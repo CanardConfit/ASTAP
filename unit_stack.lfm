@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 15
+  Left = 563
   Height = 644
-  Top = 229
+  Top = 303
   Width = 1761
   Caption = 'stack menu'
   ClientHeight = 644
@@ -158,7 +158,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1760
-    ActivePage = alignment1
+    ActivePage = tab_blink1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -166,7 +166,7 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 6
+    TabIndex = 7
     TabOrder = 3
     Options = [nboMultiLine]
     object Images: TTabSheet

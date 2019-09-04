@@ -3265,8 +3265,8 @@ var
   Save_Cursor          : TCursor;
   noise_level1,back_ground1,signal_level,magn,sd,
   hfd1,star_fwhm,snr,flux,xc,yc                                              : double;
-  x_new,y_new,fitsX,fitsY,col,first_image,tolerance,x,size,starX,starY,stepnr: integer;
-  reference_done,backup_made, init,solut :boolean;
+  x_new,y_new,fitsX,fitsY,col,first_image,tolerance,x,size,starX,starY,stepnr,clean_distance: integer;
+  reference_done,backup_reference, init,solut :boolean;
 
 begin
   if listview6.items.count<=1 then exit; {no files}
@@ -3284,10 +3284,13 @@ begin
   back_ground1:=-1;{not done yet indication}
   noise_level1:=-1;
   first_image:=-1;
-  backup_made:=false;
+  backup_reference:=false;
+
+  //memo2_message('Blinking started');
+
   stepnr:=0;
-  if sender=blink_button1 then init:=true {start at beginning}
-     else init:=false;{start at selection}
+  if ((sender=blink_button1) or (blink_star_filter1.checked)) then init:=true {start at beginning}
+    else init:=false;{start at selection}
   reference_done:=false;{ check if reference image is loaded. Could be after first image if abort was given}
   repeat
     stepnr:=stepnr+1; {first step is nr 1}
@@ -3366,10 +3369,7 @@ begin
 
           if solut then listview6.Items.item[c].subitems.Strings[8]:='✓' else  listview6.Items.item[c].subitems.Strings[8]:='';
 
-
-        //13:32:05  133 of 135 tetrahedrons selected matching within 0.005 tolerance.  Solution x:=0.999799*x+ 0.000383*y+ 12.955186,  y:=0.000336*x+ 0.999466*y+ 2.896680
-        //13:32:08  102 of 103 tetrahedrons selected matching within 0.005 tolerance.  Solution x:=-0.999535*x+ 0.006346*y+ 2399.382202,  y:=-0.007244*x+ -0.999204*y+ 1764.404977  <=flipped
-
+          setlength(img_temp,naxis3,0,0);{set to zero to clear old values (at the edges}
           setlength(img_temp,naxis3,width2,height2);{new size}
 
           if blink_star_filter1.checked then
@@ -3381,10 +3381,10 @@ begin
               signal_level:=back_ground1 + noise_level1*strtofloat2(sd_factor_blink1.text);{level of stars}
 
               backup_img; {make copy to img_backup}
-              backup_made:=true;
+              backup_reference:=true;
               tolerance:=round(strtofloat2(extra_star_supression_diameter1.text));{increase star diamter of referecne image}
-              for fitsY:=1 to height2 do
-              for fitsX:=1 to width2  do
+              for fitsY:=0 to height2-1 do
+              for fitsX:=0 to width2-1  do
               begin {smear out stars}
                 if ((fitsX>=tolerance) and (fitsX<=width2-1-tolerance) and (fitsY>=tolerance) and (FitsY<=height2-1-tolerance)) then
                 begin
@@ -3396,18 +3396,18 @@ begin
               end;
             end;
 
-            if backup_made then {background calculated, img_backup created}
+            if backup_reference then {background calculated, img_backup created}
             begin
-              for fitsY:=1 to height2 do
-              for fitsX:=1 to width2  do
+              for fitsY:=0 to height2-1 do
+              for fitsX:=0 to width2-1  do
               begin
-                x_new:=round(solution_vectorX[0]*(fitsx-1)+solution_vectorX[1]*(fitsY-1)+solution_vectorX[2]); {correction x:=aX+bY+c}
-                y_new:=round(solution_vectorY[0]*(fitsx-1)+solution_vectorY[1]*(fitsY-1)+solution_vectorY[2]); {correction y:=aX+bY+c}
+                x_new:=round(solution_vectorX[0]*(fitsx)+solution_vectorX[1]*(fitsY)+solution_vectorX[2]); {correction x:=aX+bY+c}
+                y_new:=round(solution_vectorY[0]*(fitsx)+solution_vectorY[1]*(fitsY)+solution_vectorY[2]); {correction y:=aX+bY+c}
 
                 if ((x_new>=0) and (x_new<=width2-1) and (y_new>=0) and (y_new<=height2-1)) then
                 begin
                   if img_backup[0,x_new,y_new]< signal_level {use only red color to detect stars} then {no star}
-                  for col:=0 to naxis3-1 do {all colors} img_temp[col,x_new,y_new]:=img_loaded[col,fitsX-1,fitsY-1]
+                  for col:=0 to naxis3-1 do {all colors} img_temp[col,x_new,y_new]:=img_loaded[col,fitsX,fitsY]
                   else {star}
                   for col:=0 to naxis3-1 do {all colors} img_temp[col,x_new,y_new]:=0;
                 end;
@@ -3416,14 +3416,14 @@ begin
           end{blink star filter checked}
           else {standard alligned blink}
           begin
-            for fitsY:=1 to height2 do
-            for fitsX:=1 to width2  do
+            for fitsY:=0 to height2-1 do
+            for fitsX:=0 to width2-1  do
             begin
-              x_new:=round(solution_vectorX[0]*(fitsx-1)+solution_vectorX[1]*(fitsY-1)+solution_vectorX[2]); {correction x:=aX+bY+c}
-              y_new:=round(solution_vectorY[0]*(fitsx-1)+solution_vectorY[1]*(fitsY-1)+solution_vectorY[2]); {correction y:=aX+bY+c}
+              x_new:=round(solution_vectorX[0]*(fitsx)+solution_vectorX[1]*(fitsY)+solution_vectorX[2]); {correction x:=aX+bY+c}
+              y_new:=round(solution_vectorY[0]*(fitsx)+solution_vectorY[1]*(fitsY)+solution_vectorY[2]); {correction y:=aX+bY+c}
 
               if ((x_new>=0) and (x_new<=width2-1) and (y_new>=0) and (y_new<=height2-1)) then
-              for col:=0 to naxis3-1 do {all colors} img_temp[col,x_new,y_new]:=img_loaded[col,fitsX-1,fitsY-1] ;
+              for col:=0 to naxis3-1 do {all colors} img_temp[col,x_new,y_new]:=img_loaded[col,fitsX,fitsY] ;
             end;
           end;
 
@@ -3441,6 +3441,8 @@ begin
   until ((esc_pressed) or (sender=blink_button1 {single run}));
 
   img_temp:=nil;{free memory}
+
+  //memo2_message('Blinking stopped.');
 
   Screen.Cursor :=Save_Cursor;{back to normal }
 end;
@@ -3642,23 +3644,44 @@ begin
 
       setlength(img_temp,naxis3,width2,height2);{new size}
 
-      for fitsY:=1 to height2 do
-      for fitsX:=1 to width2  do
+      for fitsY:=0 to height2-1 do
+      for fitsX:=0 to width2-1  do
       begin
-         for col:=0 to naxis3-1 do {all colors} img_temp[col,fitsX-1,fitsY-1]:=0;{clear memory}
+         for col:=0 to naxis3-1 do {all colors} img_temp[col,fitsX,fitsY]:=0;{clear memory}
       end;
 
-      for fitsY:=1 to height2 do
-      for fitsX:=1 to width2  do
+      {align}
+      for fitsY:=0 to height2-1 do
+      for fitsX:=0 to width2-1  do
       begin
-        x_new:=round(solution_vectorX[0]*(fitsx-1)+solution_vectorX[1]*(fitsY-1)+solution_vectorX[2]); {correction x:=aX+bY+c}
-        y_new:=round(solution_vectorY[0]*(fitsx-1)+solution_vectorY[1]*(fitsY-1)+solution_vectorY[2]); {correction y:=aX+bY+c}
+        x_new:=round(solution_vectorX[0]*(fitsx)+solution_vectorX[1]*(fitsY)+solution_vectorX[2]); {correction x:=aX+bY+c}
+        y_new:=round(solution_vectorY[0]*(fitsx)+solution_vectorY[1]*(fitsY)+solution_vectorY[2]); {correction y:=aX+bY+c}
 
         if ((x_new>=0) and (x_new<=width2-1) and (y_new>=0) and (y_new<=height2-1)) then
-          for col:=0 to naxis3-1 do {all colors} img_temp[col,x_new,y_new]:=img_loaded[col,fitsX-1,fitsY-1] ;
+          for col:=0 to naxis3-1 do {all colors} img_temp[col,x_new,y_new]:=img_loaded[col,fitsX,fitsY] ;
       end;
 
-      img_loaded:=img_temp;
+      {fix black holes}
+      For fitsY:=0 to height2-1 do
+      for fitsX:=0 to width2-1 do
+      for col:=0 to naxis3-1 do
+      if img_temp[col,fitsX,fitsY]<>0 then img_loaded[col,fitsX,fitsY]:=img_temp[col,fitsX,fitsY]
+      else
+      begin { black spot filter or missing red, green, blue channnel. Note for this version img_temp is counting for each color since they could be different}
+        if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
+        begin
+          if ((img_temp[col,fitsX-1,fitsY]<>0) and (img_temp[col,fitsX,fitsY-1]<>0){keep borders nice for last pixel right}) then img_loaded[col,fitsX,fitsY]:=img_temp[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
+          else
+          if img_temp[col,fitsX,fitsY-1]<>0 then img_loaded[col,fitsX,fitsY]:=img_temp[col,fitsX,fitsY-1]{take nearest pixel y-1 as replacement}
+          else
+          img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded}
+        end {fill black spots}
+        else
+        img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded}
+      end; {black spot filter}
+
+
+      //img_loaded:=img_temp;
       if pos('_aligned.fit',filename2)=0 then filename2:=ChangeFileExt(Filename2,'_aligned.fit');{rename only once}
 
       if nrbits=16 then

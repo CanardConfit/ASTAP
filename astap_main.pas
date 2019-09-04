@@ -917,7 +917,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.257b dated 2019-9-1';
+  #13+#10+'Version ß0.9.258 dated 2019-9-4';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
