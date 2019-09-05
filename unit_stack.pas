@@ -5518,7 +5518,7 @@ begin
 
 
     update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1);{for the rare case the darks are coloured. Should normally be not the case since it expects raw mono FITS files without bayer matrix applied !!}
-    update_text   ('COMMENT 1','  Created by Astrometric Stacking Program. www.hnsky.org');
+    update_text   ('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
     naxis3:=1; {any color is made mono in the routine}
 
     img_loaded:=img_dark;
@@ -6236,7 +6236,7 @@ begin
             remove_key('CDELT1  ');
             remove_key('PLTSOLVD');
 
-            update_text('COMMENT 1','  Created by Astrometric Stacking Program. www.hnsky.org');
+            update_text('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
             update_text('CALSTAT =',#39+calstat+#39);
 
             if pos('D',calstat)>0 then
@@ -6369,7 +6369,7 @@ begin
       { interim files can contain keywords: EXPTIME, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
       { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
-      update_text   ('COMMENT 1','  Created by Astrometric Stacking Program. www.hnsky.org');
+      update_text   ('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
       calstat:=calstat+'S'; {status stacked}
       update_text ('CALSTAT =',#39+calstat+#39); {calibration status}
       update_text ('DATE-OBS=',#39+JdToDate(jd_start)+#39);{give start point exposures}

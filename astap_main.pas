@@ -699,16 +699,16 @@ begin
   if naxis3=1 then  remove_key('NAXIS3  ');{remove key word in header. Some program don't like naxis3=1}
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
-  update_text   ('COMMENT  ','  Created by Astrometric Stacking Program. www.hnsky.org');
+  update_text   ('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
 
   if type_test=2 then
   begin
-    update_text   ('COMMENT  1','  Artificial image, background has value 1000 with sigma 100 Gaussian noise');
-    update_text   ('COMMENT  2','  Top rows contain hotpixels withvalue 65535');
-    update_text   ('COMMENT  3','  Rows below have Gaussian stars with a sigma of '+floattostr2(sigma));
-    update_text   ('COMMENT  4','  Which will be measured as HFD '+stackmenu1.hfd_simulation1.text);
-    update_text   ('COMMENT  5','  Note that theoretical Gaussian stars with a sigma of 1 are');
-    update_text   ('COMMENT  6','  equivalentto a HFD of 2.354 if subsampled enough.');
+    update_text   ('COMMENT A','  Artificial image, background has value 1000 with sigma 100 Gaussian noise');
+    update_text   ('COMMENT B','  Top rows contain hotpixels withvalue 65535');
+    update_text   ('COMMENT C','  Rows below have Gaussian stars with a sigma of '+floattostr2(sigma));
+    update_text   ('COMMENT D','  Which will be measured as HFD '+stackmenu1.hfd_simulation1.text);
+    update_text   ('COMMENT E','  Note that theoretical Gaussian stars with a sigma of 1 are');
+    update_text   ('COMMENT F','  equivalent to a HFD of 2.354 if subsampled enough.');
   end;
 
   update_menu(true);{file loaded, update menu for fits. Set fits_file:=true}
@@ -2066,7 +2066,7 @@ begin
       update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);
       update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
       update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-      update_text   ('COMMENT  ','Software: ASTAP, Astrometric STAcking Program. www.hnsky.org');
+      update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
       mainwindow.memo1.visible:=true;{Show new header again}
       deletefile(changeFileExt(filename2,'.wcs'));
     end;
@@ -4261,7 +4261,7 @@ begin
     end; {colors naxis3 times}
 
     {rescale if required}
-    if ( ((nrbits<=-32){-32 or -64} or (nrbits=+32)) and  ((measured_max<=1.01) or (datamax_org<=1)) ) then {rescale 0..1 range float for GIMP, Astro Pixel Processor files, transfer to 0..64000 float}
+    if ( ((nrbits<=-32){-32 or -64} or (nrbits=+32)) and  ((measured_max<=1.01) or (datamax_org<=1)) ) then {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..64000 float}
     begin
       for k:=1 to naxis3 do {do all colors}
         For i:=0 to height2-1 do
@@ -4506,7 +4506,7 @@ begin
     update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3);
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
-  update_text   ('COMMENT  ','Software: ASTAP, Astrometric STAcking Program. www.hnsky.org');
+  update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
   add_text      ('HISTORY  ','Imported from '+filen);
 end;
 
@@ -4719,7 +4719,7 @@ begin
   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
-  update_text   ('COMMENT  ','Software: ASTAP, Astrometric STAcking Program. www.hnsky.org');
+  update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
   if tiff then
   begin
      i:=1 ;
@@ -6179,8 +6179,8 @@ begin
 
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(cwhite));
-  update_text   ('COMMENT  ','  Created by Astrometric Stacking Program. www.hnsky.org');
-  update_text   ('COMMENT 2','  Grey values indicate HFD values * 100');
+  update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
+  update_text   ('COMMENT G','  Grey values indicate HFD values * 100');
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
 
