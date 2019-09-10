@@ -166,7 +166,7 @@ begin
   SetString(aline, Pansichar(@header2[0]),header_length);{convert header to string starting <Image}
   start_image:=pos('<Image ',aline);{find range <image..../image>}
 
-  if posex('<compression=',aline,start_image)>0 then begin close_fits_file;mainwindow.error_label1.caption:='Error'; mainwindow.error_label1.visible:=true; mainwindow.statusbar1.panels[5].text:=('Can not read compressed XISF file!!');fits_file:=false; exit; end;
+  if posex('compression=',aline,start_image)>0 then begin close_fits_file;mainwindow.error_label1.caption:='Error, can not read compressed XISF files!!'; mainwindow.error_label1.visible:=true; fits_file:=false; exit; end;
 
   a:=posex('geometry=',aline,start_image);
   if a>0 then

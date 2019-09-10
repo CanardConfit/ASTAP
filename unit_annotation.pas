@@ -324,20 +324,19 @@ begin
   yy := -(sin_dec0 * cos_dec * cos_deltaRA - cos_dec0 * sin_dec) / dv;  {tangent of the angle in DEC}
 end;
 
+
 procedure plot_deepsky;{plot the deep sky object on the image}
 type
   textarea = record
      x1,y1,x2,y2 : integer;
   end;
 var
-  fitsX, fitsY : double;
-  dra,ddec,delta,gamma,
-  telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,
-  length1,width1,pa,xx,yy,x,y,len,flipped,gx_orientation             :double;
+  fitsX,fitsY,dra,ddec,delta,gamma, telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,length1,width1,pa,len,flipped,
+  gx_orientation, delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh : double;
   name: string;
   flip_horizontal, flip_vertical: boolean;
   text_dimensions  : array of textarea;
-  i,text_counter,th,tw,x1,y1,x2,y2,h,xm,ym : integer;
+  i,text_counter,th,tw,x1,y1,x2,y2,hf,x,y : integer;
   overlap  :boolean;
 begin
   if ((fits_file) and (cd1_1<>0)) then
@@ -345,11 +344,9 @@ begin
     flip_vertical:=mainwindow.Flipvertical1.Checked;
     flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
 
-    fitsx:=width2/2;{for case crpix1 is not in the middle}
-    fitsy:=height2/2;
-
-    dRa :=(cd1_1*(fitsx-crpix1)+cd1_2*(fitsy-crpix2))*pi/180;
-    dDec:=(cd2_1*(fitsx-crpix1)+cd2_2*(fitsy-crpix2))*pi/180;
+    {6. Passage (x,y) -> (RA,DEC) to find RA0,DEC0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
+    dRa :=(cd1_1*((width2/2)-crpix1)+cd1_2*((height2/2)-crpix2))*pi/180; {also valid for case crpix1,crpix2 is not in the middle}
+    dDec:=(cd2_1*((width2/2)-crpix1)+cd2_2*((height2/2)-crpix2))*pi/180;
     delta:=cos(dec0)-dDec*sin(dec0);
     gamma:=sqrt(dRa*dRa+delta*delta);
     telescope_ra:=ra0+arctan(Dra/delta);
@@ -363,9 +360,9 @@ begin
     mainwindow.image1.canvas.pen.color:=clyellow;
     if  ((deepstring.count>10000) and (deepstring.count<50000)) then {deepsky.csv}
     begin {default deep sky database 30.000 objects}
-       h:=max(mainwindow.panel1.height,mainwindow.image1.height);
-       mainwindow.image1.Canvas.font.size:=max(8,round(14*height2/h));{adapt font to image dimensions}
-       mainwindow.image1.Canvas.Pen.width :=max(1,round(height2/h));{thickness lines}
+       hf:=max(mainwindow.panel1.height,mainwindow.image1.height);
+       mainwindow.image1.Canvas.font.size:=max(8,round(14*height2/hf));{adapt font to image dimensions}
+       mainwindow.image1.Canvas.Pen.width :=max(1,round(height2/hf));{thickness lines}
     end
     else
     begin{for HyperLeda, variables}
@@ -379,49 +376,51 @@ begin
     text_counter:=0;
     setlength(text_dimensions,200);
 
+    sincos(dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
+
     repeat
       read_deepsky('S',telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov,{var} ra2,dec2,length1,width1,pa);{deepsky database search}
 
+      {5. Conversion (RA,DEC) -> (x,y). See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
+      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
+      delta_ra:=ra2-ra0;
+      sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
+      HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
+      dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
+      dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
+      det:=CD2_2*CD1_1 - CD1_2*CD2_1;
+      fitsX:= +crpix1 - (CD1_2*dDEC - CD2_2*dRA) / det;{1..width2}
+      fitsY:= +crpix2 + (CD1_1*dDEC - CD2_1*dRA) / det;{1..height2}
+      x:=round(fitsX-1);{0..width2-1}
+      y:=round(fitsY-1);{0..height2-1}
 
-      equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1, {var} xx,yy); {xx,yy in arc seconds}
-      xx:=xx/(cdelt1*3600);{convert arc seconds to pixels}
-      yy:=yy/(cdelt2*3600);
 
-      rotate((90-crota2)*pi/180,xx,yy,x,y);{rotate to screen orientation}
-
-      if ((x<=width2/2+500) and (y<=height2/2+500)) then {within image1 with some overlap}
+      if ((x>-0.25*width2) and (x<=1.25*width2) and (y>-0.25*height2) and (y<=1.25*height2)) then {within image1 with some overlap}
       begin
         gx_orientation:=pa*flipped+crota2;
-        if flip_horizontal=false then begin x:=fitsX-x; end else begin x:=fitsX+x;
-          gx_orientation:=-gx_orientation;
-        end;
-        if flip_vertical=false   then begin y:=fitsY-y; end else
-        begin
-          y:=fitsY+y;
-          gx_orientation:=-gx_orientation;
-        end;
-
-
-        if naam3='' then name:=naam2
-        else
-        if naam4='' then name:=naam2+'/'+naam3
-        else
-        name:=naam2+'/'+naam3+'/'+naam4;
+        if flip_horizontal then begin x:=(width2-1)-x; gx_orientation:=-gx_orientation; end;
+        if flip_vertical then gx_orientation:=-gx_orientation else y:=(height2-1)-y;
 
         {Plot deepsky text labels on an empthy text space.}
         { 1) If the center of the deepsky object is outside the image then don't plot text}
         { 2) If the text space is occupied, then move the text down. If the text crosses the bottom then use the original text position.}
         { 3) If the text crosses the right side of the image then move the text to the left.}
         { 4) If the text is moved in y then connect the text to the deepsky object with a vertical line.}
-        if ( (round(x)>=0) and (round(x)<=width2) and (round(y)>=0) and (round(y)<=height2) ) then {plot only text if center object is visible}
+        if ( (x>=0) and (x<=width2-1) and (y>=0) and (y<=height2-1) ) then {plot only text if center object is visible}
         begin
+          if naam3='' then name:=naam2
+          else
+          if naam4='' then name:=naam2+'/'+naam3
+          else
+          name:=naam2+'/'+naam3+'/'+naam4;
+
           {get text dimensions}
           th:=mainwindow.image1.Canvas.textheight(name);
           tw:=mainwindow.image1.Canvas.textwidth(name);
-          x1:=round(x);
-          y1:=round(y);
-          x2:=round(x)+ tw;
-          y2:=round(y)+ th ;
+          x1:=x;
+          y1:=y;
+          x2:=x+ tw;
+          y2:=y+ th ;
 
           if ((x1<=width2) and (x2>width2)) then begin x1:=x1-(x2-width2);x2:=width2;end; {if text is beyond right side, move left}
 
@@ -445,8 +444,8 @@ begin
                   y2:=y2+(th div 3);
                   if y2>=height2 then {no space left, use original position}
                   begin
-                    y1:=round(y);
-                    y2:=round(y)+th ;
+                    y1:=y;
+                    y2:=y+th ;
                     overlap:=false;{stop searching}
                     i:=$FFFFFFF;{stop searching}
                   end;
@@ -461,10 +460,10 @@ begin
          text_dimensions[text_counter].x2:=x2;
          text_dimensions[text_counter].y2:=y2;
 
-         if y1<>round(y) then {there was textual overlap}
+         if y1<>y then {there was textual overlap}
          begin
-           mainwindow.image1.Canvas.moveto(round(x),round(y+th/4));
-           mainwindow.image1.Canvas.lineto(round(x),y1);
+           mainwindow.image1.Canvas.moveto(x,round(y+th/4));
+           mainwindow.image1.Canvas.lineto(x,y1);
          end;
          mainwindow.image1.Canvas.textout(x1,y1,name);
          inc(text_counter);
@@ -477,19 +476,17 @@ begin
 
        if len<=2 then {too small to plot an elipse or circle, plot just four dots}
        begin
-         xm:=round(x);
-         ym:=round(y);
-         mainwindow.image1.canvas.pixels[xm-2,ym+2]:=clyellow;
-         mainwindow.image1.canvas.pixels[xm+2,ym+2]:=clyellow;
-         mainwindow.image1.canvas.pixels[xm-2,ym-2]:=clyellow;
-         mainwindow.image1.canvas.pixels[xm+2,ym-2]:=clyellow;
+         mainwindow.image1.canvas.pixels[x-2,y+2]:=clyellow;
+         mainwindow.image1.canvas.pixels[x+2,y+2]:=clyellow;
+         mainwindow.image1.canvas.pixels[x-2,y-2]:=clyellow;
+         mainwindow.image1.canvas.pixels[x+2,y-2]:=clyellow;
        end
        else
        begin
          if PA<>999 then
            plot_glx(mainwindow.image1.canvas,x,y,len,width1/length1,gx_orientation*pi/180) {draw oval or galaxy}
          else
-         mainwindow.image1.canvas.ellipse(round(x-len),round(y-len),round(x+len),round(y+len));{circel}
+         mainwindow.image1.canvas.ellipse(round(x-len),round(y-len),round(x+1+len),round(y+1+len));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
        end;
      end;
     until linepos>=$FFFFFF;{end of database}
@@ -497,6 +494,7 @@ begin
     text_dimensions:=nil;{remove used memory}
   end;
 end;{plot deep_sky}
+
 
 function Gaia_star_color(Bp_Rp: integer):integer;
 begin
@@ -516,49 +514,6 @@ begin
   else
   result:=$0000FF; {>1.5 rood}
 end;
-
-procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot image stars and database stars used for the solution}
-var
-  nrstars,i, starX, starY,size  : integer;
-  flip_horizontal, flip_vertical: boolean;
-  xx,yy,x,y                     :double;
-begin
-  flip_vertical:=mainwindow.Flipvertical1.Checked;
-  flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
-
-  {do image stars}
-  nrstars:=length(starlist2[0]);
-  for i:=0 to nrstars-1 do
-  begin
-    mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-    mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
-    mainwindow.image1.Canvas.brush.Style:=bsClear;
-    mainwindow.image1.Canvas.Pen.Color :=clred;
-
-    if flip_horizontal=true then starX:=round((width2-starlist2[0,i]))  else starX:=round(starlist2[0,i]);
-    if flip_vertical=false  then starY:=round((height2-starlist2[1,i])) else starY:=round(starlist2[1,i]);
-    size:=15;
-    mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
- end;
-
-  {do database stars}
-  nrstars:=length(starlist1[0]);
-  for i:=0 to nrstars-1 do
-  begin
-    mainwindow.image1.Canvas.Pen.Color := clyellow;
-
-    xx:=(starlist1[0,i]-correctionX)/(cdelt1*3600);{apply correction for database stars center and image center and convert arc seconds to pixels}
-    yy:=(starlist1[1,i]-correctionY)/(cdelt2*3600);
-    rotate((90-crota2)*pi/180,xx,yy,X,Y);{rotate to screen orientation}
-
-    if flip_horizontal=false then begin starX:=round(crpix1-x); end else begin starX:=round(crpix1+x); end;
-    if flip_vertical=false   then begin starY:=round(crpix2-y); end else begin starY:=round(crpix2+y); end;
-
-    size:=20;
-    mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-  end;
-end;
-
 
 function get_best_mean(list: array of double): double;{Remove outliers from polulation using MAD. }
 var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
@@ -590,11 +545,13 @@ end;
 
 procedure plot_stars(photometry_only,show_distortion: boolean);{plot stars on the image}
 var
-  fitsX,fitsY,fitsX_middle, fitsY_middle,screenX_middle,screenY_middle,
+  fitsX,fitsY, fitsX_middle, fitsY_middle,screenX_middle,screenY_middle,
   dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
-  xx,yy,x,y,mag2,Bp_Rp,
+  xx,yy,mag2,Bp_Rp,
   hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc,area_visible,ln_area_per_star,magn  :double;
-  star_counter,star_total_counter,x2,y2,len, max_nr_stars                                   : integer;
+  delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh : double;
+
+  x,y,star_counter,star_total_counter,x2,y2,len, max_nr_stars                                   : integer;
   flip_horizontal, flip_vertical: boolean;
   mag_offset_array : array of double;
   frac1,frac2,frac3,frac4  : double;
@@ -602,19 +559,26 @@ var
 
     procedure plot_star;
     begin
-      equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1, {var} xx,yy); {xx,yy in arc seconds}
-      xx:=xx/(cdelt1*3600);{convert arc seconds to pixels}
-      yy:=yy/(cdelt2*3600);
-      rotate((90-crota2)*pi/180,xx,yy,x,y);{rotate to screen orientation}
-      fitsX:=screenX_middle-x;{0..width2-1, not actual fitsX pixels}
-      fitsY:=screenY_middle+y;{0..height2-1, not actual fitsX pixels}
 
-      if ((x<=width2/2+50) and (y<=height2/2+50)) then {within image1 with some overlap}
+     {5. Conversion (RA,DEC) -> (x,y)}
+      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
+      delta_ra:=ra2-ra0;
+      sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
+      HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
+      dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
+      dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
+      det:=CD2_2*CD1_1 - CD1_2*CD2_1;
+      fitsX:= +crpix1 - (CD1_2*dDEC - CD2_2*dRA) / det; {1..width2}
+      fitsY:= +crpix2 + (CD1_1*dDEC - CD2_1*dRA) / det; {1..height2}
+      x:=round(fitsX-1); {0..width2-1}
+      y:=round(fitsY-1); {0..height2-1}
+
+      if ((x>-50) and (x<=width2+50) and (y>-50) and (y<=height2+50)) then {within image1 with some overlap}
       begin
         if photometry_only=false then
         begin {annotate}
-          if flip_horizontal=false then begin x2 {0..width2-1} :=round(screenX_middle-x); end else begin x2:=round(screenX_middle+x); {pa:=-pa;} end;
-          if flip_vertical=false   then begin y2 {0..height2-1}:=round(screenY_middle-y); end else begin y2:=round(screenY_middle+y);{ pa:=-pa;} end;
+          if flip_horizontal then x2:=(width2-1)-x else x2:=x;
+          if flip_vertical   then y2:=y         else y2:=(height2-1)-y;
 
           inc(star_counter);
           inc(star_total_counter);
@@ -631,11 +595,11 @@ var
             star_counter:=0;
           end;
           len:=round((200-mag2)/5.02);
-          mainwindow.image1.canvas.ellipse(x2-len,y2-len,x2+len,y2+len);{circel}
+          mainwindow.image1.canvas.ellipse(x2-len,y2-len,x2+1+len,y2+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
         end;
 
         {get mag/flux ratio}
-        HFD(img_loaded,round(fitsX),round(fitsY), hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        HFD(img_loaded,x,y, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
         begin
           if ((img_loaded[0,round(xc),round(yc)]<65000) and
@@ -659,7 +623,7 @@ var
           begin
             mainwindow.image1.Canvas.Pen.width :=3;
             mainwindow.image1.Canvas.MoveTo(x2, y2);
-            mainwindow.image1.Canvas.LineTo(round(x2+(fitsX-xc )*50),round(y2-(fitsY-yc)*50 ));
+            mainwindow.image1.Canvas.LineTo(round(x2+(x-xc)*50),round(y2-(y-yc)*50 ));
             mainwindow.image1.Canvas.Pen.width :=1;
             //  totalX:=totalX+(fitsX-xc);
             //  totalY:=totalY+(fitsY-yc);
@@ -721,6 +685,8 @@ begin
 
     find_areas( telescope_ra,telescope_dec, fov,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
 
+    sincos(dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
+
     {read 1th area}
     if area1<>0 then {read 1th area}
     begin
@@ -764,6 +730,50 @@ begin
 
   end;{fits file}
 end;{plot stars}
+
+
+procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot image stars and database stars used for the solution}
+var
+  nrstars,i, starX, starY,size  : integer;
+  flip_horizontal, flip_vertical: boolean;
+  xx,yy,x,y                     :double;
+begin
+  flip_vertical:=mainwindow.Flipvertical1.Checked;
+  flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
+
+  {do image stars}
+  nrstars:=length(starlist2[0]);
+  for i:=0 to nrstars-1 do
+  begin
+    mainwindow.image1.Canvas.Pen.Mode := pmMerge;
+    mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
+    mainwindow.image1.Canvas.brush.Style:=bsClear;
+    mainwindow.image1.Canvas.Pen.Color :=clred;
+
+    if flip_horizontal=true then starX:=round((width2-starlist2[0,i]))  else starX:=round(starlist2[0,i]);
+    if flip_vertical=false  then starY:=round((height2-starlist2[1,i])) else starY:=round(starlist2[1,i]);
+    size:=15;
+    mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+ end;
+
+  {do database stars}
+  nrstars:=length(starlist1[0]);
+  for i:=0 to nrstars-1 do
+  begin
+    mainwindow.image1.Canvas.Pen.Color := clyellow;
+
+    xx:=(starlist1[0,i]-correctionX)/(cdelt1*3600);{apply correction for database stars center and image center and convert arc seconds to pixels}
+    yy:=(starlist1[1,i]-correctionY)/(cdelt2*3600);
+    rotate((90-crota2)*pi/180,xx,yy,X,Y);{rotate to screen orientation}
+
+    if flip_horizontal=false then begin starX:=round(crpix1-x); end else begin starX:=round(crpix1+x); end;
+    if flip_vertical=false   then begin starY:=round(crpix2-y); end else begin starY:=round(crpix2+y); end;
+
+    size:=20;
+    mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+  end;
+end;
+
 
 end.
 

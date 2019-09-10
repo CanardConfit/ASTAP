@@ -65,8 +65,6 @@ uses
    CustApp, Types;
 
 
-var
-  settingstring :tstrings; {settings for save and loading}
 type
 
   { Tmainwindow }
@@ -94,6 +92,15 @@ type
     MenuItem13: TMenuItem;
     MenuItem14: TMenuItem;
     loadsettings1: TMenuItem;
+    MenuItem15: TMenuItem;
+    MenuItem16: TMenuItem;
+    MenuItem17: TMenuItem;
+    enterposition2: TMenuItem;
+    flipped1: TMenuItem;
+    shape_marker2: TShape;
+    shape_marker3: TShape;
+    solvebytwopositions1: TMenuItem;
+    enterposition1: TMenuItem;
     Returntodefaultsettings2: TMenuItem;
     savesettings2: TMenuItem;
     settings_menu1: TMenuItem;
@@ -229,6 +236,8 @@ type
     procedure FormShowHint(Sender: TObject; HintInfo: PHintInfo);
     procedure measuretotalmagnitude1Click(Sender: TObject);
     procedure loadsettings1Click(Sender: TObject);
+    procedure MenuItem15Click(Sender: TObject);
+    procedure enterposition1Click(Sender: TObject);
     procedure receivemessage(Sender: TObject); {For single instance, receive paramstr(1) from second instance prior to termination}
 
     procedure add_marker1Click(Sender: TObject);
@@ -350,6 +359,9 @@ type
   star_list   = array of array of double;
 
 var
+  settingstring :tstrings; {settings for save and loading}
+
+var
    user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
    img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_backup,img_final : image_array;
    filename2: string;
@@ -406,11 +418,22 @@ const
    application_path:string='';{to be set in main}
    shape_fitsX: double=0;
    shape_fitsY: double=0;
-   shape_marker_fitsX: double=0;
-   shape_marker_fitsY: double=0;
+   shape_marker1_fitsX: double=10;
+   shape_marker1_fitsY: double=10;
+   shape_marker2_fitsX: double=20;
+   shape_marker2_fitsY: double=20;
+   shape_marker3_fitsX: double=0;
+   shape_marker3_fitsY: double=0;
+
    command_execution : boolean=false;{program executed in command line}
 
-//   factorX    : double=1.1;
+   mouse_positionRADEC1 : string='';{For manual reference solving}
+   mouse_positionRADEC2 : string='';{For manual reference solving}
+   flipped_img          : string='';
+//   mouse_positionX1 : double=100;{For manual reference solving}
+//   mouse_positionY1 : double=100;{For manual reference solving}
+//   mouse_positionX2 : double=200;{For manual reference solving}
+//   mouse_positionY2 : double=200;{For manual reference solving}
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;var sep: double);
@@ -472,6 +495,9 @@ function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result 
 function fnmodulo (x,range: double):double;
 procedure measure_magnitudes(var stars :star_list);{find stars in image and return, x,y, hfd, flux}
 function binx2 : boolean; {converts filename2 to binx2 version}
+procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean); {convert ra in text to double in radians}
+procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
+
 
 const   bufwide=1024*120;{buffer size in bytes}
 
@@ -917,7 +943,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.258 dated 2019-9-4';
+  #13+#10+'Version ß0.9.259 dated 2019-9-10';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1650,6 +1676,8 @@ begin
     save_settings(savedialog1.filename);
 end;
 
+
+
 procedure Tmainwindow.show_distortion1Click(Sender: TObject);
 begin
  plot_stars(false,true {show Distortion});
@@ -1702,7 +1730,7 @@ begin
   mainwindow.shape_alignment_marker1.visible:=true;
 end;
 
-procedure show_marker_shape(fitsX,fitsY: double);{show manual alignment shape}
+procedure show_marker_shape(shape: TShape; fitsX,fitsY: double);{show manual alignment shape}
 var
    xf,yf,x,y : double;
 begin
@@ -1712,13 +1740,14 @@ begin
   if mainwindow.Fliphorizontal1.Checked then x:=mainwindow.image1.width-xF else x:=xF;
   if mainwindow.Flipvertical1.Checked then y:=mainwindow.image1.height-yF else y:=yF;
 
-  mainwindow.shape_marker1.height:=round(20*mainwindow.image1.height/height2);
-  mainwindow.shape_marker1.width:= round(20*mainwindow.image1.width/width2);
-
-  mainwindow.shape_marker1.left:=round(mainwindow.image1.left + x-mainwindow.shape_marker1.width/2);
-  mainwindow.shape_marker1.top:=round(mainwindow.image1.top   + y-mainwindow.shape_marker1.height/2);
-
-  mainwindow.shape_marker1.visible:=true;
+  with shape do
+  begin
+     height:=round(20*mainwindow.image1.height/height2);
+     width:= round(20*mainwindow.image1.width/width2);
+     left:=round(mainwindow.image1.left + x - width/2);
+     top:=round(mainwindow.image1.top   + y - height/2);
+     visible:=true;
+  end;
 end;
 
 
@@ -1744,7 +1773,11 @@ begin
 
      {marker}
      if mainwindow.shape_marker1.visible then {do this only when visible}
-       show_marker_shape(shape_marker_fitsX, shape_marker_fitsY);
+       show_marker_shape(mainwindow.shape_marker1,shape_marker1_fitsX, shape_marker1_fitsY);
+     if mainwindow.shape_marker2.visible then {do this only when visible}
+       show_marker_shape(mainwindow.shape_marker2,shape_marker2_fitsX, shape_marker2_fitsY);
+     if mainwindow.shape_marker3.visible then {do this only when visible}
+       show_marker_shape(mainwindow.shape_marker3,shape_marker3_fitsX, shape_marker3_fitsY);
 
      {reference point manual alignment}
      if mainwindow.shape_alignment_marker1.visible then {For manual alignment. Do this only when visible}
@@ -1861,48 +1894,23 @@ begin
   lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
 end;
 
-procedure place_marker_radec(str1: string);{place ra,dec marker in image}
+function place_marker_radec(str1: string): boolean;{place ra,dec marker in image}
 var
-  ra,dec,rah,ram,ras,decD,decM,decS,plusmin :double;
-  position1,position2,position3,position4,position5,position6, error1,error2,error3,error4,error5,error6:integer;
-
-  dec_new,SIN_dec_new,COS_dec_new,ra_new,SIN_dec_ref,COS_dec_ref,det,
-  delta_ra,ra_ref,SIN_delta_ra,COS_delta_ra, H, dRa,dDec                : double;
+  dec_new,SIN_dec_new,COS_dec_new,ra_new,
+  SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec,fitsx,fitsy : double;
+  kommapos:integer;
+  error1,error2  : boolean;
 
 begin
   if cd1_1=0 then exit;{no solution to place marker}
 
-  str1:=trim(str1)+' ';
-  str1:= stringreplace(str1, ',', '.',[rfReplaceAll]);
-  str1:= stringreplace(str1, ':', ' ',[rfReplaceAll]);
-  str1:= stringreplace(str1, 'd', ' ',[rfReplaceAll]);
-  str1:= stringreplace(str1, #9, ' ',[rfReplaceAll]);{tab}
-  str1:= stringreplace(str1, '  ', ' ',[rfReplaceAll]);{remove double space}
-  str1:= stringreplace(str1, '- ', '-',[rfReplaceAll]);{remove space after minus}
+  kommapos:=pos(',',str1);
+  ra_text_to_radians (copy(str1,1  ,kommapos-1) ,ra_new,error1); {convert ra text to ra0 in radians}
+  dec_text_to_radians(copy(str1,kommapos+1,99) ,dec_new,error2); {convert dec text to dec0 in radians}
 
-  marker_position:=str1;
-
-  position1:=pos(' ',str1);{after rah}
-  position2:=posex(' ',str1,position1+1);{after ram}
-  position3:=posex(' ',str1,position2+1);{after ras}
-  position4:=posex(' ',str1,position3+1);{after dec}
-  position5:=posex(' ',str1,position4+1);{after decm}
-  position6:=posex(' ',str1,position5+1);{after decs}
-
-  val(copy(str1,1,position1-1),rah,error1);
-  val(copy(str1,position1+1,position2-position1-1),raM,error2);
-  val(copy(str1,position2+1,position3-position2-1),raS,error3);
-  val(copy(str1,position3+1,position4-position3-1),decD,error4);
-  val(copy(str1,position4+1,position5-position4-1),decM,error5);
-  val(copy(str1,position5+1,position6-position5-1),decS,error6);
-
-
-  if ((error1=0) and (error2=0) and (error3=0) and (error4=0) and (error5=0) and (error6=0)) then
+  if ((error1=false) and (error2=false)) then
   begin
-    ra_new:=(rah+raM/60+raS/3600)*pi/12;
-    if pos('-',str1)>0 then plusmin:=-1 else plusmin:=1;
-    decD:=abs(decD);
-    dec_new:=(plusmin*(decD+decM/60+decS/3600))*pi/180;
+    result:=true;
 
    {5. Conversion (RA,DEC) -> (x,y) of reference image}
     sincos(dec_new,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
@@ -1917,16 +1925,18 @@ begin
 
     det:=CD2_2*CD1_1 - CD1_2*CD2_1;
 
-    shape_marker_fitsX:=+CRPIX1  - (CD1_2*dDEC - CD2_2*dRA) / det;
-    shape_marker_fitsY:=+CRPIX2  + (CD1_1*dDEC - CD2_1*dRA) / det;
+    fitsX:=+CRPIX1  - (CD1_2*dDEC - CD2_2*dRA) / det;
+    fitsY:=+CRPIX2  + (CD1_1*dDEC - CD2_1*dRA) / det;
 
-    show_marker_shape(shape_marker_fitsX, shape_marker_fitsY);
+    shape_marker3_fitsX:=fitsX;
+    shape_marker3_fitsY:=fitsY;
+    show_marker_shape(mainwindow.shape_marker3,shape_marker3_fitsX, shape_marker3_fitsY);
 
   end
   else
   begin
-    mainwindow.shape_marker1.visible:=false;
-    mainwindow.add_marker_position1.checked:=false;
+    mainwindow.shape_marker3.visible:=false;
+    result:=false;
     beep;
     exit;
   end;
@@ -1941,6 +1951,12 @@ begin
     stackmenu1.search_fov1.text:=floattostrF2(height2*cdelt2,0,2);
   end
   else mainwindow.statusbar1.panels[6].text:='';
+end;
+
+function fits_file_name(inp : string): boolean; {fits file name?}
+begin
+  inp:=uppercase(extractfileext(inp));
+  result:=((inp='.FIT') or (inp='.FITS') or (inp='.FTS'));
 end;
 
 procedure update_menu_related_to_solver(yes :boolean); {update menu section related to solver succesfull}
@@ -1973,7 +1989,7 @@ begin
   mainwindow.stretch_draw1.Enabled:=fits;
   mainwindow.highlight_non_stellar1.enabled:=(naxis3=3);
 
-  mainwindow.SaveFITSwithupdatedheader1.Enabled:=((fits) and (fileexists(filename2)));{menu disable, no file available to update header}
+  mainwindow.SaveFITSwithupdatedheader1.Enabled:=((fits) and (fits_file_name(filename2)) and (fileexists(filename2)));{menu disable, no file available to update header}
 
   mainwindow.CropFITSimage1.Enabled:=fits;
 
@@ -2543,6 +2559,7 @@ Function prepare_dec2(decx:double; sep:ansichar):string; {radialen to text, form
    g,m,s,ds :integer;
    sign   : ansichar;
 begin {make from rax [0..pi*2] a text in array bericht. Length is 10 long}
+//  if decX>2*pi then decX:=2*pi;
   if decx<0 then sign:='-' else sign:='+';
   decx:=abs(decx)+pi*0.1/(360*60*60); {add 1/20 second to get correct rounding and not 7:60 results as with round}
   decx:=decx*180/pi; {make degrees}
@@ -3712,7 +3729,8 @@ begin
     if mainwindow.Flipvertical1.Checked then mainwindow.Flipvertical1Click(nil);
 
     plot_north; {draw arrow or clear indication position north depending on value cd1_1}
-    if mainwindow.add_marker_position1.checked then place_marker_radec(marker_position);
+    if mainwindow.add_marker_position1.checked then
+      mainwindow.add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
 
     mainwindow.statusbar1.panels[5].text:=inttostr(width2)+' x '+inttostr(height2)+' x '+inttostr(naxis3)+'   '+inttostr(nrbits)+' BPP';{give image dimensions and bit per pixel info}
     update_statusbar_section5;{update section 5 with image dimensions in degrees}
@@ -4537,7 +4555,6 @@ begin
   cd2_1:=0;{just for the case it is not available}
   cd2_2:=0;{just for the case it is not available}
   date_obs:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
-  a_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
   filter_name:='';
   calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
   imagetype:='';
@@ -5228,6 +5245,7 @@ begin
 
 
     marker_position :=initstring.Values['marker_position'];{ra, dec marker}
+    mainwindow.shape_marker3.hint:=marker_position;
 
     ra1.text:= initstring.Values['ra'];
     dec1.text:= initstring.Values['dec'];
@@ -5950,8 +5968,16 @@ begin
     mainwindow.astrometric_solve_image1.enabled:=true;
 
     mainwindow.SaveasJPGPNGBMP1.Enabled:=true;
+
+    mainwindow.shape_marker1.visible:=false;
+    mainwindow.shape_marker2.visible:=false;
   end;
   ext1:=uppercase(ExtractFileExt(filename2));
+
+  x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
+  y_coeff[0]:=0;
+  a_order:=0; {SIP_polynomial, use for check if there is data}
+
   result:=false;{assume failure}
   {fits}
   if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')or (ext1='.WCS')) then {FITS}
@@ -6340,6 +6366,12 @@ begin
   end;
 end;
 
+procedure Tmainwindow.MenuItem15Click(Sender: TObject);
+begin
+  save_settings(user_path+'astap.cfg');
+end;
+
+
 procedure measure_magnitudes(var stars :star_list);{find stars and return, x,y, hfd, flux}
 var
   fitsX,fitsY,size, i, j,starX,starY,nrstars    : integer;
@@ -6462,12 +6494,14 @@ procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
 begin
   if add_marker_position1.checked then
   begin
-    marker_position:=InputBox('α, δ position:','23 00 00.0  89 00 00.0 ',marker_position );
+    marker_position:=InputBox('Enter α, δ position seperated by a comma.','23 00 00.0,  89 00 00.0 ',marker_position );
     if marker_position='' then begin add_marker_position1.checked:=false; exit; end;
 
-    place_marker_radec(marker_position);
-
-  end;
+    add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
+    mainwindow.shape_marker3.hint:=marker_position;
+  end
+  else
+    mainwindow.shape_marker3.visible:=false;
 end;
 procedure Tmainwindow.SimpleIPCServer1MessageQueued(Sender: TObject);{For OneInstance, this event only occurs in Windows}
 begin
@@ -6484,7 +6518,7 @@ begin
     Statusbar1.Panels[0].text:='α, δ';
     Statusbar1.Panels[1].text:='α, δ centered';
     Statusbar1.Panels[2].text:='Local standard deviation or star values';
-    Statusbar1.Panels[3].text:='X, Y = [pixel value]';
+    Statusbar1.Panels[3].text:='X, Y = [pixel value(s)]';
     Statusbar1.Panels[4].text:='RGB values screen';
   end;
 end;
@@ -6583,25 +6617,48 @@ begin
   Screen.Cursor:=Save_Cursor;
 end;
 
-
-procedure Tmainwindow.add_marker1Click(Sender: TObject);
-var
-  xf,yf: integer;
-  fitsX,fitsY  : double;
+procedure set_marker1XY(show: boolean);
+  var
+    xf,yf: integer;
+    fitsX,fitsY  : double;
 begin
-  if add_marker1.checked then
+  if show then
   begin
-    if Fliphorizontal1.Checked then xf:=image1.width-down_x else xf:=down_x;;
-    if Flipvertical1.Checked then yf:=image1.height-down_y else yf:=down_y;
+    if mainwindow.Fliphorizontal1.Checked then xf:=mainwindow.image1.width-down_x else xf:=down_x;;
+    if mainwindow.Flipvertical1.Checked then yf:=mainwindow.image1.height-down_y else yf:=down_y;
 
-    shape_marker_fitsX:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
-    shape_marker_fitsY:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
+    shape_marker1_fitsX:=0.5+(0.5+xf)/(mainwindow.image1.width/width2);{starts at 1}
+    shape_marker1_fitsY:=0.5+height2-(0.5+yf)/(mainwindow.image1.height/height2); {from bottom to top, starts at 1}
 
-    show_marker_shape(shape_marker_fitsX, shape_marker_fitsY);
+    show_marker_shape(mainwindow.shape_marker1,shape_marker1_fitsX, shape_marker1_fitsY);
   end
   else
     mainwindow.shape_marker1.visible:=false;
+end;
 
+procedure set_marker2XY(show: boolean);
+  var
+    xf,yf: integer;
+    fitsX,fitsY  : double;
+begin
+  if show then
+  begin
+    if mainwindow.Fliphorizontal1.Checked then xf:=mainwindow.image1.width-down_x else xf:=down_x;;
+    if mainwindow.Flipvertical1.Checked then yf:=mainwindow.image1.height-down_y else yf:=down_y;
+
+    shape_marker2_fitsX:=0.5+(0.5+xf)/(mainwindow.image1.width/width2);{starts at 1}
+    shape_marker2_fitsY:=0.5+height2-(0.5+yf)/(mainwindow.image1.height/height2); {from bottom to top, starts at 1}
+
+    show_marker_shape(mainwindow.shape_marker2,shape_marker2_fitsX, shape_marker2_fitsY);
+  end
+  else
+    mainwindow.shape_marker1.visible:=false;
+end;
+
+procedure Tmainwindow.add_marker1Click(Sender: TObject);
+begin
+   set_marker1XY(add_marker1.checked);
+   shape_marker1.hint:='Marker';
 end;
 
 procedure Tmainwindow.center_lost_windowsClick(Sender: TObject);
@@ -6808,10 +6865,6 @@ end;
 //  height2:=mainwindow.Image1.Picture.height;
 //end;
 
-function fits_file_name(inp : string): boolean; {fits file name?}
-begin
-  result:=((pos('.fit',inp)<>0) or (pos('.FIT',inp)<>0) or (pos('.fts',inp)<>0) or (pos('.FTS',inp)<>0));
-end;
 
 function load_and_solve : boolean; {load image and plate solve}
 begin
@@ -7701,78 +7754,200 @@ begin
 
 end;
 
-procedure Tmainwindow.ra1Change(Sender: TObject);
+procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean); {convert ra in text to double in radians}
 var
   rah,ram,ras,plusmin :double;
-  str1   :string;
   position1,position2,position3,error1,error2,error3:integer;
 begin
 
-  str1:=trim(ra1.text)+' ';
-  if pos('-',str1)>0 then plusmin:=-1 else plusmin:=1;
-  str1:= stringreplace(str1, ',', '.',[]);
+  inp:= stringreplace(inp, ',', '.',[rfReplaceAll]);
+  inp:= stringreplace(inp, ':', ' ',[rfReplaceAll]);
+  inp:= stringreplace(inp, 'h', ' ',[rfReplaceAll]);
+  inp:= stringreplace(inp, '  ', ' ',[rfReplaceAll]);
+  inp:= stringreplace(inp, '  ', ' ',[rfReplaceAll]);
 
-  position1:=pos(' ',str1);
-  val(copy(str1,1,position1-1),rah,error1);
+  inp:=trim(inp)+' ';
+  if pos('-',inp)>0 then plusmin:=-1 else plusmin:=1;
 
-  position2:=posex(' ',str1,position1+1);
+  position1:=pos(' ',inp);
+  val(copy(inp,1,position1-1),rah,error1);
+
+  position2:=posex(' ',inp,position1+1);
   if position2-position1>1 then {ram available}
   begin
-    val(copy(str1,position1+1,position2-position1-1),ram,error2);
+    val(copy(inp,position1+1,position2-position1-1),ram,error2);
 
     {ram found try ras}
-    position3:=posex(' ',str1,position2+1);
-    if position3-position2>1 then val( copy(str1,position2+1,position3-position2-1),ras,error3)
+    position3:=posex(' ',inp,position2+1);
+    if position3-position2>1 then val( copy(inp,position2+1,position3-position2-1),ras,error3)
        else begin ras:=0;error3:=0;end;
   end
   else
     begin ram:=0;error2:=0; ras:=0; error3:=0; end;
 
-  ra_radians:=plusmin*(abs(rah)+ram/60+ras/3600)*pi/12;
-
-  str(plusmin*(abs(rah)+ram/60+ras/3600):0:6,str1);
-  ra_label.Caption:=str1;
-
-  if ((ra_radians>2*pi) or (error1<>0) or (error2>1) or (error3<>0)) then mainwindow.ra1.color:=clred else mainwindow.ra1.color:=clwindow;
-
+  ra:=plusmin*(abs(rah)+ram/60+ras/3600)*pi/12;
+  errorRA:=((error1<>0) or (error2>1) or (error3<>0) or (ra>2*pi));
 end;
 
-procedure Tmainwindow.dec1Change(Sender: TObject);
+procedure Tmainwindow.ra1Change(Sender: TObject);
+var
+    str1   : string;
+   errorRA : boolean;
+begin
+  ra_text_to_radians(ra1.text,ra_radians,errorRA); {convert ra in text to double in radians}
+
+  str(ra_radians*12/pi:0:6,str1);
+  ra_label.Caption:=str1;
+
+  if errorRA then mainwindow.ra1.color:=clred else mainwindow.ra1.color:=clwindow;
+end;
+
+procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
 var
   decd,decm,decs :double;
-  str1   :string;
   position1,position2,position3,error1,error2,error3,plusmin:integer ;
 begin
+  inp:= stringreplace(inp, ',', '.',[rfReplaceAll]);
+  inp:= stringreplace(inp, ':', ' ',[rfReplaceAll]);
+  inp:= stringreplace(inp, 'd', ' ',[rfReplaceAll]);
+  inp:= stringreplace(inp, '  ', ' ',[rfReplaceAll]);
+  inp:= stringreplace(inp, '  ', ' ',[rfReplaceAll]);
+  inp:=trim(inp)+' ';
+  if pos('-',inp)>0 then plusmin:=-1 else plusmin:=1;
 
-  str1:=dec1.text;
-  if pos('-',str1)>0 then plusmin:=-1 else plusmin:=1;
-  str1:=trim(str1)+' ';
-  str1:= stringreplace(str1, ',', '.',[]);
-
-  position1:=pos(' ',str1);
-  val(copy(str1,1,position1-1),decd,error1);
 
 
-  position2:=posex(' ',str1,position1+1);
+  position1:=pos(' ',inp);
+  val(copy(inp,1,position1-1),decd,error1);
+
+
+  position2:=posex(' ',inp,position1+1);
   if position2-position1>1 then {decm available}
   begin
-    val(copy(str1,position1+1,position2-position1-1),decm,error2);
+    val(copy(inp,position1+1,position2-position1-1),decm,error2);
 
     {decm found try decs}
-    position3:=posex(' ',str1,position2+1);
-    if position3-position2>1 then val( copy(str1,position2+1,position3-position2-1),decs,error3)
+    position3:=posex(' ',inp,position2+1);
+    if position3-position2>1 then val( copy(inp,position2+1,position3-position2-1),decs,error3)
        else begin decs:=0;error3:=0;end;
   end
   else
     begin decm:=0;error2:=0;decs:=0; error3:=0; end;
 
-  dec_radians:=plusmin*(abs(decd)+decm/60+decs/3600)*pi/180;
+  dec:=plusmin*(abs(decd)+decm/60+decs/3600)*pi/180;
+  errorDEC:=((error1<>0) or (error2>1) or (error3<>0));
+end;
+procedure Tmainwindow.dec1Change(Sender: TObject);
+var
+   str1     : string;
+   errorDEC : boolean;
+begin
 
-  str(plusmin*(abs(decd)+decm/60+decs/3600):0:6,str1);
+  dec_text_to_radians(dec1.text,dec_radians,errorDEC); {convert dec in text to double in radians}
+
+  str(dec_radians*180/pi:0:6,str1);
   dec_label.Caption:=str1;
 
-  if ((error1<>0) or (error2>1) or (error3<>0)) then mainwindow.dec1.color:=clred else mainwindow.dec1.color:=clwindow;
+  if (errorDEC) then mainwindow.dec1.color:=clred else mainwindow.dec1.color:=clwindow;
 
+end;
+
+
+procedure Tmainwindow.enterposition1Click(Sender: TObject);
+var
+  ra2,dec2,pixeldistance,distance,angle,angle2,angle3   : double;
+  kommapos         : integer;
+  error2,flipped   : boolean;
+const
+  len=10;
+begin
+  if sender=enterposition1 then
+  begin
+    set_marker1XY(true); {set also shape_marker1_fitsX, Y}
+    mouse_positionRADEC1:=InputBox('Enter α, δ of mouse position seperated by a comma:','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',mouse_positionRADEC1);
+    if mouse_positionRADEC1=''  then exit; {cancel used}
+    shape_marker1.hint:='Reference 1: '+mouse_positionRADEC1
+  end
+  else
+  if sender=enterposition2 then
+  begin
+    set_marker2XY(true);  {set also shape_marker2_fitsX, Y}
+    mouse_positionRADEC2:=InputBox('Enter α, δ of mouse position seperated by a comma:','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',mouse_positionRADEC2);
+    if mouse_positionRADEC2=''  then exit;  {cancel used}
+    shape_marker2.hint:='Reference 2: '+mouse_positionRADEC2
+
+  end;
+
+  if ( (mouse_positionRADEC1<>'') and (mouse_positionRADEC2<>'')) then {solve}
+  begin
+    flipped:=flipped1.checked; {flipped image}
+
+    crpix1:=shape_marker1_fitsX;
+    crpix2:=shape_marker1_fitsY;
+
+    kommapos:=pos(',',mouse_positionRADEC1);
+    ra_text_to_radians (copy(mouse_positionRADEC1,1  ,kommapos-1) ,ra0,error2); {convert ra text to ra_1 in radians}
+    if error2 then begin beep;exit;end;
+    dec_text_to_radians(copy(mouse_positionRADEC1,kommapos+1,99) ,dec0,error2); {convert dec text to dec_1 in radians}
+    if error2 then begin beep;exit;end;
+
+    kommapos:=pos(',',mouse_positionRADEC2);
+    ra_text_to_radians (copy(mouse_positionRADEC2,1  ,kommapos-1) ,ra2,error2); {convert ra text to ra0 in radians}
+    if error2 then begin beep;exit;end;
+    dec_text_to_radians(copy(mouse_positionRADEC2,kommapos+1,99) ,dec2,error2); {convert dec text to dec0 in radians}
+    if error2 then begin beep;exit;end;
+
+    pixeldistance:=sqrt(sqr(shape_marker2_fitsX- shape_marker1_fitsX)+sqr(shape_marker2_fitsY- shape_marker1_fitsY));
+    ang_sep(ra0,dec0,ra2,dec2 ,distance);{calculate distance in radians}
+
+    cdelt2:=distance*180/(pi*pixeldistance);
+    if flipped then cdelt1:=-cdelt2 else cdelt1:=cdelt2;
+
+    {find crota2}
+   {see meeus new formula 46.5, angel of moon limb}
+    angle2:=atn_2(cos(dec2)*sin(ra2-ra0),sin(dec2)*cos(dec0) - cos(dec2)*sin(dec0)*cos(ra2-ra0)); {angle between line between the two stars and north}
+    angle3:=atn_2(shape_marker2_fitsX- shape_marker1_fitsX,shape_marker2_fitsY- shape_marker1_fitsY); {angle between top and line between two reference pixels}
+
+    if flipped then
+      angle:=(angle2+angle3)  ELSE angle:=(-angle2+angle3);{swapped n-s or e-w image}
+
+    angle:=fnmodulo(angle,2*pi);
+
+    if angle< -pi then angle:=angle+2*pi;
+    if angle>=+pi then angle:=angle-2*pi;
+
+    crota2:=-angle*180/pi;{crota2 is defined north to west, so reverse}
+    crota1:=crota2;
+
+    old_to_new_WCS;{ {new WCS missing, convert old WCS to new}
+
+    update_text ('CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   ');
+    update_text ('CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
+    update_text ('CUNIT1  =',#39+'deg     '+#39+'           / Unit of coordinates                            ');
+
+    update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
+    update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
+
+    update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,ra0*180/pi);
+    update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,dec0*180/pi);
+
+
+    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);
+    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);
+
+    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
+    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
+
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+    update_text   ('PLTSOLVD=','                   T / ASTAP manual with two positions');
+
+    update_menu_related_to_solver(true); {update menu section related to solver succesfull}
+
+    plot_north;
+  end;
 end;
 
 procedure Tmainwindow.histogram1MouseMove(Sender: TObject; Shift: TShiftState;
@@ -8160,6 +8335,7 @@ var
    dRa,dDec,delta,gamma  : double;
 
 begin
+ RAM:=0;DECM:=0;{for case wrong index or CD1_1=0}
  {DSS polynom solution}
  if mainwindow.polynomial1.itemindex=2 then {DSS survey}
  begin
@@ -8184,7 +8360,7 @@ begin
      dDec:=(cd2_1*(u2)+cd2_2*(v2))*pi/180;
      delta:=cos(dec0)-dDec*sin(dec0);
      gamma:=sqrt(dRa*dRa+delta*delta);
-     RAM:=ra0+arctan(Dra/delta);
+     ram:=ra0+arctan(Dra/delta);
      DECM:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
    end
    else
@@ -8197,11 +8373,10 @@ begin
        delta:=cos(dec0)-dDec*sin(dec0);
        gamma:=sqrt(dRa*dRa+delta*delta);
        RAM:=ra0+arctan(Dra/delta);
+       if ram<0 then ram:=ram+2*pi;
        DECM:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
      end;
-   end
-   else begin RAM:=0;DECM:=0;end;
-
+   end;
  end;{WCS solution}
 
 
@@ -8270,9 +8445,9 @@ procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
   Y: Integer);
 
 var
-  mouse_fitsx,mouse_fitsy,hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM :double;
-  s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str  : string;
-  x_sized,y_sized,factor :integer;
+  mouse_fitsx,mouse_fitsy,hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM : double;
+  s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str      : string;
+  x_sized,y_sized,factor,flipH,flipV :integer;
   color1:tcolor;
   r,b :single;
 begin
@@ -8284,15 +8459,22 @@ begin
 
        mainwindow.image1.Top:= mainwindow.image1.Top+(y-down_y);
        mainwindow.shape_marker1.Top:= mainwindow.shape_marker1.Top+(y-down_y);{normal marker}
+       mainwindow.shape_marker2.Top:= mainwindow.shape_marker2.Top+(y-down_y);{normal marker}
+       mainwindow.shape_marker3.Top:= mainwindow.shape_marker3.Top+(y-down_y);{normal marker}
      end;
      if abs(x-down_x)>2 then
      begin
        mainwindow.image1.left:= mainwindow.image1.left+(x-down_x);
        mainwindow.shape_marker1.left:= mainwindow.shape_marker1.left+(x-down_x);{normal marker}
+       mainwindow.shape_marker2.left:= mainwindow.shape_marker2.left+(x-down_x);{normal marker}
+       mainwindow.shape_marker3.left:= mainwindow.shape_marker3.left+(x-down_x);{normal marker}
      end;
 
      exit;{no more to do}
    end;
+
+   if Fliphorizontal1.Checked then flipH:=-1 else flipH:=1;
+   if Flipvertical1.Checked then  flipV:=-1 else flipV:=1;
 
 //  rubber rectangle
    x_sized:=trunc(x*width2/image1.width);
@@ -8321,8 +8503,9 @@ begin
        erase_rectangle;
        draw_rectangle(x_sized,y_sized);
 
-       if cdelt2<>0 then dist_str:=inttostr(round(3600* sqrt (sqr((X_sized-startX)*cdelt1)+sqr((Y_sized-startY)*cdelt2))))+'"'  else dist_str:='';
-       mainwindow.statusbar1.panels[7].text:=inttostr(X_sized-startX)+' x '+inttostr(Y_sized-startY)+'    '+dist_str;{indicate rectangl size}
+       if cdelt2<>0 then dist_str:=inttostr(round(3600* sqrt (sqr((X_sized-startX)*cdelt1)+sqr((startY-Y_sized)*cdelt2))))+'"'  else dist_str:='';
+       if cdelt2<>0 then angle_str:=inttostr(round(fnmodulo (atn_2(flipH*(X_sized-startX),flipV*(startY-Y_sized))*180/pi + crota2,360)) )+'°' else  angle_str:=''; ;
+       mainwindow.statusbar1.panels[7].text:=inttostr(flipH*(X_sized-startX))+' x '+inttostr(flipV*(startY-Y_sized))+'    '+dist_str+'    '+angle_str;{indicate rectangl size}
 
      end
      else
@@ -8338,8 +8521,8 @@ begin
   {end rubber rectangle}
 
 
-   if Fliphorizontal1.Checked then xf:=image1.width-x else xf:=x;;
-   if Flipvertical1.Checked then yf:=image1.height-y else yf:=y;
+   if flipH=-1 then xf:=image1.width-x else xf:=x;;
+   if flipV=-1 then yf:=image1.height-y else yf:=y;
 
    mouse_fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
    mouse_fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
