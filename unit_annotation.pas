@@ -548,7 +548,7 @@ var
   fitsX,fitsY, fitsX_middle, fitsY_middle,screenX_middle,screenY_middle,
   dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
   xx,yy,mag2,Bp_Rp,
-  hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc,area_visible,ln_area_per_star,magn  :double;
+  hfd1,star_fwhm,snr, flux,xc,yc,area_visible,ln_area_per_star,magn  :double;
   delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh : double;
 
   x,y,star_counter,star_total_counter,x2,y2,len, max_nr_stars                                   : integer;

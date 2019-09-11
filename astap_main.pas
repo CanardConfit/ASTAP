@@ -943,7 +943,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.259 dated 2019-9-10';
+  #13+#10+'Version ß0.9.260 dated 2019-9-11';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -8088,9 +8088,6 @@ begin
     end;
     bg_standard_deviation:=sqrt(bg_standard_deviation/(counter+0.0001)); {standard deviation in background}
 
-//    if ((  abs(round(x1-700))<=50) and (abs(round(y1-1100))<50)) then {mod}
-//    beep;
-
     repeat {reduce box size till symmetry to remove stars}
  // Get center of gravity whithin star detection box and count signal pixels
       SumVal:=0;
@@ -8139,9 +8136,6 @@ begin
 
       if sumval<100000 then af:=min(0.9,rs/10) {variable asymmetry factor. 1 is allow only prefect symmetrical, 0.000001 if off.  More critital detection if rs is large   }
                        else af:=min(0.7,rs/10);{relax criteria for bright stars. Above 100000 no galaxy or nebula}
-
-  //    af:=min(0.9,rs/10); {variable asymmetry factor. 1 is allow only prefect symmetrical, 0.000001 if off}
-
 
       asymmetry:=( (val_00<af*val_11) or (val_00>val_11/af) or {diagonal asymmetry} {has shape large asymmetry, NO OVALS are accepted}
                    (val_01<af*val_10) or (val_01>val_10/af) or {diagonal asymmetry}
@@ -8216,9 +8210,12 @@ begin
 
     hfd1:=max(0.7,hfd1);
     star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
-    snr:=valmax/(bg_standard_deviation+1);{how much times above background noise, add 1 for cases background deviation is 0. A SNR>1000000000 confuses the procedure get_brightest_stars}
 
-  //  snr:=sumval;
+    //snr:=valmax/(bg_standard_deviation+1);{how much times above background noise, add 1 for cases background deviation is 0. A SNR > 1000000000 confuses the procedure get_brightest_stars}
+    //mainwindow.caption:='snr old '+inttostr(round(snr));
+
+    snr:=flux/sqrt(flux +sqr(ri)*pi*sqr(bg_standard_deviation)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
+
 
     {==========Notes on HFD calculation method=================
       https://en.wikipedia.org/wiki/Half_flux_diameter
