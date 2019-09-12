@@ -34,10 +34,11 @@ uses
    LCLIntf,{for selectobject, openURL}
    LCLProc,
    FPImage,
-  fpreadTIFF, {all part of fcl-image}
-  fpreadPNG,fpreadBMP,fpreadJPEG,fpreadPNM,  {images}
-    fpwriteTIFF,fpwritePNG,fpwriteBMP,fpwriteJPEG, fptiffcmn,  {images}
+   fpreadTIFF, {all part of fcl-image}
+   fpreadPNG,fpreadBMP,fpreadJPEG,fpreadPNM,  {images}
+   fpwriteTIFF,fpwritePNG,fpwriteBMP,fpwriteJPEG, fptiffcmn,  {images}
    GraphType, {fastbitmap}
+   LCLVersion,
   {$else}  {delphi}
   {$endif}
 
@@ -925,7 +926,7 @@ begin
 
  {$IFDEF fpc}
  {$MACRO ON} {required for FPC_fullversion}
-  about_message5:=' compiler FPC '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE.';
+  about_message5:=' Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version;
  {$ELSE} {delphi}
   about_message5:='';
  {$ENDIF}
@@ -943,7 +944,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.260 dated 2019-9-11';
+  #13+#10+'Version ß0.9.260a dated 2019-9-12';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6873,19 +6874,17 @@ begin
   result:=((result {succesfull load?}) and (solve_image(img_loaded,true {get hist}) )); {find plate solution}
 end;
 
-//procedure log_to_file(lg : string);
-//var
-//  logf: string;
-//  f   :  textfile;
-//begin
-//  logf:=documents_path +'astap_log.txt';
-//  assignfile(f,logf);
-//  if fileexists(logf)=false then rewrite(f) else append(f);
-//  writeln(f,lg);
-//  closefile(f);
-//end;
+procedure log_to_file(logf,mess : string);{for testing}
+var
+  f   :  textfile;
+begin
+  assignfile(f,logf);
+  if fileexists(logf)=false then rewrite(f) else append(f);
+  writeln(f,mess);
+  closefile(f);
+end;
 
-procedure log_to_file2(logf,mess : string);
+procedure log_to_file2(logf,mess : string);{used for platesolve2}
 var
   f   :  textfile;
 begin
@@ -8021,7 +8020,7 @@ const
     rs,i,j,counter, ri, distance,distance_top_value,illuminated_pixels:integer;
     SumVal,SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
     val,bg_average,bg,bg_standard_deviation,pixel_counter,valmax,
-    val_00,val_01,val_10,val_11,af : double;
+    val_00,val_01,val_10,val_11,af {,snr_old} : double;
     HistStart,asymmetry : boolean;
     distance_histogram : array [0..max_ri] of integer;
 
@@ -8211,11 +8210,12 @@ begin
     hfd1:=max(0.7,hfd1);
     star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
 
-    //snr:=valmax/(bg_standard_deviation+1);{how much times above background noise, add 1 for cases background deviation is 0. A SNR > 1000000000 confuses the procedure get_brightest_stars}
-    //mainwindow.caption:='snr old '+inttostr(round(snr));
+   // snr_old:=valmax/(bg_standard_deviation+1);{how much times above background noise, add 1 for cases background deviation is 0. A SNR > 1000000000 confuses the procedure get_brightest_stars}
+   // mainwindow.caption:='snr old '+inttostr(round(snr_old));
 
     snr:=flux/sqrt(flux +sqr(ri)*pi*sqr(bg_standard_deviation)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
 
+//    log_to_file('snr_test.csv',inttostr(round(snr*1000))+','+inttostr(round(snr_old*1000)));
 
     {==========Notes on HFD calculation method=================
       https://en.wikipedia.org/wiki/Half_flux_diameter
@@ -8574,7 +8574,7 @@ begin
    begin
      str(hfd2:0:1,hfd_str);
      str(fwhm_star2:0:1,fwhm_str);
-     str(snr:0:1,snr_str);
+     str(snr:0:0,snr_str);
      if flux_magn_offset<>0 then {offset calculated in star annotation call}
      begin
         str(flux_magn_offset-ln(flux)*2.511886432/ln(10):0:1,mag_str);
