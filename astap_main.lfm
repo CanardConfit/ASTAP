@@ -74,7 +74,7 @@ object mainwindow: Tmainwindow
     Left = 54
     Height = 25
     Hint = 'Declination'
-    Top = 22
+    Top = 24
     Width = 11
     Alignment = taRightJustify
     Caption = 'δ'

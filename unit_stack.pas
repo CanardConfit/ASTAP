@@ -54,6 +54,7 @@ type
     clear_astrometric_solutions1: TButton;
     export_aligned_files1: TButton;
     edit_noise1: TEdit;
+    calibrate_prior_solving1: TCheckBox;
     GroupBox3: TGroupBox;
     Label49: TLabel;
     mark_outliers_upto1: TComboBox;
@@ -624,7 +625,7 @@ type
 
 var
   calc_scale:double;
-  light_count,bias_counter, flat_count, flatdark_count,  file_count, dark_count, dark_exposure, dark_temperature,
+  light_count,bias_counter, flat_count, flatdark_count,  file_count, dark_count,
   counterR,counterG, counterB,  counterRGB,counterL,
   counterRdark,counterGdark, counterBdark,  counterRGBdark,counterLdark,
   counterRflat,counterGflat, counterBflat,  counterRGBflat,counterLflat,
@@ -637,7 +638,6 @@ var
   jd                       : double;{julian day of date-obs}
   jd_sum                   : double;{sum of julian days}
   jd_start                 : double; {start observation in julian days}
-  flat_filter : string;
 
   file_list : array of string;
   files_to_process, files_to_process_LRGB : array of  TfileToDo;{contains names to process and index to listview1}
@@ -645,6 +645,10 @@ var
   flat_norm_value  : double;
 
 const
+  dark_exposure : integer=987654321;{not done indication}
+  dark_temperature: integer=987654321;
+  flat_filter : string='987654321';{not done indication}
+
   image_path: string='';
   dropsize: double=0.65; {should be between 1 and 0.5}
   filter_name_changed: boolean=false;{if changed then reanalyse}
@@ -5744,12 +5748,16 @@ end;
 
 procedure apply_dark_flat(filter1:string; exposure1,stemperature1,width1:integer; var dcount,fcount,fdcount: integer; var flat_factor: double) ; {inline;} {apply dark, flat if required, renew if different exposure or ccd temp}
 var  {variables in the procedure are created to protect global variables as filter_name against overwriting by loading other fits files}
-  fitsX,fitsY,k : integer;
-  calstat_local : string;
-  datamax_light : double;
+  fitsX,fitsY,k,light_naxis3 : integer;
+  calstat_local              : string;
+  datamax_light ,light_exposure : double;
 begin
   calstat_local:=calstat;{Note load darks or flats will overwrite calstat}
   datamax_light:=datamax_org;
+
+  light_naxis3:=naxis3; {preserve so it is not overriden by apply dark_flat}
+  light_exposure:=exposure;{preserve so it is not overriden by apply dark_flat}
+
 
   if pos('D',calstat_local)<>0 then
              memo2_message('Skipping dark calibration, already applied. See header keyword CALSTAT')
@@ -5814,6 +5822,10 @@ begin
   end;{do flat & flat dark}
   calstat:=calstat_local;{report calibration}
   datamax_org:=datamax_light;{restore. will be overwitten by previouse reads}
+
+  naxis3:=light_naxis3;{return old value}
+  exposure:=light_exposure;{preserve so it is not overriden by apply dark_flat}
+
 end;
 
 

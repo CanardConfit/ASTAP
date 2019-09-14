@@ -705,8 +705,8 @@ end;
 
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
-    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col, light_naxis3, drizzle_mode             : integer;
-    background_correction, flat_factor,  h,dRA, dDec,det, delta,gamma,ra_new, dec_new, sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v, value, weightF,light_exposure     : double;
+    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,drizzle_mode             : integer;
+    background_correction, flat_factor,  h,dRA, dDec,det, delta,gamma,ra_new, dec_new, sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v, value, weightF    : double;
     init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
 
 begin
@@ -755,12 +755,9 @@ begin
             if ((make_osc_color1.checked) and (test_bayer_matrix(img_loaded)=false)) then memo2_message('█ █ █ █ █ █ Warning, not an OSC image! █ █ █ █ █ █');
             if ((make_osc_color1.checked=false) and (test_bayer_matrix(img_loaded)=true)) then memo2_message('█ █ █ █ █ █ Warning, OSC image is stacked as monochrome! Check mark convert OSC to colour. █ █ █ █ █ █');
           end;
-          light_naxis3:=naxis3; {preserve so it is not overriden by apply dark_flat}
-          light_exposure:=exposure;{preserve so it is not overriden by apply dark_flat}
 
           apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
           {these global variables are passed-on in procedure to protect against overwriting}
-          naxis3:=light_naxis3; {return old value}
 
           memo2_message('Adding file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
           Application.ProcessMessages;
@@ -871,8 +868,8 @@ begin
           if solution then
           begin
             inc(counter);
-            sum_exp:=sum_exp+light_exposure;
-            if light_exposure<>0 then weightF:=light_exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
+            sum_exp:=sum_exp+exposure;
+            if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
 
             date_obs_to_jd;{convert date-obs to jd}
             if jd<jd_start then jd_start:=jd;
@@ -977,11 +974,11 @@ end;
 
 procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{mosaic/tile mode}
 var
-    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,light_naxis3,
+    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,
     diameter,y,x2,y2 : integer;
 
     flat_factor, h,dRA, dDec,det,delta,gamma,ra_new, dec_new,   sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v,  value,
-    background_correction, light_exposure                                                                            : double;
+    background_correction                                                                            : double;
     init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
 
 begin
@@ -1023,12 +1020,8 @@ begin
           memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
         end;
 
-        light_naxis3:=naxis3; {preserve so it is not overriden by apply dark_flat}
-        light_exposure:=exposure;{preserve so it is not overriden by apply dark_flat}
-
         apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
         {these global variables are passed-on in procedure to protect against overwriting}
-        naxis3:=light_naxis3;{return old value}
 
         memo2_message('Adding file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
         Application.ProcessMessages;
@@ -1093,7 +1086,7 @@ begin
         if solution then
         begin
           inc(counter);
-          sum_exp:=sum_exp+light_exposure;
+          sum_exp:=sum_exp+exposure;
 
           date_obs_to_jd;{convert date-obs to jd}
           if jd<jd_start then jd_start:=jd;
@@ -1182,8 +1175,8 @@ end;
 
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 var
-    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,light_naxis3,  drizzle_mode   : integer;
-    background_correction, flat_factor, h,dRA, dDec,det,delta,gamma,ra_new, dec_new,variance_factor, sin_dec_new,cos_dec_new, delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v, value,light_exposure,weightF  : double;
+    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,  drizzle_mode   : integer;
+    background_correction, flat_factor, h,dRA, dDec,det,delta,gamma,ra_new, dec_new,variance_factor, sin_dec_new,cos_dec_new, delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v, value,weightF  : double;
     init, solution, use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
 
 
@@ -1239,12 +1232,8 @@ begin
           if ((make_osc_color1.checked=false) and (test_bayer_matrix(img_loaded)=true)) then memo2_message('█ █ █ █ █ █ Warning, OSC image is stacked as monochrome! Check mark convert OSC to colour. █ █ █ █ █ █');
         end;
 
-        light_naxis3:=naxis3; {preserve so it is not overriden by apply dark_flat}
-        light_exposure:=exposure;{preserve so it is not overriden by apply dark_flat}
-
         apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
         {these global variables are passed-on in procedure to protect against overwriting}
-        naxis3:=light_naxis3;{return old value}
 
         memo2_message('Adding light file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
         Application.ProcessMessages;
@@ -1352,8 +1341,8 @@ begin
         if solution then
         begin
           inc(counter);
-          sum_exp:=sum_exp+light_exposure;
-          if light_exposure<>0 then weightF:=light_exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
+          sum_exp:=sum_exp+exposure;
+          if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
 
           date_obs_to_jd;{convert date-obs to jd}
           if jd<jd_start then jd_start:=jd;
@@ -1423,12 +1412,8 @@ begin
             initialise2;{set variables correct}
           end;
 
-          light_naxis3:=naxis3; {preserve so it is not overriden by apply dark_flat}
-          light_exposure:=exposure;{preserve so it is not overriden by apply dark_flat}
-
           apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
           {these global variables are passed-on in procedure to protect against overwriting}
-          naxis3:=light_naxis3;{return old value}
 
           memo2_message('Calculating pixels σ of light file '+inttostr(c+1)+'-'+nr_selected1.caption+' '+filename2+' Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
           Application.ProcessMessages;
@@ -1544,12 +1529,8 @@ begin
           Application.ProcessMessages;
           if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
 
-          light_naxis3:=naxis3; {preserve so it is not overriden by apply dark_flat}
-          light_exposure:=exposure;{preserve so it is not overriden by apply dark_flat}
-
           apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
           {these global variables are passed-on in procedure to protect against overwriting}
-          naxis3:=light_naxis3;
 
           memo2_message('Combining '+inttostr(c+1)+'-'+nr_selected1.caption+'"'+filename2+'", ignoring outliers. Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
           Application.ProcessMessages;

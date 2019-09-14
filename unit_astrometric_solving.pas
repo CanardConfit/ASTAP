@@ -387,7 +387,7 @@ end;
 function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
   nrstars,nrstars_required,count,max_distance,nr_tetrahedrons, minimum_tetrahedrons,i,database_stars,distance : integer;
-  search_field,step_size,telescope_ra,telescope_dec,radius,fov, max_fov,oversize,sep,ra7,dec7,centerX,centerY,correctionX,correctionY,binning,cropping  :double;
+  search_field,step_size,telescope_ra,telescope_dec,radius,fov, max_fov,oversize,sep,ra7,dec7,centerX,centerY,correctionX,correctionY,binning,cropping, flat_factor: double;
   solution, go_ahead,solve_show_log  : boolean;
   Save_Cursor     : TCursor;
   startTick  : qword;{for timing/speed purposes}
@@ -404,6 +404,12 @@ begin
   result:=false;
   esc_pressed:=false;
   startTick := GetTickCount64;
+
+  if stackmenu1.calibrate_prior_solving1.checked then
+  begin
+    memo2_message('Calibrating image prior to solving.');
+    apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
+  end;
 
   if stackmenu1.force_oversize1.checked=false then info_message:='▶▶' {normal} else info_message:='▶'; {slow}
   info_message:= ' [' +stackmenu1.radius_search1.text+'°]'+#9+#9+info_message+

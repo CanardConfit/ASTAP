@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 491
+  Left = 314
   Height = 644
-  Top = 190
+  Top = 118
   Width = 1761
   Caption = 'stack menu'
   ClientHeight = 644
@@ -48,8 +48,8 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.2.0'
   object Memo2: TMemo
     Left = 0
-    Height = 152
-    Top = 492
+    Height = 148
+    Top = 496
     Width = 1761
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
@@ -63,7 +63,7 @@ object stackmenu1: Tstackmenu1
   object Label30: TLabel
     Left = 304
     Height = 15
-    Top = 456
+    Top = 458
     Width = 98
     Caption = 'Press ESC to abort.'
     Color = clBtnFace
@@ -72,18 +72,18 @@ object stackmenu1: Tstackmenu1
   end
   object classify_groupbox1: TGroupBox
     Left = 488
-    Height = 51
+    Height = 56
     Top = 440
     Width = 480
     Caption = 'Classify by'
-    ClientHeight = 31
+    ClientHeight = 36
     ClientWidth = 476
     TabOrder = 2
     object classify_filter1: TCheckBox
       Left = 72
       Height = 19
       Hint = 'Activate this option if you want to stack LRGB or RGB  images using filter name.  Set filter names in stack method'
-      Top = -8
+      Top = -2
       Width = 80
       Caption = 'Image filter'
       OnClick = classify_filter1Click
@@ -95,7 +95,7 @@ object stackmenu1: Tstackmenu1
       Left = 72
       Height = 19
       Hint = 'Activate this option if you want to stack images of different objects in one run.'
-      Top = 8
+      Top = 16
       Width = 89
       Caption = 'Image object'
       ParentShowHint = False
@@ -106,7 +106,7 @@ object stackmenu1: Tstackmenu1
       Left = 368
       Height = 19
       Hint = 'Activate this option if you want link the flats based on filter name.'
-      Top = -8
+      Top = -2
       Width = 66
       Caption = 'Flat filter'
       ParentShowHint = False
@@ -117,7 +117,7 @@ object stackmenu1: Tstackmenu1
       Left = 208
       Height = 19
       Hint = 'Activate this option if you want link the darks based on exposure duration.'
-      Top = -8
+      Top = -2
       Width = 122
       Caption = 'Dark exposure time'
       ParentShowHint = False
@@ -128,7 +128,7 @@ object stackmenu1: Tstackmenu1
       Left = 208
       Height = 19
       Hint = 'Activate this option if you want link the darks based on sensor temperature.'
-      Top = 8
+      Top = 16
       Width = 112
       Caption = 'Dark temperature'
       ParentShowHint = False
@@ -1933,20 +1933,20 @@ object stackmenu1: Tstackmenu1
         TabOrder = 3
       end
       object GroupBox11: TGroupBox
-        Left = 920
-        Height = 73
-        Top = 119
-        Width = 320
+        Left = 1080
+        Height = 108
+        Top = 87
+        Width = 207
         AutoSize = True
-        Caption = 'PlateSolve2 command line, options for JPG, PNG, TIF files'
-        ClientHeight = 53
-        ClientWidth = 316
+        Caption = 'PlateSolve2 command line, options'
+        ClientHeight = 88
+        ClientWidth = 203
         TabOrder = 4
         object commandline_bin1: TComboBox
-          Left = 237
+          Left = 80
           Height = 23
           Hint = 'Resize to smaller dimensions to allow speedy display in planetarium program. Binning is not used in plate solving'
-          Top = 5
+          Top = 32
           Width = 72
           BorderSpacing.Around = 5
           ItemHeight = 15
@@ -1964,9 +1964,9 @@ object stackmenu1: Tstackmenu1
           Text = '4'
         end
         object Label20: TLabel
-          Left = 165
+          Left = 8
           Height = 15
-          Top = 10
+          Top = 37
           Width = 50
           BorderSpacing.Around = 5
           Caption = 'FITS bin x'
@@ -1979,16 +1979,16 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Convert to input file to FITs and save with solution'
           Top = 5
-          Width = 100
+          Width = 136
           BorderSpacing.Around = 5
-          Caption = 'Convert to FITS'
+          Caption = 'Convert image to FITS'
           TabOrder = 1
         end
         object annotated_jpg1: TCheckBox
           Left = 5
           Height = 19
           Hint = 'Convert the input file to deep sky annotated jpg. Same file name but with _annotated added. If this option is activated also the converted FITS file will be annotated.'
-          Top = 29
+          Top = 64
           Width = 193
           BorderSpacing.Around = 5
           Caption = 'Produce deep sky annotated jpg '
@@ -1996,12 +1996,12 @@ object stackmenu1: Tstackmenu1
         end
       end
       object solve1: TButton
-        Left = 920
+        Left = 1078
         Height = 30
         Hint = 'Find plate solution for image in the viewer'
         Top = 24
-        Width = 339
-        Caption = 'Find astrometric solution for current image'
+        Width = 210
+        Caption = 'Solve current image'
         OnClick = solve1Click
         ParentShowHint = False
         ShowHint = True
@@ -2009,10 +2009,10 @@ object stackmenu1: Tstackmenu1
       end
       object help_astrometric_solving1: TLabel
         Cursor = crHandPoint
-        Left = 936
+        Left = 1080
         Height = 25
         Hint = 'Help'
-        Top = 64
+        Top = 58
         Width = 9
         Caption = '?'
         Font.Color = clBlue
@@ -2035,23 +2035,23 @@ object stackmenu1: Tstackmenu1
       end
       object GroupBox_astrometric_solver_settings1: TGroupBox
         Left = 208
-        Height = 186
-        Top = 6
-        Width = 705
+        Height = 195
+        Top = 0
+        Width = 864
         Caption = 'Solver'
-        ClientHeight = 166
-        ClientWidth = 701
+        ClientHeight = 175
+        ClientWidth = 860
         TabOrder = 7
         object Panel_solver1: TPanel
           Left = 0
-          Height = 166
+          Height = 175
           Top = 0
-          Width = 701
+          Width = 860
           Align = alClient
           BevelColor = clMenuHighlight
           BevelOuter = bvSpace
-          ClientHeight = 166
-          ClientWidth = 701
+          ClientHeight = 175
+          ClientWidth = 860
           TabOrder = 0
           object force_oversize1: TCheckBox
             Left = 421
@@ -2386,6 +2386,18 @@ object stackmenu1: Tstackmenu1
                 TabOrder = 3
               end
             end
+          end
+          object calibrate_prior_solving1: TCheckBox
+            Left = 704
+            Height = 19
+            Hint = 'Calibrate the images prior to solving. Use this for noisy images.'
+            Top = 10
+            Width = 136
+            BorderSpacing.Around = 5
+            Caption = 'Calibrate prior solving'
+            Color = clBtnFace
+            ParentColor = False
+            TabOrder = 7
           end
         end
       end
@@ -5075,7 +5087,7 @@ object stackmenu1: Tstackmenu1
     Left = 24
     Height = 41
     Hint = 'Stack images using darks, flats and flat dark frames.'
-    Top = 444
+    Top = 446
     Width = 248
     Caption = 'Stack check marked images'
     OnClick = stack_button1Click

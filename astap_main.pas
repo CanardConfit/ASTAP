@@ -944,7 +944,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.260a dated 2019-9-12';
+  #13+#10+'Version ß0.9.261 dated 2019-9-14';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5279,6 +5279,7 @@ begin
     stackmenu1.blink_star_filter1.Checked:=get_boolean('blink_star_filter',true);{blink}
 
     stackmenu1.force_oversize1.Checked:=get_boolean('force_slow',false);
+    stackmenu1.calibrate_prior_solving1.Checked:=get_boolean('calibrate_prior_solving',false);
 
     dum:=initstring.Values['star_database']; if dum<>'' then stackmenu1.star_database1.text:=dum;
     dum:=initstring.Values['solve_search_field']; if dum<>'' then stackmenu1.search_fov1.text:=dum;
@@ -5535,6 +5536,8 @@ begin
   initstring.Values['blink_star_filter']:=BoolStr[stackmenu1.blink_star_filter1.checked];{blink}
 
   initstring.Values['force_slow']:=BoolStr[stackmenu1.force_oversize1.checked];
+  initstring.Values['calibrate_prior_solving']:=BoolStr[stackmenu1.calibrate_prior_solving1.checked];
+
 
   initstring.Values['ra']:=ra1.text;
   initstring.Values['dec']:=dec1.text;
@@ -6874,15 +6877,15 @@ begin
   result:=((result {succesfull load?}) and (solve_image(img_loaded,true {get hist}) )); {find plate solution}
 end;
 
-procedure log_to_file(logf,mess : string);{for testing}
-var
-  f   :  textfile;
-begin
-  assignfile(f,logf);
-  if fileexists(logf)=false then rewrite(f) else append(f);
-  writeln(f,mess);
-  closefile(f);
-end;
+//procedure log_to_file(logf,mess : string);{for testing}
+//var
+//  f   :  textfile;
+//begin
+//  assignfile(f,logf);
+//  if fileexists(logf)=false then rewrite(f) else append(f);
+//  writeln(f,mess);
+//  closefile(f);
+//end;
 
 procedure log_to_file2(logf,mess : string);{used for platesolve2}
 var
