@@ -4,6 +4,7 @@ object mainwindow: Tmainwindow
   Hint = ' '
   Top = 173
   Width = 1094
+  AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
   ClientHeight = 626
   ClientWidth = 1094
@@ -50,11 +51,11 @@ object mainwindow: Tmainwindow
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnDropFiles = FormDropFiles
   OnKeyPress = FormKeyPress
   OnPaint = FormPaint
   OnResize = FormResize
   OnShow = FormShow
-  OnShowHint = FormShowHint
   LCLVersion = '2.0.2.0'
   object Label1: TLabel
     Left = 54

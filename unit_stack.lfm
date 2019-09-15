@@ -3,6 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 644
   Top = 118
   Width = 1761
+  AllowDropFiles = True
   Caption = 'stack menu'
   ClientHeight = 644
   ClientWidth = 1761
@@ -40,6 +41,7 @@ object stackmenu1: Tstackmenu1
   }
   KeyPreview = True
   OnCreate = FormCreate
+  OnDropFiles = FormDropFiles
   OnKeyPress = FormKeyPress
   OnPaint = FormPaint
   OnResize = FormResize

@@ -234,7 +234,7 @@ type
     procedure annotate_with_measured_magnitudes1Click(Sender: TObject);
     procedure ccd_inspector_plot1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
-    procedure FormShowHint(Sender: TObject; HintInfo: PHintInfo);
+    procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
     procedure measuretotalmagnitude1Click(Sender: TObject);
     procedure loadsettings1Click(Sender: TObject);
     procedure MenuItem15Click(Sender: TObject);
@@ -498,6 +498,7 @@ procedure measure_magnitudes(var stars :star_list);{find stars in image and retu
 function binx2 : boolean; {converts filename2 to binx2 version}
 procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean); {convert ra in text to double in radians}
 procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
+function image_file_name(inp : string): boolean; {readable image name?}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -944,7 +945,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.261 dated 2019-9-14';
+  #13+#10+'Version ß0.9.262 dated 2019-9-15';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1958,6 +1959,17 @@ function fits_file_name(inp : string): boolean; {fits file name?}
 begin
   inp:=uppercase(extractfileext(inp));
   result:=((inp='.FIT') or (inp='.FITS') or (inp='.FTS'));
+end;
+function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
+begin
+  result:=((ext='.RAW') or (ext='.CRW') or (ext='.CR2') or (ext='.KDC') or (ext='.DCR') or (ext='.MRW') or (ext='.ARW') or (ext='.NEF') or (ext='.NRW') or (ext='.DNG') or (ext='.ORF') or (ext='.PTX') or (ext='.PEF') or (ext='.RW2') or (ext='.SRW') or (ext='.RAF') or (ext='.KDC')); {raw format extension?}
+end;
+
+function image_file_name(inp : string): boolean; {readable image name?}
+begin
+  inp:=uppercase(extractfileext(inp));
+  result:=( (inp='.FIT') or (inp='.FITS') or (inp='.FTS') or (inp='.JPG') or (inp='.JPEG') or (inp='.TIF') or (inp='.PNG') );
+  if result=false then result:=check_raw_file_extension(inp);
 end;
 
 procedure update_menu_related_to_solver(yes :boolean); {update menu section related to solver succesfull}
@@ -5894,10 +5906,6 @@ begin
   result:=false;
 end;
 
-function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
-begin
-  result:=((ext='.RAW') or (ext='.CRW') or (ext='.CR2') or (ext='.KDC') or (ext='.DCR') or (ext='.MRW') or (ext='.ARW') or (ext='.NEF') or (ext='.NRW') or (ext='.DNG') or (ext='.ORF') or (ext='.PTX') or (ext='.PEF') or (ext='.RW2') or (ext='.SRW') or (ext='.RAF') or (ext='.KDC')); {raw format extension?}
-end;
 
 procedure Tmainwindow.make_pgm_and_fits1click(Sender: TObject);
 var
@@ -6248,13 +6256,13 @@ begin
   end;
 end;
 
-procedure Tmainwindow.FormShowHint(Sender: TObject; HintInfo: PHintInfo);
+procedure Tmainwindow.FormDropFiles(Sender: TObject;
+  const FileNames: array of String);
 begin
-
+ {no check on file extension required}
+  filename2:=FileNames[0];
+   if load_image(true,true {plot}){load and center}=false then beep;{image not found}
 end;
-
-
-
 
 procedure Tmainwindow.measuretotalmagnitude1Click(Sender: TObject);
 var

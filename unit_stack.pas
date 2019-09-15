@@ -477,6 +477,7 @@ type
     procedure cygwin1DropDown(Sender: TObject);
     procedure export_aligned_files1Click(Sender: TObject);
     procedure extend_object_name_with_time_observation1Click(Sender: TObject);
+    procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
     procedure FormPaint(Sender: TObject);
     procedure help_blink1Click(Sender: TObject);
     procedure help_photometry1Click(Sender: TObject);
@@ -1429,7 +1430,7 @@ begin
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '|JPEG, TIFF, PNG files (*.)|*.JPG;*.JPEG;*.TIF*;*.PNG;'+
                         '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
-  fits_file:=true;
+ // fits_file:=true;2019-9-19 removed
   if opendialog1.execute then
   begin
     for i:=0 to OpenDialog1.Files.count-1 do
@@ -3846,6 +3847,35 @@ begin
       beep;{image not found}
     end;
     inc(index); {go to next file}
+  end;
+end;
+
+procedure Tstackmenu1.FormDropFiles(Sender: TObject;
+  const FileNames: array of String);
+var
+   i : integer;
+begin
+  for i := Low(FileNames) to High(FileNames) do
+  begin
+    if image_file_name(FileNames[i])=true then {readable image file}
+    begin
+      case pagecontrol1.pageindex of    1:   listview234567_add(listview2,FileNames[i]);{darks}
+                                        2:   listview234567_add(listview3,FileNames[i]);{flats}
+                                        3:   listview234567_add(listview4,FileNames[i]);{flat darks}
+                                        7:   listview234567_add(listview6,FileNames[i]);{blink}
+                                        8:   listview234567_add(listview7,FileNames[i]);{photometry}
+                                       else
+                                       begin {images}
+                                         listview_add(FileNames[i]);
+                                         if  pos('_stacked',FileNames[i])<>0 then {do not check mark images already stacked}
+                                               listview1.items[ListView1.items.count-1].checked:=false;
+                                         count_selected; {report the number of images selected in images_selected and update menu indication}
+                                       end;
+
+
+      end;
+
+    end;
   end;
 end;
 
