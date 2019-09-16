@@ -478,7 +478,6 @@ function inttostr5(x:integer):string;{always 5 digit}
 function SMedian(list: array of double): double;{get median of an array of double, taken from CCDciel code}
 function floattostrF2(const x:double; width1,decimals1 :word): string;
 procedure DeleteFiles(lpath,FileSpec: string);{delete files such  *.wcs}
-function image_to_array(color1: boolean): boolean;{convert image to array}
 procedure new_to_old_WCS;{convert new style FITsS to old style}
 procedure old_to_new_WCS;{ convert old WCS to new}
 procedure update_float(inp1,comment1:string;x:double);{update keyword of fits header in memo}
@@ -945,7 +944,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.262 dated 2019-9-15';
+  #13+#10+'Version ß0.9.263 dated 2019-9-16';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6911,7 +6910,7 @@ var
    fname:string;
 begin
   load_deep;{load the deepsky database once. If loaded no action}
-  plot_deepsky;
+  plot_deepsky;{annotate}
   JPG := TJPEGImage.Create;
   try
     JPG.Assign(mainwindow.image1.Picture.Graphic);    //Convert data into jpg
@@ -6992,8 +6991,8 @@ var
   command1 : string;
   f        : textfile;
   resultstr,rastr,decstr,cdelt,crota,flipped,confidence,resultV,line1,line2 : string;
-  dummy,ratio,field_size,search_field : double;
-  source_fits,solved,apt_request:boolean;
+  dummy,binning,field_size,search_field : double;
+  source_fits,solved,apt_request,histogram_done:boolean;
 begin
 
 //  logging:=true;
@@ -7116,21 +7115,24 @@ begin
 
         if solved then
         begin
+          histogram_done:=false;
           if  stackmenu1.annotated_jpg1.checked then {save view as annotated jpg}
           begin
-             if source_fits then plot_fits(mainwindow.image1,true {center_image});{center and stretch with current settings}
-             save_annotated_jpg(filename2);
+            getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+            histogram_done:=true;
+            plot_fits(mainwindow.image1,true {center_image});{center and stretch with current settings}
+            save_annotated_jpg(filename2);
           end;
 
           if ((source_fits=false {no fits file?}) and (stackmenu1.commandline_saveasfits1.checked)) then
           begin
-            ratio:=strtofloat2(stackmenu1.commandline_bin1.text);
-            mainwindow.image1.width:= round(width2/ratio);
-            mainwindow.image1.height:=round(height2/ratio);
-            mainwindow.stretch_draw1Click(nil); {stretch draw and adapt header in memo}
-            if image_to_array(false {mono all colors}) then save_fits(ChangeFileExt(filename2,'.fit'),8,false {overwrite});
+            binning:=strtofloat2(stackmenu1.commandline_bin1.text);
+            resize_img_loaded(1/binning); {resize img_loaded in free ratio}
+            if histogram_done=false then getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+            save_fits(ChangeFileExt(filename2,'.fit'),8,true {overwrite});
           end;
           //log_to_file('Solved,'+filename2+','+solved_in+','+offset_found);
+
         end; {solved}
         //else
         //log_to_file('Fail,'+filename2);
@@ -7159,8 +7161,8 @@ end;
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
    // f: text;
-    source_fits: boolean;
-    ratio      : double;
+    source_fits,histogram_done: boolean;
+    binning    : double;
     s,old      : string;
 begin
   user_path:=GetAppConfigDir(false);{get user path for app config}
@@ -7273,30 +7275,32 @@ begin
 
           //log_to_file(cmdline+' =>succes');
 
-          if hasoption('update') then
-                                     mainwindow.SaveFITSwithupdatedheader1Click(nil); {update the fits file header}
+          if hasoption('update') then mainwindow.SaveFITSwithupdatedheader1Click(nil); {update the fits file header}
 
-
+          histogram_done:=false;
           if hasoption('annotate') then
           begin
-            if source_fits then plot_fits(mainwindow.image1,true {center_image});{center and stretch with current settings}
+            getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+            histogram_done:=true;
+            plot_fits(mainwindow.image1,true {center_image});{center and stretch with current settings}
             save_annotated_jpg(filename2);{save viewer as annotated jpg}
           end;
           if hasoption('tofits') then {still to be tested}
           begin
             if source_fits=false {no fits file?} then
             begin
-              ratio:=strtofloat2(GetOptionValue('tofits'));
-              mainwindow.image1.width:= round(width2/ratio);
-              mainwindow.image1.height:=round(height2/ratio);
-              mainwindow.stretch_draw1Click(nil); {stretch draw and adapt header in memo}
-              if image_to_array(false {mono all colors}) then save_fits(filename2,8,true {override});
+              binning:=strtofloat2(GetOptionValue('tofits'));
+              resize_img_loaded(1/binning); {resize img_loaded in free ratio}
+              if histogram_done=false then getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+              save_fits(changeFileExt(filename2,'.fit'),8,true {overwrite});
             end;
 
           end;
         end
         else
         begin {no solution}
+
+        exit;
           if hasoption('o') then filename2:=GetOptionValue('o');
           write_ini(false);{write solution to ini file}
          //  log_to_file(cmdline+' =>failure');
@@ -9233,180 +9237,6 @@ begin
   end;
 end;
 
-
-function image_to_array(color1 :boolean): boolean;{convert image to array}
-type
-  PRGBTripleArray = ^TRGBTripleArray; {for fast pixel routine}
-  {$ifdef mswindows}
-  TRGBTripleArray = array[0..trunc(bufwide/3)] of TRGBTriple; {for fast pixel routine}
-  {$else} {unix}
-  TRGBTripleArray = array[0..trunc(bufwide/3)] of tagRGBQUAD; {for fast pixel routine}
-  {$endif}
-var
-  I,j,k,height_flipped,width_flipped : integer;
-  nr_colors, progress1,progress_value: integer;
-  OldCursor : TCursor;
-  pixelrow: PRGBTripleArray;{for fast pixel routine}
-  Bitmap  : TBitmap;{for fast pixel routine}
-  Flipvertical, Fliphorizontal :boolean;
-begin
-  result:=false;
-
-  {$IFDEF fpc}
-  progress_indicator(0,'');
-  {$else} {delphi}
-   mainwindow.taskbar1.progressstate:=TTaskBarProgressState.Normal;
-   mainwindow.taskbar1.progressvalue:=0; {show progress}
-  {$endif}
-
-  progress1:=0;
-
-  Bitmap := TBitmap.Create;
-  TRY
-    WITH Bitmap DO
-    BEGIN
-      Width := width2;
-      Height := height2;
-        // Unclear why this must follow width/height to work correctly.
-        // If PixelFormat precedes width/height, bitmap will always be black.
-      Bitmap.PixelFormat := pf24bit;
-    END;
-    except;
-  end;
-
-  bitmap.Canvas.Draw(0, 0, mainwindow.image1.Picture.Bitmap); {copy image to bitmap}
-
-  OldCursor := Screen.Cursor;
-  Screen.Cursor:= crHourGlass;
-
-
-  if color1 then begin nr_colors:=3; naxis:=3; end else begin nr_colors:=1; naxis:=2;end;
-  naxis3:=nr_colors;
-
-  {update header}
-  mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
-  mainwindow.memo1.clear; {clear}
-  for j:=0 to 10 do {emphy header, create a new one}{create an header with fixed sequence}
-  begin
-    if ((j<>5) or  (naxis3<>1)) then {skip naxis3 for mono images}
-     mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
-  end;
-  mainwindow.memo1.lines.add(head1[27]); {add end}
-
- {update FITs header}
-  nrbits:=8;
-  update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
-  update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for colour}
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-
-  if color1=false then {convert to mono}
-      update_text   ('FILTER  =',#39+'L       '+#39+'           / Filter name                                    ');
-
-  update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-  update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
-  update_integer('BZERO   =',' /  Scaling applied to data                       ' ,0);
-
-//{19}('CTYPE1  = '+#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   '),
-//{20}('CTYPE2  = '+#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   '),
-//{21}('CUNIT1  = '+#39+'deg     '+#39+'           / Unit of coordinate                             '),
-//{22}('CRPIX1  =                  0.0 / X of reference pixel                           '),
-//{23}('CRPIX2  =                  0.0 / Y of reference pixel                           '),
-//{24}('CRVAL1  =                  0.0 / RA of reference pixel (deg)                    '),
-//{25}('CRVAL2  =                  0.0 / DEC of reference pixel (deg)                   '),
-//{26}('CDELT1  =                  0.0 / X pixel size (deg)                             '),
-//{27}('CDELT2  =                  0.0 / Y pixel size (deg)                             '),
-//{28}('CROTA1  =                  0.0 / Image twist of X axis        (deg)             '),
-//{29}('CROTA2  =                  0.0 / Image twist of Y axis W of N (deg)             '),
-//{30}('CD1_1   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
-//{31}('CD1_2   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
-//{32}('CD2_1   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
-//{33}('CD2_2   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
-//{34}('PLTSOLVD=                    T / Plate solved by ASTAP                          '));
-
-  {update existing header}
-
-  setlength(img_loaded,naxis3,width2,height2);{set length of image array}
-
-  Flipvertical:=mainwindow.Flipvertical1.checked;
-  Fliphorizontal:=mainwindow.Fliphorizontal1.checked;
-  progress1:=0;
-  for k:=1 to nr_colors do
-  begin
-    for i:=0 to height2-1 do
-    begin
-      inc(progress1);
-      progress_value:=round(progress1*100/(nr_colors*height2));{progress in %}
-      {$IFDEF fpc}
-      if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
-      {$else} {delphi}
-      if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
-      {$endif}
-      if Flipvertical then height_flipped:=i else height_flipped:=height2-1-i;
-
-      pixelrow := Bitmap.ScanLine[height_flipped];{height2-1)-i, FITS count from bottom, windows from top}
-
-      for j:=0 to width2-1 do
-      begin
-        if Fliphorizontal then width_flipped:=width2-1-j else width_flipped:=j;
-        try
-         if nr_colors=1 then
-         begin
-          {$ifdef mswindows}
-           fitsbuffer[j]:=round((pixelrow[width_flipped].rgbtRed+pixelrow[width_flipped].rgbtGreen+pixelrow[width_flipped].rgbtBlue)/3); {monochrome, all colors}
-          {$endif}
-          {$ifdef linux}
-           fitsbuffer[j]:=round((pixelrow[width_flipped].rgbRed+pixelrow[width_flipped].rgbGreen+pixelrow[width_flipped].rgbBlue)/3); {monochrome, all colors}
-          {$endif}
-          {$ifdef darwin} {MacOS}
-           fitsbuffer[j]:=round((pixelrow[width_flipped].rgbRed+pixelrow[width_flipped].rgbGreen+pixelrow[width_flipped].rgbreserved)/3); {monochrome, all colors}
-         {$endif}
-         end
-         else
-         begin
-           case k of
-             {$ifdef mswindows}
-             1: fitsbuffer[j]:=pixelrow[width_flipped].rgbtRed ;{red}
-             2: fitsbuffer[j]:=pixelrow[width_flipped].rgbtGreen;{green}
-             3: fitsbuffer[j]:=pixelrow[width_flipped].rgbtBlue;{blue}
-             {$endif}
-             {$ifdef linux}
-             1: fitsbuffer[j]:=pixelrow[width_flipped].rgbRed ;{red}
-             2: fitsbuffer[j]:=pixelrow[width_flipped].rgbGreen;{green}
-             3: fitsbuffer[j]:=pixelrow[width_flipped].rgbBlue;{blue}
-             {$endif}
-             {$ifdef darwin} {MacOS}
-                 {colours are different arranged in MacOS !!!}
-             1: fitsbuffer[j]:=pixelrow[width_flipped].rgbgreen;{red}
-             2: fitsbuffer[j]:=pixelrow[width_flipped].rgbred;{green}
-             3: fitsbuffer[j]:=pixelrow[width_flipped].rgbreserved;{blue}
-             {$endif}
-           end;
-         end;
-         img_loaded[k-1,j,i]:=fitsbuffer[j];{create copy in fits array}
-
-         finally;
-         {some computer errors}
-        end;
-      end;
-    end;
-  end;{3 colors}
-
-  Bitmap.Free;
-
-  mainwindow.image1.stretch:=true;
-  Screen.Cursor:= OldCursor;
-  {$IFDEF fpc}
-  progress_indicator(-100,'');{back to normal}
-  {$else} {delphi}
-  mainwindow.taskbar1.progressstate:=TTaskBarProgressState.None;
-  {$endif}
-  result:=true;
-  update_menu(true) {update menu if fits file is available in array or working from image1 canvas}
-end;
-
-
-
 Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel floating}
 var value1   : single;
     lw       : longword absolute value1;
@@ -9475,6 +9305,7 @@ begin
     mainwindow.memo1.lines.add(head1[27]); {add end}
   end;
 
+
  {update FITs header}
   if type1<>24 then
   begin
@@ -9486,10 +9317,17 @@ begin
       update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3);
     if type1=16 then bzero2:=32768 else bzero2:=0;
     update_integer('BZERO   =',' / Scaling applied to data                        ' ,bzero2);
-    update_integer('DATAMIN =',' / Minimum data value                             ' ,round(datamin_org));
-    update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
-
-
+    if type1<>8 then
+    begin
+      update_integer('DATAMIN =',' / Minimum data value                             ' ,round(datamin_org));
+      update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
+      update_integer('CBLACK  =',' / Indicates the black point used when displaying the image.' ,round(cblack) ); {2019-4-9}
+      update_integer('CWHITE  =',' / indicates the white point used when displaying the image.' ,round(cwhite) );
+    end;
+    begin {in most case reducing from 16 or flat to 8 bit}
+      update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
+      update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
+    end;
   end {update existing header}
   else
   begin {special 8 bit with three colors combined in 24 bit}
@@ -9504,9 +9342,6 @@ begin
     update_integer('BZERO   =',' / Scaling applied to data                        ' ,0);
     {update existing header}
   end;
-
-  update_integer('CBLACK  =',' / Indicates the black point used when displaying the image.' ,round(cblack) ); {2019-4-9}
-  update_integer('CWHITE  =',' / indicates the white point used when displaying the image.' ,round(cwhite) );
 
   {write memo1 header to file}
   for i:=0 to 79 do empthy_line[i]:=#32;{space}

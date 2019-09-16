@@ -675,6 +675,8 @@ procedure apply_dark_flat(filter1:string; exposure1,stemperature1,width1:integer
 procedure smart_colour_smooth( var img: image_array; wide : integer; measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 procedure date_obs_to_jd;{get julian day for date_obs, so the start of the observation}
 function JdToDate(jd:double):string;{Returns Date from Julian Date}
+procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
+
 
 implementation
 
@@ -2923,20 +2925,15 @@ end;
 //  end;
 //end;
 
-procedure Tstackmenu1.free_resize_fits1Click(Sender: TObject);{free resize FITS image}
+procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
 var
-   Save_Cursor:TCursor;
-   img_temp2 : image_array;
-   FitsX, fitsY,k,w,h,w2,h2   : integer;
-   x,y,ratio          : double;
-begin
-  if fits_file=false then exit;
-  Save_Cursor := Screen.Cursor;
-  backup_img;
+  img_temp2                : image_array;
+  FitsX, fitsY,k,w,h,w2,h2 : integer;
+  x,y                      : double;
 
-  w2:=width_UpDown1.position;
-  ratio:=w2/width2;
-  h2:=round(height2*ratio);
+begin
+  w2:=round(ratio*width2);
+  h2:=round(ratio*height2);
 
   repeat
     w:=max(w2,round(width2/2));  {reduce in steps of two maximum to preserve stars}
@@ -2956,19 +2953,19 @@ begin
     height2:=h;
   until ((w<=w2) and (h<=h2)); {continue till required size is reeached}
 
-   img_temp2:=nil;
+  img_temp2:=nil;
 
-   update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
+  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
 
-   if crpix1<>0 then begin crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
-   if crpix2<>0 then begin crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
+  if crpix1<>0 then begin crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
+  if crpix2<>0 then begin crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
 
-   if cdelt1<>0 then begin cdelt1:=cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
-   if cdelt2<>0 then begin cdelt2:=cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
+  if cdelt1<>0 then begin cdelt1:=cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
+  if cdelt2<>0 then begin cdelt2:=cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
 
-   if cd1_1<>0 then
-   begin
+  if cd1_1<>0 then
+  begin
      cd1_1:=cd1_1/ratio;
      cd1_2:=cd1_2/ratio;
      cd2_1:=cd2_1/ratio;
@@ -2980,8 +2977,17 @@ begin
    end;
 
    update_float  ('XBINNING=',' / Binning factor in width                         ' ,XBINNING/ratio);
-   update_float  ('YBINNING=',' / Binning factor in height                        ' ,yBINNING/ratio);
+   update_float  ('YBINNING=',' / Binning factor in height                        ' ,YBINNING/ratio);
+end;
 
+procedure Tstackmenu1.free_resize_fits1Click(Sender: TObject);{free resize FITS image}
+var
+  Save_Cursor:TCursor;
+begin
+  if fits_file=false then exit;
+  Save_Cursor := Screen.Cursor;
+  backup_img;
+  resize_img_loaded(width_UpDown1.position/width2 {ratio});
 
    getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
    plot_fits(mainwindow.image1,true);{plot}
