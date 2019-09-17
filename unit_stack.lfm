@@ -160,7 +160,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1760
-    ActivePage = Pixelmath1
+    ActivePage = alignment1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -169,7 +169,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 9
+    TabIndex = 6
     TabOrder = 3
     Options = [nboMultiLine]
     object Images: TTabSheet
@@ -2214,7 +2214,7 @@ object stackmenu1: Tstackmenu1
             Alignment = taRightJustify
             AutoSize = False
             BorderSpacing.Around = 5
-            Caption = 'Field heigth image [°]:'
+            Caption = 'Field height image [°]:'
             Color = clBtnFace
             ParentColor = False
             Transparent = False
