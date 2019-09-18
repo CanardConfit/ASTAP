@@ -2146,13 +2146,14 @@ object stackmenu1: Tstackmenu1
           object downsample_for_solving1: TComboBox
             Left = 568
             Height = 23
-            Hint = 'Binning of the image will be applied prior to plate solving. While binning colour images are converted to mono. Use binning if image is large or very noisy.'
+            Hint = 'Binning of the image will be applied prior to plate solving. 0 is automatic selection. Use binning if image is large or very noisy.'
             Top = 62
             Width = 72
             BorderSpacing.Around = 5
             ItemHeight = 15
-            ItemIndex = 1
+            ItemIndex = 0
             Items.Strings = (
+              '0'
               '1'
               '2'
               '3'
@@ -2161,7 +2162,7 @@ object stackmenu1: Tstackmenu1
             OnChange = resize_factor1Change
             Style = csDropDownList
             TabOrder = 2
-            Text = '2'
+            Text = '0'
           end
           object Label50: TLabel
             Left = 384

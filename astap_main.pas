@@ -944,7 +944,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.264 dated 2019-9-17';
+  #13+#10+'Version ß0.9.265 dated 2019-9-18';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7206,7 +7206,7 @@ begin
         application.messagebox( pchar(
         '-f  filename'+#10+
         '-r  radius_area_to_search[degrees]'+#10+      {changed}
-        '-z  downsample_factor[2,3,4] {downsample prior to solving}'+#10+
+        '-z  downsample_factor[0,1,2,3,4] {downsample prior to solving. 0 is auto}'+#10+
         '-fov diameter_field[degrees]'+#10+   {changed}
         '-ra  center_right ascension[hours]'+#10+
         '-spd center_south_pole_distance[degrees]'+#10+

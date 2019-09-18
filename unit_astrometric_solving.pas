@@ -386,8 +386,8 @@ end;
 
 function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
-  nrstars,nrstars_required,count,max_distance,nr_tetrahedrons, minimum_tetrahedrons,i,database_stars,distance : integer;
-  search_field,step_size,telescope_ra,telescope_dec,radius,fov, max_fov,oversize,sep,ra7,dec7,centerX,centerY,correctionX,correctionY,binning,cropping, flat_factor: double;
+  nrstars,nrstars_required,count,max_distance,nr_tetrahedrons, minimum_tetrahedrons,i,database_stars,distance,binning : integer;
+  search_field,step_size,telescope_ra,telescope_dec,radius,fov, max_fov,oversize,sep,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, flat_factor: double;
   solution, go_ahead,solve_show_log  : boolean;
   Save_Cursor     : TCursor;
   startTick  : qword;{for timing/speed purposes}
@@ -411,15 +411,25 @@ begin
     apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
   end;
 
+  binning:=stackmenu1.downsample_for_solving1.itemindex;
+  if binning<=0 then  {zero gives -1, Auto is 0}
+  begin
+    if height2>5000 then binning:=4
+    else
+    if height2>2500 then binning:=2
+    else
+    binning:=1;
+  end;
+
   if stackmenu1.force_oversize1.checked=false then info_message:='▶▶' {normal} else info_message:='▶'; {slow}
   info_message:= ' [' +stackmenu1.radius_search1.text+'°]'+#9+#9+info_message+
-                  #10+'↕ '+stackmenu1.search_fov1.text+'°'+ #9+#9+stackmenu1.downsample_for_solving1.text+'x'+stackmenu1.downsample_for_solving1.text+' ⇒ '+inttostr(width2)+'x'+inttostr(height2)+
+                  #10+'↕ '+stackmenu1.search_fov1.text+'°'+ #9+#9+inttostr(binning)+'x'+inttostr(binning)+' ⇒ '+inttostr(width2)+'x'+inttostr(height2)+
                   #10+mainwindow.ra1.text+'h,'+mainwindow.dec1.text+'°'+{for tray icon}
                   #10+filename2;
 
   trayicon_visible:=mainwindow.TrayIcon1.visible;
 
-  binning:=strtoint(stackmenu1.downsample_for_solving1.caption);
+
 
   max_fov:=strtofloat(stackmenu1.max_fov1.caption);{for very large images only}
 
@@ -436,12 +446,12 @@ begin
   else cropping:=1;
 
 
-  if ((binning<>1) or (cropping<1)) then
+  if ((binning>1) or (cropping<1)) then
   begin
     old_width:=width2;
     old_height:=height2;
     old_naxis3:=naxis3;
-    if binning<>1 then memo2_message('Creating monochromatic x '+stackmenu1.downsample_for_solving1.caption+' binning image to solve.');
+    if binning>1 then memo2_message('Creating monochromatic x '+inttostr(binning)+' binning image to solve.');
     if cropping<>1 then memo2_message('Cropping image x '+floattostrF2(cropping,0,2));
 
     if binning=2 then binX2_crop(cropping,img,img_binned) {combine values of 4 pixels, default option if 3 and 4 are not specified}
