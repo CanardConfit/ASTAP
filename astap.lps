@@ -4,13 +4,12 @@
     <PathDelim Value="\"/>
     <Version Value="11"/>
     <BuildModes Active="Default"/>
-    <Units Count="78">
+    <Units Count="87">
       <Unit0>
         <Filename Value="astap.lpr"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="5"/>
-        <CursorPos X="26" Y="19"/>
+        <EditorIndex Value="4"/>
+        <CursorPos X="74" Y="14"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -21,8 +20,9 @@
         <ComponentName Value="mainwindow"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <TopLine Value="7030"/>
-        <CursorPos X="44" Y="7058"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="7177"/>
+        <CursorPos X="30" Y="7179"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -34,9 +34,9 @@
         <ComponentName Value="stackmenu1"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <EditorIndex Value="4"/>
-        <TopLine Value="5651"/>
-        <CursorPos X="40" Y="5659"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="95"/>
+        <CursorPos X="74" Y="104"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -46,19 +46,18 @@
         <Filename Value="unit_tiff.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="493"/>
-        <CursorPos X="119" Y="135"/>
+        <TopLine Value="425"/>
+        <CursorPos X="11" Y="449"/>
         <UsageCount Value="200"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit3>
       <Unit4>
         <Filename Value="unit_astrometry.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="97"/>
-        <CursorPos X="6" Y="108"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="30"/>
+        <CursorPos X="3" Y="49"/>
         <UsageCount Value="200"/>
-        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit4>
       <Unit5>
@@ -74,19 +73,18 @@
         <Filename Value="unit_star_align.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="497"/>
-        <CursorPos Y="518"/>
+        <TopLine Value="476"/>
+        <CursorPos X="11" Y="483"/>
         <UsageCount Value="201"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit6>
       <Unit7>
         <Filename Value="unit_annotation.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="1"/>
-        <TopLine Value="626"/>
-        <CursorPos X="13" Y="633"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="584"/>
+        <CursorPos X="9" Y="602"/>
         <UsageCount Value="204"/>
-        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit7>
       <Unit8>
@@ -105,17 +103,17 @@
         <Filename Value="unit_xisf.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="328"/>
-        <CursorPos X="6" Y="345"/>
+        <TopLine Value="157"/>
+        <CursorPos X="18" Y="158"/>
         <UsageCount Value="200"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit9>
       <Unit10>
         <Filename Value="unit_stack_routines.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="3"/>
-        <TopLine Value="701"/>
-        <CursorPos X="24" Y="724"/>
+        <EditorIndex Value="6"/>
+        <TopLine Value="419"/>
+        <CursorPos X="28" Y="423"/>
         <UsageCount Value="206"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -124,8 +122,8 @@
         <Filename Value="unit_inspector_plot.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="86"/>
-        <CursorPos X="13" Y="134"/>
+        <TopLine Value="117"/>
+        <CursorPos X="9" Y="133"/>
         <UsageCount Value="200"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit11>
@@ -135,7 +133,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="31"/>
         <CursorPos Y="60"/>
-        <UsageCount Value="181"/>
+        <UsageCount Value="200"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit12>
       <Unit13>
@@ -143,7 +141,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="7"/>
         <CursorPos X="20" Y="29"/>
-        <UsageCount Value="78"/>
+        <UsageCount Value="62"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit13>
       <Unit14>
@@ -151,14 +149,14 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="978640"/>
         <CursorPos X="43" Y="978666"/>
-        <UsageCount Value="199"/>
+        <UsageCount Value="183"/>
         <DefaultSyntaxHighlighter Value="None"/>
       </Unit14>
       <Unit15>
         <Filename Value="2.txt"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="47" Y="947268"/>
-        <UsageCount Value="199"/>
+        <UsageCount Value="183"/>
         <DefaultSyntaxHighlighter Value="None"/>
       </Unit15>
       <Unit16>
@@ -166,7 +164,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="514709"/>
         <CursorPos X="47" Y="514735"/>
-        <UsageCount Value="199"/>
+        <UsageCount Value="183"/>
         <DefaultSyntaxHighlighter Value="None"/>
       </Unit16>
       <Unit17>
@@ -175,23 +173,24 @@
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="21"/>
-        <UsageCount Value="127"/>
+        <UsageCount Value="111"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit17>
       <Unit18>
         <Filename Value="unit_astrometric_solving.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="398"/>
-        <CursorPos X="25" Y="432"/>
-        <UsageCount Value="95"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="376"/>
+        <CursorPos Y="398"/>
+        <UsageCount Value="100"/>
+        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit18>
       <Unit19>
         <Filename Value="unit_290.pas"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="863"/>
-        <CursorPos X="18" Y="898"/>
-        <UsageCount Value="54"/>
+        <TopLine Value="21"/>
+        <CursorPos X="119" Y="45"/>
+        <UsageCount Value="77"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit19>
       <Unit20>
@@ -199,7 +198,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="1615"/>
         <CursorPos X="44" Y="1659"/>
-        <UsageCount Value="6"/>
+        <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit20>
       <Unit21>
@@ -207,7 +206,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="4543"/>
         <CursorPos X="31" Y="4155"/>
-        <UsageCount Value="6"/>
+        <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit21>
       <Unit22>
@@ -215,63 +214,55 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="2687"/>
         <CursorPos X="19" Y="2725"/>
-        <UsageCount Value="6"/>
+        <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit22>
       <Unit23>
         <Filename Value="C:\lazarus\lcl\include\control.inc"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="1560"/>
-        <CursorPos Y="1583"/>
-        <UsageCount Value="17"/>
+        <TopLine Value="1562"/>
+        <CursorPos X="10" Y="1569"/>
+        <UsageCount Value="19"/>
       </Unit23>
       <Unit24>
         <Filename Value="C:\lazarus\lcl\include\listitems.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="5"/>
         <CursorPos Y="27"/>
-        <UsageCount Value="45"/>
+        <UsageCount Value="35"/>
       </Unit24>
       <Unit25>
-        <Filename Value="astap_sourceforge_upload\code\unit_stack.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="1654"/>
-        <CursorPos Y="1682"/>
-        <UsageCount Value="7"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit25>
-      <Unit26>
         <Filename Value="C:\temp\tiffinst\Install\Sourses\TIFFBMP.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="54"/>
         <CursorPos X="19" Y="56"/>
-        <UsageCount Value="6"/>
+        <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit26>
-      <Unit27>
+      </Unit25>
+      <Unit26>
         <Filename Value="C:\temp\tiff2bmp\ReadTiffTags.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="373"/>
         <CursorPos Y="428"/>
-        <UsageCount Value="6"/>
+        <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit27>
-      <Unit28>
+      </Unit26>
+      <Unit27>
         <Filename Value="C:\temp\tiff2bmp\ReadTiff.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="621"/>
         <CursorPos X="99" Y="635"/>
-        <UsageCount Value="6"/>
+        <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit28>
-      <Unit29>
+      </Unit27>
+      <Unit28>
         <Filename Value="C:\lazarus\fpc\3.0.4\source\packages\fcl-image\src\fpreadtiff.pas"/>
         <UnitName Value="FPReadTiff"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="112"/>
-        <UsageCount Value="6"/>
-      </Unit29>
-      <Unit30>
+        <UsageCount Value="10"/>
+      </Unit28>
+      <Unit29>
         <Filename Value="backup\astap_main.pas"/>
         <ComponentName Value="mainwindow"/>
         <HasResources Value="True"/>
@@ -279,300 +270,223 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="1378"/>
         <CursorPos Y="1398"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="7"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit30>
-      <Unit31>
-        <Filename Value="C:\Users\h\AppData\Local\Temp\Rar$DI02.170\unit_stack_routines.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="983"/>
-        <CursorPos X="18" Y="1122"/>
-        <UsageCount Value="1"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit31>
-      <Unit32>
+      </Unit29>
+      <Unit30>
         <Filename Value="C:\Users\h\AppData\Local\Temp\Rar$DI00.671\unit_stack.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="3224"/>
         <CursorPos X="2" Y="3261"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="2"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit32>
-      <Unit33>
-        <Filename Value="C:\Users\h\AppData\Local\Temp\Rar$DI90.630\unit_stack.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="4711"/>
-        <CursorPos Y="4752"/>
-        <UsageCount Value="1"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit33>
-      <Unit34>
+      </Unit30>
+      <Unit31>
         <Filename Value="C:\lazarus\lcl\include\listitem.inc"/>
-        <EditorIndex Value="-1"/>
+        <EditorIndex Value="1"/>
         <TopLine Value="633"/>
-        <CursorPos Y="658"/>
-        <UsageCount Value="21"/>
-      </Unit34>
-      <Unit35>
+        <CursorPos X="93" Y="652"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit31>
+      <Unit32>
         <Filename Value="C:\Users\h\AppData\Local\Temp\Rar$DI07.060\hns_Udownload.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="81"/>
         <CursorPos X="13" Y="14"/>
-        <UsageCount Value="6"/>
+        <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit35>
-      <Unit36>
-        <Filename Value="C:\lazarus\lcl\include\inputdialog.inc"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="102"/>
-        <CursorPos Y="121"/>
-        <UsageCount Value="7"/>
-      </Unit36>
-      <Unit37>
+      </Unit32>
+      <Unit33>
         <Filename Value="C:\Users\h\AppData\Local\Temp\Rar$DI01.355\unit_stack.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="2906"/>
         <CursorPos X="26" Y="2933"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="7"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit37>
-      <Unit38>
+      </Unit33>
+      <Unit34>
         <Filename Value="unit_stack.lfm"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="195"/>
-        <CursorPos X="60" Y="201"/>
-        <UsageCount Value="10"/>
+        <TopLine Value="5106"/>
+        <CursorPos Y="5128"/>
+        <UsageCount Value="6"/>
         <DefaultSyntaxHighlighter Value="LFM"/>
-      </Unit38>
-      <Unit39>
+      </Unit34>
+      <Unit35>
         <Filename Value="C:\hnsky.fpc\hns_Userver.pas"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="89"/>
-        <CursorPos X="24" Y="125"/>
-        <UsageCount Value="6"/>
+        <TopLine Value="92"/>
+        <CursorPos X="7" Y="94"/>
+        <UsageCount Value="9"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit39>
-      <Unit40>
+      </Unit35>
+      <Unit36>
         <Filename Value="C:\Users\h\AppData\Local\Temp\Rar$DI00.601\unit_stack.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="5582"/>
         <CursorPos X="14" Y="5697"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="7"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit40>
-      <Unit41>
+      </Unit36>
+      <Unit37>
         <Filename Value="C:\lazarus\components\lazutils\lazutf8classes.pas"/>
         <UnitName Value="LazUTF8Classes"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="138"/>
         <CursorPos X="15" Y="152"/>
-        <UsageCount Value="33"/>
-      </Unit41>
-      <Unit42>
+        <UsageCount Value="17"/>
+      </Unit37>
+      <Unit38>
         <Filename Value="uniqueinstance-1.1\uniqueinstance.pas"/>
         <UnitName Value="UniqueInstance"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="61"/>
         <CursorPos X="49" Y="64"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="2"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit42>
-      <Unit43>
-        <Filename Value="uniqueinstance-1.1\uniqueinstancebase.pas"/>
-        <UnitName Value="UniqueInstanceBase"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="27"/>
-        <UsageCount Value="7"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit43>
-      <Unit44>
-        <Filename Value="uniqueinstance-1.1\uniqueinstance_package.pas"/>
-        <EditorIndex Value="-1"/>
-        <UsageCount Value="7"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit44>
-      <Unit45>
+      </Unit38>
+      <Unit39>
         <Filename Value="C:\Users\h\AppData\Local\Temp\Rar$DI00.009\unit1.pas"/>
         <UnitName Value="Unit1"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="78"/>
         <CursorPos Y="103"/>
-        <UsageCount Value="6"/>
+        <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit45>
-      <Unit46>
-        <Filename Value="backup\unit_stack.pas"/>
-        <ComponentName Value="stackmenu1"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="2283"/>
-        <CursorPos Y="2308"/>
-        <UsageCount Value="3"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit46>
-      <Unit47>
+      </Unit39>
+      <Unit40>
         <Filename Value="C:\lazarus\lcl\lclrescache.pas"/>
         <UnitName Value="LCLResCache"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="156"/>
         <CursorPos Y="169"/>
-        <UsageCount Value="3"/>
-      </Unit47>
-      <Unit48>
+        <UsageCount Value="7"/>
+      </Unit40>
+      <Unit41>
         <Filename Value="C:\lazarus\lcl\include\customform.inc"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="1713"/>
-        <CursorPos Y="1726"/>
-        <UsageCount Value="3"/>
-      </Unit48>
-      <Unit49>
+        <TopLine Value="1455"/>
+        <CursorPos Y="1478"/>
+        <UsageCount Value="15"/>
+      </Unit41>
+      <Unit42>
         <Filename Value="C:\lazarus\lcl\include\customcheckbox.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="76"/>
         <CursorPos Y="99"/>
-        <UsageCount Value="8"/>
-      </Unit49>
-      <Unit50>
+        <UsageCount Value="2"/>
+      </Unit42>
+      <Unit43>
         <Filename Value="C:\lazarus\lcl\include\wincontrol.inc"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="4744"/>
-        <CursorPos Y="4768"/>
-        <UsageCount Value="12"/>
-      </Unit50>
-      <Unit51>
+        <TopLine Value="5397"/>
+        <CursorPos Y="5420"/>
+        <UsageCount Value="15"/>
+      </Unit43>
+      <Unit44>
         <Filename Value="C:\lazarus\lcl\include\winapi.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="827"/>
         <CursorPos Y="846"/>
-        <UsageCount Value="8"/>
-      </Unit51>
-      <Unit52>
+        <UsageCount Value="2"/>
+      </Unit44>
+      <Unit45>
         <Filename Value="C:\lazarus\lcl\interfaces\win32\win32winapi.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="3039"/>
         <CursorPos Y="3058"/>
-        <UsageCount Value="8"/>
-      </Unit52>
-      <Unit53>
+        <UsageCount Value="2"/>
+      </Unit45>
+      <Unit46>
         <Filename Value="C:\lazarus\lcl\interfaces\win32\win32wsstdctrls.pp"/>
         <UnitName Value="Win32WSStdCtrls"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="1377"/>
         <CursorPos Y="1404"/>
-        <UsageCount Value="10"/>
-      </Unit53>
-      <Unit54>
-        <Filename Value="source_ASTAP_FPC-24-05-2019\unit_stack.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="4979"/>
-        <CursorPos Y="5013"/>
-        <UsageCount Value="8"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit54>
-      <Unit55>
+        <UsageCount Value="4"/>
+      </Unit46>
+      <Unit47>
         <Filename Value="C:\lazarus\lcl\include\application.inc"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="1397"/>
-        <CursorPos Y="1421"/>
+        <TopLine Value="803"/>
+        <CursorPos Y="833"/>
         <UsageCount Value="15"/>
-      </Unit55>
-      <Unit56>
+      </Unit47>
+      <Unit48>
         <Filename Value="C:\lazarus\lcl\include\canvas.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="1339"/>
         <CursorPos X="36" Y="1365"/>
-        <UsageCount Value="2"/>
-      </Unit56>
-      <Unit57>
+        <UsageCount Value="6"/>
+      </Unit48>
+      <Unit49>
         <Filename Value="C:\lazarus\lcl\graphics.pp"/>
         <UnitName Value="Graphics"/>
         <EditorIndex Value="-1"/>
-        <UsageCount Value="2"/>
-      </Unit57>
-      <Unit58>
+        <UsageCount Value="6"/>
+      </Unit49>
+      <Unit50>
         <Filename Value="C:\lazarus\components\lazutils\laztracer.pas"/>
         <UnitName Value="LazTracer"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="28"/>
-        <CursorPos Y="50"/>
+        <CursorPos X="19" Y="35"/>
         <UsageCount Value="37"/>
-      </Unit58>
-      <Unit59>
-        <Filename Value="source_ASTAP_FPC-29-05-2019\unit_stack.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="5550"/>
-        <CursorPos X="94" Y="5585"/>
-        <UsageCount Value="1"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit59>
-      <Unit60>
-        <Filename Value="C:\hnsky.fpc\astronomy_on_personal_computer\astronomy with the personal computer 3th edition 1998\astronomy with the personal computer 3th edition 1998\SUN\MINISUN.PAS"/>
-        <EditorIndex Value="-1"/>
-        <UsageCount Value="1"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit60>
-      <Unit61>
+      </Unit50>
+      <Unit51>
         <Filename Value="C:\lazarus\lcl\include\customedit.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="507"/>
         <CursorPos Y="529"/>
-        <UsageCount Value="10"/>
-      </Unit61>
-      <Unit62>
+        <UsageCount Value="4"/>
+      </Unit51>
+      <Unit52>
         <Filename Value="C:\lazarus\lcl\lclmessageglue.pas"/>
         <UnitName Value="LCLMessageGlue"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="87"/>
-        <CursorPos Y="123"/>
-        <UsageCount Value="10"/>
-      </Unit62>
-      <Unit63>
+        <TopLine Value="88"/>
+        <CursorPos Y="116"/>
+        <UsageCount Value="11"/>
+      </Unit52>
+      <Unit53>
         <Filename Value="C:\lazarus\lcl\interfaces\win32\win32callback.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="2611"/>
         <CursorPos Y="2638"/>
-        <UsageCount Value="10"/>
-      </Unit63>
-      <Unit64>
+        <UsageCount Value="4"/>
+      </Unit53>
+      <Unit54>
         <Filename Value="C:\lazarus\lcl\interfaces\win32\win32wsforms.pp"/>
         <UnitName Value="Win32WSForms"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="367"/>
         <CursorPos Y="388"/>
-        <UsageCount Value="10"/>
-      </Unit64>
-      <Unit65>
+        <UsageCount Value="4"/>
+      </Unit54>
+      <Unit55>
         <Filename Value="C:\lazarus\lcl\interfaces\win32\win32wscontrols.pp"/>
         <UnitName Value="Win32WSControls"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="464"/>
         <CursorPos Y="489"/>
-        <UsageCount Value="10"/>
-      </Unit65>
-      <Unit66>
-        <Filename Value="source_ASTAP_FPC-29-05-2019\astap_main.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="5560"/>
-        <CursorPos X="94" Y="5581"/>
-        <UsageCount Value="1"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit66>
-      <Unit67>
+        <UsageCount Value="4"/>
+      </Unit55>
+      <Unit56>
         <Filename Value="C:\lazarus\lcl\include\customcombobox.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="921"/>
         <CursorPos Y="943"/>
-        <UsageCount Value="3"/>
-      </Unit67>
-      <Unit68>
+        <UsageCount Value="7"/>
+      </Unit56>
+      <Unit57>
         <Filename Value="C:\hnsky.fpc\hns_Uprs.pas"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="8" Y="19"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="4"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit68>
-      <Unit69>
+      </Unit57>
+      <Unit58>
         <Filename Value="J:\astap_main.pas"/>
         <ComponentName Value="mainwindow"/>
         <HasResources Value="True"/>
@@ -580,69 +494,226 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="6612"/>
         <CursorPos Y="6651"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="4"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit69>
-      <Unit70>
-        <Filename Value="source_ASTAP_FPC-29-05-2019\unit_stack_routines.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="602"/>
-        <CursorPos X="69" Y="640"/>
-        <UsageCount Value="1"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit70>
-      <Unit71>
-        <Filename Value="J:\unit_astrometric_solving.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="328"/>
-        <CursorPos Y="368"/>
-        <UsageCount Value="1"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit71>
-      <Unit72>
-        <Filename Value="C:\Users\h\AppData\Local\Temp\Rar$DI02.320\astap_main.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="5730"/>
-        <CursorPos Y="5763"/>
-        <UsageCount Value="1"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit72>
-      <Unit73>
+      </Unit58>
+      <Unit59>
         <Filename Value="C:\lazarus\lcl\include\brush.inc"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="2"/>
+        <TopLine Value="4"/>
         <CursorPos Y="38"/>
         <UsageCount Value="21"/>
-      </Unit73>
-      <Unit74>
-        <Filename Value="C:\lazarus\lcl\include\font.inc"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="801"/>
-        <CursorPos Y="825"/>
-        <UsageCount Value="11"/>
-      </Unit74>
-      <Unit75>
+      </Unit59>
+      <Unit60>
         <Filename Value="backup\unit_photometry.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="67"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="3"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit75>
-      <Unit76>
+      </Unit60>
+      <Unit61>
         <Filename Value="D:\ccdciel_program\ccdciel-master\ccdciel-master\src\pu_hyperbola.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="112"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="4"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
-      </Unit76>
-      <Unit77>
+      </Unit61>
+      <Unit62>
         <Filename Value="astap_main.lfm"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="724"/>
         <CursorPos Y="752"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="4"/>
         <DefaultSyntaxHighlighter Value="LFM"/>
+      </Unit62>
+      <Unit63>
+        <Filename Value="source_ASTAP_FPC-24-05-2019\astap_main.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="4953"/>
+        <CursorPos Y="4969"/>
+        <UsageCount Value="4"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit63>
+      <Unit64>
+        <Filename Value="test files\Daniel m51\MasterDark_ISO1600_300s.fit"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="6"/>
+        <DefaultSyntaxHighlighter Value="None"/>
+      </Unit64>
+      <Unit65>
+        <Filename Value="source_ASTAP_FPC-29-05-2019\unit_290.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="804"/>
+        <CursorPos Y="850"/>
+        <UsageCount Value="2"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit65>
+      <Unit66>
+        <Filename Value="C:\hnsky.fpc\unit_290.pas"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="2"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit66>
+      <Unit67>
+        <Filename Value="source_ASTAP_FPC-04-08-2019\unit_annotation.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="647"/>
+        <CursorPos Y="662"/>
+        <UsageCount Value="2"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit67>
+      <Unit68>
+        <Filename Value="D:\temp\skychart-master\skychart-master\skychart\u_290.pas"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="47" Y="378"/>
+        <UsageCount Value="3"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit68>
+      <Unit69>
+        <Filename Value="C:\hnsky.fpc\hns_U290.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="457"/>
+        <CursorPos X="17" Y="486"/>
+        <UsageCount Value="9"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit69>
+      <Unit70>
+        <Filename Value="C:\lazarus\lcl\include\customimage.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="27"/>
+        <CursorPos X="100" Y="43"/>
+        <UsageCount Value="11"/>
+      </Unit70>
+      <Unit71>
+        <Filename Value="C:\temp\openssl\openssl_fpc32.pas"/>
+        <UnitName Value="openssl"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="5470"/>
+        <CursorPos X="5" Y="5511"/>
+        <UsageCount Value="11"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit71>
+      <Unit72>
+        <Filename Value="C:\temp\openssl\openssl_new.pp"/>
+        <UnitName Value="openssl"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="5561"/>
+        <CursorPos X="4" Y="5565"/>
+        <UsageCount Value="8"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit72>
+      <Unit73>
+        <Filename Value="C:\lazarus\lcl\extctrls.pp"/>
+        <UnitName Value="ExtCtrls"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="7"/>
+      </Unit73>
+      <Unit74>
+        <Filename Value="C:\Users\h\AppData\Local\Temp\Rar$DI00.176\unit_stack.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="4132"/>
+        <CursorPos Y="4164"/>
+        <UsageCount Value="5"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit74>
+      <Unit75>
+        <Filename Value="astap_sourceforge_upload\code\astap_main.pas"/>
+        <ComponentName Value="mainwindow"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="916"/>
+        <CursorPos X="26" Y="947"/>
+        <UsageCount Value="10"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit75>
+      <Unit76>
+        <Filename Value="C:\Users\h\AppData\Local\Temp\Rar$DI03.938\hns_fv1.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="393"/>
+        <CursorPos Y="393"/>
+        <UsageCount Value="8"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit76>
+      <Unit77>
+        <Filename Value="E:\hnsky.code\hns_fits\hns_fit1.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="62"/>
+        <CursorPos X="10" Y="81"/>
+        <UsageCount Value="8"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit77>
+      <Unit78>
+        <Filename Value="E:\hnsky.code\hns_fits\hns_fit2.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1033"/>
+        <CursorPos Y="1061"/>
+        <UsageCount Value="8"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit78>
+      <Unit79>
+        <Filename Value="C:\lazarus\lcl\include\statuspanels.inc"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos Y="28"/>
+        <UsageCount Value="17"/>
+      </Unit79>
+      <Unit80>
+        <Filename Value="C:\lazarus\lcl\include\buttoncontrol.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2"/>
+        <CursorPos Y="22"/>
+        <UsageCount Value="13"/>
+      </Unit80>
+      <Unit81>
+        <Filename Value="C:\lazarus\lcl\include\buttons.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="150"/>
+        <CursorPos Y="170"/>
+        <UsageCount Value="13"/>
+      </Unit81>
+      <Unit82>
+        <Filename Value="C:\Users\h\AppData\Local\Temp\Rar$DI00.986\astap_main.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="7917"/>
+        <CursorPos X="18" Y="7949"/>
+        <UsageCount Value="9"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit82>
+      <Unit83>
+        <Filename Value="C:\hnsky.fpc\hns_main.pas"/>
+        <ComponentName Value="mainwindow"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="13261"/>
+        <CursorPos Y="13295"/>
+        <UsageCount Value="9"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit83>
+      <Unit84>
+        <Filename Value="C:\lazarus\lcl\include\rasterimage.inc"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="926"/>
+        <CursorPos Y="955"/>
+        <UsageCount Value="14"/>
+        <Loaded Value="True"/>
+      </Unit84>
+      <Unit85>
+        <Filename Value="source_ASTAP_FPC-04-08-2019\unit_stack.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2878"/>
+        <CursorPos X="14" Y="2876"/>
+        <UsageCount Value="11"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit85>
+      <Unit86>
+        <Filename Value="source_ASTAP_FPC-04-08-2019\astap_main.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="9196"/>
+        <CursorPos X="19" Y="9227"/>
+        <UsageCount Value="10"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit86>
     </Units>
     <OtherDefines Count="5">
       <Define0 Value="Borland"/>
@@ -653,124 +724,124 @@
     </OtherDefines>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="931" Column="17" TopLine="926"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="485" Column="63" TopLine="453"/>
       </Position1>
       <Position2>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="930" Column="17" TopLine="925"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="259" Column="118" TopLine="239"/>
       </Position2>
       <Position3>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="929" Column="17" TopLine="924"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="390" Column="142" TopLine="358"/>
       </Position3>
       <Position4>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="928" Column="17" TopLine="923"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="414" Column="10" TopLine="382"/>
       </Position4>
       <Position5>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="927" Column="17" TopLine="922"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="415" Column="13" TopLine="383"/>
       </Position5>
       <Position6>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="926" Column="17" TopLine="921"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="417" Column="33" TopLine="385"/>
       </Position6>
       <Position7>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="925" Column="17" TopLine="920"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="419" Column="33" TopLine="387"/>
       </Position7>
       <Position8>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="924" Column="17" TopLine="919"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="421" Column="12" TopLine="390"/>
       </Position8>
       <Position9>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="923" Column="17" TopLine="918"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="426" Column="108" TopLine="394"/>
       </Position9>
       <Position10>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="922" Column="17" TopLine="917"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="449" Column="15" TopLine="417"/>
       </Position10>
       <Position11>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="921" Column="17" TopLine="916"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="454" Column="117" TopLine="422"/>
       </Position11>
       <Position12>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="920" Column="17" TopLine="915"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="457" Column="15" TopLine="425"/>
       </Position12>
       <Position13>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="919" Column="17" TopLine="914"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="459" Column="15" TopLine="427"/>
       </Position13>
       <Position14>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="918" Column="17" TopLine="913"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="461" Column="15" TopLine="429"/>
       </Position14>
       <Position15>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="917" Column="17" TopLine="912"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="463" Column="83" TopLine="431"/>
       </Position15>
       <Position16>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="916" Column="17" TopLine="911"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="484" Column="123" TopLine="452"/>
       </Position16>
       <Position17>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="915" Column="17" TopLine="910"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="485" Column="63" TopLine="453"/>
       </Position17>
       <Position18>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="914" Column="17" TopLine="909"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="259" Column="118" TopLine="239"/>
       </Position18>
       <Position19>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="913" Column="17" TopLine="908"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="389" Column="118" TopLine="358"/>
       </Position19>
       <Position20>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="912" Column="17" TopLine="907"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="415" TopLine="404"/>
       </Position20>
       <Position21>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="911" Column="17" TopLine="906"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="417" TopLine="404"/>
       </Position21>
       <Position22>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="910" Column="17" TopLine="905"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="419" TopLine="404"/>
       </Position22>
       <Position23>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="909" Column="17" TopLine="904"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="424" TopLine="404"/>
       </Position23>
       <Position24>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="908" Column="17" TopLine="903"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="434" TopLine="404"/>
       </Position24>
       <Position25>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="907" Column="17" TopLine="902"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="415" TopLine="404"/>
       </Position25>
       <Position26>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="906" Column="17" TopLine="901"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="454" Column="82" TopLine="435"/>
       </Position26>
       <Position27>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="905" Column="17" TopLine="900"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="420" TopLine="393"/>
       </Position27>
       <Position28>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="904" Column="17" TopLine="899"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="417" Column="46" TopLine="398"/>
       </Position28>
       <Position29>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="903" Column="17" TopLine="898"/>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <Caret Line="419" TopLine="398"/>
       </Position29>
       <Position30>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="915" Column="6" TopLine="898"/>
+        <Caret Line="930" Column="10" TopLine="921"/>
       </Position30>
     </JumpHistory>
     <RunParams>
@@ -779,22 +850,32 @@
     </RunParams>
   </ProjectSession>
   <Debugging>
-    <Watches Count="5">
+    <BreakPoints Count="2">
       <Item1>
-        <Expression Value="bgr"/>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="astap_main.pas"/>
+        <Line Value="1482"/>
       </Item1>
       <Item2>
-        <Expression Value="value"/>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="astap_main.pas"/>
+        <Line Value="7117"/>
+      </Item2>
+    </BreakPoints>
+    <Watches Count="3">
+      <Item1>
+        <Expression Value="x"/>
+      </Item1>
+      <Item2>
+        <Expression Value="y"/>
       </Item2>
       <Item3>
-        <Expression Value="weightF"/>
+        <Expression Value="img_loaded[0,200,200]"/>
       </Item3>
-      <Item4>
-        <Expression Value="red"/>
-      </Item4>
-      <Item5>
-        <Expression Value="count"/>
-      </Item5>
     </Watches>
   </Debugging>
 </CONFIG>

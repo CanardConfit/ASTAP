@@ -98,6 +98,9 @@ type
     MenuItem17: TMenuItem;
     enterposition2: TMenuItem;
     flipped1: TMenuItem;
+    rotateright1: TMenuItem;
+    rotateleft1: TMenuItem;
+    MenuItem19: TMenuItem;
     shape_marker2: TShape;
     shape_marker3: TShape;
     solvebytwopositions1: TMenuItem;
@@ -272,6 +275,7 @@ type
     procedure remove_annotations1Click(Sender: TObject);
     procedure remove_colour1Click(Sender: TObject);
     procedure Returntodefaultsettings1Click(Sender: TObject);
+    procedure rotateleft1Click(Sender: TObject);
     procedure saturation_factor_plot1KeyUp(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure saturation_factor_plot1MouseUp(Sender: TObject;
@@ -391,7 +395,8 @@ var
    subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
    date_obs,ut,pltlabel,plateid,telescop,instrum,origin:string;
    datamin_org, datamax_org,
-   old_crpix1,old_crpix2 : double;{for backup}
+   old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
+
 
 
 
@@ -848,6 +853,16 @@ begin
   begin
     old_crpix1:=crpix1;{could be modified by crop}
     old_crpix2:=crpix2;
+
+    old_crota1:=crota1;{for 90 degrees rotate}
+    old_crota2:=crota2;
+    old_cdelt1:=cdelt1;
+    old_cdelt2:=cdelt2;
+    old_cd1_1:=cd1_1;
+    old_cd1_2:=cd1_2;
+    old_cd2_1:=cd2_1;
+    old_cd2_2:=cd2_2;
+
     memo_backup:=mainwindow.Memo1.Text;{backup fits header}
 
     img_backup:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
@@ -881,6 +896,16 @@ begin
     crpix1:=old_crpix1;{could be modified by crop}
     crpix2:=old_crpix2;
 
+    crota1:=old_crota1;{for 90 degrees rotate}
+    crota2:=old_crota2;
+    cdelt1:=old_cdelt1;
+    cdelt2:=old_cdelt2;
+    cd1_1:=old_cd1_1;
+    cd1_2:=old_cd1_2;
+    cd2_1:=old_cd2_1;
+    cd2_2:=old_cd2_2;
+
+
     mainwindow.Memo1.Text:=memo_backup;{restore fits header}
 
     stackmenu1.test_pattern1.Enabled:=naxis3=1;{allow debayer if mono again}
@@ -892,6 +917,7 @@ begin
     getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
     plot_fits(mainwindow.image1,resized);{restore image1}
 
+   // plot_north; {case image is 90 degrees rotated}
 
     stackmenu1.apply_dpp_button1.Enabled:=true;
     update_equalise_background_step(equalise_background_step-1);{update equalize menu}
@@ -944,7 +970,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.265 dated 2019-9-18';
+  #13+#10+'Version ß0.9.266 dated 2019-9-19';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1655,6 +1681,143 @@ begin
   end;
 end;
 
+procedure plot_north;{draw arrow north. If cd1_1=0 then clear north arrow}
+const xpos=25;{position arrow}
+      ypos=25;
+      leng=24;{half of length}
+
+var
+      dra,ddec,
+      cdelt1_a, det,x,y :double;
+      flipV, flipH : integer;
+begin
+  {clear}
+  mainwindow.image2.canvas.brush.color:=clmenu;
+  mainwindow.image2.canvas.rectangle(-1,-1, mainwindow.image2.width+1, mainwindow.image2.height+1);
+
+  if cd1_1=0 then {remove rotation indication and exit}
+  begin
+     mainwindow.rotation1.caption:='';
+     exit;
+  end;
+
+  mainwindow.rotation1.caption:=floattostrf(crota2, FFfixed, 0, 2)+'°';{show rotation}
+
+  if ((fits_file=false) or (cd1_1=0)) then exit;
+
+  mainwindow.image2.Canvas.Pen.Color := clred;
+
+  if mainwindow.Fliphorizontal1.checked then flipH:=-1 else flipH:=+1;
+  if mainwindow.Flipvertical1.checked then flipV:=-1 else flipV:=+1;
+
+  cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{lenght of a pixel diagonal in direction RA in arcseconds}
+
+  moveToex(mainwindow.image2.Canvas.handle,round(xpos),round(ypos),nil);
+  det:=CD2_2*CD1_1-CD1_2*CD2_1;{this result can be negative !!}
+  dRa:=0;
+  dDec:=cdelt1_a*leng;
+  x := (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
+  dRa:=cdelt1_a*-3;
+  dDec:=cdelt1_a*(leng-5);
+  x := (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  dRa:=cdelt1_a*+3;
+  dDec:=cdelt1_a*(leng-5);
+  x := (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  dRa:=0;
+  dDec:=cdelt1_a*leng;
+  x := (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+
+
+  moveToex(mainwindow.image2.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
+  dRa:= cdelt1_a*leng/3;
+  dDec:=0;
+  x := 0 + (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := 0 + (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
+end;
+
+procedure Tmainwindow.rotateleft1Click(Sender: TObject); {rotate left or right 90 degrees}
+var
+    dum, col,fitsX,fitsY : integer;
+    dummy                : double;
+    right :boolean;
+begin
+  backup_img;
+
+  right:= (sender=rotateright1); {rotate right?}
+
+  if Fliphorizontal1.checked then right:= (right=false);{change rotation if flipped}
+  if Flipvertical1.checked then   right:= (right=false);{change rotation if flipped}
+
+  setlength(img_temp,naxis3, height2,width2);{set length of image with swapped width and height}
+
+  for col:=0 to naxis3-1 do {do all colours}
+  begin
+    For fitsY:=0 to (height2-1) do
+      for fitsX:=0 to (width2-1) do
+      begin
+        if right=false then img_temp[col,(height2-1)-fitsY,fitsX]:=img_loaded[col,fitsX,fitsY]
+                       else img_temp[col, fitsY,(width2-1)-fitsX]:=img_loaded[col,fitsX,fitsY];
+      end;
+  end;
+  {swap width and height}
+  dum:=width2;
+  width2:=height2;
+  height2:=dum;
+  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
+  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+
+
+  img_loaded:=img_temp;
+  img_temp:=nil;
+  plot_fits(mainwindow.image1,false);
+
+  if cd1_1<>0 then {update solution for rotation}
+  begin
+    if right then {rotate right}
+    begin
+      dummy:=cd1_1; cd1_1:=cd1_2; cd1_2:=-dummy;
+      dummy:=cd2_1; cd2_1:=cd2_2; cd2_2:=-dummy;
+
+      dummy:=crpix1; crpix1:=crpix2; crpix2:=height2-dummy;
+    end
+    else
+    begin {rotate left}
+      dummy:=cd1_1; cd1_1:=-cd1_2; cd1_2:=dummy;
+      dummy:=cd2_1; cd2_1:=-cd2_2; cd2_2:=dummy;
+
+      dummy:=crpix1; crpix1:=width2-crpix2; crpix2:=dummy;
+    end;
+    new_to_old_WCS;{convert new style FITS to old style, calculate crota1,crota2,cdelt1,cdelt2}
+
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+
+
+    update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
+    update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
+
+    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);
+    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);
+
+    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
+    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
+
+    plot_north;
+  end;
+
+end;
+
 procedure Tmainwindow.saturation_factor_plot1KeyUp(Sender: TObject;
   var Key: Word; Shift: TShiftState);
 begin
@@ -1832,68 +1995,6 @@ begin
 end;
 
 
-procedure plot_north;{draw arrow north. If cd1_1=0 then clear north arrow}
-const xpos=25;{position arrow}
-      ypos=25;
-      leng=24;{half of length}
-
-var
-      dra,ddec,
-      cdelt1_a, det,x,y :double;
-      flipV, flipH : integer;
-begin
-  {clear}
-  mainwindow.image2.canvas.brush.color:=clmenu;
-  mainwindow.image2.canvas.rectangle(-1,-1, mainwindow.image2.width+1, mainwindow.image2.height+1);
-
-  if cd1_1=0 then {remove rotation indication and exit}
-  begin
-     mainwindow.rotation1.caption:='';
-     exit;
-  end;
-
-  mainwindow.rotation1.caption:=floattostrf(crota2, FFfixed, 0, 2)+'°';{show rotation}
-
-  if ((fits_file=false) or (cd1_1=0)) then exit;
-
-  mainwindow.image2.Canvas.Pen.Color := clred;
-
-  if mainwindow.Fliphorizontal1.checked then flipH:=-1 else flipH:=+1;
-  if mainwindow.Flipvertical1.checked then flipV:=-1 else flipV:=+1;
-
-  cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{lenght of a pixel diagonal in direction RA in arcseconds}
-
-  moveToex(mainwindow.image2.Canvas.handle,round(xpos),round(ypos),nil);
-  det:=CD2_2*CD1_1-CD1_2*CD2_1;{this result can be negative !!}
-  dRa:=0;
-  dDec:=cdelt1_a*leng;
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
-  dRa:=cdelt1_a*-3;
-  dDec:=cdelt1_a*(leng-5);
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
-  dRa:=cdelt1_a*+3;
-  dDec:=cdelt1_a*(leng-5);
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
-  dRa:=0;
-  dDec:=cdelt1_a*leng;
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
-
-
-  moveToex(mainwindow.image2.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
-  dRa:= cdelt1_a*leng/3;
-  dDec:=0;
-  x := 0 + (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := 0 + (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
-end;
 
 function place_marker_radec(str1: string): boolean;{place ra,dec marker in image}
 var
@@ -2007,6 +2108,9 @@ begin
 
 
   mainwindow.stretch1.enabled:=fits;
+  mainwindow.rotateleft1.enabled:=fits;
+  mainwindow.rotateright1.enabled:=fits;
+
   mainwindow.minimum1.enabled:=fits;
   mainwindow.maximum1.enabled:=fits;
   mainwindow.range1.enabled:=fits;
