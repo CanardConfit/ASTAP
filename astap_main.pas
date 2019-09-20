@@ -970,7 +970,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.266a dated 2019-9-20';
+  #13+#10+'Version ß0.9.267 dated 2019-9-20';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1677,7 +1677,11 @@ procedure Tmainwindow.Returntodefaultsettings1Click(Sender: TObject);
 begin
   if (IDYES= Application.MessageBox('This will set all ASTAP settings to default and close the program. Are you sure?', 'Default settings?', MB_ICONQUESTION + MB_YESNO) ) then
   begin
-    if deletefile(user_path+'astap.cfg') then  mainwindow.close else beep;
+    if deletefile(user_path+'astap.cfg') then
+    begin
+      halt(0); {don't save only do mainwindow.destroy. Note  mainwindow.close will save the setting again, so don't use}
+    end
+    else beep;
   end;
 end;
 
@@ -7297,7 +7301,12 @@ begin
 
   fov_specified:=false;{assume no FOV specification in commandline}
   screen.Cursor:=0;
-  if platesolve2_command then  mainwindow.close  {halt(0)} {stop program, platesolve command already executed}
+  if platesolve2_command then
+  begin
+    esc_pressed:=true;{kill any running activity. This for APT}
+    {stop program, platesolve command already executed}
+    halt(0); {don't save only do form.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
+  end
   else
   if paramcount>0 then   {file as first parameter}
   begin
@@ -7323,7 +7332,9 @@ begin
         '-annotate  {produce deepsky annotated jpg file}' +#10+#10+
         'Preference will be given to the values in the FITS header.'
         ), pchar('ASTAP astrometric solver usage:'),MB_OK);
-        mainwindow.close; {halt(0)};
+
+        esc_pressed:=true;{kill any running activity. This for APT}
+        halt(0); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
       end;
       if hasoption('f') then
       begin
@@ -7410,7 +7421,8 @@ begin
           write_ini(false);{write solution to ini file}
          //  log_to_file(cmdline+' =>failure');
         end;
-        mainwindow.close; {halt(0);}{no zero gives error in armhf}
+        esc_pressed:=true;{kill any running activity. This for APT}
+        halt(0); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
       end;
     end;
     Mainwindow.stretch1Change(nil);{create gamma curve}

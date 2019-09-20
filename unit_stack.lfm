@@ -50,8 +50,8 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.2.0'
   object Memo2: TMemo
     Left = 0
-    Height = 148
-    Top = 496
+    Height = 144
+    Top = 500
     Width = 1272
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
@@ -74,11 +74,11 @@ object stackmenu1: Tstackmenu1
   end
   object classify_groupbox1: TGroupBox
     Left = 488
-    Height = 56
+    Height = 60
     Top = 440
     Width = 480
     Caption = 'Classify by'
-    ClientHeight = 36
+    ClientHeight = 40
     ClientWidth = 476
     TabOrder = 2
     object classify_filter1: TCheckBox
