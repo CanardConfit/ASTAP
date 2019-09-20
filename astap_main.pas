@@ -970,7 +970,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.267 dated 2019-9-20';
+  #13+#10+'Version ß0.9.268 dated 2019-9-20';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7385,7 +7385,7 @@ begin
 
         if load_and_solve then {filename2 extension will change to .fit}
         begin
-          if hasoption('o') then filename2:=GetOptionValue('o');
+          if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
           write_ini(true);{write solution to ini file}
           mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file}
 
@@ -7415,9 +7415,7 @@ begin
         end
         else
         begin {no solution}
-
-        exit;
-          if hasoption('o') then filename2:=GetOptionValue('o');
+          if hasoption('o') then filename2:=GetOptionValue('o'); {change file name for .ini file}
           write_ini(false);{write solution to ini file}
          //  log_to_file(cmdline+' =>failure');
         end;
