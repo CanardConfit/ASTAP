@@ -1,13 +1,13 @@
 object mainwindow: Tmainwindow
-  Left = 347
-  Height = 646
+  Left = 434
+  Height = 541
   Hint = ' '
-  Top = 173
-  Width = 1094
+  Top = 31
+  Width = 1088
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 626
-  ClientWidth = 1094
+  ClientHeight = 521
+  ClientWidth = 1088
   Color = clForm
   Font.CharSet = ANSI_CHARSET
   Font.Color = clBlack
@@ -136,15 +136,8 @@ object mainwindow: Tmainwindow
     Hint = 'Right ascension of reference pixel. Normally in the middle of the image. Format 23 30 00.0 or 23.500. Double click to retrieve position from database'
     Top = 0
     Width = 95
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clMenuText
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
     OnChange = ra1Change
     OnDblClick = ra1DblClick
-    ParentFont = False
     ParentShowHint = False
     ShowHint = True
     TabOrder = 0
@@ -156,15 +149,8 @@ object mainwindow: Tmainwindow
     Hint = 'Declination of reference pixel. Normally in the middle of the image. Format +89 30 00 or 89.500. Double click to retrieve position from database'
     Top = 26
     Width = 95
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clMenuText
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
     OnChange = dec1Change
     OnDblClick = ra1DblClick
-    ParentFont = False
     ParentShowHint = False
     ShowHint = True
     TabOrder = 1
@@ -174,7 +160,7 @@ object mainwindow: Tmainwindow
     Left = 596
     Height = 163
     Top = 5
-    Width = 494
+    Width = 488
     Anchors = [akTop, akLeft, akRight]
     Font.Height = -9
     Font.Name = 'Courier'
@@ -200,13 +186,13 @@ object mainwindow: Tmainwindow
     TabOrder = 3
   end
   object Panel1: TPanel
-    Left = 0
-    Height = 447
+    Left = -3
+    Height = 381
     Hint = 'hint'
-    Top = 177
+    Top = 172
     Width = 1088
     Anchors = []
-    ClientHeight = 447
+    ClientHeight = 381
     ClientWidth = 1088
     Color = 2105376
     ParentColor = False
@@ -216,9 +202,9 @@ object mainwindow: Tmainwindow
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
     object Image1: TImage
-      Left = 224
+      Left = 232
       Height = 241
-      Top = 154
+      Top = 56
       Width = 546
       Anchors = [akLeft, akRight, akBottom]
       OnMouseDown = Image1MouseDown
@@ -426,14 +412,7 @@ object mainwindow: Tmainwindow
       Top = 56
       Width = 49
       Enabled = False
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clMenuText
-      Font.Height = -12
-      Font.Name = 'Segoe UI'
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
       OnEditingDone = min2EditingDone
-      ParentFont = False
       ParentShowHint = False
       ShowHint = True
       TabOrder = 2
@@ -446,14 +425,7 @@ object mainwindow: Tmainwindow
       Top = 77
       Width = 49
       Enabled = False
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clMenuText
-      Font.Height = -12
-      Font.Name = 'Segoe UI'
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
       OnEditingDone = max2EditingDone
-      ParentFont = False
       ParentShowHint = False
       ShowHint = True
       TabOrder = 3
@@ -583,8 +555,8 @@ object mainwindow: Tmainwindow
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
-    Top = 603
-    Width = 1094
+    Top = 498
+    Width = 1088
     Panels = <    
       item
         Width = 200
