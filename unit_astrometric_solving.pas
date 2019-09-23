@@ -53,7 +53,8 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 //                                                                               | Convert the α, δ equatorial coordinates into standard coordinates
 //                                                                               | (CCD pixel x,y coordinates for optical projection), rigid method
 //3) 	Find the stars to construct the smallest irregular tetrahedrons.         | Find the stars to construct the smallest irregular tetrahedrons.
-//      Record tetrahedron edges length and mean position (x,y) of tetrahedrons. | Record tetrahedron edges length and mean position (x,y) of  tetrahedrons.
+//      Record tetrahedron edges length (equals visible angular distances) and   | Record tetrahedron edges length (equals visible angular distances) and
+//      mean position (x,y) of tetrahedrons.                                     | mean position (x,y) of the tetrahedrons.
 //                                                                               |
 //4) 	Sort the six tetrahedron edges on length for each tetrahedron. 	         | Sort the six edges on length for each tetrahedron. e1 is the longest and e6 shortest.
 //      e1 is the longest and e6 shortest.                                       |

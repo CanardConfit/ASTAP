@@ -98,6 +98,7 @@ type
     MenuItem17: TMenuItem;
     enterposition2: TMenuItem;
     flipped1: TMenuItem;
+    inversimage1: TMenuItem;
     rotateright1: TMenuItem;
     rotateleft1: TMenuItem;
     MenuItem19: TMenuItem;
@@ -242,6 +243,7 @@ type
     procedure loadsettings1Click(Sender: TObject);
     procedure MenuItem15Click(Sender: TObject);
     procedure enterposition1Click(Sender: TObject);
+    procedure inversimage1Click(Sender: TObject);
     procedure receivemessage(Sender: TObject); {For single instance, receive paramstr(1) from second instance prior to termination}
 
     procedure add_marker1Click(Sender: TObject);
@@ -970,7 +972,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.268 dated 2019-9-20';
+  #13+#10+'Version ß0.9.269 dated 2019-9-23';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1750,10 +1752,14 @@ end;
 
 procedure Tmainwindow.rotateleft1Click(Sender: TObject); {rotate left or right 90 degrees}
 var
-    dum, col,fitsX,fitsY : integer;
-    dummy                : double;
-    right :boolean;
+  dum, col,fitsX,fitsY : integer;
+  dummy                : double;
+  right :boolean;
+  Save_Cursor:TCursor;
 begin
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
   backup_img;
 
   right:= (sender=rotateright1); {rotate right?}
@@ -1819,7 +1825,7 @@ begin
 
     plot_north;
   end;
-
+  Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
 
 procedure Tmainwindow.saturation_factor_plot1KeyUp(Sender: TObject;
@@ -2114,6 +2120,7 @@ begin
   mainwindow.stretch1.enabled:=fits;
   mainwindow.rotateleft1.enabled:=fits;
   mainwindow.rotateright1.enabled:=fits;
+  mainwindow.inversimage1.enabled:=fits;
 
   mainwindow.minimum1.enabled:=fits;
   mainwindow.maximum1.enabled:=fits;
@@ -7327,6 +7334,7 @@ begin
         '-t  tolerance'+#10+
         '-speed mode[auto/slow] {slow is forcing small search steps to improve detection.}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
+        '-log   {write the solver log to file}'+#10+
         '-update  {update the FITS header with the found solution}' +#10+#10+
         '-tofits  binning[1,2,3,4,6,8]  {make new fits file from PNG/JPG file input}'+#10+
         '-annotate  {produce deepsky annotated jpg file}' +#10+#10+
@@ -7420,6 +7428,7 @@ begin
          //  log_to_file(cmdline+' =>failure');
         end;
         esc_pressed:=true;{kill any running activity. This for APT}
+        if hasoption('log') then stackmenu1.Memo2.Lines.SavetoFile(ChangeFileExt(filename2,'.log'));{save memo2 log to log file}
         halt(0); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
       end;
     end;
@@ -7606,11 +7615,11 @@ var
   Fliphorizontal:=mainwindow.Fliphorizontal1.Checked;
 
   image1.Canvas.Pen.Mode := pmMerge;
-  image1.Canvas.Pen.width := round(1+height2/image1.height);{thickness lines}
   image1.Canvas.brush.Style:=bsClear;
   image1.Canvas.font.color:=clyellow;
-  image1.Canvas.font.size:=round(max(10,8*height2/image1.height));{adapt font to image dimensions}
   mainwindow.image1.Canvas.Pen.Color := clred;
+  image1.Canvas.Pen.width := round(1+height2/image1.height);{thickness lines}
+  image1.Canvas.font.size:=round(max(10,8*height2/image1.height));{adapt font to image dimensions}
 
   mag_str:='';
 
@@ -7714,7 +7723,8 @@ var
       x3:=round(+median_top_right*scale_factor+width2/2);y3:=round(+median_top_right*scale_factor+height2/2);
       x4:=round(-median_top_left*scale_factor+width2/2);y4:=round(+median_top_left*scale_factor+height2/2);
 
-      image1.Canvas.Pen.width := 2*round(+height2/image1.height);{thickness lines}
+      image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
+
       image1.Canvas.pen.color:=clyellow;
 
       image1.Canvas.moveto(x1,y1);{draw trapezium}
@@ -7737,13 +7747,13 @@ var
     SetLength(hfdlist,nhfd);{set length correct}
     str(SMedian(hfdList):0:1,hfd_value);
     mess2:='Median HFD='+hfd_value+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
-    image1.Canvas.font.size:=20*round(height2/image1.height);
+    image1.Canvas.font.size:=round(image1.Canvas.font.size*20/12);
     image1.Canvas.font.color:=clwhite;
     image1.Canvas.textout(round(image1.Canvas.font.size),height2-round(2*image1.Canvas.font.size),mess2);{median HFD and tilt indication}
   end
   else
     begin
-      image1.Canvas.font.size:=20*round(height2/image1.height);;
+      image1.Canvas.font.size:=round(image1.Canvas.font.size*20/12);
       image1.Canvas.textout(round(image1.Canvas.font.size),height2-round(2*image1.Canvas.font.size),'No star detected');
     end;
 
@@ -8077,6 +8087,33 @@ begin
 
     plot_north;
   end;
+end;
+
+procedure Tmainwindow.inversimage1Click(Sender: TObject);
+var
+  max_range, col,fitsX,fitsY : integer;
+  Save_Cursor:TCursor;
+begin
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  backup_img;
+
+  if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65535;
+
+  for col:=0 to naxis3-1 do {do all colours}
+  begin
+    For fitsY:=0 to (height2-1) do
+      for fitsX:=0 to (width2-1) do
+      begin
+        img_loaded[col,fitsX,fitsY]:=max_range-img_loaded[col,fitsX,fitsY]
+      end;
+  end;
+
+  getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+  plot_fits(mainwindow.image1,false);
+
+  Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
 
 procedure Tmainwindow.histogram1MouseMove(Sender: TObject; Shift: TShiftState;

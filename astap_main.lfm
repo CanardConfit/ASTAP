@@ -854,7 +854,7 @@ object mainwindow: Tmainwindow
       object ccdinspector1: TMenuItem
         Caption = 'CCD inspector'
         Enabled = False
-        Hint = 'Mark all stars with a square based on the star HFD value.'
+        Hint = 'Calculate average HFD value , curvature and tilt. The absolute font size will be smaller if you zoom in.'
         ImageIndex = 17
         ShortCut = 116
         OnClick = CCDinspector1Click
@@ -933,7 +933,7 @@ object mainwindow: Tmainwindow
       object rotateleft1: TMenuItem
         Caption = 'Rotate image 90° left'
         Enabled = False
-        Hint = 'Rotate left, select save to make it permanently'
+        Hint = 'Rotate left.  Saving will apply the changes the original image.'
         ImageIndex = 27
         ShortCut = 16460
         OnClick = rotateleft1Click
@@ -941,10 +941,16 @@ object mainwindow: Tmainwindow
       object rotateright1: TMenuItem
         Caption = 'Rotate image 90° right'
         Enabled = False
-        Hint = 'Rotate right, select save to make it permanently.'
+        Hint = 'Rotate image. right. Saving will apply the changes the original image.'
         ImageIndex = 28
         ShortCut = 16466
         OnClick = rotateleft1Click
+      end
+      object inversimage1: TMenuItem
+        Caption = 'Inverse image'
+        Enabled = False
+        Hint = 'Inverse image. Saving will apply the changes the original image.'
+        OnClick = inversimage1Click
       end
       object MenuItem10: TMenuItem
         Caption = '-'
