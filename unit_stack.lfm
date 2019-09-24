@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1271
-    ActivePage = Images
+    ActivePage = alignment1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 6
     TabOrder = 5
     Options = [nboMultiLine]
     object Images: TTabSheet
@@ -2159,8 +2159,6 @@ object stackmenu1: Tstackmenu1
               '5'
               '7'
               '10'
-              '15'
-              '20'
             )
             OnChange = resize_factor1Change
             TabOrder = 3

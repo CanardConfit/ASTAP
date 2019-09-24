@@ -20,7 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 interface
 uses
-   forms,Classes, SysUtils,strutils, math,graphics;
+   forms,Classes, SysUtils,strutils, math,graphics, Controls {for tcursor};
 
 procedure plot_deepsky;{plot the deep sky object on the image}
 procedure load_deep;{load the deepsky database once. If loaded no action}
@@ -338,9 +338,14 @@ var
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,hf,x,y : integer;
   overlap  :boolean;
+  Save_Cursor:TCursor;
+
 begin
   if ((fits_file) and (cd1_1<>0)) then
   begin
+     Save_Cursor := Screen.Cursor;
+     Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
     flip_vertical:=mainwindow.Flipvertical1.Checked;
     flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
 
@@ -492,6 +497,8 @@ begin
     until linepos>=$FFFFFF;{end of database}
 
     text_dimensions:=nil;{remove used memory}
+
+    Screen.Cursor:=Save_Cursor;
   end;
 end;{plot deep_sky}
 
@@ -556,6 +563,8 @@ var
   mag_offset_array : array of double;
   frac1,frac2,frac3,frac4  : double;
   area1,area2,area3,area4,nrstars_required2  : integer;
+  Save_Cursor: TCursor;
+ // area290:integer;
 
     procedure plot_star;
     begin
@@ -585,7 +594,7 @@ var
 
           if Bp_Rp<>999 then {colour version}
           begin
-            mainwindow.image1.Canvas.textout(x2,y2,inttostr(round(mag2))+':'+inttostr(round(Bp_Rp))    {+'<-'+inttostr(area290)} );
+            mainwindow.image1.Canvas.textout(x2,y2,inttostr(round(mag2))+':'+inttostr(round(Bp_Rp)) {   +'<-'+inttostr(area290) });
             mainwindow.image1.canvas.pen.color:=Gaia_star_color(round(Bp_Rp));{color circel}
           end
           else
@@ -641,6 +650,9 @@ begin
 
   if ((fits_file) and (cd1_1<>0)) then
   begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
     flip_vertical:=mainwindow.Flipvertical1.Checked;
     flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
 
@@ -662,7 +674,10 @@ begin
     telescope_ra:=ra0+arctan(Dra/delta);
     telescope_dec:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
 
-    fov:= 2.0*sqrt(sqr(0.5*width2*cdelt1)+sqr(0.5*height2*cdelt2))*pi/180; {field of view with 0% extra}
+    fov:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view with 0% extra}
+
+    fov:=min(fov,9.53*pi/180);{warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+
     linepos:=0;
 
     mainwindow.image1.Canvas.Pen.width :=1; // round(1+height2/mainwindow.image1.height);{thickness lines}
@@ -690,6 +705,7 @@ begin
     {read 1th area}
     if area1<>0 then {read 1th area}
     begin
+    //  area290:=area1;
       nrstars_required2:=trunc(max_nr_stars * frac1);
       while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,area1,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
       close_star_database;{close reader, so next time same file is read from beginning}
@@ -698,6 +714,7 @@ begin
     {read 2th area}
     if area2<>0 then {read 2th area}
     begin
+   //  area290:=area2;
       nrstars_required2:=trunc(max_nr_stars * (frac1+frac2));
       while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,area2,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
       close_star_database;{close reader, so next time same file is read from beginning}
@@ -706,6 +723,7 @@ begin
     {read 3th area}
     if area3<>0 then {read 3th area}
     begin
+   //  area290:=area3;
       nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
       while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,area3,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
       close_star_database;{close reader, so next time same file is read from beginning}
@@ -713,6 +731,8 @@ begin
     {read 4th area}
     if area4<>0 then {read 4th area}
     begin
+   // area290:=area4;
+
       nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
       while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,area4,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
       close_star_database;{close reader, so next time same file is read from beginning}
@@ -727,6 +747,8 @@ begin
     else
     flux_magn_offset:=0;
     mag_offset_array:=nil;
+
+    Screen.Cursor:= Save_Cursor;
 
   end;{fits file}
 end;{plot stars}

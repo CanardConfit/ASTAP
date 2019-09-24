@@ -658,19 +658,20 @@ begin
   end;
 end;
 
-procedure find_areas(ra1,dec1,fov :double; var area1,area2,area3,area4 :integer; var frac1,frac2,frac3,frac4:double);{find up to four star database areas for the square image. Maximum size image about 20x20 degrees or 4 fields}
+procedure find_areas(ra1,dec1,fov :double; var area1,area2,area3,area4 :integer; var frac1,frac2,frac3,frac4:double);{find up to four star database areas for the square image. Maximum size is a little lesse the one database field 9.5x9.5 degrees}
 var
   ra_cornerWN,ra_cornerEN,ra_cornerWS,ra_cornerES,
-  dec_cornerN,dec_cornerS,fov2,
+  dec_cornerN,dec_cornerS,fov_half,
   spaceE,spaceW,spaceN,spaceS                                           : double;
 begin
-  fov2:=fov/2;
-  dec_cornerN:=dec1+fov2; {above +pi/2 doesn't matter since it is all area 290}
-  dec_cornerS:=dec1-fov2; {above -pi/2 doesn't matter since it is all area 1}
-  ra_cornerWN:=ra1-fov2/cos(dec_cornerN); if ra_cornerWN<0     then ra_cornerWN:=ra_cornerWN+2*pi;{For direction west the RA decreases}
-  ra_cornerEN:=ra1+fov2/cos(dec_cornerN); if ra_cornerEN>=2*pi then ra_cornerEN:=ra_cornerEN-2*pi;
-  ra_cornerWS:=ra1-fov2/cos(dec_cornerS); if ra_cornerWS<0     then ra_cornerWS:=ra_cornerWS+2*pi;
-  ra_cornerES:=ra1+fov2/cos(dec_cornerS); if ra_cornerES>=2*pi then ra_cornerES:=ra_cornerES-2*pi;
+  fov_half:=fov/2; {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+
+  dec_cornerN:=dec1+fov_half; {above +pi/2 doesn't matter since it is all area 290}
+  dec_cornerS:=dec1-fov_half; {above -pi/2 doesn't matter since it is all area 1}
+  ra_cornerWN:=ra1-fov_half/cos(dec_cornerN); if ra_cornerWN<0     then ra_cornerWN:=ra_cornerWN+2*pi;{For direction west the RA decreases}
+  ra_cornerEN:=ra1+fov_half/cos(dec_cornerN); if ra_cornerEN>=2*pi then ra_cornerEN:=ra_cornerEN-2*pi;
+  ra_cornerWS:=ra1-fov_half/cos(dec_cornerS); if ra_cornerWS<0     then ra_cornerWS:=ra_cornerWS+2*pi;
+  ra_cornerES:=ra1+fov_half/cos(dec_cornerS); if ra_cornerES>=2*pi then ra_cornerES:=ra_cornerES-2*pi;
 
   {corner 1}
   area_and_boundaries(ra_cornerEN,dec_cornerN, area1, spaceE,spaceW,spaceN,spaceS);

@@ -433,6 +433,8 @@ begin
 
 
   max_fov:=strtofloat(stackmenu1.max_fov1.caption);{for very large images only}
+  max_fov:=min(max_fov,9.53);{warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+
 
   if ((fov_specified=false) and (cdelt2<>0)) then {no fov in native command line and cdelt2 in header}
     fov:=height2*cdelt2 {calculate FOV}

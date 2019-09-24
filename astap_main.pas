@@ -379,9 +379,10 @@ var
 
 var
   a_order: integer;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
-  a_0_2, a_1_1, a_2_0,  b_0_2, b_1_1, b_2_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
-  ap_0_1, ap_0_2, ap_1_0, ap_1_1, ap_2_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
-  bp_0_1, bp_0_2, bp_1_0, bp_1_1, bp_2_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
+  a_0_2, a_0_3, a_1_1, a_1_2,a_2_0, a_2_1, a_3_0 : double; {SIP, Simple Imaging Polynomial use by astrometry.net, Spitzer}
+  b_0_2, b_0_3, b_1_1, b_1_2,b_2_0, b_2_1, b_3_0 : double; {SIP, Simple Imaging Polynomial use by astrometry.net, Spitzer}
+  ap_0_1, ap_0_2, ap_0_3, ap_1_0, ap_1_1, ap_1_2, ap_2_0, ap_2_1, ap_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
+  bp_0_1, bp_0_2, bp_0_3, bp_1_0, bp_1_1, bp_1_2, bp_2_0, bp_2_1, bp_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
 
 var
    histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
@@ -919,8 +920,6 @@ begin
     getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
     plot_fits(mainwindow.image1,resized);{restore image1}
 
-   // plot_north; {case image is 90 degrees rotated}
-
     stackmenu1.apply_dpp_button1.Enabled:=true;
     update_equalise_background_step(equalise_background_step-1);{update equalize menu}
 
@@ -972,7 +971,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.269 dated 2019-9-23';
+  #13+#10+'Version ß0.9.270 dated 2019-9-24';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3960,6 +3959,11 @@ begin
     cd2_1:=0;{just for the case it is not available}
     cd2_2:=0;{just for the case it is not available}
     a_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
+    a_0_2:=0; a_0_3:=0; a_1_1:=0; a_1_2:=0;a_2_0:=0; a_2_1:=0; a_3_0:=0;
+    b_0_2:=0; b_0_3:=0; b_1_1:=0; b_1_2:=0;b_2_0:=0; b_2_1:=0; b_3_0:=0;
+    ap_0_1:=0; ap_0_2:=0; ap_0_3:=0; ap_1_0:=0; ap_1_1:=0; ap_1_2:=0; ap_2_0:=0; ap_2_1:=0; ap_3_0:=0;
+    bp_0_1:=0; bp_0_2:=0; bp_0_3:=0; bp_1_0:=0; bp_1_1:=0; bp_1_2:=0; bp_2_0:=0; bp_2_1:=0; bp_3_0:=0;
+
     calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
     centalt:=999;{assume no data available}
     centaz:=999;{assume no data available}
@@ -4233,26 +4237,51 @@ begin
         if (header[i+3]='3') then   ppo_coeff[2]:=validate_double;
         if (header[i+3]='6') then   ppo_coeff[5]:=validate_double;
       end;
-      if ((header[i]='A') and (header[i+1]='_') and (header[i+2]='O') and (header[i+3]='R') and (header[i+4]='D')) then a_order:=round(validate_double);{should be 2 if TAN-SIP convention available}
-      if ((header[i]='A') and (header[i+1]='_') and (header[i+2]='0') and (header[i+3]='_') and (header[i+4]='2')) then a_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-      if ((header[i]='A') and (header[i+1]='_') and (header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then a_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-      if ((header[i]='A') and (header[i+1]='_') and (header[i+2]='2') and (header[i+3]='_') and (header[i+4]='0')) then a_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-      if ((header[i]='B') and (header[i+1]='_') and (header[i+2]='0') and (header[i+3]='_') and (header[i+4]='2')) then b_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-      if ((header[i]='B') and (header[i+1]='_') and (header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then b_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-      if ((header[i]='B') and (header[i+1]='_') and (header[i+2]='2') and (header[i+3]='_') and (header[i+4]='0')) then b_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-
-      if ((header[i]='A') and (header[i+1]='P') and (header[i+2]='_') and (header[i+3]='0') and (header[i+4]='_') and (header[i+5]='1')) then ap_0_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-      if ((header[i]='A') and (header[i+1]='P') and (header[i+2]='_') and (header[i+3]='0') and (header[i+4]='_') and (header[i+5]='2')) then ap_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-      if ((header[i]='A') and (header[i+1]='P') and (header[i+2]='_') and (header[i+3]='1') and (header[i+4]='_') and (header[i+5]='0')) then ap_1_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-      if ((header[i]='A') and (header[i+1]='P') and (header[i+2]='_') and (header[i+3]='1') and (header[i+4]='_') and (header[i+5]='1')) then ap_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-      if ((header[i]='A') and (header[i+1]='P') and (header[i+2]='_') and (header[i+3]='2') and (header[i+4]='_') and (header[i+5]='0')) then ap_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-
-      if ((header[i]='B') and (header[i+1]='P') and (header[i+2]='_') and (header[i+3]='0') and (header[i+4]='_') and (header[i+5]='1')) then bp_0_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-      if ((header[i]='B') and (header[i+1]='P') and (header[i+2]='_') and (header[i+3]='0') and (header[i+4]='_') and (header[i+5]='2')) then bp_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-      if ((header[i]='B') and (header[i+1]='P') and (header[i+2]='_') and (header[i+3]='1') and (header[i+4]='_') and (header[i+5]='0')) then bp_1_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-      if ((header[i]='B') and (header[i+1]='P') and (header[i+2]='_') and (header[i+3]='1') and (header[i+4]='_') and (header[i+5]='1')) then bp_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-      if ((header[i]='B') and (header[i+1]='P') and (header[i+2]='_') and (header[i+3]='2') and (header[i+4]='_') and (header[i+5]='0')) then bp_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-
+      if ((header[i]='A') and (header[i+1]='_')) then
+      begin
+        if ((header[i+2]='O') and (header[i+3]='R') and (header[i+4]='D')) then a_order:=round(validate_double);{should be 2 if TAN-SIP convention available}
+        if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='2')) then a_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='3')) then a_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then a_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then a_1_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='0')) then a_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then a_2_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+2]='3') and (header[i+3]='_') and (header[i+4]='0')) then a_3_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+      end;
+      if ((header[i]='B') and (header[i+1]='_')) then
+      begin
+        if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='2')) then b_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='3')) then b_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then b_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then b_1_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='0')) then b_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then b_2_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+2]='3') and (header[i+3]='_') and (header[i+4]='0')) then b_3_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+      end;
+      if ((header[i]='A') and (header[i+1]='P') and (header[i+2]='_')) then
+      begin
+        if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='1')) then ap_0_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='2')) then ap_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='3')) then ap_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='1') and (header[i+4]='_') and (header[i+5]='0')) then ap_1_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='1') and (header[i+4]='_') and (header[i+5]='1')) then ap_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='1') and (header[i+4]='_') and (header[i+5]='2')) then ap_1_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='2') and (header[i+4]='_') and (header[i+5]='0')) then ap_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='2') and (header[i+4]='_') and (header[i+5]='1')) then ap_2_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='3') and (header[i+4]='_') and (header[i+5]='0')) then ap_3_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+      end;
+      if ((header[i]='B') and (header[i+1]='P') and (header[i+2]='_')) then
+      begin
+        if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='1')) then bp_0_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='2')) then bp_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='3')) then bp_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='1') and (header[i+4]='_') and (header[i+5]='0')) then bp_1_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='1') and (header[i+4]='_') and (header[i+5]='1')) then bp_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='1') and (header[i+4]='_') and (header[i+5]='2')) then bp_1_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='2') and (header[i+4]='_') and (header[i+5]='0')) then bp_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='2') and (header[i+4]='_') and (header[i+5]='1')) then bp_2_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+        if ((header[i+3]='3') and (header[i+4]='_') and (header[i+5]='0')) then bp_3_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+      end;
       if ((header[i]='C') and (header[i+1]='N')  and (header[i+2]='P') and (header[i+3]='I') and (header[i+4]='X') and (header[i+5]='1')) then
               x_pixel_offset:=round(validate_double);{rotation, read double value}
       if ((header[i]='C') and (header[i+1]='N')  and (header[i+2]='P') and (header[i+3]='I') and (header[i+4]='X') and (header[i+5]='2')) then
@@ -8495,7 +8524,7 @@ end;
 procedure calculate_equatorial_mouse_position(fitsx,fitsy : double; var   ram,decm  : double {mouse position});
 var
    fits_unsampledX, fits_unsampledY :double;
-   u,v,u2,v2 : double;
+   u,v,u2,v2             : double;
    dRa,dDec,delta,gamma  : double;
 
 begin
@@ -8514,12 +8543,12 @@ begin
  end
  else
  begin {WCS and SIP solutions}
-   if ((mainwindow.Polynomial1.itemindex=1) and (a_order=2)) then {SIP, Simple Imaging Polynomial use by astrometry.net}
+   if ((mainwindow.Polynomial1.itemindex=1) and (a_order>=2)) then {SIP, Simple Imaging Polynomial use by astrometry.net or spitzer}
    begin
      u:=fitsx-crpix1;
      v:=fitsy-crpix2;
-     u2:=u + a_2_0*u*u + a_0_2*v*v + a_1_1*u*v; {SIP correction}
-     v2:=v + b_2_0*u*u + b_0_2*v*v + b_1_1*u*v; {SIP correction}
+     u2:=u + a_2_0*u*u + a_0_2*v*v + a_1_1*u*v + a_2_1*u*u*v+ a_1_2*u*v*v + a_3_0*u*u*u + a_0_3*v*v*v; {SIP correction for second or third order}
+     v2:=v + b_2_0*u*u + b_0_2*v*v + b_1_1*u*v + b_2_1*u*u*v+ b_1_2*u*v*v + b_3_0*u*u*u + b_0_3*v*v*v; {SIP correction for second or third order}
      dRa :=(cd1_1*(u2)+cd1_2*(v2))*pi/180;
      dDec:=(cd2_1*(u2)+cd2_2*(v2))*pi/180;
      delta:=cos(dec0)-dDec*sin(dec0);

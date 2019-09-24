@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 434
+  Left = 1073
   Height = 541
   Hint = ' '
-  Top = 31
+  Top = 146
   Width = 1088
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -950,6 +950,7 @@ object mainwindow: Tmainwindow
         Caption = 'Inverse image'
         Enabled = False
         Hint = 'Inverse image. Saving will apply the changes the original image.'
+        ShortCut = 16457
         OnClick = inversimage1Click
       end
       object MenuItem10: TMenuItem
