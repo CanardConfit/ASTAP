@@ -99,6 +99,7 @@ type
     enterposition2: TMenuItem;
     flipped1: TMenuItem;
     inversimage1: TMenuItem;
+    Enter_rectangle_with_label1: TMenuItem;
     rotateright1: TMenuItem;
     rotateleft1: TMenuItem;
     MenuItem19: TMenuItem;
@@ -506,6 +507,7 @@ function binx2 : boolean; {converts filename2 to binx2 version}
 procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean); {convert ra in text to double in radians}
 procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
 function image_file_name(inp : string): boolean; {readable image name?}
+procedure plot_annotations; {plot annotations stored in fits header}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -971,7 +973,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.270 dated 2019-9-24';
+  #13+#10+'Version ß0.9.271 dated 2019-9-26';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1290,6 +1292,9 @@ procedure Tmainwindow.Memo1KeyUp(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
    mainwindow.caption:='FITS header position '+ inttostr(Memo1.CaretPos.y)+':'+inttostr(Memo1.CaretPos.x);
+   statusbar1.SimplePanel:=true;
+   statusbar1.Simpletext:=mainwindow.caption;
+
 end;
 
 procedure Tmainwindow.localgaussian1Click(Sender: TObject);
@@ -1627,6 +1632,7 @@ end;
 procedure Tmainwindow.remove_annotations1Click(Sender: TObject);
 begin
   plot_fits(mainwindow.image1,false);
+  plot_annotations;
 end;
 
 procedure Tmainwindow.remove_colour1Click(Sender: TObject);{make local area monochrome}
@@ -1744,8 +1750,8 @@ begin
   moveToex(mainwindow.image2.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
   dRa:= cdelt1_a*leng/3;
   dDec:=0;
-  x := 0 + (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := 0 + (CD1_1*dDEC - CD2_1*dRA) / det;
+  x := (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := (CD1_1*dDEC - CD2_1*dRA) / det;
   lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
 end;
 
@@ -1870,6 +1876,7 @@ end;
 procedure Tmainwindow.remove_markers1Click(Sender: TObject);
 begin
   plot_fits(mainwindow.image1,false);
+  plot_annotations;
 end;
 
 procedure show_shape(good_lock : boolean;fitsX,fitsY: double);{show manual alignment shape}
@@ -3892,30 +3899,30 @@ var
         TheFile3.free;
      end;
 
-     Function validate_double:double;{read values}
+     Function validate_double:double;{read floating point or integer values}
      var t :shortstring;
          r,err : integer;
-         x     :double;
      begin
        t:='';
-       for r:=I+10 to I+29+1 do {read 20 characters max, position 11 to 30 in string, position 10 to 29 in pchar}
-       if header[r] in [' ','/']=false then t:=t+header[r];{'/' is strictly not necessary but safer}
-       val(t,x,err);
-       validate_double:=x;
+       r:=I+10;{position 11 equals 10}
+       while ((header[r]<>'/') and (r<=I+29) {pos 30}) do {'/' check is strictly not necessary but safer}
+       begin  {read 20 characters max, position 11 to 30 in string, position 10 to 29 in pchar}
+         if header[r]<>' ' then t:=t+header[r];
+         inc(r);
+       end;
+       val(t,result,err);
      end;
 
-     Function get_string:string;{read values}
+     Function get_string:string;{read string values}
      var t :shortstring;
          r : integer;
      begin
-       t:='';
-       r:=I+10+1;{single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
-       //while ((header[r-1]<>#39) and (r<I+10+69)) do inc(r);{find first single_quote if not at position 11}
+       result:='';
+       r:=I+11;{pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
        repeat
-         t:=t+header[r];
+         result:=result+header[r];
          inc(r);
-       until ((header[r]=#39) or (r>=I+10+69));
-       get_string:=t;
+       until ((header[r]=#39){last quote} or (r>=I+79));{read string up to position 80 equals 79}
      end;
 
 begin
@@ -3973,7 +3980,7 @@ begin
   end;{reset variables}
 
   filter_name:='';
-  naxis:=1;
+  naxis:=-1;
   naxis3:=1;
   bzero:=0;{just for the case it is not available}
   imagetype:='';
@@ -4360,14 +4367,20 @@ begin
   end;
   unsaved_import:=false;{file is available for astrometry.net}
 
-  if ((load_data=false) or (naxis<2 {wcs file, no data})) then begin close_fits_file; result:=true; exit; end;{only read header for analyse or WCS file}
+  if ((load_data=false) or (naxis<2 {wcs file, no data})) then begin
+     close_fits_file; result:=true; exit;
+  end;{only read header for analyse or WCS file}
 
   fract:=frac(reader_position/2880);
 
   if fract<>0 then
   begin
     i:=round((1-fract)*2880);{left part of next 2880 bytes block}
-    try reader.read(header[0],i);except;close_fits_file; exit;end; {skip empty part and go to image data}
+    try reader.read(header[0],i);
+    except;
+      close_fits_file;
+      exit;
+    end; {skip empty part and go to image data}
     inc(reader_position,i);
   end;
 
@@ -6151,6 +6164,8 @@ begin
       mainwindow.demosaicBayermatrix1.Enabled:=true;
 
       image_move_to_left_top_corner:=re_center;
+
+      plot_annotations;
     end;
     exit;
   end;
@@ -6829,9 +6844,12 @@ procedure Tmainwindow.DisplayHint(Sender: TObject);
 begin
   if ((length(GetlongHint(Application.Hint))>0)) then
   begin
-      mainwindow.Caption:=(GetlongHint(Application.Hint));
-  end;
-
+     //  mainwindow.Caption:=GetlongHint(Application.Hint);
+    statusbar1.SimplePanel:=true;
+    statusbar1.Simpletext:=GetlongHint(Application.Hint);
+  end
+  else
+  statusbar1.SimplePanel:=false;
 end;
 
 procedure Tmainwindow.FormDestroy(Sender: TObject);
@@ -6844,14 +6862,110 @@ begin
   recent_files.free;
 end;
 
+procedure plot_rectangle(x1,y1,x2,y2: integer); {accurate positioned rectangle on screen coordinates}
+begin
+   with mainwindow.image1.Canvas do
+   begin
+     moveto(x1,y1);
+     lineto(x1,y2);
+     lineto(x2,y2);
+     lineto(x2,y1);
+     lineto(x1,y1);
+   end;
+end;
 
+procedure plot_annotations; {plot annotations stored in fits header}
+var
+  count1,x1,y1,x2,y2,text_height,text_width : integer;
+  typ,correction                            : double;
+  line,t  : string;
+  List: TStrings;
+begin
+  List := TStringList.Create;
+  list.StrictDelimiter:=true;
+
+  mainwindow.image1.Canvas.Pen.Color:= clyellow;
+
+  mainwindow.image1.Canvas.brush.Style:=bsClear;
+  mainwindow.image1.Canvas.font.color:=clyellow;
+
+  {$ifdef mswindows}
+  SetTextAlign(mainwindow.image1.canvas.handle, ta_left or ta_top or TA_NOUPDATECP);{always, since Linux is doing this fixed}
+  setbkmode(mainwindow.image1.canvas.handle,TRANSPARENT); {transparent}
+  {$else} {Linux}
+  {$endif}
+
+  count1:=mainwindow.Memo1.Lines.Count-1;
+  try
+    while count1>=0 do {plot annotations}
+    begin
+      if pos('ANNOTATE=',mainwindow.Memo1.Lines[count1])>0 then {found}
+      begin
+        List.Clear;
+        ExtractStrings([';'], [], PChar(copy(mainwindow.Memo1.Lines[count1],12,80-12)),List);
+
+        x1:=list.count;
+        if list.count>=6  then {correct annotation}
+        begin
+          x1:=strtoint(list[0])-1;{subtract 1 for conversion fits coordinates 1... to screen coordinates 0...}
+          y1:=strtoint(list[1])-1;
+          x2:=strtoint(list[2])-1;
+          y2:=strtoint(list[3])-1;
+
+          if mainwindow.Fliphorizontal1.Checked then {restore based on flipped conditions}
+          begin
+            x1:=(width2-1)-x1;
+            x2:=(width2-1)-x2;
+          end;
+          if mainwindow.Flipvertical1.Checked=false then
+          begin
+            y1:=(height2-1)-y1;
+            y2:=(height2-1)-y2;
+          end;
+
+          typ:=strtofloat2(list[4]);
+          mainwindow.image1.Canvas.Pen.width:=max(1,round(1*abs(typ))); ;
+          mainwindow.image1.Canvas.font.size:=max(12,round(12*abs(typ)));
+
+          if typ>0 then
+          begin
+            mainwindow.image1.Canvas.moveto(x1,y1);
+            mainwindow.image1.Canvas.lineto(x2,y2);
+          end
+          else
+             plot_rectangle(x1,y1,x2,y2); {accurate positioned rectangle on screen coordinates}
+
+//           t:=list[5];
+//            delete(t,length(t)-5,1);{remove last char(39)}
+//          correction:=mainwindow.image1.Canvas.font.size/mainwindow.font.size;
+//          text_height:=round(mainwindow.image1.canvas.Textheight(tlist[5])*correction);{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
+//          text_width:=round(mainwindow.image1.canvas.Textwidth(list[5])*correction); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
+
+          text_height:=round(mainwindow.image1.canvas.Textheight(list[5]));{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
+          text_width:=round(mainwindow.image1.canvas.Textwidth(list[5])); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
+
+          if x2>=x1 then text_width:=0;
+          if y2>=y1 then text_height:=text_height div 3;
+
+          mainwindow.image1.Canvas.textout( -text_width+x2, -text_height + y2,list[5]);
+        end;
+
+      end;
+      count1:=count1-1;
+    end;
+
+  finally
+    List.Free;
+  end;
+
+end;
 
 
 procedure Tmainwindow.Enterlabel1Click(Sender: TObject);
 var
   value : string;
-  text_height,text_width,text_x,text_y  : integer;
-  correction: double;
+  text_height,text_width,text_x,text_y   : integer;
+  style                                  : double;
 
 begin
   backup_img;
@@ -6878,22 +6992,47 @@ begin
     text_y:=startY+image1.Canvas.font.size;
   end;
 
-  image1.Canvas.lineto(text_X,text_Y);
+  if sender<>Enter_rectangle_with_label1 then
+     image1.Canvas.lineto(text_X,text_Y)
+  else
+     plot_rectangle(startX,startY,text_X,text_Y);{plot accuratea rectangle. x and y are in range 1..., convert to range 0....}
+
 
   {$ifdef mswindows}
-  SetTextAlign(canvas.handle, ta_left or ta_top or TA_NOUPDATECP);{always, since Linux is doing this fixed}
-  setbkmode(canvas.handle,TRANSPARENT); {transparent}
+  SetTextAlign(image1.canvas.handle, ta_left or ta_top or TA_NOUPDATECP);{always, since Linux is doing this fixed}
+  setbkmode(image1.canvas.handle,TRANSPARENT); {transparent}
   {$else} {Linux}
   {$endif}
 
-  correction:=image1.Canvas.font.size/mainwindow.font.size;
-  text_height:=round(canvas.Textheight(value)*correction);{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
-  text_width:=round(canvas.Textwidth(value)*correction); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
+//  correction:=image1.Canvas.font.size/mainwindow.font.size;
+//  text_height:=round(mainwindow.canvas.Textheight(value)*correction);{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
+//  text_width:=round(mainwindow.canvas.Textwidth(value)*correction); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
+
+  text_height:=round(image1.canvas.Textheight(value));{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
+  text_width:=round(image1.canvas.Textwidth(value)); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
 
   if oldX>=startX then text_width:=0;
   if oldY>=startY then text_height:=text_height div 3;
 
   image1.Canvas.textout( -text_width+text_X, -text_height + text_Y, value);
+
+  {store annotations}
+  if Fliphorizontal1.Checked then {flip to fits style, range 0..}
+  begin
+    startX:=(width2-1)-startX;
+    text_X:=(width2-1)-text_X;
+  end;
+  if Flipvertical1.Checked=false then
+  begin
+    startY:=(height2-1)-startY;
+    text_Y:=(height2-1)-text_Y;
+  end;
+  startX:=startX+1; {convert to fits range 1...}
+  startY:=startY+1; {convert to fits range 1...}
+  text_X:=text_X+1; {convert to fits range 1...}
+  text_Y:=text_Y+1; {convert to fits range 1...}
+  if sender<>Enter_rectangle_with_label1 then style:=width2/image1.width else style:=-width2/image1.width;
+  add_text ('ANNOTATE=',#39+inttostr(startX)+';'+inttostr(startY)+';'+inttostr(text_X)+';'+inttostr(text_Y)+';'+floattostr2(style)+';'+value+';'+#39);
 end;
 
 procedure Tmainwindow.Exit1Click(Sender: TObject);
@@ -7632,7 +7771,7 @@ var
  hfd1,star_fwhm,snr,flux,xc,yc,
  median_top_left, median_top_right,median_bottom_left,median_bottom_right,median_worst,median_best,scale_factor,median_center, median_outer_ring : double;
  hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
- mess1,mess2,hfd_value,mag_str : string;
+ mess1,mess2,hfd_value           : string;
  Save_Cursor:TCursor;
  Fliphorizontal, Flipvertical: boolean;
 
@@ -7649,8 +7788,6 @@ var
   mainwindow.image1.Canvas.Pen.Color := clred;
   image1.Canvas.Pen.width := round(1+height2/image1.height);{thickness lines}
   image1.Canvas.font.size:=round(max(10,8*height2/image1.height));{adapt font to image dimensions}
-
-  mag_str:='';
 
   nhfd:=0;{set counters at zero}
   nhfd_top_left:=0;
@@ -7833,7 +7970,11 @@ end;
 procedure Tmainwindow.star_annotation1Click(Sender: TObject);
 begin
   plot_stars(sender=calibrate_photometry1 {if true photometry only}, false {show Distortion});
-  if flux_magn_offset>0 then mainwindow.caption:='Photometry calibration successfull';
+  if flux_magn_offset>0 then
+  begin
+      mainwindow.caption:='Photometry calibration successfull';
+      application.hint:=mainwindow.caption;
+  end;
 end;
 
 
@@ -8152,6 +8293,7 @@ var
 begin
    value:=inttostr(round(max_range*x/histogram1.Width));
    mainwindow.CAPTION:='Histogram value: ' +value;
+   application.hint:=mainwindow.caption;
    histogram1.hint:=value;
 end;
 
@@ -9008,7 +9150,7 @@ begin
     filename_bak:=changeFileExt(filename2,'.bak');
     if fileexists(filename_bak) then deletefile(filename_bak);
     if renamefile(filename2,filename_bak) then savefits_update_header(filename_bak,filename2);
-    mainwindow.caption:='File saved!';
+    //mainwindow.caption:='File saved!';
   except
   end;
 end;
@@ -9504,7 +9646,8 @@ begin
       update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
       update_integer('CBLACK  =',' / Indicates the black point used when displaying the image.' ,round(cblack) ); {2019-4-9}
       update_integer('CWHITE  =',' / indicates the white point used when displaying the image.' ,round(cwhite) );
-    end;
+    end
+    else
     begin {in most case reducing from 16 or flat to 8 bit}
       update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
       update_integer('DATAMAX =',' / Maximum data value                             ' ,255);

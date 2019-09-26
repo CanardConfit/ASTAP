@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 1073
+  Left = 252
   Height = 541
   Hint = ' '
-  Top = 146
+  Top = 148
   Width = 1088
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -957,7 +957,8 @@ object mainwindow: Tmainwindow
         Caption = '-'
       end
       object remove_annotations1: TMenuItem
-        Caption = 'Remove all annotations'
+        Caption = 'Clean-up'
+        Hint = 'Redraw image. Remove any markers except annotations. For removal annotations reload or remove annotations from FITS header.'
         ImageIndex = 25
         OnClick = remove_annotations1Click
       end
@@ -1093,8 +1094,13 @@ object mainwindow: Tmainwindow
     left = 712
     top = 104
     object Enterlabel1: TMenuItem
-      Caption = 'Add label'
-      Hint = 'Add label to current mouse position'
+      Caption = 'Add annotation'
+      Hint = 'Add label to current mouse position. Hold left mouse button down and pull a rectangle with mouse to extend connecting line.'
+      OnClick = Enterlabel1Click
+    end
+    object Enter_rectangle_with_label1: TMenuItem
+      Caption = 'Add rectangle with annotation'
+      Hint = 'Add rectangle. Hold left mouse button down and pull a rectangle with mouse.'
       OnClick = Enterlabel1Click
     end
     object add_marker1: TMenuItem
@@ -1126,8 +1132,8 @@ object mainwindow: Tmainwindow
       OnClick = measuretotalmagnitude1Click
     end
     object remove_markers1: TMenuItem
-      Caption = 'Remove all markers and labels.'
-      Hint = 'Refresh images. Remove any marker, label and CCD inspection markers'
+      Caption = 'Clean-up '
+      Hint = 'Redraw image. Remove any markers except annotations. For removal annotations reload or remove annotations from FITS header.'
       ImageIndex = 25
       OnClick = remove_markers1Click
     end
