@@ -1010,8 +1010,9 @@ begin
         filename2:=files_to_process[c].name;
 
         Application.ProcessMessages;
+
         {load image}
-        if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then memo2_message('Error');{can't load} begin exit;end;
+        if ((esc_pressed) or  (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then  begin memo2_message('Error');{can't load} exit;end;
 
         if init=false then
         begin

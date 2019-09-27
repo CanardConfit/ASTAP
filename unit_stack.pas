@@ -56,7 +56,6 @@ type
     analyseflatsButton3: TButton;
     analysephotmetrymore1: TButton;
     analysephotometry1: TButton;
-    annotated_jpg1: TCheckBox;
     apply_artificial_flat_correction1: TButton;
     apply_background_noise_filter1: TButton;
     apply_create_gradient1: TButton;
@@ -109,8 +108,6 @@ type
     clear_photometry_list1: TButton;
     clear_selection2: TButton;
     clear_selection3: TButton;
-    commandline_bin1: TComboBox;
-    commandline_saveasfits1: TCheckBox;
     create_test_image_stars1: TButton;
     cygwin1: TComboBox;
     Darks: TTabSheet;
@@ -152,7 +149,6 @@ type
     gridlines1: TCheckBox;
     GroupBox1: TGroupBox;
     GroupBox10: TGroupBox;
-    GroupBox11: TGroupBox;
     GroupBox12: TGroupBox;
     GroupBox14: TGroupBox;
     GroupBox16: TGroupBox;
@@ -196,7 +192,6 @@ type
     Label18: TLabel;
     Label19: TLabel;
     Label2: TLabel;
-    Label20: TLabel;
     Label21: TLabel;
     Label22: TLabel;
     Label23: TLabel;
@@ -1265,7 +1260,7 @@ begin
       if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
 
 
-      load_fits(filename2,false {do not update RA0..},true,true,img); {load in memory}
+      load_fits(filename2,true { update RA0..},true,true,img); {load in memory}
 
       if fits_file=false then {failed to load}
       begin
@@ -5791,13 +5786,19 @@ procedure apply_dark_flat(filter1:string; exposure1,stemperature1,width1:integer
 var  {variables in the procedure are created to protect global variables as filter_name against overwriting by loading other fits files}
   fitsX,fitsY,k,light_naxis3 : integer;
   calstat_local              : string;
-  datamax_light ,light_exposure : double;
+  datamax_light ,light_exposure,light_cd1_1,light_cd1_2,light_cd2_1,light_cd2_2, light_ra0, light_dec0 : double;
 begin
   calstat_local:=calstat;{Note load darks or flats will overwrite calstat}
   datamax_light:=datamax_org;
 
   light_naxis3:=naxis3; {preserve so it is not overriden by apply dark_flat}
   light_exposure:=exposure;{preserve so it is not overriden by apply dark_flat}
+  light_cd1_1:=cd1_1;
+  light_cd1_2:=cd1_2;
+  light_cd2_1:=cd2_1;
+  light_cd2_2:=cd2_2;
+  light_ra0:=ra0;
+  light_dec0:=dec0;
 
 
   if pos('D',calstat_local)<>0 then
@@ -5866,6 +5867,12 @@ begin
 
   naxis3:=light_naxis3;{return old value}
   exposure:=light_exposure;{preserve so it is not overriden by apply dark_flat}
+  cd1_1:=light_cd1_1;
+  cd1_2:=light_cd1_2;
+  cd2_1:=light_cd2_1;
+  cd2_2:=light_cd2_2;
+  ra0:=light_ra0;
+  dec0:=light_dec0;
 
 end;
 

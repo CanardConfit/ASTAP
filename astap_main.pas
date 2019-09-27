@@ -973,7 +973,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.271 dated 2019-9-26';
+  #13+#10+'Version ß0.9.272 dated 2019-9-27';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5438,9 +5438,6 @@ begin
 
 //    stackmenu1.solve_show_log1.Checked:=get_boolean('solve_log',true);{show internal solving}
 
-    stackmenu1.commandline_saveasfits1.Checked:=get_boolean('commandline_saveasfits',true);{save as fits}
-    stackmenu1.annotated_jpg1.Checked:=get_boolean('annotated_jpg',true);{show internal solving}
-
     stackmenu1.write_log1.Checked:=get_boolean('write_log',true);{write to log file}
 
     stackmenu1.align_blink1.Checked:=get_boolean('align_blink',true);{blink}
@@ -5461,10 +5458,6 @@ begin
 
     dum:=initstring.Values['downsample']; if dum<>'' then stackmenu1.downsample_for_solving1.text:=dum;
     dum:=initstring.Values['max_fov']; if ((dum<>'') and (dum<>'3')) then stackmenu1.max_fov1.text:=dum;{remove 2020-6  dum<>3}
-
-
-    dum:=initstring.Values['commandline_bin']; if dum<>'' then stackmenu1.commandline_bin1.text:=dum;
-
 
     dum:=initstring.Values['oversize'];if dum<>'' then stackmenu1.oversize1.text:=dum;
     dum:=initstring.Values['sd_factor']; if dum<>'' then stackmenu1.sd_factor1.text:=dum;
@@ -5695,9 +5688,6 @@ begin
   initstring.Values['grid_lines']:=BoolStr[stackmenu1.gridlines1.Checked];
   initstring.Values['uncheck_outliers']:=BoolStr[stackmenu1.uncheck_outliers1.Checked];
 
-  initstring.Values['commandline_saveasfits']:=BoolStr[stackmenu1.commandline_saveasfits1.checked];{platesolve2 command, save jpg's as fits}
-  initstring.Values['annotated_jpg']:=BoolStr[stackmenu1.annotated_jpg1.checked];{platesolve2 command, save as annotated jpg}
-
   initstring.Values['write_log']:=BoolStr[stackmenu1.write_log1.checked];{write log to file}
 
   initstring.Values['align_blink']:=BoolStr[stackmenu1.align_blink1.checked];{blink}
@@ -5727,10 +5717,6 @@ begin
   initstring.Values['maximum_stars']:=stackmenu1.max_stars1.text;
   initstring.Values['downsample']:=stackmenu1.downsample_for_solving1.text;
   initstring.Values['max_fov']:=stackmenu1.max_fov1.text;
-
-
-
-  initstring.Values['commandline_bin']:=stackmenu1.commandline_bin1.text;{binning for jpg, png in commandline}
 
   initstring.Values['pixel_size']:=stackmenu1.pixelsize1.text;
   initstring.Values['focal_length']:=stackmenu1.focallength1.text;
@@ -7276,7 +7262,7 @@ var
   f        : textfile;
   resultstr,rastr,decstr,cdelt,crota,flipped,confidence,resultV,line1,line2 : string;
   dummy,binning,field_size,search_field : double;
-  source_fits,solved,apt_request,histogram_done:boolean;
+  source_fits,solved,apt_request,histogram_done,file_loaded:boolean;
 begin
 
 //  logging:=true;
@@ -7312,6 +7298,10 @@ begin
         result:=true;
         stackmenu1.use_astrometry_internal1.checked:=true; {use internal solver}
 
+        filename2:=list[5];
+        source_fits:=fits_file_name(filename2);{fits file extension?}
+        file_loaded:=load_image(false,false {plot});{load file first to give commandline parameters later priority}
+
         ra1.Text:=floattostr2(strtofloat2(list[0])*12/pi);
         dec1.Text:=floattostr2(strtofloat2(list[1])*180/pi);
         {$IfDef Darwin}// for OS X,
@@ -7319,11 +7309,9 @@ begin
           mainwindow.dec1change(nil);
         {$ENDIF}
 
-        filename2:=list[5];
-        source_fits:=fits_file_name(filename2);{fits file extension?}
-
         field_size:=strtofloat2(list[3])*180/pi;{field height in degrees}
         stackmenu1.search_fov1.text:=floattostr2(field_size);{field width in degrees}
+        fov_specified:=true; {always for platesolve2 command}
         regions:=strtoint(list[4]);{use the number of regions in the platesolve2 command}
         if regions=3000{maximum for SGP, force a field of 90 degrees} then   search_field:=90
         else
@@ -7337,7 +7325,7 @@ begin
           trayicon1.visible:=true;{show progress in hint of trayicon}
         {$endif}
 
-        if load_and_solve then {find solution, will  change filename2 extension to .fit }
+        if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
         begin
           resultstr:='Valid plate solution';
           confidence:='999';
@@ -7397,29 +7385,6 @@ begin
 
         {note SGP uses PlateSolve2 v2.29. This version writes APM always with dot as decimal seperator}
 
-        if solved then
-        begin
-          histogram_done:=false;
-          if  stackmenu1.annotated_jpg1.checked then {save view as annotated jpg}
-          begin
-            getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-            histogram_done:=true;
-            plot_fits(mainwindow.image1,true {center_image});{center and stretch with current settings}
-            save_annotated_jpg(filename2);
-          end;
-
-          if ((source_fits=false {no fits file?}) and (stackmenu1.commandline_saveasfits1.checked)) then
-          begin
-            binning:=strtofloat2(stackmenu1.commandline_bin1.text);
-            resize_img_loaded(1/binning); {resize img_loaded in free ratio}
-            if histogram_done=false then getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-            save_fits(ChangeFileExt(filename2,'.fit'),8,true {overwrite});
-          end;
-          //log_to_file('Solved,'+filename2+','+solved_in+','+offset_found);
-
-        end; {solved}
-        //else
-        //log_to_file('Fail,'+filename2);
         {extra log}
         log_to_file2(ChangeFileExt(filename2,'.txt'),'Command: '+command1+#10+
                                                      'RA : '+mainwindow.ra1.text+#10+
@@ -7445,7 +7410,7 @@ end;
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
    // f: text;
-    source_fits,histogram_done: boolean;
+    source_fits,histogram_done,file_loaded: boolean;
     binning    : double;
     s,old      : string;
 begin
@@ -7516,6 +7481,8 @@ begin
       begin
         filename2:=GetOptionValue('f');
         source_fits:=fits_file_name(filename2);{fits file extension?}
+        file_loaded:=load_image(false,false {plot});{load file first to give commandline parameters later priority}
+
         if hasoption('fov') then
         begin
           fov_specified:=true; {do not calculate it from header};
@@ -7559,7 +7526,8 @@ begin
 
         stackmenu1.use_astrometry_internal1.checked:=true; {use internal solver}
 
-        if load_and_solve then {filename2 extension will change to .fit}
+
+        if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
         begin
           if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
           write_ini(true);{write solution to ini file}
