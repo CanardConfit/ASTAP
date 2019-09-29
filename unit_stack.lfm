@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 240
+  Left = 362
   Height = 644
-  Top = 134
+  Top = 177
   Width = 1272
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1271
-    ActivePage = alignment1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 6
+    TabIndex = 0
     TabOrder = 5
     Options = [nboMultiLine]
     object Images: TTabSheet
@@ -1601,12 +1601,12 @@ object stackmenu1: Tstackmenu1
       end
       object mosaic_box1: TGroupBox
         Left = 936
-        Height = 96
+        Height = 128
         Hint = 'Tools for equalizing the tiles of the mosaic.'
         Top = 48
         Width = 301
         Caption = 'Image stitching (mosaic) settings'
-        ClientHeight = 76
+        ClientHeight = 108
         ClientWidth = 297
         Enabled = False
         TabOrder = 7
@@ -1648,6 +1648,35 @@ object stackmenu1: Tstackmenu1
           Checked = True
           State = cbChecked
           TabOrder = 2
+        end
+        object Label65: TLabel
+          Left = 8
+          Height = 15
+          Top = 72
+          Width = 114
+          Caption = 'Crop each image [%] '
+          ParentColor = False
+        end
+        object mosaic_crop2: TEdit
+          Left = 208
+          Height = 23
+          Hint = 'Use to remove poor areas near borders'
+          Top = 64
+          Width = 40
+          TabOrder = 3
+          Text = '0'
+        end
+        object mosaic_crop1: TUpDown
+          Left = 248
+          Height = 23
+          Top = 64
+          Width = 17
+          Associate = mosaic_crop2
+          Max = 90
+          Min = 0
+          MinRepeatInterval = 25
+          Position = 0
+          TabOrder = 4
         end
       end
       object Label60: TLabel
@@ -4248,13 +4277,13 @@ object stackmenu1: Tstackmenu1
         ClientHeight = 84
         ClientWidth = 196
         TabOrder = 8
-        object Button3: TButton
+        object colournebula1: TButton
           Left = 8
           Height = 30
           Top = 48
           Width = 118
           Caption = 'Colour nebula'
-          OnClick = Button3Click
+          OnClick = colournebula1Click
           TabOrder = 0
         end
         object star_level_colouring1: TComboBox

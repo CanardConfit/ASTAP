@@ -25,10 +25,13 @@ procedure stack_average(oversize:integer; var files_to_process : array of TfileT
 procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack mosaic/tile mode}
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 
+
 {$inline on}  {!!! Set this off for debugging}
 procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
 procedure astrometric_to_vector; {convert astrometric solution to vector solution}
 procedure initialise1;{set variables correct}
+
+
 var
   pedestal : double;{target background value}
 
@@ -212,101 +215,6 @@ begin
  until y_drop>=y1+dropsize;
 end;
 
-procedure smear_filter(img :image_array);
-var
-   fitsX,fitsY,col,w,h                                          :integer;
-   sum,value,factor1,factor2,delta, hotpixel1,hotpixel2         :double;
-begin
-  factor1:=200;{reduce factor}
-  factor2:=30;{rise  factor}
-  hotpixel1:=0.1;
-  hotpixel2:=200;
-
-  w:=Length(img[0]); {width}
-  h:=Length(img[0][0]); {height}
-
-  for fitsY:=0 to h-1  do
-  begin
-    sum:=0;
-    for fitsX:=0 to w-1 do  {left}
-      for col:=0 to naxis3-1 do
-      begin
-//        if ((fitsx=6085) and (fitsy=3302)) then
-//        beep;
-        value:=img[col,fitsx,fitsy];
-        delta:=value-sum;
-        if abs(delta)<abs(sum*hotpixel1)+hotpixel2 then {hot pixel filter}
-        begin
-          if ((delta>0) and (sum>=0)) then {rise fast positive} sum:=sum+delta/factor2
-          else
-          if ((delta<0) and (sum<=0)) then {rise fast negative}  sum:=sum+delta/factor2
-          else
-          if ((delta<0) and (sum>=0)) then {reduce slowly to zero} sum:=sum+delta/factor1
-          else
-          if ((delta>0) and (sum<=0)) then {reduce slowly to zero} sum:=sum+delta/factor1;
-        end;
-        img[col,fitsx,fitsy]:=sum;
-      end;
-    sum:=0;
-    for fitsX:=w-1 downto 0 do  {right}
-      for col:=0 to naxis3-1 do
-      begin
-        value:=img[col,fitsx,fitsy];
-        delta:=value-sum;
-        if abs(delta)<abs(sum*hotpixel1)+hotpixel2 then {hot pixel filter}
-        begin
-          if ((delta>0) and (sum>=0)) then {rise fast positive} sum:=sum+delta/factor2
-          else
-          if ((delta<0) and (sum<=0)) then {rise fast negative}  sum:=sum+delta/factor2
-          else
-          if ((delta<0) and (sum>=0)) then {reduce slowly to zero} sum:=sum+delta/factor1
-          else
-          if ((delta>0) and (sum<=0)) then {reduce slowly to zero} sum:=sum+delta/factor1;
-        end;
-        img[col,fitsx,fitsy]:=sum;
-      end;
-  end;
-  sum:=0;
-  for fitsX:=1 to w-1 do
-  begin
-    sum:=0;
-    for fitsY:=0 to h-1 do  {up}
-     for col:=0 to naxis3-1 do
-      begin
-        value:=img[col,fitsx,fitsy];
-        delta:=value-sum;
-        if abs(delta)<abs(sum*hotpixel1)+hotpixel2 then {hot pixel filter}
-        begin
-          if ((delta>0) and (sum>=0)) then {rise fast positive} sum:=sum+delta/factor2
-          else
-          if ((delta<0) and (sum<=0)) then {rise fast negative}  sum:=sum+delta/factor2
-          else
-          if ((delta<0) and (sum>=0)) then {reduce slowly to zero} sum:=sum+delta/factor1
-          else
-          if ((delta>0) and (sum<=0)) then {reduce slowly to zero} sum:=sum+delta/factor1;
-        end;
-        img[col,fitsx,fitsy]:=sum;
-      end;
-    sum:=0;
-    for fitsY:=h-1 downto 0 do  {down}
-     for col:=0 to naxis3-1 do
-     begin
-       value:=img[col,fitsx,fitsy];
-       delta:=value-sum;
-       if abs(delta)<abs(sum*hotpixel1)+hotpixel2 then {hot pixel filter}
-       begin
-         if ((delta>0) and (sum>=0)) then {rise fast positive} sum:=sum+delta/factor2
-         else
-         if ((delta<0) and (sum<=0)) then {rise fast negative}  sum:=sum+delta/factor2
-         else
-         if ((delta<0) and (sum>=0)) then {reduce slowly to zero} sum:=sum+delta/factor1
-         else
-         if ((delta>0) and (sum<=0)) then {reduce slowly to zero} sum:=sum+delta/factor1;
-       end;
-       img[col,fitsx,fitsy]:=sum;
-     end;
-  end;
-end;
 
 procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
 var
@@ -971,14 +879,20 @@ begin
     end;{simple average}
   end;{with stackmenu1}
 end;
+function minimum_distance_borders(fitsX,fitsY,w,h: integer): single;
+begin
+  result:=min(fitsX,w-fitsX);
+  result:=min(fitsY,result);
+  result:=min(h-fitsY,result);
+end;
 
 procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{mosaic/tile mode}
 var
     fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,
-    diameter,y,x2,y2 : integer;
+    diameter,y,x2,y2,cropW,cropH : integer;
 
     flat_factor, h,dRA, dDec,det,delta,gamma,ra_new, dec_new,   sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v,  value,
-    background_correction                                                                            : double;
+    background_correction,dummy,median                                                                           : double;
     init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
 
 begin
@@ -995,6 +909,8 @@ begin
     jd_sum:=0;{sum of Julian midpoints}
     jd_start:=9999999999;{start observations in Julian day}
     init:=false;
+
+    dummy:=0;
 
     {mosaic mode}
     begin
@@ -1055,7 +971,7 @@ begin
           setlength(img_average,naxis3,width_max,height_max);
           setlength(img_temp,1,width_max,height_max);{mono}
 
-          setlength(img_variance,naxis3,width_max,height_max);{used for difference}
+      //    setlength(img_variance,naxis3,width_max,height_max);{used for difference}
 
           for fitsY:=0 to height_max-1 do
             for fitsX:=0 to width_max-1 do
@@ -1063,7 +979,7 @@ begin
               for col:=0 to naxis3-1 do
               begin
                 img_average[col,fitsX,fitsY]:=0; {clear img_average}
-                img_variance[col,fitsX,fitsY]:=0; {clear }
+               // img_variance[col,fitsX,fitsY]:=10000;
               end;
               img_temp[0,fitsX,fitsY]:=0; {clear img_temp}
             end;
@@ -1100,50 +1016,55 @@ begin
             vector_based:=true;
           end;
 
-          for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
-          for fitsX:=1 to width2  do
+          cropW:=trunc(stackmenu1.mosaic_crop1.Position*width2/100);
+          cropH:=trunc(stackmenu1.mosaic_crop1.Position*height2/100);
+
+          for fitsY:=1+1+cropH to height2-1-cropH do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
+          for fitsX:=1+1+cropW to width2-1-cropW  do
           begin
             calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
             x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
-              value:=img_average[0,x_new,y_new];
-              if value<0.0001 then {empthy pixel}
+              if img_loaded[0,fitsX-1,fitsY-1]>0.0001 then {not a black area around image}
               begin
-                if img_loaded[0,fitsX-1,fitsY-1]>0.0001 then {not a black area around image}
+                dummy:=1+minimum_distance_borders(fitsX,fitsY,width2,height2);{minimum distance borders}
+                if img_temp[0,x_new,y_new]=0 then {blank pixel}
                 begin
-                  for col:=0 to naxis3-1 do {all colors} img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1]+background_correction;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
-                  img_temp[0,x_new,y_new]:=counter;{keep record of the pixel written for the image with number counter}
+                  for col:=0 to naxis3-1 do {all colors}
+                  img_average[col,x_new,y_new]:=img_loaded[col,fitsX-1,fitsY-1]+background_correction;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                  img_temp[0,x_new,y_new]:=dummy;
+                end
+                else
+                begin {already pixel filled, try to make an average}
+                  for col:=0 to naxis3-1 do {all colors}
+                  begin
+                    median:=median_background(img_loaded,col,15,fitsX-1,fitsY-1);{find median value in sizeXsize matrix of img}
+                    value:=img_loaded[col,fitsX-1,fitsY-1];
+
+                    if ((value<median+100) and
+                        (img_loaded[col,fitsX-1-1,fitsY-1]<median+100) and (img_loaded[col,fitsX-1+1,fitsY-1]<median+100) and (img_loaded[col,fitsX-1,fitsY-1-1]<median+100) and (img_loaded[col,fitsX-1,fitsY-1+1]<median+100) {check nearest pixels}
+                       ) then {not a star, prevent double stars at overlap area}
+                    img_average[col,x_new,y_new]:=+img_average[col,x_new,y_new]*img_temp[0,x_new,y_new]{distance border}/(dummy+img_temp[0,x_new,y_new])
+                                                  +(value+background_correction)*dummy/(dummy+img_temp[0,x_new,y_new]);{calculate value between the existing and new value depending on BORDER DISTANCE}
+                  end;
+                  img_temp[0,x_new,y_new]:=dummy;
                 end;
-              end
-              else
-              begin {overlapping area, find mean difference in values}
-                for col:=0 to naxis3-1 do {all colors}
-                    img_variance[col,x_new,y_new]:=value-(img_loaded[col,fitsX-1,fitsY-1]+background_correction);{record difference}
               end;
             end;
           end;
-
-          if counter>1 then {second, third image}
-          begin
-            memo2_message('Stitching '+filename2+' to current result.') ;
-            smear_filter(img_variance);{smear the difference and use it to compensate at the boundary.}
-            For fitsY:=0 to height_max-1 do
-            for fitsX:=0 to width_max-1 do
-            begin
-              if img_temp[0,fitsX, fitsY]=counter then {pixel found to correct}
-                for col:=0 to naxis3-1 do {all colors}
-                   img_average[col,fitsX, fitsY]:=img_average[col,fitsX, fitsY]+img_variance[col,fitsX, fitsY];{add smeared difference}
-
-              img_variance[col,fitsX, fitsY]:=0; {clear img_variance for next image}
-            end;
-          end;
-
         end;
         progress_indicator(10+89*counter/length(files_to_process){(ListView1.items.count)},' Stacking');{show progress}
       finally
       end;
     end;
+
+ //  width2:=width_max;
+ //   height2:=height_max;
+ //  img_loaded:=img_average;
+ //   exit;
+
+
 
     if counter<>0 then
     begin
@@ -1155,9 +1076,11 @@ begin
          if img_temp[0,fitsX,fitsY]<>0 then  {something data written}
           begin
             for col:=0 to naxis3-1 do  img_loaded[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY];
+
           end
           else
           begin { black spot filter}
+
             if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
             begin
               if ((img_temp[0,fitsX-1,fitsY]<>0) and (img_temp[0,fitsX,fitsY-1]<>0){keep borders nice for last pixel right}) then  begin for col:=0 to naxis3-1 do img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY];{take nearest pixel x-1 as replacement}end

@@ -63,7 +63,7 @@ uses
  {$endif}
    {Messages,} SysUtils, Graphics, Forms, strutils, math, clipbrd, {for copy to clipboard}
    Buttons, PopupNotifier, simpleipc,
-   CustApp, Types;
+   CustApp, Types, LCLType;
 
 
 type
@@ -100,6 +100,9 @@ type
     flipped1: TMenuItem;
     inversimage1: TMenuItem;
     Enter_rectangle_with_label1: TMenuItem;
+    submenurotate1: TMenuItem;
+    imageflipv1: TMenuItem;
+    imagefliph1: TMenuItem;
     rotateright1: TMenuItem;
     rotateleft1: TMenuItem;
     MenuItem19: TMenuItem;
@@ -240,6 +243,7 @@ type
     procedure ccd_inspector_plot1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
+    procedure imageflipv1Click(Sender: TObject);
     procedure measuretotalmagnitude1Click(Sender: TObject);
     procedure loadsettings1Click(Sender: TObject);
     procedure MenuItem15Click(Sender: TObject);
@@ -973,7 +977,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.272 dated 2019-9-27';
+  #13+#10+'Version ß0.9.273 dated 2019-9-29';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2127,6 +2131,9 @@ begin
   mainwindow.rotateleft1.enabled:=fits;
   mainwindow.rotateright1.enabled:=fits;
   mainwindow.inversimage1.enabled:=fits;
+  mainwindow.imageflipH1.enabled:=fits;
+  mainwindow.imageflipV1.enabled:=fits;
+
 
   mainwindow.minimum1.enabled:=fits;
   mainwindow.maximum1.enabled:=fits;
@@ -5368,6 +5375,7 @@ begin
     i:=stackmenu1.width;get_int(i,'stackmenu_width'); stackmenu1.width:=i;
 
     i:=stackmenu1.mosaic_width1.position;get_int(i,'mosaic_width'); stackmenu1.mosaic_width1.position:=i;
+    i:=stackmenu1.mosaic_crop1.position;get_int(i,'mosaic_crop'); stackmenu1.mosaic_crop1.position:=i;
 
     i:=minimum1.position;  get_int(i,'minimum_position');MINIMUM1.position:=i;
     i:=maximum1.position;  get_int(i,'maximum_position');maximum1.position:=i;
@@ -5645,6 +5653,7 @@ begin
   initstring.Values['stack_method']:=inttostr(stackmenu1.stack_method1.itemindex);
 
   initstring.Values['mosaic_width']:=inttostr(stackmenu1.mosaic_width1.position);
+  initstring.Values['mosaic_crop']:=inttostr(stackmenu1.mosaic_crop1.position);
 
   initstring.Values['flat_combine_method']:=inttostr(stackmenu1.flat_combine_method1.itemindex);
   initstring.Values['stack_tab']:=inttostr(stackmenu1.pagecontrol1.tabindex);
@@ -6408,6 +6417,69 @@ begin
   filename2:=FileNames[0];
    if load_image(true,true {plot}){load and center}=false then beep;{image not found}
 end;
+
+procedure Tmainwindow.imageflipv1Click(Sender: TObject);
+var
+  dum, col,fitsX,fitsY : integer;
+  dummy                : double;
+  vertical             :boolean;
+  Save_Cursor:TCursor;
+begin
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  backup_img;
+
+  vertical:= (sender=imageflipv1);
+
+  setlength(img_temp,naxis3, width2,height2);
+
+  for col:=0 to naxis3-1 do {do all colours}
+  begin
+    For fitsY:=0 to (height2-1) do
+      for fitsX:=0 to (width2-1) do
+      begin
+        if vertical then img_temp[col, fitsX,(height2-1)-fitsY]:=img_loaded[col,fitsX,fitsY]
+        else
+        img_temp[col,(width2-1)-fitsX,fitsY]:=img_loaded[col,fitsX,fitsY];
+      end;
+  end;
+
+  img_loaded:=img_temp;
+  img_temp:=nil;
+  plot_fits(mainwindow.image1,false);
+
+  if cd1_1<>0 then {update solution for rotation}
+  begin
+    if vertical then {rotate right}
+    begin
+      cd1_2:=-cd1_2;
+      cd2_2:=-cd2_2;
+    end
+    else
+    begin {rotate horizontal}
+      cd1_1:=-cd1_1;
+      cd2_1:=-cd2_1;
+    end;
+    new_to_old_WCS;{convert new style FITS to old style, calculate crota1,crota2,cdelt1,cdelt2}
+
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+
+    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);
+    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);
+
+    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
+    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
+
+    plot_north;
+  end;
+  Screen.Cursor := Save_Cursor;  { Always restore to normal }
+end;
+
+
 
 procedure Tmainwindow.measuretotalmagnitude1Click(Sender: TObject);
 var

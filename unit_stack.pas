@@ -95,7 +95,7 @@ type
     browse_darks1: TButton;
     browse_flats1: TButton;
     browse_photometry1: TButton;
-    Button3: TButton;
+    colournebula1: TButton;
     Button_free_resize_fits1: TButton;
     calculated_scale1: TLabel;
     calibrate_prior_solving1: TCheckBox;
@@ -239,6 +239,7 @@ type
     Label62: TLabel;
     Label63: TLabel;
     Label64: TLabel;
+    Label65: TLabel;
     Label7: TLabel;
     Label8: TLabel;
     Label9: TLabel;
@@ -271,6 +272,8 @@ type
     mosaic_box1: TGroupBox;
     mosaic_width1: TUpDown;
     mosaic_width2: TEdit;
+    mosaic_crop2: TEdit;
+    mosaic_crop1: TUpDown;
     most_common_filter_radius1: TEdit;
     most_common_filter_tool1: TButton;
     multiply_blue1: TEdit;
@@ -466,7 +469,7 @@ type
     procedure blink_stop1Click(Sender: TObject);
     procedure blink_unaligned_multi_step1Click(Sender: TObject);
     procedure browse_dark1Click(Sender: TObject);
-    procedure Button3Click(Sender: TObject);
+    procedure colournebula1Click(Sender: TObject);
     procedure clear_photometric_solutions1Click(Sender: TObject);
     procedure clear_photometry_list1Click(Sender: TObject);
     procedure cygwin1DropDown(Sender: TObject);
@@ -671,6 +674,7 @@ procedure smart_colour_smooth( var img: image_array; wide : integer; measurehist
 procedure date_obs_to_jd;{get julian day for date_obs, so the start of the observation}
 function JdToDate(jd:double):string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
+function median_background(var img :image_array;color,size,x,y:integer): double;{find median value in sizeXsize matrix of img}
 
 
 implementation
@@ -1783,22 +1787,26 @@ end;
  end;
 
 
-function median_background(color,size,x,y:integer): double;{find median in 3x3 matrix of img_loaded}
+function median_background(var img :image_array;color,size,x,y:integer): double;{find median value in sizeXsize matrix of img}
 var i,j,count,size2,step  : integer;
     intArray : array of integer;
+    w,h,colors  :integer;
 begin
   if (size div 2)*2=size then size:=size+1;{requires odd 3,5,7....}
   size2:=size*size;
   SetLength(intArray,size2) ;
   step:=size div 2;
   count:=0;
+  w:=Length(img[0]); {width}
+  h:=Length(img[0][0]); {height}
+
   begin
     for j:=y-step to  y+step do
       for i:=x-step to x+step do
       begin
-        if ((i>=0) and (i<width2) and (j>=0) and (j<height2) ) then {within the boundaries of the image array}
+        if ((i>=0) and (i<w) and (j>=0) and (j<h) ) then {within the boundaries of the image array}
         begin
-          intArray[count]:=round(img_loaded[color,i ,j]);
+          intArray[count]:=round(img[color,i ,j]);
           inc(count);
         end;
       end;
@@ -1809,34 +1817,66 @@ begin
   result:=intArray[count div 2];  {for 3x3 matrix the median is 5th element equals in range 0..8 equals intArray[4]}
 end;
 
+//procedure median_smooth(var img :image_array; box_size  :integer); {replace array values with median value}
+//  var
+//     fitsx,fitsy,i,j,col,step,
+//     colors,w,h                   :integer;
+//     offset                   : single;
 
-procedure median_equalise(box_size  :integer);
+// begin
+//   colors:=Length(img); {colors}
+//   w:=Length(img[0]); {width}
+//   h:=Length(img[0][0]); {height}
+
+//   if (box_size div 2)*2=box_size then box_size:=box_size+1;{requires odd 3,5,7....}
+//   step:=box_size div 2; {for 3*3 it is 1, for 5*5 it is 2...}
+
+//    for col:=0 to colors-1 do {do all colours}
+//    begin
+//      for fitsY:=0 to h-1 do
+//        for fitsX:=0 to w-1 do
+//          if ((frac(fitsX/box_size)=0) and (frac(fitsy/box_size)=0)) then
+//          begin
+//            offset:=median_background(img,col,box_size {3x3},fitsX,fitsY);
+//            begin
+//              for j:=fitsy-step to  fitsy+step do
+//                for i:=fitsx-step to fitsx+step do
+//                  if ((i>=0) and (i<w) and (j>=0) and (j<h) ) then {within the boundaries of the image array}
+//                    img[col,i,j]:=offset;
+//            end;
+//          end;
+//    end;{all colors}
+//  end;
+
+
+procedure median_equalise(var img :image_array; box_size  :integer);
  var
-    fitsx,fitsy,i,j,col,step : integer;
+    fitsx,fitsy,i,j,col,step,
+    colors,w,h                :integer;
     offset                   : single;
     bg                       : double;
-
- begin
-   memo2_message('Equalising background of '+filename2);
-  {equalize background}
+begin
+  colors:=Length(img); {colors}
+  w:=Length(img[0]); {width}
+  h:=Length(img[0][0]); {height}
 
   if (box_size div 2)*2=box_size then box_size:=box_size+1;{requires odd 3,5,7....}
   step:=box_size div 2; {for 3*3 it is 1, for 5*5 it is 2...}
 
-   for col:=0 to naxis3-1 do {do all colours}
+   for col:=0 to colors-1 do {do all colours}
    begin
-     get_background(col,img_loaded,true,false{do not calculate noise_level},bg,star_level); {should be about 500 for mosaic since that is the target value}
-     for fitsY:=0 to height2-1 do
-       for fitsX:=0 to width2-1 do
+     get_background(col,img,true,false{do not calculate noise_level},bg,star_level); {should be about 500 for mosaic since that is the target value}
+     for fitsY:=0 to h-1 do
+       for fitsX:=0 to w-1 do
          if ((frac(fitsX/box_size)=0) and (frac(fitsy/box_size)=0)) then
          begin
-           offset:=median_background(col,box_size {3x3},fitsX,fitsY)-bg;
+           offset:=median_background(img,col,box_size {3x3},fitsX,fitsY)-bg;
            if ((offset<0) {and (offset>-200)}) then
            begin
              for j:=fitsy-step to  fitsy+step do
                for i:=fitsx-step to fitsx+step do
-                 if ((i>=0) and (i<width2) and (j>=0) and (j<height2) ) then {within the boundaries of the image array}
-                   img_loaded[col,i,j]:=img_loaded[col,i,j]-offset;
+                 if ((i>=0) and (i<w) and (j>=0) and (j<h) ) then {within the boundaries of the image array}
+                   img[col,i,j]:=img[col,i,j]-offset;
            end;
          end;
    end;{all colors}
@@ -1856,7 +1896,10 @@ begin
 
      try box_size:=strtoint(equalise_box_size1.text);except end;
 
-     median_equalise(box_size);
+     memo2_message('Equalising background of '+filename2);
+    {equalize background}
+
+     median_equalise(img_loaded, box_size);
 
   //   getfits_histogram(true);{get histogram}
      plot_fits(mainwindow.image1,true);{plot real}
@@ -3516,7 +3559,9 @@ begin
   end;
 end;
 
-procedure Tstackmenu1.Button3Click(Sender: TObject);
+
+
+procedure Tstackmenu1.colournebula1Click(Sender: TObject);
 var
    radius, fitsX,fitsY      : integer;
    value,org_value  : single;
