@@ -63,7 +63,7 @@ uses
  {$endif}
    {Messages,} SysUtils, Graphics, Forms, strutils, math, clipbrd, {for copy to clipboard}
    Buttons, PopupNotifier, simpleipc,
-   CustApp, Types, LCLType;
+   CustApp, Types;
 
 
 type
@@ -977,7 +977,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.273 dated 2019-9-29';
+  #13+#10+'Version ß0.9.273a dated 2019-9-30';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3095,7 +3095,7 @@ begin
   setlength(img_temp2,3,width2,height2);{set length of image array color}
 
   bg:=0;
-  counter:=0;
+  counter:=0;{prevent divide by zero for fully saturated images}
 
   for y := 1 to height2-2 do   {-2 = -1 -1}
   begin
@@ -3235,20 +3235,24 @@ begin
   end;{y loop}
 
   img_loaded:=img_temp2;
-  {correct colour satuated pixels }
-  bg:=bg/counter; {background}
-  for fitsY:=0 to height2-1 do
-  for fitsX:=0 to width2-1 do
-  if img_temp2[1,fitsX,fitsY]=$FFFFFF {marker saturated} then
+
+  if counter>0 then {not fully saturated image}
   begin
-    colred:=0;
-    colgreen:=0;
-    colblue:=0;
-    counter:=0;
-    luminance:=img_temp2[0,fitsX,fitsY];
-    luminance:=luminance-bg;{luminance above background}
+  {correct colour satuated pixels }
+
+    bg:=bg/counter; {background}
+    for fitsY:=0 to height2-1 do
+    for fitsX:=0 to width2-1 do
+    if img_temp2[1,fitsX,fitsY]=$FFFFFF {marker saturated} then
     begin
-      for y:=-step to step do
+      colred:=0;
+      colgreen:=0;
+      colblue:=0;
+      counter:=0;
+      luminance:=img_temp2[0,fitsX,fitsY];
+      luminance:=luminance-bg;{luminance above background}
+      begin
+        for y:=-step to step do
         for x:=-step to step do
         begin
            x2:=fitsX+x;
@@ -3295,6 +3299,18 @@ begin
 
       end;
     end;
+  end{not full saturated}
+  else
+  begin {fully saturated image}
+    for fitsY:=0 to height2-1 do
+    for fitsX:=0 to width2-1 do
+    begin
+      img_loaded[0,fitsX  ,  fitsY  ]:=saturation;
+      img_loaded[1,fitsX  ,  fitsY  ]:=saturation;
+      img_loaded[2,fitsX  ,  fitsY  ]:=saturation;
+    end;
+  end;
+
 
   img_temp2:=nil;{free temp memory}
   naxis3:=3;{now three colors}

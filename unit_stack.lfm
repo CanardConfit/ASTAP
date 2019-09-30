@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1271
-    ActivePage = Images
+    ActivePage = tab_stackmethod1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 5
     TabOrder = 5
     Options = [nboMultiLine]
     object Images: TTabSheet
@@ -1672,7 +1672,7 @@ object stackmenu1: Tstackmenu1
           Top = 64
           Width = 17
           Associate = mosaic_crop2
-          Max = 90
+          Max = 49
           Min = 0
           MinRepeatInterval = 25
           Position = 0
