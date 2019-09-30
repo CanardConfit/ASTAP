@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1271
-    ActivePage = tab_stackmethod1
+    ActivePage = alignment1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 5
+    TabIndex = 6
     TabOrder = 5
     Options = [nboMultiLine]
     object Images: TTabSheet
@@ -1672,7 +1672,7 @@ object stackmenu1: Tstackmenu1
           Top = 64
           Width = 17
           Associate = mosaic_crop2
-          Max = 49
+          Max = 99
           Min = 0
           MinRepeatInterval = 25
           Position = 0
@@ -2223,7 +2223,7 @@ object stackmenu1: Tstackmenu1
           object search_fov1: TComboBox
             Left = 568
             Height = 23
-            Hint = 'Field height of the image. In most cases this will be calculated automatically. If not enter the field height manually.'
+            Hint = 'Field height of the image. In most cases this will be calculated automatically. If not enter the field height manually or select auto mode.'
             Top = 8
             Width = 72
             BorderSpacing.Around = 5
@@ -2246,6 +2246,7 @@ object stackmenu1: Tstackmenu1
               '10'
               '10'
               '13'
+              'auto'
             )
             OnChange = search_fov1Change
             TabOrder = 0

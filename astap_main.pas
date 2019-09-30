@@ -977,7 +977,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.273a dated 2019-9-30';
+  #13+#10+'Version ß0.9.274 dated 2019-9-30';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2548,7 +2548,6 @@ begin
 
 end;
 
-
 function floattostr2(x:double):string;
 begin
   str(x:0:6,result);
@@ -2575,8 +2574,6 @@ var
 begin
 //  if FormatSettings.DecimalSeparator<>'.' then s:=StringReplace(s,FormatSettings.DecimalSeparator,'.',[]); {replaces komma by dot}
   s:=StringReplace(s,',','.',[]); {replaces komma by dot}
-//  if DecimalSeparator<>'.' then s:=StringReplace(s,DecimalSeparator,'.',[]); {replaces komma by dot}
-//  StringReplace(s,' ','',[rfReplaceAll]); {remove spaces}
   s:=trim(s); {remove spaces}
   val(s,result,error1);
   if error1<>0 then result:=0;

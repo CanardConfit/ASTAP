@@ -1016,8 +1016,8 @@ begin
             vector_based:=true;
           end;
 
-          cropW:=trunc(stackmenu1.mosaic_crop1.Position*width2/100);
-          cropH:=trunc(stackmenu1.mosaic_crop1.Position*height2/100);
+          cropW:=trunc(stackmenu1.mosaic_crop1.Position*width2/200);
+          cropH:=trunc(stackmenu1.mosaic_crop1.Position*height2/200);
 
           for fitsY:=1+1+cropH to height2-1-cropH do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
           for fitsX:=1+1+cropW to width2-1-cropW  do
