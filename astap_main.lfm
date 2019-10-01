@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 241
+  Left = 212
   Height = 541
   Hint = ' '
-  Top = 95
+  Top = 237
   Width = 1088
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -938,7 +938,7 @@ object mainwindow: Tmainwindow
           Enabled = False
           Hint = 'Rotate left.  Saving will apply the changes the original image.'
           ImageIndex = 27
-          ShortCut = 16460
+          ShortCut = 8268
           OnClick = rotateleft1Click
         end
         object rotateright1: TMenuItem
@@ -946,7 +946,7 @@ object mainwindow: Tmainwindow
           Enabled = False
           Hint = 'Rotate image. right. Saving will apply the changes the original image.'
           ImageIndex = 28
-          ShortCut = 16466
+          ShortCut = 8274
           OnClick = rotateleft1Click
         end
         object imageflipv1: TMenuItem
@@ -954,6 +954,7 @@ object mainwindow: Tmainwindow
           Enabled = False
           Hint = 'Flip image vertical. Saving will apply the changes the original image.'
           ImageIndex = 29
+          ShortCut = 8278
           OnClick = imageflipv1Click
         end
         object imagefliph1: TMenuItem
@@ -961,13 +962,14 @@ object mainwindow: Tmainwindow
           Enabled = False
           Hint = 'Flip image horizontal. Saving will apply the changes the original image.'
           ImageIndex = 30
+          ShortCut = 8264
           OnClick = imageflipv1Click
         end
         object inversimage1: TMenuItem
           Caption = 'Inverse image'
           Enabled = False
           Hint = 'Inverse image. Saving will apply the changes the original image.'
-          ShortCut = 16457
+          ShortCut = 8265
           OnClick = inversimage1Click
         end
       end

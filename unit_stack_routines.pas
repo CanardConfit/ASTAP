@@ -25,7 +25,6 @@ procedure stack_average(oversize:integer; var files_to_process : array of TfileT
 procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack mosaic/tile mode}
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 
-
 {$inline on}  {!!! Set this off for debugging}
 procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
 procedure astrometric_to_vector; {convert astrometric solution to vector solution}
@@ -581,34 +580,47 @@ begin
 end;
 
 
-function test_bayer_matrix(img: image_array) :boolean;  {apply most common filter on first array and place result in second array}
+function test_bayer_matrix(img: image_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
 var
-   fitsX,w,h,shortest : integer;
-   p11,p12,p21,p22  : single;
+   fitsX,w,h,middleY,step_size       : integer;
+   p11,p12,p21,p22                   : array of double;
+   m11,m12,m21,m22,average,lowest,highest : double;
+const
+   steps=100;
 begin
 //  colors:=Length(img); {colors}
-  w:=Length(img[0]); {width}
+  w:=Length(img[0]);    {width}
   h:=Length(img[0][0]); {height}
-  if h<w then shortest:=h else shortest:=w;
 
-  p11:=0;
-  p12:=0;
-  p21:=0;
-  p22:=0;
+  middleY:=h div 2;
+  step_size:=w div steps;
 
-  for fitsX:=0 to shortest-2   do
-    if odd(fitsX) then
-    begin
-      p11:=p11+img[0,fitsX,fitsX];
-      p12:=p12+img[0,fitsX+1,fitsX];
-      p21:=p21+img[0,fitsX,fitsX+1];
-      p22:=p22+img[0,fitsX+1,fitsX+1];
-    end;
+  SetLength(p11,steps);
+  SetLength(p12,steps);
+  SetLength(p21,steps);
+  SetLength(p22,steps);
 
-  result:=(   (abs(1-(p11/p12))>0.04) or
-              (abs(1-(p11/p21))>0.04) or
-              (abs(1-(p11/p22))>0.04) );
+  for fitsX:=0 to steps-1   do  {test one horizontal line and take 100 samples of the bayer matrix}
+  begin
+    p11[fitsX]:=img[0,step_size*fitsX,middleY];
+    p12[fitsX]:=img[0,step_size*fitsX+1,middleY];
+    p21[fitsX]:=img[0,step_size*fitsX,middleY+1];
+    p22[fitsX]:=img[0,step_size*fitsX+1,middleY+1];
+  end;
 
+  m11:=Smedian(p11);
+  m12:=Smedian(p12);
+  m21:=Smedian(p21);
+  m22:=Smedian(p22);
+  lowest:=min(min(m11,m12),min(m21,m22));
+  highest:=max(max(m11,m12),max(m21,m22));
+
+  result:=highest-lowest>200;
+
+  p11:=nil;
+  p12:=nil;
+  p21:=nil;
+  p22:=nil;
 end;
 
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}

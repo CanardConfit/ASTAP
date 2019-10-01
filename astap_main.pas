@@ -977,7 +977,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.274 dated 2019-9-30';
+  #13+#10+'Version ß0.9.275 dated 2019-10-1';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6730,7 +6730,6 @@ var
   end;
   Screen.Cursor:= Save_Cursor;
 end;
-
 
 procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
 begin
