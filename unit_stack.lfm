@@ -2,11 +2,11 @@ object stackmenu1: Tstackmenu1
   Left = 362
   Height = 644
   Top = 177
-  Width = 1272
+  Width = 1410
   AllowDropFiles = True
   Caption = 'stack menu'
   ClientHeight = 644
-  ClientWidth = 1272
+  ClientWidth = 1410
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -52,7 +52,7 @@ object stackmenu1: Tstackmenu1
     Left = 0
     Height = 144
     Top = 500
-    Width = 1272
+    Width = 1410
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -189,7 +189,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1255
+    Left = 1393
     Height = 15
     Hint = 'Click to widen.'
     Top = 440
@@ -207,8 +207,8 @@ object stackmenu1: Tstackmenu1
     Height = 440
     Hint = 'Stack menu'
     Top = 0
-    Width = 1271
-    ActivePage = alignment1
+    Width = 1409
+    ActivePage = Pixelmath1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 6
+    TabIndex = 9
     TabOrder = 5
     Options = [nboMultiLine]
     object Images: TTabSheet
@@ -3261,7 +3261,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools'
       Caption = 'Pixel math'
       ClientHeight = 412
-      ClientWidth = 1263
+      ClientWidth = 1401
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox
         Left = 992
@@ -4262,6 +4262,10 @@ object stackmenu1: Tstackmenu1
             '3'
             '4'
             '5'
+            '8'
+            '10'
+            '12'
+            '15'
           )
           OnChange = resize_factor1Change
           TabOrder = 1

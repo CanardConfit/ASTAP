@@ -614,9 +614,9 @@ end;
 
 procedure create_test_image(type_test : integer);{create an artificial test image}
 var
-   i,j,m,n, factor  : integer;
-   sigma            : double;
-   gradient : boolean;
+   i,j,m,n, factor,stepsize,starcounter    : integer;
+   sigma,hole_radius,donut_radius,hfd_diameter : double;
+   gradient                  : boolean;
 begin
   naxis:=0; {0 dimensions}
 
@@ -665,6 +665,8 @@ begin
 
   sigma:=strtofloat2(stackmenu1.hfd_simulation1.text)/2.5;{gaussian shaped star, sigma is HFD/2.5, in perfect world it should be /2.354 but sigma 1 will be measured with current alogorithm as 2.5}
 
+  starcounter:=0;
+
   if type_test=1 then {no stars just gradients}
   begin
     naxis3:=3; {NAXIS3 number of colors}
@@ -694,6 +696,7 @@ begin
   begin {star test image}
     naxis3:=1; {NAXIS3 number of colors}
     setlength(img_loaded,naxis3,width2,height2);{set length of image array}
+
     For i:=0 to height2-1 do
     for j:=0 to width2-1 do
     begin
@@ -705,23 +708,35 @@ begin
 
     end;
 
-    For i:=8 to height2-1-8 do
-    for j:=8 to width2-1-8 do
+    stepsize:=round(sigma*3);
+    if stepsize<8 then stepsize:=8;{minimum value}
+
+    For i:=stepsize to height2-1-stepsize do
+    for j:=stepsize to width2-1-stepsize do
     begin
-      if (((frac(i/100)=0) and (frac(j/100)=0)) or ((frac(i/20)=0) and (j=width2-450)) )  then
+      if ( (frac(i/100)=0) and (frac(j/100)=0)  )  then
       begin
         if i>height2-300 then {hot pixels} img_loaded[0,j,i]:=65535 {hot pixel}
         else {create real stars}
-        if i>(height2-300)/2 then
         begin
-          for m:=-8 to 8 do for n:=-8 to 8 do
-              img_loaded[0,j+n,i+m]:=img_loaded[0,j+n,i+m]+4000*j/width2*exp(-0.5/sqr(sigma)*(m*m+n*n)); {faint gaussian shaped stars}
+          inc(starcounter);
+          for m:=-stepsize to stepsize do for n:=-stepsize to stepsize do
+          begin
+              if sigma*2.5<=5 then
+              begin
+                img_loaded[0,j+n,i+m]:=img_loaded[0,j+n,i+m]+(65000/power(starcounter,0.8)){Intensity} *exp(-0.5/sqr(sigma)*(m*m+n*n)); {gaussian shaped stars}
+                if frac(starcounter/20)=0 then img_loaded[0,180+starcounter+n,130+starcounter+m]:=img_loaded[0,180+starcounter+n,130+starcounter+m]+(65000/power(starcounter,0.7)){Intesity} *exp(-0.5/sqr(sigma)*(m*m+n*n)) {diagonal gaussian shaped stars}
+              end
+              else
+              begin
+                hfd_diameter:=sigma*2.5;
+                hole_radius:=trunc(hfd_diameter/3);
+                donut_radius:=sqrt(2*sqr(hfd_diameter/2)-sqr(hole_radius));
+                if ( (sqrt(n*n+m*m)<=donut_radius) and (sqrt(n*n+m*m)>=hole_radius){hole}) then img_loaded[0,j+n,i+m]:=img_loaded[0,j+n,i+m]+4000*sqr(j/width2) {DONUT SHAPED stars}
+              end;
+          end;
 
-        end
-        else
-        for m:=-8 to 8 do for n:=-8 to 8 do
-           img_loaded[0,j+n,i+m]:=img_loaded[0,j+n,i+m]+64000*j/width2*exp(-0.5/sqr(sigma)*(m*m+n*n)); {bright  gaussian shaped stars}
-
+        end;
       end;
 
     end;
@@ -745,7 +760,7 @@ begin
   if type_test=2 then
   begin
     update_text   ('COMMENT A','  Artificial image, background has value 1000 with sigma 100 Gaussian noise');
-    update_text   ('COMMENT B','  Top rows contain hotpixels withvalue 65535');
+    update_text   ('COMMENT B','  Top rows contain hotpixels with value 65535');
     update_text   ('COMMENT C','  Rows below have Gaussian stars with a sigma of '+floattostr2(sigma));
     update_text   ('COMMENT D','  Which will be measured as HFD '+stackmenu1.hfd_simulation1.text);
     update_text   ('COMMENT E','  Note that theoretical Gaussian stars with a sigma of 1 are');
@@ -977,7 +992,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.275 dated 2019-10-1';
+  #13+#10+'Version ß0.9.275a dated 2019-10-1';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -8436,7 +8451,11 @@ const
 
     end;
 begin
-  rs:=14;{14 is test box of 28, HFD maximum is about 28}
+  rs:=14;{14 is test box of 28, HFD maximum is about 10}
+
+
+  if ((xc>1190) and (xc<1210) and (yc>490) and (yc<510)) then
+  beep;
 
   if ((x1-rs-4<=0) or (x1+rs+4>=width2-1) or
       (y1-rs-4<=0) or (y1+rs+4>=height2-1) )
