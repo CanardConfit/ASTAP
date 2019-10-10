@@ -992,7 +992,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.275a dated 2019-10-1';
+  #13+#10+'Version ß0.9.276 dated 2019-10-10';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6358,6 +6358,7 @@ procedure Tmainwindow.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   esc_pressed:=true;{stop processing. Required for reliable stopping by APT}
   save_settings(user_path+'astap.cfg');
+
 end;
 
 procedure Tmainwindow.receivemessage(Sender: TObject);{For OneInstance, called from timer (linux) or SimpleIPCServer1MessageQueued (Windows)}
@@ -6945,6 +6946,8 @@ begin
 
   deepstring.free;{free deepsky}
   recent_files.free;
+
+//system.exitcode:=777;
 end;
 
 procedure plot_rectangle(x1,y1,x2,y2: integer); {accurate positioned rectangle on screen coordinates}
@@ -7509,9 +7512,10 @@ end;
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
    // f: text;
-    source_fits,histogram_done,file_loaded: boolean;
-    binning    : double;
     s,old      : string;
+    source_fits,histogram_done,file_loaded: boolean;
+    binning, backgr, hfd_median : double;
+    hfd_counter : integer;
 begin
   user_path:=GetAppConfigDir(false);{get user path for app config}
   if load_settings(user_path+'astap.cfg')=false then
@@ -7566,11 +7570,12 @@ begin
         '-t  tolerance'+#10+
         '-speed mode[auto/slow] {slow is forcing small search steps to improve detection.}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
-        '-log   {write the solver log to file}'+#10+
-        '-update  {update the FITS header with the found solution}' +#10+#10+
-        '-tofits  binning[1,2,3,4,6,8]  {make new fits file from PNG/JPG file input}'+#10+
-        '-annotate  {produce deepsky annotated jpg file}' +#10+#10+
-        'Preference will be given to the values in the FITS header.'
+        '-analyse {Analyse only and report in the errorlevel the median HFD * 100M + number of stars used}'+#10+
+        '-log   {Write the solver log to file}'+#10+
+        '-update  {Update the FITS header with the found solution}' +#10+#10+
+        '-tofits  binning[1,2,3,4,6,8]  {Make new fits file from PNG/JPG file input}'+#10+
+        '-annotate  {Produce deepsky annotated jpg file}' +#10+#10+
+        'Preference will be given to the command line values.'
         ), pchar('ASTAP astrometric solver usage:'),MB_OK);
 
         esc_pressed:=true;{kill any running activity. This for APT}
@@ -7615,6 +7620,12 @@ begin
                  stackmenu1.max_stars1.text:=GetOptionValue('s');
         if hasoption('t') then stackmenu1.tetrahedron_tolerance1.text:=GetOptionValue('t');
         if hasoption('speed') then stackmenu1.force_oversize1.checked:=pos('slow',GetOptionValue('speed'))<>0;
+
+        if ((file_loaded) and (hasoption('analyse'))) then {analyse fits and report HFD value in errorlevel }
+        begin
+           analyse_fits(hfd_counter,backgr,hfd_median, img_loaded); {find background, number of stars, median HFD}
+           halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
+        end;{analyse fits and report HFD value}
 
         command_execution:=true;{later required for trayicon and popup notifier}
         {$ifdef CPUARM}

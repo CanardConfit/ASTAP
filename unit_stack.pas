@@ -660,7 +660,6 @@ procedure listview234567_add(tl: tlistview; s0:string);
 procedure update_equalise_background_step(pos1: integer);{update equalise background menu}
 procedure memo2_message(s: string);{message to memo2}
 
-//function get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean):double; {get background level from peek histogram}
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; var background, starlevel: double); {get background and star level from peek histogram}
 
 procedure update_stackmenu;{update stackmenu1 menus}
@@ -675,6 +674,7 @@ procedure date_obs_to_jd;{get julian day for date_obs, so the start of the obser
 function JdToDate(jd:double):string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
 function median_background(var img :image_array;color,size,x,y:integer): double;{find median value in sizeXsize matrix of img}
+procedure analyse_fits(var hfd_counter : integer; var backgr, hfd_median : double; var img : image_array); {find background, number of stars, median HFD}
 
 
 implementation

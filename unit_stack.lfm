@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1409
-    ActivePage = Pixelmath1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -216,14 +216,14 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 9
+    TabIndex = 0
     TabOrder = 5
     Options = [nboMultiLine]
     object Images: TTabSheet
       Hint = 'Select here the light frames'
       Caption = 'Images'
       ClientHeight = 412
-      ClientWidth = 1263
+      ClientWidth = 1401
       object nr_selected1: TLabel
         Left = 372
         Height = 15
@@ -290,7 +290,7 @@ object stackmenu1: Tstackmenu1
         Height = 372
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1263
+        Width = 1401
         Align = alBottom
         Anchors = [akTop, akLeft, akRight]
         Checkboxes = True
