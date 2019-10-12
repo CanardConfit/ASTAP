@@ -992,7 +992,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.276 dated 2019-10-10';
+  #13+#10+'Version ß0.9.276a dated 2019-10-12';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6444,7 +6444,8 @@ procedure Tmainwindow.FormDropFiles(Sender: TObject;
 begin
  {no check on file extension required}
   filename2:=FileNames[0];
-   if load_image(true,true {plot}){load and center}=false then beep;{image not found}
+   if load_image(true,true {plot}){load and center}=false then
+                                                      beep;{image not found}
 end;
 
 procedure Tmainwindow.imageflipv1Click(Sender: TObject);
@@ -6719,7 +6720,10 @@ var
   if flux_magn_offset=0 then {calibrate}
      plot_stars(true {if true photometry only}, false {show Distortion});
 
-  if flux_magn_offset=0 then begin beep; exit;end;
+  if flux_magn_offset=0 then begin
+    beep;
+    exit;
+  end;
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -8465,8 +8469,8 @@ begin
   rs:=14;{14 is test box of 28, HFD maximum is about 10}
 
 
-  if ((xc>1190) and (xc<1210) and (yc>490) and (yc<510)) then
-  beep;
+//  if ((xc>1190) and (xc<1210) and (yc>490) and (yc<510)) then
+//  beep;
 
   if ((x1-rs-4<=0) or (x1+rs+4>=width2-1) or
       (y1-rs-4<=0) or (y1+rs+4>=height2-1) )

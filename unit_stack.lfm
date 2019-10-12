@@ -1037,7 +1037,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 412
-      ClientWidth = 1263
+      ClientWidth = 1401
       ImageIndex = 5
       object Label3: TLabel
         Left = 45
@@ -1921,7 +1921,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the alignment options'
       Caption = 'Alignment'
       ClientHeight = 412
-      ClientWidth = 1263
+      ClientWidth = 1401
       ImageIndex = 7
       OnContextPopup = alignment1ContextPopup
       object help_stack_menu3: TLabel
