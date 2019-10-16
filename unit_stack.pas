@@ -656,7 +656,7 @@ const
 
 
 procedure listview_add(s0 :string);{add items to listview}
-procedure listview234567_add(tl: tlistview; s0:string);
+procedure listview_add2(tl: tlistview; s0:string; count:integer);
 procedure update_equalise_background_step(pos1: integer);{update equalise background menu}
 procedure memo2_message(s: string);{message to memo2}
 
@@ -711,6 +711,7 @@ const
   I_foctemp=21;
   I_centalt=22;
   I_centaz=23;
+  I_gain=24;
 
   D_exposure=0;
   D_temperature=1;
@@ -720,6 +721,8 @@ const
   D_type=5;
   D_background=6;
   D_sigma=7;
+  D_gain=8;
+  F_filter=9;
 
 {$ifdef mswindows}
 Function ShutMeDown:string;
@@ -845,51 +848,29 @@ begin
       ListItem.SubItems.Add('?');
       ListItem.SubItems.Add('?');
       ListItem.SubItems.Add('?');
-      for i:=8 to 24 do ListItem.SubItems.Add('-');
+      for i:=8 to 25 do ListItem.SubItems.Add('-');
       Items[items.Count-1].Checked:=true;
     Items.EndUpdate;
   end;
 end;
-procedure listview234567_add(tl: tlistview; s0:string);
+
+procedure listview_add2(tl: tlistview; s0:string; count:integer);
 var
   ListItem: TListItem;
-  c,k : integer;
+  i : integer;
 begin
   with tl do {stackmenu.listview2}
   begin
     Items.BeginUpdate;
       ListItem := Items.Add;
       ListItem.Caption := s0;{with checkbox}
-      ListItem.SubItems.Add('');{exposure}
-      ListItem.SubItems.Add('');{tem}
-      ListItem.SubItems.Add('');{bin}
-      ListItem.SubItems.Add('');{width}
-      ListItem.SubItems.Add('');{height}
-      ListItem.SubItems.Add('');{type}
-      ListItem.SubItems.Add(''); {filter/date time if existing. If not existing, seems to be ignored}
-      ListItem.SubItems.Add('');{solution for blink}
-      ListItem.SubItems.Add('');{calibration info, If not existing, seems to be ignored}
-
-      if name=stackmenu1.listview6.name then {blink}
-      begin
-        ListItem.SubItems.Add('');
-      end;
-      if name=stackmenu1.listview7.name then {photometry}
-      begin
-        ListItem.SubItems.Add('');
-        ListItem.SubItems.Add('');
-        ListItem.SubItems.Add('');
-        ListItem.SubItems.Add('');
-        ListItem.SubItems.Add('');{12, stars}
-        ListItem.SubItems.Add('');{13 astrometric solution }
-        ListItem.SubItems.Add('');{14 photometric solution }
-        ListItem.SubItems.Add('');{15 calibration}
-      end;
-
+      for i:=1 to count do
+          ListItem.SubItems.Add('');
       Items[items.Count-1].Checked:=true;
     Items.EndUpdate;
   end;
 end;
+
 procedure listview5_add(tl: tlistview; s0,s1,s2,s3,s4,s5,s6:string);
 var
   ListItem: TListItem;
@@ -1276,7 +1257,7 @@ begin
         if pos('DARK',uppercase(imagetype))>0 then
         begin
           memo2_message('Move file '+filename2+' to tab DARKS');
-          listview234567_add(listview2,filename2);{move to darks}
+          listview_add2(listview2,filename2,9);{move to darks}
           listview1.Items.Delete(c);
           dec(c);{compensate for delete}
           dec(counts); {compensate for delete}
@@ -1285,7 +1266,7 @@ begin
         if pos('FLAT',uppercase(imagetype))>0 then
         begin
           memo2_message('Move file '+filename2+' to tab FLATS');
-          listview234567_add(listview3,filename2);{move to darks}
+          listview_add2(listview3,filename2,10);
           listview1.Items.Delete(c);
           dec(c);{compensate for delete}
           dec(counts); {compensate for delete}
@@ -1294,7 +1275,7 @@ begin
         if pos('BIAS',uppercase(imagetype))>0 then
         begin
           memo2_message('Move file '+filename2+' to tab FLAT-DARKS / BIAS');
-          listview234567_add(listview4,filename2);{move to darks}
+          listview_add2(listview4,filename2,9);
           listview1.Items.Delete(c);
           dec(c);{compensate for delete}
           dec(counts); {compensate for delete}
@@ -1351,6 +1332,7 @@ begin
               if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[I_foctemp]:=floattostrF2(focus_temp,0,1);
               if centalt<>999 then ListView1.Items.item[c].subitems.Strings[I_centalt]:=floattostrF2(centalt,0,1);
               if centaz<>999 then ListView1.Items.item[c].subitems.Strings[I_centaz]:=floattostrF2(centaz,0,1);
+              if gain<>999 then ListView1.Items.item[c].subitems.Strings[I_gain]:=inttostr(round(gain));
 
             end;
           finally
@@ -1709,7 +1691,7 @@ begin
   begin
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview234567_add(listview4,OpenDialog1.Files[i]);
+      listview_add2(listview4,OpenDialog1.Files[i],9);
     end;
   end;
 end;
@@ -1731,10 +1713,9 @@ begin
   begin
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      if sender=browse_blink1 then listview234567_add(listview6,OpenDialog1.Files[i])
+      if sender=browse_blink1 then listview_add2(listview6,OpenDialog1.Files[i],9)
       else
-      if sender=browse_photometry1 then listview234567_add(listview7,OpenDialog1.Files[i]);
-
+      if sender=browse_photometry1 then listview_add2(listview7,OpenDialog1.Files[i],17);
       DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
     end;
   end;
@@ -1757,7 +1738,7 @@ begin
   begin
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview234567_add(listview3,OpenDialog1.Files[i]);
+       listview_add2(listview3,OpenDialog1.Files[i],10);
     end;
   end;
 end;
@@ -2522,11 +2503,12 @@ begin
               get_background(0,img,true {update_hist},true {calculate noise level}, {var} backgr,star_level);
               lv.Items.item[c].subitems.Strings[D_background]:=inttostr5(round(backgr));
               if ((lv.name=stackmenu1.listview2.name) or (lv.name=stackmenu1.listview3.name) or (lv.name=stackmenu1.listview4.name)) then
-                lv.Items.item[c].subitems.Strings[D_sigma]:=inttostr(noise_level[0]); {noise level}
+              lv.Items.item[c].subitems.Strings[D_sigma]:=inttostr(noise_level[0]); {noise level}
+              lv.Items.item[c].subitems.Strings[D_gain]:=inttostr(round(gain)); {camera gain}
             end;
             if lv.name=stackmenu1.listview3.name then
             begin
-             lv.Items.item[c].subitems.Strings[8]:=filter_name; {filter name, without spaces}
+             lv.Items.item[c].subitems.Strings[F_filter]:=filter_name; {filter name, without spaces}
             end;
 
             if lv.name=stackmenu1.listview6.name then {blink tab}
@@ -3554,7 +3536,7 @@ begin
   begin
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview234567_add(listview2,OpenDialog1.Files[i]);
+      listview_add2(listview2,OpenDialog1.Files[i],9);
     end;
   end;
 end;
@@ -3910,11 +3892,11 @@ begin
   begin
     if image_file_name(FileNames[i])=true then {readable image file}
     begin
-      case pagecontrol1.pageindex of    1:   listview234567_add(listview2,FileNames[i]);{darks}
-                                        2:   listview234567_add(listview3,FileNames[i]);{flats}
-                                        3:   listview234567_add(listview4,FileNames[i]);{flat darks}
-                                        7:   listview234567_add(listview6,FileNames[i]);{blink}
-                                        8:   listview234567_add(listview7,FileNames[i]);{photometry}
+      case pagecontrol1.pageindex of    1:   listview_add2(listview2,FileNames[i],9);{darks}
+                                        2:   listview_add2(listview3,FileNames[i],10);{flats}
+                                        3:   listview_add2(listview4,FileNames[i],9);{flat darks}
+                                        7:   listview_add2(listview6,FileNames[i],9);{blink}
+                                        8:   listview_add2(listview7,FileNames[i],17);{photometry}
                                        else
                                        begin {images}
                                          listview_add(FileNames[i]);
@@ -4007,7 +3989,7 @@ begin
           (binX2=false)) {converts filename2 to binx2 version}
           then exit;
       listview7.Items[c].Checked:=false;
-      listview234567_add(listview7,filename2);{add binx2 file}
+      listview_add2(listview7,filename2,17);{add binx2 file}
     end;
   end;{for loop for astrometric solving }
   {astrometric calibration}
@@ -5627,7 +5609,7 @@ begin
           inc(c);
         end;
       end;
-      listview234567_add(listview2,path1);{add master}
+      listview_add2(listview2,path1,9);{add master}
       listview2.Items.EndUpdate;
 
       analyse_listview(listview2, 0 {analyse readuced header only});{update the tab information}
@@ -5769,7 +5751,7 @@ begin
             inc(c);
           end;
         end;
-        listview234567_add(listview3,path1);{add master}
+        listview_add2(listview3,path1,10);{add master}
         listview3.Items.EndUpdate;
         analyse_listview(listview3,0 {analyse reduced header only});{update the tab information}
       end;

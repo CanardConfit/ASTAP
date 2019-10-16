@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 362
+  Left = 306
   Height = 644
-  Top = 177
+  Top = 213
   Width = 1410
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -414,24 +414,29 @@ object stackmenu1: Tstackmenu1
             Width = 73
           end        
           item
-            Caption = 'focpos'
+            Caption = 'FocPos'
             MinWidth = 60
             Width = 60
           end        
           item
-            Caption = 'foctemp'
+            Caption = 'FocTemp'
             MinWidth = 70
             Width = 70
           end        
           item
-            Caption = 'centalt'
+            Caption = 'CentAlt'
             MinWidth = 60
             Width = 60
           end        
           item
-            Caption = 'centaz'
+            Caption = 'CentAz'
             MinWidth = 60
-            Width = 91
+            Width = 60
+          end        
+          item
+            Caption = 'Gain'
+            MinWidth = 60
+            Width = 60
           end>
         GridLines = True
         HideSelection = False
@@ -538,7 +543,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 412
-      ClientWidth = 1263
+      ClientWidth = 1401
       ImageIndex = 1
       object browse_darks1: TButton
         Left = 32
@@ -581,7 +586,7 @@ object stackmenu1: Tstackmenu1
         Height = 372
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1263
+        Width = 1401
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -635,6 +640,10 @@ object stackmenu1: Tstackmenu1
             Caption = 'σ'
             MaxWidth = 50
             MinWidth = 50
+          end        
+          item
+            Caption = 'Gain'
+            MinWidth = 50
           end>
         GridLines = True
         HideSelection = False
@@ -681,7 +690,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 412
-      ClientWidth = 1263
+      ClientWidth = 1401
       ImageIndex = 2
       object browse_flats1: TButton
         Left = 32
@@ -729,7 +738,7 @@ object stackmenu1: Tstackmenu1
         Height = 372
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1263
+        Width = 1401
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -785,6 +794,10 @@ object stackmenu1: Tstackmenu1
             MinWidth = 50
           end        
           item
+            Caption = 'Gain'
+            MinWidth = 50
+          end        
+          item
             Caption = 'Filter'
             MinWidth = 50
             Width = 1116
@@ -824,7 +837,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
       ClientHeight = 412
-      ClientWidth = 1752
+      ClientWidth = 1401
       ImageIndex = 3
       object browse_bias1: TButton
         Left = 32
@@ -837,10 +850,10 @@ object stackmenu1: Tstackmenu1
       end
       object clear_selection3: TButton
         Left = 664
-        Height = 21
+        Height = 25
         Hint = 'Remove file list.'
         Top = 6
-        Width = 44
+        Width = 53
         AutoSize = True
         Caption = 'Clear'
         OnClick = clear_selection3Click
@@ -861,7 +874,7 @@ object stackmenu1: Tstackmenu1
         Height = 372
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1752
+        Width = 1401
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -917,6 +930,10 @@ object stackmenu1: Tstackmenu1
             Caption = 'σ'
             MaxWidth = 50
             MinWidth = 50
+          end        
+          item
+            Caption = 'Gain'
+            MinWidth = 50
           end>
         GridLines = True
         HideSelection = False
@@ -939,10 +956,10 @@ object stackmenu1: Tstackmenu1
       end
       object nr_total_bias1: TLabel
         Left = 272
-        Height = 11
+        Height = 15
         Hint = 'Number of images in the list'
         Top = 10
-        Width = 4
+        Width = 6
         Caption = '0'
         Color = clBtnFace
         ParentColor = False
@@ -953,14 +970,14 @@ object stackmenu1: Tstackmenu1
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
       ClientHeight = 412
-      ClientWidth = 1752
+      ClientWidth = 1401
       ImageIndex = 6
       object listview5: TListView
         Left = 0
         Height = 372
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1752
+        Width = 1401
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Columns = <        
@@ -1026,9 +1043,9 @@ object stackmenu1: Tstackmenu1
       end
       object Label_results1: TLabel
         Left = 16
-        Height = 11
+        Height = 15
         Top = 8
-        Width = 235
+        Width = 345
         Caption = 'Stacked images are displayed here. Double click to view in viewer.'
         ParentColor = False
       end
@@ -2649,14 +2666,14 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 412
-      ClientWidth = 1263
+      ClientWidth = 1401
       ImageIndex = 11
       object listview6: TListView
         Left = 0
         Height = 372
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1263
+        Width = 1401
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -2949,7 +2966,7 @@ object stackmenu1: Tstackmenu1
     object tab_photometry1: TTabSheet
       Caption = 'Photometry'
       ClientHeight = 412
-      ClientWidth = 1752
+      ClientWidth = 1401
       ImageIndex = 11
       object browse_photometry1: TButton
         Left = 32
@@ -3053,7 +3070,7 @@ object stackmenu1: Tstackmenu1
         Height = 372
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1752
+        Width = 1401
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True

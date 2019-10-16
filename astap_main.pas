@@ -399,7 +399,7 @@ var
    set_temperature : integer;
    star_level  : double;
    object_name, filter_name,calstat,imagetype, memo_backup: string;
-   exposure,focus_temp,centalt,centaz,cblack,cwhite            :double; {from FITS}
+   exposure,focus_temp,centalt,centaz,cblack,cwhite,gain            :double; {from FITS}
    subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
    date_obs,ut,pltlabel,plateid,telescop,instrum,origin:string;
    datamin_org, datamax_org,
@@ -992,7 +992,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.276a dated 2019-10-12';
+  #13+#10+'Version ß0.9.277 dated 2019-10-16';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4027,6 +4027,7 @@ begin
   set_temperature:=999;
   focus_temp:=999;{assume no data available}
   focus_pos:=999;{assume no data available}
+  gain:=999;{assume no data available}
   date_obs:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
   scale:=0;
   measured_max:=0;
@@ -4112,16 +4113,6 @@ begin
     if ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
            try set_temperature:=round(validate_double);{read double value} except; end; {some programs give huge values}
 
-    if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and
-                    (( (header[i+3]='U') and (header[i+4]='S') and (header[i+5]='T') and (header[i+6]='E')) or
-                     ( (header[i+3]='T') and (header[i+4]='E') and (header[i+5]='M') and (header[i+6]='P')) )  ) then
-           focus_temp:=validate_double;{read double value}
-
-    if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and
-                    (( (header[i+3]='U') and (header[i+4]='S') and (header[i+5]='P') and (header[i+6]='O')) or
-                     ( (header[i+3]='P') and (header[i+4]='O') and (header[i+5]='S') and (header[i+6]=' ')) )  ) then
-           try focus_pos:=round(validate_double);{focus position} except;end;
-
     if ((header[i]='B') and (header[i+1]='A')  and (header[i+2]='N') and (header[i+3]='D') and (header[i+4]='P') and (header[i+5]='A') and (header[i+6]='S')) then
              BANDPASS:=validate_double;{read integer as double value}
 
@@ -4162,6 +4153,9 @@ begin
          flat_count:=round(validate_double);{read integer as double value}
     if ((header[i]='B') and (header[i+1]='I')  and (header[i+2]='A') and (header[i+3]='S') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
          flatdark_count:=round(validate_double);{read integer as double value}
+
+    if ((header[i]='G') and (header[i+1]='A')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]=' ')) then
+           gain:=validate_double;{gain CCD}
 
 
     if light then {read as light ##############################################################################################################################################################}
@@ -4247,6 +4241,24 @@ begin
 
       if ((header[i]='C') and (header[i+1]='A')  and (header[i+2]='L') and (header[i+3]='S') and (header[i+4]='T') and (header[i+5]='A')) then
          calstat:=get_string;{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected.}
+
+
+      if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and
+                      (( (header[i+3]='U') and (header[i+4]='S') and (header[i+5]='T') and (header[i+6]='E')) or
+                       ( (header[i+3]='T') and (header[i+4]='E') and (header[i+5]='M') and (header[i+6]='P')) )  ) then
+             focus_temp:=validate_double;{focus temperature}
+      if ((header[i]='A') and (header[i+1]='M')  and (header[i+2]='B') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
+             focus_temp:=validate_double;{ambient temperature}
+      if ((header[i]='T') and (header[i+1]='A')  and (header[i+2]='M') and (header[i+3]='B') and (header[i+4]='I') and (header[i+5]='E') and (header[i+6]='N')) then
+             focus_temp:=validate_double;{ambient temperature APT. Remove in 2020. Should be replace by AMB-TEMP}
+
+
+      if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and
+                      (( (header[i+3]='U') and (header[i+4]='S') and (header[i+5]='P') and (header[i+6]='O')) or
+                       ( (header[i+3]='P') and (header[i+4]='O') and (header[i+5]='S') and (header[i+6]=' ')) )  ) then
+             try focus_pos:=round(validate_double);{focus position} except;end;
+
+
 
       if ((header[i]='S') and (header[i+1]='C')  and (header[i+2]='A') and (header[i+3]='L') and (header[i+4]='E')) then  scale:=validate_double; {scale value for SGP files}
 
@@ -5578,7 +5590,7 @@ begin
        dum:=initstring.Values['dark'+inttostr(c)];
        if ((dum<>'') and (fileexists(dum))) then
        begin
-         listview234567_add(stackmenu1.listview2,dum);
+         listview_add2(stackmenu1.listview2,dum,9);
          stackmenu1.ListView2.items[c].Checked:=get_boolean('dark'+inttostr(c)+'_check',true);
        end;
        inc(c);
@@ -5589,7 +5601,7 @@ begin
       dum:=initstring.Values['flat'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
       begin
-        listview234567_add(stackmenu1.listview3,dum);
+        listview_add2(stackmenu1.listview3,dum,10);
         stackmenu1.ListView3.items[c].Checked:=get_boolean('flat'+inttostr(c)+'_check',true);
       end;
       inc(c);
@@ -5600,7 +5612,7 @@ begin
       dum:=initstring.Values['flat_dark'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
       begin
-        listview234567_add(stackmenu1.listview4,dum);
+        listview_add2(stackmenu1.listview4,dum,9);
         stackmenu1.ListView4.items[c].Checked:=get_boolean('flat_dark'+inttostr(c)+'_check',true);
       end;
       inc(c);
@@ -5611,7 +5623,7 @@ begin
       dum:=initstring.Values['blink'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
       begin
-        listview234567_add(stackmenu1.listview6,dum);
+        listview_add2(stackmenu1.listview6,dum,9);
         stackmenu1.ListView6.items[c].Checked:=get_boolean('blink'+inttostr(c)+'_check',true);
       end;
       inc(c);
@@ -5622,7 +5634,7 @@ begin
       dum:=initstring.Values['photometry'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
       begin
-        listview234567_add(stackmenu1.listview7,dum);
+        listview_add2(stackmenu1.listview7,dum,17);
         stackmenu1.ListView7.items[c].Checked:=get_boolean('photometry'+inttostr(c)+'_check',true);
       end;
       inc(c);
