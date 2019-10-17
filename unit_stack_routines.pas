@@ -29,7 +29,8 @@ procedure stack_sigmaclip(oversize:integer; var files_to_process : array of Tfil
 procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
 procedure astrometric_to_vector; {convert astrometric solution to vector solution}
 procedure initialise1;{set variables correct}
-
+procedure initialise2;{set variables correct}
+function test_bayer_matrix(img: image_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
 
 var
   pedestal : double;{target background value}
@@ -891,6 +892,9 @@ begin
     end;{simple average}
   end;{with stackmenu1}
 end;
+
+
+
 function minimum_distance_borders(fitsX,fitsY,w,h: integer): single;
 begin
   result:=min(fitsX,w-fitsX);

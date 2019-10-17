@@ -101,7 +101,7 @@ begin
   mainwindow.minimum1.position:=0;
   mainwindow.maximum1.position:=max_value;
 
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainwindow.image1,false,true);
 end;
 
 

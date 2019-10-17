@@ -114,7 +114,7 @@ begin
         load_fits(filename2,false {light},true,true {reset var},img_loaded);
         if naxis<2 then exit; {WCS file}
         getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-        plot_fits(newimage,false);     {mainwindow.image1.Visible:=true; is done in plot_fits}
+        plot_fits(newimage,false,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
 
         //newImage.picture.Bitmap.LoadFromFile('C:\ASTAP.FPC\mozart_large.bmp');
         newImage.Width := round((thumbnails1.panel1.width-2)/3);

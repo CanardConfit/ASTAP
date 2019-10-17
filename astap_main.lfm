@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 212
+  Left = 738
   Height = 541
   Hint = ' '
-  Top = 237
+  Top = 253
   Width = 1088
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -670,11 +670,11 @@ object mainwindow: Tmainwindow
         ShortCut = 16463
         OnClick = LoadFITSPNGBMPJPEG1Click
       end
-      object MenuItem7: TMenuItem
+      object select_directory_thumb1: TMenuItem
         Caption = 'Thumbnail viewer'
         Hint = 'Show FITS files as thumnails'
         ShortCut = 16468
-        OnClick = MenuItem7Click
+        OnClick = select_directory_thumb1Click
       end
       object MenuItem6: TMenuItem
         Caption = 'Open recent'
@@ -2307,12 +2307,6 @@ object mainwindow: Tmainwindow
     Hint = 'ASTAP'
     left = 872
     top = 104
-  end
-  object SelectDirectoryDialog1: TSelectDirectoryDialog
-    FileName = 'C:\astap.fpc'
-    InitialDir = 'C:\'
-    left = 967
-    top = 31
   end
   object PopupNotifier1: TPopupNotifier
     Color = clInfoBk

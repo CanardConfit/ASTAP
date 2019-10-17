@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 306
+  Left = 783
   Height = 644
-  Top = 213
+  Top = 232
   Width = 1410
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -3274,7 +3274,101 @@ object stackmenu1: Tstackmenu1
         TabOrder = 11
       end
     end
-    object Pixelmath1: TTabSheet
+    object tab_live_stacking1: TTabSheet
+      Caption = 'Live stacking'
+      ClientHeight = 412
+      ClientWidth = 1401
+      object browse_live_stacking1: TButton
+        Left = 48
+        Height = 25
+        Top = 48
+        Width = 75
+        Caption = 'Browse'
+        OnClick = browse_live_stacking1Click
+        TabOrder = 0
+      end
+      object live_stacking1: TButton
+        Left = 48
+        Height = 25
+        Hint = 'Start live stacking'
+        Top = 144
+        Width = 80
+        Caption = '>'
+        OnClick = live_stacking1Click
+        TabOrder = 1
+      end
+      object live_stacking_pause1: TButton
+        Left = 152
+        Height = 25
+        Hint = 'Pause stacking process'
+        Top = 144
+        Width = 75
+        Caption = '||'
+        OnClick = live_stacking_pause1Click
+        TabOrder = 2
+      end
+      object live_stacking_restart1: TButton
+        Left = 248
+        Height = 25
+        Hint = 'Start a new stacking run. Current stack will be cleared.'
+        Top = 144
+        Width = 75
+        Caption = 'Restart'
+        OnClick = live_stacking_restart1Click
+        TabOrder = 3
+      end
+      object live_stacking_path1: TLabel
+        Left = 152
+        Height = 15
+        Top = 52
+        Width = 15
+        Caption = '---'
+        ParentColor = False
+      end
+      object Label15: TLabel
+        Left = 48
+        Height = 15
+        Top = 376
+        Width = 225
+        Caption = 'Processed files will get a new extension .fts'
+        ParentColor = False
+      end
+      object files_live_stacked1: TLabel
+        Left = 368
+        Height = 15
+        Top = 148
+        Width = 15
+        Caption = '---'
+        ParentColor = False
+      end
+      object restore_file_ext1: TButton
+        Left = 422
+        Height = 25
+        Hint = 'Rename all files back to extension .fit. Stacking will be stopped. '
+        Top = 376
+        Width = 258
+        Caption = 'Rename all .fts files back to .fit'
+        OnClick = restore_file_ext1Click
+        TabOrder = 4
+      end
+      object Label20: TLabel
+        Left = 48
+        Height = 15
+        Top = 320
+        Width = 215
+        Caption = 'Darks and flats will be applied if available'
+        ParentColor = False
+      end
+      object Label30: TLabel
+        Left = 48
+        Height = 15
+        Top = 346
+        Width = 313
+        Caption = 'Stack will restart if telescope position has moved 20 arcmin.'
+        ParentColor = False
+      end
+    end
+    object tab_Pixelmath1: TTabSheet
       Hint = 'Pixel math tools'
       Caption = 'Pixel math'
       ClientHeight = 412
@@ -5070,7 +5164,7 @@ object stackmenu1: Tstackmenu1
   end
   object OpenDialog1: TOpenDialog
     Title = 'Open an existing file'
-    left = 840
+    left = 816
     top = 504
   end
   object ImageList2: TImageList

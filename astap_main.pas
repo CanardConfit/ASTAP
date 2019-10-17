@@ -129,7 +129,7 @@ type
     SimpleIPCServer1: TSimpleIPCServer;
     zoomin1: TMenuItem;
     zoomout1: TMenuItem;
-    MenuItem7: TMenuItem;
+    select_directory_thumb1: TMenuItem;
     add_marker1: TMenuItem;
     calibrate_photometry1: TMenuItem;
     MenuItem9: TMenuItem;
@@ -139,7 +139,6 @@ type
     remove_above1: TMenuItem;
     remove_below1: TMenuItem;
     MenuItem8: TMenuItem;
-    SelectDirectoryDialog1: TSelectDirectoryDialog;
     Shape_alignment_marker1: TShape;
     shape_marker1: TShape;
     SpeedButton1: TSpeedButton;
@@ -306,7 +305,7 @@ type
     procedure remove_below1Click(Sender: TObject);
     procedure remove_left1Click(Sender: TObject);
     procedure remove_right1Click(Sender: TObject);
-    procedure MenuItem7Click(Sender: TObject);
+    procedure select_directory_thumb1Click(Sender: TObject);
     procedure SpeedButton1Click(Sender: TObject);
     procedure split_raw1click(Sender: TObject);
     procedure OpenDialog1SelectionChange(Sender: TObject);
@@ -452,7 +451,7 @@ const
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;var sep: double);
 function load_fits(filen:string;light {load as light of dark/flat},load_data,reset_var:boolean;var img_loaded2: image_array): boolean;{load fits file}
-procedure plot_fits(img: timage;center_image:boolean);
+procedure plot_fits(img: timage;center_image,show_header:boolean);
 procedure getfits_histogram(mode :integer);{get histogram, plot histogram, set min & max}
 procedure HFD(img: image_array; x1,y1: integer; var hfd1,star_fwhm,snr{peak/sigma noise},flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity}
 procedure backup_img;
@@ -769,7 +768,7 @@ begin
 
   update_menu(true);{file loaded, update menu for fits. Set fits_file:=true}
   getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-  plot_fits(mainwindow.image1,true);{plot test image}
+  plot_fits(mainwindow.image1,true,true);{plot test image}
 end;
 
 procedure progress_indicator(i:double; info:string);{0 to 100% indication of progress}
@@ -939,7 +938,7 @@ begin
     setlength(img_loaded,naxis3,width2,height2);{force a duplication}
 
     getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-    plot_fits(mainwindow.image1,resized);{restore image1}
+    plot_fits(mainwindow.image1,resized,true);{restore image1}
 
     stackmenu1.apply_dpp_button1.Enabled:=true;
     update_equalise_background_step(equalise_background_step-1);{update equalize menu}
@@ -992,7 +991,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.277 dated 2019-10-16';
+  #13+#10+'Version ß0.9.278 dated 2019-10-17';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1020,7 +1019,7 @@ end;
 procedure Tmainwindow.histogram_UpDown1Click(Sender: TObject; Button: TUDBtnType  );
 begin
   getfits_histogram(1);{get histogram NO, plot histogram YES, set min & max YES}
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainwindow.image1,false,true);
 end;
 
 procedure update_recent_file_menu;{recent file menu update}
@@ -1059,7 +1058,7 @@ end;
 procedure Tmainwindow.image_cleanup1Click(Sender: TObject);
 begin
   mainwindow.error_label1.visible:=false;
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainwindow.image1,false,true);
 end;
 
 
@@ -1123,7 +1122,7 @@ begin
         end;
       end;
     end;{k color}
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainwindow.image1,false,true);
     progress_indicator(-100,'');{back to normal}
     Screen.Cursor:=Save_Cursor;
   end {fits file}
@@ -1192,7 +1191,7 @@ begin
         end;
       end;
     end;{k color}
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainwindow.image1,false,true);
     Screen.Cursor:=Save_Cursor;
   end {fits file}
   else
@@ -1301,7 +1300,7 @@ begin
  begin
     maximum1.Position:=edit_value;
     mainwindow.range1.itemindex:=4; {manual}
-   plot_fits(mainwindow.image1,false);
+   plot_fits(mainwindow.image1,false,true);
  end;
 end;
 
@@ -1370,7 +1369,7 @@ begin
     end;{k color}
 
     img_temp:=nil;{clean memory}
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainwindow.image1,false,true);
     Screen.Cursor:=Save_Cursor;
   end{fits file}
   else
@@ -1517,7 +1516,7 @@ begin
         end;
       end;
 
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainwindow.image1,false,true);
     Screen.Cursor:=Save_Cursor;
   end {fits file}
   else
@@ -1583,7 +1582,7 @@ begin
 
 
 //  getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-  plot_fits(mainwindow.image1,false);{plot real}
+  plot_fits(mainwindow.image1,false,true);{plot real}
 
   Screen.Cursor:=Save_Cursor;
 end;
@@ -1650,7 +1649,7 @@ end;
 
 procedure Tmainwindow.remove_annotations1Click(Sender: TObject);
 begin
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainwindow.image1,false,true);
   plot_annotations;
 end;
 
@@ -1692,7 +1691,7 @@ begin
        img_loaded[1,fitsX,fitsY]:=val;
        img_loaded[2,fitsX,fitsY]:=val;
     end;
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainwindow.image1,false,true);
     Screen.Cursor:=Save_Cursor;
   end{fits file}
   else
@@ -1812,7 +1811,7 @@ begin
 
   img_loaded:=img_temp;
   img_temp:=nil;
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainwindow.image1,false,true);
 
   if cd1_1<>0 then {update solution for rotation}
   begin
@@ -1855,13 +1854,13 @@ end;
 procedure Tmainwindow.saturation_factor_plot1KeyUp(Sender: TObject;
   var Key: Word; Shift: TShiftState);
 begin
-  plot_fits(mainwindow.image1,false);{plot real}
+  plot_fits(mainwindow.image1,false,true);{plot real}
 end;
 
 procedure Tmainwindow.saturation_factor_plot1MouseUp(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-    plot_fits(mainwindow.image1,false);{plot real}
+    plot_fits(mainwindow.image1,false,true);{plot real}
 end;
 
 
@@ -1894,7 +1893,7 @@ end;
 
 procedure Tmainwindow.remove_markers1Click(Sender: TObject);
 begin
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainwindow.image1,false,true);
   plot_annotations;
 end;
 
@@ -2273,7 +2272,7 @@ begin
   begin
     minimum1.Position:=edit_value;
     mainwindow.range1.itemindex:=4; {manual}
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainwindow.image1,false,true);
   end;
 end;
 
@@ -2318,7 +2317,7 @@ begin
   mainwindow.CropFITSimage1Click(nil);
 end;
 
-procedure Tmainwindow.MenuItem7Click(Sender: TObject);
+procedure Tmainwindow.select_directory_thumb1Click(Sender: TObject);
 begin
   if SelectDirectory('Select a directory', ExtractFileDir(filename2){initialdir} , chosenDirectory) then
   begin
@@ -2460,7 +2459,7 @@ begin
       if load_fits(opendialog1.filename,true {light},true,true {reset var},img_loaded) then
       begin
         getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-        plot_fits(mainwindow.image1,false {re_center});
+        plot_fits(mainwindow.image1,false {re_center},true);
       end;
     end;
   end;
@@ -2555,7 +2554,7 @@ begin
         end;
       end;
     end;{k color}
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainwindow.image1,false,true);
     Screen.Cursor:=Save_Cursor;
   end {fits file}
   else
@@ -3665,7 +3664,7 @@ begin
 end;
 
 
-procedure plot_fits(img:timage; center_image:boolean);
+procedure plot_fits(img:timage; center_image,show_header:boolean);
 type
 
   PRGBTripleArray = ^TRGBTripleArray; {for fast pixel routine}
@@ -3688,7 +3687,7 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
   img.visible:=true;
-  mainwindow.memo1.visible:=true;{start updating memo1}
+  mainwindow.memo1.visible:=show_header;{start updating memo1}
 
   Bitmap := TBitmap.Create;
   TRY
@@ -5574,6 +5573,8 @@ begin
     dum:=initstring.Values['noisefilter_blur']; if dum<>'' then stackmenu1.noisefilter_blur1.text:=dum;
     dum:=initstring.Values['noisefilter_sd']; if dum<>'' then stackmenu1.noisefilter_sd1.text:=dum;
 
+    stackmenu1.live_stacking_path1.caption:=initstring.Values['live_stack_dir'];
+
     c:=0;
     repeat {add images}
        dum:=initstring.Values['image'+inttostr(c)];
@@ -5832,6 +5833,8 @@ begin
   initstring.Values['sd_factor_list']:=stackmenu1.sd_factor_list1.text;
   initstring.Values['noisefilter_blur']:=stackmenu1.noisefilter_blur1.text;
   initstring.Values['noisefilter_sd']:=stackmenu1.noisefilter_sd1.text;
+
+  initstring.Values['live_stack_dir']:=stackmenu1.live_stacking_path1.caption;
 
   for c:=0 to stackmenu1.ListView1.items.count-1 do {add light images}
   begin
@@ -6193,7 +6196,7 @@ begin
       add_recent_file(filename2);{add to recent file list}
 
       getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-      plot_fits(mainwindow.image1,re_center);     {mainwindow.image1.Visible:=true; is done in plot_fits}
+      plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
 
       mainwindow.ShowFITSheader1.enabled:=true;
       mainwindow.demosaicBayermatrix1.Enabled:=true;
@@ -6216,7 +6219,7 @@ begin
       add_recent_file(filename2);{add to recent file list}
 
       getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-      plot_fits(mainwindow.image1,re_center);     {mainwindow.image1.Visible:=true; is done in plot_fits}
+      plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
 
       mainwindow.ShowFITSheader1.enabled:=true;
       mainwindow.demosaicBayermatrix1.Enabled:=true;
@@ -6242,7 +6245,7 @@ begin
       add_recent_file(filename4);{add to recent file list}
 
       getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-      plot_fits(mainwindow.image1,re_center);     {mainwindow.image1.Visible:=true; is done in plot_fits}
+      plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
 
       mainwindow.ShowFITSheader1.enabled:=true;
       mainwindow.demosaicBayermatrix1.Enabled:=true;
@@ -6263,7 +6266,7 @@ begin
       add_recent_file(filename2);{add to recent file list}
 
       getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-      plot_fits(mainwindow.image1,re_center);     {mainwindow.image1.Visible:=true; is done in plot_fits}
+      plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
 
       mainwindow.ShowFITSheader1.enabled:=true;
       mainwindow.demosaicBayermatrix1.Enabled:=true;
@@ -6285,7 +6288,7 @@ begin
       add_recent_file(filename2);{add to recent file list}
 
       getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-      plot_fits(mainwindow.image1,re_center);     {mainwindow.image1.Visible:=true; is done in plot_fits}
+      plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
 
       mainwindow.ShowFITSheader1.enabled:=true;
       mainwindow.demosaicBayermatrix1.Enabled:=true;
@@ -6303,7 +6306,7 @@ begin
   if plot then
   begin
     getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-    plot_fits(mainwindow.image1,re_center);     {mainwindow.image1.Visible:=true; is done in plot_fits}
+    plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
     mainwindow.ShowFITSheader1.enabled:=true;
     mainwindow.demosaicBayermatrix1.Enabled:=true;
     image_move_to_left_top_corner:=re_center;
@@ -6489,7 +6492,7 @@ begin
 
   img_loaded:=img_temp;
   img_temp:=nil;
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainwindow.image1,false,true);
 
   if cd1_1<>0 then {update solution for rotation}
   begin
@@ -7668,7 +7671,7 @@ begin
           begin
             getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
             histogram_done:=true;
-            plot_fits(mainwindow.image1,true {center_image});{center and stretch with current settings}
+            plot_fits(mainwindow.image1,true {center_image},true);{center and stretch with current settings}
             save_annotated_jpg(filename2);{save viewer as annotated jpg}
           end;
           if hasoption('tofits') then {still to be tested}
@@ -7806,7 +7809,7 @@ begin
   begin
     getfits_histogram(2);{no new file, only update sliders. get histogram NO, plot histogram NO, set min & max YES}
 
-    plot_fits(mainwindow.image1,false);
+    plot_fits(mainwindow.image1,false,true);
   end;
 end;
 
@@ -8050,7 +8053,7 @@ begin
 
   smart_colour_smooth(img_loaded,10,false {get red hist});
 
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainwindow.image1,false,true);
   stackmenu1.test_pattern1.Enabled:=false;{do no longer allow debayer}
 
   Screen.Cursor:=OldCursor;
@@ -8142,7 +8145,7 @@ begin
 
    img_temp:=nil; {free memory}
 
-   plot_fits(mainwindow.image1,true);
+   plot_fits(mainwindow.image1,true,true);
 
    image_move_to_left_top_corner:=true;
 
@@ -8375,7 +8378,7 @@ begin
   end;
 
   getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainwindow.image1,false,true);
 
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
@@ -9203,7 +9206,7 @@ begin
 
   {colours are now mixed, redraw histogram}
   getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-  plot_fits(mainwindow.image1,false);{plot}
+  plot_fits(mainwindow.image1,false,true);{plot}
   Screen.cursor:=Save_Cursor;
 end;
 
@@ -10019,7 +10022,7 @@ begin
   min2.text:=inttostr(minimum1.position);
   {$IfDef Darwin}// for OS X,
    {update after scrolling deosn't work. in macOS. See mainwindow.maximum1Scroll. temporary fix }
-   if ((fits_file) {and (scrollcode=scEndScroll)}) then plot_fits(mainwindow.image1,false);
+   if ((fits_file) {and (scrollcode=scEndScroll)}) then plot_fits(mainwindow.image1,false,true);
   {$ELSE}
   {$ENDIF}
 
@@ -10031,7 +10034,7 @@ begin
 
   {$IfDef Darwin}// {MacOS}
    {update after scrolling deosn't work. in macOS. See mainwindow.maximum1Scroll. temporary fix }
-   if ((fits_file) {and (scrollcode=scEndScroll)}) then plot_fits(mainwindow.image1,false);
+   if ((fits_file) {and (scrollcode=scEndScroll)}) then plot_fits(mainwindow.image1,false,true);
   {$ELSE}
   {$ENDIF}
 end;
@@ -10039,7 +10042,7 @@ end;
 procedure Tmainwindow.maximum1Scroll(Sender: TObject; ScrollCode: TScrollCode;
   var ScrollPos: Integer);
 begin
-  if ((fits_file) and (scrollcode=scEndScroll)) then plot_fits(mainwindow.image1,false);
+  if ((fits_file) and (scrollcode=scEndScroll)) then plot_fits(mainwindow.image1,false,true);
   mainwindow.range1.itemindex:=4; {manual}
 end;
 

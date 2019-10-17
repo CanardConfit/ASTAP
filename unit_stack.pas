@@ -94,7 +94,16 @@ type
     browse_blink1: TButton;
     browse_darks1: TButton;
     browse_flats1: TButton;
+    Label20: TLabel;
+    Label30: TLabel;
+    live_stacking1: TButton;
     browse_photometry1: TButton;
+    browse_live_stacking1: TButton;
+    restore_file_ext1: TButton;
+    Label15: TLabel;
+    files_live_stacked1: TLabel;
+    live_stacking_path1: TLabel;
+    live_stacking_pause1: TButton;
     colournebula1: TButton;
     Button_free_resize_fits1: TButton;
     calculated_scale1: TLabel;
@@ -254,6 +263,7 @@ type
     listview5: TListView;
     listview6: TListView;
     listview7: TListView;
+    live_stacking_restart1: TButton;
     luminance_filter1: TEdit;
     luminance_filter2: TEdit;
     make_osc_color1: TCheckBox;
@@ -299,7 +309,8 @@ type
     photometry_binx2: TButton;
     photometry_button1: TButton;
     photometry_stop1: TButton;
-    Pixelmath1: TTabSheet;
+    tab_live_stacking1: TTabSheet;
+    tab_Pixelmath1: TTabSheet;
     pixelsize1: TEdit;
     PopupMenu7: TPopupMenu;
     radius_search1: TComboBox;
@@ -469,6 +480,9 @@ type
     procedure blink_stop1Click(Sender: TObject);
     procedure blink_unaligned_multi_step1Click(Sender: TObject);
     procedure browse_dark1Click(Sender: TObject);
+    procedure browse_live_stacking1Click(Sender: TObject);
+    procedure live_stacking1Click(Sender: TObject);
+    procedure restore_file_ext1Click(Sender: TObject);
     procedure colournebula1Click(Sender: TObject);
     procedure clear_photometric_solutions1Click(Sender: TObject);
     procedure clear_photometry_list1Click(Sender: TObject);
@@ -483,6 +497,8 @@ type
       var DefaultDraw: Boolean);
     procedure listview7CustomDrawItem(Sender: TCustomListView; Item: TListItem;
       State: TCustomDrawState; var DefaultDraw: Boolean);
+    procedure live_stacking_pause1Click(Sender: TObject);
+    procedure live_stacking_restart1Click(Sender: TObject);
     procedure more_indication1Click(Sender: TObject);
     procedure photometry_binx2Click(Sender: TObject);
     procedure photometry_button1Click(Sender: TObject);
@@ -680,7 +696,7 @@ procedure analyse_fits(var hfd_counter : integer; var backgr, hfd_median : doubl
 implementation
 
 
-uses  unit_astrometry,unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd;
+uses  unit_astrometry,unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd, unit_live_stacking;
 {$IFDEF fpc}
   {$R *.lfm}
 {$else}  {delphi}
@@ -829,6 +845,13 @@ end;
 procedure memo2_message(s: string);{message to memo2}
 begin
   stackmenu1.memo2.lines.add(TimeToStr(time)+'  '+s);
+  {$IFDEF LINUX}
+  // scroll down:
+  stackmenu1.Memo2.SelStart:=Length(stackmenu1.Memo2.lines.Text)-1;
+  stackmenu1.Memo2.VertScrollBar.Position:=40000;
+  {$ELSE }
+  {$ENDIF}
+
 end;
 
 procedure listview_add(s0:string);
@@ -1528,7 +1551,7 @@ begin
             img_loaded[col,fitsX,fitsY]:=img_temp[col,fitsX,fitsY]-img_loaded[col,fitsX,fitsY]+1000;
         end;
     getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-    plot_fits(mainwindow.image1,false);{plot real}
+    plot_fits(mainwindow.image1,false,true);{plot real}
   end;
   Screen.Cursor:=Save_Cursor;
 
@@ -1547,7 +1570,7 @@ begin
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
     if  tetrahedrons_displayed then
-      plot_fits(mainwindow.image1,false); {remove tetrahedrons}
+      plot_fits(mainwindow.image1,false,true); {remove tetrahedrons}
     get_background(0,img_loaded,false{histogram already available},true {unknown, calculate also noise level} ,{var}cblack,star_level);
     find_stars(img_loaded,starlist1);{find stars and put them in a list}
     find_tetrahedrons_ref;{find tetrahedrons for reference image}
@@ -1644,7 +1667,7 @@ begin
    Screen.Cursor := crHourglass;    { Show hourglass cursor }
    backup_img;
    gaussian_blur2(img_loaded,strtofloat2(equalise_gaussian_filter1.text));
-   plot_fits(mainwindow.image1,false);{plot}
+   plot_fits(mainwindow.image1,false,true);{plot}
    Screen.Cursor:=Save_Cursor;
    update_equalise_background_step(equalise_background_step+1);{update menu}
 end;
@@ -1883,7 +1906,7 @@ begin
      median_equalise(img_loaded, box_size);
 
   //   getfits_histogram(true);{get histogram}
-     plot_fits(mainwindow.image1,true);{plot real}
+     plot_fits(mainwindow.image1,true,true);{plot real}
      Screen.Cursor:=Save_Cursor;
   end;
 end;
@@ -1944,7 +1967,7 @@ begin
 
    apply_factors;
    getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-   plot_fits(mainwindow.image1,false);{plot real}
+   plot_fits(mainwindow.image1,false,true);{plot real}
    Screen.Cursor:=Save_Cursor;
   end;
 end;
@@ -2015,7 +2038,7 @@ begin
     end;
     img_temp:=nil;
     getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-    plot_fits(mainwindow.image1,false);{plot real}
+    plot_fits(mainwindow.image1,false,true);{plot real}
     Screen.Cursor:=Save_Cursor;
   end;
 end;
@@ -2080,7 +2103,7 @@ begin
         end;
      apply_dpp_button1.Enabled:=false;
      getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-     plot_fits(mainwindow.image1,true);{plot real}
+     plot_fits(mainwindow.image1,true,true);{plot real}
 
      Screen.Cursor:=Save_Cursor;
   end;
@@ -2136,7 +2159,7 @@ begin
 
   apply_most_common(img_backup,img_loaded,radius); {apply most common filter on first array and place result in second array}
 
-  plot_fits(mainwindow.image1,false);{plot real}
+  plot_fits(mainwindow.image1,false,true);{plot real}
   Screen.Cursor:=Save_Cursor;
   update_equalise_background_step(equalise_background_step+1);{update menu}
 end;
@@ -2282,7 +2305,7 @@ begin
       if load_fits(filename2,true {light},true,true,img_loaded) then{succes load}
       begin
         getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-        plot_fits(mainwindow.image1,false);{plot real}
+        plot_fits(mainwindow.image1,false,true);{plot real}
       end;
     end
     else
@@ -2326,7 +2349,7 @@ begin
    backup_img;
    gaussian_blur2(img_loaded,strtofloat2(blur_factor1.text));
    getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-   plot_fits(mainwindow.image1,false);{plot}
+   plot_fits(mainwindow.image1,false,true);{plot}
    Screen.cursor:=Save_Cursor;
 end;
 
@@ -2809,7 +2832,7 @@ begin
   if pos('4x4',stackmenu1.flat_combine_method1.text)>0 then  x4mean(1 {nr of colors},img_loaded); {else do nothing}
 
   getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-  plot_fits(mainwindow.image1,false);{plot real}
+  plot_fits(mainwindow.image1,false,true);{plot real}
 
   Screen.Cursor:=Save_Cursor;
 end;
@@ -2893,7 +2916,7 @@ begin
          end;
        end;
      end;{k color}
-     plot_fits(mainwindow.image1,false);{plot real}
+     plot_fits(mainwindow.image1,false,true);{plot real}
      progress_indicator(-100,'');{back to normal}
      Screen.Cursor:=Save_Cursor;
   end;
@@ -3015,7 +3038,7 @@ begin
   resize_img_loaded(width_UpDown1.position/width2 {ratio});
 
    getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-   plot_fits(mainwindow.image1,true);{plot}
+   plot_fits(mainwindow.image1,true,true);{plot}
    Screen.cursor:=Save_Cursor;
 end;
 
@@ -3470,7 +3493,7 @@ begin
           {nothing to do}
         end;
 
-        plot_fits(mainwindow.image1,false {re_center});
+        plot_fits(mainwindow.image1,false {re_center},true);
       end;
       inc(c);
     until c>=listview6.items.count;
@@ -3541,6 +3564,52 @@ begin
   end;
 end;
 
+procedure Tstackmenu1.browse_live_stacking1Click(Sender: TObject);
+var
+  live_stack_directory : string;
+begin
+  if SelectDirectory('Select directory with files to stack live', live_stacking_path1.caption , live_stack_directory) then
+  begin
+    live_stacking_path1.caption:=live_stack_directory;{show path}
+  end;
+end;
+
+procedure Tstackmenu1.live_stacking1Click(Sender: TObject);
+begin
+  save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
+  esc_pressed:=false;
+  live_stacking_pause1.font.style:=[];
+  live_stacking1.font.style:=[fsbold];
+  Application.ProcessMessages; {process font changes}
+  if pause_pressed=false then {restart}
+      stack_live(round(strtofloat2(stackmenu1.oversize1.Text)), live_stacking_path1.caption){stack live average}
+  else
+     pause_pressed:=false;
+end;
+
+procedure Tstackmenu1.restore_file_ext1Click(Sender: TObject);
+var
+  searchResult : TSearchRec;
+  filen        : string;
+begin
+  esc_pressed:=true; {stop all stacking}
+  If FindFirst (live_stacking_path1.caption+PathDelim+'*.fts',faAnyFile,searchResult)=0 then
+    begin
+    Repeat
+      With searchResult do
+        begin
+          filen:=live_stacking_path1.caption+PathDelim+searchResult.Name;
+          if RenameFile(filen,ChangeFileExt(filen,'.fit'))=false then {mark files as done, beep if failure}
+             beep;
+
+        end;
+    Until FindNext(searchResult)<>0;
+    end;
+  FindClose(searchResult);
+
+  memo2_message('Live stacking stopped and all .fts files renamed to .fit.');
+end;
+
 
 
 procedure Tstackmenu1.colournebula1Click(Sender: TObject);
@@ -3604,7 +3673,7 @@ begin
   update_text   ('HISTORY 77','  Artificial colour applied.');
 
   getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-  plot_fits(mainwindow.image1,false);{plot real}
+  plot_fits(mainwindow.image1,false,true);{plot real}
   Screen.Cursor:=Save_Cursor;
 end;
 
@@ -3948,6 +4017,18 @@ begin
   if  Item.index=0 then  stackmenu1.nr_total_photometry1.caption:=inttostr(sender.items.count);{update counting info}
   {$endif}
   Sender.Canvas.Font.Color := clmenutext;{required for high contrast settings. Otherwise it is always black}
+end;
+
+procedure Tstackmenu1.live_stacking_pause1Click(Sender: TObject);
+begin
+  pause_pressed:=true;
+  live_stacking_pause1.font.style:=[fsbold];
+  mainwindow.memo1.visible:=true;{show header again}
+end;
+
+procedure Tstackmenu1.live_stacking_restart1Click(Sender: TObject);
+begin
+  esc_pressed:=true;
 end;
 
 procedure Tstackmenu1.more_indication1Click(Sender: TObject);
@@ -4339,7 +4420,7 @@ begin
         CRPIX1:=round(solution_vectorX[0]*(CRPIX1-1)+solution_vectorX[1]*(CRPIX2-1)+solution_vectorX[2]);{correct for marker_position at ra_dec position}
         CRPIX2:=round(solution_vectorY[0]*(CRPIX1-1)+solution_vectorY[1]*(CRPIX2-1)+solution_vectorY[2]);
 
-        plot_fits(mainwindow.image1,false {re_center});
+        plot_fits(mainwindow.image1,false {re_center},true);
 
         mainwindow.image1.Canvas.Pen.Mode := pmMerge;
         mainwindow.image1.Canvas.Pen.width :=round(1+height2/mainwindow.image1.height);{thickness lines}
@@ -4752,7 +4833,7 @@ begin
 
   smart_colour_smooth(img_loaded, round(strtofloat2(smart_smooth_width1.text)),false);
 
-  plot_fits(mainwindow.image1,false);{plot real}
+  plot_fits(mainwindow.image1,false,true);{plot real}
 
   Screen.Cursor:=Save_Cursor;
 end;
@@ -4848,7 +4929,7 @@ begin
      backup_img; {move copy to img_backup}
      try radius:=strtoint(extract_background_box_size1.text);except end;
      apply_most_common(img_backup,img_loaded,radius); {apply most common filter on first array and place result in second array}
-     plot_fits(mainwindow.image1,true);{plot real}
+     plot_fits(mainwindow.image1,true,true);{plot real}
      Screen.Cursor:=Save_Cursor;
   end;
 end;
@@ -5009,7 +5090,7 @@ begin
         img_loaded[1,fitsX  ,  fitsY  ]:=green;
         img_loaded[2,fitsX  ,  fitsY  ]:=blue;
      end;
-   plot_fits(mainwindow.image1,false);{plot}
+   plot_fits(mainwindow.image1,false,true);{plot}
    Screen.cursor:=Save_Cursor;
 end;
 
@@ -5216,7 +5297,7 @@ begin
   background_noise_filter(img_loaded,strtofloat2(stackmenu1.noisefilter_sd1.text),strtofloat2(stackmenu1.noisefilter_blur1.text));
 
 //  getfits_histogram(true);{get histogram}
-  plot_fits(mainwindow.image1,false);{plot real}
+  plot_fits(mainwindow.image1,false,true);{plot real}
 
   Screen.Cursor:=Save_Cursor;
 end;
@@ -5254,7 +5335,7 @@ begin
     for col:=0 to naxis3-1 do
       img_loaded[col,fitsX,fitsY]:=max(0,img_loaded[col,fitsX,fitsY]+randg(3*noise,noise){gaussian noise});
 
-    plot_fits(mainwindow.image1,false);{plot real}
+    plot_fits(mainwindow.image1,false,true);{plot real}
     Screen.Cursor:=Save_Cursor;
    end;
 end;
@@ -5311,7 +5392,7 @@ begin
 
         getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
 
-        plot_fits(mainwindow.image1,false {re_center});
+        plot_fits(mainwindow.image1,false {re_center},true);
       end;
       inc(c);
     until c>=listview1.items.count;
@@ -6250,7 +6331,7 @@ begin
         else
         if pos('stich',stackmenu1.stack_method1.text)>0=true then stack_mosaic(over_size,{var}files_to_process,counterL) {mosaic combining}
                                                               else
-                                                                stack_average(over_size,{var}files_to_process,counterL);{average}
+                                                               stack_average(over_size,{var}files_to_process,counterL);{average}
 
         if counterL>0 then exposureL:=round(sum_exp/counterL); {average exposure}
 
@@ -6428,7 +6509,7 @@ begin
         getfits_histogram(0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
 
       CD1_1:=0;{kill any existing north arrow during plotting. Most likely wrong after stacking}
-      plot_fits(mainwindow.image1,true);{plot real}
+      plot_fits(mainwindow.image1,true,true);{plot real}
       mainwindow.Memo1.Text:=memo1_text;{use saved fits header first FITS file}
 
       {kill any old plate solution since it is most likely invalid due to oversize or less accurate}
@@ -6745,7 +6826,7 @@ begin
   end;{k color}
 
   getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-  plot_fits(mainwindow.image1,false);
+  plot_fits(mainwindow.image1,false,true);
   Screen.Cursor:=Save_Cursor;
 
 end;
