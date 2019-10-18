@@ -35,20 +35,21 @@ uses unit_stack, astap_main,unit_stack_routines,unit_astrometric_solving,unit_st
 const
   oldra0  :double=0;
   olddec0 :double=0;
+  oldexposure:double=0;
 
-function find_file(stack_directory:string) : string;
+function file_available(stack_directory:string; var filen: string ) : boolean; {check if fits file is available and report the filename}
 var
   searchResult : TSearchRec;
-
 begin
   if findfirst(stack_directory+PathDelim+'*.fit*', faAnyFile, searchResult) = 0 then
   begin
-    result:= stack_directory+PathDelim+searchResult.Name;
-    // Must free up resources used by these successful finds
-    FindClose(searchResult);
+    result:=true;
+    filen:= stack_directory+PathDelim+searchResult.Name;
   end
   else
-  result:='';
+  result:=false;
+
+  FindClose(searchResult);
 end;
 
 procedure update_header;
@@ -73,7 +74,7 @@ end;
 procedure stack_live(oversize:integer; path :string);{stack live average}
 var
     fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col           : integer;
-    background_correction, flat_factor,  h,dRA, dDec,det, delta,gamma,ra_new, dec_new, sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v, value, weightF,distance    : double;
+    {background_correction,} flat_factor,  h,dRA, dDec,det, delta,gamma,ra_new, dec_new, sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v, value, weightF,distance    : double;
     init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
 
     counter :  integer;
@@ -104,45 +105,33 @@ begin
     mainwindow.memo1.visible:=false;{Hide header}
 
 
-    {live stack specific}
-
-    background_correction:=0;
-
-
-
     {live stacking}
     repeat
     begin
-//      for c:=0 to length(files_to_process)-1 do
-//      if length(files_to_process[c].name)>0 then
-      filename2:=find_file(path);
-      if ((filename2<>'') and (pause_pressed=false)) then
-
-
+      if ((pause_pressed=false) and (file_available(path,filename2 {file found}))) then
       begin
-
         try { Do some lengthy operation }
-         // ListView1.Selected :=nil; {remove any selection}
-         // ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
-        //  Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False);{scroll to selected item}
-
-         // filename2:=files_to_process[c].name;
-
           Application.ProcessMessages;
-
-
-
           {load image}
           if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
 
+          if init=true then {stack ongoing, reference image selected}
           {test of mount has moved}
           ang_sep(ra0,dec0,oldra0,olddec0 ,distance);{calculate distance in radians}
           oldra0:=ra0;olddec0:=dec0;
-          if distance>(20/3600)*(pi/180) then
+          if distance>(0.2*pi/180) then
           begin
             reset_var; {reset variables including init:=false}
             memo2_message('New telescope position. New stack started');
+          end
+          else
+          {test if exposure has changed}
+          if exposure<>oldexposure then
+          begin
+            reset_var; {reset variables including init:=false}
+            memo2_message('New exposure time. New stack started');
           end;
+          oldexposure:=exposure;
 
           if init=false then
           begin
@@ -162,12 +151,7 @@ begin
           if esc_pressed then exit;
 
           if make_osc_color1.checked then
-          begin
-//             if drizzle_mode<>2 {<>Bayer drizzle}  then
-             demosaic_bayer {convert OSC image to colour}
-//             else naxis3:=3;{for bayer drizzle, demosaic will be done later}
-             {naxis3 is now 3}
-          end;
+             demosaic_bayer; {convert OSC image to colour}
 
           if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
 
@@ -199,7 +183,7 @@ begin
 
           if init=false then {init}
           begin
-            memo2_message('Reference image, largest with best HFD is: '+filename2);
+            memo2_message('Reference image is: '+filename2);
             image_path:=ExtractFilePath(filename2); {for saving later}
             width_max:=width2+oversize*2;
             height_max:=height2+oversize*2;
@@ -286,7 +270,7 @@ begin
               end;
             end
           end;
-          stackmenu1.files_live_stacked1.caption:='Counter '+inttostr(counter);{Show progress}
+          stackmenu1.files_live_stacked1.caption:=inttostr(counter)+' stacked';{Show progress}
 
           if RenameFile(filename2,ChangeFileExt(filename2,'.fts'))=false then {mark files as done, beep if failure}
              beep;

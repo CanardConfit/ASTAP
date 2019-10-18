@@ -94,6 +94,7 @@ type
     browse_blink1: TButton;
     browse_darks1: TButton;
     browse_flats1: TButton;
+    help_live_stacking1: TLabel;
     Label20: TLabel;
     Label30: TLabel;
     live_stacking1: TButton;
@@ -481,6 +482,7 @@ type
     procedure blink_unaligned_multi_step1Click(Sender: TObject);
     procedure browse_dark1Click(Sender: TObject);
     procedure browse_live_stacking1Click(Sender: TObject);
+    procedure help_live_stacking1Click(Sender: TObject);
     procedure live_stacking1Click(Sender: TObject);
     procedure restore_file_ext1Click(Sender: TObject);
     procedure colournebula1Click(Sender: TObject);
@@ -3572,6 +3574,11 @@ begin
   begin
     live_stacking_path1.caption:=live_stack_directory;{show path}
   end;
+end;
+
+procedure Tstackmenu1.help_live_stacking1Click(Sender: TObject);
+begin
+  openurl('http://www.hnsky.org/astap.htm#live_stacking');
 end;
 
 procedure Tstackmenu1.live_stacking1Click(Sender: TObject);
