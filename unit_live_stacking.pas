@@ -75,7 +75,7 @@ procedure stack_live(oversize:integer; path :string);{stack live average}
 var
     fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col           : integer;
     {background_correction,} flat_factor,  h,dRA, dDec,det, delta,gamma,ra_new, dec_new, sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v, value, weightF,distance    : double;
-    init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
+    init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based,waiting :boolean;
 
     counter :  integer;
 
@@ -111,6 +111,7 @@ begin
       if ((pause_pressed=false) and (file_available(path,filename2 {file found}))) then
       begin
         try { Do some lengthy operation }
+          waiting:=false;
           Application.ProcessMessages;
           {load image}
           if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
@@ -200,7 +201,7 @@ begin
             if init=true then {second image}
             begin
               begin{internal alignment}
-               // get_background(0,img_loaded,true,true {unknown, calculate also noise_level} , {var} cblack,star_level);
+                get_background(0,img_loaded,true,true {unknown, calculate also noise_level} , {var} cblack,star_level);
                // background_correction:=pedestal-cblack;
                // datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
@@ -272,17 +273,19 @@ begin
         end;
       end
       else
-      begin  {pause}
-        if ((mainwindow.memo1.visible=false) and (counter>0)) then
-        begin
-          counterL:=counter;
-          update_header;
-          if pause_pressed then memo2_message('Live stack is suspended.')
+      begin  {pause or no files}
+        if waiting=false then {do this only once}
+          begin
+            if ((pause_pressed) and (counter>0)) then
+          begin
+            counterL:=counter;
+            update_header;
+            memo2_message('Live stack is suspended.')
+          end
           else
-             memo2_message('Live stack is waiting for files.');
-
+          memo2_message('Live stack is waiting for files.');
         end;
-
+        waiting:=true;
         Application.ProcessMessages;
         sleep(1000); {no new files, wait some time}
       end;

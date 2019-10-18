@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 1037
+  Left = 742
   Height = 644
-  Top = 101
+  Top = 230
   Width = 1410
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1409
-    ActivePage = Flats
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 2
+    TabIndex = 0
     TabOrder = 5
     Options = [nboMultiLine]
     object Images: TTabSheet
@@ -3289,36 +3289,33 @@ object stackmenu1: Tstackmenu1
       end
       object live_stacking1: TButton
         Left = 48
-        Height = 50
+        Height = 25
         Hint = 'Start live stacking'
         Top = 144
         Width = 80
-        Caption = '⯈'
-        Font.Height = -27
+        Caption = '>'
         OnClick = live_stacking1Click
         ParentFont = False
         TabOrder = 1
       end
       object live_stacking_pause1: TButton
         Left = 152
-        Height = 50
+        Height = 25
         Hint = 'Pause stacking process'
         Top = 144
         Width = 75
-        Caption = '❙❙'
-        Font.Height = -27
+        Caption = '||'
         OnClick = live_stacking_pause1Click
         ParentFont = False
         TabOrder = 2
       end
       object live_stacking_restart1: TButton
         Left = 248
-        Height = 50
+        Height = 25
         Hint = 'Clear stack and restart.'
         Top = 144
         Width = 75
-        Caption = '⟲ '
-        Font.Height = -27
+        Caption = 'Restart'
         OnClick = live_stacking_restart1Click
         ParentFont = False
         TabOrder = 3
