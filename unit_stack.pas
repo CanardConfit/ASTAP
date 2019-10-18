@@ -694,16 +694,6 @@ procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
 function median_background(var img :image_array;color,size,x,y:integer): double;{find median value in sizeXsize matrix of img}
 procedure analyse_fits(var hfd_counter : integer; var backgr, hfd_median : double; var img : image_array); {find background, number of stars, median HFD}
 
-
-implementation
-
-
-uses  unit_astrometry,unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd, unit_live_stacking;
-{$IFDEF fpc}
-  {$R *.lfm}
-{$else}  {delphi}
- {$R *.lfm}
-{$endif}
 const
   I_object=0; {position in listview1}
   I_filter=1;
@@ -741,6 +731,46 @@ const
   D_sigma=7;
   D_gain=8;
   F_filter=9;
+
+  B_exposure=0;
+  B_temperature=1;
+  B_binning=2;
+  B_width=3;
+  B_height=4;
+  B_type=5;
+  B_date=6;
+  B_calibration=7;
+  B_solution=8;
+
+  P_exposure=0;
+  P_temperature=1;
+  P_binning=2;
+  P_width=3;
+  P_height=4;
+  P_type=5;
+  P_background=6;
+  P_filter=7;
+  P_date=8;
+  P_jd_mid=9;
+  P_jd_helio=10;
+  P_magn=11;
+  P_hfd=12;
+  P_stars=13;
+  P_astrometric=14;
+  P_photometric=15;
+  P_calibration=16;
+
+
+implementation
+
+
+uses  unit_astrometry,unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd, unit_live_stacking;
+{$IFDEF fpc}
+  {$R *.lfm}
+{$else}  {delphi}
+ {$R *.lfm}
+{$endif}
+
 
 {$ifdef mswindows}
 Function ShutMeDown:string;
@@ -1081,7 +1111,7 @@ begin
               memo2_message(ListView1.Items.item[c].caption+ ' unchecked due to high outlier HFD value.' );
             end
             else
-            if (stars_mean- strtofloat(ListView1.Items.item[c].subitems.Strings[0+5]))>sd_factor*stars_sd  then
+            if (stars_mean- strtofloat(ListView1.Items.item[c].subitems.Strings[I_stardetections]))>sd_factor*stars_sd  then
             begin {remove low star count outliers}
               ListView1.Items.item[c].checked:=false;
               ListView1.Items.item[c].subitems.Strings[I_result]:='↓ stars';{mark as outlier}
@@ -2396,8 +2426,8 @@ begin
       begin
         if ((tl=stackmenu1.listview1) and (stackmenu1.use_manual_alignment1.checked)) then {manual alignment}
         begin
-          fitsX:=strtofloat2(tl.Items.item[index].subitems.Strings[11+5]);
-          fitsY:=strtofloat2(tl.Items.item[index].subitems.Strings[11+6]);
+          fitsX:=strtofloat2(tl.Items.item[index].subitems.Strings[I_X]);
+          fitsY:=strtofloat2(tl.Items.item[index].subitems.Strings[I_Y]);
           show_shape(true {assume good lock},fitsX,fitsY);
         end
         else mainwindow.shape_alignment_marker1.visible:=false;
@@ -2538,32 +2568,32 @@ begin
 
             if lv.name=stackmenu1.listview6.name then {blink tab}
             begin
-              lv.Items.item[c].subitems.Strings[6]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
-              lv.Items.item[c].subitems.Strings[7]:=calstat; {calibration calstat info DFB}
+              lv.Items.item[c].subitems.Strings[B_date]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
+              lv.Items.item[c].subitems.Strings[B_calibration]:=calstat; {calibration calstat info DFB}
             end;
 
             if lv.name=stackmenu1.listview7.name then {photometry tab}
             begin
-              lv.Items.item[c].subitems.Strings[7+1]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
+              lv.Items.item[c].subitems.Strings[P_date]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
               date_obs_to_jd; {convert date to Julian day}
               jd:=jd+exposure/2; {mid exposure}
-              lv.Items.item[c].subitems.Strings[8+1]:=floattostrF2(jd,0,5);{julian day}
+              lv.Items.item[c].subitems.Strings[P_jd_mid]:=floattostrF2(jd,0,5);{julian day}
 
               hjd:=JD_to_HJD(jd,RA0,DEC0);{conversion JD to HJD}
-              lv.Items.item[c].subitems.Strings[9+1]:=floattostrF2(frac(Hjd),0,5);{helio julian day}
+              lv.Items.item[c].subitems.Strings[P_jd_helio]:=floattostrF2(frac(Hjd),0,5);{helio julian day}
 
               {magn is column 9 will be added seperately}
               {solution is column 12 will be added seperately}
-              lv.Items.item[c].subitems.Strings[15+1]:=calstat; {calibration calstat info DFB}
+              lv.Items.item[c].subitems.Strings[P_calibration]:=calstat; {calibration calstat info DFB}
             end;
-            if amode=3 then {listview7}
+            if amode=3 then {listview7 photometry}
             begin
 
               analyse_fits(hfd_counter, backgr, hfd_median,img); {find background, number of stars, median HFD}
-              lv.Items.item[c].subitems.Strings[6]:=inttostr5(round(backgr));
-              lv.Items.item[c].subitems.Strings[7]:=filter_name;
-              lv.Items.item[c].subitems.Strings[11+1]:=floattostrF2(hfd_median,0,1);
-              lv.Items.item[c].subitems.Strings[12+1]:=inttostr5(hfd_counter); {number of stars}
+              lv.Items.item[c].subitems.Strings[P_background]:=inttostr5(round(backgr));
+              lv.Items.item[c].subitems.Strings[P_filter]:=filter_name;
+              lv.Items.item[c].subitems.Strings[P_hfd]:=floattostrF2(hfd_median,0,1);
+              lv.Items.item[c].subitems.Strings[P_stars]:=inttostr5(hfd_counter); {number of stars}
             end;
           end;
         finally
@@ -2680,8 +2710,8 @@ begin
 
   for c:=0 to stackmenu1.listview3.items.count-1 do
      if stackmenu1.listview3.items[c].checked=true then
-       if ((stackmenu1.classify_flat_filter1.checked=false) or (filter='ignore') or (filter=stackmenu1.listview3.Items.item[c].subitems.Strings[8])) then {filter correct?}
-         if ((width1=12345) or (width1=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[3]))) then {width correct}
+       if ((stackmenu1.classify_flat_filter1.checked=false) or (filter='ignore') or (filter=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter])) then {filter correct?}
+         if ((width1=12345) or (width1=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]))) then {width correct}
          begin
            file_list[file_count]:=stackmenu1.ListView3.items[c].caption;
            inc(file_count);
@@ -3203,7 +3233,7 @@ procedure Tstackmenu1.listview1CustomDrawItem(Sender: TCustomListView;
 begin
   if stackmenu1.use_manual_alignment1.checked then
   begin
-    if length(sender.Items.item[Item.Index].subitems.Strings[11+5])>1 then {manual position added, colour it}
+    if length(sender.Items.item[Item.Index].subitems.Strings[I_X])>1 then {manual position added, colour it}
        Sender.Canvas.Font.Color := clGreen
        else
        Sender.Canvas.Font.Color := clred;
@@ -3335,7 +3365,7 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
 
- if listview6.Items.item[listview6.items.count-1].subitems.Strings[0]='' {exposire last row} then
+ if listview6.Items.item[listview6.items.count-1].subitems.Strings[B_exposure]='' {exposure} then
       analyse_listview(listview6, 1 {analyse minimum, load full fits header only});
 
 //  flipvertical:=mainwindow.Flipvertical1.Checked;
@@ -3428,7 +3458,7 @@ begin
              solut:=true;
           end;
 
-          if solut then listview6.Items.item[c].subitems.Strings[8]:='✓' else  listview6.Items.item[c].subitems.Strings[8]:='';
+          if solut then listview6.Items.item[c].subitems.Strings[B_solution]:='✓' else  listview6.Items.item[c].subitems.Strings[B_solution]:='';
 
           setlength(img_temp,naxis3,0,0);{set to zero to clear old values (at the edges}
           setlength(img_temp,naxis3,width2,height2);{new size}
@@ -3527,7 +3557,7 @@ begin
     if (sender=listview6)=false then
       DeleteFiles(image_path,'*.astap_image_stars');{delete solution files}
 
-    for c:=0 to listview6.items.count-1 do listview6.Items.item[c].subitems.Strings[8]:='';{clear alignment marks}
+    for c:=0 to listview6.items.count-1 do listview6.Items.item[c].subitems.Strings[B_solution]:='';{clear alignment marks}
   end;
 end;
 
@@ -3586,7 +3616,7 @@ begin
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
   esc_pressed:=false;
   live_stacking_pause1.font.style:=[];
-  live_stacking1.font.style:=[fsbold];
+  live_stacking1.font.style:=[fsbold,fsunderline];
   Application.ProcessMessages; {process font changes}
   if pause_pressed=false then {restart}
       stack_live(round(strtofloat2(stackmenu1.oversize1.Text)), live_stacking_path1.caption){stack live average}
@@ -3613,6 +3643,9 @@ begin
     Until FindNext(searchResult)<>0;
     end;
   FindClose(searchResult);
+
+  live_stacking_pause1.font.style:=[];
+  live_stacking1.font.style:=[];
 
   memo2_message('Live stacking stopped and all .fts files renamed to .fit.');
 end;
@@ -3698,8 +3731,8 @@ begin
 
     for c:=0 to listview7.items.count-1 do
     begin
-      listview7.Items.item[c].subitems.Strings[13+1]:='';{clear astrometry marks}
-      listview7.Items.item[c].subitems.Strings[14+1]:='';{clear photometry marks}
+      listview7.Items.item[c].subitems.Strings[P_astrometric]:='';{clear astrometry marks}
+      listview7.Items.item[c].subitems.Strings[P_photometric]:='';{clear photometry marks}
     end;
   end;
   if sender=clear_astrometric_solutions1 then
@@ -3734,7 +3767,7 @@ begin
 
   esc_pressed:=false;
   for c:=0 to listview6.items.count-1 do {this is not required but nice}
-  if (listview6.Items.item[c].subitems.Strings[8]='✓') then
+  if (listview6.Items.item[c].subitems.Strings[B_solution]='✓') then
   begin
     filename2:=listview6.items[c].caption;
     mainwindow.caption:=filename2;
@@ -4029,13 +4062,17 @@ end;
 procedure Tstackmenu1.live_stacking_pause1Click(Sender: TObject);
 begin
   pause_pressed:=true;
-  live_stacking_pause1.font.style:=[fsbold];
+  live_stacking_pause1.font.style:=[fsbold,fsunderline];
+  live_stacking1.font.style:=[];
   mainwindow.memo1.visible:=true;{show header again}
 end;
 
 procedure Tstackmenu1.live_stacking_restart1Click(Sender: TObject);
 begin
   esc_pressed:=true;
+  live_stacking_pause1.font.style:=[];
+  live_stacking1.font.style:=[];
+
 end;
 
 procedure Tstackmenu1.more_indication1Click(Sender: TObject);
@@ -4294,7 +4331,7 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
 
- if listview7.Items.item[listview7.items.count-1].subitems.Strings[0]='' {exposire last row} then
+ if listview7.Items.item[listview7.items.count-1].subitems.Strings[B_exposure]='' {exposure} then
       analyse_listview(listview7, 1 {analyse full header only});
 
   flipvertical:=mainwindow.Flipvertical1.Checked;
@@ -4308,7 +4345,7 @@ begin
   {solve images first to allow flux to magnitude calibration}
   for c:=0 to listview7.items.count-1 do {check for astrometric solutions}
   begin
-    if listview7.Items.item[c].subitems.Strings[14+1]='' then {not check marked as done}
+    if listview7.Items.item[c].subitems.Strings[P_photometric]='' then {not check marked as done}
     if ((esc_pressed=false) and (listview7.Items.item[c].checked) )  then
     begin
 
@@ -4331,17 +4368,17 @@ begin
         if solve_image(img_loaded,true  {get hist}) then
         begin{match between loaded image and star database}
           mainwindow.SaveFITSwithupdatedheader1Click(nil);
-          listview7.Items.item[c].subitems.Strings[13+1]:='✓';
+          listview7.Items.item[c].subitems.Strings[P_astrometric]:='✓';
         end
         else
         begin
           listview7.Items[c].Checked:=false;
-          listview7.Items.item[c].subitems.Strings[13+1]:='';
+          listview7.Items.item[c].subitems.Strings[P_astrometric]:='';
           memo2_message(filename2+ 'Uncheck, no astrometric solution found for this file. Can not measure magnitude!');
         end;
       end
       else
-      listview7.Items.item[c].subitems.Strings[13+1]:='✓';
+      listview7.Items.item[c].subitems.Strings[P_astrometric]:='✓';
 
     end;{check for astrometric solutions}
   end;{for loop for astrometric solving }
@@ -4383,12 +4420,12 @@ begin
           if pos('F',calstat)=0 then
           begin
             extra_message:=' Image not calibrated with a flat field. Photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu.';
-            listview7.Items.item[c].subitems.Strings[14+1]:='no calibration';
+            listview7.Items.item[c].subitems.Strings[P_photometric]:='no calibration';
           end
           else
           begin
             extra_message:='';
-            listview7.Items.item[c].subitems.Strings[14+1]:='✓';
+            listview7.Items.item[c].subitems.Strings[P_photometric]:='✓';
           end;
           memo2_message(inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.'+extra_message);
           measure_magnitudes(stars); {analyse}
@@ -4397,7 +4434,7 @@ begin
         else
         begin
           read_stars_from_disk(filename2,stars)  ;{read from disk}
-          if pos('F',calstat)=0 then  listview7.Items.item[c].subitems.Strings[14+1]:='no calibration' else listview7.Items.item[c].subitems.Strings[14+1]:='✓';
+          if pos('F',calstat)=0 then  listview7.Items.item[c].subitems.Strings[P_photometric]:='no calibration' else listview7.Items.item[c].subitems.Strings[P_photometric]:='✓';
         end;
 
         setlength(img_temp,naxis3,width2,height2);{new size}
@@ -4436,7 +4473,7 @@ begin
         mainwindow.image1.Canvas.font.size:=10; //round(max(10,8*height2/image1.height));{adapt font to image dimensions}
         mainwindow.image1.Canvas.Pen.Color := clred;
 
-        listview7.Items.item[c].subitems.Strings[10+1]:=''; {MAGN, always blank}
+        listview7.Items.item[c].subitems.Strings[P_magn]:=''; {MAGN, always blank}
 
         {measure the single star clicked on by mouse}
         if mainwindow.shape_alignment_marker1.visible then
@@ -4456,7 +4493,7 @@ begin
                 (img_loaded[0,round(xc+1),round(yc+1)]<60000)  ) then {not saturated}
             begin
               magn:=flux_magn_offset-ln(flux)*2.511886432/ln(10);
-              listview7.Items.item[c].subitems.Strings[10+1]:=floattostrf(magn, ffgeneral, 5,0); {write measured magnitude to list}
+              listview7.Items.item[c].subitems.Strings[P_magn]:=floattostrf(magn, ffgeneral, 5,0); {write measured magnitude to list}
             end;
             for i:=0 to  length(stars[0])-2 do
             begin
@@ -4480,7 +4517,7 @@ begin
            mainwindow.image1.Canvas.textout(starX+size,starY,floattostrf(magn*10, ffgeneral, 3,0));{add hfd as text}
 
            if ( (abs(shape_fitsX-x_new)<6) and (abs(shape_fitsY-y_new)<6) ) then
-            listview7.Items.item[c].subitems.Strings[10+1]:=floattostrf(magn, ffgeneral, 5,0); {write measured magnitude to list}
+            listview7.Items.item[c].subitems.Strings[P_magn]:=floattostrf(magn, ffgeneral, 5,0); {write measured magnitude to list}
 
         end;{measure single star clicked on}
 
@@ -5136,9 +5173,9 @@ begin
   for c:=0 to listview6.items.count-1 do {this is not required but nice}
   begin
     if fileexists(ChangeFileExt(listview6.items[c].caption,'.astap_solution')) then {read solution}
-       listview6.Items.item[c].subitems.Strings[8]:='✓'
+       listview6.Items.item[c].subitems.Strings[B_solution]:='✓'
     else
-    listview6.Items.item[c].subitems.Strings[8]:='';{clear alignment marks}
+    listview6.Items.item[c].subitems.Strings[B_solution]:='';{clear alignment marks}
   end;
 end;
 
@@ -5154,9 +5191,9 @@ begin
   for c:=0 to listview7.items.count-1 do {this is not required but nice}
   begin
     if fileexists(ChangeFileExt(listview7.items[c].caption,'.astap_image_stars')) then {photometric solution}
-       listview7.Items.item[c].subitems.Strings[14+1]:='✓'
+       listview7.Items.item[c].subitems.Strings[P_photometric]:='✓'
     else
-    listview7.Items.item[c].subitems.Strings[14+1]:='';
+    listview7.Items.item[c].subitems.Strings[P_photometric]:='';
   end;
 end;
 procedure Tstackmenu1.auto_background_level1Click(Sender: TObject);
@@ -5552,8 +5589,8 @@ begin
   while c<stackmenu1.listview3.items.count do
   begin
     if stackmenu1.listview3.items[c].checked=true then
-      if ((stackmenu1.classify_flat_filter1.checked=false) or (AnsiCompareText(filter,stackmenu1.listview3.Items.item[c].subitems.Strings[8])=0)) then {filter correct?  ignoring case}
-        if  width1=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[3]) then {width correct}
+      if ((stackmenu1.classify_flat_filter1.checked=false) or (AnsiCompareText(filter,stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter])=0)) then {filter correct?  ignoring case}
+        if  width1=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct}
         begin
           memo2_message('Loading master flat file '+stackmenu1.ListView3.items[c].caption);
           if load_fits(stackmenu1.ListView3.items[c].caption,false {light},true,false {reset var},img_flat)=false then begin memo2_message('Error'); flat_count:=0; exit; end;
@@ -5744,15 +5781,15 @@ begin
       begin {set specification master}
         if specified=false then
         begin
-          filter:=stackmenu1.listview3.Items.item[c].subitems.Strings[6];
-          width1:=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[3]);
+          filter:=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter];
+          width1:=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]);
           if flat_dark_width=0 then memo2_message('Warning no flat-dark/bias found!!')
           else
           if width1<>flat_dark_width then begin memo2_message('Abort, the width of the flat and flat-dark do not match!!');exit end;
           specified:=true;
         end;
-        if ((stackmenu1.classify_flat_filter1.checked=false) or (filter=stackmenu1.listview3.Items.item[c].subitems.Strings[8])) then {filter correct?}
-            if  width1=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[3]) then {width correct}
+        if ((stackmenu1.classify_flat_filter1.checked=false) or (filter=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter])) then {filter correct?}
+            if  width1=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct}
              begin
                file_list[file_count]:=filen;
                inc(file_count);
@@ -6173,7 +6210,7 @@ begin
         ListView1.Selected :=nil; {remove any selection}
         ListView1.ItemIndex := c;{show wich file is processed}
         Listview1.Items[c].MakeVisible(False);{scroll to selected item}
-        if length(ListView1.Items.item[c].subitems.Strings[11+5])<=1 then {no manual position added}
+        if length(ListView1.Items.item[c].subitems.Strings[I_X])<=1 then {no manual position added}
         begin
           memo2_message('█ █ █  Abort! █ █ █  Reference object missing for one file. Double click on all file names and mark with the mouse the reference object. The file name will then turn green.');
           Screen.Cursor := Save_Cursor;

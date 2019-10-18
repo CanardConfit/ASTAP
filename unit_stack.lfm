@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 143
+  Left = 1037
   Height = 644
-  Top = 182
+  Top = 101
   Width = 1410
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1409
-    ActivePage = Images
+    ActivePage = Flats
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 2
     TabOrder = 5
     Options = [nboMultiLine]
     object Images: TTabSheet
@@ -3287,37 +3287,40 @@ object stackmenu1: Tstackmenu1
         OnClick = browse_live_stacking1Click
         TabOrder = 0
       end
-      object live_stacking1: TBitBtn
+      object live_stacking1: TButton
         Left = 48
-        Height = 25
+        Height = 50
         Hint = 'Start live stacking'
         Top = 144
         Width = 80
-        Images = ImageList2
-        ImageIndex = 14
+        Caption = '⯈'
+        Font.Height = -27
         OnClick = live_stacking1Click
+        ParentFont = False
         TabOrder = 1
       end
-      object live_stacking_pause1: TBitBtn
+      object live_stacking_pause1: TButton
         Left = 152
-        Height = 25
+        Height = 50
         Hint = 'Pause stacking process'
         Top = 144
         Width = 75
-        Images = ImageList2
-        ImageIndex = 15
+        Caption = '❙❙'
+        Font.Height = -27
         OnClick = live_stacking_pause1Click
+        ParentFont = False
         TabOrder = 2
       end
-      object live_stacking_restart1: TBitBtn
+      object live_stacking_restart1: TButton
         Left = 248
-        Height = 25
+        Height = 50
         Hint = 'Clear stack and restart.'
         Top = 144
         Width = 75
-        Images = ImageList2
-        ImageIndex = 16
+        Caption = '⟲ '
+        Font.Height = -27
         OnClick = live_stacking_restart1Click
+        ParentFont = False
         TabOrder = 3
       end
       object live_stacking_path1: TLabel

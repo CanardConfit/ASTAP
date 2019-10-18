@@ -163,20 +163,10 @@ begin
           else {internal star alignment}
           if init=false then {first image}
           begin
-            if use_manual_alignment then
-            begin
-              referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+5]); {reference offset}
-              referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+6]); {reference offset}
-            end
-            else
             begin
               get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var} cblack,star_level);
               find_stars(img_loaded,starlist1);{find stars and put them in a list}
               find_tetrahedrons_ref;{find tetrahedrons for reference image}
-//              pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
-//              if pedestal<500 then pedestal:=500;{prevent image noise could go below zero}
-//              background_correction:=pedestal-cblack;
-//              datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
             end;
           end;
 
@@ -201,11 +191,6 @@ begin
             old_width:=width2;
             old_height:=height2;
 
-            if use_manual_alignment then
-            begin
-              referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+5]); {reference offset}
-              referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+6]); {reference offset}
-            end;
           end;{init, c=0}
 
           solution:=true;

@@ -991,7 +991,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.279 dated 2019-10-18';
+  #13+#10+'Version ß0.9.280 dated 2019-10-18';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -8403,8 +8403,8 @@ begin
  for i:=0 to listview1.Items.Count-1 do
    if listview1.Items[i].Selected then
   begin
-    ListView1.Items.item[i].subitems.Strings[11+5]:=floattostrF2(fitsX,0,2);
-    ListView1.Items.item[i].subitems.Strings[11+6]:=floattostrF2(fitsY,0,2);
+    ListView1.Items.item[i].subitems.Strings[I_X]:=floattostrF2(fitsX,0,2);
+    ListView1.Items.item[i].subitems.Strings[I_Y]:=floattostrF2(fitsY,0,2);
   end;
 end;
 

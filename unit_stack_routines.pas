@@ -453,7 +453,7 @@ begin
                       files_to_process[c].name:=''; {remove file from list}
                      solution:=false;
                       ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[2]:=6;{mark 3th column with exclaimation}
-                      ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[2]:='no solution';{no stack result}
+                      ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_result]:='no solution';{no stack result}
                     end;
                  end;{internal alignment}
               end
@@ -703,8 +703,8 @@ begin
           begin
             if use_manual_alignment then
             begin
-              referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+5]); {reference offset}
-              referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+6]); {reference offset}
+              referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
+              referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
             end
             else
             begin
@@ -741,8 +741,8 @@ begin
 
             if use_manual_alignment then
             begin
-              referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+5]); {reference offset}
-              referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+6]); {reference offset}
+              referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
+              referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
             end;
           end;{init, c=0}
 
@@ -754,8 +754,8 @@ begin
             begin
               if use_manual_alignment then
               begin {manual alignment}
-                solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+5]); {calculate correction}
-                solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+6]);
+                solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {calculate correction}
+                solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]);
                 memo2_message('Solution x:=x+'+floattostr2(solution_vectorX[2])+',  y:=y+'+floattostr2(solution_vectorY[2]));
               end
               else
@@ -1198,8 +1198,8 @@ begin
         begin
           if use_manual_alignment then
           begin
-            referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+5]); {reference offset}
-            referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+6]); {reference offset}
+            referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
+            referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
           end
           else
           begin
@@ -1241,8 +1241,8 @@ begin
               begin
                 if use_manual_alignment then
                 begin {manual alignment}
-                  solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+5]); {calculate correction}
-                  solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+6]);
+                  solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {calculate correction}
+                  solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]);
                   memo2_message('Solution x:=x+'+floattostr2(solution_vectorX[2])+',  y:=y+'+floattostr2(solution_vectorY[2]));
                 end
                 else
@@ -1264,8 +1264,8 @@ begin
                       memo2_message('Not enough tetrahedron matches <3 or inconsistent solution, skipping this image.');
                       files_to_process[c].name:=''; {remove file from list}
                       solution:=false;
-                      ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[2]:=6;{mark 3th column with exclaimation}
-                      ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[2]:='no solution';{no stack result}
+                      ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[2]:=6;{mark 3th column with exclamation}
+                      ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_result]:='no solution';{no stack result}
                     end;
                  end;{internal alignment}
               end
@@ -1395,13 +1395,13 @@ begin
             begin
               if init=true then
               begin
-                referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+5]); {reference offset}
-                referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+6]); {reference offset}
+                referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
+                referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
               end
               else
               begin
-                solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+5]); {calculate correction}
-                solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+6]);
+                solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {calculate correction}
+                solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]);
               end;
             end
             else
@@ -1522,13 +1522,13 @@ begin
             begin
               if init=true then
               begin
-                referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+5]); {reference offset}
-                referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+6]); {reference offset}
+                referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
+                referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
               end
               else
               begin
-                solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+5]); {calculate correction}
-                solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[11+6]);
+                solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {calculate correction}
+                solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]);
               end;
             end
             else
