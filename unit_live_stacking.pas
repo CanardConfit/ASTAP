@@ -75,14 +75,15 @@ procedure stack_live(oversize:integer; path :string);{stack live average}
 var
     fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col           : integer;
     {background_correction,} flat_factor,  h,dRA, dDec,det, delta,gamma,ra_new, dec_new, sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v, value, weightF,distance    : double;
-    init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based,waiting :boolean;
+    init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based,waiting,transition_image :boolean;
 
-    counter :  integer;
+    counter,total_counter,bad_counter :  integer;
 
     procedure reset_var;{reset variables  including init:=false}
     begin
       init:=false;
       counter:=0;
+      bad_counter:=0;
       sum_exp:=0;
       jd_sum:=0;{sum of Julian midpoints}
       jd_start:=9999999999;{start observations in Julian day}
@@ -106,6 +107,7 @@ begin
 
     pause_pressed:=false;
     esc_pressed:=false;
+    total_counter:=0;
 
     mainwindow.memo1.visible:=false;{Hide header}
 
@@ -117,18 +119,26 @@ begin
       begin
         try { Do some lengthy operation }
           waiting:=false;
+          transition_image:=false;
+
           Application.ProcessMessages;
           {load image}
           if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
 
-          if init=true then {stack ongoing, reference image selected}
-          {test of mount has moved}
-          ang_sep(ra0,dec0,oldra0,olddec0 ,distance);{calculate distance in radians}
+     //     if filename2='E:\ASTRO IMAGES\_1Temp\serial stacking\test-no-filter_20191018_201701.fit' then
+     //     beep;
+
+
+          ang_sep(ra0,dec0,oldra0,olddec0 ,distance); {calculate distance in radians.   {test of mount has moved}
           oldra0:=ra0;olddec0:=dec0;
           if distance>(0.2*pi/180) then
           begin
             reset_var; {reset variables including init:=false}
-            memo2_message('New telescope position. New stack started');
+            if total_counter<>0 then {new position not caused by start}
+            begin
+              transition_image:=true; {image with possible slewing involved}
+              memo2_message('New telescope position at distance '+floattostrF2(distance*180/pi,0,2)+'°. New stack started. First transition image will be skipped');
+            end;
           end
           else
           {test if exposure has changed}
@@ -139,142 +149,139 @@ begin
           end;
           oldexposure:=exposure;
 
-          if init=false then
+
+          if transition_image=false then {else skip this image, could slewed during this image}
           begin
-            initialise1;{set variables correct. Do this before apply dark}
-            initialise2;{set variables correct}
+            if init=false then
+           begin
+              initialise1;{set variables correct. Do this before apply dark}
+              initialise2;{set variables correct}
 
-            memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
-            if ((make_osc_color1.checked) and (test_bayer_matrix(img_loaded)=false)) then memo2_message('█ █ █ █ █ █ Warning, not an OSC image! █ █ █ █ █ █');
-            if ((make_osc_color1.checked=false) and (test_bayer_matrix(img_loaded)=true)) then memo2_message('█ █ █ █ █ █ Warning, OSC image is stacked as monochrome! Check mark convert OSC to colour. █ █ █ █ █ █');
-          end;
+              memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
+              if ((make_osc_color1.checked) and (test_bayer_matrix(img_loaded)=false)) then memo2_message('█ █ █ █ █ █ Warning, not an OSC image! █ █ █ █ █ █');
+              if ((make_osc_color1.checked=false) and (test_bayer_matrix(img_loaded)=true)) then memo2_message('█ █ █ █ █ █ Warning, OSC image is stacked as monochrome! Check mark convert OSC to colour. █ █ █ █ █ █');
+            end;
 
-          apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
-          {these global variables are passed-on in procedure to protect against overwriting}
+            apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
+            {these global variables are passed-on in procedure to protect against overwriting}
 
-          memo2_message('Adding file: '+inttostr(counter)+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
-          Application.ProcessMessages;
-          if esc_pressed then exit;
+            memo2_message('Adding file: '+inttostr(counter)+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
+            Application.ProcessMessages;
+            if esc_pressed then exit;
 
-          if make_osc_color1.checked then
-             demosaic_bayer; {convert OSC image to colour}
+            if make_osc_color1.checked then
+               demosaic_bayer; {convert OSC image to colour}
 
-          if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
+            if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
 
-          if ((use_astrometry_internal) or (use_astrometry_net)) then
-          begin {get_solution}
-            if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then
-                       begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
-          end
-          else {internal star alignment}
-          if init=false then {first image}
-          begin
+            if ((use_astrometry_internal) or (use_astrometry_net)) then
+            begin {get_solution}
+              if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then
+                         begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
+            end
+            else {internal star alignment}
+            if init=false then {first image}
             begin
               get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var} cblack,star_level);
               find_stars(img_loaded,starlist1);{find stars and put them in a list}
               find_tetrahedrons_ref;{find tetrahedrons for reference image}
             end;
-          end;
 
 
-          if init=false then {init}
-          begin
-            memo2_message('Reference image is: '+filename2);
-            image_path:=ExtractFilePath(filename2); {for saving later}
-            width_max:=width2+oversize*2;
-            height_max:=height2+oversize*2;
-
-         //   if drizzle_mode=1 then {drizzle} begin width_max:=width_max+width_max; height_max:=height_max+height_max end;
-            setlength(img_average,naxis3,width_max,height_max);
-//            setlength(img_temp,naxis3,width_max,height_max);
-            for fitsY:=0 to height_max-1 do
-              for fitsX:=0 to width_max-1 do
-                for col:=0 to naxis3-1 do
-                begin
-                  img_average[col,fitsX,fitsY]:=0; {clear img_average}
-//                  img_temp[col,fitsX,fitsY]:=0; {clear img_temp}
-                end;
-            old_width:=width2;
-            old_height:=height2;
-
-          end;{init, c=0}
-
-          solution:=true;
-          if ((use_astrometry_internal) or (use_astrometry_net)) then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
-          else
-          begin {align using star match}
-            if init=true then {second image}
+            if init=false then {init}
             begin
-              begin{internal alignment}
-                get_background(0,img_loaded,true,true {unknown, calculate also noise_level} , {var} cblack,star_level);
-               // background_correction:=pedestal-cblack;
-               // datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
+              memo2_message('Reference image is: '+filename2);
+              image_path:=ExtractFilePath(filename2); {for saving later}
+              width_max:=width2+oversize*2;
+              height_max:=height2+oversize*2;
 
-                find_stars(img_loaded,starlist2);{find stars and put them in a list}
-                find_tetrahedrons_new;{find triangels for new image}
-                if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
-                memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
+              setlength(img_average,naxis3,width_max,height_max);
+              for fitsY:=0 to height_max-1 do
+                for fitsX:=0 to width_max-1 do
+                  for col:=0 to naxis3-1 do
+                  begin
+                    img_average[col,fitsX,fitsY]:=0; {clear img_average}
+                  end;
+              old_width:=width2;
+              old_height:=height2;
+
+            end;{init, c=0}
+
+            solution:=true;
+
+            {align using star match}
+            if init=true then {second image}
+            begin{internal alignment}
+              get_background(0,img_loaded,true,true {unknown, calculate also noise_level} , {var} cblack,star_level);
+
+              find_stars(img_loaded,starlist2);{find stars and put them in a list}
+              find_tetrahedrons_new;{find triangels for new image}
+              if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
+              memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
                      +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])
                      +',  y:='+floattostr2(solution_vectorY[0])+'*x+ '+floattostr2(solution_vectorY[1])+'*y+ '+floattostr2(solution_vectorY[2]) )
 
-                  else
-                  begin
-                    memo2_message('Not enough tetrahedron matches <3 or inconsistent solution, skipping this image.');
-                    files_to_process[c].name:=''; {remove file from list}
-                    solution:=false;
-                  end;
-               end;{internal alignment}
-            end
-            else
-            reset_solution_vectors(1);{no influence on the first image}
-          end;
-          init:=true;{initialize for first image done}
+               else
+               begin
+                 memo2_message('Not enough tetrahedron matches <3 or inconsistent solution, skipping this image.');
+                 solution:=false;
+               end;
+             end{internal alignment}
+             else
+               reset_solution_vectors(1);{no influence on the first image}
 
-          if solution then
-          begin
-            inc(counter);
-            sum_exp:=sum_exp+exposure;
-            if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
+            init:=true;{initialize for first image done}
 
-            date_obs_to_jd;{convert date-obs to jd}
-            if jd<jd_start then jd_start:=jd;
-            jd_sum:=jd_sum+jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
-
-            vector_based:=true;
-
-            //if drizzle_mode=0 then
+            if solution then
             begin
-              for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
-              for fitsX:=1 to width2  do
+              inc(counter);
+              inc(total_counter);
+              sum_exp:=sum_exp+exposure;
+              if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
+
+              date_obs_to_jd;{convert date-obs to jd}
+              if jd<jd_start then jd_start:=jd;
+              jd_sum:=jd_sum+jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+
+              vector_based:=true;
+
               begin
-                calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-                x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversize;
-                x_new:=round(x_new_float);y_new:=round(y_new_float);
-                if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+                for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
+                for fitsX:=1 to width2  do
                 begin
-                  for col:=0 to naxis3-1 do {all colors}
+                  calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
+                  x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversize;
+                  x_new:=round(x_new_float);y_new:=round(y_new_float);
+                  if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
                   begin
-                    {serial stacking}
-                    img_average[col,x_new,y_new]:=(img_average[col,x_new,y_new]*(counter-1)+ img_loaded[col,fitsX-1,fitsY-1])/(counter);{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                    for col:=0 to naxis3-1 do {all colors}
+                    begin
+                      {serial stacking}
+                      img_average[col,x_new,y_new]:=(img_average[col,x_new,y_new]*(counter-1)+ img_loaded[col,fitsX-1,fitsY-1])/(counter);{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                    end;
                   end;
                 end;
               end;
+              if counter=1 then getfits_histogram(0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
+              CD1_1:=0;{kill any existing north arrow during plotting. Most likely wrong after stacking}
+              height2:=height_max;
+              width2:=width_max;
+              img_loaded:=img_average;
+
+              plot_fits(mainwindow.image1,false,false{do not show header in memo1});{plot real}
+
             end
-          end;
-          stackmenu1.files_live_stacked1.caption:=inttostr(counter)+' stacked';{Show progress}
-          application.hint:=inttostr(counter)+' stacked';{Show progress}
+            else
+            inc(bad_counter);
+
+            stackmenu1.files_live_stacked1.caption:=inttostr(counter)+' stacked, '+inttostr(bad_counter)+ ' failures ' ;{Show progress}
+            application.hint:=inttostr(counter)+' stacked, '+inttostr(bad_counter)+ ' failures ' ;{Show progress}
+          end; {no transition image}
 
           if RenameFile(filename2,ChangeFileExt(filename2,'.fts'))=false then {mark files as done, beep if failure}
              beep;
 
 
-          if counter=1 then getfits_histogram(0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
-          CD1_1:=0;{kill any existing north arrow during plotting. Most likely wrong after stacking}
-          height2:=height_max;
-          width2:=width_max;
-          img_loaded:=img_average;
-
-          plot_fits(mainwindow.image1,false,false{do not show header in memo1});{plot real}
         finally
         end;
       end

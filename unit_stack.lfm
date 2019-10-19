@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 742
+  Left = 349
   Height = 644
-  Top = 230
+  Top = 170
   Width = 1410
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1409
-    ActivePage = tab_live_stacking1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 9
+    TabIndex = 0
     TabOrder = 5
     Options = [nboMultiLine]
     object Images: TTabSheet
@@ -3279,7 +3279,7 @@ object stackmenu1: Tstackmenu1
       ClientHeight = 412
       ClientWidth = 1401
       object browse_live_stacking1: TButton
-        Left = 48
+        Left = 16
         Height = 25
         Hint = 'Select the directory which will contain the live images to stack.'
         Top = 48
@@ -3289,21 +3289,21 @@ object stackmenu1: Tstackmenu1
         TabOrder = 0
       end
       object live_stacking1: TButton
-        Left = 48
+        Left = 16
         Height = 25
         Hint = 'Start live stacking'
         Top = 184
-        Width = 80
+        Width = 75
         Caption = '>'
         OnClick = live_stacking1Click
         ParentFont = False
         TabOrder = 1
       end
       object live_stacking_pause1: TButton
-        Left = 152
+        Left = 16
         Height = 25
         Hint = 'Pause live stacking process'
-        Top = 184
+        Top = 224
         Width = 75
         Caption = '||'
         OnClick = live_stacking_pause1Click
@@ -3311,10 +3311,10 @@ object stackmenu1: Tstackmenu1
         TabOrder = 2
       end
       object live_stacking_restart1: TButton
-        Left = 248
+        Left = 16
         Height = 25
         Hint = 'Stop live stacking.'
-        Top = 184
+        Top = 264
         Width = 75
         Caption = 'Stop'
         OnClick = live_stacking_restart1Click
@@ -3322,9 +3322,9 @@ object stackmenu1: Tstackmenu1
         TabOrder = 3
       end
       object live_stacking_path1: TLabel
-        Left = 152
+        Left = 16
         Height = 15
-        Top = 52
+        Top = 88
         Width = 15
         Caption = '---'
         ParentColor = False
@@ -3338,9 +3338,9 @@ object stackmenu1: Tstackmenu1
         ParentColor = False
       end
       object files_live_stacked1: TLabel
-        Left = 48
+        Left = 16
         Height = 15
-        Top = 128
+        Top = 152
         Width = 15
         Caption = '---'
         ParentColor = False
