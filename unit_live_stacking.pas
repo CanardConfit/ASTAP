@@ -86,6 +86,11 @@ var
       sum_exp:=0;
       jd_sum:=0;{sum of Julian midpoints}
       jd_start:=9999999999;{start observations in Julian day}
+
+      dark_exposure:=987654321;{not done indication}
+      dark_temperature:=987654321;
+      flat_filter:='987654321';{not done indication}
+
     end;
 
 begin
@@ -257,6 +262,7 @@ begin
             end
           end;
           stackmenu1.files_live_stacked1.caption:=inttostr(counter)+' stacked';{Show progress}
+          application.hint:=inttostr(counter)+' stacked';{Show progress}
 
           if RenameFile(filename2,ChangeFileExt(filename2,'.fts'))=false then {mark files as done, beep if failure}
              beep;
@@ -269,7 +275,7 @@ begin
           img_loaded:=img_average;
 
           plot_fits(mainwindow.image1,false,false{do not show header in memo1});{plot real}
-           finally
+        finally
         end;
       end
       else

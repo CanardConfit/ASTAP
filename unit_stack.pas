@@ -4064,7 +4064,6 @@ begin
   pause_pressed:=true;
   live_stacking_pause1.font.style:=[fsbold,fsunderline];
   live_stacking1.font.style:=[];
-  mainwindow.memo1.visible:=true;{show header again}
 end;
 
 procedure Tstackmenu1.live_stacking_restart1Click(Sender: TObject);

@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1409
-    ActivePage = Images
+    ActivePage = tab_live_stacking1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 9
     TabOrder = 5
     Options = [nboMultiLine]
     object Images: TTabSheet
@@ -3281,6 +3281,7 @@ object stackmenu1: Tstackmenu1
       object browse_live_stacking1: TButton
         Left = 48
         Height = 25
+        Hint = 'Select the directory which will contain the live images to stack.'
         Top = 48
         Width = 75
         Caption = 'Browse'
@@ -3291,7 +3292,7 @@ object stackmenu1: Tstackmenu1
         Left = 48
         Height = 25
         Hint = 'Start live stacking'
-        Top = 144
+        Top = 184
         Width = 80
         Caption = '>'
         OnClick = live_stacking1Click
@@ -3301,8 +3302,8 @@ object stackmenu1: Tstackmenu1
       object live_stacking_pause1: TButton
         Left = 152
         Height = 25
-        Hint = 'Pause stacking process'
-        Top = 144
+        Hint = 'Pause live stacking process'
+        Top = 184
         Width = 75
         Caption = '||'
         OnClick = live_stacking_pause1Click
@@ -3312,10 +3313,10 @@ object stackmenu1: Tstackmenu1
       object live_stacking_restart1: TButton
         Left = 248
         Height = 25
-        Hint = 'Clear stack and restart.'
-        Top = 144
+        Hint = 'Stop live stacking.'
+        Top = 184
         Width = 75
-        Caption = 'Restart'
+        Caption = 'Stop'
         OnClick = live_stacking_restart1Click
         ParentFont = False
         TabOrder = 3
@@ -3337,9 +3338,9 @@ object stackmenu1: Tstackmenu1
         ParentColor = False
       end
       object files_live_stacked1: TLabel
-        Left = 368
+        Left = 48
         Height = 15
-        Top = 148
+        Top = 128
         Width = 15
         Caption = '---'
         ParentColor = False
