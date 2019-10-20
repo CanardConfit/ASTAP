@@ -5975,7 +5975,7 @@ begin
  if fileexists(application_path+'dcraw.exe')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'dcraw.exe !!, Download, rename to dcdraw.exe and place in program directory' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
  {$endif}
  {$ifdef Linux}
- if fileexists('/usr/bin/dcraw')=false then begin result:=false; application.messagebox(pchar('Could not find program dcdraw !!, Install this program. Eg: sudo apt-get install dcraw' ),pchar('Error'),MB_ICONWARNING+MB_OK);;exit; end;
+ if fileexists('/usr/bin/dcraw')=false then begin result:=false; application.messagebox(pchar('Could not find program dcraw !!, Install this program. Eg: sudo apt-get install dcraw' ),pchar('Error'),MB_ICONWARNING+MB_OK);;exit; end;
  {$endif}
  {$ifdef Darwin} {MacOS}
  if fileexists(application_path+'/dcraw')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'dcraw' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
