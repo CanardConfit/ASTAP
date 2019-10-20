@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 interface
 
 uses
-  Classes, SysUtils,forms;
+  Classes, SysUtils,forms,fileutil;
 
 procedure stack_live(oversize:integer; path :string);{stack live average}
 
@@ -39,18 +39,27 @@ const
 
 function file_available(stack_directory:string; var filen: string ) : boolean; {check if fits file is available and report the filename}
 var
-  searchResult : TSearchRec;
+   thefiles : Tstringlist;
 begin
-  if findfirst(stack_directory+PathDelim+'*.fit*', faAnyFile, searchResult) = 0 then
+  try
+  //No need to create the stringlist; the function does that for you
+  theFiles := FindAllFiles(stack_directory, '*.fit;*.fits;*.FIT;*.FITS;'+
+                                            '*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif*;*.TIF;'+
+                                            '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef', true); //find images
+
+  if TheFiles.count>0 then
   begin
+    filen:=TheFiles[0];
     result:=true;
-    filen:= stack_directory+PathDelim+searchResult.Name;
   end
   else
-  result:=false;
-
-  FindClose(searchResult);
+    result:=false;
+  finally
+    thefiles.Free;
+  end;
 end;
+
+
 
 procedure update_header;
 begin
@@ -69,6 +78,21 @@ begin
 
   mainwindow.memo1.visible:=true;{Show new header again}
 
+end;
+
+function  load_thefile(filen:string) : boolean;
+var
+   ext1 : string;
+begin
+  ext1:=uppercase(ExtractFileExt(filen));
+
+  if ((ext1='.FIT') or (ext1='.FITS')) then
+    result:= load_fits(filen,true {light},true,true {reset var},img_loaded)
+  else
+  if check_raw_file_extension(ext1) then {check if extension is from raw file}
+    result:=convert_load_raw(filen) {raw}
+  else
+    result:=load_tiffpngJPEG(filename2,img_loaded);
 end;
 
 procedure stack_live(oversize:integer; path :string);{stack live average}
@@ -111,6 +135,7 @@ begin
 
     mainwindow.memo1.visible:=false;{Hide header}
 
+//   (file_available2(path,filename2 {file found}));
 
     {live stacking}
     repeat
@@ -123,11 +148,7 @@ begin
 
           Application.ProcessMessages;
           {load image}
-          if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
-
-     //     if filename2='E:\ASTRO IMAGES\_1Temp\serial stacking\test-no-filter_20191018_201701.fit' then
-     //     beep;
-
+          if ((esc_pressed) or (load_thefile(filename2)=false)) then begin memo2_message('Error');{can't load} exit;end;
 
           ang_sep(ra0,dec0,oldra0,olddec0 ,distance); {calculate distance in radians.   {test of mount has moved}
           oldra0:=ra0;olddec0:=dec0;
@@ -148,7 +169,6 @@ begin
             memo2_message('New exposure time. New stack started');
           end;
           oldexposure:=exposure;
-
 
           if transition_image=false then {else skip this image, could slewed during this image}
           begin
@@ -277,8 +297,9 @@ begin
             stackmenu1.files_live_stacked1.caption:=inttostr(counter)+' stacked, '+inttostr(bad_counter)+ ' failures ' ;{Show progress}
             application.hint:=inttostr(counter)+' stacked, '+inttostr(bad_counter)+ ' failures ' ;{Show progress}
           end; {no transition image}
-
-          if RenameFile(filename2,ChangeFileExt(filename2,'.fts'))=false then {mark files as done, beep if failure}
+  //
+             if RenameFile(filename2,ChangeFileExt(filename2,ExtractFileExt(filename2)+'_' ))=false then {mark files as done, beep if failure}
+//             if RenameFile(filename2,ChangeFileExt(filename2,'.fts'))=false then {mark files as done, beep if failure}
              beep;
 
 

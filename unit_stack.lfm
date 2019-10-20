@@ -3281,7 +3281,7 @@ object stackmenu1: Tstackmenu1
       object browse_live_stacking1: TButton
         Left = 16
         Height = 25
-        Hint = 'Select the directory which will contain the live images to stack.'
+        Hint = 'Select the directory which will contain the live images to stack. Program will read FITS, RAW(s), JPEG, TIFF, PNG.'
         Top = 48
         Width = 75
         Caption = 'Browse'
@@ -3291,7 +3291,7 @@ object stackmenu1: Tstackmenu1
       object live_stacking1: TButton
         Left = 16
         Height = 25
-        Hint = 'Start live stacking'
+        Hint = 'Start live stacking.'
         Top = 184
         Width = 75
         Caption = '>'
@@ -3302,7 +3302,7 @@ object stackmenu1: Tstackmenu1
       object live_stacking_pause1: TButton
         Left = 16
         Height = 25
-        Hint = 'Pause live stacking process'
+        Hint = 'Pause live stacking process.'
         Top = 224
         Width = 75
         Caption = '||'
@@ -3333,8 +3333,8 @@ object stackmenu1: Tstackmenu1
         Left = 24
         Height = 15
         Top = 376
-        Width = 225
-        Caption = 'Processed files will get a new extension .fts'
+        Width = 227
+        Caption = 'Processed files will get a new extension *.*_'
         ParentColor = False
       end
       object files_live_stacked1: TLabel
@@ -3346,12 +3346,12 @@ object stackmenu1: Tstackmenu1
         ParentColor = False
       end
       object restore_file_ext1: TButton
-        Left = 422
+        Left = 352
         Height = 25
         Hint = 'Rename all files back to extension .fit. Stacking will be stopped. '
-        Top = 376
+        Top = 368
         Width = 258
-        Caption = 'Rename all .fts files back to .fit'
+        Caption = 'Rename all files back to original'
         OnClick = restore_file_ext1Click
         TabOrder = 4
       end

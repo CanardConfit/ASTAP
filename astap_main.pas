@@ -511,6 +511,7 @@ procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean)
 procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
 function image_file_name(inp : string): boolean; {readable image name?}
 procedure plot_annotations; {plot annotations stored in fits header}
+function convert_load_raw(filename3: string): boolean; {convert raw to pgm file using DCRAW}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -991,7 +992,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.283 dated 2019-10-19';
+  #13+#10+'Version ß0.9.284 dated 2019-10-20';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6108,8 +6109,6 @@ var
   ext   : string;
   err   : boolean;
 begin
-//  if check_dcraw=false then exit;
-
   OpenDialog1.Title := 'Select multiple  files to convert';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter :=  'All formats |*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif*;*.TIF;*.new;*.ppm;*.pgm;*.pfm;*.xisf;*.fz;'+

@@ -3628,17 +3628,23 @@ procedure Tstackmenu1.restore_file_ext1Click(Sender: TObject);
 var
   searchResult : TSearchRec;
   filen        : string;
+  counter      : integer;
 begin
+  counter:=0;
   esc_pressed:=true; {stop all stacking}
-  If FindFirst (live_stacking_path1.caption+PathDelim+'*.fts',faAnyFile,searchResult)=0 then
+  If FindFirst (live_stacking_path1.caption+PathDelim+'*.*_',faAnyFile,searchResult)=0 then
     begin
     Repeat
       With searchResult do
         begin
           filen:=live_stacking_path1.caption+PathDelim+searchResult.Name;
-          if RenameFile(filen,ChangeFileExt(filen,'.fit'))=false then {mark files as done, beep if failure}
-             beep;
-
+          if copy(filen,length(filen),1)='_' then
+          begin
+            if RenameFile(filen,copy(filen,1,length(filen)-1))=false then {remove *.*_}
+            beep
+            else
+            inc(counter);
+          end;
         end;
     Until FindNext(searchResult)<>0;
     end;
@@ -3647,7 +3653,7 @@ begin
   live_stacking_pause1.font.style:=[];
   live_stacking1.font.style:=[];
 
-  memo2_message('Live stacking stopped and all .fts files renamed to .fit.');
+  memo2_message('Live stacking stopped and '+inttostr(counter)+' files renamed to orginal file name.');
 end;
 
 
@@ -5399,7 +5405,6 @@ procedure Tstackmenu1.blink_unaligned_multi_step1Click(Sender: TObject);
 var
   c,i,j: integer;
   Save_Cursor          : TCursor;
-  first_image,stepnr: integer;
   init              : boolean;
 begin
   if listview1.items.count<=1 then exit; {no files}
