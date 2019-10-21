@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1409
-    ActivePage = Images
+    ActivePage = tab_live_stacking1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 9
     TabOrder = 5
     Options = [nboMultiLine]
     object Images: TTabSheet

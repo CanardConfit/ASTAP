@@ -1466,7 +1466,7 @@ begin
   opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
-                        '|JPEG, TIFF, PNG files (*.)|*.JPG;*.JPEG;*.TIF*;*.PNG;'+
+                        '|JPEG, TIFF, PNG files (*.)||*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
                         '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
  // fits_file:=true;2019-9-19 removed
   if opendialog1.execute then

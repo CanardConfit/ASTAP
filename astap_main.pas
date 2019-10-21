@@ -992,7 +992,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.284 dated 2019-10-20';
+  #13+#10+'Version ß0.9.285 dated 2019-10-21';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6111,10 +6111,10 @@ var
 begin
   OpenDialog1.Title := 'Select multiple  files to convert';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter :=  'All formats |*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif*;*.TIF;*.new;*.ppm;*.pgm;*.pfm;*.xisf;*.fz;'+
+  opendialog1.Filter :=  'All formats |*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pfm;*.xisf;*.fz;'+
                                        '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                          '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
-                         '|24 bits PNG, TIFF,  JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif*;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
+                         '|24 bits PNG, TIFF,  JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
                          '|Compressed FITS files|*.fz';
   opendialog1.initialdir:=ExtractFileDir(filename2);
   fits_file:=false;
@@ -9998,10 +9998,10 @@ procedure Tmainwindow.LoadFITSPNGBMPJPEG1Click(Sender: TObject);
 begin
   OpenDialog1.Title := 'Open in viewer';
 
-  opendialog1.Filter :=  'All formats |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif*;*.TIF;*.new;*.ppm;*.pgm;*.pfm;*.xisf;*.fz;'+
+  opendialog1.Filter :=  'All formats |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pfm;*.xisf;*.fz;'+
                                       '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                          '|8, 16, 32 and -32 bit FITS files (*.fit*,*.xisf)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.new;*.xisf;*.fz'+
-                         '|24 bits PNG, TIFF,  JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif*;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
+                         '|24 bits PNG, TIFF,  JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
                          '|Preview FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   opendialog1.filename:=filename2;
   opendialog1.initialdir:=ExtractFileDir(filename2);

@@ -44,7 +44,7 @@ begin
   try
   //No need to create the stringlist; the function does that for you
   theFiles := FindAllFiles(stack_directory, '*.fit;*.fits;*.FIT;*.FITS;'+
-                                            '*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif*;*.TIF;'+
+                                            '*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;'+
                                             '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef', true); //find images
 
   if TheFiles.count>0 then
@@ -148,7 +148,11 @@ begin
 
           Application.ProcessMessages;
           {load image}
-          if ((esc_pressed) or (load_thefile(filename2)=false)) then begin memo2_message('Error');{can't load} exit;end;
+          if ((esc_pressed) or (load_thefile(filename2)=false)) then
+          begin
+            memo2_message('Error');{can't load}
+            exit;
+          end;
 
           ang_sep(ra0,dec0,oldra0,olddec0 ,distance); {calculate distance in radians.   {test of mount has moved}
           oldra0:=ra0;olddec0:=dec0;
@@ -185,7 +189,7 @@ begin
             apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
             {these global variables are passed-on in procedure to protect against overwriting}
 
-            memo2_message('Adding file: '+inttostr(counter)+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
+            memo2_message('Adding file: '+inttostr(counter+1)+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
             Application.ProcessMessages;
             if esc_pressed then exit;
 
