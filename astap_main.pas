@@ -9583,8 +9583,8 @@ begin
   filename3:=ChangeFileExt(FileName2,'');
   savedialog1.filename:=filename3;
   if image_path<>'' then savedialog1.initialdir:=image_path;{path from stacking}
-  if naxis3>1 then savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit|*.tif|PPM 16 bit stretched|*.ppm;|PPM 16 bit|*.ppm'
-              else savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit|*.tif|PGM 16 bit stretched|*.pgm;|PGM 16 bit|*.pgm';
+  if naxis3>1 then savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit float|*.tif|PPM 16 bit stretched|*.ppm;|PPM 16 bit|*.ppm'
+              else savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit float|*.tif|PGM 16 bit stretched|*.pgm;|PGM 16 bit|*.pgm';
   savedialog1.filterindex:=SaveasTIFF1filterindex; {default 1}
   if savedialog1.execute then
   begin
@@ -9612,7 +9612,7 @@ begin
         save_tiff16(img_loaded,naxis3,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked)
       else
       if savedialog1.filterindex=5 then
-        save_tiff_96(img_loaded,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked) {old uncompressed routine in unit_tiff}
+      save_tiff_96(img_loaded,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked) {old uncompressed routine in unit_tiff}
       else
       if savedialog1.filterindex=6 then
       begin
@@ -9635,12 +9635,12 @@ begin
       else
       if savedialog1.filterindex=3 then
       begin
-        img_temp:=stretch_img(img_loaded);                                                                       {mono tiff doesn't work in FPwriteTIFF ?? Fix later}
-        save_tiff16(img_temp,naxis3,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked);{old uncompressed routine in unit_tiff}
+        img_temp:=stretch_img(img_loaded);
+        save_tiff16(img_temp,naxis3,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked);
       end
       else
       if savedialog1.filterindex=4 then
-      save_tiff16(img_loaded,naxis3,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked){old uncompressed routine in unit_tiff}
+      save_tiff16(img_loaded,naxis3,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked)
       else
       if savedialog1.filterindex=5 then
         save_tiff_32(img_loaded,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked){old uncompressed routine in unit_tiff}

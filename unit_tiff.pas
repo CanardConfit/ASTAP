@@ -1,6 +1,7 @@
 unit unit_tiff;
+{Writes tiff files from an image array}
 {Based on 8 bit routines from bit2tiff.pas,  BMP to TIFF, Freeware version 3.0 - Sep 10, 2000 by Wolfgang Krug}
-{Modified to 16bit & 32bit grayscale & RGB48 RGB96  colour in 2018 by Han Kleijn}
+{Heavily modified for 16bit integer and 32 bit float gray and colour in 2018,2019 by Han Kleijn}
 {freeware}
 
 interface
@@ -16,11 +17,8 @@ uses
 
  {$endif}
 
-
-
-{Messages,} SysUtils, Classes,dialogs,
-      astap_main {for img_array type}
-      ;
+  {Messages,}
+  SysUtils, Classes,dialogs, astap_main {for img_array type};
 
 //function save_tiff_48(img: image_array; wide2,height2:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 48=3x16 color TIFF file }
 function save_tiff_96(img: image_array; wide2,height2:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 96=3x32 color TIFF file }
@@ -39,7 +37,7 @@ type
   end;
 
 
-var     tiffbuffer32: array[0..trunc(bufwide/4)] of Dword; {bufwide is set in astap_main and is 120000}
+var     tiffbuffer32: array[0..trunc(bufwide/4)] of single; {bufwide is set in astap_main and is 120000}
         tiffbuffer: array[0..bufwide] of byte absolute tiffbuffer32;
 
 const
@@ -47,92 +45,105 @@ const
 	TifHeader : array[0..7] of Byte = (
             $49, $49,                 { Intel byte order }
             $2a, $00,                 { TIFF version (42) }
-            $08, $00, $00, $00 );     { Pointer to the first directory }
+            $08, $00, $00, $00 );     { Pointer to the first directory. Will be updated later }
+
+//  size16=15;
+//   NoOfDirsBW16 : array[0..1] of Byte = ( size16, $00 );	{ Number of tags within the directory }
+
+//  	DirectoryBW16 : array[0..size16-1] of TDirEntry = (
+// ( _Tag: $00FE; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {0 NewSubFile: Image with full solution (0) }
+// ( _Tag: $0100; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  {1 ImageWidth:      Value will be set later }
+// ( _Tag: $0101; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  {2 ImageLength:     Value will be set later }
+// ( _Tag: $0102; _Type: $0003; _Count: $00000001; _Value: $00000010 ),  {3 BitsPerSample $10=16 ,no address         }
+// ( _Tag: $0103; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  {4 Compression:     No compression          }
+// ( _Tag: $0106; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  {5 PhotometricInterpretation:   0, 1        }
+
+// ( _Tag: $0111; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {6 StripOffsets: Ptr to the adress of the image data }
+// ( _Tag: $0115; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  {7 SamplesPerPixels: 1                      }
+// ( _Tag: $0116; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {8 RowsPerStrip: Value will be set later    }
+// ( _Tag: $0117; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {9 StripByteCounts: xs*ys bytes pro strip   }
+// ( _Tag: $011A; _Type: $0005; _Count: $00000001; _Value: $00000000 ),  {10 X-Resolution: Adresse                    }
+// ( _Tag: $011B; _Type: $0005; _Count: $00000001; _Value: $00000000 ),  {11 Y-Resolution: (Adresse)                  }
+// ( _Tag: $0128; _Type: $0003; _Count: $00000001; _Value: $00000002 ),  {12 Resolution Unit: (2)= Unit ZOLL          }
+// ( _Tag: $0131; _Type: $0002; _Count: $0000000A; _Value: $00000000 ),  {13 Software:                                }
+// ( _Tag: $0153; _Type: $0003; _Count: $00000001; _Value: $00000001 )); {14 Sampleformat  integer=1                  }
 
 
-//   NoOfDirsBW16 : array[0..1] of Byte = ( $0E, $00 );	{ Number of tags within the directory }
+ size32=15;
 
-//  	DirectoryBW16 : array[0..13] of TDirEntry = (
-// ( _Tag: $00FE; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  { NewSubFile: Image with full solution (0) }
-// ( _Tag: $0100; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  { ImageWidth:      Value will be set later }
-// ( _Tag: $0101; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  { ImageLength:     Value will be set later }
-// ( _Tag: $0102; _Type: $0003; _Count: $00000001; _Value: $00000010 ),  { BitsPerSample $10=16 ,no address         }
-// ( _Tag: $0103; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  { Compression:     No compression          }
-// ( _Tag: $0106; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  { PhotometricInterpretation:   0, 1        }
+ NoOfDirsBW32 : array[0..1] of Byte = ( size32, $00 );  	       { Number of tags within the directory }
 
-// ( _Tag: $0111; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  { StripOffsets: Ptr to the adress of the image data }
-// ( _Tag: $0115; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  { SamplesPerPixels: 1                      }
-// ( _Tag: $0116; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  { RowsPerStrip: Value will be set later    }
-// ( _Tag: $0117; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  { StripByteCounts: xs*ys bytes pro strip   }
-// ( _Tag: $011A; _Type: $0005; _Count: $00000001; _Value: $00000000 ),  { X-Resolution: Adresse                    }
-// ( _Tag: $011B; _Type: $0005; _Count: $00000001; _Value: $00000000 ),  { Y-Resolution: (Adresse)                  }
-// ( _Tag: $0128; _Type: $0003; _Count: $00000001; _Value: $00000002 ),  { Resolution Unit: (2)= Unit ZOLL          }
-// ( _Tag: $0131; _Type: $0002; _Count: $0000000A; _Value: $00000000 )); { Software:                                }
+  	DirectoryBW32 : array[0..size32-1] of TDirEntry = (
+ ( _Tag: $00FE; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {0 NewSubFile: Image with full solution (0) }
+ ( _Tag: $0100; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  {1 ImageWidth:      Value will be set later }
+ ( _Tag: $0101; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  {2 ImageLength:     Value will be set later }
+ ( _Tag: $0102; _Type: $0003; _Count: $00000001; _Value: $00000020 ),  {3 BitsPerSample $20=32 ,no address         }
+ ( _Tag: $0103; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  {4 Compression:     No compression          }
+ ( _Tag: $0106; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  {5 PhotometricInterpretation:   0, 1        }
+
+ ( _Tag: $0111; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {6 StripOffsets: Ptr to the adress of the image data }
 
 
-    NoOfDirsBW32 : array[0..1] of Byte = ( $0E, $00 );	{ Number of tags within the directory }
-
-  	DirectoryBW32 : array[0..13] of TDirEntry = (
- ( _Tag: $00FE; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  { NewSubFile: Image with full solution (0) }
- ( _Tag: $0100; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  { ImageWidth:      Value will be set later }
- ( _Tag: $0101; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  { ImageLength:     Value will be set later }
- ( _Tag: $0102; _Type: $0003; _Count: $00000001; _Value: $00000020 ),  { BitsPerSample $10=16 ,no address         }
- ( _Tag: $0103; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  { Compression:     No compression          }
- ( _Tag: $0106; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  { PhotometricInterpretation:   0, 1        }
-
- ( _Tag: $0111; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  { StripOffsets: Ptr to the adress of the image data }
- ( _Tag: $0115; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  { SamplesPerPixels: 1                      }
- ( _Tag: $0116; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  { RowsPerStrip: Value will be set later    }
- ( _Tag: $0117; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  { StripByteCounts: xs*ys bytes pro strip   }
- ( _Tag: $011A; _Type: $0005; _Count: $00000001; _Value: $00000000 ),  { X-Resolution: Adresse                    }
- ( _Tag: $011B; _Type: $0005; _Count: $00000001; _Value: $00000000 ),  { Y-Resolution: (Adresse)                  }
- ( _Tag: $0128; _Type: $0003; _Count: $00000001; _Value: $00000002 ),  { Resolution Unit: (2)= Unit ZOLL          }
- ( _Tag: $0131; _Type: $0002; _Count: $0000000A; _Value: $00000000 )); { Software:                                }
+ ( _Tag: $0115; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  {7 SamplesPerPixels: 1                      }
+ ( _Tag: $0116; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {8 RowsPerStrip: Value will be set later    }
+ ( _Tag: $0117; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {9 StripByteCounts: xs*ys bytes pro strip   }
+ ( _Tag: $011A; _Type: $0005; _Count: $00000001; _Value: $00000000 ),  {10 X-Resolution: Adresse                   }
+ ( _Tag: $011B; _Type: $0005; _Count: $00000001; _Value: $00000000 ),  {11 Y-Resolution: (Adresse)                 }
+ ( _Tag: $0128; _Type: $0003; _Count: $00000001; _Value: $00000002 ),  {12 Resolution Unit: (2)= Unit ZOLL         }
+ ( _Tag: $0131; _Type: $0002; _Count: $0000000A; _Value: $00000000 ),  {13 Software:                               }
+ ( _Tag: $0153; _Type: $0003; _Count: $00000001; _Value: $00000003 )); {14 Sampleformat  float=3                   }
 
 
 
-//  NoOfDirsRGB48 : array[0..1] of Byte = ( $0F, $00 );	{ Number of tags within the directory }
 
-//	DirectoryRGB48 : array[0..14] of TDirEntry = (
-// ( _Tag: $00FE; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  { NewSubFile:      Image with full solution (0) }
-// ( _Tag: $0100; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  { ImageWidth:      Value will be set later      }
-// ( _Tag: $0101; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  { ImageLength:     Value will be set later      }
-// ( _Tag: $0102; _Type: $0003; _Count: $00000003; _Value: $00000000 ),  { BitsPerSample address will be written later   }
-// ( _Tag: $0103; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  { Compression:     No compression               }
-// ( _Tag: $0106; _Type: $0003; _Count: $00000001; _Value: $00000002 ),  { PhotometricInterpretation:
-//                                                                          0=black, 2 power BitsPerSample -1 =white }
-// ( _Tag: $0111; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  { StripOffsets: Ptr to the adress of the image data }
-// ( _Tag: $0115; _Type: $0003; _Count: $00000001; _Value: $00000003 ),  { SamplesPerPixels: 3                         }
-// ( _Tag: $0116; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  { RowsPerStrip: Value will be set later         }
-// ( _Tag: $0117; _Type: $0004; _Count: $00000001; _Value: $00000000 ),	 { StripByteCounts: xs*ys bytes pro strip        }
-// ( _Tag: $011A; _Type: $0005; _Count: $00000001; _Value: $00000000 ),	 { X-Resolution: Adresse                         }
-// ( _Tag: $011B; _Type: $0005; _Count: $00000001; _Value: $00000000 ),	 { Y-Resolution: (Adresse)                       }
-// ( _Tag: $011C; _Type: $0003; _Count: $00000001; _Value: $00000001 ),	 { PlanarConfiguration:
-//                                                                           Pixel data will be stored continous         }
-// ( _Tag: $0128; _Type: $0003; _Count: $00000001; _Value: $00000002 ),	 { Resolution Unit: (2)= Unit ZOLL               }
-// ( _Tag: $0131; _Type: $0002; _Count: $0000000A; _Value: $00000000 )); { Software:                                     }
+// size48=16;
+//  NoOfDirsRGB48 : array[0..1] of Byte = (size48, $00 );	{ Number of tags within the directory }
+
+//	DirectoryRGB48 : array[0..size48-1] of TDirEntry = (
+// ( _Tag: $00FE; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {0 NewSubFile:      Image with full solution (0) }
+// ( _Tag: $0100; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  {1 ImageWidth:      Value will be set later      }
+// ( _Tag: $0101; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  {2 ImageLength:     Value will be set later      }
+// ( _Tag: $0102; _Type: $0003; _Count: $00000003; _Value: $00000000 ),  {3 BitsPerSample address will be written later   }
+// ( _Tag: $0103; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  {4 Compression:     No compression               }
+// ( _Tag: $0106; _Type: $0003; _Count: $00000001; _Value: $00000002 ),  {5 PhotometricInterpretation:
+//                                                                        { 0=black, 2 power BitsPerSample -1 =white }
+// ( _Tag: $0111; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {6 StripOffsets: Ptr to the adress of the image data }
+// ( _Tag: $0115; _Type: $0003; _Count: $00000001; _Value: $00000003 ),  {7 SamplesPerPixels: 3                         }
+// ( _Tag: $0116; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {8 RowsPerStrip: Value will be set later         }
+// ( _Tag: $0117; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {9  StripByteCounts: xs*ys bytes pro strip  }
+// ( _Tag: $011A; _Type: $0005; _Count: $00000001; _Value: $00000000 ),  {10 X-Resolution: Adresse                   }
+// ( _Tag: $011B; _Type: $0005; _Count: $00000001; _Value: $00000000 ),  {11 Y-Resolution: (Adresse)                 }
+// ( _Tag: $011C; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  {12 PlanarConfiguration:
+//                                                                       { Pixel data will be stored continous       }
+// ( _Tag: $0128; _Type: $0003; _Count: $00000001; _Value: $00000002 ),  {13 Resolution Unit: (2)= Unit ZOLL         }
+// ( _Tag: $0131; _Type: $0002; _Count: $0000000A; _Value: $00000000 ),  {14 Software:                               }
+// ( _Tag: $0153; _Type: $0003; _Count: $00000001; _Value: $00000001 )); {15 Sampleformat  integer=1                 }
 
 
-  NoOfDirsRGB96 : array[0..1] of Byte = ( $0F, $00 );	{ Number of tags within the directory }
+  size96=16;
 
-	DirectoryRGB96 : array[0..14] of TDirEntry = (
- ( _Tag: $00FE; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  { NewSubFile:      Image with full solution (0) }
- ( _Tag: $0100; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  { ImageWidth:      Value will be set later      }
- ( _Tag: $0101; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  { ImageLength:     Value will be set later      }
- ( _Tag: $0102; _Type: $0003; _Count: $00000003; _Value: $00000000 ),  { BitsPerSample address will be written later   }
- ( _Tag: $0103; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  { Compression:     No compression               }
- ( _Tag: $0106; _Type: $0003; _Count: $00000001; _Value: $00000002 ),  { PhotometricInterpretation:
+  NoOfDirsRGB96 : array[0..1] of Byte = (size96, $00 );	{ Number of tags within the directory }
+
+	DirectoryRGB96 : array[0..size96-1] of TDirEntry = (
+ ( _Tag: $00FE; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {0 NewSubFile:      Image with full solution (0) }
+ ( _Tag: $0100; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  {1 ImageWidth:      Value will be set later      }
+ ( _Tag: $0101; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  {2 ImageLength:     Value will be set later      }
+ ( _Tag: $0102; _Type: $0003; _Count: $00000003; _Value: $00000000 ),  {3 BitsPerSample address will be written later   }
+ ( _Tag: $0103; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  {4 Compression:     No compression               }
+ ( _Tag: $0106; _Type: $0003; _Count: $00000001; _Value: $00000002 ),  {5 PhotometricInterpretation:
                                                                           0=black, 2 power BitsPerSample -1 =white }
- ( _Tag: $0111; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  { StripOffsets: Ptr to the adress of the image data }
- ( _Tag: $0115; _Type: $0003; _Count: $00000001; _Value: $00000003 ),  { SamplesPerPixels: 3                         }
- ( _Tag: $0116; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  { RowsPerStrip: Value will be set later         }
- ( _Tag: $0117; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  { StripByteCounts: xs*ys bytes pro strip        }
- ( _Tag: $011A; _Type: $0005; _Count: $00000001; _Value: $00000000 ),  { X-Resolution: Adresse                         }
- ( _Tag: $011B; _Type: $0005; _Count: $00000001; _Value: $00000000 ),  { Y-Resolution: (Adresse)                       }
- ( _Tag: $011C; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  { PlanarConfiguration:
-                                                                          Pixel data will be stored continous          }
- ( _Tag: $0128; _Type: $0003; _Count: $00000001; _Value: $00000002 ),  { Resolution Unit: (2)= Unit ZOLL               }
- ( _Tag: $0131; _Type: $0002; _Count: $0000000A; _Value: $00000000 )); { Software:                                     }
+ ( _Tag: $0111; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {6 StripOffsets: Ptr to the adress of the image data }
+ ( _Tag: $0115; _Type: $0003; _Count: $00000001; _Value: $00000003 ),  {7 SamplesPerPixels: 3                           }
+ ( _Tag: $0116; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {8 RowsPerStrip: Value will be set later         }
+ ( _Tag: $0117; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {9 StripByteCounts: xs*ys bytes pro strip        }
+ ( _Tag: $011A; _Type: $0005; _Count: $00000001; _Value: $00000000 ),  {10 X-Resolution: Adresse                        }
+ ( _Tag: $011B; _Type: $0005; _Count: $00000001; _Value: $00000000 ),  {11 Y-Resolution: (Adresse)                      }
+ ( _Tag: $011C; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  {12 PlanarConfiguration:
+                                                                           Pixel data will be stored continous          }
+ ( _Tag: $0128; _Type: $0003; _Count: $00000001; _Value: $00000002 ),  {13 Resolution Unit: (2)= Unit ZOLL              }
+ ( _Tag: $0131; _Type: $0002; _Count: $0000000A; _Value: $00000000 ),  {14 Software:                                    }
+ ( _Tag: $0153; _Type: $0003; _Count: $00000001; _Value: $00000003 )); {15 Sampleformat  float=3                        }
+
 
   NullString      : array[0..3] of Byte     = ( $00, $00, $00, $00 );
   X_Res_Value     : array[0..7] of Byte     = ( $6D,$03,$00,$00,  $0A,$00,$00,$00 );  { Value for X-Resolution:
@@ -183,7 +194,11 @@ const
  { Write TIFF - File for Image with RGB-Values }
  { ------------------------------------------- }
  { Write Header }
-//  thefile.writebuffer ( TifHeader, sizeof(TifHeader));
+//   OffsetDir:= sizeof(TifHeader)+  sizeof(X_Res_Value)+ sizeof(Y_Res_Value)+ sizeof(BitsPerSample48)+ sizeof(Software); {where is the IFD directory}
+//   TifHeader[4]:=OffsetDir and $FF ; { Pointer to the first directory. currently $22}
+//   TifHeader[5]:=OffsetDir shl 8 ;   { Pointer to the first directory.}
+//   thefile.writebuffer ( TifHeader, sizeof(TifHeader));
+
 
 //  OffsetXRes := thefile.Position ;
 //  thefile.writebuffer ( X_Res_Value, sizeof(X_Res_Value));
@@ -197,7 +212,19 @@ const
 //  OffsetSoftware := thefile.Position ;
 //  thefile.writebuffer ( Software, sizeof(Software));
 
-//  OffsetStrip := thefile.Position ;
+//  OffsetStrip := OffsetDir +sizeof(NoOfDirsRGB48) +sizeof(DirectoryRGB48) + sizeof(NullString);
+
+  { Set Offset - Adresses into Directory }
+//   DirectoryRGB48[ 3]._Value := OffsetBitsPerSample;  { BitsPerSample location containing 1000 1000 1000  (16,16,16)}
+//   Directoryrgb48[ 6]._Value := OffsetStrip; 	      { StripOffset, location of start image data}
+//   Directoryrgb48[10]._Value := OffsetXRes; 	      { X-Resolution  }
+//   Directoryrgb48[11]._Value := OffsetYRes; 	      { Y-Resolution  }
+//   Directoryrgb48[14]._Value := OffsetSoftware;       { Software      }
+
+ { Write Directory }
+//   thefile.writebuffer ( NoOfDirsRGB48, sizeof(NoOfDirsRGB48));{number of directory entries}
+//   thefile.writebuffer ( Directoryrgb48, sizeof(Directoryrgb48));
+//   thefile.writebuffer ( NullString, sizeof(NullString));
 
   { Write Image Data }
 //  for i:=0 to Height2-1 do
@@ -232,10 +259,6 @@ const
 //	thefile.writebuffer ( Directoryrgb48, sizeof(Directoryrgb48));
 //	thefile.writebuffer ( NullString, sizeof(NullString));
 
-	{ Update Start of IFD Directory }
-  {all programs write IFD after image data, could be written before image data}
-//  thefile.Seek ( 4, soFromBeginning ) ;
-//  thefile.writebuffer ( OffsetDir, sizeof(OffsetDir));
 //  thefile.free;
 //  result:=true;
 //end;
@@ -255,7 +278,7 @@ var
   i,j,k,m : integer;
   dum: double;
 
-  buf32: dword;
+  buf32: single;
   buffer : array[0..3] of byte absolute buf32;
 begin
   result:=false;
@@ -280,6 +303,10 @@ begin
  { Write TIFF - File for Image with RGB-Values }
  { ------------------------------------------- }
  { Write Header }
+
+  OffsetDir:= sizeof(TifHeader)+  sizeof(X_Res_Value)+ sizeof(Y_Res_Value)+ sizeof(BitsPerSample96)+ sizeof(Software); {where is the IFD directory}
+  TifHeader[4]:=OffsetDir and $FF ; { Pointer to the first directory. currently $22}
+  TifHeader[5]:=OffsetDir shl 8 ;   { Pointer to the first directory.}
   thefile.writebuffer ( TifHeader, sizeof(TifHeader));
 
   OffsetXRes := thefile.Position ;
@@ -294,7 +321,20 @@ begin
   OffsetSoftware := thefile.Position ;
   thefile.writebuffer ( Software, sizeof(Software));
 
-  OffsetStrip := thefile.Position ;
+  OffsetStrip := OffsetDir +sizeof(NoOfDirsRGB96) +sizeof(DirectoryRGB96) + sizeof(NullString);
+
+  { Set Offset - Adresses into Directory }
+  DirectoryRGB96[ 3]._Value := OffsetBitsPerSample;   { BitsPerSample location containing 1000 1000 1000  (16,16,16)}
+  Directoryrgb96[ 6]._Value := OffsetStrip; 	      { StripOffset, location of start image data}
+  Directoryrgb96[10]._Value := OffsetXRes; 	      { X-Resolution  }
+  Directoryrgb96[11]._Value := OffsetYRes; 	      { Y-Resolution  }
+  Directoryrgb96[14]._Value := OffsetSoftware; 	      { Software      }
+
+  { Write Directory }
+  thefile.writebuffer ( NoOfDirsRGB96, sizeof(NoOfDirsRGB96));{number of directory entries}
+  thefile.writebuffer ( Directoryrgb96, sizeof(Directoryrgb96));
+  thefile.writebuffer ( NullString, sizeof(NullString));
+
 
   { Write Image Data }
   for i:=0 to Height2-1 do
@@ -303,20 +343,19 @@ begin
     for j:=0 to wide2-1 do
       begin
        if flip_H=true then m:=wide2-1-j else m:=j;
-       dum:=$FFFF*img[0,m,k];{increase level with 65535 to maximum, fractions will be preserved }  if dum>$FFFFFFFF then dum:=$FFFFFFFF;if dum<0 then dum:=$0;
-       buf32:=round(dum); {has absolute link to buffer}
+       buf32:=img[0,m,k]/65535;{range 0..1,  buf32 has absolute link to buffer}
        tiffbuffer[m*12 ]  :=buffer[0];
        tiffbuffer[m*12+1] :=buffer[1];
        tiffbuffer[m*12+2] :=buffer[2];
        tiffbuffer[m*12+3] :=buffer[3];
-       dum:=$FFFF*img[1,m,k]; if dum>$FFFFFFFF then dum:=$FFFFFFFF;if dum<0 then dum:=$0;
-       buf32:=round(dum);
+
+       buf32:=img[1,m,k]/65535;{range 0..1,  buf32 has absolute link to buffer}
        tiffbuffer[m*12+4]  :=buffer[0];
        tiffbuffer[m*12+5] :=buffer[1];
        tiffbuffer[m*12+6] :=buffer[2];
        tiffbuffer[m*12+7] :=buffer[3];
-       dum:=$FFFF*img[2,m,k]; if dum>$FFFFFFFF then dum:=$FFFFFFFF;if dum<0 then dum:=$0;
-       buf32:=round(dum);
+
+       buf32:=img[2,m,k]/65535;{range 0..1,  buf32 has absolute link to buffer}
        tiffbuffer[m*12+8]  :=buffer[0];
        tiffbuffer[m*12+9] :=buffer[1];
        tiffbuffer[m*12+10] :=buffer[2];
@@ -325,24 +364,7 @@ begin
      end;
      thefile.writebuffer(tiffbuffer,wide2*12) ;{works only for byte arrays}
    end;
-
-	{ Set Offset - Adresses into Directory }
-  DirectoryRGB96[ 3]._Value := OffsetBitsPerSample; 	{ BitsPerSample location containing 1000 1000 1000  (16,16,16)}
-  Directoryrgb96[ 6]._Value := OffsetStrip; 	      { StripOffset, location of start image data}
-  Directoryrgb96[10]._Value := OffsetXRes; 		      { X-Resolution  }
-  Directoryrgb96[11]._Value := OffsetYRes; 		      { Y-Resolution  }
-  Directoryrgb96[14]._Value := OffsetSoftware; 	    { Software      }
-
-	{ Write Directory }
-  OffsetDir := thefile.Position ;{where is the IFD directory}
-	thefile.writebuffer ( NoOfDirsRGB96, sizeof(NoOfDirsRGB96));{number of directory entries}
-	thefile.writebuffer ( Directoryrgb96, sizeof(Directoryrgb96));
-	thefile.writebuffer ( NullString, sizeof(NullString));
-
-	{ Update Start of IFD Directory }
-  {all programs write IFD after image data, could be written before image data}
-  thefile.Seek ( 4, soFromBeginning ) ;
-  thefile.writebuffer ( OffsetDir, sizeof(OffsetDir));
+;
   thefile.free;
   result:=true;
 end;
@@ -386,7 +408,11 @@ end;
  { Write TIFF - File for Image with RGB-Values }
  { ------------------------------------------- }
  { Write Header }
+//  OffsetDir:= sizeof(TifHeader)+  sizeof(X_Res_Value)+ sizeof(Y_Res_Value)+ sizeof(Software);{where is the IFD directory}
+//  TifHeader[4]:=OffsetDir and $FF ; { Pointer to the first directory. currently $22}
+//  TifHeader[5]:=OffsetDir shl 8 ;   { Pointer to the first directory.}
 //  thefile.writebuffer ( TifHeader, sizeof(TifHeader));
+
 
 //  OffsetXRes := thefile.Position ;
 //  thefile.writebuffer ( X_Res_Value, sizeof(X_Res_Value));
@@ -397,7 +423,19 @@ end;
 //  OffsetSoftware := thefile.Position ;
 //  thefile.writebuffer ( Software, sizeof(Software));
 
-//  OffsetStrip := thefile.Position ;
+//   OffsetStrip := OffsetDir +sizeof(NoOfDirsBW16) +sizeof(Directorybw16) + sizeof(NullString);
+
+      { Set Offset - Adresses into Directory }
+//  Directorybw16[ 6]._Value := OffsetStrip; 	      { StripOffset, location of start image data}
+//  Directorybw16[10]._Value := OffsetXRes; 	      { X-Resolution  }
+//  Directorybw16[11]._Value := OffsetYRes; 	      { Y-Resolution  }
+//  Directorybw16[13]._Value := OffsetSoftware; 	      { Software      }
+
+   { Write IFD Directory }
+//   thefile.writebuffer ( NoOfDirsBW16, sizeof(NoOfDirsBW16));{number of directory entries}
+//   thefile.writebuffer ( Directorybw16, sizeof(Directorybw16));
+//   thefile.writebuffer ( NullString, sizeof(NullString));
+
 
   { Write Image Data }
 //  for i:=0 to Height2-1 do
@@ -413,28 +451,11 @@ end;
 //     thefile.writebuffer( tiffbuffer,wide2*2{size 2x8}) ;{works only for byte arrays}
 //   end;
 
-	{ Set Offset - Adresses into Directory }
-//  Directorybw16[ 6]._Value := OffsetStrip; 	      { StripOffset, location of start image data}
-//  Directorybw16[10]._Value := OffsetXRes; 		      { X-Resolution  }
-//  Directorybw16[11]._Value := OffsetYRes; 		      { Y-Resolution  }
-//  Directorybw16[13]._Value := OffsetSoftware; 	    { Software      }
-
-
-	{ Write Directory }
-//  OffsetDir := thefile.Position ;{where is the IFD directory}
-//	thefile.writebuffer ( NoOfDirsBW16, sizeof(NoOfDirsBW16));{number of directory entries}
-//	thefile.writebuffer ( Directorybw16, sizeof(Directorybw16));
-//	thefile.writebuffer ( NullString, sizeof(NullString));
-
-	{ Update Start of IFD Directory }
-  {all programs write IFD after image data, could be written before image data}
-//  thefile.Seek ( 4, soFromBeginning ) ;
-//  thefile.writebuffer ( OffsetDir, sizeof(OffsetDir));
 //  thefile.free;
 //  result:=true;
 //end;
 
-function save_tiff_32(img: image_array; wide2,height2:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 32 bit gray scale TIFF file }
+function save_tiff_32(img: image_array; wide2,height2:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 32 bit float gray scale TIFF file }
 
 var
   OffsetXRes     : LongInt;
@@ -445,8 +466,7 @@ var
 var
   thefile : tfilestream;
   i,j,k,m : integer;
-  dum: double;
-  buf32 : Dword;
+
 begin
   result:=false;
   filen2:=ChangeFileExt(Filen2,'.tif');
@@ -465,14 +485,15 @@ begin
  Directorybw32[1]._Value := LongInt(Wide2);        { Image Width }
  Directorybw32[2]._Value := LongInt(Height2);      { Image Height }
 
-//irectoryCOL[3]._Value := LongInt($10); 	  { BitsPerSample }
-
  Directorybw32[8]._Value := LongInt(Height2);      { Image Height }
  Directorybw32[9]._Value := LongInt(4*Wide2*Height2);{ Strip Byte Counts }
 
- { Write TIFF - File for Image with RGB-Values }
+ { Write TIFF -  }
  { ------------------------------------------- }
  { Write Header }
+  OffsetDir:= sizeof(TifHeader)+  sizeof(X_Res_Value)+ sizeof(Y_Res_Value)+ sizeof(Software);{where is the IFD directory}
+  TifHeader[4]:=OffsetDir and $FF ; { Pointer to the first directory. currently $22}
+  TifHeader[5]:=OffsetDir shl 8 ;   { Pointer to the first directory.}
   thefile.writebuffer ( TifHeader, sizeof(TifHeader));
 
   OffsetXRes := thefile.Position ;
@@ -484,7 +505,19 @@ begin
   OffsetSoftware := thefile.Position ;
   thefile.writebuffer ( Software, sizeof(Software));
 
-  OffsetStrip := thefile.Position ;
+  OffsetStrip := OffsetDir +sizeof(NoOfDirsBW32) +sizeof(Directorybw32) + sizeof(NullString);
+
+  { Set Offset - Adresses into Directory }
+  Directorybw32[ 6]._Value := OffsetStrip; 	      { StripOffset, location of start image data}
+  Directorybw32[10]._Value := OffsetXRes; 	      { X-Resolution  }
+  Directorybw32[11]._Value := OffsetYRes; 	      { Y-Resolution  }
+  Directorybw32[13]._Value := OffsetSoftware; 	      { Software      }
+
+  { Write IFD Directory }
+  thefile.writebuffer ( NoOfDirsBW32, sizeof(NoOfDirsBW32));{number of directory entries}
+  thefile.writebuffer ( Directorybw32, sizeof(Directorybw32));
+  thefile.writebuffer ( NullString, sizeof(NullString));
+
 
   { Write Image Data }
   for i:=0 to Height2-1 do
@@ -493,32 +526,11 @@ begin
     for j:=0 to wide2-1 do
       begin
         if flip_H=true then m:=wide2-1-j else m:=j;
-        dum:=$FFFF*img[0,m,k];{increase level with 65535 to maximum, fractions will be preserved }
-        if dum>$FFFFFFFF then dum:=$FFFFFFFF;if dum<0 then dum:=$0;buf32:=round(dum);
-        tiffbuffer32[m]:=buf32;
+        tiffbuffer32[m]:=img[0,m,k]/65535;{range 0..1}
       end;
      thefile.writebuffer(tiffbuffer,wide2*4{size 2x8}) ;{works only for byte arrays}
    end;
 
-
-
-	{ Set Offset - Adresses into Directory }
-  Directorybw32[ 6]._Value := OffsetStrip; 	      { StripOffset, location of start image data}
-  Directorybw32[10]._Value := OffsetXRes; 		      { X-Resolution  }
-  Directorybw32[11]._Value := OffsetYRes; 		      { Y-Resolution  }
-  Directorybw32[13]._Value := OffsetSoftware; 	    { Software      }
-
-
-	{ Write Directory }
-  OffsetDir := thefile.Position ;{where is the IFD directory}
-	thefile.writebuffer ( NoOfDirsBW32, sizeof(NoOfDirsBW32));{number of directory entries}
-	thefile.writebuffer ( Directorybw32, sizeof(Directorybw32));
-	thefile.writebuffer ( NullString, sizeof(NullString));
-
-	{ Update Start of IFD Directory }
-  {all programs write IFD after image data, could be written before image data}
-  thefile.Seek ( 4, soFromBeginning ) ;
-  thefile.writebuffer ( OffsetDir, sizeof(OffsetDir));
   thefile.free;
   result:=true;
 
