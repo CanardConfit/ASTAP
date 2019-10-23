@@ -219,7 +219,7 @@ end;
 procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
 var
     fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,
-    diameter,y,x2,y2  : integer;
+    diameter,y,x2,y2,binning  : integer;
     background_correction : double;
 
     flat_factor,h,dRA, dDec,det,delta,gamma,ra_new, dec_new,variance_factor,
@@ -245,6 +245,7 @@ begin
     use_astrometry_internal:=use_astrometry_internal1.checked;
     use_astrometry_net:=use_astrometry_net1.checked;
 
+    binning:=report_binning;{select binning}
     counter:=0;
     jd_sum:=0;{sum of Julian midpoints}
     jd_start:=9999999999;{start observations in Julian day}
@@ -398,8 +399,10 @@ begin
               end
               else
               begin
-                get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var} cblack,star_level );{2019x}
-                find_stars(img_loaded,starlist1);{find stars and put them in a list}
+//                get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var} cblack,star_level );{2019x}
+  //              find_stars(img_loaded,starlist1);{find stars and put them in a list}
+                bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist1);{bin, measure background, find stars}
+
                 find_tetrahedrons_ref;{find tetrahedrons for reference image}
               end;
             end;
@@ -439,8 +442,11 @@ begin
                 end
                 else
                 begin{internal alignment}
-                  get_background(0,img_loaded,true,true {unknown, calculate also noise_level}, {var} cblack,star_level);
-                  find_stars(img_loaded,starlist2);{find stars and put them in a list}
+//                  get_background(0,img_loaded,true,true {unknown, calculate also noise_level}, {var} cblack,star_level);
+//                  find_stars(img_loaded,starlist2);{find stars and put them in a list}
+                  bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist2);{bin, measure background, find stars}
+
+
                   find_tetrahedrons_new;{find tetrahedrons for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
                   memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
@@ -626,7 +632,7 @@ end;
 
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
-    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,drizzle_mode             : integer;
+    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,drizzle_mode,binning             : integer;
     background_correction, flat_factor,  h,dRA, dDec,det, delta,gamma,ra_new, dec_new, sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v, value, weightF    : double;
     init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
 
@@ -646,6 +652,8 @@ begin
     sum_exp:=0;
     jd_sum:=0;{sum of Julian midpoints}
     jd_start:=9999999999;{start observations in Julian day}
+
+    binning:=report_binning;{select binning}
 
     init:=false;
 
@@ -708,9 +716,13 @@ begin
             end
             else
             begin
-              get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var} cblack,star_level);
-              find_stars(img_loaded,starlist1);{find stars and put them in a list}
+//              get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var} cblack,star_level);
+//              find_stars(img_loaded,starlist1);{find stars and put them in a list}
+
+              bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist1);{bin, measure background, find stars}
+
               find_tetrahedrons_ref;{find tetrahedrons for reference image}
+
               pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
               if pedestal<500 then pedestal:=500;{prevent image noise could go below zero}
               background_correction:=pedestal-cblack;
@@ -760,11 +772,16 @@ begin
               end
               else
               begin{internal alignment}
-                get_background(0,img_loaded,true,true {unknown, calculate also noise_level} , {var} cblack,star_level);
+
+
+//                get_background(0,img_loaded,true,true {unknown, calculate also noise_level} , {var} cblack,star_level);
+//                find_stars(img_loaded,starlist2);{find stars and put them in a list}
+
+                bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist2);{bin, measure background, find stars}
+
                 background_correction:=pedestal-cblack;
                 datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
-                find_stars(img_loaded,starlist2);{find stars and put them in a list}
                 find_tetrahedrons_new;{find triangels for new image}
                 if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
                 memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
@@ -1115,7 +1132,7 @@ end;
 
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 var
-    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,  drizzle_mode   : integer;
+    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,  drizzle_mode,binning   : integer;
     background_correction, flat_factor, h,dRA, dDec,det,delta,gamma,ra_new, dec_new,variance_factor, sin_dec_new,cos_dec_new, delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v, value,weightF  : double;
     init, solution, use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
 
@@ -1136,6 +1153,7 @@ begin
     use_astrometry_internal:=use_astrometry_internal1.checked;
     use_astrometry_net:=use_astrometry_net1.checked;
 
+    binning:=report_binning;{select binning}
     counter:=0;
     sum_exp:=0;
     jd_sum:=0;{sum of Julian midpoints}
@@ -1203,8 +1221,10 @@ begin
           end
           else
           begin
-            get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var}cblack, star_level );
-            find_stars(img_loaded,starlist1);{find stars and put them in a list}
+//            get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var}cblack, star_level );
+//            find_stars(img_loaded,starlist1);{find stars and put them in a list}
+            bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist1);{bin, measure background, find stars}
+
             find_tetrahedrons_ref;{find tetrahedrons for reference image}
             pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
             if pedestal<500 then pedestal:=500;{prevent image noise could go below zero}
@@ -1247,11 +1267,14 @@ begin
                 end
                 else
                 begin{internal alignment}
-                  get_background(0,img_loaded,true,true {unknown, calculate also noise_level}, {var}cblack, star_level);
+//                  get_background(0,img_loaded,true,true {unknown, calculate also noise_level}, {var}cblack, star_level);
+//                  find_stars(img_loaded,starlist2);{find stars and put them in a list}
+
+                  bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist2);{bin, measure background, find stars}
+
                   background_correction:=pedestal-cblack;{correct later for difference in background}
                   datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
-                  find_stars(img_loaded,starlist2);{find stars and put them in a list}
                   find_tetrahedrons_new;{find triangels for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),true{save solution}) then {find difference between ref image and new image}
 

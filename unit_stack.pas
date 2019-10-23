@@ -94,6 +94,8 @@ type
     browse_blink1: TButton;
     browse_darks1: TButton;
     browse_flats1: TButton;
+    downsample_for_solving1: TComboBox;
+    downsample_solving_label1: TLabel;
     help_live_stacking1: TLabel;
     Label20: TLabel;
     Label30: TLabel;
@@ -125,8 +127,6 @@ type
     ddp_filter1: TRadioButton;
     ddp_filter2: TRadioButton;
     demosaic_method1: TComboBox;
-    downsample_for_solving1: TComboBox;
-    downsample_solving_label1: TLabel;
     drizzle1: TCheckBox;
     drop_size1: TComboBox;
     Edit_a1: TEdit;
@@ -310,6 +310,7 @@ type
     photometry_binx2: TButton;
     photometry_button1: TButton;
     photometry_stop1: TButton;
+    show_tetrahedrons1: TBitBtn;
     tab_live_stacking1: TTabSheet;
     tab_Pixelmath1: TTabSheet;
     pixelsize1: TEdit;
@@ -348,7 +349,6 @@ type
     selectall7: TMenuItem;
     list_to_clipboard1: TMenuItem;
     show_console1: TCheckBox;
-    show_tetrahedrons1: TBitBtn;
     sigma_factor_remove_background_colourB1: TComboBox;
     sigma_factor_remove_background_colourG1: TComboBox;
     sigma_factor_remove_background_colourR1: TComboBox;

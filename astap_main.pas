@@ -992,7 +992,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.285 dated 2019-10-21';
+  #13+#10+'Version ß0.9.286 dated 2019-10-23';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2795,11 +2795,16 @@ begin
     for x:=1 to width2-2 do
     begin
      {http://cilab.knu.ac.kr/English/research/Color/Interpolation.htm ,  Bilinear interpolation}
+
       try
       green_even:= ( (odd(x+1+offsetX)) and (odd(y+1+offsetY)) );{even(i) function is odd(i+1), even is here for array position not fits position}
       green_odd := ( (odd(x+offsetX)) and  (odd(y+offsetY)) );
       red :=( (odd(x+offsetX)) and (odd(y+1+offsetY)) );
       blue:=( (odd(x+1+offsetX)) and (odd(y+offsetY)) );
+
+ //     if ((x=3963) and (y=692)) then
+ //     beep;
+
 
       if green_odd then begin
                    img_temp2[0,x,y]:=     (img_loaded[0,x  ,y-1] + img_loaded[0,x  ,y+1])/2; {red neighbor pixels };
@@ -2822,6 +2827,7 @@ begin
                    img_temp2[2,x,y]:=     (img_loaded[0,x,  y  ]  ); end;
       except
       end;
+
 
     end;{x loop}
   end;{y loop}
@@ -7534,10 +7540,18 @@ var
     source_fits,histogram_done,file_loaded: boolean;
     binning, backgr, hfd_median : double;
     hfd_counter : integer;
+    t :string;
 begin
   user_path:=GetAppConfigDir(false);{get user path for app config}
+
   if load_settings(user_path+'astap.cfg')=false then
   begin
+    {$ifdef mswindows}
+    {$else} {unix}
+    s:=expandfilename('~/.config');
+    if DirectoryExists(s)=false then createdir(s); {required since in Linux and MacOS you can't create ./config and .config/astap in one step}
+    {$endif}
+
     if DirectoryExists(user_path)=false then createdir(user_path);{create c:\users\yourname\appdata\local\astap}
 
     {begin remove 2020}

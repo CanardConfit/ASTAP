@@ -105,6 +105,8 @@ uses   Classes,SysUtils,controls,forms,math,
        unit_star_align, unit_290, astap_main, unit_stack, unit_annotation;
 
 function solve_image(img :image_array; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
+procedure bin_and_find_stars(img :image_array;binning:integer;cropping:double;get_hist{update hist}:boolean; var starlist3:star_list);{bin, measure background, find stars}
+function report_binning : integer;{select the binning}
 
 var
   star1   : array[0..2] of array of single;
@@ -384,6 +386,72 @@ begin
   height2:=h;
 end;
 
+procedure bin_and_find_stars(img :image_array;binning:integer;cropping:double;get_hist{update hist}:boolean; var starlist3:star_list);{bin, measure background, find stars}
+var
+  old_width,old_height,old_naxis3,nrstars,i : integer;
+  img_binned : image_array;
+
+begin
+  if ((binning>1) or (cropping<1)) then
+  begin
+    old_width:=width2;
+    old_height:=height2;
+    old_naxis3:=naxis3;
+    if binning>1 then memo2_message('Creating monochromatic x '+inttostr(binning)+' binning image for solving/star alignment.');
+    if cropping<>1 then memo2_message('Cropping image x '+floattostrF2(cropping,0,2));
+
+    if binning=2 then binX2_crop(cropping,img,img_binned) {combine values of 4 pixels, default option if 3 and 4 are not specified}
+    else
+    if binning=3 then binX3_crop(cropping,img,img_binned) {combine values of 9 pixels}
+    else
+    if binning=4 then binX4_crop(cropping,img,img_binned) {combine values of 16 pixels}
+    else
+    if binning=1 then binX1_crop(cropping,img,img_binned); {crop image, no binning}
+
+    {test routine, to show bin result}
+    //    img_loaded:=img_binned;
+    //    naxis3:=1;
+    //    plot_fits(mainwindow.image1,true);{plot real}
+    //    exit;
+
+    get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}cblack,star_level );{get back ground}
+    find_stars(img_binned,starlist3); {find stars of the image and put them in a list}
+    img_binned:=nil;
+    nrstars:=Length(starlist3[0])-1;
+
+    if width2<1000 then memo2_message('Info: REDUCE OR REMOVE DOWNSAMPLING IS RECOMMENDED. Set this option in stack menu, tab alignment.');
+    width2:=old_width; {restore to original size}
+    height2:=old_height;
+    naxis3:=old_naxis3;
+
+
+    for i:=1 to nrstars do {correct star positions for cropping. Simplest method}
+    begin
+      starlist3[0,i]:={(binning-1)/2} + starlist3[0,i]*binning+(width2*(1-cropping)/2);{correct star positions for binning/ cropping}
+      starlist3[1,i]:={(binning-1)/2} + starlist3[1,i]*binning+(height2*(1-cropping)/2);
+    end;
+  end
+  else
+  begin
+    if height2>2500 then memo2_message('Info: DOWNSAMPLING IS RECOMMENDED FOR LARGE IMAGES. Set this option in stack menu, tab alignment.');
+    get_background(0,img_loaded,get_hist {load hist},true {calculate also standard deviation background}, {var} cblack,star_level);{get back ground}
+    find_stars(img,starlist3); {find stars of the image and put them in a list}
+    //nrstars:=Length(starlist3[0])-1;
+  end;
+end;
+
+function report_binning : integer;{select the binning}
+begin
+  result:=stackmenu1.downsample_for_solving1.itemindex;
+  if result<=0 then  {zero gives -1, Auto is 0}
+  begin
+    if height2>5000 then result:=4
+    else
+    if height2>2500 then result:=2
+    else
+     result:=1;
+  end;
+end;
 
 function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
@@ -393,9 +461,8 @@ var
   Save_Cursor     : TCursor;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,info_message  :string;
-  img_binned : image_array;
-  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,old_width,old_height,old_naxis3 : integer;
-  trayicon_visible,autoFOV : boolean;
+  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t : integer;
+  {trayicon_visible,}autoFOV : boolean;
 const
    popupnotifier_visible : boolean=false;
 begin
@@ -412,15 +479,17 @@ begin
     apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
   end;
 
-  binning:=stackmenu1.downsample_for_solving1.itemindex;
-  if binning<=0 then  {zero gives -1, Auto is 0}
-  begin
-    if height2>5000 then binning:=4
-    else
-    if height2>2500 then binning:=2
-    else
-    binning:=1;
-  end;
+//  binning:=stackmenu1.downsample_for_solving1.itemindex;
+//  if binning<=0 then  {zero gives -1, Auto is 0}
+//  begin
+//    if height2>5000 then binning:=4
+//    else
+//    if height2>2500 then binning:=2
+//    else
+//    binning:=1;
+//  end;
+
+  binning:=report_binning;
 
   if stackmenu1.force_oversize1.checked=false then info_message:='▶▶' {normal} else info_message:='▶'; {slow}
   info_message:= ' [' +stackmenu1.radius_search1.text+'°]'+#9+#9+info_message+
@@ -428,7 +497,7 @@ begin
                   #10+mainwindow.ra1.text+'h,'+mainwindow.dec1.text+'°'+{for tray icon}
                   #10+filename2;
 
-  trayicon_visible:=mainwindow.TrayIcon1.visible;
+//  trayicon_visible:=mainwindow.TrayIcon1.visible;
 
 
 
@@ -458,21 +527,21 @@ begin
     else cropping:=1;
 
 
-    if ((binning>1) or (cropping<1)) then
-    begin
-      old_width:=width2;
-      old_height:=height2;
-      old_naxis3:=naxis3;
-      if binning>1 then memo2_message('Creating monochromatic x '+inttostr(binning)+' binning image to solve.');
-      if cropping<>1 then memo2_message('Cropping image x '+floattostrF2(cropping,0,2));
+//    if ((binning>1) or (cropping<1)) then
+//    begin
+//      old_width:=width2;
+//      old_height:=height2;
+//      old_naxis3:=naxis3;
+//      if binning>1 then memo2_message('Creating monochromatic x '+inttostr(binning)+' binning image to solve.');
+//      if cropping<>1 then memo2_message('Cropping image x '+floattostrF2(cropping,0,2));
 
-      if binning=2 then binX2_crop(cropping,img,img_binned) {combine values of 4 pixels, default option if 3 and 4 are not specified}
-      else
-      if binning=3 then binX3_crop(cropping,img,img_binned) {combine values of 9 pixels}
-      else
-      if binning=4 then binX4_crop(cropping,img,img_binned) {combine values of 16 pixels}
-      else
-      if binning=1 then binX1_crop(cropping,img,img_binned); {crop image, no binning}
+//      if binning=2 then binX2_crop(cropping,img,img_binned) {combine values of 4 pixels, default option if 3 and 4 are not specified}
+//      else
+//      if binning=3 then binX3_crop(cropping,img,img_binned) {combine values of 9 pixels}
+//      else
+//      if binning=4 then binX4_crop(cropping,img,img_binned) {combine values of 16 pixels}
+//      else
+//      if binning=1 then binX1_crop(cropping,img,img_binned); {crop image, no binning}
 
       {test routine, to show bin result}
      //    img_loaded:=img_binned;
@@ -480,32 +549,35 @@ begin
      //    plot_fits(mainwindow.image1,true);{plot real}
      //    exit;
 
-      get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}cblack,star_level );{get back ground}
-      find_stars(img_binned,starlist2); {find stars of the image and put them in a list}
-      img_binned:=nil;
-      nrstars:=Length(starlist2[0])-1;
+//      get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}cblack,star_level );{get back ground}
+//      find_stars(img_binned,starlist2); {find stars of the image and put them in a list}
+//      img_binned:=nil;
+//      nrstars:=Length(starlist2[0])-1;
 
-      if width2<1000 then memo2_message('Info: REDUCE OR REMOVE DOWNSAMPLING IS RECOMMENDED. Set this option in stack menu, tab alignment.');
-      width2:=old_width; {restore to original size}
-      height2:=old_height;
-      naxis3:=old_naxis3;
+//      if width2<1000 then memo2_message('Info: REDUCE OR REMOVE DOWNSAMPLING IS RECOMMENDED. Set this option in stack menu, tab alignment.');
+//      width2:=old_width; {restore to original size}
+//      height2:=old_height;
+//      naxis3:=old_naxis3;
 
 
-      for i:=1 to nrstars do {correct star positions for cropping. Simplest method}
-      begin
-        starlist2[0,i]:={(binning-1)/2} + starlist2[0,i]*binning+(width2*(1-cropping)/2);{correct star positions for binning/ cropping}
-        starlist2[1,i]:={(binning-1)/2} + starlist2[1,i]*binning+(height2*(1-cropping)/2);
-      end;
-    end
-    else
-    begin
+//      for i:=1 to nrstars do {correct star positions for cropping. Simplest method}
+//      begin
+//        starlist2[0,i]:={(binning-1)/2} + starlist2[0,i]*binning+(width2*(1-cropping)/2);{correct star positions for binning/ cropping}
+//        starlist2[1,i]:={(binning-1)/2} + starlist2[1,i]*binning+(height2*(1-cropping)/2);
+//      end;
+//    end
+//    else
+//    begin
 
-      if height2>2500 then memo2_message('Info: DOWNSAMPLING IS RECOMMENDED FOR LARGE IMAGES. Set this option in stack menu, tab alignment.');
-      get_background(0,img_loaded,get_hist {load hist},true {calculate also standard deviation background}, {var} cblack,star_level);{get back ground}
-      find_stars(img,starlist2); {find stars of the image and put them in a list}
-      nrstars:=Length(starlist2[0])-1;
-    end;
+//      if height2>2500 then memo2_message('Info: DOWNSAMPLING IS RECOMMENDED FOR LARGE IMAGES. Set this option in stack menu, tab alignment.');
+//      get_background(0,img_loaded,get_hist {load hist},true {calculate also standard deviation background}, {var} cblack,star_level);{get back ground}
+//      find_stars(img,starlist2); {find stars of the image and put them in a list}
+//      nrstars:=Length(starlist2[0])-1;
+//    end;
 
+    bin_and_find_stars(img,binning,cropping,get_hist{update hist}, starlist2);{bin, measure background, find stars}
+
+    nrstars:=Length(starlist2[0])-1;
     nrstars_required:=round(nrstars*(height2/width2)*1.25);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
   //  nrstars_required:=round(nrstars*(height2/width2)*factorX);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
 

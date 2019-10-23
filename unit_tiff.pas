@@ -1,8 +1,8 @@
 unit unit_tiff;
-{Writes tiff files from an image array}
-{Based on 8 bit routines from bit2tiff.pas,  BMP to TIFF, Freeware version 3.0 - Sep 10, 2000 by Wolfgang Krug}
-{Heavily modified for 16bit integer and 32 bit float gray and colour in 2018,2019 by Han Kleijn}
-{freeware}
+{Writes uncompressed tiff files from an image array}
+{Based orginally on 8 bit routines from bit2tiff.pas,  BMP to TIFF, Freeware version 3.0 - Sep 10, 2000 by Wolfgang Krug}
+{Heavily modified for 16bit integer and 32 bit float gray and colour. IFD directory placed at beginning file and fileposition and seek commands avoided.}
+{Freeware, released in 2018,2019 by Han Kleijn}
 
 interface
 

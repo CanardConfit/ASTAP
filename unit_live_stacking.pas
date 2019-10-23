@@ -97,9 +97,9 @@ end;
 
 procedure stack_live(oversize:integer; path :string);{stack live average}
 var
-    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col           : integer;
-    {background_correction,} flat_factor,  h,dRA, dDec,det, delta,gamma,ra_new, dec_new, sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v, value, weightF,distance    : double;
-    init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based,waiting,transition_image :boolean;
+    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,binning        : integer;
+    {background_correction,} flat_factor, { h,dRA, dDec,det, delta,gamma,ra_new, dec_new, sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v, value, weightF,} distance    : double;
+    init, solution,{use_star_alignment,use_manual_alignment,} use_astrometry_internal, use_astrometry_net,vector_based,waiting,transition_image :boolean;
 
     counter,total_counter,bad_counter :  integer;
 
@@ -121,13 +121,14 @@ var
 begin
   with stackmenu1 do
   begin
-    use_star_alignment:=stackmenu1.use_star_alignment1.checked;
-    use_manual_alignment:=stackmenu1.use_manual_alignment1.checked;
+//    use_star_alignment:=stackmenu1.use_star_alignment1.checked;
+//    use_manual_alignment:=stackmenu1.use_manual_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
     use_astrometry_net:=use_astrometry_net1.checked;
 
     reset_var; {reset variables  including init:=false}
 
+    binning:=report_binning;{select binning}
 
     pause_pressed:=false;
     esc_pressed:=false;
@@ -206,8 +207,10 @@ begin
             else {internal star alignment}
             if init=false then {first image}
             begin
-              get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var} cblack,star_level);
-              find_stars(img_loaded,starlist1);{find stars and put them in a list}
+//              get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var} cblack,star_level);
+//              find_stars(img_loaded,starlist1);{find stars and put them in a list}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist1);{bin, measure background, find stars}
+
               find_tetrahedrons_ref;{find tetrahedrons for reference image}
             end;
 
@@ -236,9 +239,10 @@ begin
             {align using star match}
             if init=true then {second image}
             begin{internal alignment}
-              get_background(0,img_loaded,true,true {unknown, calculate also noise_level} , {var} cblack,star_level);
+//              get_background(0,img_loaded,true,true {unknown, calculate also noise_level} , {var} cblack,star_level);
+//              find_stars(img_loaded,starlist2);{find stars and put them in a list}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist2);{bin, measure background, find stars}
 
-              find_stars(img_loaded,starlist2);{find stars and put them in a list}
               find_tetrahedrons_new;{find triangels for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
               memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
@@ -261,7 +265,7 @@ begin
               inc(counter);
               inc(total_counter);
               sum_exp:=sum_exp+exposure;
-              if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
+//              if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
 
               date_obs_to_jd;{convert date-obs to jd}
               if jd<jd_start then jd_start:=jd;

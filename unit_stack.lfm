@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 349
+  Left = 198
   Height = 644
-  Top = 170
+  Top = 240
   Width = 1410
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1409
-    ActivePage = tab_live_stacking1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 9
+    TabIndex = 0
     TabOrder = 5
     Options = [nboMultiLine]
     object Images: TTabSheet
@@ -2017,11 +2017,11 @@ object stackmenu1: Tstackmenu1
         TabOrder = 3
       end
       object solve1: TButton
-        Left = 1078
+        Left = 976
         Height = 30
         Hint = 'Find plate solution for image in the viewer'
-        Top = 24
-        Width = 210
+        Top = 56
+        Width = 320
         Caption = 'Solve current image'
         OnClick = solve1Click
         ParentShowHint = False
@@ -2030,10 +2030,10 @@ object stackmenu1: Tstackmenu1
       end
       object help_astrometric_solving1: TLabel
         Cursor = crHandPoint
-        Left = 1080
+        Left = 978
         Height = 25
         Hint = 'Help'
-        Top = 58
+        Top = 114
         Width = 9
         Caption = '?'
         Font.Color = clBlue
@@ -2058,49 +2058,49 @@ object stackmenu1: Tstackmenu1
         Left = 208
         Height = 195
         Top = 0
-        Width = 864
+        Width = 750
         Caption = 'Solver'
         ClientHeight = 175
-        ClientWidth = 860
+        ClientWidth = 746
         TabOrder = 6
         object Panel_solver1: TPanel
           Left = 0
           Height = 175
           Top = 0
-          Width = 860
+          Width = 746
           Align = alClient
           BevelColor = clMenuHighlight
           BevelOuter = bvSpace
           ClientHeight = 175
-          ClientWidth = 860
+          ClientWidth = 746
           TabOrder = 0
           object force_oversize1: TCheckBox
             Left = 421
             Height = 19
             Hint = 'Check-mark  this to improve solving reliability in some cases. Search window will be always large with overlap but will slow down solving.  Default this is off.  This is command line option -speedCommand'
-            Top = 141
+            Top = 123
             Width = 160
             Alignment = taLeftJustify
             BorderSpacing.Around = 5
             Caption = 'Force large search window'
             Color = clBtnFace
             ParentColor = False
-            TabOrder = 5
+            TabOrder = 4
           end
           object star_database1: TEdit
             Left = 568
             Height = 23
             Hint = 'Star database in use.  Selection will be automatic. Enter manually a database to force use. Type blank to reactivate automatic selection.'
-            Top = 116
+            Top = 93
             Width = 72
             BorderSpacing.Around = 5
-            TabOrder = 4
+            TabOrder = 3
             Text = '---'
           end
           object Label53: TLabel
             Left = 384
             Height = 20
-            Top = 119
+            Top = 93
             Width = 176
             Alignment = taRightJustify
             AutoSize = False
@@ -2114,7 +2114,7 @@ object stackmenu1: Tstackmenu1
             Left = 384
             Height = 20
             Hint = 'Crop images above this height [degrees].'
-            Top = 92
+            Top = 64
             Width = 176
             Alignment = taRightJustify
             AutoSize = False
@@ -2128,7 +2128,7 @@ object stackmenu1: Tstackmenu1
             Left = 568
             Height = 23
             Hint = 'Crop images above this height [degrees].'
-            Top = 89
+            Top = 64
             Width = 72
             BorderSpacing.Around = 5
             ItemHeight = 15
@@ -2144,42 +2144,8 @@ object stackmenu1: Tstackmenu1
               '10'
             )
             OnChange = resize_factor1Change
-            TabOrder = 3
-            Text = '10'
-          end
-          object downsample_solving_label1: TLabel
-            Left = 384
-            Height = 20
-            Top = 65
-            Width = 176
-            Alignment = taRightJustify
-            AutoSize = False
-            BorderSpacing.Around = 5
-            Caption = 'Downsample:'
-            Color = clBtnFace
-            ParentColor = False
-            Transparent = False
-          end
-          object downsample_for_solving1: TComboBox
-            Left = 568
-            Height = 23
-            Hint = 'Binning of the image will be applied prior to plate solving. 0 is automatic selection. Use binning if image is large or very noisy.'
-            Top = 62
-            Width = 72
-            BorderSpacing.Around = 5
-            ItemHeight = 15
-            ItemIndex = 0
-            Items.Strings = (
-              '0'
-              '1'
-              '2'
-              '3'
-              '4'
-            )
-            OnChange = resize_factor1Change
-            Style = csDropDownList
             TabOrder = 2
-            Text = '0'
+            Text = '10'
           end
           object Label50: TLabel
             Left = 384
@@ -2198,7 +2164,7 @@ object stackmenu1: Tstackmenu1
             Left = 568
             Height = 23
             Hint = 'Enter the search field in degrees. The program will search in a square spiral around the start position as indicated in the viewer.'
-            Top = 35
+            Top = 36
             Width = 72
             BorderSpacing.Around = 5
             ItemHeight = 15
@@ -2216,7 +2182,7 @@ object stackmenu1: Tstackmenu1
           object actual_search_distance1: TLabel
             Left = 656
             Height = 15
-            Top = 34
+            Top = 36
             Width = 11
             BorderSpacing.Around = 5
             Caption = '0°'
@@ -2227,7 +2193,7 @@ object stackmenu1: Tstackmenu1
           object Label48: TLabel
             Left = 384
             Height = 20
-            Top = 9
+            Top = 8
             Width = 176
             Alignment = taRightJustify
             AutoSize = False
@@ -2272,7 +2238,7 @@ object stackmenu1: Tstackmenu1
           object field1: TLabel
             Left = 656
             Height = 15
-            Top = 10
+            Top = 8
             Width = 23
             BorderSpacing.Around = 5
             Caption = '[0,0]'
@@ -2282,53 +2248,30 @@ object stackmenu1: Tstackmenu1
           end
           object GroupBox_star_alignment_settings1: TGroupBox
             Left = 8
-            Height = 157
-            Top = 4
-            Width = 370
+            Height = 149
+            Top = 9
+            Width = 362
             AutoSize = True
             Caption = 'Tetrahedron detection'
-            ClientHeight = 137
-            ClientWidth = 366
-            TabOrder = 6
+            ClientHeight = 129
+            ClientWidth = 358
+            TabOrder = 5
             object Panel_star_detection1: TPanel
               Left = 0
-              Height = 137
+              Height = 129
               Top = 0
-              Width = 366
+              Width = 358
               Align = alClient
               BevelColor = clMenuHighlight
               BevelOuter = bvSpace
-              ClientHeight = 137
-              ClientWidth = 366
+              ClientHeight = 129
+              ClientWidth = 358
               TabOrder = 0
-              object show_tetrahedrons1: TBitBtn
-                Left = 8
-                Height = 30
-                Hint = 'Show triangular pyramids or irregular tetrahedrons in current image.'
-                Top = 8
-                Width = 352
-                BorderSpacing.Around = 5
-                Caption = 'Test button to show tetrahedrons'
-                Glyph.Data = {
-                  F6000000424DF600000000000000760000002800000010000000100000000100
-                  0400000000008000000000000000000000000000000000000000000000000000
-                  8000008000000080800080000000800080008080000080808000C0C0C0000000
-                  FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00DDDDD7777777
-                  7777DDDDD77DDDDDDD77DDDD7DD7DDDDD7D7DDDD7DDD7DDD7DD7DDDD7DDDD7D7
-                  DDD7DDD7DDDDDD7DDDD7DDD7DDDDD77DDDD7DDD7DDDD7DD7DDD7DD7DDDD7DDDD
-                  7DD7DD7DDD7DDDDDD7D7DD7DD7DDDDDDDD77D7DD7DDDDDDDDDD7D7D7DDDDDDD7
-                  777DD77DDDD7777DDDDD77D7777DDDDDDDDD777DDDDDDDDDDDDD
-                }
-                OnClick = show_tetrahedrons1Click
-                ParentShowHint = False
-                ShowHint = True
-                TabOrder = 0
-              end
               object max_stars1: TComboBox
-                Left = 264
+                Left = 263
                 Height = 23
                 Hint = 'Number of star takens from the image for alignment. Typical value 200 to 500. For crowded star fields reduce to 100 to 200.'
-                Top = 48
+                Top = 40
                 Width = 88
                 BorderSpacing.Around = 5
                 ItemHeight = 15
@@ -2345,14 +2288,14 @@ object stackmenu1: Tstackmenu1
                   ''
                   ''
                 )
-                TabOrder = 1
+                TabOrder = 0
                 Text = '500'
               end
               object Label21: TLabel
-                Left = 17
+                Left = 8
                 Height = 20
-                Top = 50
-                Width = 240
+                Top = 40
+                Width = 248
                 Alignment = taRightJustify
                 AutoSize = False
                 BorderSpacing.Around = 5
@@ -2362,10 +2305,10 @@ object stackmenu1: Tstackmenu1
                 Transparent = False
               end
               object Label51: TLabel
-                Left = 1
+                Left = 8
                 Height = 20
-                Top = 83
-                Width = 256
+                Top = 72
+                Width = 248
                 Alignment = taRightJustify
                 AutoSize = False
                 BorderSpacing.Around = 5
@@ -2378,7 +2321,7 @@ object stackmenu1: Tstackmenu1
                 Left = 264
                 Height = 23
                 Hint = 'If detections fails increase tolerance. Typical value 0.003 up to 0.008'
-                Top = 80
+                Top = 72
                 Width = 88
                 BorderSpacing.Around = 5
                 ItemHeight = 15
@@ -2388,35 +2331,70 @@ object stackmenu1: Tstackmenu1
                   '0.005'
                   '0.007'
                 )
-                TabOrder = 2
+                TabOrder = 1
                 Text = '0.005'
               end
               object solve_show_log1: TCheckBox
                 Left = 122
                 Height = 19
                 Hint = 'Show extra information in log for debugging.'
-                Top = 112
+                Top = 104
                 Width = 155
                 Alignment = taLeftJustify
                 BorderSpacing.Around = 5
                 Caption = 'Show extended solver log'
                 ParentShowHint = False
                 ShowHint = True
+                TabOrder = 2
+              end
+              object downsample_for_solving1: TComboBox
+                Left = 264
+                Height = 23
+                Hint = 'Binning of the image will be applied prior to plate solving. 0 is automatic selection. Use binning if image is large or very noisy.'
+                Top = 8
+                Width = 87
+                BorderSpacing.Around = 5
+                ItemHeight = 15
+                ItemIndex = 0
+                Items.Strings = (
+                  '0'
+                  '1'
+                  '2'
+                  '3'
+                  '4'
+                )
+                OnChange = resize_factor1Change
+                Style = csDropDownList
                 TabOrder = 3
+                Text = '0'
+              end
+              object downsample_solving_label1: TLabel
+                Left = 80
+                Height = 20
+                Top = 8
+                Width = 176
+                Alignment = taRightJustify
+                AutoSize = False
+                BorderSpacing.Around = 5
+                Caption = 'Downsample:'
+                Color = clBtnFace
+                ParentColor = False
+                Transparent = False
               end
             end
           end
           object calibrate_prior_solving1: TCheckBox
-            Left = 704
+            Left = 445
             Height = 19
             Hint = 'Calibrate the images prior to solving. Use this for noisy images.'
-            Top = 10
+            Top = 144
             Width = 136
+            Alignment = taLeftJustify
             BorderSpacing.Around = 5
             Caption = 'Calibrate prior solving'
             Color = clBtnFace
             ParentColor = False
-            TabOrder = 7
+            TabOrder = 6
           end
         end
       end
@@ -2660,6 +2638,29 @@ object stackmenu1: Tstackmenu1
             WordWrap = True
           end
         end
+      end
+      object show_tetrahedrons1: TBitBtn
+        Left = 976
+        Height = 30
+        Hint = 'Show triangular pyramids or irregular tetrahedrons in current image.'
+        Top = 16
+        Width = 320
+        BorderSpacing.Around = 5
+        Caption = 'Test button to show tetrahedrons'
+        Glyph.Data = {
+          F6000000424DF600000000000000760000002800000010000000100000000100
+          0400000000008000000000000000000000000000000000000000000000000000
+          8000008000000080800080000000800080008080000080808000C0C0C0000000
+          FF0000FF000000FFFF00FF000000FF00FF00FFFF0000FFFFFF00DDDDD7777777
+          7777DDDDD77DDDDDDD77DDDD7DD7DDDDD7D7DDDD7DDD7DDD7DD7DDDD7DDDD7D7
+          DDD7DDD7DDDDDD7DDDD7DDD7DDDDD77DDDD7DDD7DDDD7DD7DDD7DD7DDDD7DDDD
+          7DD7DD7DDD7DDDDDD7D7DD7DD7DDDDDDDD77D7DD7DDDDDDDDDD7D7D7DDDDDDD7
+          777DD77DDDD7777DDDDD77D7777DDDDDDDDD777DDDDDDDDDDDDD
+        }
+        OnClick = show_tetrahedrons1Click
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 8
       end
     end
     object tab_blink1: TTabSheet
