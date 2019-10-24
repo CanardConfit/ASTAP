@@ -992,7 +992,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.286 dated 2019-10-23';
+  #13+#10+'Version ß0.9.287 dated 2019-10-24';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1635,7 +1635,7 @@ begin
   load_deep;{Load the deepsky database once. If loaded, no action}
   if length(objname)>1 then {Object name length should be two or longer}
   begin
-    linepos:=0;{Set pointer to the beginning}
+    linepos:=2;{Set pointer to the beginning. First two lines are comments}
     repeat
       read_deepsky('T' {full search},0 {ra},0 {dec},1 {cos(telescope_dec},2*pi{fov},{var} ra0,dec0,length0,width0,pa);{deepsky database search}
       if ((objname=uppercase(naam2)) or (objname=uppercase(naam3)) or (objname=uppercase(naam4))) then  {uppercase required for e.g. Sh2-105}
@@ -4789,7 +4789,7 @@ begin
   a_order:=0; {reset SIP_polynomial, use for check if there is data}
 
 
-  count1:=mainwindow.Memo1.Lines.Count-1-1;
+  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF}-1;
   while count1>1 do {read bare minimum keys since TIFF is not required for stacking}
   begin
     key:=copy(mainwindow.Memo1.Lines[count1],1,9);
@@ -7007,7 +7007,7 @@ begin
   {$else} {Linux}
   {$endif}
 
-  count1:=mainwindow.Memo1.Lines.Count-1;
+  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
   try
     while count1>=0 do {plot annotations}
     begin
@@ -7535,7 +7535,6 @@ end;
 
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
-   // f: text;
     s,old      : string;
     source_fits,histogram_done,file_loaded: boolean;
     binning, backgr, hfd_median : double;
@@ -7546,13 +7545,8 @@ begin
 
   if load_settings(user_path+'astap.cfg')=false then
   begin
-    {$ifdef mswindows}
-    {$else} {unix}
-    s:=expandfilename('~/.config');
-    if DirectoryExists(s)=false then createdir(s); {required since in Linux and MacOS you can't create ./config and .config/astap in one step}
-    {$endif}
-
-    if DirectoryExists(user_path)=false then createdir(user_path);{create c:\users\yourname\appdata\local\astap}
+    if DirectoryExists(user_path)=false then ForceDirectories(user_path);{create c:\users\yourname\appdata\local\astap   or /users/../.config/astap
+                   Force directories will make also .config if missing. Using createdir doesn't work if both a directory and subdirectory are to be made in Linux and Mac}
 
     {begin remove 2020}
     {$ifdef mswindows}
@@ -9085,7 +9079,7 @@ procedure update_float(inp1,comment1:string;x:double);{update keyword of fits he
 begin
   str(x:20,s);
 
-  count1:=mainwindow.Memo1.Lines.Count-1;
+  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
   while count1>=0 do {update keyword}
   begin
     if pos(inp1,mainwindow.Memo1.Lines[count1])>0 then {found}
@@ -9099,7 +9093,7 @@ begin
     count1:=count1-1;
   end;
   {not found, add to the end}
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inp1+' '+s+comment1);
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inp1+' '+s+comment1);
 end;
 procedure update_integer(inp1,comment1:string;x:integer);{update or insert variable in header}
  var
@@ -9108,7 +9102,7 @@ procedure update_integer(inp1,comment1:string;x:integer);{update or insert varia
 begin
   str(x:20,s);
 
-  count1:=mainwindow.Memo1.Lines.Count-1;
+  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
   while count1>=0 do {update keyword}
   begin
     if pos(inp1,mainwindow.Memo1.Lines[count1])>0 then {found}
@@ -9125,7 +9119,7 @@ begin
   if inp1='NAXIS1  =' then mainwindow.memo1.lines.insert(3,inp1+' '+s+comment1) else{PixInsight requires to have it on 3th place}
   if inp1='NAXIS2  =' then mainwindow.memo1.lines.insert(4,inp1+' '+s+comment1) else{PixInsight requires to have it on 4th place}
   if inp1='NAXIS3  =' then mainwindow.memo1.lines.insert(5,inp1+' '+s+comment1) else{PixInsight requires to have it on this place}
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inp1+' '+s+comment1);
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inp1+' '+s+comment1);
 end;
 procedure update_generic(message_key,message_value,message_comment:string);{update header using text only}
 var
@@ -9136,7 +9130,7 @@ begin
     while length(message_value)<20 do message_value:=' '+message_value;{extend length, right aligned}
     while length(message_key)<8 do message_key:=message_key+' ';{make standard lenght of 8}
 
-   count1:=mainwindow.Memo1.Lines.Count-1;
+   count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
     while count1>=0 do {update keyword}
     begin
       if pos(message_key,mainwindow.Memo1.Lines[count1])>0 then {found}
@@ -9147,10 +9141,10 @@ begin
       count1:=count1-1;
     end;
     {not found, add to the end}
-    mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,message_key+'= '+message_value+' / '+message_comment);
+    mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},message_key+'= '+message_value+' / '+message_comment);
   end {no history of comment keyword}
   else
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,message_key+' '+message_value+message_comment);
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},message_key+' '+message_value+message_comment);
 end;
 
 procedure update_text(inp1,comment1:string);{update or insert text in header}
@@ -9158,7 +9152,7 @@ var
    count1: integer;
 begin
 
-  count1:=mainwindow.Memo1.Lines.Count-1;
+  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
   while count1>=0 do {update keyword}
   begin
     if pos(inp1,mainwindow.Memo1.Lines[count1])>0 then {found}
@@ -9169,12 +9163,12 @@ begin
     count1:=count1-1;
   end;
   {not found, add to the end}
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inp1+' '+comment1);
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inp1+' '+comment1);
 end;
 
 procedure add_text(inp1,comment1:string);{add text to header memo}
 begin
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inp1+' '+comment1);  {add to the end}
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inp1+' '+comment1);  {add to the end}
 end;
 
 procedure remove_key(inp1:string);{remove key word in header}
@@ -9182,7 +9176,7 @@ var
    count1: integer;
 begin
 
-  count1:=mainwindow.Memo1.Lines.Count-1;
+  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
   while count1>=0 do {update keyword}
   begin
     if pos(inp1,mainwindow.Memo1.Lines[count1])>0 then {found}

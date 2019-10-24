@@ -359,7 +359,7 @@ begin
 
     cos_telescope_dec:=cos(telescope_dec);
     fov:=1.5*sqrt(sqr(0.5*width2*cdelt1)+sqr(0.5*height2*cdelt2))*pi/180; {field of view with 50% extra}
-    linepos:=0;
+    linepos:=2;{Set pointer to the beginning. First two lines are comments}
     if cdelt1*cdelt2>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;
 
     mainwindow.image1.canvas.pen.color:=clyellow;
@@ -678,7 +678,7 @@ begin
 
     fov:=min(fov,9.53*pi/180);{warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
 
-    linepos:=0;
+    linepos:=2;{Set pointer to the beginning. First two lines are comments}
 
     mainwindow.image1.Canvas.Pen.width :=1; // round(1+height2/mainwindow.image1.height);{thickness lines}
     mainwindow.image1.canvas.pen.color:=$00B0FF ;{orange}
