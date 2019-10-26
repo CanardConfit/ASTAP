@@ -7647,13 +7647,14 @@ begin
         if hasoption('t') then stackmenu1.tetrahedron_tolerance1.text:=GetOptionValue('t');
         if hasoption('speed') then stackmenu1.force_oversize1.checked:=pos('slow',GetOptionValue('speed'))<>0;
 
+        command_execution:=true;{later required for trayicon and popup notifier and memo2 scroll in Linux}
+
         if ((file_loaded) and (hasoption('analyse'))) then {analyse fits and report HFD value in errorlevel }
         begin
            analyse_fits(hfd_counter,backgr,hfd_median, img_loaded); {find background, number of stars, median HFD}
            halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
         end;{analyse fits and report HFD value}
 
-        command_execution:=true;{later required for trayicon and popup notifier}
         {$ifdef CPUARM}
         {set tray icon visible gives a fatal error in old compiler for armhf}
         {$else}
