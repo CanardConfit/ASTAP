@@ -874,16 +874,17 @@ begin
   end;
 end;
 
-procedure memo2_message(s: string);{message to memo2}
+procedure memo2_message(s: string);{message to memo2. Is also used for log to file in commandline mode}
 begin
   stackmenu1.memo2.lines.add(TimeToStr(time)+'  '+s);
-  {$IFDEF LINUX}
-  // scroll down:
-  stackmenu1.Memo2.SelStart:=Length(stackmenu1.Memo2.lines.Text)-1;
-  stackmenu1.Memo2.VertScrollBar.Position:=40000;
-  {$ELSE }
-  {$ENDIF}
-
+ {$IFDEF LINUX}
+  if command_execution= false then {will give a run time error in command line}
+  begin  // scroll down:
+    stackmenu1.Memo2.SelStart:=Length(stackmenu1.Memo2.lines.Text)-1;
+    stackmenu1.Memo2.VertScrollBar.Position:=65000;
+  end;
+ {$ELSE }
+ {$ENDIF}
 end;
 
 procedure listview_add(s0:string);
