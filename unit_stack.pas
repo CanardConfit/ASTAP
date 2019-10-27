@@ -878,7 +878,7 @@ procedure memo2_message(s: string);{message to memo2. Is also used for log to fi
 begin
   stackmenu1.memo2.lines.add(TimeToStr(time)+'  '+s);
  {$IFDEF LINUX}
-  if command_execution= false then {will give a run time error in command line}
+  if ((command_execution=false){save some time and run time error in command line} and (stackmenu1.Memo2.HandleAllocated){prevent run time errors}) then
   begin  // scroll down:
     stackmenu1.Memo2.SelStart:=Length(stackmenu1.Memo2.lines.Text)-1;
     stackmenu1.Memo2.VertScrollBar.Position:=65000;

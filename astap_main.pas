@@ -992,7 +992,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.288 dated 2019-10-24';
+  #13+#10+'Version ß0.9.289 dated 2019-10-27';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7422,6 +7422,8 @@ begin
       if ((list.count>=6) and (error1=0)) then {this is a platesolve2 command line}
       begin
         result:=true;
+        command_execution:=true; {later required for trayicon and popup notifier}
+
         stackmenu1.use_astrometry_internal1.checked:=true; {use internal solver}
 
         filename2:=list[5];
@@ -7445,7 +7447,6 @@ begin
 
         stackmenu1.radius_search1.text:=floattostrF2(search_field,0,1);{convert to radius of a square search field}
 
-        command_execution:=true; {later required for trayicon and popup notifier}
         {$ifdef CPUARM}
         {$else}
           trayicon1.visible:=true;{show progress in hint of trayicon}
@@ -7609,6 +7610,8 @@ begin
       end;
       if hasoption('f') then
       begin
+        command_execution:=true;{later required for trayicon and popup notifier and memo2 scroll in Linux}
+
         filename2:=GetOptionValue('f');
         source_fits:=fits_file_name(filename2);{fits file extension?}
         file_loaded:=load_image(false,false {plot});{load file first to give commandline parameters later priority}
@@ -7647,7 +7650,6 @@ begin
         if hasoption('t') then stackmenu1.tetrahedron_tolerance1.text:=GetOptionValue('t');
         if hasoption('speed') then stackmenu1.force_oversize1.checked:=pos('slow',GetOptionValue('speed'))<>0;
 
-        command_execution:=true;{later required for trayicon and popup notifier and memo2 scroll in Linux}
 
         if ((file_loaded) and (hasoption('analyse'))) then {analyse fits and report HFD value in errorlevel }
         begin
