@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 198
+  Left = 470
   Height = 644
-  Top = 240
+  Top = 238
   Width = 1410
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1409
-    ActivePage = Images
+    ActivePage = alignment1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 6
     TabOrder = 5
     Options = [nboMultiLine]
     object Images: TTabSheet
@@ -446,7 +446,7 @@ object stackmenu1: Tstackmenu1
         RowSelect = True
         ScrollBars = ssAutoBoth
         SmallImages = ImageList_colors
-        SortColumn = 22
+        SortColumn = 5
         SortType = stData
         TabOrder = 3
         ViewStyle = vsReport
@@ -2074,19 +2074,6 @@ object stackmenu1: Tstackmenu1
           ClientHeight = 175
           ClientWidth = 746
           TabOrder = 0
-          object force_oversize1: TCheckBox
-            Left = 421
-            Height = 19
-            Hint = 'Check-mark  this to improve solving reliability in some cases. Search window will be always large with overlap but will slow down solving.  Default this is off.  This is command line option -speedCommand'
-            Top = 123
-            Width = 160
-            Alignment = taLeftJustify
-            BorderSpacing.Around = 5
-            Caption = 'Force large search window'
-            Color = clBtnFace
-            ParentColor = False
-            TabOrder = 4
-          end
           object star_database1: TEdit
             Left = 568
             Height = 23
@@ -2255,7 +2242,7 @@ object stackmenu1: Tstackmenu1
             Caption = 'Tetrahedron detection'
             ClientHeight = 129
             ClientWidth = 358
-            TabOrder = 5
+            TabOrder = 4
             object Panel_star_detection1: TPanel
               Left = 0
               Height = 129
@@ -2384,14 +2371,25 @@ object stackmenu1: Tstackmenu1
             end
           end
           object calibrate_prior_solving1: TCheckBox
-            Left = 445
+            Left = 460
             Height = 19
             Hint = 'Calibrate the images prior to solving. Use this for noisy images.'
-            Top = 144
+            Top = 148
             Width = 136
-            Alignment = taLeftJustify
             BorderSpacing.Around = 5
             Caption = 'Calibrate prior solving'
+            Color = clBtnFace
+            ParentColor = False
+            TabOrder = 5
+          end
+          object force_oversize1: TCheckBox
+            Left = 460
+            Height = 19
+            Hint = 'Check-mark  this to improve solving reliability in some cases. Search window will be always large with overlap but will slow down solving.  Default this is off.  This is command line option -speedCommand'
+            Top = 125
+            Width = 160
+            BorderSpacing.Around = 5
+            Caption = 'Force large search window'
             Color = clBtnFace
             ParentColor = False
             TabOrder = 6

@@ -94,8 +94,10 @@ type
     browse_blink1: TButton;
     browse_darks1: TButton;
     browse_flats1: TButton;
+    calibrate_prior_solving1: TCheckBox;
     downsample_for_solving1: TComboBox;
     downsample_solving_label1: TLabel;
+    force_oversize1: TCheckBox;
     help_live_stacking1: TLabel;
     Label20: TLabel;
     Label30: TLabel;
@@ -110,7 +112,6 @@ type
     colournebula1: TButton;
     Button_free_resize_fits1: TButton;
     calculated_scale1: TLabel;
-    calibrate_prior_solving1: TCheckBox;
     clear_astrometric_solutions1: TButton;
     clear_blink_alignment1: TButton;
     clear_blink_list1: TButton;
@@ -148,7 +149,6 @@ type
     Flats: TTabSheet;
     flat_combine_method1: TComboBox;
     focallength1: TEdit;
-    force_oversize1: TCheckBox;
     gb1: TEdit;
     gg1: TEdit;
     gr1: TEdit;

@@ -994,6 +994,7 @@ begin
   #13+#10+
   #13+#10+'Version ß0.9.289 dated 2019-10-27';
 
+
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
 end;
