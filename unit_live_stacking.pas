@@ -40,17 +40,24 @@ const
 function file_available(stack_directory:string; var filen: string ) : boolean; {check if fits file is available and report the filename}
 var
    thefiles : Tstringlist;
+   f : file;
 begin
   try
   //No need to create the stringlist; the function does that for you
   theFiles := FindAllFiles(stack_directory, '*.fit;*.fits;*.FIT;*.FITS;'+
                                             '*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;'+
                                             '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef', true); //find images
-
   if TheFiles.count>0 then
   begin
     filen:=TheFiles[0];
-    result:=true;
+
+    {check if free for reading}
+    assign(f,filen);
+    {$I-}
+    reset(f); {prepare for reading}
+    {$I+}
+    result:=(IOresult=0); {report if file is accessible}
+    if result then close(f);
   end
   else
     result:=false;
@@ -103,6 +110,7 @@ var
 
     counter,total_counter,bad_counter :  integer;
 
+
     procedure reset_var;{reset variables  including init:=false}
     begin
       init:=false;
@@ -119,6 +127,7 @@ var
     end;
 
 begin
+
   with stackmenu1 do
   begin
 //    use_star_alignment:=stackmenu1.use_star_alignment1.checked;
