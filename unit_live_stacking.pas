@@ -314,10 +314,9 @@ begin
             stackmenu1.files_live_stacked1.caption:=inttostr(counter)+' stacked, '+inttostr(bad_counter)+ ' failures ' ;{Show progress}
             application.hint:=inttostr(counter)+' stacked, '+inttostr(bad_counter)+ ' failures ' ;{Show progress}
           end; {no transition image}
-  //
-             if RenameFile(filename2,ChangeFileExt(filename2,ExtractFileExt(filename2)+'_' ))=false then {mark files as done, beep if failure}
-//             if RenameFile(filename2,ChangeFileExt(filename2,'.fts'))=false then {mark files as done, beep if failure}
-             beep;
+
+          if RenameFile(filename2,ChangeFileExt(filename2,ExtractFileExt(filename2)+'_' ))=false then {mark files as done, beep if failure}
+            beep;
 
 
         finally

@@ -156,7 +156,6 @@ type
     green_filter1: TEdit;
     green_filter2: TEdit;
     green_filter_add1: TEdit;
-    gridlines1: TCheckBox;
     GroupBox1: TGroupBox;
     GroupBox10: TGroupBox;
     GroupBox12: TGroupBox;
@@ -562,7 +561,6 @@ type
     procedure dark_sport_filter1Click(Sender: TObject);
     procedure free_resize_fits1Click(Sender: TObject);
     procedure copypath1Click(Sender: TObject);
-    procedure gridlines1Click(Sender: TObject);
     procedure help_pixel_math1Click(Sender: TObject);
     procedure help_stack_menu2Click(Sender: TObject);
     procedure help_stack_menu3Click(Sender: TObject);
@@ -3094,15 +3092,7 @@ begin
   end;{with listview}
 end;
 
-procedure Tstackmenu1.gridlines1Click(Sender: TObject);
-begin
-  listview1.gridlines:=gridlines1.checked;
-  listview2.gridlines:=gridlines1.checked;
-  listview3.gridlines:=gridlines1.checked;
-  listview4.gridlines:=gridlines1.checked;
-  listview5.gridlines:=gridlines1.checked;
-  listview6.gridlines:=gridlines1.checked;{blink}
-end;
+
 
 procedure Tstackmenu1.help_pixel_math1Click(Sender: TObject);
 begin

@@ -4965,7 +4965,7 @@ begin
      j:=length(descrip);
      while i<j do
      begin
-       add_text('COMMENT  ',copy(descrip,I,I+70));{add TIFF describtion}
+       add_text('COMMENT  ',copy(descrip,I,70));{add TIFF describtion}
        inc(i,70);
      end;
   end;
@@ -5463,7 +5463,6 @@ begin
     stackmenu1.classify_dark_exposure1.checked:= get_boolean('classify_dark_exposure',false);
     stackmenu1.classify_flat_filter1.checked:= get_boolean('classify_flat_filter',false);
 
-    stackmenu1.gridlines1.checked:= get_boolean('grid_lines',false);
     stackmenu1.uncheck_outliers1.checked:= get_boolean('uncheck_outliers',false);
 
 
@@ -5742,7 +5741,6 @@ begin
   initstring.Values['classify_dark_exposure']:=BoolStr[stackmenu1.classify_dark_exposure1.Checked];
   initstring.Values['classify_flat_filter']:=BoolStr[stackmenu1.classify_flat_filter1.Checked];
 
-  initstring.Values['grid_lines']:=BoolStr[stackmenu1.gridlines1.Checked];
   initstring.Values['uncheck_outliers']:=BoolStr[stackmenu1.uncheck_outliers1.Checked];
 
   initstring.Values['write_log']:=BoolStr[stackmenu1.write_log1.checked];{write log to file}
