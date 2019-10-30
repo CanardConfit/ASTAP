@@ -992,7 +992,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.290 dated 2019-10-28';
+  #13+#10+'Version ß0.9.291 dated 2019-10-30';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5463,6 +5463,7 @@ begin
     stackmenu1.classify_dark_exposure1.checked:= get_boolean('classify_dark_exposure',false);
     stackmenu1.classify_flat_filter1.checked:= get_boolean('classify_flat_filter',false);
 
+    stackmenu1.gridlines1.checked:= get_boolean('grid_lines',false);
     stackmenu1.uncheck_outliers1.checked:= get_boolean('uncheck_outliers',false);
 
 
@@ -5741,6 +5742,7 @@ begin
   initstring.Values['classify_dark_exposure']:=BoolStr[stackmenu1.classify_dark_exposure1.Checked];
   initstring.Values['classify_flat_filter']:=BoolStr[stackmenu1.classify_flat_filter1.Checked];
 
+  initstring.Values['grid_lines']:=BoolStr[stackmenu1.gridlines1.Checked];
   initstring.Values['uncheck_outliers']:=BoolStr[stackmenu1.uncheck_outliers1.Checked];
 
   initstring.Values['write_log']:=BoolStr[stackmenu1.write_log1.checked];{write log to file}
@@ -7489,9 +7491,19 @@ begin
 
 
         str(cdelt2*3600:7:5,cdelt);
-        if crota2<0 then crota2:=crota2+360; {platesolve2 reports in 0..360 degrees, mimic this behavior for SGP}
-        str(crota2:7:2,crota);{note platesolve2 reports JPG files with 180 degrees offset and different rotation}
-        if ((cdelt2=0{prevent divide by zero}) or (cdelt1/cdelt2<0)) then flipped:='1.0000' else flipped:='-1.0000';
+        if ((cdelt2=0{prevent divide by zero}) or (cdelt1/cdelt2<0)) then
+        begin
+          if source_fits then flipped:='1.0000' else flipped:='-1.0000'; {PlateSolve2 sees a FITS file flipped while not flipped due to the orientation 1,1 at left bottom}
+        end
+        else
+        begin
+          if source_fits then flipped:='-1.0000' else flipped:='1.0000';{PlateSolve2 sees a FITS file flipped while not flipped due to the orientation 1,1 at left bottom}
+          crota2:=180-crota2;{mimic strange Platesolve2 angle calculation.}
+        end;
+
+        crota2:=fnmodulo(crota2,360); {Platesolve2 reports in 0..360 degrees, mimic this behavior for SGP}
+
+        str(crota2:7:2,crota);
         line2:=cdelt+','+crota+','+flipped+',0.00000,'+confidence;
 
         apt_request:=pos('ImageToSolve',filename2)>0; {if call from APT then write with numeric seperator according Windows setting as for PlateSolve2 2.28}

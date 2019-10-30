@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 470
+  Left = 268
   Height = 644
-  Top = 238
+  Top = 313
   Width = 1410
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -203,12 +203,12 @@ object stackmenu1: Tstackmenu1
     OnClick = more_indication1Click
   end
   object pagecontrol1: TPageControl
-    Left = -3
+    Left = 0
     Height = 440
     Hint = 'Stack menu'
     Top = 0
     Width = 1409
-    ActivePage = Images
+    ActivePage = tab_Pixelmath1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 10
     TabOrder = 5
     Options = [nboMultiLine]
     object Images: TTabSheet
@@ -525,6 +525,18 @@ object stackmenu1: Tstackmenu1
         Caption = '||'
         OnClick = blink_stop1Click
         TabOrder = 7
+      end
+      object gridlines1: TCheckBox
+        Left = 1024
+        Height = 19
+        Hint = 'Show 1-pixel lines, as a grid, between rows and '
+        Top = 8
+        Width = 69
+        Caption = 'Grid lines'
+        Checked = True
+        OnClick = gridlines1Click
+        State = cbChecked
+        TabOrder = 8
       end
     end
     object Darks: TTabSheet

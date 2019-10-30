@@ -98,6 +98,7 @@ type
     downsample_for_solving1: TComboBox;
     downsample_solving_label1: TLabel;
     force_oversize1: TCheckBox;
+    gridlines1: TCheckBox;
     help_live_stacking1: TLabel;
     Label20: TLabel;
     Label30: TLabel;
@@ -481,6 +482,7 @@ type
     procedure blink_unaligned_multi_step1Click(Sender: TObject);
     procedure browse_dark1Click(Sender: TObject);
     procedure browse_live_stacking1Click(Sender: TObject);
+    procedure gridlines1Click(Sender: TObject);
     procedure help_live_stacking1Click(Sender: TObject);
     procedure live_stacking1Click(Sender: TObject);
     procedure restore_file_ext1Click(Sender: TObject);
@@ -3596,6 +3598,19 @@ begin
     live_stacking_path1.caption:=live_stack_directory;{show path}
   end;
 end;
+
+procedure Tstackmenu1.gridlines1Click(Sender: TObject);
+begin
+  listview1.gridlines:=gridlines1.checked;
+  listview2.gridlines:=gridlines1.checked;
+  listview3.gridlines:=gridlines1.checked;
+  listview4.gridlines:=gridlines1.checked;
+  listview5.gridlines:=gridlines1.checked;
+  listview6.gridlines:=gridlines1.checked;{blink}
+  listview7.gridlines:=gridlines1.checked;{photometry}
+end;
+
+
 
 procedure Tstackmenu1.help_live_stacking1Click(Sender: TObject);
 begin
