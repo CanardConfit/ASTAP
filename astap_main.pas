@@ -992,7 +992,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.292 dated 2019-10-30';
+  #13+#10+'Version ß0.9.293 dated 2019-10-31';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5531,7 +5531,7 @@ begin
     if paramcount=0 then filename2:=initstring.Values['last_file'];{if used as viewer don't override paramstr1}
 
     stackmenu1.ignore_hotpixels1.checked:= get_boolean('ignore_hotpixels',false);
-    dum:=initstring.Values['ignore_hotpixel_ratio']; if dum<>'' then stackmenu1.ignore_hotpixel_ratio1.text:=dum;
+    dum:=initstring.Values['hotpixel_sd_factor']; if dum<>'' then stackmenu1.hotpixel_sd_factor1.text:=dum;
 
     dum:=initstring.Values['red_filter1']; if dum<>'' then stackmenu1.red_filter1.text:=dum;
     dum:=initstring.Values['red_filter2']; if dum<>'' then stackmenu1.red_filter2.text:=dum;
@@ -5783,6 +5783,7 @@ begin
   initstring.Values['oversize']:=stackmenu1.oversize1.text;
 //  initstring.Values['pedestal']:=stackmenu1.pedestal1.text;
 
+
   initstring.Values['sd_factor']:=stackmenu1.sd_factor1.text;
   initstring.Values['pixel_size']:=stackmenu1.pixelsize1.text;
   initstring.Values['focal_length']:=stackmenu1.focallength1.text;
@@ -5799,7 +5800,7 @@ begin
   initstring.Values['last_file']:=filename2;
 
   initstring.Values['ignore_hotpixels']:=BoolStr[stackmenu1.ignore_hotpixels1.Checked];
-  initstring.Values['ignore_hotpixel_ratio']:= stackmenu1.ignore_hotpixel_ratio1.text;
+  initstring.Values['hotpixel_sd_factor']:= stackmenu1.hotpixel_sd_factor1.text;
 
   initstring.Values['red_filter1']:=stackmenu1.red_filter1.text;
   initstring.Values['red_filter2']:=stackmenu1.red_filter2.text;

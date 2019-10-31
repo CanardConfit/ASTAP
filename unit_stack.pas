@@ -97,6 +97,7 @@ type
     calibrate_prior_solving1: TCheckBox;
     downsample_for_solving1: TComboBox;
     downsample_solving_label1: TLabel;
+    hotpixel_sd_factor1: TComboBox;
     ignore_hotpixels1: TCheckBox;
     force_oversize1: TCheckBox;
     gridlines1: TCheckBox;
@@ -312,7 +313,6 @@ type
     photometry_binx2: TButton;
     photometry_button1: TButton;
     photometry_stop1: TButton;
-    ignore_hotpixel_ratio1: TComboBox;
     show_tetrahedrons1: TBitBtn;
     tab_live_stacking1: TTabSheet;
     tab_Pixelmath1: TTabSheet;
@@ -662,7 +662,7 @@ var
   file_list : array of string;
   files_to_process, files_to_process_LRGB : array of  TfileToDo;{contains names to process and index to listview1}
   memo1_text : string;
-  flat_norm_value  : double;
+  flat_norm_value,dark_average,dark_sigma  : double;
 
 const
   dark_exposure : integer=987654321;{not done indication}
@@ -5557,7 +5557,7 @@ begin
 end;
 
 
-procedure load_master_dark(exposure,temperature,width1: integer); {average the darks selection}
+procedure load_master_dark(exposure,temperature,width1: integer; var Daverage,Dsigma:double); {average the darks selection}
 var
   c : integer;
 
@@ -5577,6 +5577,8 @@ begin
             if load_fits(stackmenu1.ListView2.items[c].caption,false {light},true,false {reset var},img_dark)=false then begin memo2_message('Error'); dark_count:=0; exit; end;
             {load master in memory img_dark}
             if dark_count=0 then dark_count:=1; {is normally updated by load_fits}
+            Daverage:=strtofloat2(stackmenu1.ListView2.Items.item[c].subitems.Strings[D_background]);{average value dark}
+            Dsigma:=strtofloat2(stackmenu1.ListView2.Items.item[c].subitems.Strings[D_sigma]);{sigma noise}
             c:=9999999;{stop searching}
           end;
     inc(c);
@@ -5951,7 +5953,7 @@ procedure apply_dark_flat(filter1:string; exposure1,stemperature1,width1:integer
 var  {variables in the procedure are created to protect global variables as filter_name against overwriting by loading other fits files}
   fitsX,fitsY,k,light_naxis3,hotpixelcounter : integer;
   calstat_local              : string;
-  datamax_light ,light_exposure,light_cd1_1,light_cd1_2,light_cd2_1,light_cd2_2, light_ra0, light_dec0,ignore_hotpixel_ratio,value,dark_average : double;
+  datamax_light ,light_exposure,light_cd1_1,light_cd1_2,light_cd2_1,light_cd2_2, light_ra0, light_dec0,value,dark_outlier_level : double;
   ignore_hotpixels : boolean;
 
 begin
@@ -5968,7 +5970,6 @@ begin
   light_dec0:=dec0;
 
   ignore_hotpixels:=stackmenu1.ignore_hotpixels1.checked;
-  ignore_hotpixel_ratio:=strtofloat2(stackmenu1.ignore_hotpixel_ratio1.text);
   hotpixelcounter:=0;
   if pos('D',calstat_local)<>0 then
              memo2_message('Skipping dark calibration, already applied. See header keyword CALSTAT')
@@ -5977,28 +5978,21 @@ begin
     if ((dark_exposure=987654321) {first dark required, any dark will do} or  (stackmenu1.classify_dark_exposure1.checked){suitable dark reguired}) then
     if  ((exposure1=dark_exposure) and (stemperature1=dark_temperature) )=false then {new dark required}
     begin
-      load_master_dark(exposure1,stemperature1 {set_temperature},width1); {will only be renewed if different exposure or set_temperature. Note load will overwrite calstat}
+      load_master_dark(exposure1,stemperature1 {set_temperature},width1, {var}dark_average,dark_sigma); {will only be renewed if different exposure or set_temperature. Note load will overwrite calstat}
       dcount:=dark_count;{protect this global dark_count in dcount for next load_master_flat}
     end;
 
+
     if dark_count>0 then
     begin
-      dark_average:=(  img_dark[0,(width2 div 2)  ,(height2 div 2)  ]+
-                                          img_dark[0,(width2 div 2)+1,(height2 div 2)  ]+
-                                          img_dark[0,(width2 div 2)  ,(height2 div 2)+1]+
-                                          img_dark[0,(width2 div 2)-1,(height2 div 2)  ]+
-                                          img_dark[0,(width2 div 2)  ,(height2 div 2)-1]+
-                                          img_dark[0,(width2 div 2)+1,(height2 div 2)+1]+
-                                          img_dark[0,(width2 div 2)-1,(height2 div 2)+1]+
-                                          img_dark[0,(width2 div 2)+1 ,(height2 div 2)-1]+
-                                          img_dark[0,(width2 div 2)-1 ,(height2 div 2)-1])/9;
+      dark_outlier_level:=strtofloat2(stackmenu1.hotpixel_sd_factor1.text)* dark_sigma + dark_average;{pixels above this level are hot}
       for fitsY:=0 to height2-1 do  {apply the dark}
         for fitsX:=0 to width2-1  do
           for k:=0 to naxis3-1 do {do all colors}
           begin
             {case hotpixels replace image pixels with image neighbour pixels}
              value:=img_dark[k,fitsX,fitsY];
-             if ((ignore_hotpixels) and (value>dark_average*ignore_hotpixel_ratio) and (fitsx>0) and (fitsY>0)) then {case dark hot pixel replace image pixels with image neighbour pixels}
+             if ((ignore_hotpixels) and (value>dark_outlier_level) and (fitsx>0) and (fitsY>0)) then {case dark hot pixel replace image pixels with image neighbour pixels}
              begin
                img_loaded[k,fitsX,fitsY]:=min(img_loaded[k,fitsX-1,fitsY],img_loaded[k,fitsX,fitsY-1]);  {take the lowest value of the neighbour pixels}
                inc(hotpixelcounter,1);
@@ -6386,7 +6380,8 @@ begin
           begin {correct object}
             files_to_process[c].name:=ListView1.items[c].caption;
             inc(image_counter);{one image more}
-            ListView1.Items.item[c].SubitemImages[2]:=5;{mark 3th columns as done using a stacked icon}
+
+            ListView1.Items.item[c].SubitemImages[I_result]:=5;{mark 3th columns as done using a stacked icon}
             ListView1.Items.item[c].subitems.Strings[I_result]:=inttostr(object_counter)+'  ';{show image result number}
             inc(nrfiles);
           end;
