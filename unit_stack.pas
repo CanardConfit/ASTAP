@@ -97,11 +97,13 @@ type
     calibrate_prior_solving1: TCheckBox;
     downsample_for_solving1: TComboBox;
     downsample_solving_label1: TLabel;
+    ignore_hotpixels1: TCheckBox;
     force_oversize1: TCheckBox;
     gridlines1: TCheckBox;
     help_live_stacking1: TLabel;
     Label20: TLabel;
     Label30: TLabel;
+    Label66: TLabel;
     live_stacking1: TButton;
     browse_photometry1: TButton;
     browse_live_stacking1: TButton;
@@ -310,6 +312,7 @@ type
     photometry_binx2: TButton;
     photometry_button1: TButton;
     photometry_stop1: TButton;
+    ignore_hotpixel_ratio1: TComboBox;
     show_tetrahedrons1: TBitBtn;
     tab_live_stacking1: TTabSheet;
     tab_Pixelmath1: TTabSheet;
@@ -5946,9 +5949,11 @@ end;
 
 procedure apply_dark_flat(filter1:string; exposure1,stemperature1,width1:integer; var dcount,fcount,fdcount: integer; var flat_factor: double) ; {inline;} {apply dark, flat if required, renew if different exposure or ccd temp}
 var  {variables in the procedure are created to protect global variables as filter_name against overwriting by loading other fits files}
-  fitsX,fitsY,k,light_naxis3 : integer;
+  fitsX,fitsY,k,light_naxis3,hotpixelcounter : integer;
   calstat_local              : string;
-  datamax_light ,light_exposure,light_cd1_1,light_cd1_2,light_cd2_1,light_cd2_2, light_ra0, light_dec0 : double;
+  datamax_light ,light_exposure,light_cd1_1,light_cd1_2,light_cd2_1,light_cd2_2, light_ra0, light_dec0,ignore_hotpixel_ratio,value,dark_average : double;
+  ignore_hotpixels : boolean;
+
 begin
   calstat_local:=calstat;{Note load darks or flats will overwrite calstat}
   datamax_light:=datamax_org;
@@ -5962,7 +5967,9 @@ begin
   light_ra0:=ra0;
   light_dec0:=dec0;
 
-
+  ignore_hotpixels:=stackmenu1.ignore_hotpixels1.checked;
+  ignore_hotpixel_ratio:=strtofloat2(stackmenu1.ignore_hotpixel_ratio1.text);
+  hotpixelcounter:=0;
   if pos('D',calstat_local)<>0 then
              memo2_message('Skipping dark calibration, already applied. See header keyword CALSTAT')
   else
@@ -5976,12 +5983,7 @@ begin
 
     if dark_count>0 then
     begin
-      for fitsY:=1 to height2 do  {apply the dark}
-        for fitsX:=1 to width2 do
-          for k:=0 to naxis3-1 do {do all colors}
-             img_loaded[k,fitsX-1,fitsY-1]:=img_loaded[k,fitsX-1,fitsY-1] - img_dark[k,fitsX-1,fitsY-1];
-      calstat_local:=calstat_local+'D'; {dark applied}
-      datamax_light:=datamax_light - round((  img_dark[0,(width2 div 2)  ,(height2 div 2)  ]+   {correct datamax with average dark value subtracted}
+      dark_average:=(  img_dark[0,(width2 div 2)  ,(height2 div 2)  ]+
                                           img_dark[0,(width2 div 2)+1,(height2 div 2)  ]+
                                           img_dark[0,(width2 div 2)  ,(height2 div 2)+1]+
                                           img_dark[0,(width2 div 2)-1,(height2 div 2)  ]+
@@ -5989,8 +5991,25 @@ begin
                                           img_dark[0,(width2 div 2)+1,(height2 div 2)+1]+
                                           img_dark[0,(width2 div 2)-1,(height2 div 2)+1]+
                                           img_dark[0,(width2 div 2)+1 ,(height2 div 2)-1]+
-                                          img_dark[0,(width2 div 2)-1 ,(height2 div 2)-1]))/9;
-
+                                          img_dark[0,(width2 div 2)-1 ,(height2 div 2)-1])/9;
+      for fitsY:=0 to height2-1 do  {apply the dark}
+        for fitsX:=0 to width2-1  do
+          for k:=0 to naxis3-1 do {do all colors}
+          begin
+            {case hotpixels replace image pixels with image neighbour pixels}
+             value:=img_dark[k,fitsX,fitsY];
+             if ((ignore_hotpixels) and (value>dark_average*ignore_hotpixel_ratio) and (fitsx>0) and (fitsY>0)) then {case dark hot pixel replace image pixels with image neighbour pixels}
+             begin
+               img_loaded[k,fitsX,fitsY]:=min(img_loaded[k,fitsX-1,fitsY],img_loaded[k,fitsX,fitsY-1]);  {take the lowest value of the neighbour pixels}
+               inc(hotpixelcounter,1);
+             end
+             else
+             {apply dark normal}
+             img_loaded[k,fitsX,fitsY]:=img_loaded[k,fitsX,fitsY] - value;
+          end;
+      calstat_local:=calstat_local+'D'; {dark applied}
+      datamax_light:=datamax_light - dark_average;  {correct datamax with average dark value subtracted}
+      if hotpixelcounter>0 then memo2_message('Dark applied. For '+inttostr(hotpixelcounter)+' hot pixels replacement values used.');
     end;
   end;{apply dark}
 

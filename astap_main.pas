@@ -992,7 +992,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.291 dated 2019-10-30';
+  #13+#10+'Version ß0.9.292 dated 2019-10-30';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5530,6 +5530,9 @@ begin
 
     if paramcount=0 then filename2:=initstring.Values['last_file'];{if used as viewer don't override paramstr1}
 
+    stackmenu1.ignore_hotpixels1.checked:= get_boolean('ignore_hotpixels',false);
+    dum:=initstring.Values['ignore_hotpixel_ratio']; if dum<>'' then stackmenu1.ignore_hotpixel_ratio1.text:=dum;
+
     dum:=initstring.Values['red_filter1']; if dum<>'' then stackmenu1.red_filter1.text:=dum;
     dum:=initstring.Values['red_filter2']; if dum<>'' then stackmenu1.red_filter2.text:=dum;
 
@@ -5794,6 +5797,9 @@ begin
   initstring.Values['gradient_filter_factor']:=stackmenu1.gradient_filter_factor1.text;
 
   initstring.Values['last_file']:=filename2;
+
+  initstring.Values['ignore_hotpixels']:=BoolStr[stackmenu1.ignore_hotpixels1.Checked];
+  initstring.Values['ignore_hotpixel_ratio']:= stackmenu1.ignore_hotpixel_ratio1.text;
 
   initstring.Values['red_filter1']:=stackmenu1.red_filter1.text;
   initstring.Values['red_filter2']:=stackmenu1.red_filter2.text;
@@ -7481,14 +7487,12 @@ begin
 
         //  0.16855631,0.71149576,0.0296,0.02268,999,c:\temp\3.fits,0   {m31}
 
-
         assignfile(f,ChangeFileExt(filename2,'.apm'));
         rewrite(f);
 
         str(ra0:9:7,rastr);{mimic format of PlateSolve2}
         str(dec0:9:7,decstr);
         line1:=rastr+','+decstr+resultV {,1 or ,-1};
-
 
         str(cdelt2*3600:7:5,cdelt);
         if ((cdelt2=0{prevent divide by zero}) or (cdelt1/cdelt2<0)) then
