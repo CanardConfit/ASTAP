@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 615
+  Left = 862
   Height = 644
-  Top = 277
+  Top = 251
   Width = 1410
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -1121,12 +1121,23 @@ object stackmenu1: Tstackmenu1
         TabOrder = 2
         Text = '2.5'
       end
-      object oversize1: TEdit
+      object oversize1: TComboBox
         Left = 813
         Height = 23
-        Hint = 'Increase stack space 100 pixels around first image size.'
+        Hint = 'Will increase the stack space around the reference image. Negative values will crop the images.'
         Top = 88
-        Width = 42
+        Width = 67
+        ItemHeight = 15
+        ItemIndex = 3
+        Items.Strings = (
+          '-10'
+          '-5'
+          '-3'
+          '0'
+          '100'
+          '200'
+          '500'
+        )
         TabOrder = 3
         Text = '0'
       end
@@ -1161,7 +1172,7 @@ object stackmenu1: Tstackmenu1
         Transparent = False
       end
       object Label7: TLabel
-        Left = 864
+        Left = 896
         Height = 15
         Top = 92
         Width = 30

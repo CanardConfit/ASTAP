@@ -100,6 +100,7 @@ type
     flipped1: TMenuItem;
     inversimage1: TMenuItem;
     Enter_rectangle_with_label1: TMenuItem;
+    rotate_arbitrary1: TMenuItem;
     submenurotate1: TMenuItem;
     imageflipv1: TMenuItem;
     imagefliph1: TMenuItem;
@@ -248,6 +249,7 @@ type
     procedure MenuItem15Click(Sender: TObject);
     procedure enterposition1Click(Sender: TObject);
     procedure inversimage1Click(Sender: TObject);
+    procedure rotate_arbitrary1Click(Sender: TObject);
     procedure receivemessage(Sender: TObject); {For single instance, receive paramstr(1) from second instance prior to termination}
 
     procedure add_marker1Click(Sender: TObject);
@@ -992,7 +994,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.293 dated 2019-10-31';
+  #13+#10+'Version ß0.9.294 dated 2019-11-03';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1847,6 +1849,8 @@ begin
     update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
     update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
 
+    add_text   ('HISTORY   ','Rotated 90 degrees.');
+
     plot_north;
   end;
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
@@ -2148,7 +2152,7 @@ begin
   mainwindow.inversimage1.enabled:=fits;
   mainwindow.imageflipH1.enabled:=fits;
   mainwindow.imageflipV1.enabled:=fits;
-
+  mainwindow.rotate_arbitrary1.enabled:=fits;
 
   mainwindow.minimum1.enabled:=fits;
   mainwindow.maximum1.enabled:=fits;
@@ -5472,7 +5476,6 @@ begin
 
     ra1.text:= initstring.Values['ra'];
     dec1.text:= initstring.Values['dec'];
-//    dum:=dec1.text;
 
     {$IfDef Darwin}//{MacOS}
       mainwindow.ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
@@ -6384,6 +6387,7 @@ end;
 procedure Tmainwindow.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   esc_pressed:=true;{stop processing. Required for reliable stopping by APT}
+
   save_settings(user_path+'astap.cfg');
 
 end;
@@ -6530,6 +6534,8 @@ begin
 
     update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
     update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
+
+    add_text     ('HISTORY   ','Flipped.                                                           ');
 
     plot_north;
   end;
@@ -8408,6 +8414,122 @@ begin
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
 
+procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
+var
+  dum, col,fitsX,fitsY,maxsize,i,j,progress_value,progressC : integer;
+  dummy,cosA,sinA,centerx,centery,centerxs,centerys,x5,y5,angle,value   : double;
+  valueI : string;
+  Save_Cursor:TCursor;
+const
+  resolution=10;
+begin
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  valueI:=InputBox('Rotation angle CW in degrees:','','' );
+  if valueI=''  then exit;
+  angle:=strtofloat2(valueI);
+
+
+  backup_img;
+
+  if Fliphorizontal1.checked then angle:=-angle;{change rotation if flipped}
+  if Flipvertical1.checked then   angle:=-angle;{change rotation if flipped}
+
+  if width2<>height2 then {fresh image}
+    maxsize:=round(1+sqrt(sqr(height2)+sqr(width2))) {add one pixel otherwise not enough resulting in runtime errors}
+  else {assume this image is already rotated. Enough space to rotate}
+    maxsize:=width2;
+
+  centerX:=maxsize/2;
+  centerY:=maxsize/2;
+  centerxs:=width2/2;
+  centerys:=height2/2;
+
+  setlength(img_temp,naxis3, maxsize,maxsize);{set length of new image}
+
+  {clear array}
+  for col:=0 to naxis3-1 do {do all colours}
+  begin
+    For fitsY:=0 to (maxsize-1) do
+      for fitsX:=0 to (maxsize-1) do
+        img_temp[col,fitsX,fitsY]:=0
+  end;
+
+
+  sincos(-angle*pi/180,sinA,cosA);
+
+  progressC:=0;
+  for col:=0 to naxis3-1 do {do all colours}
+  begin
+    For fitsY:=0 to (height2-1) do
+    begin
+      inc(progressC);{counter}
+      if frac(fitsY/100)=0 then
+        begin
+          Application.ProcessMessages;{this could change startX, startY}
+          if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+
+          progress_value:=round(progressC*100/(naxis3*height2));{progress in %}
+          progress_indicator(progress_value,'');{report progress}
+        end;
+
+      for fitsX:=0 to (width2-1) do
+      begin
+        value:=img_loaded[col,fitsX,fitsY]/sqr(resolution);{1/100 of pixel value}
+        if value>=0.0001 then {do only data}
+        for i:=0 to resolution-1 do {divide the pixel in resolution x resolution subpixels}
+        for j:=0 to resolution-1 do {divide the pixel in resolution x resolution subpixels}
+        begin
+          x5:=centerX +(fitsX-centerxs-0.5+i/resolution)*cosA - (fitsY-centerys-0.5+j/resolution)*sinA;
+          y5:=centerY +(fitsX-centerxs-0.5+i/resolution)*sinA + (fitsY-centerys-0.5+j/resolution)*cosA;
+          img_temp[col, trunc(x5) , trunc(y5) ]:=img_temp[col, trunc(x5) , trunc(y5) ]+value;
+        end;
+      end;
+    end;
+  end;
+
+  width2:=maxsize;
+  height2:=maxsize;
+  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
+  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+
+  img_loaded:=img_temp;
+  img_temp:=nil;
+  plot_fits(mainwindow.image1,false,true);
+
+  if cd1_1<>0 then {update solution for rotation}
+  begin
+     crota2:=fnmodulo(crota2-angle,360);
+     crota1:=fnmodulo(crota1-angle,360);
+     crpix1:=centerX;
+     crpix2:=centerY;
+     old_to_new_WCS;{convert old style FITS to newd style}
+
+     update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
+     update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
+     update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
+     update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+
+
+     update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
+     update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
+
+//     update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);
+//     update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);
+
+     update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
+     update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
+
+     add_text   ('HISTORY   ','Rotated by angle '+valueI);
+
+     plot_north;
+  end;
+
+  progress_indicator(-100,'');{back to normal}
+  Screen.Cursor := Save_Cursor;  { Always restore to normal }
+end;
+
 procedure Tmainwindow.histogram1MouseMove(Sender: TObject; Shift: TShiftState;
   X, Y: Integer);
 var
@@ -9701,7 +9823,7 @@ end;
 function save_fits(filen2:ansistring;type1:integer;override1:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 var
   TheFile4 : tfilestream;
-  I,j,k,bzero2, progress1,progress_value,dum, remain,minimum,maximum: integer;
+  I,j,k,bzero2, progressC,progress_value,dum, remain,minimum,maximum: integer;
   dd : single;
   line0       : ansistring;
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
@@ -9741,7 +9863,7 @@ begin
 
   unsaved_import:=false;{file is available for astrometry.net}
 
-  progress1:=0;
+  progressC:=0;
 
   {Add or update header}
   if mainwindow.memo1.lines.count<5 then {fits header existing?}
@@ -9816,8 +9938,8 @@ begin
     for k:=0 to naxis3-1 do {do all colors}
     for i:=0 to height2-1 do
     begin
-      inc(progress1);
-      progress_value:=round(progress1*100/(naxis3*height2));{progress in %}
+      inc(progressC);
+      progress_value:=round(progressC*100/(naxis3*height2));{progress in %}
       {$IFDEF fpc}
       if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
       {$else} {delphi}
@@ -9843,8 +9965,8 @@ begin
 
     for i:=0 to height2-1 do
     begin
-      inc(progress1);
-      progress_value:=round(progress1*100/(naxis3*height2));{progress in %}
+      inc(progressC);
+      progress_value:=round(progressC*100/(naxis3*height2));{progress in %}
       {$IFDEF fpc}
       if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
       {$else} {delphi}
@@ -9874,8 +9996,8 @@ begin
     for i:=0 to height2-1 do
     begin
 
-      inc(progress1);
-      progress_value:=round(progress1*100/(naxis3*height2));{progress in %}
+      inc(progressC);
+      progress_value:=round(progressC*100/(naxis3*height2));{progress in %}
       {$IFDEF fpc}
       if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
       {$else} {delphi}
@@ -9898,8 +10020,8 @@ begin
     for k:=0 to naxis3-1 do {do all colors}
     for i:=0 to height2-1 do
     begin
-      inc(progress1);
-      progress_value:=round(progress1*100/(naxis3*height2));{progress in %}
+      inc(progressC);
+      progress_value:=round(progressC*100/(naxis3*height2));{progress in %}
       {$IFDEF fpc}
       if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase in steps of 5%}
       {$else} {delphi}
@@ -10039,6 +10161,7 @@ begin
      {loadimage}
      if load_image(true,true {plot}){load and center}=false then beep;{image not found}
      LoadFITSPNGBMPJPEG1filterindex:=opendialog1.filterindex;{remember filterindex}
+     add_recent_file(filename2);{add to recent file list}
   end;
 end;
 

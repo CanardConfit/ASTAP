@@ -305,7 +305,7 @@ type
     nr_total_flats1: TLabel;
     nr_total_photometry1: TLabel;
     osc_colour_smooth1: TCheckBox;
-    oversize1: TEdit;
+    oversize1: Tcombobox;
     pagecontrol1: TPageControl;
     panel_astrometrynet1: TPanel;
     Panel_solver1: TPanel;
@@ -5557,7 +5557,7 @@ begin
 end;
 
 
-procedure load_master_dark(exposure,temperature,width1: integer; var Daverage,Dsigma:double); {average the darks selection}
+procedure load_master_dark(exposure2,temperature2,width1: integer; var Daverage,Dsigma:double); {average the darks selection}
 var
   c : integer;
 
@@ -5569,8 +5569,8 @@ begin
   while c<stackmenu1.listview2.items.count do
   begin
     if stackmenu1.listview2.items[c].checked=true then
-      if ( (stackmenu1.classify_dark_exposure1.checked=false) or (exposure=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure]))) then {exposure correct}
-        if ( (stackmenu1.classify_dark_temperature1.checked=false) or (temperature=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]))) then {temperature correct}
+      if ( (stackmenu1.classify_dark_exposure1.checked=false) or (exposure2=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure]))) then {exposure correct}
+        if ( (stackmenu1.classify_dark_temperature1.checked=false) or (temperature2=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]))) then {temperature correct}
           if  width1=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
           begin
             memo2_message('Loading master dark file '+stackmenu1.ListView2.items[c].caption);
@@ -5583,11 +5583,15 @@ begin
           end;
     inc(c);
   end;
-  dark_exposure:=exposure;{remember}
-  dark_temperature:=temperature;
+  dark_exposure:=exposure2;{remember the requested exposure time}
+  dark_temperature:=temperature2;
+
+  if ((exposure<>0 {global}) and (exposure2{request}<>exposure)) then memo2_message('█ █ █ █ █ █ Warning dark exposure time ('+floattostrF2(exposure,0,0)+') different then light exposure time ('+floattostrF2(exposure2,0,0) +')! █ █ █ █ █ █ ');
+  if ((set_temperature<>999 {global}) and (temperature2{request}<>set_temperature)) then memo2_message('█ █ █ █ █ █ Warning dark sensor temperature ('+floattostrF2(set_temperature,0,0)+') different then light sensor temperature ('+floattostrF2(temperature2,0,0) +')! █ █ █ █ █ █ ');
+
   if c<9999999  then
   begin
-    memo2_message('█ █ █ █ █ █ Warning, could not find a suitable dark for temperature "'+inttostr(temperature)+'"and exposure "'+inttostr(exposure)+'"! De-classify or add darks. █ █ █ █ █ █ ');
+    memo2_message('█ █ █ █ █ █ Warning, could not find a suitable dark for temperature "'+inttostr(temperature2)+'"and exposure "'+inttostr(exposure2)+'"! De-classify or add darks. █ █ █ █ █ █ ');
     dark_count:=0;{set back to zero}
   end;
 end;
@@ -5990,7 +5994,6 @@ begin
         for fitsX:=0 to width2-1  do
           for k:=0 to naxis3-1 do {do all colors}
           begin
-            {case hotpixels replace image pixels with image neighbour pixels}
              value:=img_dark[k,fitsX,fitsY];
              if ((ignore_hotpixels) and (value>dark_outlier_level) and (fitsx>0) and (fitsY>0)) then {case dark hot pixel replace image pixels with image neighbour pixels}
              begin
