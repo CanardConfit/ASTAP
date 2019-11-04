@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 862
+  Left = 469
   Height = 644
-  Top = 251
+  Top = 247
   Width = 1410
   AllowDropFiles = True
   Caption = 'stack menu'

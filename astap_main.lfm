@@ -975,7 +975,7 @@ object mainwindow: Tmainwindow
         object rotate_arbitrary1: TMenuItem
           Caption = 'Rotate arbitrary'
           Enabled = False
-          Hint = 'Rotate the image with the angle specified. Image quality will be reduced.'
+          Hint = 'Rotate the image with the angle specified. Image quality will be reduced. Slow but accurate algorithm.'
           ImageIndex = 31
           OnClick = rotate_arbitrary1Click
         end

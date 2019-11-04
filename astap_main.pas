@@ -776,17 +776,24 @@ end;
 
 procedure progress_indicator(i:double; info:string);{0 to 100% indication of progress}
 begin
-  stackmenu1.caption:=inttostr(round(i))+'%'+info;
-  mainwindow.caption:=inttostr(round(i))+'%'+info;
+//  mainwindow.caption:=inttostr(round(i))+'%'+info;
   if i<-99 then
   begin
     application.title:='ASTAP';
+
+    mainwindow.statusbar1.SimplePanel:=false;
+
     mainwindow.caption:=ExtractFileName(filename2);
     stackmenu1.caption:='stack menu';
   end
   else
   begin
-    application.title:=inttostr(round(i))+'%'+info;
+    application.title:=inttostr(round(i))+'%'+info;{show progress in taksbar}
+
+    mainwindow.statusbar1.SimplePanel:=true;
+    mainwindow.statusbar1.Simpletext:=inttostr(round(i))+'%'+info;{show progress in statusbar}
+
+    stackmenu1.caption:=inttostr(round(i))+'%'+info;{show progress in stack menu}
   end;
 end;
 
@@ -994,7 +1001,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.294 dated 2019-11-03';
+  #13+#10+'Version ß0.9.295 dated 2019-11-04';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -8416,8 +8423,8 @@ end;
 
 procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
 var
-  dum, col,fitsX,fitsY,maxsize,i,j,progress_value,progressC : integer;
-  dummy,cosA,sinA,centerx,centery,centerxs,centerys,x5,y5,angle,value   : double;
+  dum, col,fitsX,fitsY,maxsize,i,j,progress_value,progressC,xx,yy        : integer;
+  cosA,sinA,factor, dummy,centerx,centery,centerxs,centerys,angle,value   : double;
   valueI : string;
   Save_Cursor:TCursor;
 const
@@ -8430,7 +8437,7 @@ begin
   if valueI=''  then exit;
   angle:=strtofloat2(valueI);
 
-
+  memo2_message('Start rotation. This takes some time.');
   backup_img;
 
   if Fliphorizontal1.checked then angle:=-angle;{change rotation if flipped}
@@ -8456,35 +8463,36 @@ begin
         img_temp[col,fitsX,fitsY]:=0
   end;
 
-
   sincos(-angle*pi/180,sinA,cosA);
+  factor:=1/sqr(resolution);{1/(number of subpixels), typical 1/(10x10)}
 
   progressC:=0;
-  for col:=0 to naxis3-1 do {do all colours}
+  For fitsY:=0 to (height2-1) do
   begin
-    For fitsY:=0 to (height2-1) do
-    begin
-      inc(progressC);{counter}
-      if frac(fitsY/100)=0 then
-        begin
-          Application.ProcessMessages;{this could change startX, startY}
-          if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-
-          progress_value:=round(progressC*100/(naxis3*height2));{progress in %}
-          progress_indicator(progress_value,'');{report progress}
-        end;
-
-      for fitsX:=0 to (width2-1) do
+    inc(progressC);{counter}
+    if frac(fitsY/100)=0 then
       begin
-        value:=img_loaded[col,fitsX,fitsY]/sqr(resolution);{1/100 of pixel value}
-        if value>=0.0001 then {do only data}
-        for i:=0 to resolution-1 do {divide the pixel in resolution x resolution subpixels}
-        for j:=0 to resolution-1 do {divide the pixel in resolution x resolution subpixels}
-        begin
-          x5:=centerX +(fitsX-centerxs-0.5+i/resolution)*cosA - (fitsY-centerys-0.5+j/resolution)*sinA;
-          y5:=centerY +(fitsX-centerxs-0.5+i/resolution)*sinA + (fitsY-centerys-0.5+j/resolution)*cosA;
-          img_temp[col, trunc(x5) , trunc(y5) ]:=img_temp[col, trunc(x5) , trunc(y5) ]+value;
-        end;
+        Application.ProcessMessages;{this could change startX, startY}
+        if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+
+        progress_value:=round(progressC*100/(height2));{progress in %}
+        progress_indicator(progress_value,'');{report progress}
+      end;
+
+    for fitsX:=0 to (width2-1) do
+    begin
+      value:=img_loaded[0,fitsX,fitsY];
+      if value>=0.01 then {do only data. Use red for detection}
+      for i:=0 to resolution-1 do {divide the pixel in resolution x resolution subpixels}
+      for j:=0 to resolution-1 do {divide the pixel in resolution x resolution subpixels}
+      begin
+        {new position of subpixel}
+        xx:=trunc(centerX +(fitsX-centerxs-0.5+i/resolution)*cosA - (fitsY-centerys-0.5+j/resolution)*sinA);
+        yy:=trunc(centerY +(fitsX-centerxs-0.5+i/resolution)*sinA + (fitsY-centerys-0.5+j/resolution)*cosA);
+        {do all colours}
+        img_temp[0,xx,yy ]:=img_temp[0,xx,yy] + value*factor;{factor is typical 1/100 due to 10x10 subpixel}
+        if naxis3>=2 then img_temp[1,xx,yy]:=img_temp[1,xx,yy] + img_loaded[1,fitsX,fitsY]*factor; {this is the fastest way rather then for col:=0 to naxis3-1 loop}
+        if naxis3>=3 then img_temp[2,xx,yy]:=img_temp[2,xx,yy] + img_loaded[2,fitsX,fitsY]*factor;
       end;
     end;
   end;
@@ -8528,6 +8536,8 @@ begin
 
   progress_indicator(-100,'');{back to normal}
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
+
+  memo2_message('Finished rotation.');
 end;
 
 procedure Tmainwindow.histogram1MouseMove(Sender: TObject; Shift: TShiftState;
