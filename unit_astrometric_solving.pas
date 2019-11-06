@@ -624,7 +624,7 @@ begin
       if select_star_database(stackmenu1.star_database1.text)=false then
       begin
         result:=false;
-        application.messagebox(pchar('No star database found!'+#13+'Download the g17 (or g16 or g18) and extract the files to the program directory'), pchar('No star database!'),0);
+        application.messagebox(pchar('No star database found in the program directory!'+#13+'Download the g17 (or g16 or g18) and install'), pchar('ASTAP error:'),0);
         exit;
       end
       else stackmenu1.star_database1.text:=name_star;

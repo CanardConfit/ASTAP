@@ -1001,7 +1001,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.295 dated 2019-11-04';
+  #13+#10+'Version ß0.9.296 dated 2019-11-06';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4150,8 +4150,10 @@ begin
 
     if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
              if date_obs='' then date_obs:=get_string;
+
     if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
             if date_obs='' then date_obs:=get_string;
+
     if ((header[i]='I') and (header[i+1]='M')  and (header[i+2]='A') and (header[i+3]='G') and (header[i+4]='E') and (header[i+5]='T') and (header[i+6]='Y')) then
        imagetype:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
 
@@ -7524,8 +7526,8 @@ begin
         str(crota2:7:2,crota);
         line2:=cdelt+','+crota+','+flipped+',0.00000,'+confidence;
 
-        apt_request:=pos('ImageToSolve',filename2)>0; {if call from APT then write with numeric seperator according Windows setting as for PlateSolve2 2.28}
-        if ((apt_Request) and (formatSettings.decimalseparator= ',' )) then {creat PlateSolve2 v2.28 format}
+        apt_request:=pos('IMAGETOSOLVE',uppercase(filename2))>0; {if call from APT then write with numeric seperator according Windows setting as for PlateSolve2 2.28}
+        if ((apt_Request) and (formatSettings.decimalseparator= ',' )) then {create PlateSolve2 v2.28 format}
         begin
           line1:=stringreplace(line1, '.', ',',[rfReplaceAll]);
           line2:=stringreplace(line2, '.', ',',[rfReplaceAll]);

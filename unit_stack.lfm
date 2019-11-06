@@ -1,12 +1,12 @@
 object stackmenu1: Tstackmenu1
-  Left = 469
+  Left = 232
   Height = 644
-  Top = 247
-  Width = 1410
+  Top = 128
+  Width = 1417
   AllowDropFiles = True
   Caption = 'stack menu'
   ClientHeight = 644
-  ClientWidth = 1410
+  ClientWidth = 1417
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -52,7 +52,7 @@ object stackmenu1: Tstackmenu1
     Left = 0
     Height = 144
     Top = 500
-    Width = 1410
+    Width = 1417
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -189,7 +189,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1393
+    Left = 1400
     Height = 15
     Hint = 'Click to widen.'
     Top = 440
@@ -207,8 +207,8 @@ object stackmenu1: Tstackmenu1
     Height = 440
     Hint = 'Stack menu'
     Top = 0
-    Width = 1409
-    ActivePage = Images
+    Width = 1416
+    ActivePage = Result1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -216,14 +216,14 @@ object stackmenu1: Tstackmenu1
     MultiLine = True
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 4
     TabOrder = 5
     Options = [nboMultiLine]
     object Images: TTabSheet
       Hint = 'Select here the light frames'
       Caption = 'Images'
       ClientHeight = 412
-      ClientWidth = 1401
+      ClientWidth = 1408
       object nr_selected1: TLabel
         Left = 372
         Height = 15
@@ -290,7 +290,7 @@ object stackmenu1: Tstackmenu1
         Height = 372
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1401
+        Width = 1408
         Align = alBottom
         Anchors = [akTop, akLeft, akRight]
         Checkboxes = True
@@ -970,14 +970,14 @@ object stackmenu1: Tstackmenu1
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
       ClientHeight = 412
-      ClientWidth = 1401
+      ClientWidth = 1408
       ImageIndex = 6
       object listview5: TListView
         Left = 0
         Height = 372
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1401
+        Width = 1408
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Columns = <        
@@ -1054,7 +1054,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 412
-      ClientWidth = 1401
+      ClientWidth = 1408
       ImageIndex = 5
       object Label3: TLabel
         Left = 45
@@ -2438,11 +2438,11 @@ object stackmenu1: Tstackmenu1
           object force_oversize1: TCheckBox
             Left = 460
             Height = 19
-            Hint = 'Check-mark  this to improve solving reliability in some cases. Search window will be always large with overlap but will slow down solving.  Default this is off.  This is command line option -speedCommand'
+            Hint = 'Check-mark  this to improve solving reliability in some cases. Search window will be always large with overlap but it will slow down solving.  Default this is off.  If off  the search window size will be automatically reduced if sufficient stars are found. This option is equivalent to command line option -speed'
             Top = 125
-            Width = 160
+            Width = 45
             BorderSpacing.Around = 5
-            Caption = 'Force large search window'
+            Caption = 'Slow'
             Color = clBtnFace
             ParentColor = False
             TabOrder = 6
@@ -3428,7 +3428,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools'
       Caption = 'Pixel math'
       ClientHeight = 412
-      ClientWidth = 1401
+      ClientWidth = 1408
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox
         Left = 992
@@ -6283,6 +6283,14 @@ object stackmenu1: Tstackmenu1
     object MenuItem14: TMenuItem
       Caption = 'Copy image(s) to tab Images'
       OnClick = MenuItem14Click
+    end
+    object MenuItem24: TMenuItem
+      Caption = '-'
+    end
+    object rename_result1: TMenuItem
+      Caption = 'Rename as'
+      Hint = 'Rename the file'
+      OnClick = rename_result1Click
     end
     object MenuItem15: TMenuItem
       Caption = '-'

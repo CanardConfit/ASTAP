@@ -108,6 +108,8 @@ type
     live_stacking1: TButton;
     browse_photometry1: TButton;
     browse_live_stacking1: TButton;
+    rename_result1: TMenuItem;
+    MenuItem24: TMenuItem;
     restore_file_ext1: TButton;
     Label15: TLabel;
     files_live_stacked1: TLabel;
@@ -488,6 +490,7 @@ type
     procedure gridlines1Click(Sender: TObject);
     procedure help_live_stacking1Click(Sender: TObject);
     procedure live_stacking1Click(Sender: TObject);
+    procedure rename_result1Click(Sender: TObject);
     procedure restore_file_ext1Click(Sender: TObject);
     procedure colournebula1Click(Sender: TObject);
     procedure clear_photometric_solutions1Click(Sender: TObject);
@@ -1554,7 +1557,7 @@ begin
   if fileexists(filename2) then
   begin
      saved1.caption:='Saved';
-     report_results(filename2,'',0,-1{no icon});{report result in tab results}
+     report_results(object_name,'',0,-1{no icon});{report result in tab results}
   end
   else saved1.caption:='';
   if sender<>save_result1 then {save, step 1}
@@ -3602,6 +3605,8 @@ begin
   end;
 end;
 
+
+
 procedure Tstackmenu1.gridlines1Click(Sender: TObject);
 begin
   listview1.gridlines:=gridlines1.checked;
@@ -3631,6 +3636,30 @@ begin
       stack_live(round(strtofloat2(stackmenu1.oversize1.Text)), live_stacking_path1.caption){stack live average}
   else
      pause_pressed:=false;
+end;
+
+procedure Tstackmenu1.rename_result1Click(Sender: TObject);
+var index,counter: integer;
+    filen  : string;
+begin
+  index:=0;
+  counter:=listview5.Items.Count;
+  while index<counter do
+  begin
+    if  listview5.Items[index].Selected then
+    begin
+      filename2:=listview5.items[index].caption;
+      filen:=InputBox('New name:','',filename2) ;
+      if ((filen='') or (filen=filename2)) then exit;
+      filen:=extractfilepath(filename2)+filen+'.fits';
+      if RenameFile(filename2,filen) then
+      begin
+        listview5.items[index].caption:=filen
+      end;
+    end;
+    inc(index); {go to next file}
+  end;
+
 end;
 
 procedure Tstackmenu1.restore_file_ext1Click(Sender: TObject);
@@ -5956,15 +5985,16 @@ end;
 procedure apply_dark_flat(filter1:string; exposure1,stemperature1,width1:integer; var dcount,fcount,fdcount: integer; var flat_factor: double) ; {inline;} {apply dark, flat if required, renew if different exposure or ccd temp}
 var  {variables in the procedure are created to protect global variables as filter_name against overwriting by loading other fits files}
   fitsX,fitsY,k,light_naxis3,hotpixelcounter : integer;
-  calstat_local              : string;
+  calstat_local,date_obs_light                : string;
   datamax_light ,light_exposure,light_cd1_1,light_cd1_2,light_cd2_1,light_cd2_2, light_ra0, light_dec0,value,dark_outlier_level : double;
   ignore_hotpixels : boolean;
 
 begin
   calstat_local:=calstat;{Note load darks or flats will overwrite calstat}
+  date_obs_light:=date_obs;{Note load darks or flats will overwrite even if not specfied since this variable is reset in load_fits}
   datamax_light:=datamax_org;
 
-  light_naxis3:=naxis3; {preserve so it is not overriden by apply dark_flat}
+  light_naxis3:=naxis3; {preserve so it is not overriden by load dark_flat which will reset variable in load_fits}
   light_exposure:=exposure;{preserve so it is not overriden by apply dark_flat}
   light_cd1_1:=cd1_1;
   light_cd1_2:=cd1_2;
@@ -6041,10 +6071,12 @@ begin
     end;{flat correction}
   end;{do flat & flat dark}
   calstat:=calstat_local;{report calibration}
+  date_obs:=date_obs_light;{restore date_obs of light}
+
   datamax_org:=datamax_light;{restore. will be overwitten by previouse reads}
 
   naxis3:=light_naxis3;{return old value}
-  exposure:=light_exposure;{preserve so it is not overriden by apply dark_flat}
+  exposure:=light_exposure;{preserve so it is not overriden by load apply dark_flat which will reset variable to zero}
   cd1_1:=light_cd1_1;
   cd1_2:=light_cd1_2;
   cd2_1:=light_cd2_1;
@@ -6168,11 +6200,40 @@ begin
   end;
 end;
 
+function RemoveSpecialChars(const STR : string) : string;
+const
+  InvalidChars : set of char = ['.','\','/','*','"',':','|','<','>'];
+var
+  I : integer;
+begin
+  Result:='';
+  for i:=1 to length(str) do
+    if not(str[i] in InvalidChars) then result:=result+str[i]
+end;
+
+function propose_file_name : string; {propose a file name}
+begin
+  if object_name<>'' then result:=object_name else result:='no_object';
+  if date_obs<>'' then result:=result+', '+copy(date_obs,1,10);
+  result:=result+', ';
+  if counterR<>0 then  result:=result+inttostr(counterR)+'x'+inttostr(exposureR)+'R ';
+  if counterG<>0 then result:=result+inttostr(counterG)+'x'+inttostr(exposureG)+'G ';
+  if counterB<>0 then result:=result+inttostr(counterB)+'x'+inttostr(exposureB)+'B ';
+  if counterRGB<>0 then result:=result+inttostr(counterRGB)+'x'+inttostr(exposureRGB)+'RGB ';
+  if counterL<>0 then result:=result+inttostr(counterL)+'x'+inttostr(exposureL)+'L '; {exposure}
+  result:=StringReplace(result,' ,',',',[rfReplaceAll]);{remove all spaces in front of comma's}
+
+  if telescop<>'' then result:=result+', '+telescop;
+  if ((filter_name<>'') and (counterR=0) and (counterG=0) and (counterB=0) and (counterRGB=0)) then result:=result+', '+filter_name;
+  if instrum<>'' then result:=result+', '+instrum;
+  result:=RemoveSpecialChars(result);{slash could be in date but also telescope name like eqmod HEQ5/6}
+end;
+
 procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
    i,c,over_size,{ counterX,}nrfiles, image_counter,object_counter, first_file,position, total_counter{,his_done }: integer;
-   filter_name1, filter_name2, filename3, extra1,extra2,object_to_process,stack_info{,ff}: string;
+   filter_name1, filter_name2, filename3, extra1,extra2,object_to_process,stack_info, proposed_name    : string;
    lrgb,solution  : boolean;
    startTick      : qword;{for timing/speed purposes}
 begin
@@ -6356,10 +6417,7 @@ begin
     exposureB:=0;
     exposureRGB:=0;
     exposureL:=0;
-//    counterX:=0; {reset always for object loop}
     inc(object_counter);
-
-//    hist_info:= TStringList.Create;
 
     lrgb:=classify_filter1.checked;
 
@@ -6611,7 +6669,9 @@ begin
       update_text   ('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
       calstat:=calstat+'S'; {status stacked}
       update_text ('CALSTAT =',#39+calstat+#39); {calibration status}
-      update_text ('DATE-OBS=',#39+JdToDate(jd_start)+#39);{give start point exposures}
+      date_obs:=jdToDate(jd_start);
+      update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
+
       if ((naxis3=1) and (counterL>0)) then {works only for mono}
       begin
         update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ', jd_sum/counterL);{give midpoint of exposures}
@@ -6705,14 +6765,17 @@ begin
                       inttostr(counterRGB)+'x'+inttostr(exposureRGB)+'RGB  '+
                       inttostr(counterL)+'x'+inttostr(exposureL)+'L  '; {exposure}
 
-      position:=pos('@',filename2); if position<>0 then filename2:=copy(filename2,1,position);{remove old info from the file name}
-      filename2:=StringReplace(ChangeFileExt(filename2,'.fit'),'.fit',' '+stack_info+'_stacked.fit',[]);{give new file name }
+   //   position:=pos('@',filename2); if position<>0 then filename2:=copy(filename2,1,position);{remove old info from the file name}
+      filename2:=extractfilepath(filename2)+propose_file_name+ '  _stacked.fits';{give it a nice file name}
+
+//      filename2:=StringReplace(ChangeFileExt(filename2,'.fit'),'.fit',' '+stack_info+'_stacked.fit',[]);{give new file name }
       memo2_message('█ █ █  Saving result '+inttostr(image_counter)+' as '+filename2);
       save_fits(filename2,-32, true);
 
 
       if naxis3>1 then report_results(object_to_process,stack_info,object_counter,3 {color icon}) {report result in tab results}
                   else report_results(object_to_process,stack_info,object_counter,4 {gray icon}); {report result in tab results}
+
 
       DeleteFiles(image_path,'*.astap_solution');{delete solution files}
 
