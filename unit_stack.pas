@@ -108,6 +108,8 @@ type
     live_stacking1: TButton;
     browse_photometry1: TButton;
     browse_live_stacking1: TButton;
+    result_compress1: TMenuItem;
+    MenuItem25: TMenuItem;
     rename_result1: TMenuItem;
     MenuItem24: TMenuItem;
     restore_file_ext1: TButton;
@@ -490,6 +492,7 @@ type
     procedure gridlines1Click(Sender: TObject);
     procedure help_live_stacking1Click(Sender: TObject);
     procedure live_stacking1Click(Sender: TObject);
+    procedure result_compress1Click(Sender: TObject);
     procedure rename_result1Click(Sender: TObject);
     procedure restore_file_ext1Click(Sender: TObject);
     procedure colournebula1Click(Sender: TObject);
@@ -603,7 +606,6 @@ type
     procedure apply_factor1Click(Sender: TObject);
     procedure apply_file1Click(Sender: TObject);
     procedure file_to_add1Click(Sender: TObject);
-    procedure clear_selection1Click(Sender: TObject);
     procedure clear_selection2Click(Sender: TObject);
     procedure clear_selection3Click(Sender: TObject);
     procedure renametobak1Click(Sender: TObject);
@@ -766,6 +768,7 @@ const
   P_photometric=15;
   P_calibration=16;
 
+  outlier=8; {image index for outlier}
 
 implementation
 
@@ -1114,7 +1117,7 @@ begin
             begin {remove high HFD outliers}
               ListView1.Items.item[c].checked:=false;
               ListView1.Items.item[c].subitems.Strings[I_result]:='↑ hfd';{mark as outlier}
-              ListView1.Items.item[c].SubitemImages[0]:=99; {mark as outlier using imageindex}
+              ListView1.Items.item[c].SubitemImages[0]:=outlier; {mark as outlier using imageindex}
               memo2_message(ListView1.Items.item[c].caption+ ' unchecked due to high outlier HFD value.' );
             end
             else
@@ -1122,7 +1125,7 @@ begin
             begin {remove low star count outliers}
               ListView1.Items.item[c].checked:=false;
               ListView1.Items.item[c].subitems.Strings[I_result]:='↓ stars';{mark as outlier}
-              ListView1.Items.item[c].SubitemImages[0]:=99; {mark as outlier using imageindex}
+              ListView1.Items.item[c].SubitemImages[0]:=outlier; {mark as outlier using imageindex}
               memo2_message(ListView1.Items.item[c].caption+ ' unchecked due to low number of stars detected.' );
           end;
         end;
@@ -1413,7 +1416,7 @@ begin
     {give list an indentification key label based on object, filter and exposure time}
     for c:=0 to ListView1.items.count-1 do
     begin
-      if ListView1.Items.item[c].SubitemImages[0]=99 then {marked at outlier}
+      if ListView1.Items.item[c].SubitemImages[0]=outlier then {marked at outlier}
       begin
          ListView1.Items.item[c].checked:=true;{recheck outliers from previous session}
          ListView1.Items.item[c].SubitemImages[0]:=-1;{remove mark}
@@ -2297,10 +2300,6 @@ begin
   end;
 end;
 
-procedure Tstackmenu1.clear_selection1Click(Sender: TObject);
-begin
-
-end;
 
 procedure Tstackmenu1.focallength1Change(Sender: TObject);
 begin
@@ -2318,6 +2317,8 @@ begin
   listview3.top:=browse_flats1.top + browse_flats1.height+5;
   listview4.top:=browse_bias1.top + browse_bias1.height+5;
   listview5.top:=Label_results1.top + Label_results1.height+5;
+  listview6.top:=max(browse_blink1.top + browse_blink1.height+5,blink_star_filter1.top+blink_star_filter1.height+4) ;
+  listview7.top:=browse_photometry1.top + browse_photometry1.height+5;
 
   memo2.top:=classify_groupbox1.top+ classify_groupbox1.height+4;{make it High-DPI robust}
   memo2.height:=stackmenu1.Height-memo2.top;{make it High-DPI robust}
@@ -3637,6 +3638,32 @@ begin
   else
      pause_pressed:=false;
 end;
+
+procedure Tstackmenu1.result_compress1Click(Sender: TObject);
+var index,counter: integer;
+    filen  : string;
+  Save_Cursor:TCursor;
+begin
+  index:=0;
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  counter:=listview5.Items.Count;
+  esc_pressed:=false;
+  while index<counter do
+  begin
+    if  listview5.Items[index].Selected then
+    begin
+      filename2:=listview5.items[index].caption;
+      Application.ProcessMessages;
+      if ((esc_pressed) or (pack_cfitsio(filename2)=false)) then begin beep; mainwindow.caption:='Exit with error!!'; Screen.Cursor := Save_Cursor;  exit;end;
+    end;
+    inc(index); {go to next file}
+  end;
+  stackmenu1.caption:='Ready, all files compressed with extension .fz.';
+  Screen.Cursor := Save_Cursor;  { Always restore to normal }
+end;
+
 
 procedure Tstackmenu1.rename_result1Click(Sender: TObject);
 var index,counter: integer;

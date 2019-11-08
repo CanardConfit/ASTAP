@@ -501,6 +501,7 @@ procedure create_test_image(type_test : integer);{create an artificial test imag
 function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
 function convert_raw_to_fits(filename7 : string) :boolean;{convert raw file to FITS format}
 function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
+function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
 procedure demosaic_bayer_drizzle(pattern: integer);{make from sensor bayer pattern three colors without interpolation}
 function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
@@ -1001,7 +1002,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.296 dated 2019-11-06';
+  #13+#10+'Version ß0.9.297 dated 2019-11-08';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4268,8 +4269,6 @@ begin
              focus_temp:=validate_double;{focus temperature}
       if ((header[i]='A') and (header[i+1]='M')  and (header[i+2]='B') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
              focus_temp:=validate_double;{ambient temperature}
-      if ((header[i]='T') and (header[i+1]='A')  and (header[i+2]='M') and (header[i+3]='B') and (header[i+4]='I') and (header[i+5]='E') and (header[i+6]='N')) then
-             focus_temp:=validate_double;{ambient temperature APT. Remove in 2020. Should be replace by AMB-TEMP}
 
 
       if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and
@@ -6467,7 +6466,6 @@ begin
         for I := 0 to Count - 1 do
         begin
           filename2:=Strings[I];
-          {load fits}
           Application.ProcessMessages;
           if ((esc_pressed) or (pack_cfitsio(filename2)=false)) then begin beep; mainwindow.caption:='Exit with error!!'; Screen.Cursor := Save_Cursor;  exit;end;
        end;
@@ -7255,14 +7253,10 @@ end;
 procedure Tmainwindow.FormResize(Sender: TObject);
 begin
 
- panel1.Top:=memo1.Height+10;
+ panel1.Top:=max(memo1.Height+10, data_range_groupBox1.top+data_range_groupBox1.height+5);
  panel1.left:=0;
  panel1.width:=mainwindow.width;
  panel1.height:=StatusBar1.top-panel1.top;
-
-// mainwindow.image1.width:=width2;   {preserve aspect !!}
-// mainwindow.image1.height:=height2;
-
 
  mainwindow.image1.left:=0;
  mainwindow.image1.top:=0;
