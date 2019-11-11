@@ -46,7 +46,7 @@ begin
   //No need to create the stringlist; the function does that for you
   theFiles := FindAllFiles(stack_directory, '*.fit;*.fits;*.FIT;*.FITS;'+
                                             '*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;'+
-                                            '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef', false {search subdirectories}); //find images
+                                            '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef', false {search subdirectories}); //find images
   if TheFiles.count>0 then
   begin
     filen:=TheFiles[0];
@@ -101,14 +101,26 @@ begin
   else
     result:=load_tiffpngJPEG(filename2,img_loaded);
 end;
+function date_string: string;
+Var YY,MO,DD : Word;
+    HH,MM,SS,MS: Word;
+begin
+  DecodeDate(date,YY,MO,DD);
+  DecodeTime(Time,HH,MM,SS,MS);
+  result:=inttostr(YY)+
+          inttostr(MO)+
+          inttostr(DD)+'_'+
+          inttostr(HH)+
+          inttostr(MM)+
+          inttostr(SS);
+end;
 
 procedure stack_live(oversize:integer; path :string);{stack live average}
 var
-    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,binning        : integer;
-    {background_correction,} flat_factor, { h,dRA, dDec,det, delta,gamma,ra_new, dec_new, sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v, value, weightF,} distance    : double;
-    init, solution,{use_star_alignment,use_manual_alignment,} use_astrometry_internal, use_astrometry_net,vector_based,waiting,transition_image :boolean;
-
-    counter,total_counter,bad_counter :  integer;
+    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter :  integer;
+    flat_factor, distance    : double;
+    init, solution, use_astrometry_internal, use_astrometry_net,vector_based,waiting,transition_image :boolean;
+    file_ext,filen                    :  string;
 
 
     procedure reset_var;{reset variables  including init:=false}
@@ -216,10 +228,7 @@ begin
             else {internal star alignment}
             if init=false then {first image}
             begin
-//              get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var} cblack,star_level);
-//              find_stars(img_loaded,starlist1);{find stars and put them in a list}
               bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist1);{bin, measure background, find stars}
-
               find_tetrahedrons_ref;{find tetrahedrons for reference image}
             end;
 
@@ -248,8 +257,6 @@ begin
             {align using star match}
             if init=true then {second image}
             begin{internal alignment}
-//              get_background(0,img_loaded,true,true {unknown, calculate also noise_level} , {var} cblack,star_level);
-//              find_stars(img_loaded,starlist2);{find stars and put them in a list}
               bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist2);{bin, measure background, find stars}
 
               find_tetrahedrons_new;{find triangels for new image}
@@ -274,8 +281,6 @@ begin
               inc(counter);
               inc(total_counter);
               sum_exp:=sum_exp+exposure;
-//              if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
-
               date_obs_to_jd;{convert date-obs to jd}
               if jd<jd_start then jd_start:=jd;
               jd_sum:=jd_sum+jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
@@ -314,11 +319,11 @@ begin
             stackmenu1.files_live_stacked1.caption:=inttostr(counter)+' stacked, '+inttostr(bad_counter)+ ' failures ' ;{Show progress}
             application.hint:=inttostr(counter)+' stacked, '+inttostr(bad_counter)+ ' failures ' ;{Show progress}
           end; {no transition image}
-
-          if RenameFile(filename2,ChangeFileExt(filename2,ExtractFileExt(filename2)+'_' ))=false then {mark files as done, beep if failure}
+          file_ext:=ExtractFileExt(filename2);
+          if pos('_@',filename2)=0 then filen:=copy(filename2,1,length(filename2)-length(file_ext))+'_@'+ date_string {function} +file_ext+'_' {mark file with date for SGP since the file name will not change if first file is renamed}
+                                   else filen:=copy(filename2,1,length(filename2)-length(file_ext))+file_ext+'_'; {already marked with date}
+          if RenameFile(filename2,filen)=false then {mark files as done with file extension+'_', beep if failure}
             beep;
-
-
         finally
         end;
       end

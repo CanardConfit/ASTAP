@@ -617,7 +617,11 @@ begin
       minimum_tetrahedrons:=3;
 
     end
-    else memo2_message('Only '+inttostr(nrstars)+' stars found in image. Abort');
+    else
+    begin
+      memo2_message('Only '+inttostr(nrstars)+' stars found in image. Abort');
+      if errorlevel=0 then errorlevel:=2;{not enough stars detected}
+    end;
 
     if go_ahead then
     begin
@@ -625,6 +629,7 @@ begin
       begin
         result:=false;
         application.messagebox(pchar('No star database found in the program directory!'+#13+'Download the g17 (or g16 or g18) and install'), pchar('ASTAP error:'),0);
+        errorlevel:=32;{no star database}
         exit;
       end
       else stackmenu1.star_database1.text:=name_star;
@@ -704,6 +709,7 @@ begin
             if read_stars(telescope_ra,telescope_dec,search_field*oversize,round(nrstars_required*oversize*oversize) ,{var}database_stars)= false then
             begin
               application.messagebox(pchar('Error, some of the 290 star database files are missing!'+#13+'Download the g17 (or g16 or g18) and extract the files to the program directory.'),0 );
+              errorlevel:=33;{read error star database}
               exit; {no stars}
             end;
 

@@ -441,6 +441,7 @@ const
    shape_marker3_fitsY: double=0;
 
    command_execution : boolean=false;{program executed in command line}
+   errorlevel        : longword=0;{report errors when shutdown}
 
    mouse_positionRADEC1 : string='';{For manual reference solving}
    mouse_positionRADEC2 : string='';{For manual reference solving}
@@ -1002,7 +1003,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.297 dated 2019-11-08';
+  #13+#10+'Version ß0.9.298 dated 2019-11-11';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2109,7 +2110,7 @@ begin
 end;
 function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
 begin
-  result:=((ext='.RAW') or (ext='.CRW') or (ext='.CR2') or (ext='.KDC') or (ext='.DCR') or (ext='.MRW') or (ext='.ARW') or (ext='.NEF') or (ext='.NRW') or (ext='.DNG') or (ext='.ORF') or (ext='.PTX') or (ext='.PEF') or (ext='.RW2') or (ext='.SRW') or (ext='.RAF') or (ext='.KDC')); {raw format extension?}
+  result:=((ext='.RAW') or (ext='.CRW') or (ext='.CR2') or (ext='.CR3')or (ext='.KDC') or (ext='.DCR') or (ext='.MRW') or (ext='.ARW') or (ext='.NEF') or (ext='.NRW') or (ext='.DNG') or (ext='.ORF') or (ext='.PTX') or (ext='.PEF') or (ext='.RW2') or (ext='.SRW') or (ext='.RAF') or (ext='.KDC')); {raw format extension?}
 end;
 
 function image_file_name(inp : string): boolean; {readable image name?}
@@ -5993,16 +5994,16 @@ begin
 
 end;
 
-function check_dcraw : boolean; {check if DCRAW exists}
+function check_libraw : boolean; {check if libraw exists}
 begin
  {$ifdef mswindows}
- if fileexists(application_path+'dcraw.exe')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'dcraw.exe !!, Download, rename to dcdraw.exe and place in program directory' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
+ if fileexists(application_path+'unprocessed_raw.exe')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'unprocessed_raw.exe !!, Download, libraw and place in program directory' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
  {$endif}
  {$ifdef Linux}
- if fileexists('/usr/bin/dcraw')=false then begin result:=false; application.messagebox(pchar('Could not find program dcraw !!, Install this program. Eg: sudo apt-get install dcraw' ),pchar('Error'),MB_ICONWARNING+MB_OK);;exit; end;
+ if fileexists('/usr/lib/libraw/unprocessed_raw')=false then begin result:=false; application.messagebox(pchar('Could not find program unprocessed_raw !!, Install libraw. Eg: sudo apt-get install libraw-bin' ),pchar('Error'),MB_ICONWARNING+MB_OK);;exit; end;
  {$endif}
  {$ifdef Darwin} {MacOS}
- if fileexists(application_path+'/dcraw')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'dcraw' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
+ if fileexists(application_path+'/unprocessed_raw')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'unprocessed_raw' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
  {$endif}
  result:=true;{success}
 end;
@@ -6079,26 +6080,24 @@ end;
 
 function convert_load_raw(filename3: string): boolean; {convert raw to pgm file using DCRAW}
 var
-  commando, filename4,exposure_str :string;
+  filename4 :string;
   JD2                               : double;
 
 begin
   result:=false;
-  if check_dcraw=false then begin exit;end; {no DCRAW available}
-
-  commando:='-D -4';
+  if check_libraw=false then begin exit;end; {no DCRAW available}
 
   {$ifdef mswindows}
-  ExecuteAndWait(application_path+'dcraw.exe '+commando+ ' "'+filename3+'"',false);{execute command and wait}
+  ExecuteAndWait(application_path+'unprocessed_raw.exe "'+filename3+'"',false);{execute command and wait}
   {$endif}
   {$ifdef Darwin}{MacOS}
-   execute_unix2(application_path+'/dcraw '+commando+' "'+filename3+'"');
+   execute_unix2(application_path+'/unprocessed_raw "'+filename3+'"');
    {$endif}
    {$ifdef linux}
-   execute_unix2('/usr/bin/dcraw '+commando+' "'+filename3+'"');
+   execute_unix2('/usr/lib/libraw/unprocessed_raw "'+filename3+'"');
   {$endif}
 
-   filename4:=ChangeFileExt(FileName3,'.pgm');
+   filename4:=FileName3+'.pgm';
 
    if load_ppm_pgm(fileName4,img_loaded) then {succesfull PGM load}
    begin
@@ -6136,8 +6135,8 @@ begin
   OpenDialog1.Title := 'Select multiple  files to convert';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter :=  'All formats |*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pfm;*.xisf;*.fz;'+
-                                       '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
-                         '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
+                                       '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
+                         '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                          '|24 bits PNG, TIFF,  JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
                          '|Compressed FITS files|*.fz';
   opendialog1.initialdir:=ExtractFileDir(filename2);
@@ -7446,6 +7445,8 @@ begin
         source_fits:=fits_file_name(filename2);{fits file extension?}
         file_loaded:=load_image(false,false {plot});{load file first to give commandline parameters later priority}
 
+        if file_loaded=false then errorlevel:=16;{error file loading}
+
         ra1.Text:=floattostr2(strtofloat2(list[0])*12/pi);
         dec1.Text:=floattostr2(strtofloat2(list[1])*180/pi);
         {$IfDef Darwin}// for OS X,
@@ -7486,6 +7487,7 @@ begin
           resultstr:='Maximum search limit exceeded';
           confidence:='000';
           solved:=false;
+          if errorlevel=0 then errorlevel:=1;{no solution}
         end;
         //  0.16855631,0.71149576,1              (ra [rad],dec [rad],1 }
         //  2.69487,0.5,1.00005,-0.00017,395     {pixelsize*3600, crota2, flipped,? ,confidence}
@@ -7599,7 +7601,7 @@ begin
   begin
     esc_pressed:=true;{kill any running activity. This for APT}
     {stop program, platesolve command already executed}
-    halt(0); {don't save only do form.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
+    halt(errorlevel); {don't save only do form.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
   end
   else
   if paramcount>0 then   {file as first parameter}
@@ -7639,6 +7641,9 @@ begin
         filename2:=GetOptionValue('f');
         source_fits:=fits_file_name(filename2);{fits file extension?}
         file_loaded:=load_image(false,false {plot});{load file first to give commandline parameters later priority}
+
+        if file_loaded=false then errorlevel:=16;{error file loading}
+
 
         if hasoption('fov') then
         begin
@@ -7724,11 +7729,20 @@ begin
         begin {no solution}
           if hasoption('o') then filename2:=GetOptionValue('o'); {change file name for .ini file}
           write_ini(false);{write solution to ini file}
+          if errorlevel=0 then errorlevel:=1;{report no solution}
          //  log_to_file(cmdline+' =>failure');
         end;
         esc_pressed:=true;{kill any running activity. This for APT}
         if hasoption('log') then stackmenu1.Memo2.Lines.SavetoFile(ChangeFileExt(filename2,'.log'));{save memo2 log to log file}
-        halt(0); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
+        halt(errorlevel); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
+        {0 no errors}
+        {1 no solution}
+        {2 not enough stars detected}
+
+        {16 error reading image file}
+
+        {32 no star database found}
+        {33 error reading star database}
       end;
     end;
     Mainwindow.stretch1Change(nil);{create gamma curve}
@@ -10153,7 +10167,7 @@ begin
   OpenDialog1.Title := 'Open in viewer';
 
   opendialog1.Filter :=  'All formats |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pfm;*.xisf;*.fz;'+
-                                      '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
+                                      '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                          '|8, 16, 32 and -32 bit FITS files (*.fit*,*.xisf)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.new;*.xisf;*.fz'+
                          '|24 bits PNG, TIFF,  JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
                          '|Preview FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
