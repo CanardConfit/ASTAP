@@ -446,8 +446,6 @@ begin
   result:=stackmenu1.downsample_for_solving1.itemindex;
   if result<=0 then  {zero gives -1, Auto is 0}
   begin
-    if height2>5000 then result:=4
-    else
     if height2>2500 then result:=2
     else
      result:=1;
@@ -461,45 +459,47 @@ var
   solution, go_ahead,solve_show_log  : boolean;
   Save_Cursor     : TCursor;
   startTick  : qword;{for timing/speed purposes}
-  distancestr,oversize_mess,mess,info_message  :string;
+  distancestr,oversize_mess,mess,info_message,warning    :string;
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t : integer;
   {trayicon_visible,}autoFOV : boolean;
 const
    popupnotifier_visible : boolean=false;
+
 begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
   result:=false;
   esc_pressed:=false;
+  warning_str:='';{for header}
   startTick := GetTickCount64;
 
   if stackmenu1.calibrate_prior_solving1.checked then
   begin
     memo2_message('Calibrating image prior to solving.');
     apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
-  end;
-
-//  binning:=stackmenu1.downsample_for_solving1.itemindex;
-//  if binning<=0 then  {zero gives -1, Auto is 0}
-//  begin
-//    if height2>5000 then binning:=4
-//    else
-//    if height2>2500 then binning:=2
-//    else
-//    binning:=1;
-//  end;
+ end;
 
   binning:=report_binning;
+
+  if height2<1000           then warning_str:='Warning too small image!! ';  {for FITS header and solution}
+  if height2<1000*binning   then warning_str:=warning_str+'Downsample factor too high!! '; {for FITS header and solution}
+  if (height2>2500*binning) then warning_str:=warning_str+'Increase downsampling!! '; {for FITS header and solution}
+  if length(warning_str)>0  then
+  begin
+     memo2_message(warning_str);
+     warning:=#10+warning_str;
+  end
+  else warning:='';
 
   if stackmenu1.force_oversize1.checked=false then info_message:='▶▶' {normal} else info_message:='▶'; {slow}
   info_message:= ' [' +stackmenu1.radius_search1.text+'°]'+#9+#9+info_message+
                   #10+'↕ '+stackmenu1.search_fov1.text+'°'+ #9+#9+inttostr(binning)+'x'+inttostr(binning)+' ⇒ '+inttostr(width2)+'x'+inttostr(height2)+
+                  warning+
                   #10+mainwindow.ra1.text+'h,'+mainwindow.dec1.text+'°'+{for tray icon}
                   #10+filename2;
 
 //  trayicon_visible:=mainwindow.TrayIcon1.visible;
-
 
 
   max_fov:=strtofloat(stackmenu1.max_fov1.caption);{for very large images only}
@@ -526,55 +526,6 @@ begin
       fov:=max_fov; {temporary cropped image, adjust FOV to adapt}
     end
     else cropping:=1;
-
-
-//    if ((binning>1) or (cropping<1)) then
-//    begin
-//      old_width:=width2;
-//      old_height:=height2;
-//      old_naxis3:=naxis3;
-//      if binning>1 then memo2_message('Creating monochromatic x '+inttostr(binning)+' binning image to solve.');
-//      if cropping<>1 then memo2_message('Cropping image x '+floattostrF2(cropping,0,2));
-
-//      if binning=2 then binX2_crop(cropping,img,img_binned) {combine values of 4 pixels, default option if 3 and 4 are not specified}
-//      else
-//      if binning=3 then binX3_crop(cropping,img,img_binned) {combine values of 9 pixels}
-//      else
-//      if binning=4 then binX4_crop(cropping,img,img_binned) {combine values of 16 pixels}
-//      else
-//      if binning=1 then binX1_crop(cropping,img,img_binned); {crop image, no binning}
-
-      {test routine, to show bin result}
-     //    img_loaded:=img_binned;
-     //    naxis3:=1;
-     //    plot_fits(mainwindow.image1,true);{plot real}
-     //    exit;
-
-//      get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}cblack,star_level );{get back ground}
-//      find_stars(img_binned,starlist2); {find stars of the image and put them in a list}
-//      img_binned:=nil;
-//      nrstars:=Length(starlist2[0])-1;
-
-//      if width2<1000 then memo2_message('Info: REDUCE OR REMOVE DOWNSAMPLING IS RECOMMENDED. Set this option in stack menu, tab alignment.');
-//      width2:=old_width; {restore to original size}
-//      height2:=old_height;
-//      naxis3:=old_naxis3;
-
-
-//      for i:=1 to nrstars do {correct star positions for cropping. Simplest method}
-//      begin
-//        starlist2[0,i]:={(binning-1)/2} + starlist2[0,i]*binning+(width2*(1-cropping)/2);{correct star positions for binning/ cropping}
-//        starlist2[1,i]:={(binning-1)/2} + starlist2[1,i]*binning+(height2*(1-cropping)/2);
-//      end;
-//    end
-//    else
-//    begin
-
-//      if height2>2500 then memo2_message('Info: DOWNSAMPLING IS RECOMMENDED FOR LARGE IMAGES. Set this option in stack menu, tab alignment.');
-//      get_background(0,img_loaded,get_hist {load hist},true {calculate also standard deviation background}, {var} cblack,star_level);{get back ground}
-//      find_stars(img,starlist2); {find stars of the image and put them in a list}
-//      nrstars:=Length(starlist2[0])-1;
-//    end;
 
     bin_and_find_stars(img,binning,cropping,get_hist{update hist}, starlist2);{bin, measure background, find stars}
 
@@ -620,7 +571,7 @@ begin
     else
     begin
       memo2_message('Only '+inttostr(nrstars)+' stars found in image. Abort');
-      if errorlevel=0 then errorlevel:=2;{not enough stars detected}
+      errorlevel:=2;
     end;
 
     if go_ahead then
@@ -814,7 +765,7 @@ begin
     update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
     update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
     update_text   ('PLTSOLVD=','                   T / ASTAP internal solver      ');
-    update_text   ('COMMENT 1', solved_in+offset_found);
+    update_text   ('COMMENT 6', solved_in+offset_found);
 
     if solve_show_log then
     begin
@@ -823,6 +774,11 @@ begin
       memo2_message('See viewer image for image stars used (red) and database star used (yellow)');
     end;
 
+    if ( (fov>1.05*(height2*cdelt2) ) or (fov<0.95*(height2*cdelt2)) ) then
+    begin
+      memo2_message('Warning initial FOV significantly different.');
+      warning_str:='Warning initial FOV significantly different!! '+warning_str;
+    end;
   end
   else
   begin
@@ -830,8 +786,10 @@ begin
     memo2_message('No solution found!  :(');
     mainwindow.caption:='No solution found!  :(';
     update_text   ('PLTSOLVD=','                   F / No plate solution found.   ');
-    update_text   ('COMMENT 1','                                                  ');
+    remove_key('COMMENT 6');
   end;
+  update_text('WARNING =',#39+warning_str+#39);
+
   Screen.Cursor :=Save_Cursor;    { back to normal }
 end;
 

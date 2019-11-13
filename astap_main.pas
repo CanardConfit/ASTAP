@@ -27,6 +27,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
    2) Add the app in program packages
    3) Build package. Will produce PKG file cotaining the app.
 
+   Compiler settings for macOS:
+   targetOS: Darwin
+   CPU family X86_64
+   LCL widegetset: cocoa
 }
 interface
 uses
@@ -406,8 +410,7 @@ var
    datamin_org, datamax_org,
    old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
 
-
-
+   warning_str :string; {for solver}
 
 const
    max_range  {range histogram 255 or 65535 or streched} : integer=255;
@@ -441,7 +444,7 @@ const
    shape_marker3_fitsY: double=0;
 
    command_execution : boolean=false;{program executed in command line}
-   errorlevel        : longword=0;{report errors when shutdown}
+   errorlevel        : integer=0;{report errors when shutdown}
 
    mouse_positionRADEC1 : string='';{For manual reference solving}
    mouse_positionRADEC2 : string='';{For manual reference solving}
@@ -1003,7 +1006,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.298 dated 2019-11-11';
+  #13+#10+'Version ß0.9.299 dated 2019-11-13';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7392,6 +7395,13 @@ begin
     writeln(f,'PLTSOLVD=F');
   end;
   writeln(f,'CMDLINE='+cmdline);{write the original commmand line}
+  Case errorlevel of
+             2: writeln(f,'ERROR=Not enough stars.');
+            16: writeln(f,'ERROR=Error reading image file.');
+            32: writeln(f,'ERROR=No star database found.');
+            33: writeln(f,'ERROR=Error reading star database.');
+  end;
+  if warning_str<>'' then writeln(f,'WARNING='+warning_str);
   closefile(f);
 end;
 
@@ -7487,7 +7497,7 @@ begin
           resultstr:='Maximum search limit exceeded';
           confidence:='000';
           solved:=false;
-          if errorlevel=0 then errorlevel:=1;{no solution}
+          errorlevel:=1;{no solution}
         end;
         //  0.16855631,0.71149576,1              (ra [rad],dec [rad],1 }
         //  2.69487,0.5,1.00005,-0.00017,395     {pixelsize*3600, crota2, flipped,? ,confidence}
@@ -7539,11 +7549,11 @@ begin
         {note SGP uses PlateSolve2 v2.29. This version writes APM always with dot as decimal seperator}
 
         {extra log}
-        log_to_file2(ChangeFileExt(filename2,'.txt'),'Command: '+command1+#10+
-                                                     'RA : '+mainwindow.ra1.text+#10+
-                                                     'DEC: '+mainwindow.dec1.text+#10+
-                                                     'Height: '+stackmenu1.search_fov1.text);
-
+        write_ini(solved);{write solution to ini file}
+//        log_to_file2(ChangeFileExt(filename2,'.txt'),'Command: '+command1+#10+
+//                                                     'RA : '+mainwindow.ra1.text+#10+
+//                                                     'DEC: '+mainwindow.dec1.text+#10+
+//                                                     'Height: '+stackmenu1.search_fov1.text);
         count:=0;
         while  ((fileexists(ChangeFileExt(filename2,'.apm'))=false) and  (count<60)) do begin sleep(50);inc(count); end;{wait maximum 3 seconds till solution file is available before closing the program}
       end {list count}
@@ -7667,10 +7677,6 @@ begin
             mainwindow.dec1change(nil);
           {$ENDIF}
         end;
-        if hasoption('dec') then {remove mid 2019}
-        begin
-           application.messagebox( pchar('Please upgrade your program. Commands with -dec are no longer accepted and replaced by south pole distance -spd!. For NINA v1.9 nightly #001 use the PlateSolve2 interface.') , pchar('Error'),MB_OK);
-        end;
 
         if hasoption('z') then
                  stackmenu1.downsample_for_solving1.text:=GetOptionValue('z');
@@ -7722,27 +7728,36 @@ begin
               if histogram_done=false then getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
               save_fits(changeFileExt(filename2,'.fit'),8,true {overwrite});
             end;
-
           end;
         end
         else
         begin {no solution}
           if hasoption('o') then filename2:=GetOptionValue('o'); {change file name for .ini file}
           write_ini(false);{write solution to ini file}
-          if errorlevel=0 then errorlevel:=1;{report no solution}
+          errorlevel:=1;{no solution}
          //  log_to_file(cmdline+' =>failure');
         end;
         esc_pressed:=true;{kill any running activity. This for APT}
         if hasoption('log') then stackmenu1.Memo2.Lines.SavetoFile(ChangeFileExt(filename2,'.log'));{save memo2 log to log file}
         halt(errorlevel); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
-        {0 no errors}
-        {1 no solution}
-        {2 not enough stars detected}
 
-        {16 error reading image file}
+        //  Exit status:
+        //  0 no errors.
+        //  1 no solution.
+        //  2 not enough stars detected.
 
-        {32 no star database found}
-        {33 error reading star database}
+        // 16 error reading image file.
+
+        // 32 no star database found.
+        // 33 error reading star database.
+
+        // ini file is always written. Could contain:
+        // ERROR=......
+        // WARNING=......
+
+        // wcs file is written when there is a solution. Could contain:
+        // WARNING =.........
+
       end;
     end;
     Mainwindow.stretch1Change(nil);{create gamma curve}
