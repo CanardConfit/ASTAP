@@ -478,13 +478,14 @@ begin
   begin
     memo2_message('Calibrating image prior to solving.');
     apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
- end;
+  end;
 
   binning:=report_binning;
 
-  if height2<1000           then warning_str:='Warning too small image!! ';  {for FITS header and solution}
-  if height2<1000*binning   then warning_str:=warning_str+'Downsample factor too high!! '; {for FITS header and solution}
-  if (height2>2500*binning) then warning_str:=warning_str+'Increase downsampling!! '; {for FITS header and solution}
+  if height2<1000           then warning_str:='Warning, too small image!! ';  {for FITS header and solution}
+  if ((binning>1) and (height2<1000*binning))   then warning_str:=warning_str+'Warning, downsample factor too high!! '; {for FITS header and solution}
+  if (height2>2500*binning) then warning_str:=warning_str+'Warning, increase downsampling!! '; {for FITS header and solution}
+
   if length(warning_str)>0  then
   begin
      memo2_message(warning_str);

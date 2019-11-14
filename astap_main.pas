@@ -1006,11 +1006,12 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.299 dated 2019-11-13';
+  #13+#10+'Version ß0.9.299a dated 2019-11-14';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
 end;
+
 
 procedure Tmainwindow.FormKeyPress(Sender: TObject; var Key: char);
 begin
