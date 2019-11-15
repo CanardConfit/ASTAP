@@ -105,6 +105,7 @@ type
     Label20: TLabel;
     Label30: TLabel;
     Label66: TLabel;
+    scale_calc1: TLabel;
     live_stacking1: TButton;
     browse_photometry1: TButton;
     browse_live_stacking1: TButton;
@@ -2302,9 +2303,15 @@ end;
 
 
 procedure Tstackmenu1.focallength1Change(Sender: TObject);
+var
+   fl,d : double;
 begin
-  calc_scale:=strtofloat2(stackmenu1.pixelsize1.text)/(0.0001+strtofloat2(stackmenu1.focallength1.text))*206.3; {arcsec per pixel}
-  stackmenu1.calculated_scale1.caption:=floattostrf(calc_scale, ffgeneral, 3, 2);
+  fl:=0.0001+strtofloat2(stackmenu1.focallength1.text);
+  d:=strtofloat2(stackmenu1.pixelsize1.text);
+  calc_scale:=(d/fl)*(180*3600/1000)/pi; {arcsec per pixel}
+  calculated_scale1.caption:=floattostrf(calc_scale, ffgeneral, 3, 3)+' "/pixel';
+  if fits_file then scale_calc1.Caption:=floattostrf((width2*d/fl)*(180/1000)/pi,ffgeneral, 3, 3)+'° x '+floattostrf((height2*d/fl)*(180/1000)/pi, ffgeneral, 3, 3)+'°'
+               else scale_calc1.Caption:='- - -';
 end;
 
 procedure Tstackmenu1.FormResize(Sender: TObject);
@@ -4094,7 +4101,6 @@ end;
 
 procedure Tstackmenu1.FormPaint(Sender: TObject);
 begin
-
  case pagecontrol1.tabindex of 7:more_indication1.visible:=stackmenu1.width<=export_aligned_files1.left+20;
                                8:more_indication1.visible:=stackmenu1.width<=Label_bin_oversampled1.left+20;
                                9:more_indication1.visible:=stackmenu1.width<=GroupBox_test_images1.left+20;
@@ -4385,14 +4391,14 @@ end;
 
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
-  c,i,j: integer;
+  c,i: integer;
   Save_Cursor          : TCursor;
   magn,hfd1,star_fwhm,snr,flux,xc,yc         : double;
   x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr: integer;
   flipvertical,fliphorizontal,init,refresh_solutions  :boolean;
   stars :star_list;
   outliers : array of array of double;
-  extra_message,dd  : string;
+  extra_message  : string;
 
 
 begin
@@ -4773,7 +4779,7 @@ begin
 end;
 
 {can be removed test routine}
-procedure smooth_button_test( var img: image_array; wide : integer);{combine color values of 5x5 pixels, keep luminance intact}
+procedure smooth_button_test( var img: image_array);{combine color values of 5x5 pixels, keep luminance intact}
 var fitsX,fitsY : integer;
   pixel_value : double;
 begin
@@ -4799,10 +4805,9 @@ end;
 
 
 procedure smart_colour_smooth( var img: image_array; wide : integer; measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
-var fitsX,fitsY,x,y,step,x2,y2,count,d,vcount  : integer;
+var fitsX,fitsY,x,y,step,x2,y2,count  : integer;
     img_temp2            : image_array;
-    luminance,red,green,blue,rgb,r,g,b,sqr_dist,v,sdev,lowest,highest,top,bg,r2,g2,b2,noise_level1,ratio,
-    h,s,i, peak,bgR2,bgB2,bgG2,nebula_level: single;
+    luminance,red,green,blue,rgb,r,g,b,sqr_dist,highest,top,bg,r2,g2,b2,noise_level1, peak,bgR2,bgB2,bgG2  : single;
     bgR,bgB,bgG  : double;
     copydata : boolean;
 begin
@@ -4897,12 +4902,7 @@ begin
 
 
         if ((red>3*noise_level1+4*(bgR2-bgR)) or (green>3*noise_level1+4*(bgG2-bgG)) or (blue>3*noise_level1+4*(bgB2-bgB)) ) then {enough flux, so bright flux measured. Factor +4*(bgG2-bgG) for stars in nebula}
-//      if ((red>3*noise_level1) or (green>3*noise_level1) or (blue>3*noise_level1) ) then {enough flux, so bright flux measured}
-
         begin
-
-          if red>blue then lowest:=blue else lowest:=red;
-
           if red<blue*1.06 then {>6000k} green:=0.6604*red+0.3215*blue; {prevent purple stars, purple stars are physical not possible. Emperical formula calculated from colour table http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html}
 
           luminance:=(r2+g2+b2)/3;
@@ -4933,8 +4933,6 @@ end;
 procedure Tstackmenu1.smart_colour_smooth_button1Click(Sender: TObject);
 var
   Save_Cursor:TCursor;
-  above_level, sigma : double;
-  sigmastr : string;
 begin
   if Length(img_loaded)<3 then
   begin
@@ -5468,8 +5466,8 @@ end;
 
 procedure Tstackmenu1.blink_unaligned_multi_step1Click(Sender: TObject);
 var
-  c,i,j: integer;
-  Save_Cursor          : TCursor;
+  c                 : integer;
+  Save_Cursor       : TCursor;
   init              : boolean;
 begin
   if listview1.items.count<=1 then exit; {no files}

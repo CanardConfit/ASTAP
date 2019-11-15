@@ -25,12 +25,9 @@ interface
 uses
   Classes, SysUtils, math;
 
-//procedure sun(jd:real; var ra,dec: double); {jd  var ra 0..2*pi, dec [0..pi/2] of Sun equinox of date}
 function JD_to_HJD(jd,ra_object,dec_object: double): double;{conversion JD to HJD}  {see https://en.wikipedia.org/wiki/Heliocentric_Julian_Day}
 
-
 implementation
-
 
 { sun:      low precision solar coordinates (approx. 1')               }
 {           jd : julian day                                            }
@@ -42,7 +39,7 @@ procedure sun(jd:real; var ra,dec: double); {jd  var ra 0..2*pi, dec [0..pi/2] o
     cos_ecl=cos(23.43929111*pi/180);{obliquity of ecliptic}
     sin_ecl=sin(23.43929111*pi/180);{obliquity of ecliptic}
   var
-    angle,l,m,dl,sin_l,cos_l,x,y,z,rho,t: double;
+    angle,l,m,dl,sin_l,cos_l,y,z,rho,t: double;
 
   begin
     t:=(jd-2451545)/36525; {time in julian centuries since j2000 }
@@ -69,8 +66,9 @@ begin
   m:=3.075+0.00186*t;{seconds}
   n:=1.33621-0.00057*t; {seconds}
   n2:=20.043-0.0085*t;{arcsec}
-  dra:=(m + n *sin(ra1)*tan(dec1))*pi/(3600*12);{yearly ra drift in radians}
-  ddec:=n2*cos(ra1)*pi/(3600*180); {yearly dec drift in radians}
+  sincos(ra1,sin_ra1,cos_ra1);
+  dra:=(m + n *sin_ra1*tan(dec1))*pi/(3600*12);{yearly ra drift in radians}
+  ddec:=n2*cos_ra1*pi/(3600*180); {yearly dec drift in radians}
   ra2:=ra1+(dra*t*100);{multiply with number of years is t*100}
   dec2:=dec1+(ddec*t*100);
 end;

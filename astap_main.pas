@@ -518,7 +518,7 @@ procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean)
 procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
 function image_file_name(inp : string): boolean; {readable image name?}
 procedure plot_annotations; {plot annotations stored in fits header}
-function convert_load_raw(filename3: string): boolean; {convert raw to pgm file using DCRAW}
+function convert_load_raw(filename3: string): boolean; {convert raw to pgm file using Libraw}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -882,10 +882,7 @@ begin
 end;
 
 procedure backup_img;
-var
-   fitsX,fitsY:integer;
 begin
-
   mainwindow.Undo1.Enabled:=true;
   if fits_file=true then
   begin
@@ -998,7 +995,7 @@ begin
   #13+#10+
   #13+#10+'This program can view, measure, "astrometric solve" and stack deep sky images.'+
   #13+#10+
-  #13+#10+'It uses an internal star matching routine, internal astrometric solving routine or a local version of astrometry.net for alignment.'+' For RAW file conversion it uses the external program DCRAW by Dave Coffin.'+
+  #13+#10+'It uses an internal star matching routine, internal astrometric solving routine or a local version of astrometry.net for alignment.'+' For RAW file conversion it uses the external program LibRaw.'+
   #13+#10+
   #13+#10+about_message4+about_message5+
   #13+#10+
@@ -1006,7 +1003,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.299a dated 2019-11-14';
+  #13+#10+'Version ß0.9.299b dated 2019-11-15';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1394,7 +1391,7 @@ end;
 
 procedure Tmainwindow.localcoloursmooth1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,k,bsize,x2,y2,x3,y3  : integer;
+   fitsX,fitsY,dum,k,bsize,x2,y2        : integer;
    noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,
    center_x,center_y,a,b,angle_from_center,mean_value,old_value : double;
    line_bottom, line_top,rgb,luminance : double;
@@ -1618,9 +1615,7 @@ end;
 
 function extract_objectname_from_filename(filename8: string): string; {try to extract exposure from filename}
 var
-  name_str  :string;
-  i,x,err,exposure2  : integer;
-  ch : char;
+  i,x   : integer;
 begin
   {try to reconstruct exposure time from filename}
   result:='';
@@ -1918,7 +1913,6 @@ end;
 procedure show_shape(good_lock : boolean;fitsX,fitsY: double);{show manual alignment shape}
 var
    xf,yf,x,y : double;
-   xc,yc : integer;
 begin
   xF:=(fitsX-0.5)*(mainwindow.image1.width/width2)-0.5; //inverse of  fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
   yF:=-(fitsY-height2-0.5)*(mainwindow.image1.height/height2)-0.5; //inverse of fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
@@ -1969,8 +1963,7 @@ end;
 
 procedure zoom(mousewheelfactor:double);
 var
-  image_left,image_top,centerX,centerY : double;
-  h,w              : integer;
+  image_left,image_top : double;
 begin
    if ( ((mainwindow.image1.width<=15000) or (mousewheelfactor<1){zoom out}) and {above 12000 unequal stretch}
         ((mainwindow.image1.width>=100 ) or (mousewheelfactor>1){zoom in})                                                                  )
@@ -2203,6 +2196,8 @@ begin
   stackmenu1.resize_factor1Change(nil);{update dimensions binning menu}
   stackmenu1.test_pattern1.Enabled:=naxis3=1;{mono}
   stackmenu1.apply_background_noise_filter1.Enabled:=fits;
+
+  stackmenu1.focallength1Change(nil); {update calculation pixel size in arc seconds}
 
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
 
@@ -2928,7 +2923,7 @@ var
     X,Y,offsetx, offsety, count: integer;
     red,green_odd,green_even,blue : boolean;
     img_temp2 : image_array;
-    a1,a2,a3,a4,a5,a6,a7,a8, average1,average2,average3,luminance,factor2,signal,signal2,bg : single;
+    a1,a2,a3,a4,a5,a6,a7,a8, average1,average2,average3,luminance,signal,signal2,bg : single;
 
 begin
   case pattern  of
@@ -3109,13 +3104,12 @@ begin
   naxis:=3; {from 2 to 3 dimensions}
 end;
 
-
 procedure demosaic_astroC_bilinear_interpolation(saturation {saturation point}, pattern: integer);{make from sensor bayer pattern the three colors}
 var
     X,Y,offsetx, offsety, counter,fitsX,fitsY,x2,y2: integer;
     red,green_odd,green_even,blue : boolean;
     img_temp2 : image_array;
-    a1,a2,a3,a4,a5,a6,a7,a8, average1,average2,average3,luminance, largest,r,g,b,colred,colgreen,colblue,rgb,lowest: single;
+    a1,a2,a3,a4,a5,a6,a7,a8, average1,average2,average3,luminance, r,g,b,colred,colgreen,colblue,rgb,lowest: single;
     bg, sqr_dist   :  double;
 const
   step = 5;
@@ -3541,7 +3535,6 @@ end;
 procedure preserve_colour_saturated_bayer;{for bayer matrix}
 var
     fitsX,fitsY,w,h : integer;
-    ratio  : double;
 begin
   Application.ProcessMessages;
   if esc_pressed then begin exit;end;
@@ -3732,9 +3725,6 @@ begin
                     mainwindow.shape_alignment_marker1.visible:=false; {hide shape if stacked image is plotted}
   if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then  demosaic_bilinear_interpolation(stackmenu1.bayer_pattern1.itemindex);{convert to colour}
 
-//  datamin:=mainwindow.minimum1.position;
-//  datamax:=mainwindow.maximum1.position;
-//  if datamax<=datamin then datamax:=datamin+1;
   cblack:=mainwindow.minimum1.position;
   cwhite:=mainwindow.maximum1.position;
   if cwhite<=cblack then cwhite:=cblack+1;
@@ -3972,8 +3962,7 @@ var
      end;
 
      Function get_string:string;{read string values}
-     var t :shortstring;
-         r : integer;
+     var  r: integer;
      begin
        result:='';
        r:=I+11;{pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
@@ -4770,7 +4759,7 @@ end;
 
 procedure read_keys_memo;
 var
-  s,aline,key  : string;
+  s,key    : string;
   count1   : integer;
   ra2,dec2 : double;
      function read_float(aline :string): double;
@@ -5971,10 +5960,11 @@ end;
 function extract_exposure_from_filename(filename8: string):integer; {try to extract exposure from filename}
 var
   exposure_str  :string;
-  i,x,err,exposure2  : integer;
+  i,x,err      : integer;
   ch : char;
 begin
   {try to reconstruct exposure time from filename}
+  result:=0;
   exposure_str:='';
   filename8:=uppercase(filename8);
   i:=pos('SEC',filename8);
@@ -5992,8 +5982,8 @@ begin
         i:=-999; {stop}
       dec(i);
     end;
-    val(exposure_str,exposure2,err);
-    if err=0 then  update_integer('EXPOSURE=',' / exposure extracted from file name.                     ' ,exposure2);
+    val(exposure_str,result,err);
+    if err=0 then  update_integer('EXPOSURE=',' / exposure extracted from file name.                     ' ,result);
   end;
 
 end;
@@ -6082,14 +6072,14 @@ begin
 end;
 
 
-function convert_load_raw(filename3: string): boolean; {convert raw to pgm file using DCRAW}
+function convert_load_raw(filename3: string): boolean; {convert raw to pgm file using LibRaw}
 var
   filename4 :string;
   JD2                               : double;
 
 begin
   result:=false;
-  if check_libraw=false then begin exit;end; {no DCRAW available}
+  if check_libraw=false then begin exit;end; {no LibRaw available}
 
   {$ifdef mswindows}
   ExecuteAndWait(application_path+'unprocessed_raw.exe "'+filename3+'"',false);{execute command and wait}
@@ -6262,7 +6252,7 @@ begin
     else
     result:=true;
 
-    {successfull conversion using DCRAW}
+    {successfull conversion using LibRaw}
     filename4:=filename2;{store name for history}
     filename2:=ChangeFileExt(FileName2,'.fit');{for the case you want to save it}
 
@@ -6491,8 +6481,7 @@ end;
 
 procedure Tmainwindow.imageflipv1Click(Sender: TObject);
 var
-  dum, col,fitsX,fitsY : integer;
-  dummy                : double;
+  col,fitsX,fitsY : integer;
   vertical             :boolean;
   Save_Cursor:TCursor;
 begin
@@ -6556,7 +6545,7 @@ end;
 
 procedure Tmainwindow.measuretotalmagnitude1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,k,font_height,counter,tx,ty,saturation_counter : integer;
+   fitsX,fitsY,dum,font_height,counter,tx,ty,saturation_counter : integer;
    flux,bg_average,value : double;
    Save_Cursor           : TCursor;
    mag_str               : string;
@@ -6676,11 +6665,8 @@ end;
 
 procedure measure_magnitudes(var stars :star_list);{find stars and return, x,y, hfd, flux}
 var
-  fitsX,fitsY,size, i, j,starX,starY,nrstars    : integer;
+  fitsX,fitsY,size, i, j,nrstars    : integer;
   hfd1,star_fwhm,snr,flux,xc,yc : double;
-  Save_Cursor:TCursor;
-  plot_magnitudes: boolean;
-
 begin
 
   SetLength(stars,4,5000);{set array length}
@@ -6752,11 +6738,10 @@ end;
 
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
- fitsX,fitsY,size, i, j,starX,starY,nrstars    : integer;
- hfd1,star_fwhm,snr,flux,xc,yc : double;
+ size, i, starX, starY         : integer;
  Save_Cursor:TCursor;
- Fliphorizontal, Flipvertical,plot_magnitudes: boolean;
- stars :star_list;
+ Fliphorizontal, Flipvertical  : boolean;
+ stars : star_list;
 
  begin
   if fits_file=false then exit; {file loaded?}
@@ -6924,7 +6909,6 @@ end;
 procedure set_marker1XY(show: boolean);
   var
     xf,yf: integer;
-    fitsX,fitsY  : double;
 begin
   if show then
   begin
@@ -6943,7 +6927,6 @@ end;
 procedure set_marker2XY(show: boolean);
   var
     xf,yf: integer;
-    fitsX,fitsY  : double;
 begin
   if show then
   begin
@@ -7012,8 +6995,7 @@ end;
 procedure plot_annotations; {plot annotations stored in fits header}
 var
   count1,x1,y1,x2,y2,text_height,text_width : integer;
-  typ,correction                            : double;
-  line,t  : string;
+  typ     : double;
   List: TStrings;
 begin
   List := TStringList.Create;
@@ -7322,7 +7304,6 @@ end;
 procedure save_annotated_jpg(filename: string);{save viewer as annotated jpg}
 var
    JPG: TJPEGImage;
-   fname:string;
 begin
   load_deep;{load the deepsky database once. If loaded no action}
   plot_deepsky;{annotate}
@@ -7330,7 +7311,6 @@ begin
   try
     JPG.Assign(mainwindow.image1.Picture.Graphic);    //Convert data into jpg
     JPG.CompressionQuality :=90;
-    fname:=ChangeFileExt(filename,'_annotated.jpg');
     JPG.SaveToFile(ChangeFileExt(filename,'_annotated.jpg'));
   finally
   JPG.Free;
@@ -7413,8 +7393,8 @@ var
   command1 : string;
   f        : textfile;
   resultstr,rastr,decstr,cdelt,crota,flipped,confidence,resultV,line1,line2 : string;
-  dummy,binning,field_size,search_field : double;
-  source_fits,solved,apt_request,histogram_done,file_loaded:boolean;
+  dummy,field_size,search_field : double;
+  source_fits,solved,apt_request,file_loaded:boolean;
 begin
 
 //  logging:=true;
@@ -7577,7 +7557,6 @@ var
     source_fits,histogram_done,file_loaded: boolean;
     binning, backgr, hfd_median : double;
     hfd_counter : integer;
-    t :string;
 begin
   user_path:=GetAppConfigDir(false);{get user path for app config}
 
@@ -7626,17 +7605,17 @@ begin
         application.messagebox( pchar(
         '-f  filename'+#10+
         '-r  radius_area_to_search[degrees]'+#10+      {changed}
-        '-z  downsample_factor[0,1,2,3,4] {downsample prior to solving. 0 is auto}'+#10+
+        '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto}'+#10+
         '-fov diameter_field[degrees]'+#10+   {changed}
         '-ra  center_right ascension[hours]'+#10+
         '-spd center_south_pole_distance[degrees]'+#10+
         '-s  max_number_of_stars'+#10+
         '-t  tolerance'+#10+
-        '-speed mode[auto/slow] {slow is forcing small search steps to improve detection.}'+#10+
+        '-speed mode[auto/slow] {Slow is forcing small search steps to improve detection.}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-analyse {Analyse only and report in the errorlevel the median HFD * 100M + number of stars used}'+#10+
         '-log   {Write the solver log to file}'+#10+
-        '-update  {Update the FITS header with the found solution}' +#10+#10+
+        '-update  {update the FITS header with the found solution}' +#10+#10+
         '-tofits  binning[1,2,3,4,6,8]  {Make new fits file from PNG/JPG file input}'+#10+
         '-annotate  {Produce deepsky annotated jpg file}' +#10+#10+
         'Preference will be given to the command line values.'
@@ -8328,8 +8307,6 @@ var
   ra2,dec2,pixeldistance,distance,angle,angle2,angle3   : double;
   kommapos         : integer;
   error2,flipped   : boolean;
-const
-  len=10;
 begin
   if sender=enterposition1 then
   begin
@@ -8449,8 +8426,8 @@ end;
 
 procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
 var
-  dum, col,fitsX,fitsY,maxsize,i,j,progress_value,progressC,xx,yy        : integer;
-  cosA,sinA,factor, dummy,centerx,centery,centerxs,centerys,angle,value   : double;
+  col,fitsX,fitsY,maxsize,i,j,progress_value,progressC,xx,yy        : integer;
+  cosA,sinA,factor, centerx,centery,centerxs,centerys,angle,value   : double;
   valueI : string;
   Save_Cursor:TCursor;
 const

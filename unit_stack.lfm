@@ -1,12 +1,12 @@
 object stackmenu1: Tstackmenu1
-  Left = 542
+  Left = 221
   Height = 530
-  Top = 89
-  Width = 1275
+  Top = 120
+  Width = 1312
   AllowDropFiles = True
   Caption = 'stack menu'
   ClientHeight = 530
-  ClientWidth = 1275
+  ClientWidth = 1312
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -51,7 +51,7 @@ object stackmenu1: Tstackmenu1
     Left = 0
     Height = 30
     Top = 500
-    Width = 1275
+    Width = 1312
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -198,7 +198,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1258
+    Left = 1295
     Height = 15
     Hint = 'Click to widen.'
     Top = 440
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     Height = 440
     Hint = 'Stack menu'
     Top = 0
-    Width = 1274
+    Width = 1311
     ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
@@ -233,7 +233,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the light frames'
       Caption = 'Images'
       ClientHeight = 412
-      ClientWidth = 1266
+      ClientWidth = 1303
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -307,7 +307,7 @@ object stackmenu1: Tstackmenu1
         Height = 372
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1266
+        Width = 1303
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -2106,7 +2106,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the alignment options'
       Caption = 'Alignment'
       ClientHeight = 412
-      ClientWidth = 1266
+      ClientWidth = 1303
       ImageIndex = 7
       OnContextPopup = alignment1ContextPopup
       ParentFont = False
@@ -2599,23 +2599,23 @@ object stackmenu1: Tstackmenu1
         Height = 184
         Hint = 'Local version of astrometric solution finder Astrometry.net'
         Top = 216
-        Width = 1078
+        Width = 1085
         AutoSize = True
         Caption = 'Astrometry.net local version settings'
         ClientHeight = 164
-        ClientWidth = 1074
+        ClientWidth = 1081
         ParentFont = False
         TabOrder = 7
         object panel_astrometrynet1: TPanel
           Left = 0
           Height = 164
           Top = 0
-          Width = 1074
+          Width = 1081
           Align = alClient
           BevelColor = clMenuHighlight
           BevelOuter = bvSpace
           ClientHeight = 164
-          ClientWidth = 1074
+          ClientWidth = 1081
           ParentFont = False
           TabOrder = 0
           object cygwin1: TComboBox
@@ -2789,13 +2789,13 @@ object stackmenu1: Tstackmenu1
             Text = '580'
           end
           object Label13: TLabel
-            Left = 696
-            Height = 34
-            Top = 127
-            Width = 377
+            Left = 768
+            Height = 49
+            Top = 113
+            Width = 312
             AutoSize = False
             BorderSpacing.Left = 5
-            Caption = 'arcsec/pixel  Will only be used if FITS header doesn''t contain pixel size in arc-seconds'
+            Caption = 'Scale calculation will only be used if FITS header doesn''t contain pixel size in arc-seconds'
             Color = clBtnFace
             ParentColor = False
             ParentFont = False
@@ -2805,7 +2805,7 @@ object stackmenu1: Tstackmenu1
           object calculated_scale1: TLabel
             Left = 662
             Height = 15
-            Top = 131
+            Top = 122
             Width = 15
             BorderSpacing.Around = 5
             Caption = '0.0'
@@ -2851,6 +2851,14 @@ object stackmenu1: Tstackmenu1
             ParentFont = False
             Transparent = False
             WordWrap = True
+          end
+          object scale_calc1: TLabel
+            Left = 662
+            Height = 15
+            Top = 144
+            Width = 42
+            Caption = '0.0 x 0.0'
+            ParentColor = False
           end
         end
       end
