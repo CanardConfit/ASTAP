@@ -1,11 +1,11 @@
 object stackmenu1: Tstackmenu1
-  Left = 290
-  Height = 530
-  Top = 258
+  Left = 574
+  Height = 661
+  Top = 237
   Width = 1312
   AllowDropFiles = True
   Caption = 'stack menu'
-  ClientHeight = 530
+  ClientHeight = 661
   ClientWidth = 1312
   Color = clForm
   Icon.Data = {
@@ -46,11 +46,11 @@ object stackmenu1: Tstackmenu1
   OnPaint = FormPaint
   OnResize = FormResize
   OnShow = FormShow
-  LCLVersion = '2.0.2.0'
+  LCLVersion = '2.0.0.4'
   object Memo2: TMemo
     Left = 0
-    Height = 30
-    Top = 500
+    Height = 151
+    Top = 510
     Width = 1312
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
@@ -63,9 +63,9 @@ object stackmenu1: Tstackmenu1
   end
   object press_esc_to_abort1: TLabel
     Left = 304
-    Height = 15
-    Top = 458
-    Width = 98
+    Height = 22
+    Top = 468
+    Width = 135
     Caption = 'Press ESC to abort.'
     Color = clBtnFace
     ParentColor = False
@@ -75,19 +75,19 @@ object stackmenu1: Tstackmenu1
   object classify_groupbox1: TGroupBox
     Left = 488
     Height = 60
-    Top = 440
+    Top = 449
     Width = 480
     Caption = 'Classify by'
-    ClientHeight = 40
-    ClientWidth = 476
+    ClientHeight = 37
+    ClientWidth = 478
     ParentFont = False
     TabOrder = 2
     object classify_filter1: TCheckBox
       Left = 72
-      Height = 19
+      Height = 26
       Hint = 'Activate this option if you want to stack LRGB or RGB  images using filter name.  Set filter names in stack method'
       Top = -2
-      Width = 80
+      Width = 107
       Caption = 'Image filter'
       OnClick = classify_filter1Click
       ParentFont = False
@@ -97,10 +97,10 @@ object stackmenu1: Tstackmenu1
     end
     object classify_object1: TCheckBox
       Left = 72
-      Height = 19
+      Height = 26
       Hint = 'Activate this option if you want to stack images of different objects in one run.'
       Top = 16
-      Width = 89
+      Width = 119
       Caption = 'Image object'
       ParentFont = False
       ParentShowHint = False
@@ -109,10 +109,10 @@ object stackmenu1: Tstackmenu1
     end
     object classify_flat_filter1: TCheckBox
       Left = 368
-      Height = 19
+      Height = 26
       Hint = 'Activate this option if you want link the flats based on filter name.'
       Top = -2
-      Width = 66
+      Width = 90
       Caption = 'Flat filter'
       ParentFont = False
       ParentShowHint = False
@@ -121,10 +121,10 @@ object stackmenu1: Tstackmenu1
     end
     object classify_dark_exposure1: TCheckBox
       Left = 208
-      Height = 19
+      Height = 26
       Hint = 'Activate this option if you want link the darks based on exposure duration.'
       Top = -2
-      Width = 122
+      Width = 164
       Caption = 'Dark exposure time'
       ParentFont = False
       ParentShowHint = False
@@ -133,10 +133,10 @@ object stackmenu1: Tstackmenu1
     end
     object classify_dark_temperature1: TCheckBox
       Left = 208
-      Height = 19
+      Height = 26
       Hint = 'Activate this option if you want link the darks based on sensor temperature.'
       Top = 16
-      Width = 112
+      Width = 150
       Caption = 'Dark temperature'
       ParentFont = False
       ParentShowHint = False
@@ -147,10 +147,10 @@ object stackmenu1: Tstackmenu1
   object help_stack_menu2: TLabel
     Cursor = crHandPoint
     Left = 1000
-    Height = 30
+    Height = 28
     Hint = 'Help'
     Top = 449
-    Width = 9
+    Width = 10
     Caption = '?'
     Font.Color = clBlue
     Font.Height = -21
@@ -162,10 +162,10 @@ object stackmenu1: Tstackmenu1
   end
   object powerdown_enabled1: TCheckBox
     Left = 1080
-    Height = 19
+    Height = 26
     Hint = 'If selected, shutdown computer after completion.'
-    Top = 447
-    Width = 177
+    Top = 456
+    Width = 234
     Caption = 'Power down after completion'
     ParentFont = False
     ParentShowHint = False
@@ -174,10 +174,10 @@ object stackmenu1: Tstackmenu1
   end
   object write_log1: TCheckBox
     Left = 1080
-    Height = 19
+    Height = 26
     Hint = 'Write the stack log to a file with extension .txt'
-    Top = 468
-    Width = 87
+    Top = 477
+    Width = 115
     Caption = 'Write log file'
     ParentFont = False
     ParentShowHint = False
@@ -188,7 +188,7 @@ object stackmenu1: Tstackmenu1
     Left = 24
     Height = 41
     Hint = 'Stack images using darks, flats and flat dark frames.'
-    Top = 446
+    Top = 460
     Width = 248
     Caption = 'Stack check marked images'
     OnClick = stack_button1Click
@@ -199,7 +199,7 @@ object stackmenu1: Tstackmenu1
   end
   object more_indication1: TLabel
     Left = 1295
-    Height = 15
+    Height = 22
     Hint = 'Click to widen.'
     Top = 440
     Width = 13
@@ -213,7 +213,7 @@ object stackmenu1: Tstackmenu1
   end
   object pagecontrol1: TPageControl
     Left = 1
-    Height = 440
+    Height = 448
     Hint = 'Stack menu'
     Top = 0
     Width = 1311
@@ -232,24 +232,24 @@ object stackmenu1: Tstackmenu1
     object Images: TTabSheet
       Hint = 'Select here the light frames'
       Caption = 'Images'
-      ClientHeight = 412
-      ClientWidth = 1303
+      ClientHeight = 400
+      ClientWidth = 1301
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
-        Height = 15
+        Height = 22
         Top = 10
-        Width = 6
+        Width = 9
         Caption = '0'
         ParentColor = False
         ParentFont = False
       end
       object nr_total1: TLabel
         Left = 420
-        Height = 15
+        Height = 22
         Hint = 'Total number of images in the list'
         Top = 10
-        Width = 6
+        Width = 9
         Caption = '0'
         ParentColor = False
         ParentFont = False
@@ -282,9 +282,9 @@ object stackmenu1: Tstackmenu1
       end
       object Label9: TLabel
         Left = 396
-        Height = 15
+        Height = 22
         Top = 10
-        Width = 5
+        Width = 6
         Caption = '/'
         ParentColor = False
         ParentFont = False
@@ -304,10 +304,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview1: TListView
         Left = 0
-        Height = 372
+        Height = 360
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1303
+        Width = 1301
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -316,18 +316,19 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'File'
             MinWidth = 150
-            Width = 33
+            Width = 150
           end        
           item
             AutoSize = True
             Caption = 'Object'
             MinWidth = 50
+            Width = 53
           end        
           item
             AutoSize = True
             Caption = 'Filter'
             MinWidth = 41
-            Width = 41
+            Width = 43
           end        
           item
             Caption = 'Result'
@@ -338,7 +339,7 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Bin'
             MinWidth = 33
-            Width = 32
+            Width = 33
           end        
           item
             Alignment = taRightJustify
@@ -403,7 +404,7 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'I-Position'
             MinWidth = 80
-            Width = 66
+            Width = 80
           end        
           item
             Alignment = taRightJustify
@@ -428,7 +429,7 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Calibration'
             MinWidth = 73
-            Width = 73
+            Width = 85
           end        
           item
             Caption = 'FocPos'
@@ -477,21 +478,21 @@ object stackmenu1: Tstackmenu1
       end
       object uncheck_outliers1: TCheckBox
         Left = 464
-        Height = 19
+        Height = 26
         Hint = 'Uncheck files with abnormal HFD or abnormal amount number of stars detected.'
         Top = 8
-        Width = 197
+        Width = 266
         Caption = 'After analyse untick worst images'
         ParentFont = False
         TabOrder = 4
       end
       object sd_factor_list1: TComboBox
         Left = 735
-        Height = 23
+        Height = 32
         Hint = 'Sigma factor (or percentage to keep) to identify abnormal HFD values or number of stars detected. '
         Top = 6
         Width = 72
-        ItemHeight = 15
+        ItemHeight = 0
         ItemIndex = 1
         Items.Strings = (
           '2.0'
@@ -511,10 +512,10 @@ object stackmenu1: Tstackmenu1
       object help_uncheck_outliers1: TLabel
         Cursor = crHandPoint
         Left = 1136
-        Height = 30
+        Height = 28
         Hint = 'Online help about analyse'
         Top = 2
-        Width = 9
+        Width = 10
         Caption = '?'
         Font.Color = clBlue
         Font.Height = -21
@@ -550,10 +551,10 @@ object stackmenu1: Tstackmenu1
       end
       object gridlines1: TCheckBox
         Left = 1024
-        Height = 19
+        Height = 26
         Hint = 'Show 1-pixel lines, as a grid, between rows and '
         Top = 8
-        Width = 69
+        Width = 94
         Caption = 'Grid lines'
         Checked = True
         OnClick = gridlines1Click
@@ -565,8 +566,8 @@ object stackmenu1: Tstackmenu1
     object Darks: TTabSheet
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
-      ClientHeight = 412
-      ClientWidth = 1266
+      ClientHeight = 400
+      ClientWidth = 1301
       ImageIndex = 1
       ParentFont = False
       object browse_darks1: TButton
@@ -584,10 +585,10 @@ object stackmenu1: Tstackmenu1
       end
       object replace_by_master_dark1: TButton
         Left = 312
-        Height = 25
+        Height = 30
         Hint = 'Combine to check-marked files to master dark. The other files are not affected.'
         Top = 6
-        Width = 295
+        Width = 365
         AutoSize = True
         Caption = 'Replace check-marked by one or more master dark'
         OnClick = replace_by_master_dark1Click
@@ -596,10 +597,10 @@ object stackmenu1: Tstackmenu1
       end
       object clear_dark_list1: TButton
         Left = 736
-        Height = 25
+        Height = 30
         Hint = 'Clear image list'
         Top = 6
-        Width = 53
+        Width = 44
         AutoSize = True
         Caption = 'Clear'
         OnClick = clear_dark_list1Click
@@ -610,10 +611,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview2: TListView
         Left = 0
-        Height = 387
+        Height = 367
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1264
+        Width = 1299
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -671,6 +672,7 @@ object stackmenu1: Tstackmenu1
           item
             Caption = 'Gain'
             MinWidth = 50
+            Width = 704
           end>
         GridLines = True
         HideSelection = False
@@ -705,10 +707,10 @@ object stackmenu1: Tstackmenu1
       end
       object nr_total_darks1: TLabel
         Left = 272
-        Height = 15
+        Height = 22
         Hint = 'Number of images in the list'
         Top = 10
-        Width = 6
+        Width = 9
         Caption = '0'
         Color = clBtnFace
         ParentColor = False
@@ -719,8 +721,8 @@ object stackmenu1: Tstackmenu1
     object Flats: TTabSheet
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
-      ClientHeight = 412
-      ClientWidth = 1266
+      ClientHeight = 400
+      ClientWidth = 1301
       ImageIndex = 2
       ParentFont = False
       object browse_flats1: TButton
@@ -873,8 +875,8 @@ object stackmenu1: Tstackmenu1
     object Bias: TTabSheet
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
-      ClientHeight = 412
-      ClientWidth = 1266
+      ClientHeight = 400
+      ClientWidth = 1301
       ImageIndex = 3
       ParentFont = False
       object browse_bias1: TButton
@@ -959,7 +961,6 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Type'
             MinWidth = 50
-            Width = 40
           end        
           item
             Alignment = taRightJustify
@@ -975,6 +976,7 @@ object stackmenu1: Tstackmenu1
           item
             Caption = 'Gain'
             MinWidth = 50
+            Width = 671
           end>
         GridLines = True
         HideSelection = False
@@ -1012,8 +1014,8 @@ object stackmenu1: Tstackmenu1
     object Result1: TTabSheet
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
-      ClientHeight = 412
-      ClientWidth = 1266
+      ClientHeight = 400
+      ClientWidth = 1301
       ImageIndex = 6
       ParentFont = False
       object listview5: TListView
@@ -1034,19 +1036,20 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Object'
             MinWidth = 50
+            Width = 53
           end        
           item
             AutoSize = True
             Caption = 'Result'
             MinWidth = 60
-            Width = 47
+            Width = 60
           end        
           item
             Alignment = taRightJustify
             AutoSize = True
             Caption = 'Exposure'
             MinWidth = 75
-            Width = 63
+            Width = 75
           end        
           item
             Alignment = taRightJustify
@@ -1058,13 +1061,13 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Height'
             MinWidth = 50
-            Width = 51
+            Width = 54
           end        
           item
             AutoSize = True
             Caption = 'Calibration'
             MinWidth = 73
-            Width = 73
+            Width = 934
           end>
         GridLines = True
         HideSelection = False
@@ -1099,8 +1102,8 @@ object stackmenu1: Tstackmenu1
     object tab_stackmethod1: TTabSheet
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
-      ClientHeight = 412
-      ClientWidth = 1303
+      ClientHeight = 400
+      ClientWidth = 1301
       ImageIndex = 5
       ParentFont = False
       object Label3: TLabel
@@ -1121,7 +1124,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Select combination method'
         Top = 46
         Width = 175
-        ItemHeight = 15
+        ItemHeight = 0
         ItemIndex = 0
         Items.Strings = (
           '2x2 mean'
@@ -1140,7 +1143,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Select stack method.'
         Top = 88
         Width = 175
-        ItemHeight = 15
+        ItemHeight = 0
         ItemIndex = 0
         Items.Strings = (
           'Average'
@@ -1160,7 +1163,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Sigma factor to identify outlier pixels. A factor of around 3.0 will remove satellite tracks and hot pixels. Sigma stands for standard deviation.'
         Top = 88
         Width = 60
-        ItemHeight = 15
+        ItemHeight = 0
         ItemIndex = 0
         Items.Strings = (
           '2.5'
@@ -1178,7 +1181,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Will increase the stack space around the reference image. Negative values will crop the images.'
         Top = 88
         Width = 67
-        ItemHeight = 15
+        ItemHeight = 0
         ItemIndex = 3
         Items.Strings = (
           '-10'
@@ -1284,8 +1287,8 @@ object stackmenu1: Tstackmenu1
         Width = 268
         AutoSize = True
         Caption = 'R+G+B+L stacking, link filters to RGB colours'
-        ClientHeight = 183
-        ClientWidth = 264
+        ClientHeight = 180
+        ClientWidth = 266
         ParentFont = False
         TabOrder = 4
         object red_filter1: TEdit
@@ -1624,7 +1627,7 @@ object stackmenu1: Tstackmenu1
           Hint = 'Filter applied on RGB before applying L'
           Top = 160
           Width = 264
-          ItemHeight = 15
+          ItemHeight = 0
           Items.Strings = (
             '2x2 mean'
             '3x3 mean'
@@ -1711,7 +1714,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Drop size compared with the orginal pizel size. Typcial this value should be 0.65'
         Top = 152
         Width = 78
-        ItemHeight = 15
+        ItemHeight = 0
         Items.Strings = (
           '0.9'
           '0,8'
@@ -1730,8 +1733,8 @@ object stackmenu1: Tstackmenu1
         Top = 48
         Width = 301
         Caption = 'Image stitching (mosaic) settings'
-        ClientHeight = 108
-        ClientWidth = 297
+        ClientHeight = 105
+        ClientWidth = 299
         Enabled = False
         ParentFont = False
         TabOrder = 7
@@ -1829,8 +1832,8 @@ object stackmenu1: Tstackmenu1
         Top = 186
         Width = 408
         Caption = 'RAW one shot colour images'
-        ClientHeight = 183
-        ClientWidth = 404
+        ClientHeight = 180
+        ClientWidth = 406
         ParentFont = False
         TabOrder = 8
         object make_osc_color1: TCheckBox
@@ -1851,7 +1854,7 @@ object stackmenu1: Tstackmenu1
           Height = 23
           Top = 14
           Width = 104
-          ItemHeight = 15
+          ItemHeight = 0
           ItemIndex = 2
           Items.Strings = (
             'GR'
@@ -1880,7 +1883,7 @@ object stackmenu1: Tstackmenu1
           Hint = 'Demosaic method of color filter array.  Best method is AstroC.  For white stars you could AstroM.  Note that super-pixel produces half size images. Use this for over-sampled images.'
           Top = 95
           Width = 390
-          ItemHeight = 15
+          ItemHeight = 0
           ItemIndex = 0
           Items.Strings = (
             'AstroC, colour for saturated stars. Range 0-65535'
@@ -2072,7 +2075,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Sigma factor to dectect hot pixels.'
         Top = 123
         Width = 78
-        ItemHeight = 15
+        ItemHeight = 0
         ItemIndex = 5
         Items.Strings = (
           '5'
@@ -2105,8 +2108,8 @@ object stackmenu1: Tstackmenu1
     object alignment1: TTabSheet
       Hint = 'Set here the alignment options'
       Caption = 'Alignment'
-      ClientHeight = 412
-      ClientWidth = 1303
+      ClientHeight = 400
+      ClientWidth = 1301
       ImageIndex = 7
       OnContextPopup = alignment1ContextPopup
       ParentFont = False
@@ -2235,8 +2238,8 @@ object stackmenu1: Tstackmenu1
         Top = 0
         Width = 750
         Caption = 'Solver'
-        ClientHeight = 175
-        ClientWidth = 746
+        ClientHeight = 172
+        ClientWidth = 748
         ParentFont = False
         TabOrder = 6
         object Panel_solver1: TPanel
@@ -2247,8 +2250,8 @@ object stackmenu1: Tstackmenu1
           Align = alClient
           BevelColor = clMenuHighlight
           BevelOuter = bvSpace
-          ClientHeight = 175
-          ClientWidth = 746
+          ClientHeight = 171
+          ClientWidth = 742
           ParentFont = False
           TabOrder = 0
           object star_database1: TEdit
@@ -2298,7 +2301,7 @@ object stackmenu1: Tstackmenu1
             Top = 64
             Width = 72
             BorderSpacing.Around = 5
-            ItemHeight = 15
+            ItemHeight = 0
             ItemIndex = 7
             Items.Strings = (
               '2'
@@ -2336,7 +2339,7 @@ object stackmenu1: Tstackmenu1
             Top = 36
             Width = 72
             BorderSpacing.Around = 5
-            ItemHeight = 15
+            ItemHeight = 0
             ItemIndex = 1
             Items.Strings = (
               '10'
@@ -2382,7 +2385,7 @@ object stackmenu1: Tstackmenu1
             Top = 8
             Width = 72
             BorderSpacing.Around = 5
-            ItemHeight = 15
+            ItemHeight = 0
             ItemIndex = 3
             Items.Strings = (
               '0.5'
@@ -2427,8 +2430,8 @@ object stackmenu1: Tstackmenu1
             Width = 362
             AutoSize = True
             Caption = 'Tetrahedron detection'
-            ClientHeight = 129
-            ClientWidth = 358
+            ClientHeight = 126
+            ClientWidth = 360
             ParentFont = False
             TabOrder = 4
             object Panel_star_detection1: TPanel
@@ -2439,8 +2442,8 @@ object stackmenu1: Tstackmenu1
               Align = alClient
               BevelColor = clMenuHighlight
               BevelOuter = bvSpace
-              ClientHeight = 129
-              ClientWidth = 358
+              ClientHeight = 125
+              ClientWidth = 354
               ParentFont = False
               TabOrder = 0
               object max_stars1: TComboBox
@@ -2450,7 +2453,7 @@ object stackmenu1: Tstackmenu1
                 Top = 40
                 Width = 88
                 BorderSpacing.Around = 5
-                ItemHeight = 15
+                ItemHeight = 0
                 ItemIndex = 3
                 Items.Strings = (
                   '200'
@@ -2503,7 +2506,7 @@ object stackmenu1: Tstackmenu1
                 Top = 72
                 Width = 88
                 BorderSpacing.Around = 5
-                ItemHeight = 15
+                ItemHeight = 0
                 ItemIndex = 1
                 Items.Strings = (
                   '0.003'
@@ -2535,7 +2538,7 @@ object stackmenu1: Tstackmenu1
                 Top = 8
                 Width = 87
                 BorderSpacing.Around = 5
-                ItemHeight = 15
+                ItemHeight = 0
                 ItemIndex = 0
                 Items.Strings = (
                   '0'
@@ -2602,8 +2605,8 @@ object stackmenu1: Tstackmenu1
         Width = 1085
         AutoSize = True
         Caption = 'Astrometry.net local version settings'
-        ClientHeight = 164
-        ClientWidth = 1081
+        ClientHeight = 161
+        ClientWidth = 1083
         ParentFont = False
         TabOrder = 7
         object panel_astrometrynet1: TPanel
@@ -2614,8 +2617,8 @@ object stackmenu1: Tstackmenu1
           Align = alClient
           BevelColor = clMenuHighlight
           BevelOuter = bvSpace
-          ClientHeight = 164
-          ClientWidth = 1081
+          ClientHeight = 160
+          ClientWidth = 1077
           ParentFont = False
           TabOrder = 0
           object cygwin1: TComboBox
@@ -2625,7 +2628,7 @@ object stackmenu1: Tstackmenu1
             Top = 13
             Width = 608
             BorderSpacing.Around = 5
-            ItemHeight = 15
+            ItemHeight = 0
             ItemIndex = 0
             Items.Strings = (
               'C:\Users\user_name\AppData\Local\cygwin_ansvr\bin\bash.exe'
@@ -2734,7 +2737,7 @@ object stackmenu1: Tstackmenu1
             Top = 99
             Width = 456
             BorderSpacing.Around = 5
-            ItemHeight = 15
+            ItemHeight = 0
             ItemIndex = 0
             Items.Strings = (
               '--downsample 2 --no-fits2fits'
@@ -2890,8 +2893,8 @@ object stackmenu1: Tstackmenu1
     object tab_blink1: TTabSheet
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
-      ClientHeight = 412
-      ClientWidth = 1266
+      ClientHeight = 400
+      ClientWidth = 1301
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
@@ -2943,7 +2946,6 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Type'
             MinWidth = 50
-            Width = 40
           end        
           item
             Alignment = taRightJustify
@@ -2961,7 +2963,7 @@ object stackmenu1: Tstackmenu1
             Alignment = taRightJustify
             Caption = 'Solution'
             MinWidth = 90
-            Width = 90
+            Width = 631
           end>
         GridLines = True
         HideSelection = False
@@ -3094,7 +3096,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Sigma factor to identify stars above background of the first image.'
         Top = 6
         Width = 79
-        ItemHeight = 15
+        ItemHeight = 0
         ItemIndex = 2
         Items.Strings = (
           '1'
@@ -3114,7 +3116,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Increase this value if star are not fully surpressed.'
         Top = 6
         Width = 79
-        ItemHeight = 15
+        ItemHeight = 0
         ItemIndex = 0
         Items.Strings = (
           '0'
@@ -3208,8 +3210,8 @@ object stackmenu1: Tstackmenu1
     end
     object tab_photometry1: TTabSheet
       Caption = 'Photometry'
-      ClientHeight = 412
-      ClientWidth = 1266
+      ClientHeight = 400
+      ClientWidth = 1301
       ImageIndex = 11
       ParentFont = False
       object browse_photometry1: TButton
@@ -3249,10 +3251,10 @@ object stackmenu1: Tstackmenu1
       end
       object nr_total_photometry1: TLabel
         Left = 272
-        Height = 15
+        Height = 22
         Hint = 'Number of images in the list'
         Top = 10
-        Width = 6
+        Width = 9
         Caption = '0'
         ParentColor = False
         ParentFont = False
@@ -3292,10 +3294,10 @@ object stackmenu1: Tstackmenu1
       end
       object clear_photometry_list1: TButton
         Left = 1016
-        Height = 25
+        Height = 30
         Hint = 'Clear image list'
         Top = 6
-        Width = 53
+        Width = 44
         AutoSize = True
         Caption = 'Clear'
         OnClick = clear_photometry_list1Click
@@ -3306,10 +3308,10 @@ object stackmenu1: Tstackmenu1
       end
       object clear_photometry_alignment1: TButton
         Left = 1080
-        Height = 25
+        Height = 30
         Hint = 'Clears photometric calibration. Use this if you change the star database.'
         Top = 6
-        Width = 184
+        Width = 216
         AutoSize = True
         Caption = 'Clear photometric  calibration'
         OnClick = clear_photometric_solutions1Click
@@ -3320,10 +3322,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview7: TListView
         Left = 0
-        Height = 372
+        Height = 352
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1266
+        Width = 1301
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3367,7 +3369,6 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Type'
             MinWidth = 50
-            Width = 40
           end        
           item
             Alignment = taRightJustify
@@ -3453,10 +3454,10 @@ object stackmenu1: Tstackmenu1
       object help_photometry1: TLabel
         Cursor = crHandPoint
         Left = 632
-        Height = 30
+        Height = 28
         Hint = 'Online help about blink and photometry'
         Top = 3
-        Width = 9
+        Width = 10
         Caption = '?'
         Font.Color = clBlue
         Font.Height = -21
@@ -3468,19 +3469,19 @@ object stackmenu1: Tstackmenu1
       end
       object Label_bin_oversampled1: TLabel
         Left = 1528
-        Height = 15
+        Height = 22
         Top = 12
-        Width = 260
+        Width = 345
         Caption = 'Bin oversampled images first for better  detection'
         ParentColor = False
         ParentFont = False
       end
       object photometry_binx2: TButton
         Left = 664
-        Height = 25
+        Height = 30
         Hint = 'Bin the images for better photometric detection.  Orginal files will not be affected.'
         Top = 6
-        Width = 61
+        Width = 56
         AutoSize = True
         Caption = 'Bin x 2'
         OnClick = photometry_binx2Click
@@ -3489,11 +3490,11 @@ object stackmenu1: Tstackmenu1
       end
       object mark_outliers_upto1: TComboBox
         Left = 872
-        Height = 23
+        Height = 32
         Hint = 'Limiting magnitude value'
         Top = 6
         Width = 79
-        ItemHeight = 15
+        ItemHeight = 0
         ItemIndex = 3
         Items.Strings = (
           '11'
@@ -3511,19 +3512,19 @@ object stackmenu1: Tstackmenu1
       end
       object Label19: TLabel
         Left = 736
-        Height = 15
+        Height = 22
         Top = 12
-        Width = 103
+        Width = 135
         Caption = 'Mark outliers up to:'
         ParentColor = False
         ParentFont = False
       end
       object clear_astrometric_solutions1: TButton
         Left = 1304
-        Height = 25
+        Height = 30
         Hint = 'This will renew the astrometric solutions and photometric calibration . Use this only for the rare case  the solutions are wrong and alignment is poor.'
         Top = 6
-        Width = 179
+        Width = 215
         AutoSize = True
         Caption = 'Refresh astrometric solutions'
         OnClick = clear_photometric_solutions1Click
@@ -3535,14 +3536,14 @@ object stackmenu1: Tstackmenu1
     end
     object tab_live_stacking1: TTabSheet
       Caption = 'Live stacking'
-      ClientHeight = 412
-      ClientWidth = 1303
+      ClientHeight = 400
+      ClientWidth = 1301
       ParentFont = False
       object browse_live_stacking1: TButton
         Left = 16
         Height = 25
         Hint = 'Select the directory which will contain the live images to stack. Program will read FITS, RAW(s), JPEG, TIFF, PNG.'
-        Top = 32
+        Top = 16
         Width = 75
         Caption = 'Browse'
         OnClick = browse_live_stacking1Click
@@ -3553,7 +3554,7 @@ object stackmenu1: Tstackmenu1
         Left = 16
         Height = 25
         Hint = 'Start live stacking.'
-        Top = 144
+        Top = 128
         Width = 75
         Caption = '>'
         OnClick = live_stacking1Click
@@ -3564,7 +3565,7 @@ object stackmenu1: Tstackmenu1
         Left = 16
         Height = 25
         Hint = 'Pause live stacking process.'
-        Top = 184
+        Top = 168
         Width = 75
         Caption = '||'
         OnClick = live_stacking_pause1Click
@@ -3575,7 +3576,7 @@ object stackmenu1: Tstackmenu1
         Left = 16
         Height = 25
         Hint = 'Stop live stacking.'
-        Top = 224
+        Top = 208
         Width = 75
         Caption = 'Stop'
         OnClick = live_stacking_restart1Click
@@ -3584,8 +3585,8 @@ object stackmenu1: Tstackmenu1
       end
       object live_stacking_path1: TLabel
         Left = 16
-        Height = 15
-        Top = 80
+        Height = 22
+        Top = 64
         Width = 15
         Caption = '---'
         ParentColor = False
@@ -3593,27 +3594,27 @@ object stackmenu1: Tstackmenu1
       end
       object Label15: TLabel
         Left = 24
-        Height = 15
-        Top = 384
-        Width = 227
+        Height = 22
+        Top = 352
+        Width = 307
         Caption = 'Processed files will get a new extension *.*_'
         ParentColor = False
         ParentFont = False
       end
       object files_live_stacked1: TLabel
         Left = 16
-        Height = 15
-        Top = 112
+        Height = 22
+        Top = 96
         Width = 15
         Caption = '---'
         ParentColor = False
         ParentFont = False
       end
       object restore_file_ext1: TButton
-        Left = 352
+        Left = 376
         Height = 25
         Hint = 'Rename all files back to extension .fit. Stacking will be stopped. '
-        Top = 368
+        Top = 208
         Width = 258
         Caption = 'Rename all files back to original'
         OnClick = restore_file_ext1Click
@@ -3622,27 +3623,27 @@ object stackmenu1: Tstackmenu1
       end
       object Label20: TLabel
         Left = 24
-        Height = 15
-        Top = 352
-        Width = 215
+        Height = 22
+        Top = 320
+        Width = 293
         Caption = 'Darks and flats will be applied if available'
         ParentColor = False
         ParentFont = False
       end
       object Label30: TLabel
         Left = 24
-        Height = 15
-        Top = 288
-        Width = 469
+        Height = 22
+        Top = 256
+        Width = 629
         Caption = 'Stacking will restart if telescope position has moved  0.2° or when exposure time changes'
         ParentColor = False
         ParentFont = False
       end
       object Label67: TLabel
         Left = 24
-        Height = 15
-        Top = 320
-        Width = 304
+        Height = 22
+        Top = 288
+        Width = 407
         Caption = 'Debayer and colour correction as set in tab Stack method.'
         ParentColor = False
       end
@@ -3650,8 +3651,8 @@ object stackmenu1: Tstackmenu1
     object tab_Pixelmath1: TTabSheet
       Hint = 'Pixel math tools'
       Caption = 'Pixel math'
-      ClientHeight = 412
-      ClientWidth = 1303
+      ClientHeight = 400
+      ClientWidth = 1301
       ImageIndex = 4
       ParentFont = False
       object groupBox_dvp1: TGroupBox
@@ -3660,15 +3661,15 @@ object stackmenu1: Tstackmenu1
         Top = 8
         Width = 265
         Caption = 'Digital development process'
-        ClientHeight = 252
-        ClientWidth = 261
+        ClientHeight = 249
+        ClientWidth = 263
         ParentFont = False
         TabOrder = 0
         object Label29: TLabel
           Left = 8
-          Height = 15
+          Height = 22
           Top = 16
-          Width = 164
+          Width = 213
           Caption = 'Yij = k [ a * Xij / ({Xij} + a ) ] + b'
           Color = clBtnFace
           ParentColor = False
@@ -3677,9 +3678,9 @@ object stackmenu1: Tstackmenu1
         end
         object Label31: TLabel
           Left = 48
-          Height = 15
+          Height = 22
           Top = 109
-          Width = 17
+          Width = 22
           Alignment = taRightJustify
           Caption = 'a ='
           Color = clBtnFace
@@ -3688,7 +3689,7 @@ object stackmenu1: Tstackmenu1
           Transparent = False
         end
         object Label32: TLabel
-          Left = -106
+          Left = -104
           Height = 23
           Hint = 'Subtracted from Xij prior application of DDP'
           Top = 180
@@ -3704,9 +3705,9 @@ object stackmenu1: Tstackmenu1
         end
         object Label33: TLabel
           Left = 49
-          Height = 15
+          Height = 22
           Top = 138
-          Width = 17
+          Width = 21
           Alignment = taRightJustify
           Caption = 'k ='
           Color = clBtnFace
@@ -3716,9 +3717,9 @@ object stackmenu1: Tstackmenu1
         end
         object Label34: TLabel
           Left = 32
-          Height = 15
+          Height = 22
           Top = 53
-          Width = 22
+          Width = 27
           Alignment = taRightJustify
           Caption = '{ } ='
           Color = clBtnFace
@@ -3739,7 +3740,7 @@ object stackmenu1: Tstackmenu1
         end
         object Edit_gaussian_blur1: TEdit
           Left = 200
-          Height = 23
+          Height = 32
           Hint = 'Use values below 1. Results in unsharp stars. Some  sharping required in a later stage.'
           Top = 72
           Width = 57
@@ -3749,7 +3750,7 @@ object stackmenu1: Tstackmenu1
         end
         object Edit_a1: TEdit
           Left = 71
-          Height = 23
+          Height = 32
           Hint = 'Typical value 500'
           Top = 106
           Width = 57
@@ -3759,7 +3760,7 @@ object stackmenu1: Tstackmenu1
         end
         object edit_background1: TEdit
           Left = 109
-          Height = 23
+          Height = 32
           Top = 180
           Width = 57
           OnClick = edit_background1Click
@@ -3769,7 +3770,7 @@ object stackmenu1: Tstackmenu1
         end
         object edit_k1: TEdit
           Left = 71
-          Height = 23
+          Height = 32
           Hint = 'Typical value 5 to 20.'
           Top = 138
           Width = 57
@@ -3779,10 +3780,10 @@ object stackmenu1: Tstackmenu1
         end
         object ddp_filter1: TRadioButton
           Left = 71
-          Height = 19
+          Height = 26
           Hint = 'Results in a nonlinear hyperbolic stretch, excellent for galaxies.'
           Top = 48
-          Width = 49
+          Width = 65
           Caption = 'None'
           Checked = True
           ParentFont = False
@@ -3791,18 +3792,18 @@ object stackmenu1: Tstackmenu1
         end
         object ddp_filter2: TRadioButton
           Left = 71
-          Height = 19
+          Height = 26
           Top = 73
-          Width = 91
+          Width = 126
           Caption = 'Gaussian blur'
           ParentFont = False
           TabOrder = 1
         end
         object auto_background1: TCheckBox
           Left = 192
-          Height = 19
+          Height = 26
           Top = 180
-          Width = 46
+          Width = 61
           Caption = 'Auto'
           Checked = True
           ParentFont = False
@@ -3811,7 +3812,7 @@ object stackmenu1: Tstackmenu1
         end
         object UpDown1: TUpDown
           Left = 166
-          Height = 23
+          Height = 32
           Top = 180
           Width = 16
           Associate = edit_background1
@@ -3874,8 +3875,8 @@ object stackmenu1: Tstackmenu1
         Top = 208
         Width = 212
         Caption = 'Gaussian blur'
-        ClientHeight = 40
-        ClientWidth = 208
+        ClientHeight = 37
+        ClientWidth = 210
         ParentFont = False
         TabOrder = 1
         object apply_gaussian_blur_button1: TButton
@@ -3894,10 +3895,10 @@ object stackmenu1: Tstackmenu1
         end
         object blur_factor1: TComboBox
           Left = 1
-          Height = 23
+          Height = 32
           Top = 1
           Width = 69
-          ItemHeight = 15
+          ItemHeight = 0
           ItemIndex = 0
           Items.Strings = (
             '0.5 '
@@ -3967,12 +3968,12 @@ object stackmenu1: Tstackmenu1
         Top = 8
         Width = 426
         Caption = 'Colour correction'
-        ClientHeight = 84
-        ClientWidth = 422
+        ClientHeight = 81
+        ClientWidth = 424
         ParentFont = False
         TabOrder = 2
         object Label14: TLabel
-          Left = -183
+          Left = -181
           Height = 20
           Top = 4
           Width = 87
@@ -3986,7 +3987,7 @@ object stackmenu1: Tstackmenu1
           Transparent = False
         end
         object Label17: TLabel
-          Left = -183
+          Left = -181
           Height = 20
           Top = 27
           Width = 87
@@ -4001,7 +4002,7 @@ object stackmenu1: Tstackmenu1
         end
         object add_valueR1: TEdit
           Left = 92
-          Height = 23
+          Height = 32
           Top = 0
           Width = 89
           Color = 13158655
@@ -4011,7 +4012,7 @@ object stackmenu1: Tstackmenu1
         end
         object multiply_red1: TEdit
           Left = 92
-          Height = 23
+          Height = 32
           Top = 24
           Width = 89
           Color = 13158655
@@ -4021,7 +4022,7 @@ object stackmenu1: Tstackmenu1
         end
         object multiply_green1: TEdit
           Left = 186
-          Height = 23
+          Height = 32
           Top = 24
           Width = 89
           Color = 13172680
@@ -4031,7 +4032,7 @@ object stackmenu1: Tstackmenu1
         end
         object multiply_blue1: TEdit
           Left = 280
-          Height = 23
+          Height = 32
           Top = 24
           Width = 89
           Color = 16763080
@@ -4053,7 +4054,7 @@ object stackmenu1: Tstackmenu1
         end
         object add_valueG1: TEdit
           Left = 186
-          Height = 23
+          Height = 32
           Top = 0
           Width = 89
           Color = 13172680
@@ -4063,7 +4064,7 @@ object stackmenu1: Tstackmenu1
         end
         object add_valueB1: TEdit
           Left = 280
-          Height = 23
+          Height = 32
           Top = 0
           Width = 89
           Color = 16763080
@@ -4146,8 +4147,8 @@ object stackmenu1: Tstackmenu1
         Top = 272
         Width = 212
         Caption = 'Artificial flat-field correction'
-        ClientHeight = 40
-        ClientWidth = 208
+        ClientHeight = 37
+        ClientWidth = 210
         ParentFont = False
         TabOrder = 3
         object apply_artificial_flat_correction1: TButton
@@ -4210,11 +4211,11 @@ object stackmenu1: Tstackmenu1
         end
         object equalise_box_size1: TComboBox
           Left = 7
-          Height = 23
+          Height = 32
           Hint = 'Filter box size used to detect the local median value.'
           Top = 1
           Width = 60
-          ItemHeight = 15
+          ItemHeight = 0
           ItemIndex = 0
           Items.Strings = (
             '3'
@@ -4229,17 +4230,17 @@ object stackmenu1: Tstackmenu1
       end
       object GroupBox7: TGroupBox
         Left = 0
-        Height = 360
+        Height = 365
         Top = 8
         Width = 344
         Caption = 'Equalise background tool'
-        ClientHeight = 340
-        ClientWidth = 340
+        ClientHeight = 342
+        ClientWidth = 342
         ParentFont = False
         TabOrder = 4
         object equalise_gaussian_filter1: TEdit
           Left = 305
-          Height = 23
+          Height = 32
           Hint = 'Gaussian filter factor. Typical value is 40'
           Top = 114
           Width = 32
@@ -4261,7 +4262,7 @@ object stackmenu1: Tstackmenu1
         end
         object most_common_filter_radius1: TEdit
           Left = 305
-          Height = 23
+          Height = 32
           Hint = 'Median filter factor. Typical value is 20'
           Top = 80
           Width = 32
@@ -4343,9 +4344,9 @@ object stackmenu1: Tstackmenu1
         end
         object Label41: TLabel
           Left = 8
-          Height = 15
+          Height = 22
           Top = 84
-          Width = 10
+          Width = 14
           Caption = '3)'
           Color = clBtnFace
           ParentColor = False
@@ -4354,9 +4355,9 @@ object stackmenu1: Tstackmenu1
         end
         object Label42: TLabel
           Left = 8
-          Height = 15
+          Height = 22
           Top = 119
-          Width = 10
+          Width = 14
           Caption = '4)'
           Color = clBtnFace
           ParentColor = False
@@ -4365,9 +4366,9 @@ object stackmenu1: Tstackmenu1
         end
         object Label44: TLabel
           Left = 8
-          Height = 15
+          Height = 22
           Top = 188
-          Width = 10
+          Width = 14
           Caption = '6)'
           Color = clBtnFace
           ParentColor = False
@@ -4388,9 +4389,9 @@ object stackmenu1: Tstackmenu1
         end
         object Label45: TLabel
           Left = 8
-          Height = 15
+          Height = 22
           Top = 154
-          Width = 10
+          Width = 14
           Caption = '5)'
           Color = clBtnFace
           ParentColor = False
@@ -4399,9 +4400,9 @@ object stackmenu1: Tstackmenu1
         end
         object Label46: TLabel
           Left = 8
-          Height = 15
+          Height = 22
           Top = 18
-          Width = 10
+          Width = 14
           Caption = '1)'
           Color = clBtnFace
           ParentColor = False
@@ -4465,9 +4466,9 @@ object stackmenu1: Tstackmenu1
         end
         object Label52: TLabel
           Left = 8
-          Height = 15
+          Height = 22
           Top = 247
-          Width = 10
+          Width = 14
           Caption = '7)'
           Color = clBtnFace
           ParentColor = False
@@ -4476,9 +4477,9 @@ object stackmenu1: Tstackmenu1
         end
         object Label54: TLabel
           Left = 8
-          Height = 15
+          Height = 22
           Top = 295
-          Width = 10
+          Width = 14
           Caption = '8)'
           Color = clBtnFace
           ParentColor = False
@@ -4493,8 +4494,8 @@ object stackmenu1: Tstackmenu1
         Top = 208
         Width = 202
         Caption = 'Split in seperate R, G, B files.'
-        ClientHeight = 36
-        ClientWidth = 198
+        ClientHeight = 33
+        ClientWidth = 200
         ParentFont = False
         TabOrder = 5
         object splitRGB1: TButton
@@ -4516,8 +4517,8 @@ object stackmenu1: Tstackmenu1
         Top = 336
         Width = 426
         Caption = 'Resize current viewer image'
-        ClientHeight = 44
-        ClientWidth = 422
+        ClientHeight = 41
+        ClientWidth = 424
         ParentFont = False
         TabOrder = 6
         object Button_free_resize_fits1: TButton
@@ -4534,7 +4535,7 @@ object stackmenu1: Tstackmenu1
         end
         object Edit_width1: TEdit
           Left = 92
-          Height = 23
+          Height = 32
           Hint = 'Width'
           Top = 5
           Width = 56
@@ -4545,7 +4546,7 @@ object stackmenu1: Tstackmenu1
         end
         object width_UpDown1: TUpDown
           Left = 148
-          Height = 23
+          Height = 32
           Top = 5
           Width = 17
           Associate = Edit_width1
@@ -4603,11 +4604,11 @@ object stackmenu1: Tstackmenu1
         end
         object resize_factor1: TComboBox
           Left = 8
-          Height = 23
+          Height = 32
           Hint = 'Resize from current format'
           Top = 5
           Width = 60
-          ItemHeight = 15
+          ItemHeight = 0
           ItemIndex = 3
           Items.Strings = (
             '3'
@@ -4625,9 +4626,9 @@ object stackmenu1: Tstackmenu1
         end
         object new_height1: TLabel
           Left = 200
-          Height = 15
+          Height = 22
           Top = 8
-          Width = 24
+          Width = 36
           Caption = '1080'
           Color = clBtnFace
           ParentColor = False
@@ -4636,9 +4637,9 @@ object stackmenu1: Tstackmenu1
         end
         object new_height2: TLabel
           Left = 176
-          Height = 15
+          Height = 22
           Top = 8
-          Width = 6
+          Width = 8
           Caption = 'x'
           Color = clBtnFace
           ParentColor = False
@@ -4649,10 +4650,10 @@ object stackmenu1: Tstackmenu1
       object help_pixel_math1: TLabel
         Cursor = crHandPoint
         Left = 296
-        Height = 30
+        Height = 28
         Hint = 'Help'
         Top = 368
-        Width = 9
+        Width = 10
         Caption = '?'
         Font.Color = clBlue
         Font.Height = -21
@@ -4669,8 +4670,8 @@ object stackmenu1: Tstackmenu1
         Top = 8
         Width = 136
         Caption = 'Create test images'
-        ClientHeight = 148
-        ClientWidth = 132
+        ClientHeight = 145
+        ClientWidth = 134
         ParentFont = False
         TabOrder = 7
         object apply_create_gradient1: TButton
@@ -4697,10 +4698,10 @@ object stackmenu1: Tstackmenu1
         end
         object artificial_image_gradient1: TCheckBox
           Left = 8
-          Height = 19
+          Height = 26
           Hint = 'Add a typical gradient of telescope. The center is more bright then the corners.'
           Top = 80
-          Width = 65
+          Width = 88
           Caption = 'Gradient'
           Checked = True
           ParentFont = False
@@ -4709,11 +4710,11 @@ object stackmenu1: Tstackmenu1
         end
         object hfd_simulation1: TComboBox
           Left = 8
-          Height = 23
+          Height = 32
           Hint = 'HFD of the simulated stars'
           Top = 45
           Width = 80
-          ItemHeight = 15
+          ItemHeight = 0
           ItemIndex = 1
           Items.Strings = (
             '2'
@@ -4739,8 +4740,8 @@ object stackmenu1: Tstackmenu1
         Top = 272
         Width = 200
         Caption = 'Artificial colouring'
-        ClientHeight = 84
-        ClientWidth = 196
+        ClientHeight = 81
+        ClientWidth = 198
         ParentFont = False
         TabOrder = 8
         object colournebula1: TButton
@@ -4755,11 +4756,11 @@ object stackmenu1: Tstackmenu1
         end
         object star_level_colouring1: TComboBox
           Left = 8
-          Height = 23
+          Height = 32
           Hint = 'Star level above background'
           Top = 17
           Width = 80
-          ItemHeight = 15
+          ItemHeight = 0
           ItemIndex = 3
           Items.Strings = (
             '1000'
@@ -4774,11 +4775,11 @@ object stackmenu1: Tstackmenu1
         end
         object filter_artificial_colouring1: TComboBox
           Left = 104
-          Height = 23
+          Height = 32
           Hint = 'Filter factor to seperate stars from nebula.'
           Top = 17
           Width = 80
-          ItemHeight = 15
+          ItemHeight = 0
           ItemIndex = 1
           Items.Strings = (
             '5'
@@ -4792,18 +4793,18 @@ object stackmenu1: Tstackmenu1
         end
         object Label4: TLabel
           Left = 8
-          Height = 15
+          Height = 22
           Top = 0
-          Width = 50
+          Width = 68
           Caption = 'Star level:'
           ParentColor = False
           ParentFont = False
         end
         object Label16: TLabel
           Left = 104
-          Height = 15
+          Height = 22
           Top = 0
-          Width = 63
+          Width = 83
           Caption = 'Filter factor:'
           ParentColor = False
           ParentFont = False
@@ -4861,8 +4862,8 @@ object stackmenu1: Tstackmenu1
         Top = 88
         Width = 202
         Caption = 'Background colour removal'
-        ClientHeight = 92
-        ClientWidth = 198
+        ClientHeight = 89
+        ClientWidth = 200
         ParentFont = False
         TabOrder = 9
         object apply_remove_background_colour1: TButton
@@ -4879,21 +4880,21 @@ object stackmenu1: Tstackmenu1
         end
         object Label26: TLabel
           Left = 8
-          Height = 15
+          Height = 22
           Top = 13
-          Width = 129
+          Width = 171
           Caption = 'Smooth below σ factors:'
           ParentColor = False
           ParentFont = False
         end
         object sigma_factor_remove_background_colourR1: TComboBox
           Left = 8
-          Height = 23
+          Height = 32
           Hint = 'Standard deviation of background noise. Normal value 2.5 to 3.0. Could influence faint nebula.'
           Top = 32
           Width = 60
           Color = 13158655
-          ItemHeight = 15
+          ItemHeight = 0
           ItemIndex = 4
           Items.Strings = (
             '0'
@@ -4911,12 +4912,12 @@ object stackmenu1: Tstackmenu1
         end
         object sigma_factor_remove_background_colourG1: TComboBox
           Left = 72
-          Height = 23
+          Height = 32
           Hint = 'Standard deviation of background noise. Normal value 2.5 to 3.0. Could influence faint nebula.'
           Top = 32
           Width = 60
           Color = 13172680
-          ItemHeight = 15
+          ItemHeight = 0
           ItemIndex = 4
           Items.Strings = (
             '0'
@@ -4934,12 +4935,12 @@ object stackmenu1: Tstackmenu1
         end
         object sigma_factor_remove_background_colourB1: TComboBox
           Left = 136
-          Height = 23
+          Height = 32
           Hint = 'Standard deviation of background noise. Normal value 2.5 to 3.0. Could influence faint nebula.'
           Top = 32
           Width = 60
           Color = 16763080
-          ItemHeight = 15
+          ItemHeight = 0
           ItemIndex = 2
           Items.Strings = (
             '0'
@@ -5009,8 +5010,8 @@ object stackmenu1: Tstackmenu1
         Top = 8
         Width = 202
         Caption = 'Smart colour smoothing'
-        ClientHeight = 52
-        ClientWidth = 198
+        ClientHeight = 49
+        ClientWidth = 200
         ParentFont = False
         TabOrder = 10
         object smart_colour_smooth_button1: TButton
@@ -5027,11 +5028,11 @@ object stackmenu1: Tstackmenu1
         end
         object smart_smooth_width1: TComboBox
           Left = 4
-          Height = 23
+          Height = 32
           Hint = 'Factor for colour smoothing. This will keep luminance but smooth the colours '
           Top = 4
           Width = 60
-          ItemHeight = 15
+          ItemHeight = 0
           ItemIndex = 2
           Items.Strings = (
             '5'
@@ -5098,8 +5099,8 @@ object stackmenu1: Tstackmenu1
         Top = 208
         Width = 212
         Caption = 'Extract background/artificial flat'
-        ClientHeight = 40
-        ClientWidth = 208
+        ClientHeight = 37
+        ClientWidth = 210
         ParentFont = False
         TabOrder = 11
         object apply_get_background1: TButton
@@ -5162,11 +5163,11 @@ object stackmenu1: Tstackmenu1
         end
         object extract_background_box_size1: TComboBox
           Left = 7
-          Height = 23
+          Height = 32
           Hint = 'Filter box size'
           Top = 1
           Width = 60
-          ItemHeight = 15
+          ItemHeight = 0
           ItemIndex = 0
           Items.Strings = (
             '20'
@@ -5187,17 +5188,17 @@ object stackmenu1: Tstackmenu1
         Top = 112
         Width = 425
         Caption = 'Apply file to image in viewer'
-        ClientHeight = 68
-        ClientWidth = 421
+        ClientHeight = 65
+        ClientWidth = 423
         ParentFont = False
         TabOrder = 12
         object add_substract1: TComboBox
           Left = 87
-          Height = 23
+          Height = 32
           Hint = 'Add or subtract files. The apply flat routine can work with mono or colour flat files. '
           Top = 27
           Width = 197
-          ItemHeight = 15
+          ItemHeight = 0
           Items.Strings = (
             'Add file'
             'Subtract file from view'
@@ -5225,7 +5226,7 @@ object stackmenu1: Tstackmenu1
         end
         object image_to_add1: TLabel
           Left = 8
-          Height = 15
+          Height = 22
           Top = 2
           Width = 15
           Caption = '---'
@@ -5298,8 +5299,8 @@ object stackmenu1: Tstackmenu1
         Top = 284
         Width = 266
         Caption = 'Background noise filter'
-        ClientHeight = 96
-        ClientWidth = 262
+        ClientHeight = 93
+        ClientWidth = 264
         ParentFont = False
         TabOrder = 13
         object Label55: TLabel
@@ -5317,11 +5318,11 @@ object stackmenu1: Tstackmenu1
         end
         object noisefilter_sd1: TComboBox
           Left = 128
-          Height = 23
+          Height = 32
           Hint = 'Standard deviation to detect deepsky objects not to be blurred. '
           Top = 3
           Width = 60
-          ItemHeight = 15
+          ItemHeight = 0
           ItemIndex = 2
           Items.Strings = (
             '1.0'
@@ -5394,11 +5395,11 @@ object stackmenu1: Tstackmenu1
         end
         object noisefilter_blur1: TComboBox
           Left = 128
-          Height = 23
+          Height = 32
           Hint = 'This blur will be applied on the sky background'
           Top = 32
           Width = 60
-          ItemHeight = 15
+          ItemHeight = 0
           ItemIndex = 2
           Items.Strings = (
             '0.5 '
@@ -5432,8 +5433,8 @@ object stackmenu1: Tstackmenu1
         Top = 272
         Width = 212
         Caption = 'Remove gradient'
-        ClientHeight = 40
-        ClientWidth = 208
+        ClientHeight = 37
+        ClientWidth = 210
         ParentFont = False
         TabOrder = 14
         object undo_button15: TBitBtn
@@ -5484,7 +5485,7 @@ object stackmenu1: Tstackmenu1
         end
         object apply_vertical_gradient1: TButton
           Left = 48
-          Height = 25
+          Height = 30
           Hint = 'This will remove any vertical gradient. For any other angle apply both.'
           Top = 4
           Width = 65
@@ -5496,7 +5497,7 @@ object stackmenu1: Tstackmenu1
         end
         object gradient_filter_factor1: TEdit
           Left = 8
-          Height = 23
+          Height = 32
           Hint = 'Filter factor. Typical value is 30'
           Top = 1
           Width = 32
@@ -5506,10 +5507,10 @@ object stackmenu1: Tstackmenu1
         end
         object apply_horizontal_gradient1: TButton
           Left = 106
-          Height = 25
+          Height = 30
           Hint = 'This will remove any horizontal gradient. For any other angle apply both.'
           Top = 4
-          Width = 70
+          Width = 65
           AutoSize = True
           Caption = 'Apply ↔'
           OnClick = apply_vertical_gradient1Click
@@ -5523,8 +5524,8 @@ object stackmenu1: Tstackmenu1
         Top = 183
         Width = 137
         Caption = 'Add noise'
-        ClientHeight = 69
-        ClientWidth = 133
+        ClientHeight = 66
+        ClientWidth = 135
         ParentFont = False
         TabOrder = 15
         object add_noise1: TButton
@@ -5540,7 +5541,7 @@ object stackmenu1: Tstackmenu1
         end
         object edit_noise1: TEdit
           Left = 8
-          Height = 23
+          Height = 32
           Hint = 'Add Gaussian noise. The value is the standard deviation. The mean is three times the value'
           Top = 3
           Width = 89
