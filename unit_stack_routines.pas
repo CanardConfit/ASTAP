@@ -922,7 +922,7 @@ end;
 procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{mosaic/tile mode}
 var
     fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,
-    diameter,y,x2,y2,cropW,cropH : integer;
+    cropW,cropH : integer;
 
     flat_factor, h,dRA, dDec,det,delta,gamma,ra_new, dec_new,   sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v,  value,
     background_correction,dummy,median                                                                           : double;

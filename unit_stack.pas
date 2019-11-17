@@ -95,6 +95,7 @@ type
     browse_darks1: TButton;
     browse_flats1: TButton;
     calibrate_prior_solving1: TCheckBox;
+    Label67: TLabel;
     downsample_for_solving1: TComboBox;
     downsample_solving_label1: TLabel;
     hotpixel_sd_factor1: TComboBox;
@@ -1040,7 +1041,9 @@ begin
        above:=above+histogram[colour,i];
        if above>0.001*his_total then starlevel:=i;
     end;
-    starlevel:=starlevel-trunc(background)-1;{star level above background. Important subtract 1 for saturated images. Otherwise no stars are detected}
+    if starlevel<= background then starlevel:=background+1 {no or very few stars}
+    else
+    starlevel:=starlevel-background-1;{star level above background. Important subtract 1 for saturated images. Otherwise no stars are detected}
     {calculate noise level}
     noise_level[colour]:= round(get_standard_deviation(background,colour,img));
   end;
@@ -2475,12 +2478,14 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
   esc_pressed:=false;
-  if img_loaded<>nil then  memo_backup:=mainwindow.Memo1.Text;{backup fits header for later}
+  if img_loaded<>nil then
+              memo_backup:=mainwindow.Memo1.Text;{backup fits header for later}
 
   if amode<=1 then  lv.Items.BeginUpdate;{stop updating to prevent flickering till finished}
 
   counts:=lv.items.count-1;
 
+  loaded:=false;
   c:=0;
   {convert any non FITS file}
   while c<=counts  do {check all}
@@ -2626,7 +2631,7 @@ begin
   img:= nil;
 
   {try to restore original header data for image in the viewer}
-  if img_loaded<>nil then
+  if ((img_loaded<>nil) and (loaded {image was loaded for analysing})) then
   begin
     naxis3:=length(img_loaded);{nr colours}
     height2:=length(img_loaded[0,0]);{length}

@@ -1003,7 +1003,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.299b dated 2019-11-15';
+  #13+#10+'Version ß0.9.300 dated 2019-11-17';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5566,6 +5566,14 @@ begin
     dum:=initstring.Values['green_filter_add']; if dum<>'' then stackmenu1.green_filter_add1.text:=dum;
     dum:=initstring.Values['blue_filter_add']; if dum<>'' then stackmenu1.blue_filter_add1.text:=dum;
 
+   {Six colour correction factors}
+    dum:=initstring.Values['add_value_R']; if dum<>'' then stackmenu1.add_valueR1.text:=dum;
+    dum:=initstring.Values['add_value_G']; if dum<>'' then stackmenu1.add_valueG1.text:=dum;
+    dum:=initstring.Values['add_value_B']; if dum<>'' then stackmenu1.add_valueB1.text:=dum;
+    dum:=initstring.Values['multiply_R']; if dum<>'' then stackmenu1.multiply_red1.text:=dum;
+    dum:=initstring.Values['multiply_G']; if dum<>'' then stackmenu1.multiply_green1.text:=dum;
+    dum:=initstring.Values['multiply_B']; if dum<>'' then stackmenu1.multiply_blue1.text:=dum;
+
     dum:=initstring.Values['smart_smooth_width']; if dum<>'' then stackmenu1.smart_smooth_width1.text:=dum;
 
     dum:=initstring.Values['star_level_colouring']; if dum<>'' then stackmenu1.star_level_colouring1.text:=dum;
@@ -5831,6 +5839,14 @@ begin
   initstring.Values['red_filter_add']:=stackmenu1.red_filter_add1.text;
   initstring.Values['green_filter_add']:=stackmenu1.green_filter_add1.text;
   initstring.Values['blue_filter_add']:=stackmenu1.blue_filter_add1.text;
+
+  {Colour correction factors}
+  initstring.Values['add_value_R']:=stackmenu1.add_valueR1.text;
+  initstring.Values['add_value_G']:=stackmenu1.add_valueG1.text;
+  initstring.Values['add_value_B']:=stackmenu1.add_valueB1.text;
+  initstring.Values['multiply_R']:=stackmenu1.multiply_red1.text;
+  initstring.Values['multiply_G']:=stackmenu1.multiply_green1.text;
+  initstring.Values['multiply_B']:=stackmenu1.multiply_blue1.text;
 
   initstring.Values['smart_smooth_width']:=stackmenu1.smart_smooth_width1.text;
 

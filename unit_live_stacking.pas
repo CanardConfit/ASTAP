@@ -118,9 +118,10 @@ end;
 procedure stack_live(oversize:integer; path :string);{stack live average}
 var
     fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter :  integer;
-    flat_factor, distance    : double;
-    init, solution, use_astrometry_internal, use_astrometry_net,vector_based,waiting,transition_image :boolean;
+    flat_factor, distance             : double;
+    init, solution, use_astrometry_internal, use_astrometry_net,vector_based,waiting,transition_image,colour_correction :boolean;
     file_ext,filen                    :  string;
+    multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}
 
 
     procedure reset_var;{reset variables  including init:=false}
@@ -142,8 +143,6 @@ begin
 
   with stackmenu1 do
   begin
-//    use_star_alignment:=stackmenu1.use_star_alignment1.checked;
-//    use_manual_alignment:=stackmenu1.use_manual_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
     use_astrometry_net:=use_astrometry_net1.checked;
 
@@ -156,6 +155,8 @@ begin
     total_counter:=0;
 
     mainwindow.memo1.visible:=false;{Hide header}
+
+    colour_correction:=((stackmenu1.make_osc_color1.checked) and (stackmenu1.osc_colour_smooth1.checked));
 
 //   (file_available2(path,filename2 {file found}));
 
@@ -250,6 +251,29 @@ begin
               old_width:=width2;
               old_height:=height2;
 
+              if colour_correction then
+              begin
+                memo2_message('Using first reference image to determine colour adjustment factors.');
+                stackmenu1.auto_background_level1Click(nil);
+
+                {do factor math behind so "subtract view from file" works in correct direction}
+                add_valueR:=strtofloat2(stackmenu1.add_valueR1.Text);
+                add_valueG:=strtofloat2(stackmenu1.add_valueG1.Text);
+                add_valueB:=strtofloat2(stackmenu1.add_valueB1.Text);
+
+                multiply_red:=strtofloat2(stackmenu1.multiply_red1.Text);
+                multiply_green:=strtofloat2(stackmenu1.multiply_green1.Text);
+                multiply_blue:=strtofloat2(stackmenu1.multiply_blue1.Text);
+
+                {prevent clamping to 65535}
+                scaleR:=(65535+add_valueR)*multiply_red/65535;{range 0..1, if above 1 then final value could be above 65535}
+                scaleG:=(65535+add_valueG)*multiply_green/65535;
+                scaleB:=(65535+add_valueB)*multiply_blue/65535;
+                largest:=scaleR;
+                if scaleG>largest then largest:=scaleG;
+                if scaleB>largest then largest:=scaleB;
+                {use largest to scale to maximum 65535}
+              end;
             end;{init, c=0}
 
             solution:=true;
@@ -287,6 +311,7 @@ begin
 
               vector_based:=true;
 
+              if colour_correction=false then {no colour correction}
               begin
                 for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
                 for fitsX:=1 to width2  do
@@ -299,16 +324,49 @@ begin
                     for col:=0 to naxis3-1 do {all colors}
                     begin
                       {serial stacking}
-                      img_average[col,x_new,y_new]:=(img_average[col,x_new,y_new]*(counter-1)+ img_loaded[col,fitsX-1,fitsY-1])/(counter);{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                      img_average[col,x_new,y_new]:=(img_average[col,x_new,y_new]*(counter-1)+ img_loaded[col,fitsX-1,fitsY-1])/counter;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                    end;
+                  end;
+                end;
+              end
+
+              else {colour correction}
+              begin
+                for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
+                for fitsX:=1 to width2  do
+                begin
+                  calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
+                  x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversize;
+                  x_new:=round(x_new_float);y_new:=round(y_new_float);
+                  if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+                  begin
+                    dum:=img_loaded[0,fitsX-1,fitsY-1];
+                      if dum<>0 then {signal}
+                      begin
+                      dum:=(dum+add_valueR)*multiply_red/largest;
+                        if dum<0 then dum:=0;
+                       img_average[0,x_new,y_new]:=(img_average[0,x_new,y_new]*(counter-1)+ dum)/counter;
+                      end;
+                    if naxis3>1 then {colour}
+                    begin
+                      dum:=img_loaded[1,fitsX-1,fitsY-1];   if dum<>0 then {signal} begin dum:=(dum+add_valueG)*multiply_green/largest; if dum<0 then dum:=0; img_average[1,x_new,y_new]:=(img_average[1,x_new,y_new]*(counter-1)+ dum)/counter;end;
+                    end;
+                    if naxis3>2 then {colour}
+                    begin
+                      dum:=img_loaded[2,fitsX-1,fitsY-1]; if dum<>0 then {signal} begin dum:=(dum+add_valueB)*multiply_blue/largest; if dum<0 then dum:=0; img_average[2,x_new,y_new]:=(img_average[2,x_new,y_new]*(counter-1)+ dum)/counter;end;
                     end;
                   end;
                 end;
               end;
-              if counter=1 then getfits_histogram(0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
+
+
               CD1_1:=0;{kill any existing north arrow during plotting. Most likely wrong after stacking}
               height2:=height_max;
               width2:=width_max;
-              img_loaded:=img_average;
+              img_loaded:=img_average;{copy the pointer. Both have now access to the data!!}
+
+              if counter=1 then {set range correct}
+                   getfits_histogram(0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
 
               plot_fits(mainwindow.image1,false,false{do not show header in memo1});{plot real}
 

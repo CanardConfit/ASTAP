@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 221
+  Left = 290
   Height = 530
-  Top = 120
+  Top = 258
   Width = 1312
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -1100,7 +1100,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 412
-      ClientWidth = 1266
+      ClientWidth = 1303
       ImageIndex = 5
       ParentFont = False
       object Label3: TLabel
@@ -3536,13 +3536,13 @@ object stackmenu1: Tstackmenu1
     object tab_live_stacking1: TTabSheet
       Caption = 'Live stacking'
       ClientHeight = 412
-      ClientWidth = 1266
+      ClientWidth = 1303
       ParentFont = False
       object browse_live_stacking1: TButton
         Left = 16
         Height = 25
         Hint = 'Select the directory which will contain the live images to stack. Program will read FITS, RAW(s), JPEG, TIFF, PNG.'
-        Top = 48
+        Top = 32
         Width = 75
         Caption = 'Browse'
         OnClick = browse_live_stacking1Click
@@ -3553,7 +3553,7 @@ object stackmenu1: Tstackmenu1
         Left = 16
         Height = 25
         Hint = 'Start live stacking.'
-        Top = 184
+        Top = 144
         Width = 75
         Caption = '>'
         OnClick = live_stacking1Click
@@ -3564,7 +3564,7 @@ object stackmenu1: Tstackmenu1
         Left = 16
         Height = 25
         Hint = 'Pause live stacking process.'
-        Top = 224
+        Top = 184
         Width = 75
         Caption = '||'
         OnClick = live_stacking_pause1Click
@@ -3575,7 +3575,7 @@ object stackmenu1: Tstackmenu1
         Left = 16
         Height = 25
         Hint = 'Stop live stacking.'
-        Top = 264
+        Top = 224
         Width = 75
         Caption = 'Stop'
         OnClick = live_stacking_restart1Click
@@ -3585,7 +3585,7 @@ object stackmenu1: Tstackmenu1
       object live_stacking_path1: TLabel
         Left = 16
         Height = 15
-        Top = 88
+        Top = 80
         Width = 15
         Caption = '---'
         ParentColor = False
@@ -3594,7 +3594,7 @@ object stackmenu1: Tstackmenu1
       object Label15: TLabel
         Left = 24
         Height = 15
-        Top = 376
+        Top = 384
         Width = 227
         Caption = 'Processed files will get a new extension *.*_'
         ParentColor = False
@@ -3603,7 +3603,7 @@ object stackmenu1: Tstackmenu1
       object files_live_stacked1: TLabel
         Left = 16
         Height = 15
-        Top = 152
+        Top = 112
         Width = 15
         Caption = '---'
         ParentColor = False
@@ -3623,7 +3623,7 @@ object stackmenu1: Tstackmenu1
       object Label20: TLabel
         Left = 24
         Height = 15
-        Top = 344
+        Top = 352
         Width = 215
         Caption = 'Darks and flats will be applied if available'
         ParentColor = False
@@ -3632,18 +3632,26 @@ object stackmenu1: Tstackmenu1
       object Label30: TLabel
         Left = 24
         Height = 15
-        Top = 312
+        Top = 288
         Width = 469
         Caption = 'Stacking will restart if telescope position has moved  0.2° or when exposure time changes'
         ParentColor = False
         ParentFont = False
+      end
+      object Label67: TLabel
+        Left = 24
+        Height = 15
+        Top = 320
+        Width = 304
+        Caption = 'Debayer and colour correction as set in tab Stack method.'
+        ParentColor = False
       end
     end
     object tab_Pixelmath1: TTabSheet
       Hint = 'Pixel math tools'
       Caption = 'Pixel math'
       ClientHeight = 412
-      ClientWidth = 1266
+      ClientWidth = 1303
       ImageIndex = 4
       ParentFont = False
       object groupBox_dvp1: TGroupBox

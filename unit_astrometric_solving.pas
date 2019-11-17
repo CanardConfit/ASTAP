@@ -418,7 +418,8 @@ begin
     get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}cblack,star_level );{get back ground}
     find_stars(img_binned,starlist3); {find stars of the image and put them in a list}
     img_binned:=nil;
-    nrstars:=Length(starlist3[0])-1;
+//    nrstars:=Length(starlist3[0])-1;
+    nrstars:=Length(starlist3[0]);
 
     if width2<1000 then memo2_message('Info: REDUCE OR REMOVE DOWNSAMPLING IS RECOMMENDED. Set this option in stack menu, tab alignment.');
     width2:=old_width; {restore to original size}
@@ -426,7 +427,8 @@ begin
     naxis3:=old_naxis3;
 
 
-    for i:=1 to nrstars do {correct star positions for cropping. Simplest method}
+//    for i:=1 to nrstars do {correct star positions for cropping. Simplest method}
+    for i:=0 to nrstars-1 do {correct star positions for cropping. Simplest method}
     begin
       starlist3[0,i]:={(binning-1)/2} + starlist3[0,i]*binning+(width2*(1-cropping)/2);{correct star positions for binning/ cropping}
       starlist3[1,i]:={(binning-1)/2} + starlist3[1,i]*binning+(height2*(1-cropping)/2);
@@ -530,7 +532,7 @@ begin
 
     bin_and_find_stars(img,binning,cropping,get_hist{update hist}, starlist2);{bin, measure background, find stars}
 
-    nrstars:=Length(starlist2[0])-1;
+    nrstars:=Length(starlist2[0]);
     nrstars_required:=round(nrstars*(height2/width2)*1.25);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
   //  nrstars_required:=round(nrstars*(height2/width2)*factorX);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
 

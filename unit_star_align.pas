@@ -164,22 +164,24 @@ end;
 
 procedure find_tetrahedrons(starlist :star_list; var starlisttetrahedrons :star_list);  {find closest stars}
 var
-   i,j,k,nrstars,j_used1,j_used2,nrtetrahedrons : integer;
+   i,j,k,nrstars_min_one,j_used1,j_used2,nrtetrahedrons : integer;
    shortest_distance,distance,shortest,shortest2    : double;
    identical_tetrahedron : boolean;
+const
+   buffersize=1000;{1000}
 begin
-  nrstars:=Length(starlist[0])-1;
+  nrstars_min_one:=Length(starlist[0])-1;
 
   nrtetrahedrons:=0;
-  SetLength(starlisttetrahedrons,10,1000);{set array length to 100}
+  SetLength(starlisttetrahedrons,10,buffersize);{set array length to 100}
 
-  for i:=0 to nrstars do
+  for i:=0 to nrstars_min_one do
   begin
       shortest_distance:=1E99;
       starlisttetrahedrons[0,nrtetrahedrons]:=starlist[0,i];
       starlisttetrahedrons[1,nrtetrahedrons]:=starlist[1,i];
       j_used1:=-1;
-      for j:=0 to nrstars do {find closest star}
+      for j:=0 to nrstars_min_one do {find closest star}
       begin
         if j<>i{not used} then
         begin
@@ -198,7 +200,7 @@ begin
       shortest:=shortest_distance;{store shortest distance}
       shortest_distance:=1E99;
       j_used2:=-1;
-      for j:=0 to nrstars do{find second closest star}
+      for j:=0 to nrstars_min_one do{find second closest star}
         begin
           if ((J<>I) and (J<>j_used1)) {not used} then
           begin
@@ -215,7 +217,7 @@ begin
 
       shortest2:=shortest_distance;{store shortest distance}
       shortest_distance:=1E99;
-      for j:=0 to nrstars do{find third closest star}
+      for j:=0 to nrstars_min_one do{find third closest star}
       begin
         if ((J<>I) and (J<>j_used1) and (J<>j_used2)) {not used} then
         begin
@@ -241,7 +243,7 @@ begin
       if identical_tetrahedron=false then  {new tetrahedron found}
       begin
         inc(nrtetrahedrons); {new unique tetrahedron found}
-        if nrtetrahedrons>=length(starlisttetrahedrons[0]) then setlength(starlisttetrahedrons,10,nrtetrahedrons+1000);{get more space}
+        if nrtetrahedrons>=buffersize then setlength(starlisttetrahedrons,10,length(starlisttetrahedrons[0])+buffersize);{get more space}
       end;
   end;{i}
 
@@ -429,12 +431,15 @@ end;
 
 procedure find_stars(img :image_array;var starlist1: star_list);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,starX,starY,size,i,j, max_stars,retries    : integer;
+   fitsX, fitsY,nrstars,size,i,j, max_stars,retries    : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level      : double;
-   img_temp2 : image_array;
-   snr_list: array of double;
-   solve_show_log,flip_vertical,flip_horizontal  : boolean;
+   img_temp2       : image_array;
+   snr_list        : array of double;
+   solve_show_log  : boolean;
+// flip_vertical,flip_horizontal  : boolean;
    startTick2  : qword;{for timing/speed purposes}
+const
+    buffersize=5000;{5000}
 begin
 
   if fits_file=false then exit; {file loaded?}
@@ -449,11 +454,12 @@ begin
   solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details}
   if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
 
-  flip_vertical:=mainwindow.Flipvertical1.Checked;
-  flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
+//  for testing
+//  flip_vertical:=mainwindow.Flipvertical1.Checked;
+//  flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
 
-  SetLength(starlist1,2,5000);{set array length}
-  setlength(snr_list,5000);{set array length}
+  SetLength(starlist1,2,buffersize);{set array length}
+  setlength(snr_list,buffersize);{set array length}
 
   setlength(img_temp2,1,width2,height2);{set length of image array}
   max_stars:=strtoint(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
@@ -500,8 +506,8 @@ begin
             inc(nrstars);
             if nrstars>=length(starlist1[0]) then
             begin
-              SetLength(starlist1,2,nrstars+5000);{adapt array size if required}
-              setlength(snr_list,nrstars+5000);{adapt array size if required}
+              SetLength(starlist1,2,nrstars+buffersize);{adapt array size if required}
+              setlength(snr_list,nrstars+buffersize);{adapt array size if required}
             end;
             starlist1[0,nrstars-1]:=xc; {store star position}
             starlist1[1,nrstars-1]:=yc;
@@ -519,8 +525,8 @@ begin
 
   img_temp2:=nil;{free mem}
 
-  SetLength(starlist1,2,nrstars+1);{set length correct}
-  setlength(snr_list,nrstars+1);{set length correct}
+  SetLength(starlist1,2,nrstars);{set length correct}
+  setlength(snr_list,nrstars);{set length correct}
 
   if nrstars>max_stars then {reduce number of stars if too high}
   begin
