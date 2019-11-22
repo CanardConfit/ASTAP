@@ -889,6 +889,7 @@ begin
 end;
 
 
+
 function GetFileSize2(p_sFilePath : string) : Int64;
 var
   oFile : file of Byte;
@@ -3669,7 +3670,7 @@ begin
     for i:=-w2 to w2  do
     for j:=-h2 to h2 do
     begin
-      if sqr(i)+sqr(j)<=sqr(w2) then {plot only in a circel}
+      if sqr(i)+sqr(j)<sqr(w2)-20 then {plot only in a circel}
       begin
         h:=180+Arctan2(i,j)*180/pi;
         HSV2RGB(h, 1 {s 0..1}, 255 {v 0..1},r,g,b);
