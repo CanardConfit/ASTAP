@@ -520,6 +520,9 @@ function image_file_name(inp : string): boolean; {readable image name?}
 procedure plot_annotations; {plot annotations stored in fits header}
 function convert_load_raw(filename3: string): boolean; {convert raw to pgm file using Libraw}
 
+procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+
 
 const   bufwide=1024*120;{buffer size in bytes}
 
@@ -1003,7 +1006,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.300 dated 2019-11-17';
+  #13+#10+'Version ß0.9.302 dated 2019-11-22';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3587,6 +3590,7 @@ begin
     demosaic_Malvar_He_Cutler(stackmenu1.bayer_pattern1.itemindex);{make from sensor bayer pattern the three colors}
 end;
 
+
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 const
     range=$FFFF;
@@ -5596,6 +5600,9 @@ begin
     dum:=initstring.Values['noisefilter_blur']; if dum<>'' then stackmenu1.noisefilter_blur1.text:=dum;
     dum:=initstring.Values['noisefilter_sd']; if dum<>'' then stackmenu1.noisefilter_sd1.text:=dum;
 
+    i:=stackmenu1.hue_fuzziness1.position;get_int(i,'hue_fuzziness'); stackmenu1.hue_fuzziness1.position:=i;
+    i:=stackmenu1.sample_size1.itemindex;get_int(i,'sample_size'); stackmenu1.sample_size1.itemindex:=i;
+
     stackmenu1.live_stacking_path1.caption:=initstring.Values['live_stack_dir'];
 
     c:=0;
@@ -5868,6 +5875,9 @@ begin
   initstring.Values['sd_factor_list']:=stackmenu1.sd_factor_list1.text;
   initstring.Values['noisefilter_blur']:=stackmenu1.noisefilter_blur1.text;
   initstring.Values['noisefilter_sd']:=stackmenu1.noisefilter_sd1.text;
+
+  initstring.Values['hue_fuzziness']:=inttostr(stackmenu1.hue_fuzziness1.position);
+  initstring.Values['sample_size']:=inttostr(stackmenu1.sample_size1.itemindex);
 
   initstring.Values['live_stack_dir']:=stackmenu1.live_stacking_path1.caption;
 
@@ -8440,6 +8450,8 @@ begin
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
 
+
+
 procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
 var
   col,fitsX,fitsY,maxsize,i,j,progress_value,progressC,xx,yy        : integer;
@@ -8585,21 +8597,56 @@ begin
 end;
 
 
+function RGBToH(r,g,b : single): integer;
+{https://en.wikipedia.org/wiki/Hue}
+{Preucil used a polar plot, which he termed a color circle.[8] Using R, G, and B, one may compute hue angle using the following scheme: determine which of the six possible orderings of R, G, and B prevail, then apply the formula given in the table below. }
+//const
+//  range = $1; {RGB range}
+var
+  H, D, Cmax, Cmin: Single;
+begin
+//  R := R/range;
+//  G := G/range;
+//  B := B/range;
+  Cmax := Max(R, Max(G, B));
+  Cmin := Min(R, Min(G, B));
+
+  if Cmax = Cmin then
+    h := 0
+  else
+  begin
+    D := Cmax - Cmin;
+
+    if R = Cmax then h := (G - B) / D
+    else
+    if G = Cmax then h := 2 + (B - R) / D
+    else
+    h := 4 + (R - G) / D;
+
+    h := h * 60; {make range 0..360}
+    if h < 0 then
+       h := h + 360;
+  end;
+  result:=round(h)
+end;
+
 procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
   xf,yf: integer;
   fitsX,fitsY,hfd2,fwhm_star2,snr,flux,xc,yc: double;
 begin
+  if Fliphorizontal1.Checked then xf:=image1.width-x else xf:=x;;
+  if Flipvertical1.Checked then yf:=image1.height-y else yf:=y;
+
+  fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
+  fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
+
+
   {for manual alignment}
   if ( ((stackmenu1.use_manual_alignment1.checked) and (pos('S',calstat)=0 {if stacked image don't change anything in last selected file} )) or
         (stackmenu1.pagecontrol1.tabindex=8 {photometry})){measure one object in blink routine } then
   begin
-    if Fliphorizontal1.Checked then xf:=image1.width-x else xf:=x;;
-    if Flipvertical1.Checked then yf:=image1.height-y else yf:=y;
-
-    fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
-    fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
 
     HFD(img_loaded,round(fitsX-1),round(fitsY-1),hfd2,fwhm_star2,snr,flux,xc,yc);{auto center using HFD function}
 
@@ -8621,6 +8668,12 @@ begin
   if ssleft in shift then
   begin
     screen.Cursor := crhandpoint;
+
+    if naxis3=3 then {for colour replace function}
+    begin
+      sample(round(fitsx),round(fitsy));
+    end;
+
   end;
 end;
 
@@ -8992,39 +9045,6 @@ begin
  end;{WCS solution}
 
 
-end;
-
-function RGBToH(r,g,b : single): integer;
-{https://en.wikipedia.org/wiki/Hue}
-{Preucil used a polar plot, which he termed a color circle.[8] Using R, G, and B, one may compute hue angle using the following scheme: determine which of the six possible orderings of R, G, and B prevail, then apply the formula given in the table below. }
-//const
-//  range = $1; {RGB range}
-var
-  H, D, Cmax, Cmin: Single;
-begin
-//  R := R/range;
-//  G := G/range;
-//  B := B/range;
-  Cmax := Max(R, Max(G, B));
-  Cmin := Min(R, Min(G, B));
-
-  if Cmax = Cmin then
-    h := 0
-  else
-  begin
-    D := Cmax - Cmin;
-
-    if R = Cmax then h := (G - B) / D
-    else
-    if G = Cmax then h := 2 + (B - R) / D
-    else
-    h := 4 + (R - G) / D;
-
-    h := h * 60; {make range 0..360}
-    if h < 0 then
-       h := h + 360;
-  end;
-  result:=round(h)
 end;
 
 procedure erase_rectangle;
@@ -10133,7 +10153,8 @@ end;
 
 procedure Tmainwindow.Saveasfits1Click(Sender: TObject);
 begin
-  savedialog1.filename:=ChangeFileExt(FileName2,'.fit');
+  if pos('.fit',filename2)=0 then savedialog1.filename:=ChangeFileExt(FileName2,'.fits')
+                             else savedialog1.filename:=FileName2;
 
   if image_path<>'' then savedialog1.initialdir:=image_path;{path from stacking}
   savedialog1.Filter := 'IEEE Float (-32) FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS|16 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS|8 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS|8 bit FITS files (special, naxis1=3)(*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';

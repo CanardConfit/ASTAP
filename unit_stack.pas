@@ -43,6 +43,9 @@ type
   Tstackmenu1 = class(TForm)
     actual_search_distance1: TLabel;
     add_noise1: TButton;
+    apply_create_gradient1: TButton;
+    apply_dpp_button1: TButton;
+    apply_hue1: TButton;
     add_substract1: TComboBox;
     add_valueB1: TEdit;
     add_valueG1: TEdit;
@@ -58,8 +61,6 @@ type
     analysephotometry1: TButton;
     apply_artificial_flat_correction1: TButton;
     apply_background_noise_filter1: TButton;
-    apply_create_gradient1: TButton;
-    apply_dpp_button1: TButton;
     apply_factor1: TButton;
     apply_file1: TButton;
     apply_gaussian_blur_button1: TButton;
@@ -95,6 +96,33 @@ type
     browse_darks1: TButton;
     browse_flats1: TButton;
     calibrate_prior_solving1: TCheckBox;
+    colournebula1: TButton;
+    create_test_image_stars1: TButton;
+    ddp_filter1: TRadioButton;
+    ddp_filter2: TRadioButton;
+    colourShape3: TShape;
+    new_saturation1: TTrackBar;
+    sample_size1: TComboBox;
+    Edit_a1: TEdit;
+    edit_background1: TEdit;
+    Edit_gaussian_blur1: TEdit;
+    edit_k1: TEdit;
+    edit_noise1: TEdit;
+    filter_artificial_colouring1: TComboBox;
+    GroupBox11: TGroupBox;
+    GroupBox14: TGroupBox;
+    GroupBox3: TGroupBox;
+    groupBox_dvp1: TGroupBox;
+    GroupBox_test_images1: TGroupBox;
+    hfd_simulation1: TComboBox;
+    colourShape2: TShape;
+    Label16: TLabel;
+    Label29: TLabel;
+    Label31: TLabel;
+    Label32: TLabel;
+    Label33: TLabel;
+    Label34: TLabel;
+    Label4: TLabel;
     Label67: TLabel;
     downsample_for_solving1: TComboBox;
     downsample_solving_label1: TLabel;
@@ -106,6 +134,9 @@ type
     Label20: TLabel;
     Label30: TLabel;
     Label66: TLabel;
+    HueRadioButton1: TRadioButton;
+    HueRadioButton2: TRadioButton;
+    Label68: TLabel;
     scale_calc1: TLabel;
     live_stacking1: TButton;
     browse_photometry1: TButton;
@@ -119,7 +150,6 @@ type
     files_live_stacked1: TLabel;
     live_stacking_path1: TLabel;
     live_stacking_pause1: TButton;
-    colournebula1: TButton;
     Button_free_resize_fits1: TButton;
     calculated_scale1: TLabel;
     clear_astrometric_solutions1: TButton;
@@ -131,20 +161,12 @@ type
     clear_photometry_list1: TButton;
     clear_selection2: TButton;
     clear_selection3: TButton;
-    create_test_image_stars1: TButton;
     cygwin1: TComboBox;
     Darks: TTabSheet;
     dark_sport_filter1: TButton;
-    ddp_filter1: TRadioButton;
-    ddp_filter2: TRadioButton;
     demosaic_method1: TComboBox;
     drizzle1: TCheckBox;
     drop_size1: TComboBox;
-    Edit_a1: TEdit;
-    edit_background1: TEdit;
-    Edit_gaussian_blur1: TEdit;
-    edit_k1: TEdit;
-    edit_noise1: TEdit;
     Edit_width1: TEdit;
     Equalise_background1: TCheckBox;
     equalise_box_size1: TComboBox;
@@ -154,7 +176,6 @@ type
     extra_star_supression_diameter1: TComboBox;
     field1: TLabel;
     file_to_add1: TButton;
-    filter_artificial_colouring1: TComboBox;
     filter_groupbox1: TGroupBox;
     Flats: TTabSheet;
     flat_combine_method1: TComboBox;
@@ -169,10 +190,8 @@ type
     GroupBox1: TGroupBox;
     GroupBox10: TGroupBox;
     GroupBox12: TGroupBox;
-    GroupBox14: TGroupBox;
     GroupBox16: TGroupBox;
     GroupBox2: TGroupBox;
-    GroupBox3: TGroupBox;
     GroupBox4: TGroupBox;
     GroupBox5: TGroupBox;
     GroupBox6: TGroupBox;
@@ -181,11 +200,9 @@ type
     GroupBox9: TGroupBox;
     GroupBox_astrometric_solver_settings1: TGroupBox;
     GroupBox_astrometry_net1: TGroupBox;
-    groupBox_dvp1: TGroupBox;
     GroupBox_equalise_tool1: TGroupBox;
     GroupBox_equalise_tool2: TGroupBox;
     GroupBox_star_alignment_settings1: TGroupBox;
-    GroupBox_test_images1: TGroupBox;
     help_astrometric_alignment1: TLabel;
     help_astrometric_solving1: TLabel;
     help_blink1: TLabel;
@@ -195,7 +212,6 @@ type
     help_stack_menu1: TLabel;
     help_stack_menu3: TLabel;
     help_uncheck_outliers1: TLabel;
-    hfd_simulation1: TComboBox;
     ignore_header_solution1: TCheckBox;
     Images: TTabSheet;
     image_to_add1: TLabel;
@@ -206,7 +222,6 @@ type
     Label12: TLabel;
     Label13: TLabel;
     Label14: TLabel;
-    Label16: TLabel;
     Label17: TLabel;
     Label18: TLabel;
     Label19: TLabel;
@@ -219,18 +234,12 @@ type
     Label26: TLabel;
     Label27: TLabel;
     Label28: TLabel;
-    Label29: TLabel;
     Label3: TLabel;
-    Label31: TLabel;
-    Label32: TLabel;
-    Label33: TLabel;
-    Label34: TLabel;
     Label35: TLabel;
     Label36: TLabel;
     Label37: TLabel;
     Label38: TLabel;
     Label39: TLabel;
-    Label4: TLabel;
     Label40: TLabel;
     Label41: TLabel;
     Label42: TLabel;
@@ -319,7 +328,11 @@ type
     photometry_binx2: TButton;
     photometry_button1: TButton;
     photometry_stop1: TButton;
+    colourShape1: TShape;
+    rainbowshape1: TShape;
     show_tetrahedrons1: TBitBtn;
+    star_level_colouring1: TComboBox;
+    TabSheet1: TTabSheet;
     tab_live_stacking1: TTabSheet;
     tab_Pixelmath1: TTabSheet;
     pixelsize1: TEdit;
@@ -377,7 +390,6 @@ type
     select6: TMenuItem;
     stack_method1: TComboBox;
     star_database1: TEdit;
-    star_level_colouring1: TComboBox;
     subtract_background1: TButton;
     tab_blink1: TTabSheet;
     tab_photometry1: TTabSheet;
@@ -385,6 +397,7 @@ type
     test_flat_mean: TButton;
     test_pattern1: TButton;
     tetrahedron_tolerance1: TComboBox;
+    hue_fuzziness1: TTrackBar;
     uncheck_outliers1: TCheckBox;
     undo_button1: TBitBtn;
     undo_button10: TBitBtn;
@@ -392,6 +405,7 @@ type
     undo_button13: TBitBtn;
     undo_button14: TBitBtn;
     undo_button15: TBitBtn;
+    undo_button16: TBitBtn;
     undo_button2: TBitBtn;
     undo_button3: TBitBtn;
     undo_button4: TBitBtn;
@@ -484,6 +498,7 @@ type
     procedure align_blink1Change(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
     procedure analysephotometry1Click(Sender: TObject);
+    procedure apply_hue1Click(Sender: TObject);
     procedure auto_background_level1Click(Sender: TObject);
     procedure apply_background_noise_filter1Click(Sender: TObject);
     procedure blink_star_filter1Change(Sender: TObject);
@@ -493,7 +508,9 @@ type
     procedure browse_live_stacking1Click(Sender: TObject);
     procedure gridlines1Click(Sender: TObject);
     procedure help_live_stacking1Click(Sender: TObject);
+    procedure hue_fuzziness1Change(Sender: TObject);
     procedure live_stacking1Click(Sender: TObject);
+    procedure new_saturation1Change(Sender: TObject);
     procedure result_compress1Click(Sender: TObject);
     procedure rename_result1Click(Sender: TObject);
     procedure restore_file_ext1Click(Sender: TObject);
@@ -703,6 +720,7 @@ function JdToDate(jd:double):string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
 function median_background(var img :image_array;color,size,x,y:integer): double;{find median value in sizeXsize matrix of img}
 procedure analyse_fits(var hfd_counter : integer; var backgr, hfd_median : double; var img : image_array); {find background, number of stars, median HFD}
+procedure sample(fitsx,fitsy : integer);{sampe local colour and fill shape with colour}
 
 const
   I_object=0; {position in listview1}
@@ -1599,8 +1617,6 @@ begin
     getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
     plot_fits(mainwindow.image1,false,true);{plot real}
   end;
-  Screen.Cursor:=Save_Cursor;
-
   update_equalise_background_step(5 {force 5 since equalise background is set to 1 by loading fits file} );{update menu}
   Screen.Cursor:=Save_Cursor;
 end;
@@ -1613,7 +1629,7 @@ begin
   else
   begin
     Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    screen.Cursor := crHourglass;    { Show hourglass cursor }
 
     if  tetrahedrons_displayed then
       plot_fits(mainwindow.image1,false,true); {remove tetrahedrons}
@@ -2342,6 +2358,8 @@ begin
   stackmenu1.focallength1Change(nil); {update calculation pixel size in arc seconds}
   stackmenu1.width_UpDown1.position:=round(width2*strtofloat2(stackmenu1.resize_factor1.caption));
   stackmenu1.make_osc_color1Change(nil);{update glyph stack button}
+
+  hue_fuzziness1Change(nil);{show position}
 
   update_stackmenu;
 end;
@@ -3638,6 +3656,105 @@ begin
   openurl('http://www.hnsky.org/astap.htm#live_stacking');
 end;
 
+procedure plot_hue_disk(hue1,hue2: single);
+var
+  i,j,w2,h2 :integer;
+  r,g,b,h,x,y : single;
+begin
+  with stackmenu1.rainbowshape1 do
+  begin
+    w2:= width div 2;
+    h2:= height div 2;
+
+    for i:=-w2 to w2  do
+    for j:=-h2 to h2 do
+    begin
+      if sqr(i)+sqr(j)<=sqr(w2) then {plot only in a circel}
+      begin
+        h:=180+Arctan2(i,j)*180/pi;
+        HSV2RGB(h, 1 {s 0..1}, 255 {v 0..1},r,g,b);
+        canvas.pixels[i+w2,j+h2]:=rgb(trunc(r),trunc(g),trunc(b));
+      end;
+    end;
+
+    Canvas.Pen.width :=2;{thickness lines}
+    Canvas.pen.color:=clblack;
+    sincos(hue1*pi/180,x,y);
+    canvas.moveto(w2,h2);
+    canvas.lineto(w2-round(x*w2),h2-round(y*w2));
+
+    sincos(hue2*pi/180,x,y);
+    canvas.moveto(w2,h2);
+    canvas.lineto(w2-round(x*w2),h2-round(y*w2));
+
+  end;
+end;
+
+procedure sample(fitsx,fitsy : integer);{sampe local colour and fill shape with colour}
+var
+    halfboxsize,i,j,counter,fx,fy :integer;
+    r,g,b,h,s,v,saturation_factor : single;
+    colour: tcolor;
+begin
+  halfboxsize:=(stackmenu1.sample_size1.itemindex);
+  counter:=0;
+  r:=0;
+  g:=0;
+  b:=0;
+  for i:=-halfboxsize to halfboxsize do
+  for j:=-halfboxsize to halfboxsize do {average local colour}
+  begin
+    fx:=i+fitsX-1;
+    fy:=j+fitsY-1;
+    if ((fx>=0) and (fx<width2) and (fy>=0) and (fy<height2) ) then
+    begin
+      inc(counter);
+      r:=r+img_loaded[0,round(fitsX)-1,round(fitsY)-1]-cblack;
+      g:=g+img_loaded[1,round(fitsX)-1,round(fitsY)-1]-cblack;
+      b:=b+img_loaded[2,round(fitsX)-1,round(fitsY)-1]-cblack;
+   end;
+  end;
+
+  RGB2HSV(r/counter,g/counter,b/counter,h,s,v); {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+
+  if stackmenu1.HueRadioButton1.checked then begin
+                                               HSV2RGB(h , s {s 0..1}, v /256{v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+                                               stackmenu1.colourshape1.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
+                                               stackmenu1.hue_fuzziness1Change(nil);
+                                             end;
+  if stackmenu1.HueRadioButton2.checked then
+  begin
+    HSV2RGB(h , s {s 0..1}, v /256{v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+    stackmenu1.colourshape2.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
+    HSV2RGB(h , s * stackmenu1.new_saturation1.position /100 {s 0..1}, v /256{v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+    stackmenu1.colourshape3.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
+  end;
+
+end;
+
+procedure Tstackmenu1.hue_fuzziness1Change(Sender: TObject);
+var
+  colour :tcolor;
+  oldhue,s,v,dhue,hue1,hue2,r,g,b  : single;
+begin
+  dhue:=hue_fuzziness1.position;
+
+
+  colour:=colourShape1.brush.color;
+  RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),oldhue,s,v);
+
+
+  hue1:=oldhue - dhue/2;
+  if hue1>360 then hue1:=hue1-360;
+  if hue1<0 then hue1:=hue1+360;
+
+  hue2:=oldhue + dhue/2;
+  if hue2>360 then hue2:=hue2-360;
+  if hue2<0 then hue2:=hue2+360;
+
+  plot_hue_disk(hue1,hue2);
+end;
+
 procedure Tstackmenu1.live_stacking1Click(Sender: TObject);
 begin
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
@@ -3649,6 +3766,19 @@ begin
       stack_live(round(strtofloat2(stackmenu1.oversize1.Text)), live_stacking_path1.caption){stack live average}
   else
      pause_pressed:=false;
+end;
+
+procedure Tstackmenu1.new_saturation1Change(Sender: TObject);
+var
+  r,g,b,h,s,v : single;
+  colour : tcolor;
+begin
+  colour:=colourShape2.brush.color;
+  RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),h,s,v);
+
+  HSV2RGB(h , s * stackmenu1.new_saturation1.position /100 {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+  stackmenu1.colourshape3.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
+
 end;
 
 procedure Tstackmenu1.result_compress1Click(Sender: TObject);
@@ -5269,6 +5399,54 @@ begin
     listview7.Items.item[c].subitems.Strings[P_photometric]:='';
   end;
 end;
+
+procedure Tstackmenu1.apply_hue1Click(Sender: TObject);
+var fitsX, fitsY,col,fuzziness :integer;
+    r,g,b,h,s,v,oldhue,newhue,dhue,saturation_factor : single;
+    Save_Cursor:TCursor;
+    colour: tcolor;
+begin
+  if ((fits_file=false) and (naxis3<>3)) then exit;
+
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  backup_img;
+
+  fuzziness:=hue_fuzziness1.position;
+  saturation_factor:=new_saturation1.position /100;
+
+  colour:=colourShape1.brush.color;
+  RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),oldhue,s,v);
+  colour:=colourShape3.brush.color;
+  RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),newhue,s,v);
+
+
+  for fitsY:=0 to height2-1 do
+    for fitsX:=0 to width2-1 do
+    begin {subtract view from file}
+      RGB2HSV(img_loaded[0,fitsX,fitsY]-cblack,
+              img_loaded[1,fitsX,fitsY]-cblack,
+              img_loaded[2,fitsX,fitsY]-cblack, h,s,v); {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+
+      dhue:=abs(oldhue - h);
+      if ((dhue<=fuzziness) or (dhue>=360-fuzziness)) then {colour close enough, replace colour}
+      begin
+        HSV2RGB(newhue , s*saturation_factor {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+
+        img_loaded[0,fitsX,fitsY]:=r +cblack;
+        img_loaded[1,fitsX,fitsY]:=g +cblack;
+        img_loaded[2,fitsX,fitsY]:=b +cblack;
+      end;
+
+    end;
+  //getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+  plot_fits(mainwindow.image1,false,true);{plot real}
+
+  HueRadioButton1.checked:=false;
+  HueRadioButton2.checked:=false;
+  Screen.Cursor:=Save_Cursor;
+end;
+
 procedure Tstackmenu1.auto_background_level1Click(Sender: TObject);
 var
     r,g,b,star_levelR, star_levelG,star_levelB : double;

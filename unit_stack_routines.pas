@@ -622,7 +622,7 @@ begin
   lowest:=min(min(m11,m12),min(m21,m22));
   highest:=max(max(m11,m12),max(m21,m22));
 
-  result:=highest-lowest>200;
+  result:=highest-lowest>40;
 
   p11:=nil;
   p12:=nil;
@@ -681,8 +681,8 @@ begin
             initialise2;{set variables correct}
 
             memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
-            if ((make_osc_color1.checked) and (test_bayer_matrix(img_loaded)=false)) then memo2_message('█ █ █ █ █ █ Warning, not an OSC image! █ █ █ █ █ █');
-            if ((make_osc_color1.checked=false) and (test_bayer_matrix(img_loaded)=true)) then memo2_message('█ █ █ █ █ █ Warning, OSC image is stacked as monochrome! Check mark convert OSC to colour. █ █ █ █ █ █');
+            if ((make_osc_color1.checked) and (test_bayer_matrix(img_loaded)=false)) then memo2_message('█ █ █ █ █ █ Warning, maybe not an OSC image! █ █ █ █ █ █');
+            if ((make_osc_color1.checked=false) and (test_bayer_matrix(img_loaded)=true)) then memo2_message('█ █ █ █ █ █ Warning, suspect OSC image is stacked as monochrome! Check mark convert OSC to colour. █ █ █ █ █ █');
           end;
 
           apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
