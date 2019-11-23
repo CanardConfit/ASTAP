@@ -102,6 +102,7 @@ type
     ddp_filter2: TRadioButton;
     colourShape3: TShape;
     new_saturation1: TTrackBar;
+    rainbow_Panel1: TPanel;
     sample_size1: TComboBox;
     Edit_a1: TEdit;
     edit_background1: TEdit;
@@ -329,7 +330,6 @@ type
     photometry_button1: TButton;
     photometry_stop1: TButton;
     colourShape1: TShape;
-    rainbowshape1: TShape;
     show_tetrahedrons1: TBitBtn;
     star_level_colouring1: TComboBox;
     TabSheet1: TTabSheet;
@@ -3637,8 +3637,6 @@ begin
   end;
 end;
 
-
-
 procedure Tstackmenu1.gridlines1Click(Sender: TObject);
 begin
   listview1.gridlines:=gridlines1.checked;
@@ -3662,7 +3660,7 @@ var
   i,j,w2,h2 :integer;
   r,g,b,h,x,y : single;
 begin
-  with stackmenu1.rainbowshape1 do
+  with stackmenu1.rainbow_panel1 do
   begin
     w2:= width div 2;
     h2:= height div 2;
@@ -3670,23 +3668,23 @@ begin
     for i:=-w2 to w2  do
     for j:=-h2 to h2 do
     begin
-      if sqr(i)+sqr(j)<sqr(w2)-20 then {plot only in a circel}
+      if sqr(i)+sqr(j)<sqr(w2) then {plot only in a circel}
       begin
         h:=180+Arctan2(i,j)*180/pi;
         HSV2RGB(h, 1 {s 0..1}, 255 {v 0..1},r,g,b);
         canvas.pixels[i+w2,j+h2]:=rgb(trunc(r),trunc(g),trunc(b));
-      end;
+        end;
     end;
 
     Canvas.Pen.width :=2;{thickness lines}
     Canvas.pen.color:=clblack;
     sincos(hue1*pi/180,x,y);
     canvas.moveto(w2,h2);
-    canvas.lineto(w2-round(x*w2),h2-round(y*w2));
+    canvas.lineto(w2-round(x*(w2-3)),h2-round(y*(w2-3)));
 
     sincos(hue2*pi/180,x,y);
     canvas.moveto(w2,h2);
-    canvas.lineto(w2-round(x*w2),h2-round(y*w2));
+    canvas.lineto(w2-round(x*(w2-3)),h2-round(y*(w2-3)));
 
   end;
 end;

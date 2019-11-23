@@ -1101,7 +1101,7 @@ object mainwindow: Tmainwindow
           Enabled = False
           Hint = 'Rotate left.  Saving will apply the changes the original image.'
           ImageIndex = 27
-          ShortCut = 8268
+          ShortCut = 49228
           OnClick = rotateleft1Click
         end
         object rotateright1: TMenuItem
@@ -1109,7 +1109,7 @@ object mainwindow: Tmainwindow
           Enabled = False
           Hint = 'Rotate image. right. Saving will apply the changes the original image.'
           ImageIndex = 28
-          ShortCut = 8274
+          ShortCut = 49234
           OnClick = rotateleft1Click
         end
         object imageflipv1: TMenuItem
@@ -1117,7 +1117,7 @@ object mainwindow: Tmainwindow
           Enabled = False
           Hint = 'Flip image vertical. Saving will apply the changes the original image.'
           ImageIndex = 29
-          ShortCut = 8278
+          ShortCut = 49238
           OnClick = imageflipv1Click
         end
         object imagefliph1: TMenuItem
@@ -1125,7 +1125,7 @@ object mainwindow: Tmainwindow
           Enabled = False
           Hint = 'Flip image horizontal. Saving will apply the changes the original image.'
           ImageIndex = 30
-          ShortCut = 8264
+          ShortCut = 49224
           OnClick = imageflipv1Click
         end
         object rotate_arbitrary1: TMenuItem
