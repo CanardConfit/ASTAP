@@ -104,6 +104,8 @@ type
     flipped1: TMenuItem;
     inversimage1: TMenuItem;
     Enter_rectangle_with_label1: TMenuItem;
+    MenuItem18: TMenuItem;
+    set_area1: TMenuItem;
     rotate_arbitrary1: TMenuItem;
     submenurotate1: TMenuItem;
     imageflipv1: TMenuItem;
@@ -253,6 +255,7 @@ type
     procedure MenuItem15Click(Sender: TObject);
     procedure enterposition1Click(Sender: TObject);
     procedure inversimage1Click(Sender: TObject);
+    procedure set_area1Click(Sender: TObject);
     procedure rotate_arbitrary1Click(Sender: TObject);
     procedure receivemessage(Sender: TObject); {For single instance, receive paramstr(1) from second instance prior to termination}
 
@@ -1006,7 +1009,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.303 dated 2019-11-23';
+  #13+#10+'Version ß0.9.304 dated 2019-11-24';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -8451,6 +8454,37 @@ begin
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
 
+procedure Tmainwindow.set_area1Click(Sender: TObject);
+var
+    dum : integer;
+begin
+
+  if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+   begin
+     starty:=height2-1-starty;
+     oldY:=height2-1-oldY;
+   end;
+
+   if mainwindow.Fliphorizontal1.Checked then
+   begin
+     startX:=width2-1-startX;
+     oldX:=width2-1-oldX;
+   end;
+
+   if startX>oldX then begin dum:=oldX; oldx:=startX; startX:=dum; end;{swap}
+   if startY>oldY then begin dum:=oldY; oldy:=startY; startY:=dum; end;
+
+
+   {selected area colour replace}
+   areax1:=startX;
+   areay1:=startY;
+   areax2:=oldX;
+   areay2:=oldY;
+   stackmenu1.area_set1.caption:='✓';
+
+end;
+
+
 
 
 procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
@@ -9538,9 +9572,9 @@ begin
         col_g:=img1[1,fitsx,fitsy];
         col_b:=img1[2,fitsx,fitsy];
 
-        colrr:=(col_r-cblack)/(cwhite-cblack);{scale to 1}
-        colgg:=(col_g-cblack)/(cwhite-cblack);{scale to 1}
-        colbb:=(col_b-cblack)/(cwhite-cblack);{scale to 1}
+        colrr:=(col_r-cblack)/(cwhite-cblack);{scale to 0..1}
+        colgg:=(col_g-cblack)/(cwhite-cblack);{scale to 0..1}
+        colbb:=(col_b-cblack)/(cwhite-cblack);{scale to 0..1}
 
         if sat_factor<>1 then {adjust saturation}
         begin

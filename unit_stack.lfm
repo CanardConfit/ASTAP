@@ -3210,8 +3210,8 @@ object stackmenu1: Tstackmenu1
     end
     object tab_photometry1: TTabSheet
       Caption = 'Photometry'
-      ClientHeight = 417
-      ClientWidth = 1510
+      ClientHeight = 420
+      ClientWidth = 1506
       ImageIndex = 11
       ParentFont = False
       object browse_photometry1: TButton
@@ -3251,10 +3251,10 @@ object stackmenu1: Tstackmenu1
       end
       object nr_total_photometry1: TLabel
         Left = 272
-        Height = 22
+        Height = 15
         Hint = 'Number of images in the list'
         Top = 10
-        Width = 9
+        Width = 6
         Caption = '0'
         ParentColor = False
         ParentFont = False
@@ -3294,10 +3294,10 @@ object stackmenu1: Tstackmenu1
       end
       object clear_photometry_list1: TButton
         Left = 1016
-        Height = 30
+        Height = 25
         Hint = 'Clear image list'
         Top = 6
-        Width = 44
+        Width = 53
         AutoSize = True
         Caption = 'Clear'
         OnClick = clear_photometry_list1Click
@@ -3308,10 +3308,10 @@ object stackmenu1: Tstackmenu1
       end
       object clear_photometry_alignment1: TButton
         Left = 1080
-        Height = 30
+        Height = 25
         Hint = 'Clears photometric calibration. Use this if you change the star database.'
         Top = 6
-        Width = 216
+        Width = 184
         AutoSize = True
         Caption = 'Clear photometric  calibration'
         OnClick = clear_photometric_solutions1Click
@@ -3322,10 +3322,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview7: TListView
         Left = 0
-        Height = 352
+        Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1301
+        Width = 1506
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3455,10 +3455,10 @@ object stackmenu1: Tstackmenu1
       object help_photometry1: TLabel
         Cursor = crHandPoint
         Left = 632
-        Height = 28
+        Height = 30
         Hint = 'Online help about blink and photometry'
         Top = 3
-        Width = 10
+        Width = 9
         Caption = '?'
         Font.Color = clBlue
         Font.Height = -21
@@ -3470,19 +3470,19 @@ object stackmenu1: Tstackmenu1
       end
       object Label_bin_oversampled1: TLabel
         Left = 1528
-        Height = 22
+        Height = 15
         Top = 12
-        Width = 345
+        Width = 260
         Caption = 'Bin oversampled images first for better  detection'
         ParentColor = False
         ParentFont = False
       end
       object photometry_binx2: TButton
         Left = 664
-        Height = 30
+        Height = 25
         Hint = 'Bin the images for better photometric detection.  Orginal files will not be affected.'
         Top = 6
-        Width = 56
+        Width = 61
         AutoSize = True
         Caption = 'Bin x 2'
         OnClick = photometry_binx2Click
@@ -3513,19 +3513,19 @@ object stackmenu1: Tstackmenu1
       end
       object Label19: TLabel
         Left = 736
-        Height = 22
+        Height = 15
         Top = 12
-        Width = 135
+        Width = 103
         Caption = 'Mark outliers up to:'
         ParentColor = False
         ParentFont = False
       end
       object clear_astrometric_solutions1: TButton
         Left = 1304
-        Height = 30
+        Height = 25
         Hint = 'This will renew the astrometric solutions and photometric calibration . Use this only for the rare case  the solutions are wrong and alignment is poor.'
         Top = 6
-        Width = 215
+        Width = 179
         AutoSize = True
         Caption = 'Refresh astrometric solutions'
         OnClick = clear_photometric_solutions1Click
@@ -3537,8 +3537,8 @@ object stackmenu1: Tstackmenu1
     end
     object tab_live_stacking1: TTabSheet
       Caption = 'Live stacking'
-      ClientHeight = 417
-      ClientWidth = 1510
+      ClientHeight = 420
+      ClientWidth = 1506
       ParentFont = False
       object browse_live_stacking1: TButton
         Left = 16
@@ -3586,7 +3586,7 @@ object stackmenu1: Tstackmenu1
       end
       object live_stacking_path1: TLabel
         Left = 16
-        Height = 22
+        Height = 15
         Top = 64
         Width = 15
         Caption = '---'
@@ -3595,16 +3595,16 @@ object stackmenu1: Tstackmenu1
       end
       object Label15: TLabel
         Left = 24
-        Height = 22
+        Height = 15
         Top = 352
-        Width = 307
+        Width = 227
         Caption = 'Processed files will get a new extension *.*_'
         ParentColor = False
         ParentFont = False
       end
       object files_live_stacked1: TLabel
         Left = 16
-        Height = 22
+        Height = 15
         Top = 96
         Width = 15
         Caption = '---'
@@ -3624,27 +3624,27 @@ object stackmenu1: Tstackmenu1
       end
       object Label20: TLabel
         Left = 24
-        Height = 22
+        Height = 15
         Top = 320
-        Width = 293
+        Width = 215
         Caption = 'Darks and flats will be applied if available'
         ParentColor = False
         ParentFont = False
       end
       object Label30: TLabel
         Left = 24
-        Height = 22
+        Height = 15
         Top = 256
-        Width = 629
+        Width = 469
         Caption = 'Stacking will restart if telescope position has moved  0.2° or when exposure time changes'
         ParentColor = False
         ParentFont = False
       end
       object Label67: TLabel
         Left = 24
-        Height = 22
+        Height = 15
         Top = 288
-        Width = 407
+        Width = 304
         Caption = 'Debayer and colour correction as set in tab Stack method.'
         ParentColor = False
       end
@@ -5128,15 +5128,13 @@ object stackmenu1: Tstackmenu1
           Top = 46
           Width = 76
           Caption = 'Old colour'
-          Checked = True
           TabOrder = 1
-          TabStop = True
         end
         object HueRadioButton2: TRadioButton
           Left = 8
           Height = 19
           Hint = 'Click on the image in the viewer to select a colour'
-          Top = 121
+          Top = 161
           Width = 81
           Caption = 'New colour'
           TabOrder = 0
@@ -5152,14 +5150,14 @@ object stackmenu1: Tstackmenu1
           Left = 120
           Height = 22
           Hint = 'Click on the image in the viewer to select a new colour'
-          Top = 120
+          Top = 160
           Width = 25
         end
         object apply_hue1: TButton
           Left = 8
           Height = 30
           Hint = 'Add noise to the image in the viewer'
-          Top = 158
+          Top = 198
           Width = 114
           Caption = 'Apply'
           OnClick = apply_hue1Click
@@ -5169,11 +5167,12 @@ object stackmenu1: Tstackmenu1
         object hue_fuzziness1: TTrackBar
           Left = 152
           Height = 39
-          Hint = 'Fuziness of old colour.'
+          Hint = 'Fuziness of old colour.  [0..180°]'
           Top = 46
           Width = 96
           LineSize = 5
           Max = 180
+          Min = 1
           OnChange = hue_fuzziness1Change
           PageSize = 5
           Position = 50
@@ -5184,7 +5183,7 @@ object stackmenu1: Tstackmenu1
           Left = 160
           Height = 30
           Hint = 'Undo last action'
-          Top = 160
+          Top = 200
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -5262,11 +5261,11 @@ object stackmenu1: Tstackmenu1
         object new_saturation1: TTrackBar
           Left = 152
           Height = 39
-          Hint = 'Saturation of new colour'
-          Top = 121
+          Hint = 'Saturation of new colour [0..200%]'
+          Top = 161
           Width = 96
           LineSize = 5
-          Max = 100
+          Max = 200
           OnChange = new_saturation1Change
           PageSize = 5
           Position = 100
@@ -5277,7 +5276,7 @@ object stackmenu1: Tstackmenu1
           Left = 272
           Height = 22
           Hint = 'Final new colour'
-          Top = 120
+          Top = 160
           Width = 25
         end
         object rainbow_Panel1: TPanel
@@ -5289,6 +5288,34 @@ object stackmenu1: Tstackmenu1
           BevelOuter = bvNone
           ParentColor = False
           TabOrder = 7
+          OnMouseDown = rainbow_Panel1MouseDown
+        end
+        object area_set1: TLabel
+          Left = 136
+          Height = 15
+          Hint = 'Indicates if area is selected.'
+          Top = 109
+          Width = 10
+          Caption = '⍻'
+          ParentColor = False
+        end
+        object area_selected1: TLabel
+          Left = 8
+          Height = 15
+          Top = 109
+          Width = 96
+          Caption = 'Sub-area selected:'
+          ParentColor = False
+        end
+        object unselect_area1: TButton
+          Left = 184
+          Height = 25
+          Hint = 'Unselect area. If unselected the colours in whole image will be replaced.'
+          Top = 104
+          Width = 35
+          Caption = '⍻'
+          OnClick = unselect_area1Click
+          TabOrder = 8
         end
       end
     end

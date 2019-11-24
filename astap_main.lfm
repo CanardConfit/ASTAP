@@ -1389,6 +1389,14 @@ object mainwindow: Tmainwindow
       Caption = 'Brighten a small area based on the corner values. Apply a few times'
       OnClick = brighten_area1Click
     end
+    object MenuItem18: TMenuItem
+      Caption = '-'
+    end
+    object set_area1: TMenuItem
+      Caption = 'Set area'
+      Hint = 'Set area for colour replace'
+      OnClick = set_area1Click
+    end
     object MenuItem4: TMenuItem
       Caption = '-'
     end

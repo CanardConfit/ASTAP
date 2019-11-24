@@ -95,12 +95,15 @@ type
     browse_blink1: TButton;
     browse_darks1: TButton;
     browse_flats1: TButton;
+    unselect_area1: TButton;
     calibrate_prior_solving1: TCheckBox;
+    area_set1: TLabel;
     colournebula1: TButton;
     create_test_image_stars1: TButton;
     ddp_filter1: TRadioButton;
     ddp_filter2: TRadioButton;
     colourShape3: TShape;
+    area_selected1: TLabel;
     new_saturation1: TTrackBar;
     rainbow_Panel1: TPanel;
     sample_size1: TComboBox;
@@ -511,6 +514,8 @@ type
     procedure hue_fuzziness1Change(Sender: TObject);
     procedure live_stacking1Click(Sender: TObject);
     procedure new_saturation1Change(Sender: TObject);
+    procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
     procedure result_compress1Click(Sender: TObject);
     procedure rename_result1Click(Sender: TObject);
     procedure restore_file_ext1Click(Sender: TObject);
@@ -636,6 +641,7 @@ type
     procedure FormShow(Sender: TObject);
     procedure undo_button_equalise_background1Click(Sender: TObject);
     procedure unselect1Click(Sender: TObject);
+    procedure unselect_area1Click(Sender: TObject);
     procedure UpDown1Click(Sender: TObject; Button: TUDBtnType);
     procedure focallength1Change(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -687,6 +693,7 @@ var
   files_to_process, files_to_process_LRGB : array of  TfileToDo;{contains names to process and index to listview1}
   memo1_text : string;
   flat_norm_value,dark_average,dark_sigma  : double;
+  areax1,areax2,areay1,areay2 : integer;
 
 const
   dark_exposure : integer=987654321;{not done indication}
@@ -789,6 +796,7 @@ const
   P_calibration=16;
 
   outlier=8; {image index for outlier}
+
 
 implementation
 
@@ -2408,6 +2416,11 @@ begin
   if sender=unselect7 then listview_unselect(listview7);{popupmenu blink}
 end;
 
+procedure Tstackmenu1.unselect_area1Click(Sender: TObject);
+begin
+  area_set1.caption:='⍻'
+end;
+
 procedure Tstackmenu1.apply_gaussian_blur_button1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
@@ -3691,15 +3704,20 @@ end;
 
 procedure sample(fitsx,fitsy : integer);{sampe local colour and fill shape with colour}
 var
-    halfboxsize,i,j,counter,fx,fy :integer;
-    r,g,b,h,s,v,saturation_factor : single;
+    halfboxsize,i,j,counter,fx,fy,col_r,col_g,col_b  :integer;
+    r,g,b,h,s,v,saturation_factor,colrr,colgg,colbb,luminance, luminance_stretched,factor, largest : single;
     colour: tcolor;
+    RadioButton1,radiobutton2: boolean;
 begin
+  radiobutton1:=stackmenu1.HueRadioButton1.checked;
+  radiobutton2:=stackmenu1.HueRadioButton2.checked;
+
+  if ((radiobutton1=false) and (radiobutton2=false)) then exit;
   halfboxsize:=(stackmenu1.sample_size1.itemindex);
   counter:=0;
-  r:=0;
-  g:=0;
-  b:=0;
+  colrr:=0;
+  colgg:=0;
+  colbb:=0;
   for i:=-halfboxsize to halfboxsize do
   for j:=-halfboxsize to halfboxsize do {average local colour}
   begin
@@ -3708,24 +3726,63 @@ begin
     if ((fx>=0) and (fx<width2) and (fy>=0) and (fy<height2) ) then
     begin
       inc(counter);
-      r:=r+img_loaded[0,round(fitsX)-1,round(fitsY)-1]-cblack;
-      g:=g+img_loaded[1,round(fitsX)-1,round(fitsY)-1]-cblack;
-      b:=b+img_loaded[2,round(fitsX)-1,round(fitsY)-1]-cblack;
+      colrr:=colrr+img_loaded[0,round(fitsX)-1,round(fitsY)-1];
+      colgg:=colgg+img_loaded[1,round(fitsX)-1,round(fitsY)-1];
+      colbb:=colbb+img_loaded[2,round(fitsX)-1,round(fitsY)-1];
    end;
   end;
 
-  RGB2HSV(r/counter,g/counter,b/counter,h,s,v); {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+  colrr:=((colrr/counter)-cblack)/(cwhite-cblack);{scale to 0..1}
+  colgg:=((colgg/counter)-cblack)/(cwhite-cblack);{scale to 0..1}
+  colbb:=((colbb/counter)-cblack)/(cwhite-cblack);{scale to 0..1}
 
-  if stackmenu1.HueRadioButton1.checked then begin
-                                               HSV2RGB(h , s {s 0..1}, v /256{v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
-                                               stackmenu1.colourshape1.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
-                                               stackmenu1.hue_fuzziness1Change(nil);
-                                             end;
-  if stackmenu1.HueRadioButton2.checked then
+  if colrr<=0.00000000001 then colrr:=0.00000000001;
+  if colgg<=0.00000000001 then colgg:=0.00000000001;
+  if colbb<=0.00000000001 then colbb:=0.00000000001;
+
+  {find brightest colour and resize all if above 1}
+  largest:=colrr;
+  if colgg>largest then largest:=colgg;
+  if colbb>largest then largest:=colbb;
+  if largest>1 then {clamp to 1 but preserve colour, so ratio r,g,b}
   begin
-    HSV2RGB(h , s {s 0..1}, v /256{v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+    colrr:=colrr/largest;
+    colgg:=colgg/largest;
+    colbb:=colbb/largest;
+    largest:=1;
+  end;
+
+  if stretch_on then {Stretch luminance only. Keep RGB ratio !!}
+  begin
+    luminance:=(colrr+colgg+colbb)/3;{luminance in range 0..1}
+    luminance_stretched:=stretch_c[trunc(32768*luminance)];
+    factor:=luminance_stretched/luminance;
+    if factor*largest>1 then factor:=1/largest; {clamp again, could be higher then 1}
+    col_r:=round(colrr*factor*255);{stretch only luminance but keep rgb ratio!}
+    col_g:=round(colgg*factor*255);{stretch only luminance but keep rgb ratio!}
+    col_b:=round(colbb*factor*255);{stretch only luminance but keep rgb ratio!}
+  end
+  else
+  begin
+    col_r:=round(255*colrr);
+    col_g:=round(255*colgg);
+    col_b:=round(255*colbb);
+  end;
+
+  RGB2HSV(col_r,col_g,col_b,h,s,v); {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+
+  if radiobutton1 then
+  begin
+    HSV2RGB(h , s {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+    stackmenu1.colourshape1.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
+    stackmenu1.hue_fuzziness1Change(nil);
+  end
+  else
+  if RadioButton2 then
+  begin
+    HSV2RGB(h , s {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
     stackmenu1.colourshape2.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
-    HSV2RGB(h , s * stackmenu1.new_saturation1.position /100 {s 0..1}, v /256{v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+    HSV2RGB(h , min(1,s * stackmenu1.new_saturation1.position /100) {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
     stackmenu1.colourshape3.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
   end;
 
@@ -3778,6 +3835,45 @@ begin
   HSV2RGB(h , s * stackmenu1.new_saturation1.position /100 {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
   stackmenu1.colourshape3.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
 
+end;
+
+procedure Tstackmenu1.rainbow_Panel1MouseDown(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  w2,h2 : integer;
+  hue,dhue,hue1,hue2,oldhue,s,v,r,g,b   : single;
+  colour : tcolor;
+begin
+  with rainbow_Panel1 do
+  begin
+    w2:= width div 2;
+    h2:= height div 2;
+
+    hue:=180+Arctan2(x-w2,y-h2)*180/pi;
+
+    dhue:=hue_fuzziness1.position;
+    hue1:=hue - dhue/2;
+    hue2:=hue + dhue/2;
+    plot_hue_disk(hue1,hue2);
+  end;
+
+  {adapt shape colours}
+  if HueRadioButton1.checked then
+  begin
+    colour:=colourShape1.brush.color;
+    RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),oldhue,s,v);
+    HSV2RGB(hue , s {s 0..1}, v {v 0..1},r,g,b);
+    colourShape1.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
+  end;
+  if HueRadioButton2.checked then
+  begin
+    colour:=colourShape2.brush.color;
+    RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),oldhue,s,v);
+    HSV2RGB(hue , s {s 0..1}, v {v 0..1},r,g,b);
+    colourShape2.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
+    HSV2RGB(hue , s*new_saturation1.position /100 {s 0..1}, v {v 0..1},r,g,b);
+    colourShape3.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
+  end;
 end;
 
 procedure Tstackmenu1.result_compress1Click(Sender: TObject);
@@ -5403,6 +5499,7 @@ procedure Tstackmenu1.apply_hue1Click(Sender: TObject);
 var fitsX, fitsY,col,fuzziness :integer;
     r,g,b,h,s,v,oldhue,newhue,dhue,saturation_factor : single;
     Save_Cursor:TCursor;
+    selected_area : boolean;
     colour: tcolor;
 begin
   if ((fits_file=false) and (naxis3<>3)) then exit;
@@ -5419,9 +5516,18 @@ begin
   colour:=colourShape3.brush.color;
   RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),newhue,s,v);
 
+  if stackmenu1.area_set1.caption<>'✓'  then {no area selected}
+  begin
+    areax1:=0;
+    areay1:=0;
+    areax2:=width2-1;
+    areaY2:=height2-1;
+  end;
+  {else set in astap_main}
 
-  for fitsY:=0 to height2-1 do
-    for fitsX:=0 to width2-1 do
+
+  for fitsY:=areay1 to areay2 do
+    for fitsX:=areax1 to areax2 do
     begin {subtract view from file}
       RGB2HSV(img_loaded[0,fitsX,fitsY]-cblack,
               img_loaded[1,fitsX,fitsY]-cblack,
@@ -5430,7 +5536,7 @@ begin
       dhue:=abs(oldhue - h);
       if ((dhue<=fuzziness) or (dhue>=360-fuzziness)) then {colour close enough, replace colour}
       begin
-        HSV2RGB(newhue , s*saturation_factor {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+        HSV2RGB(newhue , min(1,s*saturation_factor) {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 
         img_loaded[0,fitsX,fitsY]:=r +cblack;
         img_loaded[1,fitsX,fitsY]:=g +cblack;
