@@ -1,12 +1,12 @@
 object stackmenu1: Tstackmenu1
-  Left = 414
+  Left = 82
   Height = 660
-  Top = 176
-  Width = 1515
+  Top = 103
+  Width = 1450
   AllowDropFiles = True
   Caption = 'stack menu'
   ClientHeight = 660
-  ClientWidth = 1515
+  ClientWidth = 1450
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -46,12 +46,12 @@ object stackmenu1: Tstackmenu1
   OnPaint = FormPaint
   OnResize = FormResize
   OnShow = FormShow
-  LCLVersion = '2.0.2.0'
+  LCLVersion = '2.0.6.0'
   object Memo2: TMemo
     Left = 0
     Height = 150
     Top = 510
-    Width = 1515
+    Width = 1450
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -198,7 +198,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1498
+    Left = 1433
     Height = 15
     Hint = 'Click to widen.'
     Top = 440
@@ -212,11 +212,11 @@ object stackmenu1: Tstackmenu1
     OnClick = more_indication1Click
   end
   object pagecontrol1: TPageControl
-    Left = 1
+    Left = 0
     Height = 448
     Hint = 'Stack menu'
     Top = 0
-    Width = 1514
+    Width = 1449
     ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
@@ -233,7 +233,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the light frames'
       Caption = 'Images'
       ClientHeight = 420
-      ClientWidth = 1506
+      ClientWidth = 1441
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -307,7 +307,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1506
+        Width = 1441
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -565,8 +565,8 @@ object stackmenu1: Tstackmenu1
     object Darks: TTabSheet
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
-      ClientHeight = 417
-      ClientWidth = 1510
+      ClientHeight = 420
+      ClientWidth = 1441
       ImageIndex = 1
       ParentFont = False
       object browse_darks1: TButton
@@ -584,10 +584,10 @@ object stackmenu1: Tstackmenu1
       end
       object replace_by_master_dark1: TButton
         Left = 312
-        Height = 30
+        Height = 25
         Hint = 'Combine to check-marked files to master dark. The other files are not affected.'
         Top = 6
-        Width = 365
+        Width = 295
         AutoSize = True
         Caption = 'Replace check-marked by one or more master dark'
         OnClick = replace_by_master_dark1Click
@@ -596,10 +596,10 @@ object stackmenu1: Tstackmenu1
       end
       object clear_dark_list1: TButton
         Left = 736
-        Height = 30
+        Height = 25
         Hint = 'Clear image list'
         Top = 6
-        Width = 44
+        Width = 53
         AutoSize = True
         Caption = 'Clear'
         OnClick = clear_dark_list1Click
@@ -610,10 +610,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview2: TListView
         Left = 0
-        Height = 367
+        Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1299
+        Width = 1440
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -706,10 +706,10 @@ object stackmenu1: Tstackmenu1
       end
       object nr_total_darks1: TLabel
         Left = 272
-        Height = 22
+        Height = 15
         Hint = 'Number of images in the list'
         Top = 10
-        Width = 9
+        Width = 6
         Caption = '0'
         Color = clBtnFace
         ParentColor = False
@@ -720,8 +720,8 @@ object stackmenu1: Tstackmenu1
     object Flats: TTabSheet
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
-      ClientHeight = 417
-      ClientWidth = 1510
+      ClientHeight = 420
+      ClientWidth = 1441
       ImageIndex = 2
       ParentFont = False
       object browse_flats1: TButton
@@ -771,10 +771,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview3: TListView
         Left = 0
-        Height = 372
+        Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1266
+        Width = 1441
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -874,8 +874,8 @@ object stackmenu1: Tstackmenu1
     object Bias: TTabSheet
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
-      ClientHeight = 417
-      ClientWidth = 1510
+      ClientHeight = 420
+      ClientWidth = 1441
       ImageIndex = 3
       ParentFont = False
       object browse_bias1: TButton
@@ -913,10 +913,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview4: TListView
         Left = 0
-        Height = 372
+        Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1266
+        Width = 1441
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -2107,8 +2107,8 @@ object stackmenu1: Tstackmenu1
     object alignment1: TTabSheet
       Hint = 'Set here the alignment options'
       Caption = 'Alignment'
-      ClientHeight = 417
-      ClientWidth = 1510
+      ClientHeight = 420
+      ClientWidth = 1506
       ImageIndex = 7
       OnContextPopup = alignment1ContextPopup
       ParentFont = False
@@ -2892,16 +2892,16 @@ object stackmenu1: Tstackmenu1
     object tab_blink1: TTabSheet
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
-      ClientHeight = 417
-      ClientWidth = 1510
+      ClientHeight = 420
+      ClientWidth = 1506
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
         Left = 0
-        Height = 372
+        Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1266
+        Width = 1506
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3656,111 +3656,19 @@ object stackmenu1: Tstackmenu1
       ClientWidth = 1506
       ImageIndex = 4
       ParentFont = False
-      object GroupBox4: TGroupBox
-        Left = 564
-        Height = 60
-        Top = 208
-        Width = 212
-        Caption = 'Gaussian blur'
-        ClientHeight = 40
-        ClientWidth = 208
-        ParentFont = False
-        TabOrder = 0
-        object apply_gaussian_blur_button1: TButton
-          Left = 82
-          Height = 30
-          Hint = 'Apply gaussian blur after stacking to reduce noise. Hit CTRL-Z to undo'
-          Top = 4
-          Width = 80
-          Caption = 'Apply'
-          Enabled = False
-          OnClick = apply_gaussian_blur_button1Click
-          ParentFont = False
-          ParentShowHint = False
-          ShowHint = True
-          TabOrder = 1
-        end
-        object blur_factor1: TComboBox
-          Left = 1
-          Height = 23
-          Top = 1
-          Width = 69
-          ItemHeight = 15
-          ItemIndex = 0
-          Items.Strings = (
-            '0.5 '
-            '0.6'
-            '0.7'
-            '0.8'
-            '10'
-            '20'
-            '40'
-            ''
-          )
-          ParentFont = False
-          TabOrder = 0
-          Text = '0.5 '
-        end
-        object undo_button2: TBitBtn
-          Left = 168
-          Height = 30
-          Hint = 'Undo last action'
-          Top = 4
-          Width = 30
-          Glyph.Data = {
-            36040000424D3604000000000000360000002800000010000000100000000100
-            2000000000000004000000000000000000000000000000000000FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
-            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
-            C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          }
-          OnClick = undo_button2Click
-          ParentFont = False
-          TabOrder = 2
-        end
-      end
       object GroupBox5: TGroupBox
-        Left = 349
+        Left = 355
         Height = 104
         Hint = 'Apply following to current displayed image:'
         Top = 8
-        Width = 426
+        Width = 430
         Caption = 'Colour correction'
         ClientHeight = 84
-        ClientWidth = 422
+        ClientWidth = 426
         ParentFont = False
-        TabOrder = 1
+        TabOrder = 0
         object Label14: TLabel
-          Left = 0
+          Left = 4
           Height = 20
           Top = 3
           Width = 87
@@ -3774,7 +3682,7 @@ object stackmenu1: Tstackmenu1
           Transparent = False
         end
         object Label17: TLabel
-          Left = 0
+          Left = 4
           Height = 20
           Top = 27
           Width = 87
@@ -3828,11 +3736,11 @@ object stackmenu1: Tstackmenu1
           Text = '1.0'
         end
         object apply_factor1: TButton
-          Left = 186
+          Left = 212
           Height = 30
           Hint = 'Apply above actions. Hit CTRL-Z to undo.'
           Top = 53
-          Width = 185
+          Width = 157
           Caption = 'Apply'
           Enabled = False
           OnClick = apply_factor1Click
@@ -3860,7 +3768,7 @@ object stackmenu1: Tstackmenu1
           Text = '0.0'
         end
         object undo_button4: TBitBtn
-          Left = 382
+          Left = 387
           Height = 30
           Hint = 'Undo last action'
           Top = 53
@@ -3929,21 +3837,21 @@ object stackmenu1: Tstackmenu1
         end
       end
       object GroupBox_equalise_tool1: TGroupBox
-        Left = 350
+        Left = 355
         Height = 60
-        Top = 272
-        Width = 212
+        Top = 320
+        Width = 430
         Caption = 'Artificial flat-field correction'
         ClientHeight = 40
-        ClientWidth = 208
+        ClientWidth = 426
         ParentFont = False
-        TabOrder = 2
+        TabOrder = 1
         object apply_artificial_flat_correction1: TButton
-          Left = 80
+          Left = 212
           Height = 30
           Hint = 'Equalise corners of the image below the average background. '
-          Top = 4
-          Width = 80
+          Top = 1
+          Width = 157
           Caption = 'Apply'
           Enabled = False
           OnClick = apply_artificial_flat_correction1Click
@@ -3951,10 +3859,10 @@ object stackmenu1: Tstackmenu1
           TabOrder = 1
         end
         object undo_button3: TBitBtn
-          Left = 170
+          Left = 387
           Height = 30
           Hint = 'Undo last action'
-          Top = 4
+          Top = 2
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -3997,7 +3905,7 @@ object stackmenu1: Tstackmenu1
           TabOrder = 2
         end
         object equalise_box_size1: TComboBox
-          Left = 7
+          Left = 68
           Height = 23
           Hint = 'Filter box size used to detect the local median value.'
           Top = 1
@@ -4017,18 +3925,18 @@ object stackmenu1: Tstackmenu1
       end
       object GroupBox7: TGroupBox
         Left = 0
-        Height = 365
+        Height = 372
         Top = 8
         Width = 344
         Caption = 'Equalise background tool'
-        ClientHeight = 345
+        ClientHeight = 352
         ClientWidth = 340
         ParentFont = False
-        TabOrder = 3
+        TabOrder = 2
         object equalise_gaussian_filter1: TEdit
           Left = 305
           Height = 23
-          Hint = 'Gaussian filter factor. Typical value is 40'
+          Hint = 'Gaussian filter factor. This should be about twice of the most common factor. Typical value is 40'
           Top = 114
           Width = 32
           ParentFont = False
@@ -4050,7 +3958,7 @@ object stackmenu1: Tstackmenu1
         object most_common_filter_radius1: TEdit
           Left = 305
           Height = 23
-          Hint = 'Median filter factor. Typical value is 20'
+          Hint = 'Median filter factor (box size). Typical value is 20'
           Top = 80
           Width = 32
           ParentFont = False
@@ -4273,219 +4181,59 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
           Transparent = False
         end
-      end
-      object GroupBox9: TGroupBox
-        Left = 784
-        Height = 56
-        Hint = 'Spit viewer image in red, green and blue file.'
-        Top = 208
-        Width = 202
-        Caption = 'Split in seperate R, G, B files.'
-        ClientHeight = 36
-        ClientWidth = 198
-        ParentFont = False
-        TabOrder = 4
-        object splitRGB1: TButton
-          Left = 7
+        object help_pixel_math1: TLabel
+          Cursor = crHandPoint
+          Left = 326
           Height = 30
-          Hint = 'This will make three seperate files'
-          Top = 1
-          Width = 184
-          Caption = 'Split in R, G, B'
-          Enabled = False
-          OnClick = splitRGB1Click
-          ParentFont = False
-          TabOrder = 0
-        end
-      end
-      object GroupBox10: TGroupBox
-        Left = 350
-        Height = 64
-        Top = 336
-        Width = 426
-        Caption = 'Resize current viewer image'
-        ClientHeight = 44
-        ClientWidth = 422
-        ParentFont = False
-        TabOrder = 5
-        object Button_free_resize_fits1: TButton
-          Left = 294
-          Height = 30
-          Hint = 'Resize current image in the viewer'
-          Top = 8
-          Width = 80
-          Caption = 'Resize'
-          Enabled = False
-          OnClick = free_resize_fits1Click
-          ParentFont = False
-          TabOrder = 3
-        end
-        object Edit_width1: TEdit
-          Left = 92
-          Height = 23
-          Hint = 'Width'
-          Top = 5
-          Width = 56
-          OnChange = Edit_width1Change
-          ParentFont = False
-          TabOrder = 1
-          Text = '300'
-        end
-        object width_UpDown1: TUpDown
-          Left = 148
-          Height = 23
-          Top = 5
-          Width = 17
-          Associate = Edit_width1
-          Increment = 10
-          Max = 32000
-          Min = 10
-          Position = 300
-          TabOrder = 2
-        end
-        object undo_button5: TBitBtn
-          Left = 382
-          Height = 30
-          Hint = 'Undo last action'
-          Top = 8
-          Width = 30
-          Glyph.Data = {
-            36040000424D3604000000000000360000002800000010000000100000000100
-            2000000000000004000000000000000000000000000000000000FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
-            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
-            C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          }
-          OnClick = undo_button2Click
-          ParentFont = False
-          TabOrder = 4
-        end
-        object resize_factor1: TComboBox
-          Left = 8
-          Height = 23
-          Hint = 'Resize from current format'
-          Top = 5
-          Width = 60
-          ItemHeight = 15
-          ItemIndex = 3
-          Items.Strings = (
-            '3'
-            '2'
-            '1'
-            '0.5'
-            '0.25'
-            ''
-            ''
-          )
-          OnChange = resize_factor1Change
-          ParentFont = False
-          TabOrder = 0
-          Text = '0.5'
-        end
-        object new_height1: TLabel
-          Left = 200
-          Height = 15
-          Top = 8
-          Width = 24
-          Caption = '1080'
-          Color = clBtnFace
+          Hint = 'Help'
+          Top = -8
+          Width = 9
+          Caption = '?'
+          Font.Color = clBlue
+          Font.Height = -21
           ParentColor = False
           ParentFont = False
-          Transparent = False
+          ParentShowHint = False
+          ShowHint = True
+          OnClick = help_pixel_math1Click
         end
-        object new_height2: TLabel
-          Left = 176
-          Height = 15
-          Top = 8
-          Width = 6
-          Caption = 'x'
-          Color = clBtnFace
-          ParentColor = False
-          ParentFont = False
-          Transparent = False
-        end
-      end
-      object help_pixel_math1: TLabel
-        Cursor = crHandPoint
-        Left = 296
-        Height = 30
-        Hint = 'Help'
-        Top = 368
-        Width = 9
-        Caption = '?'
-        Font.Color = clBlue
-        Font.Height = -21
-        ParentColor = False
-        ParentFont = False
-        ParentShowHint = False
-        ShowHint = True
-        OnClick = help_pixel_math1Click
       end
       object GroupBox1: TGroupBox
-        Left = 783
-        Height = 112
-        Top = 88
-        Width = 202
+        Left = 355
+        Height = 80
+        Top = 176
+        Width = 430
         Caption = 'Background colour removal'
-        ClientHeight = 92
-        ClientWidth = 198
+        ClientHeight = 60
+        ClientWidth = 426
         ParentFont = False
-        TabOrder = 6
+        TabOrder = 3
         object apply_remove_background_colour1: TButton
-          Left = 8
+          Left = 212
           Height = 30
           Hint = 'This command removes the background colour.'
-          Top = 58
-          Width = 184
-          Caption = 'Remove background colour'
+          Top = 24
+          Width = 160
+          Caption = 'Apply'
           Enabled = False
           OnClick = apply_remove_background_colour1Click
           ParentFont = False
           TabOrder = 3
         end
         object Label26: TLabel
-          Left = 8
+          Left = 4
           Height = 15
-          Top = 13
+          Top = 7
           Width = 129
           Caption = 'Smooth below σ factors:'
           ParentColor = False
           ParentFont = False
         end
         object sigma_factor_remove_background_colourR1: TComboBox
-          Left = 8
+          Left = 4
           Height = 23
           Hint = 'Standard deviation of background noise. Normal value 2.5 to 3.0. Could influence faint nebula.'
-          Top = 32
+          Top = 26
           Width = 60
           Color = 13158655
           ItemHeight = 15
@@ -4505,10 +4253,10 @@ object stackmenu1: Tstackmenu1
           Text = '2.5'
         end
         object sigma_factor_remove_background_colourG1: TComboBox
-          Left = 72
+          Left = 68
           Height = 23
           Hint = 'Standard deviation of background noise. Normal value 2.5 to 3.0. Could influence faint nebula.'
-          Top = 32
+          Top = 26
           Width = 60
           Color = 13172680
           ItemHeight = 15
@@ -4528,10 +4276,10 @@ object stackmenu1: Tstackmenu1
           Text = '2.5'
         end
         object sigma_factor_remove_background_colourB1: TComboBox
-          Left = 136
+          Left = 132
           Height = 23
           Hint = 'Standard deviation of background noise. Normal value 2.5 to 3.0. Could influence faint nebula.'
-          Top = 32
+          Top = 26
           Width = 60
           Color = 16763080
           ItemHeight = 15
@@ -4551,10 +4299,10 @@ object stackmenu1: Tstackmenu1
           Text = '1.5'
         end
         object undo_button9: TBitBtn
-          Left = 166
+          Left = 387
           Height = 30
           Hint = 'Undo last action'
-          Top = -8
+          Top = 24
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -4598,22 +4346,22 @@ object stackmenu1: Tstackmenu1
         end
       end
       object GroupBox2: TGroupBox
-        Left = 783
-        Height = 72
+        Left = 355
+        Height = 60
         Hint = 'Improves colour of saturated stars'
-        Top = 8
-        Width = 202
+        Top = 112
+        Width = 430
         Caption = 'Smart colour smoothing'
-        ClientHeight = 52
-        ClientWidth = 198
+        ClientHeight = 40
+        ClientWidth = 426
         ParentFont = False
-        TabOrder = 7
+        TabOrder = 4
         object smart_colour_smooth_button1: TButton
-          Left = 80
+          Left = 212
           Height = 30
           Hint = 'This routine smoothes the colour of and try to preserve nebula.'
-          Top = 4
-          Width = 71
+          Top = 0
+          Width = 156
           Caption = 'Apply'
           Enabled = False
           OnClick = smart_colour_smooth_button1Click
@@ -4621,10 +4369,10 @@ object stackmenu1: Tstackmenu1
           TabOrder = 1
         end
         object smart_smooth_width1: TComboBox
-          Left = 4
+          Left = 68
           Height = 23
           Hint = 'Factor for colour smoothing. This will keep luminance but smooth the colours '
-          Top = 4
+          Top = 3
           Width = 60
           ItemHeight = 15
           ItemIndex = 2
@@ -4641,10 +4389,10 @@ object stackmenu1: Tstackmenu1
           Text = '10'
         end
         object undo_button13: TBitBtn
-          Left = 161
+          Left = 387
           Height = 30
           Hint = 'Undo last action'
-          Top = 4
+          Top = 0
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -4685,210 +4433,10 @@ object stackmenu1: Tstackmenu1
           OnClick = undo_button2Click
           ParentFont = False
           TabOrder = 2
-        end
-      end
-      object GroupBox12: TGroupBox
-        Left = 350
-        Height = 60
-        Top = 208
-        Width = 212
-        Caption = 'Extract background/artificial flat'
-        ClientHeight = 40
-        ClientWidth = 208
-        ParentFont = False
-        TabOrder = 8
-        object apply_get_background1: TButton
-          Left = 80
-          Height = 30
-          Hint = 'Replace the values in each box with the most common value using the most common filter. This works better then removing stars as outliers.'
-          Top = 4
-          Width = 80
-          Caption = 'Apply'
-          Enabled = False
-          OnClick = apply_get_background1Click
-          ParentFont = False
-          TabOrder = 1
-        end
-        object undo_button10: TBitBtn
-          Left = 170
-          Height = 30
-          Hint = 'Undo last action'
-          Top = 4
-          Width = 30
-          Glyph.Data = {
-            36040000424D3604000000000000360000002800000010000000100000000100
-            2000000000000004000000000000000000000000000000000000FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
-            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
-            C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          }
-          OnClick = undo_button2Click
-          ParentFont = False
-          TabOrder = 2
-        end
-        object extract_background_box_size1: TComboBox
-          Left = 7
-          Height = 23
-          Hint = 'Filter box size'
-          Top = 1
-          Width = 60
-          ItemHeight = 15
-          ItemIndex = 0
-          Items.Strings = (
-            '20'
-            '30'
-            '40'
-            '50'
-          )
-          OnChange = resize_factor1Change
-          ParentFont = False
-          TabOrder = 0
-          Text = '20'
-        end
-      end
-      object GroupBox6: TGroupBox
-        Left = 350
-        Height = 88
-        Hint = 'Apply a flat image or add or subtract an image. '
-        Top = 112
-        Width = 425
-        Caption = 'Apply file to image in viewer'
-        ClientHeight = 68
-        ClientWidth = 421
-        ParentFont = False
-        TabOrder = 9
-        object add_substract1: TComboBox
-          Left = 87
-          Height = 23
-          Hint = 'Add or subtract files. The apply flat routine can work with mono or colour flat files. '
-          Top = 27
-          Width = 197
-          ItemHeight = 15
-          Items.Strings = (
-            'Add file'
-            'Subtract file from view'
-            'Subtract file from view +1000'
-            'Subtract view from file'
-            'Subtract view from file +1000'
-            'Apply file as flat field'
-            ''
-          )
-          ParentFont = False
-          TabOrder = 1
-        end
-        object file_to_add1: TButton
-          Left = 7
-          Height = 30
-          Hint = 'Select images to add/subtract or use a flat.'
-          Top = 27
-          Width = 75
-          Caption = 'Browse'
-          OnClick = file_to_add1Click
-          ParentFont = False
-          ParentShowHint = False
-          ShowHint = True
-          TabOrder = 0
-        end
-        object image_to_add1: TLabel
-          Left = 8
-          Height = 15
-          Top = 2
-          Width = 15
-          Caption = '---'
-          ParentColor = False
-          ParentFont = False
-          WordWrap = True
-        end
-        object apply_file1: TButton
-          Left = 293
-          Height = 30
-          Hint = 'Apply above actions. Hit CTRL-Z to undo.'
-          Top = 27
-          Width = 80
-          Caption = 'Apply'
-          Enabled = False
-          OnClick = apply_file1Click
-          ParentFont = False
-          TabOrder = 2
-        end
-        object undo_button11: TBitBtn
-          Left = 383
-          Height = 30
-          Hint = 'Undo last action'
-          Top = 27
-          Width = 30
-          Glyph.Data = {
-            36040000424D3604000000000000360000002800000010000000100000000100
-            2000000000000004000000000000000000000000000000000000FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-            FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
-            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
-            C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          }
-          OnClick = undo_button2Click
-          ParentFont = False
-          TabOrder = 3
         end
       end
       object GroupBox16: TGroupBox
-        Left = 1000
+        Left = 797
         Height = 116
         Top = 8
         Width = 352
@@ -4896,7 +4444,7 @@ object stackmenu1: Tstackmenu1
         ClientHeight = 96
         ClientWidth = 348
         ParentFont = False
-        TabOrder = 10
+        TabOrder = 5
         object Label55: TLabel
           Left = 63
           Height = 20
@@ -4931,7 +4479,7 @@ object stackmenu1: Tstackmenu1
           Text = '2.0'
         end
         object undo_button14: TBitBtn
-          Left = 200
+          Left = 304
           Height = 30
           Hint = 'Undo last action'
           Top = 64
@@ -4977,7 +4525,7 @@ object stackmenu1: Tstackmenu1
           TabOrder = 3
         end
         object apply_background_noise_filter1: TButton
-          Left = 8
+          Left = 104
           Height = 30
           Top = 64
           Width = 184
@@ -5022,20 +4570,20 @@ object stackmenu1: Tstackmenu1
         end
       end
       object GroupBox_equalise_tool2: TGroupBox
-        Left = 564
+        Left = 355
         Height = 60
-        Top = 272
-        Width = 212
+        Top = 256
+        Width = 430
         Caption = 'Remove gradient'
         ClientHeight = 40
-        ClientWidth = 208
+        ClientWidth = 426
         ParentFont = False
-        TabOrder = 11
+        TabOrder = 6
         object undo_button15: TBitBtn
-          Left = 176
+          Left = 387
           Height = 30
           Hint = 'Undo last action'
-          Top = 4
+          Top = 0
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -5078,21 +4626,22 @@ object stackmenu1: Tstackmenu1
           TabOrder = 3
         end
         object apply_vertical_gradient1: TButton
-          Left = 48
-          Height = 25
+          Left = 209
+          Height = 30
           Hint = 'This will remove any vertical gradient. For any other angle apply both.'
-          Top = 4
+          Top = 0
           Width = 65
           AutoSize = True
           Caption = 'Apply ↕'
+          Constraints.MinHeight = 30
           OnClick = apply_vertical_gradient1Click
           ParentFont = False
           TabOrder = 1
         end
         object gradient_filter_factor1: TEdit
-          Left = 8
+          Left = 68
           Height = 23
-          Hint = 'Filter factor. Typical value is 30'
+          Hint = 'Filter factor (box size). Typical value is 30'
           Top = 1
           Width = 32
           ParentFont = False
@@ -5100,27 +4649,28 @@ object stackmenu1: Tstackmenu1
           Text = '30'
         end
         object apply_horizontal_gradient1: TButton
-          Left = 106
-          Height = 25
+          Left = 299
+          Height = 30
           Hint = 'This will remove any horizontal gradient. For any other angle apply both.'
-          Top = 4
+          Top = 0
           Width = 70
           AutoSize = True
           Caption = 'Apply ↔'
+          Constraints.MinHeight = 30
           OnClick = apply_vertical_gradient1Click
           ParentFont = False
           TabOrder = 2
         end
       end
       object GroupBox11: TGroupBox
-        Left = 1000
-        Height = 264
-        Top = 136
+        Left = 797
+        Height = 258
+        Top = 122
         Width = 353
         Caption = 'Colour replace'
-        ClientHeight = 244
+        ClientHeight = 238
         ClientWidth = 349
-        TabOrder = 12
+        TabOrder = 7
         object HueRadioButton1: TRadioButton
           Left = 8
           Height = 19
@@ -5154,11 +4704,11 @@ object stackmenu1: Tstackmenu1
           Width = 25
         end
         object apply_hue1: TButton
-          Left = 8
+          Left = 104
           Height = 30
           Hint = 'Add noise to the image in the viewer'
-          Top = 198
-          Width = 114
+          Top = 200
+          Width = 184
           Caption = 'Apply'
           OnClick = apply_hue1Click
           ParentFont = False
@@ -5180,7 +4730,7 @@ object stackmenu1: Tstackmenu1
           TabOrder = 3
         end
         object undo_button16: TBitBtn
-          Left = 160
+          Left = 304
           Height = 30
           Hint = 'Undo last action'
           Top = 200
@@ -5321,8 +4871,8 @@ object stackmenu1: Tstackmenu1
     end
     object TabSheet1: TTabSheet
       Caption = 'Pixel math 2'
-      ClientHeight = 417
-      ClientWidth = 1510
+      ClientHeight = 420
+      ClientWidth = 1506
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox
         Left = 8
@@ -5539,20 +5089,20 @@ object stackmenu1: Tstackmenu1
         end
       end
       object GroupBox3: TGroupBox
-        Left = 544
-        Height = 89
-        Top = 191
-        Width = 137
+        Left = 776
+        Height = 57
+        Top = 112
+        Width = 256
         Caption = 'Add noise'
-        ClientHeight = 69
-        ClientWidth = 133
+        ClientHeight = 37
+        ClientWidth = 252
         ParentFont = False
         TabOrder = 1
         object add_noise1: TButton
-          Left = 8
+          Left = 129
           Height = 30
           Hint = 'Add noise to the image in the viewer'
-          Top = 32
+          Top = -2
           Width = 118
           Caption = 'Apply'
           OnClick = add_noise1Click
@@ -5571,10 +5121,10 @@ object stackmenu1: Tstackmenu1
         end
       end
       object GroupBox14: TGroupBox
-        Left = 280
+        Left = 512
         Height = 104
         Hint = 'Artificial colouring of H-alpha images. Clouds will be made red. Stars white.'
-        Top = 8
+        Top = 72
         Width = 200
         Caption = 'Artificial colouring'
         ClientHeight = 84
@@ -5585,7 +5135,7 @@ object stackmenu1: Tstackmenu1
           Left = 8
           Height = 30
           Top = 48
-          Width = 118
+          Width = 136
           Caption = 'Colour nebula'
           OnClick = colournebula1Click
           ParentFont = False
@@ -5694,21 +5244,21 @@ object stackmenu1: Tstackmenu1
         end
       end
       object GroupBox_test_images1: TGroupBox
-        Left = 545
-        Height = 168
+        Left = 776
+        Height = 96
         Hint = 'Create artificial test image for testing star detection. This tool is intendent for developpers only.'
         Top = 8
-        Width = 136
+        Width = 255
         Caption = 'Create test images'
-        ClientHeight = 148
-        ClientWidth = 132
+        ClientHeight = 76
+        ClientWidth = 251
         ParentFont = False
         TabOrder = 3
         object apply_create_gradient1: TButton
-          Left = 8
+          Left = 128
           Height = 30
           Hint = 'Create a FITS test image with levels of gray and colour.'
-          Top = 112
+          Top = 37
           Width = 118
           Caption = 'Gradient'
           OnClick = apply_create_gradient1Click
@@ -5716,10 +5266,10 @@ object stackmenu1: Tstackmenu1
           TabOrder = 3
         end
         object create_test_image_stars1: TButton
-          Left = 8
+          Left = 128
           Height = 25
           Hint = 'This will create a FITS image with rows of hotpixels, Gaussian stars with a HFD of 2.5 and 5.0'
-          Top = 16
+          Top = 8
           Width = 118
           Caption = 'Stars, hot pixels'
           OnClick = apply_create_gradient1Click
@@ -5730,7 +5280,7 @@ object stackmenu1: Tstackmenu1
           Left = 8
           Height = 19
           Hint = 'Add a typical gradient of telescope. The center is more bright then the corners.'
-          Top = 80
+          Top = 40
           Width = 65
           Caption = 'Gradient'
           Checked = True
@@ -5742,7 +5292,7 @@ object stackmenu1: Tstackmenu1
           Left = 8
           Height = 23
           Hint = 'HFD of the simulated stars'
-          Top = 45
+          Top = 8
           Width = 80
           ItemHeight = 15
           ItemIndex = 1
@@ -5763,16 +5313,484 @@ object stackmenu1: Tstackmenu1
           Text = '2.5'
         end
       end
+      object GroupBox12: TGroupBox
+        Left = 288
+        Height = 60
+        Top = 8
+        Width = 212
+        Caption = 'Extract background/artificial flat'
+        ClientHeight = 40
+        ClientWidth = 208
+        ParentFont = False
+        TabOrder = 4
+        object apply_get_background1: TButton
+          Left = 80
+          Height = 30
+          Hint = 'Replace the values in each box with the most common value using the most common filter. This works better then removing stars as outliers.'
+          Top = 4
+          Width = 80
+          Caption = 'Apply'
+          Enabled = False
+          OnClick = apply_get_background1Click
+          ParentFont = False
+          TabOrder = 1
+        end
+        object undo_button10: TBitBtn
+          Left = 170
+          Height = 30
+          Hint = 'Undo last action'
+          Top = 4
+          Width = 30
+          Glyph.Data = {
+            36040000424D3604000000000000360000002800000010000000100000000100
+            2000000000000004000000000000000000000000000000000000FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
+            C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          }
+          OnClick = undo_button2Click
+          ParentFont = False
+          TabOrder = 2
+        end
+        object extract_background_box_size1: TComboBox
+          Left = 7
+          Height = 23
+          Hint = 'Filter box size'
+          Top = 4
+          Width = 60
+          ItemHeight = 15
+          ItemIndex = 0
+          Items.Strings = (
+            '20'
+            '30'
+            '40'
+            '50'
+          )
+          OnChange = resize_factor1Change
+          ParentFont = False
+          TabOrder = 0
+          Text = '20'
+        end
+      end
+      object GroupBox4: TGroupBox
+        Left = 288
+        Height = 60
+        Top = 72
+        Width = 212
+        Caption = 'Gaussian blur'
+        ClientHeight = 40
+        ClientWidth = 208
+        ParentFont = False
+        TabOrder = 5
+        object apply_gaussian_blur_button1: TButton
+          Left = 82
+          Height = 30
+          Hint = 'Apply gaussian blur after stacking to reduce noise. Hit CTRL-Z to undo'
+          Top = 4
+          Width = 80
+          Caption = 'Apply'
+          Enabled = False
+          OnClick = apply_gaussian_blur_button1Click
+          ParentFont = False
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 1
+        end
+        object blur_factor1: TComboBox
+          Left = 7
+          Height = 23
+          Top = 4
+          Width = 63
+          ItemHeight = 15
+          ItemIndex = 0
+          Items.Strings = (
+            '0.5 '
+            '0.6'
+            '0.7'
+            '0.8'
+            '10'
+            '20'
+            '40'
+            ''
+          )
+          ParentFont = False
+          TabOrder = 0
+          Text = '0.5 '
+        end
+        object undo_button2: TBitBtn
+          Left = 168
+          Height = 30
+          Hint = 'Undo last action'
+          Top = 4
+          Width = 30
+          Glyph.Data = {
+            36040000424D3604000000000000360000002800000010000000100000000100
+            2000000000000004000000000000000000000000000000000000FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
+            C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          }
+          OnClick = undo_button2Click
+          ParentFont = False
+          TabOrder = 2
+        end
+      end
+      object GroupBox6: TGroupBox
+        Left = 288
+        Height = 88
+        Hint = 'Apply a flat image or add or subtract an image. '
+        Top = 192
+        Width = 425
+        Caption = 'Apply file to image in viewer'
+        ClientHeight = 68
+        ClientWidth = 421
+        ParentFont = False
+        TabOrder = 6
+        object add_substract1: TComboBox
+          Left = 87
+          Height = 23
+          Hint = 'Add or subtract files. The apply flat routine can work with mono or colour flat files. '
+          Top = 27
+          Width = 197
+          ItemHeight = 15
+          Items.Strings = (
+            'Add file'
+            'Subtract file from view'
+            'Subtract file from view +1000'
+            'Subtract view from file'
+            'Subtract view from file +1000'
+            'Apply file as flat field'
+            ''
+          )
+          ParentFont = False
+          TabOrder = 1
+        end
+        object file_to_add1: TButton
+          Left = 7
+          Height = 30
+          Hint = 'Select images to add/subtract or use a flat.'
+          Top = 27
+          Width = 75
+          Caption = 'Browse'
+          OnClick = file_to_add1Click
+          ParentFont = False
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 0
+        end
+        object image_to_add1: TLabel
+          Left = 8
+          Height = 15
+          Top = 2
+          Width = 15
+          Caption = '---'
+          ParentColor = False
+          ParentFont = False
+          WordWrap = True
+        end
+        object apply_file1: TButton
+          Left = 293
+          Height = 30
+          Hint = 'Apply above actions. Hit CTRL-Z to undo.'
+          Top = 27
+          Width = 80
+          Caption = 'Apply'
+          Enabled = False
+          OnClick = apply_file1Click
+          ParentFont = False
+          TabOrder = 2
+        end
+        object undo_button11: TBitBtn
+          Left = 383
+          Height = 30
+          Hint = 'Undo last action'
+          Top = 27
+          Width = 30
+          Glyph.Data = {
+            36040000424D3604000000000000360000002800000010000000100000000100
+            2000000000000004000000000000000000000000000000000000FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
+            C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          }
+          OnClick = undo_button2Click
+          ParentFont = False
+          TabOrder = 3
+        end
+      end
+      object GroupBox9: TGroupBox
+        Left = 512
+        Height = 60
+        Hint = 'Spit viewer image in red, green and blue file.'
+        Top = 8
+        Width = 202
+        Caption = 'Split in seperate R, G, B files.'
+        ClientHeight = 40
+        ClientWidth = 198
+        ParentFont = False
+        TabOrder = 7
+        object splitRGB1: TButton
+          Left = 7
+          Height = 30
+          Hint = 'This will make three seperate files'
+          Top = 1
+          Width = 184
+          Caption = 'Split in R, G, B'
+          Enabled = False
+          OnClick = splitRGB1Click
+          ParentFont = False
+          TabOrder = 0
+        end
+      end
+      object GroupBox10: TGroupBox
+        Left = 288
+        Height = 64
+        Top = 288
+        Width = 426
+        Caption = 'Resize current viewer image'
+        ClientHeight = 44
+        ClientWidth = 422
+        ParentFont = False
+        TabOrder = 8
+        object Button_free_resize_fits1: TButton
+          Left = 296
+          Height = 30
+          Hint = 'Resize current image in the viewer'
+          Top = 5
+          Width = 80
+          Caption = 'Resize'
+          Enabled = False
+          OnClick = free_resize_fits1Click
+          ParentFont = False
+          TabOrder = 3
+        end
+        object Edit_width1: TEdit
+          Left = 92
+          Height = 23
+          Hint = 'Width'
+          Top = 5
+          Width = 56
+          OnChange = Edit_width1Change
+          ParentFont = False
+          TabOrder = 1
+          Text = '300'
+        end
+        object width_UpDown1: TUpDown
+          Left = 148
+          Height = 23
+          Top = 5
+          Width = 17
+          Associate = Edit_width1
+          Increment = 10
+          Max = 32000
+          Min = 10
+          Position = 300
+          TabOrder = 2
+        end
+        object undo_button5: TBitBtn
+          Left = 383
+          Height = 30
+          Hint = 'Undo last action'
+          Top = 5
+          Width = 30
+          Glyph.Data = {
+            36040000424D3604000000000000360000002800000010000000100000000100
+            2000000000000004000000000000000000000000000000000000FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
+            C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          }
+          OnClick = undo_button2Click
+          ParentFont = False
+          TabOrder = 4
+        end
+        object resize_factor1: TComboBox
+          Left = 8
+          Height = 23
+          Hint = 'Resize from current format'
+          Top = 5
+          Width = 60
+          ItemHeight = 15
+          ItemIndex = 3
+          Items.Strings = (
+            '3'
+            '2'
+            '1'
+            '0.5'
+            '0.25'
+            ''
+            ''
+          )
+          OnChange = resize_factor1Change
+          ParentFont = False
+          TabOrder = 0
+          Text = '0.5'
+        end
+        object new_height1: TLabel
+          Left = 200
+          Height = 15
+          Top = 8
+          Width = 24
+          Caption = '1080'
+          Color = clBtnFace
+          ParentColor = False
+          ParentFont = False
+          Transparent = False
+        end
+        object new_height2: TLabel
+          Left = 176
+          Height = 15
+          Top = 8
+          Width = 6
+          Caption = 'x'
+          Color = clBtnFace
+          ParentColor = False
+          ParentFont = False
+          Transparent = False
+        end
+      end
+      object help_pixel_math2: TLabel
+        Cursor = crHandPoint
+        Left = 144
+        Height = 30
+        Hint = 'Help'
+        Top = 312
+        Width = 9
+        Caption = '?'
+        Font.Color = clBlue
+        Font.Height = -21
+        ParentColor = False
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        OnClick = help_pixel_math2Click
+      end
     end
   end
   object OpenDialog1: TOpenDialog
     Title = 'Open an existing file'
-    left = 816
-    top = 504
+    left = 832
+    top = 528
   end
   object ImageList2: TImageList
     left = 1344
-    top = 504
+    top = 528
     Bitmap = {
       4C69110000001000000010000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -6323,8 +6341,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu1: TPopupMenu
     Images = ImageList2
-    left = 888
-    top = 504
+    left = 904
+    top = 528
     object Viewimage1: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -6391,7 +6409,7 @@ object stackmenu1: Tstackmenu1
   end
   object ImageList_colors: TImageList
     left = 1312
-    top = 560
+    top = 584
     Bitmap = {
       4C690900000010000000100000000000FF000000FF000000FF000000FF000000
       FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF000000
@@ -6686,8 +6704,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu2: TPopupMenu
     Images = ImageList2
-    left = 920
-    top = 504
+    left = 936
+    top = 528
     object Viewimage2: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -6739,8 +6757,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu3: TPopupMenu
     Images = ImageList2
-    left = 960
-    top = 504
+    left = 976
+    top = 528
     object Viewimage3: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -6792,8 +6810,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu4: TPopupMenu
     Images = ImageList2
-    left = 992
-    top = 504
+    left = 1008
+    top = 528
     object Viewimage4: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -6845,8 +6863,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu5: TPopupMenu
     Images = ImageList2
-    left = 1032
-    top = 504
+    left = 1048
+    top = 528
     object Viewimage5: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -6892,7 +6910,7 @@ object stackmenu1: Tstackmenu1
   object PopupMenu6: TPopupMenu
     Images = ImageList2
     left = 1160
-    top = 504
+    top = 528
     object Viewimage6: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -6964,13 +6982,13 @@ object stackmenu1: Tstackmenu1
       'ColorS=F0FBFF'
       'ColorT=A4A0A0'
     )
-    left = 832
-    top = 560
+    left = 848
+    top = 584
   end
   object PopupMenu7: TPopupMenu
     Images = ImageList2
     left = 1240
-    top = 504
+    top = 528
     object Viewimage7: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click

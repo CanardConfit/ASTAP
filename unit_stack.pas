@@ -43,10 +43,13 @@ type
   Tstackmenu1 = class(TForm)
     actual_search_distance1: TLabel;
     add_noise1: TButton;
+    add_substract1: TComboBox;
     apply_create_gradient1: TButton;
     apply_dpp_button1: TButton;
+    apply_file1: TButton;
+    apply_gaussian_blur_button1: TButton;
+    apply_get_background1: TButton;
     apply_hue1: TButton;
-    add_substract1: TComboBox;
     add_valueB1: TEdit;
     add_valueG1: TEdit;
     add_valueR1: TEdit;
@@ -62,10 +65,7 @@ type
     apply_artificial_flat_correction1: TButton;
     apply_background_noise_filter1: TButton;
     apply_factor1: TButton;
-    apply_file1: TButton;
-    apply_gaussian_blur_button1: TButton;
     apply_gaussian_filter1: TButton;
-    apply_get_background1: TButton;
     apply_horizontal_gradient1: TButton;
     apply_remove_background_colour1: TButton;
     apply_vertical_gradient1: TButton;
@@ -95,6 +95,27 @@ type
     browse_blink1: TButton;
     browse_darks1: TButton;
     browse_flats1: TButton;
+    Button_free_resize_fits1: TButton;
+    Edit_width1: TEdit;
+    extract_background_box_size1: TComboBox;
+    file_to_add1: TButton;
+    GroupBox10: TGroupBox;
+    GroupBox12: TGroupBox;
+    GroupBox4: TGroupBox;
+    GroupBox6: TGroupBox;
+    GroupBox9: TGroupBox;
+    help_pixel_math1: TLabel;
+    help_pixel_math2: TLabel;
+    image_to_add1: TLabel;
+    Label26: TLabel;
+    new_height1: TLabel;
+    new_height2: TLabel;
+    resize_factor1: TComboBox;
+    splitRGB1: TButton;
+    undo_button10: TBitBtn;
+    undo_button11: TBitBtn;
+    undo_button2: TBitBtn;
+    undo_button5: TBitBtn;
     unselect_area1: TButton;
     calibrate_prior_solving1: TCheckBox;
     area_set1: TLabel;
@@ -154,7 +175,6 @@ type
     files_live_stacked1: TLabel;
     live_stacking_path1: TLabel;
     live_stacking_pause1: TButton;
-    Button_free_resize_fits1: TButton;
     calculated_scale1: TLabel;
     clear_astrometric_solutions1: TButton;
     clear_blink_alignment1: TButton;
@@ -171,15 +191,12 @@ type
     demosaic_method1: TComboBox;
     drizzle1: TCheckBox;
     drop_size1: TComboBox;
-    Edit_width1: TEdit;
     Equalise_background1: TCheckBox;
     equalise_box_size1: TComboBox;
     equalise_gaussian_filter1: TEdit;
     export_aligned_files1: TButton;
-    extract_background_box_size1: TComboBox;
     extra_star_supression_diameter1: TComboBox;
     field1: TLabel;
-    file_to_add1: TButton;
     filter_groupbox1: TGroupBox;
     Flats: TTabSheet;
     flat_combine_method1: TComboBox;
@@ -192,16 +209,11 @@ type
     green_filter2: TEdit;
     green_filter_add1: TEdit;
     GroupBox1: TGroupBox;
-    GroupBox10: TGroupBox;
-    GroupBox12: TGroupBox;
     GroupBox16: TGroupBox;
     GroupBox2: TGroupBox;
-    GroupBox4: TGroupBox;
     GroupBox5: TGroupBox;
-    GroupBox6: TGroupBox;
     GroupBox7: TGroupBox;
     GroupBox8: TGroupBox;
-    GroupBox9: TGroupBox;
     GroupBox_astrometric_solver_settings1: TGroupBox;
     GroupBox_astrometry_net1: TGroupBox;
     GroupBox_equalise_tool1: TGroupBox;
@@ -212,13 +224,11 @@ type
     help_blink1: TLabel;
     help_osc_menu1: TLabel;
     help_photometry1: TLabel;
-    help_pixel_math1: TLabel;
     help_stack_menu1: TLabel;
     help_stack_menu3: TLabel;
     help_uncheck_outliers1: TLabel;
     ignore_header_solution1: TCheckBox;
     Images: TTabSheet;
-    image_to_add1: TLabel;
     keep_console_open1: TCheckBox;
     Label1: TLabel;
     Label10: TLabel;
@@ -235,7 +245,6 @@ type
     Label23: TLabel;
     Label24: TLabel;
     Label25: TLabel;
-    Label26: TLabel;
     Label27: TLabel;
     Label28: TLabel;
     Label3: TLabel;
@@ -312,8 +321,6 @@ type
     multiply_blue1: TEdit;
     multiply_green1: TEdit;
     multiply_red1: TEdit;
-    new_height1: TLabel;
-    new_height2: TLabel;
     noisefilter_blur1: TComboBox;
     noisefilter_sd1: TComboBox;
     nr_selected1: TLabel;
@@ -352,7 +359,6 @@ type
     replace_by_master_dark1: TButton;
     replace_by_master_flat1: TButton;
     reset_factors1: TButton;
-    resize_factor1: TComboBox;
     Result1: TTabSheet;
     rg1: TEdit;
     RGB_filter1: TComboBox;
@@ -381,7 +387,6 @@ type
     smart_smooth_width1: TComboBox;
     solve1: TButton;
     solve_show_log1: TCheckBox;
-    splitRGB1: TButton;
     stack_button1: TBitBtn;
     MenuItem16: TMenuItem;
     MenuItem17: TMenuItem;
@@ -403,16 +408,12 @@ type
     hue_fuzziness1: TTrackBar;
     uncheck_outliers1: TCheckBox;
     undo_button1: TBitBtn;
-    undo_button10: TBitBtn;
-    undo_button11: TBitBtn;
     undo_button13: TBitBtn;
     undo_button14: TBitBtn;
     undo_button15: TBitBtn;
     undo_button16: TBitBtn;
-    undo_button2: TBitBtn;
     undo_button3: TBitBtn;
     undo_button4: TBitBtn;
-    undo_button5: TBitBtn;
     undo_button6: TBitBtn;
     undo_button7: TBitBtn;
     undo_button8: TBitBtn;
@@ -511,6 +512,7 @@ type
     procedure browse_live_stacking1Click(Sender: TObject);
     procedure gridlines1Click(Sender: TObject);
     procedure help_live_stacking1Click(Sender: TObject);
+    procedure help_pixel_math2Click(Sender: TObject);
     procedure hue_fuzziness1Change(Sender: TObject);
     procedure live_stacking1Click(Sender: TObject);
     procedure new_saturation1Change(Sender: TObject);
@@ -916,7 +918,7 @@ procedure memo2_message(s: string);{message to memo2. Is also used for log to fi
 begin
   stackmenu1.memo2.lines.add(TimeToStr(time)+'  '+s);
  {$IFDEF LINUX}
-  if ((command_execution=false){save some time and run time error in command line} and (stackmenu1.Memo2.HandleAllocated){prevent run time errors}) then
+  if ((commandline_execution=false){save some time and run time error in command line} and (stackmenu1.Memo2.HandleAllocated){prevent run time errors}) then
   begin  // scroll down:
     stackmenu1.Memo2.SelStart:=Length(stackmenu1.Memo2.lines.Text)-1;
     stackmenu1.Memo2.VertScrollBar.Position:=65000;
@@ -2166,7 +2168,7 @@ begin
            bf:=(img_loaded[0,fitsX,fitsY] +a_factor);
            if bf<0.00001 then colr:=0 else
            begin
-             colr:= k_factor*a_factor*(img_backup[col,fitsX,fitsY]-min)/bf ;
+             colr:= k_factor*a_factor*(img_backup[index_backup].img[col,fitsX,fitsY]-min)/bf ;
              if colr>65535 then colr:=65535;
              if colr<0 then colr:=0;
            end;
@@ -2224,11 +2226,11 @@ begin
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
-  backup_img; {move copy to img_backup}
+  backup_img; {move copy to backup_img}
 
   try radius:=strtoint(stackmenu1.most_common_filter_radius1.text);except end;
 
-  apply_most_common(img_backup,img_loaded,radius); {apply most common filter on first array and place result in second array}
+  apply_most_common(img_backup[index_backup].img,img_loaded,radius); {apply most common filter on first array and place result in second array}
 
   plot_fits(mainwindow.image1,false,true);{plot real}
   Screen.Cursor:=Save_Cursor;
@@ -2984,8 +2986,8 @@ begin
          begin
            if ((frac(fitsx/10)=0) and (frac(fitsY/10)=0)) then
            begin
-             most_common:=get_most_common(img_backup,k,fitsX-radius,fitsX+radius-1,fitsY-radius,fitsY+radius-1,32000);
-             neg_noise_level:=get_negative_noise_level(img_backup,k,fitsX-radius,fitsX+radius,fitsY-radius,fitsY+radius,most_common);{find the most common value of a local area and calculate negative noise level}
+             most_common:=get_most_common(img_backup[index_backup].img,k,fitsX-radius,fitsX+radius-1,fitsY-radius,fitsY+radius-1,32000);
+             neg_noise_level:=get_negative_noise_level(img_backup[index_backup].img,k,fitsX-radius,fitsX+radius,fitsY-radius,fitsY+radius,most_common);{find the most common value of a local area and calculate negative noise level}
              for i:=-radius to +radius-1 do
                   for j:=-radius to +radius-1 do
                   begin
@@ -3146,10 +3148,9 @@ begin
 end;
 
 
-
 procedure Tstackmenu1.help_pixel_math1Click(Sender: TObject);
 begin
-    openurl('http://www.hnsky.org/astap.htm#pixel_math');
+  openurl('http://www.hnsky.org/astap.htm#pixel_math');
 end;
 
 procedure Tstackmenu1.help_stack_menu2Click(Sender: TObject);
@@ -3192,17 +3193,16 @@ begin
 
   memo2_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
 
-  setlength(img_backup,naxis3,width2,height2);{set length of image array}
-  img_backup:=img_loaded;
+  img_buffer:=img_loaded;{copy pointer}
 
   filename1:=ChangeFileExt(FileName2,'.fit');{make it lowercase fit also if FTS or FIT}
   old_naxis3:=naxis3;{could be bayered, remember mono}
   naxis3:=1;
 
-  setlength(img_loaded,1,width2,height2);{set length of image array}
+  setlength(img_loaded,1,width2,height2);{create a new mono image}
   for fitsY:=0 to height2-1 do
   for fitsX:=0 to width2-1 do
-         img_loaded[0,fitsX,fitsY]:=img_backup[0,fitsX,fitsY];
+         img_loaded[0,fitsX,fitsY]:=img_buffer[0,fitsX,fitsY];
   filename2:=StringReplace(filename1,'.fit','_red.fit',[]);{give new file name }
   update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1);
   update_text   ('FILTER  =',#39+'Red     '+#39+'           / Filter name                                    ');
@@ -3210,7 +3210,7 @@ begin
 
   for fitsY:=0 to height2-1 do
   for fitsX:=0 to width2-1 do
-        img_loaded[0,fitsX,fitsY]:=img_backup[1,fitsX,fitsY];
+        img_loaded[0,fitsX,fitsY]:=img_buffer[1,fitsX,fitsY];
   filename2:=StringReplace(filename1,'.fit','_green.fit',[]);{give new file name }
   update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1);
   update_text   ('FILTER  =',#39+'Green   '+#39+'           / Filter name                                    ');
@@ -3218,7 +3218,7 @@ begin
 
   for fitsY:=0 to height2-1 do
   for fitsX:=0 to width2-1 do
-      img_loaded[0,fitsX,fitsY]:=img_backup[2,fitsX,fitsY];
+      img_loaded[0,fitsX,fitsY]:=img_buffer[2,fitsX,fitsY];
   filename2:=StringReplace(filename1,'.fit','_blue.fit',[]);{give new file name }
   update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1);
   update_text   ('FILTER  =',#39+'Blue    '+#39+'           / Filter name                                    ');
@@ -3229,7 +3229,7 @@ begin
   filename2:=filename1;
   naxis3:=old_naxis3;
   update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3);
-  img_loaded:=img_backup;
+  img_loaded:=img_buffer;
 end;
 
 procedure Tstackmenu1.analysedarksButton2Click(Sender: TObject);
@@ -3515,9 +3515,11 @@ begin
               noise_level1:=noise_level[0];
               signal_level:=back_ground1 + noise_level1*strtofloat2(sd_factor_blink1.text);{level of stars}
 
-              backup_img; {make copy to img_backup}
+              img_buffer:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+              setlength(img_buffer,naxis3,width2,height2);{this forces an duplication}
+              //img_backup; {make copy to img_backup}
               backup_reference:=true;
-              tolerance:=round(strtofloat2(extra_star_supression_diameter1.text));{increase star diamter of referecne image}
+              tolerance:=round(strtofloat2(extra_star_supression_diameter1.text));{increase star diameter of referecne image}
               for fitsY:=0 to height2-1 do
               for fitsX:=0 to width2-1  do
               begin {smear out stars}
@@ -3526,7 +3528,7 @@ begin
                   if img_loaded[0,fitsX,fitsY]> signal_level {star} then {increase star size}
                     for i:=-tolerance to tolerance do
                     for j:=-tolerance to tolerance do
-                      img_backup[0,fitsX+i,fitsY+j]:=65535;
+                      img_buffer[0,fitsX+i,fitsY+j]:=65535;
                 end;
               end;
             end;
@@ -3541,7 +3543,7 @@ begin
 
                 if ((x_new>=0) and (x_new<=width2-1) and (y_new>=0) and (y_new<=height2-1)) then
                 begin
-                  if img_backup[0,x_new,y_new]< signal_level {use only red color to detect stars} then {no star}
+                  if img_buffer[0,x_new,y_new]< signal_level {use only red color to detect stars} then {no star}
                   for col:=0 to naxis3-1 do {all colors} img_temp[col,x_new,y_new]:=img_loaded[col,fitsX,fitsY]
                   else {star}
                   for col:=0 to naxis3-1 do {all colors} img_temp[col,x_new,y_new]:=0;
@@ -3666,6 +3668,11 @@ end;
 procedure Tstackmenu1.help_live_stacking1Click(Sender: TObject);
 begin
   openurl('http://www.hnsky.org/astap.htm#live_stacking');
+end;
+
+procedure Tstackmenu1.help_pixel_math2Click(Sender: TObject);
+begin
+  openurl('http://www.hnsky.org/astap.htm#pixel_math2');
 end;
 
 procedure plot_hue_disk(hue1,hue2: single);
@@ -3983,7 +3990,7 @@ begin
   memo2_message('Applying most common filter with factor '+stackmenu1.filter_artificial_colouring1.text);
 
   setlength(img_temp,3,width2,height2);{new size}
-  apply_most_common(img_backup,img_temp,radius); {apply most common filter on first array and place result in second array}
+  apply_most_common(img_backup[index_backup].img,img_temp,radius); {apply most common filter on first array and place result in second array}
 
   memo2_message('Applying Gaussian blur of '+floattostrF2(radius*2,0,1));
   gaussian_blur2(img_temp,radius*2);
@@ -3998,14 +4005,14 @@ begin
   for fitsY:=0 to height2-1 do
     for fitsX:=0 to width2-1 do
       begin {subtract view from file}
-           org_value:=img_backup[0,fitsX,fitsY];  {stars+nebula}
+           org_value:=img_backup[index_backup].img[0,fitsX,fitsY];  {stars+nebula}
                               {smooth nebula}
            value:=org_value - img_temp[0,fitsX,fitsY];
            if  value>star_level_colouring then {star}
            begin
              img_loaded[0,fitsX,fitsY]:=org_value;
-             if naxis3>1 then img_loaded[1,fitsX,fitsY]:=img_backup[1,fitsX,fitsY] else img_loaded[1,fitsX,fitsY]:=org_value;
-             if naxis3>2 then img_loaded[2,fitsX,fitsY]:=img_backup[2,fitsX,fitsY] else img_loaded[2,fitsX,fitsY]:=org_value;
+             if naxis3>1 then img_loaded[1,fitsX,fitsY]:=img_backup[index_backup].img[1,fitsX,fitsY] else img_loaded[1,fitsX,fitsY]:=org_value;
+             if naxis3>2 then img_loaded[2,fitsX,fitsY]:=img_backup[index_backup].img[2,fitsX,fitsY] else img_loaded[2,fitsX,fitsY]:=org_value;
            end
            else {nebula}
            begin
@@ -5270,7 +5277,7 @@ begin
      Screen.Cursor := crHourglass;    { Show hourglass cursor }
      backup_img; {move copy to img_backup}
      try radius:=strtoint(extract_background_box_size1.text);except end;
-     apply_most_common(img_backup,img_loaded,radius); {apply most common filter on first array and place result in second array}
+     apply_most_common(img_backup[index_backup].img,img_loaded,radius); {apply most common filter on first array and place result in second array}
      plot_fits(mainwindow.image1,true,true);{plot real}
      Screen.Cursor:=Save_Cursor;
   end;
@@ -5879,7 +5886,7 @@ procedure double_size(img: image_array; w,h : integer; var img2 : image_array);{
 var
    fitsX,fitsY,i,x,y:integer;
 begin
-  setlength(img_backup,naxis3,w,h);{set length of image array}
+  setlength(img_buffer,naxis3,w,h);{set length of image array}
 
   for fitsY:=0 to h do
     for fitsX:=0 to w do
@@ -5889,13 +5896,13 @@ begin
         x:=fitsX div 2;
         y:=fitsY div 2;
         if  ((x<=width2-1) and (y<=height2-1)) then {prevent problem if slightly different}
-           img_backup[i,fitsX ,fitsY]  :=img[i,x,y];
+           img_buffer[i,fitsX ,fitsY]  :=img[i,x,y];
       end;
     end;
   height2:=h;
   width2 :=w;
 
-  img2:=img_backup;
+  img2:=img_buffer;
 end;
 
 
@@ -7207,7 +7214,7 @@ var
 begin
   if fits_file=false then exit;
 
-
+  memo2_message('Remove gradient started.');
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
@@ -7226,7 +7233,7 @@ begin
      begin
        y1:=(step+1)*fitsY-(step div 2);
        y2:=(step+1)*fitsY+(step div 2);
-       most_common:=get_most_common(img_backup,k,0,width2-1,y1,y2,32000);
+       most_common:=get_most_common(img_backup[index_backup].img,k,0,width2-1,y1,y2,32000);
        mean:=mean+most_common;
        inc(counter);
        for i:=y1 to y2 do
@@ -7246,7 +7253,7 @@ begin
      begin
        x1:=(step+1)*fitsX-(step div 2);
        x2:=(step+1)*fitsX+(step div 2);
-       most_common:=get_most_common(img_backup,k,x1,x2,0,height2-1,32000);
+       most_common:=get_most_common(img_backup[index_backup].img,k,x1,x2,0,height2-1,32000);
        mean:=mean+most_common;
        inc(counter);
        for i:=x1 to x2 do
@@ -7268,12 +7275,15 @@ begin
       for fitsY:=0 to height2-1 do
        for fitsX:=0 to width2-1 do
         begin
-          img_loaded[k,fitsX,fitsY]:=mean+img_backup[k,fitsX,fitsY]-img_loaded[k,fitsX,fitsY];
+          img_loaded[k,fitsX,fitsY]:=mean+img_backup[index_backup].img[k,fitsX,fitsY]-img_loaded[k,fitsX,fitsY];
         end;
   end;{k color}
 
   getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
   plot_fits(mainwindow.image1,false,true);
+
+  memo2_message('Remove gradient finished.');
+
   Screen.Cursor:=Save_Cursor;
 
 end;

@@ -56,7 +56,7 @@ object mainwindow: Tmainwindow
   OnPaint = FormPaint
   OnResize = FormResize
   OnShow = FormShow
-  LCLVersion = '2.0.2.0'
+  LCLVersion = '2.0.6.0'
   object Label1: TLabel
     Left = 54
     Height = 25

@@ -641,7 +641,7 @@ begin
               stackmenu1.caption:= 'Search distance:  '+distancestr;
               mainwindow.caption:= 'Search distance:  '+distancestr;
 
-              if command_execution then {command line execution}
+              if commandline_execution then {command line execution}
               begin
                  {$ifdef CPUARM}
                  { tray icon  gives a fatal execution error in the old compiler for armhf}

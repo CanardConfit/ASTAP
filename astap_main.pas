@@ -378,17 +378,35 @@ type
   image_array = array of array of array of Single;
   star_list   = array of array of double;
 
-var
-  settingstring :tstrings; {settings for save and loading}
+type
+   tbackup  = record
+     crpix1 : double;{could be modified by crop}
+     crpix2 : double;
+     crota1 : double;{for 90 degrees rotate}
+     crota2 : double;
+     cdelt1 : double;
+     cdelt2 : double;
+     cd1_1  : double;
+     cd1_2  : double;
+     cd2_1  : double;
+     cd2_2  : double;
+     header : string;
+     img    : array of array of array of single;
+   end;
 
 var
-   user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
-   img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_backup,img_final : image_array;
-   filename2: string;
-   nrbits,Xbinning,Ybinning    : integer;
-   crota2,crota1                      : double; {image rotation at center in degrees}
-   cd1_1,cd1_2,cd2_1,cd2_2 :double;
-   ra_radians,dec_radians, pixel_size : double;
+  img_backup : array of tbackup;{dynamic so memory can be freed}
+
+  settingstring :tstrings; {settings for save and loading}
+
+  user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
+  img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_buffer,img_final : image_array;
+  filename2: string;
+  nrbits,Xbinning,Ybinning    : integer;
+  size_backup,index_backup    : integer;{number of backup images for ctrl-z, numbered 0,1,2,3}
+  crota2,crota1                      : double; {image rotation at center in degrees}
+  cd1_1,cd1_2,cd2_1,cd2_2 :double;
+  ra_radians,dec_radians, pixel_size : double;
 
 var
   a_order: integer;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
@@ -446,7 +464,7 @@ const
    shape_marker3_fitsX: double=0;
    shape_marker3_fitsY: double=0;
 
-   command_execution : boolean=false;{program executed in command line}
+   commandline_execution : boolean=false;{program executed in command line}
    errorlevel        : integer=0;{report errors when shutdown}
 
    mouse_positionRADEC1 : string='';{For manual reference solving}
@@ -889,27 +907,29 @@ end;
 
 procedure backup_img;
 begin
-  mainwindow.Undo1.Enabled:=true;
   if fits_file=true then
   begin
-    old_crpix1:=crpix1;{could be modified by crop}
-    old_crpix2:=crpix2;
+    if img_backup=nil then setlength(img_backup,size_backup+1);{create memory for size_backup backup images}
+    inc(index_backup,1);
+    if index_backup>size_backup then index_backup:=0;
 
-    old_crota1:=crota1;{for 90 degrees rotate}
-    old_crota2:=crota2;
-    old_cdelt1:=cdelt1;
-    old_cdelt2:=cdelt2;
-    old_cd1_1:=cd1_1;
-    old_cd1_2:=cd1_2;
-    old_cd2_1:=cd2_1;
-    old_cd2_2:=cd2_2;
+    img_backup[index_backup].crpix1:=crpix1;{could be modified by crop}
+    img_backup[index_backup].crpix2:=crpix2;{could be modified by crop}
+    img_backup[index_backup].crota1:=crota1;{for 90 degrees rotate}
+    img_backup[index_backup].crota2:=crota2;{for 90 degrees rotate}
+    img_backup[index_backup].cdelt1:=cdelt1;
+    img_backup[index_backup].cdelt2:=cdelt2;
+    img_backup[index_backup].cd1_1:=cd1_1;
+    img_backup[index_backup].cd1_2:=cd1_2;
+    img_backup[index_backup].cd2_1:=cd2_1;
+    img_backup[index_backup].cd2_2:=cd2_2;
 
-    memo_backup:=mainwindow.Memo1.Text;{backup fits header}
+    img_backup[index_backup].header:=mainwindow.Memo1.Text;{backup fits header}
+    img_backup[index_backup].img:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+    setlength(img_backup[index_backup].img,naxis3,width2,height2);{this forces an duplication}
 
-    img_backup:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_backup,naxis3,width2,height2);{this forces an duplication}
+    mainwindow.Undo1.Enabled:=true;
   end;
-
 end;
 
 procedure restore_img;
@@ -924,35 +944,34 @@ begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-
     old_width2:=width2;
     old_height2:=height2;
 
-    naxis3:=length(img_backup);{nr colours}
-    width2:=length(img_backup[0]);{width}
-    height2:=length(img_backup[0,0]);{length}
+    naxis3:=length(img_backup[index_backup].img);{nr colours}
+    width2:=length(img_backup[index_backup].img[0]);{width}
+    height2:=length(img_backup[index_backup].img[0,0]);{length}
 
     resized:=((width2<>old_width2) or ( height2<>old_height2));
 
-    crpix1:=old_crpix1;{could be modified by crop}
-    crpix2:=old_crpix2;
+    crpix1:=img_backup[index_backup].crpix1;{could be modified by crop}
+    crpix2:=img_backup[index_backup].crpix2;
 
-    crota1:=old_crota1;{for 90 degrees rotate}
-    crota2:=old_crota2;
-    cdelt1:=old_cdelt1;
-    cdelt2:=old_cdelt2;
-    cd1_1:=old_cd1_1;
-    cd1_2:=old_cd1_2;
-    cd2_1:=old_cd2_1;
-    cd2_2:=old_cd2_2;
+    crota1:=img_backup[index_backup].crota1;{for 90 degrees rotate}
+    crota2:=img_backup[index_backup].crota2;
+    cdelt1:=img_backup[index_backup].cdelt1;
+    cdelt2:=img_backup[index_backup].cdelt2;
+    cd1_1:=img_backup[index_backup].cd1_1;
+    cd1_2:=img_backup[index_backup].cd1_2;
+    cd2_1:=img_backup[index_backup].cd2_1;
+    cd2_2:=img_backup[index_backup].cd2_2;
 
 
-    mainwindow.Memo1.Text:=memo_backup;{restore fits header}
+    mainwindow.Memo1.Text:=img_backup[index_backup].header;{restore fits header}
 
     stackmenu1.test_pattern1.Enabled:=naxis3=1;{allow debayer if mono again}
 
 
-    img_loaded:=img_backup; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+    img_loaded:=img_backup[index_backup].img; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
     setlength(img_loaded,naxis3,width2,height2);{force a duplication}
 
     getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
@@ -961,14 +980,26 @@ begin
     stackmenu1.apply_dpp_button1.Enabled:=true;
     update_equalise_background_step(equalise_background_step-1);{update equalize menu}
 
-    mainwindow.Undo1.Enabled:=false;
+//    mainwindow.Undo1.Enabled:=false;
     if fits_file=false {due to stretch draw} then update_menu(true); {update menu and set fits_file:=true;}
 
-    Screen.Cursor:=Save_Cursor;
 
+    dec(index_backup,1);{update index}
+    if index_backup<0 then index_backup:=size_backup;
+
+    if img_backup[index_backup].img=nil then
+    begin
+      mainwindow.Undo1.Enabled:=false;
+      memo2_message('No more backups');
+    end
+    else
+    memo2_message('Restored backup index '+inttostr(index_backup));
+
+    Screen.Cursor:=Save_Cursor;
   end;
 
 end;
+
 
 procedure Tmainwindow.About1Click(Sender: TObject);
 var
@@ -1009,7 +1040,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.304 dated 2019-11-24';
+  #13+#10+'Version ß0.9.305 dated 2019-11-26';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6211,6 +6242,8 @@ end;
 function load_image(re_center,plot: boolean): boolean; {load fits or PNG, BMP, TIF}
 var
    ext1, filename4: string;
+   i              : integer;
+   fitsfile       : boolean;
 begin
   if plot then
   begin
@@ -6230,51 +6263,27 @@ begin
   a_order:=0; {SIP_polynomial, use for check if there is data}
 
   result:=false;{assume failure}
+  fitsfile:=false;
   {fits}
   if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')or (ext1='.WCS')) then {FITS}
   begin
     result:=load_fits(filename2,true {light},true,true {reset var},img_loaded);
     if result=false then exit;{succes?}
     if naxis<2 then exit; {WCS file}
-    if plot then
-    begin
-      add_recent_file(filename2);{add to recent file list}
+  end
 
-      getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-      plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
-
-      mainwindow.ShowFITSheader1.enabled:=true;
-      mainwindow.demosaicBayermatrix1.Enabled:=true;
-
-      image_move_to_left_top_corner:=re_center;
-
-      plot_annotations;
-    end;
-    exit;
-  end;
-
+  else
   if (ext1='.FZ') then {CFITSIO format}
   begin
     if unpack_cfitsio(filename2)=false then begin beep; exit; end
     else{successfull conversion using funpack}
     result:=load_fits(filename2,true {light},true {load data},true {reset var},img_loaded); {load new fits file}
 
-    if plot then
-    begin
-      add_recent_file(filename2);{add to recent file list}
+    if result=false then exit
+    else fitsfile:=true;
+  end {fz}
 
-      getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-      plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
-
-      mainwindow.ShowFITSheader1.enabled:=true;
-      mainwindow.demosaicBayermatrix1.Enabled:=true;
-
-      image_move_to_left_top_corner:=re_center;
-    end;
-    exit;{done}
-  end;{raw}
-
-
+  else
   if check_raw_file_extension(ext1) then {raw format}
   begin
     if convert_load_raw(filename2)=false then begin beep; exit; end
@@ -6284,65 +6293,25 @@ begin
     {successfull conversion using LibRaw}
     filename4:=filename2;{store name for history}
     filename2:=ChangeFileExt(FileName2,'.fit');{for the case you want to save it}
+  end{raw}
 
-    if plot then
-    begin
-      add_recent_file(filename4);{add to recent file list}
-
-      getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-      plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
-
-      mainwindow.ShowFITSheader1.enabled:=true;
-      mainwindow.demosaicBayermatrix1.Enabled:=true;
-
-      image_move_to_left_top_corner:=re_center;
-    end;
-    exit;{done}
-  end;{raw}
-
+  else
   if ((ext1='.PPM') or (ext1='.PGM') or (ext1='.PFM')) then {PPM/PGM/ PFM}
   begin
     if load_ppm_pgm(filename2,img_loaded)=false then exit {load the simple formats ppm color or pgm grayscale, exit on failure}
     else
       result:=true;
+  end
 
-    if plot then
-    begin
-      add_recent_file(filename2);{add to recent file list}
-
-      getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-      plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
-
-      mainwindow.ShowFITSheader1.enabled:=true;
-      mainwindow.demosaicBayermatrix1.Enabled:=true;
-
-      image_move_to_left_top_corner:=re_center;
-    end;
-    exit;
-  end;
-
-
+  else
   if ext1='.XISF' then {XISF}
   begin
     if load_xisf(filename2,img_loaded)=false then exit{load XISF, exit on failure}
     else
       result:=true;
+  end
 
-    if plot then
-    begin
-      add_recent_file(filename2);{add to recent file list}
-
-      getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-      plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
-
-      mainwindow.ShowFITSheader1.enabled:=true;
-      mainwindow.demosaicBayermatrix1.Enabled:=true;
-
-      image_move_to_left_top_corner:=re_center;
-    end;
-    exit;
-  end;
-
+  else
   {tif, png, bmp, jpeg}
   if load_tiffpngJPEG(filename2,img_loaded)=false then exit {load tif, exit on failure}
   else
@@ -6350,11 +6319,20 @@ begin
 
   if plot then
   begin
+    add_recent_file(filename2);{add to recent file list}
     getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
     plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
     mainwindow.ShowFITSheader1.enabled:=true;
     mainwindow.demosaicBayermatrix1.Enabled:=true;
     image_move_to_left_top_corner:=re_center;
+
+    if fitsfile then plot_annotations;
+  end;
+
+  if commandline_execution=false then
+  begin
+    img_backup:=nil;{release backup memory}
+    index_backup:=size_backup; {initiate start index_backup:=0}
   end;
 end;
 
@@ -7458,7 +7436,7 @@ begin
       if ((list.count>=6) and (error1=0)) then {this is a platesolve2 command line}
       begin
         result:=true;
-        command_execution:=true; {later required for trayicon and popup notifier}
+        commandline_execution:=true; {later required for trayicon and popup notifier}
 
         stackmenu1.use_astrometry_internal1.checked:=true; {use internal solver}
 
@@ -7656,7 +7634,7 @@ begin
       end;
       if hasoption('f') then
       begin
-        command_execution:=true;{later required for trayicon and popup notifier and memo2 scroll in Linux}
+        commandline_execution:=true;{later required for trayicon and popup notifier and memo2 scroll in Linux}
 
         filename2:=GetOptionValue('f');
         source_fits:=fits_file_name(filename2);{fits file extension?}
@@ -9426,7 +9404,7 @@ begin
   setlength(img_loaded,1,width2,height2);{set length of image array mono}
   for fitsY:=0 to height2-1 do
     for fitsX:=0 to width2-1 do
-     img_loaded[0,fitsx,fitsy]:=(img_backup[0,fitsx,fitsy]+img_backup[1,fitsx,fitsy]+img_backup[2,fitsx,fitsy])/3;
+     img_loaded[0,fitsx,fitsy]:=(img_backup[index_backup].img[0,fitsx,fitsy]+img_backup[index_backup].img[1,fitsx,fitsy]+img_backup[index_backup].img[2,fitsx,fitsy])/3;
 
   naxis:=2;{mono}
   update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for colour}
@@ -10158,23 +10136,6 @@ begin
   astrometric_solve_image1Click(Sender);
 end;
 
-
-FUNCTION ATN_2(Y,X:double):double; {could replaced by internal math function arctan2}
-VAR   AX,AY,PHI: double;
-BEGIN
-  IF (X=0.0) AND (Y=0.0)
-    THEN ATN_2:=0.0
-  ELSE
-  BEGIN
-    AX:=ABS(X); AY:=ABS(Y);
-    IF (AX>AY)
-    THEN PHI:=ARCTAN(AY/AX)
-      ELSE PHI:=(pi/2)-ARCTAN(AX/AY);
-    IF (X<0.0) THEN PHI:=pi-PHI;
-    IF (Y<0.0) THEN PHI:=-PHI;
-    ATN_2:=PHI;
-   END;
-END;
 procedure Tmainwindow.Stackimages1Click(Sender: TObject);
 begin
   stackmenu1.visible:=true;
@@ -10278,5 +10239,18 @@ begin
   if ((fits_file) and (scrollcode=scEndScroll)) then plot_fits(mainwindow.image1,false,true);
   mainwindow.range1.itemindex:=4; {manual}
 end;
+
+begin
+  {$ifdef CPUARM}
+    size_backup:= 0; {0, one backup images for ctrl-z}
+    index_backup:=size_backup;
+  {$else}
+    size_backup:=2; {0,1,2 three backup images for ctrl-z}
+    index_backup:=size_backup;
+
+//    size_backup:=0; {0, one backup images for ctrl-z}
+//    index_backup:=size_backup;
+
+  {$endif}
 
 end.
