@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 82
+  Left = 237
   Height = 660
-  Top = 103
+  Top = 109
   Width = 1450
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -228,6 +228,7 @@ object stackmenu1: Tstackmenu1
     ShowHint = True
     TabIndex = 0
     TabOrder = 5
+    OnChange = pagecontrol1Change
     Options = [nboMultiLine]
     object Images: TTabSheet
       Hint = 'Select here the light frames'
@@ -2108,7 +2109,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the alignment options'
       Caption = 'Alignment'
       ClientHeight = 420
-      ClientWidth = 1506
+      ClientWidth = 1441
       ImageIndex = 7
       OnContextPopup = alignment1ContextPopup
       ParentFont = False
@@ -3653,7 +3654,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools'
       Caption = 'Pixel math 1'
       ClientHeight = 420
-      ClientWidth = 1506
+      ClientWidth = 1441
       ImageIndex = 4
       ParentFont = False
       object GroupBox5: TGroupBox
@@ -4830,15 +4831,16 @@ object stackmenu1: Tstackmenu1
           Width = 25
         end
         object rainbow_Panel1: TPanel
-          Left = 256
+          Left = 249
           Height = 92
           Hint = 'Hue range to be replaced.'
-          Top = -7
+          Top = 0
           Width = 92
           BevelOuter = bvNone
           ParentColor = False
           TabOrder = 7
           OnMouseDown = rainbow_Panel1MouseDown
+          OnPaint = rainbow_Panel1Paint
         end
         object area_set1: TLabel
           Left = 136

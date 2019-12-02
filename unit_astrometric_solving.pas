@@ -242,8 +242,6 @@ begin
     close_star_database;{close reader, so next time same file is read from beginning}
   end;
 
-
-
   if nrstars<nrstars_required then
        SetLength(starlist1,2,nrstars); {fix array length on data for case less stars are found}
 
@@ -418,7 +416,6 @@ begin
     get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}cblack,star_level );{get back ground}
     find_stars(img_binned,starlist3); {find stars of the image and put them in a list}
     img_binned:=nil;
-//    nrstars:=Length(starlist3[0])-1;
     nrstars:=Length(starlist3[0]);
 
     if width2<1000 then memo2_message('Info: REDUCE OR REMOVE DOWNSAMPLING IS RECOMMENDED. Set this option in stack menu, tab alignment.');
@@ -427,7 +424,6 @@ begin
     naxis3:=old_naxis3;
 
 
-//    for i:=1 to nrstars do {correct star positions for cropping. Simplest method}
     for i:=0 to nrstars-1 do {correct star positions for cropping. Simplest method}
     begin
       starlist3[0,i]:={(binning-1)/2} + starlist3[0,i]*binning+(width2*(1-cropping)/2);{correct star positions for binning/ cropping}
@@ -439,7 +435,6 @@ begin
     if height2>2500 then memo2_message('Info: DOWNSAMPLING IS RECOMMENDED FOR LARGE IMAGES. Set this option in stack menu, tab alignment.');
     get_background(0,img_loaded,get_hist {load hist},true {calculate also standard deviation background}, {var} cblack,star_level);{get back ground}
     find_stars(img,starlist3); {find stars of the image and put them in a list}
-    //nrstars:=Length(starlist3[0])-1;
   end;
 end;
 

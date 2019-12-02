@@ -172,7 +172,14 @@ const
 begin
   nrstars_min_one:=Length(starlist[0])-1;
 
+  if nrstars_min_one<3 then
+  begin {not enough stars for tetrahedrons}
+    SetLength(starlisttetrahedrons,10,0);
+    exit;
+  end;
+
   nrtetrahedrons:=0;
+
   SetLength(starlisttetrahedrons,10,buffersize);{set array length to 100}
 
   for i:=0 to nrstars_min_one do
@@ -395,15 +402,17 @@ begin
   for i:=0 to length(snr_histogram)-1 do snr_histogram[i]:=0; {clear snr histogram}
   for i:=0 to length(snr_list)-1 do
   begin
-    snr_scaled:=round(snr_list[i]*range/highest_snr);
-    if snr_scaled<=range then
-       snr_histogram[snr_scaled]:=snr_histogram[snr_scaled]+1;{count how often this snr value is measured}
+  //  memo2_message(inttostr(i)+ ' , '+floattostr2(snr_list[i])) ;
+    snr_scaled:=trunc(snr_list[i]*range/highest_snr);
+//    if snr_scaled<=range then  {2019-11-30, this line is not required}
+     snr_histogram[snr_scaled]:=snr_histogram[snr_scaled]+1;{count how often this snr value is measured}
   end;
   count:=0;
   i:=range+1;
   repeat
     dec(i);
     count:=count+snr_histogram[i];
+  //  memo2_message(inttostr(snr_histogram[i])+ ' , ' +inttostr(i));
   until ((i<=0) or (count>=nr_stars_required));
 
   snr_required:=highest_snr*i/range;
@@ -437,6 +446,7 @@ var
    snr_list        : array of double;
    solve_show_log  : boolean;
 // flip_vertical,flip_horizontal  : boolean;
+// starX,starY :integer;
    startTick2  : qword;{for timing/speed purposes}
 const
     buffersize=5000;{5000}
@@ -445,18 +455,18 @@ begin
   if fits_file=false then exit; {file loaded?}
 
   {for testing}
-  // mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-  // mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
-  // mainwindow.image1.Canvas.brush.Style:=bsClear;
-  // mainwindow.image1.Canvas.font.color:=$FF;
-  // mainwindow.image1.Canvas.Pen.Color := $FF;
+//   mainwindow.image1.Canvas.Pen.Mode := pmMerge;
+//   mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
+//   mainwindow.image1.Canvas.brush.Style:=bsClear;
+//   mainwindow.image1.Canvas.font.color:=$FF;
+//   mainwindow.image1.Canvas.font.size:=10;
+//   mainwindow.image1.Canvas.Pen.Color := $FF;
+//   flip_vertical:=mainwindow.Flipvertical1.Checked;
+//   flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
 
   solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details}
   if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
 
-//  for testing
-//  flip_vertical:=mainwindow.Flipvertical1.Checked;
-//  flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
 
   SetLength(starlist1,2,buffersize);{set array length}
   setlength(snr_list,buffersize);{set array length}
@@ -490,11 +500,12 @@ begin
           if ((hfd1<=10) and (snr>10) and (hfd1>0.8) {two pixels minimum} ) then
           begin
             {for testing}
-            //if flip_vertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
-            //if flip_horizontal=true then starX:=round(width2-xc)  else starX:=round(xc);
-            //  size:=round(5*hfd1);
-            //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-            //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+          //  if flip_vertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
+          //  if flip_horizontal=true then starX:=round(width2-xc)  else starX:=round(xc);
+          //  size:=round(5*hfd1);
+          //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+          //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+          //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(snr, ffgeneral, 2,1));{add hfd as text}
 
             size:=round(3*hfd1);
             for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}

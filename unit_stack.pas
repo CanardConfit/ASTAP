@@ -516,8 +516,10 @@ type
     procedure hue_fuzziness1Change(Sender: TObject);
     procedure live_stacking1Click(Sender: TObject);
     procedure new_saturation1Change(Sender: TObject);
+    procedure pagecontrol1Change(Sender: TObject);
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure rainbow_Panel1Paint(Sender: TObject);
     procedure result_compress1Click(Sender: TObject);
     procedure rename_result1Click(Sender: TObject);
     procedure restore_file_ext1Click(Sender: TObject);
@@ -696,6 +698,7 @@ var
   memo1_text : string;
   flat_norm_value,dark_average,dark_sigma  : double;
   areax1,areax2,areay1,areay2 : integer;
+  hue1,hue2: single;{for colour disk}
 
 const
   dark_exposure : integer=987654321;{not done indication}
@@ -3675,40 +3678,6 @@ begin
   openurl('http://www.hnsky.org/astap.htm#pixel_math2');
 end;
 
-procedure plot_hue_disk(hue1,hue2: single);
-var
-  i,j,w2,h2 :integer;
-  r,g,b,h,x,y : single;
-begin
-  with stackmenu1.rainbow_panel1 do
-  begin
-    w2:= width div 2;
-    h2:= height div 2;
-
-    for i:=-w2 to w2  do
-    for j:=-h2 to h2 do
-    begin
-      if sqr(i)+sqr(j)<sqr(w2) then {plot only in a circel}
-      begin
-        h:=180+Arctan2(i,j)*180/pi;
-        HSV2RGB(h, 1 {s 0..1}, 255 {v 0..1},r,g,b);
-        canvas.pixels[i+w2,j+h2]:=rgb(trunc(r),trunc(g),trunc(b));
-        end;
-    end;
-
-    Canvas.Pen.width :=2;{thickness lines}
-    Canvas.pen.color:=clblack;
-    sincos(hue1*pi/180,x,y);
-    canvas.moveto(w2,h2);
-    canvas.lineto(w2-round(x*(w2-3)),h2-round(y*(w2-3)));
-
-    sincos(hue2*pi/180,x,y);
-    canvas.moveto(w2,h2);
-    canvas.lineto(w2-round(x*(w2-3)),h2-round(y*(w2-3)));
-
-  end;
-end;
-
 procedure sample(fitsx,fitsy : integer);{sampe local colour and fill shape with colour}
 var
     halfboxsize,i,j,counter,fx,fy,col_r,col_g,col_b  :integer;
@@ -3798,7 +3767,7 @@ end;
 procedure Tstackmenu1.hue_fuzziness1Change(Sender: TObject);
 var
   colour :tcolor;
-  oldhue,s,v,dhue,hue1,hue2,r,g,b  : single;
+  oldhue,s,v,dhue,r,g,b  : single;
 begin
   dhue:=hue_fuzziness1.position;
 
@@ -3815,7 +3784,7 @@ begin
   if hue2>360 then hue2:=hue2-360;
   if hue2<0 then hue2:=hue2+360;
 
-  plot_hue_disk(hue1,hue2);
+  stackmenu1.rainbow_panel1.refresh;{plot colour disk in on paint event. Onpaint is required for MacOS}
 end;
 
 procedure Tstackmenu1.live_stacking1Click(Sender: TObject);
@@ -3844,11 +3813,17 @@ begin
 
 end;
 
+procedure Tstackmenu1.pagecontrol1Change(Sender: TObject);
+begin
+
+end;
+
+
 procedure Tstackmenu1.rainbow_Panel1MouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   w2,h2 : integer;
-  hue,dhue,hue1,hue2,oldhue,s,v,r,g,b   : single;
+  hue,dhue,oldhue,s,v,r,g,b   : single;
   colour : tcolor;
 begin
   with rainbow_Panel1 do
@@ -3861,7 +3836,7 @@ begin
     dhue:=hue_fuzziness1.position;
     hue1:=hue - dhue/2;
     hue2:=hue + dhue/2;
-    plot_hue_disk(hue1,hue2);
+    stackmenu1.rainbow_panel1.refresh;{plot colour disk on an OnPaint event. Required for MacOS}
   end;
 
   {adapt shape colours}
@@ -3880,6 +3855,40 @@ begin
     colourShape2.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
     HSV2RGB(hue , s*new_saturation1.position /100 {s 0..1}, v {v 0..1},r,g,b);
     colourShape3.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
+  end;
+end;
+
+procedure Tstackmenu1.rainbow_Panel1Paint(Sender: TObject); {pixel draw on paint required for MacOS}
+  var
+  i,j,w2,h2 :integer;
+  r,g,b,h,x,y : single;
+begin
+  with stackmenu1.rainbow_panel1 do
+  begin
+    w2:= width div 2;
+    h2:= height div 2;
+
+    for i:=-w2 to w2  do
+    for j:=-h2 to h2 do
+    begin
+      if sqr(i)+sqr(j)<sqr(w2) then {plot only in a circel}
+      begin
+        h:=180+Arctan2(i,j)*180/pi;
+        HSV2RGB(h, 1 {s 0..1}, 255 {v 0..1},r,g,b);
+        canvas.pixels[i+w2,j+h2]:=rgb(trunc(r),trunc(g),trunc(b));
+        end;
+    end;
+
+    Canvas.Pen.width :=2;{thickness lines}
+    Canvas.pen.color:=clblack;
+    sincos(hue1*pi/180,x,y);
+    canvas.moveto(w2,h2);
+    canvas.lineto(w2-round(x*(w2-3)),h2-round(y*(w2-3)));
+
+    sincos(hue2*pi/180,x,y);
+    canvas.moveto(w2,h2);
+    canvas.lineto(w2-round(x*(w2-3)),h2-round(y*(w2-3)));
+
   end;
 end;
 
@@ -6552,8 +6561,8 @@ end;
 procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
-   i,c,over_size,{ counterX,}nrfiles, image_counter,object_counter, first_file,position, total_counter{,his_done }: integer;
-   filter_name1, filter_name2, filename3, extra1,extra2,object_to_process,stack_info, proposed_name    : string;
+   i,c,over_size,{ counterX,}nrfiles, image_counter,object_counter, first_file, total_counter: integer;
+   filter_name1, filter_name2, filename3, extra1,extra2,object_to_process,stack_info         : string;
    lrgb,solution  : boolean;
    startTick      : qword;{for timing/speed purposes}
 begin

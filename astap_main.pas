@@ -493,7 +493,7 @@ procedure update_text(inp1,comment1:string);{update or insert text in header}
 procedure add_text(inp1,comment1:string);{add text to header memo}
 procedure update_generic(message_key,message_value,message_comment:string);{update header using text only}
 procedure update_integer(inp1,comment1:string;x:integer);{update or insert variable in header}
-function strtofloat2(s:string): double;{uses the current decimal seperator, either dot or komma}
+function strtofloat2(s:string): double;{works with either dot or komma as decimal seperator}
 function TextfileSize(const name: string): LongInt;
 function floattostr2(x:double):string;
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
@@ -1040,7 +1040,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.305 dated 2019-11-26';
+  #13+#10+'Version ß0.9.305a dated 2019-12-02';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2632,7 +2632,7 @@ begin
   str(x:5,result);
 end;
 
-function strtofloat2(s:string): double;{uses the current decimal seperator, either dot or komma}
+function strtofloat2(s:string): double;{works with either dot or komma as decimal seperator}
 var
   error1:integer;
 begin
@@ -8712,15 +8712,13 @@ const
       if ((x_trunc<=0) or (x_trunc>=(width2-2)) or (y_trunc<=0) or (y_trunc>=(height2-2))) then begin result:=0; exit;end;
       x_frac :=frac(x1);
       y_frac :=frac(y1);
-
       try
-      result:=         (img[0,x_trunc  ,y_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
-      result:=result + (img[0,x_trunc+1,y_trunc  ]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
-      result:=result + (img[0,x_trunc  ,y_trunc+1]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
-      result:=result + (img[0,x_trunc+1,y_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
+        result:=         (img[0,x_trunc  ,y_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
+        result:=result + (img[0,x_trunc+1,y_trunc  ]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
+        result:=result + (img[0,x_trunc  ,y_trunc+1]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
+        result:=result + (img[0,x_trunc+1,y_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
       except
       end;
-
     end;
 begin
   rs:=14;{14 is test box of 28, HFD maximum is about 10}
