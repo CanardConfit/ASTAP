@@ -184,7 +184,6 @@ begin
     Code := P-@S+1;
 end;
 
-
 procedure read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; var ra2,dec2,length2,width2,pa : double);{deepsky database search}
 var
   x,z,y      : integer;
@@ -197,7 +196,7 @@ begin
 
     if linepos>=deepstring.count then
       begin
-        linepos:=$FFFFFF;{mark as completed}
+        linepos:=$FFFFFF;{mark as finished}
         exit;
       end;
     regel:=deepstring.strings[linepos]; {using regel,is faster then deepstring.strings[linepos]}

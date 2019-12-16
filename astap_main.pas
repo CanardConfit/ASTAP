@@ -97,7 +97,8 @@ type
     MenuItem13: TMenuItem;
     MenuItem14: TMenuItem;
     loadsettings1: TMenuItem;
-    MenuItem15: TMenuItem;
+    localbackgroundequalise1: TMenuItem;
+    save_settings1: TMenuItem;
     MenuItem16: TMenuItem;
     MenuItem17: TMenuItem;
     enterposition2: TMenuItem;
@@ -117,8 +118,7 @@ type
     shape_marker3: TShape;
     solvebytwopositions1: TMenuItem;
     enterposition1: TMenuItem;
-    Returntodefaultsettings2: TMenuItem;
-    savesettings2: TMenuItem;
+    save_settings_as1: TMenuItem;
     settings_menu1: TMenuItem;
     variable_star_annotation1: TMenuItem;
     remove_annotations1: TMenuItem;
@@ -159,7 +159,6 @@ type
     MenuItem2: TMenuItem;
     helponline1: TMenuItem;
     MenuItem3: TMenuItem;
-    Local_equalise_tool1: TMenuItem;
     MenuItem5: TMenuItem;
     brighten_area1: TMenuItem;
     convert_raw_to_fits1: TMenuItem;
@@ -252,7 +251,8 @@ type
     procedure imageflipv1Click(Sender: TObject);
     procedure measuretotalmagnitude1Click(Sender: TObject);
     procedure loadsettings1Click(Sender: TObject);
-    procedure MenuItem15Click(Sender: TObject);
+    procedure localbackgroundequalise1Click(Sender: TObject);
+    procedure save_settings1Click(Sender: TObject);
     procedure enterposition1Click(Sender: TObject);
     procedure inversimage1Click(Sender: TObject);
     procedure set_area1Click(Sender: TObject);
@@ -274,7 +274,6 @@ type
     procedure histogram_UpDown1Click(Sender: TObject; Button: TUDBtnType);
     procedure Image1MouseEnter(Sender: TObject);
     procedure image_cleanup1Click(Sender: TObject);
-    procedure Local_equalise_tool1Click(Sender: TObject);
     procedure deepsky_overlay1Click(Sender: TObject);
     procedure brighten_area1Click(Sender: TObject);
     procedure make_pgm_and_fits1click(Sender: TObject);
@@ -440,7 +439,7 @@ const
    naxis  : integer=2;{number of dimensions}
    naxis3 : integer=1;{number of colors}
    fits_file: boolean=false;
-   image_move_to_left_top_corner : boolean=false;
+   image_move_to_center : boolean=false;
    ra0 : double=0;
    dec0: double=0; {plate center values}
    crpix1: double=0;{reference pixel}
@@ -455,6 +454,11 @@ const
    height_radians: double=(100/60)*pi/180;
    mouse_enter : integer=0;{for crop function}
    application_path:string='';{to be set in main}
+   bayerpat: string='';{bayer pattern}
+   bayerpattern_final:integer=0;
+   xbayroff: double=0;{additional bayer pattern offset to apply}
+   Ybayroff: double=0;{additional bayer pattern offset to apply}
+
    shape_fitsX: double=0;
    shape_fitsY: double=0;
    shape_marker1_fitsX: double=10;
@@ -474,6 +478,11 @@ const
 //   mouse_positionY1 : double=100;{For manual reference solving}
 //   mouse_positionX2 : double=200;{For manual reference solving}
 //   mouse_positionY2 : double=200;{For manual reference solving}
+    bayer_pattern : array[0..3] of string=('GRBG',
+                                           'BGGR',
+                                           'RGGB',
+                                           'GBRG');
+
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;var sep: double);
@@ -493,6 +502,10 @@ procedure update_text(inp1,comment1:string);{update or insert text in header}
 procedure add_text(inp1,comment1:string);{add text to header memo}
 procedure update_generic(message_key,message_value,message_comment:string);{update header using text only}
 procedure update_integer(inp1,comment1:string;x:integer);{update or insert variable in header}
+procedure add_integer(inp1,comment1:string;x:integer);{add integer variable to header}
+procedure update_float(inp1,comment1:string;x:double);{update keyword of fits header in memo}
+procedure remove_key(inp1:string);{remove key word in header}
+
 function strtofloat2(s:string): double;{works with either dot or komma as decimal seperator}
 function TextfileSize(const name: string): LongInt;
 function floattostr2(x:double):string;
@@ -519,8 +532,6 @@ function floattostrF2(const x:double; width1,decimals1 :word): string;
 procedure DeleteFiles(lpath,FileSpec: string);{delete files such  *.wcs}
 procedure new_to_old_WCS;{convert new style FITsS to old style}
 procedure old_to_new_WCS;{ convert old WCS to new}
-procedure update_float(inp1,comment1:string;x:double);{update keyword of fits header in memo}
-procedure remove_key(inp1:string);{remove key word in header}
 procedure show_shape(good_lock: boolean;fitsX,fitsY: double);{show shape}
 procedure create_test_image(type_test : integer);{create an artificial test image}
 function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
@@ -543,6 +554,7 @@ function convert_load_raw(filename3: string): boolean; {convert raw to pgm file 
 
 procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -990,7 +1002,7 @@ begin
     if img_backup[index_backup].img=nil then
     begin
       mainwindow.Undo1.Enabled:=false;
-      memo2_message('No more backups');
+      //memo2_message('No more backups');
     end
     else
     memo2_message('Restored backup index '+inttostr(index_backup));
@@ -1040,7 +1052,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.305a dated 2019-12-02';
+  #13+#10+'Version ß0.9.306 dated 2019-12-16';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1111,76 +1123,6 @@ begin
   plot_fits(mainwindow.image1,false,true);
 end;
 
-
-procedure Tmainwindow.Local_equalise_tool1Click(Sender: TObject);{special local equalise filter}
-var
-
-   fitsX,fitsY,dum,k,i,j,progress_value,startX2, startY2  : integer;
-   median_local,difference : double;
-   Save_Cursor:TCursor;
-begin
-  if fits_file=false then exit;
-  if  ((abs(oldx-startX)>10)and (abs(oldy-starty)>10)) then
-  begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
-    backup_img;
-
-    startX2:=startX;{save for Application.ProcessMessages;this could change startX, startY}
-    startY2:=startY;
-
-    if mainwindow.Flipvertical1.Checked=false then
-    begin
-      startY2:=height2-startY2;{fits images start from the bottom}
-      oldY:=height2-oldY;
-    end;
-
-    if mainwindow.Fliphorizontal1.Checked then
-    begin
-      startX2:=width2-startX2;
-      oldX:=width2-oldX;
-    end;
-
-    if startX2>oldX then begin dum:=oldX; oldx:=startX2; startX2:=dum; end;{swap}
-    if startY2>oldY then begin dum:=oldY; oldy:=startY2; startY2:=dum; end;
-
-    for k:=0 to naxis3-1 do {do all colors}
-    begin
-      median_local:=get_most_common(img_loaded,k,startX2,oldX-1,startY2,oldY-1,32000);{find the median of a local area}
-      for fitsY:=startY2 to oldY-1 do
-      begin
-        if frac(fitsY/100)=0 then
-        begin
-          Application.ProcessMessages;{this could change startX, startY}
-          if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-          progress_value:=round(100*(fitsY-startY2)/(((k+1)/naxis3)*(oldY-startY2)));
-          progress_indicator(progress_value,'');{report progress}
-        end;
-        for fitsX:=startX2 to oldX-1 do
-        begin
-          if ((frac(fitsx/3)=0) and (frac(fitsY/3)=0)) then
-          begin
-            difference:=get_most_common(img_loaded,k,fitsX,fitsX+9,fitsY,fitsY+9,32000 )- median_local;
-            if difference<0 then
-            for j:=fitsY to fitsY+9 do
-              for i:=fitsX to fitsX+9 do
-              begin
-                if ((i<width2)and (j<height2)) then img_loaded[k,i,j]:=img_loaded[k,i,j]-difference/25;
-              end;
-          end;
-        end;
-      end;
-    end;{k color}
-    plot_fits(mainwindow.image1,false,true);
-    progress_indicator(-100,'');{back to normal}
-    Screen.Cursor:=Save_Cursor;
-  end {fits file}
-  else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the left mouse button down'),'',MB_OK);
-
-end;
-
 procedure Tmainwindow.deepsky_overlay1Click(Sender: TObject);
 begin
   load_deep;{load the deepsky database once. If loaded no action}
@@ -1189,7 +1131,7 @@ end;
 
 procedure Tmainwindow.brighten_area1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,k : integer;
+   fitsX,fitsY,dum,k,startX2,startY2,oldX2,oldY2,progress_value : integer;
    median_left_bottom,median_left_top, median_right_top, median_right_bottom,
    line_bottom, line_top,required_bg,{difference,}most_common : double;
 
@@ -1201,47 +1143,62 @@ begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
+    startX2:=startX;{save for Application.ProcessMessages;this could change startX, startY}
+    startY2:=startY;
+    oldX2:=oldX;
+    oldY2:=oldY;
+
     backup_img;
 
     if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
     begin
-      starty:=height2-1-starty;
-      oldY:=height2-1-oldY;
+      startY2:=height2-1-startY2;
+      oldY2:=height2-1-oldY2;
     end;
 
     if mainwindow.Fliphorizontal1.Checked then
     begin
-      startX:=width2-1-startX;
-      oldX:=width2-1-oldX;
+      startX2:=width2-1-startX2;
+      oldX2:=width2-1-oldX2;
     end;
 
-    if startX>oldX then begin dum:=oldX; oldx:=startX; startX:=dum; end;{swap}
-    if startY>oldY then begin dum:=oldY; oldy:=startY; startY:=dum; end;
+    if startX2>oldX2 then begin dum:=oldX2; oldX2:=startX2; startX2:=dum; end;{swap}
+    if startY2>oldY2 then begin dum:=oldY2; oldY2:=startY2; startY2:=dum; end;
 
     for k:=0 to naxis3-1 do {do all colors}
     begin
-      median_left_bottom:=get_most_common(img_loaded,k,startx-10,startx+10,starty-10,starty+10,32000);{find the median of a local area}
-      median_left_top:=   get_most_common(img_loaded,k,startx-10,startx+10,oldy-10,oldY+10,32000);{find the median of a local area}
+      median_left_bottom:=get_most_common(img_loaded,k,startX2-10,startX2+10,startY2-10,startY2+10,32000);{find the median of a local area}
+      median_left_top:=   get_most_common(img_loaded,k,startX2-10,startX2+10,oldY2-10,oldY2+10,32000);{find the median of a local area}
 
-      median_right_bottom:=get_most_common(img_loaded,k,oldX-10,oldX+10,starty-10,starty+10,32000);{find the median of a local area}
-      median_right_top:=   get_most_common(img_loaded,k,oldX-10,oldX+10,oldY-10,oldY+10,32000);{find the median of a local area}
+      median_right_bottom:=get_most_common(img_loaded,k,oldX2-10,oldX2+10,startY2-10,startY2+10,32000);{find the median of a local area}
+      median_right_top:=   get_most_common(img_loaded,k,oldX2-10,oldX2+10,oldY2-10,oldY2+10,32000);{find the median of a local area}
 
 
-      for fitsY:=startY to oldY-1 do
-      for fitsX:=startX to oldX-1 do
+      for fitsY:=startY2 to oldY2-1 do
       begin
-        begin
-          line_bottom:=median_left_bottom*(oldx-fitsx)/(oldx-startx)+ median_right_bottom *(fitsx-startX)/(oldx-startx);{median value at bottom line}
-          line_top:=  median_left_top *   (oldx-fitsx)/(oldx-startx)+ median_right_top*(fitsx-startX)/(oldx-startx);{median value at top line}
-          required_bg:=line_bottom*(oldY-fitsY)/(oldY-startY)+line_top*(fitsY-startY)/(oldY-startY);{median value at position FitsX, fitsY}
 
-          most_common:=get_most_common(img_loaded,k,fitsX,fitsX+5,fitsY,fitsY+5,32000 );
-          if most_common<0.99*required_bg then
-            img_loaded[k,fitsX,fitsY]:=img_loaded[k,fitsX,fitsY]-(most_common-required_bg)*0.5;
+        if frac(fitsY/50)=0 then
+        begin
+          Application.ProcessMessages;{this could change startX, startY}
+          if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+          progress_value:=round(100*( k/naxis3 +  0.3333*(fitsY-startY2)/(oldY2-startY2)));
+          progress_indicator(progress_value,'');{report progress}
+        end;
+
+        for fitsX:=startX2 to oldX2-1 do
+        begin
+            line_bottom:=median_left_bottom*(oldX2-fitsx)/(oldX2-startX2)+ median_right_bottom *(fitsx-startX2)/(oldX2-startX2);{median value at bottom line}
+            line_top:=  median_left_top *   (oldX2-fitsx)/(oldX2-startX2)+ median_right_top*(fitsx-startX2)/(oldX2-startX2);{median value at top line}
+            required_bg:=line_bottom*(oldY2-fitsY)/(oldY2-startY2)+line_top*(fitsY-startY2)/(oldY2-startY2);{median value at position FitsX, fitsY}
+
+            most_common:=get_most_common(img_loaded,k,fitsX,fitsX+5,fitsY,fitsY+5,32000 );
+            if most_common<0.99*required_bg then
+              img_loaded[k,fitsX,fitsY]:=img_loaded[k,fitsX,fitsY]-(most_common-required_bg)*0.5;
         end;
       end;
     end;{k color}
     plot_fits(mainwindow.image1,false,true);
+    progress_indicator(-100,'');{back to normal}
     Screen.Cursor:=Save_Cursor;
   end {fits file}
   else
@@ -2218,21 +2175,11 @@ begin
 
   update_menu_related_to_solver((fits) and (cd1_1<>0));
 
-  stackmenu1.apply_dpp_button1.enabled:=fits;{exist, otherwise error with command line}
-  stackmenu1.apply_factor1.enabled:=fits;
-  stackmenu1.apply_file1.enabled:=fits;
-  stackmenu1.apply_gaussian_blur_button1.enabled:=fits;
-  stackmenu1.apply_artificial_flat_correction1.enabled:=fits;
-  stackmenu1.apply_get_background1.enabled:=fits;
-  stackmenu1.splitRGB1.enabled:=fits;
-  stackmenu1.apply_remove_background_colour1.enabled:=fits;
-  stackmenu1.smart_colour_smooth_button1.enabled:=fits;
-  stackmenu1.Button_free_resize_fits1.enabled:=fits;
-
+  stackmenu1.tab_Pixelmath1.enabled:=fits;
+  stackmenu1.tab_Pixelmath2.enabled:=fits;
 
   stackmenu1.resize_factor1Change(nil);{update dimensions binning menu}
   stackmenu1.test_pattern1.Enabled:=naxis3=1;{mono}
-  stackmenu1.apply_background_noise_filter1.Enabled:=fits;
 
   stackmenu1.focallength1Change(nil); {update calculation pixel size in arc seconds}
 
@@ -2836,7 +2783,6 @@ begin
      3: begin offsetx:=1; offsety:=1; end;
   end;
 
-
   setlength(img_temp2,3,width2,height2);{set length of image array color}
 
   for y := 1 to height2-2 do   {-2 = -1 -1}
@@ -2900,7 +2846,6 @@ begin
      2: begin offsetx:=1; offsety:=0; end;
      3: begin offsetx:=1; offsety:=1; end;
   end;
-
 
   setlength(img_temp2,3,width2,height2);{set length of image array color}
 
@@ -3385,7 +3330,7 @@ end;
 
 
 
-procedure demosaic_Malvar_He_Cutler({img: image_array;}pattern: integer);{make from sensor bayer pattern the three colors}
+procedure demosaic_Malvar_He_Cutler(pattern: integer);{make from sensor bayer pattern the three colors}
 {Based on paper HIGH-QUALITY LINEAR INTERPOLATION FOR DEMOSAICING OF BAYER-PATTERNED COLOR IMAGES
                 Henrique S. Malvar, Li-wei He, and Ross Cutler, Microsoft Research}
 var
@@ -3399,7 +3344,6 @@ begin
      2: begin offsetx:=1; offsety:=0; end;
      3: begin offsetx:=1; offsety:=1; end;
   end;
-
   setlength(img_temp2,3,width2,height2);{set length of image array color}
 
   for y := 2 to height2-3 do   {-3 = -1 -2, ignore borders}
@@ -3596,34 +3540,63 @@ begin
     end;
 end;
 
+function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
+var
+  pattern: string;
+  automatic :boolean;
+begin
+  automatic:=stackmenu1.bayer_pattern1.Text='auto';
+  if automatic then
+  begin
+    if bayerpat<>'' then pattern:=bayerpat {from fits header or RGGB if not specified}
+    else bayerpat:='RGGB';{most common}
+  end
+  else
+    pattern:=stackmenu1.bayer_pattern1.text;
+
+
+  if pattern=bayer_pattern[2]{'RGGB'} then begin result:=2; {offsetx:=1; offsety:=0;} end {ASI294, ASI071, most common pattern}
+  else
+  if pattern=bayer_pattern[0]{'GRBG'} then begin result:=0  {offsetx:=0; offsety:=0;} end {ASI1600MC}
+  else
+  if pattern=bayer_pattern[1]{'BGGR'} then begin result:=1  {offsetx:=0; offsety:=1;} end
+  else
+  if pattern=bayer_pattern[3]{'GBRG'} then begin result:=3; {offsetx:=1; offsety:=1;} end;
+
+  if automatic then
+  begin
+    if odd(round(xbayroff)) then begin if result<2 then result:=result+2 else result:=result-2;{shifted bayer pattern due to flip or sub section}end;
+    if odd(round(ybayroff)) then begin if result<3 then result:=result+1 else result:=result-1;{shifted bayer pattern due to flip or sub section}end;
+  end;
+  bayerpattern_final:=result; {store for global use}
+end;
 
 procedure demosaic_bayer; {convert OSC image to colour}
 begin
 //preserve_colour_saturated_bayer;
   if pos('Super',stackmenu1.demosaic_method1.text)<>0  then {use Bilinear interpolation}
-    Super_pixel_demosaic(stackmenu1.bayer_pattern1.itemindex){create super-pixels from each group of 4 pixels RGGB}
+    Super_pixel_demosaic(get_demosaic_pattern){create super-pixels from each group of 4 pixels RGGB}
   else
   if pos('Bilinear',stackmenu1.demosaic_method1.text)<>0  then {use Bilinear interpolation}
-    demosaic_bilinear_interpolation(stackmenu1.bayer_pattern1.itemindex){make from sensor bayer pattern the three colors}
+    demosaic_bilinear_interpolation(get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
   if pos('AstroC',stackmenu1.demosaic_method1.text)<>0  then
   begin
-    if pos('4095',stackmenu1.demosaic_method1.text)<>0 then demosaic_astroC_bilinear_interpolation(4095 div 2,stackmenu1.bayer_pattern1.itemindex){make from sensor bayer pattern the three colors}
+    if pos('4095',stackmenu1.demosaic_method1.text)<>0 then demosaic_astroC_bilinear_interpolation(4095 div 2,get_demosaic_pattern){make from sensor bayer pattern the three colors}
     else
-    if pos('16383',stackmenu1.demosaic_method1.text)<>0 then demosaic_astroC_bilinear_interpolation(16383 div 2,stackmenu1.bayer_pattern1.itemindex){make from sensor bayer pattern the three colors}
+    if pos('16383',stackmenu1.demosaic_method1.text)<>0 then demosaic_astroC_bilinear_interpolation(16383 div 2,get_demosaic_pattern){make from sensor bayer pattern the three colors}
     else
-    demosaic_astroC_bilinear_interpolation(65535 div 2,stackmenu1.bayer_pattern1.itemindex){make from sensor bayer pattern the three colors}
+    demosaic_astroC_bilinear_interpolation(65535 div 2,get_demosaic_pattern){make from sensor bayer pattern the three colors}
   end
   else
   if pos('AstroM',stackmenu1.demosaic_method1.text)<>0  then {}
-    demosaic_astroM_bilinear_interpolation(stackmenu1.bayer_pattern1.itemindex){make from sensor bayer pattern the three colors}
+    demosaic_astroM_bilinear_interpolation(get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
   if pos('Bayer',stackmenu1.demosaic_method1.text)<>0  then {}
-    demosaic_bayer_drizzle(stackmenu1.bayer_pattern1.itemindex){make from sensor bayer pattern the three colors}
+    demosaic_bayer_drizzle(get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
     demosaic_Malvar_He_Cutler(stackmenu1.bayer_pattern1.itemindex);{make from sensor bayer pattern the three colors}
 end;
-
 
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 const
@@ -3844,13 +3817,11 @@ begin
 
       col:=round(img_loaded[0,j,i]);
       colrr:=(col-cblack)/(cwhite-cblack);{scale to 1}
-//      if colrr<=0.00000000001 then colrr:=0.00000000001;
 
       if naxis3>=2 then {at least two colours}
       begin
         col:=round(img_loaded[1,j,i]);
         colgg:=(col-cblack)/(cwhite-cblack);{scale to 1}
-    //    if colgg<=0.00000000001 then colgg:=0.00000000001;
       end
       else
       colgg:=colrr;
@@ -3931,13 +3902,18 @@ begin
   img.Picture.Bitmap.Transparent := True;
   img.Picture.Bitmap.TransparentColor := clblack;
 
+
   if center_image then {image new of resized}
   begin
-    img.left:=0;
     img.top:=0;
     img.height:=mainwindow.panel1.height;
+
+    img.left:=0;
+//    img.left:=(mainwindow.panel1.width- round(img.height*width2/height2)) div 2;
+
   end;
-  img.width:=round(mainwindow.image1.height*width2/height2); {lock image aspect always for case a image with a different is clicked on in stack menu}
+//  img.width:=round(mainwindow.image1.height*width2/height2); {lock image aspect always for case a image with a different is clicked on in stack menu}
+  img.width:=round(img.height*width2/height2); {lock image aspect always for case a image with a different is clicked on in stack menu}
 
 
   if img=mainwindow.image1 then {plotting to mainwindow?}
@@ -4014,7 +3990,7 @@ begin
   {some house keeping}
   result:=false; {assume failure}
   if load_data then mainwindow.caption:=ExtractFileName(filen);
-  {house keeping finished}
+  {house keeping done}
 
   try
     TheFile3:=tfilestream.Create( filen, fmOpenRead );
@@ -4050,6 +4026,10 @@ begin
     cd1_2:=0;{just for the case it is not available}
     cd2_1:=0;{just for the case it is not available}
     cd2_2:=0;{just for the case it is not available}
+    bayerpat:='';{reset bayer pattern}
+    xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
+    ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
+
     a_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
     a_0_2:=0; a_0_3:=0; a_1_1:=0; a_1_2:=0;a_2_0:=0; a_2_1:=0; a_3_0:=0;
     b_0_2:=0; b_0_3:=0; b_1_1:=0; b_1_2:=0;b_2_0:=0; b_2_1:=0; b_3_0:=0;
@@ -4318,6 +4298,15 @@ begin
             else
             if (header[i+4]='Y') then   ref_Y:=validate_double;
           end;
+
+      if ((header[i]='B') and (header[i+1]='A')  and (header[i+2]='Y') and (header[i+3]='E') and (header[i+4]='R') and (header[i+5]='P') and (header[i+6]='A')) then
+         bayerpat:=get_string;{BAYERPAT, bayer patern such as RGGB}
+
+     if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='A') and (header[i+3]='Y') and (header[i+4]='R') and (header[i+5]='O') and (header[i+6]='F')) then
+         xbayroff:=validate_double;{offset to used to correct BAYERPAT due to flipping}
+
+      if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='A') and (header[i+3]='Y') and (header[i+4]='R') and (header[i+5]='O') and (header[i+6]='F')) then
+         ybayroff:=validate_double;{offset to used to correct BAYERPAT due to flipping}
 
 
 
@@ -4625,6 +4614,9 @@ begin
   ybinning:=1;
   exposure:=0;
   set_temperature:=999;
+  bayerpat:='';{reset bayer pattern}
+  xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
+  ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
 
   I:=0;
   reader_position:=0;
@@ -4797,7 +4789,7 @@ end;
 
 procedure read_keys_memo;
 var
-  s,key    : string;
+  key      : string;
   count1   : integer;
   ra2,dec2 : double;
      function read_float(aline :string): double;
@@ -5473,11 +5465,11 @@ begin
     i:=stackmenu1.stack_method1.itemindex;  get_int(i,'stack_method');stackmenu1.stack_method1.itemindex:=i;
     i:=stackmenu1.flat_combine_method1.itemindex;  get_int(i,'flat_combine_method');
     i:=stackmenu1.pagecontrol1.tabindex;  get_int(i,'stack_tab');stackmenu1.pagecontrol1.tabindex:=i;
-    i:=stackmenu1.bayer_pattern1.itemindex;  get_int(i,'bayer_pattern');stackmenu1.bayer_pattern1.itemindex:=i;
+
     i:=stackmenu1.demosaic_method1.itemindex;  get_int(i,'demosaic_method');stackmenu1.demosaic_method1.itemindex:=i;
     i:=Polynomial1.itemindex;  get_int(i,'polynomial');Polynomial1.itemindex:=i;
 
-    i:=stackmenu1.bayer_pattern1.itemindex;  get_int(i,'rgb_filter');stackmenu1.rgb_filter1.itemindex:=i;
+    i:=stackmenu1.rgb_filter1.itemindex;  get_int(i,'rgb_filter');stackmenu1.rgb_filter1.itemindex:=i;
 
     get_int(thumbnails1_width,'thumbnails_width');
     get_int(thumbnails1_height,'thumbnails_height');
@@ -5565,16 +5557,28 @@ begin
     dum:=initstring.Values['search_area']; if dum<>'' then stackmenu1.search_area1.text:=dum;
     dum:=initstring.Values['astrometry_extra_options']; if dum<>'' then stackmenu1.astrometry_extra_options1.text:=dum;
     dum:=initstring.Values['most_common_filter_radius']; if dum<>'' then stackmenu1.most_common_filter_radius1.text:=dum;
-    dum:=initstring.Values['equalise_gaussian_filter']; if dum<>'' then stackmenu1.equalise_gaussian_filter1.text:=dum;
 
     dum:=initstring.Values['extract_background_box_size']; if dum<>'' then stackmenu1.extract_background_box_size1.text:=dum;
-    dum:=initstring.Values['equalise_box_size']; if dum<>'' then stackmenu1.equalise_box_size1.text:=dum;
+    dum:=initstring.Values['dark_areas_box_size']; if dum<>'' then stackmenu1.dark_areas_box_size1.text:=dum;
+    dum:=initstring.Values['ring_equalise_factor']; if dum<>'' then stackmenu1.ring_equalise_factor1.text:=dum;
+
     dum:=initstring.Values['gradient_filter_factor']; if dum<>'' then stackmenu1.gradient_filter_factor1.text:=dum;
 
     if paramcount=0 then filename2:=initstring.Values['last_file'];{if used as viewer don't override paramstr1}
 
     stackmenu1.ignore_hotpixels1.checked:= get_boolean('ignore_hotpixels',false);
     dum:=initstring.Values['hotpixel_sd_factor']; if dum<>'' then stackmenu1.hotpixel_sd_factor1.text:=dum;
+
+    dum:=initstring.Values['bayerpat']; if dum<>'' then stackmenu1.bayer_pattern1.text:=dum
+    else
+    begin  {remove the following lines in dec 2020}
+       i:=9;  get_int(i,'bayer_pattern');
+       if i=0 then stackmenu1.bayer_pattern1.text:='GRBG';
+       if i=1 then stackmenu1.bayer_pattern1.text:='BGGR';
+       if i=2 then stackmenu1.bayer_pattern1.text:='RGGB';
+       if i=3 then stackmenu1.bayer_pattern1.text:='GBRG';
+       if i=9 then stackmenu1.bayer_pattern1.text:='auto';{new installation}
+    end;
 
     dum:=initstring.Values['red_filter1']; if dum<>'' then stackmenu1.red_filter1.text:=dum;
     dum:=initstring.Values['red_filter2']; if dum<>'' then stackmenu1.red_filter2.text:=dum;
@@ -5762,7 +5766,9 @@ begin
 
   initstring.Values['flat_combine_method']:=inttostr(stackmenu1.flat_combine_method1.itemindex);
   initstring.Values['stack_tab']:=inttostr(stackmenu1.pagecontrol1.tabindex);
-  initstring.Values['bayer_pattern']:=inttostr(stackmenu1.bayer_pattern1.itemindex);
+
+  initstring.Values['bayerpat']:=stackmenu1.bayer_pattern1.text;
+
   initstring.Values['demosaic_method']:=inttostr(stackmenu1.demosaic_method1.itemindex);
   initstring.Values['polynomial']:=inttostr(polynomial1.itemindex);
 
@@ -5835,8 +5841,6 @@ begin
   initstring.Values['pixel_size']:=stackmenu1.pixelsize1.text;
   initstring.Values['focal_length']:=stackmenu1.focallength1.text;
   initstring.Values['oversize']:=stackmenu1.oversize1.text;
-//  initstring.Values['pedestal']:=stackmenu1.pedestal1.text;
-
 
   initstring.Values['sd_factor']:=stackmenu1.sd_factor1.text;
   initstring.Values['pixel_size']:=stackmenu1.pixelsize1.text;
@@ -5846,9 +5850,11 @@ begin
   initstring.Values['astrometry_extra_options']:=stackmenu1.astrometry_extra_options1.text;
   initstring.Values['blur_factor']:=stackmenu1.blur_factor1.text;
   initstring.Values['most_common_filter_radius']:=stackmenu1.most_common_filter_radius1.text;
-  initstring.Values['equalise_gaussian_filter']:=stackmenu1.equalise_gaussian_filter1.text;
 
   initstring.Values['extract_background_box_size']:=stackmenu1.extract_background_box_size1.text;
+  initstring.Values['dark_areas_box_size']:=stackmenu1.dark_areas_box_size1.text;
+  initstring.Values['ring_equalise_factor']:=stackmenu1.ring_equalise_factor1.text;
+
   initstring.Values['gradient_filter_factor']:=stackmenu1.gradient_filter_factor1.text;
 
   initstring.Values['last_file']:=filename2;
@@ -6228,9 +6234,9 @@ begin
            save_fits(ChangeFileExt(filename2,'.fit'),16,false);
        end;
 
-      if err=false then mainwindow.caption:='Ready, all files converted.'
+      if err=false then mainwindow.caption:='Completed, all files converted.'
        else
-       mainwindow.caption:='Ready, files converted with errors!';
+       mainwindow.caption:='Finished, files converted but with errors!';
 
        finally
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
@@ -6324,7 +6330,7 @@ begin
     plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
     mainwindow.ShowFITSheader1.enabled:=true;
     mainwindow.demosaicBayermatrix1.Enabled:=true;
-    image_move_to_left_top_corner:=re_center;
+    image_move_to_center:=re_center;
 
     if fitsfile then plot_annotations;
   end;
@@ -6471,7 +6477,7 @@ begin
        end;
        finally
 
-       mainwindow.caption:='Ready, all files compressed with extension .fz.';
+       mainwindow.caption:='Finished, all files compressed with extension .fz.';
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
   end;
@@ -6664,7 +6670,110 @@ begin
   end;
 end;
 
-procedure Tmainwindow.MenuItem15Click(Sender: TObject);
+procedure Tmainwindow.localbackgroundequalise1Click(Sender: TObject);
+var
+   fitsX,fitsY,dum,k,bsize,startX2,startY2,oldX2,oldY2,progress_value  : integer;
+   median_left_bottom,median_left_top, median_right_top, median_right_bottom,
+   noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,noise_level,
+   center_x,center_y,a,b,angle_from_center,new_value,old_value : double;
+   line_bottom, line_top : double;
+
+   Save_Cursor:TCursor;
+begin
+  if fits_file=false then exit;
+  if  ((abs(oldx-startX)>2)and (abs(oldy-starty)>2)) then
+  begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+    backup_img;
+
+    bsize:=min(15,abs(oldx-startX));{15 or smaller}
+
+
+    startX2:=startX;{save for Application.ProcessMessages;this could change startX, startY}
+    startY2:=startY;
+    oldX2:=oldX;
+    oldY2:=oldY;
+
+
+    if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+    begin
+      startY2:=height2-1-startY2;
+      oldY2:=height2-1-oldY2;
+    end;
+
+    if mainwindow.Fliphorizontal1.Checked then
+    begin
+      startX2:=width2-1-startX2;
+      oldX2:=width2-1-oldX2;
+    end;
+
+    if startX2>oldX2 then begin dum:=oldX2; oldX2:=startX2; startX2:=dum; end;{swap}
+    if startY2>oldY2 then begin dum:=oldY2; oldY2:=startY2; startY2:=dum; end;
+
+    {ellipse parameters}
+    center_x:=(startX2+oldX2-1)/2;
+    center_y:=(startY2+oldY2-1)/2;
+    a:=(oldX2-1-startX2)/2;
+    b:=(oldY2-1-startY2)/2;
+
+    {prepare a smooth background image}
+    setlength(img_buffer,naxis3,oldX2-startX2,oldY2-startY2);{new size}
+    setlength(img_temp,naxis3,oldX2-startX2,oldY2-startY2);{new size}
+    for k:=0 to naxis3-1 do
+    for fitsY:=startY2 to oldY2-1 do
+    for fitsX:=startX2 to oldX2-1 do img_buffer[k,fitsX-startX2,fitsY-startY2]:=img_loaded[k,fitsX,fitsY];{copy section of interest}
+    apply_most_common(img_buffer,img_temp,bsize); {apply most common filter on first array and place result in second array}
+    gaussian_blur2(img_temp,bsize+bsize);
+
+    {correct image}
+    for k:=0 to naxis3-1 do {do all colors}
+    begin
+
+      median_left_bottom:=get_most_common(img_loaded,k,startX2-bsize,startX2+bsize,startY2-bsize,startY2+bsize,32000);{find the median of a local area}
+      median_left_top:=   get_most_common(img_loaded,k,startX2-bsize,startX2+bsize,oldY2-bsize,oldY2+bsize,32000);{find the median of a local area}
+
+      median_right_bottom:=get_most_common(img_loaded,k,oldX2-bsize,oldX2+bsize,startY2-bsize,startY2+bsize,32000);{find the median of a local area}
+      median_right_top:=   get_most_common(img_loaded,k,oldX2-bsize,oldX2+bsize,oldY2-bsize,oldY2+bsize,32000);{find the median of a local area}
+
+      {apply correction}
+      for fitsY:=startY2 to oldY2-1 do
+      begin
+        if frac(fitsY/50)=0 then
+        begin
+          Application.ProcessMessages;{this could change startX, startY}
+          if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+          progress_value:=round(100*( k/naxis3 +  0.3333*(fitsY-startY2)/(oldY2-startY2)));
+          progress_indicator(progress_value,'');{report progress}
+        end;
+
+        for fitsX:=startX2 to oldX2-1 do
+        begin
+          angle_from_center:=arctan(abs(fitsY-center_Y)/max(1,abs(fitsX-center_X)));
+          if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
+          begin
+            line_bottom:=median_left_bottom*(oldX2-fitsx)/(oldX2-startX2)+ median_right_bottom *(fitsx-startX2)/(oldX2-startX2);{median value at bottom line}
+            line_top:=  median_left_top *   (oldX2-fitsx)/(oldX2-startX2)+ median_right_top*(fitsx-startX2)/(oldX2-startX2);{median value at top line}
+            new_value:=line_bottom*(oldY2-fitsY)/(oldY2-startY2)+line_top*(fitsY-startY2)/(oldY2-startY2);{median value at position FitsX, fitsY}
+
+            img_loaded[k,fitsX,fitsY]:=img_loaded[k,fitsX,fitsY] +(new_value-img_temp[k,fitsX-startX2,fitsY-startY2]);
+          end;
+        end;
+
+      end;
+    end;{k color}
+
+    plot_fits(mainwindow.image1,false,true);
+    progress_indicator(-100,'');{back to normal}
+    Screen.Cursor:=Save_Cursor;
+  end {fits file}
+  else
+  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the left mouse button down'),'',MB_OK);
+
+end;
+
+procedure Tmainwindow.save_settings1Click(Sender: TObject);
 begin
   save_settings(user_path+'astap.cfg');
 end;
@@ -7236,26 +7345,35 @@ end;
 
 procedure Tmainwindow.FormPaint(Sender: TObject);
 begin
-   if image_move_to_left_top_corner then
+   if image_move_to_center then
    begin
      mainwindow.image1.top:=0;
      mainwindow.image1.left:=0;
+//     mainwindow.image1.left:=(mainwindow.panel1.width- mainwindow.image1.width) div 2;
    end;
 end;
 
 procedure Tmainwindow.FormResize(Sender: TObject);
+var
+    h,w,mw: integer;
 begin
 
  panel1.Top:=max(memo1.Height+10, data_range_groupBox1.top+data_range_groupBox1.height+5);
  panel1.left:=0;
- panel1.width:=mainwindow.width;
- panel1.height:=StatusBar1.top-panel1.top;
 
- mainwindow.image1.left:=0;
+
+ mw:=mainwindow.width;
+ h:=StatusBar1.top-panel1.top;
+ w:=round(h*width2/height2);
+
+ panel1.width:=mw;
+ panel1.height:=h;
+ mainwindow.image1.height:=h;
+ mainwindow.image1.width:=w;
+
  mainwindow.image1.top:=0;
-
- mainwindow.image1.height:=panel1.height;
- mainwindow.image1.width:=round(mainwindow.image1.height*width2/height2);
+ mainwindow.image1.left:=0;
+//  mainwindow.image1.left:=(mw- w) div 2;
 
 end;
 
@@ -8099,10 +8217,15 @@ begin
   backup_img;
 
   demosaic_bayer;
+  memo2_message('De-mosaic bayer pattern used '+bayer_pattern[bayerpattern_final]);
   {colours are now created, redraw histogram}
   getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
 
   smart_colour_smooth(img_loaded,10,false {get red hist});
+
+  remove_key('BAYERPAT');{remove key word in header}
+  remove_key('XBAYROFF');{remove key word in header}
+  remove_key('YBAYROFF');{remove key word in header}
 
   plot_fits(mainwindow.image1,false,true);
   stackmenu1.test_pattern1.Enabled:=false;{do no longer allow debayer}
@@ -8198,7 +8321,7 @@ begin
 
    plot_fits(mainwindow.image1,true,true);
 
-   image_move_to_left_top_corner:=true;
+   image_move_to_center:=true;
 
    update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
    update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
@@ -8432,6 +8555,7 @@ begin
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
 
+
 procedure Tmainwindow.set_area1Click(Sender: TObject);
 var
     dum : integer;
@@ -8581,7 +8705,7 @@ begin
   progress_indicator(-100,'');{back to normal}
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 
-  memo2_message('Finished rotation.');
+  memo2_message('Rotation done.');
 end;
 
 procedure Tmainwindow.histogram1MouseMove(Sender: TObject; Shift: TShiftState;
@@ -8673,7 +8797,7 @@ begin
   mainwindow.shape_alignment_marker1.visible:=false;
   {end manual alignment}
 
-  image_move_to_left_top_corner:=false;{image in moved to 0,0, why is so difficult???}
+  image_move_to_center:=false;{image in moved to center, why is so difficult???}
 
   down_x:=x;
   down_y:=y;
@@ -9321,6 +9445,16 @@ begin
   if inp1='NAXIS3  =' then mainwindow.memo1.lines.insert(5,inp1+' '+s+comment1) else{PixInsight requires to have it on this place}
   mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inp1+' '+s+comment1);
 end;
+procedure add_integer(inp1,comment1:string;x:integer);{add integer variable to header}
+ var
+   s,aline  : string;
+   count1   : integer;
+begin
+  str(x:20,s);
+  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inp1+' '+s+comment1);
+end;
+
 procedure update_generic(message_key,message_value,message_comment:string);{update header using text only}
 var
    count1: integer;

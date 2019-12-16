@@ -131,7 +131,9 @@ begin
   y_coeff[0]:=0;
 
   a_order:=0; {reset SIP_polynomial, use for check if there is data}
-
+  bayerpat:='';{reset bayer pattern}
+  xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
+  ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
 
   setlength(header2,16);
   reader_position:=0;
@@ -240,6 +242,10 @@ begin
 //    time_obs:=extract_string_keyword('DATE-OBS');
 //    time_obs:=extract_string_keyword('DATE');
 //    filter_name:=extract_string_keyword('FILTER');
+  bayerpat:=extract_string_keyword('BAYERPAT');
+  extract_double_keyword('XBAYROFF',Xbayroff);;{offset to used to correct BAYERPAT due to flipping}
+  extract_double_keyword('YBAYROFF',Ybayroff);;{offset to used to correct BAYERPAT due to flipping}
+
 
   {update memo keywords and variables for floats}
   extract_double_keyword('CD1_1',cd1_1);{extract float value from XML header and add keyword to FITS memo header, ignoring comments.}

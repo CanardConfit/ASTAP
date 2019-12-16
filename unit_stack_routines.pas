@@ -587,46 +587,6 @@ begin
 end;
 
 
-function test_bayer_matrix2(img: image_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
-var
-   fitsX,w,h,middleY,step_size,
-   countp11,countp12,countp21,countp22       : integer;
-   p11,p12,p21,p22                   : single;
-const
-   steps=100;
-begin
-//  colors:=Length(img); {colors}
-  w:=Length(img[0]);    {width}
-  h:=Length(img[0][0]); {height}
-
-
-  countp11:=0;
-  countp12:=0;
-  countp21:=0;
-  countp22:=0;
-
-  middleY:=h div 2;
-  step_size:=w div steps;
-
-  for fitsX:=0 to steps-1   do  {test one horizontal line and take 100 samples of the bayer matrix}
-  begin
-    p11:=img[0,step_size*fitsX,middleY];
-    p12:=img[0,step_size*fitsX+1,middleY];
-    p21:=img[0,step_size*fitsX,middleY+1];
-    p22:=img[0,step_size*fitsX+1,middleY+1];
-
-    if ((p11>p12) and (p11>p21) and (p11>p22)) then inc(countp11);
-    if ((p12>p11) and (p12>p21) and (p12>p22)) then inc(countp12);
-    if ((p21>p11) and (p21>p12) and (p21>p22)) then inc(countp21);
-    if ((p22>p11) and (p22>p12) and (p22>p21)) then inc(countp22);
-  end;
-
-
-
-  memo2_message(inttostr(countp11)+'  '+inttostr(countp12)+ '  '+inttostr(countp21)+'  ' +inttostr(countp22));
-end;
-
-
 function test_bayer_matrix(img: image_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
 var
    fitsX,w,h,middleY,step_size       : integer;
@@ -635,7 +595,7 @@ var
 const
    steps=100;
 begin
-//  colors:=Length(img); {colors}
+  //  colors:=Length(img); {colors}
   w:=Length(img[0]);    {width}
   h:=Length(img[0][0]); {height}
 
@@ -664,7 +624,6 @@ begin
   highest:=max(max(m11,m12),max(m21,m22));
 
   result:=highest-lowest>100;
-
 
   p11:=nil;
   p12:=nil;
@@ -722,10 +681,10 @@ begin
           begin
             initialise1;{set variables correct. Do this before apply dark}
             initialise2;{set variables correct}
-
-            memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
-            if ((make_osc_color1.checked) and (test_bayer_matrix(img_loaded)=false)) then memo2_message('█ █ █ █ █ █ Warning, maybe not an OSC image! █ █ █ █ █ █');
-            if ((make_osc_color1.checked=false) and (test_bayer_matrix(img_loaded)=true)) then memo2_message('█ █ █ █ █ █ Warning, suspect OSC image is stacked as monochrome! Check mark convert OSC to colour. █ █ █ █ █ █');
+            if ((bayerpat='') and (make_osc_color1.checked)) then
+               if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
+               else
+               if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, monochrome image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
           end;
 
           apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
@@ -885,7 +844,7 @@ begin
             if drizzle_mode=2 then {bayer_drizzle}
             begin
               {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
-              demosaic_bayer_drizzle(stackmenu1.bayer_pattern1.itemindex);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
+              demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
 
               for fitsY:=1 to height2 do
               for fitsX:=1 to width2  do
@@ -1229,8 +1188,10 @@ begin
           initialise1;{set variables correct}
           initialise2;{set variables correct}
           memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
-          if ((make_osc_color1.checked) and (test_bayer_matrix(img_loaded)=false)) then memo2_message('█ █ █ █ █ █ Warning, not an OSC image! █ █ █ █ █ █');
-          if ((make_osc_color1.checked=false) and (test_bayer_matrix(img_loaded)=true)) then memo2_message('█ █ █ █ █ █ Warning, OSC image is stacked as monochrome! Check mark convert OSC to colour. █ █ █ █ █ █');
+          if ((bayerpat='') and (make_osc_color1.checked)) then
+             if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
+             else
+             if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, monochrome image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
         end;
 
         apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
@@ -1355,7 +1316,7 @@ begin
           jd_sum:=jd_sum+jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
           {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
-          if drizzle_mode=2 then demosaic_bayer_drizzle(stackmenu1.bayer_pattern1.itemindex);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
+          if drizzle_mode=2 then demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
 
           vector_based:=((use_star_alignment) or (use_manual_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
@@ -1485,7 +1446,7 @@ begin
           init:=true;{initialize for first image done}
 
           {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
-          if drizzle_mode=2 then demosaic_bayer_drizzle(stackmenu1.bayer_pattern1.itemindex);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
+          if drizzle_mode=2 then demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
 
           vector_based:=((use_star_alignment) or (use_manual_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
@@ -1646,7 +1607,7 @@ begin
           if drizzle_mode=2 then {bayer_drizzle}
           begin
             {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
-            demosaic_bayer_drizzle(stackmenu1.bayer_pattern1.itemindex);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
+            demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
 
             for fitsY:=1 to height2 do
             for fitsX:=1 to width2  do

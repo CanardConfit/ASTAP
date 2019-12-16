@@ -919,13 +919,13 @@ object mainwindow: Tmainwindow
       end
       object settings_menu1: TMenuItem
         Caption = 'Settings'
-        object MenuItem15: TMenuItem
+        object save_settings1: TMenuItem
           Caption = 'Save settings'
           Hint = 'Save current settings'
           ImageIndex = 26
-          OnClick = MenuItem15Click
+          OnClick = save_settings1Click
         end
-        object savesettings2: TMenuItem
+        object save_settings_as1: TMenuItem
           Caption = 'Save settings as'
           Hint = 'Settings will be saved as. Note that after restart the default.cfg is loaded automatically. '
           OnClick = savesettings1Click
@@ -933,7 +933,7 @@ object mainwindow: Tmainwindow
         object MenuItem16: TMenuItem
           Caption = '-'
         end
-        object Returntodefaultsettings2: TMenuItem
+        object Returntodefaultsettings1: TMenuItem
           Caption = 'Return to default settings and exit'
           Hint = 'Prgram will return to default settings'
           OnClick = Returntodefaultsettings1Click
@@ -1380,13 +1380,14 @@ object mainwindow: Tmainwindow
       Hint = 'Local Gaussian blur with factor as set in pixel math'
       OnClick = localgaussian1Click
     end
-    object Local_equalise_tool1: TMenuItem
-      Caption = 'Local equalise tool. Apply a few times'
-      Hint = 'Removes slowly darker areas within the pulled rectangle. Select darker area including suroundings. Apply many times to equalise.'
-      OnClick = Local_equalise_tool1Click
+    object localbackgroundequalise1: TMenuItem
+      Caption = 'Equalise background tool'
+      Hint = 'Equalises bright or dark background within the pulled rectangle. '
+      OnClick = localbackgroundequalise1Click
     end
     object brighten_area1: TMenuItem
-      Caption = 'Brighten a small area based on the corner values. Apply a few times'
+      Caption = 'Brighten dark area tool'
+      Hint = 'Place the rectangle around the (small) darker area.  Area will be brightened based on the corner values.  Apply a few times.'
       OnClick = brighten_area1Click
     end
     object MenuItem18: TMenuItem
@@ -1394,7 +1395,7 @@ object mainwindow: Tmainwindow
     end
     object set_area1: TMenuItem
       Caption = 'Set area'
-      Hint = 'Set area for colour replace'
+      Hint = 'Set area for colour replace in tab pixel math 1.'
       OnClick = set_area1Click
     end
     object MenuItem4: TMenuItem

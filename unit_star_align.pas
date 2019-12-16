@@ -544,7 +544,7 @@ begin
      if solve_show_log then memo2_message('Selecting the '+ inttostr(max_stars)+' brightest stars only.');
     get_brightest_stars(max_stars, highest_snr, snr_list, starlist1);
   end;
-  if solve_show_log then memo2_message('Finding stars completed in '+ inttostr(gettickcount64 - startTick2)+ ' ms');
+  if solve_show_log then memo2_message('Finding stars done in '+ inttostr(gettickcount64 - startTick2)+ ' ms');
 end;
 
 procedure find_tetrahedrons_ref;{find tetrahedrons for reference image}

@@ -205,8 +205,10 @@ begin
               initialise2;{set variables correct}
 
               memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
-              if ((make_osc_color1.checked) and (test_bayer_matrix(img_loaded)=false)) then memo2_message('█ █ █ █ █ █ Warning, not an OSC image! █ █ █ █ █ █');
-              if ((make_osc_color1.checked=false) and (test_bayer_matrix(img_loaded)=true)) then memo2_message('█ █ █ █ █ █ Warning, OSC image is stacked as monochrome! Check mark convert OSC to colour. █ █ █ █ █ █');
+              if ((bayerpat='') and (make_osc_color1.checked)) then
+                if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
+                else
+                if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, monochrome image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
             end;
 
             apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
