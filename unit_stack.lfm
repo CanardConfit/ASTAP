@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 660
+  Left = 286
   Height = 660
-  Top = 115
+  Top = 182
   Width = 1450
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -3859,10 +3859,10 @@ object stackmenu1: Tstackmenu1
           TabOrder = 1
         end
         object undo_button3: TBitBtn
-          Left = 387
+          Left = 382
           Height = 30
           Hint = 'Undo last action'
-          Top = 0
+          Top = 5
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -3923,7 +3923,7 @@ object stackmenu1: Tstackmenu1
           Text = '3'
         end
         object apply_artificial_flat_correctionV2: TButton
-          Left = 280
+          Left = 275
           Height = 30
           Hint = 'Equalise all. There should be no object in the center of the image and deepsky objects should be small.. '
           Top = 5
@@ -3934,7 +3934,7 @@ object stackmenu1: Tstackmenu1
           TabOrder = 3
         end
         object ring_equalise_factor1: TComboBox
-          Left = 200
+          Left = 198
           Height = 23
           Hint = 'Ring equalise: specify object size in the center of the image in percentage of the image height. This area will then be protected against the correction. '
           Top = 8

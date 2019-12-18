@@ -6859,6 +6859,7 @@ begin
                stack_sigmaclip(over_size,{var}files_to_process,counterL) {sigma clip combining}
              end
         else
+
         if pos('stich',stackmenu1.stack_method1.text)>0=true then stack_mosaic(over_size,{var}files_to_process,counterL) {mosaic combining}
                                                               else
                                                                stack_average(over_size,{var}files_to_process,counterL);{average}
@@ -6866,6 +6867,7 @@ begin
         if counterL>0 then exposureL:=round(sum_exp/counterL); {average exposure}
 
         if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+
       end
       else counterL:=0; {number of files processed}
 
@@ -7023,6 +7025,7 @@ begin
     Screen.Cursor := Save_Cursor;  { Always restore to normal }
     if esc_pressed then begin exit;end;
     fits_file:=true;
+    nrbits:=-32; {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
 
     if ((counterL<>0){none lrgb loop} or (length(extra2)>=2){lrgb loop}) then
     begin

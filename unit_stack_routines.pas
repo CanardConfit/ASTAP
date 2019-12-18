@@ -681,6 +681,7 @@ begin
           begin
             initialise1;{set variables correct. Do this before apply dark}
             initialise2;{set variables correct}
+            memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
             if ((bayerpat='') and (make_osc_color1.checked)) then
                if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
                else

@@ -1052,11 +1052,12 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.306 dated 2019-12-16';
+  #13+#10+'Version ß0.9.307 dated 2019-12-18';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
 end;
+
 
 
 procedure Tmainwindow.FormKeyPress(Sender: TObject; var Key: char);
@@ -3547,10 +3548,7 @@ var
 begin
   automatic:=stackmenu1.bayer_pattern1.Text='auto';
   if automatic then
-  begin
-    if bayerpat<>'' then pattern:=bayerpat {from fits header or RGGB if not specified}
-    else bayerpat:='RGGB';{most common}
-  end
+    pattern:=bayerpat {from fits header or RGGB if not specified}
   else
     pattern:=stackmenu1.bayer_pattern1.text;
 
@@ -3561,7 +3559,9 @@ begin
   else
   if pattern=bayer_pattern[1]{'BGGR'} then begin result:=1  {offsetx:=0; offsety:=1;} end
   else
-  if pattern=bayer_pattern[3]{'GBRG'} then begin result:=3; {offsetx:=1; offsety:=1;} end;
+  if pattern=bayer_pattern[3]{'GBRG'} then begin result:=3; {offsetx:=1; offsety:=1;} end
+  else
+  result:=2;{empthy no bayer pattern, take default RGGB}
 
   if automatic then
   begin
@@ -4449,7 +4449,7 @@ begin
        cdelt2:=scale/3600 {scale is in arcsec/pixel }
      else
      if ((focallen<>0) and (xpixsz<>0)) then
-       cdelt2:=180/(3.141*1000)*xpixsz/focallen; {use maxim DL key word}
+       cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word}
   end;
   unsaved_import:=false;{file is available for astrometry.net}
 
@@ -4614,7 +4614,7 @@ begin
   ybinning:=1;
   exposure:=0;
   set_temperature:=999;
-  bayerpat:='';{reset bayer pattern}
+  bayerpat:='T';{assume image is from Raw DSLR image}
   xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
   ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
 
@@ -4781,7 +4781,10 @@ begin
   if naxis3<>1 then
     update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3);
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
+  update_integer('DATAMAX =',' / Maximum data value                           ' ,round(datamax_org));
+
+  update_text   ('BAYERPAT=',#39+'T'+#39+'           / Unknown Bayer color pattern                  ');
+
   update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
   add_text      ('HISTORY  ','Imported from '+filen);
 end;
