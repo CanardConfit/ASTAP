@@ -259,10 +259,10 @@ object mainwindow: Tmainwindow
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
     object Image1: TImage
-      Left = 288
+      Left = 312
       Height = 241
-      Top = -57
-      Width = 0
+      Top = 40
+      Width = 400
       Anchors = [akLeft, akRight, akBottom]
       OnMouseDown = Image1MouseDown
       OnMouseEnter = Image1MouseEnter

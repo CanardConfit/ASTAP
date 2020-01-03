@@ -36,7 +36,7 @@ uses
  math, ExtCtrls, Menus, Buttons,
  LCLIntf,{for for getkeystate, selectobject, openURL}
  clipbrd, Types,strutils,
- astap_main;
+ astap_main,unit_image_sharpness;
 
 type
   { Tstackmenu1 }
@@ -745,23 +745,24 @@ const
   I_stardetections=5;
   I_starlevel=6;
   I_background=7;
-  I_exposure=8;
-  I_temperature=9;
-  I_width=10;
-  I_height=11;
-  I_type=12;
-  I_datetime=13;
-  I_position=14;
-  I_solution=15;
-  I_esolution=16;
-  I_x=17;
-  I_y=18;
-  I_calibration=19;
-  I_focpos=20;
-  I_foctemp=21;
-  I_centalt=22;
-  I_centaz=23;
-  I_gain=24;
+  I_sharpness=8;
+  I_exposure=9;
+  I_temperature=10;
+  I_width=11;
+  I_height=12;
+  I_type=13;
+  I_datetime=14;
+  I_position=15;
+  I_solution=16;
+  I_esolution=17;
+  I_x=18;
+  I_y=19;
+  I_calibration=20;
+  I_focpos=21;
+  I_foctemp=22;
+  I_centalt=23;
+  I_centaz=24;
+  I_gain=25;
 
   D_exposure=0;
   D_temperature=1;
@@ -949,7 +950,7 @@ begin
       ListItem.SubItems.Add('?');
       ListItem.SubItems.Add('?');
       ListItem.SubItems.Add('?');
-      for i:=8 to 25 do ListItem.SubItems.Add('-');
+      for i:=8 to 26 do ListItem.SubItems.Add('-');
       Items[items.Count-1].Checked:=true;
     Items.EndUpdate;
   end;
@@ -1225,6 +1226,7 @@ begin
   img_temp2:=nil;{free mem}
 end;
 
+
 procedure Tstackmenu1.Analyse1Click(Sender: TObject);
 var
   c,hfd_counter  ,i,j,counts  : integer;
@@ -1297,7 +1299,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
 
-        success:=load_tiffpngJPEG(filename1,img);
+        success:=load_tiffpngJPEG(filename1,img_loaded);
         if success then
         begin
           exposure:=extract_exposure_from_filename(filename1); {try to extract exposure time from filename}
@@ -1393,6 +1395,8 @@ begin
             begin
               if hfd_median>=99 then ListView1.Items.item[c].checked:=false; {no stars, can't process this image}
               ListView1.Items.item[c].subitems.Strings[I_object]:=object_name; {object name, without spaces}
+
+
               ListView1.Items.item[c].subitems.Strings[I_filter]:=filter_name; {filter name, without spaces}
               if naxis3=3 then ListView1.Items.item[c].subitems.Strings[I_filter]:='colour'; {give RGB images filter name colour}
 
@@ -1415,6 +1419,9 @@ begin
 
               ListView1.Items.item[c].subitems.Strings[I_starlevel]:=inttostr5(round(star_level));
               ListView1.Items.item[c].subitems.Strings[I_background]:=inttostr5(round(backgr));
+
+              ListView1.Items.item[c].subitems.Strings[I_sharpness]:=floattostrF2(image_sharpness(img,((bayerpat<>'') or (make_osc_color1.checked)) {colour image?}),1,2); {sharpness test}
+
               ListView1.Items.item[c].subitems.Strings[I_exposure]:=inttostr(round(exposure));
               if set_temperature<>999 then ListView1.Items.item[c].subitems.Strings[I_temperature]:=inttostr(set_temperature);
               ListView1.Items.item[c].subitems.Strings[I_width]:=inttostr(width2); {width}

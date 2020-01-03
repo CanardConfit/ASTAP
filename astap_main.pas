@@ -608,6 +608,7 @@ var
   fitsbufferSINGLE: array[0..round(bufwide/4)] of single absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
   fitsbufferDouble: array[0..round(bufwide/8)] of double absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
 
+
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_astrometry,unit_star_align, unit_astrometric_solving, unit_290, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot;
@@ -622,7 +623,7 @@ uses unit_dss, unit_stack, unit_tiff,unit_astrometry,unit_star_align, unit_astro
 
 var
   recent_files : tstringlist;
-  oldx, oldy, startX,startY :integer; {for rubber rectangle}
+  oldx, oldy, startX,startY                    :integer; {for rubber rectangle}
   object_xc,object_yc, object_raM,object_decM  : double; {near mouse auto centered object position}
 
 const
@@ -1052,7 +1053,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.307 dated 2019-12-18';
+  #13+#10+'Version ß0.9.308 dated 2020-1-3';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4783,7 +4784,7 @@ begin
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                           ' ,round(datamax_org));
 
-  update_text   ('BAYERPAT=',#39+'T'+#39+'           / Unknown Bayer color pattern                  ');
+  update_text   ('BAYERPAT=',#39+'T'+#39+'                  / Unknown Bayer color pattern                  ');
 
   update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
   add_text      ('HISTORY  ','Imported from '+filen);
@@ -8390,6 +8391,8 @@ var
   decd,decm,decs :double;
   position1,position2,position3,error1,error2,error3,plusmin:integer ;
 begin
+//  inp:= stringreplace(inp, '--', '-',[rfReplaceAll]);
+
   inp:= stringreplace(inp, ',', '.',[rfReplaceAll]);
   inp:= stringreplace(inp, ':', ' ',[rfReplaceAll]);
   inp:= stringreplace(inp, 'd', ' ',[rfReplaceAll]);
@@ -8817,6 +8820,7 @@ begin
   end;
 end;
 
+
 procedure HFD(img: image_array;x1,y1: integer; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity}
 const
    max_ri=50; //sqrt(sqr(rs+rs)+sqr(rs+rs))+1;
@@ -8824,7 +8828,7 @@ const
     rs,i,j,counter, ri, distance,distance_top_value,illuminated_pixels:integer;
     SumVal,SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
     val,bg_average,bg,bg_standard_deviation,pixel_counter,valmax,
-    val_00,val_01,val_10,val_11,af {,snr_old} : double;
+    val_00,val_01,val_10,val_11,af, faintA,faintB, brightA,brightB,faintest,brightest : double;
     HistStart,asymmetry : boolean;
     distance_histogram : array [0..max_ri] of integer;
 
@@ -8942,12 +8946,13 @@ begin
       if sumval<100000 then af:=min(0.9,rs/10) {variable asymmetry factor. 1 is allow only prefect symmetrical, 0.000001 if off.  More critital detection if rs is large   }
                        else af:=min(0.7,rs/10);{relax criteria for bright stars. Above 100000 no galaxy or nebula}
 
-      asymmetry:=( (val_00<af*val_11) or (val_00>val_11/af) or {diagonal asymmetry} {has shape large asymmetry, NO OVALS are accepted}
-                   (val_01<af*val_10) or (val_01>val_10/af) or {diagonal asymmetry}
-                   (val_00<af*val_10) or (val_00>val_10/af) or {east west asymmetry1}
-                   (val_01<af*val_11) or (val_01>val_11/af) or {east west asymmetry2}
-                   (val_00<af*val_01) or (val_00>val_01/af) or {north south asymmetry1}
-                   (val_10<af*val_11) or (val_10>val_11/af));  {north south asymmetry2}
+      {check for asymmetry of detected star using the four quadrants}
+      if val_00<val_01  then begin faintA:=val_00; brightA:=val_01; end else begin faintA:=val_01; brightA:=val_00; end;
+      if val_10<val_11  then begin faintB:=val_10; brightB:=val_11; end else begin faintB:=val_11; brightB:=val_10; end;
+      if faintA<faintB  then faintest:=faintA else faintest:=faintB;{find faintest quadrant}
+      if brightA>brightB  then brightest:=brightA else brightest:=brightB;{find brightest quadrant}
+      asymmetry:=(brightest*af>=faintest); {if true then detected star has asymmetry, ovals/galaxies or double stars will not be accepted}
+
 
       if asymmetry then  dec(rs,2); {try a smaller window to exclude nearby stars}
       if rs<4 then begin
@@ -9450,12 +9455,17 @@ begin
 end;
 procedure add_integer(inp1,comment1:string;x:integer);{add integer variable to header}
  var
-   s,aline  : string;
+   s        : string;
    count1   : integer;
 begin
   str(x:20,s);
   count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
   mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inp1+' '+s+comment1);
+
+//  ddd:=length(inp1+' '+s+comment1);
+//  if ddd<>80 then
+//    ddd:=ddd+1;
+
 end;
 
 procedure update_generic(message_key,message_value,message_comment:string);{update header using text only}
