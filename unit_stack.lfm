@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1449
-    ActivePage = tab_stackmethod1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -226,7 +226,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 5
+    TabIndex = 0
     TabOrder = 5
     OnChange = pagecontrol1Change
     Options = [nboMultiLine]

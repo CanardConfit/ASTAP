@@ -1317,6 +1317,7 @@ begin
     inc(c);
   end;
 
+
   c:=0;
   repeat {check for double entries}
      i:=c+1;
@@ -1336,6 +1337,9 @@ begin
 
 
   counts:=ListView1.items.count-1;
+
+  if counts<=0 then exit; {if only darks where added none are left. Prefent runtime error in progress calculation}
+
   c:=0;
   repeat {check all files, remove darks, bias}
     if ((ListView1.Items.item[c].checked) and ((length(ListView1.Items.item[c].subitems.Strings[I_hfd])<=1){hfd} or (filter_name_changed)) ) then {hfd unknown, only update blank rows}
@@ -1420,7 +1424,7 @@ begin
               ListView1.Items.item[c].subitems.Strings[I_starlevel]:=inttostr5(round(star_level));
               ListView1.Items.item[c].subitems.Strings[I_background]:=inttostr5(round(backgr));
 
-              ListView1.Items.item[c].subitems.Strings[I_sharpness]:=floattostrF2(image_sharpness(img,((bayerpat<>'') or (make_osc_color1.checked)) {colour image?}),1,2); {sharpness test}
+              ListView1.Items.item[c].subitems.Strings[I_sharpness]:=floattostrF2(image_sharpness(img),1,3); {sharpness test}
 
               ListView1.Items.item[c].subitems.Strings[I_exposure]:=inttostr(round(exposure));
               if set_temperature<>999 then ListView1.Items.item[c].subitems.Strings[I_temperature]:=inttostr(set_temperature);

@@ -1051,9 +1051,9 @@ begin
   #13+#10+
   #13+#10+'Send an e-mail if you like this free program. Feel free to distribute !'+
   #13+#10+
-  #13+#10+'© 2018, 2019  by Han Kleijn. Webpage: www.hnsky.org'+
+  #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.308 dated 2020-1-3';
+  #13+#10+'Version ß0.9.309 dated 2020-1-4';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -9461,11 +9461,6 @@ begin
   str(x:20,s);
   count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
   mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inp1+' '+s+comment1);
-
-//  ddd:=length(inp1+' '+s+comment1);
-//  if ddd<>80 then
-//    ddd:=ddd+1;
-
 end;
 
 procedure update_generic(message_key,message_value,message_comment:string);{update header using text only}
