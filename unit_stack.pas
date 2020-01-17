@@ -97,7 +97,9 @@ type
     browse_darks1: TButton;
     browse_flats1: TButton;
     Button_free_resize_fits1: TButton;
+    manual_centering1: TComboBox;
     Edit_width1: TEdit;
+    panel_manual1: TPanel;
     ring_equalise_factor1: TComboBox;
     extract_background_box_size1: TComboBox;
     file_to_add1: TButton;
@@ -875,6 +877,7 @@ begin
     Panel_solver1.color:=clnone;
     Panel_star_detection1.color:=clnone;
     panel_astrometrynet1.color:=clnone;
+    panel_manual1.color:=clnone;
 
     if use_star_alignment1.checked then
     begin
@@ -893,7 +896,14 @@ begin
     begin
       panel_astrometrynet1.bevelouter:=bvSpace;
       panel_astrometrynet1.color:=clBtnFace;
+    end
+    else
+    if use_manual_alignment1.checked then
+    begin
+      panel_manual1.bevelouter:=bvSpace;
+      panel_manual1.color:=clBtnFace;
     end;
+
 
     osc_colour_smooth1.enabled:=make_osc_color1.checked;
     bayer_pattern1.enabled:=make_osc_color1.checked;
@@ -1432,7 +1442,7 @@ begin
               ListView1.Items.item[c].subitems.Strings[I_height]:=inttostr(height2);{height}
               ListView1.Items.item[c].subitems.Strings[I_type]:=imagetype;{type}
               ListView1.Items.item[c].subitems.Strings[I_datetime]:=StringReplace(date_obs,'T',' ',[]);{date/time}
-              ListView1.Items.item[c].subitems.Strings[I_position]:=prepare_ra5(ra0,'h')+', '+ prepare_dec5(dec0,'d');{give internal position}
+              ListView1.Items.item[c].subitems.Strings[I_position]:=prepare_ra5(ra0,': ')+', '+ prepare_dec5(dec0,'° ');{give internal position}
 
               {is internal solution available?}
               if cd1_1<>0 then
@@ -3342,7 +3352,7 @@ end;
 
 procedure Tstackmenu1.help_astrometric_solving1Click(Sender: TObject);
 begin
-  openurl('http://www.hnsky.org/astap.htm#astrometric_solving');
+  openurl('http://www.hnsky.org/astap.htm#alignment_menu');
 end;
 
 procedure Tstackmenu1.Label1Click(Sender: TObject);
@@ -5889,6 +5899,13 @@ begin
         getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
 
         plot_fits(mainwindow.image1,false {re_center},true);
+
+        {show alignment marker}
+        if (stackmenu1.use_manual_alignment1.checked) then {manual alignment}
+          show_shape(true {assume good lock},strtofloat2(listview1.Items.item[c].subitems.Strings[I_X]),strtofloat2(listview1.Items.item[c].subitems.Strings[I_Y]))
+        else mainwindow.shape_alignment_marker1.visible:=false;
+
+
       end;
       inc(c);
     until c>=listview1.items.count;

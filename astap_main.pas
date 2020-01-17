@@ -522,10 +522,10 @@ procedure execute_unix2(s:string);
 {$endif}
 function get_most_common(img :image_array;colorm,xmin,xmax,ymin,ymax,max1:integer):integer;{find the most common value of a local area and assume this is the best average background value}
 function get_negative_noise_level(img :image_array;colorm,xmin,xmax,ymin,ymax: integer;common_level:double): double;{find the negative noise level below most_common_level  of a local area}
-function prepare_ra5(rax:double; sep:ansichar):string; {radialen to text  format 24h 00.0}
-function prepare_dec5(decx:double;sep:ansichar):string; {radialen to text  format 90d 00 }
-function prepare_dec(decx:double; sep:ansichar):string; {radialen to text, format 90d 00 00}
-function prepare_ra(rax:double; sep:ansichar):string; {radialen to text, format 24: 00 00.0 }
+function prepare_ra5(rax:double; sep:string):string; {radialen to text  format 24h 00.0}
+function prepare_dec5(decx:double;sep:string):string; {radialen to text  format 90d 00 }
+function prepare_dec(decx:double; sep:string):string; {radialen to text, format 90d 00 00}
+function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24: 00 00.0 }
 function inttostr5(x:integer):string;{always 5 digit}
 function SMedian(list: array of double): double;{get median of an array of double, taken from CCDciel code}
 function floattostrF2(const x:double; width1,decimals1 :word): string;
@@ -1053,7 +1053,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.309 dated 2020-1-4';
+  #13+#10+'Version ß0.9.310 dated 2020-1-17';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2633,7 +2633,7 @@ begin
   end;
 end;
 
-function prepare_ra5(rax:double; sep:ansichar):string; {radialen to text  format 24h 00.0}
+function prepare_ra5(rax:double; sep:string):string; {radialen to text  format 24h 00.0}
   var
     B : String[2];
     h,m,dm  :integer;
@@ -2644,10 +2644,10 @@ begin {make from rax [0..pi*2] a text in array bericht. Length is 8 long}
   m:=trunc((rax-h)*60);
   dm:=trunc((rax-h-m/60)*600);
   Str(trunc(h):2,b);
-  prepare_ra5:=b+sep+' '+leadingzero(m)+'.'+ansichar(dm+48);
+  prepare_ra5:=b+sep+leadingzero(m)+'.'+ansichar(dm+48);
 end;
 
-function prepare_dec5(decx:double;sep:ansichar):string; {radialen to text  format 90d 00 }
+function prepare_dec5(decx:double;sep:string):string; {radialen to text  format 90d 00 }
  var
    B : String[7];
    g,m :integer;
@@ -2659,10 +2659,10 @@ begin {make from rax [0..pi*2] a text in array bericht. Length is 10 long}
   g:=trunc(decx);
   m:=trunc((decx-g)*60);
   Str(trunc(g):0,b);
-  prepare_dec5:=sign+b+sep+' '+leadingzero(m);
+  prepare_dec5:=sign+b+sep+leadingzero(m);
 end;
 
-function prepare_ra(rax:double; sep:ansichar):string; {radialen to text, format 24: 00 00.0 }
+function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24: 00 00.0 }
  var
    h,m,s,ds  :integer;
  begin   {make from rax [0..pi*2] a text in array bericht. Length is 8 long}
@@ -2672,10 +2672,10 @@ function prepare_ra(rax:double; sep:ansichar):string; {radialen to text, format 
   m:=trunc((rax-h)*60);
   s:=trunc((rax-h-m/60)*3600);
   ds:=trunc((rax-h-m/60-s/3600)*36000);
-  prepare_ra:=leadingzero(h)+sep+leadingzero(m)+' '+leadingzero(s)+'.'+ansichar(ds+48);
+  prepare_ra:=leadingzero(h)+sep+leadingzero(m)+'  '+leadingzero(s)+'.'+ansichar(ds+48);
 end;
 
-function prepare_dec(decx:double; sep:ansichar):string; {radialen to text, format 90d 00 00}
+function prepare_dec(decx:double; sep:string):string; {radialen to text, format 90d 00 00}
  var
    g,m,s  :integer;
    sign   : ansichar;
@@ -2686,9 +2686,9 @@ begin {make from rax [0..pi*2] a text in array bericht. Length is 10 long}
   g:=trunc(decx);
   m:=trunc((decx-g)*60);
   s:=trunc((decx-g-m/60)*3600);
-  prepare_dec:=sign+leadingzero(g)+sep+leadingzero(m)+' '+leadingzero(s);
+  prepare_dec:=sign+leadingzero(g)+sep+leadingzero(m)+'  '+leadingzero(s);
 end;
-function prepare_ra2(rax:double; sep:ansichar):string; {radialen to text, format 24: 00 00.00 }
+function prepare_ra2(rax:double; sep:string):string; {radialen to text, format 24: 00 00.00 }
  var
    B       : String[2];
    h,m,s,ds  :integer;
@@ -2700,10 +2700,10 @@ function prepare_ra2(rax:double; sep:ansichar):string; {radialen to text, format
   s:=trunc((rax-h-m/60)*3600);
   ds:=trunc((rax-h-m/60-s/3600)*360000);
   Str(trunc(h):2,b);
-  prepare_ra2:=b+sep+' '+leadingzero(m)+'  '+leadingzero(s)+'.'+leadingzero(ds);
+  prepare_ra2:=b+sep+leadingzero(m)+'  '+leadingzero(s)+'.'+leadingzero(ds);
 end;
 
-Function prepare_dec2(decx:double; sep:ansichar):string; {radialen to text, format 90d 00 00.1}
+Function prepare_dec2(decx:double; sep:string):string; {radialen to text, format 90d 00 00.1}
  var
    B,ds2 : String[5];
    g,m,s,ds :integer;
@@ -2719,7 +2719,7 @@ begin {make from rax [0..pi*2] a text in array bericht. Length is 10 long}
   ds:=trunc((decx-g-m/60-s/3600)*36000);
   Str(trunc(g):2,b);
   Str(trunc(ds):1,ds2);
-  prepare_dec2:=sign+b+sep+' '+leadingzero(m)+'  '+leadingzero(s)+'.'+ds2;
+  prepare_dec2:=sign+b+sep+leadingzero(m)+'  '+leadingzero(s)+'.'+ds2;
 end;
 
 
@@ -5546,6 +5546,9 @@ begin
     dum:=initstring.Values['tetrahedron_tolerance']; if dum<>'' then stackmenu1.tetrahedron_tolerance1.text:=dum;
     dum:=initstring.Values['maximum_stars']; if dum<>'' then stackmenu1.max_stars1.text:=dum;
 
+    dum:=initstring.Values['manual_centering']; if dum<>'' then stackmenu1.manual_centering1.text:=dum;
+
+
     {remove binning in 2020. Replaced by downsample}
     dum:=initstring.Values['binning']; if dum<>'' then stackmenu1.downsample_for_solving1.text:=dum;
 
@@ -5839,6 +5842,9 @@ begin
   initstring.Values['radius_search']:=stackmenu1.radius_search1.text;
   initstring.Values['tetrahedron_tolerance']:=stackmenu1.tetrahedron_tolerance1.text;
   initstring.Values['maximum_stars']:=stackmenu1.max_stars1.text;
+
+  initstring.Values['manual_centering']:=stackmenu1.manual_centering1.text;
+
   initstring.Values['downsample']:=stackmenu1.downsample_for_solving1.text;
   initstring.Values['max_fov']:=stackmenu1.max_fov1.text;
 
@@ -7337,12 +7343,12 @@ begin
     if mainwindow.Fliphorizontal1.Checked=true then x7:=round(width2-object_xc) else x7:=round(object_xc);
     if mainwindow.Flipvertical1.Checked=false then y7:=round(height2-object_yc) else y7:=round(object_yc);
 
-    image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+prepare_ra2(object_raM,':')+','+prepare_dec2(object_decM,'d'));
+    image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+prepare_ra2(object_raM,': ')+','+prepare_dec2(object_decM,'° '));
   end
   else
   begin {no object sync, give mouse position}
     image1.Canvas.font.color:=clred;
-    image1.Canvas.textout(round(3+down_x   /(image1.width/width2)),round(-font_height +(down_y+10)/(image1.height/height2)),'_'+prepare_ra2(object_raM,':')+','+prepare_dec2(object_decM,'d'));
+    image1.Canvas.textout(round(3+down_x   /(image1.width/width2)),round(-font_height +(down_y+10)/(image1.height/height2)),'_'+prepare_ra2(object_raM,': ')+','+prepare_dec2(object_decM,'° '));
   end;
 
 end;
@@ -8037,7 +8043,7 @@ end;
 procedure Tmainwindow.CCDinspector1Click(Sender: TObject);
 var
  fitsX,fitsY,size, i, j,starX,starY    : integer;
- nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,x1,x2,x3,x4,y1,y2,y3,y4 : integer;
+ nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,x1,x2,x3,x4,y1,y2,y3,y4,fontsize : integer;
  hfd1,star_fwhm,snr,flux,xc,yc,
  median_top_left, median_top_right,median_bottom_left,median_bottom_right,median_worst,median_best,scale_factor,median_center, median_outer_ring : double;
  hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
@@ -8057,7 +8063,8 @@ var
   image1.Canvas.font.color:=clyellow;
   mainwindow.image1.Canvas.Pen.Color := clred;
   image1.Canvas.Pen.width := round(1+height2/image1.height);{thickness lines}
-  image1.Canvas.font.size:=round(max(10,8*height2/image1.height));{adapt font to image dimensions}
+  fontsize:=round(max(10,8*height2/image1.height));{adapt font to image dimensions}
+  image1.Canvas.font.size:=fontsize;
 
   nhfd:=0;{set counters at zero}
   nhfd_top_left:=0;
@@ -8129,7 +8136,7 @@ var
 
       median_center:=SMedian(hfdlist_center);
       median_outer_ring:=SMedian(hfdlist_outer_ring);
-      mess1:='  Curvature='+inttostr(round(100*(median_outer_ring/(median_center)-1)))+'%';{estimate tilt value}
+      mess1:='  Off-axis aberration[HFD]='+floattostrF2(median_outer_ring-(median_center),0,2);{}
 //      mess1:=mess1+'      '+inttostr(nhfd_center)+' ' +inttostr(nhfd_outer_ring);
     end
     else
@@ -8175,17 +8182,31 @@ var
       image1.Canvas.lineto(x3,y3);{draw diagonal}
       image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
       image1.Canvas.lineto(x4,y4);{draw diagonal}
-      mess2:='  Tilt='+inttostr(round(100*((median_worst/median_best)-1)))+'%';{estimate tilt value}
+//      mess2:='  Tilt='+inttostr(round(100*((median_worst/median_best)-1)))+'%';{estimate tilt value}
+      mess2:='  Tilt[HFD]='+floattostrF2(median_worst-median_best,0,2);{estimate tilt value}
+
+
     end
     else
     mess2:='';
 
+
+    image1.Canvas.font.size:=fontsize*4;
+    image1.Canvas.textout(x4,y4,floattostrF2(median_top_left,0,2));
+    image1.Canvas.textout(x3,y3,floattostrF2(median_top_right,0,2));
+    image1.Canvas.textout(x1,y1,floattostrF2(median_bottom_left,0,2));
+    image1.Canvas.textout(x2,y2,floattostrF2(median_bottom_right,0,2));
+    image1.Canvas.textout(width2 div 2,height2 div 2,floattostrF2(median_center,0,2));
+
+
     SetLength(hfdlist,nhfd);{set length correct}
     str(SMedian(hfdList):0:1,hfd_value);
     mess2:='Median HFD='+hfd_value+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
-    image1.Canvas.font.size:=round(image1.Canvas.font.size*20/12);
+    image1.Canvas.font.size:=fontsize*2;
     image1.Canvas.font.color:=clwhite;
     image1.Canvas.textout(round(image1.Canvas.font.size),height2-round(2*image1.Canvas.font.size),mess2);{median HFD and tilt indication}
+
+
   end
   else
     begin
@@ -8258,7 +8279,7 @@ var
    Centroid : string;
 begin
   if object_xc>0 then Centroid:=#9+'(Centroid)' else Centroid:='';
-  Clipboard.AsText:=prepare_ra2(object_raM,':')+#9+prepare_dec2(object_decM,'d')+Centroid;
+  Clipboard.AsText:=prepare_ra2(object_raM,': ')+#9+prepare_dec2(object_decM,'° ')+Centroid;
 end;
 
 procedure Tmainwindow.Copypositioninhrs1Click(Sender: TObject);
@@ -8386,7 +8407,7 @@ begin
   if errorRA then mainwindow.ra1.color:=clred else mainwindow.ra1.color:=clwindow;
 end;
 
-procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
+procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert dec in text to double in radians}
 var
   decd,decm,decs :double;
   position1,position2,position3,error1,error2,error3,plusmin:integer ;
@@ -8396,6 +8417,7 @@ begin
   inp:= stringreplace(inp, ',', '.',[rfReplaceAll]);
   inp:= stringreplace(inp, ':', ' ',[rfReplaceAll]);
   inp:= stringreplace(inp, 'd', ' ',[rfReplaceAll]);
+  inp:= stringreplace(inp, '°', ' ',[rfReplaceAll]);
   inp:= stringreplace(inp, '  ', ' ',[rfReplaceAll]);
   inp:= stringreplace(inp, '  ', ' ',[rfReplaceAll]);
   inp:=trim(inp)+' ';
@@ -8773,6 +8795,54 @@ begin
   result:=round(h)
 end;
 
+
+procedure find_highest_pixel_value(img: image_array;x1,y1: integer; var xc,yc:double);{}
+var
+  i,j,x2,y2  : integer;
+  value, val, SumVal,SumValX,SumValY,SumValR, Xg,Yg : double;
+
+begin
+  x2:=x1;
+  y2:=y1;
+  value:=0;
+
+  {find highest pixel}
+  for i:=x1-6 to x1+6 do
+  for j:=y1-6 to y1+6 do
+  begin
+    val:=img[0,i,j];
+    if val>value then
+    begin
+      value:=val;
+      x2:=i;
+      y2:=j;
+    end;
+  end;
+
+  {find center of gravity for 3x3}
+  SumVal:=0;
+ SumValX:=0;
+  SumValY:=0;
+
+  for i:=-2 to +2 do
+  for j:=-2 to +2 do
+  begin
+    val:=img[0,x2+i,y2+j]-cblack;
+    SumVal:=SumVal+val;
+    SumValX:=SumValX+val*(i);
+    SumValY:=SumValY+val*(j);
+  end;
+
+  Xg:=SumValX/SumVal;
+  Yg:=SumValY/SumVal;
+  xc:=(x2+Xg);
+  yc:=(y2+Yg);
+ {center of gravity found}
+
+
+
+end;
+
 procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
@@ -8791,7 +8861,13 @@ begin
         (stackmenu1.pagecontrol1.tabindex=8 {photometry})){measure one object in blink routine } then
   begin
 
-    HFD(img_loaded,round(fitsX-1),round(fitsY-1),hfd2,fwhm_star2,snr,flux,xc,yc);{auto center using HFD function}
+    if pos('Comet',stackmenu1.manual_centering1.text)=0 then
+      HFD(img_loaded,round(fitsX-1),round(fitsY-1),hfd2,fwhm_star2,snr,flux,xc,yc) {auto center using HFD function}
+    else
+    begin
+      find_highest_pixel_value(img_loaded,round(fitsX-1),round(fitsY-1),xc,yc);
+      snr:=2;
+    end;
 
     shape_fitsX:=xc+1;{calculate fits positions}
     shape_fitsY:=yc+1;
@@ -8946,6 +9022,7 @@ begin
       if sumval<100000 then af:=min(0.9,rs/10) {variable asymmetry factor. 1 is allow only prefect symmetrical, 0.000001 if off.  More critital detection if rs is large   }
                        else af:=min(0.7,rs/10);{relax criteria for bright stars. Above 100000 no galaxy or nebula}
 
+
       {check for asymmetry of detected star using the four quadrants}
       if val_00<val_01  then begin faintA:=val_00; brightA:=val_01; end else begin faintA:=val_01; brightA:=val_00; end;
       if val_10<val_11  then begin faintB:=val_10; brightB:=val_11; end else begin faintB:=val_11; brightB:=val_10; end;
@@ -8955,9 +9032,10 @@ begin
 
 
       if asymmetry then  dec(rs,2); {try a smaller window to exclude nearby stars}
-      if rs<4 then begin
-        hfd1:=999; exit;
-        end; {try to reduce box up to rs=4 equals 8x8 box else exit}
+      if rs<4 then
+      begin
+        hfd1:=999;
+      end; {try to reduce box up to rs=4 equals 8x8 box else exit}
     until asymmetry=false;{loop and reduce box size until asymmetry is gone.}
 
 
@@ -9361,7 +9439,7 @@ begin
      else mag_str:='';
 
      calculate_equatorial_mouse_position(object_xc,object_yc,object_raM,object_decM);
-     mainwindow.statusbar1.panels[1].text:=prepare_ra2(object_raM,':')+'   '+prepare_dec2(object_decM,'d');
+     mainwindow.statusbar1.panels[1].text:=prepare_ra2(object_raM,': ')+'   '+prepare_dec2(object_decM,'° ');
      mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', SNR='+snr_str+mag_str;
    end
    else
@@ -9371,7 +9449,7 @@ begin
      mainwindow.statusbar1.panels[2].text:='σ = '+ floattostrf( SD(round(mouse_fitsX-1),round(mouse_fitsY-1)),ffFixed{ ffgeneral}, 4, 1);
    end;
   calculate_equatorial_mouse_position(mouse_fitsx,mouse_fitsy,raM,decM);
-  mainwindow.statusbar1.panels[0].text:=prepare_ra2(raM,':')+'   '+prepare_dec2(decM,'d');
+  mainwindow.statusbar1.panels[0].text:=prepare_ra2(raM,': ')+'   '+prepare_dec2(decM,'° ');
 //  mainwindow.caption:=floattostr(xc)+'/'+floattostr(yc);
 end;
 

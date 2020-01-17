@@ -666,7 +666,7 @@ begin
             if solve_show_log then
             begin
               if (nrstars_required>database_stars) then  mess:=#9+' Warning, reached maximum magnitude of star database!' else mess:='';
-              memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(telescope_ra,':')+#9+prepare_dec(telescope_dec,'d')+#9+' Up to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(length(starlisttetrahedrons1[0]))+' database tetrahedrons to compare.'+mess);
+              memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(telescope_ra,': ')+#9+prepare_dec(telescope_dec,'° ')+#9+' Up to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(length(starlisttetrahedrons1[0]))+' database tetrahedrons to compare.'+mess);
             end;
 
             // for testing purposes
@@ -737,8 +737,8 @@ begin
     solved_in:=' Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}
     ang_sep(ra_radians,dec_radians,ra0,dec0, sep);
     offset_found:=' Offset was '+floattostrF2(sep*180/pi,0,3)+' deg.';
-    memo2_message('Solution found: '+  prepare_ra(ra0,':')+#9+prepare_dec(dec0,'d') +#9+ solved_in+offset_found+#9+' Used stars up to magnitude: '+floattostrF2(mag2/10,0,1) );
-    mainwindow.caption:=('Solution found:    '+  prepare_ra(ra0,':')+'     '+prepare_dec(dec0,'d')  );
+    memo2_message('Solution found: '+  prepare_ra(ra0,': ')+#9+prepare_dec(dec0,'° ') +#9+ solved_in+offset_found+#9+' Used stars up to magnitude: '+floattostrF2(mag2/10,0,1) );
+    mainwindow.caption:=('Solution found:    '+  prepare_ra(ra0,': ')+'     '+prepare_dec(dec0,'° ')  );
     result:=true;
 
     update_text ('CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   ');
