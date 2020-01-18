@@ -2254,7 +2254,6 @@ object stackmenu1: Tstackmenu1
           Height = 175
           Top = 0
           Width = 746
-          Align = alClient
           BevelColor = clMenuHighlight
           BevelOuter = bvSpace
           ClientHeight = 175
@@ -2446,7 +2445,6 @@ object stackmenu1: Tstackmenu1
               Height = 129
               Top = 0
               Width = 358
-              Align = alClient
               BevelColor = clMenuHighlight
               BevelOuter = bvSpace
               ClientHeight = 129
@@ -2621,7 +2619,6 @@ object stackmenu1: Tstackmenu1
           Height = 131
           Top = 0
           Width = 1337
-          Align = alClient
           BevelColor = clMenuHighlight
           BevelOuter = bvSpace
           ClientHeight = 131
@@ -2901,7 +2898,6 @@ object stackmenu1: Tstackmenu1
         Height = 36
         Top = 376
         Width = 753
-        Align = alClient
         BevelColor = clMenuHighlight
         BevelOuter = bvSpace
         ClientHeight = 36

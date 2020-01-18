@@ -490,15 +490,6 @@ begin
   end
   else warning:='';
 
-  if stackmenu1.force_oversize1.checked=false then info_message:='▶▶' {normal} else info_message:='▶'; {slow}
-  info_message:= ' [' +stackmenu1.radius_search1.text+'°]'+#9+#9+info_message+
-                  #10+'↕ '+stackmenu1.search_fov1.text+'°'+ #9+#9+inttostr(binning)+'x'+inttostr(binning)+' ⇒ '+inttostr(width2)+'x'+inttostr(height2)+
-                  warning+
-                  #10+mainwindow.ra1.text+'h,'+mainwindow.dec1.text+'°'+{for tray icon}
-                  #10+filename2;
-
-//  trayicon_visible:=mainwindow.TrayIcon1.visible;
-
 
   max_fov:=strtofloat(stackmenu1.max_fov1.caption);{for very large images only}
   max_fov:=min(max_fov,9.53);{warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
@@ -507,7 +498,7 @@ begin
   if ((fov_specified=false) and (cdelt2<>0)) then {no fov in native command line and cdelt2 in header}
     fov:=height2*cdelt2 {calculate FOV}
   else
-   fov:=strtofloat2(stackmenu1.search_fov1.text);{use specfied FOV in stackmenu}
+    fov:=strtofloat2(stackmenu1.search_fov1.text);{use specfied FOV in stackmenu}
 
   autoFOV:=(fov=0);{specified auto FOV}
 
@@ -517,6 +508,14 @@ begin
       if fov=0 then fov:=9.5 else fov:=fov/1.5;
       memo2_message('Trying FOV: '+floattostrF2(fov,0,1));
     end;
+
+    {prepare popupnotifier1 text}
+    if stackmenu1.force_oversize1.checked=false then info_message:='▶▶' {normal} else info_message:='▶'; {slow}
+    info_message:= ' [' +stackmenu1.radius_search1.text+'°]'+#9+#9+info_message+
+                    #10+'↕ '+floattostrf2(fov,0,2)+'°'+ #9+#9+inttostr(binning)+'x'+inttostr(binning)+' ⇒ '+inttostr(width2)+'x'+inttostr(height2)+
+                    warning+
+                    #10+mainwindow.ra1.text+'h,'+mainwindow.dec1.text+'°'+{for tray icon}
+                    #10+filename2;
 
     if fov>max_fov then
     begin
