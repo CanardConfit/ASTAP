@@ -555,6 +555,7 @@ function convert_load_raw(filename3: string): boolean; {convert raw to pgm file 
 procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
+procedure CCD_inspector(toscreen: boolean; var nr_stars,median_hfd,median_center, median_outer_ring, median_bottom_left,median_bottom_right,median_top_left,median_top_right :double; var img : image_array); {find hfd values}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -1053,7 +1054,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.312 dated 2020-1-18';
+  #13+#10+'Version ß0.9.313 dated 2020-1-20';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5716,6 +5717,17 @@ begin
       inc(c);
     until (dum='');
 
+    c:=0;
+    repeat {add inspector files}
+      dum:=initstring.Values['inspector'+inttostr(c)];
+      if ((dum<>'') and (fileexists(dum))) then
+      begin
+        listview_add2(stackmenu1.listview8,dum,16);
+        stackmenu1.ListView8.items[c].Checked:=get_boolean('inspector'+inttostr(c)+'_check',true);
+      end;
+      inc(c);
+    until (dum='');
+
 
     c:=0;
     repeat {read recent files}
@@ -5961,6 +5973,11 @@ begin
   begin
     initstring.Values['photometry'+inttostr(c)]:=stackmenu1.ListView7.items[c].caption;
     initstring.Values['photometry'+inttostr(c)+'_check']:=boolstr[stackmenu1.ListView7.items[c].Checked];
+  end;
+  for c:=0 to stackmenu1.ListView8.items.count-1  do {add photometry files}
+  begin
+    initstring.Values['inspector'+inttostr(c)]:=stackmenu1.ListView8.items[c].caption;
+    initstring.Values['inspector'+inttostr(c)+'_check']:=boolstr[stackmenu1.ListView8.items[c].Checked];
   end;
 
   for c:=0 to recent_files.count-1  do {add recent files}
@@ -7512,6 +7529,7 @@ begin
     writeln(f,'PLTSOLVD=F');
   end;
   writeln(f,'CMDLINE='+cmdline);{write the original commmand line}
+
   Case errorlevel of
              2: writeln(f,'ERROR=Not enough stars.');
             16: writeln(f,'ERROR=Error reading image file.');
@@ -7519,6 +7537,18 @@ begin
             33: writeln(f,'ERROR=Error reading star database.');
   end;
   if warning_str<>'' then writeln(f,'WARNING='+warning_str);
+  closefile(f);
+end;
+
+procedure write_wcs;{write wcs file without using filestream}
+var
+   f: text;
+   i: integer;
+begin
+  assignfile(f,ChangeFileExt(filename2,'.wcs'));
+  rewrite(f);
+  for i:=0 to mainwindow.memo1.lines.count-1 do
+    writeln(f,mainwindow.memo1.lines[i]);
   closefile(f);
 end;
 
@@ -7692,7 +7722,7 @@ var
     s,old      : string;
     source_fits,histogram_done,file_loaded: boolean;
     binning, backgr, hfd_median : double;
-    hfd_counter : integer;
+    hfd_counter,i : integer;
 begin
   user_path:=GetAppConfigDir(false);{get user path for app config}
 
@@ -7820,8 +7850,11 @@ begin
         if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
         begin
           if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
+
           write_ini(true);{write solution to ini file}
-          mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file}
+          write_wcs;{write memo1 without using filestream}
+//          try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
+
 
           //log_to_file(cmdline+' =>succes');
 
@@ -7851,6 +7884,7 @@ begin
           if hasoption('o') then filename2:=GetOptionValue('o'); {change file name for .ini file}
           write_ini(false);{write solution to ini file}
           errorlevel:=1;{no solution}
+
          //  log_to_file(cmdline+' =>failure');
         end;
         esc_pressed:=true;{kill any running activity. This for APT}
@@ -8039,32 +8073,46 @@ begin
  end;
 end;
 
-
-procedure Tmainwindow.CCDinspector1Click(Sender: TObject);
+procedure CCD_inspector(toscreen: boolean; var nr_stars,median_hfd,median_center, median_outer_ring, median_bottom_left,median_bottom_right,median_top_left,median_top_right :double; var img : image_array); {find hfd values}
 var
  fitsX,fitsY,size, i, j,starX,starY    : integer;
  nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,x1,x2,x3,x4,y1,y2,y3,y4,fontsize : integer;
  hfd1,star_fwhm,snr,flux,xc,yc,
- median_top_left, median_top_right,median_bottom_left,median_bottom_right,median_worst,median_best,scale_factor,median_center, median_outer_ring : double;
+ median_worst,median_best,scale_factor : double;
  hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
  mess1,mess2,hfd_value           : string;
  Save_Cursor:TCursor;
  Fliphorizontal, Flipvertical: boolean;
 
- begin
+begin
   if fits_file=false then exit; {file loaded?}
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
-  Flipvertical:=mainwindow.Flipvertical1.Checked;
-  Fliphorizontal:=mainwindow.Fliphorizontal1.Checked;
 
-  image1.Canvas.Pen.Mode := pmMerge;
-  image1.Canvas.brush.Style:=bsClear;
-  image1.Canvas.font.color:=clyellow;
-  mainwindow.image1.Canvas.Pen.Color := clred;
-  image1.Canvas.Pen.width := round(1+height2/image1.height);{thickness lines}
-  fontsize:=round(max(10,8*height2/image1.height));{adapt font to image dimensions}
-  image1.Canvas.font.size:=fontsize;
+  with mainwindow do
+  begin
+  if toscreen then
+  begin
+    Flipvertical:=mainwindow.Flipvertical1.Checked;
+    Fliphorizontal:=mainwindow.Fliphorizontal1.Checked;
+
+
+    image1.Canvas.Pen.Mode := pmMerge;
+    image1.Canvas.brush.Style:=bsClear;
+    image1.Canvas.font.color:=clyellow;
+    image1.Canvas.Pen.Color := clred;
+    image1.Canvas.Pen.width := round(1+height2/image1.height);{thickness lines}
+    fontsize:=round(max(10,8*height2/image1.height));{adapt font to image dimensions}
+    image1.Canvas.font.size:=fontsize;
+ end;
+
+  median_hfd:=0;
+  median_center:=0;
+  median_outer_ring:=0;
+  median_bottom_left:=0;
+  median_bottom_right:=0;
+  median_top_left:=0;
+  median_top_right:=0;
 
   nhfd:=0;{set counters at zero}
   nhfd_top_left:=0;
@@ -8083,7 +8131,7 @@ var
   SetLength(hfdlist_bottom_left,1000);
   SetLength(hfdlist_bottom_right,1000);
 
-  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
+  get_background(0,img,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
   setlength(img_temp,1,width2,height2);{set length of image array}
   for fitsY:=0 to height2-1 do
@@ -8094,17 +8142,27 @@ var
   begin
     for fitsX:=0 to width2-1-1 do
     begin
-      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>star_level{ 3.5*noise_level}){star}) then {new star}
+      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img[0,fitsX,fitsY]- cblack>star_level{ 3.5*noise_level}){star}) then {new star}
       begin
-        HFD(img_loaded,fitsX,fitsY, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        HFD(img,fitsX,fitsY, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if (hfd1>=0.8) {two pixels minimum} and (hfd1<99) then
         begin
-          size:=round(5*hfd1);
-          if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
-          if Fliphorizontal     then starX:=round(width2-xc)  else starX:=round(xc);
 
-          image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-          image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+
+          if toscreen then
+          begin
+            size:=round(5*hfd1);
+            if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);
+            if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
+
+            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+            mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+          end
+          else
+          begin
+            starX:=round(xc);
+            starY:=round(yc);
+          end;
 
           size:=round(3*hfd1);
           for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
@@ -8127,6 +8185,8 @@ var
   end;
   img_temp:=nil;{free mem}
 
+
+
   if nhfd>0 then
   begin
     if ((nhfd_center>0) and (nhfd_outer_ring>0)) then  {enough information for curvature calculation}
@@ -8136,8 +8196,7 @@ var
 
       median_center:=SMedian(hfdlist_center);
       median_outer_ring:=SMedian(hfdlist_outer_ring);
-      mess1:='  Off-axis aberration[HFD]='+floattostrF2(median_outer_ring-(median_center),0,2);{}
-//      mess1:=mess1+'      '+inttostr(nhfd_center)+' ' +inttostr(nhfd_outer_ring);
+      if toscreen then mess1:='  Off-axis aberration[HFD]='+floattostrF2(median_outer_ring-(median_center),0,2);{}
     end
     else
     mess1:='';
@@ -8157,62 +8216,74 @@ var
       median_bottom_left:=SMedian(hfdList_bottom_left);
       median_bottom_right:=SMedian(hfdList_bottom_right);
 
-      median_best:=min(min(median_top_left, median_top_right),min(median_bottom_left,median_bottom_right));{find best corner}
-      median_worst:=max(max(median_top_left, median_top_right),max(median_bottom_left,median_bottom_right));{find worst corner}
+      if toscreen then
+      begin
+        median_best:=min(min(median_top_left, median_top_right),min(median_bottom_left,median_bottom_right));{find best corner}
+        median_worst:=max(max(median_top_left, median_top_right),max(median_bottom_left,median_bottom_right));{find worst corner}
 
-      scale_factor:=width2*0.25/median_worst;
-      x1:=round(-median_bottom_left*scale_factor+width2/2);y1:=round(-median_bottom_left*scale_factor+height2/2);{calculate coordinates counter clockwise}
-      x2:=round(+median_bottom_right*scale_factor+width2/2);y2:=round(-median_bottom_right*scale_factor+height2/2);
-      x3:=round(+median_top_right*scale_factor+width2/2);y3:=round(+median_top_right*scale_factor+height2/2);
-      x4:=round(-median_top_left*scale_factor+width2/2);y4:=round(+median_top_left*scale_factor+height2/2);
+        scale_factor:=width2*0.25/median_worst;
+        x1:=round(-median_bottom_left*scale_factor+width2/2);y1:=round(-median_bottom_left*scale_factor+height2/2);{calculate coordinates counter clockwise}
+        x2:=round(+median_bottom_right*scale_factor+width2/2);y2:=round(-median_bottom_right*scale_factor+height2/2);
+        x3:=round(+median_top_right*scale_factor+width2/2);y3:=round(+median_top_right*scale_factor+height2/2);
+        x4:=round(-median_top_left*scale_factor+width2/2);y4:=round(+median_top_left*scale_factor+height2/2);
 
-      image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
+        image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
 
-      image1.Canvas.pen.color:=clyellow;
+        image1.Canvas.pen.color:=clyellow;
 
-      image1.Canvas.moveto(x1,y1);{draw trapezium}
-      image1.Canvas.lineto(x2,y2);{draw trapezium}
-      image1.Canvas.lineto(x3,y3);{draw trapezium}
-      image1.Canvas.lineto(x4,y4);{draw trapezium}
-      image1.Canvas.lineto(x1,y1);{draw trapezium}
+        image1.Canvas.moveto(x1,y1);{draw trapezium}
+        image1.Canvas.lineto(x2,y2);{draw trapezium}
+        image1.Canvas.lineto(x3,y3);{draw trapezium}
+        image1.Canvas.lineto(x4,y4);{draw trapezium}
+        image1.Canvas.lineto(x1,y1);{draw trapezium}
 
-      image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
-      image1.Canvas.lineto(x2,y2);{draw diagonal}
-      image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
-      image1.Canvas.lineto(x3,y3);{draw diagonal}
-      image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
-      image1.Canvas.lineto(x4,y4);{draw diagonal}
-//      mess2:='  Tilt='+inttostr(round(100*((median_worst/median_best)-1)))+'%';{estimate tilt value}
-      mess2:='  Tilt[HFD]='+floattostrF2(median_worst-median_best,0,2);{estimate tilt value}
+        image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
+        image1.Canvas.lineto(x2,y2);{draw diagonal}
+        image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
+        image1.Canvas.lineto(x3,y3);{draw diagonal}
+        image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
+        image1.Canvas.lineto(x4,y4);{draw diagonal}
+        mess2:='  Tilt[HFD]='+floattostrF2(median_worst-median_best,0,2);{estimate tilt value}
 
+
+        image1.Canvas.font.size:=fontsize*4;
+        image1.Canvas.textout(x4,y4,floattostrF2(median_top_left,0,2));
+        image1.Canvas.textout(x3,y3,floattostrF2(median_top_right,0,2));
+        image1.Canvas.textout(x1,y1,floattostrF2(median_bottom_left,0,2));
+        image1.Canvas.textout(x2,y2,floattostrF2(median_bottom_right,0,2));
+        image1.Canvas.textout(width2 div 2,height2 div 2,floattostrF2(median_center,0,2));
+
+      end;
 
     end
     else
     mess2:='';
 
 
-    image1.Canvas.font.size:=fontsize*4;
-    image1.Canvas.textout(x4,y4,floattostrF2(median_top_left,0,2));
-    image1.Canvas.textout(x3,y3,floattostrF2(median_top_right,0,2));
-    image1.Canvas.textout(x1,y1,floattostrF2(median_bottom_left,0,2));
-    image1.Canvas.textout(x2,y2,floattostrF2(median_bottom_right,0,2));
-    image1.Canvas.textout(width2 div 2,height2 div 2,floattostrF2(median_center,0,2));
-
-
     SetLength(hfdlist,nhfd);{set length correct}
-    str(SMedian(hfdList):0:1,hfd_value);
-    mess2:='Median HFD='+hfd_value+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
-    image1.Canvas.font.size:=fontsize*2;
-    image1.Canvas.font.color:=clwhite;
-    image1.Canvas.textout(round(image1.Canvas.font.size),height2-round(2*image1.Canvas.font.size),mess2);{median HFD and tilt indication}
+    median_hfd:=SMedian(hfdList);
+    str(median_hfd:0:1,hfd_value);
 
+    nr_stars:=nhfd;
 
+    if toscreen then
+    begin
+      mess2:='Median HFD='+hfd_value+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
+      image1.Canvas.font.size:=fontsize*2;
+      image1.Canvas.font.color:=clwhite;
+      image1.Canvas.textout(round(image1.Canvas.font.size),height2-round(2*image1.Canvas.font.size),mess2);{median HFD and tilt indication}
+    end;
   end
   else
-    begin
+    if toscreen then
+     begin
       image1.Canvas.font.size:=round(image1.Canvas.font.size*20/12);
       image1.Canvas.textout(round(image1.Canvas.font.size),height2-round(2*image1.Canvas.font.size),'No star detected');
     end;
+
+
+
+  end;{with mainwindow}
 
   hfdlist:=nil;{release memory}
 
@@ -8225,6 +8296,14 @@ var
   hfdlist_bottom_right:=nil;
 
   Screen.Cursor:= Save_Cursor;
+end;
+
+procedure Tmainwindow.CCDinspector1Click(Sender: TObject);
+var
+  nr_stars,hfd_median,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right: double;
+begin
+  if fits_file=false then exit; {file loaded?}
+  CCD_inspector(true {toscreen},nr_stars, hfd_median,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right, img_loaded); {find hfd values}
 end;
 
 procedure Tmainwindow.DemosaicBayermatrix1Click(Sender: TObject);

@@ -44,13 +44,6 @@ type
     actual_search_distance1: TLabel;
     add_noise1: TButton;
     add_substract1: TComboBox;
-    apply_artificial_flat_correctionV2: TButton;
-    apply_create_gradient1: TButton;
-    apply_dpp_button1: TButton;
-    apply_file1: TButton;
-    apply_gaussian_blur_button1: TButton;
-    apply_get_background1: TButton;
-    apply_hue1: TButton;
     add_valueB1: TEdit;
     add_valueG1: TEdit;
     add_valueR1: TEdit;
@@ -63,13 +56,23 @@ type
     analyseflatsButton3: TButton;
     analysephotmetrymore1: TButton;
     analysephotometry1: TButton;
+    analyse_inspector1: TButton;
     apply_artificial_flat_correction1: TButton;
+    apply_artificial_flat_correctionV2: TButton;
     apply_background_noise_filter1: TButton;
+    apply_create_gradient1: TButton;
+    apply_dpp_button1: TButton;
     apply_factor1: TButton;
+    apply_file1: TButton;
+    apply_gaussian_blur_button1: TButton;
     apply_gaussian_filter1: TButton;
+    apply_get_background1: TButton;
     apply_horizontal_gradient1: TButton;
+    apply_hue1: TButton;
     apply_remove_background_colour1: TButton;
     apply_vertical_gradient1: TButton;
+    area_selected1: TLabel;
+    area_set1: TLabel;
     artificial_image_gradient1: TCheckBox;
     astrometry_extra_options1: TComboBox;
     auto_background1: TCheckBox;
@@ -96,114 +99,57 @@ type
     browse_blink1: TButton;
     browse_darks1: TButton;
     browse_flats1: TButton;
-    Button_free_resize_fits1: TButton;
-    manual_centering1: TComboBox;
-    Edit_width1: TEdit;
-    panel_manual1: TPanel;
-    ring_equalise_factor1: TComboBox;
-    extract_background_box_size1: TComboBox;
-    file_to_add1: TButton;
-    GroupBox10: TGroupBox;
-    GroupBox12: TGroupBox;
-    GroupBox4: TGroupBox;
-    GroupBox6: TGroupBox;
-    GroupBox9: TGroupBox;
-    help_pixel_math1: TLabel;
-    help_pixel_math2: TLabel;
-    image_to_add1: TLabel;
-    Label26: TLabel;
-    new_height1: TLabel;
-    new_height2: TLabel;
-    resize_factor1: TComboBox;
-    splitRGB1: TButton;
-    undo_button10: TBitBtn;
-    undo_button11: TBitBtn;
-    undo_button2: TBitBtn;
-    undo_button5: TBitBtn;
-    unselect_area1: TButton;
-    calibrate_prior_solving1: TCheckBox;
-    area_set1: TLabel;
-    colournebula1: TButton;
-    create_test_image_stars1: TButton;
-    ddp_filter1: TRadioButton;
-    ddp_filter2: TRadioButton;
-    colourShape3: TShape;
-    area_selected1: TLabel;
-    new_saturation1: TTrackBar;
-    rainbow_Panel1: TPanel;
-    sample_size1: TComboBox;
-    Edit_a1: TEdit;
-    edit_background1: TEdit;
-    Edit_gaussian_blur1: TEdit;
-    edit_k1: TEdit;
-    edit_noise1: TEdit;
-    filter_artificial_colouring1: TComboBox;
-    GroupBox11: TGroupBox;
-    GroupBox14: TGroupBox;
-    GroupBox3: TGroupBox;
-    groupBox_dvp1: TGroupBox;
-    GroupBox_test_images1: TGroupBox;
-    hfd_simulation1: TComboBox;
-    colourShape2: TShape;
-    Label16: TLabel;
-    Label29: TLabel;
-    Label31: TLabel;
-    Label32: TLabel;
-    Label33: TLabel;
-    Label34: TLabel;
-    Label4: TLabel;
-    Label67: TLabel;
-    downsample_for_solving1: TComboBox;
-    downsample_solving_label1: TLabel;
-    hotpixel_sd_factor1: TComboBox;
-    ignore_hotpixels1: TCheckBox;
-    force_oversize1: TCheckBox;
-    gridlines1: TCheckBox;
-    help_live_stacking1: TLabel;
-    Label20: TLabel;
-    Label30: TLabel;
-    Label66: TLabel;
-    HueRadioButton1: TRadioButton;
-    HueRadioButton2: TRadioButton;
-    Label68: TLabel;
-    scale_calc1: TLabel;
-    live_stacking1: TButton;
-    browse_photometry1: TButton;
+    browse_inspector1: TButton;
     browse_live_stacking1: TButton;
-    result_compress1: TMenuItem;
-    MenuItem25: TMenuItem;
-    rename_result1: TMenuItem;
-    MenuItem24: TMenuItem;
-    restore_file_ext1: TButton;
-    Label15: TLabel;
-    files_live_stacked1: TLabel;
-    live_stacking_path1: TLabel;
-    live_stacking_pause1: TButton;
+    browse_photometry1: TButton;
+    Button_free_resize_fits1: TButton;
     calculated_scale1: TLabel;
+    calibrate_prior_solving1: TCheckBox;
     clear_astrometric_solutions1: TButton;
     clear_blink_alignment1: TButton;
     clear_blink_list1: TButton;
+    clear_inspector_list1: TButton;
     clear_dark_list1: TButton;
     clear_image_list1: TButton;
     clear_photometry_alignment1: TButton;
     clear_photometry_list1: TButton;
     clear_selection2: TButton;
     clear_selection3: TButton;
+    colournebula1: TButton;
+    colourShape1: TShape;
+    colourShape2: TShape;
+    colourShape3: TShape;
+    create_test_image_stars1: TButton;
     cygwin1: TComboBox;
     Darks: TTabSheet;
+    dark_areas_box_size1: TComboBox;
     dark_sport_filter1: TButton;
+    ddp_filter1: TRadioButton;
+    ddp_filter2: TRadioButton;
     demosaic_method1: TComboBox;
+    downsample_for_solving1: TComboBox;
+    downsample_solving_label1: TLabel;
     drizzle1: TCheckBox;
     drop_size1: TComboBox;
+    Edit_a1: TEdit;
+    edit_background1: TEdit;
+    Edit_gaussian_blur1: TEdit;
+    edit_k1: TEdit;
+    edit_noise1: TEdit;
+    Edit_width1: TEdit;
     Equalise_background1: TCheckBox;
-    dark_areas_box_size1: TComboBox;
     export_aligned_files1: TButton;
+    extract_background_box_size1: TComboBox;
     extra_star_supression_diameter1: TComboBox;
     field1: TLabel;
+    files_live_stacked1: TLabel;
+    file_to_add1: TButton;
+    filter_artificial_colouring1: TComboBox;
     filter_groupbox1: TGroupBox;
     Flats: TTabSheet;
     flat_combine_method1: TComboBox;
     focallength1: TEdit;
+    force_oversize1: TCheckBox;
     gb1: TEdit;
     gg1: TEdit;
     gr1: TEdit;
@@ -211,27 +157,48 @@ type
     green_filter1: TEdit;
     green_filter2: TEdit;
     green_filter_add1: TEdit;
+    gridlines1: TCheckBox;
     GroupBox1: TGroupBox;
+    GroupBox10: TGroupBox;
+    GroupBox11: TGroupBox;
+    GroupBox12: TGroupBox;
+    GroupBox14: TGroupBox;
     GroupBox16: TGroupBox;
     GroupBox2: TGroupBox;
+    GroupBox3: TGroupBox;
+    GroupBox4: TGroupBox;
     GroupBox5: TGroupBox;
+    GroupBox6: TGroupBox;
     GroupBox7: TGroupBox;
     GroupBox8: TGroupBox;
+    GroupBox9: TGroupBox;
     GroupBox_astrometric_solver_settings1: TGroupBox;
     GroupBox_astrometry_net1: TGroupBox;
+    groupBox_dvp1: TGroupBox;
     GroupBox_equalise_tool1: TGroupBox;
     GroupBox_equalise_tool2: TGroupBox;
     GroupBox_star_alignment_settings1: TGroupBox;
+    GroupBox_test_images1: TGroupBox;
     help_astrometric_alignment1: TLabel;
     help_astrometric_solving1: TLabel;
     help_blink1: TLabel;
+    help_live_stacking1: TLabel;
     help_osc_menu1: TLabel;
     help_photometry1: TLabel;
+    help_pixel_math1: TLabel;
+    help_pixel_math2: TLabel;
     help_stack_menu1: TLabel;
     help_stack_menu3: TLabel;
     help_uncheck_outliers1: TLabel;
+    hfd_simulation1: TComboBox;
+    hotpixel_sd_factor1: TComboBox;
+    HueRadioButton1: TRadioButton;
+    HueRadioButton2: TRadioButton;
+    hue_fuzziness1: TTrackBar;
     ignore_header_solution1: TCheckBox;
+    ignore_hotpixels1: TCheckBox;
     Images: TTabSheet;
+    image_to_add1: TLabel;
     keep_console_open1: TCheckBox;
     Label1: TLabel;
     Label10: TLabel;
@@ -239,23 +206,34 @@ type
     Label12: TLabel;
     Label13: TLabel;
     Label14: TLabel;
+    Label15: TLabel;
+    Label16: TLabel;
     Label17: TLabel;
     Label18: TLabel;
     Label19: TLabel;
     Label2: TLabel;
+    Label20: TLabel;
     Label21: TLabel;
     Label22: TLabel;
     Label23: TLabel;
     Label24: TLabel;
     Label25: TLabel;
+    Label26: TLabel;
     Label27: TLabel;
     Label28: TLabel;
+    Label29: TLabel;
     Label3: TLabel;
+    Label30: TLabel;
+    Label31: TLabel;
+    Label32: TLabel;
+    Label33: TLabel;
+    Label34: TLabel;
     Label35: TLabel;
     Label36: TLabel;
     Label37: TLabel;
     Label38: TLabel;
     Label39: TLabel;
+    Label4: TLabel;
     Label40: TLabel;
     Label41: TLabel;
     Label42: TLabel;
@@ -284,6 +262,9 @@ type
     Label63: TLabel;
     Label64: TLabel;
     Label65: TLabel;
+    Label66: TLabel;
+    Label67: TLabel;
+    Label68: TLabel;
     Label7: TLabel;
     Label8: TLabel;
     Label9: TLabel;
@@ -298,13 +279,77 @@ type
     listview5: TListView;
     listview6: TListView;
     listview7: TListView;
+    listview8: TListView;
+    list_to_clipboard8: TMenuItem;
+    live_stacking1: TButton;
+    live_stacking_path1: TLabel;
+    live_stacking_pause1: TButton;
     live_stacking_restart1: TButton;
     luminance_filter1: TEdit;
     luminance_filter2: TEdit;
     make_osc_color1: TCheckBox;
+    manual_centering1: TComboBox;
     mark_outliers_upto1: TComboBox;
     max_fov1: TComboBox;
     max_stars1: TComboBox;
+    MenuItem23: TMenuItem;
+    MenuItem26: TMenuItem;
+    MenuItem27: TMenuItem;
+    mosaic_box1: TGroupBox;
+    mosaic_crop1: TUpDown;
+    mosaic_crop2: TEdit;
+    mosaic_width1: TUpDown;
+    mosaic_width2: TEdit;
+    most_common_filter_radius1: TEdit;
+    most_common_filter_tool1: TButton;
+    multiply_blue1: TEdit;
+    multiply_green1: TEdit;
+    multiply_red1: TEdit;
+    new_height1: TLabel;
+    new_height2: TLabel;
+    new_saturation1: TTrackBar;
+    noisefilter_blur1: TComboBox;
+    noisefilter_sd1: TComboBox;
+    nr_selected1: TLabel;
+    nr_total1: TLabel;
+    nr_total_bias1: TLabel;
+    nr_total_blink1: TLabel;
+    nr_total_inspector1: TLabel;
+    nr_total_darks1: TLabel;
+    nr_total_flats1: TLabel;
+    nr_total_photometry1: TLabel;
+    osc_colour_smooth1: TCheckBox;
+    oversize1: TComboBox;
+    pagecontrol1: TPageControl;
+    panel_astrometrynet1: TPanel;
+    panel_manual1: TPanel;
+    Panel_solver1: TPanel;
+    Panel_star_detection1: TPanel;
+    photometry_binx2: TButton;
+    photometry_button1: TButton;
+    photometry_stop1: TButton;
+    pixelsize1: TEdit;
+    PopupMenu8: TPopupMenu;
+    radius_search1: TComboBox;
+    rainbow_Panel1: TPanel;
+    rb1: TEdit;
+    red_filter1: TEdit;
+    red_filter2: TEdit;
+    red_filter_add1: TEdit;
+    removeselected8: TMenuItem;
+    remove_deepsky_label1: TLabel;
+    remove_solver_files1: TCheckBox;
+    renametobak8: TMenuItem;
+    replace_by_master_dark1: TButton;
+    replace_by_master_flat1: TButton;
+    reset_factors1: TButton;
+    resize_factor1: TComboBox;
+    restore_file_ext1: TButton;
+    Result1: TTabSheet;
+    result_compress1: TMenuItem;
+    MenuItem25: TMenuItem;
+    rename_result1: TMenuItem;
+    MenuItem24: TMenuItem;
     more_indication1: TLabel;
     list_to_clipboard7: TMenuItem;
     MenuItem20: TMenuItem;
@@ -314,67 +359,25 @@ type
     extend_object_name_with_time_observation1: TMenuItem;
     MenuItem19: TMenuItem;
     list_to_clipboard6: TMenuItem;
-    mosaic_box1: TGroupBox;
-    mosaic_width1: TUpDown;
-    mosaic_width2: TEdit;
-    mosaic_crop2: TEdit;
-    mosaic_crop1: TUpDown;
-    most_common_filter_radius1: TEdit;
-    most_common_filter_tool1: TButton;
-    multiply_blue1: TEdit;
-    multiply_green1: TEdit;
-    multiply_red1: TEdit;
-    noisefilter_blur1: TComboBox;
-    noisefilter_sd1: TComboBox;
-    nr_selected1: TLabel;
-    nr_total1: TLabel;
-    nr_total_bias1: TLabel;
-    nr_total_blink1: TLabel;
-    nr_total_darks1: TLabel;
-    nr_total_flats1: TLabel;
-    nr_total_photometry1: TLabel;
-    osc_colour_smooth1: TCheckBox;
-    oversize1: Tcombobox;
-    pagecontrol1: TPageControl;
-    panel_astrometrynet1: TPanel;
-    Panel_solver1: TPanel;
-    Panel_star_detection1: TPanel;
-    photometry_binx2: TButton;
-    photometry_button1: TButton;
-    photometry_stop1: TButton;
-    colourShape1: TShape;
-    show_tetrahedrons1: TBitBtn;
-    star_level_colouring1: TComboBox;
-    tab_Pixelmath2: TTabSheet;
-    tab_live_stacking1: TTabSheet;
-    tab_Pixelmath1: TTabSheet;
-    pixelsize1: TEdit;
     PopupMenu7: TPopupMenu;
-    radius_search1: TComboBox;
-    rb1: TEdit;
-    red_filter1: TEdit;
-    red_filter2: TEdit;
-    red_filter_add1: TEdit;
     removeselected7: TMenuItem;
-    remove_deepsky_label1: TLabel;
-    remove_solver_files1: TCheckBox;
     renametobak7: TMenuItem;
-    replace_by_master_dark1: TButton;
-    replace_by_master_flat1: TButton;
-    reset_factors1: TButton;
-    Result1: TTabSheet;
     rg1: TEdit;
     RGB_filter1: TComboBox;
+    ring_equalise_factor1: TComboBox;
     rr1: TEdit;
+    sample_size1: TComboBox;
     saved1: TLabel;
     save_as_new_file1: TButton;
     save_result1: TButton;
+    scale_calc1: TLabel;
     sd_factor1: TComboBox;
     sd_factor_blink1: TComboBox;
     sd_factor_list1: TComboBox;
     search_area1: TEdit;
     search_fov1: TComboBox;
     select7: TMenuItem;
+    select8: TMenuItem;
     selectall3: TMenuItem;
     selectall4: TMenuItem;
     selectall6: TMenuItem;
@@ -382,7 +385,9 @@ type
     selectall1: TMenuItem;
     selectall7: TMenuItem;
     list_to_clipboard1: TMenuItem;
+    selectall8: TMenuItem;
     show_console1: TCheckBox;
+    show_tetrahedrons1: TBitBtn;
     sigma_factor_remove_background_colourB1: TComboBox;
     sigma_factor_remove_background_colourG1: TComboBox;
     sigma_factor_remove_background_colourR1: TComboBox;
@@ -390,6 +395,8 @@ type
     smart_smooth_width1: TComboBox;
     solve1: TButton;
     solve_show_log1: TCheckBox;
+    SpeedButton1: TSpeedButton;
+    splitRGB1: TButton;
     stack_button1: TBitBtn;
     MenuItem16: TMenuItem;
     MenuItem17: TMenuItem;
@@ -401,22 +408,30 @@ type
     select6: TMenuItem;
     stack_method1: TComboBox;
     star_database1: TEdit;
+    star_level_colouring1: TComboBox;
     subtract_background1: TButton;
+    TabSheet1: TTabSheet;
     tab_blink1: TTabSheet;
+    tab_live_stacking1: TTabSheet;
     tab_photometry1: TTabSheet;
+    tab_Pixelmath1: TTabSheet;
+    tab_Pixelmath2: TTabSheet;
     tab_stackmethod1: TTabSheet;
     test_flat_mean: TButton;
     test_pattern1: TButton;
     tetrahedron_tolerance1: TComboBox;
-    hue_fuzziness1: TTrackBar;
     uncheck_outliers1: TCheckBox;
     undo_button1: TBitBtn;
+    undo_button10: TBitBtn;
+    undo_button11: TBitBtn;
     undo_button13: TBitBtn;
     undo_button14: TBitBtn;
     undo_button15: TBitBtn;
     undo_button16: TBitBtn;
+    undo_button2: TBitBtn;
     undo_button3: TBitBtn;
     undo_button4: TBitBtn;
+    undo_button5: TBitBtn;
     undo_button6: TBitBtn;
     undo_button7: TBitBtn;
     undo_button8: TBitBtn;
@@ -424,6 +439,8 @@ type
     undo_button_equalise_background1: TBitBtn;
     unselect6: TMenuItem;
     unselect7: TMenuItem;
+    unselect8: TMenuItem;
+    unselect_area1: TButton;
     UpDown1: TUpDown;
     use_astrometry_internal1: TRadioButton;
     use_astrometry_net1: TRadioButton;
@@ -431,6 +448,7 @@ type
     use_star_alignment1: TRadioButton;
     Viewimage6: TMenuItem;
     Viewimage7: TMenuItem;
+    Viewimage8: TMenuItem;
     width_UpDown1: TUpDown;
     write_log1: TCheckBox;
     powerdown_enabled1: TCheckBox;
@@ -505,6 +523,7 @@ type
     procedure align_blink1Change(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
     procedure analysephotometry1Click(Sender: TObject);
+    procedure analyse_inspector1Click(Sender: TObject);
     procedure apply_hue1Click(Sender: TObject);
     procedure auto_background_level1Click(Sender: TObject);
     procedure apply_background_noise_filter1Click(Sender: TObject);
@@ -513,10 +532,16 @@ type
     procedure blink_unaligned_multi_step1Click(Sender: TObject);
     procedure browse_dark1Click(Sender: TObject);
     procedure browse_live_stacking1Click(Sender: TObject);
+    procedure clear_inspector_list1Click(Sender: TObject);
     procedure gridlines1Click(Sender: TObject);
     procedure help_live_stacking1Click(Sender: TObject);
     procedure help_pixel_math2Click(Sender: TObject);
     procedure hue_fuzziness1Change(Sender: TObject);
+    procedure listview8CustomDrawItem(Sender: TCustomListView; Item: TListItem;
+      State: TCustomDrawState; var DefaultDraw: Boolean);
+    procedure listview8CustomDrawSubItem(Sender: TCustomListView;
+      Item: TListItem; SubItem: Integer; State: TCustomDrawState;
+      var DefaultDraw: Boolean);
     procedure live_stacking1Click(Sender: TObject);
     procedure new_saturation1Change(Sender: TObject);
     procedure pagecontrol1Change(Sender: TObject);
@@ -550,7 +575,7 @@ type
     procedure apply_get_background1Click(Sender: TObject);
     procedure help_osc_menu1Click(Sender: TObject);
     procedure help_uncheck_outliers1Click(Sender: TObject);
-    procedure listview5CustomDrawItem(Sender: TCustomListView; Item: TListItem;
+    procedure listview6CustomDrawItem(Sender: TCustomListView; Item: TListItem;
       State: TCustomDrawState; var DefaultDraw: Boolean);
     procedure list_to_clipboard1Click(Sender: TObject);
     procedure make_osc_color1Click(Sender: TObject);
@@ -590,8 +615,6 @@ type
       State: TCustomDrawState; var DefaultDraw: Boolean);
     procedure listview6CustomDraw(Sender: TCustomListView; const ARect: TRect;
       var DefaultDraw: Boolean);
-    procedure listview6CustomDrawItem(Sender: TCustomListView; Item: TListItem;
-      State: TCustomDrawState; var DefaultDraw: Boolean);
     procedure luminance_filter1Change(Sender: TObject);
     procedure make_osc_color1Change(Sender: TObject);
     procedure MenuItem14Click(Sender: TObject);
@@ -807,6 +830,8 @@ const
 
   outlier=8; {image index for outlier}
 
+  insp_focus_pos=8;
+  insp_nr_stars=7;
 
 implementation
 
@@ -1822,7 +1847,7 @@ procedure Tstackmenu1.browse_blink1Click(Sender: TObject);
 var
   i: integer;
 begin
-  OpenDialog1.Title := 'Select images to blink';
+  OpenDialog1.Title := 'Select images to add';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
 //  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
@@ -1837,7 +1862,10 @@ begin
     begin
       if sender=browse_blink1 then listview_add2(listview6,OpenDialog1.Files[i],9)
       else
-      if sender=browse_photometry1 then listview_add2(listview7,OpenDialog1.Files[i],17);
+      if sender=browse_photometry1 then listview_add2(listview7,OpenDialog1.Files[i],17)
+      else
+      if sender=browse_inspector1 then listview_add2(listview8,OpenDialog1.Files[i],16);
+
       DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
     end;
   end;
@@ -2592,6 +2620,7 @@ procedure analyse_listview(lv :tlistview; amode : integer);{analyse list of FITS
 // amode=1 ==> full, header only
 // amode=2 ==> get background
 // amode=3 ==> get background, HFD, stars
+// amode=4 ==> inspector
 var
   c,counts,i : integer;
   hfd_counter : integer;
@@ -2600,6 +2629,7 @@ var
   Save_Cursor          : TCursor;
   loaded               : boolean;
   img                  : image_array;
+  nr_stars,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right : double;
 begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -2734,6 +2764,24 @@ begin
               {solution is column 12 will be added seperately}
               lv.Items.item[c].subitems.Strings[P_calibration]:=calstat; {calibration calstat info DFB}
             end;
+
+            if amode=4 then {listview8 inspector tab}
+            begin
+              lv.Items.item[c].subitems.Strings[B_date]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
+              lv.Items.item[c].subitems.Strings[insp_focus_pos]:=inttostr(focus_pos);
+
+              CCD_inspector(false {toscreen},nr_stars, hfd_median,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right, img); {find hfd values}
+              lv.Items.item[c].subitems.Strings[insp_nr_stars]:=floattostrF2(nr_stars,0,0);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+2]:=floattostrF2(hfd_median,0,2);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+3]:=floattostrF2(hfd_center,0,2);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+4]:=floattostrF2(hfd_outer_ring,0,2);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+5]:=floattostrF2(hfd_bottom_left,0,2);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+6]:=floattostrF2(hfd_bottom_right,0,2);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+7]:=floattostrF2(hfd_top_left,0,2);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+8]:=floattostrF2(hfd_top_right,0,2);
+            end;
+
+
             if amode=3 then {listview7 photometry}
             begin
 
@@ -3746,6 +3794,12 @@ begin
   end;
 end;
 
+procedure Tstackmenu1.clear_inspector_list1Click(Sender: TObject);
+begin
+  esc_pressed:=true; {stop any running action}
+  listview8.Clear;
+end;
+
 procedure Tstackmenu1.gridlines1Click(Sender: TObject);
 begin
   listview1.gridlines:=gridlines1.checked;
@@ -3876,6 +3930,35 @@ begin
   if hue2<0 then hue2:=hue2+360;
 
   stackmenu1.rainbow_panel1.refresh;{plot colour disk in on paint event. Onpaint is required for MacOS}
+end;
+
+procedure Tstackmenu1.listview8CustomDrawItem(Sender: TCustomListView;
+  Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
+begin
+  stackmenu1.nr_total_inspector1.caption:=inttostr(sender.items.count);{update counting info}
+end;
+
+procedure Tstackmenu1.listview8CustomDrawSubItem(Sender: TCustomListView;
+  Item: TListItem; SubItem: Integer; State: TCustomDrawState;
+  var DefaultDraw: Boolean);
+
+var  error2,x : integer;
+     st     : string;
+begin
+  st:=sender.Items.item[Item.Index].subitems.Strings[insp_nr_stars];
+  val(st,x,error2);
+  if x<100 then {not enough stars}
+    Sender.Canvas.Font.Color := clred
+  else
+    Sender.Canvas.Font.Color := clmenutext;{required for high contrast settings. Otherwise it is always black}
+
+
+  {$ifdef mswindows}
+   {$else} {unix}
+   {temporary fix for CustomDraw not called}
+   if  Item.index=0 then  stackmenu1.nr_total_inspector1.caption:=inttostr(sender.items.count);{update counting info}
+   {$endif}
+
 end;
 
 procedure Tstackmenu1.live_stacking1Click(Sender: TObject);
@@ -5395,13 +5478,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.listview5CustomDrawItem(Sender: TCustomListView;
-  Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
-begin
-  Sender.Canvas.Font.Color := clmenutext;{required for high contrast settings. Otherwise it is always black}
-end;
-
-
 procedure Tstackmenu1.list_to_clipboard1Click(Sender: TObject); {copy seleced lines to clipboard}
 var
   index,c : integer;
@@ -5409,9 +5485,13 @@ var
   lv  : tlistview;
 begin
   info:='';
+  if sender=list_to_clipboard8 then lv:=listview8
+  else
   if sender=list_to_clipboard7 then lv:=listview7
   else
-   lv:=listview1;
+  if sender=list_to_clipboard6 then lv:=listview6
+  else
+  lv:=listview1;
 
   {get column names}
   for c := 0 to lv.Items[0].SubItems.Count do
@@ -5468,6 +5548,7 @@ begin
   if sender=selectall4 then select_all(listview4);{popupmenu}
   if sender=selectall6 then select_all(listview6);{popupmenu blink}
   if sender=selectall7 then select_all(listview7);{popupmenu photometry}
+  if sender=selectall8 then select_all(listview8);{popupmenu photometry}
 end;
 
 procedure remove_background( var img: image_array);
@@ -5600,6 +5681,13 @@ begin
     else
     listview7.Items.item[c].subitems.Strings[P_photometric]:='';
   end;
+end;
+
+procedure Tstackmenu1.analyse_inspector1Click(Sender: TObject);
+begin
+  memo2_message('Inspector routine. Note hfd values above about 14 will not be detected.');
+  analyse_listview(listview8, 4 {full header and data inspector mode});
+  memo2_message('Ready. To copy result, select the rows with ctrl-A and copy with ctrl-C');
 end;
 
 procedure Tstackmenu1.apply_hue1Click(Sender: TObject);
