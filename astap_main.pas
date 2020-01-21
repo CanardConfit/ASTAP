@@ -1054,12 +1054,11 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.313 dated 2020-1-20';
+  #13+#10+'Version ß0.9.314 dated 2020-1-21';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
 end;
-
 
 
 procedure Tmainwindow.FormKeyPress(Sender: TObject; var Key: char);

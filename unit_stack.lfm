@@ -3656,9 +3656,10 @@ object stackmenu1: Tstackmenu1
           end        
           item
             Alignment = taRightJustify
+            AutoSize = True
             Caption = 'Date/Time'
             MinWidth = 90
-            Width = 90
+            Width = 70
           end        
           item
             Caption = 'Star detections'
@@ -3747,10 +3748,10 @@ object stackmenu1: Tstackmenu1
         TabOrder = 3
       end
       object nr_total_inspector1: TLabel
-        Left = 272
+        Left = 480
         Height = 15
         Hint = 'Number of images in the list'
-        Top = 10
+        Top = 8
         Width = 6
         Caption = '0'
         ParentColor = False
@@ -3766,6 +3767,17 @@ object stackmenu1: Tstackmenu1
         Flat = True
         ImageIndex = 0
         ImageWidth = 32
+      end
+      object curve_fitting1: TButton
+        Left = 248
+        Height = 26
+        Hint = 'Analyse image files'
+        Top = 6
+        Width = 200
+        Caption = 'Hyperbola curve fitting'
+        OnClick = curve_fitting1Click
+        ParentFont = False
+        TabOrder = 4
       end
     end
     object tab_live_stacking1: TTabSheet

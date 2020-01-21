@@ -57,6 +57,7 @@ type
     analysephotmetrymore1: TButton;
     analysephotometry1: TButton;
     analyse_inspector1: TButton;
+    curve_fitting1: TButton;
     apply_artificial_flat_correction1: TButton;
     apply_artificial_flat_correctionV2: TButton;
     apply_background_noise_filter1: TButton;
@@ -533,6 +534,7 @@ type
     procedure browse_dark1Click(Sender: TObject);
     procedure browse_live_stacking1Click(Sender: TObject);
     procedure clear_inspector_list1Click(Sender: TObject);
+    procedure curve_fitting1Click(Sender: TObject);
     procedure gridlines1Click(Sender: TObject);
     procedure help_live_stacking1Click(Sender: TObject);
     procedure help_pixel_math2Click(Sender: TObject);
@@ -835,14 +837,12 @@ const
 
 implementation
 
-
-uses  unit_astrometry,unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd, unit_live_stacking;
+uses  unit_astrometry,unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd, unit_live_stacking, unit_hyperbola;
 {$IFDEF fpc}
   {$R *.lfm}
 {$else}  {delphi}
  {$R *.lfm}
 {$endif}
-
 
 {$ifdef mswindows}
 Function ShutMeDown:string;
@@ -1741,6 +1741,7 @@ begin
   if sender=removeselected4 then listview_removeselect(listview4);{from popup menu}
   if sender=removeselected6 then listview_removeselect(listview6);{from popup menu blink}
   if sender=removeselected7 then listview_removeselect(listview7);{from popup menu photometry}
+  if sender=removeselected8 then listview_removeselect(listview8);{inspector}
 end;
 
 procedure Tstackmenu1.help_astrometric_alignment1Click(Sender: TObject);
@@ -1818,6 +1819,7 @@ begin
    if sender=select4 then listview_select(listview4);{from popupmenu}
    if sender=select6 then listview_select(listview6);{from popupmenu blink}
    if sender=select7 then listview_select(listview7);{from popupmenu blink}
+   if sender=select8 then listview_select(listview8);
 end;
 
 
@@ -2433,6 +2435,7 @@ begin
   if sender=renametobak5 then listview_rename_bak(listview5);{from popupmenu}
   if sender=renametobak6 then listview_rename_bak(listview6);{from popupmenu blink}
   if sender=renametobak7 then listview_rename_bak(listview7);{from popupmenu photometry}
+  if sender=renametobak8 then listview_rename_bak(listview8);{from popupmenu photometry}
 end;
 
 procedure Tstackmenu1.clear_selection2Click(Sender: TObject);
@@ -2536,7 +2539,8 @@ begin
   if sender=unselect3 then listview_unselect(listview3);{popupmenu}
   if sender=unselect4 then listview_unselect(listview4);{popupmenu}
   if sender=unselect6 then listview_unselect(listview6);{popupmenu blink}
-  if sender=unselect7 then listview_unselect(listview7);{popupmenu blink}
+  if sender=unselect7 then listview_unselect(listview7);
+  if sender=unselect8 then listview_unselect(listview8);{inspector}
 end;
 
 procedure Tstackmenu1.unselect_area1Click(Sender: TObject);
@@ -2630,6 +2634,7 @@ var
   loaded               : boolean;
   img                  : image_array;
   nr_stars,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right : double;
+
 begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -2644,6 +2649,7 @@ begin
 
   loaded:=false;
   c:=0;
+
   {convert any non FITS file}
   while c<=counts  do {check all}
   begin
@@ -2771,14 +2777,15 @@ begin
               lv.Items.item[c].subitems.Strings[insp_focus_pos]:=inttostr(focus_pos);
 
               CCD_inspector(false {toscreen},nr_stars, hfd_median,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right, img); {find hfd values}
+
               lv.Items.item[c].subitems.Strings[insp_nr_stars]:=floattostrF2(nr_stars,0,0);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+2]:=floattostrF2(hfd_median,0,2);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+3]:=floattostrF2(hfd_center,0,2);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+4]:=floattostrF2(hfd_outer_ring,0,2);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+5]:=floattostrF2(hfd_bottom_left,0,2);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+6]:=floattostrF2(hfd_bottom_right,0,2);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+7]:=floattostrF2(hfd_top_left,0,2);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+8]:=floattostrF2(hfd_top_right,0,2);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+2]:=floattostrF2(hfd_median,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+3]:=floattostrF2(hfd_center,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+4]:=floattostrF2(hfd_outer_ring,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+5]:=floattostrF2(hfd_bottom_left,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+6]:=floattostrF2(hfd_bottom_right,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+7]:=floattostrF2(hfd_top_left,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+8]:=floattostrF2(hfd_top_right,0,3);
             end;
 
 
@@ -3798,6 +3805,56 @@ procedure Tstackmenu1.clear_inspector_list1Click(Sender: TObject);
 begin
   esc_pressed:=true; {stop any running action}
   listview8.Clear;
+end;
+
+procedure Tstackmenu1.curve_fitting1Click(Sender: TObject);
+var
+   p,a,b,position, center : double;
+   c,img_counter,i    : integer;
+   array_hfd : array of tdouble2;
+const
+   len: integer= 200;
+begin
+  memo2_message('Finding the best focus position for each area using hyperbola curve fitting');
+
+  {do first or second time}
+  analyse_listview(listview8, 4 {full header and data inspector mode});
+
+  setlength(array_hfd,len);
+  for i:=1 to 7 do
+  begin
+    img_counter:=0;
+    with listview8 do
+    for c:=0 to listview8.items.count-1 do
+    begin
+      if Items.item[c].checked then
+      begin
+        position:=strtofloat2(Items.item[c].subitems.Strings[insp_focus_pos]);{inefficient but simple code to convert string back to float}
+        if position>0 then
+        begin
+          array_hfd[img_counter,1]:=position;
+          array_hfd[img_counter,2]:=strtofloat(Items.item[c].subitems.Strings[insp_focus_pos+i]);
+          inc(img_counter);
+          if img_counter>=len then begin len:=len+200; setlength(array_hfd,len); {adapt size} end;
+        end
+        else memo2_message('█ █ █ █ █ █  Error, no focus position in fits header! █ █ █ █ █ █ ');
+      end;
+    end;
+    if img_counter>=5 then
+    begin
+      find_best_hyperbola_fit(array_hfd, img_counter, p,a,b); {input data[n,1]=position,data[n,2]=hfd, output: bestfocusposition=p, a, b of hyperbola}
+      if i=1 then       memo2_message('median'+#9+#9+     'Focus='+floattostrf2(p,0,0)+#9+', a='+floattostrf2(a,0,5)+#9+', b='+floattostrf2(b,0,5));
+      if i=2 then begin memo2_message('center'+#9+#9+     'Focus='+floattostrf2(p,0,0)+#9+', a='+floattostrf2(a,0,5)+#9+', b='+floattostrf2(b,0,5));center:=p; end;
+      if i=3 then       memo2_message('outer_ring'+#9+#9+ 'Focus='+floattostrf2(p,0,0)+#9+', a='+floattostrf2(a,0,5)+#9+', b='+floattostrf2(b,0,5));
+      if i=4 then begin memo2_message('bottom_left'+#9+#9+'Focus='+floattostrf2(p,0,0)+#9+', a='+floattostrf2(a,0,5)+#9+', b='+floattostrf2(b,0,5) +#9+'offset: '+floattostrf2(p-center,0,0)); end;
+      if i=5 then begin memo2_message('bottom_right'+#9+  'Focus='+floattostrf2(p,0,0)+#9+', a='+floattostrf2(a,0,5)+#9+', b='+floattostrf2(b,0,5) +#9+'offset: '+floattostrf2(p-center,0,0)); end;
+      if i=6 then begin memo2_message('top_left'+#9+#9+   'Focus='+floattostrf2(p,0,0)+#9+', a='+floattostrf2(a,0,5)+#9+', b='+floattostrf2(b,0,5) +#9+'offset: '+floattostrf2(p-center,0,0)); end;
+      if i=7 then begin memo2_message('top_right'+#9+#9+  'Focus='+floattostrf2(p,0,0)+#9+', a='+floattostrf2(a,0,5)+#9+', b='+floattostrf2(b,0,5) +#9+'offset: '+floattostrf2(p-center,0,0)); end;
+    end
+    else
+    if i=1 then memo2_message('█ █ █ █ █ █  Error, five or more images are required at different focus positions! █ █ █ █ █ █ ');
+  end;
+
 end;
 
 procedure Tstackmenu1.gridlines1Click(Sender: TObject);
@@ -5685,7 +5742,7 @@ end;
 
 procedure Tstackmenu1.analyse_inspector1Click(Sender: TObject);
 begin
-  memo2_message('Inspector routine. Note hfd values above about 14 will not be detected.');
+  memo2_message('Inspector routine. Note hfd values above about 12 will not be detected. Un-check these files prior to curve fitting ');
   analyse_listview(listview8, 4 {full header and data inspector mode});
   memo2_message('Ready. To copy result, select the rows with ctrl-A and copy with ctrl-C');
 end;
@@ -7501,7 +7558,8 @@ begin
   if sender=Viewimage4 then listview_view(listview4);
   if sender=Viewimage5 then listview_view(listview5);
   if sender=Viewimage6 then listview_view(listview6);{popup menu blink}
-  if sender=Viewimage7 then listview_view(listview7);{popup menu blink}
+  if sender=Viewimage7 then listview_view(listview7);
+  if sender=Viewimage8 then listview_view(listview8);{inspector}
 end;
 
 end.
