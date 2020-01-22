@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1705
-    ActivePage = TabSheet1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -226,7 +226,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 9
+    TabIndex = 0
     TabOrder = 5
     OnChange = pagecontrol1Change
     Options = [nboMultiLine]
@@ -3662,53 +3662,61 @@ object stackmenu1: Tstackmenu1
             Width = 70
           end        
           item
+            Alignment = taRightJustify
             Caption = 'Star detections'
             MinWidth = 110
             Width = 110
           end        
           item
+            Alignment = taRightJustify
             Caption = 'FocPos'
             MinWidth = 80
             Width = 80
           end        
           item
+            Alignment = taRightJustify
             Caption = 'hfd'
             MinWidth = 60
             Width = 60
           end        
           item
             Alignment = taRightJustify
-            Caption = 'center'
+            Caption = 'hfd cent'
             ImageIndex = 9
-            MinWidth = 80
-            Width = 80
+            MinWidth = 100
+            Width = 100
           end        
           item
-            Caption = 'outer'
+            Alignment = taRightJustify
+            Caption = 'hfd out'
             ImageIndex = 10
-            MinWidth = 80
-            Width = 80
+            MinWidth = 100
+            Width = 100
           end        
           item
-            Caption = 'B_L'
+            Alignment = taRightJustify
+            Caption = 'hfd bl'
             ImageIndex = 11
             MinWidth = 80
             Width = 80
           end        
           item
-            Caption = 'B_R'
+            Alignment = taRightJustify
+            Caption = 'hfd br'
             ImageIndex = 12
             MinWidth = 80
             Width = 80
           end        
           item
-            Caption = 'T_L'
+            Alignment = taRightJustify
+            Caption = 'hfd tl'
             ImageIndex = 13
             MinWidth = 80
             Width = 80
           end        
           item
-            Caption = 'T_R'
+            Alignment = taRightJustify
+            Caption = 'hfd tr'
             ImageIndex = 14
             MinWidth = 80
             Width = 80
@@ -3722,7 +3730,7 @@ object stackmenu1: Tstackmenu1
         RowSelect = True
         ScrollBars = ssAutoBoth
         SmallImages = ImageList_colors
-        SortColumn = 9
+        SortColumn = 12
         SortType = stData
         TabOrder = 2
         ViewStyle = vsReport
