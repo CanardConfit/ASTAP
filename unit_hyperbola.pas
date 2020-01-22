@@ -163,8 +163,8 @@ begin
       p1:=p1 + p_range*0.1;{do 20 steps within range}
     end;{position loop}
     inc(iteration_cycles);
-  until  ( (old_error-lowest_error<0.00001){lowest error almost reached. Error is expressed in relative error per point}
-        or (lowest_error<=0.00001)         {perfect result}
+  until  ( (old_error-lowest_error<1E-5){lowest error almost reached. Error is expressed in relative error per point}
+        or (lowest_error<=1E-5 {0.00001})         {perfect result}
         or (iteration_cycles>=30) );       {most likely convergence problem}
 end;
 

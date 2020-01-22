@@ -759,7 +759,7 @@ procedure date_obs_to_jd;{get julian day for date_obs, so the start of the obser
 function JdToDate(jd:double):string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
 function median_background(var img :image_array;color,size,x,y:integer): double;{find median value in sizeXsize matrix of img}
-procedure analyse_fits(var hfd_counter : integer; var backgr, hfd_median : double; var img : image_array); {find background, number of stars, median HFD}
+procedure analyse_fits(img : image_array; var star_counter : integer; var backgr, hfd_median : double); {find background, number of stars, median HFD}
 procedure sample(fitsx,fitsy : integer);{sampe local colour and fill shape with colour}
 procedure apply_most_common(sourc,dest: image_array; radius: integer);  {apply most common filter on first array and place result in second array}
 
@@ -1213,16 +1213,19 @@ begin
   end;{with stackmenu1}
 end;
 
-procedure analyse_fits(var hfd_counter : integer; var backgr, hfd_median : double; var img : image_array); {find background, number of stars, median HFD}
+procedure analyse_fits(img : image_array;var star_counter : integer; var backgr, hfd_median : double); {find background, number of stars, median HFD}
 var
    fitsX,fitsY,size,i, j          : integer;
    hfd1,star_fwhm,snr,flux,xc,yc  :double;
    hfd_list                       :array of double;
    img_temp2  : image_array;
 
+const
+   len: integer=1000;
+
 begin
-  hfd_counter:=0;
-  SetLength(hfd_list,0);{set array length to zero}
+  star_counter:=0;
+  SetLength(hfd_list,len);{set array length to len}
 
   get_background(0,img,true,true {calculate background and also star level end noise level},{var}backgr,star_level);
 
@@ -1242,7 +1245,9 @@ begin
           HFD(img,fitsX,fitsY, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1>0.8) {two pixels minimum} and (hfd1<=15)) then
           begin
-            inc(hfd_counter);SetLength(hfd_list,hfd_counter); hfd_list[hfd_counter-1]:=hfd1;
+            hfd_list[star_counter]:=hfd1;{store}
+            inc(star_counter);
+            if star_counter>=len then begin len:=len+1000; SetLength(hfd_list,len);{increase size} end;
             size:=round(5*hfd1);
 
             for j:=fitsY to fitsY+size do {Mark the whole star area as surveyed}
@@ -1253,10 +1258,160 @@ begin
         end;
       end;
     end;
-    if hfd_counter>0 then hfd_median:=SMedian(hfd_List) else hfd_median:=99;
+    if star_counter>0 then
+    begin
+      SetLength(hfd_list,star_counter);{set size correctly}
+      hfd_median:=SMedian(hfd_List);
+    end
+    else hfd_median:=99;
   end {backgr is normal}
   else
   hfd_median:=99;{Most common value image is too low. Can not  process this image. Check camera offset setting.}
+
+  img_temp2:=nil;{free mem}
+end;
+
+procedure analyse_fits_extended(img : image_array;var nr_stars, hfd_median,median_center, median_outer_ring, median_bottom_left,median_bottom_right,median_top_left,median_top_right : double); {analyse several areas}
+var
+   fitsX,fitsY,size,i, j          : integer;
+   nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right : integer;
+   hfd1,star_fwhm,snr,flux,xc,yc,backgr  :double;
+   img_temp2  : image_array;
+   hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
+
+
+const
+   len: integer=1000;
+
+begin
+  nhfd:=0;{set counters at zero}
+  nhfd_top_left:=0;
+  nhfd_top_right:=0;
+  nhfd_bottom_left:=0;
+  nhfd_bottom_right:=0;
+  nhfd_center:=0;
+  nhfd_outer_ring:=0;
+  SetLength(hfdlist,len*4);{set array length on a starting value}
+
+  SetLength(hfdlist_center,len);
+  SetLength(hfdlist_outer_ring,len*2);
+
+  SetLength(hfdlist_top_left,len);
+  SetLength(hfdlist_top_right,len);
+  SetLength(hfdlist_bottom_left,len);
+  SetLength(hfdlist_bottom_right,len);
+
+  get_background(0,img,true,true {calculate background and also star level end noise level},{var}backgr,star_level);
+
+  if backgr>8 then
+  begin
+    setlength(img_temp2,1,width2,height2);{set length of image array}
+    for fitsY:=0 to height2-1 do
+      for fitsX:=0 to width2-1  do
+        img_temp2[0,fitsX,fitsY]:=0;{mark as no surveyed area}
+
+    for fitsY:=0 to height2-1 do
+    begin
+      for fitsX:=0 to width2-1  do
+      begin
+        if (( img_temp2[0,fitsX,fitsY]=0){area not surveyed} and (img[0,fitsX,fitsY]-backgr>star_level {5*noise_level}){star}) then {new star. For analyse used sigma is 5, so not too low.}
+        begin
+          HFD(img,fitsX,fitsY, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+          if ((hfd1>0.8) {two pixels minimum} and (hfd1<=15)) then
+          begin
+//            hfd_list[star_counter]:=hfd1;{store}
+//            inc(star_counter);
+//            if star_counter>=len then begin len:=len+1000; SetLength(hfd_list,len);{increase size} end;
+
+
+            {store values}
+            hfdlist[nhfd]:=hfd1; inc(nhfd); if nhfd>=length(hfdlist) then SetLength(hfdlist,nhfd+100); {adapt length if required and store hfd value}
+            if  sqr(xc - (width2 div 2) )+sqr(yc - (height2 div 2))<sqr(0.25)*(sqr(width2 div 2)+sqr(height2 div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
+            else
+            begin
+              if  sqr(xc - (width2 div 2) )+sqr(yc - (height2 div 2))>sqr(0.75)*(sqr(width2 div 2)+sqr(height2 div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
+
+              if ( (xc<(width2 div 2)) and (yc<(height2 div 2)) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
+              if ( (xc>(width2 div 2)) and (yc<(height2 div 2)) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
+              if ( (xc<(width2 div 2)) and (yc>(height2 div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+100);        end;
+              if ( (xc>(width2 div 2)) and (yc>(height2 div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
+            end;
+
+
+            size:=round(3*hfd1);
+            for j:=fitsY to fitsY+size do {Mark the whole star area as surveyed}
+               for i:=fitsX-size to fitsX+size do
+                 if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
+                   img_temp2[0,i,j]:=1;
+          end;
+        end;
+      end;
+    end;
+
+    nr_stars:=nhfd;
+//    nr_stars:=backgr;
+
+    if nhfd>0 then
+    begin
+      SetLength(hfdlist,nhfd);{set size correctly}
+      hfd_median:=SMedian(hfdList);
+    end
+    else hfd_median:=99;
+
+
+    if nhfd_center>0 then
+    begin
+      SetLength(hfdlist_center,nhfd_center); {set length correct}
+      median_center:=SMedian(hfdlist_center);
+    end
+    else median_center:=99;
+
+
+    if nhfd_outer_ring>0 then
+    begin
+      SetLength(hfdlist_outer_ring,nhfd_outer_ring);{set size correctly}
+      median_outer_ring:=SMedian(hfdlist_outer_ring);
+    end
+    else median_outer_ring:=99;
+
+    if nhfd_bottom_left>0 then
+    begin
+      SetLength(hfdlist_bottom_left,nhfd_bottom_left);{set size correctly}
+      median_bottom_left:=SMedian(hfdlist_bottom_left);
+    end
+    else median_bottom_left:=99;
+
+    if nhfd_bottom_right>0 then
+    begin
+      SetLength(hfdList_bottom_right,nhfd_bottom_right);{set size correctly}
+      median_bottom_right:=SMedian(hfdList_bottom_right);
+    end
+    else median_bottom_right:=99;
+
+    if nhfd_top_left>0 then
+    begin
+      SetLength(hfdList_top_left,nhfd_top_left);{set size correctly}
+      median_top_left:=SMedian(hfdList_top_left);
+    end
+    else median_top_left:=99;
+
+    if nhfd_top_right>0 then
+    begin
+      SetLength(hfdList_top_right,nhfd_top_right);{set size correctly}
+      median_top_right:=SMedian(hfdList_top_right);
+    end
+    else median_top_right:=99;
+  end;{backgr>8}
+
+  hfdlist:=nil;{release memory}
+
+  hfdlist_center:=nil;
+  hfdlist_outer_ring:=nil;
+
+  hfdlist_top_left:=nil;
+  hfdlist_top_right:=nil;
+  hfdlist_bottom_left:=nil;
+  hfdlist_bottom_right:=nil;
 
   img_temp2:=nil;{free mem}
 end;
@@ -1427,7 +1582,7 @@ begin
         else
         begin {light frame}
 
-          analyse_fits(hfd_counter,backgr, hfd_median, img); {find background, number of stars, median HFD}
+          analyse_fits(img,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
 
           ListView1.Items.BeginUpdate;
           try
@@ -2633,7 +2788,8 @@ var
   Save_Cursor          : TCursor;
   loaded               : boolean;
   img                  : image_array;
-  nr_stars,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right : double;
+
+  nr_stars, hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right : double;
 
 begin
   Save_Cursor := Screen.Cursor;
@@ -2776,9 +2932,18 @@ begin
               lv.Items.item[c].subitems.Strings[B_date]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
               lv.Items.item[c].subitems.Strings[insp_focus_pos]:=inttostr(focus_pos);
 
-              CCD_inspector(false {toscreen},nr_stars, hfd_median,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right, img); {find hfd values}
+//            CCD_inspector(false {toscreen},nr_stars, hfd_median,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right, img); {find hfd values}
 
+              analyse_fits_extended(img, nr_stars, hfd_median,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right); {analyse several areas}
+
+              if ((hfd_median>15) or (hfd_center>15) or (hfd_outer_ring>15) or (hfd_bottom_left>15) or (hfd_bottom_right>15) or (hfd_top_left>15) or (hfd_top_right>15)) then
+              begin
+                lv.Items.item[c].checked:=false; {uncheck}
+                lv.Items.item[c].subitems.Strings[insp_nr_stars]:='❌'    ;
+              end
+              else
               lv.Items.item[c].subitems.Strings[insp_nr_stars]:=floattostrF2(nr_stars,0,0);
+
               lv.Items.item[c].subitems.Strings[insp_nr_stars+2]:=floattostrF2(hfd_median,0,3);
               lv.Items.item[c].subitems.Strings[insp_nr_stars+3]:=floattostrF2(hfd_center,0,3);
               lv.Items.item[c].subitems.Strings[insp_nr_stars+4]:=floattostrF2(hfd_outer_ring,0,3);
@@ -2792,7 +2957,7 @@ begin
             if amode=3 then {listview7 photometry}
             begin
 
-              analyse_fits(hfd_counter, backgr, hfd_median,img); {find background, number of stars, median HFD}
+              analyse_fits(img ,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
               lv.Items.item[c].subitems.Strings[P_background]:=inttostr5(round(backgr));
               lv.Items.item[c].subitems.Strings[P_filter]:=filter_name;
               lv.Items.item[c].subitems.Strings[P_hfd]:=floattostrF2(hfd_median,0,1);
@@ -3809,19 +3974,19 @@ end;
 
 procedure Tstackmenu1.curve_fitting1Click(Sender: TObject);
 var
-   p,a,b,position, center : double;
+   p,a,b,position, center,hfd : double;
    c,img_counter,i    : integer;
    array_hfd : array of tdouble2;
 const
    len: integer= 200;
 begin
   memo2_message('Finding the best focus position for each area using hyperbola curve fitting');
-
+  memo2_message('Positions are for an image with pixel position 1,1 at left bottom. So B_L=bottom_left is at corner of pixel position 1,1.');
   {do first or second time}
   analyse_listview(listview8, 4 {full header and data inspector mode});
 
   setlength(array_hfd,len);
-  for i:=1 to 7 do
+  for i:=1 to 7 do {do all hfd areas}
   begin
     img_counter:=0;
     with listview8 do
@@ -3829,13 +3994,18 @@ begin
     begin
       if Items.item[c].checked then
       begin
+
         position:=strtofloat2(Items.item[c].subitems.Strings[insp_focus_pos]);{inefficient but simple code to convert string back to float}
         if position>0 then
         begin
-          array_hfd[img_counter,1]:=position;
-          array_hfd[img_counter,2]:=strtofloat(Items.item[c].subitems.Strings[insp_focus_pos+i]);
-          inc(img_counter);
-          if img_counter>=len then begin len:=len+200; setlength(array_hfd,len); {adapt size} end;
+          hfd:=strtofloat(Items.item[c].subitems.Strings[insp_focus_pos+i]);
+          if hfd<15 then {valid data}
+          begin
+            array_hfd[img_counter,1]:=position;
+            array_hfd[img_counter,2]:=hfd;
+            inc(img_counter);
+            if img_counter>=len then begin len:=len+200; setlength(array_hfd,len); {adapt size} end;
+          end;
         end
         else memo2_message('█ █ █ █ █ █  Error, no focus position in fits header! █ █ █ █ █ █ ');
       end;
@@ -3843,13 +4013,13 @@ begin
     if img_counter>=5 then
     begin
       find_best_hyperbola_fit(array_hfd, img_counter, p,a,b); {input data[n,1]=position,data[n,2]=hfd, output: bestfocusposition=p, a, b of hyperbola}
-      if i=1 then       memo2_message('median'+#9+#9+     'Focus='+floattostrf2(p,0,0)+#9+', a='+floattostrf2(a,0,5)+#9+', b='+floattostrf2(b,0,5));
-      if i=2 then begin memo2_message('center'+#9+#9+     'Focus='+floattostrf2(p,0,0)+#9+', a='+floattostrf2(a,0,5)+#9+', b='+floattostrf2(b,0,5));center:=p; end;
-      if i=3 then       memo2_message('outer_ring'+#9+#9+ 'Focus='+floattostrf2(p,0,0)+#9+', a='+floattostrf2(a,0,5)+#9+', b='+floattostrf2(b,0,5));
-      if i=4 then begin memo2_message('bottom_left'+#9+#9+'Focus='+floattostrf2(p,0,0)+#9+', a='+floattostrf2(a,0,5)+#9+', b='+floattostrf2(b,0,5) +#9+'offset: '+floattostrf2(p-center,0,0)); end;
-      if i=5 then begin memo2_message('bottom_right'+#9+  'Focus='+floattostrf2(p,0,0)+#9+', a='+floattostrf2(a,0,5)+#9+', b='+floattostrf2(b,0,5) +#9+'offset: '+floattostrf2(p-center,0,0)); end;
-      if i=6 then begin memo2_message('top_left'+#9+#9+   'Focus='+floattostrf2(p,0,0)+#9+', a='+floattostrf2(a,0,5)+#9+', b='+floattostrf2(b,0,5) +#9+'offset: '+floattostrf2(p-center,0,0)); end;
-      if i=7 then begin memo2_message('top_right'+#9+#9+  'Focus='+floattostrf2(p,0,0)+#9+', a='+floattostrf2(a,0,5)+#9+', b='+floattostrf2(b,0,5) +#9+'offset: '+floattostrf2(p-center,0,0)); end;
+      if i=1 then       memo2_message('median'+#9+#9+     'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'_____________'            +#9+#9+'lowest error='+floattostrf2(lowest_error,0,5)+#9+' iteration_cycles='+floattostrf2(iteration_cycles,0,0));
+      if i=2 then begin memo2_message('center'+#9+#9+     'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'_____________'            +#9+#9+'lowest error='+floattostrf2(lowest_error,0,5)+#9+' iteration_cycles='+floattostrf2(iteration_cycles,0,0));center:=p; end;
+      if i=3 then       memo2_message('outer_ring'+#9+#9+ 'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'lowest error='+floattostrf2(lowest_error,0,5)+#9+' iteration_cycles='+floattostrf2(iteration_cycles,0,0));
+      if i=4 then begin memo2_message('bottom_left'+#9+#9+'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'lowest error='+floattostrf2(lowest_error,0,5)+#9+' iteration_cycles='+floattostrf2(iteration_cycles,0,0)); end;
+      if i=5 then begin memo2_message('bottom_right'+#9+  'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'lowest error='+floattostrf2(lowest_error,0,5)+#9+' iteration_cycles='+floattostrf2(iteration_cycles,0,0)); end;
+      if i=6 then begin memo2_message('top_left'+#9+#9+   'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'lowest error='+floattostrf2(lowest_error,0,5)+#9+' iteration_cycles='+floattostrf2(iteration_cycles,0,0)); end;
+      if i=7 then begin memo2_message('top_right'+#9+#9+  'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'lowest error='+floattostrf2(lowest_error,0,5)+#9+' iteration_cycles='+floattostrf2(iteration_cycles,0,0)); end;
     end
     else
     if i=1 then memo2_message('█ █ █ █ █ █  Error, five or more images are required at different focus positions! █ █ █ █ █ █ ');
@@ -4002,9 +4172,7 @@ procedure Tstackmenu1.listview8CustomDrawSubItem(Sender: TCustomListView;
 var  error2,x : integer;
      st     : string;
 begin
-  st:=sender.Items.item[Item.Index].subitems.Strings[insp_nr_stars];
-  val(st,x,error2);
-  if x<100 then {not enough stars}
+  if sender.Items.item[Item.Index].subitems.Strings[insp_nr_stars]='❌'  then
     Sender.Canvas.Font.Color := clred
   else
     Sender.Canvas.Font.Color := clmenutext;{required for high contrast settings. Otherwise it is always black}
@@ -5742,16 +5910,29 @@ end;
 
 procedure Tstackmenu1.analyse_inspector1Click(Sender: TObject);
 begin
-  memo2_message('Inspector routine. Note hfd values above about 12 will not be detected. Un-check these files prior to curve fitting ');
+  stackmenu1.memo2.lines.add('Inspector routine using multiple images. Usage:');
+  stackmenu1.memo2.lines.add('- Browse for a number of short exposure images made at different focuser positions around focus. Use a fixed focuser step size and avoid backlash.');
+  stackmenu1.memo2.lines.add('- Press analyse to measure the area hfd values of each image.');
+  stackmenu1.memo2.lines.add('- Press curve fitting. The curve fit routine will calculate the best focuser position for each area using the hfd values. The focuser differences from center will indicate tilt & curvature of the image.');
+  stackmenu1.memo2.lines.add('');
+  stackmenu1.memo2.lines.add('Remarks:');
+  stackmenu1.memo2.lines.add('It is possible to make more then one exposure per focuser position, but this number should be the same for each focuser point.');
+  stackmenu1.memo2.lines.add('Note that hfd values above about 12 will not be detected. Un-check these files prior to curve fitting ');
+  stackmenu1.memo2.lines.add('');
+  memo2_message('Start analysing images');
   analyse_listview(listview8, 4 {full header and data inspector mode});
-  memo2_message('Ready. To copy result, select the rows with ctrl-A and copy with ctrl-C');
+
+  listview8.Selected :=nil; {remove any selection}
+  listview8.ItemIndex := 0;{mark where we are. }
+  listview8.Items[0].MakeVisible(False);{scroll to selected item and fix last red colouring}
+
+  memo2_message('Ready analysing. To copy result, select the rows with ctrl-A and copy the rows with ctrl-C. They can be pasted into a spreadsheet. Press now "curve fitting" to measure tilt and curvature in focuser positions.');
 end;
 
 procedure Tstackmenu1.apply_hue1Click(Sender: TObject);
 var fitsX, fitsY,col,fuzziness :integer;
     r,g,b,h,s,v,oldhue,newhue,dhue,saturation_factor : single;
     Save_Cursor:TCursor;
-    selected_area : boolean;
     colour: tcolor;
 begin
   if ((fits_file=false) and (naxis3<>3)) then exit;
