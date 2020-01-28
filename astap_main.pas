@@ -98,6 +98,15 @@ type
     MenuItem14: TMenuItem;
     loadsettings1: TMenuItem;
     localbackgroundequalise1: TMenuItem;
+    menufindnext1: TMenuItem;
+    Menufind1: TMenuItem;
+    menupaste: TMenuItem;
+    menucopy1: TMenuItem;
+    PopupMenu_memo1: TPopupMenu;
+    radec_copy1: TMenuItem;
+    radec_paste1: TMenuItem;
+    radec_search1: TMenuItem;
+    PopupMenu_ra_dec1: TPopupMenu;
     save_settings1: TMenuItem;
     MenuItem16: TMenuItem;
     MenuItem17: TMenuItem;
@@ -252,6 +261,13 @@ type
     procedure measuretotalmagnitude1Click(Sender: TObject);
     procedure loadsettings1Click(Sender: TObject);
     procedure localbackgroundequalise1Click(Sender: TObject);
+    procedure menucopy1Click(Sender: TObject);
+    procedure Menufind1Click(Sender: TObject);
+    procedure menufindnext1Click(Sender: TObject);
+    procedure menupasteClick(Sender: TObject);
+    procedure radec_copy1Click(Sender: TObject);
+    procedure radec_paste1Click(Sender: TObject);
+    procedure radec_search1Click(Sender: TObject);
     procedure save_settings1Click(Sender: TObject);
     procedure enterposition1Click(Sender: TObject);
     procedure inversimage1Click(Sender: TObject);
@@ -431,6 +447,11 @@ var
    old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
 
    warning_str :string; {for solver}
+
+var
+  position_find: Integer; {for fits header memo1 popup menu}
+const
+  PatternToFind : string=''; {for fits header memo1 popup menu }
 
 const
    max_range  {range histogram 255 or 65535 or streched} : integer=255;
@@ -1054,7 +1075,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.315 dated 2020-1-22';
+  #13+#10+'Version ß0.9.316 dated 2020-1-28';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1630,6 +1651,31 @@ begin
     end
   end;
 end;
+procedure search_database;
+var
+   ra0,dec0,length0,width0,pa : double;
+   objname : string;
+begin
+  with mainwindow do
+  begin
+    objname:=uppercase(inputbox('Retrieve position from deepsky database','Object name:' , extract_objectname_from_filename(filename2) ));
+    load_deep;{Load the deepsky database once. If loaded, no action}
+    if length(objname)>1 then {Object name length should be two or longer}
+    begin
+      linepos:=2;{Set pointer to the beginning. First two lines are comments}
+      repeat
+        read_deepsky('T' {full search},0 {ra},0 {dec},1 {cos(telescope_dec},2*pi{fov},{var} ra0,dec0,length0,width0,pa);{deepsky database search}
+        if ((objname=uppercase(naam2)) or (objname=uppercase(naam3)) or (objname=uppercase(naam4))) then  {uppercase required for e.g. Sh2-105}
+        begin
+          ra1.text:=prepare_ra(ra0,' ');{Add object position}
+          dec1.text:=prepare_dec(dec0,' ');
+          linepos:=$FFFFFF; {Stop}
+       end;
+      until linepos>=$FFFFFF;{Found object or end of database}
+    end;
+  end;{with mainwindow}
+end;
+
 
 
 procedure Tmainwindow.ra1DblClick(Sender: TObject); {retrieve object position from database}
@@ -1637,21 +1683,11 @@ var
    ra0,dec0,length0,width0,pa : double;
    objname : string;
 begin
-  objname:=uppercase(inputbox('Retrieve position from deepsky database','Object name:' , extract_objectname_from_filename(filename2) ));
-  load_deep;{Load the deepsky database once. If loaded, no action}
-  if length(objname)>1 then {Object name length should be two or longer}
-  begin
-    linepos:=2;{Set pointer to the beginning. First two lines are comments}
-    repeat
-      read_deepsky('T' {full search},0 {ra},0 {dec},1 {cos(telescope_dec},2*pi{fov},{var} ra0,dec0,length0,width0,pa);{deepsky database search}
-      if ((objname=uppercase(naam2)) or (objname=uppercase(naam3)) or (objname=uppercase(naam4))) then  {uppercase required for e.g. Sh2-105}
-      begin
-        ra1.text:=prepare_ra(ra0,' ');{Add object position}
-        dec1.text:=prepare_dec(dec0,' ');
-        linepos:=$FFFFFF; {Stop}
-     end;
-    until linepos>=$FFFFFF;{Found object or end of database}
-  end;
+   {$IfDef Darwin}// for OS X,
+     exit; {double click is also triggered by single click.}
+   {$ENDIF}
+  search_database;
+
 end;
 
 procedure Tmainwindow.remove_annotations1Click(Sender: TObject);
@@ -2251,8 +2287,8 @@ begin
     mainwindow.ra1.text:=prepare_ra(ra0,' ');{show center of image}
     mainwindow.dec1.text:=prepare_dec(dec0,' ');
     {$IfDef Darwin}// {MacOS}
-      ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
-      mainwindow.dec1change(nil);
+      //ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
+      //mainwindow.dec1change(nil);
     {$ENDIF}
     plot_north;
     update_menu_related_to_solver(true);{update menus section}
@@ -4248,7 +4284,7 @@ begin
         begin
           mainwindow.dec1.text:=get_string;
          {$IfDef Darwin}//{MacOS}
-          mainwindow.ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
+          mainwindow.dec1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
          {$ENDIF}
         end
         else
@@ -6796,8 +6832,72 @@ begin
   end {fits file}
   else
   application.messagebox(pchar('Pull first a rectangle with the mouse while holding the left mouse button down'),'',MB_OK);
+end;
+
+procedure Tmainwindow.menucopy1Click(Sender: TObject);{for fits header memo1 popup menu}
+begin
+  Clipboard.AsText:=copy(Memo1.Text,Memo1.SelStart+1, Memo1.SelLength);
+end;
+
+
+procedure Tmainwindow.Menufind1Click(Sender: TObject); {for fits header memo1 popup menu}
+begin
+  PatternToFind:=uppercase(inputbox('Find','Text to find in fits header:' ,PatternToFind));
+  position_find := pos(PatternToFind, uppercase( Memo1.Text));
+  if position_find > 0 then
+  begin
+     Memo1.SelStart := position_find-1;
+     Memo1.SelLength := Length(PatternToFind);
+     Memo1.SetFocus; // necessary so highlight is visible
+  end;
+end;
+
+procedure Tmainwindow.menufindnext1Click(Sender: TObject);{for fits header memo1 popup menu}
+begin
+  position_find := posex(PatternToFind, uppercase(Memo1.Text),position_find+1);
+  if position_find > 0 then
+  begin
+     Memo1.SelStart := position_find-1;
+     Memo1.SelLength := Length(PatternToFind);
+     Memo1.SetFocus; // necessary so highlight is visible
+  end;
 
 end;
+
+procedure Tmainwindow.menupasteClick(Sender: TObject);{for fits header memo1 popup menu}
+var
+  I : integer;
+  S,T : string;
+begin
+  with Memo1 do
+  begin
+    I:= SelStart;
+    S:= Memo1.Text;
+    T:=Clipboard.AsText;
+    system.insert(T, S, SelStart + 1);
+    Text:= S;
+    SelStart:= I + length(T);
+  end;
+end;
+
+procedure Tmainwindow.radec_copy1Click(Sender: TObject);
+begin
+  if ra1.focused then Clipboard.AsText:=ra1.text;
+  if dec1.focused then Clipboard.AsText:=dec1.text;
+
+end;
+
+procedure Tmainwindow.radec_paste1Click(Sender: TObject);
+begin
+  if ra1.focused then ra1.text:=Clipboard.AsText;
+  if dec1.focused then dec1.text:=Clipboard.AsText;
+end;
+
+procedure Tmainwindow.radec_search1Click(Sender: TObject);
+begin
+  search_database;
+end;
+
 
 procedure Tmainwindow.save_settings1Click(Sender: TObject);
 begin
@@ -7606,8 +7706,8 @@ begin
         ra1.Text:=floattostr2(strtofloat2(list[0])*12/pi);
         dec1.Text:=floattostr2(strtofloat2(list[1])*180/pi);
         {$IfDef Darwin}// for OS X,
-          mainwindow.ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
-          mainwindow.dec1change(nil);
+          //mainwindow.ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
+          //mainwindow.dec1change(nil);
         {$ENDIF}
 
         field_size:=strtofloat2(list[3])*180/pi;{field height in degrees}
@@ -7716,6 +7816,7 @@ begin
 end;
 
 
+
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
     s,old      : string;
@@ -7810,7 +7911,7 @@ begin
         begin
            mainwindow.ra1.text:=GetOptionValue('ra');
            {$IfDef Darwin}// for OS X,
-             mainwindow.ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
+            // mainwindow.ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
            {$ENDIF}
         end;
         if hasoption('spd') then {south pole distance. Negative values can't be passed via commandline}
@@ -7819,7 +7920,7 @@ begin
           str(dec0:0:6,s);
           mainwindow.dec1.text:=s;
           {$IfDef Darwin}// for OS X,
-            mainwindow.dec1change(nil);
+          //  mainwindow.dec1change(nil);
           {$ENDIF}
         end;
 
@@ -7852,8 +7953,7 @@ begin
 
           write_ini(true);{write solution to ini file}
           write_wcs;{write memo1 without using filestream}
-//          try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
-
+//        try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
 
           //log_to_file(cmdline+' =>succes');
 
@@ -7888,6 +7988,8 @@ begin
         end;
         esc_pressed:=true;{kill any running activity. This for APT}
         if hasoption('log') then stackmenu1.Memo2.Lines.SavetoFile(ChangeFileExt(filename2,'.log'));{save memo2 log to log file}
+        //sleep(300);
+
         halt(errorlevel); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
 
         //  Exit status:
@@ -8134,7 +8236,7 @@ begin
   SetLength(hfdlist_bottom_right,len);
 
 //  get_background(0,img,{cblack=0} false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
-  get_background(0,img,{cblack=0} true{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
+  get_background(0,img,{cblack=0} false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
   setlength(img_temp,1,width2,height2);{set length of image array}
   for fitsY:=0 to height2-1 do
@@ -8657,6 +8759,8 @@ begin
   inp:= stringreplace(inp, ',', '.',[rfReplaceAll]);
   inp:= stringreplace(inp, ':', ' ',[rfReplaceAll]);
   inp:= stringreplace(inp, 'h', ' ',[rfReplaceAll]);
+  inp:= stringreplace(inp, 'm', ' ',[rfReplaceAll]);
+  inp:= stringreplace(inp, 's', ' ',[rfReplaceAll]);
   inp:= stringreplace(inp, '  ', ' ',[rfReplaceAll]);
   inp:= stringreplace(inp, '  ', ' ',[rfReplaceAll]);
 
@@ -8706,6 +8810,8 @@ begin
   inp:= stringreplace(inp, ',', '.',[rfReplaceAll]);
   inp:= stringreplace(inp, ':', ' ',[rfReplaceAll]);
   inp:= stringreplace(inp, 'd', ' ',[rfReplaceAll]);
+  inp:= stringreplace(inp, 'm', ' ',[rfReplaceAll]);
+  inp:= stringreplace(inp, 's', ' ',[rfReplaceAll]);
   inp:= stringreplace(inp, '°', ' ',[rfReplaceAll]);
   inp:= stringreplace(inp, '  ', ' ',[rfReplaceAll]);
   inp:= stringreplace(inp, '  ', ' ',[rfReplaceAll]);

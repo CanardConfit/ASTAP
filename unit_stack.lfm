@@ -1,12 +1,12 @@
 object stackmenu1: Tstackmenu1
-  Left = 138
+  Left = 526
   Height = 660
-  Top = 116
-  Width = 1706
+  Top = 262
+  Width = 1024
   AllowDropFiles = True
   Caption = 'stack menu'
   ClientHeight = 660
-  ClientWidth = 1706
+  ClientWidth = 1024
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -51,7 +51,7 @@ object stackmenu1: Tstackmenu1
     Left = 0
     Height = 150
     Top = 510
-    Width = 1706
+    Width = 1024
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -198,7 +198,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1688
+    Left = 1006
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     Height = 448
     Hint = 'Stack menu'
     Top = 0
-    Width = 1705
+    Width = 1023
     ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
@@ -233,8 +233,8 @@ object stackmenu1: Tstackmenu1
     object Images: TTabSheet
       Hint = 'Select here the light frames'
       Caption = 'Images'
-      ClientHeight = 420
-      ClientWidth = 1697
+      ClientHeight = 400
+      ClientWidth = 1015
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -305,10 +305,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview1: TListView
         Left = 0
-        Height = 380
+        Height = 360
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1697
+        Width = 1015
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -572,8 +572,8 @@ object stackmenu1: Tstackmenu1
     object Darks: TTabSheet
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
-      ClientHeight = 420
-      ClientWidth = 1697
+      ClientHeight = 418
+      ClientWidth = 1017
       ImageIndex = 1
       ParentFont = False
       object browse_darks1: TButton
@@ -591,10 +591,10 @@ object stackmenu1: Tstackmenu1
       end
       object replace_by_master_dark1: TButton
         Left = 312
-        Height = 25
+        Height = 20
         Hint = 'Combine to check-marked files to master dark. The other files are not affected.'
         Top = 6
-        Width = 295
+        Width = 338
         AutoSize = True
         Caption = 'Replace check-marked by one or more master dark'
         OnClick = replace_by_master_dark1Click
@@ -603,10 +603,10 @@ object stackmenu1: Tstackmenu1
       end
       object clear_dark_list1: TButton
         Left = 736
-        Height = 25
+        Height = 20
         Hint = 'Clear image list'
         Top = 6
-        Width = 53
+        Width = 60
         AutoSize = True
         Caption = 'Clear'
         OnClick = clear_dark_list1Click
@@ -617,10 +617,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview2: TListView
         Left = 0
-        Height = 380
+        Height = 378
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1696
+        Width = 1016
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -628,6 +628,7 @@ object stackmenu1: Tstackmenu1
           item
             AutoSize = True
             Caption = 'File'
+            MinWidth = 150
             Width = 33
           end        
           item
@@ -713,10 +714,10 @@ object stackmenu1: Tstackmenu1
       end
       object nr_total_darks1: TLabel
         Left = 272
-        Height = 15
+        Height = 16
         Hint = 'Number of images in the list'
         Top = 10
-        Width = 6
+        Width = 8
         Caption = '0'
         Color = clBtnFace
         ParentColor = False
@@ -727,8 +728,8 @@ object stackmenu1: Tstackmenu1
     object Flats: TTabSheet
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
-      ClientHeight = 420
-      ClientWidth = 1697
+      ClientHeight = 418
+      ClientWidth = 1017
       ImageIndex = 2
       ParentFont = False
       object browse_flats1: TButton
@@ -743,10 +744,10 @@ object stackmenu1: Tstackmenu1
       end
       object replace_by_master_flat1: TButton
         Left = 312
-        Height = 25
+        Height = 20
         Hint = 'Combine the check-marked flats and flat darks to one master flat. The other files are not affected.'
         Top = 6
-        Width = 327
+        Width = 377
         AutoSize = True
         Caption = 'Replace check-marked by master flat, flat darks included.'
         OnClick = replace_by_master_flat1Click
@@ -755,10 +756,10 @@ object stackmenu1: Tstackmenu1
       end
       object clear_selection2: TButton
         Left = 736
-        Height = 25
+        Height = 20
         Hint = 'Remove file list.'
         Top = 6
-        Width = 53
+        Width = 60
         AutoSize = True
         Caption = 'Clear'
         OnClick = clear_selection2Click
@@ -778,10 +779,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview3: TListView
         Left = 0
-        Height = 380
+        Height = 378
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1441
+        Width = 1017
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -789,6 +790,7 @@ object stackmenu1: Tstackmenu1
           item
             AutoSize = True
             Caption = 'File'
+            MinWidth = 150
             Width = 33
           end        
           item
@@ -867,10 +869,10 @@ object stackmenu1: Tstackmenu1
       end
       object nr_total_flats1: TLabel
         Left = 272
-        Height = 15
+        Height = 16
         Hint = 'Number of images in the list'
         Top = 10
-        Width = 6
+        Width = 8
         Caption = '0'
         Color = clBtnFace
         ParentColor = False
@@ -881,8 +883,8 @@ object stackmenu1: Tstackmenu1
     object Bias: TTabSheet
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
-      ClientHeight = 420
-      ClientWidth = 1697
+      ClientHeight = 418
+      ClientWidth = 1017
       ImageIndex = 3
       ParentFont = False
       object browse_bias1: TButton
@@ -897,10 +899,10 @@ object stackmenu1: Tstackmenu1
       end
       object clear_selection3: TButton
         Left = 664
-        Height = 25
+        Height = 20
         Hint = 'Remove file list.'
         Top = 6
-        Width = 53
+        Width = 60
         AutoSize = True
         Caption = 'Clear'
         OnClick = clear_selection3Click
@@ -920,10 +922,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview4: TListView
         Left = 0
-        Height = 380
+        Height = 378
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1697
+        Width = 1017
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -931,6 +933,7 @@ object stackmenu1: Tstackmenu1
           item
             AutoSize = True
             Caption = 'File'
+            MinWidth = 150
             Width = 33
           end        
           item
@@ -1007,10 +1010,10 @@ object stackmenu1: Tstackmenu1
       end
       object nr_total_bias1: TLabel
         Left = 272
-        Height = 15
+        Height = 16
         Hint = 'Number of images in the list'
         Top = 10
-        Width = 6
+        Width = 8
         Caption = '0'
         Color = clBtnFace
         ParentColor = False
@@ -1021,22 +1024,23 @@ object stackmenu1: Tstackmenu1
     object Result1: TTabSheet
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
-      ClientHeight = 420
-      ClientWidth = 1697
+      ClientHeight = 418
+      ClientWidth = 1017
       ImageIndex = 6
       ParentFont = False
       object listview5: TListView
         Left = 0
-        Height = 380
+        Height = 378
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1697
+        Width = 1017
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Columns = <        
           item
             AutoSize = True
             Caption = 'File'
+            MinWidth = 150
             Width = 33
           end        
           item
@@ -1097,9 +1101,9 @@ object stackmenu1: Tstackmenu1
       end
       object Label_results1: TLabel
         Left = 16
-        Height = 15
+        Height = 16
         Top = 8
-        Width = 345
+        Width = 399
         Caption = 'Stacked images are displayed here. Double click to view in viewer.'
         ParentColor = False
         ParentFont = False
@@ -1634,6 +1638,7 @@ object stackmenu1: Tstackmenu1
           Top = 160
           Width = 264
           ItemHeight = 15
+          ItemIndex = 0
           Items.Strings = (
             '2x2 mean'
             '3x3 mean'
@@ -1654,6 +1659,7 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
           Style = csDropDownList
           TabOrder = 20
+          Text = '2x2 mean'
         end
       end
       object test_flat_mean: TButton
@@ -2931,16 +2937,16 @@ object stackmenu1: Tstackmenu1
     object tab_blink1: TTabSheet
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
-      ClientHeight = 420
-      ClientWidth = 1697
+      ClientHeight = 418
+      ClientWidth = 1017
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
         Left = 0
-        Height = 380
+        Height = 378
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1697
+        Width = 1017
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -2948,6 +2954,7 @@ object stackmenu1: Tstackmenu1
           item
             AutoSize = True
             Caption = 'File'
+            MinWidth = 150
             Width = 33
           end        
           item
@@ -3039,10 +3046,10 @@ object stackmenu1: Tstackmenu1
       end
       object clear_blink_list1: TButton
         Left = 1240
-        Height = 25
+        Height = 20
         Hint = 'Clear image list'
         Top = 5
-        Width = 53
+        Width = 60
         AutoSize = True
         Caption = 'Clear'
         OnClick = clear_blink_list1Click
@@ -3053,10 +3060,10 @@ object stackmenu1: Tstackmenu1
       end
       object nr_total_blink1: TLabel
         Left = 272
-        Height = 15
+        Height = 16
         Hint = 'Number of images in the list'
         Top = 10
-        Width = 6
+        Width = 8
         Caption = '0'
         ParentColor = False
         ParentFont = False
@@ -3096,10 +3103,10 @@ object stackmenu1: Tstackmenu1
       end
       object align_blink1: TCheckBox
         Left = 624
-        Height = 19
+        Height = 18
         Hint = 'Use star alignment to align images. For the first round additional time will be required for calculating solution. Clear alignment if you reuse images.'
         Top = 0
-        Width = 89
+        Width = 95
         Caption = 'Align images'
         Checked = True
         OnChange = align_blink1Change
@@ -3109,10 +3116,10 @@ object stackmenu1: Tstackmenu1
       end
       object blink_star_filter1: TCheckBox
         Left = 624
-        Height = 19
+        Height = 18
         Hint = 'Activate this option to suppress the stars based on the stars of the first image.'
         Top = 17
-        Width = 207
+        Width = 226
         Caption = 'Filter out stars based on first image.'
         OnChange = blink_star_filter1Change
         ParentFont = False
@@ -3120,9 +3127,9 @@ object stackmenu1: Tstackmenu1
       end
       object Label62: TLabel
         Left = 856
-        Height = 15
+        Height = 16
         Top = 8
-        Width = 41
+        Width = 48
         Caption = 'σ factor'
         Color = clBtnFace
         ParentColor = False
@@ -3172,9 +3179,9 @@ object stackmenu1: Tstackmenu1
       end
       object Label63: TLabel
         Left = 1016
-        Height = 15
+        Height = 16
         Top = 8
-        Width = 88
+        Width = 101
         Caption = 'star suppr. diam.'
         Color = clBtnFace
         ParentColor = False
@@ -3184,10 +3191,10 @@ object stackmenu1: Tstackmenu1
       end
       object clear_blink_alignment1: TButton
         Left = 1304
-        Height = 25
+        Height = 20
         Hint = 'Clear alignment and photometric calibration. Apply this if alignment is poor.'
         Top = 5
-        Width = 110
+        Width = 123
         AutoSize = True
         Caption = 'Clear alignment'
         OnClick = clear_blink_alignment1Click
@@ -3210,10 +3217,10 @@ object stackmenu1: Tstackmenu1
       object help_blink1: TLabel
         Cursor = crHandPoint
         Left = 1440
-        Height = 30
+        Height = 24
         Hint = 'Online help about blink and photometry'
         Top = 0
-        Width = 9
+        Width = 11
         Caption = '?'
         Font.Color = clBlue
         Font.Height = -21
@@ -3225,10 +3232,10 @@ object stackmenu1: Tstackmenu1
       end
       object export_aligned_files1: TButton
         Left = 1488
-        Height = 25
+        Height = 20
         Hint = 'Export the images with solution to new aligned image files (_aligned.fit). Prior to this run the blink routine once to get alignment solutions.'
         Top = 5
-        Width = 102
+        Width = 116
         AutoSize = True
         Caption = 'Export aligned'
         OnClick = export_aligned_files1Click
@@ -3239,9 +3246,9 @@ object stackmenu1: Tstackmenu1
       end
       object Label49: TLabel
         Left = 1544
-        Height = 15
+        Height = 16
         Top = 12
-        Width = 40
+        Width = 49
         Caption = 'Label49'
         ParentColor = False
         ParentFont = False
@@ -3249,8 +3256,8 @@ object stackmenu1: Tstackmenu1
     end
     object tab_photometry1: TTabSheet
       Caption = 'Photometry'
-      ClientHeight = 420
-      ClientWidth = 1697
+      ClientHeight = 400
+      ClientWidth = 1015
       ImageIndex = 11
       ParentFont = False
       object browse_photometry1: TButton
@@ -3361,10 +3368,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview7: TListView
         Left = 0
-        Height = 380
+        Height = 360
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1697
+        Width = 1015
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3372,6 +3379,7 @@ object stackmenu1: Tstackmenu1
           item
             AutoSize = True
             Caption = 'File'
+            MinWidth = 150
             Width = 33
           end        
           item
@@ -3576,8 +3584,8 @@ object stackmenu1: Tstackmenu1
     end
     object TabSheet1: TTabSheet
       Caption = 'Inspector'
-      ClientHeight = 420
-      ClientWidth = 1697
+      ClientHeight = 400
+      ClientWidth = 1015
       ImageIndex = 17
       object browse_inspector1: TButton
         Left = 32
@@ -3605,10 +3613,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview8: TListView
         Left = 0
-        Height = 380
+        Height = 360
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1697
+        Width = 1015
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3616,6 +3624,7 @@ object stackmenu1: Tstackmenu1
           item
             AutoSize = True
             Caption = 'File'
+            MinWidth = 150
             Width = 33
           end        
           item

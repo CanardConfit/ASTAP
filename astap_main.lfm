@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 466
+  Left = 700
   Height = 616
   Hint = ' '
-  Top = 158
+  Top = 154
   Width = 1095
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -174,6 +174,7 @@ object mainwindow: Tmainwindow
     OnDblClick = ra1DblClick
     ParentFont = False
     ParentShowHint = False
+    PopupMenu = PopupMenu_ra_dec1
     ShowHint = True
     TabOrder = 0
     Text = '00 00 00.0'
@@ -194,6 +195,7 @@ object mainwindow: Tmainwindow
     OnDblClick = ra1DblClick
     ParentFont = False
     ParentShowHint = False
+    PopupMenu = PopupMenu_ra_dec1
     ShowHint = True
     TabOrder = 1
     Text = '+00 00 00.00'
@@ -212,6 +214,7 @@ object mainwindow: Tmainwindow
     OnChange = Memo1Change
     OnKeyUp = Memo1KeyUp
     ParentFont = False
+    PopupMenu = PopupMenu_memo1
     ScrollBars = ssVertical
     TabOrder = 2
     WordWrap = False
@@ -971,7 +974,7 @@ object mainwindow: Tmainwindow
         Caption = 'Solve image astrometric (plate solve)'
         Enabled = False
         Hint = 'Find astrometric solution using either the internal solver or astrometry.net if selected. PNG of JPEG files will be first converted to a 8 bit FITS file with the same name.'
-        ShortCut = 16454
+        ShortCut = 16464
         OnClick = astrometric_solve_image1Click
       end
       object MenuItem9: TMenuItem
@@ -980,7 +983,7 @@ object mainwindow: Tmainwindow
       object AddplatesolvesolutiontoselectedFITSfiles1: TMenuItem
         Caption = 'Batch solve images'
         Hint = 'Find a plate solution for selected files and add to the FITS file header.'
-        ShortCut = 32838
+        ShortCut = 32848
         OnClick = AddplatesolvesolutiontoselectedFITSfiles1Click
       end
       object convert_raw_to_fits1: TMenuItem
@@ -1274,7 +1277,7 @@ object mainwindow: Tmainwindow
   object PopupMenu1: TPopupMenu
     Images = ImageList1
     AutoPopup = False
-    left = 712
+    left = 728
     top = 104
     object Enterlabel1: TMenuItem
       Caption = 'Add annotation'
@@ -2557,5 +2560,44 @@ object mainwindow: Tmainwindow
     MaxAction = ipcmoaNone
     left = 1024
     top = 96
+  end
+  object PopupMenu_ra_dec1: TPopupMenu
+    left = 936
+    top = 32
+    object radec_search1: TMenuItem
+      Caption = 'Search database'
+      Hint = 'Search for a deepsky object position.'
+      OnClick = radec_search1Click
+    end
+    object radec_copy1: TMenuItem
+      Caption = 'Copy'
+      OnClick = radec_copy1Click
+    end
+    object radec_paste1: TMenuItem
+      Caption = 'Paste'
+      OnClick = radec_paste1Click
+    end
+  end
+  object PopupMenu_memo1: TPopupMenu
+    left = 1016
+    top = 36
+    object Menufind1: TMenuItem
+      Caption = 'Find'
+      ShortCut = 16454
+      OnClick = Menufind1Click
+    end
+    object menufindnext1: TMenuItem
+      Caption = 'Find next'
+      ShortCut = 114
+      OnClick = menufindnext1Click
+    end
+    object menucopy1: TMenuItem
+      Caption = 'Copy'
+      OnClick = menucopy1Click
+    end
+    object menupaste: TMenuItem
+      Caption = 'Paste'
+      OnClick = menupasteClick
+    end
   end
 end

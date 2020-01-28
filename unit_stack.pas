@@ -1326,6 +1326,7 @@ begin
 
             {store values}
             hfdlist[nhfd]:=hfd1; inc(nhfd); if nhfd>=length(hfdlist) then SetLength(hfdlist,nhfd+100); {adapt length if required and store hfd value}
+
             if  sqr(xc - (width2 div 2) )+sqr(yc - (height2 div 2))<sqr(0.25)*(sqr(width2 div 2)+sqr(height2 div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
             else
             begin
@@ -2881,6 +2882,7 @@ begin
       else
       loaded:=load_fits(filename,true {light, so also position ra0..},true {full fits},true {reset var},img); {for background or background+hfd+star}
 
+
       if loaded then
       begin {success loading header only}
         try
@@ -2932,9 +2934,33 @@ begin
               lv.Items.item[c].subitems.Strings[B_date]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
               lv.Items.item[c].subitems.Strings[insp_focus_pos]:=inttostr(focus_pos);
 
-//            CCD_inspector(false {toscreen},nr_stars, hfd_median,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right, img); {find hfd values}
-
               analyse_fits_extended(img, nr_stars, hfd_median,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right); {analyse several areas}
+
+
+
+                //          if pos('_210551',filename)>0 then
+            //              if ((pos('_210637',filename)>0) or (pos('_210623',filename)>0)) then
+                          begin
+              //              hfd_median:=hfd_median+6;
+                //            hfd_center:=hfd_center+6;{for test}
+                  //          hfd_outer_ring:=hfd_outer_ring+6;
+                    //        hfd_bottom_left:=hfd_bottom_left+6;
+                      //      hfd_bottom_right:=hfd_bottom_right+6;
+                        //    hfd_top_left:=hfd_top_left+6;
+                          //  hfd_top_right:=hfd_top_right+6;
+
+//                             hfd_median:=hfd_median-4;
+  //                           hfd_center:=hfd_center-4;{for test}
+    //                         hfd_outer_ring:=hfd_outer_ring-4;
+      //                       hfd_bottom_left:=hfd_bottom_left-4;
+        //                     hfd_bottom_right:=hfd_bottom_right-4;
+          //                   hfd_top_left:=hfd_top_left-4;
+            //                 hfd_top_right:=hfd_top_right-4;
+
+                          end;
+
+
+
 
               if ((hfd_median>15) or (hfd_center>15) or (hfd_outer_ring>15) or (hfd_bottom_left>15) or (hfd_bottom_right>15) or (hfd_top_left>15) or (hfd_top_right>15)) then
               begin
@@ -4010,19 +4036,20 @@ begin
         else memo2_message('█ █ █ █ █ █  Error, no focus position in fits header! █ █ █ █ █ █ ');
       end;
     end;
-    if img_counter>=5 then
+    if img_counter>=4 then
     begin
       find_best_hyperbola_fit(array_hfd, img_counter, p,a,b); {input data[n,1]=position,data[n,2]=hfd, output: bestfocusposition=p, a, b of hyperbola}
-      if i=1 then       memo2_message('median'+#9+#9+     'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'_____________'            +#9+#9+'lowest error='+floattostrf2(lowest_error,0,5)+#9+' iteration_cycles='+floattostrf2(iteration_cycles,0,0));
-      if i=2 then begin memo2_message('center'+#9+#9+     'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'_____________'            +#9+#9+'lowest error='+floattostrf2(lowest_error,0,5)+#9+' iteration_cycles='+floattostrf2(iteration_cycles,0,0));center:=p; end;
-      if i=3 then       memo2_message('outer ring'+#9+#9+ 'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'lowest error='+floattostrf2(lowest_error,0,5)+#9+' iteration_cycles='+floattostrf2(iteration_cycles,0,0));
-      if i=4 then begin memo2_message('bottom left'+#9+#9+'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'lowest error='+floattostrf2(lowest_error,0,5)+#9+' iteration_cycles='+floattostrf2(iteration_cycles,0,0)); end;
-      if i=5 then begin memo2_message('bottom right'+#9+  'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'lowest error='+floattostrf2(lowest_error,0,5)+#9+' iteration_cycles='+floattostrf2(iteration_cycles,0,0)); end;
-      if i=6 then begin memo2_message('top left'+#9+#9+   'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'lowest error='+floattostrf2(lowest_error,0,5)+#9+' iteration_cycles='+floattostrf2(iteration_cycles,0,0)); end;
-      if i=7 then begin memo2_message('top right'+#9+#9+  'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'lowest error='+floattostrf2(lowest_error,0,5)+#9+' iteration_cycles='+floattostrf2(iteration_cycles,0,0)); end;
+
+      if i=1 then       memo2_message('full image'+#9+#9+ 'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'_____________'            +#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));
+      if i=2 then begin memo2_message('center'+#9+#9+     'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'_____________'            +#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));center:=p;end;
+      if i=3 then       memo2_message('outer ring'+#9+#9+ 'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));
+      if i=4 then       memo2_message('bottom left'+#9+#9+'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));
+      if i=5 then       memo2_message('bottom right'+#9+  'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));
+      if i=6 then       memo2_message('top left'+#9+#9+   'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));
+      if i=7 then       memo2_message('top right'+#9+#9+  'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));
     end
     else
-    if i=1 then memo2_message('█ █ █ █ █ █  Error, five or more images are required at different focus positions! █ █ █ █ █ █ ');
+    if i=1 then memo2_message('█ █ █ █ █ █  Error, four or more images are required at different focus positions! █ █ █ █ █ █ ');
   end;
 
 end;
