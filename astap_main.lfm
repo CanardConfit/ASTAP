@@ -1,13 +1,13 @@
 object mainwindow: Tmainwindow
-  Left = 700
+  Left = 574
   Height = 616
   Hint = ' '
-  Top = 154
-  Width = 1095
+  Top = 495
+  Width = 1163
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
   ClientHeight = 596
-  ClientWidth = 1095
+  ClientWidth = 1163
   Color = clForm
   Font.CharSet = ANSI_CHARSET
   Font.Color = clBlack
@@ -204,7 +204,7 @@ object mainwindow: Tmainwindow
     Left = 596
     Height = 163
     Top = 5
-    Width = 495
+    Width = 563
     Anchors = [akTop, akLeft, akRight]
     Font.Height = -9
     Font.Name = 'Courier'
@@ -242,11 +242,11 @@ object mainwindow: Tmainwindow
     Height = 445
     Hint = 'hint'
     Top = 176
-    Width = 1120
+    Width = 1188
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
     ClientHeight = 445
-    ClientWidth = 1120
+    ClientWidth = 1188
     Color = 2105376
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
@@ -262,10 +262,10 @@ object mainwindow: Tmainwindow
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
     object Image1: TImage
-      Left = 312
-      Height = 241
-      Top = 40
-      Width = 400
+      Left = 448
+      Height = 264
+      Top = 32
+      Width = 428
       Anchors = [akLeft, akRight, akBottom]
       OnMouseDown = Image1MouseDown
       OnMouseEnter = Image1MouseEnter
@@ -701,13 +701,7 @@ object mainwindow: Tmainwindow
     Left = 0
     Height = 23
     Top = 573
-    Width = 1095
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
+    Width = 1163
     Panels = <    
       item
         Width = 200
@@ -731,9 +725,8 @@ object mainwindow: Tmainwindow
         Width = 150
       end    
       item
-        Width = 50
+        Width = 300
       end>
-    ParentFont = False
     ParentShowHint = False
     SimplePanel = False
     SizeGrip = False
@@ -907,6 +900,7 @@ object mainwindow: Tmainwindow
       end
       object SaveasJPGPNGBMP1: TMenuItem
         Caption = 'Save as JPEG, PNG or BMP'
+        Enabled = False
         Hint = 'Save image as JPEG, PNG or BMP. These files are 8 bit and include annotations.'
         ShortCut = 16458
         OnClick = SaveasJPGPNGBMP1Click

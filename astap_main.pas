@@ -510,7 +510,7 @@ procedure ang_sep(ra1,dec1,ra2,dec2 : double;var sep: double);
 function load_fits(filen:string;light {load as light of dark/flat},load_data,reset_var:boolean;var img_loaded2: image_array): boolean;{load fits file}
 procedure plot_fits(img: timage;center_image,show_header:boolean);
 procedure getfits_histogram(mode :integer);{get histogram, plot histogram, set min & max}
-procedure HFD(img: image_array; x1,y1: integer; var hfd1,star_fwhm,snr{peak/sigma noise},flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity}
+procedure HFD(img: image_array; x1,y1,rs{box size}: integer; var hfd1,star_fwhm,snr{peak/sigma noise},flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity}
 procedure backup_img;
 procedure restore_img;
 function load_image(re_center, plot:boolean) : boolean; {load fits or PNG, BMP, TIF}
@@ -576,7 +576,6 @@ function convert_load_raw(filename3: string): boolean; {convert raw to pgm file 
 procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
-procedure CCD_inspector(toscreen: boolean; var nr_stars,hfd_median,median_center, median_outer_ring, median_bottom_left,median_bottom_right,median_top_left,median_top_right :double; var img : image_array); {find hfd values}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -1075,11 +1074,12 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.316 dated 2020-1-28';
+  #13+#10+'Version ß0.9.318 dated 2020-2-7';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
 end;
+
 
 
 procedure Tmainwindow.FormKeyPress(Sender: TObject; var Key: char);
@@ -6927,9 +6927,9 @@ begin
   begin
     for fitsX:=0 to width2-1-1  do
     begin
-      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>star_level{ 3.5*noise_level}){star}) then {new star}
+      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>star_level{ 5*noise_level[0]}){star}) then {new star}
       begin
-        HFD(img_loaded,fitsX,fitsY, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
         begin
           {for testing}
@@ -7052,6 +7052,7 @@ begin
     Statusbar1.Panels[2].text:='Local standard deviation or star values';
     Statusbar1.Panels[3].text:='X, Y = [pixel value(s)]';
     Statusbar1.Panels[4].text:='RGB values screen';
+    Statusbar1.Panels[7].text:='w x h   distance[arcsec]  angle';
   end;
 end;
 
@@ -7475,7 +7476,6 @@ begin
    begin
      mainwindow.image1.top:=0;
      mainwindow.image1.left:=0;
-//     mainwindow.image1.left:=(mainwindow.panel1.width- mainwindow.image1.width) div 2;
    end;
 end;
 
@@ -7487,20 +7487,18 @@ begin
  panel1.Top:=max(memo1.Height+10, data_range_groupBox1.top+data_range_groupBox1.height+5);
  panel1.left:=0;
 
-
  mw:=mainwindow.width;
  h:=StatusBar1.top-panel1.top;
  w:=round(h*width2/height2);
 
  panel1.width:=mw;
  panel1.height:=h;
+
  mainwindow.image1.height:=h;
  mainwindow.image1.width:=w;
 
  mainwindow.image1.top:=0;
  mainwindow.image1.left:=0;
-//  mainwindow.image1.left:=(mw- w) div 2;
-
 end;
 
 //procedure stretch_image(w,h: integer);
@@ -8175,246 +8173,14 @@ begin
   end;
 end;
 
-procedure CCD_inspector(toscreen: boolean; var nr_stars,hfd_median,median_center, median_outer_ring, median_bottom_left,median_bottom_right,median_top_left,median_top_right :double; var img : image_array); {find hfd values}
-var
- fitsX,fitsY,size, i, j,starX,starY    : integer;
- nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,x1,x2,x3,x4,y1,y2,y3,y4,fontsize : integer;
- hfd1,star_fwhm,snr,flux,xc,yc,
- median_worst,median_best,scale_factor : double;
- hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
- mess1,mess2,hfd_value           : string;
- Save_Cursor:TCursor;
- Fliphorizontal, Flipvertical: boolean;
-const
-   len : integer=1000;
-
-begin
-  if fits_file=false then exit; {file loaded?}
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
-  with mainwindow do
-  begin
-  if toscreen then
-  begin
-    Flipvertical:=mainwindow.Flipvertical1.Checked;
-    Fliphorizontal:=mainwindow.Fliphorizontal1.Checked;
-
-
-    image1.Canvas.Pen.Mode := pmMerge;
-    image1.Canvas.brush.Style:=bsClear;
-    image1.Canvas.font.color:=clyellow;
-    image1.Canvas.Pen.Color := clred;
-    image1.Canvas.Pen.width := round(1+height2/image1.height);{thickness lines}
-    fontsize:=round(max(10,8*height2/image1.height));{adapt font to image dimensions}
-    image1.Canvas.font.size:=fontsize;
- end;
-
-  hfd_median:=0;
-  median_center:=0;
-  median_outer_ring:=0;
-  median_bottom_left:=0;
-  median_bottom_right:=0;
-  median_top_left:=0;
-  median_top_right:=0;
-
-  nhfd:=0;{set counters at zero}
-  nhfd_top_left:=0;
-  nhfd_top_right:=0;
-  nhfd_bottom_left:=0;
-  nhfd_bottom_right:=0;
-  nhfd_center:=0;
-  nhfd_outer_ring:=0;
-  SetLength(hfdlist,len*4);{set array length on a starting value}
-
-  SetLength(hfdlist_center,len);
-  SetLength(hfdlist_outer_ring,len*2);
-
-  SetLength(hfdlist_top_left,len);
-  SetLength(hfdlist_top_right,len);
-  SetLength(hfdlist_bottom_left,len);
-  SetLength(hfdlist_bottom_right,len);
-
-//  get_background(0,img,{cblack=0} false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
-  get_background(0,img,{cblack=0} false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
-
-  setlength(img_temp,1,width2,height2);{set length of image array}
-  for fitsY:=0 to height2-1 do
-    for fitsX:=0 to width2-1  do
-      img_temp[0,fitsX,fitsY]:=-1;{mark as not surveyed}
-
-  for fitsY:=0 to height2-1-1  do
-  begin
-    for fitsX:=0 to width2-1-1 do
-    begin
-      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img[0,fitsX,fitsY]- cblack>star_level{ 3.5*noise_level}){star}) then {new star}
-      begin
-        HFD(img,fitsX,fitsY, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-        if (hfd1>=0.8) {two pixels minimum} and (hfd1<99) then
-        begin
-
-
-          if toscreen then
-          begin
-            size:=round(5*hfd1);
-            if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);
-            if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
-
-            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-            mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
-          end
-          else
-          begin
-            starX:=round(xc);
-            starY:=round(yc);
-          end;
-
-          size:=round(3*hfd1);
-          for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
-            for i:=fitsX-size to fitsX+size do
-              if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
-                img_temp[0,i,j]:=1;
-
-          {store values}
-          hfdlist[nhfd]:=hfd1; inc(nhfd); if nhfd>=length(hfdlist) then SetLength(hfdlist,nhfd+100); {adapt length if required and store hfd value}
-          if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))<sqr(0.25)*(sqr(width2 div 2)+sqr(height2 div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
-          else
-          begin
-            if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))>sqr(0.75)*(sqr(width2 div 2)+sqr(height2 div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
-
-            if ( (starX<(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
-            if ( (starX>(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
-            if ( (starX<(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+100);        end;
-            if ( (starX>(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
-          end;
-         end;
-      end;
-    end;
-
-  end;
-  img_temp:=nil;{free mem}
-
-
-
-  if nhfd>0 then
-  begin
-    if ((nhfd_center>0) and (nhfd_outer_ring>0)) then  {enough information for curvature calculation}
-    begin
-      SetLength(hfdlist_center,nhfd_center); {set length correct}
-      SetLength(hfdlist_outer_ring,nhfd_outer_ring);
-
-      median_center:=SMedian(hfdlist_center);
-      median_outer_ring:=SMedian(hfdlist_outer_ring);
-      if toscreen then mess1:='  Off-axis aberration[HFD]='+floattostrF2(median_outer_ring-(median_center),0,2);{}
-    end
-    else
-    mess1:='';
-
-
-
-    if ((nhfd_top_left>0) and (nhfd_top_right>0) and (nhfd_bottom_left>0) and (nhfd_bottom_right>0)) then  {enough information for tilt calculation}
-    begin
-      SetLength(hfdlist_bottom_left,nhfd_bottom_left); {set length correct}
-      SetLength(hfdlist_bottom_right,nhfd_bottom_right);
-      SetLength(hfdlist_top_left,nhfd_top_left);
-      SetLength(hfdlist_top_right,nhfd_top_right);
-
-
-      median_top_left:=SMedian(hfdList_top_left);
-      median_top_right:=SMedian(hfdList_top_right);
-      median_bottom_left:=SMedian(hfdList_bottom_left);
-      median_bottom_right:=SMedian(hfdList_bottom_right);
-
-      if toscreen then
-      begin
-        median_best:=min(min(median_top_left, median_top_right),min(median_bottom_left,median_bottom_right));{find best corner}
-        median_worst:=max(max(median_top_left, median_top_right),max(median_bottom_left,median_bottom_right));{find worst corner}
-
-        scale_factor:=width2*0.25/median_worst;
-        x1:=round(-median_bottom_left*scale_factor+width2/2);y1:=round(-median_bottom_left*scale_factor+height2/2);{calculate coordinates counter clockwise}
-        x2:=round(+median_bottom_right*scale_factor+width2/2);y2:=round(-median_bottom_right*scale_factor+height2/2);
-        x3:=round(+median_top_right*scale_factor+width2/2);y3:=round(+median_top_right*scale_factor+height2/2);
-        x4:=round(-median_top_left*scale_factor+width2/2);y4:=round(+median_top_left*scale_factor+height2/2);
-
-        image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
-
-        image1.Canvas.pen.color:=clyellow;
-
-        image1.Canvas.moveto(x1,y1);{draw trapezium}
-        image1.Canvas.lineto(x2,y2);{draw trapezium}
-        image1.Canvas.lineto(x3,y3);{draw trapezium}
-        image1.Canvas.lineto(x4,y4);{draw trapezium}
-        image1.Canvas.lineto(x1,y1);{draw trapezium}
-
-        image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
-        image1.Canvas.lineto(x2,y2);{draw diagonal}
-        image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
-        image1.Canvas.lineto(x3,y3);{draw diagonal}
-        image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
-        image1.Canvas.lineto(x4,y4);{draw diagonal}
-        mess2:='  Tilt[HFD]='+floattostrF2(median_worst-median_best,0,2);{estimate tilt value}
-
-
-        image1.Canvas.font.size:=fontsize*4;
-        image1.Canvas.textout(x4,y4,floattostrF2(median_top_left,0,2));
-        image1.Canvas.textout(x3,y3,floattostrF2(median_top_right,0,2));
-        image1.Canvas.textout(x1,y1,floattostrF2(median_bottom_left,0,2));
-        image1.Canvas.textout(x2,y2,floattostrF2(median_bottom_right,0,2));
-        image1.Canvas.textout(width2 div 2,height2 div 2,floattostrF2(median_center,0,2));
-
-      end;
-
-    end
-    else
-    mess2:='';
-
-
-    SetLength(hfdlist,nhfd);{set length correct}
-    hfd_median:=SMedian(hfdList);
-    str(hfd_median:0:1,hfd_value);
-
-    nr_stars:=nhfd;
-  //  nr_stars:=cblack;
-
-    if toscreen then
-    begin
-      mess2:='Median HFD='+hfd_value+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
-      image1.Canvas.font.size:=fontsize*2;
-      image1.Canvas.font.color:=clwhite;
-      image1.Canvas.textout(round(image1.Canvas.font.size),height2-round(2*image1.Canvas.font.size),mess2);{median HFD and tilt indication}
-    end;
-  end
-  else
-    if toscreen then
-     begin
-      image1.Canvas.font.size:=round(image1.Canvas.font.size*20/12);
-      image1.Canvas.textout(round(image1.Canvas.font.size),height2-round(2*image1.Canvas.font.size),'No star detected');
-    end;
-
-
-
-  end;{with mainwindow}
-
-  hfdlist:=nil;{release memory}
-
-  hfdlist_center:=nil;
-  hfdlist_outer_ring:=nil;
-
-  hfdlist_top_left:=nil;
-  hfdlist_top_right:=nil;
-  hfdlist_bottom_left:=nil;
-  hfdlist_bottom_right:=nil;
-
-  Screen.Cursor:= Save_Cursor;
-end;
 
 procedure Tmainwindow.CCDinspector1Click(Sender: TObject);
 var
- fitsX,fitsY,size, i, j,starX,starY,
+ fitsX,fitsY,size, i, j,starX,starY, retries,max_stars,
  nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,x1,x2,x3,x4,y1,y2,y3,y4,fontsize : integer;
 
- {hfd_median,}hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right: double;
- hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor,
+// {hfd_median,}hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right: double;
+ hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
  hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right, median_top_left, median_top_right : double;
  hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
  mess1,mess2,hfd_value           : string;
@@ -8428,6 +8194,8 @@ begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
+  max_stars:=500;
+
   with mainwindow do
   begin
     Flipvertical:=mainwindow.Flipvertical1.Checked;
@@ -8450,13 +8218,7 @@ begin
   median_top_left:=0;
   median_top_right:=0;
 
-  nhfd:=0;{set counters at zero}
-  nhfd_top_left:=0;
-  nhfd_top_right:=0;
-  nhfd_bottom_left:=0;
-  nhfd_bottom_right:=0;
-  nhfd_center:=0;
-  nhfd_outer_ring:=0;
+
   SetLength(hfdlist,len*4);{set array length on a starting value}
 
   SetLength(hfdlist_center,len);
@@ -8467,55 +8229,71 @@ begin
   SetLength(hfdlist_bottom_left,len);
   SetLength(hfdlist_bottom_right,len);
 
-//  get_background(0,img,{cblack=0} false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
   get_background(0,img_loaded,{cblack=0} false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
-  setlength(img_temp,1,width2,height2);{set length of image array}
-  for fitsY:=0 to height2-1 do
-    for fitsX:=0 to width2-1  do
-      img_temp[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+  detection_level:=star_level; {level above background. Start with a high value}
 
-  for fitsY:=0 to height2-1-1  do
-  begin
-    for fitsX:=0 to width2-1-1 do
+  retries:=2; {try up to three times to get enough stars from the image}
+  repeat
+    nhfd:=0;{set counters at zero}
+    nhfd_top_left:=0;
+    nhfd_top_right:=0;
+    nhfd_bottom_left:=0;
+    nhfd_bottom_right:=0;
+    nhfd_center:=0;
+    nhfd_outer_ring:=0;
+
+
+    setlength(img_temp,1,width2,height2);{set length of image array}
+    for fitsY:=0 to height2-1 do
+      for fitsX:=0 to width2-1  do
+        img_temp[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+
+    for fitsY:=0 to height2-1-1  do
     begin
-      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>star_level{ 3.5*noise_level}){star}) then {new star}
+      for fitsX:=0 to width2-1-1 do
       begin
-        HFD(img_loaded,fitsX,fitsY, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-        if (hfd1>=0.8) {two pixels minimum} and (hfd1<99) then
+        if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
         begin
-          size:=round(5*hfd1);
-          if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);
-          if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
+          HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
-          mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-          mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
-
-          size:=round(3*hfd1);
-          for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
-            for i:=fitsX-size to fitsX+size do
-              if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
-                img_temp[0,i,j]:=1;
-
-          {store values}
-          hfdlist[nhfd]:=hfd1; inc(nhfd); if nhfd>=length(hfdlist) then SetLength(hfdlist,nhfd+100); {adapt length if required and store hfd value}
-          if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))<sqr(0.25)*(sqr(width2 div 2)+sqr(height2 div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
-          else
+          if ((hfd1<=99) and (snr>10) and (hfd1>0.8) {two pixels minimum} ) then
           begin
-            if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))>sqr(0.75)*(sqr(width2 div 2)+sqr(height2 div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
+            size:=round(5*hfd1);
+            if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);
+            if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
 
-            if ( (starX<(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
-            if ( (starX>(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
-            if ( (starX<(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+100);        end;
-            if ( (starX>(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
+            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+            mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+
+            size:=round(3*hfd1);
+            for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
+              for i:=fitsX-size to fitsX+size do
+                if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
+                  img_temp[0,i,j]:=1;
+
+            {store values}
+            hfdlist[nhfd]:=hfd1; inc(nhfd); if nhfd>=length(hfdlist) then SetLength(hfdlist,nhfd+100); {adapt length if required and store hfd value}
+            if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))<sqr(0.25)*(sqr(width2 div 2)+sqr(height2 div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
+            else
+            begin
+              if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))>sqr(0.75)*(sqr(width2 div 2)+sqr(height2 div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
+
+              if ( (starX<(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
+              if ( (starX>(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
+              if ( (starX<(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+100);        end;
+              if ( (starX>(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
+            end;
           end;
-         end;
+        end;
       end;
     end;
 
-  end;
-  img_temp:=nil;{free mem}
+    dec(retries);{try again with lower detection level}
+    if retries =1 then begin if 15*noise_level[0]<star_level then detection_level:=15*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
+    if retries =0 then begin if  5*noise_level[0]<star_level then detection_level:= 5*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
 
+  until ((nhfd>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
 
   if nhfd>0 then
@@ -8613,6 +8391,8 @@ begin
   hfdlist_top_right:=nil;
   hfdlist_bottom_left:=nil;
   hfdlist_bottom_right:=nil;
+
+  img_temp:=nil;{free mem}
 
   Screen.Cursor:= Save_Cursor;
 end;
@@ -9257,7 +9037,7 @@ begin
   begin
 
     if pos('Comet',stackmenu1.manual_centering1.text)=0 then
-      HFD(img_loaded,round(fitsX-1),round(fitsY-1),hfd2,fwhm_star2,snr,flux,xc,yc) {auto center using HFD function}
+      HFD(img_loaded,round(fitsX-1),round(fitsY-1),14{box size},hfd2,fwhm_star2,snr,flux,xc,yc) {auto center using HFD function}
     else
     begin
       find_highest_pixel_value(img_loaded,round(fitsX-1),round(fitsY-1),xc,yc);
@@ -9292,17 +9072,16 @@ begin
 end;
 
 
-procedure HFD(img: image_array;x1,y1: integer; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity}
+procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity}
 const
-   max_ri=50; //sqrt(sqr(rs+rs)+sqr(rs+rs))+1;
-  var
-    rs,i,j,counter, ri, distance,distance_top_value,illuminated_pixels:integer;
-    SumVal,SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
-    val,bg_average,bg,bg_standard_deviation,pixel_counter,valmax,
-    val_00,val_01,val_10,val_11,af, faintA,faintB, brightA,brightB,faintest,brightest : double;
-    HistStart,asymmetry : boolean;
-    distance_histogram : array [0..max_ri] of integer;
-
+  max_ri=50; //should be larger or equalsmaller then rssqrt(sqr(rs+rs)+sqr(rs+rs))+1;
+var
+  i,j,counter, ri, distance,distance_top_value,illuminated_pixels:integer;
+  SumVal,SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
+  val,bg_average,bg,bg_standard_deviation,pixel_counter,valmax,
+  val_00,val_01,val_10,val_11,af, faintA,faintB, brightA,brightB,faintest,brightest : double;
+  HistStart,asymmetry : boolean;
+  distance_histogram : array [0..max_ri] of integer;
 
     function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
     var
@@ -9323,10 +9102,8 @@ const
       end;
     end;
 begin
-  rs:=14;{14 is test box of 28, HFD maximum is about 10}
 
-
-//  if ((xc>1190) and (xc<1210) and (yc>490) and (yc<510)) then
+//  if ((xc>290) and (xc<330) and (yc>130) and (yc<155)) then
 //  beep;
 
   if ((x1-rs-4<=0) or (x1+rs+4>=width2-1) or
@@ -9336,6 +9113,7 @@ begin
   bg:=0;
   valmax:=0;
   hfd1:=999;
+
   try
     counter:=0;
     bg_average:=0;
@@ -9403,7 +9181,6 @@ begin
 
   //   Check for asymmetry. Are we testing a group of stars or a defocused star?
       val_00:=0;val_01:=0;val_10:=0;val_11:=0;
-      for i:=0 to max_ri do distance_histogram[i]:=0;{clear histogram}
 
       for i:=-rs to 0 do begin
         for j:=-rs to 0 do begin
@@ -9433,17 +9210,20 @@ begin
       end; {try to reduce box up to rs=4 equals 8x8 box else exit}
     until asymmetry=false;{loop and reduce box size until asymmetry is gone.}
 
-
-    // radius of interest, this works for donut shapes.
-    for i:=0 to max_ri do distance_histogram[i]:=0;{clear histogram}
+   // Build signal histogram from center of gravity
+    for i:=0 to rs do distance_histogram[i]:=0;{clear signal histogram for the range used}
     for i:=-rs to rs do begin
       for j:=-rs to rs do begin
-        val:=value_subpixel(xc+i,yc+j)-bg;
-        if val>((3*bg_standard_deviation)) then {3 * sd should be signal }
+
+        distance:=round(sqrt(i*i + j*j)); {distance from gravity center} {modA}
+        if distance<=rs then {build histogram for circel with radius rs}
         begin
-          distance:=round(sqrt(i*i + j*j)); {distance from gravity center}
-          if distance<=max_ri then distance_histogram[distance]:=distance_histogram[distance]+1;{build distance histogram}
-          if val>valmax then valmax:=val;{record the peak value of the star}
+          val:=value_subpixel(xc+i,yc+j)-bg;
+          if val>((3*bg_standard_deviation)) then {3 * sd should be signal }
+          begin
+            distance_histogram[distance]:=distance_histogram[distance]+1;{build distance histogram up to circel with diameter rs}
+            if val>valmax then valmax:=val;{record the peak value of the star}
+          end;
         end;
       end;
     end;
@@ -9456,9 +9236,9 @@ begin
       inc(ri);
       illuminated_pixels:=illuminated_pixels+distance_histogram[ri];
       if distance_histogram[ri]>0 then HistStart:=true;{continue until we found a value>0, center of defocused star image can be black having a central obstruction in the telescope}
-      if distance_top_value<distance_histogram[ri] then distance_top_value:=distance_histogram[ri];
-    until ((ri>=max_ri) or (ri>=rs){##} or (HistStart and (distance_histogram[ri]<=0.1*distance_top_value {##drop-off detection})));{find a distance where there is no pixel illuminated, so the border of the star image of interest}
-    if ri>=rs then {star is larger then box, abort}
+      if distance_top_value<distance_histogram[ri] then distance_top_value:=distance_histogram[ri]; {this should be 2*pi*ri if it is nice defocused star disk}
+    until ( (ri>=rs) or (HistStart and (distance_histogram[ri]<=0.1*distance_top_value {drop-off detection})));{find a distance where there is no pixel illuminated, so the border of the star image of interest}
+    if ri>=rs then {star is equal or larger then box, abort}
     begin
       hfd1:=999;
       exit;
@@ -9693,9 +9473,9 @@ procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
   Y: Integer);
 
 var
-  mouse_fitsx,mouse_fitsy,hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM : double;
+  mouse_fitsx,mouse_fitsy,hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance : double;
   s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str      : string;
-  x_sized,y_sized,factor,flipH,flipV :integer;
+  x_sized,y_sized,factor,flipH,flipV,i :integer;
   color1:tcolor;
   r,b :single;
 begin
@@ -9751,23 +9531,34 @@ begin
        erase_rectangle;
        draw_rectangle(x_sized,y_sized);
 
-       if cdelt2<>0 then dist_str:=inttostr(round(3600* sqrt (sqr((X_sized-startX)*cdelt1)+sqr((startY-Y_sized)*cdelt2))))+'"'  else dist_str:='';
-       if cdelt2<>0 then angle_str:=inttostr(round(fnmodulo (atn_2(flipH*(X_sized-startX),flipV*(startY-Y_sized))*180/pi + crota2,360)) )+'°' else  angle_str:=''; ;
-       mainwindow.statusbar1.panels[7].text:=inttostr(flipH*(X_sized-startX))+' x '+inttostr(flipV*(startY-Y_sized))+'    '+dist_str+'    '+angle_str;{indicate rectangl size}
-
+       if cdelt2<>0 then
+       begin
+         pixel_distance:= 3600*sqrt (sqr((X_sized-startX)*cdelt1)+sqr((startY-Y_sized)*cdelt2));{pixel distance in arcsec}
+         if pixel_distance<60 then dist_str:=inttostr(round(pixel_distance))+'"'
+         else
+         if pixel_distance<3600 then dist_str:=floattostrF(pixel_distance/60,ffgeneral,3,2)+#39
+         else
+         dist_str:=floattostrF(pixel_distance/3600,ffgeneral,3,2)+'°';
+       end
+       else dist_str:='';
+       if cdelt2<>0 then angle_str:='∠='+inttostr(round(fnmodulo (atn_2(flipH*(X_sized-startX),flipV*(startY-Y_sized))*180/pi + crota2,360)) )+'°' else  angle_str:=''; ;
+       mainwindow.statusbar1.panels[7].text:=inttostr(abs(X_sized-startX))+' x '+inttostr(abs(startY-Y_sized))+'    '+dist_str+'    '+angle_str;{indicate rectangl size}
      end
      else
      begin
        startx:=x_sized;
        starty:=y_sized;
        mainwindow.statusbar1.panels[7].text:='';{remove crop size}
-
      end;
      oldx:=x_sized;
      oldy:=y_sized;
    end;
   {end rubber rectangle}
 
+  //memo2_message('mouse move');
+
+
+   if ssright in shift then exit; {rubber rectangle with update statusbar is very slow. Does it trigger an event???}
 
    if flipH=-1 then xf:=image1.width-x else xf:=x;;
    if flipV=-1 then yf:=image1.height-y else yf:=y;
@@ -9819,8 +9610,11 @@ begin
    except
 
    end;
+
+
    hfd2:=999;
-   HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),hfd2,fwhm_star2,snr,flux,object_xc,object_yc) ;
+   HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),14{box size},hfd2,fwhm_star2,snr,flux,object_xc,object_yc) ;
+
    if ((hfd2<99) and (hfd2>0)) then
    begin
      str(hfd2:0:1,hfd_str);
@@ -9929,10 +9723,8 @@ end;
 procedure add_integer(inp1,comment1:string;x:integer);{add integer variable to header}
  var
    s        : string;
-   count1   : integer;
 begin
   str(x:20,s);
-  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
   mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inp1+' '+s+comment1);
 end;
 
@@ -10096,7 +9888,7 @@ var filename3:ansistring;
 begin
   filename3:=ChangeFileExt(FileName2,'');
   savedialog1.filename:=filename3;
-  savedialog1.Filter := 'PNG (*.png)|*.png;|BMP (*.bmp)|*.bmp;|JPG 100% compression quality (*.jpg)|*.jpg;|JPG 90% compression quality (*.jpg)|*.jpg;|JPG 80% compression quality (*.jpg)|*.jpg;|JPG 70% compression quality (*.jpg)|*.jpg;';
+  savedialog1.Filter := 'PNG 8 bit(*.png)|*.png;|BMP 8 bit(*.bmp)|*.bmp;|JPG 100% compression quality (*.jpg)|*.jpg;|JPG 90% compression quality (*.jpg)|*.jpg;|JPG 80% compression quality (*.jpg)|*.jpg;|JPG 70% compression quality (*.jpg)|*.jpg;';
   savedialog1.filterindex:=SaveasJPGPNGBMP1filterindex; {4 or jpg 90%}
   if savedialog1.execute then
   begin

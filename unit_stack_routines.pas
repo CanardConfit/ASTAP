@@ -333,9 +333,10 @@ begin
 
             if init=false then
             begin
+              memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
+              if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then  begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
               initialise1;{set variables correct, do this before apply dark}
               initialise2;{set variables correct}
-              memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
             end;
 
             saturated_level:=datamax_org*0.97;{130}
@@ -679,9 +680,10 @@ begin
 
           if init=false then
           begin
+            memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
+            if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then  begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
             initialise1;{set variables correct. Do this before apply dark}
             initialise2;{set variables correct}
-            memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
             if ((bayerpat='') and (make_osc_color1.checked)) then
                if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
                else
@@ -968,9 +970,10 @@ begin
 
         if init=false then
         begin
+          memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
+          if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then  begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
           initialise1;{set variables correct}
           initialise2;{set variables correct}
-          memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
         end;
 
         apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
@@ -1186,9 +1189,10 @@ begin
 
         if init=false then
         begin
+          memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
+          if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then  begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
           initialise1;{set variables correct}
           initialise2;{set variables correct}
-          memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
           if ((bayerpat='') and (make_osc_color1.checked)) then
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
              else
@@ -1376,8 +1380,7 @@ begin
 
           if init=false then
           begin
-            initialise1;{set variables correct, do this before apply_dark filter}
-            initialise2;{set variables correct}
+            {not required. Done in first step}
           end;
 
           apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
@@ -1416,7 +1419,7 @@ begin
 
           inc(counter);
 
-          if ((use_astrometry_internal) or (use_astrometry_net)) then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+          if ((use_astrometry_internal) or (use_astrometry_net)) then  sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
           else
           begin {align using star match, read saved solution vectors}
             if use_manual_alignment then
@@ -1518,8 +1521,6 @@ begin
 
           if init=false then {init}
           begin
-            initialise1;{set variables correct}
-            initialise2;{set variables correct}
             width_max:=width2+oversize*2;
             height_max:=height2+oversize*2;
 
@@ -1543,7 +1544,7 @@ begin
 
           inc(counter);
 
-          if ((use_astrometry_internal) or (use_astrometry_net)) then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+          if ((use_astrometry_internal) or (use_astrometry_net)) then  sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
           else
           begin {align using star match, read saved solution vectors}
             if use_manual_alignment then

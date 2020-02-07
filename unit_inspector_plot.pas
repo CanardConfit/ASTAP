@@ -5,7 +5,7 @@ unit unit_inspector_plot;
 interface
 
 uses
-  Classes, SysUtils,astap_main, unit_stack;
+  Classes, SysUtils,math,astap_main, unit_stack;
 
 type
   hfd_array   = array of array of integer;
@@ -107,54 +107,65 @@ end;
 
 procedure CCDinspector_analyse;
 var
- fitsX,fitsY,size, i, j,nhfd    : integer;
- hfd1,star_fwhm,snr,flux,xc,yc  : double;
+ fitsX,fitsY,size, i, j,nhfd,retries,max_stars  : integer;
+ hfd1,star_fwhm,snr,flux,xc,yc,detection_level  : double;
  hfd_values  : hfd_array;
 
  begin
   if fits_file=false then exit; {file loaded?}
 
-  nhfd:=0;{set counters at zero}
+  max_stars:=500;
+
   SetLength(hfd_values,3,4000);{will contain x,y,hfd}
+  setlength(img_temp,1,width2,height2);{set length of image array}
 
   get_background(0,img_loaded,true{ calculate histogram},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
-  setlength(img_temp,1,width2,height2);{set length of image array}
-  for fitsY:=0 to height2-1 do
-    for fitsX:=0 to width2-1  do
-      img_temp[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+  detection_level:=star_level; {level above background. Start with a high value}
 
-  for fitsY:=0 to height2-1-1  do
-  begin
-    for fitsX:=0 to width2-1-1 do
+  retries:=2; {try up to three times to get enough stars from the image}
+  repeat
+    nhfd:=0;{set counters at zero}
+
+    for fitsY:=0 to height2-1 do
+      for fitsX:=0 to width2-1  do
+        img_temp[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+
+    for fitsY:=0 to height2-1-1  do
     begin
-      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>star_level{ 3.5*noise_level}){star}) then {new star}
+      for fitsX:=0 to width2-1-1 do
       begin
-        HFD(img_loaded,fitsX,fitsY, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-        if (hfd1>=0.8) {two pixels minimum} and (hfd1<99) then
+        if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
         begin
-          size:=round(3*hfd1);
-          for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
-            for i:=fitsX-size to fitsX+size do
-              if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
-                img_temp[0,i,j]:=1;
+          HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+          if (hfd1>=0.8) {two pixels minimum} and (hfd1<99) then
+          begin
+            size:=round(3*hfd1);
+            for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
+              for i:=fitsX-size to fitsX+size do
+                if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
+                  img_temp[0,i,j]:=1;
 
-          {store values}
+            {store values}
 
-          if nhfd>=length(hfd_values)-1 then
-              SetLength(hfd_values,3,nhfd+100);{adapt length if required}
-          hfd_values[0,nhfd]:=round(xc);
-          hfd_values[1,nhfd]:=round(yc);
-          hfd_values[2,nhfd]:=round(hfd1*100);
-          inc(nhfd);
-
+            if nhfd>=length(hfd_values)-1 then
+                SetLength(hfd_values,3,nhfd+100);{adapt length if required}
+            hfd_values[0,nhfd]:=round(xc);
+            hfd_values[1,nhfd]:=round(yc);
+            hfd_values[2,nhfd]:=round(hfd1*100);
+            inc(nhfd);
+          end;
         end;
       end;
     end;
 
-  end;
-  img_temp:=nil;{free mem}
+    dec(retries);{try again with lower detection level}
+    if retries =1 then begin if 15*noise_level[0]<star_level then detection_level:=15*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
+    if retries =0 then begin if  5*noise_level[0]<star_level then detection_level:= 5*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
 
+  until ((nhfd>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
+
+  img_temp:=nil;{free mem}
   plot(nhfd,hfd_values);
   hfd_values:=nil;
 end;

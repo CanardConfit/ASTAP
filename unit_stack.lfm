@@ -1,12 +1,12 @@
 object stackmenu1: Tstackmenu1
-  Left = 526
+  Left = 191
   Height = 660
-  Top = 262
-  Width = 1024
+  Top = 198
+  Width = 1677
   AllowDropFiles = True
   Caption = 'stack menu'
   ClientHeight = 660
-  ClientWidth = 1024
+  ClientWidth = 1677
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -51,7 +51,7 @@ object stackmenu1: Tstackmenu1
     Left = 0
     Height = 150
     Top = 510
-    Width = 1024
+    Width = 1677
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -198,7 +198,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1006
+    Left = 1659
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     Height = 448
     Hint = 'Stack menu'
     Top = 0
-    Width = 1023
+    Width = 1676
     ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
@@ -233,8 +233,8 @@ object stackmenu1: Tstackmenu1
     object Images: TTabSheet
       Hint = 'Select here the light frames'
       Caption = 'Images'
-      ClientHeight = 400
-      ClientWidth = 1015
+      ClientHeight = 420
+      ClientWidth = 1668
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -305,10 +305,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview1: TListView
         Left = 0
-        Height = 360
+        Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1015
+        Width = 1668
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -2122,7 +2122,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the alignment options'
       Caption = 'Alignment'
       ClientHeight = 420
-      ClientWidth = 1697
+      ClientWidth = 1668
       ImageIndex = 7
       OnContextPopup = alignment1ContextPopup
       ParentFont = False
@@ -2648,6 +2648,7 @@ object stackmenu1: Tstackmenu1
               '/usr/local/astrometry/bin'
               '/usr/bin'
             )
+            OnChange = cygwin1Change
             OnDropDown = cygwin1DropDown
             ParentColor = True
             ParentFont = False
@@ -2748,7 +2749,7 @@ object stackmenu1: Tstackmenu1
             Width = 456
             BorderSpacing.Around = 5
             ItemHeight = 15
-            ItemIndex = 0
+            ItemIndex = 2
             Items.Strings = (
               '--downsample 2 --no-fits2fits'
               '--downsample 4 --no-fits2fits'
@@ -2761,7 +2762,7 @@ object stackmenu1: Tstackmenu1
             ParentColor = True
             ParentFont = False
             TabOrder = 4
-            Text = '--downsample 2 --no-fits2fits'
+            Text = '--downsample 2'
           end
           object remove_solver_files1: TCheckBox
             Left = 792
@@ -2802,10 +2803,10 @@ object stackmenu1: Tstackmenu1
             Text = '580'
           end
           object Label13: TLabel
-            Left = 1024
+            Left = 1064
             Height = 49
             Top = 81
-            Width = 312
+            Width = 272
             AutoSize = False
             BorderSpacing.Left = 5
             Caption = 'Scale calculation will only be used if FITS header doesn''t contain pixel size in arc-seconds'
@@ -3584,8 +3585,8 @@ object stackmenu1: Tstackmenu1
     end
     object TabSheet1: TTabSheet
       Caption = 'Inspector'
-      ClientHeight = 400
-      ClientWidth = 1015
+      ClientHeight = 420
+      ClientWidth = 1668
       ImageIndex = 17
       object browse_inspector1: TButton
         Left = 32
@@ -3613,10 +3614,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview8: TListView
         Left = 0
-        Height = 360
+        Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1015
+        Width = 1668
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3915,7 +3916,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools'
       Caption = 'Pixel math 1'
       ClientHeight = 420
-      ClientWidth = 1697
+      ClientWidth = 1668
       ImageIndex = 4
       ParentFont = False
       object GroupBox5: TGroupBox
@@ -5153,7 +5154,7 @@ object stackmenu1: Tstackmenu1
     object tab_Pixelmath2: TTabSheet
       Caption = 'Pixel math 2'
       ClientHeight = 420
-      ClientWidth = 1697
+      ClientWidth = 1668
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox
@@ -5803,12 +5804,13 @@ object stackmenu1: Tstackmenu1
           TabOrder = 1
         end
         object file_to_add1: TButton
-          Left = 7
-          Height = 30
-          Hint = 'Select images to add/subtract or use a flat.'
+          Left = 40
+          Height = 25
+          Hint = 'Browse and select image to add/subtract or use a flat.'
           Top = 27
-          Width = 75
-          Caption = 'Browse'
+          Width = 35
+          AutoSize = True
+          Caption = '...'
           OnClick = file_to_add1Click
           ParentFont = False
           ParentShowHint = False

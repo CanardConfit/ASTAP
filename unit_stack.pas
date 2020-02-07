@@ -535,6 +535,7 @@ type
     procedure browse_live_stacking1Click(Sender: TObject);
     procedure clear_inspector_list1Click(Sender: TObject);
     procedure curve_fitting1Click(Sender: TObject);
+    procedure cygwin1Change(Sender: TObject);
     procedure gridlines1Click(Sender: TObject);
     procedure help_live_stacking1Click(Sender: TObject);
     procedure help_pixel_math2Click(Sender: TObject);
@@ -1240,10 +1241,10 @@ begin
     begin
       for fitsX:=0 to width2-1  do
       begin
-        if (( img_temp2[0,fitsX,fitsY]=0){area not surveyed} and (img[0,fitsX,fitsY]-backgr>star_level {5*noise_level}){star}) then {new star. For analyse used sigma is 5, so not too low.}
+        if (( img_temp2[0,fitsX,fitsY]=0){area not surveyed} and (img[0,fitsX,fitsY]-backgr>star_level)) then {new star. For analyse used sigma is 5, so not too low.}
         begin
-          HFD(img,fitsX,fitsY, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-          if ((hfd1>0.8) {two pixels minimum} and (hfd1<=15)) then
+          HFD(img,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+          if ((hfd1<=15) and (snr>10) and (hfd1>0.8) {two pixels minimum} ) then
           begin
             hfd_list[star_counter]:=hfd1;{store}
             inc(star_counter);
@@ -1273,24 +1274,21 @@ end;
 
 procedure analyse_fits_extended(img : image_array;var nr_stars, hfd_median,median_center, median_outer_ring, median_bottom_left,median_bottom_right,median_top_left,median_top_right : double); {analyse several areas}
 var
-   fitsX,fitsY,size,i, j          : integer;
+   fitsX,fitsY,size,i, j, retries,max_stars   : integer;
    nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right : integer;
-   hfd1,star_fwhm,snr,flux,xc,yc,backgr  :double;
+   hfd1,star_fwhm,snr,flux,xc,yc,backgr,detection_level  :double;
    img_temp2  : image_array;
    hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
+//   solve_show_log : boolean;
 
 
 const
    len: integer=1000;
 
 begin
-  nhfd:=0;{set counters at zero}
-  nhfd_top_left:=0;
-  nhfd_top_right:=0;
-  nhfd_bottom_left:=0;
-  nhfd_bottom_right:=0;
-  nhfd_center:=0;
-  nhfd_outer_ring:=0;
+  max_stars:=500; //strtoint(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
+//  solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details}
+
   SetLength(hfdlist,len*4);{set array length on a starting value}
 
   SetLength(hfdlist_center,len);
@@ -1301,56 +1299,77 @@ begin
   SetLength(hfdlist_bottom_left,len);
   SetLength(hfdlist_bottom_right,len);
 
+  setlength(img_temp2,1,width2,height2);{set length of image array}
+
   get_background(0,img,true,true {calculate background and also star level end noise level},{var}backgr,star_level);
 
-  if backgr>8 then
-  begin
-    setlength(img_temp2,1,width2,height2);{set length of image array}
-    for fitsY:=0 to height2-1 do
-      for fitsX:=0 to width2-1  do
-        img_temp2[0,fitsX,fitsY]:=0;{mark as no surveyed area}
+  detection_level:=star_level; {level above background. Start with a high value}
+  retries:=2; {try three times to get enough stars from the image}
+  repeat
+    nhfd:=0;{set counters at zero}
+    nhfd_top_left:=0;
+    nhfd_top_right:=0;
+    nhfd_bottom_left:=0;
+    nhfd_bottom_right:=0;
+    nhfd_center:=0;
+    nhfd_outer_ring:=0;
 
-    for fitsY:=0 to height2-1 do
+    if backgr>8 then
     begin
-      for fitsX:=0 to width2-1  do
+      for fitsY:=0 to height2-1 do
+        for fitsX:=0 to width2-1  do
+          img_temp2[0,fitsX,fitsY]:=0;{mark as no surveyed area}
+
+      for fitsY:=0 to height2-1 do
       begin
-        if (( img_temp2[0,fitsX,fitsY]=0){area not surveyed} and (img[0,fitsX,fitsY]-backgr>star_level {5*noise_level}){star}) then {new star. For analyse used sigma is 5, so not too low.}
+        for fitsX:=0 to width2-1  do
         begin
-          HFD(img,fitsX,fitsY, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-          if ((hfd1>0.8) {two pixels minimum} and (hfd1<=15)) then
+          if (( img_temp2[0,fitsX,fitsY]=0){area not surveyed} and (img[0,fitsX,fitsY]-backgr>detection_level){star}) then {new star. For analyse used sigma is 5, so not too low.}
           begin
+            HFD(img,fitsX,fitsY,25 {LARGE box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            if ((hfd1<=35) and (snr>10) and (hfd1>0.8) {two pixels minimum} ) then
+            begin
 //            hfd_list[star_counter]:=hfd1;{store}
 //            inc(star_counter);
 //            if star_counter>=len then begin len:=len+1000; SetLength(hfd_list,len);{increase size} end;
 
 
-            {store values}
-            hfdlist[nhfd]:=hfd1; inc(nhfd); if nhfd>=length(hfdlist) then SetLength(hfdlist,nhfd+100); {adapt length if required and store hfd value}
+              {store values}
+              hfdlist[nhfd]:=hfd1; inc(nhfd); if nhfd>=length(hfdlist) then SetLength(hfdlist,nhfd+100); {adapt length if required and store hfd value}
 
-            if  sqr(xc - (width2 div 2) )+sqr(yc - (height2 div 2))<sqr(0.25)*(sqr(width2 div 2)+sqr(height2 div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
-            else
-            begin
-              if  sqr(xc - (width2 div 2) )+sqr(yc - (height2 div 2))>sqr(0.75)*(sqr(width2 div 2)+sqr(height2 div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
+              if  sqr(xc - (width2 div 2) )+sqr(yc - (height2 div 2))<sqr(0.25)*(sqr(width2 div 2)+sqr(height2 div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
+              else
+              begin
+                if  sqr(xc - (width2 div 2) )+sqr(yc - (height2 div 2))>sqr(0.75)*(sqr(width2 div 2)+sqr(height2 div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
 
-              if ( (xc<(width2 div 2)) and (yc<(height2 div 2)) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
-              if ( (xc>(width2 div 2)) and (yc<(height2 div 2)) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
-              if ( (xc<(width2 div 2)) and (yc>(height2 div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+100);        end;
-              if ( (xc>(width2 div 2)) and (yc>(height2 div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
+                if ( (xc<(width2 div 2)) and (yc<(height2 div 2)) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
+                if ( (xc>(width2 div 2)) and (yc<(height2 div 2)) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
+                if ( (xc<(width2 div 2)) and (yc>(height2 div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+100);        end;
+                if ( (xc>(width2 div 2)) and (yc>(height2 div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
+              end;
+
+
+              size:=round(3*hfd1);
+              for j:=fitsY to fitsY+size do {Mark the whole star area as surveyed}
+                for i:=fitsX-size to fitsX+size do
+                  if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
+                     img_temp2[0,i,j]:=1;
             end;
-
-
-            size:=round(3*hfd1);
-            for j:=fitsY to fitsY+size do {Mark the whole star area as surveyed}
-               for i:=fitsX-size to fitsX+size do
-                 if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
-                   img_temp2[0,i,j]:=1;
           end;
         end;
       end;
+
     end;
 
-    nr_stars:=nhfd;
-//    nr_stars:=backgr;
+     dec(retries);{try again with lower detection level}
+     if retries =1 then begin if 15*noise_level[0]<star_level then detection_level:=15*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
+     if retries =0 then begin if  5*noise_level[0]<star_level then detection_level:= 5*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
+
+
+   until ((nhfd>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
+
+   nr_stars:=nhfd;
+
 
     if nhfd>0 then
     begin
@@ -1402,7 +1421,6 @@ begin
       median_top_right:=SMedian(hfdList_top_right);
     end
     else median_top_right:=99;
-  end;{backgr>8}
 
   hfdlist:=nil;{release memory}
 
@@ -2604,7 +2622,7 @@ begin
   OpenDialog1.Title := 'Select image';
   OpenDialog1.Options := [ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
-  fits_file:=true;
+//  fits_file:=true;
   if opendialog1.execute then
   begin
      image_to_add1.caption:=OpenDialog1.Files[0];
@@ -2935,32 +2953,6 @@ begin
               lv.Items.item[c].subitems.Strings[insp_focus_pos]:=inttostr(focus_pos);
 
               analyse_fits_extended(img, nr_stars, hfd_median,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right); {analyse several areas}
-
-
-
-                //          if pos('_210551',filename)>0 then
-            //              if ((pos('_210637',filename)>0) or (pos('_210623',filename)>0)) then
-                          begin
-              //              hfd_median:=hfd_median+6;
-                //            hfd_center:=hfd_center+6;{for test}
-                  //          hfd_outer_ring:=hfd_outer_ring+6;
-                    //        hfd_bottom_left:=hfd_bottom_left+6;
-                      //      hfd_bottom_right:=hfd_bottom_right+6;
-                        //    hfd_top_left:=hfd_top_left+6;
-                          //  hfd_top_right:=hfd_top_right+6;
-
-//                             hfd_median:=hfd_median-4;
-  //                           hfd_center:=hfd_center-4;{for test}
-    //                         hfd_outer_ring:=hfd_outer_ring-4;
-      //                       hfd_bottom_left:=hfd_bottom_left-4;
-        //                     hfd_bottom_right:=hfd_bottom_right-4;
-          //                   hfd_top_left:=hfd_top_left-4;
-            //                 hfd_top_right:=hfd_top_right-4;
-
-                          end;
-
-
-
 
               if ((hfd_median>15) or (hfd_center>15) or (hfd_outer_ring>15) or (hfd_bottom_left>15) or (hfd_bottom_right>15) or (hfd_top_left>15) or (hfd_top_right>15)) then
               begin
@@ -3992,6 +3984,8 @@ begin
   end;
 end;
 
+
+
 procedure Tstackmenu1.clear_inspector_list1Click(Sender: TObject);
 begin
   esc_pressed:=true; {stop any running action}
@@ -4054,6 +4048,12 @@ begin
 
 end;
 
+procedure Tstackmenu1.cygwin1Change(Sender: TObject);
+begin
+  if fileexists({$ifdef mswindows} stackmenu1.cygwin1.text {$else} {unix} stackmenu1.cygwin1.text+'/solve-field' {$endif} ) then
+    cygwin1.color:=$AAFFAA {green} else cygwin1.color:=$AAAAFF;{red}
+end;
+
 procedure Tstackmenu1.gridlines1Click(Sender: TObject);
 begin
   listview1.gridlines:=gridlines1.checked;
@@ -4080,8 +4080,7 @@ end;
 procedure sample(fitsx,fitsy : integer);{sampe local colour and fill shape with colour}
 var
     halfboxsize,i,j,counter,fx,fy,col_r,col_g,col_b  :integer;
-    r,g,b,h,s,v,saturation_factor,colrr,colgg,colbb,luminance, luminance_stretched,factor, largest : single;
-    colour: tcolor;
+    r,g,b,h,s,v,colrr,colgg,colbb,luminance, luminance_stretched,factor, largest : single;
     RadioButton1,radiobutton2: boolean;
 begin
   radiobutton1:=stackmenu1.HueRadioButton1.checked;
@@ -4499,6 +4498,7 @@ procedure Tstackmenu1.cygwin1DropDown(Sender: TObject);
 var u_path : string;
     i   : integer;
 begin
+
   {$ifdef mswindows}
   u_path:=GetUserDir;
   for i:=0 to cygwin1.Items.count-1 do {replace by correct user name}
@@ -5226,7 +5226,7 @@ begin
         {measure the single star clicked on by mouse}
         if mainwindow.shape_alignment_marker1.visible then
         begin
-          HFD(img_loaded,round(shape_fitsX-1),round(shape_fitsY-1), hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+          HFD(img_loaded,round(shape_fitsX-1),round(shape_fitsY-1),14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>0) and (snr>10)) then {star detected in img_loaded}
           begin
             if ((img_loaded[0,round(xc),round(yc)]<60000) and
@@ -5944,16 +5944,18 @@ begin
   stackmenu1.memo2.lines.add('');
   stackmenu1.memo2.lines.add('Remarks:');
   stackmenu1.memo2.lines.add('It is possible to make more then one exposure per focuser position, but this number should be the same for each focuser point.');
-  stackmenu1.memo2.lines.add('Note that hfd values above about 12 will not be detected. Un-check these files prior to curve fitting ');
+  stackmenu1.memo2.lines.add('Note that hfd values above about 20 will give  erroneous results. Un-check these files prior to curve fitting. ');
   stackmenu1.memo2.lines.add('');
   memo2_message('Start analysing images');
   analyse_listview(listview8, 4 {full header and data inspector mode});
 
-  listview8.Selected :=nil; {remove any selection}
-  listview8.ItemIndex := 0;{mark where we are. }
-  listview8.Items[0].MakeVisible(False);{scroll to selected item and fix last red colouring}
-
-  memo2_message('Ready analysing. To copy result, select the rows with ctrl-A and copy the rows with ctrl-C. They can be pasted into a spreadsheet. Press now "curve fitting" to measure tilt and curvature in focuser positions.');
+  if listview8.items.count>1 then {prevent run time error if no files are available}
+  begin
+    listview8.Selected :=nil; {remove any selection}
+    listview8.ItemIndex := 0;{mark where we are. }
+    listview8.Items[0].MakeVisible(False);{scroll to selected item and fix last red colouring}
+    memo2_message('Ready analysing. To copy result, select the rows with ctrl-A and copy the rows with ctrl-C. They can be pasted into a spreadsheet. Press now "curve fitting" to measure tilt and curvature in focuser positions.');
+  end;
 end;
 
 procedure Tstackmenu1.apply_hue1Click(Sender: TObject);

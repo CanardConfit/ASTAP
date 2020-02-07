@@ -607,7 +607,7 @@ var
         end;
 
         {get mag/flux ratio}
-        HFD(img_loaded,x,y, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        HFD(img_loaded,x,y,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
         begin
           if ((img_loaded[0,round(xc),round(yc)]<65000) and

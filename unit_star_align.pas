@@ -464,6 +464,7 @@ begin
 //   flip_vertical:=mainwindow.Flipvertical1.Checked;
 //   flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
 
+  max_stars:=strtoint(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
   solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details}
   if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
 
@@ -472,17 +473,10 @@ begin
   setlength(snr_list,buffersize);{set array length}
 
   setlength(img_temp2,1,width2,height2);{set length of image array}
-  max_stars:=strtoint(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
 
-
-  retries:=2; {try three times to get enough stars from the image}
+  detection_level:=star_level; {level above background. Start with a high value}
+  retries:=2; {try up to three times to get enough stars from the image}
   repeat
-    if retries=2 then detection_level:=star_level {level above background. Start with a high value}
-    else
-    if retries=1 then begin detection_level:=min(star_level,15*noise_level[0]); end {lower detection level}
-    else
-    detection_level:=min(star_level,5*noise_level[0]);{lower detection level}
-
     highest_snr:=0;
     nrstars:=0;{set counters at zero}
 
@@ -496,7 +490,7 @@ begin
       begin
         if (( img_temp2[0,fitsX,fitsY]<=0){area not surveyed} and (img[0,fitsX,fitsY]-cblack>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
         begin
-          HFD(img,fitsX,fitsY, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+          HFD(img,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<=10) and (snr>10) and (hfd1>0.8) {two pixels minimum} ) then
           begin
             {for testing}
@@ -530,7 +524,9 @@ begin
     end;
 
     if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(cblack))+ '. Detection level used '+inttostr( round(detection_level))+' above background. Star level is '+inttostr(round(star_level))+' above background. Noise level is '+floattostrF2(noise_level[0],0,0));
-    dec(retries);{try again with lower level}
+    dec(retries);{try again with lower detection level}
+    if retries =1 then begin if 15*noise_level[0]<star_level then detection_level:=15*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
+    if retries =0 then begin if  5*noise_level[0]<star_level then detection_level:= 5*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
 
   until ((nrstars>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
@@ -541,7 +537,7 @@ begin
 
   if nrstars>max_stars then {reduce number of stars if too high}
   begin
-     if solve_show_log then memo2_message('Selecting the '+ inttostr(max_stars)+' brightest stars only.');
+    if solve_show_log then memo2_message('Selecting the '+ inttostr(max_stars)+' brightest stars only.');
     get_brightest_stars(max_stars, highest_snr, snr_list, starlist1);
   end;
   if solve_show_log then memo2_message('Finding stars done in '+ inttostr(gettickcount64 - startTick2)+ ' ms');
