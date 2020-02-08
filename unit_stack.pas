@@ -2954,7 +2954,7 @@ begin
 
               analyse_fits_extended(img, nr_stars, hfd_median,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right); {analyse several areas}
 
-              if ((hfd_median>15) or (hfd_center>15) or (hfd_outer_ring>15) or (hfd_bottom_left>15) or (hfd_bottom_right>15) or (hfd_top_left>15) or (hfd_top_right>15)) then
+              if ((hfd_median>25) or (hfd_center>25) or (hfd_outer_ring>25) or (hfd_bottom_left>25) or (hfd_bottom_right>25) or (hfd_top_left>25) or (hfd_top_right>25)) then
               begin
                 lv.Items.item[c].checked:=false; {uncheck}
                 lv.Items.item[c].subitems.Strings[insp_nr_stars]:='❌'    ;
