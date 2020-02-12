@@ -112,7 +112,7 @@ begin
   cd1_2:=0;{just for the case it is not available}
   cd2_1:=0;{just for the case it is not available}
   cd2_2:=0;{just for the case it is not available}
-  date_obs:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+  date_obs:='';date_avg:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
   naxis:=1;
   naxis3:=1;
   scale:=0;
@@ -237,11 +237,10 @@ begin
 
 
 
-//  Not required since XISF is not used for stacking}
-//    time_obs:=extract_string_keyword('TIME-OBS');
-//    time_obs:=extract_string_keyword('DATE-OBS');
-//    time_obs:=extract_string_keyword('DATE');
-//    filter_name:=extract_string_keyword('FILTER');
+  date_obs:=extract_string_keyword('DATE-OBS');
+  if date_obs='' then date_obs:=extract_string_keyword('DATE');
+
+  filter_name:=extract_string_keyword('FILTER');
   bayerpat:=extract_string_keyword('BAYERPAT');
   extract_double_keyword('XBAYROFF',Xbayroff);;{offset to used to correct BAYERPAT due to flipping}
   extract_double_keyword('YBAYROFF',Ybayroff);;{offset to used to correct BAYERPAT due to flipping}

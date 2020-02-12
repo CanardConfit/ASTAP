@@ -471,9 +471,9 @@ begin
             if ((c<>0) and (solution)) then  {do not add reference channel c=0, in most case luminance file.}
             begin
               inc(counter);{count number of files involved}
-              date_obs_to_jd;{convert date-obs to jd}
+              date_to_jd(date_obs);{convert date-obs to jd}
               if jd<jd_start then jd_start:=jd;
-              jd_sum:=jd_sum+jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+              jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
               vector_based:=((use_star_alignment) or (use_manual_alignment));
               if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
@@ -814,9 +814,9 @@ begin
             sum_exp:=sum_exp+exposure;
             if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
 
-            date_obs_to_jd;{convert date-obs to jd}
+            date_to_jd(date_obs);{convert date-obs to jd}
             if jd<jd_start then jd_start:=jd;
-            jd_sum:=jd_sum+jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+            jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
             vector_based:=((use_star_alignment) or (use_manual_alignment));
             if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
@@ -1044,9 +1044,9 @@ begin
           inc(counter);
           sum_exp:=sum_exp+exposure;
 
-          date_obs_to_jd;{convert date-obs to jd}
+          date_to_jd(date_obs);{convert date-obs to jd}
           if jd<jd_start then jd_start:=jd;
-          jd_sum:=jd_sum+jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+          jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
           vector_based:=((use_star_alignment) or (use_manual_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
@@ -1316,9 +1316,9 @@ begin
           sum_exp:=sum_exp+exposure;
           if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
 
-          date_obs_to_jd;{convert date-obs to jd}
+          date_to_jd(date_obs);{convert date-obs to jd}
           if jd<jd_start then jd_start:=jd;
-          jd_sum:=jd_sum+jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+          jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
           {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
           if drizzle_mode=2 then demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}

@@ -186,6 +186,7 @@ type
     help_live_stacking1: TLabel;
     help_osc_menu1: TLabel;
     help_photometry1: TLabel;
+    help_inspector_tab1: TLabel;
     help_pixel_math1: TLabel;
     help_pixel_math2: TLabel;
     help_stack_menu1: TLabel;
@@ -537,6 +538,7 @@ type
     procedure curve_fitting1Click(Sender: TObject);
     procedure cygwin1Change(Sender: TObject);
     procedure gridlines1Click(Sender: TObject);
+    procedure help_inspector_tab1Click(Sender: TObject);
     procedure help_live_stacking1Click(Sender: TObject);
     procedure help_pixel_math2Click(Sender: TObject);
     procedure hue_fuzziness1Change(Sender: TObject);
@@ -756,7 +758,7 @@ function create_wcs_solution(filen: string): boolean; {plate solving,  check for
 function load_wcs_solution(filen: string): boolean; {plate solving, load astrometry.net solution}
 procedure apply_dark_flat(filter1:string; exposure1,stemperature1,width1:integer; var dcount,fcount,fdcount: integer; var flat_factor: double) ; {inline;} {apply dark, flat if required, renew if different exposure or ccd temp}
 procedure smart_colour_smooth( var img: image_array; wide : integer; measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
-procedure date_obs_to_jd;{get julian day for date_obs, so the start of the observation}
+procedure date_to_jd(date_time:string);{get julian day for date_obs, so the start of the observation or for date_avg. Set global variable jd}
 function JdToDate(jd:double):string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
 function median_background(var img :image_array;color,size,x,y:integer): double;{find median value in sizeXsize matrix of img}
@@ -2935,8 +2937,8 @@ begin
             if lv.name=stackmenu1.listview7.name then {photometry tab}
             begin
               lv.Items.item[c].subitems.Strings[P_date]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
-              date_obs_to_jd; {convert date to Julian day}
-              jd:=jd+exposure/2; {mid exposure}
+              date_to_jd(date_obs);{convert date-obs to jd}
+              jd:=jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
               lv.Items.item[c].subitems.Strings[P_jd_mid]:=floattostrF2(jd,0,5);{julian day}
 
               hjd:=JD_to_HJD(jd,RA0,DEC0);{conversion JD to HJD}
@@ -4065,6 +4067,10 @@ begin
   listview7.gridlines:=gridlines1.checked;{photometry}
 end;
 
+procedure Tstackmenu1.help_inspector_tab1Click(Sender: TObject);
+begin
+  openurl('http://www.hnsky.org/astap.htm#inspector_tab');
+end;
 
 
 procedure Tstackmenu1.help_live_stacking1Click(Sender: TObject);
@@ -4681,17 +4687,17 @@ begin
 
 end;
 
-procedure date_obs_to_jd;{get julian day for date_obs, so the start of the observation}
+procedure date_to_jd(date_time:string);{get julian day for date_obs, so the start of the observation or for date_avg. Set global variable jd}
 var
    yy,mm,dd,hh,min,ss,error2 :integer;
 begin
   jd:=0;
-  val(copy(date_obs,18,2),ss,error2); if error2<>0 then exit;
-  val(copy(date_obs,15,2),min,error2);if error2<>0 then exit;
-  val(copy(date_obs,12,2),hh,error2);if error2<>0 then exit;
-  val(copy(date_obs,09,2),dd,error2);if error2<>0 then exit;
-  val(copy(date_obs,06,2),mm,error2);if error2<>0 then exit;
-  val(copy(date_obs,01,4),yy,error2);if error2<>0 then exit;
+  val(copy(date_time,18,2),ss,error2); if error2<>0 then exit;
+  val(copy(date_time,15,2),min,error2);if error2<>0 then exit;
+  val(copy(date_time,12,2),hh,error2);if error2<>0 then exit;
+  val(copy(date_time,09,2),dd,error2);if error2<>0 then exit;
+  val(copy(date_time,06,2),mm,error2);if error2<>0 then exit;
+  val(copy(date_time,01,4),yy,error2);if error2<>0 then exit;
   jd:=julian_calc(yy,mm,dd,hh,min,ss);{calculate julian date}
 end;
 
@@ -4717,8 +4723,7 @@ begin
       filename2:=listview1.items[index].caption;
       if load_image(false,false {plot}) then {load only}
       begin
-        date_obs_to_jd;{get julian day for date_obs, so the start of the observation}
-
+        date_to_jd(date_obs);{get julian day for date_obs, so the start of the observation}
         jd:=round(jd*24*3600/interval)*interval/(24*3600); {round to time to interval }
         str(jd:1:5, timestr);
         if  pos('-JD',object_name)=0 then

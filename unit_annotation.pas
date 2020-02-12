@@ -563,7 +563,6 @@ var
   frac1,frac2,frac3,frac4  : double;
   area1,area2,area3,area4,nrstars_required2  : integer;
   Save_Cursor: TCursor;
- // area290:integer;
 
     procedure plot_star;
     begin

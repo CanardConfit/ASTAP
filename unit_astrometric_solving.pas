@@ -458,7 +458,7 @@ var
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,info_message,warning    :string;
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t : integer;
-  {trayicon_visible,}autoFOV : boolean;
+  binning_done, autoFOV : boolean;
 const
    popupnotifier_visible : boolean=false;
 
@@ -502,6 +502,8 @@ begin
 
   autoFOV:=(fov=0);{specified auto FOV}
 
+  binning_done:=false;{do it only once in auto loop}
+
   repeat {autoFOV loop}
     if autoFOV then
     begin
@@ -524,7 +526,8 @@ begin
     end
     else cropping:=1;
 
-    bin_and_find_stars(img,binning,cropping,get_hist{update hist}, starlist2);{bin, measure background, find stars}
+    if binning_done=false then bin_and_find_stars(img,binning,cropping,get_hist{update hist}, starlist2);{bin, measure background, find stars}
+    if cropping=1 then binning_done:=true;{no more binning required in auto loop}
 
     nrstars:=Length(starlist2[0]);
     nrstars_required:=round(nrstars*(height2/width2)*1.25);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}

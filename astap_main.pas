@@ -100,6 +100,10 @@ type
     localbackgroundequalise1: TMenuItem;
     menufindnext1: TMenuItem;
     Menufind1: TMenuItem;
+    annotate_minor_planets1: TMenuItem;
+    MenuItem15: TMenuItem;
+    MenuItem20: TMenuItem;
+    MenuItem7: TMenuItem;
     menupaste: TMenuItem;
     menucopy1: TMenuItem;
     PopupMenu_memo1: TPopupMenu;
@@ -265,6 +269,7 @@ type
     procedure Menufind1Click(Sender: TObject);
     procedure menufindnext1Click(Sender: TObject);
     procedure menupasteClick(Sender: TObject);
+    procedure annotate_minor_planets1Click(Sender: TObject);
     procedure radec_copy1Click(Sender: TObject);
     procedure radec_paste1Click(Sender: TObject);
     procedure radec_search1Click(Sender: TObject);
@@ -439,10 +444,12 @@ var
    stretch_on, esc_pressed, fov_specified,unsaved_import : boolean;
    set_temperature : integer;
    star_level  : double;
+   sitelat,sitelong: double;{Observatory latitude,longitude}
    object_name, filter_name,calstat,imagetype, memo_backup: string;
    exposure,focus_temp,centalt,centaz,cblack,cwhite,gain            :double; {from FITS}
    subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
-   date_obs,ut,pltlabel,plateid,telescop,instrum,origin:string;
+   date_obs,date_avg,ut,pltlabel,plateid,telescop,instrum,origin:string;
+
    datamin_org, datamax_org,
    old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
 
@@ -632,7 +639,7 @@ var
 
 implementation
 
-uses unit_dss, unit_stack, unit_tiff,unit_astrometry,unit_star_align, unit_astrometric_solving, unit_290, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot;
+uses unit_dss, unit_stack, unit_tiff,unit_astrometry,unit_star_align, unit_astrometric_solving, unit_290, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -1074,7 +1081,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.318a dated 2020-2-8';
+  #13+#10+'Version ß0.9.319 dated 2020-2-12';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2154,6 +2161,9 @@ begin
   mainwindow.show_distortion1.enabled:=yes;{enable menu}
   mainwindow.annotate_with_measured_magnitudes1.enabled:=yes;{enable menu}
   mainwindow.variable_star_annotation1.enabled:=yes;{enable menu}
+  mainwindow.annotate_minor_planets1.enabled:=yes;{enable menu}
+  mainwindow.hyperleda_annotation1.enabled:=yes;{enable menu}
+  mainwindow.deepsky_annotation1.enabled:=yes;{enable menu}
   mainwindow.star_annotation1.enabled:=yes;{enable menu}
   mainwindow.hyperleda_annotation1.enabled:=yes;{enable menu}
   mainwindow.deepsky_annotation1.enabled:=yes;{enable menu}
@@ -2621,7 +2631,6 @@ function strtofloat2(s:string): double;{works with either dot or komma as decima
 var
   error1:integer;
 begin
-//  if FormatSettings.DecimalSeparator<>'.' then s:=StringReplace(s,FormatSettings.DecimalSeparator,'.',[]); {replaces komma by dot}
   s:=StringReplace(s,',','.',[]); {replaces komma by dot}
   s:=trim(s); {remove spaces}
   val(s,result,error1);
@@ -4095,7 +4104,7 @@ begin
   focus_temp:=999;{assume no data available}
   focus_pos:=999;{assume no data available}
   gain:=999;{assume no data available}
-  date_obs:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+  date_obs:=''; date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
   scale:=0;
   measured_max:=0;
 
@@ -4199,10 +4208,14 @@ begin
              INSTRUM:=get_string;
 
     if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
-             if date_obs='' then date_obs:=get_string;
+            if date_obs='' then date_obs:=get_string;
 
     if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
-            if date_obs='' then date_obs:=get_string;
+            date_obs:=get_string;
+
+    if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='A') and (header[i+6]='V')) then
+            date_avg:=get_string;
+
 
     if ((header[i]='I') and (header[i+1]='M')  and (header[i+2]='A') and (header[i+3]='G') and (header[i+4]='E') and (header[i+5]='T') and (header[i+6]='Y')) then
        imagetype:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
@@ -4345,6 +4358,11 @@ begin
       if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='A') and (header[i+3]='Y') and (header[i+4]='R') and (header[i+5]='O') and (header[i+6]='F')) then
          ybayroff:=validate_double;{offset to used to correct BAYERPAT due to flipping}
 
+
+      if ((header[i]='S') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='L') and (header[i+5]='A') and (header[i+6]='T')) then
+         sitelat:=validate_double;{offset to used to correct BAYERPAT due to flipping}
+      if ((header[i]='S') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='L') and (header[i+5]='O') and (header[i+6]='N')) then
+         sitelong:=validate_double;{offset to used to correct BAYERPAT due to flipping}
 
 
       {following is only required when using DSS polynome plate fit}
@@ -4641,7 +4659,10 @@ begin
   cd1_2:=0;
   cd2_1:=0;
   cd2_2:=0;
-  date_obs:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+  date_obs:=''; date_avg:='';date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+  sitelat:=0;{Observatory latitude}
+  sitelong:=0;{Observatory longitude}
+
   naxis:=1;
   naxis3:=1;
   filter_name:='';
@@ -4852,7 +4873,7 @@ begin
   cd1_2:=0;{just for the case it is not available}
   cd2_1:=0;{just for the case it is not available}
   cd2_2:=0;{just for the case it is not available}
-  date_obs:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+  date_obs:='';date_avg:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
   filter_name:='';
   calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
   imagetype:='';
@@ -4892,7 +4913,8 @@ end;
 
 function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
-  i,j  : integer;
+  i,j   : integer;
+  jd2   : double;
   image: TFPCustomImage;
   reader: TFPCustomImageReader;
   tiff, grayscale  : boolean;
@@ -4970,7 +4992,7 @@ begin
   cd1_2:=0;
   cd2_1:=0;
   cd2_2:=0;
-  date_obs:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+  date_obs:=''; date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
   filter_name:='';
   calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. Example value DFB}
   imagetype:='';
@@ -5034,6 +5056,12 @@ begin
   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
+
+
+  JD2:=2415018.5+(FileDateToDateTime(fileage(filen))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
+  date_obs:=JdToDate(jd2);
+  update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
+
   update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
   if tiff then
   begin
@@ -5686,6 +5714,14 @@ begin
 
     stackmenu1.live_stacking_path1.caption:=initstring.Values['live_stack_dir'];
 
+    dum:=initstring.Values['mpcorb_path'];if dum<>'' then mpcorb_path:=dum;{asteroids}
+    dum:=initstring.Values['maxcount'];if dum<>'' then maxcount_asteroid:=dum;{asteroids}
+    dum:=initstring.Values['maxmag'];if dum<>'' then maxmag_asteroid:=dum;{asteroids}
+    showfullnames:=get_boolean('showfullnames',false);{asteroids}
+
+    get_int(asteroidcolorindex,'asteroid_color');
+
+
     c:=0;
     repeat {add images}
        dum:=initstring.Values['image'+inttostr(c)];
@@ -5978,6 +6014,15 @@ begin
 
   initstring.Values['live_stack_dir']:=stackmenu1.live_stacking_path1.caption;
 
+
+  initstring.Values['mpcorb_path']:=mpcorb_path;{asteroids}
+  initstring.Values['maxcount']:=maxcount_asteroid;{asteroids}
+  initstring.Values['maxmag']:=maxmag_asteroid;{asteroids}
+  initstring.Values['showfullnames']:=BoolStr[showfullnames];{asteroids}
+  initstring.Values['asteroid_color']:=inttostr(asteroidcolorindex);
+
+                                      ;
+
   for c:=0 to stackmenu1.ListView1.items.count-1 do {add light images}
   begin
     initstring.Values['image'+inttostr(c)]:=stackmenu1.ListView1.items[c].caption;
@@ -6204,7 +6249,7 @@ function convert_load_raw(filename3: string): boolean; {convert raw to pgm file 
 var
   filename4 :string;
   JD2                               : double;
-
+  fa                                : integer;
 begin
   result:=false;
   if check_libraw=false then begin exit;end; {no LibRaw available}
@@ -6219,14 +6264,15 @@ begin
    execute_unix2('/usr/lib/libraw/unprocessed_raw "'+filename3+'"');
   {$endif}
 
-   filename4:=FileName3+'.pgm';
+  filename4:=FileName3+'.pgm';
 
    if load_ppm_pgm(fileName4,img_loaded) then {succesfull PGM load}
    begin
      deletefile(filename4);{delete temporary pgm file}
 
-     JD2:=2415018.5+(FileDateToDateTime(fileage(filename3))); {convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
-     update_text ('DATE-OBS=',#39+JdToDate(jd2)+#39);{give start point exposures}
+     JD2:=2415018.5+(FileDateToDateTime(fileage(filename3))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
+     date_obs:=JdToDate(jd2);
+     update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
      add_text   ('HISTORY  ','Converted from '+filename3);
 
      result:=true;
@@ -6880,6 +6926,14 @@ begin
   end;
 end;
 
+procedure Tmainwindow.annotate_minor_planets1Click(Sender: TObject);
+begin
+  form_asteroids1:=Tform_asteroids1.Create(self); {in project option not loaded automatic}
+  form_asteroids1.ShowModal;
+  form_asteroids1.release;
+  save_settings(user_path+'astap.cfg');
+end;
+
 procedure Tmainwindow.radec_copy1Click(Sender: TObject);
 begin
   if ra1.focused then Clipboard.AsText:=ra1.text;
@@ -7424,7 +7478,6 @@ begin
   'Origin: '+origin+#13+#10+
   'Telescope: '+ telescop+#13+#10+
   'Instrument: '+instrum+#13+#10+
-  'Date-of-obs: '+date_obs+#13+#10+
   'Date-obs: '+Date_obs+#13+#10+
   'UT-time: '+UT+#13+#10+
   'Plt-label: '+Pltlabel+#13+#10+
@@ -8183,6 +8236,7 @@ var
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
  hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right, median_top_left, median_top_right : double;
  hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
+ starlistXY    :array of array of integer;
  mess1,mess2,hfd_value           : string;
  Save_Cursor:TCursor;
  Fliphorizontal, Flipvertical: boolean;
@@ -8220,6 +8274,7 @@ begin
 
 
   SetLength(hfdlist,len*4);{set array length on a starting value}
+  SetLength(starlistXY,2,len*4);{x,y positions}
 
   SetLength(hfdlist_center,len);
   SetLength(hfdlist_outer_ring,len*2);
@@ -8228,6 +8283,7 @@ begin
   SetLength(hfdlist_top_right,len);
   SetLength(hfdlist_bottom_left,len);
   SetLength(hfdlist_bottom_right,len);
+  setlength(img_temp,1,width2,height2);{set length of image array}
 
   get_background(0,img_loaded,{cblack=0} false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
@@ -8244,7 +8300,6 @@ begin
     nhfd_outer_ring:=0;
 
 
-    setlength(img_temp,1,width2,height2);{set length of image array}
     for fitsY:=0 to height2-1 do
       for fitsX:=0 to width2-1  do
         img_temp[0,fitsX,fitsY]:=-1;{mark as not surveyed}
@@ -8259,21 +8314,29 @@ begin
 
           if ((hfd1<=99) and (snr>10) and (hfd1>0.8) {two pixels minimum} ) then
           begin
-            size:=round(5*hfd1);
+//            size:=round(5*hfd1);
             if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);
             if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
 
-            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-            mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+//            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+//            mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
             size:=round(3*hfd1);
-            for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
+            for j:=fitsY-size to fitsY+size do {mark the whole star area as surveyed}
               for i:=fitsX-size to fitsX+size do
                 if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
                   img_temp[0,i,j]:=1;
 
             {store values}
-            hfdlist[nhfd]:=hfd1; inc(nhfd); if nhfd>=length(hfdlist) then SetLength(hfdlist,nhfd+100); {adapt length if required and store hfd value}
+            hfdlist[nhfd]:=hfd1;
+            starlistXY[0,nhfd]:=starX; {store star position in image coordinates, not FITS coordinates}
+            starlistXY[1,nhfd]:=starY;
+            inc(nhfd); if nhfd>=length(hfdlist) then
+            begin
+              SetLength(hfdlist,nhfd+100); {adapt length if required and store hfd value}
+              SetLength(starlistXY,2,nhfd+100);{adapt array size if required}
+            end;
+
             if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))<sqr(0.25)*(sqr(width2 div 2)+sqr(height2 div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
             else
             begin
@@ -8293,11 +8356,23 @@ begin
     if retries =1 then begin if 15*noise_level[0]<star_level then detection_level:=15*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
     if retries =0 then begin if  5*noise_level[0]<star_level then detection_level:= 5*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
 
-  until ((nhfd>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
+  until ((nhfd>=max_stars) or (retries<0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
 
   if nhfd>0 then
   begin
+    for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
+    begin
+      hfd1:=hfdlist[i];
+      size:=round(5*hfd1);
+      starX:=starlistXY[0,i];
+      starY:=starlistXY[1,i];
+      mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+      mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+    end;
+
+
+
     if ((nhfd_center>0) and (nhfd_outer_ring>0)) then  {enough information for curvature calculation}
     begin
       SetLength(hfdlist_center,nhfd_center); {set length correct}
@@ -8391,6 +8466,8 @@ begin
   hfdlist_top_right:=nil;
   hfdlist_bottom_left:=nil;
   hfdlist_bottom_right:=nil;
+
+  starlistXY:=nil;
 
   img_temp:=nil;{free mem}
 
@@ -9475,7 +9552,7 @@ procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
 var
   mouse_fitsx,mouse_fitsy,hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance : double;
   s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str      : string;
-  x_sized,y_sized,factor,flipH,flipV,i :integer;
+  x_sized,y_sized,factor,flipH,flipV :integer;
   color1:tcolor;
   r,b :single;
 begin

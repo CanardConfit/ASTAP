@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 574
+  Left = 674
   Height = 616
   Hint = ' '
-  Top = 495
+  Top = 214
   Width = 1163
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -974,32 +974,36 @@ object mainwindow: Tmainwindow
       object MenuItem9: TMenuItem
         Caption = '-'
       end
-      object AddplatesolvesolutiontoselectedFITSfiles1: TMenuItem
-        Caption = 'Batch solve images'
-        Hint = 'Find a plate solution for selected files and add to the FITS file header.'
-        ShortCut = 32848
-        OnClick = AddplatesolvesolutiontoselectedFITSfiles1Click
-      end
-      object convert_raw_to_fits1: TMenuItem
-        Caption = 'Batch convert to FITS'
-        Hint = 'Convert the selected images to the FITS format.'
-        ShortCut = 16452
-        OnClick = make_pgm_and_fits1click
-      end
-      object bin2x2: TMenuItem
-        Caption = 'Batch convert bin2x2'
-        Hint = 'Bin 2x2 all selected images'
-        OnClick = bin2x2Click
-      end
-      object split_osc1: TMenuItem
-        Caption = 'Batch split raw images in R, G, G, B'
-        Hint = 'For RAW OSC data only. This will extract the Bayer 2x2 matrix pixels representing red, green, green and blue and write to seperate files. If your image Ha with your OSC, one file will contain the red data only.'
-        OnClick = split_raw1click
-      end
-      object compress_fpack1: TMenuItem
-        Caption = 'Batch compress FITS'
-        Hint = 'Compress all files using the CFITSIO utility program fpack. Works best for 32 bit floating point fits files. Original files will be kept.'
-        OnClick = compress_fpack1Click
+      object MenuItem7: TMenuItem
+        Caption = 'Batch processing'
+        Hint = 'Batch processes'
+        object AddplatesolvesolutiontoselectedFITSfiles1: TMenuItem
+          Caption = 'Batch solve images'
+          Hint = 'Find a plate solution for selected files and add to the FITS file header.'
+          ShortCut = 32848
+          OnClick = AddplatesolvesolutiontoselectedFITSfiles1Click
+        end
+        object convert_raw_to_fits1: TMenuItem
+          Caption = 'Batch convert to FITS'
+          Hint = 'Convert the selected images to the FITS format.'
+          ShortCut = 16452
+          OnClick = make_pgm_and_fits1click
+        end
+        object bin2x2: TMenuItem
+          Caption = 'Batch convert bin2x2'
+          Hint = 'Bin 2x2 all selected images'
+          OnClick = bin2x2Click
+        end
+        object split_osc1: TMenuItem
+          Caption = 'Batch split raw images in R, G, G, B'
+          Hint = 'For RAW OSC data only. This will extract the Bayer 2x2 matrix pixels representing red, green, green and blue and write to seperate files. If your image Ha with your OSC, one file will contain the red data only.'
+          OnClick = split_raw1click
+        end
+        object compress_fpack1: TMenuItem
+          Caption = 'Batch compress FITS'
+          Hint = 'Compress all files using the CFITSIO utility program fpack. Works best for 32 bit floating point fits files. Original files will be kept.'
+          OnClick = compress_fpack1Click
+        end
       end
       object N6: TMenuItem
         Caption = '-'
@@ -1169,14 +1173,22 @@ object mainwindow: Tmainwindow
         Hint = 'Annotate all variable stars'
         OnClick = variable_star_annotation1Click
       end
+      object annotate_minor_planets1: TMenuItem
+        Caption = 'Asteroid annotation'
+        Enabled = False
+        Hint = 'Annotate asteroids'
+        OnClick = annotate_minor_planets1Click
+      end
       object hyperleda_annotation1: TMenuItem
         Caption = 'Deepsky (HyperLeda) annotation'
+        Enabled = False
         Hint = 'Use the huge HyperLeda database for annotation.  Prior to this the image needs to be astrometric solved. Zoom in to get small font.'
         ShortCut = 16473
         OnClick = hyperleda_annotation1Click
       end
       object deepsky_annotation1: TMenuItem
         Caption = 'Deepsky annotation'
+        Enabled = False
         Hint = 'This will place deep sky annotations on the image. Prior to this the image needs to be astrometric solved. Zoom in to get smaller font'
         ImageIndex = 19
         ShortCut = 16460

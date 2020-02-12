@@ -69,6 +69,7 @@ end;
 
 
 procedure update_header;
+
 begin
   mainwindow.Memo1.Text:=memo1_text;{use saved fits header first FITS file}
   update_text('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
@@ -307,9 +308,9 @@ begin
               inc(counter);
               inc(total_counter);
               sum_exp:=sum_exp+exposure;
-              date_obs_to_jd;{convert date-obs to jd}
+              date_to_jd(date_obs);{convert date-obs to jd}
               if jd<jd_start then jd_start:=jd;
-              jd_sum:=jd_sum+jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+              jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
               vector_based:=true;
 
