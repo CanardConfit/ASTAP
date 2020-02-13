@@ -171,7 +171,7 @@ object form_asteroids1: Tform_asteroids1
     end
     object ColorBox1: TColorBox
       Left = 336
-      Height = 24
+      Height = 22
       Top = 112
       Width = 100
       DefaultColorColor = clFuchsia
@@ -211,6 +211,7 @@ object form_asteroids1: Tform_asteroids1
       Height = 23
       Top = 40
       Width = 113
+      OnChange = latitude1Change
       TabOrder = 1
       Text = '0'
     end
@@ -238,6 +239,7 @@ object form_asteroids1: Tform_asteroids1
       Hint = 'For east enter negative, for west enter positive'
       Top = 72
       Width = 113
+      OnChange = longitude1Change
       TabOrder = 2
       Text = '0'
     end

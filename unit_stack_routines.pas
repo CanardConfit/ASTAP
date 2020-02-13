@@ -402,7 +402,7 @@ begin
               begin
 //                get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var} cblack,star_level );{2019x}
   //              find_stars(img_loaded,starlist1);{find stars and put them in a list}
-                bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist1);{bin, measure background, find stars}
+                bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist1);{bin, measure background, find stars}
 
                 find_tetrahedrons_ref;{find tetrahedrons for reference image}
               end;
@@ -445,7 +445,7 @@ begin
                 begin{internal alignment}
 //                  get_background(0,img_loaded,true,true {unknown, calculate also noise_level}, {var} cblack,star_level);
 //                  find_stars(img_loaded,starlist2);{find stars and put them in a list}
-                  bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist2);{bin, measure background, find stars}
+                  bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist2);{bin, measure background, find stars}
 
 
                   find_tetrahedrons_new;{find tetrahedrons for new image}
@@ -724,7 +724,7 @@ begin
 //              get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var} cblack,star_level);
 //              find_stars(img_loaded,starlist1);{find stars and put them in a list}
 
-              bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist1);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist1);{bin, measure background, find stars}
 
               find_tetrahedrons_ref;{find tetrahedrons for reference image}
 
@@ -782,7 +782,7 @@ begin
 //                get_background(0,img_loaded,true,true {unknown, calculate also noise_level} , {var} cblack,star_level);
 //                find_stars(img_loaded,starlist2);{find stars and put them in a list}
 
-                bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist2);{bin, measure background, find stars}
+                bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist2);{bin, measure background, find stars}
 
                 background_correction:=pedestal-cblack;
                 datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
@@ -1232,7 +1232,7 @@ begin
           begin
 //            get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var}cblack, star_level );
 //            find_stars(img_loaded,starlist1);{find stars and put them in a list}
-            bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist1);{bin, measure background, find stars}
+            bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist1);{bin, measure background, find stars}
 
             find_tetrahedrons_ref;{find tetrahedrons for reference image}
             pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
@@ -1279,7 +1279,7 @@ begin
 //                  get_background(0,img_loaded,true,true {unknown, calculate also noise_level}, {var}cblack, star_level);
 //                  find_stars(img_loaded,starlist2);{find stars and put them in a list}
 
-                  bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist2);{bin, measure background, find stars}
+                  bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist2);{bin, measure background, find stars}
 
                   background_correction:=pedestal-cblack;{correct later for difference in background}
                   datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}

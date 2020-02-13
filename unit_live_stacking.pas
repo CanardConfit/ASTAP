@@ -232,7 +232,7 @@ begin
             else {internal star alignment}
             if init=false then {first image}
             begin
-              bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist1);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist1);{bin, measure background, find stars}
               find_tetrahedrons_ref;{find tetrahedrons for reference image}
             end;
 
@@ -284,7 +284,7 @@ begin
             {align using star match}
             if init=true then {second image}
             begin{internal alignment}
-              bin_and_find_stars(img_loaded, binning,1  {cropping},true{update hist},starlist2);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist2);{bin, measure background, find stars}
 
               find_tetrahedrons_new;{find triangels for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}

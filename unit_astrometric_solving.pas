@@ -106,7 +106,7 @@ uses   Classes,SysUtils,controls,forms,math,
        unit_star_align, unit_290, astap_main, unit_stack, unit_annotation;
 
 function solve_image(img :image_array; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
-procedure bin_and_find_stars(img :image_array;binning:integer;cropping:double;get_hist{update hist}:boolean; var starlist3:star_list);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; var starlist3:star_list);{bin, measure background, find stars}
 function report_binning : integer;{select the binning}
 
 var
@@ -385,7 +385,7 @@ begin
   height2:=h;
 end;
 
-procedure bin_and_find_stars(img :image_array;binning:integer;cropping:double;get_hist{update hist}:boolean; var starlist3:star_list);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; var starlist3:star_list);{bin, measure background, find stars}
 var
   old_width,old_height,old_naxis3,nrstars,i : integer;
   img_binned : image_array;
@@ -414,7 +414,7 @@ begin
     //    exit;
 
     get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}cblack,star_level );{get back ground}
-    find_stars(img_binned,starlist3); {find stars of the image and put them in a list}
+    find_stars(img_binned,hfd_min,starlist3); {find stars of the image and put them in a list}
     img_binned:=nil;
     nrstars:=Length(starlist3[0]);
 
@@ -434,7 +434,7 @@ begin
   begin
     if height2>2500 then memo2_message('Info: DOWNSAMPLING IS RECOMMENDED FOR LARGE IMAGES. Set this option in stack menu, tab alignment.');
     get_background(0,img_loaded,get_hist {load hist},true {calculate also standard deviation background}, {var} cblack,star_level);{get back ground}
-    find_stars(img,starlist3); {find stars of the image and put them in a list}
+    find_stars(img,hfd_min,starlist3); {find stars of the image and put them in a list}
   end;
 end;
 
@@ -452,13 +452,13 @@ end;
 function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
   nrstars,nrstars_required,count,max_distance,nr_tetrahedrons, minimum_tetrahedrons,i,database_stars,distance,binning : integer;
-  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov, max_fov,oversize,sep,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, flat_factor: double;
+  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov, max_fov,oversize,sep,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, flat_factor,min_star_size_arcsec,hfd_min: double;
   solution, go_ahead,solve_show_log  : boolean;
   Save_Cursor     : TCursor;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,info_message,warning    :string;
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t : integer;
-  binning_done, autoFOV : boolean;
+  autoFOV : boolean;
 const
    popupnotifier_visible : boolean=false;
 
@@ -491,9 +491,10 @@ begin
   else warning:='';
 
 
-  max_fov:=strtofloat(stackmenu1.max_fov1.caption);{for very large images only}
+  max_fov:=strtofloat2(stackmenu1.max_fov1.caption);{for very large images only}
   max_fov:=min(max_fov,9.53);{warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
 
+  min_star_size_arcsec:=strtofloat2(stackmenu1.min_star_size1.caption); {arc sec};
 
   if ((fov_specified=false) and (cdelt2<>0)) then {no fov in native command line and cdelt2 in header}
     fov:=height2*cdelt2 {calculate FOV}
@@ -501,8 +502,6 @@ begin
     fov:=strtofloat2(stackmenu1.search_fov1.text);{use specfied FOV in stackmenu}
 
   autoFOV:=(fov=0);{specified auto FOV}
-
-  binning_done:=false;{do it only once in auto loop}
 
   repeat {autoFOV loop}
     if autoFOV then
@@ -526,8 +525,10 @@ begin
     end
     else cropping:=1;
 
-    if binning_done=false then bin_and_find_stars(img,binning,cropping,get_hist{update hist}, starlist2);{bin, measure background, find stars}
-    if cropping=1 then binning_done:=true;{no more binning required in auto loop}
+    hfd_min:=max(0.8,min_star_size_arcsec/(binning*fov*3600/height2) );{to ignore hot pixels which are too small}
+
+
+    bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
 
     nrstars:=Length(starlist2[0]);
     nrstars_required:=round(nrstars*(height2/width2)*1.25);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
@@ -788,7 +789,7 @@ begin
     update_text   ('PLTSOLVD=','                   F / No plate solution found.   ');
     remove_key('COMMENT 6');
   end;
-  update_text('WARNING =',#39+warning_str+#39);
+  if warning_str<>'' then update_text('WARNING =',#39+warning_str+#39);
 
   Screen.Cursor :=Save_Cursor;    { back to normal }
 end;

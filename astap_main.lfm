@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 674
+  Left = 445
   Height = 616
   Hint = ' '
-  Top = 214
+  Top = 208
   Width = 1163
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -1177,6 +1177,7 @@ object mainwindow: Tmainwindow
         Caption = 'Asteroid annotation'
         Enabled = False
         Hint = 'Annotate asteroids'
+        ShortCut = 16465
         OnClick = annotate_minor_planets1Click
       end
       object hyperleda_annotation1: TMenuItem

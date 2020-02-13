@@ -57,6 +57,7 @@ type
     analysephotmetrymore1: TButton;
     analysephotometry1: TButton;
     analyse_inspector1: TButton;
+    binning_for_solving_label3: TLabel;
     curve_fitting1: TButton;
     apply_artificial_flat_correction1: TButton;
     apply_artificial_flat_correctionV2: TButton;
@@ -293,6 +294,7 @@ type
     manual_centering1: TComboBox;
     mark_outliers_upto1: TComboBox;
     max_fov1: TComboBox;
+    min_star_size1: TComboBox;
     max_stars1: TComboBox;
     MenuItem23: TMenuItem;
     MenuItem26: TMenuItem;
@@ -1872,7 +1874,7 @@ begin
     if  tetrahedrons_displayed then
       plot_fits(mainwindow.image1,false,true); {remove tetrahedrons}
     get_background(0,img_loaded,false{histogram already available},true {unknown, calculate also noise level} ,{var}cblack,star_level);
-    find_stars(img_loaded,starlist1);{find stars and put them in a list}
+    find_stars(img_loaded,0.8 {hfd_min=two pixels},starlist1);{find stars and put them in a list}
     find_tetrahedrons_ref;{find tetrahedrons for reference image}
     display_tetrahedrons(starlisttetrahedrons1);
     tetrahedrons_displayed:=true;
@@ -3796,7 +3798,7 @@ begin
               get_background(0,img_loaded,false {no histogram already done},true {unknown, calculate also datamax}, {var} cblack,star_level);
               back_ground1:=cblack;
               noise_level1:=noise_level[0]; {remember for difference}
-              find_stars(img_loaded,starlist1);{find stars and put them in a list}
+              find_stars(img_loaded,0.8 {hfd_min=two pixels},starlist1);{find stars and put them in a list}
               find_tetrahedrons_ref;{find tetrahedrons for reference image}
 
               reset_solution_vectors(1);{no influence on the first image since reference}
@@ -3808,7 +3810,7 @@ begin
             begin
               mainwindow.caption:=filename2+' Working on star solutions, be patient.';
               get_background(0,img_loaded,false {no histogram already done} ,true {unknown, calculate also noise_level} , {var} cblack,star_level);
-              find_stars(img_loaded,starlist2);{find stars and put them in a list}
+              find_stars(img_loaded,0.8 {hfd_min=two pixels},starlist2);{find stars and put them in a list}
               find_tetrahedrons_new;{find triangels for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),true{save solution}) then {find difference between ref image and new image}
               begin

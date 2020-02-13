@@ -102,6 +102,8 @@ type
     procedure FormKeyPress(Sender: TObject; var Key: char);
     procedure FormShow(Sender: TObject);
     procedure help_asteroid_annotation1Click(Sender: TObject);
+    procedure latitude1Change(Sender: TObject);
+    procedure longitude1Change(Sender: TObject);
   private
 
   public
@@ -133,6 +135,7 @@ var
 
    wtime2actual: double;
    midpoint    : boolean;
+   site_lat_radians,site_long_radians  : double;
 
 const
    sun200_calculated : boolean=false; {sun200 calculated for comets}
@@ -145,6 +148,29 @@ VAR DAY : INTEGER;
     HOUR, T, TEQX,  XP_ecl_helio,YP_ecl_helio,ZP_ecl_helio, XS,YS,ZS,xe,ye,ze {earth},xeb,yeb,zeb {earth tov Bary centre},
                     xsb,ysb,zsb, {Sun t.o.v Bary centre} xa,ya,za {astroid}, sun_geodist, L,B,R,LS,BS,RS,
                     VX,VY,VZ {comet}     : double;
+
+
+
+procedure Tform_asteroids1.help_asteroid_annotation1Click(Sender: TObject); {han.k}
+begin
+  openurl('http://www.hnsky.org/astap.htm#asteroid_annotation');
+end;
+
+procedure Tform_asteroids1.latitude1Change(Sender: TObject);{han.k}
+var
+  errordecode:boolean;
+begin
+  dec_text_to_radians(latitude1.Text,site_lat_radians,errordecode);
+  if errordecode then latitude1.color:=clred else latitude1.color:=clwindow;
+end;
+
+procedure Tform_asteroids1.longitude1Change(Sender: TObject);{han.k}
+var
+  errordecode:boolean;
+begin
+  dec_text_to_radians(longitude1.Text,site_long_radians,errordecode);
+  if errordecode then longitude1.color:=clred else longitude1.color:=clwindow;
+end;
 
 
 (*---------------------------------------------------------------------------*)
@@ -774,7 +800,7 @@ BEGIN (* COMET *)
 
   ECLEQU (T,X_pln,Y_pln,Z_pln);{convert ecliptic equinox t  to equatorial equinox t}
 
-  PARALLAX_XYZ(wtime2actual,sitelat*pi/180,X_pln,Y_pln,Z_pln);{correct parallax  in correct equinox. X, Y, Z in AE}
+  PARALLAX_XYZ(wtime2actual,site_lat_radians,X_pln,Y_pln,Z_pln);{correct parallax  in correct equinox. X, Y, Z in AE}
 
   PMATEQU (T,TEQX,AS2);{prepare equinox t to desired teqx}
   PRECART (AS2,X_pln,Y_pln,Z_pln); {change equinox}
@@ -968,7 +994,7 @@ var txtf : textfile;
     yy,mm,dd,a_h,a_anm,Peri,Node,a_incl,a_ecc,a_a,c_q, RA,DEC,DELTA,sun_delta,degrees_to_perihelion,c_epochdelta,ra2,dec2,mag,phase,delta_t : double;
     SIN_dec_ref,COS_dec_ref,maxmag       : double;
     desn,name,s:string;
-    flip_horizontal, flip_vertical: boolean;
+    flip_horizontal, flip_vertical      : boolean;
     astr_color                          : tcolor;
     Save_Cursor: TCursor;
 
@@ -1036,11 +1062,11 @@ begin
     mainwindow.error_label1.caption:=('Error converting date-obs from FITS header');
     mainwindow.error_label1.visible:=true;
   end;
-  if ((sitelat=0) and (sitelong=0)) then memo2_message('Warning observatory latitude,longitude not found in the fits header');
+  if ((site_lat_radians=0) and (site_long_radians=0)) then memo2_message('Warning observatory latitude,longitude not found in the fits header');
 
   delta_t:=deltaT_calc(jd); {calculate delta_T in days}
 
-  wtime2actual:=limit_radialen((-sitelong*pi/180)+siderealtime2000 +(jd-2451545 )* earth_angular_velocity,2*pi);
+  wtime2actual:=limit_radialen((-site_long_radians)+siderealtime2000 +(jd-2451545 )* earth_angular_velocity,2*pi);
         {change by time & longitude in 0 ..pi*2, simular as siderial time}
         {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
 
@@ -1131,14 +1157,14 @@ begin
 end;
 
 procedure Tform_asteroids1.annotate_asteroids1Click(Sender: TObject); {han.k}
+var errordecode: boolean;
+
 begin
   if test_mpcorb=false then begin exit; end;{file not found}
 
   mpcorb_path:=form_asteroids1.mpcorb_path1.caption;
 
   date_avg:=date_obs1.Text;
-  sitelat:=strtofloat2(latitude1.Text);
-  sitelong:=strtofloat2(longitude1.Text);
 
   maxcount_asteroid:=max_nr_asteroids1.text;
   maxmag_asteroid:=max_magn_asteroids1.text;
@@ -1182,6 +1208,8 @@ end;
 
 
 procedure Tform_asteroids1.FormShow(Sender: TObject);{han.k}
+var
+  errordecode: boolean;
 begin
   esc_pressed:=false;{reset from cancel}
 
@@ -1202,17 +1230,22 @@ begin
 
   max_nr_asteroids1.text:=maxcount_asteroid;
   max_magn_asteroids1.text:=maxmag_asteroid;
-  latitude1.Text:=floattostrF(sitelat,ffgeneral,8,5);
-  longitude1.Text:=floattostrF(sitelong,ffgeneral,8,5);
+
+    {decode latitude, longitude}
+
+   latitude1.Text:=trim(sitelat); {copy the string to tedit}
+   longitude1.Text:=trim(sitelong);
+  //dec_text_to_radians(latitude1.Text,site_lat,errordecode);
+  //dec_text_to_radians(longitude.Text,site_long,errordecode);
+
+//  latitude1.Text:=floattostrF(sitelat,ffgeneral,8,5);
+//  longitude1.Text:=floattostrF(sitelong,ffgeneral,8,5);
+
   showfullnames1.Checked:=showfullnames;
 
   ColorBox1.ItemIndex :=asteroidcolorindex;
 end;
 
-procedure Tform_asteroids1.help_asteroid_annotation1Click(Sender: TObject);
-begin
-  openurl('http://www.hnsky.org/astap.htm#asteroid_annotation');
-end;
 
 
 end.

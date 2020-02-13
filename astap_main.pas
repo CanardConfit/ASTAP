@@ -444,8 +444,7 @@ var
    stretch_on, esc_pressed, fov_specified,unsaved_import : boolean;
    set_temperature : integer;
    star_level  : double;
-   sitelat,sitelong: double;{Observatory latitude,longitude}
-   object_name, filter_name,calstat,imagetype, memo_backup: string;
+   object_name, filter_name,calstat,imagetype, memo_backup,sitelat, sitelong: string;
    exposure,focus_temp,centalt,centaz,cblack,cwhite,gain            :double; {from FITS}
    subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
    date_obs,date_avg,ut,pltlabel,plateid,telescop,instrum,origin:string;
@@ -502,15 +501,10 @@ const
    mouse_positionRADEC1 : string='';{For manual reference solving}
    mouse_positionRADEC2 : string='';{For manual reference solving}
    flipped_img          : string='';
-//   mouse_positionX1 : double=100;{For manual reference solving}
-//   mouse_positionY1 : double=100;{For manual reference solving}
-//   mouse_positionX2 : double=200;{For manual reference solving}
-//   mouse_positionY2 : double=200;{For manual reference solving}
-    bayer_pattern : array[0..3] of string=('GRBG',
-                                           'BGGR',
-                                           'RGGB',
-                                           'GBRG');
-
+   bayer_pattern : array[0..3] of string=('GRBG',
+                                          'BGGR',
+                                          'RGGB',
+                                          'GBRG');
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;var sep: double);
@@ -1081,7 +1075,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.319 dated 2020-2-12';
+  #13+#10+'Version ß0.9.320 dated 2020-2-13';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4032,6 +4026,18 @@ var
        until ((header[r]=#39){last quote} or (r>=I+79));{read string up to position 80 equals 79}
      end;
 
+     Function get_as_string:string;{read float as string values. Universal e.g. for latitude and longitude which could be either string or float}
+     var  r: integer;
+     begin
+       result:='';
+       r:=I+11;{pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
+       repeat
+         result:=result+header[r];
+         inc(r);
+       until ((header[r]=#39){last quote} or (r>=I+30));{read string up to position 30}
+     end;
+
+
 begin
   {some house keeping}
   result:=false; {assume failure}
@@ -4360,14 +4366,12 @@ begin
 
 
       if ((header[i]='S') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='L') and (header[i+5]='A') and (header[i+6]='T')) then
-         sitelat:=validate_double;{offset to used to correct BAYERPAT due to flipping}
+         sitelat:=get_as_string;{universal, site latitude as string}
       if ((header[i]='S') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='L') and (header[i+5]='O') and (header[i+6]='N')) then
-         sitelong:=validate_double;{offset to used to correct BAYERPAT due to flipping}
+         sitelong:=get_as_string;{universal, site longitude as string}
 
 
       {following is only required when using DSS polynome plate fit}
-      begin
-      end;
       if ((header[i]='A') and (header[i+1]='M')  and (header[i+2]='D') and (header[i+3]='X')) then
         begin
           if header[i+5]=' ' then s:=(header[i+4]) else s:=(header[i+4])+(header[i+5]);
@@ -4609,6 +4613,7 @@ begin
   fits_file:=true;{succes}
 end;
 
+
 function load_PPM_PGM(filen:string; var img_loaded2: image_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
    i,j, reader_position  : integer;
@@ -4660,8 +4665,8 @@ begin
   cd2_1:=0;
   cd2_2:=0;
   date_obs:=''; date_avg:='';date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
-  sitelat:=0;{Observatory latitude}
-  sitelong:=0;{Observatory longitude}
+  sitelat:='';{Observatory latitude}
+  sitelong:='';{Observatory longitude}
 
   naxis:=1;
   naxis3:=1;
@@ -5609,6 +5614,7 @@ begin
     dum:=initstring.Values['radius_search']; if dum<>'' then stackmenu1.radius_search1.text:=dum;
     dum:=initstring.Values['tetrahedron_tolerance']; if dum<>'' then stackmenu1.tetrahedron_tolerance1.text:=dum;
     dum:=initstring.Values['maximum_stars']; if dum<>'' then stackmenu1.max_stars1.text:=dum;
+    dum:=initstring.Values['min_star_size']; if dum<>'' then stackmenu1.min_star_size1.text:=dum;
 
     dum:=initstring.Values['manual_centering']; if dum<>'' then stackmenu1.manual_centering1.text:=dum;
 
@@ -5925,6 +5931,8 @@ begin
   initstring.Values['radius_search']:=stackmenu1.radius_search1.text;
   initstring.Values['tetrahedron_tolerance']:=stackmenu1.tetrahedron_tolerance1.text;
   initstring.Values['maximum_stars']:=stackmenu1.max_stars1.text;
+  initstring.Values['min_star_size']:=stackmenu1.min_star_size1.text;
+
 
   initstring.Values['manual_centering']:=stackmenu1.manual_centering1.text;
 
@@ -7928,6 +7936,7 @@ begin
         '-spd center_south_pole_distance[degrees]'+#10+
         '-s  max_number_of_stars'+#10+
         '-t  tolerance'+#10+
+        '-m  minimum_star_size["]'+#10+
         '-speed mode[auto/slow] {Slow is forcing small search steps to improve detection.}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-analyse {Analyse only and report in the errorlevel the median HFD * 100M + number of stars used}'+#10+
@@ -7980,6 +7989,7 @@ begin
         if hasoption('s') then
                  stackmenu1.max_stars1.text:=GetOptionValue('s');
         if hasoption('t') then stackmenu1.tetrahedron_tolerance1.text:=GetOptionValue('t');
+        if hasoption('m') then stackmenu1.min_star_size1.text:=GetOptionValue('m');
         if hasoption('speed') then stackmenu1.force_oversize1.checked:=pos('slow',GetOptionValue('speed'))<>0;
 
 
@@ -8662,8 +8672,6 @@ var
   decd,decm,decs :double;
   position1,position2,position3,error1,error2,error3,plusmin:integer ;
 begin
-//  inp:= stringreplace(inp, '--', '-',[rfReplaceAll]);
-
   inp:= stringreplace(inp, ',', '.',[rfReplaceAll]);
   inp:= stringreplace(inp, ':', ' ',[rfReplaceAll]);
   inp:= stringreplace(inp, 'd', ' ',[rfReplaceAll]);
@@ -8674,8 +8682,6 @@ begin
   inp:= stringreplace(inp, '  ', ' ',[rfReplaceAll]);
   inp:=trim(inp)+' ';
   if pos('-',inp)>0 then plusmin:=-1 else plusmin:=1;
-
-
 
   position1:=pos(' ',inp);
   val(copy(inp,1,position1-1),decd,error1);

@@ -37,7 +37,7 @@ var
 
    Savefile: file of solution_vector;{to save solution if required for second and third step stacking}
 
-procedure find_stars(img :image_array;var starlist1: star_list);{find stars and put them in a list}
+procedure find_stars(img :image_array;hfd_min:double;var starlist1: star_list);{find stars and put them in a list}
 procedure find_tetrahedrons_ref;  {find star tetrahedrons for ref image}
 procedure find_tetrahedrons_new;  {find star tetrahedrons for new image}
 function find_offset_and_rotation(minimum_tetrahedrons: integer;tolerance:double;save_solution:boolean) : boolean; {find difference between ref image and new image}
@@ -438,7 +438,7 @@ begin
   starlist1:=starlist2;{move pointer}
 end;
 
-procedure find_stars(img :image_array;var starlist1: star_list);{find stars and put them in a list}
+procedure find_stars(img :image_array;hfd_min:double;var starlist1: star_list);{find stars and put them in a list}
 var
    fitsX, fitsY,nrstars,size,i,j, max_stars,retries    : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level      : double;
@@ -491,7 +491,7 @@ begin
         if (( img_temp2[0,fitsX,fitsY]<=0){area not surveyed} and (img[0,fitsX,fitsY]-cblack>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
         begin
           HFD(img,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-          if ((hfd1<=10) and (snr>10) and (hfd1>0.8) {two pixels minimum} ) then
+          if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} ) then
           begin
             {for testing}
           //  if flip_vertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
