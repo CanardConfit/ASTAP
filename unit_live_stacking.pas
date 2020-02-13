@@ -78,7 +78,8 @@ begin
   update_text ('CALSTAT =',#39+calstat+#39); {calibration status}
   update_text ('DATE-OBS=',#39+JdToDate(jd_start)+#39);{give start point exposures}
   update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ', jd_sum/counterL);{give midpoint of exposures}
-  update_text ('DATE-AVG=',#39+JdToDate(jd_sum/counterL)+#39);{give midpoint of exposures}
+  date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
+  update_text ('DATE-AVG=',#39+date_avg+#39);{give midpoint of exposures}
   update_integer('LIGH_CNT=',' / Light frames combined.                  ' ,counterL); {for interim lum,red,blue...files.}
   update_integer('DARK_CNT=',' / Darks used for luminance.               ' ,dark_count);{for interim lum,red,blue...files. Compatible with master darks}
   update_integer('FLAT_CNT=',' / Flats used for luminance.               ' ,flat_count);{for interim lum,red,blue...files. Compatible with master flats}

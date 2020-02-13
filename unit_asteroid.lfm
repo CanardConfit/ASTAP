@@ -50,7 +50,7 @@ object form_asteroids1: Tform_asteroids1
   object GroupBox1: TGroupBox
     Left = 8
     Height = 168
-    Top = 8
+    Top = 0
     Width = 542
     Caption = 'Asteroid database'
     ClientHeight = 148
@@ -82,7 +82,7 @@ object form_asteroids1: Tform_asteroids1
     object mpcorb_filedate1: TLabel
       Left = 151
       Height = 15
-      Top = 48
+      Top = 40
       Width = 15
       Caption = '---'
       ParentColor = False
@@ -107,7 +107,7 @@ object form_asteroids1: Tform_asteroids1
     object up_to_number1: TLabel
       Left = 8
       Height = 15
-      Top = 80
+      Top = 72
       Width = 160
       Alignment = taRightJustify
       Anchors = [akTop, akRight]
@@ -120,7 +120,7 @@ object form_asteroids1: Tform_asteroids1
       Left = 184
       Height = 23
       Hint = 'Specify here the number of asteroids to extract.'
-      Top = 77
+      Top = 72
       Width = 78
       TabOrder = 1
       Text = '10000'
@@ -162,21 +162,30 @@ object form_asteroids1: Tform_asteroids1
       TabOrder = 3
     end
     object showfullnames1: TCheckBox
-      Left = 336
+      Left = 328
       Height = 19
-      Top = 77
+      Top = 104
       Width = 107
       Caption = 'Show full names'
       TabOrder = 4
     end
     object ColorBox1: TColorBox
-      Left = 336
+      Left = 328
       Height = 22
-      Top = 112
+      Top = 73
       Width = 100
       DefaultColorColor = clFuchsia
       ItemHeight = 16
       TabOrder = 5
+    end
+    object add_date1: TCheckBox
+      Left = 328
+      Height = 19
+      Hint = 'Add the image date and position of the image center.'
+      Top = 129
+      Width = 137
+      Caption = 'Add date and position'
+      TabOrder = 6
     end
   end
   object GroupBox2: TGroupBox
@@ -216,21 +225,21 @@ object form_asteroids1: Tform_asteroids1
       Text = '0'
     end
     object Label2: TLabel
-      Left = 78
+      Left = 75
       Height = 15
       Top = 40
-      Width = 43
+      Width = 46
       Anchors = [akTop, akRight]
-      Caption = 'Latitude'
+      Caption = 'Latitude:'
       ParentColor = False
     end
     object Label3: TLabel
-      Left = 67
+      Left = 64
       Height = 15
       Top = 72
-      Width = 54
+      Width = 57
       Anchors = [akTop, akRight]
-      Caption = 'Longitude'
+      Caption = 'Longitude:'
       ParentColor = False
     end
     object longitude1: TEdit

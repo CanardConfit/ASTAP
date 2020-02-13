@@ -577,7 +577,7 @@ function convert_load_raw(filename3: string): boolean; {convert raw to pgm file 
 procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
-
+Function LeadingZero(w : integer) : String;
 
 const   bufwide=1024*120;{buffer size in bytes}
 
@@ -1075,7 +1075,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.320 dated 2020-2-13';
+  #13+#10+'Version ß0.9.321 dated 2020-2-13';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5723,7 +5723,8 @@ begin
     dum:=initstring.Values['mpcorb_path'];if dum<>'' then mpcorb_path:=dum;{asteroids}
     dum:=initstring.Values['maxcount'];if dum<>'' then maxcount_asteroid:=dum;{asteroids}
     dum:=initstring.Values['maxmag'];if dum<>'' then maxmag_asteroid:=dum;{asteroids}
-    showfullnames:=get_boolean('showfullnames',false);{asteroids}
+    showfullnames:=get_boolean('showfullnames',true);{asteroids}
+    add_date:=get_boolean('add_date',true);{asteroids}
 
     get_int(asteroidcolorindex,'asteroid_color');
 
@@ -6027,6 +6028,8 @@ begin
   initstring.Values['maxcount']:=maxcount_asteroid;{asteroids}
   initstring.Values['maxmag']:=maxmag_asteroid;{asteroids}
   initstring.Values['showfullnames']:=BoolStr[showfullnames];{asteroids}
+  initstring.Values['add_date']:=BoolStr[add_date];{asteroids}
+
   initstring.Values['asteroid_color']:=inttostr(asteroidcolorindex);
 
                                       ;
@@ -8455,7 +8458,7 @@ begin
 
     image1.Canvas.font.size:=fontsize*2;
     image1.Canvas.font.color:=clwhite;
-    image1.Canvas.textout(round(image1.Canvas.font.size),height2-round(2*image1.Canvas.font.size),mess2);{median HFD and tilt indication}
+    image1.Canvas.textout(round(fontsize*2),height2-round(4*fontsize),mess2);{median HFD and tilt indication}
   end
   else
   begin

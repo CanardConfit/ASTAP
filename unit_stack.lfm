@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 104
+  Left = 673
   Height = 660
-  Top = 150
+  Top = 255
   Width = 1677
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1676
-    ActivePage = Images
+    ActivePage = tab_photometry1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -226,7 +226,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 8
     TabOrder = 5
     OnChange = pagecontrol1Change
     Options = [nboMultiLine]

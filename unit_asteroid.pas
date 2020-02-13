@@ -92,6 +92,7 @@ type
     mpcorb_path1: TLabel;
     OpenDialog1: TOpenDialog;
     showfullnames1: TCheckBox;
+    add_date1: TCheckBox;
     UpDown1: TUpDown;
     up_to_magn1: TLabel;
     up_to_number1: TLabel;
@@ -118,7 +119,8 @@ const
    maxcount_asteroid : string='10000';
    maxmag_asteroid : string='17';
    mpcorb_path : string='MPCORB.DAT';
-   showfullnames: boolean=false;
+   showfullnames: boolean=true;
+   add_date: boolean=true;
    asteroidcolorindex: integer=13;
 
 procedure plot_mpcorb;{read and plot MPCORB.dat}
@@ -990,9 +992,9 @@ const
    a_g : double =0.15;{asteroid_slope_factor}
    Gauss_gravitational_constant: double=0.01720209895*180/pi;
 var txtf : textfile;
-    count, maxcount   : integer;
+    count, maxcount,fontsize            : integer;
     yy,mm,dd,a_h,a_anm,Peri,Node,a_incl,a_ecc,a_a,c_q, RA,DEC,DELTA,sun_delta,degrees_to_perihelion,c_epochdelta,ra2,dec2,mag,phase,delta_t : double;
-    SIN_dec_ref,COS_dec_ref,maxmag       : double;
+    SIN_dec_ref,COS_dec_ref,maxmag      : double;
     desn,name,s:string;
     flip_horizontal, flip_vertical      : boolean;
     astr_color                          : tcolor;
@@ -1078,6 +1080,7 @@ begin
   maxcount:=strtoint(form_asteroids1.max_nr_asteroids1.text);
   maxmag:=strtofloat2(form_asteroids1.max_magn_asteroids1.text);
   showfullnames:=form_asteroids1.showfullnames1.checked;
+  add_date:=form_asteroids1.add_date1.checked;
 
   assignfile(txtf,form_asteroids1.mpcorb_path1.caption);
   try
@@ -1132,6 +1135,18 @@ begin
   finally
     CloseFile(txtf);
   end;
+
+  {write some info at bottom screen}
+  with mainwindow do
+  begin
+    if form_asteroids1.add_date1.checked then
+    begin
+     fontsize:=20;
+     image1.Canvas.font.size:=20;
+     image1.Canvas.textout(round(fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd)+'    Center position[α,δ]:   '+ra1.text+'      '+dec1.text);{}
+    end;
+  end;
+
 
   Screen.Cursor:= Save_Cursor;
 
@@ -1231,17 +1246,13 @@ begin
   max_nr_asteroids1.text:=maxcount_asteroid;
   max_magn_asteroids1.text:=maxmag_asteroid;
 
-    {decode latitude, longitude}
+  {latitude, longitude}
+  latitude1.Text:=trim(sitelat); {copy the string to tedit}
+  longitude1.Text:=trim(sitelong);
 
-   latitude1.Text:=trim(sitelat); {copy the string to tedit}
-   longitude1.Text:=trim(sitelong);
-  //dec_text_to_radians(latitude1.Text,site_lat,errordecode);
-  //dec_text_to_radians(longitude.Text,site_long,errordecode);
-
-//  latitude1.Text:=floattostrF(sitelat,ffgeneral,8,5);
-//  longitude1.Text:=floattostrF(sitelong,ffgeneral,8,5);
 
   showfullnames1.Checked:=showfullnames;
+  form_asteroids1.add_date1.checked:=add_date;
 
   ColorBox1.ItemIndex :=asteroidcolorindex;
 end;

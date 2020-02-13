@@ -4609,16 +4609,6 @@ end;
 
 
 
-Function LeadingZero(w : integer) : String;
- var
-   s : String;
- begin
-   Str(w:0,s);
-   if Length(s) = 1 then
-     s := '0' + s;
-   LeadingZero := s;
- end;
-
 function JdToDate(jd:double):string;{Returns Date from Julian Date,  See MEEUS 2 page 63}
 var A,B,C,D,E,F,G,J,M,T,Z: double; {!!! 2016 by purpose, otherwise with timezone 8, 24:00 midnigth becomes 15:59 UTC}
     HH, MM, SS           : integer;
@@ -7469,7 +7459,8 @@ begin
       if ((naxis3=1) and (counterL>0)) then {works only for mono}
       begin
         update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ', jd_sum/counterL);{give midpoint of exposures}
-        update_text ('DATE-AVG=',#39+JdToDate(jd_sum/counterL)+#39);{give midpoint of exposures}
+        date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
+        update_text ('DATE-AVG=',#39+date_avg+#39);{give midpoint of exposures}
       end;
 
       if pos('Sigma',stackmenu1.stack_method1.text)>0=true then
