@@ -36,6 +36,9 @@ const
   oldra0  :double=0;
   olddec0 :double=0;
   oldexposure:double=0;
+var
+  memo1_text : string;{for backup header}
+
 
 function file_available(stack_directory:string; var filen: string ) : boolean; {check if fits file is available and report the filename}
 var
@@ -72,11 +75,12 @@ procedure update_header;
 
 begin
   mainwindow.Memo1.Text:=memo1_text;{use saved fits header first FITS file}
+
   update_text('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
   update_text   ('HISTORY 1','  Stacking method LIVE STACKING');
   update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(sum_exp));
   update_text ('CALSTAT =',#39+calstat+#39); {calibration status}
-  update_text ('DATE-OBS=',#39+JdToDate(jd_start)+#39);{give start point exposures}
+  update_text ('DATE-OBS=',#39+JdToDate(jd_stop)+#39);{give end point exposures}
   update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ', jd_sum/counterL);{give midpoint of exposures}
   date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
   update_text ('DATE-AVG=',#39+date_avg+#39);{give midpoint of exposures}
@@ -133,7 +137,7 @@ var
       bad_counter:=0;
       sum_exp:=0;
       jd_sum:=0;{sum of Julian midpoints}
-      jd_start:=9999999999;{start observations in Julian day}
+      jd_stop:=0;{end observations in Julian day}
 
       dark_exposure:=987654321;{not done indication}
       dark_temperature:=987654321;
@@ -310,7 +314,7 @@ begin
               inc(total_counter);
               sum_exp:=sum_exp+exposure;
               date_to_jd(date_obs);{convert date-obs to jd}
-              if jd<jd_start then jd_start:=jd;
+              if jd>jd_stop then jd_stop:=jd;
               jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
               vector_based:=true;
@@ -413,6 +417,8 @@ begin
 
     counterL:=counter;
     if counter>0 then update_header;
+
+    memo1_text:='';{release memory}
   end;{with stackmenu1}
 end;
 

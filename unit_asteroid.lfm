@@ -178,13 +178,13 @@ object form_asteroids1: Tform_asteroids1
       ItemHeight = 16
       TabOrder = 5
     end
-    object add_date1: TCheckBox
+    object add_subtitle1: TCheckBox
       Left = 328
       Height = 19
-      Hint = 'Add the image date and position of the image center.'
+      Hint = 'Add to the bottom of the image date and position.'
       Top = 129
-      Width = 137
-      Caption = 'Add date and position'
+      Width = 120
+      Caption = 'Add image subtitle'
       TabOrder = 6
     end
   end

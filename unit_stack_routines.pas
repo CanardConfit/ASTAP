@@ -248,7 +248,7 @@ begin
     binning:=report_binning;{select binning}
     counter:=0;
     jd_sum:=0;{sum of Julian midpoints}
-    jd_start:=9999999999;{start observations in Julian day}
+    jd_stop:=0;{end observations in Julian day}
     init:=false;
 
     {LRGB method}
@@ -333,7 +333,8 @@ begin
 
             if init=false then
             begin
-              memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
+              backup_header;{backup header and solution}
+
               if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then  begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
               initialise1;{set variables correct, do this before apply dark}
               initialise2;{set variables correct}
@@ -443,10 +444,7 @@ begin
                 end
                 else
                 begin{internal alignment}
-//                  get_background(0,img_loaded,true,true {unknown, calculate also noise_level}, {var} cblack,star_level);
-//                  find_stars(img_loaded,starlist2);{find stars and put them in a list}
                   bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist2);{bin, measure background, find stars}
-
 
                   find_tetrahedrons_new;{find tetrahedrons for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
@@ -470,9 +468,9 @@ begin
             init:=true;{initialize for first image done}
             if ((c<>0) and (solution)) then  {do not add reference channel c=0, in most case luminance file.}
             begin
-              inc(counter);{count number of files involved}
+              inc(counter);{count number of colour files involved}
               date_to_jd(date_obs);{convert date-obs to jd}
-              if jd<jd_start then jd_start:=jd;
+              if jd>jd_stop then jd_stop:=jd;
               jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
               vector_based:=((use_star_alignment) or (use_manual_alignment));
@@ -654,7 +652,7 @@ begin
     counter:=0;
     sum_exp:=0;
     jd_sum:=0;{sum of Julian midpoints}
-    jd_start:=9999999999;{start observations in Julian day}
+    jd_stop:=0;{end observations in Julian day}
 
     binning:=report_binning;{select binning}
 
@@ -680,7 +678,8 @@ begin
 
           if init=false then
           begin
-            memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
+            backup_header;{backup header and solution}
+
             if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then  begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
             initialise1;{set variables correct. Do this before apply dark}
             initialise2;{set variables correct}
@@ -815,7 +814,7 @@ begin
             if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
 
             date_to_jd(date_obs);{convert date-obs to jd}
-            if jd<jd_start then jd_start:=jd;
+            if jd>jd_stop then jd_stop:=jd;
             jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
             vector_based:=((use_star_alignment) or (use_manual_alignment));
@@ -945,7 +944,7 @@ begin
     counter:=0;
     sum_exp:=0;
     jd_sum:=0;{sum of Julian midpoints}
-    jd_start:=9999999999;{start observations in Julian day}
+    jd_stop:=0;{end observations in Julian day}
     init:=false;
 
     dummy:=0;
@@ -970,7 +969,8 @@ begin
 
         if init=false then
         begin
-          memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
+          backup_header;{backup header and solution}
+
           if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then  begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
           initialise1;{set variables correct}
           initialise2;{set variables correct}
@@ -1045,7 +1045,7 @@ begin
           sum_exp:=sum_exp+exposure;
 
           date_to_jd(date_obs);{convert date-obs to jd}
-          if jd<jd_start then jd_start:=jd;
+          if jd>jd_stop then jd_stop:=jd;
           jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
           vector_based:=((use_star_alignment) or (use_manual_alignment));
@@ -1163,7 +1163,7 @@ begin
     counter:=0;
     sum_exp:=0;
     jd_sum:=0;{sum of Julian midpoints}
-    jd_start:=9999999999;{start observations in Julian day}
+    jd_stop:=0;{end observations in Julian day}
 
     init:=false;
     background_correction:=0;{required for astrometric alignment}
@@ -1189,7 +1189,8 @@ begin
 
         if init=false then
         begin
-          memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
+          backup_header;{backup header and solution}
+
           if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then  begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
           initialise1;{set variables correct}
           initialise2;{set variables correct}
@@ -1317,7 +1318,7 @@ begin
           if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
 
           date_to_jd(date_obs);{convert date-obs to jd}
-          if jd<jd_start then jd_start:=jd;
+          if jd>jd_stop then jd_stop:=jd;
           jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
           {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}

@@ -724,11 +724,10 @@ var
   ref_X, ref_Y             : double;{reference position from FITS header, used for manual stacking of colour images, second stage}
   jd                       : double;{julian day of date-obs}
   jd_sum                   : double;{sum of julian days}
-  jd_start                 : double; {start observation in julian days}
+  jd_stop                  : double;{end observation in julian days}
 
   file_list : array of string;
   files_to_process, files_to_process_LRGB : array of  TfileToDo;{contains names to process and index to listview1}
-  memo1_text : string;
   flat_norm_value,dark_average,dark_sigma  : double;
   areax1,areax2,areay1,areay2 : integer;
   hue1,hue2: single;{for colour disk}
@@ -767,6 +766,8 @@ function median_background(var img :image_array;color,size,x,y:integer): double;
 procedure analyse_fits(img : image_array; var star_counter : integer; var backgr, hfd_median : double); {find background, number of stars, median HFD}
 procedure sample(fitsx,fitsy : integer);{sampe local colour and fill shape with colour}
 procedure apply_most_common(sourc,dest: image_array; radius: integer);  {apply most common filter on first array and place result in second array}
+procedure backup_header;{backup solution and header}
+procedure restore_header;{backup solution and header}
 
 const
   I_object=0; {position in listview1}
@@ -843,6 +844,28 @@ const
 implementation
 
 uses  unit_astrometry,unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd, unit_live_stacking, unit_hyperbola;
+
+type
+   theaderbackup  = record
+     crpix1 : double;{could be modified by crop}
+     crpix2 : double;
+     crval1 : double;
+     crval2 : double;
+     crota1 : double;{for 90 degrees rotate}
+     crota2 : double;
+     cdelt1 : double;
+     cdelt2 : double;
+     cd1_1  : double;
+     cd1_2  : double;
+     cd2_1  : double;
+     cd2_2  : double;
+     date_obs: string; {for accurate asteroid plotting after manual stack}
+     header : string;
+   end;
+var
+   header_backup : array of theaderbackup;{dynamic so memory can be freed}
+
+
 {$IFDEF fpc}
   {$R *.lfm}
 {$else}  {delphi}
@@ -886,6 +909,46 @@ begin
   result:=sqrt(sqrt(sqr( (2/(pi*a)) + ln(1-x*x)/2)-(ln(1-x*x)/a) ) - (2/(pi*a) + ln(1-x*x)/2) );
 end;
 
+procedure backup_header;{backup solution and header}
+begin
+  if header_backup=nil then setlength(header_backup,1);{create memory}
+  header_backup[0].crpix1:=crpix1;
+  header_backup[0].crpix2:=crpix2;
+  header_backup[0].crval1:=ra0;
+  header_backup[0].crval2:=dec0;
+  header_backup[0].crota1:=crota1;
+  header_backup[0].crota2:=crota2;
+  header_backup[0].cdelt1:=cdelt1;
+  header_backup[0].cdelt2:=cdelt2;
+  header_backup[0].cd1_1:=cd1_1;
+  header_backup[0].cd1_2:=cd1_2;
+  header_backup[0].cd2_1:=cd2_1;
+  header_backup[0].cd2_2:=cd2_2;
+  header_backup[0].date_obs:=date_obs;
+  header_backup[0].header:=mainwindow.Memo1.Text;{backup fits header}
+end;
+procedure restore_header;{restore solution and header}
+begin
+  if header_backup=nil then exit;{no backup}
+  crpix1:=header_backup[0].crpix1;
+  crpix2:=header_backup[0].crpix2;
+
+  ra0:=header_backup[0].crval1;
+  dec0:=header_backup[0].crval2;
+
+  crota1:=header_backup[0].crota1;
+  crota2:=header_backup[0].crota2;
+  cdelt1:=header_backup[0].cdelt1;
+  cdelt2:=header_backup[0].cdelt2;
+  cd1_1:=header_backup[0].cd1_1;
+  cd1_2:=header_backup[0].cd1_2;
+  cd2_1:=header_backup[0].cd2_1;
+  cd2_2:=header_backup[0].cd2_2;
+  date_obs:=header_backup[0].date_obs;
+  mainwindow.Memo1.Text:=header_backup[0].header;{restore fits header}
+
+  header_backup:=nil; {release memory}
+end;
 
 procedure update_stackmenu;{update stackmenu1 menus, called onshow stackmenu1}
 var
@@ -1864,6 +1927,7 @@ end;
 procedure Tstackmenu1.show_tetrahedrons1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
+   hfd_min   : double;
 begin
   if fits_file=false then application.messagebox( pchar('First load an image in the viewer!'), pchar('No action'),MB_OK)
   else
@@ -1874,7 +1938,9 @@ begin
     if  tetrahedrons_displayed then
       plot_fits(mainwindow.image1,false,true); {remove tetrahedrons}
     get_background(0,img_loaded,false{histogram already available},true {unknown, calculate also noise level} ,{var}cblack,star_level);
-    find_stars(img_loaded,0.8 {hfd_min=two pixels},starlist1);{find stars and put them in a list}
+
+    hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size1.caption){arc sec}/(cdelt2 *3600) );{to ignore hot pixels which are too small}
+    find_stars(img_loaded,hfd_min,starlist1);{find stars and put them in a list}
     find_tetrahedrons_ref;{find tetrahedrons for reference image}
     display_tetrahedrons(starlisttetrahedrons1);
     tetrahedrons_displayed:=true;
@@ -6897,7 +6963,8 @@ begin
         Application.ProcessMessages;
         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin memo2_message('Error');{can't load} Screen.Cursor := Save_Cursor; exit;end;
 
-        memo1_text:=mainwindow.Memo1.Text;{save fits header FITS file}
+        backup_header;{backup header and solution}
+
         apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
         {these global variables are passed-on in procedure to protect against overwriting}
         memo2_message('Calibrating file: '+inttostr(c+1)+'-'+inttostr( ListView1.items.count-1)+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
@@ -6908,7 +6975,8 @@ begin
             demosaic_bayer; {convert OSC image to colour}
          {naxis3 is now 3}
 
-        mainwindow.Memo1.Text:=memo1_text;{use saved fits header}
+        restore_header;{restore header and solution}
+
         update_text   ('COMMENT 1','  Calibrated by Astrometric Stacking Program. www.hnsky.org');
         update_text   ('CALSTAT =',#39+calstat+#39); {calibration status}
 
@@ -7013,9 +7081,9 @@ end;
 procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
-   i,c,over_size,{ counterX,}nrfiles, image_counter,object_counter, first_file, total_counter: integer;
+   i,c,over_size,over_sizeL,nrfiles, image_counter,object_counter, first_file, total_counter,counter_colours: integer;
    filter_name1, filter_name2, filename3, extra1,extra2,object_to_process,stack_info         : string;
-   lrgb,solution  : boolean;
+   lrgb,solution,monofile  : boolean;
    startTick      : qword;{for timing/speed purposes}
 begin
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
@@ -7173,7 +7241,9 @@ begin
     counterB:=0;
     counterRGB:=0;
     counterL:=0;
+    monofile:=false;{mono file success}
     light_count:=0;
+    counter_colours:=0;{number of lrgb colours added}
 
     counterRdark:=0;
     counterGdark:=0;
@@ -7201,12 +7271,11 @@ begin
     inc(object_counter);
 
     lrgb:=classify_filter1.checked;
-
+    over_size:=round(strtofloat2(stackmenu1.oversize1.Text));{accept also commas but round later}
     if lrgb=false then
     begin
       SetLength(files_to_process, ListView1.items.count);{set array length to listview}
       nrfiles:=0;
-      over_size:=round(strtofloat2(stackmenu1.oversize1.Text));{accept also commas but round later}
 
       for c:=0 to ListView1.items.count-1 do
       begin
@@ -7244,12 +7313,20 @@ begin
                                                               else
                                                                stack_average(over_size,{var}files_to_process,counterL);{average}
 
-        if counterL>0 then exposureL:=round(sum_exp/counterL); {average exposure}
+        if counterL>0 then
+        begin
+          exposureL:=round(sum_exp/counterL); {average exposure}
+          monofile:=true;{success}
+        end;
 
         if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
 
       end
-      else counterL:=0; {number of files processed}
+      else
+      begin
+        counterL:=0; {number of files processed}
+        monofile:=false;{stack failure}
+      end;
 
     end
     else
@@ -7299,22 +7376,18 @@ begin
           if nrfiles>1 then {more then one file}
           begin
             put_lowest_hfd_on_top(files_to_process);
-            over_size:=round(strtofloat2(stackmenu1.oversize1.Text));{do oversize in 'A', 'S', 'M' routine, set repeatilly}
             if pos('Sigma',stackmenu1.stack_method1.text)>0=true then stack_sigmaclip(over_size,{var}files_to_process, counterL) {sigma clip combining}
             else
             if pos('stich',stackmenu1.stack_method1.text)>0=true then stack_mosaic(over_size,{var}files_to_process,counterL) {mosaic combining}
                                                                   else stack_average(over_size,{var}files_to_process,counterL);{average}
-            over_size:=0; {do oversize only once. Not again in 'L' mode !!}
+            over_sizeL:=0; {do oversize only once. Not again in 'L' mode !!}
             if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
 
-            {kill any old plate solution since it is most likely invalid due to oversize or less accurate}
-            remove_key('CD1_1   ');
-            remove_key('CD1_2   ');
-            remove_key('CD2_1   ');
-            remove_key('CD2_2   ');
-            remove_key('CROTA2  ');
-            remove_key('CDELT1  ');
-            remove_key('PLTSOLVD');
+            if over_size<>0 then {adapt astrometric solution for intermediate file}
+            begin
+              if crpix1<>0 then begin crpix1:=crpix1+over_size; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;{adapt reference pixel of plate solution due to oversize}
+              if crpix2<>0 then begin crpix2:=crpix2+over_size; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
+            end;
 
             update_text('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
             update_text('CALSTAT =',#39+calstat+#39);
@@ -7364,7 +7437,7 @@ begin
           else
           begin
             files_to_process_LRGB[i+1]:=files_to_process[first_file]; {one file, no need to stack}
-            over_size:=round(strtofloat2(stackmenu1.oversize1.Text));{do oversize in 'L'  routine}
+            over_sizeL:=over_size;{do oversize in 'L'  routine}
             counterL:=1;
           end;
 
@@ -7390,7 +7463,7 @@ begin
         if files_to_process_LRGB[0].name='' then  files_to_process_LRGB[0]:=files_to_process_LRGB[2]; {use green channel as reference is no luminance is available}
 
 
-        stack_LRGB(over_size {zero if already stacked from several files},files_to_process_LRGB, counterL); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,RGB,L]}
+        stack_LRGB(over_sizeL {zero if already stacked from several files},files_to_process_LRGB, counter_colours); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,RGB,L]}
         if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
       end
       else
@@ -7399,7 +7472,6 @@ begin
          memo2.lines.add('Error! One color only. For LRGB stacking a minimum of two colors is required. Removed the check mark classify on "image filter" or add images made with a different color filter.');
          lrgb:=false;{prevent runtime errors with naxis3=3}
       end;
-      counterL:=0;{prevent a second save in next part for final file unless length(extra2)>=2}
     end;
 
     Screen.Cursor := Save_Cursor;  { Always restore to normal }
@@ -7407,7 +7479,7 @@ begin
     fits_file:=true;
     nrbits:=-32; {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
 
-    if ((counterL<>0){none lrgb loop} or (length(extra2)>=2){lrgb loop}) then
+    if ((monofile){success none lrgb loop} or (counter_colours<>0{length(extra2)>=2} {lrgb loop})) then
     begin
       if ((stackmenu1.make_osc_color1.checked) and (stackmenu1.osc_colour_smooth1.checked)) then
       begin
@@ -7421,26 +7493,14 @@ begin
       else
         getfits_histogram(0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
 
-      CD1_1:=0;{kill any existing north arrow during plotting. Most likely wrong after stacking}
+      restore_header;{restore header and solution}{use saved fits header first FITS file as saved in unit_stack_routines}
       plot_fits(mainwindow.image1,true,true);{plot real}
-      mainwindow.Memo1.Text:=memo1_text;{use saved fits header first FITS file}
 
-      {kill any old plate solution since it is most likely invalid due to oversize or less accurate}
-      remove_key('CD1_1   ');
-      remove_key('CD1_2   ');
-      remove_key('CD2_1   ');
-      remove_key('CD2_2   ');
-      remove_key('CROTA1  ');
-      remove_key('CROTA2  ');
-      remove_key('CDELT1  ');
-      remove_key('CDELT2  ');
-      remove_key('PLTSOLVD');
       remove_key('DATE    ');{no purpose anymore for the orginal date written}
       remove_key('EXPTIME'); {remove, will be added later in the header}
       remove_key('EXPOSURE');{remove, will be replaced by LUM_EXP, RED_EXP.....}
       remove_key('CCD-TEMP');{remove, will be replaced by LUM_EXP, RED_EXP.....}
       remove_key('SET-TEMP');{remove, will be replaced by LUM_EXP, RED_EXP.....}
-      remove_key('EXPOSURE');{remove, will be replaced by LUM_EXP, RED_EXP.....}
       remove_key('LIGH_CNT');{remove, will be replaced by LUM_CNT, RED_CNT.....}
       remove_key('DARK_CNT');{remove, will be replaced by LUM_DARK, RED_DARK.....}
       remove_key('FLAT_CNT');{remove, will be replaced by LUM_FLAT, RED_FLAT.....}
@@ -7453,15 +7513,21 @@ begin
       update_text   ('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
       calstat:=calstat+'S'; {status stacked}
       update_text ('CALSTAT =',#39+calstat+#39); {calibration status}
-      date_obs:=jdToDate(jd_start);
-      update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
 
-      if ((naxis3=1) and (counterL>0)) then {works only for mono}
+      if use_manual_alignment1.checked=false then {don't do this for manual stacking and moving object. Keep the date of the reference image for correct annotation of asteroids}
       begin
-        update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ', jd_sum/counterL);{give midpoint of exposures}
-        date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
-        update_text ('DATE-AVG=',#39+date_avg+#39);{give midpoint of exposures}
-      end;
+        remove_key('EXPOSURE');{remove, will be replaced by LUM_EXP, RED_EXP.....}
+        date_obs:=jdToDate(jd_stop);
+        update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
+        if ((naxis3=1) and (counterL>0)) then {works only for mono}
+        begin
+          update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ', jd_sum/counterL);{give midpoint of exposures}
+          date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
+          update_text ('DATE-AVG=',#39+date_avg+#39);{give midpoint of exposures}
+        end;
+      end
+      else;{keep EXPOSURE and date_obs from reference image for accurate asteroid annotation}
+
 
       if pos('Sigma',stackmenu1.stack_method1.text)>0=true then
         update_text   ('HISTORY 1','  Stacking method SIGMA CLIP MEAN') else
@@ -7487,7 +7553,13 @@ begin
 
       if lrgb=false then {monochrome}
       begin
-        update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(sum_exp));
+        if over_size<>0 then {adapt astrometric solution. For colour this is already done during luminance stacking}
+        begin
+          if crpix1<>0 then begin crpix1:=crpix1+over_size; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;{adapt reference pixel of plate solution due to oversize}
+          if crpix2<>0 then begin crpix2:=crpix2+over_size; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
+        end;
+        exposure:=sum_exp;{for annotation asteroid}
+        update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(exposure));
         add_integer('LUM_EXP =',' / Average luminance exposure time.               ' ,exposureL);
         add_integer('LUM_CNT =',' / Luminance images combined.                     ' ,counterL);
         add_integer('LUM_DARK=',' / Darks used for luminance.                      ' ,dark_count);
@@ -7500,7 +7572,8 @@ begin
         naxis:=3;{will be written in save routine}
         naxis3:=3;{will be written in save routine, {naxis3 is update in  save_fits}
         if length(extra2)>1 then update_text('FILTER  =',#39+'        '+#39);{wipe filter info}
-        update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(exposureL*counterL)); {could be used by astroimageJ for midpoint. Download time are not included, so it is not perfect}
+        exposure:=exposureL*counterL;{for annotation asteroid}
+        update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(exposure)); {could be used for midpoint. Download time are not included, so it is not perfect}
         add_integer('LUM_EXP =',' / Luminance exposure time.                       ' ,exposureL);
         add_integer('LUM_CNT =',' / Luminance images combined.                     ' ,counterL);
         add_integer('LUM_DARK=',' / Darks used for luminance.                      ' ,counterLdark);
@@ -7559,6 +7632,7 @@ begin
 
       filename2:=extractfilepath(filename2)+propose_file_name+ '  _stacked.fits';{give it a nice file name}
 
+      if cd1_1<>0 then memo2_message('Astrometric solution reference file preserved for stack.');
       memo2_message('█ █ █  Saving result '+inttostr(image_counter)+' as '+filename2);
       save_fits(filename2,-32, true);
 

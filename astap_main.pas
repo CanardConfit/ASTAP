@@ -101,7 +101,6 @@ type
     menufindnext1: TMenuItem;
     Menufind1: TMenuItem;
     annotate_minor_planets1: TMenuItem;
-    MenuItem15: TMenuItem;
     MenuItem20: TMenuItem;
     MenuItem7: TMenuItem;
     menupaste: TMenuItem;
@@ -399,9 +398,11 @@ type
   star_list   = array of array of double;
 
 type
-   tbackup  = record
+   timgbackup  = record
      crpix1 : double;{could be modified by crop}
      crpix2 : double;
+     crval1 : double;
+     crval2 : double;
      crota1 : double;{for 90 degrees rotate}
      crota2 : double;
      cdelt1 : double;
@@ -415,7 +416,7 @@ type
    end;
 
 var
-  img_backup : array of tbackup;{dynamic so memory can be freed}
+  img_backup      : array of timgbackup;{dynamic so memory can be freed}
 
   settingstring :tstrings; {settings for save and loading}
 
@@ -940,6 +941,8 @@ begin
     else result:=0;
 end;
 
+
+
 procedure backup_img;
 begin
   if fits_file=true then
@@ -947,9 +950,10 @@ begin
     if img_backup=nil then setlength(img_backup,size_backup+1);{create memory for size_backup backup images}
     inc(index_backup,1);
     if index_backup>size_backup then index_backup:=0;
-
     img_backup[index_backup].crpix1:=crpix1;{could be modified by crop}
     img_backup[index_backup].crpix2:=crpix2;{could be modified by crop}
+    img_backup[index_backup].crval1:=ra0;
+    img_backup[index_backup].crval2:=dec0;
     img_backup[index_backup].crota1:=crota1;{for 90 degrees rotate}
     img_backup[index_backup].crota2:=crota2;{for 90 degrees rotate}
     img_backup[index_backup].cdelt1:=cdelt1;
@@ -960,8 +964,8 @@ begin
     img_backup[index_backup].cd2_2:=cd2_2;
 
     img_backup[index_backup].header:=mainwindow.Memo1.Text;{backup fits header}
-    img_backup[index_backup].img:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_backup[index_backup].img,naxis3,width2,height2);{this forces an duplication}
+    img_backup[index_backup].img:=img_loaded;
+ // not required  setlength(img_backup[index_backup].img,naxis3,width2,height2);{this forces an duplication}{In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
 
     mainwindow.Undo1.Enabled:=true;
   end;
@@ -990,6 +994,9 @@ begin
 
     crpix1:=img_backup[index_backup].crpix1;{could be modified by crop}
     crpix2:=img_backup[index_backup].crpix2;
+
+    ra0:=img_backup[index_backup].crval1;
+    dec0:=img_backup[index_backup].crval2;
 
     crota1:=img_backup[index_backup].crota1;{for 90 degrees rotate}
     crota2:=img_backup[index_backup].crota2;
@@ -1075,7 +1082,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.321 dated 2020-2-13';
+  #13+#10+'Version ß0.9.322 dated 2020-2-15';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1637,7 +1644,7 @@ var
 begin
   {try to reconstruct exposure time from filename}
   result:='';
-  filename8:=uppercase(filename8);
+  filename8:=uppercase(extractfilename(filename8));
   i:=pos('NGC',filename8); if i>0 then begin result:='NGC'; i:=i+3; end;
   if i=0 then begin i:=pos('IC',filename8); if i>0 then begin result:='IC'; i:=i+2; end; end;
   if i=0 then begin i:=pos('SH2-',filename8); if i>0 then begin result:='SH2-'; i:=i+4; end; end;
@@ -2152,6 +2159,8 @@ end;
 
 procedure update_menu_related_to_solver(yes :boolean); {update menu section related to solver succesfull}
 begin
+  if mainwindow.show_distortion1.enabled=yes then exit;{no need to update}
+
   mainwindow.show_distortion1.enabled:=yes;{enable menu}
   mainwindow.annotate_with_measured_magnitudes1.enabled:=yes;{enable menu}
   mainwindow.variable_star_annotation1.enabled:=yes;{enable menu}
@@ -2172,63 +2181,58 @@ end;
 
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
 begin
+  if fits<>mainwindow.Saveasfits1.enabled then  {menu requires update}
+  begin
+    mainwindow.Saveasfits1.enabled:=fits;
+    mainwindow.data_range_groupBox1.Enabled:=fits;
+    mainwindow.Export_image1.enabled:=fits;
+    mainwindow.SaveasJPGPNGBMP1.Enabled:=fits;
 
-  fits_file:=fits;
-  mainwindow.data_range_groupBox1.Enabled:=fits;
-  mainwindow.Export_image1.enabled:=fits;
-  mainwindow.Saveasfits1.enabled:=fits;
-  mainwindow.ShowFITSheader1.enabled:=fits;
-  mainwindow.demosaicBayermatrix1.Enabled:=fits;
-  mainwindow.autocorrectcolours1.Enabled:=fits;
-  mainwindow.stretch_draw1.Enabled:=fits;
+    mainwindow.ShowFITSheader1.enabled:=fits;
+    mainwindow.demosaicBayermatrix1.Enabled:=fits;
+    mainwindow.autocorrectcolours1.Enabled:=fits;
+    mainwindow.stretch_draw1.Enabled:=fits;
+
+    mainwindow.CropFITSimage1.Enabled:=fits;
+
+
+    mainwindow.stretch1.enabled:=fits;
+    mainwindow.rotateleft1.enabled:=fits;
+    mainwindow.rotateright1.enabled:=fits;
+    mainwindow.inversimage1.enabled:=fits;
+    mainwindow.imageflipH1.enabled:=fits;
+    mainwindow.imageflipV1.enabled:=fits;
+    mainwindow.rotate_arbitrary1.enabled:=fits;
+
+    mainwindow.minimum1.enabled:=fits;
+    mainwindow.maximum1.enabled:=fits;
+    mainwindow.range1.enabled:=fits;
+    mainwindow.min2.enabled:=fits;
+    mainwindow.max2.enabled:=fits;
+    mainwindow.histogram_UpDown1.enabled:=fits;
+
+    mainwindow.ccdinspector1.enabled:=fits;
+    mainwindow.ccd_inspector_plot1.enabled:=fits;
+    mainwindow.convertmono1.enabled:=fits;
+
+    mainwindow.solve_button1.enabled:=fits;
+    mainwindow.astrometric_solve_image1.enabled:=fits;
+
+    stackmenu1.tab_Pixelmath1.enabled:=fits;
+    stackmenu1.tab_Pixelmath2.enabled:=fits;
+  end;{menu change}
+
   mainwindow.highlight_non_stellar1.enabled:=(naxis3=3);
 
   mainwindow.SaveFITSwithupdatedheader1.Enabled:=((fits) and (fits_file_name(filename2)) and (fileexists(filename2)));{menu disable, no file available to update header}
-
-  mainwindow.CropFITSimage1.Enabled:=fits;
-
-
-  mainwindow.stretch1.enabled:=fits;
-  mainwindow.rotateleft1.enabled:=fits;
-  mainwindow.rotateright1.enabled:=fits;
-  mainwindow.inversimage1.enabled:=fits;
-  mainwindow.imageflipH1.enabled:=fits;
-  mainwindow.imageflipV1.enabled:=fits;
-  mainwindow.rotate_arbitrary1.enabled:=fits;
-
-  mainwindow.minimum1.enabled:=fits;
-  mainwindow.maximum1.enabled:=fits;
-  mainwindow.range1.enabled:=fits;
-  mainwindow.min2.enabled:=fits;
-  mainwindow.max2.enabled:=fits;
-  mainwindow.histogram_UpDown1.enabled:=fits;
-
   mainwindow.saturation_factor_plot1.enabled:=naxis3=3;{colour};
-
-  mainwindow.ccdinspector1.enabled:=fits;
-  mainwindow.ccd_inspector_plot1.enabled:=fits;
-  mainwindow.convertmono1.enabled:=fits;
-
-
   mainwindow.Polynomial1Change(nil);{update color}
-
-  mainwindow.solve_button1.enabled:=fits;
-  mainwindow.astrometric_solve_image1.enabled:=fits;
-
   update_menu_related_to_solver((fits) and (cd1_1<>0));
-
-  stackmenu1.tab_Pixelmath1.enabled:=fits;
-  stackmenu1.tab_Pixelmath2.enabled:=fits;
-
   stackmenu1.resize_factor1Change(nil);{update dimensions binning menu}
   stackmenu1.test_pattern1.Enabled:=naxis3=1;{mono}
-
   stackmenu1.focallength1Change(nil); {update calculation pixel size in arc seconds}
-
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
-
   update_equalise_background_step(1);{update equalise background menu}
-  mainwindow.statusbar1.panels[7].text:=''; {clear any outstanding error}
 end;
 
 
@@ -3949,10 +3953,8 @@ begin
     img.height:=mainwindow.panel1.height;
 
     img.left:=0;
-//    img.left:=(mainwindow.panel1.width- round(img.height*width2/height2)) div 2;
 
   end;
-//  img.width:=round(mainwindow.image1.height*width2/height2); {lock image aspect always for case a image with a different is clicked on in stack menu}
   img.width:=round(img.height*width2/height2); {lock image aspect always for case a image with a different is clicked on in stack menu}
 
 
@@ -3969,6 +3971,9 @@ begin
 
     mainwindow.statusbar1.panels[5].text:=inttostr(width2)+' x '+inttostr(height2)+' x '+inttostr(naxis3)+'   '+inttostr(nrbits)+' BPP';{give image dimensions and bit per pixel info}
     update_statusbar_section5;{update section 5 with image dimensions in degrees}
+    mainwindow.statusbar1.panels[7].text:=''; {2020-2-15 moved from load_fits to plot_image. Clear any outstanding error}
+
+    update_menu(true);{2020-2-15 moved from load_fits to plot_image.  file loaded, update menu for fits}
   end;
 
   {do refresh at the end for smooth display, especially for blinking }
@@ -4606,7 +4611,7 @@ begin
       cwhite:=65535;
     end;
 
-    update_menu(true);{file loaded, update menu for fits}
+    ///update_menu(true);{2019-2-15 moved from load_fits to plot_fits.  file loaded, update menu for fits}
   end;
   close_fits_file;
   result:=true;
@@ -7701,17 +7706,17 @@ begin
   closefile(f);
 end;
 
-procedure write_wcs;{write wcs file without using filestream}
-var
-   f: text;
-   i: integer;
-begin
-  assignfile(f,ChangeFileExt(filename2,'.wcs'));
-  rewrite(f);
-  for i:=0 to mainwindow.memo1.lines.count-1 do
-    writeln(f,mainwindow.memo1.lines[i]);
-  closefile(f);
-end;
+//procedure write_wcs;{write wcs file without using filestream}
+//var
+//   f: text;
+//   i: integer;
+//begin
+//  assignfile(f,ChangeFileExt(filename2,'.wcs'));
+//  rewrite(f);
+//  for i:=0 to mainwindow.memo1.lines.count-1 do
+//    writeln(f,mainwindow.memo1.lines[i]);
+//  closefile(f);
+//end;
 
 function platesolve2_command: boolean;
 var
@@ -8016,8 +8021,8 @@ begin
           if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
 
           write_ini(true);{write solution to ini file}
-          write_wcs;{write memo1 without using filestream}
-//        try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
+ //         write_wcs;{write memo1 without using filestream}
+         try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
 
           //log_to_file(cmdline+' =>succes');
 
@@ -8151,16 +8156,6 @@ begin
       finally
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
-
-//    mess[repeatC]:= '_____________FactorX: ' +floattostr2(factorX)+ '   Total files solved: '+inttostr(nrsolved)+#13+#10;
-//    memo2_message('_____________FactorX: ' +floattostr2(factorX)+ '   Total files solved: '+inttostr(nrsolved) );{test}
-//    factorX:=factorX+0.05;
-//    repeatC:=repeatC+1;
-//    until true;
-//    until factorX>1.5;
-//    for i:=0 to repeatC-1 do   memo2_message(mess[i]);
-
-
     if stackmenu1.use_astrometry_net1.checked=false then {report statistics for internal solver only}
       memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(OpenDialog1.Files.count-nrsolved-skipped)+' solve failures, '+inttostr(skipped)+' images skipped. For re-solve set option "ignore fits header solution".');
   end;
@@ -8612,7 +8607,7 @@ begin
    update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
    update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
 
-   if crpix1<>0 then begin crpix1:=crpix1-startX; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;{reference pixel of plate solution}
+   if crpix1<>0 then begin crpix1:=crpix1-startX; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;{adapt reference pixel of plate solution. Is no longer in the middle}
    if crpix2<>0 then begin crpix2:=crpix2-startY; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
 
    Screen.Cursor:=Save_Cursor;

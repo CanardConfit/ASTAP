@@ -92,7 +92,7 @@ type
     mpcorb_path1: TLabel;
     OpenDialog1: TOpenDialog;
     showfullnames1: TCheckBox;
-    add_date1: TCheckBox;
+    add_subtitle1: TCheckBox;
     UpDown1: TUpDown;
     up_to_magn1: TLabel;
     up_to_number1: TLabel;
@@ -1080,7 +1080,7 @@ begin
   maxcount:=strtoint(form_asteroids1.max_nr_asteroids1.text);
   maxmag:=strtofloat2(form_asteroids1.max_magn_asteroids1.text);
   showfullnames:=form_asteroids1.showfullnames1.checked;
-  add_date:=form_asteroids1.add_date1.checked;
+  add_date:=form_asteroids1.add_subtitle1.checked;
 
   assignfile(txtf,form_asteroids1.mpcorb_path1.caption);
   try
@@ -1139,11 +1139,11 @@ begin
   {write some info at bottom screen}
   with mainwindow do
   begin
-    if form_asteroids1.add_date1.checked then
+    if form_asteroids1.add_subtitle1.checked then
     begin
      fontsize:=20;
      image1.Canvas.font.size:=20;
-     image1.Canvas.textout(round(fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd)+'    Center position[α,δ]:   '+ra1.text+'      '+dec1.text);{}
+     image1.Canvas.textout(round(fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd)+'    Position[α,δ]:   '+ra1.text+'      '+dec1.text);{}
     end;
   end;
 
@@ -1252,7 +1252,7 @@ begin
 
 
   showfullnames1.Checked:=showfullnames;
-  form_asteroids1.add_date1.checked:=add_date;
+  form_asteroids1.add_subtitle1.checked:=add_date;
 
   ColorBox1.ItemIndex :=asteroidcolorindex;
 end;
