@@ -5,7 +5,7 @@
 {$else}  {delphi}
 {$endif}
 
-{Copyright (C) 2017,2018, 2019 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2020 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 {This program is free software: you can redistribute it and/or modify
@@ -86,7 +86,6 @@ type
     localcoloursmooth1: TMenuItem;
     autocorrectcolours1: TMenuItem;
     center_lost_windows: TMenuItem;
-    highlight_non_stellar1: TMenuItem;
     deepsky_annotation1: TMenuItem;
     hyperleda_annotation1: TMenuItem;
     ccd_inspector_plot1: TMenuItem;
@@ -101,6 +100,7 @@ type
     menufindnext1: TMenuItem;
     Menufind1: TMenuItem;
     annotate_minor_planets1: TMenuItem;
+    save_to_tiff1: TMenuItem;
     MenuItem20: TMenuItem;
     MenuItem7: TMenuItem;
     menupaste: TMenuItem;
@@ -173,7 +173,7 @@ type
     MenuItem3: TMenuItem;
     MenuItem5: TMenuItem;
     brighten_area1: TMenuItem;
-    convert_raw_to_fits1: TMenuItem;
+    convert_to_fits1: TMenuItem;
     convertmono1: TMenuItem;
     MenuItem6: TMenuItem;
     recent1: TMenuItem;
@@ -203,7 +203,7 @@ type
     inversemousewheel1: TCheckBox;
     LoadFITSPNGBMPJPEG1: TMenuItem;
     SaveasJPGPNGBMP1: TMenuItem;
-    Image2: TImage;
+    image_north_arrow1: TImage;
     GroupBox1: TGroupBox;
     save1: TButton;
     solve_button1: TButton;
@@ -267,6 +267,7 @@ type
     procedure menucopy1Click(Sender: TObject);
     procedure Menufind1Click(Sender: TObject);
     procedure menufindnext1Click(Sender: TObject);
+    procedure save_to_tiff1Click(Sender: TObject);
     procedure menupasteClick(Sender: TObject);
     procedure annotate_minor_planets1Click(Sender: TObject);
     procedure radec_copy1Click(Sender: TObject);
@@ -296,14 +297,13 @@ type
     procedure image_cleanup1Click(Sender: TObject);
     procedure deepsky_overlay1Click(Sender: TObject);
     procedure brighten_area1Click(Sender: TObject);
-    procedure make_pgm_and_fits1click(Sender: TObject);
+    procedure convert_to_fits1click(Sender: TObject);
     procedure bin2x2Click(Sender: TObject);
     procedure max2EditingDone(Sender: TObject);
     procedure Memo1KeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure localgaussian1Click(Sender: TObject);
     procedure localcoloursmooth1Click(Sender: TObject);
     procedure autocorrectcolours1Click(Sender: TObject);
-    procedure highlight_non_stellar1Click(Sender: TObject);
     procedure hyperleda_annotation1Click(Sender: TObject);
     procedure ra1DblClick(Sender: TObject);
     procedure remove_annotations1Click(Sender: TObject);
@@ -374,8 +374,7 @@ type
     procedure Export_image1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure CropFITSimage1Click(Sender: TObject);
-    procedure maximum1Scroll(Sender: TObject; ScrollCode: TScrollCode;
-      var ScrollPos: Integer);
+    procedure maximum1Scroll(Sender: TObject; ScrollCode: TScrollCode; var ScrollPos: Integer);
     procedure stretch1Change(Sender: TObject);
     procedure histogram1MouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
@@ -767,10 +766,10 @@ begin
     For i:=0 to height2-1 do
     for j:=0 to width2-1 do
     begin
-      if gradient=false then img_loaded[0,j,i]:=randg(1000,100 {noise}){default background}
+      if gradient=false then img_loaded[0,j,i]:=randg(1000,100 {noise}){default background is 1000}
       else
       img_loaded[0,j,i]:=-500*sqrt( sqr((i-height2/2)/height2) +sqr((j-width2/2)/height2) ){circular gradient}
-                         + randg(1000,100 {noise}){default background}
+                         + randg(1000,100 {noise}){default background is 100}
 
 
     end;
@@ -792,7 +791,7 @@ begin
               if sigma*2.5<=5 then
               begin
                 img_loaded[0,j+n,i+m]:=img_loaded[0,j+n,i+m]+(65000/power(starcounter,0.8)){Intensity} *exp(-0.5/sqr(sigma)*(m*m+n*n)); {gaussian shaped stars}
-                if frac(starcounter/20)=0 then img_loaded[0,180+starcounter+n,130+starcounter+m]:=img_loaded[0,180+starcounter+n,130+starcounter+m]+(65000/power(starcounter,0.7)){Intesity} *exp(-0.5/sqr(sigma)*(m*m+n*n)) {diagonal gaussian shaped stars}
+                if frac(starcounter/20)=0 then img_loaded[0,180+starcounter+n,130+starcounter+m]:=img_loaded[0,180+starcounter+n,130+starcounter+m]+(65000/power(starcounter,0.7)){Intensity} *exp(-0.5/sqr(sigma)*(m*m+n*n)) {diagonal gaussian shaped stars}
               end
               else
               begin
@@ -965,7 +964,7 @@ begin
 
     img_backup[index_backup].header:=mainwindow.Memo1.Text;{backup fits header}
     img_backup[index_backup].img:=img_loaded;
- // not required  setlength(img_backup[index_backup].img,naxis3,width2,height2);{this forces an duplication}{In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+    setlength(img_backup[index_backup].img,naxis3,width2,height2);{this forces an duplication}{In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
 
     mainwindow.Undo1.Enabled:=true;
   end;
@@ -1082,7 +1081,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.322 dated 2020-2-15';
+  #13+#10+'Version ß0.9.323 dated 2020-2-19';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1095,7 +1094,8 @@ begin
    if key=#27 then
    begin
      esc_pressed:=true;
-     memo2_message('ESC pressed. Stacking stopped.');
+     memo2_message('ESC pressed. Stopped processing.');
+     update_menu(false); {undefined situation. The array img_loaded and variables are different from image1. Prevent saving wrong array}
    end;
 end;
 
@@ -1299,14 +1299,15 @@ end;
 procedure Tmainwindow.bin2x2Click(Sender: TObject);
 var
   Save_Cursor:TCursor;
-  i: integer;
-
+  img_temp2 : image_array;
+  I, FitsX, fitsY,k,w,h   : integer;
+  ratio                   : double;
 begin
 
   OpenDialog1.Title := 'Select multiple  files to reduce in size (bin2x2)';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
-
+  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.FIT*';
+//  fits_file:=true;
   data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
 
@@ -1315,15 +1316,65 @@ begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
     try { Do some lengthy operation }
-        with OpenDialog1.Files do
-        for I := 0 to Count - 1 do
-        begin
-          filename2:=Strings[I];
-          {load fits}
-          Application.ProcessMessages;
-          if ((esc_pressed) or (binx2=false)) then begin Screen.Cursor := Save_Cursor;  exit;end;
-       end;
-       finally
+       with OpenDialog1.Files do
+       for I := 0 to Count - 1 do
+       begin
+         filename2:=Strings[I];
+         {load fits}
+         Application.ProcessMessages;
+        if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin Screen.Cursor := Save_Cursor;  exit;end;
+         ratio:=0.5;
+
+         w:=trunc(width2/2);  {half size}
+         h:=trunc(height2/2);
+
+         setlength(img_temp2,naxis3,w,h);;
+         for k:=0 to naxis3-1 do
+           for fitsY:=0 to h-1 do
+              for fitsX:=0 to w-1  do
+              begin
+                img_temp2[k,fitsX,fitsY]:=(img_loaded[k,fitsx*2,fitsY*2]+
+                                           img_loaded[k,fitsx*2 +1,fitsY*2]+
+                                           img_loaded[k,fitsx*2   ,fitsY*2+1]+
+                                           img_loaded[k,fitsx*2 +1,fitsY*2+1])/4;
+                end;
+         img_loaded:=img_temp2;
+         width2:=w;
+         height2:=h;
+
+         update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
+         update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+
+         if crpix1<>0 then begin crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
+         if crpix2<>0 then begin crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
+
+         if cdelt1<>0 then begin cdelt1:=cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
+         if cdelt2<>0 then begin cdelt2:=cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
+
+         if cd1_1<>0 then
+         begin
+           cd1_1:=cd1_1/ratio;
+           cd1_2:=cd1_2/ratio;
+           cd2_1:=cd2_1/ratio;
+           cd2_2:=cd2_2/ratio;
+           update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
+           update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
+           update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
+           update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+         end;
+
+         update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING/ratio));
+         update_integer('YBINNING=',' / Binning factor in height                        ' ,round(yBINNING/ratio));
+         add_text   ('HISTORY   ','BIN2x2 version of '+extractfilename(Strings[I]));
+
+
+         save_fits(ChangeFileExt(FileName2,'_bin2x2.fit'),16,true);{overwrite}
+
+         img_temp2:=nil;
+
+      end;
+      finally
+      update_menu(false); {Undefined situation. The array img_loaded and variables are different from image1. Prevent saving wrong array}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
   end;
@@ -1579,53 +1630,6 @@ begin                                               {range 2000 till 20000k}
   result:=abs((b/g)-(0.6427*sqr(RdivG)-2.868*RdivG+3.3035));
 end;
 
-procedure Tmainwindow.highlight_non_stellar1Click(Sender: TObject);
-var
-  Save_Cursor : TCursor;
-  r,g,b       : single;
-  bgR,bgG,bgB : double;
-  fitsX,fitsY : integer;
-begin
-  if Length(img_loaded)<3 then
-  begin
-    memo2_message('Error, no three colour image loaded!');
-    exit;
-  end;
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
-  backup_img;
-
-  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}bgR,star_level);{calculate background level from peek histogram}
-  get_background(1,img_loaded,false{histogram is already available},true {calculate noise level},{var}bgG,star_level);{calculate background level from peek histogram}
-  get_background(2,img_loaded,false{histogram is already available},true {calculate noise level},{var}bgB,star_level);{calculate background level from peek histogram}
-
-  for fitsY:=0 to height2-1  do
-    for fitsX:=0 to width2-1 do
-    begin
-      r:=img_loaded[0,fitsX,fitsY]-bgR;
-      g:=img_loaded[1,fitsX,fitsY]-bgG;
-      b:=img_loaded[2,fitsX,fitsY]-bgB;
-
-//      if ((fitsX=2168) and (fitsY=1423)) then
-//      beep;
-
-      if  ((r>5*noise_level[0]) or (g>5*noise_level[1]) or  (b>5*noise_level[2])) {signal above background}  then
-           if (test_star_spectrum(r,g,b))>0.5{non-stellar}   then
-      begin {dim }
-        img_loaded[0,fitsX,fitsY]:=r*2+bgR;
-        img_loaded[1,fitsX,fitsY]:=g*2+bgG;
-        img_loaded[2,fitsX,fitsY]:=b*2+bgB;
-      end;
-    end;
-
-
-//  getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-  plot_fits(mainwindow.image1,false,true);{plot real}
-
-  Screen.Cursor:=Save_Cursor;
-end;
-
-
 procedure Tmainwindow.hyperleda_annotation1Click(Sender: TObject);
 var
   Save_Cursor:TCursor;
@@ -1772,8 +1776,8 @@ var
       flipV, flipH : integer;
 begin
   {clear}
-  mainwindow.image2.canvas.brush.color:=clmenu;
-  mainwindow.image2.canvas.rectangle(-1,-1, mainwindow.image2.width+1, mainwindow.image2.height+1);
+  mainwindow.image_north_arrow1.canvas.brush.color:=clmenu;
+  mainwindow.image_north_arrow1.canvas.rectangle(-1,-1, mainwindow.image_north_arrow1.width+1, mainwindow.image_north_arrow1.height+1);
 
   if cd1_1=0 then {remove rotation indication and exit}
   begin
@@ -1785,43 +1789,43 @@ begin
 
   if ((fits_file=false) or (cd1_1=0)) then exit;
 
-  mainwindow.image2.Canvas.Pen.Color := clred;
+  mainwindow.image_north_arrow1.Canvas.Pen.Color := clred;
 
   if mainwindow.Fliphorizontal1.checked then flipH:=-1 else flipH:=+1;
   if mainwindow.Flipvertical1.checked then flipV:=-1 else flipV:=+1;
 
   cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{lenght of a pixel diagonal in direction RA in arcseconds}
 
-  moveToex(mainwindow.image2.Canvas.handle,round(xpos),round(ypos),nil);
+  moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);
   det:=CD2_2*CD1_1-CD1_2*CD2_1;{this result can be negative !!}
   dRa:=0;
   dDec:=cdelt1_a*leng;
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
+  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
   dRa:=cdelt1_a*-3;
   dDec:=cdelt1_a*(leng-5);
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
   dRa:=cdelt1_a*+3;
   dDec:=cdelt1_a*(leng-5);
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
   dRa:=0;
   dDec:=cdelt1_a*leng;
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
 
-  moveToex(mainwindow.image2.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
+  moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
   dRa:= cdelt1_a*leng/3;
   dDec:=0;
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image2.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
+  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
 end;
 
 procedure Tmainwindow.rotateleft1Click(Sender: TObject); {rotate left or right 90 degrees}
@@ -2000,38 +2004,36 @@ begin
   end;
 end;
 
-
 procedure zoom(mousewheelfactor:double);
 var
   image_left,image_top : double;
 begin
-   if ( ((mainwindow.image1.width<=15000) or (mousewheelfactor<1){zoom out}) and {above 12000 unequal stretch}
-        ((mainwindow.image1.width>=100 ) or (mousewheelfactor>1){zoom in})                                                                  )
-   then
-   begin
+  if ( ((mainwindow.image1.width<=65535) or (mousewheelfactor<1){zoom out}) and {increased to 65535. Was above 12000 unequal stretch}
+       ((mainwindow.image1.width>=100 ) or (mousewheelfactor>1){zoom in})                                                                  )
+  then
+  begin
+    image_left:=mainwindow.image1.left; {preserve for shape position calculation}
+    image_top:=mainwindow.image1.top;
 
-     image_left:=mainwindow.image1.left; {preserve for shape position calculation}
-     image_top:=mainwindow.image1.top;
+    mainwindow.image1.height:=round(mainwindow.image1.height * mousewheelfactor);
+    mainwindow.image1.width:= round(mainwindow.image1.width * mousewheelfactor);
 
-     mainwindow.image1.height:=round(mainwindow.image1.height * mousewheelfactor);
-     mainwindow.image1.width:= round(mainwindow.image1.width * mousewheelfactor);
+    {scroll to compensate zoom}
+    mainwindow.image1.left:=+round(mainwindow.panel1.clientwidth/2  +  (image_left - mainwindow.panel1.clientwidth/2)*mousewheelfactor);
+    mainwindow.image1.top:= +round(mainwindow.panel1.clientheight/2 +  (image_top - mainwindow.panel1.clientheight/2)*mousewheelfactor);
 
-     {scroll to compensate zoom}
-     mainwindow.image1.left:=+round(mainwindow.panel1.clientwidth/2  +  (image_left - mainwindow.panel1.clientwidth/2)*mousewheelfactor);
-     mainwindow.image1.top:= +round(mainwindow.panel1.clientheight/2 +  (image_top - mainwindow.panel1.clientheight/2)*mousewheelfactor);
+    {marker}
+    if mainwindow.shape_marker1.visible then {do this only when visible}
+      show_marker_shape(mainwindow.shape_marker1,shape_marker1_fitsX, shape_marker1_fitsY);
+    if mainwindow.shape_marker2.visible then {do this only when visible}
+      show_marker_shape(mainwindow.shape_marker2,shape_marker2_fitsX, shape_marker2_fitsY);
+    if mainwindow.shape_marker3.visible then {do this only when visible}
+      show_marker_shape(mainwindow.shape_marker3,shape_marker3_fitsX, shape_marker3_fitsY);
 
-     {marker}
-     if mainwindow.shape_marker1.visible then {do this only when visible}
-       show_marker_shape(mainwindow.shape_marker1,shape_marker1_fitsX, shape_marker1_fitsY);
-     if mainwindow.shape_marker2.visible then {do this only when visible}
-       show_marker_shape(mainwindow.shape_marker2,shape_marker2_fitsX, shape_marker2_fitsY);
-     if mainwindow.shape_marker3.visible then {do this only when visible}
-       show_marker_shape(mainwindow.shape_marker3,shape_marker3_fitsX, shape_marker3_fitsY);
-
-     {reference point manual alignment}
-     if mainwindow.shape_alignment_marker1.visible then {For manual alignment. Do this only when visible}
-       show_shape(true,shape_fitsX, shape_fitsY);
-   end;
+    {reference point manual alignment}
+    if mainwindow.shape_alignment_marker1.visible then {For manual alignment. Do this only when visible}
+      show_shape(true,shape_fitsX, shape_fitsY);
+  end;
 end;
 
 procedure Tmainwindow.zoomin1Click(Sender: TObject);
@@ -2222,8 +2224,6 @@ begin
     stackmenu1.tab_Pixelmath2.enabled:=fits;
   end;{menu change}
 
-  mainwindow.highlight_non_stellar1.enabled:=(naxis3=3);
-
   mainwindow.SaveFITSwithupdatedheader1.Enabled:=((fits) and (fits_file_name(filename2)) and (fileexists(filename2)));{menu disable, no file available to update header}
   mainwindow.saturation_factor_plot1.enabled:=naxis3=3;{colour};
   mainwindow.Polynomial1Change(nil);{update color}
@@ -2388,7 +2388,7 @@ var
   img_temp11, img_temp12, img_temp21, img_temp22 : image_array;
   I, FitsX, fitsY,w,h   : integer;
   ratio                 : double;
-  filename1: string;
+
 begin
 
   OpenDialog1.Title := 'Select multiple RAW files to split in red, green, green and blue files';
@@ -2406,10 +2406,10 @@ begin
         with OpenDialog1.Files do
         for I := 0 to Count - 1 do
         begin
-          filename1:=Strings[I];
+          filename2:=Strings[I];
           {load image}
           Application.ProcessMessages;
-          if ((esc_pressed) or (load_fits(filename1,true {light},true,true {reset var},img_loaded)=false)) then begin beep; Screen.Cursor := Save_Cursor; exit;end;
+          if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin beep; Screen.Cursor := Save_Cursor; exit;end;
 
           ratio:=0.5;
           w:=trunc(width2/2);  {half size}
@@ -2465,16 +2465,16 @@ begin
 
           update_text   ('FILTER  =',#39+'P11'+#39+'           / Filter name                                    ');
           img_loaded:=img_temp11;
-          save_fits(ChangeFileExt(FileName1,'_p11.fit'),16,true);{overwrite}
+          save_fits(ChangeFileExt(FileName2,'_p11.fit'),16,true);{overwrite}
           update_text   ('FILTER  =',#39+'P12'+#39+'           / Filter name                                    ');
           img_loaded:=img_temp12;
-          save_fits(ChangeFileExt(FileName1,'_p12.fit'),16,true);{overwrite}
+          save_fits(ChangeFileExt(FileName2,'_p12.fit'),16,true);{overwrite}
           update_text   ('FILTER  =',#39+'P21'+#39+'           / Filter name                                    ');
           img_loaded:=img_temp21;
-          save_fits(ChangeFileExt(FileName1,'_p21.fit'),16,true);{overwrite}
+          save_fits(ChangeFileExt(FileName2,'_p21.fit'),16,true);{overwrite}
           update_text   ('FILTER  =',#39+'P22'+#39+'           / Filter name                                    ');
           img_loaded:=img_temp22;
-          save_fits(ChangeFileExt(FileName1,'_p22.fit'),16,true);{overwrite}
+          save_fits(ChangeFileExt(FileName2,'_p22.fit'),16,true);{overwrite}
 
           img_temp11:=nil;
           img_temp12:=nil;
@@ -2482,7 +2482,8 @@ begin
           img_temp22:=nil;
 
        end;
-       finally
+      finally
+      update_menu(false); {Undefined situation. The array img_loaded and variables are different from image1. Prevent saving wrong array}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
   end;
@@ -6309,19 +6310,20 @@ begin
 end;
 
 
-procedure Tmainwindow.make_pgm_and_fits1click(Sender: TObject);
+procedure Tmainwindow.convert_to_fits1click(Sender: TObject);
 var
   I: integer;
   Save_Cursor:TCursor;
-  ext   : string;
+  ext : string;
   err   : boolean;
+
 begin
   OpenDialog1.Title := 'Select multiple  files to convert';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter :=  'All formats |*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pfm;*.xisf;*.fz;'+
                                        '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                          '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
-                         '|24 bits PNG, TIFF,  JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
+                         '|24 bits PNG, TIFF, JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
                          '|Compressed FITS files|*.fz';
   opendialog1.initialdir:=ExtractFileDir(filename2);
   fits_file:=false;
@@ -6333,36 +6335,37 @@ begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
     try { Do some lengthy operation }
-       with OpenDialog1.Files do
-       for I := 0 to Count - 1 do
-       begin
-         Application.ProcessMessages;
-         if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
-         filename2:=Strings[I];
-         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
-         ext:=uppercase(ExtractFileExt(filename2));
+      with OpenDialog1.Files do
+      for I := 0 to Count - 1 do
+      begin
+        Application.ProcessMessages;
+        if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+        filename2:=Strings[I];
+        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
+        ext:=uppercase(ExtractFileExt(filename2));
 
-         if check_raw_file_extension(ext) then {raw format}
-         begin
-           if convert_raw_to_fits(filename2)=false then begin beep; err:=true; mainwindow.caption:='Error converting '+filename2;end;
-         end
-         else
-         if (ext='.FZ') then {CFITSIO format}
-         begin
-           if unpack_cfitsio(filename2)=false then begin beep; err:=true; mainwindow.caption:='Error converting '+filename2; end;
-         end
-         else
-         {tif, png, bmp, jpeg}
-         if load_tiffpngJPEG(filename2,img_loaded)=false then begin beep; err:=true; mainwindow.caption:='Error converting '+filename2 end
-           else
-           save_fits(ChangeFileExt(filename2,'.fit'),16,false);
-       end;
+        if check_raw_file_extension(ext) then {raw format}
+        begin
+          if convert_raw_to_fits(filename2)=false then begin beep; err:=true; mainwindow.caption:='Error converting '+filename2;end;
+        end
+        else
+        if (ext='.FZ') then {CFITSIO format}
+        begin
+          if unpack_cfitsio(filename2)=false then begin beep; err:=true; mainwindow.caption:='Error converting '+filename2; end;
+        end
+        else
+        {tif, png, bmp, jpeg}
+        if load_tiffpngJPEG(filename2,img_loaded)=false then begin beep; err:=true; mainwindow.caption:='Error converting '+filename2 end
+          else
+          save_fits(ChangeFileExt(filename2,'.fit'),16,false);
+      end;
 
       if err=false then mainwindow.caption:='Completed, all files converted.'
-       else
-       mainwindow.caption:='Finished, files converted but with errors!';
+      else
+      mainwindow.caption:='Finished, files converted but with errors!';
 
-       finally
+      finally
+      update_menu(false); {Undefined situation. The array img_loaded and variables are different from image1. Prevent saving wrong array}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
   end;
@@ -6578,7 +6581,7 @@ procedure Tmainwindow.compress_fpack1Click(Sender: TObject);
 var
   Save_Cursor:TCursor;
   i: integer;
-
+  filename1: string;
 begin
 
   OpenDialog1.Title := 'Select multiple  FITS files to compress. Original files will be kept.';
@@ -6595,9 +6598,9 @@ begin
         with OpenDialog1.Files do
         for I := 0 to Count - 1 do
         begin
-          filename2:=Strings[I];
+          filename1:=Strings[I];
           Application.ProcessMessages;
-          if ((esc_pressed) or (pack_cfitsio(filename2)=false)) then begin beep; mainwindow.caption:='Exit with error!!'; Screen.Cursor := Save_Cursor;  exit;end;
+          if ((esc_pressed) or (pack_cfitsio(filename1)=false)) then begin beep; mainwindow.caption:='Exit with error!!'; Screen.Cursor := Save_Cursor;  exit;end;
        end;
        finally
 
@@ -6615,6 +6618,8 @@ begin
    if load_image(true,true {plot}){load and center}=false then
                                                       beep;{image not found}
 end;
+
+
 
 procedure Tmainwindow.imageflipv1Click(Sender: TObject);
 var
@@ -8096,8 +8101,6 @@ var
   Save_Cursor:TCursor;
   skipped, nrsolved :integer;
 
-//  repeatC: integer;
-//  mess       : array[0..100] of string;
 begin
 
   OpenDialog1.Title := 'Select multiple  files to add plate solution';
@@ -8112,10 +8115,6 @@ begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-
-//    factorX:=1;
-//    repeatC:=0;
-//    repeat
     nrsolved:=0;
     skipped:=0;
 
@@ -8154,6 +8153,7 @@ begin
 
 
       finally
+      update_menu(false); {Undefined situation. The array img_loaded and variables are different from image1. Prevent saving wrong array}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
     if stackmenu1.use_astrometry_net1.checked=false then {report statistics for internal solver only}
@@ -8240,12 +8240,11 @@ var
  fitsX,fitsY,size, i, j,starX,starY, retries,max_stars,
  nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,x1,x2,x3,x4,y1,y2,y3,y4,fontsize : integer;
 
-// {hfd_median,}hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right: double;
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
  hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right, median_top_left, median_top_right : double;
  hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
  starlistXY    :array of array of integer;
- mess1,mess2,hfd_value           : string;
+ mess1,mess2,hfd_value,hfd_arcsec      : string;
  Save_Cursor:TCursor;
  Fliphorizontal, Flipvertical: boolean;
 const
@@ -8316,11 +8315,11 @@ begin
     begin
       for fitsX:=0 to width2-1-1 do
       begin
-        if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
+        if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed}  and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
         begin
           HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
-          if ((hfd1<=99) and (snr>10) and (hfd1>0.8) {two pixels minimum} ) then
+          if ((hfd1<=99) and (snr>10) and (hfd1>0.8) {two pixels minimum} { and (flux/(hfd1*hfd1)<0.25*pi*100000)}{not saturated} ) then
           begin
 //            size:=round(5*hfd1);
             if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);
@@ -8449,7 +8448,8 @@ begin
     SetLength(hfdlist,nhfd);{set length correct}
     hfd_median:=SMedian(hfdList);
     str(hfd_median:0:1,hfd_value);
-    mess2:='Median HFD='+hfd_value+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
+    if cdelt2<>0 then begin str(hfd_median*cdelt2*3600:0:1,hfd_arcsec); hfd_arcsec:=' ('+hfd_arcsec+'")'; end else hfd_arcsec:='';
+    mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
 
     image1.Canvas.font.size:=fontsize*2;
     image1.Canvas.font.color:=clwhite;
@@ -9055,7 +9055,7 @@ end;
 procedure find_highest_pixel_value(img: image_array;x1,y1: integer; var xc,yc:double);{}
 var
   i,j,x2,y2  : integer;
-  value, val, SumVal,SumValX,SumValY,SumValR, Xg,Yg : double;
+  value, val, SumVal,SumValX,SumValY, Xg,Yg : double;
 
 begin
   x2:=x1;
@@ -9355,9 +9355,6 @@ begin
     hfd1:=max(0.7,hfd1);
     star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
 
-   // snr_old:=valmax/(bg_standard_deviation+1);{how much times above background noise, add 1 for cases background deviation is 0. A SNR > 1000000000 confuses the procedure get_brightest_stars}
-   // mainwindow.caption:='snr old '+inttostr(round(snr_old));
-
     snr:=flux/sqrt(flux +sqr(ri)*pi*sqr(bg_standard_deviation)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
 
 //    log_to_file('snr_test.csv',inttostr(round(snr*1000))+','+inttostr(round(snr_old*1000)));
@@ -9566,14 +9563,18 @@ begin
      begin
        error_label1.visible:=false;{kill error label}
 
-       mainwindow.image1.Top:= mainwindow.image1.Top+(y-down_y);
+    //   mainwindow.image1.Top:= mainwindow.image1.Top+(y-down_y);
+        timage(sender).Top:= timage(sender).Top+(y-down_y);{could be used for second image}
+
        mainwindow.shape_marker1.Top:= mainwindow.shape_marker1.Top+(y-down_y);{normal marker}
        mainwindow.shape_marker2.Top:= mainwindow.shape_marker2.Top+(y-down_y);{normal marker}
        mainwindow.shape_marker3.Top:= mainwindow.shape_marker3.Top+(y-down_y);{normal marker}
      end;
      if abs(x-down_x)>2 then
      begin
-       mainwindow.image1.left:= mainwindow.image1.left+(x-down_x);
+      // mainwindow.image1.left:= mainwindow.image1.left+(x-down_x);
+        timage(sender).left:= timage(sender).left+(x-down_x);
+
        mainwindow.shape_marker1.left:= mainwindow.shape_marker1.left+(x-down_x);{normal marker}
        mainwindow.shape_marker2.left:= mainwindow.shape_marker2.left+(x-down_x);{normal marker}
        mainwindow.shape_marker3.left:= mainwindow.shape_marker3.left+(x-down_x);{normal marker}
@@ -10271,6 +10272,66 @@ begin
   writer.Free;
 end;
 
+procedure Tmainwindow.save_to_tiff1Click(Sender: TObject);
+var
+  I: integer;
+  Save_Cursor:TCursor;
+  err   : boolean;
+begin
+  OpenDialog1.Title := 'Select multiple  files to convert';
+  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter :=  'All formats except TIF|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.new;*.ppm;*.pgm;*.pfm;*.xisf;*.fz;'+
+                                      '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
+                         '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
+                         '|24 bits PNG, JPEG, BMP(*.png, *.jpg,*.bmp)|*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP'+
+                         '|Compressed FITS files|*.fz';
+  opendialog1.initialdir:=ExtractFileDir(filename2);
+  fits_file:=false;
+  data_range_groupBox1.Enabled:=true;
+  esc_pressed:=false;
+  err:=false;
+  if OpenDialog1.Execute then
+  begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    try { Do some lengthy operation }
+      with OpenDialog1.Files do
+      for I := 0 to Count - 1 do
+      begin
+        Application.ProcessMessages;
+        if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+        filename2:=Strings[I];
+        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
+        if load_image(false {recenter},false {plot}) then
+        begin
+          filename2:=ChangeFileExt(filename2,'.tif');
+          if abs(nrbits)<=16 then
+          begin
+            save_tiff16(img_loaded,naxis3,width2,height2,filename2,false {flip H},false {flip V});
+          end
+          else
+          begin {32 bit files}
+            if naxis3<>1 then {color}
+              save_tiff_96(img_loaded,width2,height2,filename2,false {flip H},false {flip V}) {old uncompressed routine in unit_tiff}
+            else
+             save_tiff_32(img_loaded,width2,height2,filenamE2,false {flip H},false {flip V});{old uncompressed routine in unit_tiff}
+          end;
+        end
+        else err:=true;
+      end;
+      if err=false then mainwindow.caption:='Completed, all files converted.'
+      else
+      mainwindow.caption:='Finished, files converted but with errors!';
+
+      finally
+      update_menu(false); {Undefined situation. The array img_loaded and variables are different from image1. Prevent saving wrong array}
+      Screen.Cursor := Save_Cursor;  { Always restore to normal }
+    end;
+  end;
+end;
+
+
+
 procedure Tmainwindow.Export_image1Click(Sender: TObject);
 var
   filename3:ansistring;
@@ -10681,7 +10742,7 @@ begin
   opendialog1.Filter :=  'All formats |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pfm;*.xisf;*.fz;'+
                                       '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                          '|8, 16, 32 and -32 bit FITS files (*.fit*,*.xisf)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.new;*.xisf;*.fz'+
-                         '|24 bits PNG, TIFF,  JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
+                         '|24 bits PNG, TIFF, JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
                          '|Preview FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   opendialog1.filename:=filename2;
   opendialog1.initialdir:=ExtractFileDir(filename2);

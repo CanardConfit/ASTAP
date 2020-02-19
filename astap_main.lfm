@@ -148,7 +148,7 @@ object mainwindow: Tmainwindow
     ParentShowHint = False
     ShowHint = True
   end
-  object Image2: TImage
+  object image_north_arrow1: TImage
     Left = 475
     Height = 49
     Hint = 'Long axis is north, small axis is east.'
@@ -385,7 +385,7 @@ object mainwindow: Tmainwindow
     object solve_button1: TButton
       Left = 8
       Height = 30
-      Hint = 'Find astrometric solution using either the internal solver or astrometry.net if selected. PNG of JPEG files will be first converted to a 8 bit FITS file with the same name.'
+      Hint = 'Find an astrometric solution for the image in the viewer.'#13#10#13#10'Checklist for successful solving:'#13#10#13#10'- At least 30 stars are visible'#13#10'- Reasonable round stars'#13#10'- Image size at least 1.5 megapixels'#13#10'- Correct image height in degrees specified. See stack menu tab alignment.'
       Top = 0
       Width = 121
       Caption = 'Solve'
@@ -983,11 +983,16 @@ object mainwindow: Tmainwindow
           ShortCut = 32848
           OnClick = AddplatesolvesolutiontoselectedFITSfiles1Click
         end
-        object convert_raw_to_fits1: TMenuItem
+        object convert_to_fits1: TMenuItem
           Caption = 'Batch convert to FITS'
           Hint = 'Convert the selected images to the FITS format.'
           ShortCut = 16452
-          OnClick = make_pgm_and_fits1click
+          OnClick = convert_to_fits1click
+        end
+        object save_to_tiff1: TMenuItem
+          Caption = 'Batch convert to TIFF'
+          Hint = 'Convert the selected images to the TIFF format.'
+          OnClick = save_to_tiff1Click
         end
         object bin2x2: TMenuItem
           Caption = 'Batch convert bin2x2'
@@ -1028,12 +1033,6 @@ object mainwindow: Tmainwindow
         Hint = 'Show image distortion using the star positions and solution. Lines a 50x larger then distortion.'
         ShortCut = 117
         OnClick = show_distortion1Click
-      end
-      object highlight_non_stellar1: TMenuItem
-        Caption = 'Highlight non stellar'
-        Enabled = False
-        Hint = 'Check RGB spectrum and highlight any nebula'
-        OnClick = highlight_non_stellar1Click
       end
       object MenuItem2: TMenuItem
         Caption = '-'

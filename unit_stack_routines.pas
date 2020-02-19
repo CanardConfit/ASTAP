@@ -1,5 +1,5 @@
 unit unit_stack_routines;
-{Copyright (C) 2017,2018,2019 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2020 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This program is free software: you can redistribute it and/or modify
@@ -36,8 +36,8 @@ var
   pedestal : double;{target background value}
 
 var
-   SIN_dec0,COS_dec0,x_new_float,y_new_float,ra_ref,dec_ref,SIN_dec_ref,COS_dec_ref,crpix1_ref, crpix2_ref, CD1_1_ref, CD1_2_ref,CD2_1_ref,CD2_2_ref,exposure_ref,
-   ap_0_1_ref,ap_0_2_ref,ap_1_0_ref,ap_1_1_ref,ap_2_0_ref, bp_0_1_ref,bp_0_2_ref,bp_1_0_ref,bp_1_1_ref,bp_2_0_ref                                        : double;
+  SIN_dec0,COS_dec0,x_new_float,y_new_float,ra_ref,dec_ref,SIN_dec_ref,COS_dec_ref,crpix1_ref, crpix2_ref, CD1_1_ref, CD1_2_ref,CD2_1_ref,CD2_2_ref,exposure_ref,
+  ap_0_1_ref,ap_0_2_ref,ap_1_0_ref,ap_1_1_ref,ap_2_0_ref, bp_0_1_ref,bp_0_2_ref,bp_1_0_ref,bp_1_1_ref,bp_2_0_ref                                        : double;
 
 
 implementation
@@ -218,28 +218,19 @@ end;
 
 procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
 var
-    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,
-    diameter,y,x2,y2,binning  : integer;
-    background_correction : double;
-
-    flat_factor,h,dRA, dDec,det,delta,gamma,ra_new, dec_new,variance_factor,
-    sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v,
-    background_r, background_g, background_b, background_l ,
-    rgbsum,red_f,green_f,blue_f, value ,colr, colg,colb, most_common,red_add,green_add,blue_add,
-    rr_factor, rg_factor, rb_factor,
-    gr_factor, gg_factor, gb_factor,
-    br_factor, bg_factor, bb_factor,
-    saturated_level                           : double;
-
-    init, solution,drizzle_mode,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
-
+  fitsX,fitsY,c,width_max, height_max, x_new,y_new,col,  binning  : integer;
+  background_r, background_g, background_b, background_l ,
+  rgbsum,red_f,green_f,blue_f, value ,colr, colg,colb, red_add,green_add,blue_add,
+  rr_factor, rg_factor, rb_factor,
+  gr_factor, gg_factor, gb_factor,
+  br_factor, bg_factor, bb_factor,
+  saturated_level                           : double;
+  init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
 begin
   with stackmenu1 do
   begin
 
     {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
-    variance_factor:=sqr(strtofloat2(stackmenu1.sd_factor1.text));
-    drizzle_mode:=stackmenu1.drizzle1.checked;
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
     use_manual_alignment:=stackmenu1.use_manual_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
@@ -316,7 +307,6 @@ begin
                                            10:    smart_colour_smooth(img_average,10,true {get histogram});{smoothen colours}
                                            11:    smart_colour_smooth(img_average,15,true {get histogram});{smoothen colours}
                                         end;{case}
-
 
             end;
 
@@ -401,10 +391,7 @@ begin
               end
               else
               begin
-//                get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var} cblack,star_level );{2019x}
-  //              find_stars(img_loaded,starlist1);{find stars and put them in a list}
                 bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist1);{bin, measure background, find stars}
-
                 find_tetrahedrons_ref;{find tetrahedrons for reference image}
               end;
             end;
@@ -588,11 +575,11 @@ end;
 
 function test_bayer_matrix(img: image_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
 var
-   fitsX,w,h,middleY,step_size       : integer;
-   p11,p12,p21,p22                   : array of double;
-   m11,m12,m21,m22,average,lowest,highest : double;
+  fitsX,w,h,middleY,step_size       : integer;
+  p11,p12,p21,p22                   : array of double;
+  m11,m12,m21,m22,lowest,highest    : double;
 const
-   steps=100;
+  steps=100;
 begin
   //  colors:=Length(img); {colors}
   w:=Length(img[0]);    {width}
@@ -633,10 +620,9 @@ end;
 
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
-    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,drizzle_mode,binning             : integer;
-    background_correction, flat_factor,  h,dRA, dDec,det, delta,gamma,ra_new, dec_new, sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v, value, weightF    : double;
-    init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
-
+  fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,drizzle_mode,binning                : integer;
+  background_correction, flat_factor, value, weightF                                                               : double;
+  init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based : boolean;
 begin
   with stackmenu1 do
   begin
@@ -720,13 +706,8 @@ begin
             end
             else
             begin
-//              get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var} cblack,star_level);
-//              find_stars(img_loaded,starlist1);{find stars and put them in a list}
-
               bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist1);{bin, measure background, find stars}
-
               find_tetrahedrons_ref;{find tetrahedrons for reference image}
-
               pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
               if pedestal<500 then pedestal:=500;{prevent image noise could go below zero}
               background_correction:=pedestal-cblack;
@@ -776,11 +757,6 @@ begin
               end
               else
               begin{internal alignment}
-
-
-//                get_background(0,img_loaded,true,true {unknown, calculate also noise_level} , {var} cblack,star_level);
-//                find_stars(img_loaded,starlist2);{find stars and put them in a list}
-
                 bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist2);{bin, measure background, find stars}
 
                 background_correction:=pedestal-cblack;
@@ -925,11 +901,10 @@ end;
 
 procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{mosaic/tile mode}
 var
-    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,
+    fitsX,fitsY,c,width_max, height_max,x_new,y_new,col,
     cropW,cropH : integer;
 
-    flat_factor, h,dRA, dDec,det,delta,gamma,ra_new, dec_new,   sin_dec_new,cos_dec_new,delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v,  value,
-    background_correction,dummy,median                                                                           : double;
+    flat_factor, value,  background_correction,dummy,median                                                        : double;
     init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
 
 begin
@@ -1022,8 +997,6 @@ begin
               end;
               img_temp[0,fitsX,fitsY]:=0; {clear img_temp}
             end;
-          old_width:=width2;
-          old_height:=height2;
         end;{init, c=0}
 
         solution:=true;
@@ -1138,11 +1111,9 @@ end;
 
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 var
-    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,  drizzle_mode,binning   : integer;
-    background_correction, flat_factor, h,dRA, dDec,det,delta,gamma,ra_new, dec_new,variance_factor, sin_dec_new,cos_dec_new, delta_ra,SIN_delta_ra,COS_delta_ra,u0,v0,u,v, value,weightF  : double;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col,  drizzle_mode,binning   : integer;
+    background_correction, flat_factor,variance_factor, value,weightF  : double;
     init, solution, use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
-
-
 begin
   with stackmenu1 do
   begin
@@ -1215,7 +1186,7 @@ begin
         end;
 
         if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-
+                                {initialized in init=false}
 
         if ((use_astrometry_internal) or (use_astrometry_net)) then
         begin{get_solution}
@@ -1231,8 +1202,6 @@ begin
           end
           else
           begin
-//            get_background(0,img_loaded,true,true {new since flat is applied, calculate also noise_level}, {var}cblack, star_level );
-//            find_stars(img_loaded,starlist1);{find stars and put them in a list}
             bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist1);{bin, measure background, find stars}
 
             find_tetrahedrons_ref;{find tetrahedrons for reference image}
@@ -1277,9 +1246,6 @@ begin
                 end
                 else
                 begin{internal alignment}
-//                  get_background(0,img_loaded,true,true {unknown, calculate also noise_level}, {var}cblack, star_level);
-//                  find_stars(img_loaded,starlist2);{find stars and put them in a list}
-
                   bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist2);{bin, measure background, find stars}
 
                   background_correction:=pedestal-cblack;{correct later for difference in background}

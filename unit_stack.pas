@@ -1,5 +1,5 @@
 unit unit_stack;
-{Copyright (C) 2017,2018,2019 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2020 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This program is free software: you can redistribute it and/or modify
@@ -57,6 +57,7 @@ type
     analysephotmetrymore1: TButton;
     analysephotometry1: TButton;
     analyse_inspector1: TButton;
+    add_bias1: TCheckBox;
     binning_for_solving_label3: TLabel;
     curve_fitting1: TButton;
     apply_artificial_flat_correction1: TButton;
@@ -1136,14 +1137,12 @@ end;
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; var background, starlevel: double); {get background and star level from peek histogram}
 var
   i, pixels,max_range,above,his_total : integer;
-  mean  : double;
 begin
   if calc_hist then
              get_hist(colour,img);{get histogram of img_loaded and his_total}
 
   {find peak in histogram which should be the average background}
   pixels:=0;
-
   max_range:=his_mean[colour]; {mean value from histogram}
   for i := 1 to max_range do {find peak, ignore value 0 from oversize}
     if histogram[colour,i]>pixels then {find colour peak}
@@ -1510,7 +1509,6 @@ var
   Save_Cursor          : TCursor;
   green,blue,success   : boolean;
   key,ext,filename1    : string;
-  firstchar            : string;
   img                  : image_array;
 begin
   counts:=ListView1.items.count-1;
@@ -2023,7 +2021,9 @@ begin
    begin
      esc_pressed:=true;
      if use_astrometry_net1.checked then memo2_message('ESC pressed. Execution stopped. Astrometry.net will continue till last job completed.')
-     else  memo2_message('ESC pressed. Execution stopped.')
+     else  memo2_message('ESC pressed. Execution stopped.');
+
+     update_menu(false); {Undefined situation. The array img_loaded and variables are different from image1. Prevent saving wrong array}
    end;
 end;
 
@@ -3800,9 +3800,8 @@ procedure Tstackmenu1.blink_button1Click(Sender: TObject);
 var
   c,i,j: integer;
   Save_Cursor          : TCursor;
-  noise_level1,back_ground1,signal_level,magn,sd,
-  hfd1,star_fwhm,snr,flux,xc,yc                                              : double;
-  x_new,y_new,fitsX,fitsY,col,first_image,tolerance,x,size,starX,starY,stepnr,clean_distance: integer;
+  noise_level1,back_ground1,signal_level,magn,sd                  : double;
+  x_new,y_new,fitsX,fitsY,col,first_image,tolerance,stepnr        : integer;
   reference_done,backup_reference, init,solut :boolean;
 
 begin
@@ -3972,7 +3971,6 @@ begin
         begin
           {nothing to do}
         end;
-
         plot_fits(mainwindow.image1,false {re_center},true);
       end;
       inc(c);
@@ -4115,7 +4113,6 @@ begin
     else
     if i=1 then memo2_message('█ █ █ █ █ █  Error, four or more images are required at different focus positions! █ █ █ █ █ █ ');
   end;
-
 end;
 
 procedure Tstackmenu1.cygwin1Change(Sender: TObject);
@@ -4406,9 +4403,9 @@ begin
   begin
     if  listview5.Items[index].Selected then
     begin
-      filename2:=listview5.items[index].caption;
+      filen:=listview5.items[index].caption;
       Application.ProcessMessages;
-      if ((esc_pressed) or (pack_cfitsio(filename2)=false)) then begin beep; mainwindow.caption:='Exit with error!!'; Screen.Cursor := Save_Cursor;  exit;end;
+      if ((esc_pressed) or (pack_cfitsio(filen)=false)) then begin beep; mainwindow.caption:='Exit with error!!'; Screen.Cursor := Save_Cursor;  exit;end;
     end;
     inc(index); {go to next file}
   end;
@@ -4941,7 +4938,7 @@ var
    Savearray: file of star;{to save solution if required for second and third step stacking}
 begin
   count:=length(stars[0])-1 ;
-  AssignFile(savearray,ChangeFileExt(Filename2,'.astap_image_stars'));
+  AssignFile(savearray,ChangeFileExt(Filen,'.astap_image_stars'));
   ReWrite(savearray);
 
   {special first record}
@@ -4970,7 +4967,7 @@ var
    onestar: star;
    Savearray: file of star;{to save solution if required for second and third step stacking}
 begin
-  AssignFile(savearray,ChangeFileExt(Filename2,'.astap_image_stars'));
+  AssignFile(savearray,ChangeFileExt(Filen,'.astap_image_stars'));
   Reset(savearray);
   Read(savearray,onestar);{retrieve first special record}
   count:=round(onestar[0]);{retrieve count}
@@ -4992,13 +4989,11 @@ end;
 
 procedure find_star_outliers(report_upto_magn: double; var outliers : star_list) {contains the four stars with largest SD }   ;
 var
-  stepnr,x_new,y_new,step,c,i,j,nr_images : integer;
+  stepnr,x_new,y_new,c,i,j,nr_images : integer;
   stars_mean,stars_sd,stars_count : array of array of single;
   created : boolean;
   sd,xc,yc     : double;
   stars :star_list;
-  m,magn:double;
-
 const
     factor=5; {div factor to get small variations at the same location}
 begin
@@ -6022,7 +6017,7 @@ begin
 end;
 
 procedure Tstackmenu1.apply_hue1Click(Sender: TObject);
-var fitsX, fitsY,col,fuzziness :integer;
+var fitsX, fitsY,fuzziness :integer;
     r,g,b,h,s,v,oldhue,newhue,dhue,saturation_factor : single;
     Save_Cursor:TCursor;
     colour: tcolor;
@@ -6243,7 +6238,7 @@ end;
 procedure Tstackmenu1.add_noise1Click(Sender: TObject);
 var
   fitsX,fitsY,col: integer;
-  noise          : single;
+  noise,mean     : double;
   Save_Cursor:TCursor;
 begin
   if fits_file=true then
@@ -6254,15 +6249,18 @@ begin
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
     noise:=strtofloat2(stackmenu1.edit_noise1.Text);
+    if add_bias1.checked then mean:=3*noise else mean:=0;
 
     for fitsY:=0 to height2-1 do
     for fitsX:=0 to width2-1 do
     for col:=0 to naxis3-1 do
-      img_loaded[col,fitsX,fitsY]:=max(0,img_loaded[col,fitsX,fitsY]+randg(3*noise,noise){gaussian noise});
+    img_loaded[col,fitsX,fitsY]:=max(0,img_loaded[col,fitsX,fitsY]+randg(mean,noise){gaussian noise});
 
     plot_fits(mainwindow.image1,false,true);{plot real}
     Screen.Cursor:=Save_Cursor;
    end;
+
+   get_hist(0 {colour},img_loaded);{update for the noise. Better for test solving}
 end;
 
 procedure Tstackmenu1.blink_star_filter1Change(Sender: TObject);

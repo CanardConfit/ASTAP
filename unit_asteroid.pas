@@ -937,10 +937,9 @@ begin
 end;
 procedure convert_MPCORB_line(txt : string; var desn,name: string; var H,G,yy,mm,dd,M,Peri,Node,a_incl,a_ecc,a_a: double); {han.k}
 var
-  linepos, code2  :integer;
-  date_regel      :STRING[5];
+  code2           : integer;
+  date_regel      : STRING[5];
   centuryA,monthA,dayA:string[2];
-  epochA         :STRING[15];
 begin
   desn:='';{assume failure}
 
@@ -961,8 +960,6 @@ begin
   code2:=Ord(date_regel[5]);
   if code2<65 then code2:=code2-48 {1..9} else code2:=code2-55; {A..Z}
   dayA := Formatfloat('00', code2); {convert to string with 2 digits}
-
-  EpochA:=centuryA+date_regel[2]+date_regel[3]+monthA+dayA+'.000';
 
   if ((centuryA='19') or (centuryA='20') or (centuryA='21')) then {do only data}
   begin
@@ -993,7 +990,7 @@ const
    Gauss_gravitational_constant: double=0.01720209895*180/pi;
 var txtf : textfile;
     count, maxcount,fontsize            : integer;
-    yy,mm,dd,a_h,a_anm,Peri,Node,a_incl,a_ecc,a_a,c_q, RA,DEC,DELTA,sun_delta,degrees_to_perihelion,c_epochdelta,ra2,dec2,mag,phase,delta_t : double;
+    yy,mm,dd,a_h,a_anm,Peri,Node,a_incl,a_ecc,a_a,c_q, DELTA,sun_delta,degrees_to_perihelion,c_epochdelta,ra2,dec2,mag,phase,delta_t : double;
     SIN_dec_ref,COS_dec_ref,maxmag      : double;
     desn,name,s:string;
     flip_horizontal, flip_vertical      : boolean;
@@ -1003,11 +1000,8 @@ var txtf : textfile;
 
   procedure plot_asteroid;
   var
-    fitsX,fitsY, fitsX_middle, fitsY_middle,screenX_middle,screenY_middle,
-    dra,ddec,mag2,Bp_Rp,
-    hfd1,star_fwhm,snr, flux,xc,yc,area_visible,ln_area_per_star,magn,
-    delta_ra,det,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh : double;
-    x,y,x2,y2,len                       : integer;
+    fitsX,fitsY,dra,ddec, delta_ra,det,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh : double;
+    x,y,x2,y2,len                                                                           : integer;
   begin
 
    {5. Conversion (RA,DEC) -> (x,y)}
@@ -1220,7 +1214,6 @@ begin
     esc_pressed:=true;
   end;
 end;
-
 
 procedure Tform_asteroids1.FormShow(Sender: TObject);{han.k}
 var

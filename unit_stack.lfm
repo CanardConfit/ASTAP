@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 97
+  Left = 578
   Height = 660
-  Top = 203
+  Top = 209
   Width = 1677
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1676
-    ActivePage = tab_Pixelmath2
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -226,7 +226,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 12
+    TabIndex = 0
     TabOrder = 5
     OnChange = pagecontrol1Change
     Options = [nboMultiLine]
@@ -1024,16 +1024,16 @@ object stackmenu1: Tstackmenu1
     object Result1: TTabSheet
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
-      ClientHeight = 418
-      ClientWidth = 1017
+      ClientHeight = 420
+      ClientWidth = 1668
       ImageIndex = 6
       ParentFont = False
       object listview5: TListView
         Left = 0
-        Height = 378
+        Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1017
+        Width = 1668
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Columns = <        
@@ -1101,9 +1101,9 @@ object stackmenu1: Tstackmenu1
       end
       object Label_results1: TLabel
         Left = 16
-        Height = 16
+        Height = 15
         Top = 8
-        Width = 399
+        Width = 345
         Caption = 'Stacked images are displayed here. Double click to view in viewer.'
         ParentColor = False
         ParentFont = False
@@ -2208,7 +2208,7 @@ object stackmenu1: Tstackmenu1
       object solve1: TButton
         Left = 1104
         Height = 30
-        Hint = 'Find plate solution for image in the viewer'
+        Hint = 'Find an astrometric solution for the image in the viewer.'#13#10#13#10'Checklist for successful solving:'#13#10#13#10'- At least 30 stars are visible'#13#10'- Reasonable round stars'#13#10'- Image size at least 1.5 megapixels'#13#10'- Correct image height in degrees specified. See stack menu tab alignment.'
         Top = 56
         Width = 320
         Caption = 'Solve current image'
@@ -5440,20 +5440,20 @@ object stackmenu1: Tstackmenu1
         end
       end
       object GroupBox3: TGroupBox
-        Left = 776
-        Height = 57
-        Top = 112
+        Left = 775
+        Height = 96
+        Top = 152
         Width = 256
         Caption = 'Add noise'
-        ClientHeight = 37
+        ClientHeight = 76
         ClientWidth = 252
         ParentFont = False
         TabOrder = 1
         object add_noise1: TButton
-          Left = 129
+          Left = 128
           Height = 30
           Hint = 'Add noise to the image in the viewer'
-          Top = -2
+          Top = 36
           Width = 118
           Caption = 'Apply'
           OnClick = add_noise1Click
@@ -5461,14 +5461,24 @@ object stackmenu1: Tstackmenu1
           TabOrder = 0
         end
         object edit_noise1: TEdit
-          Left = 8
+          Left = 9
           Height = 23
           Hint = 'Add Gaussian noise. The value is the standard deviation. The mean is three times the value'
-          Top = 3
-          Width = 89
+          Top = 8
+          Width = 80
           ParentFont = False
           TabOrder = 1
           Text = '0'
+        end
+        object add_bias1: TCheckBox
+          Left = 104
+          Height = 19
+          Hint = 'Add a bias to stay positive. Do this for very large noise values.'
+          Top = 8
+          Width = 113
+          Caption = 'Add 3σ bias value'
+          ParentFont = False
+          TabOrder = 2
         end
       end
       object GroupBox14: TGroupBox
@@ -5596,12 +5606,12 @@ object stackmenu1: Tstackmenu1
       end
       object GroupBox_test_images1: TGroupBox
         Left = 776
-        Height = 96
+        Height = 136
         Hint = 'Create artificial test image for testing star detection. This tool is intendent for developpers only.'
         Top = 8
         Width = 255
         Caption = 'Create test images'
-        ClientHeight = 76
+        ClientHeight = 116
         ClientWidth = 251
         ParentFont = False
         TabOrder = 3
@@ -5609,7 +5619,7 @@ object stackmenu1: Tstackmenu1
           Left = 128
           Height = 30
           Hint = 'Create a FITS test image with levels of gray and colour.'
-          Top = 37
+          Top = 80
           Width = 118
           Caption = 'Gradient'
           OnClick = apply_create_gradient1Click
@@ -5618,8 +5628,8 @@ object stackmenu1: Tstackmenu1
         end
         object create_test_image_stars1: TButton
           Left = 128
-          Height = 25
-          Hint = 'This will create a FITS image with rows of hotpixels, Gaussian stars with a HFD of 2.5 and 5.0'
+          Height = 30
+          Hint = 'This will create a FITS image with Gaussian stars having a HFD as specified. Top rows are filled with hot pixels.'
           Top = 8
           Width = 118
           Caption = 'Stars, hot pixels'
