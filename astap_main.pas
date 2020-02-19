@@ -1081,7 +1081,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.323 dated 2020-2-19';
+  #13+#10+'Version ß0.9.324 dated 2020-2-19';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2007,9 +2007,23 @@ end;
 procedure zoom(mousewheelfactor:double);
 var
   image_left,image_top : double;
+  maxw  : double;
 begin
-  if ( ((mainwindow.image1.width<=65535) or (mousewheelfactor<1){zoom out}) and {increased to 65535. Was above 12000 unequal stretch}
+  mainwindow.caption:=inttostr(mainwindow.image1.width)+' x '+inttostr(mainwindow.image1.height);
+
+  {$ifdef mswindows}
+   maxw:=65535; {will be 1.2*65535}
+  {$else}
+  {$ifdef CPUARM}
+   maxw:=4000;{struggeling if above}
+  {$else}
+   maxw:=15000;
+  {$endif}
+ ; {$endif}
+
+  if ( ((mainwindow.image1.width<=maxw) or (mousewheelfactor<1){zoom out}) and {increased to 65535 for Windows only. Was above 12000 unequal stretch}
        ((mainwindow.image1.width>=100 ) or (mousewheelfactor>1){zoom in})                                                                  )
+
   then
   begin
     image_left:=mainwindow.image1.left; {preserve for shape position calculation}
@@ -2017,6 +2031,9 @@ begin
 
     mainwindow.image1.height:=round(mainwindow.image1.height * mousewheelfactor);
     mainwindow.image1.width:= round(mainwindow.image1.width * mousewheelfactor);
+
+    //mainwindow.caption:=inttostr(mainwindow.image1.width)+' x '+inttostr(mainwindow.image1.height);
+
 
     {scroll to compensate zoom}
     mainwindow.image1.left:=+round(mainwindow.panel1.clientwidth/2  +  (image_left - mainwindow.panel1.clientwidth/2)*mousewheelfactor);
