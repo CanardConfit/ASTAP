@@ -481,6 +481,7 @@ const
    height_radians: double=(100/60)*pi/180;
    mouse_enter : integer=0;{for crop function}
    application_path:string='';{to be set in main}
+   database_path:string='';{to be set in main}
    bayerpat: string='';{bayer pattern}
    bayerpattern_final:integer=0;
    xbayroff: double=0;{additional bayer pattern offset to apply}
@@ -1081,7 +1082,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.324 dated 2020-2-19';
+  #13+#10+'Version ß0.9.326 dated 2020-2-23';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2009,8 +2010,6 @@ var
   image_left,image_top : double;
   maxw  : double;
 begin
-  mainwindow.caption:=inttostr(mainwindow.image1.width)+' x '+inttostr(mainwindow.image1.height);
-
   {$ifdef mswindows}
    maxw:=65535; {will be 1.2*65535}
   {$else}
@@ -2153,8 +2152,8 @@ procedure update_statusbar_section5;{update section 5 with image dimensions in d
 begin
   if cdelt2<>0 then
   begin
-    mainwindow.statusbar1.panels[6].text:=floattostrF2(width2*cdelt2,0,2)+' x '+floattostrF2(height2*cdelt2,0,2)+' °';{give image dimensions and bit per pixel info}
-    stackmenu1.search_fov1.text:=floattostrF2(height2*cdelt2,0,2);
+    mainwindow.statusbar1.panels[6].text:=floattostrF2(width2*abs(cdelt2),0,2)+' x '+floattostrF2(height2*cdelt2,0,2)+' °';{give image dimensions and bit per pixel info}
+    stackmenu1.search_fov1.text:=floattostrF2(height2*abs(cdelt2),0,2); {negative cdelt2 are produced by PI}
   end
   else mainwindow.statusbar1.panels[6].text:='';
 end;
@@ -7108,7 +7107,7 @@ var
     if Fliphorizontal     then starX:=round(width2-stars[0,i])  else starX:=round(stars[0,i]);
 
     image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-    image1.Canvas.textout(starX+size,starY,floattostrf((flux_magn_offset-ln(stars[3,i]{flux})*2.511886432/ln(10))*10, ffgeneral, 3,0));{add hfd as text}
+    image1.Canvas.textout(starX+size,starY,inttostr(round((flux_magn_offset-ln(stars[3,i]{flux})*2.511886432/ln(10))*10))   );{add hfd as text}
   end;
   Screen.Cursor:= Save_Cursor;
 end;
@@ -7213,6 +7212,14 @@ begin
     check_second_instance;{check for and other instance of the application. If so send paramstr(1) and quit}
 
   application_path:= extractfilepath(application.location);{for u290, set path}
+
+  {$IfDef Darwin}// for OS X,
+    database_path:='/usr/local/opt/astap/';
+  {$else}
+    database_path:=application_path;
+  {$endif}
+
+
 
   application.HintHidePause:=5000;{display hint 5000 ms instead standard 2500}
   {application.HintPause:=1000;}

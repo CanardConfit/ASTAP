@@ -497,7 +497,7 @@ begin
   min_star_size_arcsec:=strtofloat2(stackmenu1.min_star_size1.caption); {arc sec};
 
   if ((fov_specified=false) and (cdelt2<>0)) then {no fov in native command line and cdelt2 in header}
-    fov:=height2*cdelt2 {calculate FOV}
+    fov:=height2*abs(cdelt2) {calculate FOV. PI can give negative CDELT2}
   else
     fov:=strtofloat2(stackmenu1.search_fov1.text);{use specfied FOV in stackmenu}
 

@@ -52,7 +52,7 @@ begin
     with deepstring do
     begin
        try
-       LoadFromFile(application_path+'deep_sky.csv');{load deep sky data from file }
+       LoadFromFile(database_path+'deep_sky.csv');{load deep sky data from file }
        except;
          clear;
          beep;
@@ -69,7 +69,7 @@ begin
     with deepstring do
     begin
        try
-       LoadFromFile(application_path+'variable_stars.csv');{load deep sky data from file }
+       LoadFromFile(database_path+'variable_stars.csv');{load deep sky data from file }
        except;
          clear;
          beep;
@@ -86,7 +86,7 @@ begin
     with deepstring do
     begin
        try
-       LoadFromFile(application_path+'hyperleda.csv');{load deep sky data from file }
+       LoadFromFile(database_path+'hyperleda.csv');{load deep sky data from file }
        except;
          clear;
          beep;

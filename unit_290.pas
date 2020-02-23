@@ -710,15 +710,19 @@ end;
 function select_star_database(database:string): boolean; {select a star database, report false if none is found}
 begin
   result:=true;
-  if fileexists( application_path+database+'_0101.290') then name_star:=database {try preference}
+  if fileexists( database_path+database+'_0101.290') then name_star:=database {try preference}
   else
-  if fileexists( application_path+'g17_0101.290') then name_star:='g17' {database required}
+  if fileexists( database_path+'g17_0101.290') then name_star:='g17' {database required}
   else
-  if fileexists( application_path+'g18_0101.290') then name_star:='g18' {database required}
+  if fileexists( database_path+'v17_0101.290') then name_star:='v17' {database required}
   else
-  if fileexists( application_path+'g16_0101.290') then name_star:='g16' {database required}
+  if fileexists( database_path+'g18_0101.290') then name_star:='g18' {database required}
   else
-  if fileexists( application_path+'u16_0101.290') then name_star:='u16' {database required}
+  if fileexists( database_path+'g16_0101.290') then name_star:='g16' {database required}
+  else
+  if fileexists( database_path+'v16_0101.290') then name_star:='v16' {database required}
+  else
+  if fileexists( database_path+'u16_0101.290') then name_star:='u16' {database required}
   else
   result:=false;
 end;
@@ -814,7 +818,7 @@ begin
 
          name_star:=copy(name_star,1,3)+'_'+filenames290[area290];{tyc0101.290}
          try
-           thefile_stars:=tfilestream.Create( application_path+name_star, fmOpenRead );
+           thefile_stars:=tfilestream.Create( database_path+name_star, fmOpenRead );
            Reader_stars := TReader.Create (thefile_stars, 5*6*9*11);{number of hnsky records, multiply off all posible record sizes}
            {thefile_stars.size-reader.position>sizeof(hkyhdr) could also be used but slow down a factor of 2 !!!}
            files_available:=true;
