@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 578
+  Left = 647
   Height = 660
-  Top = 209
+  Top = 180
   Width = 1677
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1676
-    ActivePage = Images
+    ActivePage = alignment1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -226,7 +226,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 6
     TabOrder = 5
     OnChange = pagecontrol1Change
     Options = [nboMultiLine]
@@ -2266,15 +2266,21 @@ object stackmenu1: Tstackmenu1
           ClientWidth = 858
           ParentFont = False
           TabOrder = 0
-          object star_database1: TEdit
+          object star_database1: TComboBox
             Left = 568
             Height = 23
             Hint = 'Star database in use.  Selection will be automatic. Enter manually a database to force use. Type blank to reactivate automatic selection.'
             Top = 120
             Width = 72
             BorderSpacing.Around = 5
+            ItemHeight = 15
+            Items.Strings = (
+              '1'
+            )
+            OnDropDown = star_database1DropDown
             ParentFont = False
-            TabOrder = 3
+            Sorted = True
+            TabOrder = 4
             Text = '---'
           end
           object Label53: TLabel
@@ -2445,7 +2451,7 @@ object stackmenu1: Tstackmenu1
             ClientHeight = 129
             ClientWidth = 358
             ParentFont = False
-            TabOrder = 4
+            TabOrder = 5
             object Panel_star_detection1: TPanel
               Left = 0
               Height = 129
@@ -2479,7 +2485,7 @@ object stackmenu1: Tstackmenu1
                   ''
                 )
                 ParentFont = False
-                TabOrder = 0
+                TabOrder = 1
                 Text = '500'
               end
               object Label21: TLabel
@@ -2525,7 +2531,7 @@ object stackmenu1: Tstackmenu1
                   '0.007'
                 )
                 ParentFont = False
-                TabOrder = 1
+                TabOrder = 2
                 Text = '0.005'
               end
               object solve_show_log1: TCheckBox
@@ -2540,7 +2546,7 @@ object stackmenu1: Tstackmenu1
                 ParentFont = False
                 ParentShowHint = False
                 ShowHint = True
-                TabOrder = 2
+                TabOrder = 3
               end
               object downsample_for_solving1: TComboBox
                 Left = 264
@@ -2561,7 +2567,7 @@ object stackmenu1: Tstackmenu1
                 OnChange = resize_factor1Change
                 ParentFont = False
                 Style = csDropDownList
-                TabOrder = 3
+                TabOrder = 0
                 Text = '0'
               end
               object downsample_solving_label1: TLabel
@@ -2591,7 +2597,7 @@ object stackmenu1: Tstackmenu1
             Color = clBtnFace
             ParentColor = False
             ParentFont = False
-            TabOrder = 5
+            TabOrder = 6
           end
           object force_oversize1: TCheckBox
             Left = 696
@@ -2604,7 +2610,7 @@ object stackmenu1: Tstackmenu1
             Color = clBtnFace
             ParentColor = False
             ParentFont = False
-            TabOrder = 6
+            TabOrder = 7
           end
           object min_star_size1: TComboBox
             Left = 568
@@ -2625,7 +2631,7 @@ object stackmenu1: Tstackmenu1
             )
             OnChange = resize_factor1Change
             ParentFont = False
-            TabOrder = 7
+            TabOrder = 3
             Text = '1.5'
           end
           object binning_for_solving_label3: TLabel
@@ -2705,7 +2711,7 @@ object stackmenu1: Tstackmenu1
             ParentShowHint = False
             ShowHint = True
             State = cbChecked
-            TabOrder = 6
+            TabOrder = 5
           end
           object keep_console_open1: TCheckBox
             Left = 792
@@ -2718,7 +2724,7 @@ object stackmenu1: Tstackmenu1
             ParentFont = False
             ParentShowHint = False
             ShowHint = True
-            TabOrder = 7
+            TabOrder = 6
           end
           object limit_area1: TCheckBox
             Left = 51
@@ -2811,7 +2817,7 @@ object stackmenu1: Tstackmenu1
             Checked = True
             ParentFont = False
             State = cbChecked
-            TabOrder = 5
+            TabOrder = 7
           end
           object Label24: TLabel
             Left = 600

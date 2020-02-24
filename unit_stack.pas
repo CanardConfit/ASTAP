@@ -336,6 +336,7 @@ type
     pixelsize1: TEdit;
     PopupMenu8: TPopupMenu;
     radius_search1: TComboBox;
+    xxxxxxx: TComboBox;
     rainbow_Panel1: TPanel;
     rb1: TEdit;
     red_filter1: TEdit;
@@ -412,7 +413,7 @@ type
     renametobak6: TMenuItem;
     select6: TMenuItem;
     stack_method1: TComboBox;
-    star_database1: TEdit;
+    star_database1: TComboBox;
     star_level_colouring1: TComboBox;
     subtract_background1: TButton;
     TabSheet1: TTabSheet;
@@ -592,6 +593,7 @@ type
     procedure reset_factors1Click(Sender: TObject);
     procedure search_fov1Change(Sender: TObject);
     procedure noisefilter_sd1Change(Sender: TObject);
+    procedure star_database1DropDown(Sender: TObject);
     procedure test_pattern1Click(Sender: TObject);
     procedure blink_button1Click(Sender: TObject);
     procedure apply_create_gradient1Click(Sender: TObject);
@@ -5959,6 +5961,24 @@ begin
 
 end;
 
+procedure Tstackmenu1.star_database1DropDown(Sender: TObject);
+var
+  SearchRec: TSearchRec;
+  s        : string;
+begin
+  with stackmenu1 do
+  begin
+    star_database1.items.clear;
+    if FindFirst(database_path+'*0101.290', faAnyFile, SearchRec)=0 then
+    begin
+      repeat
+        s:=uppercase(copy(searchrec.name,1,3));
+        star_database1.items.add(s);
+      until FindNext(SearchRec) <> 0;
+    end;
+    FindClose(SearchRec);
+  end;
+end;
 
 procedure Tstackmenu1.analyseblink1Click(Sender: TObject);
 var

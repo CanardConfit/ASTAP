@@ -712,11 +712,11 @@ begin
   result:=true;
   if fileexists( database_path+database+'_0101.290') then name_star:=database {try preference}
   else
+  if fileexists( database_path+'g18_0101.290') then name_star:='g18' {database required}
+  else
   if fileexists( database_path+'g17_0101.290') then name_star:='g17' {database required}
   else
   if fileexists( database_path+'v17_0101.290') then name_star:='v17' {database required}
-  else
-  if fileexists( database_path+'g18_0101.290') then name_star:='g18' {database required}
   else
   if fileexists( database_path+'g16_0101.290') then name_star:='g16' {database required}
   else
