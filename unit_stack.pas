@@ -594,6 +594,7 @@ type
     procedure search_fov1Change(Sender: TObject);
     procedure noisefilter_sd1Change(Sender: TObject);
     procedure star_database1DropDown(Sender: TObject);
+
     procedure test_pattern1Click(Sender: TObject);
     procedure blink_button1Click(Sender: TObject);
     procedure apply_create_gradient1Click(Sender: TObject);
@@ -757,7 +758,7 @@ procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise
 procedure update_stackmenu;{update stackmenu1 menus}
 procedure x2mean(colors: integer; var img: image_array);{combine values of 4 pixel}
 procedure x3mean(colors: integer;var img: image_array);{combine values of 9 pixel}
-function create_internal_solution : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
+function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 function create_wcs_solution(filen: string): boolean; {plate solving,  check for WCS file solution and if not available create astrometry.net WCS file solution}
 function load_wcs_solution(filen: string): boolean; {plate solving, load astrometry.net solution}
 procedure apply_dark_flat(filter1:string; exposure1,stemperature1,width1:integer; var dcount,fcount,fdcount: integer; var flat_factor: double) ; {inline;} {apply dark, flat if required, renew if different exposure or ccd temp}
@@ -770,7 +771,7 @@ procedure analyse_fits(img : image_array; var star_counter : integer; var backgr
 procedure sample(fitsx,fitsy : integer);{sampe local colour and fill shape with colour}
 procedure apply_most_common(sourc,dest: image_array; radius: integer);  {apply most common filter on first array and place result in second array}
 procedure backup_header;{backup solution and header}
-procedure restore_header;{backup solution and header}
+function  restore_header: boolean;{backup solution and header}
 
 const
   I_object=0; {position in listview1}
@@ -850,6 +851,10 @@ uses  unit_astrometry,unit_gaussian_blur, unit_star_align, unit_astrometric_solv
 
 type
    theaderbackup  = record
+     naxis   : integer;
+     naxis1  : integer;
+     naxis2  : integer;
+     naxis3  : integer;
      crpix1 : double;{could be modified by crop}
      crpix2 : double;
      crval1 : double;
@@ -930,9 +935,10 @@ begin
   header_backup[0].date_obs:=date_obs;
   header_backup[0].header:=mainwindow.Memo1.Text;{backup fits header}
 end;
-procedure restore_header;{restore solution and header}
+function restore_header;{restore solution and header}
 begin
-  if header_backup=nil then exit;{no backup}
+  if header_backup=nil then begin result:=false; exit;end;{no backup}
+
   crpix1:=header_backup[0].crpix1;
   crpix2:=header_backup[0].crpix2;
 
@@ -951,6 +957,7 @@ begin
   mainwindow.Memo1.Text:=header_backup[0].header;{restore fits header}
 
   header_backup:=nil; {release memory}
+  result:=true;
 end;
 
 procedure update_stackmenu;{update stackmenu1 menus, called onshow stackmenu1}
@@ -1135,7 +1142,7 @@ begin
   result:=sqrt(result/counter); {standard deviation using 1/25 of pixels above background}
 end;
 
-//function get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean):double; {get background level from peek histogram}
+
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; var background, starlevel: double); {get background and star level from peek histogram}
 var
   i, pixels,max_range,above,his_total : integer;
@@ -1503,8 +1510,7 @@ begin
   img_temp2:=nil;{free mem}
 end;
 
-
-procedure Tstackmenu1.Analyse1Click(Sender: TObject);
+procedure analyse_tab_images;
 var
   c,hfd_counter  ,i,j,counts  : integer;
   backgr, hfd_median   : double;
@@ -1513,282 +1519,285 @@ var
   key,ext,filename1    : string;
   img                  : image_array;
 begin
-  counts:=ListView1.items.count-1;
-  if counts<=0 then
+  with stackmenu1 do
   begin
-    memo2_message('Abort, no images to analyse! Browse for images, darks and flats. They will be sorted automatically.');
-    exit;
-  end;
-
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
-  esc_pressed:=false;
-
-  if img_loaded<>nil then memo_backup:=mainwindow.Memo1.Text;{backup fits header for later}
-
-  green:=false;
-  blue:=false;
-
-  c:=0;
-  {convert any non FITS file}
-  while c<=counts {check all} do
-  begin
-    if ListView1.Items.item[c].checked then
+    counts:=ListView1.items.count-1;
+    if counts<=0 then
     begin
-      filename1:=ListView1.items[c].caption;
-      ext:=uppercase(ExtractFileExt(filename1));
-
-      if (ext='.FZ') then {cfitsio}
-      begin
-        memo2_message('Unpacking '+filename1);
-        Application.ProcessMessages;
-        if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-
-        if unpack_cfitsio(filename1) then  {success unpacking}
-           ListView1.items[c].caption:=filename2 {change listview name to FITS.}
-        else
-        begin {conversion failure}
-          ListView1.Items.item[c].checked:=false;
-          ListView1.Items.item[c].subitems.Strings[I_result]:='Funpack required, install!!';
-        end;
-      end {cfitsio}
-      else
-      if (check_raw_file_extension(ext)) then {raw file, convert to PGM}
-      begin
-        memo2_message('Converting '+filename1+' to FITS file format');
-        Application.ProcessMessages;
-        if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-
-        if convert_raw_to_fits(filename1) then  {success converting raw to pgm file}
-           ListView1.items[c].caption:=filename2 {change listview name to FITS. The filename2 is renamed in prcedure save_16_m32..}
-        else
-        begin {conversion failure}
-          ListView1.Items.item[c].checked:=false;
-          ListView1.Items.item[c].subitems.Strings[I_result]:='Conv failure!';
-        end;
-      end {raw}
-      else
-      if ((ext='.JPG') or (ext='.JPEG') or (ext='.PNG') or (ext='.TIF') or (ext='.TIFF')) then
-      begin {tif,png,jpeg}
-        memo2_message('Converting '+filename1+' to FITS file format');
-        Application.ProcessMessages;
-        if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-
-        success:=load_tiffpngJPEG(filename1,img_loaded);
-        if success then
-        begin
-          exposure:=extract_exposure_from_filename(filename1); {try to extract exposure time from filename}
-          success:=save_fits(ChangeFileExt(filename1,'.fit'),16,false);
-        end;
-        if success then ListView1.items[c].caption:=ChangeFileExt(filename1,'.fit') {change listview name to FITS.}
-        else
-        begin {conversion failure}
-          ListView1.Items.item[c].checked:=false;
-          ListView1.Items.item[c].subitems.Strings[I_result]:='Conv failure!';
-        end;
-      end;
-
-    end;{checked}
-    inc(c);
-  end;
-
-
-  c:=0;
-  repeat {check for double entries}
-     i:=c+1;
-     while i<=counts do
-     begin
-       if ListView1.items[i].caption=ListView1.items[c].caption then {double file name}
-       begin
-         memo2_message('Removed second entry of same file '+ListView1.items[i].caption);
-         listview1.Items.Delete(i);
-         dec(counts); {compensate for delete}
-       end
-       else
-       inc(i);
-     end;
-    inc(c);
-  until c>counts;
-
-
-  counts:=ListView1.items.count-1;
-
-  if counts<=0 then exit; {if only darks where added none are left. Prefent runtime error in progress calculation}
-
-  c:=0;
-  repeat {check all files, remove darks, bias}
-    if ((ListView1.Items.item[c].checked) and ((length(ListView1.Items.item[c].subitems.Strings[I_hfd])<=1){hfd} or (filter_name_changed)) ) then {hfd unknown, only update blank rows}
-    begin {checked}
-      progress_indicator(100*c/counts,' Analysing');
-      Listview1.Selected :=nil; {remove any selection}
-      ListView1.ItemIndex := c;{mark where we are, set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
-      Listview1.Items[c].MakeVisible(False);{scroll to selected item}
-
-      filename2:=ListView1.items[c].caption;
-      Application.ProcessMessages;
-      if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-
-
-      load_fits(filename2,true { update RA0..},true,true,img); {load in memory}
-
-      if fits_file=false then {failed to load}
-      begin
-        ListView1.Items.item[c].checked:=false;
-        ListView1.Items.item[c].subitems.Strings[I_result]:='No FITS!';
-      end
-      else
-      begin
-        if pos('DARK',uppercase(imagetype))>0 then
-        begin
-          memo2_message('Move file '+filename2+' to tab DARKS');
-          listview_add2(listview2,filename2,9);{move to darks}
-          listview1.Items.Delete(c);
-          dec(c);{compensate for delete}
-          dec(counts); {compensate for delete}
-        end
-        else
-        if pos('FLAT',uppercase(imagetype))>0 then
-        begin
-          memo2_message('Move file '+filename2+' to tab FLATS');
-          listview_add2(listview3,filename2,10);
-          listview1.Items.Delete(c);
-          dec(c);{compensate for delete}
-          dec(counts); {compensate for delete}
-        end
-        else
-        if pos('BIAS',uppercase(imagetype))>0 then
-        begin
-          memo2_message('Move file '+filename2+' to tab FLAT-DARKS / BIAS');
-          listview_add2(listview4,filename2,9);
-          listview1.Items.Delete(c);
-          dec(c);{compensate for delete}
-          dec(counts); {compensate for delete}
-        end
-        else
-        begin {light frame}
-
-          analyse_fits(img,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
-
-          ListView1.Items.BeginUpdate;
-          try
-            begin
-              if hfd_median>=99 then ListView1.Items.item[c].checked:=false; {no stars, can't process this image}
-              ListView1.Items.item[c].subitems.Strings[I_object]:=object_name; {object name, without spaces}
-
-
-              ListView1.Items.item[c].subitems.Strings[I_filter]:=filter_name; {filter name, without spaces}
-              if naxis3=3 then ListView1.Items.item[c].subitems.Strings[I_filter]:='colour'; {give RGB images filter name colour}
-
-              if AnsiCompareText(red_filter1.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=0 else
-              if AnsiCompareText(red_filter2.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=0 else
-              if AnsiCompareText(green_filter1.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[1]:=1; green:=true; end else
-              if AnsiCompareText(green_filter2.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[1]:=1; green:=true; end else
-              if AnsiCompareText(blue_filter1.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[1]:=2; blue:=true; end else
-              if AnsiCompareText(blue_filter2.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[1]:=2; blue:=true; end else
-              if AnsiCompareText(luminance_filter1.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=4 else
-              if AnsiCompareText(luminance_filter2.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=4 else
-              if naxis3=3 then  ListView1.Items.item[c].SubitemImages[1]:=3 else {RGB color}
-                if filter_name<>'' then ListView1.Items.item[c].SubitemImages[1]:=7 {question mark} else
-                   ListView1.Items.item[c].SubitemImages[1]:=-1;{blank}
-
-              ListView1.Items.item[c].subitems.Strings[I_bin]:=inttostr(Xbinning)+' x '+inttostr(Ybinning); {Binning CCD}
-
-              ListView1.Items.item[c].subitems.Strings[I_hfd]:=floattostrF2(hfd_median,0,1);
-              ListView1.Items.item[c].subitems.Strings[I_stardetections]:=inttostr5(hfd_counter); {number of stars}
-
-              ListView1.Items.item[c].subitems.Strings[I_starlevel]:=inttostr5(round(star_level));
-              ListView1.Items.item[c].subitems.Strings[I_background]:=inttostr5(round(backgr));
-
-              ListView1.Items.item[c].subitems.Strings[I_sharpness]:=floattostrF2(image_sharpness(img),1,3); {sharpness test}
-
-              ListView1.Items.item[c].subitems.Strings[I_exposure]:=inttostr(round(exposure));
-              if set_temperature<>999 then ListView1.Items.item[c].subitems.Strings[I_temperature]:=inttostr(set_temperature);
-              ListView1.Items.item[c].subitems.Strings[I_width]:=inttostr(width2); {width}
-              ListView1.Items.item[c].subitems.Strings[I_height]:=inttostr(height2);{height}
-              ListView1.Items.item[c].subitems.Strings[I_type]:=imagetype;{type}
-              ListView1.Items.item[c].subitems.Strings[I_datetime]:=StringReplace(date_obs,'T',' ',[]);{date/time}
-              ListView1.Items.item[c].subitems.Strings[I_position]:=prepare_ra5(ra0,': ')+', '+ prepare_dec5(dec0,'° ');{give internal position}
-
-              {is internal solution available?}
-              if cd1_1<>0 then
-                  ListView1.Items.item[c].subitems.Strings[I_solution]:='✓' else ListView1.Items.item[c].subitems.Strings[I_solution]:='-';
-
-              {is external solution available?}
-              if stackmenu1.use_astrometry_net1.checked=true then
-                if fileexists(changeFileExt(filename2,'.wcs')) then  ListView1.Items.item[c].subitems.Strings[I_esolution]:='✓' else ListView1.Items.item[c].subitems.Strings[I_esolution]:='-';
-              ListView1.Items.item[c].subitems.Strings[I_calibration]:=calstat; {status calibration}
-              if focus_pos<>999 then ListView1.Items.item[c].subitems.Strings[I_focpos]:=inttostr(focus_pos);
-              if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[I_foctemp]:=floattostrF2(focus_temp,0,1);
-              if centalt<>999 then ListView1.Items.item[c].subitems.Strings[I_centalt]:=floattostrF2(centalt,0,1);
-              if centaz<>999 then ListView1.Items.item[c].subitems.Strings[I_centaz]:=floattostrF2(centaz,0,1);
-              if gain<>999 then ListView1.Items.item[c].subitems.Strings[I_gain]:=inttostr(round(gain));
-
-            end;
-          finally
-            ListView1.Items.EndUpdate;
-          end;
-        end;{end ligt frame}
-      end;{this is a fits file}
-    end;{checked and hfd unknown}
-    inc(c); {go to next file}
-  until c>counts;
-
-  if ((green) and (blue) and (classify_filter1.checked=false)) then memo2_message('■■■■■■■■■■■■■ Hint, colour filters detected. For colour stack set the check-mark classify by filter! ■■■■■■■■■■■■■');
-
-  if (stackmenu1.uncheck_outliers1.checked) then
-  begin
-    {give list an indentification key label based on object, filter and exposure time}
-    for c:=0 to ListView1.items.count-1 do
-    begin
-      if ListView1.Items.item[c].SubitemImages[0]=outlier then {marked at outlier}
-      begin
-         ListView1.Items.item[c].checked:=true;{recheck outliers from previous session}
-         ListView1.Items.item[c].SubitemImages[0]:=-1;{remove mark}
-      end;
-
-       if ListView1.items[c].Checked=true then
-           ListView1.Items.item[c].subitems.Strings[I_result]:=
-                   ListView1.Items.item[c].subitems.Strings[I_object]+'_'+{object name}
-                   ListView1.Items.item[c].subitems.Strings[I_filter]+'_'+{filter}
-                   ListView1.Items.item[c].subitems.Strings[I_exposure]; {exposure}
+      memo2_message('Abort, no images to analyse! Browse for images, darks and flats. They will be sorted automatically.');
+      exit;
     end;
 
-    {do statistics on each constructed key}
-    repeat
-      c:=0;
-      key:='';
-      repeat {check all files, uncheck outliers}
-        if  ListView1.Items.item[c].checked then
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+    esc_pressed:=false;
+
+    green:=false;
+    blue:=false;
+
+    c:=0;
+    {convert any non FITS file}
+    while c<=counts {check all} do
+    begin
+      if ListView1.Items.item[c].checked then
+      begin
+        filename1:=ListView1.items[c].caption;
+        ext:=uppercase(ExtractFileExt(filename1));
+
+        if (ext='.FZ') then {cfitsio}
         begin
-          key:=ListView1.Items.item[c].subitems.Strings[I_result];
-          if key<>'' then
-             list_remove_outliers(key);
+          memo2_message('Unpacking '+filename1);
+          Application.ProcessMessages;
+          if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+
+          if unpack_cfitsio(filename1) then  {success unpacking}
+             ListView1.items[c].caption:=filename2 {change listview name to FITS.}
+          else
+          begin {conversion failure}
+            ListView1.Items.item[c].checked:=false;
+            ListView1.Items.item[c].subitems.Strings[I_result]:='Funpack required, install!!';
+          end;
+        end {cfitsio}
+        else
+        if (check_raw_file_extension(ext)) then {raw file, convert to PGM}
+        begin
+          memo2_message('Converting '+filename1+' to FITS file format');
+          Application.ProcessMessages;
+          if esc_pressed then begin Screen.Cursor :=Save_Cursor;{ back to normal }  exit;  end;
+
+          if convert_raw_to_fits(filename1) then  {success converting raw to pgm file}
+             ListView1.items[c].caption:=filename2 {change listview name to FITS. The filename2 is renamed in prcedure save_16_m32..}
+          else
+          begin {conversion failure}
+            ListView1.Items.item[c].checked:=false;
+            ListView1.Items.item[c].subitems.Strings[I_result]:='Conv failure!';
+          end;
+        end {raw}
+        else
+        if ((ext='.JPG') or (ext='.JPEG') or (ext='.PNG') or (ext='.TIF') or (ext='.TIFF')) then
+        begin {tif,png,jpeg}
+          memo2_message('Converting '+filename1+' to FITS file format');
+          Application.ProcessMessages;
+          if esc_pressed then begin Screen.Cursor :=Save_Cursor;{ back to normal }  exit;  end;
+
+          success:=load_tiffpngJPEG(filename1,img);
+          if success then
+          begin
+            exposure:=extract_exposure_from_filename(filename1); {try to extract exposure time from filename}
+            success:=save_fits(img,ChangeFileExt(filename1,'.fit'),16,false);
+          end;
+          if success then ListView1.items[c].caption:=ChangeFileExt(filename1,'.fit') {change listview name to FITS.}
+          else
+          begin {conversion failure}
+            ListView1.Items.item[c].checked:=false;
+            ListView1.Items.item[c].subitems.Strings[I_result]:='Conv failure!';
+          end;
         end;
-        if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-        inc(c)
-      until c>counts;
-    until key='';{until all keys are used}
+
+      end;{checked}
+      inc(c);
+    end;
+
+
+    c:=0;
+    repeat {check for double entries}
+       i:=c+1;
+       while i<=counts do
+       begin
+         if ListView1.items[i].caption=ListView1.items[c].caption then {double file name}
+         begin
+           memo2_message('Removed second entry of same file '+ListView1.items[i].caption);
+           listview1.Items.Delete(i);
+           dec(counts); {compensate for delete}
+         end
+         else
+         inc(i);
+       end;
+      inc(c);
+    until c>counts;
+
+
+    counts:=ListView1.items.count-1;
+
+    if counts<=0 then exit; {if only darks where added none are left. Prefent runtime error in progress calculation}
+
+    c:=0;
+    repeat {check all files, remove darks, bias}
+      if ((ListView1.Items.item[c].checked) and ((length(ListView1.Items.item[c].subitems.Strings[I_hfd])<=1){hfd} or (filter_name_changed)) ) then {hfd unknown, only update blank rows}
+      begin {checked}
+        progress_indicator(100*c/counts,' Analysing');
+        Listview1.Selected :=nil; {remove any selection}
+        ListView1.ItemIndex := c;{mark where we are, set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+        Listview1.Items[c].MakeVisible(False);{scroll to selected item}
+
+        filename2:=ListView1.items[c].caption;
+        Application.ProcessMessages;
+        if esc_pressed then begin Screen.Cursor :=Save_Cursor;  { back to normal }  exit;  end;
+
+
+        load_fits(filename2,true { update RA0..},true,true,img); {load in memory}
+
+        if fits_file=false then {failed to load}
+        begin
+          ListView1.Items.item[c].checked:=false;
+          ListView1.Items.item[c].subitems.Strings[I_result]:='No FITS!';
+        end
+        else
+        begin
+          if pos('DARK',uppercase(imagetype))>0 then
+          begin
+            memo2_message('Move file '+filename2+' to tab DARKS');
+            listview_add2(listview2,filename2,9);{move to darks}
+            listview1.Items.Delete(c);
+            dec(c);{compensate for delete}
+            dec(counts); {compensate for delete}
+          end
+          else
+          if pos('FLAT',uppercase(imagetype))>0 then
+          begin
+            memo2_message('Move file '+filename2+' to tab FLATS');
+            listview_add2(listview3,filename2,10);
+            listview1.Items.Delete(c);
+            dec(c);{compensate for delete}
+            dec(counts); {compensate for delete}
+          end
+          else
+          if pos('BIAS',uppercase(imagetype))>0 then
+          begin
+            memo2_message('Move file '+filename2+' to tab FLAT-DARKS / BIAS');
+            listview_add2(listview4,filename2,9);
+            listview1.Items.Delete(c);
+            dec(c);{compensate for delete}
+            dec(counts); {compensate for delete}
+          end
+          else
+          begin {light frame}
+
+            analyse_fits(img,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
+
+            ListView1.Items.BeginUpdate;
+            try
+              begin
+                if hfd_median>=99 then ListView1.Items.item[c].checked:=false; {no stars, can't process this image}
+                ListView1.Items.item[c].subitems.Strings[I_object]:=object_name; {object name, without spaces}
+
+
+                ListView1.Items.item[c].subitems.Strings[I_filter]:=filter_name; {filter name, without spaces}
+                if naxis3=3 then ListView1.Items.item[c].subitems.Strings[I_filter]:='colour'; {give RGB images filter name colour}
+
+                if AnsiCompareText(red_filter1.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=0 else
+                if AnsiCompareText(red_filter2.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=0 else
+                if AnsiCompareText(green_filter1.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[1]:=1; green:=true; end else
+                if AnsiCompareText(green_filter2.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[1]:=1; green:=true; end else
+                if AnsiCompareText(blue_filter1.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[1]:=2; blue:=true; end else
+                if AnsiCompareText(blue_filter2.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[1]:=2; blue:=true; end else
+                if AnsiCompareText(luminance_filter1.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=4 else
+                if AnsiCompareText(luminance_filter2.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=4 else
+                if naxis3=3 then  ListView1.Items.item[c].SubitemImages[1]:=3 else {RGB color}
+                  if filter_name<>'' then ListView1.Items.item[c].SubitemImages[1]:=7 {question mark} else
+                     ListView1.Items.item[c].SubitemImages[1]:=-1;{blank}
+
+                ListView1.Items.item[c].subitems.Strings[I_bin]:=inttostr(Xbinning)+' x '+inttostr(Ybinning); {Binning CCD}
+
+                ListView1.Items.item[c].subitems.Strings[I_hfd]:=floattostrF2(hfd_median,0,1);
+                ListView1.Items.item[c].subitems.Strings[I_stardetections]:=inttostr5(hfd_counter); {number of stars}
+
+                ListView1.Items.item[c].subitems.Strings[I_starlevel]:=inttostr5(round(star_level));
+                ListView1.Items.item[c].subitems.Strings[I_background]:=inttostr5(round(backgr));
+
+                ListView1.Items.item[c].subitems.Strings[I_sharpness]:=floattostrF2(image_sharpness(img),1,3); {sharpness test}
+
+                ListView1.Items.item[c].subitems.Strings[I_exposure]:=inttostr(round(exposure));
+                if set_temperature<>999 then ListView1.Items.item[c].subitems.Strings[I_temperature]:=inttostr(set_temperature);
+                ListView1.Items.item[c].subitems.Strings[I_width]:=inttostr(width2); {width}
+                ListView1.Items.item[c].subitems.Strings[I_height]:=inttostr(height2);{height}
+                ListView1.Items.item[c].subitems.Strings[I_type]:=imagetype;{type}
+                ListView1.Items.item[c].subitems.Strings[I_datetime]:=StringReplace(date_obs,'T',' ',[]);{date/time}
+                ListView1.Items.item[c].subitems.Strings[I_position]:=prepare_ra5(ra0,': ')+', '+ prepare_dec5(dec0,'° ');{give internal position}
+
+                {is internal solution available?}
+                if cd1_1<>0 then
+                    ListView1.Items.item[c].subitems.Strings[I_solution]:='✓' else ListView1.Items.item[c].subitems.Strings[I_solution]:='-';
+
+                {is external solution available?}
+                if stackmenu1.use_astrometry_net1.checked=true then
+                  if fileexists(changeFileExt(filename2,'.wcs')) then  ListView1.Items.item[c].subitems.Strings[I_esolution]:='✓' else ListView1.Items.item[c].subitems.Strings[I_esolution]:='-';
+                ListView1.Items.item[c].subitems.Strings[I_calibration]:=calstat; {status calibration}
+                if focus_pos<>999 then ListView1.Items.item[c].subitems.Strings[I_focpos]:=inttostr(focus_pos);
+                if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[I_foctemp]:=floattostrF2(focus_temp,0,1);
+                if centalt<>999 then ListView1.Items.item[c].subitems.Strings[I_centalt]:=floattostrF2(centalt,0,1);
+                if centaz<>999 then ListView1.Items.item[c].subitems.Strings[I_centaz]:=floattostrF2(centaz,0,1);
+                if gain<>999 then ListView1.Items.item[c].subitems.Strings[I_gain]:=inttostr(round(gain));
+
+              end;
+            finally
+              ListView1.Items.EndUpdate;
+            end;
+          end;{end ligt frame}
+        end;{this is a fits file}
+      end;{checked and hfd unknown}
+      inc(c); {go to next file}
+    until c>counts;
+
+    if ((green) and (blue) and (classify_filter1.checked=false)) then memo2_message('■■■■■■■■■■■■■ Hint, colour filters detected. For colour stack set the check-mark classify by filter! ■■■■■■■■■■■■■');
+
+    if (stackmenu1.uncheck_outliers1.checked) then
+    begin
+      {give list an indentification key label based on object, filter and exposure time}
+      for c:=0 to ListView1.items.count-1 do
+      begin
+        if ListView1.Items.item[c].SubitemImages[0]=outlier then {marked at outlier}
+        begin
+           ListView1.Items.item[c].checked:=true;{recheck outliers from previous session}
+           ListView1.Items.item[c].SubitemImages[0]:=-1;{remove mark}
+        end;
+
+         if ListView1.items[c].Checked=true then
+             ListView1.Items.item[c].subitems.Strings[I_result]:=
+                     ListView1.Items.item[c].subitems.Strings[I_object]+'_'+{object name}
+                     ListView1.Items.item[c].subitems.Strings[I_filter]+'_'+{filter}
+                     ListView1.Items.item[c].subitems.Strings[I_exposure]; {exposure}
+      end;
+
+      {do statistics on each constructed key}
+      repeat
+        c:=0;
+        key:='';
+        repeat {check all files, uncheck outliers}
+          if  ListView1.Items.item[c].checked then
+          begin
+            key:=ListView1.Items.item[c].subitems.Strings[I_result];
+            if key<>'' then
+               list_remove_outliers(key);
+          end;
+          if esc_pressed then begin Screen.Cursor :=Save_Cursor;  { back to normal }  exit; end;
+          inc(c)
+        until c>counts;
+      until key='';{until all keys are used}
+    end;
+
+    count_selected; {report the number of images selected in images_selected and update menu indication}
+
+    filter_name_changed:=false; {back to normal, filter_name is not changed, so no re-analyse required}
+
+    img:=nil; {free mem}
+
+    Screen.Cursor :=Save_Cursor;    { back to normal }
+    progress_indicator(-100,'');{progresss done}
+
   end;
+end;
 
-  count_selected; {report the number of images selected in images_selected and update menu indication}
-
-  filter_name_changed:=false; {back to normal, filter_name is not changed, so no re-analyse required}
-
-  img:=nil; {free mem}
-
-  if img_loaded<>nil then {try to restore original header data for image in the viewer}
+procedure Tstackmenu1.Analyse1Click(Sender: TObject);
+begin
+  if img_loaded<>nil then {button was used, backup img array and header and restore later}
   begin
-    naxis3:=length(img_loaded);{nr colours}
-    height2:=length(img_loaded[0,0]);{length}
-    width2:=length(img_loaded[0]);{width}
-    getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-    mainwindow.Memo1.Text:=memo_backup;{restore fits header}
-  end;
-
-  Screen.Cursor :=Save_Cursor;    { back to normal }
-  progress_indicator(-100,'');{progresss done}
-
+    img_backup:=nil;{clear to save memory}
+    backup_img;
+  end;{backup fits for later}
+  analyse_tab_images;
+  if img_loaded<>nil then restore_img; {button was used, restore original image array and header}
 end;
 
 procedure Tstackmenu1.browse1Click(Sender: TObject);
@@ -1881,7 +1890,7 @@ begin
     until ((filename2[dot_pos]='.') or (dot_pos<=1));
     insert(' equalised',filename2,dot_pos);
   end;
-  save_fits(filename2 ,-32, false);
+  save_fits(img_loaded,filename2 ,-32, false);
   if fileexists(filename2) then
   begin
      saved1.caption:='Saved';
@@ -1917,7 +1926,7 @@ begin
         begin {subtract view from file}
             img_loaded[col,fitsX,fitsY]:=img_temp[col,fitsX,fitsY]-img_loaded[col,fitsX,fitsY]+1000;
         end;
-    getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+    getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
     plot_fits(mainwindow.image1,false,true);{plot real}
   end;
   update_equalise_background_step(5 {force 5 since equalise background is set to 1 by loading fits file} );{update menu}
@@ -2024,8 +2033,6 @@ begin
      esc_pressed:=true;
      if use_astrometry_net1.checked then memo2_message('ESC pressed. Execution stopped. Astrometry.net will continue till last job completed.')
      else  memo2_message('ESC pressed. Execution stopped.');
-
-     update_menu(false); {Undefined situation. The array img_loaded and variables are different from image1. Prevent saving wrong array}
    end;
 end;
 
@@ -2408,7 +2415,7 @@ begin
    Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
    apply_factors;
-   getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+   getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
    plot_fits(mainwindow.image1,false,true);{plot real}
    Screen.Cursor:=Save_Cursor;
   end;
@@ -2479,7 +2486,7 @@ begin
       end;{file loaded}
     end;
     img_temp:=nil;
-    getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+    getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
     plot_fits(mainwindow.image1,false,true);{plot real}
     Screen.Cursor:=Save_Cursor;
   end;
@@ -2544,7 +2551,7 @@ begin
            img_loaded[col,fitsX,fitsY]:=colr;
         end;
      apply_dpp_button1.Enabled:=false;
-     getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+     getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
      plot_fits(mainwindow.image1,true,true);{plot real}
 
      Screen.Cursor:=Save_Cursor;
@@ -2661,9 +2668,9 @@ begin
         update_text(keyw+'=',#39+value+#39+'                                                  ');
 
         if nrbits=16 then
-        save_fits(filename2,16,true)
+        save_fits(img_loaded,filename2,16,true)
          else
-        save_fits(filename2,-32,true);
+        save_fits(img_loaded,filename2,-32,true);
       end
       else
       beep;{image not found}
@@ -2753,7 +2760,7 @@ begin
     begin {restart from step 1}
       if load_fits(filename2,true {light},true,true,img_loaded) then{succes load}
       begin
-        getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+        getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
         plot_fits(mainwindow.image1,false,true);{plot real}
       end;
     end
@@ -2803,7 +2810,7 @@ begin
    Screen.Cursor := crHourglass;    { Show hourglass cursor }
    backup_img;
    gaussian_blur2(img_loaded,strtofloat2(blur_factor1.text));
-   getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+   getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
    plot_fits(mainwindow.image1,false,true);{plot}
    Screen.cursor:=Save_Cursor;
 end;
@@ -2887,10 +2894,8 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
   esc_pressed:=false;
-  if img_loaded<>nil then
-              memo_backup:=mainwindow.Memo1.Text;{backup fits header for later}
 
-  if amode<=1 then  lv.Items.BeginUpdate;{stop updating to prevent flickering till finished}
+   if amode<=1 then  lv.Items.BeginUpdate;{stop updating to prevent flickering till finished}
 
   counts:=lv.items.count-1;
 
@@ -2962,7 +2967,7 @@ begin
 
 
       filename:=lv.items[c].caption;
-      Application.ProcessMessages; if esc_pressed then break;{leave loop}
+      Application.ProcessMessages; if esc_pressed then begin break;{leave loop}end;
 
       if amode=0 then loaded:=load_fits(filename,false{restricted header, do not update ra0....},false {header only},true {reset var},img)
       else
@@ -3067,17 +3072,6 @@ begin
  if amode<=1 then lv.Items.EndUpdate;{can update now}
   progress_indicator(-100,'');{progresss done}
   img:= nil;
-
-  {try to restore original header data for image in the viewer}
-  if ((img_loaded<>nil) and (loaded {image was loaded for analysing})) then
-  begin
-    naxis3:=length(img_loaded);{nr colours}
-    height2:=length(img_loaded[0,0]);{length}
-    width2:=length(img_loaded[0]);{width}
-    getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-    mainwindow.Memo1.Text:=memo_backup;{restore fits header}
-    fits_file:=true; {will be lost be reading header of other files}
-  end;
 
   Screen.Cursor :=Save_Cursor;{back to normal }
 end;
@@ -3321,7 +3315,7 @@ begin
   else
   if pos('4x4',stackmenu1.flat_combine_method1.text)>0 then  x4mean(1 {nr of colors},img_loaded); {else do nothing}
 
-  getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
   plot_fits(mainwindow.image1,false,true);{plot real}
 
   Screen.Cursor:=Save_Cursor;
@@ -3330,12 +3324,20 @@ end;
 
 procedure Tstackmenu1.analyseflatsButton3Click(Sender: TObject);
 begin
+  if img_loaded<>nil then {button was used, backup img array and header and restore later}  begin img_backup:=nil;{clear to save memory} backup_img; end;{backup fits for later}
   analyse_listview(listview3,2 {analyse background reduced header});
+  if img_loaded<>nil then restore_img; {button was used, restore original image array and header}
 end;
 
 procedure Tstackmenu1.analyseflatdarksButton4Click(Sender: TObject);
 begin
+  if img_loaded<>nil then {button was used, backup img array and header and restore later}
+  begin
+    img_backup:=nil;{clear to save memory}
+    backup_img;
+  end;{backup fits for later}
   analyse_listview(listview4,2 {analyse background reduced header});
+  if img_loaded<>nil then restore_img; {button was used, restore original image array and header}
 end;
 
 procedure Tstackmenu1.changekeyword1Click(Sender: TObject);
@@ -3527,7 +3529,7 @@ begin
   backup_img;
   resize_img_loaded(width_UpDown1.position/width2 {ratio});
 
-   getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+   getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
    plot_fits(mainwindow.image1,true,true);{plot}
    Screen.cursor:=Save_Cursor;
 end;
@@ -3590,55 +3592,50 @@ end;
 
 procedure Tstackmenu1.splitRGB1Click(Sender: TObject);
 var
-   fitsx, fitsY,old_Naxis3 : integer;
+   fitsx, fitsY : integer;
    filename1,memo2_text: string;
 begin
-  if ((fits_file=false) or (naxis3<3)) then exit;
+  if ((fits_file=false) or (naxis3<>3)) then begin memo2_message('Not a three colour image!');  exit;end;
 
   memo2_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
 
-  img_buffer:=img_loaded;{copy pointer}
-
   filename1:=ChangeFileExt(FileName2,'.fit');{make it lowercase fit also if FTS or FIT}
-  old_naxis3:=naxis3;{could be bayered, remember mono}
-  naxis3:=1;
 
-  setlength(img_loaded,1,width2,height2);{create a new mono image}
+  setlength(img_buffer,1,width2,height2);{create a new mono image}
+
   for fitsY:=0 to height2-1 do
   for fitsX:=0 to width2-1 do
-         img_loaded[0,fitsX,fitsY]:=img_buffer[0,fitsX,fitsY];
+         img_buffer[0,fitsX,fitsY]:=img_loaded[0,fitsX,fitsY];
   filename2:=StringReplace(filename1,'.fit','_red.fit',[]);{give new file name }
-  update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1);
   update_text   ('FILTER  =',#39+'Red     '+#39+'           / Filter name                                    ');
-  save_fits(filename2,-32,false);
+  save_fits(img_buffer,filename2,-32,false);{fits header will be updated in save routine}
 
   for fitsY:=0 to height2-1 do
   for fitsX:=0 to width2-1 do
-        img_loaded[0,fitsX,fitsY]:=img_buffer[1,fitsX,fitsY];
+  img_buffer[0,fitsX,fitsY]:=img_loaded[1,fitsX,fitsY];
   filename2:=StringReplace(filename1,'.fit','_green.fit',[]);{give new file name }
-  update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1);
   update_text   ('FILTER  =',#39+'Green   '+#39+'           / Filter name                                    ');
-  save_fits(filename2,-32,false);
+  save_fits(img_buffer,filename2,-32,false);{fits header will be updated in save routine}
 
   for fitsY:=0 to height2-1 do
   for fitsX:=0 to width2-1 do
-      img_loaded[0,fitsX,fitsY]:=img_buffer[2,fitsX,fitsY];
+  img_buffer[0,fitsX,fitsY]:=img_loaded[2,fitsX,fitsY];
   filename2:=StringReplace(filename1,'.fit','_blue.fit',[]);{give new file name }
-  update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1);
   update_text   ('FILTER  =',#39+'Blue    '+#39+'           / Filter name                                    ');
-  save_fits(filename2,-32,false);
+  save_fits(img_buffer,filename2,-32,false);{fits header will be updated in save routine}
 
-  {restore}
-  mainwindow.Memo1.Text:= memo2_text;{save fits header first FITS file}
+  img_buffer:=nil;{release memory}
+
+  {restore old situation}
+  mainwindow.Memo1.Text:= memo2_text;{restore fits header}
   filename2:=filename1;
-  naxis3:=old_naxis3;
-  update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3);
-  img_loaded:=img_buffer;
 end;
 
 procedure Tstackmenu1.analysedarksButton2Click(Sender: TObject);
 begin
+  if img_loaded<>nil then {button was used, backup img array and header and restore later}  begin  img_backup:=nil;{clear to save memory}  backup_img;  end;{backup fits for later}
   analyse_listview(listview2,2 {analyse background, reduced header});
+  if img_loaded<>nil then restore_img; {button was used, restore original image array and header}
 end;
 
 procedure Tstackmenu1.resize_factor1Change(Sender: TObject);
@@ -3852,7 +3849,7 @@ begin
         {load image}
         if load_fits(filename2,true {light},true,true {reset var},img_loaded)=false then begin esc_pressed:=true; break;end;
 
-        getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+        getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
 
         {find solution}
         if align_blink1.checked then
@@ -4534,7 +4531,7 @@ begin
   update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3);
   update_text   ('HISTORY 77','  Artificial colour applied.');
 
-  getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
   plot_fits(mainwindow.image1,false,true);{plot real}
   Screen.Cursor:=Save_Cursor;
 end;
@@ -4655,9 +4652,9 @@ begin
       if pos('_aligned.fit',filename2)=0 then filename2:=ChangeFileExt(Filename2,'_aligned.fit');{rename only once}
 
       if nrbits=16 then
-         save_fits(filename2,16,true)
+         save_fits(img_loaded,filename2,16,true)
         else
-          save_fits(filename2,-32,true);
+          save_fits(img_loaded,filename2,-32,true);
        memo2_message('New aligned image created: '+filename2);
       listview6.items[c].caption:=filename2;
 
@@ -4793,9 +4790,9 @@ begin
          filter_name_changed:=true;{allow reanalyse}
 
         if nrbits=16 then
-        save_fits(filename2,16,true)
+        save_fits(img_loaded,filename2,16,true)
          else
-        save_fits(filename2,-32,true);
+        save_fits(img_loaded,filename2,-32,true);
       end
       else
       beep;{image not found}
@@ -5139,8 +5136,7 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
 
- if listview7.Items.item[listview7.items.count-1].subitems.Strings[B_exposure]='' {exposure} then
-      analyse_listview(listview7, 1 {analyse full header only});
+ if listview7.Items.item[listview7.items.count-1].subitems.Strings[B_exposure]='' {exposure} then  analyse_listview(listview7, 1 {analyse full header only});
 
   flipvertical:=mainwindow.Flipvertical1.Checked;
   fliphorizontal:=mainwindow.Fliphorizontal1.Checked;
@@ -5219,7 +5215,7 @@ begin
         {load image}
         if load_fits(filename2,true {light},true,true {reset var},img_loaded)=false then begin esc_pressed:=true; break;end;
 
-        getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+        getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
 
         {check/prepare photometry}
         if fileexists(ChangeFileExt(Filename2,'.astap_image_stars'))=false then
@@ -5227,7 +5223,7 @@ begin
           plot_stars(true {if true photometry only}, false {show Distortion});{measure the flux_magn_offset (flux=> magnitude factor)}
           if pos('F',calstat)=0 then
           begin
-            extra_message:=' Image not calibrated with a flat field. Photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu.';
+            extra_message:=' Image not calibrated with a flat field. Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu.';
             listview7.Items.item[c].subitems.Strings[P_photometric]:='no calibration';
           end
           else
@@ -5549,9 +5545,9 @@ begin
 
   step:= wide div 2;
 
-  get_background(0,img_loaded,measurehist {hist},true  {noise level},{var} bgR,star_level);{calculate red background, noise_level and star_level}
-  get_background(1,img_loaded,measurehist {hist},false{noise level},{var} bgG,star_level);{calculate green background}
-  get_background(2,img_loaded,measurehist {hist},false {noise level},{var} bgB,star_level);
+  get_background(0,img,measurehist {hist},true  {noise level},{var} bgR,star_level);{calculate red background, noise_level and star_level}
+  get_background(1,img,measurehist {hist},false{noise level},{var} bgG,star_level);{calculate green background}
+  get_background(2,img,measurehist {hist},false {noise level},{var} bgB,star_level);
 
   noise_level1:=noise_level[0];{red noise}
   bg:=(bgR+bgG+bgB)/3; {average background}
@@ -5980,6 +5976,8 @@ begin
   end;
 end;
 
+
+
 procedure Tstackmenu1.analyseblink1Click(Sender: TObject);
 var
    c: integer;
@@ -6015,7 +6013,7 @@ end;
 
 procedure Tstackmenu1.analyse_inspector1Click(Sender: TObject);
 begin
-  stackmenu1.memo2.lines.add('Inspector routine using multiple images. Usage:');
+  stackmenu1.memo2.lines.add('Inspector routine using multiple images at different focus positions. This routine will calculate the best focus position of serveral areas by extrapolation. Usage:');
   stackmenu1.memo2.lines.add('- Browse for a number of short exposure images made at different focuser positions around focus. Use a fixed focuser step size and avoid backlash.');
   stackmenu1.memo2.lines.add('- Press analyse to measure the area hfd values of each image.');
   stackmenu1.memo2.lines.add('- Press curve fitting. The curve fit routine will calculate the best focuser position for each area using the hfd values. The focuser differences from center will indicate tilt & curvature of the image.');
@@ -6332,7 +6330,7 @@ begin
         {load image}
         if load_fits(filename2,true {light},true,true {reset var},img_loaded)=false then begin esc_pressed:=true; break;end;
 
-        getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+        getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
 
         plot_fits(mainwindow.image1,false {re_center},true);
 
@@ -6557,8 +6555,7 @@ begin
   end;
 end;
 
-
-procedure Tstackmenu1.replace_by_master_dark1Click(Sender: TObject); {this routine works with mono files but makes coloured files mono, so less suitable for commercial cameras producing coloured raw images}
+procedure replace_by_master_dark;
 var
    path1,filen :string;
    c,counter,i : integer;
@@ -6566,103 +6563,110 @@ var
    exposure,temperature,width1: integer;
 begin
   save_settings(user_path+'astap.cfg');
-  analyse_listview(listview2,0 {analyse reduced header only});{update the tab information}
 
-  setlength(file_list,stackmenu1.listview2.items.count);
-  repeat
-  file_count:=0;
-  specified:=false;
-
-  for c:=0 to stackmenu1.listview2.items.count-1 do
-    if stackmenu1.listview2.items[c].checked=true then
-    begin
-      filen:=stackmenu1.ListView2.items[c].caption;
-      if pos('master_dark',filen)=0 then {not a master file}
-      begin {set specification master}
-        if specified=false then
-        begin
-          exposure:=round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure]));
-          temperature:=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]);
-          width1:=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]);
-          specified:=true;
-        end;
-        if ( (stackmenu1.classify_dark_exposure1.checked=false) or (exposure=round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure])))) then {exposure correct}
-          if ( (stackmenu1.classify_dark_temperature1.checked=false) or (temperature=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]))) then {temperature correct}
-            if  width1=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
-             begin
-               file_list[file_count]:=filen;
-               inc(file_count);
-             end;
-      end;
-    end;{checked}
-
-  Application.ProcessMessages;
-  if esc_pressed then exit;
-
-
-  dark_count:=0;
-  if file_count<>0 then
+  with stackmenu1 do
   begin
-    memo2_message('Averaging darks.');
-    average('dark',img_dark);  {the result will be mono so more suitable for raw images without bayer applied. Not so suitable for commercial camera's image and converted to coloured FITS}
+    analyse_listview(listview2,0 {analyse reduced header only});{update the tab information}
+    if esc_pressed then exit;{esc could by pressed while analysing}
 
-    if esc_pressed then exit;
+    setlength(file_list,stackmenu1.listview2.items.count);
+    repeat
+    file_count:=0;
+    specified:=false;
+
+    for c:=0 to stackmenu1.listview2.items.count-1 do
+      if stackmenu1.listview2.items[c].checked=true then
+      begin
+        filen:=stackmenu1.ListView2.items[c].caption;
+        if pos('master_dark',filen)=0 then {not a master file}
+        begin {set specification master}
+          if specified=false then
+          begin
+            exposure:=round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure]));
+            temperature:=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]);
+            width1:=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]);
+            specified:=true;
+          end;
+          if ( (stackmenu1.classify_dark_exposure1.checked=false) or (exposure=round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure])))) then {exposure correct}
+            if ( (stackmenu1.classify_dark_temperature1.checked=false) or (temperature=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]))) then {temperature correct}
+              if  width1=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
+               begin
+                 file_list[file_count]:=filen;
+                 inc(file_count);
+               end;
+        end;
+      end;{checked}
 
     Application.ProcessMessages;
     if esc_pressed then exit;
 
-    if ((file_count<>1) or (dark_count=0)) then  dark_count:=file_count; {else use the info from the keyword dark_cnt of the master file}
-
-    path1:=extractfilepath(file_list[0])+'master_dark_'+inttostr(dark_count)+'x'+inttostr(round(exposure))+'s_at_'+inttostr(set_temperature)+'C.fit';
-    update_integer('DARK_CNT=',' / Number of dark image combined                  ' ,dark_count);
-    { ASTAP keyword standard:}
-    { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
-    { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
-
-
-    update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1);{for the rare case the darks are coloured. Should normally be not the case since it expects raw mono FITS files without bayer matrix applied !!}
-    update_text   ('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
-    naxis3:=1; {any color is made mono in the routine}
-
-    img_loaded:=img_dark;
-    img_dark:=nil;
-
-    if save_fits(path1,-32,false) then {saved}
+    dark_count:=0;
+    if file_count<>0 then
     begin
-      listview2.Items.BeginUpdate;
-      for i:=0 to  file_count do
+      memo2_message('Averaging darks.');
+      average('dark',img_dark);  {the result will be mono so more suitable for raw images without bayer applied. Not so suitable for commercial camera's image and converted to coloured FITS}
+      if esc_pressed then exit;
+
+      Application.ProcessMessages;
+      if esc_pressed then exit;
+
+      if ((file_count<>1) or (dark_count=0)) then  dark_count:=file_count; {else use the info from the keyword dark_cnt of the master file}
+
+      path1:=extractfilepath(file_list[0])+'master_dark_'+inttostr(dark_count)+'x'+inttostr(round(exposure))+'s_at_'+inttostr(set_temperature)+'C.fit';
+      update_integer('DARK_CNT=',' / Number of dark image combined                  ' ,dark_count);
+      { ASTAP keyword standard:}
+      { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
+      { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
+
+
+      update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1);{for the rare case the darks are coloured. Should normally be not the case since it expects raw mono FITS files without bayer matrix applied !!}
+      update_text   ('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
+      naxis3:=1; {any color is made mono in the routine}
+
+      if save_fits(img_dark,path1,-32,false) then {saved}
       begin
-        c:=0;
-        counter:=listview2.Items.Count;
-        while c<counter do
+        listview2.Items.BeginUpdate;
+        for i:=0 to  file_count do
         begin
-          if file_list[i]=stackmenu1.ListView2.items[c].caption then {processed}
+          c:=0;
+          counter:=listview2.Items.Count;
+          while c<counter do
           begin
-            listview2.Items.Delete(c);
-            dec(counter);{one file less}
-          end
-          else
-          inc(c);
+            if file_list[i]=stackmenu1.ListView2.items[c].caption then {processed}
+            begin
+              listview2.Items.Delete(c);
+              dec(counter);{one file less}
+            end
+            else
+            inc(c);
+          end;
         end;
+        listview_add2(listview2,path1,9);{add master}
+        listview2.Items.EndUpdate;
+
+        analyse_listview(listview2, 0 {analyse readuced header only});{update the tab information}
       end;
-      listview_add2(listview2,path1,9);{add master}
-      listview2.Items.EndUpdate;
-
-      analyse_listview(listview2, 0 {analyse readuced header only});{update the tab information}
+      img_dark:=nil;
     end;
+
+    Application.ProcessMessages;
+    if esc_pressed then exit;
+
+    until file_count=0;{make more then one master}
+    save_Settings(user_path+'astap.cfg');{store settings}
+
   end;
-
-  Application.ProcessMessages;
-  if esc_pressed then exit;
-
-  until file_count=0;{make more then one master}
-  save_Settings(user_path+'astap.cfg');{store settings}
   memo2_message('Finished.');
 end;
 
+procedure Tstackmenu1.replace_by_master_dark1Click(Sender: TObject); {this routine works with mono files but makes coloured files mono, so less suitable for commercial cameras producing coloured raw images}
+begin
+  if img_loaded<>nil then {button was used, backup img array and header and restore later}  begin  img_backup:=nil;{clear to save memory}  backup_img;  end;{backup fits for later}
+  replace_by_master_dark;
+  if img_loaded<>nil then restore_img; {button was used, restore original image array and header}
+end;
 
-
-procedure Tstackmenu1.replace_by_master_flat1Click(Sender: TObject);
+procedure replace_by_master_flat;
 var
    fitsX,fitsY    : integer;
    path1,filen,filter :string;
@@ -6671,140 +6675,149 @@ var
    width1,flat_dark_width: integer;
    flatdark_used : boolean;
 begin
-  save_settings(user_path+'astap.cfg');
-  analyse_listview(listview3,0 {analyse reduced header only});{update the tab information. Convert to FITS if required}
-
-
-  flat_dark_width:=average_flatdarks;{average of bias frames. Convert to FITS if required}
-  flatdark_count:=file_count;
-  flatdark_used:=false;
-
-  setlength(file_list,stackmenu1.listview3.items.count);
-  repeat
-  file_count:=0;
-  specified:=false;
-
-  i:=stackmenu1.listview3.items.count-1;
-  for c:=0 to stackmenu1.listview3.items.count-1 do
-    if stackmenu1.listview3.items[c].checked=true then
-    begin
-      filen:=stackmenu1.ListView3.items[c].caption;
-      if pos('master_flat',filen)=0 then {not a master file}
-      begin {set specification master}
-        if specified=false then
-        begin
-          filter:=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter];
-          width1:=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]);
-          if flat_dark_width=0 then memo2_message('Warning no flat-dark/bias found!!')
-          else
-          if width1<>flat_dark_width then begin memo2_message('Abort, the width of the flat and flat-dark do not match!!');exit end;
-          specified:=true;
-        end;
-        if ((stackmenu1.classify_flat_filter1.checked=false) or (filter=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter])) then {filter correct?}
-            if  width1=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct}
-             begin
-               file_list[file_count]:=filen;
-               inc(file_count);
-             end;
-      end;
-    end;{checked}
-
-  Application.ProcessMessages;
-  if esc_pressed then exit;
-
-
-  flat_count:=0;
-  if file_count<>0 then
+  with stackmenu1 do
   begin
-    memo2_message('Combining flats and flat-darks.');
+    save_settings(user_path+'astap.cfg');
 
-    average_flats(filter,width1);{average of flat frames}
-    flat_count:=file_count;
+    analyse_listview(listview3,0 {analyse reduced header only});{update the tab information. Convert to FITS if required}
+    if esc_pressed then exit;{esc could be pressed in analyse}
+
+    flat_dark_width:=average_flatdarks;{average of bias frames. Convert to FITS if required}
+    flatdark_count:=file_count;
+    flatdark_used:=false;
+
+    setlength(file_list,stackmenu1.listview3.items.count);
+    repeat
+    file_count:=0;
+    specified:=false;
+
+    i:=stackmenu1.listview3.items.count-1;
+    for c:=0 to stackmenu1.listview3.items.count-1 do
+      if stackmenu1.listview3.items[c].checked=true then
+      begin
+        filen:=stackmenu1.ListView3.items[c].caption;
+        if pos('master_flat',filen)=0 then {not a master file}
+        begin {set specification master}
+          if specified=false then
+          begin
+            filter:=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter];
+            width1:=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]);
+            if flat_dark_width=0 then memo2_message('Warning no flat-dark/bias found!!')
+            else
+            if width1<>flat_dark_width then begin memo2_message('Abort, the width of the flat and flat-dark do not match!!');exit end;
+            specified:=true;
+          end;
+          if ((stackmenu1.classify_flat_filter1.checked=false) or (filter=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter])) then {filter correct?}
+              if  width1=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct}
+               begin
+                 file_list[file_count]:=filen;
+                 inc(file_count);
+               end;
+        end;
+      end;{checked}
 
     Application.ProcessMessages;
-    if esc_pressed then
-    exit;
+    if esc_pressed then exit;
 
-    if flat_count<>0 then
+
+    flat_count:=0;
+    if file_count<>0 then
     begin
-      if flatdark_count<>0 then
+      memo2_message('Combining flats and flat-darks.');
+
+      average_flats(filter,width1);{average of flat frames}
+      flat_count:=file_count;
+
+      Application.ProcessMessages;
+      if esc_pressed then
+      exit;
+
+      if flat_count<>0 then
       begin
-        flatdark_used:=true;
-        for fitsY:=0 to height2-1 do
-          for fitsX:=0 to width2-1 do
-          begin
-             img_flat[0,fitsX,fitsY]:=img_flat[0,fitsX,  fitsY  ] - img_bias[0,fitsX,  fitsY  ]; {flats and bias already many mono in procedure average}
-          end;
+        if flatdark_count<>0 then
+        begin
+          flatdark_used:=true;
+          for fitsY:=0 to height2-1 do
+            for fitsX:=0 to width2-1 do
+            begin
+               img_flat[0,fitsX,fitsY]:=img_flat[0,fitsX,  fitsY  ] - img_bias[0,fitsX,  fitsY  ]; {flats and bias already many mono in procedure average}
+            end;
+        end;
+
+        if pos('2x2',stackmenu1.flat_combine_method1.text)>0 then  x2mean(1 {nr of colors},img_flat)
+        else
+        if pos('3x3',stackmenu1.flat_combine_method1.text)>0 then
+            x3mean(1 {nr of colors},img_flat)
+        else
+        if pos('4x4',stackmenu1.flat_combine_method1.text)>0 then
+            x4mean(1 {nr of colors},img_flat);
+
       end;
 
-      if pos('2x2',stackmenu1.flat_combine_method1.text)>0 then  x2mean(1 {nr of colors},img_flat)
-      else
-      if pos('3x3',stackmenu1.flat_combine_method1.text)>0 then
-          x3mean(1 {nr of colors},img_flat)
-      else
-      if pos('4x4',stackmenu1.flat_combine_method1.text)>0 then
-          x4mean(1 {nr of colors},img_flat);
+      Application.ProcessMessages;
+      if esc_pressed then exit;
 
+      naxis3:=1; {any color is made mono in the routine}
+      if file_count<>0 then
+      begin
+        path1:=extractfilepath(file_list[0]);
+        path1:=extractfilepath(file_list[0])+'master_flat_corrected_with_flat_darks_'+filter_name+'_'+inttostr(flat_count)+'xF_'+inttostr(flatdark_count)+'xFD.fit';
+
+        update_integer('FLAT_CNT=',' / Number of flat images combined.                ' ,flat_count);
+        update_integer('BIAS_CNT=',' / Number of flat-dark or bias images combined.   ' ,flatdark_count);
+
+        { ASTAP keyword standard:}
+        { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
+        { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
+
+        update_text   ('COMMENT 1','  Created by Astrometric Stacking Program. www.hnsky.org');
+        update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1); {for the rare case the darks are coloured. Should normally be not the case since it expects raw mono FITS files without bayer matrix applied !!}
+        naxis3:=1; {any color is made mono in the routine}
+
+        if save_fits(img_flat,path1,-32,false) then {saved}
+        begin
+          listview3.Items.BeginUpdate; {remove the flats added to master}
+          for i:=0 to  file_count do
+          begin
+            c:=0;
+            counter:=listview3.Items.Count;
+            while c<counter do
+            begin
+              if file_list[i]=stackmenu1.ListView3.items[c].caption then {prcessed}
+              begin
+                listview3.Items.Delete(c);
+                dec(counter);{one file less}
+              end
+              else
+              inc(c);
+            end;
+          end;
+          listview_add2(listview3,path1,10);{add master}
+          listview3.Items.EndUpdate;
+          analyse_listview(listview3,0 {analyse reduced header only});{update the tab information}
+        end;
+        img_flat:=nil;
+      end;
     end;
 
     Application.ProcessMessages;
     if esc_pressed then exit;
 
-    naxis3:=1; {any color is made mono in the routine}
-    if file_count<>0 then
-    begin
-      path1:=extractfilepath(file_list[0]);
-      path1:=extractfilepath(file_list[0])+'master_flat_corrected_with_flat_darks_'+filter_name+'_'+inttostr(flat_count)+'xF_'+inttostr(flatdark_count)+'xFD.fit';
+    until file_count=0;{make more then one master}
 
-      update_integer('FLAT_CNT=',' / Number of flat images combined.                ' ,flat_count);
-      update_integer('BIAS_CNT=',' / Number of flat-dark or bias images combined.   ' ,flatdark_count);
+    if flatdark_used then listview4.Items.Clear;{remove bias if used}
+    save_Settings(user_path+'astap.cfg');{store settings}
 
-      { ASTAP keyword standard:}
-      { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
-      { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
-
-      update_text   ('COMMENT 1','  Created by Astrometric Stacking Program. www.hnsky.org');
-      update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1); {for the rare case the darks are coloured. Should normally be not the case since it expects raw mono FITS files without bayer matrix applied !!}
-      naxis3:=1; {any color is made mono in the routine}
-
-      img_loaded:=img_flat;
-      img_flat:=nil;
-
-      if save_fits(path1,-32,false) then {saved}
-      begin
-        listview3.Items.BeginUpdate; {remove the flats added to master}
-        for i:=0 to  file_count do
-        begin
-          c:=0;
-          counter:=listview3.Items.Count;
-          while c<counter do
-          begin
-            if file_list[i]=stackmenu1.ListView3.items[c].caption then {prcessed}
-            begin
-              listview3.Items.Delete(c);
-              dec(counter);{one file less}
-            end
-            else
-            inc(c);
-          end;
-        end;
-        listview_add2(listview3,path1,10);{add master}
-        listview3.Items.EndUpdate;
-        analyse_listview(listview3,0 {analyse reduced header only});{update the tab information}
-      end;
-    end;
+    memo2_message('Finished.');
   end;
-
-  Application.ProcessMessages;
-  if esc_pressed then exit;
-
-  until file_count=0;{make more then one master}
-
-  if flatdark_used then listview4.Items.Clear;{remove bias if used}
-  save_Settings(user_path+'astap.cfg');{store settings}
-  memo2_message('Finished.');
 end;
 
+procedure Tstackmenu1.replace_by_master_flat1Click(Sender: TObject);
+begin
+  if img_loaded<>nil then {button was used, backup img array and header and restore later}  begin img_backup:=nil;{clear to save memory} backup_img; end;{backup fits for later}
+  replace_by_master_flat;
+  if img_loaded<>nil then restore_img; {button was used, restore original image array and header}
+end;
 
 function load_wcs_solution(filen: string): boolean; {plate solving, load astrometry.net solution}
 var
@@ -6837,9 +6850,9 @@ begin
   result:=true;{existing solution, no action required}
 end;
 
-function create_internal_solution : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
+function create_internal_solution(img: image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 begin
-  if solve_image(img_loaded,true) then {match between loaded image and star database}
+  if solve_image(img,true) then {match between loaded image and star database}
   begin
     mainwindow.SaveFITSwithupdatedheader1Click(nil);
     result:=true;{new solution}
@@ -7000,7 +7013,7 @@ begin
 
         filename2:=StringReplace(ChangeFileExt(filename2,'.fit'),'.fit','_cal.fit',[]);{give new file name }
         memo2_message('█ █ █  Saving calibrated file as '+filename2);
-        save_fits(filename2,-32, true);
+        save_fits(img_loaded,filename2,-32, true);
 
         object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[I_object]); {get a object name}
         stack_info:=' '+inttostr(flatdark_count)+'x'+'FD  '+
@@ -7107,6 +7120,7 @@ begin
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
   esc_pressed:=false;
 
+
   memo2_message('Stack method '+stack_method1.text);
   memo2_message('Oversize '+oversize1.text);
   if make_osc_color1.checked then
@@ -7114,10 +7128,14 @@ begin
   if drizzle1.checked then memo2_message('Drizzle option selected with drop size '+drop_size1.text);
 
   startTick := gettickcount64;
+
+  if img_loaded<>nil then begin img_backup:=nil;{clear to save memory} backup_img;    end; ;{backup image array and header for case esc pressed.}
+
+
   if ListView1.items.count<>0 then
   begin
     memo2_message('Analysing images.');
-    stackmenu1.Analyse1Click(nil);{analyse any image not done yet}
+    analyse_tab_images; {analyse any image not done yet}
     if esc_pressed then exit;
     memo2_message('Stacking ('+stack_method1.text+'), HOLD ESC key to abort.');
   end
@@ -7130,14 +7148,14 @@ begin
   if ListView2.items.count<>0 then
   begin
     memo2_message('Analysing darks.');
-    stackmenu1.replace_by_master_dark1Click(nil);
-    if esc_pressed then exit;
+    replace_by_master_dark;
+    if esc_pressed then begin restore_img;exit;end;
   end;
   if ListView3.items.count<>0 then
   begin
     memo2_message('Analysing flats.');
-    stackmenu1.replace_by_master_flat1Click(nil);
-    if esc_pressed then exit;
+    replace_by_master_flat;
+    if esc_pressed then begin restore_img;exit;end;
   end;
 
   dark_exposure:=987654321;{not done indication}
@@ -7198,13 +7216,13 @@ begin
 
         filename2:=ListView1.items[c].caption;
         Application.ProcessMessages;
-        if esc_pressed then begin Screen.Cursor := Save_Cursor; exit;end;
+        if esc_pressed then begin restore_img; Screen.Cursor := Save_Cursor; exit;end;
 
         if stackmenu1.use_astrometry_internal1.checked then {internal solver}
         begin
           {load file}
           if load_fits(filename2,true {light},true,true {reset var},img_loaded){important required to check CD1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
-          if ((cd1_1=0) or (stackmenu1.ignore_header_solution1.checked)) then solution:= create_internal_solution else solution:=true;
+          if ((cd1_1=0) or (stackmenu1.ignore_header_solution1.checked)) then solution:= create_internal_solution(img_loaded) else solution:=true;
         end
         else
         if stackmenu1.use_astrometry_net1.checked=true then
@@ -7228,13 +7246,13 @@ begin
   end;
 
   Application.ProcessMessages;
-  if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+  if esc_pressed then begin restore_img;Screen.Cursor := Save_Cursor;  exit;end;
 
   progress_indicator(10,'');
 
   Application.ProcessMessages;
 
-  if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+  if esc_pressed then begin restore_img;Screen.Cursor := Save_Cursor;  exit;end;
 
   object_counter:=0;
   total_counter:=0;
@@ -7337,7 +7355,7 @@ begin
           monofile:=true;{success}
         end;
 
-        if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+        if esc_pressed then  begin  restore_img;Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
 
       end
       else
@@ -7399,7 +7417,7 @@ begin
             if pos('stich',stackmenu1.stack_method1.text)>0=true then stack_mosaic(over_size,{var}files_to_process,counterL) {mosaic combining}
                                                                   else stack_average(over_size,{var}files_to_process,counterL);{average}
             over_sizeL:=0; {do oversize only once. Not again in 'L' mode !!}
-            if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+            if esc_pressed then  begin restore_img; Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
 
             if over_size<>0 then {adapt astrometric solution for intermediate file}
             begin
@@ -7446,7 +7464,7 @@ begin
             filename3:=filename2;
             filename2:=StringReplace(ChangeFileExt(filename2,'.fit'),'.fit','@ '+stack_info+'_stacked.fit',[]);{give new file name for any extension, FIT, FTS, fits}
             memo2_message('█ █ █ Saving as '+filename2);
-            save_fits(filename2,-32,true {override});
+            save_fits(img_loaded,filename2,-32,true {override});
             files_to_process_LRGB[i+1].name:=filename2;{should contain [nil,r,g,b,l]}
             stack_info:='Interim result '+filter_name+' x '+inttostr(counterL);
             report_results(object_to_process,stack_info,object_counter,i {color icon});{report result in tab result using modified filename2}
@@ -7482,7 +7500,7 @@ begin
 
 
         stack_LRGB(over_sizeL {zero if already stacked from several files},files_to_process_LRGB, counter_colours); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,RGB,L]}
-        if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+        if esc_pressed then  begin  restore_img;Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
       end
       else
       if length(extra2)=1 then
@@ -7493,7 +7511,8 @@ begin
     end;
 
     Screen.Cursor := Save_Cursor;  { Always restore to normal }
-    if esc_pressed then begin exit;end;
+    if esc_pressed then begin restore_img;exit;end;
+
     fits_file:=true;
     nrbits:=-32; {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
 
@@ -7505,11 +7524,12 @@ begin
         stackmenu1.auto_background_level1Click(nil);
         apply_factors;{histogram is after this action invalid}
         stackmenu1.reset_factors1Click(nil);{reset factors to default}
-        getfits_histogram(0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
+        getfits_histogram(img_loaded,0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
         smart_colour_smooth(img_loaded,10,false {get  hist});{histogram doesn't needs an update}
       end
       else
-        getfits_histogram(0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
+        getfits_histogram(img_loaded,0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
+
 
       restore_header;{restore header and solution}{use saved fits header first FITS file as saved in unit_stack_routines}
       plot_fits(mainwindow.image1,true,true);{plot real}
@@ -7652,7 +7672,7 @@ begin
 
       if cd1_1<>0 then memo2_message('Astrometric solution reference file preserved for stack.');
       memo2_message('█ █ █  Saving result '+inttostr(image_counter)+' as '+filename2);
-      save_fits(filename2,-32, true);
+      save_fits(img_loaded,filename2,-32, true);
 
 
       if naxis3>1 then report_results(object_to_process,stack_info,object_counter,3 {color icon}) {report result in tab results}
@@ -7841,7 +7861,7 @@ begin
         end;
   end;{k color}
 
-  getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
   plot_fits(mainwindow.image1,false,true);
 
   memo2_message('Remove gradient done.');

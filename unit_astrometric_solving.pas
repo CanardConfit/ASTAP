@@ -433,7 +433,7 @@ begin
   else
   begin
     if height2>2500 then memo2_message('Info: DOWNSAMPLING IS RECOMMENDED FOR LARGE IMAGES. Set this option in stack menu, tab alignment.');
-    get_background(0,img_loaded,get_hist {load hist},true {calculate also standard deviation background}, {var} cblack,star_level);{get back ground}
+    get_background(0,img,get_hist {load hist},true {calculate also standard deviation background}, {var} cblack,star_level);{get back ground}
     find_stars(img,hfd_min,starlist3); {find stars of the image and put them in a list}
   end;
 end;

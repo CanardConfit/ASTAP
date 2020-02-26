@@ -371,7 +371,7 @@ begin
               memo2_message('Preparing astrometric solution for interim file: '+filename2);
               if use_astrometry_internal then {internal solver}
               begin
-                if cd1_1=0 then solution:= create_internal_solution else solution:=true;
+                if cd1_1=0 then solution:= create_internal_solution(img_loaded) else solution:=true;
                 if solution=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, No astrometric solution for '+filename2); exit;end;{no solution found}
               end
               else
@@ -1070,13 +1070,6 @@ begin
       finally
       end;
     end;
-
- //  width2:=width_max;
- //   height2:=height_max;
- //  img_loaded:=img_average;
- //   exit;
-
-
 
     if counter<>0 then
     begin

@@ -103,7 +103,7 @@ begin
     result:= load_fits(filen,true {light},true,true {reset var},img_loaded)
   else
   if check_raw_file_extension(ext1) then {check if extension is from raw file}
-    result:=convert_load_raw(filen) {raw}
+    result:=convert_load_raw(filen,img_loaded) {raw}
   else
     result:=load_tiffpngJPEG(filename2,img_loaded);
 end;
@@ -374,7 +374,7 @@ begin
               img_loaded:=img_average;{copy the pointer. Both have now access to the data!!}
 
               if counter=1 then {set range correct}
-                   getfits_histogram(0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
+                   getfits_histogram(img_loaded,0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
 
               plot_fits(mainwindow.image1,false,false{do not show header in memo1});{plot real}
 

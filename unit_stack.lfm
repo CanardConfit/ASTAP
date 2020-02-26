@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 647
+  Left = 392
   Height = 660
-  Top = 180
+  Top = 134
   Width = 1677
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1676
-    ActivePage = alignment1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -226,7 +226,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 6
+    TabIndex = 0
     TabOrder = 5
     OnChange = pagecontrol1Change
     Options = [nboMultiLine]
@@ -572,8 +572,8 @@ object stackmenu1: Tstackmenu1
     object Darks: TTabSheet
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
-      ClientHeight = 418
-      ClientWidth = 1017
+      ClientHeight = 420
+      ClientWidth = 1668
       ImageIndex = 1
       ParentFont = False
       object browse_darks1: TButton
@@ -591,10 +591,10 @@ object stackmenu1: Tstackmenu1
       end
       object replace_by_master_dark1: TButton
         Left = 312
-        Height = 20
+        Height = 25
         Hint = 'Combine to check-marked files to master dark. The other files are not affected.'
         Top = 6
-        Width = 338
+        Width = 295
         AutoSize = True
         Caption = 'Replace check-marked by one or more master dark'
         OnClick = replace_by_master_dark1Click
@@ -603,10 +603,10 @@ object stackmenu1: Tstackmenu1
       end
       object clear_dark_list1: TButton
         Left = 736
-        Height = 20
+        Height = 25
         Hint = 'Clear image list'
         Top = 6
-        Width = 60
+        Width = 53
         AutoSize = True
         Caption = 'Clear'
         OnClick = clear_dark_list1Click
@@ -617,10 +617,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview2: TListView
         Left = 0
-        Height = 378
+        Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1016
+        Width = 1667
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -714,10 +714,10 @@ object stackmenu1: Tstackmenu1
       end
       object nr_total_darks1: TLabel
         Left = 272
-        Height = 16
+        Height = 15
         Hint = 'Number of images in the list'
         Top = 10
-        Width = 8
+        Width = 6
         Caption = '0'
         Color = clBtnFace
         ParentColor = False
@@ -728,8 +728,8 @@ object stackmenu1: Tstackmenu1
     object Flats: TTabSheet
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
-      ClientHeight = 418
-      ClientWidth = 1017
+      ClientHeight = 420
+      ClientWidth = 1668
       ImageIndex = 2
       ParentFont = False
       object browse_flats1: TButton
@@ -744,10 +744,10 @@ object stackmenu1: Tstackmenu1
       end
       object replace_by_master_flat1: TButton
         Left = 312
-        Height = 20
+        Height = 25
         Hint = 'Combine the check-marked flats and flat darks to one master flat. The other files are not affected.'
         Top = 6
-        Width = 377
+        Width = 327
         AutoSize = True
         Caption = 'Replace check-marked by master flat, flat darks included.'
         OnClick = replace_by_master_flat1Click
@@ -756,10 +756,10 @@ object stackmenu1: Tstackmenu1
       end
       object clear_selection2: TButton
         Left = 736
-        Height = 20
+        Height = 25
         Hint = 'Remove file list.'
         Top = 6
-        Width = 60
+        Width = 53
         AutoSize = True
         Caption = 'Clear'
         OnClick = clear_selection2Click
@@ -779,10 +779,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview3: TListView
         Left = 0
-        Height = 378
+        Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1017
+        Width = 1668
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -869,10 +869,10 @@ object stackmenu1: Tstackmenu1
       end
       object nr_total_flats1: TLabel
         Left = 272
-        Height = 16
+        Height = 15
         Hint = 'Number of images in the list'
         Top = 10
-        Width = 8
+        Width = 6
         Caption = '0'
         Color = clBtnFace
         ParentColor = False
@@ -883,8 +883,8 @@ object stackmenu1: Tstackmenu1
     object Bias: TTabSheet
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
-      ClientHeight = 418
-      ClientWidth = 1017
+      ClientHeight = 420
+      ClientWidth = 1668
       ImageIndex = 3
       ParentFont = False
       object browse_bias1: TButton
@@ -899,10 +899,10 @@ object stackmenu1: Tstackmenu1
       end
       object clear_selection3: TButton
         Left = 664
-        Height = 20
+        Height = 25
         Hint = 'Remove file list.'
         Top = 6
-        Width = 60
+        Width = 53
         AutoSize = True
         Caption = 'Clear'
         OnClick = clear_selection3Click
@@ -922,10 +922,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview4: TListView
         Left = 0
-        Height = 378
+        Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1017
+        Width = 1668
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -1010,10 +1010,10 @@ object stackmenu1: Tstackmenu1
       end
       object nr_total_bias1: TLabel
         Left = 272
-        Height = 16
+        Height = 15
         Hint = 'Number of images in the list'
         Top = 10
-        Width = 8
+        Width = 6
         Caption = '0'
         Color = clBtnFace
         ParentColor = False

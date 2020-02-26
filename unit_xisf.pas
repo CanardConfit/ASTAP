@@ -406,11 +406,10 @@ begin
     end; {colors naxis3 times}
   end;
 
-  update_menu(true);{file loaded, update menu for fits}
+  update_menu(true);{file loaded, update menu for fits and set fits_file:=true}
   close_fits_file;
   unsaved_import:=true;{file is not available for astrometry.net}
   result:=true;
-  fits_file:=true;{succes}
 end;
 
 

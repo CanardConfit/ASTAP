@@ -444,7 +444,7 @@ var
    stretch_on, esc_pressed, fov_specified,unsaved_import : boolean;
    set_temperature : integer;
    star_level  : double;
-   object_name, filter_name,calstat,imagetype, memo_backup,sitelat, sitelong: string;
+   object_name, filter_name,calstat,imagetype ,sitelat, sitelong: string;
    exposure,focus_temp,centalt,centaz,cblack,cwhite,gain            :double; {from FITS}
    subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
    date_obs,date_avg,ut,pltlabel,plateid,telescop,instrum,origin:string;
@@ -458,6 +458,7 @@ var
   position_find: Integer; {for fits header memo1 popup menu}
 const
   PatternToFind : string=''; {for fits header memo1 popup menu }
+//  memo_backup   : string='';
 
 const
    max_range  {range histogram 255 or 65535 or streched} : integer=255;
@@ -511,7 +512,7 @@ const
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;var sep: double);
 function load_fits(filen:string;light {load as light of dark/flat},load_data,reset_var:boolean;var img_loaded2: image_array): boolean;{load fits file}
 procedure plot_fits(img: timage;center_image,show_header:boolean);
-procedure getfits_histogram(mode :integer);{get histogram, plot histogram, set min & max}
+procedure getfits_histogram(img: image_array; mode :integer);{get histogram, plot histogram, set min & max}
 procedure HFD(img: image_array; x1,y1,rs{box size}: integer; var hfd1,star_fwhm,snr{peak/sigma noise},flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity}
 procedure backup_img;
 procedure restore_img;
@@ -520,7 +521,8 @@ function load_image(re_center, plot:boolean) : boolean; {load fits or PNG, BMP, 
 procedure demosaic_bayer; {convert OSC image to colour}
 
 Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel floating}
-function save_fits(filen2:ansistring;type1:integer;override1:boolean): boolean;{save to 16 OR -32 BIT fits file}
+function save_fits(img: image_array;filen2:ansistring;type1:integer;override1:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
+
 procedure update_text(inp1,comment1:string);{update or insert text in header}
 procedure add_text(inp1,comment1:string);{add text to header memo}
 procedure update_generic(message_key,message_value,message_comment:string);{update header using text only}
@@ -573,7 +575,7 @@ procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean)
 procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
 function image_file_name(inp : string): boolean; {readable image name?}
 procedure plot_annotations; {plot annotations stored in fits header}
-function convert_load_raw(filename3: string): boolean; {convert raw to pgm file using Libraw}
+function convert_load_raw(filename3: string; img: image_array): boolean; {convert raw to pgm file using Libraw}
 
 procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
@@ -835,7 +837,7 @@ begin
   end;
 
   update_menu(true);{file loaded, update menu for fits. Set fits_file:=true}
-  getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
   plot_fits(mainwindow.image1,true,true);{plot test image}
 end;
 
@@ -941,8 +943,6 @@ begin
     else result:=0;
 end;
 
-
-
 procedure backup_img;
 begin
   if fits_file=true then
@@ -1016,15 +1016,13 @@ begin
     img_loaded:=img_backup[index_backup].img; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
     setlength(img_loaded,naxis3,width2,height2);{force a duplication}
 
-    getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+    getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
     plot_fits(mainwindow.image1,resized,true);{restore image1}
 
     stackmenu1.apply_dpp_button1.Enabled:=true;
     update_equalise_background_step(equalise_background_step-1);{update equalize menu}
 
-//    mainwindow.Undo1.Enabled:=false;
     if fits_file=false {due to stretch draw} then update_menu(true); {update menu and set fits_file:=true;}
-
 
     dec(index_backup,1);{update index}
     if index_backup<0 then index_backup:=size_backup;
@@ -1082,7 +1080,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.327 dated 2020-2-24';
+  #13+#10+'Version ß0.9.328 dated 2020-2-26';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1096,7 +1094,6 @@ begin
    begin
      esc_pressed:=true;
      memo2_message('ESC pressed. Stopped processing.');
-     update_menu(false); {undefined situation. The array img_loaded and variables are different from image1. Prevent saving wrong array}
    end;
 end;
 
@@ -1112,7 +1109,7 @@ end;
 
 procedure Tmainwindow.histogram_UpDown1Click(Sender: TObject; Button: TUDBtnType  );
 begin
-  getfits_histogram(1);{get histogram NO, plot histogram YES, set min & max YES}
+  getfits_histogram(img_loaded,1);{get histogram NO, plot histogram YES, set min & max YES}
   plot_fits(mainwindow.image1,false,true);
 end;
 
@@ -1292,7 +1289,7 @@ begin
   add_text   ('HISTORY   ','BIN2x2 version of '+filename2);
 
   filename2:=ChangeFileExt(Filename2,'_bin2x2.fit');
-  result:=save_fits(filename2,nrbits,true);{overwrite}
+  result:=save_fits(img_loaded,filename2,nrbits,true);{overwrite}
 
   img_temp2:=nil;
 end;
@@ -1303,6 +1300,7 @@ var
   img_temp2 : image_array;
   I, FitsX, fitsY,k,w,h   : integer;
   ratio                   : double;
+  dobackup : boolean;
 begin
 
   OpenDialog1.Title := 'Select multiple  files to reduce in size (bin2x2)';
@@ -1316,6 +1314,9 @@ begin
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    dobackup:=img_loaded<>nil;
+    if dobackup then backup_img;{preserve img array and fits header of the viewer}
+
     try { Do some lengthy operation }
        with OpenDialog1.Files do
        for I := 0 to Count - 1 do
@@ -1369,13 +1370,13 @@ begin
          add_text   ('HISTORY   ','BIN2x2 version of '+extractfilename(Strings[I]));
 
 
-         save_fits(ChangeFileExt(FileName2,'_bin2x2.fit'),16,true);{overwrite}
+         save_fits(img_loaded,ChangeFileExt(FileName2,'_bin2x2.fit'),16,true);{overwrite}
 
          img_temp2:=nil;
 
       end;
       finally
-      update_menu(false); {Undefined situation. The array img_loaded and variables are different from image1. Prevent saving wrong array}
+      if dobackup then restore_img;{for the viewer}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
   end;
@@ -2247,8 +2248,10 @@ begin
   stackmenu1.resize_factor1Change(nil);{update dimensions binning menu}
   stackmenu1.test_pattern1.Enabled:=naxis3=1;{mono}
   stackmenu1.focallength1Change(nil); {update calculation pixel size in arc seconds}
-  flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
+
   update_equalise_background_step(1);{update equalise background menu}
+
+  fits_file:=fits;{update}
 end;
 
 
@@ -2404,9 +2407,8 @@ var
   img_temp11, img_temp12, img_temp21, img_temp22 : image_array;
   I, FitsX, fitsY,w,h   : integer;
   ratio                 : double;
-
+  dobackup : boolean;
 begin
-
   OpenDialog1.Title := 'Select multiple RAW files to split in red, green, green and blue files';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
@@ -2418,6 +2420,9 @@ begin
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    dobackup:=img_loaded<>nil;
+    if dobackup then backup_img;{preserve img array and fits header of the viewer}
+
     try { Do some lengthy operation }
         with OpenDialog1.Files do
         for I := 0 to Count - 1 do
@@ -2481,16 +2486,16 @@ begin
 
           update_text   ('FILTER  =',#39+'P11'+#39+'           / Filter name                                    ');
           img_loaded:=img_temp11;
-          save_fits(ChangeFileExt(FileName2,'_p11.fit'),16,true);{overwrite}
+          save_fits(img_loaded,ChangeFileExt(FileName2,'_p11.fit'),16,true);{overwrite}
           update_text   ('FILTER  =',#39+'P12'+#39+'           / Filter name                                    ');
           img_loaded:=img_temp12;
-          save_fits(ChangeFileExt(FileName2,'_p12.fit'),16,true);{overwrite}
+          save_fits(img_loaded,ChangeFileExt(FileName2,'_p12.fit'),16,true);{overwrite}
           update_text   ('FILTER  =',#39+'P21'+#39+'           / Filter name                                    ');
           img_loaded:=img_temp21;
-          save_fits(ChangeFileExt(FileName2,'_p21.fit'),16,true);{overwrite}
+          save_fits(img_loaded,ChangeFileExt(FileName2,'_p21.fit'),16,true);{overwrite}
           update_text   ('FILTER  =',#39+'P22'+#39+'           / Filter name                                    ');
           img_loaded:=img_temp22;
-          save_fits(ChangeFileExt(FileName2,'_p22.fit'),16,true);{overwrite}
+          save_fits(img_loaded,ChangeFileExt(FileName2,'_p22.fit'),16,true);{overwrite}
 
           img_temp11:=nil;
           img_temp12:=nil;
@@ -2499,7 +2504,7 @@ begin
 
        end;
       finally
-      update_menu(false); {Undefined situation. The array img_loaded and variables are different from image1. Prevent saving wrong array}
+      if dobackup then restore_img;{for the viewer}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
   end;
@@ -2518,7 +2523,7 @@ begin
       {load image}
       if load_fits(opendialog1.filename,true {light},true,true {reset var},img_loaded) then
       begin
-        getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+        getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
         plot_fits(mainwindow.image1,false {re_center},true);
       end;
     end;
@@ -4135,7 +4140,7 @@ begin
   date_obs:=''; date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
   scale:=0;
   measured_max:=0;
-
+  flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
 
   I:=0;
   reader_position:=0;
@@ -5173,7 +5178,7 @@ begin
 
 end;
 
-procedure getfits_histogram(mode : integer);{calculate histogram, adapt brightness and background settings}
+procedure getfits_histogram(img: image_array;mode : integer);{calculate histogram, adapt brightness and background settings}
 {mode 0: get histogram, plot histogram, set min, max}
 {mode 1:                plot histogram, set min, max}
 {mode 2:                                set min, max}
@@ -5188,10 +5193,10 @@ begin
 
   if mode=0 then {get_hist}
   begin
-    number_colors:=length(img_loaded);
-    get_hist(0, img_loaded);
-    if number_colors>1 then get_hist(1, img_loaded);{green}
-    if number_colors>2 then get_hist(2, img_loaded);{blue}
+    number_colors:=length(img);
+    get_hist(0, img);
+    if number_colors>1 then get_hist(1, img);{green}
+    if number_colors>2 then get_hist(2, img);{blue}
   end;
   if mode<=1 then {plot histogram}
   begin
@@ -5514,19 +5519,7 @@ var
       end;
 
 begin
-//  GetDocumentsPath; { get documents_path}
-
   result:=false;{assume failure}
-  //{$ifdef mswindows}
-//  {$IFDEF fpc}
-//  {$else}  {delphi}
-//   if DirectoryExists(documents_path)=false then documents_Path:= {ExtractShortPathName}(ExtractFilePath(Application.ExeName));  {get application path, short 8.3 version without spaces for calling firefox}
-//  {$endif}
-
-//  {$ELSE}{linux}
-//  if DirectoryExists(user_path)=false then createdir(user_path);{create ~/astap/}
-//  {$ENDIF}
-
  initstring := Tstringlist.Create;
   with initstring do
   begin
@@ -6278,7 +6271,7 @@ begin
 end;
 
 
-function convert_load_raw(filename3: string): boolean; {convert raw to pgm file using LibRaw}
+function convert_load_raw(filename3: string;img: image_array): boolean; {convert raw to pgm file using LibRaw}
 var
   filename4 :string;
   JD2                               : double;
@@ -6299,7 +6292,7 @@ begin
 
   filename4:=FileName3+'.pgm';
 
-   if load_ppm_pgm(fileName4,img_loaded) then {succesfull PGM load}
+   if load_ppm_pgm(fileName4,img) then {succesfull PGM load}
    begin
      deletefile(filename4);{delete temporary pgm file}
 
@@ -6315,14 +6308,15 @@ end;
 
 function convert_raw_to_fits(filename7 : string) :boolean;{convert raw file to FITS format}
 begin
-  if convert_load_raw(filename7) then
+  if convert_load_raw(filename7,img_buffer) then
   begin
     exposure:=extract_exposure_from_filename(filename7);
-    save_fits(ChangeFileExt(FileName7,'.fit'),16,true);{overwrite. Filename2 will be set to fits file}
+    save_fits(img_loaded,ChangeFileExt(FileName7,'.fit'),16,true);{overwrite. Filename2 will be set to fits file}
     result:=true;
   end
   else
   result:=false;
+  img_buffer:=nil;
 end;
 
 
@@ -6331,8 +6325,7 @@ var
   I: integer;
   Save_Cursor:TCursor;
   ext : string;
-  err   : boolean;
-
+  err, dobackup : boolean;
 begin
   OpenDialog1.Title := 'Select multiple  files to convert';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -6350,6 +6343,10 @@ begin
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+    dobackup:=img_loaded<>nil;
+    if dobackup then backup_img;{preserve img array and fits header of the viewer}
+
     try { Do some lengthy operation }
       with OpenDialog1.Files do
       for I := 0 to Count - 1 do
@@ -6373,7 +6370,7 @@ begin
         {tif, png, bmp, jpeg}
         if load_tiffpngJPEG(filename2,img_loaded)=false then begin beep; err:=true; mainwindow.caption:='Error converting '+filename2 end
           else
-          save_fits(ChangeFileExt(filename2,'.fit'),16,false);
+          save_fits(img_loaded,ChangeFileExt(filename2,'.fit'),16,false);
       end;
 
       if err=false then mainwindow.caption:='Completed, all files converted.'
@@ -6381,7 +6378,7 @@ begin
       mainwindow.caption:='Finished, files converted but with errors!';
 
       finally
-      update_menu(false); {Undefined situation. The array img_loaded and variables are different from image1. Prevent saving wrong array}
+      if dobackup then restore_img;{for the viewer}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
   end;
@@ -6435,7 +6432,7 @@ begin
   else
   if check_raw_file_extension(ext1) then {raw format}
   begin
-    if convert_load_raw(filename2)=false then begin beep; exit; end
+    if convert_load_raw(filename2,img_loaded)=false then begin beep; exit; end
     else
     result:=true;
 
@@ -6469,7 +6466,7 @@ begin
   if plot then
   begin
     add_recent_file(filename2);{add to recent file list}
-    getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+    getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
     plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
     mainwindow.ShowFITSheader1.enabled:=true;
     mainwindow.demosaicBayermatrix1.Enabled:=true;
@@ -6811,6 +6808,16 @@ begin
   opendialog1.initialdir:=user_path;
   if opendialog1.execute then
   begin
+    with stackmenu1 do {clear exisiting lists}
+    begin
+      listview1.clear;
+      listview2.clear;
+      listview3.clear;
+      listview4.clear;
+      listview6.clear;
+      listview7.clear;
+      listview8.clear;
+    end;
     load_settings(opendialog1.filename);
   end;
 end;
@@ -7509,7 +7516,7 @@ var filename3:string;
 begin
   if load_fits(filen,true {light},true,true {reset var},img_loaded) {load now normal} then
   begin
-    getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+    getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
     filename3:=ChangeFileExt(Filen,'.bmp');
     mainwindow.image1.picture.SaveToFile(filename3);
   end;
@@ -8060,7 +8067,7 @@ begin
           histogram_done:=false;
           if hasoption('annotate') then
           begin
-            getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+            getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
             histogram_done:=true;
             plot_fits(mainwindow.image1,true {center_image},true);{center and stretch with current settings}
             save_annotated_jpg(filename2);{save viewer as annotated jpg}
@@ -8071,8 +8078,8 @@ begin
             begin
               binning:=strtofloat2(GetOptionValue('tofits'));
               resize_img_loaded(1/binning); {resize img_loaded in free ratio}
-              if histogram_done=false then getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
-              save_fits(changeFileExt(filename2,'.fit'),8,true {overwrite});
+              if histogram_done=false then getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+              save_fits(img_loaded,changeFileExt(filename2,'.fit'),8,true {overwrite});
             end;
           end;
         end
@@ -8124,13 +8131,14 @@ var
   I: integer;
   Save_Cursor:TCursor;
   skipped, nrsolved :integer;
+  dobackup : boolean;
 
 begin
 
   OpenDialog1.Title := 'Select multiple  files to add plate solution';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS';
-  fits_file:=true;
+//  fits_file:=true;
   data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
 
@@ -8141,6 +8149,9 @@ begin
 
     nrsolved:=0;
     skipped:=0;
+
+    dobackup:=img_loaded<>nil;
+    if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
     try { Do some lengthy operation }
         with OpenDialog1.Files do
@@ -8177,7 +8188,7 @@ begin
 
 
       finally
-      update_menu(false); {Undefined situation. The array img_loaded and variables are different from image1. Prevent saving wrong array}
+      if dobackup then restore_img;{for the viewer}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
     if stackmenu1.use_astrometry_net1.checked=false then {report statistics for internal solver only}
@@ -8204,7 +8215,7 @@ begin
 
   if mainwindow.stretch1.enabled then {file loaded}
   begin
-    getfits_histogram(2);{no new file, only update sliders. get histogram NO, plot histogram NO, set min & max YES}
+    getfits_histogram(img_loaded,2);{no new file, only update sliders. get histogram NO, plot histogram NO, set min & max YES}
 
     plot_fits(mainwindow.image1,false,true);
   end;
@@ -8524,7 +8535,7 @@ begin
   demosaic_bayer;
   memo2_message('De-mosaic bayer pattern used '+bayer_pattern[bayerpattern_final]);
   {colours are now created, redraw histogram}
-  getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
 
   smart_colour_smooth(img_loaded,10,false {get red hist});
 
@@ -8857,7 +8868,7 @@ begin
       end;
   end;
 
-  getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
   plot_fits(mainwindow.image1,false,true);
 
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
@@ -9925,7 +9936,7 @@ begin
   add_text('HISTORY   ','Converted to mono');
 
   {colours are now mixed, redraw histogram}
-  getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
   plot_fits(mainwindow.image1,false,true);{plot}
   Screen.cursor:=Save_Cursor;
 end;
@@ -10301,6 +10312,7 @@ var
   I: integer;
   Save_Cursor:TCursor;
   err   : boolean;
+  dobackup : boolean;
 begin
   OpenDialog1.Title := 'Select multiple  files to convert';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -10318,6 +10330,9 @@ begin
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    dobackup:=img_loaded<>nil;
+    if dobackup then backup_img;{preserve img array and fits header of the viewer}
+
     try { Do some lengthy operation }
       with OpenDialog1.Files do
       for I := 0 to Count - 1 do
@@ -10348,7 +10363,7 @@ begin
       mainwindow.caption:='Finished, files converted but with errors!';
 
       finally
-      update_menu(false); {Undefined situation. The array img_loaded and variables are different from image1. Prevent saving wrong array}
+      if dobackup then restore_img;{for the viewer}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
   end;
@@ -10453,10 +10468,10 @@ begin
 end;
 
 
-function save_fits(filen2:ansistring;type1:integer;override1:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
+function save_fits(img: image_array;filen2:ansistring;type1:integer;override1:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 var
   TheFile4 : tfilestream;
-  I,j,k,bzero2, progressC,progress_value,dum, remain,minimum,maximum: integer;
+  I,j,k,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, naxis3_local,height5,width5 : integer;
   dd : single;
   line0       : ansistring;
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
@@ -10465,7 +10480,14 @@ var
   rgb  : byteX3;{array [0..2] containing r,g,b colours}
 begin
   result:=false;
-  if ((type1=24) and (naxis3<3)) then
+
+  {get dimensions directly from array}
+  naxis3_local:=length(img);{nr colours}
+  width5:=length(img[0]);{width}
+  height5:=length(img[0,0]);{length}
+  if naxis3_local=1 then dimensions:=2 else dimensions:=3; {number of dimensions or colours}
+
+  if ((type1=24) and (naxis3_local<3)) then
   begin
     application.messagebox(pchar('Abort, can not save monochrome image as colour image!!'),pchar('Error'),MB_OK);
     exit;
@@ -10498,27 +10520,18 @@ begin
 
   progressC:=0;
 
-  {Add or update header}
-  if mainwindow.memo1.lines.count<5 then {fits header existing?}
-  begin {emphy header, create a new one}
-    for j:=0 to 10 do {create an header with fixed sequence}
-    begin
-    if ((j<>5) or  (naxis3<>1)) then {skip naxis3 for mono images}
-     mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
-    end;
-    mainwindow.memo1.lines.add(head1[27]); {add end}
-  end;
-
-
  {update FITs header}
-  if type1<>24 then
+  if type1<>24 then {standard FITS}
   begin
     update_integer('BITPIX  =',' / Bits per entry                                 ' ,type1); {16 or -32}
-    update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for colour}
-    update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-    update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-    if naxis3<>1 then {color image}
-      update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3);
+    update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number of dimensions, 2 for mono, 3 for colour}
+    update_integer('NAXIS1  =',' / length of x axis                               ' ,width5);
+    update_integer('NAXIS2  =',' / length of y axis                               ' ,height5);
+    if naxis3_local<>1 then {color image}
+      update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3_local)
+      else
+      remove_key('NAXIS3  ');{remove key word in header. Some program don't like naxis3=1}
+
     if type1=16 then bzero2:=32768 else bzero2:=0;
     update_integer('BZERO   =',' / Scaling applied to data                        ' ,bzero2);
     if type1<>8 then
@@ -10538,10 +10551,10 @@ begin
   begin {special 8 bit with three colors combined in 24 bit}
     {update FITs header}
     update_integer('BITPIX  =',' / Bits per entry                                 ' ,8);
-    update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for color}
+    update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number dimensions, 2 for mono, 3 for color}
     update_integer('NAXIS1  =',' / length of x axis                               ' ,3);
-    update_integer('NAXIS2  =',' / length of y axis                               ' ,width2);
-    update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,height2);
+    update_integer('NAXIS2  =',' / length of y axis                               ' ,width5);
+    update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,height5);
     update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
     update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
     update_integer('BZERO   =',' / Scaling applied to data                        ' ,0);
@@ -10568,26 +10581,26 @@ begin
   begin
     minimum:=min(0,mainwindow.minimum1.position); {stretch later if required}
     maximum:=max(255,mainwindow.maximum1.position);
-    for k:=0 to naxis3-1 do {do all colors}
-    for i:=0 to height2-1 do
+    for k:=0 to naxis3_local-1 do {do all colors}
+    for i:=0 to height5-1 do
     begin
       inc(progressC);
-      progress_value:=round(progressC*100/(naxis3*height2));{progress in %}
+      progress_value:=round(progressC*100/(naxis3_local*height5));{progress in %}
       {$IFDEF fpc}
       if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
       {$else} {delphi}
       if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
       {$endif}
 
-      for j:=0 to width2-1 do
+      for j:=0 to width5-1 do
       begin
-        dd:=img_loaded[k,j,i];{save all colors}
+        dd:=img[k,j,i];{save all colors}
         dum:=round((dd-minimum)*255/(maximum-minimum));{scale to 0..255}
         if dum<0 then dum:=0;
         if dum>255 then dum:=255;
         fitsbuffer[j]:=dum;
       end;
-      thefile4.writebuffer(fitsbuffer,width2); {write as bytes}
+      thefile4.writebuffer(fitsbuffer,width5); {write as bytes}
     end;
   end
   else
@@ -10596,21 +10609,21 @@ begin
     minimum:=min(0,mainwindow.minimum1.position); {stretch later if required}
     maximum:=max(255,mainwindow.maximum1.position);
 
-    for i:=0 to height2-1 do
+    for i:=0 to height5-1 do
     begin
       inc(progressC);
-      progress_value:=round(progressC*100/(naxis3*height2));{progress in %}
+      progress_value:=round(progressC*100/(naxis3_local*height5));{progress in %}
       {$IFDEF fpc}
       if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
       {$else} {delphi}
       if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
       {$endif}
 
-      for j:=0 to width2-1 do
+      for j:=0 to width5-1 do
       begin
         for k:=0 to 2 do {do all colors}
         begin
-          dd:=img_loaded[k,j,i];{save all colors}
+          dd:=img[k,j,i];{save all colors}
           dum:=round((dd-minimum)*255/(maximum-minimum));{scale to 0..255}
           if dum<0 then dum:=0;
           if dum>255 then dum:=255;
@@ -10618,54 +10631,54 @@ begin
         end;
         fitsbufferRGB[j]:=rgb;
       end;
-      thefile4.writebuffer(fitsbufferRGB,width2+width2+width2); {write as bytes}
+      thefile4.writebuffer(fitsbufferRGB,width5+width5+width5); {write as bytes}
     end;
   end
   else
 
   if type1=16 then
   begin
-    for k:=0 to naxis3-1 do {do all colors}
-    for i:=0 to height2-1 do
+    for k:=0 to naxis3_local-1 do {do all colors}
+    for i:=0 to height5-1 do
     begin
 
       inc(progressC);
-      progress_value:=round(progressC*100/(naxis3*height2));{progress in %}
+      progress_value:=round(progressC*100/(naxis3_local*height5));{progress in %}
       {$IFDEF fpc}
       if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
       {$else} {delphi}
       if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
       {$endif}
 
-      for j:=0 to width2-1 do
+      for j:=0 to width5-1 do
       begin
-        dum:=bzero2+round(img_loaded[k,j,i]);{save all colors}
+        dum:=bzero2+round(img[k,j,i]);{save all colors}
         dum:=dum and $FFFF;{mod 2018-9-10}
         wo:=dum;
         fitsbuffer2[j]:=swap(wo) and $FFFF;{in FITS file hi en low bytes are swapped}
       end;
-      thefile4.writebuffer(fitsbuffer2,width2+width2); {write as bytes}
+      thefile4.writebuffer(fitsbuffer2,width5+width5); {write as bytes}
     end;
   end
   else
   if type1=-32 then
   begin
-    for k:=0 to naxis3-1 do {do all colors}
-    for i:=0 to height2-1 do
+    for k:=0 to naxis3_local-1 do {do all colors}
+    for i:=0 to height5-1 do
     begin
       inc(progressC);
-      progress_value:=round(progressC*100/(naxis3*height2));{progress in %}
+      progress_value:=round(progressC*100/(naxis3_local*height5));{progress in %}
       {$IFDEF fpc}
       if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase in steps of 5%}
       {$else} {delphi}
       if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
       {$endif}
-      for j:=0 to width2-1 do
+      for j:=0 to width5-1 do
       begin
-       // img_loaded[0,j,i]:=341.7177734375;  {equals non intel 3772492355}
-        fitsbuffer4[j]:=INT_IEEE4_reverse(img_loaded[k,j,i]);{in FITS file hi en low bytes are swapped}
+       // img[0,j,i]:=341.7177734375;  {equals non intel 3772492355}
+        fitsbuffer4[j]:=INT_IEEE4_reverse(img[k,j,i]);{in FITS file hi en low bytes are swapped}
       end;
-      thefile4.writebuffer(fitsbuffer4,width2*4); {write as bytes}
+      thefile4.writebuffer(fitsbuffer4,width5*4); {write as bytes}
     end;
   end;
   remain:=round(2880*(1-frac(thefile4.position/2880)));{some program like have a multi of 2880 like astrometry.net}
@@ -10734,21 +10747,21 @@ begin
   if savedialog1.execute then
   begin
     if SaveDialog1.FilterIndex=1 then
-    save_fits(savedialog1.filename,-32,false)
+    save_fits(img_loaded,savedialog1.filename,-32,false)
     else
     if SaveDialog1.FilterIndex=2 then
-    save_fits(savedialog1.filename,16,false)
+    save_fits(img_loaded,savedialog1.filename,16,false)
     else
     if SaveDialog1.FilterIndex=3 then
     begin
       if ((nrbits=8) or (IDYES= Application.MessageBox('8 bit will reduce image quality. Select yes to continue', 'Save as 8 bit FITS', MB_ICONQUESTION + MB_YESNO) )) then {ask queastion if nrbits is reduced}
-        save_fits(savedialog1.filename,8,false);
+        save_fits(img_loaded,savedialog1.filename,8,false);
     end
     else
     if SaveDialog1.FilterIndex=4 then {special naxis1=3}
     begin
       if ((nrbits=8) or (IDYES= Application.MessageBox('8 bit will reduce image quality. Select yes to continue', 'Save as 8 bit FITS', MB_ICONQUESTION + MB_YESNO) )) then {ask queastion if nrbits is reduced}
-        save_fits(savedialog1.filename,24,false);
+        save_fits(img_loaded,savedialog1.filename,24,false);
 
     end;
 
