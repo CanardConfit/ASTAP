@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 392
+  Left = 108
   Height = 660
-  Top = 134
+  Top = 385
   Width = 1677
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -217,19 +217,17 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1676
-    ActivePage = Images
+    ActivePage = tab_photometry1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
     Images = ImageList2
-    MultiLine = True
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 8
     TabOrder = 5
     OnChange = pagecontrol1Change
-    Options = [nboMultiLine]
     object Images: TTabSheet
       Hint = 'Select here the light frames'
       Caption = 'Images'
@@ -2968,6 +2966,7 @@ object stackmenu1: Tstackmenu1
           Items.Strings = (
             'Star centering'
             'Comet centering'
+            'No centering'
             ''
           )
           OnChange = resize_factor1Change

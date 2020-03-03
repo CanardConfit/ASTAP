@@ -100,6 +100,7 @@ type
     menufindnext1: TMenuItem;
     Menufind1: TMenuItem;
     annotate_minor_planets1: TMenuItem;
+    batch_annotate1: TMenuItem;
     save_to_tiff1: TMenuItem;
     MenuItem20: TMenuItem;
     MenuItem7: TMenuItem;
@@ -133,7 +134,7 @@ type
     save_settings_as1: TMenuItem;
     settings_menu1: TMenuItem;
     variable_star_annotation1: TMenuItem;
-    remove_annotations1: TMenuItem;
+    clean_up1: TMenuItem;
     preview_demosaic1: TMenuItem;
     PopupNotifier1: TPopupNotifier;
     remove_colour1: TMenuItem;
@@ -257,6 +258,7 @@ type
 
     procedure add_marker_position1Click(Sender: TObject);
     procedure annotate_with_measured_magnitudes1Click(Sender: TObject);
+    procedure batch_annotate1Click(Sender: TObject);
     procedure ccd_inspector_plot1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
@@ -306,7 +308,7 @@ type
     procedure autocorrectcolours1Click(Sender: TObject);
     procedure hyperleda_annotation1Click(Sender: TObject);
     procedure ra1DblClick(Sender: TObject);
-    procedure remove_annotations1Click(Sender: TObject);
+    procedure clean_up1Click(Sender: TObject);
     procedure remove_colour1Click(Sender: TObject);
     procedure Returntodefaultsettings1Click(Sender: TObject);
     procedure rotateleft1Click(Sender: TObject);
@@ -458,7 +460,7 @@ var
   position_find: Integer; {for fits header memo1 popup menu}
 const
   PatternToFind : string=''; {for fits header memo1 popup menu }
-//  memo_backup   : string='';
+
 
 const
    max_range  {range histogram 255 or 65535 or streched} : integer=255;
@@ -487,6 +489,7 @@ const
    bayerpattern_final:integer=0;
    xbayroff: double=0;{additional bayer pattern offset to apply}
    Ybayroff: double=0;{additional bayer pattern offset to apply}
+   annotated : boolean=false;{any annotation in fits file?}
 
    shape_fitsX: double=0;
    shape_fitsY: double=0;
@@ -507,6 +510,8 @@ const
                                           'BGGR',
                                           'RGGB',
                                           'GBRG');
+   annotation_color: tcolor=clyellow;
+
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;var sep: double);
@@ -529,7 +534,7 @@ procedure update_generic(message_key,message_value,message_comment:string);{upda
 procedure update_integer(inp1,comment1:string;x:integer);{update or insert variable in header}
 procedure add_integer(inp1,comment1:string;x:integer);{add integer variable to header}
 procedure update_float(inp1,comment1:string;x:double);{update keyword of fits header in memo}
-procedure remove_key(inp1:string);{remove key word in header}
+procedure remove_key(inp1:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
 
 function strtofloat2(s:string): double;{works with either dot or komma as decimal seperator}
 function TextfileSize(const name: string): LongInt;
@@ -574,8 +579,8 @@ function binx2 : boolean; {converts filename2 to binx2 version}
 procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean); {convert ra in text to double in radians}
 procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
 function image_file_name(inp : string): boolean; {readable image name?}
-procedure plot_annotations; {plot annotations stored in fits header}
-function convert_load_raw(filename3: string; img: image_array): boolean; {convert raw to pgm file using Libraw}
+procedure plot_annotations(xoffset,yoffset:integer); {plot annotations stored in fits header. Offsets are for blink routine}
+function convert_load_raw(filename3: string;var img: image_array): boolean; {convert raw to pgm file using LibRaw}
 
 procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
@@ -821,7 +826,7 @@ begin
   update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
   update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-  if naxis3=1 then  remove_key('NAXIS3  ');{remove key word in header. Some program don't like naxis3=1}
+  if naxis3=1 then  remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
   update_text   ('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
@@ -1080,7 +1085,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.328 dated 2020-2-26';
+  #13+#10+'Version ß0.9.329 dated 2020-03-03';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1704,10 +1709,10 @@ begin
 
 end;
 
-procedure Tmainwindow.remove_annotations1Click(Sender: TObject);
+procedure Tmainwindow.clean_up1Click(Sender: TObject);
 begin
   plot_fits(mainwindow.image1,false,true);
-  plot_annotations;
+  if annotated then plot_annotations(0,0);
 end;
 
 procedure Tmainwindow.remove_colour1Click(Sender: TObject);{make local area monochrome}
@@ -1953,12 +1958,13 @@ end;
 procedure Tmainwindow.remove_markers1Click(Sender: TObject);
 begin
   plot_fits(mainwindow.image1,false,true);
-  plot_annotations;
+  if annotated then plot_annotations(0,0);
+
 end;
 
 procedure show_shape(good_lock : boolean;fitsX,fitsY: double);{show manual alignment shape}
 var
-   xf,yf,x,y : double;
+  xf,yf,x,y : double;
 begin
   xF:=(fitsX-0.5)*(mainwindow.image1.width/width2)-0.5; //inverse of  fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
   yF:=-(fitsY-height2-0.5)*(mainwindow.image1.height/height2)-0.5; //inverse of fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
@@ -4141,6 +4147,7 @@ begin
   scale:=0;
   measured_max:=0;
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
+  annotated:=false; {any annotation in the file}
 
   I:=0;
   reader_position:=0;
@@ -4396,6 +4403,9 @@ begin
          sitelat:=get_as_string;{universal, site latitude as string}
       if ((header[i]='S') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='L') and (header[i+5]='O') and (header[i+6]='N')) then
          sitelong:=get_as_string;{universal, site longitude as string}
+
+      if ((header[i]='A') and (header[i+1]='N')  and (header[i+2]='N') and (header[i+3]='O') and (header[i+4]='T') and (header[i+5]='A') and (header[i+6]='T')) then
+         annotated:=true; {contains annotations}
 
 
       {following is only required when using DSS polynome plate fit}
@@ -4697,6 +4707,7 @@ begin
 
   naxis:=1;
   naxis3:=1;
+
   filter_name:='';
   calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. Example value DFB}
   imagetype:='';
@@ -4704,9 +4715,19 @@ begin
   ybinning:=1;
   exposure:=0;
   set_temperature:=999;
+
+  x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
+  y_coeff[0]:=0;
+
+  a_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
+
   bayerpat:='T';{assume image is from Raw DSLR image}
   xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
   ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
+
+  flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
+  annotated:=false; {any annotation in the file}
+
 
   I:=0;
   reader_position:=0;
@@ -5032,6 +5053,10 @@ begin
   ybinning:=1;
   exposure:=0;
   set_temperature:=999;
+
+  flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
+  annotated:=false; {any annotation in the file}
+
 
   {set data}
   fits_file:=true;
@@ -5741,8 +5766,9 @@ begin
     showfullnames:=get_boolean('showfullnames',true);{asteroids}
     add_date:=get_boolean('add_date',true);{asteroids}
 
-    get_int(asteroidcolorindex,'asteroid_color');
+    get_int(annotation_color,'annotation_color');
 
+    add_annotations:=get_boolean('add_annotations',false);{asteroids as annotations}
 
     c:=0;
     repeat {add images}
@@ -6045,9 +6071,10 @@ begin
   initstring.Values['showfullnames']:=BoolStr[showfullnames];{asteroids}
   initstring.Values['add_date']:=BoolStr[add_date];{asteroids}
 
-  initstring.Values['asteroid_color']:=inttostr(asteroidcolorindex);
+  initstring.Values['annotation_color']:=inttostr(annotation_color);
 
-                                      ;
+  initstring.Values['add_annotations']:=BoolStr[add_annotations];{for asteroids}
+                                     ;
 
   for c:=0 to stackmenu1.ListView1.items.count-1 do {add light images}
   begin
@@ -6271,7 +6298,7 @@ begin
 end;
 
 
-function convert_load_raw(filename3: string;img: image_array): boolean; {convert raw to pgm file using LibRaw}
+function convert_load_raw(filename3: string;var img: image_array): boolean; {convert raw to pgm file using LibRaw}
 var
   filename4 :string;
   JD2                               : double;
@@ -6389,7 +6416,7 @@ function load_image(re_center,plot: boolean): boolean; {load fits or PNG, BMP, T
 var
    ext1, filename4: string;
    i              : integer;
-   fitsfile       : boolean;
+   afitsfile      : boolean;
 begin
   if plot then
   begin
@@ -6409,13 +6436,14 @@ begin
   a_order:=0; {SIP_polynomial, use for check if there is data}
 
   result:=false;{assume failure}
-  fitsfile:=false;
+  afitsfile:=false;
   {fits}
   if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')or (ext1='.WCS')) then {FITS}
   begin
     result:=load_fits(filename2,true {light},true,true {reset var},img_loaded);
     if result=false then exit;{succes?}
     if naxis<2 then exit; {WCS file}
+    afitsfile:=true;
   end
 
   else
@@ -6426,7 +6454,7 @@ begin
     result:=load_fits(filename2,true {light},true {load data},true {reset var},img_loaded); {load new fits file}
 
     if result=false then exit
-    else fitsfile:=true;
+    else afitsfile:=true;
   end {fz}
 
   else
@@ -6472,7 +6500,7 @@ begin
     mainwindow.demosaicBayermatrix1.Enabled:=true;
     image_move_to_center:=re_center;
 
-    if fitsfile then plot_annotations;
+    if ((afitsfile) and (annotated)) then  plot_annotations(0,0);
   end;
 
   if commandline_execution=false then
@@ -6581,7 +6609,7 @@ begin
   update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
   update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-  if naxis3=1 then  remove_key('NAXIS3  ');{remove key word in header. Some program don't like naxis3=1}
+  if naxis3=1 then  remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(cwhite));
@@ -7119,6 +7147,66 @@ var
   Screen.Cursor:= Save_Cursor;
 end;
 
+procedure Tmainwindow.batch_annotate1Click(Sender: TObject);
+var
+  I: integer;
+  Save_Cursor:TCursor;
+  skipped, nrannotated :integer;
+  dobackup : boolean;
+
+begin
+
+  OpenDialog1.Title := 'Select multiple  files to add asteroid annotation to the header';
+  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS';
+  data_range_groupBox1.Enabled:=true;
+  esc_pressed:=false;
+
+  if OpenDialog1.Execute then
+  begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+    nrannotated:=0;
+    skipped:=0;
+
+    dobackup:=img_loaded<>nil;
+    if dobackup then backup_img;{preserve img array and fits header of the viewer}
+
+    try { Do some lengthy operation }
+        with OpenDialog1.Files do
+        for I := 0 to Count - 1 do
+        begin
+          filename2:=Strings[I];
+          memo2_message('Annotating: '+filename2);
+          Application.ProcessMessages;
+          if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+
+          if load_fits(filename2,true {light},true,true {reset var},img_loaded) then {load image success}
+          begin
+            if cd1_1=0 then
+            begin
+              skipped:=skipped+1; {not astrometric solved}
+              memo2_message('Skipped: '+filename2+' No solution in header found. First batch solve the images');
+            end
+            else
+            begin
+              plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid));
+              mainwindow.SaveFITSwithupdatedheader1Click(nil);
+              nrannotated :=nrannotated +1;
+            end;
+          end;
+        end;
+
+
+      finally
+      if dobackup then restore_img;{for the viewer}
+      Screen.Cursor := Save_Cursor;  { Always restore to normal }
+    end;
+    memo2_message(inttostr(nrannotated)+' images annotated, '+inttostr(skipped)+' images did not have an astrometric solution in the header.');
+  end;
+end;
+
 
 procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
 begin
@@ -7342,7 +7430,7 @@ begin
    end;
 end;
 
-procedure plot_annotations; {plot annotations stored in fits header}
+procedure plot_annotations(xoffset,yoffset:integer); {plot annotations stored in fits header. Offsets are for blink routine}
 var
   count1,x1,y1,x2,y2,text_height,text_width : integer;
   typ     : double;
@@ -7351,10 +7439,10 @@ begin
   List := TStringList.Create;
   list.StrictDelimiter:=true;
 
-  mainwindow.image1.Canvas.Pen.Color:= clyellow;
+  mainwindow.image1.Canvas.Pen.Color:= annotation_color;{clyellow}
 
   mainwindow.image1.Canvas.brush.Style:=bsClear;
-  mainwindow.image1.Canvas.font.color:=clyellow;
+  mainwindow.image1.Canvas.font.color:=annotation_color;
 
   {$ifdef mswindows}
   SetTextAlign(mainwindow.image1.canvas.handle, ta_left or ta_top or TA_NOUPDATECP);{always, since Linux is doing this fixed}
@@ -7366,7 +7454,7 @@ begin
   try
     while count1>=0 do {plot annotations}
     begin
-      if pos('ANNOTATE=',mainwindow.Memo1.Lines[count1])>0 then {found}
+      if copy(mainwindow.Memo1.Lines[count1],1,8)='ANNOTATE' then {found}
       begin
         List.Clear;
         ExtractStrings([';'], [], PChar(copy(mainwindow.Memo1.Lines[count1],12,80-12)),List);
@@ -7374,10 +7462,10 @@ begin
         x1:=list.count;
         if list.count>=6  then {correct annotation}
         begin
-          x1:=strtoint(list[0])-1;{subtract 1 for conversion fits coordinates 1... to screen coordinates 0...}
-          y1:=strtoint(list[1])-1;
-          x2:=strtoint(list[2])-1;
-          y2:=strtoint(list[3])-1;
+          x1:=strtoint(list[0])-1 +xoffset;{subtract 1 for conversion fits coordinates 1... to screen coordinates 0...}
+          y1:=strtoint(list[1])-1 +yoffset;
+          x2:=strtoint(list[2])-1 +xoffset;
+          y2:=strtoint(list[3])-1 +yoffset;
 
           if mainwindow.Fliphorizontal1.Checked then {restore based on flipped conditions}
           begin
@@ -7401,12 +7489,6 @@ begin
           end
           else
              plot_rectangle(x1,y1,x2,y2); {accurate positioned rectangle on screen coordinates}
-
-//           t:=list[5];
-//            delete(t,length(t)-5,1);{remove last char(39)}
-//          correction:=mainwindow.image1.Canvas.font.size/mainwindow.font.size;
-//          text_height:=round(mainwindow.image1.canvas.Textheight(tlist[5])*correction);{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
-//          text_width:=round(mainwindow.image1.canvas.Textwidth(list[5])*correction); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
 
           text_height:=round(mainwindow.image1.canvas.Textheight(list[5]));{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
           text_width:=round(mainwindow.image1.canvas.Textwidth(list[5])); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
@@ -7432,7 +7514,7 @@ procedure Tmainwindow.Enterlabel1Click(Sender: TObject);
 var
   value : string;
   text_height,text_width,text_x,text_y   : integer;
-  style                                  : double;
+  boldness                               : double;
 
 begin
   backup_img;
@@ -7440,10 +7522,10 @@ begin
   if value=''  then exit;
 
   mainwindow.image1.Canvas.Pen.width:=max(1,round(1*width2/image1.width)); ;
-  mainwindow.image1.Canvas.Pen.Color:= clyellow;
+  mainwindow.image1.Canvas.Pen.Color:= annotation_color; {clyellow default}
 
   image1.Canvas.brush.Style:=bsClear;
-  image1.Canvas.font.color:=clyellow;
+  image1.Canvas.font.color:=annotation_color;
   image1.Canvas.font.size:=max(12,round(12*width2/image1.width));
 
 
@@ -7471,10 +7553,6 @@ begin
   {$else} {Linux}
   {$endif}
 
-//  correction:=image1.Canvas.font.size/mainwindow.font.size;
-//  text_height:=round(mainwindow.canvas.Textheight(value)*correction);{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
-//  text_width:=round(mainwindow.canvas.Textwidth(value)*correction); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
-
   text_height:=round(image1.canvas.Textheight(value));{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
   text_width:=round(image1.canvas.Textwidth(value)); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
 
@@ -7498,8 +7576,9 @@ begin
   startY:=startY+1; {convert to fits range 1...}
   text_X:=text_X+1; {convert to fits range 1...}
   text_Y:=text_Y+1; {convert to fits range 1...}
-  if sender<>Enter_rectangle_with_label1 then style:=width2/image1.width else style:=-width2/image1.width;
-  add_text ('ANNOTATE=',#39+inttostr(startX)+';'+inttostr(startY)+';'+inttostr(text_X)+';'+inttostr(text_Y)+';'+floattostr2(style)+';'+value+';'+#39);
+  if sender<>Enter_rectangle_with_label1 then boldness:=width2/image1.width else boldness:=-width2/image1.width;
+  add_text ('ANNOTATE=',#39+inttostr(startX)+';'+inttostr(startY)+';'+inttostr(text_X)+';'+inttostr(text_Y)+';'+floattostr2(boldness)+';'+value+';'+#39);
+  annotated:=true; {header contains annotations}
 end;
 
 procedure Tmainwindow.Exit1Click(Sender: TObject);
@@ -8539,9 +8618,9 @@ begin
 
   smart_colour_smooth(img_loaded,10,false {get red hist});
 
-  remove_key('BAYERPAT');{remove key word in header}
-  remove_key('XBAYROFF');{remove key word in header}
-  remove_key('YBAYROFF');{remove key word in header}
+  remove_key('BAYERPAT',false{all});{remove key word in header}
+  remove_key('XBAYROFF',false{all});{remove key word in header}
+  remove_key('YBAYROFF',false{all});{remove key word in header}
 
   plot_fits(mainwindow.image1,false,true);
   stackmenu1.test_pattern1.Enabled:=false;{do no longer allow debayer}
@@ -9146,29 +9225,42 @@ begin
   fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
   fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
 
+  {default good values}
+  snr:=2;
+  hfd2:=2;{just a good value}
+
 
   {for manual alignment}
   if ( ((stackmenu1.use_manual_alignment1.checked) and (pos('S',calstat)=0 {if stacked image don't change anything in last selected file} )) or
         (stackmenu1.pagecontrol1.tabindex=8 {photometry})){measure one object in blink routine } then
   begin
-
-    if pos('Comet',stackmenu1.manual_centering1.text)=0 then
-      HFD(img_loaded,round(fitsX-1),round(fitsY-1),14{box size},hfd2,fwhm_star2,snr,flux,xc,yc) {auto center using HFD function}
-    else
+    if pos('Comet',stackmenu1.manual_centering1.text)<>0 then
     begin
       find_highest_pixel_value(img_loaded,round(fitsX-1),round(fitsY-1),xc,yc);
-      snr:=2;
+    end
+    else
+    if pos('No',stackmenu1.manual_centering1.text)<>0 then {no centering}
+    begin
+      xc:=fitsX-1;{0..width2-1}
+      yc:=fitsY-1;
+    end
+    else {star alignment}
+    HFD(img_loaded,round(fitsX-1),round(fitsY-1),14{box size},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
+
+
+    if hfd2<15 then {detected something}
+    begin
+      shape_fitsX:=xc+1;{calculate fits positions}
+      shape_fitsY:=yc+1;
+      listview_add_xy(shape_fitsX,shape_fitsY);{add to list}
+      show_shape(snr>1 {good lock?},shape_fitsX, shape_fitsY);
     end;
-
-    shape_fitsX:=xc+1;{calculate fits positions}
-    shape_fitsY:=yc+1;
-
-    listview_add_xy(shape_fitsX,shape_fitsY);{add to list}
-    show_shape(snr>1 {good lock?},shape_fitsX, shape_fitsY);
   end
   else
   mainwindow.shape_alignment_marker1.visible:=false;
   {end manual alignment}
+
+
 
   image_move_to_center:=false;{image in moved to center, why is so difficult???}
 
@@ -9895,7 +9987,7 @@ begin
   mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inp1+' '+comment1);  {add to the end}
 end;
 
-procedure remove_key(inp1:string);{remove key word in header}
+procedure remove_key(inp1:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
 var
    count1: integer;
 begin
@@ -9906,7 +9998,7 @@ begin
     if pos(inp1,mainwindow.Memo1.Lines[count1])>0 then {found}
     begin
       mainwindow.Memo1.Lines.delete(count1);
-      exit;
+      if all=false then exit;
     end;
     count1:=count1-1;
   end;
@@ -9931,7 +10023,7 @@ begin
   naxis:=2;{mono}
   update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for colour}
   naxis3:=1;
-  remove_key('NAXIS3  =');{some programs don't like NAXIS3=1 like maxim DL}
+  remove_key('NAXIS3  =',false{all});{some programs don't like NAXIS3=1 like maxim DL}
 
   add_text('HISTORY   ','Converted to mono');
 
@@ -10530,7 +10622,7 @@ begin
     if naxis3_local<>1 then {color image}
       update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3_local)
       else
-      remove_key('NAXIS3  ');{remove key word in header. Some program don't like naxis3=1}
+      remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 
     if type1=16 then bzero2:=32768 else bzero2:=0;
     update_integer('BZERO   =',' / Scaling applied to data                        ' ,bzero2);

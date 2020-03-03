@@ -1009,6 +1009,11 @@ object mainwindow: Tmainwindow
           Hint = 'Compress all files using the CFITSIO utility program fpack. Works best for 32 bit floating point fits files. Original files will be kept.'
           OnClick = compress_fpack1Click
         end
+        object batch_annotate1: TMenuItem
+          Caption = 'Batch annotate asteroids'
+          Hint = 'This will add asteroid annotations to the fits header. Intended for the blinking routine or manual stacking. Batch solve the images first.'
+          OnClick = batch_annotate1Click
+        end
       end
       object N6: TMenuItem
         Caption = '-'
@@ -1139,11 +1144,11 @@ object mainwindow: Tmainwindow
       object MenuItem10: TMenuItem
         Caption = '-'
       end
-      object remove_annotations1: TMenuItem
+      object clean_up1: TMenuItem
         Caption = 'Clean-up'
         Hint = 'Redraw image. Remove any markers except annotations. For removal annotations reload or remove annotations from FITS header.'
         ImageIndex = 25
-        OnClick = remove_annotations1Click
+        OnClick = clean_up1Click
       end
       object calibrate_photometry1: TMenuItem
         Caption = 'Calibrate photometry'

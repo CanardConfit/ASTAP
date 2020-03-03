@@ -72,6 +72,7 @@ type
   { Tform_asteroids1 }
 
   Tform_asteroids1 = class(TForm)
+    add_annotations1: TCheckBox;
     annotate_asteroids1: TButton;
     cancel_button1: TButton;
     ColorBox1: TColorBox;
@@ -120,10 +121,10 @@ const
    maxmag_asteroid : string='17';
    mpcorb_path : string='MPCORB.DAT';
    showfullnames: boolean=true;
+   add_annotations: boolean=false;{annotation to the fits header}
    add_date: boolean=true;
-   asteroidcolorindex: integer=13;
 
-procedure plot_mpcorb;{read and plot MPCORB.dat}
+procedure plot_mpcorb(maxcount : integer;maxmag:double) ;{read MPCORB.dat}{han.k}
 
 implementation
 
@@ -170,7 +171,7 @@ procedure Tform_asteroids1.longitude1Change(Sender: TObject);{han.k}
 var
   errordecode:boolean;
 begin
-  dec_text_to_radians(longitude1.Text,site_long_radians,errordecode);
+  ra_text_to_radians(longitude1.Text,site_long_radians,errordecode);
   if errordecode then longitude1.color:=clred else longitude1.color:=clwindow;
 end;
 
@@ -984,19 +985,17 @@ begin
   end;
 end;
 
-procedure plot_mpcorb;{read MPCORB.dat}{han.k}
+procedure plot_mpcorb(maxcount : integer;maxmag:double) ;{read MPCORB.dat}{han.k}
 const
    a_g : double =0.15;{asteroid_slope_factor}
    Gauss_gravitational_constant: double=0.01720209895*180/pi;
-var txtf : textfile;
-    count, maxcount,fontsize            : integer;
-    yy,mm,dd,a_h,a_anm,Peri,Node,a_incl,a_ecc,a_a,c_q, DELTA,sun_delta,degrees_to_perihelion,c_epochdelta,ra2,dec2,mag,phase,delta_t : double;
-    SIN_dec_ref,COS_dec_ref,maxmag      : double;
-    desn,name,s:string;
-    flip_horizontal, flip_vertical      : boolean;
-    astr_color                          : tcolor;
-    Save_Cursor: TCursor;
 
+var txtf : textfile;
+    count,fontsize            : integer;
+    yy,mm,dd,a_h,a_anm,Peri,Node,a_incl,a_ecc,a_a,c_q, DELTA,sun_delta,degrees_to_perihelion,c_epochdelta,ra2,dec2,mag,phase,delta_t : double;
+    SIN_dec_ref,COS_dec_ref          : double;
+    desn,name,s, thetext:string;
+    flip_horizontal, flip_vertical,form_existing, errordecode : boolean;
 
   procedure plot_asteroid;
   var
@@ -1014,6 +1013,8 @@ var txtf : textfile;
     det:=CD2_2*CD1_1 - CD1_2*CD2_1;
     fitsX:= +crpix1 - (CD1_2*dDEC - CD2_2*dRA) / det; {1..width2}
     fitsY:= +crpix2 + (CD1_1*dDEC - CD2_1*dRA) / det; {1..height2}
+
+
     x:=round(fitsX-1); {0..width2-1}
     y:=round(fitsY-1); {0..height2-1}
 
@@ -1024,12 +1025,18 @@ var txtf : textfile;
        if flip_vertical   then y2:=y         else y2:=(height2-1)-y;
 
        len:=20;
-       if showfullnames then
+       if showfullnames then thetext:=trim(name) else thetext:=trim(desn)+'('+floattostrF(mag,ffgeneral,3,1)+')';
+
+       if add_annotations then
        begin
-         mainwindow.image1.Canvas.textout(x2+len,y2,trim(name)+'('+floattostrF(mag,ffgeneral,3,1)+')')
+          add_text ('ANNOTATE=',#39+inttostr(round(fitsX-len))+';'+inttostr(round(fitsY-len))+';'+inttostr(round(fitsX+len))+';'+inttostr(round(fitsY+len))+';-1;'{boldness}+thetext+';'+#39);
+          annotated:=true;{header contains annotations}
        end
-       else mainwindow.image1.Canvas.textout(x2+len,y2,desn+'('+floattostrF(mag,ffgeneral,3,1)+')');
-       mainwindow.image1.canvas.ellipse(x2-len,y2-len,x2+1+len,y2+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+       else
+       begin
+         mainwindow.image1.Canvas.textout(x2+len,y2,thetext);
+         mainwindow.image1.canvas.ellipse(x2-len,y2-len,x2+1+len,y2+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+       end;
     end;
   end;
 
@@ -1037,28 +1044,41 @@ begin
   if fits_file=false then exit;
   if cd1_1=0 then begin memo2_message('Abort, first solve the image!');exit;end;
 
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
   flip_vertical:=mainwindow.Flipvertical1.Checked;
   flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
   mainwindow.image1.Canvas.brush.Style:=bsClear;
 
-  astr_color:=form_asteroids1.ColorBox1.Selected;
-  mainwindow.image1.canvas.pen.color:=astr_color;{color circel}
-  mainwindow.image1.Canvas.font.color:=astr_color;
+  form_existing:=assigned(form_asteroids1);{form existing}
+
+  mainwindow.image1.canvas.pen.color:=annotation_color;{color circel}
+  mainwindow.image1.Canvas.font.color:=annotation_color;
   mainwindow.image1.Canvas.font.size:=12;
 
-  date_to_jd(date_avg);{convert date-AVG to jd}
-  if midpoint=false then
-     jd:=jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+  if date_avg<>'' then
+  begin
+    date_to_jd(date_avg);{convert date-AVG to jd}
+    midpoint:=true;
+  end
+  else
+  begin
+    date_to_jd(date_obs);{convert date-OBS to jd}
+    midpoint:=false;
+  end;
 
   if jd<=10 then {no date found}
   begin
     mainwindow.error_label1.caption:=('Error converting date-obs from FITS header');
     mainwindow.error_label1.visible:=true;
   end;
-  if ((site_lat_radians=0) and (site_long_radians=0)) then memo2_message('Warning observatory latitude,longitude not found in the fits header');
+
+  if midpoint=false then
+     jd:=jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+
+  dec_text_to_radians(sitelat,site_lat_radians,errordecode);
+  if errordecode then memo2_message('Warning observatory latitude not found in the fits header');
+
+  ra_text_to_radians(sitelong,site_long_radians,errordecode);
+  if errordecode then memo2_message('Warning observatory longitude not found in the fits header');
 
   delta_t:=deltaT_calc(jd); {calculate delta_T in days}
 
@@ -1066,17 +1086,14 @@ begin
         {change by time & longitude in 0 ..pi*2, simular as siderial time}
         {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
 
-
   sun200_calculated:=false;
   count:=0;
   sincos(dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
-  maxcount:=strtoint(form_asteroids1.max_nr_asteroids1.text);
-  maxmag:=strtofloat2(form_asteroids1.max_magn_asteroids1.text);
-  showfullnames:=form_asteroids1.showfullnames1.checked;
-  add_date:=form_asteroids1.add_subtitle1.checked;
+  if add_annotations then
+         remove_key('ANNOTATE',true{all});{remove key annotate words from header}
 
-  assignfile(txtf,form_asteroids1.mpcorb_path1.caption);
+  assignfile(txtf,mpcorb_path);
   try
     Reset(txtf);
     while ((not EOF(txtf)) and (count<maxcount) and (esc_pressed=false)) do   {loop}
@@ -1114,12 +1131,14 @@ begin
                                    15      0.83
                                    20      1}
 
-
-          if mag<=maxmag then plot_asteroid;
+          if mag<=maxmag then
+          begin
+             plot_asteroid;
+          end;
 
           if frac(count/10000)=0 then
           begin
-            form_asteroids1.caption:=inttostr(count);
+             if  form_existing then  form_asteroids1.caption:=inttostr(count);
             application.processmessages;{check for esc}
           end;
         except
@@ -1131,18 +1150,20 @@ begin
   end;
 
   {write some info at bottom screen}
-  with mainwindow do
+
+  if form_existing then
   begin
-    if form_asteroids1.add_subtitle1.checked then
+    with mainwindow do
     begin
-     fontsize:=20;
-     image1.Canvas.font.size:=20;
-     image1.Canvas.textout(round(fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd)+'    Position[α,δ]:   '+ra1.text+'      '+dec1.text);{}
+      if add_date then
+      begin
+       fontsize:=20;
+       image1.Canvas.font.size:=20;
+       image1.Canvas.textout(round(fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd)+'    Position[α,δ]:   '+ra1.text+'      '+dec1.text);{}
+      end;
     end;
+    if add_annotations then plot_annotations(0,0);{plot annotation from the header}
   end;
-
-
-  Screen.Cursor:= Save_Cursor;
 
 end;
 
@@ -1167,19 +1188,42 @@ end;
 
 procedure Tform_asteroids1.annotate_asteroids1Click(Sender: TObject); {han.k}
 var errordecode: boolean;
+    maxcount : integer;
+    maxmag   : double;
+    Save_Cursor: TCursor;
+
 
 begin
   if test_mpcorb=false then begin exit; end;{file not found}
+
 
   mpcorb_path:=form_asteroids1.mpcorb_path1.caption;
 
   date_avg:=date_obs1.Text;
 
   maxcount_asteroid:=max_nr_asteroids1.text;
-  maxmag_asteroid:=max_magn_asteroids1.text;
-  asteroidcolorindex:=ColorBox1.ItemIndex;
+  maxcount:=strtoint(form_asteroids1.max_nr_asteroids1.text);
 
-  plot_mpcorb;
+  maxmag_asteroid:=max_magn_asteroids1.text;
+  maxmag:=strtofloat2(form_asteroids1.max_magn_asteroids1.text);
+
+  annotation_color:=ColorBox1.selected;
+
+  showfullnames:=form_asteroids1.showfullnames1.checked;
+
+  add_annotations:=form_asteroids1.add_annotations1.checked;
+
+  add_date:=form_asteroids1.add_subtitle1.checked;
+
+  {latitude, longitude}
+  sitelat:=latitude1.Text;
+  sitelong:=longitude1.Text;
+
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  plot_mpcorb(maxcount,maxmag);
+  Screen.Cursor:= Save_Cursor;
+
   form_asteroids1.close;   {normal this form is not loaded}
   mainwindow.setfocus;
 end;
@@ -1245,9 +1289,12 @@ begin
 
 
   showfullnames1.Checked:=showfullnames;
+  add_annotations1.Checked:=add_annotations;
+
   form_asteroids1.add_subtitle1.checked:=add_date;
 
-  ColorBox1.ItemIndex :=asteroidcolorindex;
+  ColorBox1.selected:=annotation_color;
+
 end;
 
 

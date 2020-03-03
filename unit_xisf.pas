@@ -31,7 +31,8 @@ uses
   {$endif}
   Classes, SysUtils, strutils,
   astap_main,
-  unit_dss {only to reset some variables};
+  unit_dss, {only to reset some variables}
+  unit_annotation {only to reset some variables};
 
 function load_xisf(filen:string;var img_loaded2: image_array) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
 
@@ -113,9 +114,11 @@ begin
   cd2_1:=0;{just for the case it is not available}
   cd2_2:=0;{just for the case it is not available}
   date_obs:='';date_avg:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+  sitelat:='';{Observatory latitude}
+  sitelong:='';{Observatory longitude}
   naxis:=1;
   naxis3:=1;
-  scale:=0;
+
   a_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
   filter_name:='';
   calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
@@ -134,6 +137,10 @@ begin
   bayerpat:='';{reset bayer pattern}
   xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
   ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
+
+  flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
+  annotated:=false; {any annotation in the file}
+
 
   setlength(header2,16);
   reader_position:=0;
@@ -233,7 +240,7 @@ begin
   update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
   update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-  if naxis3=1 then  remove_key('NAXIS3  ');{remove key word in header. Some program don't like naxis3=1}
+  if naxis3=1 then  remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 
 
 

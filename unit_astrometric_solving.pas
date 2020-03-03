@@ -787,7 +787,7 @@ begin
     memo2_message('No solution found!  :(');
     mainwindow.caption:='No solution found!  :(';
     update_text   ('PLTSOLVD=','                   F / No plate solution found.   ');
-    remove_key('COMMENT 6');
+    remove_key('COMMENT 6',false{all});
   end;
   if warning_str<>'' then update_text('WARNING =',#39+warning_str+#39);
 

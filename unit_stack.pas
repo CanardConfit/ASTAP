@@ -2861,6 +2861,7 @@ begin
           show_shape(true {assume good lock},fitsX,fitsY);
         end
         else mainwindow.shape_alignment_marker1.visible:=false;
+        if annotated then plot_annotations(0,0);{plot any annotations}
       end
       else beep;{image not found}
       exit;{done, can display only one image}
@@ -3801,7 +3802,7 @@ var
   Save_Cursor          : TCursor;
   noise_level1,back_ground1,signal_level,magn,sd                  : double;
   x_new,y_new,fitsX,fitsY,col,first_image,tolerance,stepnr        : integer;
-  reference_done,backup_reference, init,solut :boolean;
+  reference_done,backup_reference, init,solut,annotated :boolean;
 
 begin
   if listview6.items.count<=1 then exit; {no files}
@@ -3875,7 +3876,7 @@ begin
               mainwindow.caption:=filename2+' Working on star solutions, be patient.';
               get_background(0,img_loaded,false {no histogram already done} ,true {unknown, calculate also noise_level} , {var} cblack,star_level);
               find_stars(img_loaded,0.8 {hfd_min=two pixels},starlist2);{find stars and put them in a list}
-              find_tetrahedrons_new;{find triangels for new image}
+              find_tetrahedrons_new;{find tetrahedrons for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),true{save solution}) then {find difference between ref image and new image}
               begin
                 memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
@@ -3971,9 +3972,12 @@ begin
           {nothing to do}
         end;
         plot_fits(mainwindow.image1,false {re_center},true);
+        if annotated then plot_annotations(round(solution_vectorX[2]),round(solution_vectorY[2])); {correct annotations in shift only}
       end;
       inc(c);
     until c>=listview6.items.count;
+
+
   until ((esc_pressed) or (sender=blink_button1 {single run}));
 
   img_temp:=nil;{free memory}
@@ -7534,15 +7538,15 @@ begin
       restore_header;{restore header and solution}{use saved fits header first FITS file as saved in unit_stack_routines}
       plot_fits(mainwindow.image1,true,true);{plot real}
 
-      remove_key('DATE    ');{no purpose anymore for the orginal date written}
-      remove_key('EXPTIME'); {remove, will be added later in the header}
-      remove_key('EXPOSURE');{remove, will be replaced by LUM_EXP, RED_EXP.....}
-      remove_key('CCD-TEMP');{remove, will be replaced by LUM_EXP, RED_EXP.....}
-      remove_key('SET-TEMP');{remove, will be replaced by LUM_EXP, RED_EXP.....}
-      remove_key('LIGH_CNT');{remove, will be replaced by LUM_CNT, RED_CNT.....}
-      remove_key('DARK_CNT');{remove, will be replaced by LUM_DARK, RED_DARK.....}
-      remove_key('FLAT_CNT');{remove, will be replaced by LUM_FLAT, RED_FLAT.....}
-      remove_key('BIAS_CNT');{remove, will be replaced by LUM_BIAS, RED_BIAS.....}
+      remove_key('DATE    ',false{all});{no purpose anymore for the orginal date written}
+      remove_key('EXPTIME',false{all}); {remove, will be added later in the header}
+      remove_key('EXPOSURE',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
+      remove_key('CCD-TEMP',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
+      remove_key('SET-TEMP',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
+      remove_key('LIGH_CNT',false{all});{remove, will be replaced by LUM_CNT, RED_CNT.....}
+      remove_key('DARK_CNT',false{all});{remove, will be replaced by LUM_DARK, RED_DARK.....}
+      remove_key('FLAT_CNT',false{all});{remove, will be replaced by LUM_FLAT, RED_FLAT.....}
+      remove_key('BIAS_CNT',false{all});{remove, will be replaced by LUM_BIAS, RED_BIAS.....}
 
       { ASTAP keyword standard:}
       { interim files can contain keywords: EXPTIME, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
@@ -7554,7 +7558,7 @@ begin
 
       if use_manual_alignment1.checked=false then {don't do this for manual stacking and moving object. Keep the date of the reference image for correct annotation of asteroids}
       begin
-        remove_key('EXPOSURE');{remove, will be replaced by LUM_EXP, RED_EXP.....}
+        remove_key('EXPOSURE',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
         date_obs:=jdToDate(jd_stop);
         update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
         if ((naxis3=1) and (counterL>0)) then {works only for mono}
@@ -7575,9 +7579,9 @@ begin
       begin
         if make_osc_color1.checked then
         begin
-          remove_key('BAYERPAT');{remove key word in header}
-          remove_key('XBAYROFF');{remove key word in header}
-          remove_key('YBAYROFF');{remove key word in header}
+          remove_key('BAYERPAT',false{all});{remove key word in header}
+          remove_key('XBAYROFF',false{all});{remove key word in header}
+          remove_key('YBAYROFF',false{all});{remove key word in header}
           update_text('HISTORY 2','  De-mosaic bayer pattern used '+bayer_pattern[bayerpattern_final]);
           update_text('HISTORY 3','  Colour conversion: '+ stackmenu1.demosaic_method1.text+ 'interpolation.')
         end

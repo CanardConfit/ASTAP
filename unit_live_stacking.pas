@@ -415,6 +415,8 @@ begin
 
     until esc_pressed;
 
+    memo2_message('Live stack stopped. Save result if required');
+
     counterL:=counter;
     if counter>0 then update_header;
 
