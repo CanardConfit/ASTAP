@@ -124,7 +124,7 @@ const
    add_annotations: boolean=false;{annotation to the fits header}
    add_date: boolean=true;
 
-procedure plot_mpcorb(maxcount : integer;maxmag:double) ;{read MPCORB.dat}{han.k}
+procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot :boolean) ;{read MPCORB.dat}{han.k}
 
 implementation
 
@@ -985,7 +985,7 @@ begin
   end;
 end;
 
-procedure plot_mpcorb(maxcount : integer;maxmag:double) ;{read MPCORB.dat}{han.k}
+procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot :boolean) ;{read MPCORB.dat}{han.k}
 const
    a_g : double =0.15;{asteroid_slope_factor}
    Gauss_gravitational_constant: double=0.01720209895*180/pi;
@@ -1027,7 +1027,7 @@ var txtf : textfile;
        len:=20;
        if showfullnames then thetext:=trim(name) else thetext:=trim(desn)+'('+floattostrF(mag,ffgeneral,3,1)+')';
 
-       if add_annotations then
+       if add_annot then
        begin
           add_text ('ANNOTATE=',#39+inttostr(round(fitsX-len))+';'+inttostr(round(fitsY-len))+';'+inttostr(round(fitsX+len))+';'+inttostr(round(fitsY+len))+';-1;'{boldness}+thetext+';'+#39);
           annotated:=true;{header contains annotations}
@@ -1090,7 +1090,7 @@ begin
   count:=0;
   sincos(dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
-  if add_annotations then
+  if add_annot then
          remove_key('ANNOTATE',true{all});{remove key annotate words from header}
 
   assignfile(txtf,mpcorb_path);
@@ -1162,7 +1162,7 @@ begin
        image1.Canvas.textout(round(fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd)+'    Position[α,δ]:   '+ra1.text+'      '+dec1.text);{}
       end;
     end;
-    if add_annotations then plot_annotations(0,0);{plot annotation from the header}
+    if add_annot then plot_annotations(0,0);{plot annotation from the header}
   end;
 
 end;
@@ -1221,7 +1221,7 @@ begin
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
-  plot_mpcorb(maxcount,maxmag);
+  plot_mpcorb(maxcount,maxmag,add_annotations);
   Screen.Cursor:= Save_Cursor;
 
   form_asteroids1.close;   {normal this form is not loaded}

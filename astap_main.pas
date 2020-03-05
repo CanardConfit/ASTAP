@@ -635,6 +635,7 @@ var
   fitsbufferRGB16: array[0..trunc(bufwide/6)] of byteXX3 absolute fitsbuffer;{buffer for 16 bit RGB PPM file}
   fitsbufferRGB32: array[0..trunc(bufwide/12)] of byteXXXX3 absolute fitsbuffer;{buffer for -32 bit PFM file}
   fitsbuffer4: array[0..round(bufwide/4)] of longword absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
+  fitsbuffer8: array[0..trunc(bufwide/8)] of int64 absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
   fitsbufferSINGLE: array[0..round(bufwide/4)] of single absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
   fitsbufferDouble: array[0..round(bufwide/8)] of double absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
 
@@ -1085,7 +1086,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.329 dated 2020-03-03';
+  #13+#10+'Version ß0.9.330 dated 2020-03-05';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3731,39 +3732,6 @@ begin
   v:=rgbmax;
 end;
 
-
-Function INT_IEEE4(x:longword):double;{adapt non-intel floating to intel floating point}
-var lw       : longword;
-    fl       : single absolute lw;
-begin
-  lw:=(x and $FF) shl 24 + (x and $FF00) shl 8 + (x and $FF0000) shr 8 +(x and $FF000000) shr 24 ;
-      {swap 4 bytes such that 1234 becomes 4321}
-  INT_IEEE4:=fl;{get final floating value}
-end;
-
-//Function SWAP32fast(x:longword):longword;{it very little faster then SWAP32 and SWAP32first,  adapt non-intel 32  bit  longword to intel longword   or big endian to little endian}
-//asm
-//  bswap eax
-//end;
-
-Function swap32(x:longword):longword;{adapt non-intel floating to intel floating point}
-var lw       : longword;
-begin
-  result:=(x and $FF) shl 24 + (x and $FF00) shl 8 + (x and $FF0000) shr 8 +(x and $FF000000) shr 24 ;
-      {swap 4 bytes such that 1234 becomes 4321}
-end;
-
-
-Function INT_IEEE8(x: int64):double;{adapt non-intel floating to intel floating point}
-var lw       : int64;
-    fl       : double absolute lw;
-begin
-  lw:=(x and $FF) shl 56 + (x and $FF00) shl 40 + (x and $FF0000) shl 24 + (x and $FF000000) shl 8 +(x and $FF00000000) shr 8 +(x and $FF0000000000) shr 24 + (x and $FF000000000000) shr 40 +(x and $FF00000000000000) shr 56;
-      {swap 8 bytes such that 12345678 becomes 87654321}
-  INT_IEEE8:=fl;{get final floating value}
-end;
-
-
 procedure plot_fits(img:timage; center_image,show_header:boolean);
 type
 
@@ -4026,7 +3994,13 @@ var
    sign_int          : smallint absolute wo;{for 16 signed integer}
    aline             : ansistring;
    rgbdummy          : byteX3;
+var x_longword  : longword;
+    x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
+    x_int64     : int64;
+    x_double    : double absolute x_int64;{for conversion 64 bit "big-endian" data}
 
+var lw       : int64;
+    fl       : double absolute lw;
 
      procedure close_fits_file; inline;
      begin
@@ -4596,7 +4570,8 @@ begin
           else
           if nrbits=-32 then {4 byte floating point FITS image}
           begin
-             col_float:=( INT_IEEE4(fitsbuffer4[j])+bzero); {int_IEEE, swap four bytes and the read as floating point}
+             x_longword:=swapendian(fitsbuffer4[j]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
+             col_float:=x_single +bzero; {int_IEEE, swap four bytes and the read as floating point}
              img_loaded2[k-1,j,i]:=col_float;{store in memory array}
              if col_float>measured_max then measured_max:=col_float;{find max value for images with 0..1 scale}
           end
@@ -4614,7 +4589,7 @@ begin
           else
           if nrbits=+32 then
           begin
-            col_float:=(SWAP32(fitsbuffer4[j])+bzero)/(65535);{scale to 0..64535 or 0..1 float}
+            col_float:=(swapendian(fitsbuffer4[j])+bzero)/(65535);{scale to 0..64535 or 0..1 float}
                            {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
             img_loaded2[k-1,j,i]:=col_float;{store in memory array}
             if col_float>measured_max then measured_max:=col_float;{find max value for images with 0..1 scale}
@@ -4622,6 +4597,8 @@ begin
           else
           if nrbits=-64 then {8 byte floating point FITS image}
           begin
+            x_int64:=swapendian(fitsbuffer8[j]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
+            col_float:=x_double +bzero; {int_IEEE, swap four bytes and the read as floating point}
             img_loaded2[k-1,j,i]:=col_float;{store in memory array}
             if col_float>measured_max then measured_max:=col_float;{find max value for images with 0..1 scale}
           end;
@@ -6414,8 +6391,7 @@ end;
 
 function load_image(re_center,plot: boolean): boolean; {load fits or PNG, BMP, TIF}
 var
-   ext1, filename4: string;
-   i              : integer;
+   ext1           : string;
    afitsfile      : boolean;
 begin
   if plot then
@@ -6465,7 +6441,7 @@ begin
     result:=true;
 
     {successfull conversion using LibRaw}
-    filename4:=filename2;{store name for history}
+//    filename4:=filename2;{store name for history}
     filename2:=ChangeFileExt(FileName2,'.fit');{for the case you want to save it}
   end{raw}
 
@@ -6854,7 +6830,6 @@ procedure Tmainwindow.localbackgroundequalise1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,k,bsize,startX2,startY2,oldX2,oldY2,progress_value  : integer;
    median_left_bottom,median_left_top, median_right_top, median_right_bottom,
-   noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,noise_level,
    center_x,center_y,a,b,angle_from_center,new_value,old_value : double;
    line_bottom, line_top : double;
 
@@ -7191,7 +7166,7 @@ begin
             end
             else
             begin
-              plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid));
+              plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations});
               mainwindow.SaveFITSwithupdatedheader1Click(nil);
               nrannotated :=nrannotated +1;
             end;
@@ -10553,10 +10528,7 @@ var value1   : single;
     lw       : longword absolute value1;
 begin
   value1:=x;
-
-  result:=(lw and $FF) shl 24 + (lw and $FF00) shl 8 + (lw and $FF0000) shr 8 +(lw and $FF000000) shr 24;
-      {swap 4 bytes such that 1234 becomes 4321}
-
+  result:=swapendian(lw);
 end;
 
 
