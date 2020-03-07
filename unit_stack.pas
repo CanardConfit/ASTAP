@@ -533,6 +533,7 @@ type
     procedure apply_hue1Click(Sender: TObject);
     procedure auto_background_level1Click(Sender: TObject);
     procedure apply_background_noise_filter1Click(Sender: TObject);
+    procedure bayer_pattern1Select(Sender: TObject);
     procedure blink_star_filter1Change(Sender: TObject);
     procedure blink_stop1Click(Sender: TObject);
     procedure blink_unaligned_multi_step1Click(Sender: TObject);
@@ -6242,6 +6243,11 @@ begin
   plot_fits(mainwindow.image1,false,true);{plot real}
 
   Screen.Cursor:=Save_Cursor;
+end;
+
+procedure Tstackmenu1.bayer_pattern1Select(Sender: TObject);
+begin
+  demosaic_method1.enabled:=pos('X-Trans',bayer_pattern1.text )=0; {disable method is X-trans is selected}
 end;
 
 procedure Tstackmenu1.align_blink1Change(Sender: TObject);

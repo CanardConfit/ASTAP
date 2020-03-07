@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 108
+  Left = 1096
   Height = 660
-  Top = 385
+  Top = 464
   Width = 1677
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1676
-    ActivePage = Result1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 4
+    TabIndex = 0
     TabOrder = 5
     OnChange = pagecontrol1Change
     object Images: TTabSheet
@@ -1868,11 +1868,13 @@ object stackmenu1: Tstackmenu1
           ItemIndex = 0
           Items.Strings = (
             'auto'
-            'RGGB'
-            'BGGR'
             'GRBG'
+            'BGGR'
+            'RGGB'
             'GBRG'
+            'X-Trans'
           )
+          OnSelect = bayer_pattern1Select
           ParentFont = False
           Style = csDropDownList
           TabOrder = 1

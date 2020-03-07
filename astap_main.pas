@@ -986,8 +986,11 @@ begin
 
   if mainwindow.Undo1.Enabled=true then
   begin
+    if img_backup=nil then exit;{for some rare cases}
+
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
 
     old_width2:=width2;
     old_height2:=height2;
@@ -1086,7 +1089,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.330 dated 2020-03-05';
+  #13+#10+'Version ß0.9.331 dated 2020-03-07';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2855,6 +2858,7 @@ begin
      1: begin offsetx:=0; offsety:=1; end;
      2: begin offsetx:=1; offsety:=0; end;
      3: begin offsetx:=1; offsety:=1; end;
+     else exit;
   end;
 
   setlength(img_temp2,3,width2,height2);{set length of image array color}
@@ -2894,6 +2898,94 @@ begin
                    img_temp2[0,x,y]:=     (img_loaded[0,x-1,y-1] + img_loaded[0,x-1,y+1]+ img_loaded[0,x+1,y-1]+ img_loaded[0,x+1,y+1])/4;
                    img_temp2[1,x,y]:=     (img_loaded[0,x-1,y  ] + img_loaded[0,x+1,y  ]+ img_loaded[0,x  ,y-1]+ img_loaded[0,x,  y+1])/4;
                    img_temp2[2,x,y]:=     (img_loaded[0,x,  y  ]  ); end;
+      except
+      end;
+
+
+    end;{x loop}
+  end;{y loop}
+
+
+  img_loaded:=img_temp2;
+  img_temp2:=nil;{free temp memory}
+  naxis3:=3;{now three colors}
+  naxis:=3; {from 2 to 3 dimensions}
+end;
+
+procedure demosaic_x_trans;{make from Fuji X-trans three colors}
+var
+    X,Y,x2,y2,xpos,ypos,xpos6,ypos6: integer;
+    red,blue  : single;
+    img_temp2 : image_array;
+begin
+
+  setlength(img_temp2,3,width2,height2);{set length of image array color}
+
+
+  for y := 2 to height2-2 do   {-2 = -1 -1}
+  begin
+    for x:=2 to width2-2 do
+    begin
+     {http://cilab.knu.ac.kr/English/research/Color/Interpolation.htm ,  Bilinear interpolation}
+
+      try
+       x2:=x-1;
+       y2:=y-1;
+       xpos:=1+x2-(x2 div 3)*3;{position in 3x3 matrix}
+       ypos:=1+y2-(y2 div 3)*3;
+       xpos6:=1+x2-(x2 div 6)*6;{position in 6x6 matrix}
+       ypos6:=1+y2-(y2 div 6)*6;
+
+      {use only one neighbour pixel with preference go right, go below, go left. Use only on neighbour pixel for maximum sharpness }
+
+      if ((xpos=1) and (ypos=1)) then {green}begin
+                   red             :=   img_loaded[0,x  ,y+1]; {near red pixel};
+                   img_temp2[1,x,y]:=   img_loaded[0,x,  y  ] ;
+                   blue            :=   img_loaded[0,x+1,y  ]; {near blue pixel} end else
+      if ((xpos=3) and (ypos=1)) then {green}begin
+                   red             :=   img_loaded[0,x  ,y+1]; {near red pixel};
+                   img_temp2[1,x,y]:=   img_loaded[0,x,  y  ] ;
+                   blue            :=   img_loaded[0,x-1,y  ]; {near blue pixel} end else
+      if ((xpos=2) and (ypos=2)) then {green}begin
+                   red             :=   img_loaded[0,x+1,y  ]; {near red pixel};
+                   img_temp2[1,x,y]:=   img_loaded[0,x,  y  ] ;
+                   blue:=   img_loaded[0,x  ,y+1]; {near blue pixel} end else
+      if ((xpos=1) and (ypos=3)) then {green}begin
+                   red             :=   img_loaded[0,x  ,y-1]; {near red pixel};
+                   img_temp2[1,x,y]:=   img_loaded[0,x,  y  ] ;
+                   blue:=   img_loaded[0,x+1,y  ]; {near blue pixel} end else
+      if ((xpos=3) and (ypos=3)) then {green}begin
+                   red             :=   img_loaded[0,x  ,y-1]; {near red pixel};
+                   img_temp2[1,x,y]:=   img_loaded[0,x,  y  ] ;
+                   blue            :=   img_loaded[0,x-1,y  ]; {near blue pixel} end else
+
+
+      if ((xpos=2) and (ypos=1)) then {blue}begin
+                   red             :=   img_loaded[0,x,y-1] ; {near red pixel};
+                   img_temp2[1,x,y]:=   img_loaded[0,x+1 ,y  ]; {near green pixel};
+                   blue            :=   img_loaded[0,x ,y  ]; end else
+      if ((xpos=2) and (ypos=3)) then {blue}begin
+                   red             :=   img_loaded[0,x ,y+1]; {near red pixel};
+                   img_temp2[1,x,y]:=   img_loaded[0,x+1 ,y  ]; {near green pixel};
+                   blue            :=   img_loaded[0,x ,y  ]; end else
+
+
+      if ((xpos=1) and (ypos=2)) then {red}begin
+                   red             :=   img_loaded[0,x  ,y  ];
+                   img_temp2[1,x,y]:=   img_loaded[0,x+1 ,y ];   {near green pixel(s)};
+                   blue            :=   img_loaded[0,x-1,y ]; {near blue pixel(s)} end else
+
+      if ((xpos=3) and (ypos=2)) then {red}begin
+                   red             :=   img_loaded[0,x  ,y  ];
+                   img_temp2[1,x,y]:=   img_loaded[0,x  ,y+1];   {near green pixel(s)};
+                   blue            :=   img_loaded[0,x+1,y  ]; {near blue pixel(s)} end;
+
+      {fix red and green swap}
+      if ((xpos6<=3) and (ypos6<=3)) then begin img_temp2[0,x,y]:=red;  img_temp2[2,x,y]:=blue;end else
+      if ((xpos6> 3) and (ypos6<=3)) then begin img_temp2[0,x,y]:=blue; img_temp2[2,x,y]:=red;end else
+      if ((xpos6<=3) and (ypos6> 3)) then begin img_temp2[0,x,y]:=blue; img_temp2[2,x,y]:=red;end else
+      if ((xpos6> 3) and (ypos6> 3)) then begin img_temp2[0,x,y]:=red;  img_temp2[2,x,y]:=blue;end;
+
       except
       end;
 
@@ -3625,7 +3717,6 @@ begin
   else
     pattern:=stackmenu1.bayer_pattern1.text;
 
-
   if pattern=bayer_pattern[2]{'RGGB'} then begin result:=2; {offsetx:=1; offsety:=0;} end {ASI294, ASI071, most common pattern}
   else
   if pattern=bayer_pattern[0]{'GRBG'} then begin result:=0  {offsetx:=0; offsety:=0;} end {ASI1600MC}
@@ -3645,8 +3736,12 @@ begin
 end;
 
 procedure demosaic_bayer; {convert OSC image to colour}
+var
+  s :string;
 begin
-//preserve_colour_saturated_bayer;
+  if pos('X-',stackmenu1.bayer_pattern1.Text)<>0  then {}
+     demosaic_x_trans{make from Fuji X-trans three colors}
+ else
   if pos('Super',stackmenu1.demosaic_method1.text)<>0  then {use Bilinear interpolation}
     Super_pixel_demosaic(get_demosaic_pattern){create super-pixels from each group of 4 pixels RGGB}
   else
@@ -3669,6 +3764,8 @@ begin
     demosaic_bayer_drizzle(get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
     demosaic_Malvar_He_Cutler(stackmenu1.bayer_pattern1.itemindex);{make from sensor bayer pattern the three colors}
+
+
 end;
 
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
@@ -3774,7 +3871,13 @@ begin
 
   if pos('S',calstat)>0 then
                     mainwindow.shape_alignment_marker1.visible:=false; {hide shape if stacked image is plotted}
-  if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then  demosaic_bilinear_interpolation(stackmenu1.bayer_pattern1.itemindex);{convert to colour}
+  if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then
+  begin
+    if pos('X-',stackmenu1.bayer_pattern1.Text)<>0  then {}
+       demosaic_x_trans{make from Fuji X-trans three colors}
+    else
+       demosaic_bilinear_interpolation(stackmenu1.bayer_pattern1.itemindex -1);{convert to colour}
+  end;
 
   cblack:=mainwindow.minimum1.position;
   cwhite:=mainwindow.maximum1.position;
@@ -6191,64 +6294,25 @@ begin
 
 end;
 
-function check_libraw : boolean; {check if libraw exists}
-begin
- {$ifdef mswindows}
- if fileexists(application_path+'unprocessed_raw.exe')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'unprocessed_raw.exe !!, Download, libraw and place in program directory' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
- {$endif}
- {$ifdef Linux}
- if fileexists('/usr/lib/libraw/unprocessed_raw')=false then begin result:=false; application.messagebox(pchar('Could not find program unprocessed_raw !!, Install libraw. Eg: sudo apt-get install libraw-bin' ),pchar('Error'),MB_ICONWARNING+MB_OK);;exit; end;
- {$endif}
- {$ifdef Darwin} {MacOS}
- if fileexists(application_path+'/unprocessed_raw')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'unprocessed_raw' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
- {$endif}
- result:=true;{success}
-end;
-
-function check_funpack : boolean; {check if funpack exists}
-begin
- {$ifdef mswindows}
- if fileexists(application_path+'funpack.exe')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'funpack.exe !!, Download and install fpack_funpack.exe' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
- {$endif}
- {$ifdef Linux}
- if fileexists('/usr/bin/funpack')=false then begin result:=false; application.messagebox(pchar('Could not find program funpack !!, Install this program. Eg: sudo apt-get install libcfitsio-bin' ),pchar('Error'),MB_ICONWARNING+MB_OK);;exit; end;
- {$endif}
- {$ifdef Darwin} {MacOS}
- if fileexists(application_path+'/funpack')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'funpack' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
- {$endif}
- result:=true;{success}
-end;
-function check_fpack : boolean; {check if fpack exists}
-begin
- {$ifdef mswindows}
- if fileexists(application_path+'fpack.exe')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'fpack.exe !!, Download and install fpack_funpack.exe' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
- {$endif}
- {$ifdef Linux}
- if fileexists('/usr/bin/fpack')=false then begin result:=false; application.messagebox(pchar('Could not find program fpack !!, Install this program. Eg: sudo apt-get install libcfitsio-bin' ),pchar('Error'),MB_ICONWARNING+MB_OK);;exit; end;
- {$endif}
- {$ifdef Darwin} {MacOS}
- if fileexists(application_path+'/fpack')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'fpack' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
- {$endif}
- result:=true;{success}
-end;
 
 function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 var
   commando :string;
 begin
   result:=false;
-  if check_funpack=false then begin exit;end; {no funpack available}
 
   commando:='-D';
-
   {$ifdef mswindows}
+  if fileexists(application_path+'funpack.exe')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'funpack.exe !!, Download and install fpack_funpack.exe' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
   ExecuteAndWait(application_path+'funpack.exe '+commando+ ' "'+filename3+'"',false);{execute command and wait}
   {$endif}
   {$ifdef Darwin}{MacOS}
-   execute_unix2(application_path+'/funpack '+commando+' "'+filename3+'"');
-   {$endif}
-   {$ifdef linux}
-   execute_unix2('/usr/bin/funpack '+commando+' "'+filename3+'"');
+  if fileexists(application_path+'/funpack')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'funpack' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
+  execute_unix2(application_path+'/funpack '+commando+' "'+filename3+'"');
+  {$endif}
+  {$ifdef linux}
+  if fileexists('/usr/bin/funpack')=false then begin result:=false; application.messagebox(pchar('Could not find program funpack !!, Install this program. Eg: sudo apt-get install libcfitsio-bin' ),pchar('Error'),MB_ICONWARNING+MB_OK);;exit; end;
+  execute_unix2('/usr/bin/funpack '+commando+' "'+filename3+'"');
   {$endif}
    filename2:=stringreplace(filename3,'.fz', '',[]); {changeFilext doesn't work for double dots .fits.fz}
 
@@ -6259,19 +6323,19 @@ function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using f
 
 begin
   result:=false;
-  if check_fpack=false then begin exit;end; {no fpack available}
-
-
   {$ifdef mswindows}
+  if fileexists(application_path+'fpack.exe')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'fpack.exe !!, Download and install fpack_funpack.exe' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
   ExecuteAndWait(application_path+'fpack.exe '+ ' "'+filename3+'"',false);{execute command and wait}
   {$endif}
   {$ifdef Darwin}{MacOS}
-   execute_unix2(application_path+'/fpack '+' "'+filename3+'"');
-   {$endif}
-   {$ifdef linux}
-   execute_unix2('/usr/bin/fpack '+' "'+filename3+'"');
+  if fileexists(application_path+'/fpack')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'fpack' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
+  execute_unix2(application_path+'/fpack '+' "'+filename3+'"');
   {$endif}
-   result:=true;
+   {$ifdef linux}
+  if fileexists('/usr/bin/fpack')=false then begin result:=false; application.messagebox(pchar('Could not find program fpack !!, Install this program. Eg: sudo apt-get install libcfitsio-bin' ),pchar('Error'),MB_ICONWARNING+MB_OK);;exit; end;
+  execute_unix2('/usr/bin/fpack '+' "'+filename3+'"');
+  {$endif}
+  result:=true;
 end;
 
 
@@ -6282,31 +6346,38 @@ var
   fa                                : integer;
 begin
   result:=false;
-  if check_libraw=false then begin exit;end; {no LibRaw available}
 
   {$ifdef mswindows}
+  if fileexists(application_path+'unprocessed_raw.exe')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'unprocessed_raw.exe !!, Download, libraw and place in program directory' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
   ExecuteAndWait(application_path+'unprocessed_raw.exe "'+filename3+'"',false);{execute command and wait}
   {$endif}
   {$ifdef Darwin}{MacOS}
-   execute_unix2(application_path+'/unprocessed_raw "'+filename3+'"');
+  if fileexists(application_path+'/unprocessed_raw')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'unprocessed_raw' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
+  execute_unix2(application_path+'/unprocessed_raw "'+filename3+'"');
    {$endif}
    {$ifdef linux}
-   execute_unix2('/usr/lib/libraw/unprocessed_raw "'+filename3+'"');
+  if fileexists('/usr/lib/libraw/unprocessed_raw')=false then
+  begin
+    if fileexists('/usr/bin/unprocessed_raw')=false then
+    begin result:=false; application.messagebox(pchar('Could not find program unprocessed_raw !!, Install libraw. Eg: sudo apt-get install libraw-bin' ),pchar('Error'),MB_ICONWARNING+MB_OK);;exit; end;
+    execute_unix2('/usr/bin/unprocessed_raw "'+filename3+'"');
+  end;
+  execute_unix2('/usr/lib/libraw/unprocessed_raw "'+filename3+'"');
   {$endif}
 
   filename4:=FileName3+'.pgm';
 
-   if load_ppm_pgm(fileName4,img) then {succesfull PGM load}
-   begin
-     deletefile(filename4);{delete temporary pgm file}
+  if load_ppm_pgm(fileName4,img) then {succesfull PGM load}
+  begin
+    deletefile(filename4);{delete temporary pgm file}
 
-     JD2:=2415018.5+(FileDateToDateTime(fileage(filename3))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
-     date_obs:=JdToDate(jd2);
-     update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
-     add_text   ('HISTORY  ','Converted from '+filename3);
+    JD2:=2415018.5+(FileDateToDateTime(fileage(filename3))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
+    date_obs:=JdToDate(jd2);
+    update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
+    add_text   ('HISTORY  ','Converted from '+filename3);
 
-     result:=true;
-   end;
+    result:=true;
+  end;
 end;
 
 
