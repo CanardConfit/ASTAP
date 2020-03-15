@@ -1248,6 +1248,7 @@ begin
   if opendialog1.execute then
   begin
     mpcorb_path1.caption:=OpenDialog1.Files[0];
+    test_mpcorb;
   end;
 end;
 

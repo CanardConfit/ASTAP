@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 1096
+  Left = 55
   Height = 660
-  Top = 464
+  Top = 239
   Width = 1677
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -2208,7 +2208,7 @@ object stackmenu1: Tstackmenu1
       object solve1: TButton
         Left = 1104
         Height = 30
-        Hint = 'Find an astrometric solution for the image in the viewer.'#13#10#13#10'Checklist for successful solving:'#13#10#13#10'- At least 30 stars are visible'#13#10'- Reasonable round stars'#13#10'- Image size at least 1.5 megapixels'#13#10'- Correct image height in degrees specified. See stack menu tab alignment.'
+        Hint = 'Find an astrometric solution for the image in the viewer.'#13#10#13#10'Checklist for successful solving:'#13#10#13#10'- At least 30 stars are visible'#13#10'- Reasonable round stars'#13#10'- Image dimensions at least 1500 x 1000 pixels'#13#10'- Correct image height in degrees specified. See stack menu tab alignment.'
         Top = 56
         Width = 320
         Caption = 'Solve current image'

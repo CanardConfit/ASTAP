@@ -713,6 +713,7 @@ begin
   cd2_1:=0;{just for the case it is not available}
   cd2_2:=0;{just for the case it is not available}
   date_obs:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+  sitelat:=''; sitelong:='';
   naxis:=2; {succes, now 2 dimensions}
   filter_name:='';
   calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. Example value DFB}
@@ -1089,7 +1090,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.331 dated 2020-03-07';
+  #13+#10+'Version ß0.9.332 dated 2020-03-15';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1657,17 +1658,20 @@ function extract_objectname_from_filename(filename8: string): string; {try to ex
 var
   i,x   : integer;
 begin
-  {try to reconstruct exposure time from filename}
+  {try to reconstruct object name from filename}
   result:='';
   filename8:=uppercase(extractfilename(filename8));
   i:=pos('NGC',filename8); if i>0 then begin result:='NGC'; i:=i+3; end;
   if i=0 then begin i:=pos('IC',filename8); if i>0 then begin result:='IC'; i:=i+2; end; end;
   if i=0 then begin i:=pos('SH2-',filename8); if i>0 then begin result:='SH2-'; i:=i+4; end; end;
+  if i=0 then begin i:=pos('PGC',filename8); if i>0 then begin result:='PGC'; i:=i+3; end; end;
+  if i=0 then begin i:=pos('UGC',filename8); if i>0 then begin result:='UGC'; i:=i+3; end; end;
   if i=0 then begin i:=pos('M',filename8); if i>0 then begin result:='M'; i:=i+1; end; end;
 
   if i>0 then
   begin
-    while filename8[i] in ['0','1','2','3','4','5','6','7','8','9',' ']  do
+    if filename8[i]=' ' then inc(i);{skip first space}
+    while filename8[i] in ['0','1','2','3','4','5','6','7','8','9']  do
     begin
       if filename8[i]<>' ' then result:=result+filename8[i];
       inc(i);
@@ -4221,6 +4225,7 @@ begin
   focus_pos:=999;{assume no data available}
   gain:=999;{assume no data available}
   date_obs:=''; date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+  sitelat:=''; sitelong:='';
   scale:=0;
   measured_max:=0;
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
@@ -4977,7 +4982,6 @@ begin
   update_text   ('BAYERPAT=',#39+'T'+#39+'                  / Unknown Bayer color pattern                  ');
 
   update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
-  add_text      ('HISTORY  ','Imported from '+filen);
 end;
 
 
@@ -5007,6 +5011,7 @@ begin
   cd2_1:=0;{just for the case it is not available}
   cd2_2:=0;{just for the case it is not available}
   date_obs:='';date_avg:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+  sitelat:=''; sitelong:='';
   filter_name:='';
   calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
   imagetype:='';
@@ -5126,6 +5131,7 @@ begin
   cd2_1:=0;
   cd2_2:=0;
   date_obs:=''; date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+  sitelat:=''; sitelong:='';
   filter_name:='';
   calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. Example value DFB}
   imagetype:='';
@@ -6371,11 +6377,10 @@ begin
   begin
     deletefile(filename4);{delete temporary pgm file}
 
-    JD2:=2415018.5+(FileDateToDateTime(fileage(filename3))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
+    JD2:=2415018.5+(FileDateToDateTime(fileage(filename3))); {fileage raw, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
     date_obs:=JdToDate(jd2);
     update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
     add_text   ('HISTORY  ','Converted from '+filename3);
-
     result:=true;
   end;
 end;
@@ -6462,12 +6467,13 @@ end;
 
 function load_image(re_center,plot: boolean): boolean; {load fits or PNG, BMP, TIF}
 var
-   ext1           : string;
-   afitsfile      : boolean;
+   ext1,filename_org   : string;
+   afitsfile           : boolean;
 begin
   if plot then
   begin
     mainwindow.caption:=filename2;
+    filename_org:=filename2;
     mainwindow.solve_button1.enabled:=true;
     mainwindow.astrometric_solve_image1.enabled:=true;
 
@@ -6510,9 +6516,7 @@ begin
     if convert_load_raw(filename2,img_loaded)=false then begin beep; exit; end
     else
     result:=true;
-
     {successfull conversion using LibRaw}
-//    filename4:=filename2;{store name for history}
     filename2:=ChangeFileExt(FileName2,'.fit');{for the case you want to save it}
   end{raw}
 
@@ -6540,14 +6544,14 @@ begin
 
   if plot then
   begin
-    add_recent_file(filename2);{add to recent file list}
     getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
     plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
     mainwindow.ShowFITSheader1.enabled:=true;
     mainwindow.demosaicBayermatrix1.Enabled:=true;
     image_move_to_center:=re_center;
-
     if ((afitsfile) and (annotated)) then  plot_annotations(0,0);
+
+    add_recent_file(filename_org);{As last action, add to recent file list.}
   end;
 
   if commandline_execution=false then
@@ -9877,7 +9881,7 @@ begin
      str(snr:0:0,snr_str);
      if flux_magn_offset<>0 then {offset calculated in star annotation call}
      begin
-        str(flux_magn_offset-ln(flux)*2.511886432/ln(10):0:1,mag_str);
+        str(flux_magn_offset-ln(flux)*2.511886432/ln(10):0:2,mag_str);
         mag_str:=', MAGN='+mag_str;
      end
      else mag_str:='';
@@ -10926,7 +10930,7 @@ begin
      {loadimage}
      if load_image(true,true {plot}){load and center}=false then beep;{image not found}
      LoadFITSPNGBMPJPEG1filterindex:=opendialog1.filterindex;{remember filterindex}
-     add_recent_file(filename2);{add to recent file list}
+   //  add_recent_file(filename2);{add to recent file list}
   end;
 end;
 
