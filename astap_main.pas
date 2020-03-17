@@ -1090,7 +1090,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.332 dated 2020-03-15';
+  #13+#10+'Version ß0.9.333 dated 2020-03-17';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2263,7 +2263,7 @@ begin
   stackmenu1.test_pattern1.Enabled:=naxis3=1;{mono}
   stackmenu1.focallength1Change(nil); {update calculation pixel size in arc seconds}
 
-  update_equalise_background_step(1);{update equalise background menu}
+//  update_equalise_background_step(1);{update equalise background menu} moved to load_fits
 
   fits_file:=fits;{update}
 end;
@@ -4729,6 +4729,7 @@ begin
     end;
 
     ///update_menu(true);{2019-2-15 moved from load_fits to plot_fits.  file loaded, update menu for fits}
+    if commandline_execution=false then update_equalise_background_step(1);{update equalise background menu}
   end;
   close_fits_file;
   result:=true;
