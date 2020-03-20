@@ -1,12 +1,12 @@
 object stackmenu1: Tstackmenu1
-  Left = 55
-  Height = 660
-  Top = 239
-  Width = 1677
+  Left = 330
+  Height = 644
+  Top = 245
+  Width = 1272
   AllowDropFiles = True
   Caption = 'stack menu'
-  ClientHeight = 660
-  ClientWidth = 1677
+  ClientHeight = 644
+  ClientWidth = 1272
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -49,9 +49,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.6.0'
   object Memo2: TMemo
     Left = 0
-    Height = 150
+    Height = 134
     Top = 510
-    Width = 1677
+    Width = 1272
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -198,7 +198,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1659
+    Left = 1254
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     Height = 448
     Hint = 'Stack menu'
     Top = 0
-    Width = 1676
+    Width = 1271
     ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
@@ -232,7 +232,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the light frames'
       Caption = 'Images'
       ClientHeight = 420
-      ClientWidth = 1668
+      ClientWidth = 1263
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -306,8 +306,8 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1668
-        Align = alBottom
+        Width = 1263
+        Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
         Columns = <        
@@ -571,7 +571,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 420
-      ClientWidth = 1668
+      ClientWidth = 1263
       ImageIndex = 1
       ParentFont = False
       object browse_darks1: TButton
@@ -618,7 +618,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1667
+        Width = 1262
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -727,7 +727,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 420
-      ClientWidth = 1668
+      ClientWidth = 1263
       ImageIndex = 2
       ParentFont = False
       object browse_flats1: TButton
@@ -780,7 +780,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1668
+        Width = 1263
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -882,7 +882,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
       ClientHeight = 420
-      ClientWidth = 1668
+      ClientWidth = 1263
       ImageIndex = 3
       ParentFont = False
       object browse_bias1: TButton
@@ -923,7 +923,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1668
+        Width = 1263
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -1023,7 +1023,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
       ClientHeight = 420
-      ClientWidth = 1668
+      ClientWidth = 1263
       ImageIndex = 6
       ParentFont = False
       object listview5: TListView
@@ -1031,8 +1031,8 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1668
-        Align = alBottom
+        Width = 1263
+        Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Columns = <        
           item
@@ -1111,7 +1111,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 420
-      ClientWidth = 1668
+      ClientWidth = 1263
       ImageIndex = 5
       ParentFont = False
       object Label3: TLabel
@@ -2122,7 +2122,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the alignment options'
       Caption = 'Alignment'
       ClientHeight = 420
-      ClientWidth = 1668
+      ClientWidth = 1263
       ImageIndex = 7
       OnContextPopup = alignment1ContextPopup
       ParentFont = False
@@ -2983,7 +2983,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 420
-      ClientWidth = 1668
+      ClientWidth = 1263
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
@@ -2991,7 +2991,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1668
+        Width = 1263
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3302,7 +3302,7 @@ object stackmenu1: Tstackmenu1
     object tab_photometry1: TTabSheet
       Caption = 'Photometry'
       ClientHeight = 420
-      ClientWidth = 1668
+      ClientWidth = 1263
       ImageIndex = 11
       ParentFont = False
       object browse_photometry1: TButton
@@ -3416,7 +3416,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1668
+        Width = 1263
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3630,7 +3630,7 @@ object stackmenu1: Tstackmenu1
     object TabSheet1: TTabSheet
       Caption = 'Inspector'
       ClientHeight = 420
-      ClientWidth = 1668
+      ClientWidth = 1263
       ImageIndex = 17
       object browse_inspector1: TButton
         Left = 32
@@ -3661,7 +3661,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1668
+        Width = 1263
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3861,7 +3861,7 @@ object stackmenu1: Tstackmenu1
     object tab_live_stacking1: TTabSheet
       Caption = 'Live stacking'
       ClientHeight = 420
-      ClientWidth = 1668
+      ClientWidth = 1263
       ParentFont = False
       object browse_live_stacking1: TButton
         Left = 16

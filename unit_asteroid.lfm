@@ -1,7 +1,7 @@
 object form_asteroids1: Tform_asteroids1
-  Left = 773
+  Left = 515
   Height = 360
-  Top = 354
+  Top = 236
   Width = 596
   Caption = 'Annotate asteroids using MPCORB.DAT file'
   ClientHeight = 360

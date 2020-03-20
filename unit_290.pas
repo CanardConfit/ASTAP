@@ -759,46 +759,8 @@ function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; area
     ra_raw,i                       : integer;
     delta_ra, sep, required_range  : double;
     nearbyarea,header_record: boolean;
-    label      einde;
-
-
-var
-  ar : integer;
-  spaceE,spaceW,spaceN,spaceS : double;
-  area_nr:integer;
-   area1,area2,area3,area4 :integer;
-   frac1,frac2,frac3,frac4,offs:double;
 begin
    {$I-}
-
-//   offs:=5/cos(-85.232*pi/180);
-//   find_areas((90+offs)*pi/180,-82.232*pi/180,1*pi/180, area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to 4 database areas in the image}
-
-
-//   for i:=1 to 290 do
- //  begin
- //     find_areas(centers290[i,1],centers290[i,2],1*pi/180, area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to 4 database areas in the image}
- //     beep;
- //  end;
-
-//   for i:=1 to 290 do
-//   begin
-//      area(centers290[i,1],centers290[i,2],ar,spaceE,spaceW,spaceN,spaceS);
-
-//     if ar-i<>0 then
-//         beep;
-
-//     if spaceE>9*pi/180 then
-//     beep;
-//     if spaceE>9*pi/180 then
-//     beep;
-//     if spaceN>7*pi/180 then
-//     beep;
-//     if spaceS>7*pi/180 then
-//     beep;
-
-//   end;
-
   readdatabase290:=true;
   repeat
     if  ( (file_open=0) or
@@ -883,7 +845,7 @@ begin
   until
     (header_record=false) and
     (  (abs(delta_ra*cos_telescope_dec)<field_diameter/2) and (abs(dec2-telescope_dec)<field_diameter/2)  );
-                           {calculate distance and skip when to far from centre screen, {if false then outside screen,go quick to next line}
+                           {calculate distance and skip when too far from center screen, {if false then outside screen,go to next line}
 end;
 
 begin

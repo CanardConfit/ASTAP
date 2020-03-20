@@ -2723,17 +2723,20 @@ begin
 end;
 
 procedure Tstackmenu1.FormResize(Sender: TObject);
+var
+   newtop : integer;
 begin
   pagecontrol1.height:=classify_groupbox1.top;{make it High-DPI robust}
 
-  listview1.top:=browse1.top + browse1.height+5;
+  newtop:=browse1.top + browse1.height+5;;
 
-  listview2.top:=browse_darks1.top + browse_darks1.height+5;
-  listview3.top:=browse_flats1.top + browse_flats1.height+5;
-  listview4.top:=browse_bias1.top + browse_bias1.height+5;
-  listview5.top:=Label_results1.top + Label_results1.height+5;
-  listview6.top:=max(browse_blink1.top + browse_blink1.height+5,blink_star_filter1.top+blink_star_filter1.height+4) ;
-  listview7.top:=browse_photometry1.top + browse_photometry1.height+5;
+  listview1.top:=newtop;
+  listview2.top:=newtop;
+  listview3.top:=newtop;
+  listview4.top:=newtop;
+  listview5.top:=newtop;
+  listview6.top:=newtop;
+  listview7.top:=newtop;
 
   memo2.top:=classify_groupbox1.top+ classify_groupbox1.height+4;{make it High-DPI robust}
   memo2.height:=stackmenu1.Height-memo2.top;{make it High-DPI robust}
