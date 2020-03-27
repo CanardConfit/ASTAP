@@ -59,6 +59,8 @@ type
     analyse_inspector1: TButton;
     add_bias1: TCheckBox;
     binning_for_solving_label3: TLabel;
+    saturation_tolerance1: TTrackBar;
+    remove_luminance1: TCheckBox;
     curve_fitting1: TButton;
     apply_artificial_flat_correction1: TButton;
     apply_artificial_flat_correctionV2: TButton;
@@ -580,6 +582,7 @@ type
     procedure more_indication1Click(Sender: TObject);
     procedure photometry_binx2Click(Sender: TObject);
     procedure photometry_button1Click(Sender: TObject);
+    procedure saturation_tolerance1Change(Sender: TObject);
     procedure smart_colour_smooth_button1Click(Sender: TObject);
     procedure classify_filter1Click(Sender: TObject);
     procedure apply_get_background1Click(Sender: TObject);
@@ -1725,7 +1728,7 @@ begin
                 if stackmenu1.use_astrometry_net1.checked=true then
                   if fileexists(changeFileExt(filename2,'.wcs')) then  ListView1.Items.item[c].subitems.Strings[I_esolution]:='✓' else ListView1.Items.item[c].subitems.Strings[I_esolution]:='-';
                 ListView1.Items.item[c].subitems.Strings[I_calibration]:=calstat; {status calibration}
-                if focus_pos<>999 then ListView1.Items.item[c].subitems.Strings[I_focpos]:=inttostr(focus_pos);
+                if focus_pos<>0 then ListView1.Items.item[c].subitems.Strings[I_focpos]:=inttostr(focus_pos);
                 if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[I_foctemp]:=floattostrF2(focus_temp,0,1);
                 if centalt<>999 then ListView1.Items.item[c].subitems.Strings[I_centalt]:=floattostrF2(centalt,0,1);
                 if centaz<>999 then ListView1.Items.item[c].subitems.Strings[I_centaz]:=floattostrF2(centaz,0,1);
@@ -4363,8 +4366,9 @@ end;
 
 procedure Tstackmenu1.rainbow_Panel1Paint(Sender: TObject); {pixel draw on paint required for MacOS}
   var
-  i,j,w2,h2 :integer;
-  r,g,b,h,x,y : single;
+  i,j,w2,h2,diameter :integer;
+  r,g,b,h,x,y,radius,s,v : single;
+  colour             : tcolor;
 begin
   with stackmenu1.rainbow_panel1 do
   begin
@@ -4377,7 +4381,8 @@ begin
       if sqr(i)+sqr(j)<sqr(w2) then {plot only in a circel}
       begin
         h:=180+Arctan2(i,j)*180/pi;
-        HSV2RGB(h, 1 {s 0..1}, 255 {v 0..1},r,g,b);
+        radius:=(i*i+j*j)/(w2*h2);
+        HSV2RGB(h, radius {s 0..1}, 255 {v 0..1},r,g,b);
         canvas.pixels[i+w2,j+h2]:=rgb(trunc(r),trunc(g),trunc(b));
         end;
     end;
@@ -4391,6 +4396,17 @@ begin
     sincos(hue2*pi/180,x,y);
     canvas.moveto(w2,h2);
     canvas.lineto(w2-round(x*(w2-3)),h2-round(y*(w2-3)));
+
+    colour:=colourShape1.brush.color;
+    RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),h,s,v);
+
+    canvas.Brush.Style:=bsClear;{transparent style}
+    diameter:=max(0,round(w2*s - w2*saturation_tolerance1.position/100));
+    canvas.Ellipse(w2-diameter, h2-diameter, w2+diameter, h2+diameter);
+
+    diameter:=min(w2,round(w2*s + w2*saturation_tolerance1.position/100));
+    canvas.Ellipse(w2-diameter, h2-diameter, w2+diameter, h2+diameter);
+
 
   end;
 end;
@@ -5359,6 +5375,11 @@ begin
   Screen.Cursor :=Save_Cursor;{back to normal }
 end;
 
+procedure Tstackmenu1.saturation_tolerance1Change(Sender: TObject);
+begin
+  stackmenu1.rainbow_panel1.refresh;{plot colour disk in on paint event. Onpaint is required for MacOS}
+end;
+
 
 //procedure colour_fix_saturated_pixels(var img: image_array; level:double);{bring colour back in saturated stars}
 //var
@@ -6044,9 +6065,10 @@ end;
 
 procedure Tstackmenu1.apply_hue1Click(Sender: TObject);
 var fitsX, fitsY,fuzziness :integer;
-    r,g,b,h,s,v,oldhue,newhue,dhue,saturation_factor : single;
+    r,g,b,h,s,s_new,v,oldhue,newhue,dhue,saturation_factor,v_old,s_old,saturation_tol : single;
     Save_Cursor:TCursor;
     colour: tcolor;
+    remove_lum : boolean;
 begin
   if ((fits_file=false) and (naxis3<>3)) then exit;
 
@@ -6055,12 +6077,15 @@ begin
   backup_img;
 
   fuzziness:=hue_fuzziness1.position;
+  saturation_tol:=saturation_tolerance1.position/100;
   saturation_factor:=new_saturation1.position /100;
+  remove_lum:=remove_luminance1.checked;
 
   colour:=colourShape1.brush.color;
-  RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),oldhue,s,v);
+  RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),oldhue,s_old,v);
   colour:=colourShape3.brush.color;
-  RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),newhue,s,v);
+  RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),newhue,s_new,v);
+
 
   if stackmenu1.area_set1.caption<>'✓'  then {no area selected}
   begin
@@ -6071,24 +6096,25 @@ begin
   end;
   {else set in astap_main}
 
-
+  v_old:=0;
   for fitsY:=areay1 to areay2 do
     for fitsX:=areax1 to areax2 do
     begin {subtract view from file}
-      RGB2HSV(img_loaded[0,fitsX,fitsY]-cblack,
-              img_loaded[1,fitsX,fitsY]-cblack,
-              img_loaded[2,fitsX,fitsY]-cblack, h,s,v); {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+      RGB2HSV(max(0,img_loaded[0,fitsX,fitsY]-cblack),
+              max(0,img_loaded[1,fitsX,fitsY]-cblack),
+              max(0,img_loaded[2,fitsX,fitsY]-cblack), h,s,v); {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 
       dhue:=abs(oldhue - h);
-      if ((dhue<=fuzziness) or (dhue>=360-fuzziness)) then {colour close enough, replace colour}
+      if (((dhue<=fuzziness) or (dhue>=360-fuzziness))and (abs(s-s_old)<saturation_tol {saturation tolerance} )) then {colour close enough, replace colour}
       begin
-        HSV2RGB(newhue , min(1,s*saturation_factor) {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+          if remove_lum then v:=v_old;
+          HSV2RGB(newhue , min(1,s_new*saturation_factor) {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 
-        img_loaded[0,fitsX,fitsY]:=r +cblack;
-        img_loaded[1,fitsX,fitsY]:=g +cblack;
-        img_loaded[2,fitsX,fitsY]:=b +cblack;
-      end;
-
+          img_loaded[0,fitsX,fitsY]:=r +cblack;
+          img_loaded[1,fitsX,fitsY]:=g +cblack;
+          img_loaded[2,fitsX,fitsY]:=b +cblack;
+      end
+      else v_old:=v;
     end;
   //getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
   plot_fits(mainwindow.image1,false,true);{plot real}
@@ -7140,6 +7166,8 @@ begin
               memo2_message('OSC, demosaic method '+demosaic_method1.text);
   if drizzle1.checked then memo2_message('Drizzle option selected with drop size '+drop_size1.text);
 
+  if  ((stackmenu1.use_manual_alignment1.checked) and (pos('Sigma',stackmenu1.stack_method1.text)>0=true) and (pos('Comet',stackmenu1.manual_centering1.text)<>0)) then memo2_message('█ █ █ █ █ █ Warning, use for comet stacking the stack method "Average"!. █ █ █ █ █ █ ');
+
   startTick := gettickcount64;
 
   if img_loaded<>nil then begin img_backup:=nil;{clear to save memory} backup_img;    end; ;{backup image array and header for case esc pressed.}
@@ -7353,7 +7381,7 @@ begin
 
         if pos('Sigma',stackmenu1.stack_method1.text)>0=true then
              begin
-               if length(files_to_process)<=5 then memo2_message('█ █ █ █ █ █ Method Sigma Clip does not work well for a few images. Try method average. █ █ █ █ █ █ ');
+               if length(files_to_process)<=5 then memo2_message('█ █ █ █ █ █ Method "Sigma Clip average" does not work well for a few images. Try method "Average". █ █ █ █ █ █ ');
                stack_sigmaclip(over_size,{var}files_to_process,counterL) {sigma clip combining}
              end
         else

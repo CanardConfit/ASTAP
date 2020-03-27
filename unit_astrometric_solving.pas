@@ -457,7 +457,7 @@ var
   Save_Cursor     : TCursor;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,info_message,warning    :string;
-  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t : integer;
+  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,limit_counter : integer;
   autoFOV : boolean;
 const
    popupnotifier_visible : boolean=false;
@@ -468,6 +468,7 @@ begin
 
   result:=false;
   esc_pressed:=false;
+  limit_counter:=0;
   warning_str:='';{for header}
   startTick := GetTickCount64;
 
@@ -668,7 +669,12 @@ begin
             find_tetrahedrons_ref;{find star tetrahedrons, use database as reference image}
             if solve_show_log then
             begin
-              if (nrstars_required>database_stars) then  mess:=#9+' Warning, reached maximum magnitude of star database!' else mess:='';
+              if (nrstars_required>database_stars+4) then
+              begin
+                  inc(limit_counter);
+                  mess:=#9+' Warning, reached maximum magnitude of star database! '+' Stars required:'+ inttostr(nrstars_required)+'  From database:'+inttostr(database_stars)+'  Warning nr:'+inttostr(limit_counter);
+              end
+              else mess:='';
               memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(telescope_ra,': ')+#9+prepare_dec(telescope_dec,'° ')+#9+' Up to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(length(starlisttetrahedrons1[0]))+' database tetrahedrons to compare.'+mess);
             end;
 
@@ -676,7 +682,7 @@ begin
             // create supplement lines for sky coverage testing
             // stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
 
-            if length(starlisttetrahedrons1[0])>=3 then {enough pyramaids, lets try to find a match}
+            if length(starlisttetrahedrons1[0])>=3 then {enough tetrahedrons, lets try to find a match}
                solution:=find_offset_and_rotation(minimum_tetrahedrons {>=3},strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false);{find an solution}
 
             Application.ProcessMessages;

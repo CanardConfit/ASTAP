@@ -1090,7 +1090,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.334 dated 2020-03-18';
+  #13+#10+'Version ß0.9.335 dated 2020-03-27';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4222,7 +4222,7 @@ begin
   ccd_temperature:=999;
   set_temperature:=999;
   focus_temp:=999;{assume no data available}
-  focus_pos:=999;{assume no data available}
+  focus_pos:=0;{assume no data available}
   gain:=999;{assume no data available}
   date_obs:=''; date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
   sitelat:=''; sitelong:='';
@@ -5843,6 +5843,10 @@ begin
     dum:=initstring.Values['noisefilter_sd']; if dum<>'' then stackmenu1.noisefilter_sd1.text:=dum;
 
     i:=stackmenu1.hue_fuzziness1.position;get_int(i,'hue_fuzziness'); stackmenu1.hue_fuzziness1.position:=i;
+    i:=stackmenu1.saturation_tolerance1.position;get_int(i,'saturation_tolerance'); stackmenu1.saturation_tolerance1.position:=i;
+    stackmenu1.remove_luminance1.checked:= get_boolean('remove_luminance',false);
+
+
     i:=stackmenu1.sample_size1.itemindex;get_int(i,'sample_size'); stackmenu1.sample_size1.itemindex:=i;
 
     stackmenu1.live_stacking_path1.caption:=initstring.Values['live_stack_dir'];
@@ -6147,6 +6151,9 @@ begin
   initstring.Values['noisefilter_sd']:=stackmenu1.noisefilter_sd1.text;
 
   initstring.Values['hue_fuzziness']:=inttostr(stackmenu1.hue_fuzziness1.position);
+  initstring.Values['saturation_tolerance']:=inttostr(stackmenu1.saturation_tolerance1.position);
+  initstring.Values['remove_luminance']:=BoolStr[stackmenu1.remove_luminance1.checked];{asteroids}
+
   initstring.Values['sample_size']:=inttostr(stackmenu1.sample_size1.itemindex);
 
   initstring.Values['live_stack_dir']:=stackmenu1.live_stacking_path1.caption;
@@ -8485,6 +8492,7 @@ begin
           HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
           if ((hfd1<=99) and (snr>10) and (hfd1>0.8) {two pixels minimum} { and (flux/(hfd1*hfd1)<0.25*pi*100000)}{not saturated} ) then
+//          if ((hfd1<=99) and (snr>10) and (hfd1>=0.64) {two pixels minimum} { and (flux/(hfd1*hfd1)<0.25*pi*100000)}{not saturated} ) then
           begin
 //            size:=round(5*hfd1);
             if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);
@@ -9421,11 +9429,8 @@ begin
           SumValY:=SumValY+val*(j);
         end;
       end;
-      if sumval<= 12*bg_standard_deviation then {no star found, too noisy}
-      begin
-        hfd1:=999;
-        exit;
-      end;
+      if sumval<= 12*bg_standard_deviation then exit; {no star found, too noisy, exit with hfd=999}
+
       Xg:=SumValX/SumVal;
       Yg:=SumValY/SumVal;
       xc:=(x1+Xg);
@@ -9433,10 +9438,7 @@ begin
      {center of gravity found}
 
 
-      if ((xc-rs<0) or (xc+rs>width2-1) or (yc-rs<0) or (yc+rs>height2-1) ) then begin
-        hfd1:=999;
-        exit;
-      end;{prevent runtime errors near sides of images}
+      if ((xc-rs<0) or (xc+rs>width2-1) or (yc-rs<0) or (yc+rs>height2-1) ) then exit;{prevent runtime errors near sides of images}
 
   //   Check for asymmetry. Are we testing a group of stars or a defocused star?
       val_00:=0;val_01:=0;val_10:=0;val_11:=0;
@@ -9463,10 +9465,7 @@ begin
 
 
       if asymmetry then  dec(rs,2); {try a smaller window to exclude nearby stars}
-      if rs<4 then
-      begin
-        hfd1:=999;
-      end; {try to reduce box up to rs=4 equals 8x8 box else exit}
+      if rs<4 then exit; {try to reduce box up to rs=4 equals 8x8 box else exit with hfd 999}
     until asymmetry=false;{loop and reduce box size until asymmetry is gone.}
 
    // Build signal histogram from center of gravity
@@ -9487,6 +9486,8 @@ begin
       end;
     end;
 
+    if distance_histogram[1]<3 then begin exit; end;// reject single hot pixel if less then 3 pixels are detected around the center of gravity
+
     ri:=-1;
     distance_top_value:=0;
     HistStart:=false;
@@ -9497,14 +9498,9 @@ begin
       if distance_histogram[ri]>0 then HistStart:=true;{continue until we found a value>0, center of defocused star image can be black having a central obstruction in the telescope}
       if distance_top_value<distance_histogram[ri] then distance_top_value:=distance_histogram[ri]; {this should be 2*pi*ri if it is nice defocused star disk}
     until ( (ri>=rs) or (HistStart and (distance_histogram[ri]<=0.1*distance_top_value {drop-off detection})));{find a distance where there is no pixel illuminated, so the border of the star image of interest}
-    if ri>=rs then {star is equal or larger then box, abort}
-    begin
-      hfd1:=999;
-      exit;
-    end;
+    if ri>=rs then exit; {star is equal or larger then box, abort}
 
-    if (ri>2)and(illuminated_pixels<0.35*sqr(ri+ri-2)){35% surface} then  {not a star disk but stars, abort}
-     exit; {hfd:=999}
+    if (ri>2)and(illuminated_pixels<0.35*sqr(ri+ri-2)){35% surface} then exit;  {not a star disk but stars, abort with hfd 999}
 
     except
   end;
@@ -9877,7 +9873,7 @@ begin
 
    if ((hfd2<99) and (hfd2>0)) then
    begin
-     str(hfd2:0:1,hfd_str);
+     if hfd2>1 then str(hfd2:0:1,hfd_str) else str(hfd2:0:2,hfd_str);
      str(fwhm_star2:0:1,fwhm_str);
      str(snr:0:0,snr_str);
      if flux_magn_offset<>0 then {offset calculated in star annotation call}
@@ -10794,6 +10790,13 @@ begin
       begin
         dum:=bzero2+round(img[k,j,i]);{save all colors}
         dum:=dum and $FFFF;{mod 2018-9-10}
+
+//                dum:=round(img[k,j,i]);{save all colors}
+//        if dum<17000 then dum:=1000;
+//          if dum=24672 then dum:=1000+2000;
+//          if dum=65535 then dum:=1000+4000;
+//          dum:=dum+bzero2;
+
         wo:=dum;
         fitsbuffer2[j]:=swap(wo) and $FFFF;{in FITS file hi en low bytes are swapped}
       end;

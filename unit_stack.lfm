@@ -1,12 +1,12 @@
 object stackmenu1: Tstackmenu1
-  Left = 330
+  Left = 164
   Height = 644
-  Top = 245
-  Width = 1272
+  Top = 133
+  Width = 1605
   AllowDropFiles = True
   Caption = 'stack menu'
   ClientHeight = 644
-  ClientWidth = 1272
+  ClientWidth = 1605
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -51,7 +51,7 @@ object stackmenu1: Tstackmenu1
     Left = 0
     Height = 134
     Top = 510
-    Width = 1272
+    Width = 1605
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -198,7 +198,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1254
+    Left = 1587
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     Height = 448
     Hint = 'Stack menu'
     Top = 0
-    Width = 1271
+    Width = 1604
     ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
@@ -232,7 +232,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the light frames'
       Caption = 'Images'
       ClientHeight = 420
-      ClientWidth = 1263
+      ClientWidth = 1596
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -306,7 +306,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1263
+        Width = 1596
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3992,7 +3992,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools'
       Caption = 'Pixel math 1'
       ClientHeight = 420
-      ClientWidth = 1668
+      ClientWidth = 1596
       ImageIndex = 4
       ParentFont = False
       object GroupBox5: TGroupBox
@@ -4175,7 +4175,7 @@ object stackmenu1: Tstackmenu1
         end
       end
       object GroupBox_equalise_tool1: TGroupBox
-        Left = 360
+        Left = 355
         Height = 60
         Top = 320
         Width = 430
@@ -4794,19 +4794,19 @@ object stackmenu1: Tstackmenu1
         end
       end
       object GroupBox16: TGroupBox
-        Left = 797
-        Height = 116
+        Left = 1176
+        Height = 104
         Top = 8
         Width = 352
         Caption = 'Background noise filter'
-        ClientHeight = 96
+        ClientHeight = 84
         ClientWidth = 348
         ParentFont = False
         TabOrder = 5
         object Label55: TLabel
-          Left = 63
+          Left = 8
           Height = 20
-          Top = 3
+          Top = 11
           Width = 100
           Alignment = taRightJustify
           AutoSize = False
@@ -4817,10 +4817,10 @@ object stackmenu1: Tstackmenu1
           Transparent = False
         end
         object noisefilter_sd1: TComboBox
-          Left = 170
+          Left = 115
           Height = 23
           Hint = 'Standard deviation to detect deepsky objects not to be blurred. '
-          Top = 0
+          Top = 8
           Width = 60
           ItemHeight = 15
           ItemIndex = 2
@@ -4837,10 +4837,10 @@ object stackmenu1: Tstackmenu1
           Text = '2.0'
         end
         object undo_button14: TBitBtn
-          Left = 304
+          Left = 272
           Height = 30
           Hint = 'Undo last action'
-          Top = 64
+          Top = 40
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -4883,9 +4883,9 @@ object stackmenu1: Tstackmenu1
           TabOrder = 3
         end
         object apply_background_noise_filter1: TButton
-          Left = 104
+          Left = 72
           Height = 30
-          Top = 64
+          Top = 40
           Width = 184
           Caption = 'Apply'
           OnClick = apply_background_noise_filter1Click
@@ -4893,10 +4893,10 @@ object stackmenu1: Tstackmenu1
           TabOrder = 2
         end
         object noisefilter_blur1: TComboBox
-          Left = 170
+          Left = 290
           Height = 23
           Hint = 'This blur will be applied on the sky background'
-          Top = 29
+          Top = 8
           Width = 60
           ItemHeight = 15
           ItemIndex = 2
@@ -4913,9 +4913,9 @@ object stackmenu1: Tstackmenu1
           Text = '0.7'
         end
         object Label64: TLabel
-          Left = 63
+          Left = 183
           Height = 20
-          Top = 32
+          Top = 11
           Width = 100
           Alignment = taRightJustify
           AutoSize = False
@@ -5020,13 +5020,13 @@ object stackmenu1: Tstackmenu1
         end
       end
       object GroupBox11: TGroupBox
-        Left = 796
-        Height = 254
-        Top = 126
-        Width = 353
+        Left = 792
+        Height = 372
+        Top = 8
+        Width = 377
         Caption = 'Colour replace'
-        ClientHeight = 234
-        ClientWidth = 349
+        ClientHeight = 352
+        ClientWidth = 373
         TabOrder = 7
         object HueRadioButton1: TRadioButton
           Left = 8
@@ -5041,7 +5041,7 @@ object stackmenu1: Tstackmenu1
           Left = 8
           Height = 19
           Hint = 'Click on the image in the viewer to select a colour'
-          Top = 153
+          Top = 233
           Width = 81
           Caption = 'New colour'
           TabOrder = 0
@@ -5057,14 +5057,14 @@ object stackmenu1: Tstackmenu1
           Left = 120
           Height = 22
           Hint = 'Click on the image in the viewer to select a new colour'
-          Top = 152
+          Top = 232
           Width = 25
         end
         object apply_hue1: TButton
-          Left = 104
+          Left = 96
           Height = 30
           Hint = 'Add noise to the image in the viewer'
-          Top = 194
+          Top = 317
           Width = 184
           Caption = 'Apply'
           OnClick = apply_hue1Click
@@ -5087,10 +5087,10 @@ object stackmenu1: Tstackmenu1
           TabOrder = 3
         end
         object undo_button16: TBitBtn
-          Left = 304
+          Left = 296
           Height = 30
           Hint = 'Undo last action'
-          Top = 192
+          Top = 317
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -5169,7 +5169,7 @@ object stackmenu1: Tstackmenu1
           Left = 152
           Height = 39
           Hint = 'Saturation of new colour [0..200%]'
-          Top = 153
+          Top = 233
           Width = 96
           LineSize = 5
           Max = 200
@@ -5183,15 +5183,15 @@ object stackmenu1: Tstackmenu1
           Left = 272
           Height = 22
           Hint = 'Final new colour'
-          Top = 152
+          Top = 232
           Width = 25
         end
         object rainbow_Panel1: TPanel
           Left = 249
-          Height = 92
-          Hint = 'Hue range to be replaced.'
+          Height = 120
+          Hint = 'Hue and saturation range to be replaced. The hue range is between the two lines. The saturation range is between the two circels.'
           Top = 0
-          Width = 92
+          Width = 120
           BevelOuter = bvNone
           ParentColor = False
           TabOrder = 7
@@ -5202,7 +5202,7 @@ object stackmenu1: Tstackmenu1
           Left = 136
           Height = 15
           Hint = 'Indicates if area is selected.'
-          Top = 101
+          Top = 149
           Width = 10
           Caption = '⍻'
           ParentColor = False
@@ -5210,7 +5210,7 @@ object stackmenu1: Tstackmenu1
         object area_selected1: TLabel
           Left = 8
           Height = 15
-          Top = 101
+          Top = 149
           Width = 96
           Caption = 'Sub-area selected:'
           ParentColor = False
@@ -5219,18 +5219,42 @@ object stackmenu1: Tstackmenu1
           Left = 184
           Height = 25
           Hint = 'Unselect area. If unselected the colours in whole image will be replaced.'
-          Top = 96
+          Top = 144
           Width = 35
           Caption = '⍻'
           OnClick = unselect_area1Click
           TabOrder = 8
+        end
+        object remove_luminance1: TCheckBox
+          Left = 128
+          Height = 19
+          Hint = 'Use this to remove red, green or blue hot pixels. '
+          Top = 259
+          Width = 122
+          Caption = 'Remove luminance'
+          TabOrder = 9
+        end
+        object saturation_tolerance1: TTrackBar
+          Left = 152
+          Height = 39
+          Hint = 'Tolerance colour saturation.  [0..50%] A good value is 20%'
+          Top = 84
+          Width = 96
+          LineSize = 5
+          Max = 50
+          Min = 1
+          OnChange = saturation_tolerance1Change
+          PageSize = 5
+          Position = 20
+          TickStyle = tsNone
+          TabOrder = 10
         end
       end
     end
     object tab_Pixelmath2: TTabSheet
       Caption = 'Pixel math 2'
       ClientHeight = 420
-      ClientWidth = 1668
+      ClientWidth = 1263
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox
