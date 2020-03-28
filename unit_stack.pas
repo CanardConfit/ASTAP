@@ -6065,7 +6065,7 @@ end;
 
 procedure Tstackmenu1.apply_hue1Click(Sender: TObject);
 var fitsX, fitsY,fuzziness :integer;
-    r,g,b,h,s,s_new,v,oldhue,newhue,dhue,saturation_factor,v_old,s_old,saturation_tol : single;
+    r,g,b,h,s,s_new,v,oldhue,newhue,dhue,saturation_factor,v_old1,v_old2,v_old3,s_old,saturation_tol : single;
     Save_Cursor:TCursor;
     colour: tcolor;
     remove_lum : boolean;
@@ -6096,7 +6096,9 @@ begin
   end;
   {else set in astap_main}
 
-  v_old:=0;
+  v_old1:=0;
+  v_old2:=0;
+  v_old3:=0;
   for fitsY:=areay1 to areay2 do
     for fitsX:=areax1 to areax2 do
     begin {subtract view from file}
@@ -6107,14 +6109,19 @@ begin
       dhue:=abs(oldhue - h);
       if (((dhue<=fuzziness) or (dhue>=360-fuzziness))and (abs(s-s_old)<saturation_tol {saturation tolerance} )) then {colour close enough, replace colour}
       begin
-          if remove_lum then v:=v_old;
+          if remove_lum then v:=min(min(v_old1,v_old2),v_old3);{take the lowest value}
           HSV2RGB(newhue , min(1,s_new*saturation_factor) {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 
           img_loaded[0,fitsX,fitsY]:=r +cblack;
           img_loaded[1,fitsX,fitsY]:=g +cblack;
           img_loaded[2,fitsX,fitsY]:=b +cblack;
       end
-      else v_old:=v;
+      else
+      begin
+        v_old3:=v_old2;
+        v_old2:=v_old1;
+        v_old1:=v;
+      end;
     end;
   //getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
   plot_fits(mainwindow.image1,false,true);{plot real}

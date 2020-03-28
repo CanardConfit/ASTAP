@@ -1090,7 +1090,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.335 dated 2020-03-27';
+  #13+#10+'Version ß0.9.336 dated 2020-03-28';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5052,11 +5052,11 @@ end;
 
 function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
-  i,j   : integer;
+  i,j,r,g   : integer;
   jd2   : double;
   image: TFPCustomImage;
   reader: TFPCustomImageReader;
-  tiff, grayscale  : boolean;
+  tiff, colour  : boolean;
   ext,descrip   : string;
 begin
   naxis:=0; {0 dimensions}
@@ -5090,17 +5090,26 @@ begin
      exit;
   end;
 
+  colour:=false;
   with image do {temporary till grayscale is implemented in fcl-image}
-  grayscale:=((Colors[0,0].red=Colors[0,0].green) and
-              (Colors[0,0].red=Colors[0,0].blue) and
-              (Colors[width-1,0].red=Colors[width-1,0].green) and
-              (Colors[width-1,0].red=Colors[width-1,0].blue) and
-              (Colors[0,height-1].red=Colors[0,height-1].green) and
-              (Colors[0,height-1].red=Colors[0,height-1].blue) and
-              (Colors[width-1,height-1].red=Colors[width-1,height-1].green) and
-              (Colors[width-1,height-1].red=Colors[width-1,height-1].blue));
+  begin
+    i:=0;
+    j:=height div 2;
+    while ((colour=false) and (i<width)) do {test horizontal line}
+    begin
+      colour:=((Colors[i,j].red<>Colors[i,j].green) or  (Colors[i,j].red<>Colors[i,j].blue));
+      inc(i);
+    end;
+    i:=width div 2;
+    j:=0;
+    while ((colour=false) and (j<height)) do {test vertical line}
+    begin
+      colour:=((Colors[i,j].red<>Colors[i,j].green) or  (Colors[i,j].red<>Colors[i,j].blue));
+      inc(j);
+    end;
+  end;
 
-  if grayscale then
+  if colour=false then
   begin
      naxis:=2;
      naxis3:=1;
