@@ -1,20 +1,14 @@
 object mainwindow: Tmainwindow
-  Left = 160
+  Left = 846
   Height = 616
   Hint = ' '
-  Top = 142
-  Width = 1163
+  Top = 243
+  Width = 1343
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
   ClientHeight = 596
-  ClientWidth = 1163
+  ClientWidth = 1343
   Color = clForm
-  Font.CharSet = ANSI_CHARSET
-  Font.Color = clBlack
-  Font.Height = -12
-  Font.Name = 'Segoe UI'
-  Font.Pitch = fpVariable
-  Font.Quality = fqDraft
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
     0000200000000100180000000000000300006400000064000000000000000000
@@ -56,6 +50,7 @@ object mainwindow: Tmainwindow
   OnPaint = FormPaint
   OnResize = FormResize
   OnShow = FormShow
+  ParentFont = True
   LCLVersion = '2.0.6.0'
   object Label1: TLabel
     Left = 54
@@ -164,15 +159,8 @@ object mainwindow: Tmainwindow
     Hint = 'Right ascension of reference pixel. Normally in the middle of the image. Format 23 30 00.0 or 23.500. Double click to retrieve position from database'
     Top = 0
     Width = 95
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
     OnChange = ra1Change
     OnDblClick = ra1DblClick
-    ParentFont = False
     ParentShowHint = False
     PopupMenu = PopupMenu_ra_dec1
     ShowHint = True
@@ -185,15 +173,8 @@ object mainwindow: Tmainwindow
     Hint = 'Declination of reference pixel. Normally in the middle of the image. Format +89 30 00 or 89.500. Double click to retrieve position from database'
     Top = 26
     Width = 95
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
     OnChange = dec1Change
     OnDblClick = ra1DblClick
-    ParentFont = False
     ParentShowHint = False
     PopupMenu = PopupMenu_ra_dec1
     ShowHint = True
@@ -204,7 +185,7 @@ object mainwindow: Tmainwindow
     Left = 596
     Height = 163
     Top = 5
-    Width = 563
+    Width = 743
     Anchors = [akTop, akLeft, akRight]
     Font.Height = -9
     Font.Name = 'Courier'
@@ -242,11 +223,11 @@ object mainwindow: Tmainwindow
     Height = 445
     Hint = 'hint'
     Top = 176
-    Width = 1188
+    Width = 1368
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
     ClientHeight = 445
-    ClientWidth = 1188
+    ClientWidth = 1368
     Color = 2105376
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
@@ -265,7 +246,7 @@ object mainwindow: Tmainwindow
       Left = 448
       Height = 264
       Top = 32
-      Width = 428
+      Width = 608
       Anchors = [akLeft, akRight, akBottom]
       OnMouseDown = Image1MouseDown
       OnMouseEnter = Image1MouseEnter
@@ -522,14 +503,7 @@ object mainwindow: Tmainwindow
       Top = 56
       Width = 49
       Enabled = False
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clBlack
-      Font.Height = -12
-      Font.Name = 'Segoe UI'
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
       OnEditingDone = min2EditingDone
-      ParentFont = False
       ParentShowHint = False
       ShowHint = True
       TabOrder = 2
@@ -542,14 +516,7 @@ object mainwindow: Tmainwindow
       Top = 77
       Width = 49
       Enabled = False
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clBlack
-      Font.Height = -12
-      Font.Name = 'Segoe UI'
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
       OnEditingDone = max2EditingDone
-      ParentFont = False
       ParentShowHint = False
       ShowHint = True
       TabOrder = 3
@@ -561,19 +528,17 @@ object mainwindow: Tmainwindow
       Hint = 'Preset of the automatic data range adjustments.'
       Top = 27
       Width = 100
+      DropDownCount = 20
       Enabled = False
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clBlack
-      Font.Height = -12
-      Font.Name = 'Segoe UI'
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
       ItemHeight = 15
-      ItemIndex = 1
+      ItemIndex = 2
       Items.Strings = (
         'Low'
+        'Low +'
         'Medium'
+        'Medium +'
         'High'
+        'High +'
         'Range'
         'Manual'
         'Show saturation'
@@ -582,7 +547,6 @@ object mainwindow: Tmainwindow
       OnChange = stretch1Change
       ParentBidiMode = False
       ParentColor = True
-      ParentFont = False
       ParentShowHint = False
       ShowHint = True
       Style = csDropDownList
@@ -597,12 +561,6 @@ object mainwindow: Tmainwindow
       Width = 100
       DropDownCount = 15
       Enabled = False
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clBlack
-      Font.Height = -12
-      Font.Name = 'Segoe UI'
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
       ItemHeight = 15
       ItemIndex = 0
       Items.Strings = (
@@ -624,7 +582,6 @@ object mainwindow: Tmainwindow
       )
       OnChange = stretch1Change
       ParentColor = True
-      ParentFont = False
       ParentShowHint = False
       ShowHint = True
       TabOrder = 5
@@ -701,7 +658,7 @@ object mainwindow: Tmainwindow
     Left = 0
     Height = 23
     Top = 573
-    Width = 1163
+    Width = 1343
     Panels = <    
       item
         Width = 200
@@ -1000,9 +957,28 @@ object mainwindow: Tmainwindow
           OnClick = bin2x2Click
         end
         object split_osc1: TMenuItem
-          Caption = 'Batch split raw images in R, G, G, B'
-          Hint = 'For RAW OSC data only. This will extract the Bayer 2x2 matrix pixels representing red, green, green and blue and write to seperate files. If your image Ha with your OSC, one file will contain the red data only.'
-          OnClick = split_raw1click
+          Caption = 'Extract one Bayer matrix pixel position from raw OSC images'
+          Hint = 'This will extract one of the the Bayer 2x2 matrix pixels representing red, green, green and blue and write to seperate files. If your image Ha with your OSC, one position will contain the red data only.'
+          object extract_pixel_11: TMenuItem
+            Caption = 'Bayer matrix pixel 11'
+            Hint = 'Pixels with position 11 in the Bayer matrix are extracted from the selected files.'
+            OnClick = extract_pixel_11Click
+          end
+          object extract_pixel_12: TMenuItem
+            Caption = 'Bayer matrix pixel 12'
+            Hint = 'Pixels with position 12 in the Bayer matrix are extracted from the selected files.'
+            OnClick = extract_pixel_12Click
+          end
+          object MenuItem21: TMenuItem
+            Caption = 'Bayer matrix pixel 21'
+            Hint = 'Pixels with position 21 in the Bayer matrix are extracted from the selected files.'
+            OnClick = MenuItem21Click
+          end
+          object extract_pixel_22: TMenuItem
+            Caption = 'Bayer matrix pixel 22'
+            Hint = 'Pixels with position 22 in the Bayer matrix are extracted from the selected files.'
+            OnClick = extract_pixel_22Click
+          end
         end
         object compress_fpack1: TMenuItem
           Caption = 'Batch compress FITS'

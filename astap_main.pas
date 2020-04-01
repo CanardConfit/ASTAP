@@ -101,8 +101,11 @@ type
     Menufind1: TMenuItem;
     annotate_minor_planets1: TMenuItem;
     batch_annotate1: TMenuItem;
+    extract_pixel_11: TMenuItem;
+    MenuItem21: TMenuItem;
+    extract_pixel_22: TMenuItem;
     save_to_tiff1: TMenuItem;
-    MenuItem20: TMenuItem;
+    extract_pixel_12: TMenuItem;
     MenuItem7: TMenuItem;
     menupaste: TMenuItem;
     menucopy1: TMenuItem;
@@ -261,6 +264,9 @@ type
     procedure batch_annotate1Click(Sender: TObject);
     procedure ccd_inspector_plot1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
+    procedure extract_pixel_11Click(Sender: TObject);
+    procedure extract_pixel_12Click(Sender: TObject);
+    procedure extract_pixel_22Click(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
     procedure imageflipv1Click(Sender: TObject);
     procedure measuretotalmagnitude1Click(Sender: TObject);
@@ -269,6 +275,7 @@ type
     procedure menucopy1Click(Sender: TObject);
     procedure Menufind1Click(Sender: TObject);
     procedure menufindnext1Click(Sender: TObject);
+    procedure MenuItem21Click(Sender: TObject);
     procedure save_to_tiff1Click(Sender: TObject);
     procedure menupasteClick(Sender: TObject);
     procedure annotate_minor_planets1Click(Sender: TObject);
@@ -337,7 +344,6 @@ type
     procedure remove_right1Click(Sender: TObject);
     procedure select_directory_thumb1Click(Sender: TObject);
     procedure SpeedButton1Click(Sender: TObject);
-    procedure split_raw1click(Sender: TObject);
     procedure OpenDialog1SelectionChange(Sender: TObject);
     procedure Panel1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer );
     procedure recent1Click(Sender: TObject);
@@ -1090,7 +1096,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.336 dated 2020-03-28';
+  #13+#10+'Version ß0.9.337 dated 2020-04-01';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1400,7 +1406,7 @@ begin
  if edit_value<>maximum1.Position then {value has reallly changed}
  begin
     maximum1.Position:=edit_value;
-    mainwindow.range1.itemindex:=4; {manual}
+    mainwindow.range1.itemindex:=7; {manual}
    plot_fits(mainwindow.image1,false,true);
  end;
 end;
@@ -2347,7 +2353,7 @@ begin
   if edit_value<> minimum1.Position then {something has really changed}
   begin
     minimum1.Position:=edit_value;
-    mainwindow.range1.itemindex:=4; {manual}
+    mainwindow.range1.itemindex:=7; {manual}
     plot_fits(mainwindow.image1,false,true);
   end;
 end;
@@ -2413,117 +2419,101 @@ begin
   LoadFITSPNGBMPJPEG1filterindex:=oldvalue; {restore filterindex position}
 end;
 
-
-
-procedure Tmainwindow.split_raw1click(Sender: TObject);
+procedure split_raw(xp,yp : integer);{extract one of the Bayer matrix pixels}
 var
   Save_Cursor:TCursor;
-  img_temp11, img_temp12, img_temp21, img_temp22 : image_array;
+  img_temp11 : image_array;
   I, FitsX, fitsY,w,h   : integer;
   ratio                 : double;
+  filtern               : string;
   dobackup : boolean;
 begin
-  OpenDialog1.Title := 'Select multiple RAW files to split in red, green, green and blue files';
-  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
-  fits_file:=true;
-  data_range_groupBox1.Enabled:=true;
-  esc_pressed:=false;
-
-  if OpenDialog1.Execute then
+  with mainwindow do
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
-    dobackup:=img_loaded<>nil;
-    if dobackup then backup_img;{preserve img array and fits header of the viewer}
+    filtern:='P'+inttostr(xp)+inttostr(yp);
 
-    try { Do some lengthy operation }
-        with OpenDialog1.Files do
-        for I := 0 to Count - 1 do
-        begin
-          filename2:=Strings[I];
-          {load image}
-          Application.ProcessMessages;
-          if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin beep; Screen.Cursor := Save_Cursor; exit;end;
+    OpenDialog1.Title := 'Select multiple RAW fits files to extract Bayer matrix position '+filtern+' from them';
+    OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+    opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
+    fits_file:=true;
+    data_range_groupBox1.Enabled:=true;
+    esc_pressed:=false;
 
-          ratio:=0.5;
-          w:=trunc(width2/2);  {half size}
-          h:=trunc(height2/2);
+    if OpenDialog1.Execute then
+    begin
+      Save_Cursor := Screen.Cursor;
+      Screen.Cursor := crHourglass;    { Show hourglass cursor }
+      dobackup:=img_loaded<>nil;
+      if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
-          setlength(img_temp11,1,w,h);
-          setlength(img_temp12,1,w,h);
-          setlength(img_temp21,1,w,h);
-          setlength(img_temp22,1,w,h);
+      try { Do some lengthy operation }
+          with OpenDialog1.Files do
+          for I := 0 to Count - 1 do
+          begin
+            filename2:=Strings[I];
+            {load image}
+            Application.ProcessMessages;
+            if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin beep; Screen.Cursor := Save_Cursor; exit;end;
 
-          for fitsY:=0 to h-1 do
-            for fitsX:=0 to w-1  do
+            ratio:=0.5;
+            w:=trunc(width2/2);  {half size}
+            h:=trunc(height2/2);
+
+            setlength(img_temp11,1,w,h);
+
+            for fitsY:=0 to h-1 do
+              for fitsX:=0 to w-1  do
+              begin
+                img_temp11[0,fitsX,fitsY]:=img_loaded[0,fitsx*2+xp-1,fitsY*2+yp-1];
+              end;
+
+            width2:=w;
+            height2:=h;
+
+            update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
+            update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+
+
+            update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
+            update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+
+            if crpix1<>0 then begin crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
+            if crpix2<>0 then begin crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
+
+            if cdelt1<>0 then begin cdelt1:=cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
+            if cdelt2<>0 then begin cdelt2:=cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
+
+            if cd1_1<>0 then
             begin
-              img_temp11[0,fitsX,fitsY]:=img_loaded[0,fitsx*2,fitsY*2];
-              img_temp21[0,fitsX,fitsY]:=img_loaded[0,fitsx*2+1,fitsY*2];
-              img_temp12[0,fitsX,fitsY]:=img_loaded[0,fitsx*2,fitsY*2+1];
-              img_temp22[0,fitsX,fitsY]:=img_loaded[0,fitsx*2+1,fitsY*2+1];
+              cd1_1:=cd1_1/ratio;
+              cd1_2:=cd1_2/ratio;
+              cd2_1:=cd2_1/ratio;
+              cd2_2:=cd2_2/ratio;
+              update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
+              update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
+              update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
+              update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
             end;
 
-          width2:=w;
-          height2:=h;
+            update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING/ratio));
+            update_integer('YBINNING=',' / Binning factor in height                        ' ,round(yBINNING/ratio));
+            update_text   ('FILTER  =',#39+'P11'+#39+'           / Filter name                                    ');
+            add_text   ('HISTORY   ','contains one pixel of 2x2 bayer matrix');
 
-          update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-          update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+            update_text   ('FILTER  =',#39+filtern+#39+'           / Filter name                                    ');
+            img_loaded:=img_temp11;
+            save_fits(img_loaded,ChangeFileExt(FileName2,'_'+filtern+'.fit'),16,true);{overwrite}
+            img_temp11:=nil;
 
-
-          update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-          update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-
-          if crpix1<>0 then begin crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
-          if crpix2<>0 then begin crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
-
-          if cdelt1<>0 then begin cdelt1:=cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
-          if cdelt2<>0 then begin cdelt2:=cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
-
-          if cd1_1<>0 then
-          begin
-            cd1_1:=cd1_1/ratio;
-            cd1_2:=cd1_2/ratio;
-            cd2_1:=cd2_1/ratio;
-            cd2_2:=cd2_2/ratio;
-            update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
-            update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
-            update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
-            update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
-          end;
-
-          update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING/ratio));
-          update_integer('YBINNING=',' / Binning factor in height                        ' ,round(yBINNING/ratio));
-          update_text   ('FILTER  =',#39+'P11'+#39+'           / Filter name                                    ');
-          add_text   ('HISTORY   ','contains one pixel of 2x2 bayer matrix');
-
-
-          update_text   ('FILTER  =',#39+'P11'+#39+'           / Filter name                                    ');
-          img_loaded:=img_temp11;
-          save_fits(img_loaded,ChangeFileExt(FileName2,'_p11.fit'),16,true);{overwrite}
-          update_text   ('FILTER  =',#39+'P12'+#39+'           / Filter name                                    ');
-          img_loaded:=img_temp12;
-          save_fits(img_loaded,ChangeFileExt(FileName2,'_p12.fit'),16,true);{overwrite}
-          update_text   ('FILTER  =',#39+'P21'+#39+'           / Filter name                                    ');
-          img_loaded:=img_temp21;
-          save_fits(img_loaded,ChangeFileExt(FileName2,'_p21.fit'),16,true);{overwrite}
-          update_text   ('FILTER  =',#39+'P22'+#39+'           / Filter name                                    ');
-          img_loaded:=img_temp22;
-          save_fits(img_loaded,ChangeFileExt(FileName2,'_p22.fit'),16,true);{overwrite}
-
-          img_temp11:=nil;
-          img_temp12:=nil;
-          img_temp21:=nil;
-          img_temp22:=nil;
-
-       end;
-      finally
-      if dobackup then restore_img;{for the viewer}
-      Screen.Cursor := Save_Cursor;  { Always restore to normal }
+         end;
+        finally
+        if dobackup then restore_img;{for the viewer}
+        Screen.Cursor := Save_Cursor;  { Always restore to normal }
+      end;
     end;
+
   end;
 end;
-
 
 
 
@@ -5304,7 +5294,7 @@ procedure getfits_histogram(img: image_array;mode : integer);{calculate histogra
 {mode 1:                plot histogram, set min, max}
 {mode 2:                                set min, max}
 var
-  i, min,max, value1,oldvalue1,count,countR,countG,countB,oldXpos,Xpos,steps,max_color,histo_peakR,number_colors  : integer;
+  i, minm,maxm, value1,oldvalue1,count,countR,countG,countB,oldXpos,Xpos,steps,max_color,histo_peakR,number_colors  : integer;
   above, above_R          : double;
   Save_Cursor:TCursor;
 
@@ -5381,44 +5371,48 @@ begin
   use_dataminmax:=false;
 
   case mainwindow.range1.itemindex of
-    -1,0:  above_R:=0.001;{low range}
-       1: above_R:=0.003; {medium range}
-       2: above_R:=0.01;  {high range}
-       3: begin  above_R:=0;end;{range}
-       4: begin Screen.Cursor:=Save_Cursor; exit; end;{manual}
-       5: begin use_dataminmax:=true; if nrbits=8 then begin min:=254; max:=255;end else begin min:=65500; max:=65535;end;  end;{use datamin/max}
-       6: begin use_dataminmax:=true; min:=round(datamin_org); max:=round(datamax_org);   end;{use datamin/max}
+    -1,0,1: above_R:=0.001;{low range}
+       2,3: above_R:=0.003; {medium range}
+       4,5: above_R:=0.01;  {high range}
+       6: begin  above_R:=0;end;{range}
+       7: begin Screen.Cursor:=Save_Cursor; exit; end;{manual}
+       8: begin use_dataminmax:=true; if nrbits=8 then begin minm:=254; maxm:=255;end else begin minm:=65500; maxm:=65535;end;  end;{use datamin/max}
+       9: begin use_dataminmax:=true; minm:=round(datamin_org); maxm:=round(datamax_org);   end;{use datamin/max}
   end;
 
   if use_dataminmax=false then
   begin
-    min:=0;
-    max:=0;
+    minm:=0;
+    maxm:=0;
     above:=0;
 
     i:=histo_peak_position;{typical background position in histogram};
-    while ((min=0) and (i>0)) do
+    while ((minm=0) and (i>0)) do
     begin
       dec(i);
-      if histogram[0,i]<0.1*histogram[0,histo_peak_position] then min:=i; {find position with 10% count of histo_peak_position}
+      if histogram[0,i]<0.1*histogram[0,histo_peak_position] then minm:=i; {find position with 10% count of histo_peak_position}
     end;
 
     i:=max_range{65535};
-    while ((max=0) and (i>min+1)) do
+    while ((maxm=0) and (i>minm+1)) do
     begin
        dec(i);
        above:=above+histogram[0,i];
-       if above>above_R {0.001}*his_total_red then max:=i;
+       if above>above_R {0.001}*his_total_red then maxm:=i;
     end;
+
   end;
 
-  mainwindow.minimum1.position:=min;
-  mainwindow.maximum1.position:=max;
+  case mainwindow.range1.itemindex of
+            1,3,5: mainwindow.minimum1.position:=max(0,round(minm - (maxm-minm)*0.05));{set black at 5%}
+            else mainwindow.minimum1.position:=minm;
+  end;
+  mainwindow.maximum1.position:=maxm;
 
-  mainwindow.maximum1.smallchange:=1+round(max/100);
-  mainwindow.minimum1.smallchange:=1+round(max/100);
-  mainwindow.maximum1.largechange:=1+round(max/20);
-  mainwindow.minimum1.largechange:=1+round(max/20);
+  mainwindow.maximum1.smallchange:=1+round(maxm/100);
+  mainwindow.minimum1.smallchange:=1+round(maxm/100);
+  mainwindow.maximum1.largechange:=1+round(maxm/20);
+  mainwindow.minimum1.largechange:=1+round(maxm/20);
 
 
   Screen.Cursor:=Save_Cursor;
@@ -6719,6 +6713,21 @@ begin
   end;
 end;
 
+procedure Tmainwindow.extract_pixel_11Click(Sender: TObject);
+begin
+  split_raw(1,1);{extract one of the Bayer matrix pixels}
+end;
+
+procedure Tmainwindow.extract_pixel_12Click(Sender: TObject);
+begin
+  split_raw(1,2);{extract one of the Bayer matrix pixels}
+end;
+
+procedure Tmainwindow.extract_pixel_22Click(Sender: TObject);
+begin
+  split_raw(2,2);{extract one of the Bayer matrix pixels}
+end;
+
 procedure Tmainwindow.FormDropFiles(Sender: TObject;
   const FileNames: array of String);
 begin
@@ -7047,6 +7056,11 @@ begin
      Memo1.SetFocus; // necessary so highlight is visible
   end;
 
+end;
+
+procedure Tmainwindow.MenuItem21Click(Sender: TObject);
+begin
+  split_raw(2,1);{extract one of the Bayer matrix pixels}
 end;
 
 procedure Tmainwindow.menupasteClick(Sender: TObject);{for fits header memo1 popup menu}
@@ -8501,7 +8515,6 @@ begin
           HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
           if ((hfd1<=99) and (snr>10) and (hfd1>0.8) {two pixels minimum} { and (flux/(hfd1*hfd1)<0.25*pi*100000)}{not saturated} ) then
-//          if ((hfd1<=99) and (snr>10) and (hfd1>=0.64) {two pixels minimum} { and (flux/(hfd1*hfd1)<0.25*pi*100000)}{not saturated} ) then
           begin
 //            size:=round(5*hfd1);
             if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);
@@ -9495,8 +9508,6 @@ begin
       end;
     end;
 
-    if distance_histogram[1]<3 then begin exit; end;// reject single hot pixel if less then 3 pixels are detected around the center of gravity
-
     ri:=-1;
     distance_top_value:=0;
     HistStart:=false;
@@ -9514,7 +9525,11 @@ begin
     except
   end;
 
-  if ri<3 then ri:=3; {Minimum 6+1 x 6+1 pixel box}
+  if ri<3 then {small star image}
+  begin
+    if distance_histogram[1]<3 then begin exit; end;// reject single hot pixel if less then 3 pixels are detected around the center of gravity
+    ri:=3; {Minimum 6+1 x 6+1 pixel box}
+  end;
 
   // Get HFD
   SumVal:=0;
@@ -10973,7 +10988,7 @@ procedure Tmainwindow.maximum1Scroll(Sender: TObject; ScrollCode: TScrollCode;
   var ScrollPos: Integer);
 begin
   if ((fits_file) and (scrollcode=scEndScroll)) then plot_fits(mainwindow.image1,false,true);
-  mainwindow.range1.itemindex:=4; {manual}
+  mainwindow.range1.itemindex:=7; {manual}
 end;
 
 begin
