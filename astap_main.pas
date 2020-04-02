@@ -592,6 +592,7 @@ procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{R
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
 Function LeadingZero(w : integer) : String;
+procedure log_to_file(logf,mess : string);{for testing}
 
 const   bufwide=1024*120;{buffer size in bytes}
 
@@ -1096,7 +1097,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.337 dated 2020-04-01';
+  #13+#10+'Version ß0.9.338 dated 2020-04-02';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6806,7 +6807,7 @@ end;
 procedure Tmainwindow.measuretotalmagnitude1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,font_height,counter,tx,ty,saturation_counter : integer;
-   flux,bg_average,value : double;
+   flux,bg_median,value,sd : double;
    Save_Cursor           : TCursor;
    mag_str               : string;
    bg_array              : array of double;
@@ -6848,36 +6849,35 @@ begin
 
     setlength(bg_array,5000);
 
+    {measure the median of the suroundings}
     counter:=0;
-    for fitsY:=startY-4 to oldY-1+4 do {calculate mean at square boundaries of detection box}
-    for fitsX:=startX-4 to oldX-1+4 do
+    sd:=0;
+    for fitsY:=startY-5 to oldY-1+5 do {calculate mean at square boundaries of detection box}
+    for fitsX:=startX-5 to oldX-1+5 do
     begin
-      if ( (fitsX<startX) or  (fitsX>oldX) ) then {measure only outside the box}
-      if ( (fitsY<startY) or  (fitsY>oldY) ) then {measure only outside the box}
+      if ( (fitsX<startX) or  (fitsX>oldX-1) or (fitsY<startY) or  (fitsY>oldY-1) ) then {measure only outside the box}
       begin
         if counter>=length(bg_array) then  SetLength(bg_array,counter+5000);{increase length}
         bg_array[counter]:=img_loaded[0,fitsX,fitsY];
         inc(counter);
       end;
     end;
-
     if counter>0 then
     begin
       SetLength(bg_array,counter);{set length correct}
-      bg_average:=Smedian(bg_array)
+      bg_median:=Smedian(bg_array)
     end
     else
-    bg_average:=9999999;{something went wrong}
+    bg_median:=9999999;{something went wrong}
 
     saturation_counter:=0;
     flux:=0;
     for fitsY:=startY to oldY-1 do
     for fitsX:=startX to oldX-1 do
     begin
-      value:=img_loaded[0,fitsX,fitsY];
-      flux:=flux + value - bg_average;
+      value:=img_loaded[0,fitsX,fitsY]- bg_median;
+      flux:=flux+value;{add all flux. Without stars it should average zero. Detecting flux using >3*sd misses too much signal comets}
       if value>65000 then inc(saturation_counter);{keep track of number of saturated pixels}
-
     end;
     if flux<1 then flux:=1;
     str(flux_magn_offset-ln(flux)*2.511886432/ln(10):0:1,mag_str);
@@ -6885,7 +6885,7 @@ begin
                                             else mag_str:='MAGN <'+mag_str+', '+inttostr(saturation_counter) +' saturated pixels !';
 
     image1.Canvas.brush.Style:=bsClear;
-    image1.Canvas.font.color:=clred;
+    image1.Canvas.font.color:=$00AAFF; {orange}
     image1.Canvas.font.size:=12;
 
     {$ifdef mswindows}
@@ -7796,15 +7796,15 @@ begin
   result:=((result {succesfull load?}) and (solve_image(img_loaded,true {get hist}) )); {find plate solution}
 end;
 
-//procedure log_to_file(logf,mess : string);{for testing}
-//var
-//  f   :  textfile;
-//begin
-//  assignfile(f,logf);
-//  if fileexists(logf)=false then rewrite(f) else append(f);
-//  writeln(f,mess);
-//  closefile(f);
-//end;
+procedure log_to_file(logf,mess : string);{for testing}
+var
+  f   :  textfile;
+begin
+  assignfile(f,logf);
+  if fileexists(logf)=false then rewrite(f) else append(f);
+  writeln(f,mess);
+  closefile(f);
+end;
 
 procedure log_to_file2(logf,mess : string);{used for platesolve2}
 var
