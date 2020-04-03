@@ -102,6 +102,7 @@ type
     annotate_minor_planets1: TMenuItem;
     batch_annotate1: TMenuItem;
     extract_pixel_11: TMenuItem;
+    copy_paste_tool1: TMenuItem;
     MenuItem21: TMenuItem;
     extract_pixel_22: TMenuItem;
     save_to_tiff1: TMenuItem;
@@ -124,6 +125,7 @@ type
     MenuItem18: TMenuItem;
     set_area1: TMenuItem;
     rotate_arbitrary1: TMenuItem;
+    shape_paste1: TShape;
     submenurotate1: TMenuItem;
     imageflipv1: TMenuItem;
     imagefliph1: TMenuItem;
@@ -275,6 +277,7 @@ type
     procedure menucopy1Click(Sender: TObject);
     procedure Menufind1Click(Sender: TObject);
     procedure menufindnext1Click(Sender: TObject);
+    procedure copy_paste_tool1Click(Sender: TObject);
     procedure MenuItem21Click(Sender: TObject);
     procedure save_to_tiff1Click(Sender: TObject);
     procedure menupasteClick(Sender: TObject);
@@ -461,6 +464,11 @@ var
    old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
 
    warning_str :string; {for solver}
+   copy_paste_x,
+   copy_paste_y,
+   copy_paste_w,
+   copy_paste_h : integer;
+
 
 var
   position_find: Integer; {for fits header memo1 popup menu}
@@ -496,6 +504,7 @@ const
    xbayroff: double=0;{additional bayer pattern offset to apply}
    Ybayroff: double=0;{additional bayer pattern offset to apply}
    annotated : boolean=false;{any annotation in fits file?}
+   copy_paste :boolean=false;
 
    shape_fitsX: double=0;
    shape_fitsY: double=0;
@@ -1097,7 +1106,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.338 dated 2020-04-02';
+  #13+#10+'Version ß0.9.339 dated 2020-04-03';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1111,6 +1120,13 @@ begin
    begin
      esc_pressed:=true;
      memo2_message('ESC pressed. Stopped processing.');
+
+     if copy_paste then
+     begin
+        shape_paste1.visible:=false;
+        copy_paste:=false;
+        screen.Cursor := crDefault;
+     end;
    end;
 end;
 
@@ -1248,7 +1264,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end {fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the left mouse button down'),'',MB_OK);
+  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
 
 end;
 
@@ -1481,7 +1497,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end{fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the left mouse button down'),'',MB_OK);
+  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
 end;
 
 procedure Tmainwindow.localcoloursmooth1Click(Sender: TObject);
@@ -1628,7 +1644,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end {fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the left mouse button down'),'',MB_OK);
+  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
 
 end;
 
@@ -1772,7 +1788,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end{fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the left mouse button down'),'',MB_OK);
+  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
 end;
 
 procedure Tmainwindow.Returntodefaultsettings1Click(Sender: TObject);
@@ -2007,7 +2023,7 @@ begin
   mainwindow.shape_alignment_marker1.visible:=true;
 end;
 
-procedure show_marker_shape(shape: TShape; fitsX,fitsY: double);{show manual alignment shape}
+procedure show_marker_shape(shape: TShape; w,h:integer; fitsX,fitsY: double);{show manual alignment shape}
 var
    xf,yf,x,y : double;
 begin
@@ -2019,8 +2035,8 @@ begin
 
   with shape do
   begin
-     height:=round(20*mainwindow.image1.height/height2);
-     width:= round(20*mainwindow.image1.width/width2);
+     height:=round(h*mainwindow.image1.height/height2);
+     width:= round(w*mainwindow.image1.width/width2);
      left:=round(mainwindow.image1.left + x - width/2);
      top:=round(mainwindow.image1.top   + y - height/2);
      visible:=true;
@@ -2062,11 +2078,11 @@ begin
 
     {marker}
     if mainwindow.shape_marker1.visible then {do this only when visible}
-      show_marker_shape(mainwindow.shape_marker1,shape_marker1_fitsX, shape_marker1_fitsY);
+      show_marker_shape(mainwindow.shape_marker1,20,20,shape_marker1_fitsX, shape_marker1_fitsY);
     if mainwindow.shape_marker2.visible then {do this only when visible}
-      show_marker_shape(mainwindow.shape_marker2,shape_marker2_fitsX, shape_marker2_fitsY);
+      show_marker_shape(mainwindow.shape_marker2,20,20,shape_marker2_fitsX, shape_marker2_fitsY);
     if mainwindow.shape_marker3.visible then {do this only when visible}
-      show_marker_shape(mainwindow.shape_marker3,shape_marker3_fitsX, shape_marker3_fitsY);
+      show_marker_shape(mainwindow.shape_marker3,20,20,shape_marker3_fitsX, shape_marker3_fitsY);
 
     {reference point manual alignment}
     if mainwindow.shape_alignment_marker1.visible then {For manual alignment. Do this only when visible}
@@ -2157,7 +2173,7 @@ begin
 
     shape_marker3_fitsX:=fitsX;
     shape_marker3_fitsY:=fitsY;
-    show_marker_shape(mainwindow.shape_marker3,shape_marker3_fitsX, shape_marker3_fitsY);
+    show_marker_shape(mainwindow.shape_marker3,20,20,shape_marker3_fitsX, shape_marker3_fitsY);
 
   end
   else
@@ -2628,7 +2644,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end {fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the left mouse button down'),'',MB_OK);
+  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
 
 end;
 
@@ -6403,7 +6419,7 @@ begin
   if convert_load_raw(filename7,img_buffer) then
   begin
     exposure:=extract_exposure_from_filename(filename7);
-    save_fits(img_loaded,ChangeFileExt(FileName7,'.fit'),16,true);{overwrite. Filename2 will be set to fits file}
+    save_fits(img_buffer,ChangeFileExt(FileName7,'.fit'),16,true);{overwrite. Filename2 will be set to fits file}
     result:=true;
   end
   else
@@ -6903,7 +6919,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end{fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the left mouse button down'),'',MB_OK);
+  application.messagebox(pchar('Pull first a rectangle around the object with the mouse while holding the right mouse button down'),'',MB_OK);
 end;
 
 procedure Tmainwindow.loadsettings1Click(Sender: TObject);
@@ -7025,7 +7041,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end {fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the left mouse button down'),'',MB_OK);
+  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
 end;
 
 procedure Tmainwindow.menucopy1Click(Sender: TObject);{for fits header memo1 popup menu}
@@ -7055,6 +7071,54 @@ begin
      Memo1.SelLength := Length(PatternToFind);
      Memo1.SetFocus; // necessary so highlight is visible
   end;
+
+end;
+
+procedure Tmainwindow.copy_paste_tool1Click(Sender: TObject);
+var
+   fitsX,fitsY,dum,k,oldX2,oldY2,progress_value : integer;
+   median_left_bottom,median_left_top, median_right_top, median_right_bottom,
+   line_bottom, line_top,required_bg,{difference,}most_common : double;
+
+   Save_Cursor:TCursor;
+begin
+  if fits_file=false then exit;
+  if  ((abs(oldx-startX)>1)and (abs(oldy-starty)>1)) then
+  begin
+//    Save_Cursor := Screen.Cursor;
+//    Screen.Cursor := crHandPoint;
+    Screen.Cursor := crDrag;
+
+    copy_paste_x:=startX;{save for Application.ProcessMessages;this could change startX, startY}
+    copy_paste_y:=startY;
+    oldX2:=oldX;
+    oldY2:=oldY;
+
+    backup_img;{required in case later ctrl-z is used}
+
+    if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+    begin
+      copy_paste_y:=height2-1-copy_paste_y;
+      oldY2:=height2-1-oldY2;
+    end;
+
+    if mainwindow.Fliphorizontal1.Checked then
+    begin
+      copy_paste_x:=width2-1-copy_paste_x;
+      oldX2:=width2-1-oldX2;
+    end;
+
+    if copy_paste_x>oldX2 then begin dum:=oldX2; oldX2:=copy_paste_x; copy_paste_x:=dum; end;{swap}
+    if copy_paste_y>oldY2 then begin dum:=oldY2; oldY2:=copy_paste_y; copy_paste_y:=dum; end;
+
+
+    copy_paste_w:=oldX2-copy_paste_x;
+    copy_paste_h:=oldY2-copy_paste_y;
+    copy_paste:=true;
+
+  end {fits file}
+  else
+  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
 
 end;
 
@@ -7437,7 +7501,7 @@ begin
     shape_marker1_fitsX:=0.5+(0.5+xf)/(mainwindow.image1.width/width2);{starts at 1}
     shape_marker1_fitsY:=0.5+height2-(0.5+yf)/(mainwindow.image1.height/height2); {from bottom to top, starts at 1}
 
-    show_marker_shape(mainwindow.shape_marker1,shape_marker1_fitsX, shape_marker1_fitsY);
+    show_marker_shape(mainwindow.shape_marker1,20,20,shape_marker1_fitsX, shape_marker1_fitsY);
   end
   else
     mainwindow.shape_marker1.visible:=false;
@@ -7455,7 +7519,7 @@ begin
     shape_marker2_fitsX:=0.5+(0.5+xf)/(mainwindow.image1.width/width2);{starts at 1}
     shape_marker2_fitsY:=0.5+height2-(0.5+yf)/(mainwindow.image1.height/height2); {from bottom to top, starts at 1}
 
-    show_marker_shape(mainwindow.shape_marker2,shape_marker2_fitsX, shape_marker2_fitsY);
+    show_marker_shape(mainwindow.shape_marker2,20,20,shape_marker2_fitsX, shape_marker2_fitsY);
   end
   else
     mainwindow.shape_marker1.visible:=false;
@@ -9297,7 +9361,7 @@ end;
 procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
-  xf,yf: integer;
+  xf,yf,k, fx,fy: integer;
   fitsX,fitsY,hfd2,fwhm_star2,snr,flux,xc,yc: double;
 begin
   if Fliphorizontal1.Checked then xf:=image1.width-x else xf:=x;;
@@ -9357,7 +9421,23 @@ begin
       sample(round(fitsx),round(fitsy));
     end;
 
-  end;
+    if copy_paste then {paste copied image part}
+    begin
+      for k:=0 to naxis3-1 do {do all colors}
+      begin
+        for fy:=copy_paste_y to copy_paste_y+copy_paste_h-1 do
+        for fX:=copy_paste_x to copy_paste_x+copy_paste_w-1 do
+        begin
+          img_loaded[k,max(0,min(width2-1,round(fitsX-1+(fx-copy_paste_x)- (copy_paste_w div 2)))),max(0,min(height2-1,round(fitsY-1+(fy-copy_paste_y) - (copy_paste_h div 2))))]:=img_backup[index_backup].img[k,fx,fy];{use backup for case overlap occurs}
+        end;
+      end;{k color}
+      plot_fits(mainwindow.image1,false,true);
+      copy_paste:=false;
+      shape_paste1.visible:=false;
+    end;
+  end;{left button pressed}
+
+
 end;
 
 
@@ -9856,6 +9936,7 @@ begin
    if mouse_fitsY>height2 then mouse_fitsY:=height2;
    if mouse_fitsX>width2 then mouse_fitsX:=width2;
 
+   if copy_paste then show_marker_shape(mainwindow.shape_paste1,copy_paste_w,copy_paste_h, mouse_fitsx, mouse_fitsy);{show the paste shape}
 
    try color1:=ColorToRGB(mainwindow.image1.canvas.pixels[trunc(x*width2/image1.width),trunc(y*height2/image1.height)]); ;except;end;  {note  getpixel(image1.canvas.handle,x,y) doesn't work well since X,Y follows zoom  factor !!!}
 

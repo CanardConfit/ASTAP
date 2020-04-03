@@ -451,9 +451,6 @@ var
 const
     buffersize=5000;{5000}
 begin
-
-  if fits_file=false then exit; {file loaded?}
-
   {for testing}
 //   mainwindow.image1.Canvas.Pen.Mode := pmMerge;
 //   mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
