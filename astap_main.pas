@@ -1106,7 +1106,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.339 dated 2020-04-03';
+  #13+#10+'Version ß0.9.340 dated 2020-04-07';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -8306,7 +8306,14 @@ begin
               save_fits(img_loaded,changeFileExt(filename2,'.fit'),8,true {overwrite});
             end;
           end;
-        end
+
+          if  ((fov_specified) and (stackmenu1.search_fov1.text='0' ) {auto}) then {preserve new found fov}
+          begin
+            stackmenu1.search_fov1.text:=floattostrF2(height2*abs(cdelt2),0,2);
+            save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
+          end;
+
+        end {solution}
         else
         begin {no solution}
           if hasoption('o') then filename2:=GetOptionValue('o'); {change file name for .ini file}
