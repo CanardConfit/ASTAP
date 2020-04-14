@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 96
+  Left = 350
   Height = 644
-  Top = 121
+  Top = 137
   Width = 1605
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -2196,10 +2196,10 @@ object stackmenu1: Tstackmenu1
       object use_manual_alignment1: TRadioButton
         Left = 8
         Height = 19
-        Hint = 'Double click on each image in the list to display it in the viewer. In the viewer click on the object the be used for alignment. Position is auto centered. '
+        Hint = 'Manual alignment:  Double click on each image in the list to display it in the viewer. In the viewer click on the object the be used for alignment. Position is auto centered. '#13#10#13#10'Ephemeris alignment: '#13#10#13#10'Preperation:'#13#10'- Batch solve the images in the viewer.'#13#10'- Batch annotate the images in the viewer.'#13#10#13#10'Stacking:'#13#10'- Select manual/ephemeris alignment'#13#10'- Browse for all the images in the image tab and add if available the dark, flats.'#13#10'- Double click on one of the image files to open in the viewer. This will fill in tab alignment the option combobox with all annotations.'#13#10'- Select from the option combobox the asteroid to align on.'#13#10'- Hit the analyse button in the image tab. This fill all the x,y positions in the image list based on the object annotation selected.'#13#10'- If all okay, hit the stack button. '
         Top = 384
-        Width = 144
-        Caption = 'Manual/emphemerides'
+        Width = 131
+        Caption = 'Manual/emphemeris'
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
@@ -2959,10 +2959,11 @@ object stackmenu1: Tstackmenu1
         object manual_centering1: TComboBox
           Left = 48
           Height = 23
-          Hint = 'Select an object center routine. After clicking on a star or comet the program will autocenter.'
+          Hint = 'Manual alignment: Select an object center routine. After clicking on a star or comet the program will autocenter.'#13#10#13#10#13#10'Ephemeris alignment: '#13#10#13#10'Preperation:'#13#10'- Batch solve the images in the viewer.'#13#10'- Batch annotate the images in the viewer.'#13#10#13#10'Stacking:'#13#10'- Select manual/ephemeris alignment'#13#10'- Browse for all the images in the image tab and add if available the dark, flats.'#13#10'- Double click on one of the image files to open in the viewer. This will fill in tab alignment the option combobox with all annotations.'#13#10'- Select from the option combobox the asteroid to align on.'#13#10'- Hit the analyse button in the image tab. This fill all the x,y positions in the image list based on the object annotation selected.'#13#10'- If all okay, hit the stack button. '
           Top = 8
           Width = 200
           BorderSpacing.Around = 5
+          DropDownCount = 20
           ItemHeight = 15
           ItemIndex = 0
           Items.Strings = (
@@ -2980,9 +2981,9 @@ object stackmenu1: Tstackmenu1
           Left = 272
           Height = 15
           Top = 8
-          Width = 867
+          Width = 585
           BorderSpacing.Around = 5
-          Caption = 'For emphemeride based alignment, 1) "batch annotate asteroids" for all images in the viewer. 2) View one of images. 3) Select one of the asteroids  in the combobox.'
+          Caption = 'To fill with asteroid names, load one of the annotated images in the viewer. See hint or manual for more details.'
           Color = clBtnFace
           Constraints.MaxWidth = 1000
           ParentColor = False
