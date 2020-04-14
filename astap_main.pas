@@ -491,6 +491,7 @@ const
    cdelt1: double=0;{deg/pixel for x}
    cdelt2: double=0;
    xpixsz: double=0;//Pixel Width in microns (after binning)
+   ypixsz: double=0;//Pixel height in microns (after binning)
    focallen: double=0;
    down_x: integer=0;
    down_y: integer=0;
@@ -600,8 +601,10 @@ function convert_load_raw(filename3: string;var img: image_array): boolean; {con
 procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
+procedure listview_add_xy(fitsX,fitsY: double);{add x,y position to listview}
 Function LeadingZero(w : integer) : String;
 procedure log_to_file(logf,mess : string);{for testing}
+
 
 const   bufwide=1024*120;{buffer size in bytes}
 
@@ -722,6 +725,7 @@ begin
   cdelt1:=0;
   cdelt2:=0;
   xpixsz:=0;
+  ypixsz:=0;
   focallen:=0;
   subsamp:=1;{just for the case it is not available}
   cd1_1:=0;{just for the case it is not available}
@@ -1106,7 +1110,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.340 dated 2020-04-07';
+  #13+#10+'Version ß0.9.341 dated 2020-04-14';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1399,7 +1403,14 @@ begin
          end;
 
          update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING/ratio));
-         update_integer('YBINNING=',' / Binning factor in height                        ' ,round(yBINNING/ratio));
+         update_integer('YBINNING=',' / Binning factor in height                        ' ,round(YBINNING/ratio));
+
+         if XPIXSZ<>0 then
+         begin
+           update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,XPIXSZ/ratio);{note: comment will be never used since it is an existing keyword}
+           update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,YPIXSZ/ratio);
+         end;
+
          add_text   ('HISTORY   ','BIN2x2 version of '+extractfilename(Strings[I]));
 
 
@@ -4193,6 +4204,7 @@ begin
     cdelt1:=0;
     cdelt2:=0;
     xpixsz:=0;
+    ypixsz:=0;
     focallen:=0;
     subsamp:=1;{just for the case it is not available}
     cd1_1:=0;{just for the case it is not available}
@@ -4398,6 +4410,8 @@ begin
 
       if ((header[i]='X') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {xpixsz}
              xpixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
+      if ((header[i]='Y') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {xpixsz}
+             ypixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
 
       if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') and (header[i+5]='L')) then  {focall}
               focallen:=validate_double;{Focal length of telescope in mm, maxim DL keyword}
@@ -4788,6 +4802,7 @@ begin
   cdelt1:=0;
   cdelt2:=0;
   xpixsz:=0;
+  ypixsz:=0;
   focallen:=0;
   subsamp:=1;{just for the case it is not available}
   cd1_1:=0;
@@ -5012,6 +5027,7 @@ begin
   cdelt1:=0;
   cdelt2:=0;
   xpixsz:=0;
+  ypixsz:=0;
   focallen:=0;
   subsamp:=1;{just for the case it is not available}
   cd1_1:=0;{just for the case it is not available}
@@ -5141,6 +5157,7 @@ begin
   cdelt1:=0;
   cdelt2:=0;
   xpixsz:=0;
+  ypixsz:=0;
   focallen:=0;
   subsamp:=1;{just for the case it is not available}
   cd1_1:=0;
@@ -7595,6 +7612,15 @@ begin
   {$else} {Linux}
   {$endif}
 
+  with stackmenu1 do
+  begin
+    if use_manual_alignment1.Checked then
+    begin {delete annotations from combobox}
+      while manual_centering1.items.count> 3 do
+           stackmenu1.manual_centering1.items.Delete(manual_centering1.items.count-1);
+    end;
+  end;
+
   count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
   try
     while count1>=0 do {plot annotations}
@@ -7604,13 +7630,12 @@ begin
         List.Clear;
         ExtractStrings([';'], [], PChar(copy(mainwindow.Memo1.Lines[count1],12,80-12)),List);
 
-        x1:=list.count;
         if list.count>=6  then {correct annotation}
         begin
-          x1:=strtoint(list[0])-1 +xoffset;{subtract 1 for conversion fits coordinates 1... to screen coordinates 0...}
-          y1:=strtoint(list[1])-1 +yoffset;
-          x2:=strtoint(list[2])-1 +xoffset;
-          y2:=strtoint(list[3])-1 +yoffset;
+          x1:=round(strtofloat2(list[0]))-1 +xoffset;{subtract 1 for conversion fits coordinates 1... to screen coordinates 0...}
+          y1:=round(strtofloat2(list[1]))-1 +yoffset;
+          x2:=round(strtofloat2(list[2]))-1 +xoffset;
+          y2:=round(strtofloat2(list[3]))-1 +yoffset;
 
           if mainwindow.Fliphorizontal1.Checked then {restore based on flipped conditions}
           begin
@@ -7642,6 +7667,9 @@ begin
           if y2>=y1 then text_height:=text_height div 3;
 
           mainwindow.image1.Canvas.textout( -text_width+x2, -text_height + y2,list[5]);
+
+          if stackmenu1.use_manual_alignment1.Checked then {add asteroid annotations to list}
+              stackmenu1.manual_centering1.Additem(list[5],nil);
         end;
 
       end;
@@ -8310,7 +8338,7 @@ begin
           if  ((fov_specified) and (stackmenu1.search_fov1.text='0' ) {auto}) then {preserve new found fov}
           begin
             stackmenu1.search_fov1.text:=floattostrF2(height2*abs(cdelt2),0,2);
-            save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
+            save_settings(user_path+'astap.cfg');{save settings with correct fov}
           end;
 
         end {solution}
@@ -9270,7 +9298,7 @@ begin
 end;
 
 
-procedure listview_add_xy(fitsX,fitsY: double);
+procedure listview_add_xy(fitsX,fitsY: double);{add x,y position to listview}
 var
     i: integer;
 begin

@@ -380,7 +380,7 @@ object mainwindow: Tmainwindow
     object solve_button1: TButton
       Left = 8
       Height = 30
-      Hint = 'Find an astrometric solution for the image in the viewer.'#13#10#13#10'Checklist for successful solving:'#13#10#13#10'- At least 30 stars are visible'#13#10'- Reasonable round stars'#13#10'- Image dimensions at least 1500 x 1000 pixels'#13#10'- Correct image height in degrees specified. See stack menu tab alignment.'
+      Hint = 'Find an astrometric solution for the image in the viewer.'#13#10#13#10'Checklist for successful solving:'#13#10#13#10'- At least 30 stars are visible.'#13#10'- Reasonable round stars.'#13#10'- Image dimensions at least 1280x960 pixels.'#13#10'- An approximate position is available for a spiral search'#13#10'- Correct image height in degrees specified. See stack menu tab alignment.'#13#10'- Image is not stretched or heavily photo-shopped.'
       Top = 0
       Width = 121
       Caption = 'Solve'

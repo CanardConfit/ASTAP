@@ -107,6 +107,7 @@ begin
   cdelt1:=0;
   cdelt2:=0;
   xpixsz:=0;
+  ypixsz:=0;
   focallen:=0;
   subsamp:=1;{just for the case it is not available}
   cd1_1:=0;{just for the case it is not available}

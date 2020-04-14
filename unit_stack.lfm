@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 559
+  Left = 96
   Height = 644
-  Top = 128
+  Top = 121
   Width = 1605
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -1111,7 +1111,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 420
-      ClientWidth = 1263
+      ClientWidth = 1596
       ImageIndex = 5
       ParentFont = False
       object Label3: TLabel
@@ -2122,7 +2122,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the alignment options'
       Caption = 'Alignment'
       ClientHeight = 420
-      ClientWidth = 1263
+      ClientWidth = 1596
       ImageIndex = 7
       OnContextPopup = alignment1ContextPopup
       ParentFont = False
@@ -2198,8 +2198,8 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Double click on each image in the list to display it in the viewer. In the viewer click on the object the be used for alignment. Position is auto centered. '
         Top = 384
-        Width = 108
-        Caption = 'Manual, one star'
+        Width = 144
+        Caption = 'Manual/emphemerides'
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
@@ -2208,7 +2208,7 @@ object stackmenu1: Tstackmenu1
       object solve1: TButton
         Left = 1104
         Height = 30
-        Hint = 'Find an astrometric solution for the image in the viewer.'#13#10#13#10'Checklist for successful solving:'#13#10#13#10'- At least 30 stars are visible'#13#10'- Reasonable round stars'#13#10'- Image dimensions at least 1500 x 1000 pixels'#13#10'- Correct image height in degrees specified. See stack menu tab alignment.'
+        Hint = 'Find an astrometric solution for the image in the viewer.'#13#10#13#10'Checklist for successful solving:'#13#10#13#10'- At least 30 stars are visible.'#13#10'- Reasonable round stars.'#13#10'- Image dimensions at least 1280x960 pixels.'#13#10'- An approximate position is available for a spiral search'#13#10'- Correct image height in degrees specified. See stack menu tab alignment.'#13#10'- Image is not stretched or heavily photo-shopped.'
         Top = 56
         Width = 320
         Caption = 'Solve current image'
@@ -2947,11 +2947,11 @@ object stackmenu1: Tstackmenu1
         Left = 208
         Height = 36
         Top = 376
-        Width = 753
+        Width = 1341
         BevelColor = clMenuHighlight
         BevelOuter = bvSpace
         ClientHeight = 36
-        ClientWidth = 753
+        ClientWidth = 1341
         Color = clForm
         ParentColor = False
         ParentFont = False
@@ -2969,13 +2969,26 @@ object stackmenu1: Tstackmenu1
             'Star centering'
             'Comet centering'
             'No centering'
-            ''
           )
-          OnChange = resize_factor1Change
+          OnChange = manual_centering1Change
           ParentFont = False
           Style = csDropDownList
           TabOrder = 0
           Text = 'Star centering'
+        end
+        object Label69: TLabel
+          Left = 272
+          Height = 15
+          Top = 8
+          Width = 867
+          BorderSpacing.Around = 5
+          Caption = 'For emphemeride based alignment, 1) "batch annotate asteroids" for all images in the viewer. 2) View one of images. 3) Select one of the asteroids  in the combobox.'
+          Color = clBtnFace
+          Constraints.MaxWidth = 1000
+          ParentColor = False
+          ParentFont = False
+          Transparent = False
+          WordWrap = True
         end
       end
     end
@@ -5254,7 +5267,7 @@ object stackmenu1: Tstackmenu1
     object tab_Pixelmath2: TTabSheet
       Caption = 'Pixel math 2'
       ClientHeight = 420
-      ClientWidth = 1263
+      ClientWidth = 1596
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox

@@ -59,6 +59,7 @@ type
     analyse_inspector1: TButton;
     add_bias1: TCheckBox;
     binning_for_solving_label3: TLabel;
+    Label69: TLabel;
     saturation_tolerance1: TTrackBar;
     remove_luminance1: TCheckBox;
     curve_fitting1: TButton;
@@ -555,6 +556,7 @@ type
       Item: TListItem; SubItem: Integer; State: TCustomDrawState;
       var DefaultDraw: Boolean);
     procedure live_stacking1Click(Sender: TObject);
+    procedure manual_centering1Change(Sender: TObject);
     procedure new_saturation1Change(Sender: TObject);
     procedure pagecontrol1Change(Sender: TObject);
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -747,7 +749,7 @@ const
 
   image_path: string='';
   dropsize: double=0.65; {should be between 1 and 0.5}
-  filter_name_changed: boolean=false;{if changed then reanalyse}
+  new_analyse_required: boolean=false;{if changed then reanalyse}
   tetrahedrons_displayed:boolean=false;{no tetrahedrons visible, so no refresh required}
   equalise_background_step: integer=1;
 
@@ -1514,6 +1516,46 @@ begin
   img_temp2:=nil;{free mem}
 end;
 
+procedure get_annotation_position;{find the position of the specified asteroid annotation}
+var
+  count1       : integer;
+  x1,y1,x2,y2  : double;
+  name    : string;
+  List: TStrings;
+begin
+  List := TStringList.Create;
+  list.StrictDelimiter:=true;
+
+  name:=stackmenu1.manual_centering1.text;{asteroid to center on}
+
+  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
+  try
+    while count1>=0 do {plot annotations}
+    begin
+      if copy(mainwindow.Memo1.Lines[count1],1,8)='ANNOTATE' then {found}
+      begin
+        List.Clear;
+        ExtractStrings([';'], [], PChar(copy(mainwindow.Memo1.Lines[count1],12,80-12)),List);
+
+        if list.count>=6  then {correct annotation}
+        begin
+          if list[5]=name then {correct name}
+          begin
+            x1:=strtofloat2(list[0]);{fits coordinates}
+            y1:=strtofloat2(list[1]);
+            x2:=strtofloat2(list[2]);
+            y2:=strtofloat2(list[3]);
+            listview_add_xy( (x1+x2)/2,(y1+y2)/2);{add center annotation to x,y for stacking}
+          end;
+        end;
+      end;
+      count1:=count1-1;
+    end;
+  finally
+     List.Free;
+  end;
+end;
+
 procedure analyse_tab_images;
 var
   c,hfd_counter  ,i,j,counts  : integer;
@@ -1628,7 +1670,7 @@ begin
 
     c:=0;
     repeat {check all files, remove darks, bias}
-      if ((ListView1.Items.item[c].checked) and ((length(ListView1.Items.item[c].subitems.Strings[I_hfd])<=1){hfd} or (filter_name_changed)) ) then {hfd unknown, only update blank rows}
+      if ((ListView1.Items.item[c].checked) and ((length(ListView1.Items.item[c].subitems.Strings[I_hfd])<=1){hfd} or (new_analyse_required)) ) then {hfd unknown, only update blank rows}
       begin {checked}
         progress_indicator(100*c/counts,' Analysing');
         Listview1.Selected :=nil; {remove any selection}
@@ -1734,6 +1776,8 @@ begin
                 if centaz<>999 then ListView1.Items.item[c].subitems.Strings[I_centaz]:=floattostrF2(centaz,0,1);
                 if gain<>999 then ListView1.Items.item[c].subitems.Strings[I_gain]:=inttostr(round(gain));
 
+                if ((use_manual_alignment1.Checked) and (manual_centering1.items.count> 3)) then {ephemeride based stacking}
+                   get_annotation_position;{fill the x,y with annotation position}
               end;
             finally
               ListView1.Items.EndUpdate;
@@ -1783,7 +1827,7 @@ begin
 
     count_selected; {report the number of images selected in images_selected and update menu indication}
 
-    filter_name_changed:=false; {back to normal, filter_name is not changed, so no re-analyse required}
+    new_analyse_required:=false; {back to normal, filter_name is not changed, so no re-analyse required}
 
     img:=nil; {free mem}
 
@@ -3514,18 +3558,27 @@ begin
 
   if cd1_1<>0 then
   begin
-     cd1_1:=cd1_1/ratio;
-     cd1_2:=cd1_2/ratio;
-     cd2_1:=cd2_1/ratio;
-     cd2_2:=cd2_2/ratio;
-     update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
-     update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
-     update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
-     update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
-   end;
+    cd1_1:=cd1_1/ratio;
+    cd1_2:=cd1_2/ratio;
+    cd2_1:=cd2_1/ratio;
+    cd2_2:=cd2_2/ratio;
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+  end;
 
-   update_float  ('XBINNING=',' / Binning factor in width                         ' ,XBINNING/ratio);
-   update_float  ('YBINNING=',' / Binning factor in height                        ' ,YBINNING/ratio);
+  update_float  ('XBINNING=',' / Binning factor in width                         ' ,XBINNING/ratio);
+  update_float  ('YBINNING=',' / Binning factor in height                        ' ,YBINNING/ratio);
+
+  if XPIXSZ<>0 then
+  begin
+    update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ' ,XPIXSZ/ratio);{note: comment will be never used since it is an existing keyword}
+    update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ' ,YPIXSZ/ratio);
+  end;
+  add_text   ('HISTORY   ','Image resized with factor '+ floattostr2(ratio));
+
+
 end;
 
 procedure Tstackmenu1.free_resize_fits1Click(Sender: TObject);{free resize FITS image}
@@ -3537,9 +3590,9 @@ begin
   backup_img;
   resize_img_loaded(width_UpDown1.position/width2 {ratio});
 
-   getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
-   plot_fits(mainwindow.image1,true,true);{plot}
-   Screen.cursor:=Save_Cursor;
+  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+  plot_fits(mainwindow.image1,true,true);{plot}
+  Screen.cursor:=Save_Cursor;
 end;
 
 procedure Tstackmenu1.copypath1Click(Sender: TObject);
@@ -4306,6 +4359,11 @@ begin
      pause_pressed:=false;
 end;
 
+procedure Tstackmenu1.manual_centering1Change(Sender: TObject);
+begin
+  if manual_centering1.items.count> 3 then new_analyse_required:=true;{force a new analyse for new x, y position asteroids}
+end;
+
 procedure Tstackmenu1.new_saturation1Change(Sender: TObject);
 var
   r,g,b,h,s,v : single;
@@ -4811,7 +4869,7 @@ begin
 
          update_text('OBJECT  =',#39+object_name+#39); {spaces will be added/corrected later}
 
-         filter_name_changed:=true;{allow reanalyse}
+         new_analyse_required:=true;{allow reanalyse}
 
         if nrbits=16 then
         save_fits(img_loaded,filename2,16,true)
@@ -6398,7 +6456,7 @@ end;
 
 procedure Tstackmenu1.luminance_filter1Change(Sender: TObject);
 begin
-  filter_name_changed:=true;
+  new_analyse_required:=true;
 
   {remove duplication because they will be ignored later. Follow execution of stacking routine (for i:=0 to 4) so red, green, blue luminance}
   if  AnsiCompareText(green_filter1.text,red_filter1.text)=0 then green_filter1.text:='';

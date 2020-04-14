@@ -1028,8 +1028,8 @@ var txtf : textfile;
        if showfullnames then thetext:=trim(name) else thetext:=trim(desn)+'('+floattostrF(mag,ffgeneral,3,1)+')';
 
        if add_annot then
-       begin
-          add_text ('ANNOTATE=',#39+inttostr(round(fitsX-len))+';'+inttostr(round(fitsY-len))+';'+inttostr(round(fitsX+len))+';'+inttostr(round(fitsY+len))+';-1;'{boldness}+thetext+';'+#39);
+       begin                         //floattostrF2(median_bottom_right,0,2)
+          add_text ('ANNOTATE=',#39+floattostrF2(fitsX-len,0,2)+';'+floattostrF2(fitsY-len,0,2)+';'+floattostrF2(fitsX+len,0,2)+';'+floattostrF2(fitsY+len,0,2)+';-1;'{boldness}+thetext+';'+#39);
           annotated:=true;{header contains annotations}
        end
        else

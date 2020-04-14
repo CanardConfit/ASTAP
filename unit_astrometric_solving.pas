@@ -480,8 +480,8 @@ begin
 
   binning:=report_binning;
 
-  if height2<1000           then warning_str:='Warning, too small image!! ';  {for FITS header and solution}
-  if ((binning>1) and (height2<1000*binning))   then warning_str:=warning_str+'Warning, downsample factor too high!! '; {for FITS header and solution}
+  if height2<960 then warning_str:='Warning, too small image!! ';  {for FITS header and solution. Dimensions should be equal or better the about 1280x960}
+  if ((binning>1) and (height2<960*binning))   then warning_str:=warning_str+'Warning, downsample factor too high!! '; {for FITS header and solution}
   if (height2>2500*binning) then warning_str:=warning_str+'Warning, increase downsampling!! '; {for FITS header and solution}
 
   if length(warning_str)>0  then
