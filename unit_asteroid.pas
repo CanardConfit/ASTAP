@@ -936,11 +936,14 @@ begin
 
   result:=result/(24*3600);{convert results to days}
 end;
-procedure convert_MPCORB_line(txt : string; var desn,name: string; var H,G,yy,mm,dd,M,Peri,Node,a_incl,a_ecc,a_a: double); {han.k}
+procedure convert_MPCORB_line(txt : string; var desn,name: string; var yy,mm,dd,ecc,q,inc2,lan,peri,h,g: double);{read asteroid as comet, han.k}
 var
   code2           : integer;
-  date_regel      : STRING[5];
-  centuryA,monthA,dayA:string[2];
+  a_anm,a_a,degrees_to_perihelion,c_epochdelta           : double;
+  date_regel                                             : STRING[5];
+  centuryA,monthA,dayA                                   :string[2];
+const
+   Gauss_gravitational_constant: double=0.01720209895*180/pi;
 begin
   desn:='';{assume failure}
 
@@ -974,16 +977,70 @@ begin
     mm:=strtofloat(monthA);{epoch month}
     dd:=strtofloat(dayA);{epoch day}
 
-    M:=strtofloat(copy(txt,27,35-27+1)); {27 -  35  f9.5   Mean anomaly at the epoch, in degrees}
+    a_anm:=strtofloat(copy(txt,27,35-27+1)); {27 -  35  f9.5   Mean anomaly at the epoch, in degrees}
     peri:=strtofloat(copy(txt,38,46-38+1)); {38 -  46  f9.5   Argument of perihelion, J2000.0 (degrees)}
-    node:=strtofloat(copy(txt,49,57-49+1)); {49 -  57  f9.5   Longitude of the ascending node, J2000.0  (degrees)}
-    a_incl:=strtofloat(copy(txt,60,68-60+1)); {60 -  68  f9.5   Inclination to the ecliptic, J2000.0 (degrees)}
+    lan:=strtofloat(copy(txt,49,57-49+1)); {49 -  57  f9.5   Longitude of the ascending node, J2000.0  (degrees)}
+    inc2:=strtofloat(copy(txt,60,68-60+1)); {60 -  68  f9.5   Inclination to the ecliptic, J2000.0 (degrees)}
 
-    a_ecc:=strtofloat(copy(txt,71,79-71+1)); {71 -  79  f9.7   Orbital eccentricity}
+    ecc:=strtofloat(copy(txt,71,79-71+1)); {71 -  79  f9.7   Orbital eccentricity}
 
     a_a:=strtofloat(copy(txt,93,103-93+1)); {93 - 103  f11.7  Semimajor axis (AU)}
+
+    {convert to comet elements}
+    q := a_a * ( 1 - ecc); {semi-minor axis (q) or perihelion }
+
+    {find days to nearest perihelion date}
+    if a_anm>180 then degrees_to_perihelion:=360-a_anm {future perihelion is nearer}
+                 else degrees_to_perihelion:=-a_anm;   {past perihelion is nearer}
+
+     c_epochdelta:=degrees_to_perihelion /(Gauss_gravitational_constant /( a_a * sqrt( a_a ) ));{days to nearest perihelion date}
+     dd:=dd+c_epochdelta
+
+
   end;
 end;
+procedure convert_comet_line(txt : string; var desn,name: string; var yy,mm,dd, ecc,q,inc2,lan,aop,H,k: double); {han.k}
+var
+  code2,error1    : integer;
+  g               : double;
+  date_regel      : STRING[5];
+  centuryA,monthA,dayA:string[2];
+begin
+  desn:='';{assume failure}
+
+  date_regel:=copy(txt,21,25-21+1); {21 -  25  a5     Epoch (in packed form, .0 TT), see http://www.minorplanetcenter.net/iau/info/MPOrbitFormat.html}
+
+  yy:=strtofloat(copy(txt,15,4));{epoch year}
+
+  if ((yy>1900) and (yy<2200)) then {do only data}
+  begin
+    name:=copy(txt,103,39);
+    desn:=copy(txt,159,10);
+
+    H:=strtofloat(copy(txt,91,5));   {   Absolute magnitude, H}
+
+    val(copy(txt,97,4),g,error1);
+    k:=g*2.5; { Comet activity}
+
+    yy:=strtofloat(copy(txt,15,4));{epoch year}
+    mm:=strtofloat(copy(txt,20,2));{epoch month}
+    dd:=strtofloat(copy(txt,23,7));{epoch day}
+
+    q:=strtofloat(copy(txt,31,9)); {q}
+    ecc:=strtofloat(copy(txt,41,9));
+    aop:=strtofloat(copy(txt,51,9));
+    lan:=strtofloat(copy(txt,61,9));
+    inc2:=strtofloat(copy(txt,71,9));
+
+    {Hale Bopp
+    { Q:= 0.91468400000000005;{    ! Perihelion distance q in AU;}
+    { ECC:= 0.99492999999999998;{  ! Eccentricity e}
+    { INC2:= 88.987200000000001;{ ! Inclination i}
+    { LAN:= 283.36720000000003; {  ! Longitude of the ascending node}
+    { AOP:= 130.62989999999999;{  ! Argument of perihelion}
+  end;
+end;
+
 
 procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot :boolean) ;{read MPCORB.dat}{han.k}
 const
@@ -992,15 +1049,16 @@ const
 
 var txtf : textfile;
     count,fontsize            : integer;
-    yy,mm,dd,a_h,a_anm,Peri,Node,a_incl,a_ecc,a_a,c_q, DELTA,sun_delta,degrees_to_perihelion,c_epochdelta,ra2,dec2,mag,phase,delta_t : double;
-    SIN_dec_ref,COS_dec_ref          : double;
+    yy,mm,dd,h,g,a_anm,aop,lan,incl,ecc,a_a,q, DELTA,sun_delta,degrees_to_perihelion,c_epochdelta,ra2,dec2,mag,phase,delta_t,
+    SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec     : double;
     desn,name,s, thetext:string;
-    flip_horizontal, flip_vertical,form_existing, errordecode : boolean;
+    asteroid,flip_horizontal, flip_vertical,form_existing, errordecode : boolean;
 
-  procedure plot_asteroid;
+
+  procedure plot_asteroid(sizebox :integer);
   var
     fitsX,fitsY,dra,ddec, delta_ra,det,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh : double;
-    x,y,x2,y2,len                                                                           : integer;
+    x,y,x2,y2                                                                               : integer;
   begin
 
    {5. Conversion (RA,DEC) -> (x,y)}
@@ -1024,18 +1082,18 @@ var txtf : textfile;
        if flip_horizontal then x2:=(width2-1)-x else x2:=x;
        if flip_vertical   then y2:=y         else y2:=(height2-1)-y;
 
-       len:=20;
+
        if showfullnames then thetext:=trim(name) else thetext:=trim(desn)+'('+floattostrF(mag,ffgeneral,3,1)+')';
 
        if add_annot then
        begin                         //floattostrF2(median_bottom_right,0,2)
-          add_text ('ANNOTATE=',#39+floattostrF2(fitsX-len,0,2)+';'+floattostrF2(fitsY-len,0,2)+';'+floattostrF2(fitsX+len,0,2)+';'+floattostrF2(fitsY+len,0,2)+';-1;'{boldness}+thetext+';'+#39);
+          add_text ('ANNOTATE=',#39+floattostrF2(fitsX-sizebox,0,2)+';'+floattostrF2(fitsY-sizebox,0,2)+';'+floattostrF2(fitsX+sizebox,0,2)+';'+floattostrF2(fitsY+sizebox,0,2)+';-1;'{boldness}+thetext+';'+#39);
           annotated:=true;{header contains annotations}
        end
        else
        begin
-         mainwindow.image1.Canvas.textout(x2+len,y2,thetext);
-         mainwindow.image1.canvas.ellipse(x2-len,y2-len,x2+1+len,y2+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+         mainwindow.image1.Canvas.textout(x2+sizebox,y2,thetext);
+         mainwindow.image1.canvas.ellipse(x2-sizebox,y2-sizebox,x2+1+sizebox,y2+1+sizebox);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
        end;
     end;
   end;
@@ -1043,6 +1101,9 @@ var txtf : textfile;
 begin
   if fits_file=false then exit;
   if cd1_1=0 then begin memo2_message('Abort, first solve the image!');exit;end;
+
+  cos_telescope_dec:=cos(dec0);
+  fov:=1.5*sqrt(sqr(0.5*width2*cdelt1)+sqr(0.5*height2*cdelt2))*pi/180; {field of view with 50% extra}
 
   flip_vertical:=mainwindow.Flipvertical1.Checked;
   flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
@@ -1093,58 +1154,59 @@ begin
   if add_annot then
          remove_key('ANNOTATE',true{all});{remove key annotate words from header}
 
+  asteroid:=pos('.txt',mpcorb_path)=0;
+
   assignfile(txtf,mpcorb_path);
   try
     Reset(txtf);
     while ((not EOF(txtf)) and (count<maxcount) and (esc_pressed=false)) do   {loop}
     begin
       ReadLn(txtf, s);
-      convert_MPCORB_line(s, {var} desn,name, a_h,a_g,yy,mm,dd,a_anm,Peri,Node,a_incl,a_ecc,a_a);
-      if desn<>'' then {data line}
-      begin
-        try
+
+     if asteroid then  convert_MPCORB_line(s, {var} desn,name, yy,mm,dd,ecc,q,incl,lan,aop,H,a_g){read asteroid as comet, han.k}
+                 else  convert_comet_line (s, {var} desn,name, yy,mm,dd,ecc,q,incl,lan  ,aop,H,c_k); {read MPC comet{han.k}
+     if ((desn<>'') and (q<>0)) then {data line}
+     begin
+       try
          inc(count);
+         comet(sun200_calculated,2000,jd+delta_t{delta_t in days},round(yy),round(mm),dd,ecc,q,incl,lan,aop,2000,{var} ra2,dec2,delta,sun_delta);
 
-         {convert to comet elements}
-         c_q := a_a * ( 1 - a_ecc); {semi-major axis (q)}
+         if sqr( (ra2-ra0)*cos_telescope_dec)  + sqr(dec2-dec0)< sqr(fov) then {within the image FOV}
+         begin
+           if asteroid then
+           begin
+             mag:=h+ ln(delta*sun_delta)*5/ln(10);  {log(x) = ln(x)/ln(10)}
 
-         {find days to nearest perihelion date}
-         if a_anm>180 then degrees_to_perihelion:=360-a_anm {future perihelion is nearer}
-                      else degrees_to_perihelion:=-a_anm;   {past perihelion is nearer}
+             phase:=illum_comet; { Get phase comet. Only valid is comet routine is called first.}
+             mag:=mag+asteroid_magn_comp(a_g{asteroid_slope_factor},phase);
+             {slope factor =0.15
+              angle object-sun-earth of 0   => 0   magnitude
+                                        5      0.42
+                                       10      0.65
+                                       15      0.83
+                                       20      1}
 
-          c_epochdelta:=degrees_to_perihelion /(Gauss_gravitational_constant /( a_a * sqrt( a_a ) ));{days to nearest perihelion date}
+           end
+           else
+           begin {comet magnitude}
+             mag:=H+ ln(delta)*5/ln(10)+ c_k*ln(sun_delta)/ln(10) ;
+           end;
 
-          comet(sun200_calculated,2000,jd+delta_t{delta_t in days},round(yy),round(mm),dd+c_epochdelta,a_ecc,c_q,a_incl,node,peri,2000,{var} ra2,dec2,delta,sun_delta);
+           if mag<=maxmag then
+           begin
+             if asteroid then plot_asteroid(20) else plot_asteroid(100);
+           end;
 
-          //if count<10 then memo2_message(desn+' '+prepare_ra(ra2,' ')+',   '+prepare_dec(dec2,' ') );
-
-
-          mag:=a_h+ ln(delta*sun_delta)*5/ln(10);  {log(x) = ln(x)/ln(10)}
-
-          phase:=illum_comet; { Get phase comet. Only valid is comet routine is called first.}
-          mag:=mag+asteroid_magn_comp(a_g{asteroid_slope_factor},phase);
-
-         {slope factor =0.15
-          angle object-sun-earth of 0   => 0   magnitude
-                                    5      0.42
-                                   10      0.65
-                                   15      0.83
-                                   20      1}
-
-          if mag<=maxmag then
-          begin
-             plot_asteroid;
-          end;
-
-          if frac(count/10000)=0 then
-          begin
+           if frac(count/10000)=0 then
+           begin
              if  form_existing then  form_asteroids1.caption:=inttostr(count);
-            application.processmessages;{check for esc}
-          end;
-        except
-        end;
-      end;
-    end;
+             application.processmessages;{check for esc}
+           end;
+         end;{within FOV}
+       except
+       end;
+     end;
+  end;
   finally
     CloseFile(txtf);
   end;
@@ -1242,9 +1304,9 @@ end;
 
 procedure Tform_asteroids1.file_to_add1Click(Sender: TObject); {han.k}
 begin
-  OpenDialog1.Title := 'Select MPCORB.DAT to use';
+  OpenDialog1.Title := 'Select MPCORB.DAT or CometEls.txt to use';
   OpenDialog1.Options := [ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := 'MPCORB.DAT file (*.DAT*)|*.dat;*.DAT';
+  opendialog1.Filter := 'MPCORB.DAT or CometEls.txt file (*.DAT*; com*.TXT)|*.dat;*.DAT;com*.txt';
   if opendialog1.execute then
   begin
     mpcorb_path1.caption:=OpenDialog1.Files[0];

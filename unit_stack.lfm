@@ -1,5 +1,5 @@
 object stackmenu1: Tstackmenu1
-  Left = 350
+  Left = 306
   Height = 644
   Top = 137
   Width = 1605
@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1604
-    ActivePage = Images
+    ActivePage = Flats
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 2
     TabOrder = 5
     OnChange = pagecontrol1Change
     object Images: TTabSheet
@@ -571,7 +571,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 420
-      ClientWidth = 1263
+      ClientWidth = 1596
       ImageIndex = 1
       ParentFont = False
       object browse_darks1: TButton
@@ -618,7 +618,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1262
+        Width = 1595
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -727,7 +727,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 420
-      ClientWidth = 1263
+      ClientWidth = 1596
       ImageIndex = 2
       ParentFont = False
       object browse_flats1: TButton
@@ -780,7 +780,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1263
+        Width = 1596
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -882,7 +882,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
       ClientHeight = 420
-      ClientWidth = 1263
+      ClientWidth = 1596
       ImageIndex = 3
       ParentFont = False
       object browse_bias1: TButton
@@ -923,7 +923,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1263
+        Width = 1596
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -2981,9 +2981,9 @@ object stackmenu1: Tstackmenu1
           Left = 272
           Height = 15
           Top = 8
-          Width = 585
+          Width = 697
           BorderSpacing.Around = 5
-          Caption = 'To fill with asteroid names, load one of the annotated images in the viewer. See hint or manual for more details.'
+          Caption = 'To fill combobox with asteroid or comet names, load one of the annotated images in the viewer. See hint or manual for more details.'
           Color = clBtnFace
           Constraints.MaxWidth = 1000
           ParentColor = False
@@ -3316,7 +3316,7 @@ object stackmenu1: Tstackmenu1
     object tab_photometry1: TTabSheet
       Caption = 'Photometry'
       ClientHeight = 420
-      ClientWidth = 1263
+      ClientWidth = 1596
       ImageIndex = 11
       ParentFont = False
       object browse_photometry1: TButton
@@ -3430,7 +3430,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1263
+        Width = 1596
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3644,7 +3644,7 @@ object stackmenu1: Tstackmenu1
     object TabSheet1: TTabSheet
       Caption = 'Inspector'
       ClientHeight = 420
-      ClientWidth = 1263
+      ClientWidth = 1596
       ImageIndex = 17
       object browse_inspector1: TButton
         Left = 32
@@ -3675,7 +3675,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1263
+        Width = 1596
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3875,7 +3875,7 @@ object stackmenu1: Tstackmenu1
     object tab_live_stacking1: TTabSheet
       Caption = 'Live stacking'
       ClientHeight = 420
-      ClientWidth = 1263
+      ClientWidth = 1596
       ParentFont = False
       object browse_live_stacking1: TButton
         Left = 16

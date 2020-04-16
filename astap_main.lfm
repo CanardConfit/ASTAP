@@ -1000,8 +1000,8 @@ object mainwindow: Tmainwindow
           OnClick = compress_fpack1Click
         end
         object batch_annotate1: TMenuItem
-          Caption = 'Batch annotate asteroids'
-          Hint = 'This will add asteroid annotations to the fits header. Intended for the blinking routine or manual stacking. Batch solve the images first.'
+          Caption = 'Batch annotate asteroids && comets'
+          Hint = 'This will add asteroid or comet annotations to the fits header. Intended for the blinking routine or manual stacking. Batch solve the images first.'
           OnClick = batch_annotate1Click
         end
       end
@@ -1168,7 +1168,7 @@ object mainwindow: Tmainwindow
         OnClick = variable_star_annotation1Click
       end
       object annotate_minor_planets1: TMenuItem
-        Caption = 'Asteroid annotation'
+        Caption = 'Asteroid && comet annotation'
         Enabled = False
         Hint = 'Annotate asteroids'
         ShortCut = 16465

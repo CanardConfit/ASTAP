@@ -1110,7 +1110,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.341a dated 2020-04-14';
+  #13+#10+'Version ß0.9.342 dated 2020-04-16';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4330,39 +4330,9 @@ begin
     if ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
            try set_temperature:=round(validate_double);{read double value} except; end; {some programs give huge values}
 
-    if ((header[i]='B') and (header[i+1]='A')  and (header[i+2]='N') and (header[i+3]='D') and (header[i+4]='P') and (header[i+5]='A') and (header[i+6]='S')) then
-             BANDPASS:=validate_double;{read integer as double value}
-
-    if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-             xbinning:=round(validate_double);{binning}
-    if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-             ybinning:=round(validate_double);{binning}
-
-
-    if ((header[i]='U') and (header[i+1]='T')) then
-             UT:=get_string;
-    if ((header[i]='T') and (header[i+1]='E')  and (header[i+2]='L') and (header[i+3]='E') and (header[i+4]='S') and (header[i+5]='C') and (header[i+6]='O')) then
-             TELESCOP:=get_string;
-    if ((header[i]='O') and (header[i+1]='R')  and (header[i+2]='I') and (header[i+3]='G') and (header[i+4]='I') and (header[i+5]='N')) then
-             origin:=get_string;
-    if ((header[i]='I') and (header[i+1]='N')  and (header[i+2]='S') and (header[i+3]='T') and (header[i+4]='R') and (header[i+5]='U') and (header[i+6]='M')) then
-             INSTRUM:=get_string;
-
-    if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
-            if date_obs='' then date_obs:=get_string;
-
-    if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
-            date_obs:=get_string;
-
-    if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='A') and (header[i+6]='V')) then
-            date_avg:=get_string;
-
 
     if ((header[i]='I') and (header[i+1]='M')  and (header[i+2]='A') and (header[i+3]='G') and (header[i+4]='E') and (header[i+5]='T') and (header[i+6]='Y')) then
        imagetype:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
-
-    if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='J') and (header[i+3]='E') and (header[i+4]='C') and (header[i+5]='T')) then
-       object_name:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
 
     if ((header[i]='F') and (header[i+1]='I')  and (header[i+2]='L') and (header[i+3]='T') and (header[i+4]='E') and (header[i+5]='R')) then
        filter_name:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
@@ -4383,6 +4353,9 @@ begin
 
     if light then {read as light ##############################################################################################################################################################}
     begin
+      if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='J') and (header[i+3]='E') and (header[i+4]='C') and (header[i+5]='T')) then
+          object_name:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
+
       if ((header[i]='E') and (header[i+1]='Q')  and (header[i+2]='U') and (header[i+3]='I') and (header[i+4]='N') and (header[i+5]='O') and (header[i+6]='X')) then
            equinox:=validate_double;
 
@@ -4506,6 +4479,32 @@ begin
          sitelat:=get_as_string;{universal, site latitude as string}
       if ((header[i]='S') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='L') and (header[i+5]='O') and (header[i+6]='N')) then
          sitelong:=get_as_string;{universal, site longitude as string}
+
+      if ((header[i]='U') and (header[i+1]='T')) then
+               UT:=get_string;
+      if ((header[i]='T') and (header[i+1]='E')  and (header[i+2]='L') and (header[i+3]='E') and (header[i+4]='S') and (header[i+5]='C') and (header[i+6]='O')) then
+               TELESCOP:=get_string;
+      if ((header[i]='O') and (header[i+1]='R')  and (header[i+2]='I') and (header[i+3]='G') and (header[i+4]='I') and (header[i+5]='N')) then
+               origin:=get_string;
+      if ((header[i]='I') and (header[i+1]='N')  and (header[i+2]='S') and (header[i+3]='T') and (header[i+4]='R') and (header[i+5]='U') and (header[i+6]='M')) then
+               INSTRUM:=get_string;
+
+      if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
+              if date_obs='' then date_obs:=get_string;
+
+      if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
+              date_obs:=get_string;
+
+      if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='A') and (header[i+6]='V')) then
+              date_avg:=get_string;
+
+      if ((header[i]='B') and (header[i+1]='A')  and (header[i+2]='N') and (header[i+3]='D') and (header[i+4]='P') and (header[i+5]='A') and (header[i+6]='S')) then
+               BANDPASS:=validate_double;{read integer as double value. Deep sky survey keyword}
+
+      if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
+               xbinning:=round(validate_double);{binning}
+      if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
+               ybinning:=round(validate_double);{binning}
 
       if ((header[i]='A') and (header[i+1]='N')  and (header[i+2]='N') and (header[i+3]='O') and (header[i+4]='T') and (header[i+5]='A') and (header[i+6]='T')) then
          annotated:=true; {contains annotations}

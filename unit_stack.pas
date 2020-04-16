@@ -7195,9 +7195,9 @@ begin
     if not(str[i] in InvalidChars) then result:=result+str[i]
 end;
 
-function propose_file_name : string; {propose a file name}
+function propose_file_name(object_to_process:string) : string; {propose a file name}
 begin
-  if object_name<>'' then result:=object_name else result:='no_object';
+  if object_to_process<>'' then result:=object_to_process else result:='no_object';
   if date_obs<>'' then result:=result+', '+copy(date_obs,1,10);
   result:=result+', ';
   if counterR<>0 then  result:=result+inttostr(counterR)+'x'+inttostr(exposureR)+'R ';
@@ -7774,7 +7774,7 @@ begin
                       inttostr(counterRGB)+'x'+inttostr(exposureRGB)+'RGB  '+
                       inttostr(counterL)+'x'+inttostr(exposureL)+'L  '; {exposure}
 
-      filename2:=extractfilepath(filename2)+propose_file_name+ '  _stacked.fits';{give it a nice file name}
+      filename2:=extractfilepath(filename2)+propose_file_name(object_to_process)+ '  _stacked.fits';{give it a nice file name}
 
       if cd1_1<>0 then memo2_message('Astrometric solution reference file preserved for stack.');
       memo2_message('█ █ █  Saving result '+inttostr(image_counter)+' as '+filename2);

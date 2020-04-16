@@ -3,7 +3,7 @@ object form_asteroids1: Tform_asteroids1
   Height = 360
   Top = 236
   Width = 596
-  Caption = 'Annotate asteroids using MPCORB.DAT file'
+  Caption = 'Annotation of asteroids and comets'
   ClientHeight = 360
   ClientWidth = 596
   KeyPreview = True
@@ -52,7 +52,7 @@ object form_asteroids1: Tform_asteroids1
     Height = 200
     Top = 0
     Width = 582
-    Caption = 'Asteroid database'
+    Caption = 'Database'
     ClientHeight = 180
     ClientWidth = 578
     TabOrder = 2
@@ -91,7 +91,7 @@ object form_asteroids1: Tform_asteroids1
       Cursor = crHandPoint
       Left = 32
       Height = 30
-      Hint = 'Download MPCORB.DAT using default browser'
+      Hint = 'Download MPCORB.DAT or CometEls.txt using default browser'
       Top = 3
       Width = 15
       Caption = '⇩'
