@@ -595,7 +595,7 @@ function binx2 : boolean; {converts filename2 to binx2 version}
 procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean); {convert ra in text to double in radians}
 procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
 function image_file_name(inp : string): boolean; {readable image name?}
-procedure plot_annotations(xoffset,yoffset:integer); {plot annotations stored in fits header. Offsets are for blink routine}
+procedure plot_annotations(xoffset,yoffset:integer;fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
 function convert_load_raw(filename3: string;var img: image_array): boolean; {convert raw to pgm file using LibRaw}
 
 procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
@@ -661,7 +661,7 @@ var
 
 implementation
 
-uses unit_dss, unit_stack, unit_tiff,unit_astrometry,unit_star_align, unit_astrometric_solving, unit_290, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid;
+uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_290, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -1110,7 +1110,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.342 dated 2020-04-16';
+  #13+#10+'Version ß0.9.343 dated 2020-04-17';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1754,7 +1754,7 @@ end;
 procedure Tmainwindow.clean_up1Click(Sender: TObject);
 begin
   plot_fits(mainwindow.image1,false,true);
-  if annotated then plot_annotations(0,0);
+  if annotated then plot_annotations(0,0,false);
 end;
 
 procedure Tmainwindow.remove_colour1Click(Sender: TObject);{make local area monochrome}
@@ -2000,7 +2000,7 @@ end;
 procedure Tmainwindow.remove_markers1Click(Sender: TObject);
 begin
   plot_fits(mainwindow.image1,false,true);
-  if annotated then plot_annotations(0,0);
+  if annotated then plot_annotations(0,0,false);
 
 end;
 
@@ -2315,48 +2315,9 @@ begin
   OldCursor := Screen.Cursor;
   Screen.Cursor:= crHourGlass;
 
-  if stackmenu1.use_astrometry_net1.Checked then
-  begin
-    mainwindow.caption:='Solving using local Astrometry.net.......';
-
-    if unsaved_import=false then {image available as file}
-    begin
-      if astrometry_net(filename2,true {make .new file},false {no update_header} ,true {remove_tmp},stackmenu1.show_console1.checked,stackmenu1.keep_console_open1.checked) then
-      begin
-        save1.Enabled;
-        load_fits(changeFileExt(filename2,'.new'),true {light},true,true {reset var},img_loaded);
-         mainwindow.memo1.visible:=true;{Show new header again}
-        if deletefile(changeFileExt(filename2,'.new'))=false then application.messagebox(pchar('Could not load solution'),pchar('Error '), 0);;;{solution was not succesfull}
-      end;
-    end
-    else {unsaved jpeg, png, tif file}
-    if astrometry_net(filename2,false {make .new file},false {no update_header} ,true {remove_tmp},stackmenu1.show_console1.checked,stackmenu1.keep_console_open1.checked) then
-    begin
-      save1.Enabled;
-      old_naxis3:=naxis3;
-      old_nrbits:=nrbits;
-      if load_fits(changeFileExt(filename2,'.wcs'),true {light},true {should be true to load data in MEMO1},true {reset var},img_loaded)=false{load only the wcs solution, keep imag_loaded}
-         then application.messagebox(pchar('Could not load solution'),pchar('Error '), 0);{solution not there}
-      {adapt the loaded WCS header to the jpeg file}
-      naxis:=2;
-      nrbits:=16;
-      naxis3:=old_naxis3; {preserve any color JPEG}
-      update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
-      if naxis3>1 then update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3);
-      update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);
-      update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-      update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-      update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
-      mainwindow.memo1.visible:=true;{Show new header again}
-      deletefile(changeFileExt(filename2,'.wcs'));
-    end;
-  end
-  else
-  begin {solve internal}
-
-    mainwindow.caption:='Solving.......';
-    save1.Enabled:=solve_image(img_loaded,false {get hist, is already available});{match between loaded image and star database}
-  end;
+  {solve internal}
+  mainwindow.caption:='Solving.......';
+  save1.Enabled:=solve_image(img_loaded,false {get hist, is already available});{match between loaded image and star database}
   if cd1_1<>0 then
   begin
     mainwindow.ra1.text:=prepare_ra(ra0,' ');{show center of image}
@@ -5716,13 +5677,9 @@ begin
     Flipvertical1.checked:=get_boolean('Flipvertical',false);
     add_marker_position1.checked:=get_boolean('add_marker',false);{popup marker selected?}
 
-    stackmenu1.keep_console_open1.Checked:=get_boolean('keep_open',false);
-    stackmenu1.show_console1.Checked:=get_boolean('show_console',true);
     stackmenu1.make_osc_color1.checked:=get_boolean('osc_color_convert',false);
     stackmenu1.osc_colour_smooth1.checked:=get_boolean('osc_colour_smooth',true);
 
-    stackmenu1.limit_area1.checked:=get_boolean('limit_area',true);
-    stackmenu1.limit_pixelsize1.checked:=get_boolean('limit_pixelsize',true);
     stackmenu1.ignore_header_solution1.Checked:= get_boolean('ignore_header_solution',true);
     stackmenu1.drizzle1.checked:= get_boolean('drizzle',false);
     stackmenu1.Equalise_background1.checked:= get_boolean('equalise_background',true);{for mosaic mode}
@@ -5759,9 +5716,9 @@ begin
     stackmenu1.use_manual_alignment1.checked:=initstring.Values['align_method']='4';
     stackmenu1.use_astrometry_internal1.checked:=initstring.Values['align_method']='3';
     stackmenu1.use_star_alignment1.checked:=initstring.Values['align_method']='2';
-    stackmenu1.use_astrometry_net1.checked:=initstring.Values['align_method']='1';
+    stackmenu1.use_ephemeris_alignment1.checked:=initstring.Values['align_method']='1';
 
-//    stackmenu1.solve_show_log1.Checked:=get_boolean('solve_log',true);{show internal solving}
+
 
     stackmenu1.write_log1.Checked:=get_boolean('write_log',true);{write to log file}
 
@@ -5793,9 +5750,6 @@ begin
 
     dum:=initstring.Values['pixel_size']; if dum<>'' then stackmenu1.pixelsize1.text:=dum;
     dum:=initstring.Values['focal_length']; if dum<>'' then stackmenu1.focallength1.text:=dum;
-    dum:=initstring.Values['cygwin_path']; if dum<>'' then stackmenu1.cygwin1.text:=dum;
-    dum:=initstring.Values['search_area']; if dum<>'' then stackmenu1.search_area1.text:=dum;
-    dum:=initstring.Values['astrometry_extra_options']; if dum<>'' then stackmenu1.astrometry_extra_options1.text:=dum;
     dum:=initstring.Values['most_common_filter_radius']; if dum<>'' then stackmenu1.most_common_filter_radius1.text:=dum;
 
     dum:=initstring.Values['extract_background_box_size']; if dum<>'' then stackmenu1.extract_background_box_size1.text:=dum;
@@ -5888,9 +5842,12 @@ begin
     stackmenu1.live_stacking_path1.caption:=initstring.Values['live_stack_dir'];
 
     dum:=initstring.Values['mpcorb_path'];if dum<>'' then mpcorb_path:=dum;{asteroids}
+    dum:=initstring.Values['cometels_path'];if dum<>'' then cometels_path:=dum;{asteroids}
+
     dum:=initstring.Values['maxcount'];if dum<>'' then maxcount_asteroid:=dum;{asteroids}
     dum:=initstring.Values['maxmag'];if dum<>'' then maxmag_asteroid:=dum;{asteroids}
     showfullnames:=get_boolean('showfullnames',true);{asteroids}
+    showmagnitude:=get_boolean('showmagnitude',false);{asteroids}
     add_date:=get_boolean('add_date',true);{asteroids}
 
     get_int(annotation_color,'annotation_color');
@@ -6049,13 +6006,9 @@ begin
   initstring.Values['Flipvertical']:=BoolStr[Flipvertical1.checked];
   initstring.Values['add_marker']:=BoolStr[add_marker_position1.checked];
 
-  initstring.Values['keep_open']:=BoolStr[stackmenu1.keep_console_open1.checked];
-  initstring.Values['show_console']:=BoolStr[stackmenu1.show_console1.checked];
   initstring.Values['osc_color_convert']:=BoolStr[stackmenu1.make_osc_color1.checked];
   initstring.Values['osc_colour_smooth']:=BoolStr[stackmenu1.osc_colour_smooth1.checked];
 
-  initstring.Values['limit_area']:=BoolStr[stackmenu1.limit_area1.checked];
-  initstring.Values['limit_pixelsize']:=BoolStr[stackmenu1.limit_pixelsize1.checked];
   initstring.Values['ignore_header_solution']:=BoolStr[stackmenu1.ignore_header_solution1.Checked];
 
   initstring.Values['drizzle']:=BoolStr[stackmenu1.drizzle1.Checked];
@@ -6087,13 +6040,13 @@ begin
   initstring.Values['gamma']:=stretch1.text;
   initstring.Values['marker_position']:=marker_position;
 
-  if  stackmenu1.use_manual_alignment1.checked then  initstring.Values['align_method']:='4'
+  if  stackmenu1.use_manual_alignment1.checked then initstring.Values['align_method']:='4'
   else
-  if  stackmenu1.use_astrometry_internal1.checked then  initstring.Values['align_method']:='3'
+  if  stackmenu1.use_astrometry_internal1.checked then initstring.Values['align_method']:='3'
   else
-  if  stackmenu1.use_star_alignment1.checked then     initstring.Values['align_method']:='2'
+  if  stackmenu1.use_star_alignment1.checked then initstring.Values['align_method']:='2'
   else
-  if  stackmenu1.use_astrometry_net1.checked then initstring.Values['align_method']:='1';
+  if  stackmenu1.use_ephemeris_alignment1.checked then  initstring.Values['align_method']:='1';
 
   initstring.Values['star_database']:=stackmenu1.star_database1.text;
   initstring.Values['solve_search_field']:=stackmenu1.search_fov1.text;
@@ -6115,9 +6068,6 @@ begin
   initstring.Values['sd_factor']:=stackmenu1.sd_factor1.text;
   initstring.Values['pixel_size']:=stackmenu1.pixelsize1.text;
   initstring.Values['focal_length']:=stackmenu1.focallength1.text;
-  initstring.Values['cygwin_path']:=stackmenu1.cygwin1.text;
-  initstring.Values['search_area']:=stackmenu1.search_area1.text;
-  initstring.Values['astrometry_extra_options']:=stackmenu1.astrometry_extra_options1.text;
   initstring.Values['blur_factor']:=stackmenu1.blur_factor1.text;
   initstring.Values['most_common_filter_radius']:=stackmenu1.most_common_filter_radius1.text;
 
@@ -6196,9 +6146,12 @@ begin
 
 
   initstring.Values['mpcorb_path']:=mpcorb_path;{asteroids}
+  initstring.Values['cometels_path']:=cometels_path;{comets}
+
   initstring.Values['maxcount']:=maxcount_asteroid;{asteroids}
   initstring.Values['maxmag']:=maxmag_asteroid;{asteroids}
   initstring.Values['showfullnames']:=BoolStr[showfullnames];{asteroids}
+  initstring.Values['showmagnitude']:=BoolStr[showmagnitude];{asteroids}
   initstring.Values['add_date']:=BoolStr[add_date];{asteroids}
 
   initstring.Values['annotation_color']:=inttostr(annotation_color);
@@ -6593,7 +6546,7 @@ begin
     mainwindow.ShowFITSheader1.enabled:=true;
     mainwindow.demosaicBayermatrix1.Enabled:=true;
     image_move_to_center:=re_center;
-    if ((afitsfile) and (annotated)) then  plot_annotations(0,0);
+    if ((afitsfile) and (annotated)) then  plot_annotations(0,0,false);
 
     add_recent_file(filename_org);{As last action, add to recent file list.}
   end;
@@ -6783,7 +6736,7 @@ begin
 
   backup_img;
 
-  vertical:= (sender=imageflipv1);
+  vertical:= ((sender=imageflipv1) or (sender=stackmenu1.stack_button1));
 
   setlength(img_temp,naxis3, width2,height2);
 
@@ -7591,11 +7544,12 @@ begin
    end;
 end;
 
-procedure plot_annotations(xoffset,yoffset:integer); {plot annotations stored in fits header. Offsets are for blink routine}
+procedure plot_annotations(xoffset,yoffset:integer;fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
 var
   count1,x1,y1,x2,y2,text_height,text_width : integer;
   typ     : double;
   List: TStrings;
+  d: string;
 begin
   List := TStringList.Create;
   list.StrictDelimiter:=true;
@@ -7613,10 +7567,9 @@ begin
 
   with stackmenu1 do
   begin
-    if use_manual_alignment1.Checked then
+    if use_ephemeris_alignment1.Checked then
     begin {delete annotations from combobox}
-      while manual_centering1.items.count> 3 do
-           stackmenu1.manual_centering1.items.Delete(manual_centering1.items.count-1);
+      ephemeris_centering1.Items.clear;
     end;
   end;
 
@@ -7665,10 +7618,13 @@ begin
           if x2>=x1 then text_width:=0;
           if y2>=y1 then text_height:=text_height div 3;
 
-          mainwindow.image1.Canvas.textout( -text_width+x2, -text_height + y2,list[5]);
+          mainwindow.image1.Canvas.textout( -text_width+x2, -text_height + y2,list[5]+list[6]{magnitude});
 
-          if stackmenu1.use_manual_alignment1.Checked then {add asteroid annotations to list}
-              stackmenu1.manual_centering1.Additem(list[5],nil);
+          if fill_combo then {add asteroid annotations to combobox for ephemeris alignment}
+          begin
+            stackmenu1.ephemeris_centering1.Additem(list[5],nil);
+            stackmenu1.ephemeris_centering1.itemindex:=0;{show first in the list}
+          end;
         end;
 
       end;
@@ -8420,12 +8376,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
 
-          if stackmenu1.use_astrometry_net1.checked=true then
-          begin
-            if load_fits(filename2,true {light},true,true {reset var},img_loaded) {load now normal, get some info}then
-              astrometry_net(filename2,true {make .new file},true{ update header} ,true {remove_tmp},stackmenu1.show_console1.checked,stackmenu1.keep_console_open1.checked);
-          end
-          else {load image and solve image}
+          {load image and solve image}
           if load_fits(filename2,true {light},true,true {reset var},img_loaded) then {load image success}
           begin
             if ((cd1_1<>0) and (stackmenu1.ignore_header_solution1.checked=false)) then
@@ -8449,8 +8400,7 @@ begin
       if dobackup then restore_img;{for the viewer}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
-    if stackmenu1.use_astrometry_net1.checked=false then {report statistics for internal solver only}
-      memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(OpenDialog1.Files.count-nrsolved-skipped)+' solve failures, '+inttostr(skipped)+' images skipped. For re-solve set option "ignore fits header solution".');
+    memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(OpenDialog1.Files.count-nrsolved-skipped)+' solve failures, '+inttostr(skipped)+' images skipped. For re-solve set option "ignore fits header solution".');
   end;
 end;
 

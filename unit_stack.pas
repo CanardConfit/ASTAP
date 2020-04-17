@@ -59,7 +59,20 @@ type
     analyse_inspector1: TButton;
     add_bias1: TCheckBox;
     binning_for_solving_label3: TLabel;
-    Label69: TLabel;
+    analyse_objects_visibles1: TButton;
+    calculated_scale1: TLabel;
+    focallength1: TEdit;
+    GroupBox13: TGroupBox;
+    help_stack_menu3: TLabel;
+    ignore_header_solution1: TCheckBox;
+    update_solution1: TCheckBox;
+    update_annotations1: TCheckBox;
+    Label23: TLabel;
+    Label24: TLabel;
+    Label28: TLabel;
+    ephemeris_centering1: TComboBox;
+    panel_ephemeris1: TPanel;
+    pixelsize1: TEdit;
     saturation_tolerance1: TTrackBar;
     remove_luminance1: TCheckBox;
     curve_fitting1: TButton;
@@ -80,7 +93,6 @@ type
     area_selected1: TLabel;
     area_set1: TLabel;
     artificial_image_gradient1: TCheckBox;
-    astrometry_extra_options1: TComboBox;
     auto_background1: TCheckBox;
     auto_background_level1: TButton;
     bayer_pattern1: TComboBox;
@@ -109,7 +121,6 @@ type
     browse_live_stacking1: TButton;
     browse_photometry1: TButton;
     Button_free_resize_fits1: TButton;
-    calculated_scale1: TLabel;
     calibrate_prior_solving1: TCheckBox;
     clear_astrometric_solutions1: TButton;
     clear_blink_alignment1: TButton;
@@ -126,7 +137,6 @@ type
     colourShape2: TShape;
     colourShape3: TShape;
     create_test_image_stars1: TButton;
-    cygwin1: TComboBox;
     Darks: TTabSheet;
     dark_areas_box_size1: TComboBox;
     dark_sport_filter1: TButton;
@@ -154,7 +164,6 @@ type
     filter_groupbox1: TGroupBox;
     Flats: TTabSheet;
     flat_combine_method1: TComboBox;
-    focallength1: TEdit;
     force_oversize1: TCheckBox;
     gb1: TEdit;
     gg1: TEdit;
@@ -179,7 +188,6 @@ type
     GroupBox8: TGroupBox;
     GroupBox9: TGroupBox;
     GroupBox_astrometric_solver_settings1: TGroupBox;
-    GroupBox_astrometry_net1: TGroupBox;
     groupBox_dvp1: TGroupBox;
     GroupBox_equalise_tool1: TGroupBox;
     GroupBox_equalise_tool2: TGroupBox;
@@ -195,23 +203,19 @@ type
     help_pixel_math1: TLabel;
     help_pixel_math2: TLabel;
     help_stack_menu1: TLabel;
-    help_stack_menu3: TLabel;
     help_uncheck_outliers1: TLabel;
     hfd_simulation1: TComboBox;
     hotpixel_sd_factor1: TComboBox;
     HueRadioButton1: TRadioButton;
     HueRadioButton2: TRadioButton;
     hue_fuzziness1: TTrackBar;
-    ignore_header_solution1: TCheckBox;
     ignore_hotpixels1: TCheckBox;
     Images: TTabSheet;
     image_to_add1: TLabel;
-    keep_console_open1: TCheckBox;
     Label1: TLabel;
     Label10: TLabel;
     Label11: TLabel;
     Label12: TLabel;
-    Label13: TLabel;
     Label14: TLabel;
     Label15: TLabel;
     Label16: TLabel;
@@ -221,13 +225,9 @@ type
     Label2: TLabel;
     Label20: TLabel;
     Label21: TLabel;
-    Label22: TLabel;
-    Label23: TLabel;
-    Label24: TLabel;
     Label25: TLabel;
     Label26: TLabel;
     Label27: TLabel;
-    Label28: TLabel;
     Label29: TLabel;
     Label3: TLabel;
     Label30: TLabel;
@@ -236,7 +236,6 @@ type
     Label33: TLabel;
     Label34: TLabel;
     Label35: TLabel;
-    Label36: TLabel;
     Label37: TLabel;
     Label38: TLabel;
     Label39: TLabel;
@@ -277,8 +276,6 @@ type
     Label9: TLabel;
     Label_bin_oversampled1: TLabel;
     Label_results1: TLabel;
-    limit_area1: TCheckBox;
-    limit_pixelsize1: TCheckBox;
     listview1: TListView;
     listview2: TListView;
     listview3: TListView;
@@ -329,16 +326,17 @@ type
     osc_colour_smooth1: TCheckBox;
     oversize1: TComboBox;
     pagecontrol1: TPageControl;
-    panel_astrometrynet1: TPanel;
     panel_manual1: TPanel;
     Panel_solver1: TPanel;
     Panel_star_detection1: TPanel;
     photometry_binx2: TButton;
     photometry_button1: TButton;
     photometry_stop1: TButton;
-    pixelsize1: TEdit;
     PopupMenu8: TPopupMenu;
     radius_search1: TComboBox;
+    scale_calc1: TLabel;
+    auto_rotate1: TCheckBox;
+    use_ephemeris_alignment1: TRadioButton;
     xxxxxxx: TComboBox;
     rainbow_Panel1: TPanel;
     rb1: TEdit;
@@ -347,7 +345,6 @@ type
     red_filter_add1: TEdit;
     removeselected8: TMenuItem;
     remove_deepsky_label1: TLabel;
-    remove_solver_files1: TCheckBox;
     renametobak8: TMenuItem;
     replace_by_master_dark1: TButton;
     replace_by_master_flat1: TButton;
@@ -379,11 +376,9 @@ type
     saved1: TLabel;
     save_as_new_file1: TButton;
     save_result1: TButton;
-    scale_calc1: TLabel;
     sd_factor1: TComboBox;
     sd_factor_blink1: TComboBox;
     sd_factor_list1: TComboBox;
-    search_area1: TEdit;
     search_fov1: TComboBox;
     select7: TMenuItem;
     select8: TMenuItem;
@@ -395,7 +390,6 @@ type
     selectall7: TMenuItem;
     list_to_clipboard1: TMenuItem;
     selectall8: TMenuItem;
-    show_console1: TCheckBox;
     show_tetrahedrons1: TBitBtn;
     sigma_factor_remove_background_colourB1: TComboBox;
     sigma_factor_remove_background_colourG1: TComboBox;
@@ -452,7 +446,6 @@ type
     unselect_area1: TButton;
     UpDown1: TUpDown;
     use_astrometry_internal1: TRadioButton;
-    use_astrometry_net1: TRadioButton;
     use_manual_alignment1: TRadioButton;
     use_star_alignment1: TRadioButton;
     Viewimage6: TMenuItem;
@@ -542,9 +535,10 @@ type
     procedure blink_unaligned_multi_step1Click(Sender: TObject);
     procedure browse_dark1Click(Sender: TObject);
     procedure browse_live_stacking1Click(Sender: TObject);
+    procedure analyse_objects_visibles1Click(Sender: TObject);
     procedure clear_inspector_list1Click(Sender: TObject);
     procedure curve_fitting1Click(Sender: TObject);
-    procedure cygwin1Change(Sender: TObject);
+    procedure ephemeris_centering1Change(Sender: TObject);
     procedure gridlines1Click(Sender: TObject);
     procedure help_inspector_tab1Click(Sender: TObject);
     procedure help_live_stacking1Click(Sender: TObject);
@@ -556,7 +550,6 @@ type
       Item: TListItem; SubItem: Integer; State: TCustomDrawState;
       var DefaultDraw: Boolean);
     procedure live_stacking1Click(Sender: TObject);
-    procedure manual_centering1Change(Sender: TObject);
     procedure new_saturation1Change(Sender: TObject);
     procedure pagecontrol1Change(Sender: TObject);
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -568,7 +561,6 @@ type
     procedure colournebula1Click(Sender: TObject);
     procedure clear_photometric_solutions1Click(Sender: TObject);
     procedure clear_photometry_list1Click(Sender: TObject);
-    procedure cygwin1DropDown(Sender: TObject);
     procedure export_aligned_files1Click(Sender: TObject);
     procedure extend_object_name_with_time_observation1Click(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
@@ -698,7 +690,8 @@ type
     procedure apply_artificial_flat_correction1Click(Sender: TObject);
     procedure stack_method1Change(Sender: TObject);
     procedure use_astrometry_internal1Change(Sender: TObject);
-    procedure use_astrometry_net1Change(Sender: TObject);
+    procedure use_ephemeris_alignment1Change(Sender: TObject);
+    procedure use_manual_alignment1Change(Sender: TObject);
     procedure use_star_alignment1Change(Sender: TObject);
     procedure apply_vertical_gradient1Click(Sender: TObject);
     procedure Viewimage1Click(Sender: TObject);
@@ -765,7 +758,6 @@ procedure update_stackmenu;{update stackmenu1 menus}
 procedure x2mean(colors: integer; var img: image_array);{combine values of 4 pixel}
 procedure x3mean(colors: integer;var img: image_array);{combine values of 9 pixel}
 function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
-function create_wcs_solution(filen: string): boolean; {plate solving,  check for WCS file solution and if not available create astrometry.net WCS file solution}
 function load_wcs_solution(filen: string): boolean; {plate solving, load astrometry.net solution}
 procedure apply_dark_flat(filter1:string; exposure1,stemperature1,width1:integer; var dcount,fcount,fdcount: integer; var flat_factor: double) ; {inline;} {apply dark, flat if required, renew if different exposure or ccd temp}
 procedure smart_colour_smooth( var img: image_array; wide : integer; measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
@@ -797,15 +789,14 @@ const
   I_datetime=14;
   I_position=15;
   I_solution=16;
-  I_esolution=17;
-  I_x=18;
-  I_y=19;
-  I_calibration=20;
-  I_focpos=21;
-  I_foctemp=22;
-  I_centalt=23;
-  I_centaz=24;
-  I_gain=25;
+  I_x=17;
+  I_y=18;
+  I_calibration=19;
+  I_focpos=20;
+  I_foctemp=21;
+  I_centalt=22;
+  I_centaz=23;
+  I_gain=24;
 
   D_exposure=0;
   D_temperature=1;
@@ -853,7 +844,7 @@ const
 
 implementation
 
-uses  unit_astrometry,unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd, unit_live_stacking, unit_hyperbola;
+uses  unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd, unit_live_stacking, unit_hyperbola, unit_asteroid;
 
 type
    theaderbackup  = record
@@ -967,26 +958,17 @@ begin
 end;
 
 procedure update_stackmenu;{update stackmenu1 menus, called onshow stackmenu1}
-var
-  astrometry_net :boolean;
 begin
   with stackmenu1 do
   begin
-    {set enable/disable}
-    astrometry_net:=use_astrometry_net1.checked;
-
-    GroupBox_astrometry_net1.enabled:=astrometry_net;
-    GroupBox_star_alignment_settings1.enabled:=(astrometry_net=false);
-    GroupBox_astrometric_solver_settings1.enabled:=(astrometry_net=false);
-
     {set bevel colours}
     Panel_solver1.bevelouter:=bvNone;
     Panel_star_detection1.bevelouter:=bvNone;
-    panel_astrometrynet1.bevelouter:=bvNone;
     Panel_solver1.color:=clnone;
     Panel_star_detection1.color:=clnone;
-    panel_astrometrynet1.color:=clnone;
+
     panel_manual1.color:=clnone;
+    panel_ephemeris1.color:=clnone;
 
     if use_star_alignment1.checked then
     begin
@@ -1001,17 +983,18 @@ begin
       Panel_star_detection1.color:=clBtnFace;
     end
     else
-    if astrometry_net then
-    begin
-      panel_astrometrynet1.bevelouter:=bvSpace;
-      panel_astrometrynet1.color:=clBtnFace;
-    end
-    else
     if use_manual_alignment1.checked then
     begin
       panel_manual1.bevelouter:=bvSpace;
       panel_manual1.color:=clBtnFace;
+    end
+    else
+    if use_ephemeris_alignment1.checked then
+    begin
+      panel_ephemeris1.bevelouter:=bvSpace;
+      panel_ephemeris1.color:=clBtnFace;
     end;
+
 
 
     osc_colour_smooth1.enabled:=make_osc_color1.checked;
@@ -1526,7 +1509,7 @@ begin
   List := TStringList.Create;
   list.StrictDelimiter:=true;
 
-  name:=stackmenu1.manual_centering1.text;{asteroid to center on}
+  name:=stackmenu1.ephemeris_centering1.text;{asteroid to center on}
 
   count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
   try
@@ -1767,8 +1750,8 @@ begin
                     ListView1.Items.item[c].subitems.Strings[I_solution]:='✓' else ListView1.Items.item[c].subitems.Strings[I_solution]:='-';
 
                 {is external solution available?}
-                if stackmenu1.use_astrometry_net1.checked=true then
-                  if fileexists(changeFileExt(filename2,'.wcs')) then  ListView1.Items.item[c].subitems.Strings[I_esolution]:='✓' else ListView1.Items.item[c].subitems.Strings[I_esolution]:='-';
+//                if stackmenu1.use_astrometry_net1.checked=true then
+//                  if fileexists(changeFileExt(filename2,'.wcs')) then  ListView1.Items.item[c].subitems.Strings[I_esolution]:='✓' else ListView1.Items.item[c].subitems.Strings[I_esolution]:='-';
                 ListView1.Items.item[c].subitems.Strings[I_calibration]:=calstat; {status calibration}
                 if focus_pos<>0 then ListView1.Items.item[c].subitems.Strings[I_focpos]:=inttostr(focus_pos);
                 if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[I_foctemp]:=floattostrF2(focus_temp,0,1);
@@ -1776,13 +1759,13 @@ begin
                 if centaz<>999 then ListView1.Items.item[c].subitems.Strings[I_centaz]:=floattostrF2(centaz,0,1);
                 if gain<>999 then ListView1.Items.item[c].subitems.Strings[I_gain]:=inttostr(round(gain));
 
-                if ((use_manual_alignment1.Checked) and (manual_centering1.items.count> 3)) then {ephemeride based stacking}
+                if use_ephemeris_alignment1.Checked then {ephemeride based stacking}
                    get_annotation_position;{fill the x,y with annotation position}
               end;
             finally
               ListView1.Items.EndUpdate;
             end;
-          end;{end ligt frame}
+          end;{end light frame}
         end;{this is a fits file}
       end;{checked and hfd unknown}
       inc(c); {go to next file}
@@ -2053,6 +2036,7 @@ end;
 procedure Tstackmenu1.clear_image_list1Click(Sender: TObject);
 begin
   ListView1.Clear;
+  stackmenu1.ephemeris_centering1.clear;
 end;
 
 procedure Tstackmenu1.clear_dark_list1Click(Sender: TObject);
@@ -2079,8 +2063,7 @@ begin
    if key=#27 then
    begin
      esc_pressed:=true;
-     if use_astrometry_net1.checked then memo2_message('ESC pressed. Execution stopped. Astrometry.net will continue till last job completed.')
-     else  memo2_message('ESC pressed. Execution stopped.');
+     memo2_message('ESC pressed. Execution stopped.');
    end;
 end;
 
@@ -2912,7 +2895,7 @@ begin
           show_shape(true {assume good lock},fitsX,fitsY);
         end
         else mainwindow.shape_alignment_marker1.visible:=false;
-        if annotated then plot_annotations(0,0);{plot any annotations}
+        if annotated then plot_annotations(0,0,false);{plot any annotations}
       end
       else beep;{image not found}
       exit;{done, can display only one image}
@@ -4032,7 +4015,7 @@ begin
           {nothing to do}
         end;
         plot_fits(mainwindow.image1,false {re_center},true);
-        if annotated then plot_annotations(round(solution_vectorX[2]),round(solution_vectorY[2])); {correct annotations in shift only}
+        if annotated then plot_annotations(round(solution_vectorX[2]),round(solution_vectorY[2]),false); {correct annotations in shift only}
       end;
       inc(c);
     until c>=listview6.items.count;
@@ -4115,6 +4098,47 @@ begin
   end;
 end;
 
+procedure Tstackmenu1.analyse_objects_visibles1Click(Sender: TObject);
+var
+  i:integer;
+  Save_Cursor          : TCursor;
+begin
+  if ListView1.items.count=0 then begin memo2_message('Abort, No files in tab IMAGES.' ); exit;end;{no files in list, exit}
+
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  if listview1.selected=nil then
+                 ListView1.ItemIndex := 0;{show wich file is processed}
+  filename2:=Listview1.selected.caption;
+
+  if load_fits(filename2,true {light},true,true {reset var},img_loaded)=false then
+  begin
+    memo2_message('Abort, can'+#39+'t load '+ filename2);
+    Screen.Cursor :=Save_Cursor;    { back to normal }
+    exit;
+  end;
+  if ((cd1_1=0) or (stackmenu1.ignore_header_solution1.checked)) then {no solution or ignore solution}
+  begin
+    memo2_message('Solving file: '+ filename2);
+    if create_internal_solution(img_loaded)= false then
+    begin
+      memo2_message('Abort, can'+#39+'t solve '+ filename2);
+      Screen.Cursor :=Save_Cursor;    { back to normal }
+      exit;
+    end;
+  end;
+
+  memo2_message('Annotating file: '+ filename2+ ' and extracting objects.');
+  plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations});
+  if annotated then plot_annotations(0,0,true {fill combobox})
+  else
+  memo2_message('No object locations found in image. Modify limiting count and limiting magnitude in annotation menu CTRL+Q');
+  memo2_message('Ready. Select the object to align on.');
+  Screen.Cursor :=Save_Cursor;    { back to normal }
+
+end;
+
 
 
 procedure Tstackmenu1.clear_inspector_list1Click(Sender: TObject);
@@ -4178,11 +4202,11 @@ begin
   end;
 end;
 
-procedure Tstackmenu1.cygwin1Change(Sender: TObject);
+procedure Tstackmenu1.ephemeris_centering1Change(Sender: TObject);
 begin
-  if fileexists({$ifdef mswindows} stackmenu1.cygwin1.text {$else} {unix} stackmenu1.cygwin1.text+'/solve-field' {$endif} ) then
-    cygwin1.color:=$AAFFAA {green} else cygwin1.color:=$AAAAFF;{red}
+  new_analyse_required:=true;{force a new analyse for new x, y position asteroids}
 end;
+
 
 procedure Tstackmenu1.gridlines1Click(Sender: TObject);
 begin
@@ -4359,10 +4383,6 @@ begin
      pause_pressed:=false;
 end;
 
-procedure Tstackmenu1.manual_centering1Change(Sender: TObject);
-begin
-  if manual_centering1.items.count> 3 then new_analyse_required:=true;{force a new analyse for new x, y position asteroids}
-end;
 
 procedure Tstackmenu1.new_saturation1Change(Sender: TObject);
 var
@@ -4644,19 +4664,6 @@ procedure Tstackmenu1.clear_photometry_list1Click(Sender: TObject);
 begin
   esc_pressed:=true; {stop any running action}
   listview7.Clear;
-end;
-
-procedure Tstackmenu1.cygwin1DropDown(Sender: TObject);
-var u_path : string;
-    i   : integer;
-begin
-
-  {$ifdef mswindows}
-  u_path:=GetUserDir;
-  for i:=0 to cygwin1.Items.count-1 do {replace by correct user name}
-    cygwin1.Items[i]:=stringreplace(cygwin1.Items[i],'C:\Users\user_name\',u_path,[rfIgnoreCase]);
-  {$ELSE}{linux}
-  {$endif}
 end;
 
 procedure Tstackmenu1.export_aligned_files1Click(Sender: TObject);
@@ -6944,16 +6951,6 @@ begin
   end;
 end;
 
-function create_wcs_solution(filen: string): boolean; {plate solving,  check for WCS file solution and if not available create astrometry.net WCS file solution}
-begin
-  if (fileexists(changeFileExt(filen,'.wcs'))=false) then
-  begin
-    result:=astrometry_net(filen,false {no .new file},false{no update header} ,true {remove_tmp},stackmenu1.show_console1.checked,stackmenu1.keep_console_open1.checked);
-  end
-  else
-  result:=true;{existing solution, no action required}
-end;
-
 function create_internal_solution(img: image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 begin
   if solve_image(img,true) then {match between loaded image and star database}
@@ -7218,7 +7215,8 @@ var
    Save_Cursor:TCursor;
    i,c,over_size,over_sizeL,nrfiles, image_counter,object_counter, first_file, total_counter,counter_colours: integer;
    filter_name1, filter_name2, filename3, extra1,extra2,object_to_process,stack_info         : string;
-   lrgb,solution,monofile  : boolean;
+   lrgb,solution,monofile,ignore  : boolean;
+   crotaX                         : double;
    startTick      : qword;{for timing/speed purposes}
 begin
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
@@ -7233,6 +7231,11 @@ begin
 
   if  ((stackmenu1.use_manual_alignment1.checked) and (pos('Sigma',stackmenu1.stack_method1.text)>0=true) and (pos('Comet',stackmenu1.manual_centering1.text)<>0)) then memo2_message('█ █ █ █ █ █ Warning, use for comet stacking the stack method "Average"!. █ █ █ █ █ █ ');
 
+  if  stackmenu1.use_ephemeris_alignment1.checked then
+  begin
+    if length(ephemeris_centering1.text)<=1 then begin memo2_message('█ █ █ █ █ █ Abort, no object selected for ephemeris alignment. At tab alignment, press analyse and select object to align on! █ █ █ █ █ █'); exit; end
+    else memo2_message('Ephemeris alignment on object '+ephemeris_centering1.text);
+  end;
   startTick := gettickcount64;
 
   if img_loaded<>nil then begin img_backup:=nil;{clear to save memory} backup_img;    end; ;{backup image array and header for case esc pressed.}
@@ -7307,11 +7310,14 @@ begin
 
   dropsize:=strtofloat2(stackmenu1.drop_size1.text);
 
-  if ((use_astrometry_internal1.checked) or (use_astrometry_net1.checked)) then {astrometric alignment}
+  if ((use_astrometry_internal1.checked) or (use_ephemeris_alignment1.checked)) then {astrometric alignment}
   begin
-    memo2_message('Preparing astrometric solutions');
+    memo2_message('Checking astrometric solutions');
+    if use_ephemeris_alignment1.checked then ignore:=stackmenu1.update_solution1.checked {ephemeris}
+    else ignore:=stackmenu1.ignore_header_solution1.Checked; {stacking}
+
     for c:=0 to ListView1.items.count-1 do
-    if ( (ListView1.items[c].Checked=true) and ((ignore_header_solution1.Checked) or (ListView1.Items.item[c].subitems.Strings[I_solution]<>'✓')){no internal solution }  ) then
+    if ( (ListView1.items[c].Checked=true) and ((ignore) or (ListView1.Items.item[c].subitems.Strings[I_solution]<>'✓') ){no internal solution } ) then
     begin
       try { Do some lengthy operation }
         ListView1.Selected :=nil; {remove any selection}
@@ -7324,17 +7330,9 @@ begin
         Application.ProcessMessages;
         if esc_pressed then begin restore_img; Screen.Cursor := Save_Cursor; exit;end;
 
-        if stackmenu1.use_astrometry_internal1.checked then {internal solver}
-        begin
-          {load file}
-          if load_fits(filename2,true {light},true,true {reset var},img_loaded){important required to check CD1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
-          if ((cd1_1=0) or (stackmenu1.ignore_header_solution1.checked)) then solution:= create_internal_solution(img_loaded) else solution:=true;
-        end
-        else
-        if stackmenu1.use_astrometry_net1.checked=true then
-        begin
-            solution:=create_wcs_solution(filename2);  {check for WCS file solution and if not available create astrometry.net WCS file solution}
-        end;
+        {load file}
+        if load_fits(filename2,true {light},true,true {reset var},img_loaded){important required to check CD1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
+        if ((cd1_1=0) or (ignore)) then solution:= create_internal_solution(img_loaded) else solution:=true;
 
         if solution=false then
         begin {no solution found}
@@ -7343,13 +7341,84 @@ begin
         end {no solution found}
         else
         memo2_message('Astrometric solution for: "'+filename2+'"');
-        if stackmenu1.use_astrometry_net1.checked=true then begin if solution then stackmenu1.ListView1.Items.item[c].subitems.Strings[I_esolution]:='✓' else stackmenu1.ListView1.Items.item[c].subitems.Strings[I_esolution]:=''; end {report external plate solve result}
-                                                       else begin if solution then stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]:='✓' else stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]:=''; end;{report internal plate solve result}
+        if solution then stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]:='✓' else stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]:=''; {report internal plate solve result}
+       finally
+      end;
+    end;
+    memo2_message('Astrometric solutions complete.');
+  end;
+
+  if stackmenu1.auto_rotate1.checked  then {fix rotationss}
+  begin
+    memo2_message('Checking orientations');
+    for c:=0 to ListView1.items.count-1 do
+    if ( (ListView1.items[c].Checked=true) and (stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]='✓' {solution} ) ) then
+    begin
+      try { Do some lengthy operation }
+        ListView1.Selected :=nil; {remove any selection}
+        ListView1.ItemIndex := c;{show wich file is processed}
+        Listview1.Items[c].MakeVisible(False);{scroll to selected item}
+
+        progress_indicator(10*c/ListView1.items.count-1,' rotating');{indicate 0 to 10% for plate solving}
+
+        filename2:=ListView1.items[c].caption;
+
+        Application.ProcessMessages;
+        if esc_pressed then begin restore_img; Screen.Cursor := Save_Cursor; exit;end;
+
+        {load file}
+        if load_fits(filename2,true {light},true,true {reset var},img_loaded){important required to check CD1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
+
+        crota2:=fnmodulo(crota2,360);
+        if ((crota2>=90) and (crota2<270)) then
+        begin
+          memo2_message('Rotating '+filename2+' 180°');
+          mainwindow.imageflipv1Click(nil);      {horizontal flip}
+          mainwindow.imageflipv1Click(sender);{vertical flip}
+          if nrbits=16 then
+          save_fits(img_loaded,filename2,16,true)
+           else
+          save_fits(img_loaded,filename2,-32,true);
+        end;
+
       finally
       end;
     end;
-    memo2_message('Adding astrometric solutions complete.');
+    memo2_message('Orientation task complete.');
   end;
+
+
+  if use_ephemeris_alignment1.checked then {add annotations}
+  begin
+    memo2_message('Checking annotations');
+    for c:=0 to ListView1.items.count-1 do                         //   and (stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]:='✓')and ( length(stackmenu1.ListView1.Items.item[c].subitems.Strings[I_X])<=1){no annotation yet}
+    if ( (ListView1.items[c].Checked=true) and (stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]='✓' {solution} ) and ((stackmenu1.update_annotations1.checked) or (stackmenu1.auto_rotate1.checked ) or ( length(stackmenu1.ListView1.Items.item[c].subitems.Strings[I_X])<=1)){no annotation yet} ) then
+    begin
+      try { Do some lengthy operation }
+        ListView1.Selected :=nil; {remove any selection}
+        ListView1.ItemIndex := c;{show wich file is processed}
+        Listview1.Items[c].MakeVisible(False);{scroll to selected item}
+
+        progress_indicator(10*c/ListView1.items.count-1,' annotations');{indicate 0 to 10% for plate solving}
+
+        filename2:=ListView1.items[c].caption;
+        memo2_message('Adding annotations to FITS header and X,Y positions of selected object to list for '+filename2);
+
+        Application.ProcessMessages;
+        if esc_pressed then begin restore_img; Screen.Cursor := Save_Cursor; exit;end;
+
+        {load file}
+        if load_fits(filename2,true {light},true,true {reset var},img_loaded){important required to check CD1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
+        plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add_annotations});
+        mainwindow.SaveFITSwithupdatedheader1Click(nil); {save again with annotations}
+        get_annotation_position;{fill the x,y with annotation position}
+      finally
+      end;
+    end;
+    memo2_message('Annotations complete.');
+  end;
+
+
 
   Application.ProcessMessages;
   if esc_pressed then begin restore_img;Screen.Cursor := Save_Cursor;  exit;end;
@@ -7865,12 +7934,12 @@ begin
   end;
   if mosa then memo2_message('Astrometric image stitching mode. This will stich astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the crop function or negative oversize prior to stacking.');
 
-  if ((use_star_alignment1.checked=false) and (use_manual_alignment1.checked=false)) then
-    if ((aver) or (sigm)) then
-    begin
-      use_star_alignment1.checked:=true;
-      memo2_message('Switched to INTERNAL STAR alignment. You could switch to astrometric alignment if required.');
-    end;
+//  if ((use_star_alignment1.checked=false) and (use_manual_alignment1.checked=false)) then
+//    if ((aver) or (sigm)) then
+//    begin
+//      use_star_alignment1.checked:=true;
+//      memo2_message('Switched to INTERNAL STAR alignment. You could switch to astrometric alignment if required.');
+//    end;
 
   classify_object1.enabled:=(mosa=false); {in mosaic mode ignore object name}
   oversize1.enabled:=(mosa=false); {in mosaic mode ignore this oversize setting}
@@ -7881,9 +7950,12 @@ begin
   update_stackmenu;
 end;
 
+procedure Tstackmenu1.use_ephemeris_alignment1Change(Sender: TObject);
+begin
+  update_stackmenu;
+end;
 
-
-procedure Tstackmenu1.use_astrometry_net1Change(Sender: TObject);
+procedure Tstackmenu1.use_manual_alignment1Change(Sender: TObject);
 begin
   update_stackmenu;
 end;

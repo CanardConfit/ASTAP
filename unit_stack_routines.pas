@@ -225,16 +225,16 @@ var
   gr_factor, gg_factor, gb_factor,
   br_factor, bg_factor, bb_factor,
   saturated_level                           : double;
-  init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
+  init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
 begin
   with stackmenu1 do
   begin
 
     {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
-    use_manual_alignment:=stackmenu1.use_manual_alignment1.checked;
+    use_manual_align:=stackmenu1.use_manual_alignment1.checked;
+    use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
-    use_astrometry_net:=use_astrometry_net1.checked;
 
     binning:=report_binning;{select binning}
     counter:=0;
@@ -325,7 +325,6 @@ begin
             begin
               backup_header;{backup header and solution}
 
-              if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then  begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
               initialise1;{set variables correct, do this before apply dark}
               initialise2;{set variables correct}
             end;
@@ -365,26 +364,16 @@ begin
               counterL:=light_count; counterLdark:=dark_count; counterLflat:=flat_count; counterLbias:=flatdark_count; exposureL:=round(exposure);temperatureL:=set_temperature;
             end;
 
-            if ((use_astrometry_internal) or (use_astrometry_net)) then
-            begin {create new solutions for the R, G, B and L stacked images if required}
-            {get_solution}
+            if use_astrometry_internal then {internal solver, create new solutions for the R, G, B and L stacked images if required}
+            begin
               memo2_message('Preparing astrometric solution for interim file: '+filename2);
-              if use_astrometry_internal then {internal solver}
-              begin
-                if cd1_1=0 then solution:= create_internal_solution(img_loaded) else solution:=true;
-                if solution=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, No astrometric solution for '+filename2); exit;end;{no solution found}
-              end
-              else
-              if use_astrometry_net=true then
-              begin
-                  solution:=create_wcs_solution(filename2);  {check for WCS file solution and if not available create astrometry.net WCS file solution}
-                  if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, No astrometric solution for '+filename2); exit;end;{no solution found}
-              end;
+              if cd1_1=0 then solution:= create_internal_solution(img_loaded) else solution:=true;
+              if solution=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, No astrometric solution for '+filename2); exit;end;{no solution found}
             end
             else
             if init=false then {first image}
             begin
-              if use_manual_alignment then
+              if ((use_manual_align) or (use_ephemeris_alignment)) then
               begin
                 referenceX:=ref_X; {from FITS header form first stage using mode 'A', 'S'}
                 referenceY:=ref_Y; {from FITS header}
@@ -418,12 +407,12 @@ begin
             end;{init, c=0}
 
             solution:=true;{assume solution is found}
-            if ((use_astrometry_internal) or (use_astrometry_net)) then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+            if use_astrometry_internal then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
             else
             begin {align using star match}
               if init=true then {second image}
               begin
-                if use_manual_alignment then
+                if ((use_manual_align) or (use_ephemeris_alignment)) then
                 begin {manual alignment}
                   solution_vectorX[2]:=referenceX-ref_X; {calculate correction}
                   solution_vectorY[2]:=referenceY-ref_Y;
@@ -460,7 +449,7 @@ begin
               if jd>jd_stop then jd_stop:=jd;
               jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
-              vector_based:=((use_star_alignment) or (use_manual_alignment));
+              vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
               if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
               begin
                 astrometric_to_vector;{convert astrometric solution to vector solution}
@@ -622,7 +611,7 @@ procedure stack_average(oversize:integer; var files_to_process : array of TfileT
 var
   fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,drizzle_mode,binning                : integer;
   background_correction, flat_factor, value, weightF                                                               : double;
-  init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based : boolean;
+  init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
 begin
   with stackmenu1 do
   begin
@@ -631,9 +620,9 @@ begin
     if pos('Bayer',stackmenu1.demosaic_method1.text)<>0  then drizzle_mode:=2; {Bayer drizzle mode}
 
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
-    use_manual_alignment:=stackmenu1.use_manual_alignment1.checked;
+    use_manual_align:=stackmenu1.use_manual_alignment1.checked;
+    use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
-    use_astrometry_net:=use_astrometry_net1.checked;
 
     counter:=0;
     sum_exp:=0;
@@ -666,7 +655,6 @@ begin
           begin
             backup_header;{backup header and solution}
 
-            if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then  begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
             initialise1;{set variables correct. Do this before apply dark}
             initialise2;{set variables correct}
             if ((bayerpat='') and (make_osc_color1.checked)) then
@@ -691,15 +679,10 @@ begin
 
           if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
 
-          if ((use_astrometry_internal) or (use_astrometry_net)) then
-          begin {get_solution}
-            if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then
-                       begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
-          end
-          else {internal star alignment}
+          if use_astrometry_internal=false then
           if init=false then {first image}
           begin
-            if use_manual_alignment then
+            if ((use_manual_align) or (use_ephemeris_alignment)) then
             begin
               referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
               referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
@@ -736,7 +719,7 @@ begin
             old_width:=width2;
             old_height:=height2;
 
-            if use_manual_alignment then
+            if ((use_manual_align) or (use_ephemeris_alignment)) then
             begin
               referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
               referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
@@ -744,12 +727,12 @@ begin
           end;{init, c=0}
 
           solution:=true;
-          if ((use_astrometry_internal) or (use_astrometry_net)) then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+          if use_astrometry_internal then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
           else
           begin {align using star match}
             if init=true then {second image}
             begin
-              if use_manual_alignment then
+              if ((use_manual_align) or (use_ephemeris_alignment)) then
               begin {manual alignment}
                 solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {calculate correction}
                 solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]);
@@ -793,7 +776,7 @@ begin
             if jd>jd_stop then jd_stop:=jd;
             jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
-            vector_based:=((use_star_alignment) or (use_manual_alignment));
+            vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
             if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
             begin
               astrometric_to_vector;{convert astrometric solution to vector solution}
@@ -905,16 +888,16 @@ var
     cropW,cropH : integer;
 
     flat_factor, value,  background_correction,dummy,median                                                        : double;
-    init, solution,use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
+    init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
 
 begin
   with stackmenu1 do
   begin
     {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
-    use_manual_alignment:=stackmenu1.use_manual_alignment1.checked;
+    use_manual_align:=stackmenu1.use_manual_alignment1.checked;
+    use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
-    use_astrometry_net:=use_astrometry_net1.checked;
 
     counter:=0;
     sum_exp:=0;
@@ -945,8 +928,6 @@ begin
         if init=false then
         begin
           backup_header;{backup header and solution}
-
-          if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then  begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
           initialise1;{set variables correct}
           initialise2;{set variables correct}
         end;
@@ -966,12 +947,7 @@ begin
         {naxis3 is now 3}
         // not for mosaic||| if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
 
-        if ((use_astrometry_internal) or (use_astrometry_net)) then
-        begin {get_solution}
-          if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
-        end
-        else
-        begin memo2_message('Abort, only astrometric alignment possible in mosaic mode.'); exit; end;
+        if use_astrometry_internal=false then begin memo2_message('Abort, only astrometric alignment possible in mosaic mode.'); exit; end;
 
         if init=false then {init}
         begin
@@ -1006,7 +982,7 @@ begin
           background_correction:=1000-background_correction;
         end
           else background_correction:=0;
-        if ((use_astrometry_internal) or (use_astrometry_net)) then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+        if use_astrometry_internal then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
         else
         begin memo2_message('Abort, only astrometric alignment possible in mosaic mode.'); exit; end;
 
@@ -1021,7 +997,7 @@ begin
           if jd>jd_stop then jd_stop:=jd;
           jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
-          vector_based:=((use_star_alignment) or (use_manual_alignment));
+          vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
           begin
             astrometric_to_vector;{convert astrometric solution to vector solution}
@@ -1106,7 +1082,7 @@ procedure stack_sigmaclip(oversize:integer; var files_to_process : array of Tfil
 var
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col,  drizzle_mode,binning   : integer;
     background_correction, flat_factor,variance_factor, value,weightF  : double;
-    init, solution, use_star_alignment,use_manual_alignment, use_astrometry_internal, use_astrometry_net,vector_based :boolean;
+    init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
 begin
   with stackmenu1 do
   begin
@@ -1119,9 +1095,9 @@ begin
 
 
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
-    use_manual_alignment:=stackmenu1.use_manual_alignment1.checked;
+    use_manual_align:=stackmenu1.use_manual_alignment1.checked;
+    use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
-    use_astrometry_net:=use_astrometry_net1.checked;
 
     binning:=report_binning;{select binning}
     counter:=0;
@@ -1155,7 +1131,6 @@ begin
         begin
           backup_header;{backup header and solution}
 
-          if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then  begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
           initialise1;{set variables correct}
           initialise2;{set variables correct}
           if ((bayerpat='') and (make_osc_color1.checked)) then
@@ -1181,14 +1156,10 @@ begin
         if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
                                 {initialized in init=false}
 
-        if ((use_astrometry_internal) or (use_astrometry_net)) then
-        begin{get_solution}
-          if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
-        end
-        else
+        if use_astrometry_internal=false then
         if init=false then {first image}
         begin
-          if use_manual_alignment then
+          if ((use_manual_align) or (use_ephemeris_alignment)) then
           begin
             referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
             referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
@@ -1226,12 +1197,12 @@ begin
         end;{init, c=0}
 
         solution:=true;
-        if ((use_astrometry_internal) or (use_astrometry_net)) then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+        if use_astrometry_internal then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
         else
         begin {align using star match}
            if init=true then {second image}
               begin
-                if use_manual_alignment then
+                if ((use_manual_align) or (use_ephemeris_alignment)) then
                 begin {manual alignment}
                   solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {calculate correction}
                   solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]);
@@ -1283,7 +1254,7 @@ begin
           {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
           if drizzle_mode=2 then demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
 
-          vector_based:=((use_star_alignment) or (use_manual_alignment));
+          vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
           begin
             astrometric_to_vector;{convert astrometric solution to vector solution}
@@ -1357,10 +1328,9 @@ begin
              {naxis3 is now 3}
           end;
 
-          if ((use_astrometry_internal) or (use_astrometry_net)) then
-          begin {get_solution}
-            if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
-          end;
+//          if use_astrometry_internal then
+//          begin {get_solution}
+//          end;
 
           if init=false then {init}
           begin
@@ -1379,10 +1349,10 @@ begin
 
           inc(counter);
 
-          if ((use_astrometry_internal) or (use_astrometry_net)) then  sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+          if use_astrometry_internal then  sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
           else
           begin {align using star match, read saved solution vectors}
-            if use_manual_alignment then
+            if ((use_manual_align) or (use_ephemeris_alignment)) then
             begin
               if init=true then
               begin
@@ -1412,7 +1382,7 @@ begin
           {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
           if drizzle_mode=2 then demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
 
-          vector_based:=((use_star_alignment) or (use_manual_alignment));
+          vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
           begin
             astrometric_to_vector;{convert astrometric solution to vector solution}
@@ -1474,10 +1444,10 @@ begin
              {naxis3 is now 3}
           end;
 
-          if ((use_astrometry_internal) or (use_astrometry_net)) then
-          begin {get_solution}
-            if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
-          end;
+//          if ((use_astrometry_internal) or (use_astrometry_net)) then
+//          begin {get_solution}
+//            if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
+//          end;
 
           if init=false then {init}
           begin
@@ -1504,10 +1474,10 @@ begin
 
           inc(counter);
 
-          if ((use_astrometry_internal) or (use_astrometry_net)) then  sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+          if use_astrometry_internal then  sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
           else
           begin {align using star match, read saved solution vectors}
-            if use_manual_alignment then
+            if ((use_manual_align) or (use_ephemeris_alignment)) then
             begin
               if init=true then
               begin
@@ -1534,7 +1504,7 @@ begin
           end;
           init:=true;{initialize for first image done}
 
-          vector_based:=((use_star_alignment) or (use_manual_alignment));
+          vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
           begin
             astrometric_to_vector;{convert astrometric solution to vector solution}

@@ -79,7 +79,7 @@ begin
 
   result:=sqrt(result/(w*h));{slope value, highest value is the sharpest image}
   average:=average/(w*h);{calculate average pixel value}
-  result:=4*average/result;{turn the curve upside down and scale simular as HFD values. A lower value indicates a sharper image}
+  result:=4*average/(result+0.000000000000000001);{turn the curve upside down and scale simular as HFD values. A lower value indicates a sharper image. Prevent error for full fully saturated images by adding 0.00000000000001}
 end;
 
 

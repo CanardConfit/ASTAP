@@ -125,7 +125,7 @@ procedure stack_live(oversize:integer; path :string);{stack live average}
 var
     fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter :  integer;
     flat_factor, distance             : double;
-    init, solution, use_astrometry_internal, use_astrometry_net,vector_based,waiting,transition_image,colour_correction :boolean;
+    init, solution, use_astrometry_internal, vector_based,waiting,transition_image,colour_correction :boolean;
     file_ext,filen                    :  string;
     multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}
 
@@ -150,7 +150,6 @@ begin
   with stackmenu1 do
   begin
     use_astrometry_internal:=use_astrometry_internal1.checked;
-    use_astrometry_net:=use_astrometry_net1.checked;
 
     reset_var; {reset variables  including init:=false}
 
@@ -229,12 +228,7 @@ begin
 
             if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
 
-            if ((use_astrometry_internal) or (use_astrometry_net)) then
-            begin {get_solution}
-              if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then
-                         begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
-            end
-            else {internal star alignment}
+            if use_astrometry_internal=false then
             if init=false then {first image}
             begin
               bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist1);{bin, measure background, find stars}

@@ -64,7 +64,7 @@ interface
 
 uses
    Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ComCtrls,
-   LCLIntf, ColorBox,{for for getkeystate, selectobject, openURL}
+   LCLIntf, ColorBox, Buttons,{for for getkeystate, selectobject, openURL}
    math, astap_main, unit_stack;
 
 type
@@ -74,12 +74,15 @@ type
   Tform_asteroids1 = class(TForm)
     add_annotations1: TCheckBox;
     annotate_asteroids1: TButton;
+    BitBtn1: TBitBtn;
+    BitBtn2: TBitBtn;
     cancel_button1: TButton;
     ColorBox1: TColorBox;
     date_label1: TLabel;
     date_obs1: TEdit;
     download_mpcorb1: TLabel;
     file_to_add1: TButton;
+    file_to_add2: TButton;
     GroupBox1: TGroupBox;
     GroupBox2: TGroupBox;
     help_asteroid_annotation1: TLabel;
@@ -90,19 +93,26 @@ type
     max_magn_asteroids1: TEdit;
     max_nr_asteroids1: TEdit;
     mpcorb_filedate1: TLabel;
+    mpcorb_filedate2: TLabel;
+    mpcorb_path2: TLabel;
     mpcorb_path1: TLabel;
     OpenDialog1: TOpenDialog;
     showfullnames1: TCheckBox;
     add_subtitle1: TCheckBox;
+    showmagnitude1: TCheckBox;
     UpDown1: TUpDown;
     up_to_magn1: TLabel;
     up_to_number1: TLabel;
     procedure annotate_asteroids1Click(Sender: TObject);
+    procedure BitBtn1Click(Sender: TObject);
+    procedure BitBtn2Click(Sender: TObject);
     procedure cancel_button1Click(Sender: TObject);
     procedure download_mpcorb1Click(Sender: TObject);
     procedure file_to_add1Click(Sender: TObject);
+    procedure file_to_add2Click(Sender: TObject);
     procedure FormKeyPress(Sender: TObject; var Key: char);
     procedure FormShow(Sender: TObject);
+    procedure GroupBox1Click(Sender: TObject);
     procedure help_asteroid_annotation1Click(Sender: TObject);
     procedure latitude1Change(Sender: TObject);
     procedure longitude1Change(Sender: TObject);
@@ -120,7 +130,9 @@ const
    maxcount_asteroid : string='10000';
    maxmag_asteroid : string='17';
    mpcorb_path : string='MPCORB.DAT';
+   cometels_path : string='CometEls.txt';
    showfullnames: boolean=true;
+   showmagnitude: boolean=false;
    add_annotations: boolean=false;{annotation to the fits header}
    add_date: boolean=true;
 
@@ -1048,59 +1060,120 @@ const
    Gauss_gravitational_constant: double=0.01720209895*180/pi;
 
 var txtf : textfile;
-    count,fontsize            : integer;
+    count,fontsize           : integer;
     yy,mm,dd,h,g,a_anm,aop,lan,incl,ecc,a_a,q, DELTA,sun_delta,degrees_to_perihelion,c_epochdelta,ra2,dec2,mag,phase,delta_t,
     SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec     : double;
     desn,name,s, thetext:string;
-    asteroid,flip_horizontal, flip_vertical,form_existing, errordecode : boolean;
+    flip_horizontal, flip_vertical,form_existing, errordecode : boolean;
 
 
-  procedure plot_asteroid(sizebox :integer);
-  var
-    fitsX,fitsY,dra,ddec, delta_ra,det,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh : double;
-    x,y,x2,y2                                                                               : integer;
-  begin
+      procedure plot_asteroid(sizebox :integer);
+      var
+        fitsX,fitsY,dra,ddec, delta_ra,det,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh : double;
+        x,y,x2,y2                                                                               : integer;
+      begin
 
-   {5. Conversion (RA,DEC) -> (x,y)}
-    sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
-    delta_ra:=ra2-ra0;
-    sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
-    HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
-    dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
-    dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
-    det:=CD2_2*CD1_1 - CD1_2*CD2_1;
-    fitsX:= +crpix1 - (CD1_2*dDEC - CD2_2*dRA) / det; {1..width2}
-    fitsY:= +crpix2 + (CD1_1*dDEC - CD2_1*dRA) / det; {1..height2}
-
-
-    x:=round(fitsX-1); {0..width2-1}
-    y:=round(fitsY-1); {0..height2-1}
-
-    if ((x>-50) and (x<=width2+50) and (y>-50) and (y<=height2+50)) then {within image1 with some overlap}
-    begin
-      {annotate}
-       if flip_horizontal then x2:=(width2-1)-x else x2:=x;
-       if flip_vertical   then y2:=y         else y2:=(height2-1)-y;
+       {5. Conversion (RA,DEC) -> (x,y)}
+        sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
+        delta_ra:=ra2-ra0;
+        sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
+        HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
+        dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
+        dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
+        det:=CD2_2*CD1_1 - CD1_2*CD2_1;
+        fitsX:= +crpix1 - (CD1_2*dDEC - CD2_2*dRA) / det; {1..width2}
+        fitsY:= +crpix2 + (CD1_1*dDEC - CD2_1*dRA) / det; {1..height2}
 
 
-       if showfullnames then thetext:=trim(name) else thetext:=trim(desn)+'('+floattostrF(mag,ffgeneral,3,1)+')';
+        x:=round(fitsX-1); {0..width2-1}
+        y:=round(fitsY-1); {0..height2-1}
 
-       if add_annot then
-       begin                         //floattostrF2(median_bottom_right,0,2)
-          add_text ('ANNOTATE=',#39+floattostrF2(fitsX-sizebox,0,2)+';'+floattostrF2(fitsY-sizebox,0,2)+';'+floattostrF2(fitsX+sizebox,0,2)+';'+floattostrF2(fitsY+sizebox,0,2)+';-1;'{boldness}+thetext+';'+#39);
-          annotated:=true;{header contains annotations}
-       end
-       else
-       begin
-         mainwindow.image1.Canvas.textout(x2+sizebox,y2,thetext);
-         mainwindow.image1.canvas.ellipse(x2-sizebox,y2-sizebox,x2+1+sizebox,y2+1+sizebox);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-       end;
-    end;
-  end;
+        if ((x>-50) and (x<=width2+50) and (y>-50) and (y<=height2+50)) then {within image1 with some overlap}
+        begin
+          {annotate}
+           if flip_horizontal then x2:=(width2-1)-x else x2:=x;
+           if flip_vertical   then y2:=y         else y2:=(height2-1)-y;
+
+
+           if showfullnames then thetext:=trim(name) else thetext:=trim(desn)+'('+floattostrF(mag,ffgeneral,3,1)+')';
+           if showmagnitude then thetext:=thetext+ ';{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext:=thetext+ ';';
+
+           if add_annot then
+           begin                         //floattostrF2(median_bottom_right,0,2)
+              add_text ('ANNOTATE=',#39+floattostrF2(fitsX-sizebox,0,2)+';'+floattostrF2(fitsY-sizebox,0,2)+';'+floattostrF2(fitsX+sizebox,0,2)+';'+floattostrF2(fitsY+sizebox,0,2)+';-1;'{boldness}+thetext+';'+#39);
+              annotated:=true;{header contains annotations}
+           end
+           else
+           begin
+             mainwindow.image1.Canvas.textout(x2+sizebox,y2,thetext);
+             mainwindow.image1.canvas.ellipse(x2-sizebox,y2-sizebox,x2+1+sizebox,y2+1+sizebox);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+           end;
+        end;
+      end;
+      procedure read_and_plot(asteroid: boolean; path :string);
+      begin
+        assignfile(txtf,path);
+        try
+          Reset(txtf);
+          while ((not EOF(txtf)) and (count<maxcount) and (esc_pressed=false)) do   {loop}
+          begin
+            ReadLn(txtf, s);
+           if length(s)>10 then
+           begin
+             if asteroid then  convert_MPCORB_line(s, {var} desn,name, yy,mm,dd,ecc,q,incl,lan,aop,H,a_g){read asteroid as comet, han.k}
+                         else  convert_comet_line (s, {var} desn,name, yy,mm,dd,ecc,q,incl,lan  ,aop,H,c_k); {read MPC comet{han.k}
+             if ((desn<>'') and (q<>0)) then {data line}
+             begin
+               try
+                 inc(count);
+                 comet(sun200_calculated,2000,jd+delta_t{delta_t in days},round(yy),round(mm),dd,ecc,q,incl,lan,aop,2000,{var} ra2,dec2,delta,sun_delta);
+
+                 if sqr( (ra2-ra0)*cos_telescope_dec)  + sqr(dec2-dec0)< sqr(fov) then {within the image FOV}
+                 begin
+                   if asteroid then
+                   begin
+                     mag:=h+ ln(delta*sun_delta)*5/ln(10);  {log(x) = ln(x)/ln(10)}
+
+                     phase:=illum_comet; { Get phase comet. Only valid is comet routine is called first.}
+                     mag:=mag+asteroid_magn_comp(a_g{asteroid_slope_factor},phase);
+                     {slope factor =0.15
+                      angle object-sun-earth of 0   => 0   magnitude
+                                                5      0.42
+                                               10      0.65
+                                               15      0.83
+                                               20      1}
+
+                   end
+                   else
+                   begin {comet magnitude}
+                     mag:=H+ ln(delta)*5/ln(10)+ c_k*ln(sun_delta)/ln(10) ;
+                   end;
+
+                   if mag<=maxmag then
+                   begin
+                     if asteroid then plot_asteroid(20) else plot_asteroid(100);
+                   end;
+
+                   if frac(count/10000)=0 then
+                   begin
+                     if  form_existing then  form_asteroids1.caption:=inttostr(count);
+                     application.processmessages;{check for esc}
+                   end;
+                 end;{within FOV}
+               except
+               end;
+             end;
+           end;{longer then 10}
+        end;
+        finally
+          CloseFile(txtf);
+        end;
+      end;
 
 begin
   if fits_file=false then exit;
   if cd1_1=0 then begin memo2_message('Abort, first solve the image!');exit;end;
+
 
   cos_telescope_dec:=cos(dec0);
   fov:=1.5*sqrt(sqr(0.5*width2*cdelt1)+sqr(0.5*height2*cdelt2))*pi/180; {field of view with 50% extra}
@@ -1152,64 +1225,18 @@ begin
   sincos(dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
   if add_annot then
-         remove_key('ANNOTATE',true{all});{remove key annotate words from header}
-
-  asteroid:=pos('.txt',mpcorb_path)=0;
-
-  assignfile(txtf,mpcorb_path);
-  try
-    Reset(txtf);
-    while ((not EOF(txtf)) and (count<maxcount) and (esc_pressed=false)) do   {loop}
-    begin
-      ReadLn(txtf, s);
-
-     if asteroid then  convert_MPCORB_line(s, {var} desn,name, yy,mm,dd,ecc,q,incl,lan,aop,H,a_g){read asteroid as comet, han.k}
-                 else  convert_comet_line (s, {var} desn,name, yy,mm,dd,ecc,q,incl,lan  ,aop,H,c_k); {read MPC comet{han.k}
-     if ((desn<>'') and (q<>0)) then {data line}
-     begin
-       try
-         inc(count);
-         comet(sun200_calculated,2000,jd+delta_t{delta_t in days},round(yy),round(mm),dd,ecc,q,incl,lan,aop,2000,{var} ra2,dec2,delta,sun_delta);
-
-         if sqr( (ra2-ra0)*cos_telescope_dec)  + sqr(dec2-dec0)< sqr(fov) then {within the image FOV}
-         begin
-           if asteroid then
-           begin
-             mag:=h+ ln(delta*sun_delta)*5/ln(10);  {log(x) = ln(x)/ln(10)}
-
-             phase:=illum_comet; { Get phase comet. Only valid is comet routine is called first.}
-             mag:=mag+asteroid_magn_comp(a_g{asteroid_slope_factor},phase);
-             {slope factor =0.15
-              angle object-sun-earth of 0   => 0   magnitude
-                                        5      0.42
-                                       10      0.65
-                                       15      0.83
-                                       20      1}
-
-           end
-           else
-           begin {comet magnitude}
-             mag:=H+ ln(delta)*5/ln(10)+ c_k*ln(sun_delta)/ln(10) ;
-           end;
-
-           if mag<=maxmag then
-           begin
-             if asteroid then plot_asteroid(20) else plot_asteroid(100);
-           end;
-
-           if frac(count/10000)=0 then
-           begin
-             if  form_existing then  form_asteroids1.caption:=inttostr(count);
-             application.processmessages;{check for esc}
-           end;
-         end;{within FOV}
-       except
-       end;
-     end;
+  begin
+     remove_key('ANNOTATE',true{all});{remove key annotate words from header}
+     annotated:=false;
   end;
-  finally
-    CloseFile(txtf);
-  end;
+
+  if mpcorb_path<>'' then
+                 read_and_plot(true,mpcorb_path);
+
+  count:=0;
+
+  if cometels_path<>'' then
+                 read_and_plot(false,cometels_path);
 
   {write some info at bottom screen}
 
@@ -1224,7 +1251,7 @@ begin
        image1.Canvas.textout(round(fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd)+'    Position[α,δ]:   '+ra1.text+'      '+dec1.text);{}
       end;
     end;
-    if add_annot then plot_annotations(0,0);{plot annotation from the header}
+    if add_annot then plot_annotations(0,0,false);{plot annotation from the header}
   end;
 
 end;
@@ -1236,7 +1263,7 @@ begin
   if fileExists(form_asteroids1.mpcorb_path1.caption)=false then
   begin
     form_asteroids1.mpcorb_path1.Font.color:=clred;
-    form_asteroids1.mpcorb_filedate1.caption:='Error, file MPCORB.DAT not found !!!';
+    form_asteroids1.mpcorb_filedate1.caption:='No MPCORB.DAT file';
     result:=false;
     exit;
   end
@@ -1244,6 +1271,23 @@ begin
   begin
     form_asteroids1.mpcorb_filedate1.caption:=DateTimeToStr(FileDateToDateTime(FileAge(form_asteroids1.mpcorb_path1.caption)));
     form_asteroids1.mpcorb_path1.font.color:=clgreen;
+    result:=true;
+  end;
+end;
+
+function test_cometels : boolean;
+begin
+  if fileExists(form_asteroids1.mpcorb_path2.caption)=false then
+  begin
+    form_asteroids1.mpcorb_path2.Font.color:=clred;
+    form_asteroids1.mpcorb_filedate2.caption:='No CometEls.txt file';
+    result:=false;
+    exit;
+  end
+  else
+  begin
+    form_asteroids1.mpcorb_filedate2.caption:=DateTimeToStr(FileDateToDateTime(FileAge(form_asteroids1.mpcorb_path2.caption)));
+    form_asteroids1.mpcorb_path2.font.color:=clgreen;
     result:=true;
   end;
 end;
@@ -1256,10 +1300,11 @@ var errordecode: boolean;
 
 
 begin
-  if test_mpcorb=false then begin exit; end;{file not found}
+  if ((test_mpcorb=false) and (test_cometels=false)) then begin exit; end;{file not found}
 
 
   mpcorb_path:=form_asteroids1.mpcorb_path1.caption;
+  cometels_path:=form_asteroids1.mpcorb_path2.caption;
 
   date_avg:=date_obs1.Text;
 
@@ -1272,6 +1317,7 @@ begin
   annotation_color:=ColorBox1.selected;
 
   showfullnames:=form_asteroids1.showfullnames1.checked;
+  showmagnitude:=form_asteroids1.showmagnitude1.checked;
 
   add_annotations:=form_asteroids1.add_annotations1.checked;
 
@@ -1290,6 +1336,18 @@ begin
   mainwindow.setfocus;
 end;
 
+procedure Tform_asteroids1.BitBtn1Click(Sender: TObject);
+begin
+  mpcorb_path1.caption:='';
+  test_mpcorb;
+end;
+
+procedure Tform_asteroids1.BitBtn2Click(Sender: TObject);
+begin
+  mpcorb_path2.caption:='';
+  test_cometels;
+end;
+
 procedure Tform_asteroids1.cancel_button1Click(Sender: TObject); {han.k}
 begin
   esc_pressed:=true;
@@ -1304,13 +1362,25 @@ end;
 
 procedure Tform_asteroids1.file_to_add1Click(Sender: TObject); {han.k}
 begin
-  OpenDialog1.Title := 'Select MPCORB.DAT or CometEls.txt to use';
+  OpenDialog1.Title := 'Select MPCORB.DAT to use';
   OpenDialog1.Options := [ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := 'MPCORB.DAT or CometEls.txt file (*.DAT*; com*.TXT)|*.dat;*.DAT;com*.txt';
+  opendialog1.Filter := 'MPCORB.DAT(*.DAT*)|*.dat;*.DAT';
   if opendialog1.execute then
   begin
     mpcorb_path1.caption:=OpenDialog1.Files[0];
     test_mpcorb;
+  end;
+end;
+
+procedure Tform_asteroids1.file_to_add2Click(Sender: TObject);
+begin
+  OpenDialog1.Title := 'Select CometEls.txt to use';
+  OpenDialog1.Options := [ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter := 'CometEls.txt file (com*.TXT)|com*.txt';
+  if opendialog1.execute then
+  begin
+    mpcorb_path2.caption:=OpenDialog1.Files[0];
+    test_cometels;
   end;
 end;
 
@@ -1330,6 +1400,8 @@ begin
 
   mpcorb_path1.caption:=mpcorb_path;
   test_mpcorb;
+  mpcorb_path2.caption:=cometels_path;
+  test_cometels;
   if date_avg<>'' then
   begin
      date_label1.caption:='DATE_AVG';
@@ -1352,12 +1424,18 @@ begin
 
 
   showfullnames1.Checked:=showfullnames;
+  showmagnitude1.Checked:=showmagnitude;
   add_annotations1.Checked:=add_annotations;
 
   form_asteroids1.add_subtitle1.checked:=add_date;
 
   ColorBox1.selected:=annotation_color;
 
+end;
+
+procedure Tform_asteroids1.GroupBox1Click(Sender: TObject);
+begin
+  mpcorb_path:='';
 end;
 
 
