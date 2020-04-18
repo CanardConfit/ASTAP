@@ -704,7 +704,7 @@ object mainwindow: Tmainwindow
     OnMouseEnter = StatusBar1MouseEnter
   end
   object BitBtn1: TBitBtn
-    Left = 250
+    Left = 248
     Height = 42
     Hint = 'Show stack menu. CTRL-A'
     Top = 5
@@ -1221,6 +1221,19 @@ object mainwindow: Tmainwindow
         ImageIndex = 23
         ShortCut = 16470
         OnClick = Flipvertical1Click
+      end
+      object MenuItem20: TMenuItem
+        Caption = '-'
+      end
+      object annotations_visible1: TMenuItem
+        AutoCheck = True
+        Caption = 'Annotations visible'
+        Checked = True
+        Hint = 'Switches the annotations on/off'
+        OnClick = annotations_visible1Click
+      end
+      object MenuItem15: TMenuItem
+        Caption = '-'
       end
       object zoomout1: TMenuItem
         Caption = 'Zoom out'

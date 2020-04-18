@@ -103,6 +103,9 @@ type
     batch_annotate1: TMenuItem;
     extract_pixel_11: TMenuItem;
     copy_paste_tool1: TMenuItem;
+    MenuItem15: TMenuItem;
+    annotations_visible1: TMenuItem;
+    MenuItem20: TMenuItem;
     MenuItem21: TMenuItem;
     extract_pixel_22: TMenuItem;
     save_to_tiff1: TMenuItem;
@@ -263,6 +266,7 @@ type
 
     procedure add_marker_position1Click(Sender: TObject);
     procedure annotate_with_measured_magnitudes1Click(Sender: TObject);
+    procedure annotations_visible1Click(Sender: TObject);
     procedure batch_annotate1Click(Sender: TObject);
     procedure ccd_inspector_plot1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
@@ -1110,7 +1114,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.343 dated 2020-04-17';
+  #13+#10+'Version ß0.9.345 dated 2020-04-18';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1754,7 +1758,7 @@ end;
 procedure Tmainwindow.clean_up1Click(Sender: TObject);
 begin
   plot_fits(mainwindow.image1,false,true);
-  if annotated then plot_annotations(0,0,false);
+  if ((annotated) and (annotations_visible1.checked)) then plot_annotations(0,0,false);
 end;
 
 procedure Tmainwindow.remove_colour1Click(Sender: TObject);{make local area monochrome}
@@ -2000,8 +2004,7 @@ end;
 procedure Tmainwindow.remove_markers1Click(Sender: TObject);
 begin
   plot_fits(mainwindow.image1,false,true);
-  if annotated then plot_annotations(0,0,false);
-
+  if ((annotated) and (annotations_visible1.checked)) then plot_annotations(0,0,false);
 end;
 
 procedure show_shape(good_lock : boolean;fitsX,fitsY: double);{show manual alignment shape}
@@ -4071,9 +4074,9 @@ function load_fits(filen:string;light {load as light of dark/flat},load_data,res
 {if load_data then read all else header only}
 {if reset_var=true, reset variables to zero}
 var
-   i,j,k,nr,error3,col,naxis1, reader_position  : integer;
+   i,j,k,nr,error3,col,naxis1, reader_position            : integer;
    fract,dummy,scale,exptime,ccd_temperature,measured_max : double;
-   col_float : single;
+   col_float,bscale  : single;
    s                 : string[3];
    bzero             : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
    wo                : word;   {for 16 signed integer}
@@ -4194,6 +4197,7 @@ begin
   naxis:=-1;
   naxis3:=1;
   bzero:=0;{just for the case it is not available}
+  bscale:=1;
   imagetype:='';
   xbinning:=1;{normal}
   ybinning:=1;
@@ -4272,15 +4276,24 @@ begin
        if ((header[i+5]='A') and (header[i+6]='X')) then datamax_org:=round(validate_double);     {DATAMAX. Note some FIT files contain double }
     end;
 
-    if ((header[i]='B') and (header[i+1]='Z')  and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') ) then
+    if (header[i]='B') then
     begin
-       dummy:=validate_double;
-       if dummy>2147483647 then
-       bzero:=-2147483648
-       else
-       bzero:=round(dummy); {Maxim DL writes BZERO value -2147483647 as +2147483648 !! }
-      {without this it would have worked also with error check off}
+      if ( (header[i+1]='Z')  and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') ) then
+      begin
+         dummy:=validate_double;
+         if dummy>2147483647 then
+         bzero:=-2147483648
+         else
+         bzero:=round(dummy); {Maxim DL writes BZERO value -2147483647 as +2147483648 !! }
+        {without this it would have worked also with error check off}
+      end
+      else
+      if ( (header[i+1]='S')  and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') ) then
+       begin
+          bscale:=validate_double; {rarely used. Normally 1}
+       end;
     end;
+
     if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='P') and (header[i+3]='O') and (header[i+4]='S') and (header[i+5]='U') and (header[i+6]='R')) then
           exposure:=validate_double;{read double value}
     if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='P') and (header[i+3]='T') and (header[i+4]='I') and (header[i+5]='M') and (header[i+6]='E')) then
@@ -4654,19 +4667,19 @@ begin
           if nrbits=16 then {16 bit FITS}
           begin
             wo:=swap(fitsbuffer2[j]);{move data to wo and therefore sign_int}
-            img_loaded2[k-1,j,i]:=(sign_int+bzero);
+            img_loaded2[k-1,j,i]:=sign_int*bscale + bzero;
           end
           else
           if nrbits=-32 then {4 byte floating point FITS image}
           begin
              x_longword:=swapendian(fitsbuffer4[j]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
-             col_float:=x_single +bzero; {int_IEEE, swap four bytes and the read as floating point}
+             col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
              img_loaded2[k-1,j,i]:=col_float;{store in memory array}
              if col_float>measured_max then measured_max:=col_float;{find max value for images with 0..1 scale}
           end
           else
           if nrbits=8  then {4 byte, 32 bit FITS image}
-             img_loaded2[k-1,j,i]:=(fitsbuffer[j]+bzero)
+             img_loaded2[k-1,j,i]:=(fitsbuffer[j]*bscale + bzero)
           else
           if nrbits=24 then
           begin
@@ -4678,7 +4691,7 @@ begin
           else
           if nrbits=+32 then
           begin
-            col_float:=(swapendian(fitsbuffer4[j])+bzero)/(65535);{scale to 0..64535 or 0..1 float}
+            col_float:=(swapendian(fitsbuffer4[j])*bscale+bzero)/(65535);{scale to 0..64535 or 0..1 float}
                            {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
             img_loaded2[k-1,j,i]:=col_float;{store in memory array}
             if col_float>measured_max then measured_max:=col_float;{find max value for images with 0..1 scale}
@@ -4687,7 +4700,7 @@ begin
           if nrbits=-64 then {8 byte floating point FITS image}
           begin
             x_int64:=swapendian(fitsbuffer8[j]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
-            col_float:=x_double +bzero; {int_IEEE, swap four bytes and the read as floating point}
+            col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
             img_loaded2[k-1,j,i]:=col_float;{store in memory array}
             if col_float>measured_max then measured_max:=col_float;{find max value for images with 0..1 scale}
           end;
@@ -4699,17 +4712,13 @@ begin
     if ( ((nrbits<=-32){-32 or -64} or (nrbits=+32)) and  ((measured_max<=1.01) or (datamax_org<=1)) ) then {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..64000 float}
     begin
       for k:=1 to naxis3 do {do all colors}
-        For i:=0 to height2-1 do
+        for i:=0 to height2-1 do
           for j:=0 to width2-1 do
-           begin
-             img_loaded2[k-1,j,i]:= img_loaded2[k-1,j,i]*65535;
-           end;
-
+            img_loaded2[k-1,j,i]:= img_loaded2[k-1,j,i]*65535;
       datamax_org:=65535;
       cwhite:=65535;
     end;
 
-    ///update_menu(true);{2019-2-15 moved from load_fits to plot_fits.  file loaded, update menu for fits}
     if commandline_execution=false then update_equalise_background_step(1);{update equalise background menu}
   end;
   close_fits_file;
@@ -6546,7 +6555,7 @@ begin
     mainwindow.ShowFITSheader1.enabled:=true;
     mainwindow.demosaicBayermatrix1.Enabled:=true;
     image_move_to_center:=re_center;
-    if ((afitsfile) and (annotated)) then  plot_annotations(0,0,false);
+    if ((afitsfile) and (annotated) and (mainwindow.annotations_visible1.checked)) then  plot_annotations(0,0,false);
 
     add_recent_file(filename_org);{As last action, add to recent file list.}
   end;
@@ -7261,6 +7270,14 @@ var
   Screen.Cursor:= Save_Cursor;
 end;
 
+procedure Tmainwindow.annotations_visible1Click(Sender: TObject);
+begin
+  if annotations_visible1.checked=false then  {clear screen}
+    plot_fits(mainwindow.image1,false,true)
+  else
+  if annotated then plot_annotations(0,0,false);
+end;
+
 procedure Tmainwindow.batch_annotate1Click(Sender: TObject);
 var
   I: integer;
@@ -7565,14 +7582,6 @@ begin
   {$else} {Linux}
   {$endif}
 
-  with stackmenu1 do
-  begin
-    if use_ephemeris_alignment1.Checked then
-    begin {delete annotations from combobox}
-      ephemeris_centering1.Items.clear;
-    end;
-  end;
-
   count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
   try
     while count1>=0 do {plot annotations}
@@ -7621,10 +7630,7 @@ begin
           mainwindow.image1.Canvas.textout( -text_width+x2, -text_height + y2,list[5]+list[6]{magnitude});
 
           if fill_combo then {add asteroid annotations to combobox for ephemeris alignment}
-          begin
             stackmenu1.ephemeris_centering1.Additem(list[5],nil);
-            stackmenu1.ephemeris_centering1.itemindex:=0;{show first in the list}
-          end;
         end;
 
       end;

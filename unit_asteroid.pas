@@ -1230,13 +1230,24 @@ begin
      annotated:=false;
   end;
 
+
   if mpcorb_path<>'' then
-                 read_and_plot(true,mpcorb_path);
+  begin
+    if  fileexists(mpcorb_path) then
+      read_and_plot(true,mpcorb_path)
+    else
+      memo2_message('MPCORB.DAT file not found: '+ mpcorb_path+'   Set path in menu CTRL+Q' );
+  end;
 
   count:=0;
 
   if cometels_path<>'' then
-                 read_and_plot(false,cometels_path);
+  begin
+    if fileexists(cometels_path) then
+      read_and_plot(false,cometels_path)
+    else
+      memo2_message('CometEls.txt file not found: '+ cometels_path+'   Set path in menu CTRL+Q' );
+  end;
 
   {write some info at bottom screen}
 
@@ -1339,12 +1350,14 @@ end;
 procedure Tform_asteroids1.BitBtn1Click(Sender: TObject);
 begin
   mpcorb_path1.caption:='';
+  mpcorb_path:='';
   test_mpcorb;
 end;
 
 procedure Tform_asteroids1.BitBtn2Click(Sender: TObject);
 begin
   mpcorb_path2.caption:='';
+  cometels_path:='';
   test_cometels;
 end;
 

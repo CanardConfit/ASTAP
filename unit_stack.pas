@@ -1843,7 +1843,6 @@ begin
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '|JPEG, TIFF, PNG files (*.)||*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
                         '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
- // fits_file:=true;2019-9-19 removed
   if opendialog1.execute then
   begin
     for i:=0 to OpenDialog1.Files.count-1 do
@@ -2895,7 +2894,7 @@ begin
           show_shape(true {assume good lock},fitsX,fitsY);
         end
         else mainwindow.shape_alignment_marker1.visible:=false;
-        if annotated then plot_annotations(0,0,false);{plot any annotations}
+        if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(0,0,false);{plot any annotations}
       end
       else beep;{image not found}
       exit;{done, can display only one image}
@@ -2917,9 +2916,9 @@ var
   c,counts,i : integer;
   hfd_counter : integer;
   backgr, hfd_median, ra2, dec2,hjd : double;
-  filename             : string;
+  filename1,ext        : string;
   Save_Cursor          : TCursor;
-  loaded               : boolean;
+  loaded,  success     : boolean;
   img                  : image_array;
 
   nr_stars, hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right : double;
@@ -2938,39 +2937,65 @@ begin
   c:=0;
 
   {convert any non FITS file}
-  while c<=counts  do {check all}
+  while c<=counts {check all} do
   begin
-
-    if ((lv.Items.item[c].checked) and (uppercase(ExtractFileExt(lv.items[c].caption))='.FZ')   ) then {checked raw file, convert to PGM}
+    if lv.Items.item[c].checked then
     begin
-      memo2_message('Unpacking '+lv.items[c].caption);
-      Application.ProcessMessages;
-      if esc_pressed then  begin lv.Items.EndUpdate; Screen.Cursor :=Save_Cursor;{back to normal}  exit;  end;
+      filename1:=lv.items[c].caption;
+      ext:=uppercase(ExtractFileExt(filename1));
 
-      if unpack_cfitsio(lv.items[c].caption) then  {success unpacking}
-         lv.items[c].caption:=filename2 {change listview name to FITS.}
-      else
-      begin {conversion failure}
-        Lv.Items.item[c].checked:=false;
-        Lv.Items.item[c].subitems.Strings[2]:='Funpack required, install!!';
-      end;
-    end {cfitsio}
-    else
-    if ((lv.Items.item[c].checked) and (check_raw_file_extension(uppercase(ExtractFileExt(lv.items[c].caption))))   ) then {checked raw file, convert to PGM}
-    begin
-      memo2_message('Converting '+lv.items[c].caption+' to FITS file format');
-      Application.ProcessMessages;
-      if esc_pressed then  begin lv.Items.EndUpdate; Screen.Cursor :=Save_Cursor; {back to normal} exit;  end;
+      if (ext='.FZ') then {cfitsio}
+      begin
+        memo2_message('Unpacking '+filename1);
+        Application.ProcessMessages;
+        if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
 
-      if convert_raw_to_fits(lv.items[c].caption) then  {success converting raw to pgm file}
-         lv.items[c].caption:=filename2 {change listview name to FITS. The filename2 is renamed in prcedure save_16_m32..}
+        if unpack_cfitsio(filename1) then  {success unpacking}
+           lv.items[c].caption:=filename2 {change listview name to FITS.}
+        else
+        begin {conversion failure}
+          lv.Items.item[c].checked:=false;
+          lv.Items.item[c].subitems.Strings[I_result]:='Funpack required, install!!';
+        end;
+      end {cfitsio}
       else
-      begin {conversion failure}
-        lv.Items.item[c].checked:=false;
-        lv.Items.item[c].subitems.Strings[2]:='Conv failure!';
+      if (check_raw_file_extension(ext)) then {raw file, convert to PGM}
+      begin
+        memo2_message('Converting '+filename1+' to FITS file format');
+        Application.ProcessMessages;
+        if esc_pressed then begin Screen.Cursor :=Save_Cursor;{ back to normal }  exit;  end;
+
+        if convert_raw_to_fits(filename1) then  {success converting raw to pgm file}
+           lv.items[c].caption:=filename2 {change listview name to FITS. The filename2 is renamed in procedure save_16_m32..}
+        else
+        begin {conversion failure}
+          lv.Items.item[c].checked:=false;
+          lv.Items.item[c].subitems.Strings[I_result]:='Conv failure!';
+        end;
+      end {raw}
+      else
+      if ((ext='.JPG') or (ext='.JPEG') or (ext='.PNG') or (ext='.TIF') or (ext='.TIFF')) then
+      begin {tif,png,jpeg}
+        memo2_message('Converting '+filename1+' to FITS file format');
+        Application.ProcessMessages;
+        if esc_pressed then begin Screen.Cursor :=Save_Cursor;{ back to normal }  exit;  end;
+
+        success:=load_tiffpngJPEG(filename1,img);
+        if success then
+        begin
+          exposure:=extract_exposure_from_filename(filename1); {try to extract exposure time from filename}
+          success:=save_fits(img,ChangeFileExt(filename1,'.fit'),16,false);
+        end;
+        if success then lv.items[c].caption:=ChangeFileExt(filename1,'.fit') {change listview name to FITS.}
+        else
+        begin {conversion failure}
+          lv.Items.item[c].checked:=false;
+          lv.Items.item[c].subitems.Strings[I_result]:='Conv failure!';
+        end;
       end;
+
     end;{checked}
-   inc(c);
+    inc(c);
   end;
 
   c:=0;
@@ -3001,16 +3026,16 @@ begin
       lv.Items[c].MakeVisible(False);{scroll to selected item}
 
 
-      filename:=lv.items[c].caption;
+      filename1:=lv.items[c].caption;
       Application.ProcessMessages; if esc_pressed then begin break;{leave loop}end;
 
-      if amode=0 then loaded:=load_fits(filename,false{restricted header, do not update ra0....},false {header only},true {reset var},img)
+      if amode=0 then loaded:=load_fits(filename1,false{restricted header, do not update ra0....},false {header only},true {reset var},img)
       else
-      if amode=1 then loaded:=load_fits(filename,true{ full header},false {header only},true {reset var},img)
+      if amode=1 then loaded:=load_fits(filename1,true{ full header},false {header only},true {reset var},img)
       else
-      if amode=2 then loaded:=load_fits(filename,false{reduced  header},true {full fits},true {reset var},img)
+      if amode=2 then loaded:=load_fits(filename1,false{reduced  header},true {full fits},true {reset var},img)
       else
-      loaded:=load_fits(filename,true {light, so also position ra0..},true {full fits},true {reset var},img); {for background or background+hfd+star}
+      loaded:=load_fits(filename1,true {light, so also position ra0..},true {full fits},true {reset var},img); {for background or background+hfd+star}
 
 
       if loaded then
@@ -3100,7 +3125,7 @@ begin
       else
       begin
         lv.Items.item[c].checked:=false; {can't analyse this one}
-        memo2_message('Error reading '+filename);
+        memo2_message('Error reading '+filename1);
       end;
     end;{hfd unknown}
   end;
@@ -4015,7 +4040,7 @@ begin
           {nothing to do}
         end;
         plot_fits(mainwindow.image1,false {re_center},true);
-        if annotated then plot_annotations(round(solution_vectorX[2]),round(solution_vectorY[2]),false); {correct annotations in shift only}
+        if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(round(solution_vectorX[2]),round(solution_vectorY[2]),false); {correct annotations in shift only}
       end;
       inc(c);
     until c>=listview6.items.count;
@@ -4075,6 +4100,7 @@ begin
   opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+                        '|JPEG, TIFF, PNG files (*.)||*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
                         '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
 
 
@@ -4131,7 +4157,12 @@ begin
 
   memo2_message('Annotating file: '+ filename2+ ' and extracting objects.');
   plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations});
-  if annotated then plot_annotations(0,0,true {fill combobox})
+  if annotated then
+  begin
+    mainwindow.annotations_visible1.checked:=true;
+    plot_annotations(0,0,true {fill combobox});
+    stackmenu1.ephemeris_centering1.itemindex:=stackmenu1.ephemeris_centering1.items.count-1;{show first found in the list}
+  end
   else
   memo2_message('No object locations found in image. Modify limiting count and limiting magnitude in annotation menu CTRL+Q');
   memo2_message('Ready. Select the object to align on.');
@@ -6854,15 +6885,6 @@ begin
                img_flat[0,fitsX,fitsY]:=img_flat[0,fitsX,  fitsY  ] - img_bias[0,fitsX,  fitsY  ]; {flats and bias already many mono in procedure average}
             end;
         end;
-
-        if pos('2x2',stackmenu1.flat_combine_method1.text)>0 then  x2mean(1 {nr of colors},img_flat)
-        else
-        if pos('3x3',stackmenu1.flat_combine_method1.text)>0 then
-            x3mean(1 {nr of colors},img_flat)
-        else
-        if pos('4x4',stackmenu1.flat_combine_method1.text)>0 then
-            x4mean(1 {nr of colors},img_flat);
-
       end;
 
       Application.ProcessMessages;
@@ -7707,7 +7729,13 @@ begin
 
 
       restore_header;{restore header and solution}{use saved fits header first FITS file as saved in unit_stack_routines}
+
       plot_fits(mainwindow.image1,true,true);{plot real}
+
+      if ((annotated) and (stackmenu1.use_ephemeris_alignment1.checked)) then
+                     plot_annotations(0,0,false);
+
+
 
       remove_key('DATE    ',false{all});{no purpose anymore for the orginal date written}
       remove_key('EXPTIME',false{all}); {remove, will be added later in the header}
