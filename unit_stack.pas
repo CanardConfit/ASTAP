@@ -2047,14 +2047,8 @@ procedure Tstackmenu1.FormCreate(Sender: TObject);
 var
   RealFontSize : integer;
 begin
-  {$ifdef mswindows}
-  {$else} {unix}
-  keep_console_open1.visible:=false; {not required in Linux}
-  {$endif}
-
-   RealFontSize := abs(Round((GetFontData(stackmenu1.Font.Handle).Height * 72 / stackmenu1.Font.PixelsPerInch)));
-   if realfontsize>11 then stackmenu1.font.size:=11;{limit fontsize}
-
+  RealFontSize := abs(Round((GetFontData(stackmenu1.Font.Handle).Height * 72 / stackmenu1.Font.PixelsPerInch)));
+  if realfontsize>11 then stackmenu1.font.size:=11;{limit fontsize}
 end;
 
 procedure Tstackmenu1.FormKeyPress(Sender: TObject; var Key: char);
