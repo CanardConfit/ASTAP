@@ -1541,7 +1541,7 @@ end;
 
 procedure analyse_tab_images;
 var
-  c,hfd_counter  ,i,j,counts  : integer;
+  c,hfd_counter  ,i,j,counts,nr_jd  : integer;
   backgr, hfd_median   : double;
   Save_Cursor          : TCursor;
   green,blue,success   : boolean;
@@ -1561,6 +1561,9 @@ begin
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
     esc_pressed:=false;
+
+    nr_jd:=0;{for sigma clip advanced average}
+    jd_sum:=0;{for sigma clip advanced average}
 
     green:=false;
     blue:=false;

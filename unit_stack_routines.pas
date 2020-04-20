@@ -240,6 +240,7 @@ begin
     counter:=0;
     jd_sum:=0;{sum of Julian midpoints}
     jd_stop:=0;{end observations in Julian day}
+
     init:=false;
 
     {LRGB method}
@@ -275,8 +276,6 @@ begin
             for fitsX:=0 to width_max-1 do
                for col:=0 to 2 do
                begin
-//                 if ((fitsX=757) and (fitsY=865)) then
-               //  beep;
                  if img_temp[col,fitsX,fitsY]>1 then  {more then one value added per pixel, divide by the number of values summed} img_average[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY] {scale to one image by diving by the number of pixels added}
                  else
                  if ((img_temp[col,fitsX,fitsY]<=0) and (fitsX>0) and (fitsY>0)) then {black spot filter, fix black spot which show up if one image is rotated}
@@ -1176,7 +1175,6 @@ begin
           end;
         end;
 
-
         if init=false then {init}
         begin
           image_path:=ExtractFilePath(filename2); {for saving later}
@@ -1287,7 +1285,12 @@ begin
             for col:=0 to naxis3-1 do
             if img_temp[col,fitsX,fitsY]<>0 then
                img_average[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY];{scale to one image by diving by the number of pixels added}
+//      img_loaded[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]
+
     end;  {light average}
+
+//    plot_fits(mainwindow.image1,true,true);{plot real}
+//    exit;
 
 
     {standard deviation of light images}  {stack using sigma clip average}
@@ -1327,11 +1330,6 @@ begin
              else naxis3:=3;{for bayer drizzle, demoasic will be done later}
              {naxis3 is now 3}
           end;
-
-//          if use_astrometry_internal then
-//          begin {get_solution}
-//          end;
-
           if init=false then {init}
           begin
             width_max:=width2+oversize*2;
@@ -1354,10 +1352,9 @@ begin
           begin {align using star match, read saved solution vectors}
             if ((use_manual_align) or (use_ephemeris_alignment)) then
             begin
-              if init=true then
+              if init=false then
               begin
-                referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
-                referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
+                reset_solution_vectors(1);{no influence on the first image}
               end
               else
               begin
@@ -1443,12 +1440,6 @@ begin
             else naxis3:=3;{for bayer drizzle, demoasic will be done later}
              {naxis3 is now 3}
           end;
-
-//          if ((use_astrometry_internal) or (use_astrometry_net)) then
-//          begin {get_solution}
-//            if use_astrometry_net then if load_wcs_solution(filename2)=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, sequence error. No WCS solution found, exit.'); exit;end;{no solution found}
-//          end;
-
           if init=false then {init}
           begin
             width_max:=width2+oversize*2;
@@ -1479,10 +1470,9 @@ begin
           begin {align using star match, read saved solution vectors}
             if ((use_manual_align) or (use_ephemeris_alignment)) then
             begin
-              if init=true then
+              if init=false then {3}
               begin
-                referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
-                referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
+                reset_solution_vectors(1);{no influence on the first image}
               end
               else
               begin
@@ -1517,17 +1507,17 @@ begin
             for fitsX:=1 to width2  do
             begin
               calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-              x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversize;  x_new:=round(x_new_float);y_new:=round(y_new_float);
+              x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
               if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
                 for col:=0 to naxis3-1 do {do all colors}
                 begin
                   value:=img_loaded[col,fitsX-1,fitsY-1]+ background_correction;
+         //         if(( fitsx=100) and (fitsY=100)) then
+        //          beep;
                   if sqr (value - img_average[col,x_new,y_new])< variance_factor*{sd sqr}( img_variance[col,x_new,y_new])  then {not an outlier}
                   begin
                     img_final[col,x_new,y_new]:=img_final[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
-               //     if ((fitsX=100) and (fitsy=100)) then
-                 //   beep;
                     img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
                   end;
                 end;
@@ -1545,7 +1535,7 @@ begin
             for fitsX:=1 to width2  do
             begin
               calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-              x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversize;  x_new:=round(x_new_float);y_new:=round(y_new_float);
+              x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
               if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
                 for col:=0 to naxis3-1 do {do all colors}
@@ -1553,6 +1543,7 @@ begin
                   value:=img_loaded[col,fitsX-1,fitsY-1]+background_correction;
                   if value>0 then {bayer_drizzle specific}
                     if sqr (value - img_average[col,x_new,y_new])< variance_factor*{sd sqr}( img_variance[col,x_new,y_new])  then {not an outlier}
+
                     begin
                       img_final[col,x_new,y_new]:=img_final[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
                       img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+ weightF {norm 1};{count the number of image pixels added=samples}
@@ -1614,6 +1605,7 @@ begin
 
   end;{with stackmenu1}
 end;   {stack using sigma clip average}
+
 
 end.
 
