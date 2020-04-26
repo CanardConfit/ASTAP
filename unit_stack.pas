@@ -23,6 +23,7 @@ uses
   {$endif}
  {$ifdef mswindows}
   Windows,
+  ShlObj,{for copy file(s) to clipboard}
    {$IFDEF fpc}{mswindows & FPC}
    {$else} {delphi}
     system.Win.TaskbarCore, Vcl.ImgList,
@@ -36,7 +37,6 @@ uses
  math, ExtCtrls, Menus, Buttons,
  LCLIntf,{for for getkeystate, selectobject, openURL}
  clipbrd, Types,strutils,
- ShlObj,{for copy file(s) to clipboard}
  astap_main,unit_image_sharpness;
 
 

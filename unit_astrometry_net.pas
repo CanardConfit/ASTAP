@@ -138,7 +138,7 @@ begin
      exit
   end;
   {$else} {unix}
-  if FileExists(stackmenu1.cygwin1.text+'/solve-field')=false then
+  if FileExists(form_astrometry_net1.cygwin1.text+'/solve-field')=false then
   begin
      application.messagebox(pchar('Can'+#39+'t find local astrometry.net program solve-field. Check path or installation.'),pchar('No local astrometry.net'), 0);
      exit
@@ -208,7 +208,7 @@ begin
 
   paramlist.insert(0,filename3);
 //param.Add('"--overwrite --no-plots --objs 150 --downsample 4 --ra 300.000000 --dec 40.410216 --radius 10"');
-   execute_unix(stackmenu1.cygwin1.text+'/solve-field',paramlist, showconsole);
+   execute_unix(form_astrometry_net1.cygwin1.text+'/solve-field',paramlist, showconsole);
   {$endif}
   paramlist.Free;
 
