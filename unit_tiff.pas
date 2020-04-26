@@ -79,7 +79,7 @@ const
  ( _Tag: $0101; _Type: $0003; _Count: $00000001; _Value: $00000000 ),  {2 ImageLength:     Value will be set later }
  ( _Tag: $0102; _Type: $0003; _Count: $00000001; _Value: $00000020 ),  {3 BitsPerSample $20=32 ,no address         }
  ( _Tag: $0103; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  {4 Compression:     No compression          }
- ( _Tag: $0106; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  {5 PhotometricInterpretation:   0, 1        }
+ ( _Tag: $0106; _Type: $0003; _Count: $00000001; _Value: $00000001 ),  {5 PhotometricInterpretation[0, 1], 1 = BlackIsZero. For bilevel and grayscale images: 0 is imaged as black. }
 
  ( _Tag: $0111; _Type: $0004; _Count: $00000001; _Value: $00000000 ),  {6 StripOffsets: Ptr to the adress of the image data }
 

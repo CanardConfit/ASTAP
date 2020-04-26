@@ -954,6 +954,11 @@ object mainwindow: Tmainwindow
           ShortCut = 32848
           OnClick = AddplatesolvesolutiontoselectedFITSfiles1Click
         end
+        object batch_solve_astrometry_net: TMenuItem
+          Caption = 'Batch solve images using local astrometry.net'
+          Hint = 'Solve the image using a local vesion of astrometry.net'
+          OnClick = batch_solve_astrometry_netClick
+        end
         object convert_to_fits1: TMenuItem
           Caption = 'Batch convert to FITS'
           Hint = 'Convert the selected images to the FITS format.'

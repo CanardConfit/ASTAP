@@ -108,6 +108,7 @@ type
     MenuItem20: TMenuItem;
     MenuItem21: TMenuItem;
     extract_pixel_22: TMenuItem;
+    batch_solve_astrometry_net: TMenuItem;
     save_to_tiff1: TMenuItem;
     extract_pixel_12: TMenuItem;
     MenuItem7: TMenuItem;
@@ -268,6 +269,7 @@ type
     procedure annotate_with_measured_magnitudes1Click(Sender: TObject);
     procedure annotations_visible1Click(Sender: TObject);
     procedure batch_annotate1Click(Sender: TObject);
+    procedure batch_solve_astrometry_netClick(Sender: TObject);
     procedure ccd_inspector_plot1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
     procedure extract_pixel_11Click(Sender: TObject);
@@ -548,13 +550,14 @@ procedure demosaic_bayer; {convert OSC image to colour}
 Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel floating}
 function save_fits(img: image_array;filen2:ansistring;type1:integer;override1:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 
-procedure update_text(inp1,comment1:string);{update or insert text in header}
-procedure add_text(inp1,comment1:string);{add text to header memo}
+procedure update_text(inpt,comment1:string);{update or insert text in header}
+procedure add_text(inpt,comment1:string);{add text to header memo}
+procedure add_long_comment(descrip:string);{add long text to header memo. Split description over several lines if required}
 procedure update_generic(message_key,message_value,message_comment:string);{update header using text only}
-procedure update_integer(inp1,comment1:string;x:integer);{update or insert variable in header}
-procedure add_integer(inp1,comment1:string;x:integer);{add integer variable to header}
-procedure update_float(inp1,comment1:string;x:double);{update keyword of fits header in memo}
-procedure remove_key(inp1:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
+procedure update_integer(inpt,comment1:string;x:integer);{update or insert variable in header}
+procedure add_integer(inpt,comment1:string;x:integer);{add integer variable to header}
+procedure update_float(inpt,comment1:string;x:double);{update keyword of fits header in memo}
+procedure remove_key(inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
 
 function strtofloat2(s:string): double;{works with either dot or komma as decimal seperator}
 function TextfileSize(const name: string): LongInt;
@@ -665,7 +668,7 @@ var
 
 implementation
 
-uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_290, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid;
+uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_290, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid, unit_astrometry_net;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -707,6 +710,143 @@ begin
     finally
       SysUtils.FindClose(lSearchRec);  // Free resources on successful find
     end;
+  end;
+end;
+
+procedure update_float(inpt,comment1:string;x:double);{update keyword of fits header in memo}
+ var
+   s,aline  : string;
+   count1: integer;
+begin
+  str(x:20,s);
+
+  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
+  while count1>=0 do {update keyword}
+  begin
+    if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
+    begin
+      aline:=mainwindow.Memo1.Lines[count1];
+      delete(aline,11,20);
+      insert(s,aline,11);
+      mainwindow.Memo1.Lines[count1]:=aline;
+      exit;
+    end;
+    count1:=count1-1;
+  end;
+  {not found, add to the end}
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inpt+' '+s+comment1);
+end;
+procedure update_integer(inpt,comment1:string;x:integer);{update or insert variable in header}
+ var
+   s,aline  : string;
+   count1   : integer;
+begin
+  str(x:20,s);
+
+  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
+  while count1>=0 do {update keyword}
+  begin
+    if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
+    begin
+      aline:=mainwindow.Memo1.Lines[count1];
+      delete(aline,11,20);
+      insert(s,aline,11);
+      mainwindow.Memo1.Lines[count1]:=aline;
+      exit;
+    end;
+    count1:=count1-1;
+  end;
+  {not found, add at the correct position or at the end}
+  if inpt='NAXIS1  =' then mainwindow.memo1.lines.insert(3,inpt+' '+s+comment1) else{PixInsight requires to have it on 3th place}
+  if inpt='NAXIS2  =' then mainwindow.memo1.lines.insert(4,inpt+' '+s+comment1) else{PixInsight requires to have it on 4th place}
+  if inpt='NAXIS3  =' then mainwindow.memo1.lines.insert(5,inpt+' '+s+comment1) else{PixInsight requires to have it on this place}
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inpt+' '+s+comment1);
+end;
+procedure add_integer(inpt,comment1:string;x:integer);{add integer variable to header}
+ var
+   s        : string;
+begin
+  str(x:20,s);
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inpt+' '+s+comment1);
+end;
+
+procedure update_generic(message_key,message_value,message_comment:string);{update header using text only}
+var
+   count1: integer;
+begin
+  if ((pos('HISTORY',message_key)=0) and (pos('COMMENT',message_key)=0)) then {allow mulitple lines of hisotry and comments}
+  begin
+    while length(message_value)<20 do message_value:=' '+message_value;{extend length, right aligned}
+    while length(message_key)<8 do message_key:=message_key+' ';{make standard lenght of 8}
+
+   count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
+    while count1>=0 do {update keyword}
+    begin
+      if pos(message_key,mainwindow.Memo1.Lines[count1])>0 then {found}
+      begin
+        mainwindow.Memo1.Lines[count1]:=message_key+'= '+message_value+' / '+message_comment;
+        exit;
+      end;
+      count1:=count1-1;
+    end;
+    {not found, add to the end}
+    mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},message_key+'= '+message_value+' / '+message_comment);
+  end {no history of comment keyword}
+  else
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},message_key+' '+message_value+message_comment);
+end;
+
+procedure update_text(inpt,comment1:string);{update or insert text in header}
+var
+   count1: integer;
+begin
+
+  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
+  while count1>=0 do {update keyword}
+  begin
+    if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
+    begin
+      mainwindow.Memo1.Lines[count1]:=inpt+' '+comment1;{text starting with char(39) should start at position 11 according FITS standard 4.0}
+      exit;
+    end;
+    count1:=count1-1;
+  end;
+  {not found, add to the end}
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inpt+' '+comment1);
+end;
+
+procedure add_text(inpt,comment1:string);{add text to header memo}
+begin
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inpt+' '+copy(comment1,1,79-length(inpt)));  {add to the end. Limit to 80 char max as specified by FITS standard}
+end;
+
+procedure add_long_comment(descrip:string);{add long text to header memo. Split description over several lines if required}
+var
+   i,j :integer;
+begin
+  i:=1 ;
+  j:=length(descrip);
+  while i<j do
+  begin
+    mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},'COMMENT '+copy(descrip,I,72) );  {add to the end. Limit line length to 80}
+    inc(i,72);
+  end;
+end;
+
+procedure remove_key(inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
+var
+   count1: integer;
+begin
+
+  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
+  while count1>=0 do {update keyword}
+  begin
+    if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
+    begin
+      mainwindow.Memo1.Lines.delete(count1);
+      if all=false then exit;
+    end;
+    count1:=count1-1;
   end;
 end;
 
@@ -1114,7 +1254,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.346 dated 2020-04-20';
+  #13+#10+'Version ß0.9.348 dated 2020-04-26';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -1123,7 +1263,7 @@ end;
 
 
 procedure Tmainwindow.FormKeyPress(Sender: TObject; var Key: char);
-begin
+begin {set form keypreview:=on}
    if key=#27 then
    begin
      esc_pressed:=true;
@@ -2298,6 +2438,9 @@ begin
   update_menu_related_to_solver((fits) and (cd1_1<>0));
   stackmenu1.resize_factor1Change(nil);{update dimensions binning menu}
   stackmenu1.test_pattern1.Enabled:=naxis3=1;{mono}
+
+  stackmenu1.focallength1.Text:=floattostrF2(focallen,0,0);
+  stackmenu1.pixelsize1.Text:=floattostrF2(xpixsz,0,1);
   stackmenu1.focallength1Change(nil); {update calculation pixel size in arc seconds}
 
 //  update_equalise_background_step(1);{update equalise background menu} moved to load_fits
@@ -4621,7 +4764,7 @@ begin
        cdelt2:=scale/3600 {scale is in arcsec/pixel }
      else
      if ((focallen<>0) and (xpixsz<>0)) then
-       cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word}
+       cdelt2:=180/(pi*1000)*xpixsz*xbinning/focallen; {use maxim DL key word}
   end;
   unsaved_import:=false;{file is available for astrometry.net}
 
@@ -5048,12 +5191,13 @@ var
   jd2   : double;
   image: TFPCustomImage;
   reader: TFPCustomImageReader;
-  tiff, colour  : boolean;
+  tiff, colour,saved_header  : boolean;
   ext,descrip   : string;
 begin
   naxis:=0; {0 dimensions}
   result:=false; {assume failure}
   tiff:=false;
+  saved_header:=false;
   ext:=uppercase(ExtractFileExt(filen));
   try
     Image := TFPMemoryImage.Create(10, 10);
@@ -5187,6 +5331,7 @@ begin
   begin
     mainwindow.memo1.text:=descrip;
     read_keys_memo;
+    saved_header:=true;
   end
   else {no fits header in tiff file available}
   begin
@@ -5194,6 +5339,7 @@ begin
       if ((j<>5) or  (naxis3<>1)) then {skip naxis3 for mono images}
         mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
     mainwindow.memo1.lines.add(head1[27]); {add end}
+    if descrip<>'' then add_long_comment(descrip);{add TIFF describtion}
   end;
 
   update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
@@ -5203,23 +5349,14 @@ begin
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
 
-
-  JD2:=2415018.5+(FileDateToDateTime(fileage(filen))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
-  date_obs:=JdToDate(jd2);
-  update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
+  if saved_header=false then {saved header in tiff is not restored}
+  begin
+    JD2:=2415018.5+(FileDateToDateTime(fileage(filen))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
+    date_obs:=JdToDate(jd2);
+    update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
+  end;
 
   update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
-  if tiff then
-  begin
-     i:=1 ;
-     j:=length(descrip);
-     while i<j do
-     begin
-       add_text('COMMENT  ',copy(descrip,I,70));{add TIFF describtion}
-       inc(i,70);
-     end;
-  end;
-  add_text      ('HISTORY  ','Imported from '+filen);
 
   { Clean up! }
   image.Free;
@@ -5718,8 +5855,8 @@ begin
     stretch1.text:= initstring.Values['gamma'];
     if pos('0.',stretch1.text)>0 then stretch1.text:='100'; {upgrade, temporary, remove mid 2019}
 
-    stackmenu1.pixelsize1.text:= initstring.Values['pixel_size'];
-    stackmenu1.focallength1.text:= initstring.Values['focal_length'];
+//    stackmenu1.pixelsize1.text:= initstring.Values['pixel_size'];
+//    stackmenu1.focallength1.text:= initstring.Values['focal_length'];
     stackmenu1.blur_factor1.text:= initstring.Values['blur_factor'];
 
     stackmenu1.use_manual_alignment1.checked:=initstring.Values['align_method']='4';
@@ -5757,8 +5894,8 @@ begin
     dum:=initstring.Values['oversize'];if dum<>'' then stackmenu1.oversize1.text:=dum;
     dum:=initstring.Values['sd_factor']; if dum<>'' then stackmenu1.sd_factor1.text:=dum;
 
-    dum:=initstring.Values['pixel_size']; if dum<>'' then stackmenu1.pixelsize1.text:=dum;
-    dum:=initstring.Values['focal_length']; if dum<>'' then stackmenu1.focallength1.text:=dum;
+//    dum:=initstring.Values['pixel_size']; if dum<>'' then stackmenu1.pixelsize1.text:=dum;
+//    dum:=initstring.Values['focal_length']; if dum<>'' then stackmenu1.focallength1.text:=dum;
     dum:=initstring.Values['most_common_filter_radius']; if dum<>'' then stackmenu1.most_common_filter_radius1.text:=dum;
 
     dum:=initstring.Values['extract_background_box_size']; if dum<>'' then stackmenu1.extract_background_box_size1.text:=dum;
@@ -5862,6 +5999,10 @@ begin
     get_int(annotation_color,'annotation_color');
 
     add_annotations:=get_boolean('add_annotations',false);{asteroids as annotations}
+
+    dum:=initstring.Values['astrometry_extra_options']; if dum<>'' then astrometry_extra_options:=dum;
+    show_console:=get_boolean('show_console',true);
+    dum:=initstring.Values['cygwin_path']; if dum<>'' then cygwin_path:=dum;
 
     c:=0;
     repeat {add images}
@@ -6166,7 +6307,11 @@ begin
   initstring.Values['annotation_color']:=inttostr(annotation_color);
 
   initstring.Values['add_annotations']:=BoolStr[add_annotations];{for asteroids}
-                                     ;
+
+  initstring.Values['cygwin_path']:=cygwin_path;
+  initstring.Values['show_console']:=BoolStr[show_console];
+  initstring.Values['astrometry_extra_options']:=astrometry_extra_options;
+  ;
 
   for c:=0 to stackmenu1.ListView1.items.count-1 do {add light images}
   begin
@@ -6544,7 +6689,8 @@ begin
 
   else
   {tif, png, bmp, jpeg}
-  if load_tiffpngJPEG(filename2,img_loaded)=false then exit {load tif, exit on failure}
+  if load_tiffpngJPEG(filename2,img_loaded)=false then
+        exit {load tif, exit on failure}
   else
     result:=true;
 
@@ -7338,6 +7484,12 @@ begin
   end;
 end;
 
+procedure Tmainwindow.batch_solve_astrometry_netClick(Sender: TObject);
+begin
+  form_astrometry_net1:=Tform_astrometry_net1.Create(self); {in project option not loaded automatic}
+  form_astrometry_net1.ShowModal;
+  form_astrometry_net1.release;
+end;
 
 procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
 begin
@@ -7955,17 +8107,6 @@ begin
   closefile(f);
 end;
 
-//procedure write_wcs;{write wcs file without using filestream}
-//var
-//   f: text;
-//   i: integer;
-//begin
-//  assignfile(f,ChangeFileExt(filename2,'.wcs'));
-//  rewrite(f);
-//  for i:=0 to mainwindow.memo1.lines.count-1 do
-//    writeln(f,mainwindow.memo1.lines[i]);
-//  closefile(f);
-//end;
 
 function platesolve2_command: boolean;
 var
@@ -8264,14 +8405,14 @@ begin
 
         stackmenu1.use_astrometry_internal1.checked:=true; {use internal solver}
 
-
         if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
         begin
           if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
 
           write_ini(true);{write solution to ini file}
- //         write_wcs;{write memo1 without using filestream}
-         try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
+
+          add_long_comment('cmdline:'+cmdline);{log command line in wcs file}
+          try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
 
           //log_to_file(cmdline+' =>succes');
 
@@ -10022,129 +10163,6 @@ begin
   screen.Cursor := crDefault;
 end;
 
-procedure update_float(inp1,comment1:string;x:double);{update keyword of fits header in memo}
- var
-   s,aline  : string;
-   count1: integer;
-begin
-  str(x:20,s);
-
-  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
-  while count1>=0 do {update keyword}
-  begin
-    if pos(inp1,mainwindow.Memo1.Lines[count1])>0 then {found}
-    begin
-      aline:=mainwindow.Memo1.Lines[count1];
-      delete(aline,11,20);
-      insert(s,aline,11);
-      mainwindow.Memo1.Lines[count1]:=aline;
-      exit;
-    end;
-    count1:=count1-1;
-  end;
-  {not found, add to the end}
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inp1+' '+s+comment1);
-end;
-procedure update_integer(inp1,comment1:string;x:integer);{update or insert variable in header}
- var
-   s,aline  : string;
-   count1   : integer;
-begin
-  str(x:20,s);
-
-  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
-  while count1>=0 do {update keyword}
-  begin
-    if pos(inp1,mainwindow.Memo1.Lines[count1])>0 then {found}
-    begin
-      aline:=mainwindow.Memo1.Lines[count1];
-      delete(aline,11,20);
-      insert(s,aline,11);
-      mainwindow.Memo1.Lines[count1]:=aline;
-      exit;
-    end;
-    count1:=count1-1;
-  end;
-  {not found, add at the correct position or at the end}
-  if inp1='NAXIS1  =' then mainwindow.memo1.lines.insert(3,inp1+' '+s+comment1) else{PixInsight requires to have it on 3th place}
-  if inp1='NAXIS2  =' then mainwindow.memo1.lines.insert(4,inp1+' '+s+comment1) else{PixInsight requires to have it on 4th place}
-  if inp1='NAXIS3  =' then mainwindow.memo1.lines.insert(5,inp1+' '+s+comment1) else{PixInsight requires to have it on this place}
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inp1+' '+s+comment1);
-end;
-procedure add_integer(inp1,comment1:string;x:integer);{add integer variable to header}
- var
-   s        : string;
-begin
-  str(x:20,s);
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inp1+' '+s+comment1);
-end;
-
-procedure update_generic(message_key,message_value,message_comment:string);{update header using text only}
-var
-   count1: integer;
-begin
-  if ((pos('HISTORY',message_key)=0) and (pos('COMMENT',message_key)=0)) then {allow mulitple lines of hisotry and comments}
-  begin
-    while length(message_value)<20 do message_value:=' '+message_value;{extend length, right aligned}
-    while length(message_key)<8 do message_key:=message_key+' ';{make standard lenght of 8}
-
-   count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
-    while count1>=0 do {update keyword}
-    begin
-      if pos(message_key,mainwindow.Memo1.Lines[count1])>0 then {found}
-      begin
-        mainwindow.Memo1.Lines[count1]:=message_key+'= '+message_value+' / '+message_comment;
-        exit;
-      end;
-      count1:=count1-1;
-    end;
-    {not found, add to the end}
-    mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},message_key+'= '+message_value+' / '+message_comment);
-  end {no history of comment keyword}
-  else
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},message_key+' '+message_value+message_comment);
-end;
-
-procedure update_text(inp1,comment1:string);{update or insert text in header}
-var
-   count1: integer;
-begin
-
-  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
-  while count1>=0 do {update keyword}
-  begin
-    if pos(inp1,mainwindow.Memo1.Lines[count1])>0 then {found}
-    begin
-      mainwindow.Memo1.Lines[count1]:=inp1+' '+comment1;{text starting with char(39) should start at position 11 according FITS standard 4.0}
-      exit;
-    end;
-    count1:=count1-1;
-  end;
-  {not found, add to the end}
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inp1+' '+comment1);
-end;
-
-procedure add_text(inp1,comment1:string);{add text to header memo}
-begin
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inp1+' '+comment1);  {add to the end}
-end;
-
-procedure remove_key(inp1:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
-var
-   count1: integer;
-begin
-
-  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
-  while count1>=0 do {update keyword}
-  begin
-    if pos(inp1,mainwindow.Memo1.Lines[count1])>0 then {found}
-    begin
-      mainwindow.Memo1.Lines.delete(count1);
-      if all=false then exit;
-    end;
-    count1:=count1-1;
-  end;
-end;
 
 procedure Tmainwindow.convertmono1Click(Sender: TObject);
 var

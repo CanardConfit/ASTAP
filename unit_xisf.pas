@@ -357,7 +357,7 @@ begin
      cdelt2:=scale/3600 {scale is in arcsec/pixel }
      else
      if ((focallen<>0) and (xpixsz<>0)) then
-       cdelt2:=180/(3.141*1000)*xpixsz/focallen; {use maxim DL key word}
+       cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word}
   end;
 
  {read rest of header containing zero's}

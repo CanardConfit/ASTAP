@@ -456,7 +456,7 @@ var
   solution, go_ahead,solve_show_log  : boolean;
   Save_Cursor     : TCursor;
   startTick  : qword;{for timing/speed purposes}
-  distancestr,oversize_mess,mess,info_message,warning    :string;
+  distancestr,oversize_mess,mess,info_message,warning,suggest_str    :string;
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,limit_counter : integer;
   autoFOV : boolean;
 const
@@ -475,7 +475,7 @@ begin
   if stackmenu1.calibrate_prior_solving1.checked then
   begin
     memo2_message('Calibrating image prior to solving.');
-    apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
+    apply_dark_flat(filter_name,{round(exposure),set_temperature,width2,}{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
   end;
 
   binning:=report_binning;
@@ -696,7 +696,7 @@ begin
 
     end; {enough tetrahedrons in image}
 
-  until ((autoFOV=false) or (solution) or (fov<=0.56)); {loop for autoFOV}
+  until ((autoFOV=false) or (solution) or (fov<=0.38)); {loop for autoFOV from 9.5 to 0.37 degrees. Will lock between 9.5*1.25 downto  0.37/1.25  or 11.9 downto 0.3 degrees}
 
   if solution then
   begin
@@ -783,8 +783,10 @@ begin
 
     if ( (fov>1.05*(height2*cdelt2) ) or (fov<0.95*(height2*cdelt2)) ) then
     begin
-      memo2_message('Warning initial FOV significantly different.');
-      warning_str:='Warning initial FOV significantly different!! '+warning_str;
+      if xpixsz<>0 then suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF2(height2*cdelt2,0,2)+'d, scale='+floattostrF2(cdelt2*3600,0,1)+'", FL='+inttostr(round((180/(pi*1000)*xpixsz/cdelt2)) )+'mm'
+                   else suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF2(height2*cdelt2,0,2)+'d, scale='+floattostrF2(cdelt2*3600,0,1)+'"';
+      memo2_message(suggest_str);
+      warning_str:=suggest_str+warning_str;
     end;
   end
   else
@@ -795,7 +797,10 @@ begin
     update_text   ('PLTSOLVD=','                   F / No plate solution found.   ');
     remove_key('COMMENT 6',false{all});
   end;
-  if warning_str<>'' then update_text('WARNING =',#39+warning_str+#39);
+  if warning_str<>'' then
+  begin
+     update_text('WARNING =',#39+warning_str+#39);
+  end;
 
   Screen.Cursor :=Save_Cursor;    { back to normal }
 end;

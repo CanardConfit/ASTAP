@@ -216,7 +216,7 @@ begin
                 if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, monochrome image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
             end;
 
-            apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
+            apply_dark_flat(filter_name,{round(exposure),set_temperature,width2,}{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
             {these global variables are passed-on in procedure to protect against overwriting}
 
             memo2_message('Adding file: '+inttostr(counter+1)+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;

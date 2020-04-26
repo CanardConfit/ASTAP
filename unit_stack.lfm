@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1604
-    ActivePage = Images
+    ActivePage = tab_stackmethod1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 5
     TabOrder = 5
     OnChange = pagecontrol1Change
     object Images: TTabSheet
@@ -2367,7 +2367,7 @@ object stackmenu1: Tstackmenu1
             Alignment = taRightJustify
             AutoSize = False
             BorderSpacing.Around = 5
-            Caption = 'Field height image [°]:'
+            Caption = 'Field of view (height)[°]:'
             Color = clBtnFace
             ParentColor = False
             ParentFont = False
@@ -4127,7 +4127,7 @@ object stackmenu1: Tstackmenu1
           Width = 32
           ParentFont = False
           TabOrder = 2
-          Text = '20'
+          Text = '30'
         end
         object apply_gaussian_filter1: TButton
           Left = 24
@@ -6006,7 +6006,7 @@ object stackmenu1: Tstackmenu1
           OnChange = focallength1Change
           ParentFont = False
           TabOrder = 0
-          Text = '580'
+          Text = '500'
         end
         object Label23: TLabel
           Left = 8
@@ -6032,7 +6032,7 @@ object stackmenu1: Tstackmenu1
           OnChange = focallength1Change
           ParentFont = False
           TabOrder = 1
-          Text = '7.6'
+          Text = '6.4'
         end
         object calculated_scale1: TLabel
           Left = 232
@@ -7381,6 +7381,12 @@ object stackmenu1: Tstackmenu1
     end
     object MenuItem13: TMenuItem
       Caption = '-'
+    end
+    object copy_files_to_clipboard1: TMenuItem
+      Caption = 'Copy selected files to clipboard'
+      Hint = 'Copy the selected files to clipboard.'
+      ShortCut = 16451
+      OnClick = copy_files_to_clipboard1Click
     end
     object copypath1: TMenuItem
       Caption = 'Copy file path'

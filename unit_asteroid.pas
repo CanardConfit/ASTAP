@@ -1398,7 +1398,7 @@ begin
 end;
 
 procedure Tform_asteroids1.FormKeyPress(Sender: TObject; var Key: char);{han.k}
-begin
+begin {set form keypreview:=on}
   if key=#27 then
   begin
     esc_pressed:=true;

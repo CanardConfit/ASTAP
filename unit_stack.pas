@@ -36,7 +36,9 @@ uses
  math, ExtCtrls, Menus, Buttons,
  LCLIntf,{for for getkeystate, selectobject, openURL}
  clipbrd, Types,strutils,
+ ShlObj,{for copy file(s) to clipboard}
  astap_main,unit_image_sharpness;
+
 
 type
   { Tstackmenu1 }
@@ -65,6 +67,7 @@ type
     GroupBox13: TGroupBox;
     help_stack_menu3: TLabel;
     ignore_header_solution1: TCheckBox;
+    copy_files_to_clipboard1: TMenuItem;
     update_solution1: TCheckBox;
     update_annotations1: TCheckBox;
     Label23: TLabel;
@@ -550,6 +553,7 @@ type
       Item: TListItem; SubItem: Integer; State: TCustomDrawState;
       var DefaultDraw: Boolean);
     procedure live_stacking1Click(Sender: TObject);
+    procedure copy_files_to_clipboard1Click(Sender: TObject);
     procedure new_saturation1Change(Sender: TObject);
     procedure pagecontrol1Change(Sender: TObject);
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -759,7 +763,7 @@ procedure x2mean(colors: integer; var img: image_array);{combine values of 4 pix
 procedure x3mean(colors: integer;var img: image_array);{combine values of 9 pixel}
 function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 function load_wcs_solution(filen: string): boolean; {plate solving, load astrometry.net solution}
-procedure apply_dark_flat(filter1:string; exposure1,stemperature1,width1:integer; var dcount,fcount,fdcount: integer; var flat_factor: double) ; {inline;} {apply dark, flat if required, renew if different exposure or ccd temp}
+procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer; var flat_factor: double) ; {inline;} {apply dark, flat if required, renew if different exposure or ccd temp}
 procedure smart_colour_smooth( var img: image_array; wide : integer; measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 procedure date_to_jd(date_time:string);{get julian day for date_obs, so the start of the observation or for date_avg. Set global variable jd}
 function JdToDate(jd:double):string;{Returns Date from Julian Date}
@@ -1210,7 +1214,7 @@ begin
           else
           begin {normal HFD value}
             hfd_mean:=hfd_mean+ strtofloat(ListView1.Items.item[c].subitems.Strings[I_hfd]);
-            stars_mean:=stars_mean+ strtofloat(ListView1.Items.item[c].subitems.Strings[I_stardetections]);
+            stars_mean:=stars_mean+ strtoint(ListView1.Items.item[c].subitems.Strings[I_stardetections]);
             inc(nr_good_images);
           end;
         end;
@@ -1230,7 +1234,7 @@ begin
           if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[I_result]))then
           begin {checked}
             hfd_sd:=hfd_sd+sqr(hfd_mean- strtofloat(ListView1.Items.item[c].subitems.Strings[I_hfd]) );
-            stars_sd:=stars_sd+sqr(stars_mean - strtofloat(ListView1.Items.item[c].subitems.Strings[I_stardetections]) );
+            stars_sd:=stars_sd+sqr(stars_mean - strtoint(ListView1.Items.item[c].subitems.Strings[I_stardetections]) );
 
           end;
           inc(c); {go to next file}
@@ -1260,7 +1264,7 @@ begin
               memo2_message(ListView1.Items.item[c].caption+ ' unchecked due to high outlier HFD value.' );
             end
             else
-            if (stars_mean- strtofloat(ListView1.Items.item[c].subitems.Strings[I_stardetections]))>sd_factor*stars_sd  then
+            if (stars_mean- strtoint(ListView1.Items.item[c].subitems.Strings[I_stardetections]))>sd_factor*stars_sd  then
             begin {remove low star count outliers}
               ListView1.Items.item[c].checked:=false;
               ListView1.Items.item[c].subitems.Strings[I_result]:='↓ stars';{mark as outlier}
@@ -1294,7 +1298,7 @@ begin
 
   get_background(0,img,true,true {calculate background and also star level end noise level},{var}backgr,star_level);
 
-  if backgr>8 then
+  if ((backgr<60000) and (backgr>8)) then
   begin
     setlength(img_temp2,1,width2,height2);{set length of image array}
     for fitsY:=0 to height2-1 do
@@ -1331,7 +1335,7 @@ begin
     else hfd_median:=99;
   end {backgr is normal}
   else
-  hfd_median:=99;{Most common value image is too low. Can not  process this image. Check camera offset setting.}
+  hfd_median:=99;{Most common value image is too low. Ca'+#39+'t process this image. Check camera offset setting.}
 
   img_temp2:=nil;{free mem}
 end;
@@ -4412,6 +4416,47 @@ begin
 end;
 
 
+procedure CopyFilesToClipboard(FileList: string); {See https://forum.lazarus.freepascal.org/index.php?topic=18637.0}
+var
+  DropFiles: PDropFiles;
+  hGlobal: THandle;
+  iLen: integer;
+begin
+  iLen := Length(FileList) + 2;
+  FileList := FileList + #0#0;
+  hGlobal := GlobalAlloc(GMEM_SHARE or GMEM_MOVEABLE or GMEM_ZEROINIT,
+    SizeOf(TDropFiles) + iLen);
+  if (hGlobal = 0) then
+    raise Exception.Create('Could not allocate memory.');
+  begin
+    DropFiles := GlobalLock(hGlobal);
+    DropFiles^.pFiles := SizeOf(TDropFiles);
+    Move(FileList[1], (PChar(DropFiles) + SizeOf(TDropFiles))^, iLen);
+    GlobalUnlock(hGlobal);
+    OpenClipboard(mainwindow.Handle);
+    EmptyClipboard;
+    SetClipboardData(CF_HDROP,hGlobal);
+    CloseClipboard;
+   end;
+end;
+
+procedure Tstackmenu1.copy_files_to_clipboard1Click(Sender: TObject);
+var
+  index : integer;
+  info  : string;
+begin
+  {get file name selected}
+  info:='';
+  for index:=0 to listview5.items.count-1 do
+  begin
+    if  listview5.Items[index].Selected then
+    begin
+      info:=info+listview5.items[index].caption+#0; {Separate the files with a #0.}
+    end;
+  end;
+  CopyFilesToClipboard(info);
+end;
+
 procedure Tstackmenu1.new_saturation1Change(Sender: TObject);
 var
   r,g,b,h,s,v : single;
@@ -5026,7 +5071,7 @@ begin
       ext:=uppercase(ExtractFileExt(filename2));
       if ((ext='.FIT') or (ext='.FITS') or (ext='.FTS'))=false then
       begin
-        memo2_message('█ █ █ █ █ █ Can not binx2. First analyse file list !! █ █ █ █ █ █');
+        memo2_message('█ █ █ █ █ █ Can'+#39+'t binx2. First analyse file list !! █ █ █ █ █ █');
         beep;
         exit;
       end;
@@ -5295,7 +5340,7 @@ begin
         begin
           listview7.Items[c].Checked:=false;
           listview7.Items.item[c].subitems.Strings[P_astrometric]:='';
-          memo2_message(filename2+ 'Uncheck, no astrometric solution found for this file. Can not measure magnitude!');
+          memo2_message(filename2+ 'Uncheck, no astrometric solution found for this file. Can'+#39+'t measure magnitude!');
         end;
       end
       else
@@ -5924,7 +5969,7 @@ begin
   lv:=listview1;
 
   {get column names}
-  for c := 0 to lv.Items[0].SubItems.Count do
+  for c := 0 to lv.Items[0].SubItems.Count-1 do
        info:=info+lv.columns[c].caption+#9;
   info:=info+slinebreak;
 
@@ -6980,11 +7025,11 @@ begin
   else result:=false;
 end;
 
-procedure apply_dark_flat(filter1:string; exposure1,stemperature1,width1:integer; var dcount,fcount,fdcount: integer; var flat_factor: double) ; {inline;} {apply dark, flat if required, renew if different exposure or ccd temp}
+procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer; var flat_factor: double) ; {inline;} {apply dark, flat if required, renew if different exposure or ccd temp}
 var  {variables in the procedure are created to protect global variables as filter_name against overwriting by loading other fits files}
-  fitsX,fitsY,k,light_naxis3,hotpixelcounter : integer;
+  fitsX,fitsY,k,light_naxis3,hotpixelcounter, light_width,light_height,light_set_temperature : integer;
   calstat_local,date_obs_light                : string;
-  datamax_light ,light_exposure,light_cd1_1,light_cd1_2,light_cd2_1,light_cd2_2, light_ra0, light_dec0,value,dark_outlier_level : double;
+  datamax_light ,light_exposure,light_cd1_1,light_cd1_2,light_cd2_1,light_cd2_2, light_ra0, light_dec0,value,dark_outlier_level  : double;
   ignore_hotpixels : boolean;
 
 begin
@@ -7000,6 +7045,9 @@ begin
   light_cd2_2:=cd2_2;
   light_ra0:=ra0;
   light_dec0:=dec0;
+  light_width:=width2;
+  light_height:=height2;
+  light_set_temperature:=round(set_temperature);
 
   ignore_hotpixels:=stackmenu1.ignore_hotpixels1.checked;
   hotpixelcounter:=0;
@@ -7008,12 +7056,17 @@ begin
   else
   begin
     if ((dark_exposure=987654321) {first dark required, any dark will do} or  (stackmenu1.classify_dark_exposure1.checked){suitable dark reguired}) then
-    if  ((exposure1=dark_exposure) and (stemperature1=dark_temperature) )=false then {new dark required}
+    if  ((light_exposure=dark_exposure) and (light_set_temperature=dark_temperature) )=false then {new dark required}
     begin
-      load_master_dark(exposure1,stemperature1 {set_temperature},width1, {var}dark_average,dark_sigma); {will only be renewed if different exposure or set_temperature. Note load will overwrite calstat}
+      load_master_dark(round(light_exposure),light_set_temperature {set_temperature},light_width, {var}dark_average,dark_sigma); {will only be renewed if different exposure or set_temperature. Note load will overwrite calstat}
       dcount:=dark_count;{protect this global dark_count in dcount for next load_master_flat}
     end;
 
+    if light_naxis3<>length(img_dark) then {colour image with mono dark?}
+    begin
+      dark_count:=0;
+      memo2_message('█ █ █ █ █ █  Warning, skipping dark, can'+#39+'t combine mono and colour!!')
+    end;
 
     if dark_count>0 then
     begin
@@ -7045,7 +7098,7 @@ begin
     if ((flat_filter='987654321') {first flat required, any flat will do} or  (stackmenu1.classify_flat_filter1.checked){suitable flat reguired}) then
     if AnsiCompareText(filter1,flat_filter)<>0 then {new flat required}
     begin
-      load_master_flat(filter1,width2);{will only be renewed if different filter name.  Note load will overwrite calstat}
+      load_master_flat(filter1,light_width);{will only be renewed if different filter name.  Note load will overwrite calstat}
       fcount:=flat_count;{from master flat loaded}
       fdcount:=flatdark_count;
     end;
@@ -7081,6 +7134,10 @@ begin
   cd2_2:=light_cd2_2;
   ra0:=light_ra0;
   dec0:=light_dec0;
+  width2:=light_width;
+  height2:=light_height;
+  set_temperature:=light_set_temperature;
+
 
 end;
 
@@ -7116,7 +7173,7 @@ begin
 
         backup_header;{backup header and solution}
 
-        apply_dark_flat(filter_name,round(exposure),set_temperature,width2,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
+        apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
         {these global variables are passed-on in procedure to protect against overwriting}
         memo2_message('Calibrating file: '+inttostr(c+1)+'-'+inttostr( ListView1.items.count-1)+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
         Application.ProcessMessages;
