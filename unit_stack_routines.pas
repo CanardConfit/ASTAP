@@ -650,10 +650,10 @@ begin
           {load image}
           if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
 
-          if init=true then
+          if init=true then {first file done}
           begin
              if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-//             if naxis3<>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
+             if naxis3>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine colour to mono files.'); exit;end;
           end;
 
           if init=false then
@@ -931,7 +931,7 @@ begin
         if init=true then
         begin
            // not for mosaic||| if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-//           if naxis3<>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
+           if naxis3>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
         end;
 
         if init=false then
@@ -1138,7 +1138,7 @@ begin
         if init=true then
         begin
            if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-//           if naxis3<>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
+           if naxis3>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
         end;
 
 

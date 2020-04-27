@@ -2056,6 +2056,12 @@ var
 begin
   RealFontSize := abs(Round((GetFontData(stackmenu1.Font.Handle).Height * 72 / stackmenu1.Font.PixelsPerInch)));
   if realfontsize>11 then stackmenu1.font.size:=11;{limit fontsize}
+
+{$ifdef mswindows}
+{$else} {unix}
+  copy_files_to_clipboard1.visible:=false;  {works only in Windows}
+  copy_files_to_clipboard1.enabled:=false;
+{$endif}
 end;
 
 procedure Tstackmenu1.FormKeyPress(Sender: TObject; var Key: char);
@@ -4416,6 +4422,7 @@ begin
 end;
 
 
+{$ifdef mswindows}
 procedure CopyFilesToClipboard(FileList: string); {See https://forum.lazarus.freepascal.org/index.php?topic=18637.0}
 var
   DropFiles: PDropFiles;
@@ -4439,12 +4446,16 @@ begin
     CloseClipboard;
    end;
 end;
+{$else} {unix}
+{$endif}
+
 
 procedure Tstackmenu1.copy_files_to_clipboard1Click(Sender: TObject);
 var
   index : integer;
   info  : string;
 begin
+ {$ifdef mswindows}
   {get file name selected}
   info:='';
   for index:=0 to listview5.items.count-1 do
@@ -4455,6 +4466,8 @@ begin
     end;
   end;
   CopyFilesToClipboard(info);
+{$else} {unix}
+{$endif}
 end;
 
 procedure Tstackmenu1.new_saturation1Change(Sender: TObject);

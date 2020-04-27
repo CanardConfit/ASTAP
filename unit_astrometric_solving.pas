@@ -456,7 +456,7 @@ var
   solution, go_ahead,solve_show_log  : boolean;
   Save_Cursor     : TCursor;
   startTick  : qword;{for timing/speed purposes}
-  distancestr,oversize_mess,mess,info_message,warning,suggest_str    :string;
+  distancestr,oversize_mess,mess,info_message,warning,suggest_str,memo1_backup  :string;
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,limit_counter : integer;
   autoFOV : boolean;
 const
@@ -475,7 +475,9 @@ begin
   if stackmenu1.calibrate_prior_solving1.checked then
   begin
     memo2_message('Calibrating image prior to solving.');
-    apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
+    memo1_backup:=mainwindow.Memo1.Text;{save header text prior to apply dark, flats}
+    apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp. This will clear the header in load_fits}
+    mainwindow.Memo1.Text:=memo1_backup;{restore header}
   end;
 
   binning:=report_binning;
