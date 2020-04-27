@@ -452,7 +452,7 @@ end;
 function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
   nrstars,nrstars_required,count,max_distance,nr_tetrahedrons, minimum_tetrahedrons,i,database_stars,distance,binning : integer;
-  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov, max_fov,oversize,sep,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, flat_factor,min_star_size_arcsec,hfd_min: double;
+  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov, max_fov,oversize,sep,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min: double;
   solution, go_ahead,solve_show_log  : boolean;
   Save_Cursor     : TCursor;
   startTick  : qword;{for timing/speed purposes}
@@ -475,7 +475,7 @@ begin
   if stackmenu1.calibrate_prior_solving1.checked then
   begin
     memo2_message('Calibrating image prior to solving.');
-    apply_dark_flat(filter_name,{round(exposure),set_temperature,width2,}{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
+    apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
   end;
 
   binning:=report_binning;

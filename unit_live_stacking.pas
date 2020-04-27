@@ -27,6 +27,7 @@ procedure stack_live(oversize:integer; path :string);{stack live average}
 
 const
   pause_pressed: boolean=false;
+  live_stacking: boolean=false; {used to inhibit solving while live_stacking}
 
 implementation
 
@@ -125,7 +126,7 @@ procedure stack_live(oversize:integer; path :string);{stack live average}
 var
     fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter :  integer;
     flat_factor, distance             : double;
-    init, solution, use_astrometry_internal, vector_based,waiting,transition_image,colour_correction :boolean;
+    init, solution, vector_based,waiting,transition_image,colour_correction :boolean;
     file_ext,filen                    :  string;
     multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}
 
@@ -149,8 +150,7 @@ begin
 
   with stackmenu1 do
   begin
-    use_astrometry_internal:=use_astrometry_internal1.checked;
-
+    live_stacking:=true;{to block other instruction like solve button}
     reset_var; {reset variables  including init:=false}
 
     binning:=report_binning;{select binning}
@@ -178,7 +178,10 @@ begin
           {load image}
           if ((esc_pressed) or (load_thefile(filename2)=false)) then
           begin
-            memo2_message('Error');{can't load}
+            if esc_pressed=false then memo2_message('Error loading file'); {can't load}
+            live_stacking_pause1.font.style:=[];
+            live_stacking1.font.style:=[];
+            live_stacking:=false;
             exit;
           end;
 
@@ -216,19 +219,18 @@ begin
                 if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, monochrome image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
             end;
 
-            apply_dark_flat(filter_name,{round(exposure),set_temperature,width2,}{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
+            apply_dark_flat(filter_name,{round(exposure),set_temperature,width2,}{var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
             {these global variables are passed-on in procedure to protect against overwriting}
 
             memo2_message('Adding file: '+inttostr(counter+1)+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
-            Application.ProcessMessages;
-            if esc_pressed then exit;
+//            Application.ProcessMessages;
+//            if esc_pressed then exit;
 
             if make_osc_color1.checked then
                demosaic_bayer; {convert OSC image to colour}
 
             if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
 
-            if use_astrometry_internal=false then
             if init=false then {first image}
             begin
               bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist1);{bin, measure background, find stars}
@@ -409,6 +411,9 @@ begin
 
     until esc_pressed;
 
+    live_stacking:=false;
+    live_stacking_pause1.font.style:=[];
+    live_stacking1.font.style:=[];
     memo2_message('Live stack stopped. Save result if required');
 
     counterL:=counter;

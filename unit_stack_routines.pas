@@ -609,7 +609,7 @@ end;
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
   fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,drizzle_mode,binning                : integer;
-  background_correction, flat_factor, value, weightF                                                               : double;
+  background_correction, value, weightF                                                               : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
 begin
   with stackmenu1 do
@@ -653,7 +653,7 @@ begin
           if init=true then
           begin
              if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-             if naxis3<>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
+//             if naxis3<>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
           end;
 
           if init=false then
@@ -669,7 +669,7 @@ begin
           end;
 
 
-          apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
+          apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
           {these global variables are passed-on in procedure to protect against overwriting}
 
           memo2_message('Adding file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
@@ -890,7 +890,7 @@ var
     fitsX,fitsY,c,width_max, height_max,x_new,y_new,col,
     cropW,cropH : integer;
 
-    flat_factor, value,  background_correction,dummy,median                                                        : double;
+    value, background_correction,dummy,median                                                        : double;
     init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
 
 begin
@@ -931,7 +931,7 @@ begin
         if init=true then
         begin
            // not for mosaic||| if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-           if naxis3<>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
+//           if naxis3<>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
         end;
 
         if init=false then
@@ -941,7 +941,7 @@ begin
           initialise2;{set variables correct}
         end;
 
-        apply_dark_flat(filter_name, {var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
+        apply_dark_flat(filter_name, {var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
         {these global variables are passed-on in procedure to protect against overwriting}
 
         memo2_message('Adding file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
@@ -1089,7 +1089,7 @@ end;
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 var
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col,  drizzle_mode,binning   : integer;
-    background_correction, flat_factor,variance_factor, value,weightF  : double;
+    background_correction, variance_factor, value,weightF  : double;
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
 begin
   with stackmenu1 do
@@ -1138,7 +1138,7 @@ begin
         if init=true then
         begin
            if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-           if naxis3<>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
+//           if naxis3<>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
         end;
 
 
@@ -1154,7 +1154,7 @@ begin
              if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, monochrome image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
         end;
 
-        apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
+        apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
         {these global variables are passed-on in procedure to protect against overwriting}
 
         memo2_message('Adding light file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
@@ -1329,7 +1329,7 @@ begin
             {not required. Done in first step}
           end;
 
-          apply_dark_flat(filter_name, {var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
+          apply_dark_flat(filter_name, {var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
           {these global variables are passed-on in procedure to protect against overwriting}
 
           memo2_message('Calculating pixels σ of light file '+inttostr(c+1)+'-'+nr_selected1.caption+' '+filename2+' Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
@@ -1439,10 +1439,9 @@ begin
           Application.ProcessMessages;
           if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
 
-          apply_dark_flat(filter_name, {var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
-          {these global variables are passed-on in procedure to protect against overwriting}
+          apply_dark_flat(filter_name, {var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
 
-          memo2_message('Combining '+inttostr(c+1)+'-'+nr_selected1.caption+'"'+filename2+'", ignoring outliers. Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
+          memo2_message('Combining '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'", ignoring outliers. Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
           Application.ProcessMessages;
           if esc_pressed then exit;
 

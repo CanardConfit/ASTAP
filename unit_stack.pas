@@ -763,7 +763,7 @@ procedure x2mean(colors: integer; var img: image_array);{combine values of 4 pix
 procedure x3mean(colors: integer;var img: image_array);{combine values of 9 pixel}
 function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 function load_wcs_solution(filen: string): boolean; {plate solving, load astrometry.net solution}
-procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer; var flat_factor: double) ; {inline;} {apply dark, flat if required, renew if different exposure or ccd temp}
+procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer) inline; {apply dark, flat if required, renew if different exposure or ccd temp}
 procedure smart_colour_smooth( var img: image_array; wide : integer; measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 procedure date_to_jd(date_time:string);{get julian day for date_obs, so the start of the observation or for date_avg. Set global variable jd}
 function JdToDate(jd:double):string;{Returns Date from Julian Date}
@@ -5034,6 +5034,8 @@ begin
   pause_pressed:=true;
   live_stacking_pause1.font.style:=[fsbold,fsunderline];
   live_stacking1.font.style:=[];
+  Application.ProcessMessages; {process font changes}
+
 end;
 
 procedure Tstackmenu1.live_stacking_restart1Click(Sender: TObject);
@@ -5041,6 +5043,7 @@ begin
   esc_pressed:=true;
   live_stacking_pause1.font.style:=[];
   live_stacking1.font.style:=[];
+  Application.ProcessMessages; {process font changes}
 
 end;
 
@@ -7025,11 +7028,11 @@ begin
   else result:=false;
 end;
 
-procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer; var flat_factor: double) ; {inline;} {apply dark, flat if required, renew if different exposure or ccd temp}
+procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer) ; inline; {apply dark, flat if required, renew if different exposure or ccd temp}
 var  {variables in the procedure are created to protect global variables as filter_name against overwriting by loading other fits files}
   fitsX,fitsY,k,light_naxis3,hotpixelcounter, light_width,light_height,light_set_temperature : integer;
   calstat_local,date_obs_light                : string;
-  datamax_light ,light_exposure,light_cd1_1,light_cd1_2,light_cd2_1,light_cd2_2, light_ra0, light_dec0,value,dark_outlier_level  : double;
+  datamax_light ,light_exposure,light_cd1_1,light_cd1_2,light_cd2_1,light_cd2_2, light_ra0, light_dec0,value,dark_outlier_level,flat_factor : double;
   ignore_hotpixels : boolean;
 
 begin
@@ -7173,7 +7176,7 @@ begin
 
         backup_header;{backup header and solution}
 
-        apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count,flat_factor);{apply dark, flat if required, renew if different exposure or ccd temp}
+        apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
         {these global variables are passed-on in procedure to protect against overwriting}
         memo2_message('Calibrating file: '+inttostr(c+1)+'-'+inttostr( ListView1.items.count-1)+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
         Application.ProcessMessages;

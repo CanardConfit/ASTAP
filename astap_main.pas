@@ -668,7 +668,7 @@ var
 
 implementation
 
-uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_290, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid, unit_astrometry_net;
+uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_290, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid, unit_astrometry_net, unit_live_stacking;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -1254,7 +1254,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.348 dated 2020-04-26';
+  #13+#10+'Version ß0.9.349 dated 2020-04-27';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2455,8 +2455,13 @@ var
    OldCursor : TCursor;
    colour,old_nrbits,old_naxis3   : integer;
 begin
-  save_settings(user_path+'astap.cfg');
+  if live_stacking {ongoing}  then
+  begin
+    stackmenu1.Memo2.lines.add('█ █ █ █ █ █  Can'+#39+'t solve while live stacking!!');
+    exit;
+  end;
 
+  save_settings(user_path+'astap.cfg');
 
   OldCursor := Screen.Cursor;
   Screen.Cursor:= crHourGlass;
@@ -2943,7 +2948,7 @@ procedure new_to_old_WCS;{convert new style FITsS to old style}
 var
    sign        : integer;
 begin
-  { convert to old WCS. Based on draft 1988 , do not conversion article Alain Klotz, give sometimes zero CROTA}
+  { convert to old WCS. Based on draft 1988 , do not cuse onversion article Alain Klotz, give sometimes zero CROTA}
   if (cd1_1*cd2_2-cd1_2*cd2_1)>=0 then sign:=+1 else sign:=-1;
 
   cdelt1:=sqrt(sqr(cd1_1)+sqr(cd2_1))*sign;{if no old wcs header use cd2_2 of new WCS style for pixel size}
@@ -2959,10 +2964,10 @@ end;
 
 function fnmodulo (x,range: double):double;
 begin
-   {range should be 2*pi or 24 hours or 0 .. 360}
-   x:=range *frac(X /range); {quick method for big numbers}
-   if x<0 then x:=x+range;   {do not like negative numbers}
-   fnmodulo:=x;
+  {range should be 2*pi or 24 hours or 0 .. 360}
+  x:=range *frac(X /range); {quick method for big numbers}
+  if x<0 then x:=x+range;   {do not like negative numbers}
+  fnmodulo:=x;
 end;
 
 function intensity2(x:tcolor):integer;
