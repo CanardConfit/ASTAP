@@ -108,6 +108,8 @@ uses   Classes,SysUtils,controls,forms,math,
 function solve_image(img :image_array; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; var starlist3:star_list);{bin, measure background, find stars}
 function report_binning : integer;{select the binning}
+//procedure standard_equatorial(ra0,dec0,x,y,cdelt: double; var ra,dec : double); {transformation from CCD coordinates into equatorial coordinates}
+//procedure equatorial_standard(ra0,dec0,ra,dec, cdelt : double; var xx,yy: double);
 
 var
   star1   : array[0..2] of array of single;
@@ -529,7 +531,6 @@ begin
     else cropping:=1;
 
     hfd_min:=max(0.8,min_star_size_arcsec/(binning*fov*3600/height2) );{to ignore hot pixels which are too small}
-
 
     bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
 

@@ -52,7 +52,7 @@ Begin
 
   if vector_based then {vector based correction}
   begin
-     x_new_float:=solution_vectorX[0]*(fitsxfloat-1)+solution_vectorX[1]*(fitsYfloat-1)+solution_vectorX[2]; {correction x:=aX+bY+c}
+     x_new_float:=solution_vectorX[0]*(fitsxfloat-1)+solution_vectorX[1]*(fitsYfloat-1)+solution_vectorX[2]; {correction x:=aX+bY+c  x_new_float in image array range 0..width2-1}
      y_new_float:=solution_vectorY[0]*(fitsxfloat-1)+solution_vectorY[1]*(fitsYfloat-1)+solution_vectorY[2]; {correction y:=aX+bY+c}
   end
   else
@@ -96,18 +96,21 @@ Begin
 
     if a_order=2 then {apply SIP correction}
     begin
-       x_new_float:=(CRPIX1_ref +  u0+ap_0_1_ref*v0+ ap_0_2_ref*v0*v0+ ap_1_0_ref*u0 + ap_1_1_ref*u0*v0+ ap_2_0_ref*u0*u0)-1; {SIP correction, fits count from 1, image from zero therefore subract 1}
+       x_new_float:=(CRPIX1_ref +  u0+ap_0_1_ref*v0+ ap_0_2_ref*v0*v0+ ap_1_0_ref*u0 + ap_1_1_ref*u0*v0+ ap_2_0_ref*u0*u0)-1; {SIP correction, fits count from 1, image from zero therefore subtract 1}
        y_new_float:=(CRPIX2_ref +  v0+bp_0_1_ref*v0+ bp_0_2_ref*v0*v0+ bp_1_0_ref*u0 + bp_1_1_ref*u0*v0+ bp_2_0_ref*u0*u0)-1; {SIP correction}
     end
     else
     begin
-      x_new_float:=(CRPIX1_ref + u0)-1;
+      x_new_float:=(CRPIX1_ref + u0)-1; {in image array range 0..width-1}
       y_new_float:=(CRPIX2_ref + v0)-1;
     end;
   end;{astrometric}
 end;{calc_newx_newy}
 
 procedure astrometric_to_vector;{convert astrometric solution to vector solution}
+var
+  flipped,flipped_reference  : boolean;
+
 begin
   a_order:=0; {SIP correction should be zero by definition}
 
@@ -115,7 +118,8 @@ begin
   solution_vectorX[2]:=x_new_float;
   solution_vectorY[2]:=y_new_float;
 
-  calc_newx_newy(false,2, 1);{move one pixel in X}
+  calc_newx_newy(false,2, 1); {move one pixel in X}
+
   solution_vectorX[0]:=+(x_new_float- solution_vectorX[2]);
   solution_vectorX[1]:=-(y_new_float- solution_vectorY[2]);
 
@@ -123,6 +127,13 @@ begin
   solution_vectorY[0]:=-(x_new_float- solution_vectorX[2]);
   solution_vectorY[1]:=+(y_new_float- solution_vectorY[2]);
 
+  flipped:=(cd1_1/cd2_2)>0; {flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+  flipped_reference:=(cd1_1_ref/cd2_2_ref)>0; {flipped reference image}
+  if flipped<>flipped_reference then {this can happen is user try to add images from a diffent camera/setup}
+  begin
+    solution_vectorX[1]:=-solution_vectorX[1];
+    solution_vectorY[0]:=-solution_vectorY[0];
+  end;
 end;
 
 procedure initialise1;{set variables correct}
@@ -224,7 +235,7 @@ var
   rr_factor, rg_factor, rb_factor,
   gr_factor, gg_factor, gb_factor,
   br_factor, bg_factor, bb_factor,
-  saturated_level                           : double;
+  saturated_level,hfd_min,cdelt2_lum                            : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
 begin
   with stackmenu1 do
@@ -235,6 +246,7 @@ begin
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
+    hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
     binning:=report_binning;{select binning}
     counter:=0;
@@ -270,7 +282,7 @@ begin
       for c:=0 to length(files_to_process)-1 do  {should contain reference,r,g,b,rgb,l}
       begin
         if c=5 then {all colour files added, correct for the number of pixel values added at one pixel. This can also happen if one colour has an angle and two pixel fit in one!!}
-        begin
+        begin {fix RGB stack}
           memo2_message('Correcting for number of values added for each pixel position');
           For fitsY:=0 to height_max-1 do
             for fitsX:=0 to width_max-1 do
@@ -291,23 +303,42 @@ begin
         begin
           try { Do some lengthy operation }
             if c=5 then {Luminance chanel, RGB should be ready, apply most common filter and gaussian blur}
-            begin
+            begin {prepare RGB for applying on luminance channel}
               memo2_message('Applying '+RGB_filter1.text+' filter on interim RGB image before applying on Luminance channel');
-              case rgb_filter1.itemindex of 0:    x2mean(2,img_average);
-                                            1:    x3mean(3,img_average);
+
+
+              case rgb_filter1.itemindex of 0:    mean_filter(3 {colours},3{dept},img_average);
+                                            1:    mean_filter(3 {colours},5{dept},img_average);
                                             2:    gaussian_blur2(img_average,1);
                                             3:    gaussian_blur2(img_average,2);
                                             4:    gaussian_blur2(img_average,3);
                                             5:    gaussian_blur2(img_average,5);
                                             6:    gaussian_blur2(img_average,7);
-                                            7:    smart_colour_smooth(img_average,4,true {get histogram});{smoothen colours}
-                                            8:    smart_colour_smooth(img_average,6,true {get histogram});{smoothen colours}
-                                            9:    smart_colour_smooth(img_average,8,true {get histogram});{smoothen colours}
-                                           10:    smart_colour_smooth(img_average,10,true {get histogram});{smoothen colours}
-                                           11:    smart_colour_smooth(img_average,15,true {get histogram});{smoothen colours}
+                                            7:    gaussian_blur2(img_average,10);
+                                            8:    gaussian_blur2(img_average,15);
+                                            9:    gaussian_blur2(img_average,23);
+                                           10:    gaussian_blur2(img_average,35);
+                                           11:    gaussian_blur2(img_average,50);
+                                           12:    smart_colour_smooth(img_average,4,true {get histogram});{smoothen colours}
+                                           13:    smart_colour_smooth(img_average,6,true {get histogram});{smoothen colours}
+                                           14:    smart_colour_smooth(img_average,8,true {get histogram});{smoothen colours}
+                                           15:    smart_colour_smooth(img_average,10,true {get histogram});{smoothen colours}
+                                           16:    smart_colour_smooth(img_average,15,true {get histogram});{smoothen colours}
+                                           17:    smart_colour_smooth(img_average,23,true {get histogram});{smoothen colours}
+                                           18:    smart_colour_smooth(img_average,35,true {get histogram});{smoothen colours}
+                                           19:    smart_colour_smooth(img_average,50,true {get histogram});{smoothen colours}
                                         end;{case}
 
+              //img_loaded:=img_average;
+              //naxis3:=3;
+              //height2:=length(img_loaded[0,0]);{height}
+              //width2:=length(img_loaded[0]);{width}
+              //plot_fits(mainwindow.image1,true,true);{plot real}
+              //exit;
             end;
+
+
+
 
             filename2:=files_to_process[c].name;
             if c=1 then memo2_message('Adding red file: "'+filename2+'"  to final image.');
@@ -368,18 +399,23 @@ begin
               memo2_message('Preparing astrometric solution for interim file: '+filename2);
               if cd1_1=0 then solution:= create_internal_solution(img_loaded) else solution:=true;
               if solution=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, No astrometric solution for '+filename2); exit;end;{no solution found}
+              if c=0 then cdelt2_lum:=cdelt2;
+              if ((c=1) or (c=2)  or (c=3) or (c=4)) then
+              begin
+                if cdelt2>cdelt2_lum*1.01 then memo2_message('█ █ █ █ █ █  Warning!! RGB images have a larger pixel size ('+floattostrF(cdelt2*3600,ffgeneral,3,2)+'arcsec) then the luminance image ('+floattostrF(cdelt2_lum*3600,ffgeneral,3,2)+'arcsec). If the stack result is poor, select in tab "stack method" the 3x3 mean or 5x5 mean filter for smoothing interim RGB.');
+              end;
             end
             else
             if init=false then {first image}
             begin
               if ((use_manual_align) or (use_ephemeris_alignment)) then
               begin
-                referenceX:=ref_X; {from FITS header form first stage using mode 'A', 'S'}
-                referenceY:=ref_Y; {from FITS header}
+                referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
+                referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
               end
               else
               begin
-                bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist1);{bin, measure background, find stars}
+                bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
                 find_tetrahedrons_ref;{find tetrahedrons for reference image}
               end;
             end;
@@ -413,13 +449,13 @@ begin
               begin
                 if ((use_manual_align) or (use_ephemeris_alignment)) then
                 begin {manual alignment}
-                  solution_vectorX[2]:=referenceX-ref_X; {calculate correction}
-                  solution_vectorY[2]:=referenceY-ref_Y;
+                  solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {calculate correction}
+                  solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]);
                   memo2_message('Solution x:=x+'+floattostr2(solution_vectorX[2])+',  y:=y+'+floattostr2(solution_vectorY[2]));
                 end
                 else
                 begin{internal alignment}
-                  bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist2);{bin, measure background, find stars}
+                  bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
 
                   find_tetrahedrons_new;{find tetrahedrons for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
@@ -515,15 +551,23 @@ begin
                   end;
                   if c=4 {RGB image, naxis3=3}   then
                   begin
-                    begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + img_loaded[0,fitsX-1,fitsY-1]-background_r+500;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                    begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + img_loaded[0,fitsX-1,fitsY-1]-background_r+500; img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1;{count the number of image pixels added=samples} end;
                     begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + img_loaded[1,fitsX-1,fitsY-1]-background_g+500; img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1;{count the number of image pixels added=samples} end;
                     begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + img_loaded[2,fitsX-1,fitsY-1]-background_b+500; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                  end;
+
+//                    if ((x_new=1908) and (y_new=604)) then
+//                    beep;
+
                   end;
                   if c=5 {Luminance} then
                   begin
                     {rgb is already blurred}
                     {r:=l*(0.33+r)/(r+g+b)}
+
+//                  if ((x_new=1908) and (y_new=604)) then
+//                  beep;
+
+
                     colr:=img_average[0,x_new,y_new] - 475 + red_add; {lowest_most_common is around 450 to 500}
                     colg:=img_average[1,x_new,y_new] - 475 + green_add;
                     colb:=img_average[2,x_new,y_new] - 475 + blue_add;
@@ -535,6 +579,7 @@ begin
                       green_f:=colg/rgbsum; if green_f<0 then green_f:=0;if green_f>1 then green_f:=1;
                       blue_f:=colb/rgbsum;  if blue_f<0  then blue_f:=0; if blue_f>1 then  blue_f:=1;
                     end;
+
 
                     img_average[0,x_new,y_new]:=1000+(img_loaded[0,fitsX-1,fitsY-1] - background_l)*(red_f);
                     img_average[1,x_new,y_new]:=1000+(img_loaded[0,fitsX-1,fitsY-1] - background_l)*(green_f);
@@ -608,8 +653,8 @@ end;
 
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
-  fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,drizzle_mode,binning                : integer;
-  background_correction, value, weightF                                                               : double;
+  fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,drizzle_mode,binning              : integer;
+  background_correction, value, weightF,hfd_min                                                              : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
 begin
   with stackmenu1 do
@@ -622,6 +667,7 @@ begin
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
+    hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
     counter:=0;
     sum_exp:=0;
@@ -692,7 +738,7 @@ begin
             end
             else
             begin
-              bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist1);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
               find_tetrahedrons_ref;{find tetrahedrons for reference image}
               pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
               if pedestal<500 then pedestal:=500;{prevent image noise could go below zero}
@@ -743,7 +789,7 @@ begin
               end
               else
               begin{internal alignment}
-                bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist2);{bin, measure background, find stars}
+                bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
 
                 background_correction:=pedestal-cblack;
                 datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
@@ -1088,8 +1134,8 @@ end;
 
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 var
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col,  drizzle_mode,binning   : integer;
-    background_correction, variance_factor, value,weightF  : double;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col,  drizzle_mode,binning     : integer;
+    background_correction, variance_factor, value,weightF,hfd_min                                         : double;
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
 begin
   with stackmenu1 do
@@ -1100,7 +1146,7 @@ begin
     drizzle_mode:=0;
     if stackmenu1.drizzle1.checked then drizzle_mode:=1;{standard drizzle mode}
     if pos('Bayer',stackmenu1.demosaic_method1.text)<>0  then drizzle_mode:=2; {Bayer drizzle mode}
-
+    hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
@@ -1177,7 +1223,7 @@ begin
           end
           else
           begin
-            bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist1);{bin, measure background, find stars}
+            bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
 
             find_tetrahedrons_ref;{find tetrahedrons for reference image}
             pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
@@ -1220,7 +1266,7 @@ begin
                 end
                 else
                 begin{internal alignment}
-                  bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist2);{bin, measure background, find stars}
+                  bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
 
                   background_correction:=pedestal-cblack;{correct later for difference in background}
                   datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}

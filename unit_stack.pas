@@ -62,12 +62,14 @@ type
     add_bias1: TCheckBox;
     binning_for_solving_label3: TLabel;
     analyse_objects_visibles1: TButton;
+    binning_for_solving_label4: TLabel;
     calculated_scale1: TLabel;
     focallength1: TEdit;
     GroupBox13: TGroupBox;
     help_stack_menu3: TLabel;
     ignore_header_solution1: TCheckBox;
     copy_files_to_clipboard1: TMenuItem;
+    min_star_size_stacking1: TComboBox;
     update_solution1: TCheckBox;
     update_annotations1: TCheckBox;
     Label23: TLabel;
@@ -759,8 +761,9 @@ procedure memo2_message(s: string);{message to memo2}
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; var background, starlevel: double); {get background and star level from peek histogram}
 
 procedure update_stackmenu;{update stackmenu1 menus}
-procedure x2mean(colors: integer; var img: image_array);{combine values of 4 pixel}
-procedure x3mean(colors: integer;var img: image_array);{combine values of 9 pixel}
+
+procedure mean_filter(colors,range: integer;var img: image_array);{combine values of pixels, ignore zeros}
+
 function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 function load_wcs_solution(filen: string): boolean; {plate solving, load astrometry.net solution}
 procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer) inline; {apply dark, flat if required, renew if different exposure or ccd temp}
@@ -974,10 +977,13 @@ begin
     panel_manual1.color:=clnone;
     panel_ephemeris1.color:=clnone;
 
+    min_star_size_stacking1.enabled:=false;
+
     if use_star_alignment1.checked then
     begin
        Panel_star_detection1.bevelouter:=bvSpace; {blue corner}
        Panel_star_detection1.color:=clBtnFace;
+       min_star_size_stacking1.enabled:=true;
     end
     else
     if use_astrometry_internal1.checked then
@@ -1110,17 +1116,21 @@ end;
 
 function get_standard_deviation(backgr: double {value background}; colour : integer; img2: image_array): double;{get the background standard deviation using 10000 pixels}
 var
- fitsX, fitsY,counter,stepsize : integer;
+ fitsX, fitsY,counter,stepsize,width5,height5 : integer;
  value : double;
 begin
   result:=0;
   counter:=1; {never divide by zero}
   fitsX:=15;
   stepsize:=round(height2/102);{get about 10000 samples. Use 102 rather then 100 to prevent problems with artifical generated stars which is using repeat of 100}
-  while fitsX<=width2-1 do
+
+  width5:=Length(img2[0]);    {width}
+  height5:=Length(img2[0][0]); {height}
+
+  while fitsX<=width5-1 do
   begin
     fitsY:=15;
-    while fitsY<=height2-1 do
+    while fitsY<=height5-1 do
     begin
       value:=img2[colour,fitsX,fitsY];
       if value<backgr*2 then {not an outlier, noise should be symmetrical so should be less then twice background}
@@ -1985,7 +1995,9 @@ begin
       plot_fits(mainwindow.image1,false,true); {remove tetrahedrons}
     get_background(0,img_loaded,false{histogram already available},true {unknown, calculate also noise level} ,{var}cblack,star_level);
 
-    hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size1.caption){arc sec}/(cdelt2 *3600) );{to ignore hot pixels which are too small}
+    if use_astrometry_internal1.checked then hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size1.caption){arc sec}/(cdelt2 *3600) ){to ignore hot pixels which are too small}
+                                        else hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+
     find_stars(img_loaded,hfd_min,starlist1);{find stars and put them in a list}
     find_tetrahedrons_ref;{find tetrahedrons for reference image}
     display_tetrahedrons(starlisttetrahedrons1);
@@ -2426,7 +2438,12 @@ begin
     for fitsY:=0 to height2-1 do
     for fitsX:=0 to width2-1 do
     begin
-      dum:=img_loaded[0,fitsX,fitsY]; if dum<>0 then {signal} begin dum:=(dum+add_valueR)*multiply_red/largest;  if dum<0 then dum:=0; img_loaded[0,fitsX,fitsY]:=dum;end;
+      dum:=img_loaded[0,fitsX,fitsY];
+      if dum<>0 then {signal}
+      begin
+        dum:=(dum+add_valueR)*multiply_red/largest;
+        if dum<0 then dum:=0; img_loaded[0,fitsX,fitsY]:=dum;
+      end;
 
       if naxis3>1 then {colour}
       begin
@@ -2896,6 +2913,7 @@ begin
       begin
         if ((tl=stackmenu1.listview1) and (stackmenu1.use_manual_alignment1.checked)) then {manual alignment}
         begin
+          calstat:=''; {allow manual stack for stacked images in listview1}
           fitsX:=strtofloat2(tl.Items.item[index].subitems.Strings[I_X]);
           fitsY:=strtofloat2(tl.Items.item[index].subitems.Strings[I_Y]);
           show_shape(true {assume good lock},fitsX,fitsY);
@@ -3243,73 +3261,51 @@ begin
   end;
 end;
 
-procedure x2mean(colors: integer; var img: image_array);{combine values of 4 pixel}
-var fitsX,fitsY,k,x1,x2,y1,y2,col : integer;
-    img_temp2 : image_array;
-begin
-  col:=length(img);{the real number of colours}
 
-  setlength(img_temp2,col,width2,height2);{set length of image array}
-
-  for k:=0 to col-1 do
-  begin
-    for fitsY:=0 to height2-1 do
-      for fitsX:=0 to width2-1 do
-      begin
-        x1:=fitsx;
-        x2:=fitsx+1;if x2>width2-1 then x2:=width2-1;
-        y1:=fitsy;
-        y2:=fitsy+1;if y2>height2-1 then y2:=height2-1;
-
-        img_temp2[k,fitsX,fitsY]:=(img[k,x1,  y1]+ img[k,x2,  y1]+
-                                   img[k,x1,  y2]+ img[k,x2,  y2])/4;
-
-      end;
-  end;{k}
-
-  if ((colors=1){request} and (col=3){actual})  then {rare, need to make mono, copy back to img}
-  begin
-  for fitsY:=0 to height2-1 do
-    for fitsX:=0 to width2-1 do
-    for k:=0 to col-1 do
-     img[0,fitsx,fitsy]:=(img_temp2[0,fitsx,fitsy]+img_temp2[1,fitsx,fitsy]+img_temp2[2,fitsx,fitsy])/3;
-  end
-  else
-  img:=img_temp2;{move pointer array}
-  naxis3:=colors;{the final result}
-  img_temp2:=nil;
-end;
-procedure x3mean(colors: integer;var img: image_array);{combine values of 9 pixels}
-var fitsX,fitsY,k,x1,x2,x3,y1,y2,y3,col : integer;
+procedure mean_filter(colors,range: integer;var img: image_array);{combine values of pixels, ignore zeros}
+var fitsX,fitsY,k,x1,x2,x3,y1,y2,y3,col,w,h,i,j,counter,minimum,maximum : integer;
    img_temp2 : image_array;
+   value, value2 : single;
 begin
   col:=length(img);{the real number of colours}
+  h:=length(img[0,0]);{height}
+  w:=length(img[0]);{width}
 
-  setlength(img_temp2,col,width2,height2);{set length of image array}
+  if range=2 then begin minimum:=0 ; maximum:=+1; end {combine values of 4 pixels}
+  else
+  if range=3 then begin minimum:=-1; maximum:=+1; end {combine values of 9 pixels}
+  else
+  if range=4 then begin minimum:=-1; maximum:=+2; end {combine values of 16 pixels}
+  else
+                  begin minimum:=-2; maximum:=+2; end; {combine values of 25 pixels}
 
+  setlength(img_temp2,col,w,h);{set length of image array}
   for k:=0 to col-1 do
   begin
-    for fitsY:=0 to height2-1 do
-      for fitsX:=0 to width2-1 do
+    for fitsY:=0 to h-1 do
+      for fitsX:=0 to w-1 do
       begin
-        x1:=fitsx-1;if x1<0 then x1:=0;
-        x2:=fitsx;
-        x3:=fitsx+1;if x3>width2-1 then x3:=width2-1;
-        y1:=fitsy-1;if y1<0 then y1:=0;
-        y2:=fitsy;
-        y3:=fitsy+1;if y3>height2-1 then y3:=height2-1;
-
-        img_temp2[k,fitsX,fitsY]:=(img[k,x1,  y1]+ img[k,x2,  y1] + img[k,x3,  y1]+
-                                   img[k,x1,  y2]+ img[k,x2,  y2] + img[k,x3,  y2]+
-                                   img[k,x1,  y3]+ img[k,x2,  y3] + img[k,x3,  y3])/9;
-
+        value:=0;
+        counter:=0;
+        for i:=minimum to maximum do
+        for j:=minimum to maximum do
+        begin
+          x1:=fitsX+i;
+          y1:=fitsY+j;
+          if ((x1>=0) and (x1<=w-1) and (y1>=0) and (y1<=h-1)) then
+          begin
+            value2:=img[k,x1,  y1];
+            if value2<>0 then begin value:=value+value2; inc(counter);end;{ignore zeros}
+          end;
+        end;
+        if counter<>0 then img_temp2[k,fitsX,fitsY]:=value/counter else img_temp2[k,fitsX,fitsY]:=0;
       end;
   end;{k}
 
   if ((colors=1){request} and (col=3){actual})  then {rare, need to make mono, copy back to img}
   begin
-  for fitsY:=0 to height2-1 do
-    for fitsX:=0 to width2-1 do
+  for fitsY:=0 to h-1 do
+    for fitsX:=0 to w-1 do
     for k:=0 to col-1 do
      img[0,fitsx,fitsy]:=(img_temp2[0,fitsx,fitsy]+img_temp2[1,fitsx,fitsy]+img_temp2[2,fitsx,fitsy])/3;
   end
@@ -3320,49 +3316,6 @@ begin
   img_temp2:=nil;
 end;
 
-
-procedure x4mean(colors: integer;var img: image_array);{combine values of 16 pixels}
-var fitsX,fitsY,k,x1,x2,x3,x4,y1,y2,y3,y4,col : integer;
-   img_temp2 : image_array;
-begin
-  col:=length(img);{the real number of colours}
-
-  setlength(img_temp2,col,width2,height2);{set length of image array}
-
-  for k:=0 to col-1 do
-  begin
-    for fitsY:=0 to height2-1 do
-      for fitsX:=0 to width2-1 do
-      begin
-        x1:=fitsx-1;if x1<0 then x1:=0;
-        x2:=fitsx;
-        x3:=fitsx+1;if x3>width2-1 then x3:=width2-1;
-        x4:=fitsx+2;if x4>width2-1 then x4:=width2-1;
-        y1:=fitsy-1;if y1<0 then y1:=0;
-        y2:=fitsy;
-        y3:=fitsy+1;if y3>height2-1 then y3:=height2-1;
-        y4:=fitsy+2;if y4>height2-1 then y4:=height2-1;
-
-        img_temp2[k,fitsX,fitsY]:=(img[k,x1,  y1]+ img[k,x2,  y1] + img[k,x3,  y1]+img[k,x4,  y1]+
-                                   img[k,x1,  y2]+ img[k,x2,  y2] + img[k,x3,  y2]+img[k,x4,  y2]+
-                                   img[k,x1,  y3]+ img[k,x2,  y3] + img[k,x3,  y3]+img[k,x4,  y3]+
-                                   img[k,x1,  y4]+ img[k,x2,  y4] + img[k,x3,  y4]+img[k,x4,  y4])/16;
-      end;
-  end;{k}
-
-  if ((colors=1){request} and (col=3){actual})  then {rare, need to make mono, copy back to img}
-  begin
-  for fitsY:=0 to height2-1 do
-    for fitsX:=0 to width2-1 do
-    for k:=0 to col-1 do
-     img[0,fitsx,fitsy]:=(img_temp2[0,fitsx,fitsy]+img_temp2[1,fitsx,fitsy]+img_temp2[2,fitsx,fitsy])/3;
-  end
-  else
-  img:=img_temp2;{move pointer array}
-
-  naxis3:=colors;{the final result}
-  img_temp2:=nil;
-end;
 
 procedure Tstackmenu1.test_flat_meanClick(Sender: TObject);
 var    Save_Cursor:TCursor;
@@ -3376,11 +3329,13 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   backup_img;
 
-  if pos('2x2',stackmenu1.flat_combine_method1.text)>0 then  x2mean(1 {nr of colors},img_loaded)
+  if pos('2x2',stackmenu1.flat_combine_method1.text)>0 then  mean_filter(1 {nr of colors},2,img_loaded)
   else
-  if pos('3x3',stackmenu1.flat_combine_method1.text)>0 then  x3mean(1 {nr of colors},img_loaded)
+  if pos('3x3',stackmenu1.flat_combine_method1.text)>0 then  mean_filter(1 {nr of colors},3,img_loaded)
   else
-  if pos('4x4',stackmenu1.flat_combine_method1.text)>0 then  x4mean(1 {nr of colors},img_loaded); {else do nothing}
+  if pos('4x4',stackmenu1.flat_combine_method1.text)>0 then  mean_filter(1 {nr of colors},4,img_loaded)
+  else
+  if pos('5x5',stackmenu1.flat_combine_method1.text)>0 then  mean_filter(1 {nr of colors},5,img_loaded); {else do nothing}
 
   getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
   plot_fits(mainwindow.image1,false,true);{plot real}
@@ -3875,7 +3830,7 @@ procedure Tstackmenu1.blink_button1Click(Sender: TObject);
 var
   c,i,j: integer;
   Save_Cursor          : TCursor;
-  noise_level1,back_ground1,signal_level,magn,sd                  : double;
+  noise_level1,back_ground1,signal_level,magn,sd,hfd_min                  : double;
   x_new,y_new,fitsX,fitsY,col,first_image,tolerance,stepnr        : integer;
   reference_done,backup_reference, init,solut,annotated :boolean;
 
@@ -3887,6 +3842,8 @@ begin
 
  if listview6.Items.item[listview6.items.count-1].subitems.Strings[B_exposure]='' {exposure} then
       analyse_listview(listview6, 1 {analyse minimum, load full fits header only});
+
+  hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
 //  flipvertical:=mainwindow.Flipvertical1.Checked;
 //  fliphorizontal:=mainwindow.Fliphorizontal1.Checked;
@@ -3938,7 +3895,7 @@ begin
               get_background(0,img_loaded,false {no histogram already done},true {unknown, calculate also datamax}, {var} cblack,star_level);
               back_ground1:=cblack;
               noise_level1:=noise_level[0]; {remember for difference}
-              find_stars(img_loaded,0.8 {hfd_min=two pixels},starlist1);{find stars and put them in a list}
+              find_stars(img_loaded,hfd_min,starlist1);{find stars and put them in a list}
               find_tetrahedrons_ref;{find tetrahedrons for reference image}
 
               reset_solution_vectors(1);{no influence on the first image since reference}
@@ -3950,7 +3907,7 @@ begin
             begin
               mainwindow.caption:=filename2+' Working on star solutions, be patient.';
               get_background(0,img_loaded,false {no histogram already done} ,true {unknown, calculate also noise_level} , {var} cblack,star_level);
-              find_stars(img_loaded,0.8 {hfd_min=two pixels},starlist2);{find stars and put them in a list}
+              find_stars(img_loaded,hfd_min,starlist2);{find stars and put them in a list}
               find_tetrahedrons_new;{find tetrahedrons for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),true{save solution}) then {find difference between ref image and new image}
               begin
@@ -5716,7 +5673,7 @@ end;
 
 
 procedure smart_colour_smooth( var img: image_array; wide : integer; measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
-var fitsX,fitsY,x,y,step,x2,y2,count  : integer;
+var fitsX,fitsY,x,y,step,x2,y2,count,width5,height5  : integer;
     img_temp2            : image_array;
     luminance,red,green,blue,rgb,r,g,b,sqr_dist,highest,top,bg,r2,g2,b2,noise_level1, peak,bgR2,bgB2,bgG2  : single;
     bgR,bgB,bgG  : double;
@@ -5724,7 +5681,11 @@ var fitsX,fitsY,x,y,step,x2,y2,count  : integer;
 begin
   if length(img)<3 then exit;{not a three colour image}
 
-  setlength(img_temp2,3,width2,height2);{set length of image array}
+  width5:=Length(img[0]);    {width}
+  height5:=Length(img[0][0]); {height}
+
+
+  setlength(img_temp2,3,width5,height5);{set length of image array}
 
   step:= wide div 2;
 
@@ -5735,8 +5696,8 @@ begin
   noise_level1:=noise_level[0];{red noise}
   bg:=(bgR+bgG+bgB)/3; {average background}
 
-  for fitsY:=0 to height2-1 do
-  for fitsX:=0 to width2-1 do
+  for fitsY:=0 to height5-1 do
+  for fitsX:=0 to width5-1 do
   begin
 
 
@@ -5764,7 +5725,7 @@ begin
            x2:=fitsX+x;
            y2:=fitsY+y;
 
-          if ((x2>=0) and (x2<width2) and (y2>=0) and (y2<height2) ) then {within image}
+          if ((x2>=0) and (x2<width5) and (y2>=0) and (y2<height5) ) then {within image}
            begin
              sqr_dist:=x*x+y*y;
              if sqr_dist<=step*step then {circle only}
@@ -6709,19 +6670,24 @@ begin
           if pos('2x2',stackmenu1.flat_combine_method1.text)>0 then
           begin
             memo2_message('Applying 2x2 flat filter');
-            x2mean(1 {nr of colors},img_flat);
+            mean_filter(1 {nr of colors},2{depth},img_flat);
           end
           else
           if pos('3x3',stackmenu1.flat_combine_method1.text)>0 then
           begin
-            x3mean(1 {nr of colors},img_flat);
+            mean_filter(1 {nr of colors},3{depth},img_flat);
             memo2_message('Applying 3x3 flat filter');
           end
           else
           if pos('4x4',stackmenu1.flat_combine_method1.text)>0 then
           begin
-            x4mean(1 {nr of colors},img_flat);
+            mean_filter(1 {nr of colors},4{depth},img_flat);
             memo2_message('Applying 4x4 flat filter');
+          end;
+          if pos('5x5',stackmenu1.flat_combine_method1.text)>0 then
+          begin
+            mean_filter(1 {nr of colors},5{depth},img_flat);
+            memo2_message('Applying 5x5 flat filter');
           end;
 
           c:=9999999;{stop searching}

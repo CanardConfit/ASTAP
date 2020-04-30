@@ -125,7 +125,7 @@ end;
 procedure stack_live(oversize:integer; path :string);{stack live average}
 var
     fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter :  integer;
-    flat_factor, distance             : double;
+    flat_factor, distance,hfd_min      : double;
     init, solution, vector_based,waiting,transition_image,colour_correction :boolean;
     file_ext,filen                    :  string;
     multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}
@@ -162,6 +162,8 @@ begin
     mainwindow.memo1.visible:=false;{Hide header}
 
     colour_correction:=((stackmenu1.make_osc_color1.checked) and (stackmenu1.osc_colour_smooth1.checked));
+    hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+
 
 //   (file_available2(path,filename2 {file found}));
 
@@ -233,7 +235,7 @@ begin
 
             if init=false then {first image}
             begin
-              bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist1);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
               find_tetrahedrons_ref;{find tetrahedrons for reference image}
             end;
 
@@ -285,7 +287,7 @@ begin
             {align using star match}
             if init=true then {second image}
             begin{internal alignment}
-              bin_and_find_stars(img_loaded, binning,1  {cropping},0.8 {hfd_min=two pixels},true{update hist},starlist2);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
 
               find_tetrahedrons_new;{find triangels for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}

@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 114
+  Left = 601
   Height = 644
-  Top = 256
+  Top = 346
   Width = 1605
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -1152,6 +1152,7 @@ object stackmenu1: Tstackmenu1
           '2x2 mean'
           '3x3 mean'
           '4x4 mean'
+          '5x5 mean'
           'no filter'
         )
         ParentFont = False
@@ -1650,20 +1651,27 @@ object stackmenu1: Tstackmenu1
           Top = 160
           Width = 264
           ItemHeight = 15
-          ItemIndex = 0
           Items.Strings = (
-            '2x2 mean'
             '3x3 mean'
+            '5x5 mean'
             'Gaussian blur (1)'
             'Gaussian blur (2)'
             'Gaussian blur (3)'
             'Gaussian blur (5)'
             'Gaussian blur (7)'
+            'Gaussian blur (10)'
+            'Gaussian blur (15)'
+            'Gaussian blur (23)'
+            'Gaussian blur (35)'
+            'Gaussian blur (50)'
             'Colour smooth (4)'
             'Colour smooth (6)'
             'Colour smooth (8)'
             'Colour smooth (10)'
             'Colour smooth (15)'
+            'Colour smooth (23)'
+            'Colour smooth (35)'
+            'Colour smooth (50)'
             ''
             ''
             ''
@@ -1671,7 +1679,6 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
           Style = csDropDownList
           TabOrder = 20
-          Text = '2x2 mean'
         end
       end
       object test_flat_mean: TButton
@@ -2420,23 +2427,23 @@ object stackmenu1: Tstackmenu1
           end
           object GroupBox_star_alignment_settings1: TGroupBox
             Left = 8
-            Height = 149
+            Height = 164
             Top = 9
             Width = 362
             AutoSize = True
             Caption = 'Tetrahedron detection'
-            ClientHeight = 129
+            ClientHeight = 144
             ClientWidth = 358
             ParentFont = False
             TabOrder = 5
             object Panel_star_detection1: TPanel
               Left = 0
-              Height = 129
+              Height = 144
               Top = 0
               Width = 358
               BevelColor = clMenuHighlight
               BevelOuter = bvSpace
-              ClientHeight = 129
+              ClientHeight = 144
               ClientWidth = 358
               ParentFont = False
               TabOrder = 0
@@ -2444,7 +2451,7 @@ object stackmenu1: Tstackmenu1
                 Left = 263
                 Height = 23
                 Hint = 'Number of star takens from the image for alignment. Typical value 200 to 500. For crowded star fields reduce to 100 to 200.'
-                Top = 40
+                Top = 37
                 Width = 88
                 BorderSpacing.Around = 5
                 ItemHeight = 15
@@ -2468,7 +2475,7 @@ object stackmenu1: Tstackmenu1
               object Label21: TLabel
                 Left = 8
                 Height = 20
-                Top = 40
+                Top = 37
                 Width = 248
                 Alignment = taRightJustify
                 AutoSize = False
@@ -2482,7 +2489,7 @@ object stackmenu1: Tstackmenu1
               object Label51: TLabel
                 Left = 8
                 Height = 20
-                Top = 72
+                Top = 64
                 Width = 248
                 Alignment = taRightJustify
                 AutoSize = False
@@ -2497,7 +2504,7 @@ object stackmenu1: Tstackmenu1
                 Left = 264
                 Height = 23
                 Hint = 'If detections fails increase tolerance. Typical value 0.003 up to 0.008'
-                Top = 72
+                Top = 64
                 Width = 88
                 BorderSpacing.Around = 5
                 ItemHeight = 15
@@ -2515,7 +2522,7 @@ object stackmenu1: Tstackmenu1
                 Left = 122
                 Height = 19
                 Hint = 'Show extra information in log for debugging.'
-                Top = 104
+                Top = 120
                 Width = 155
                 Alignment = taLeftJustify
                 BorderSpacing.Around = 5
@@ -2556,6 +2563,41 @@ object stackmenu1: Tstackmenu1
                 AutoSize = False
                 BorderSpacing.Around = 5
                 Caption = 'Downsample:'
+                Color = clBtnFace
+                ParentColor = False
+                ParentFont = False
+                Transparent = False
+              end
+              object min_star_size_stacking1: TComboBox
+                Left = 263
+                Height = 23
+                Hint = 'Default value is 0.8. Use this to ignore hotpixels.  For stacking only.'
+                Top = 92
+                Width = 88
+                BorderSpacing.Around = 5
+                ItemHeight = 15
+                ItemIndex = 0
+                Items.Strings = (
+                  '0.8'
+                  '1.5'
+                  '2'
+                  '3'
+                  ''
+                )
+                ParentFont = False
+                TabOrder = 4
+                Text = '0.8'
+              end
+              object binning_for_solving_label4: TLabel
+                Left = 8
+                Height = 20
+                Hint = 'Crop images above this height [degrees].'
+                Top = 92
+                Width = 248
+                Alignment = taRightJustify
+                AutoSize = False
+                BorderSpacing.Around = 5
+                Caption = 'Ignore stars less then [HFD]:'
                 Color = clBtnFace
                 ParentColor = False
                 ParentFont = False

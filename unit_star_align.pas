@@ -461,6 +461,9 @@ begin
 //   flip_vertical:=mainwindow.Flipvertical1.Checked;
 //   flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
 
+ // hfd_min:=4;
+
+
   max_stars:=strtoint(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
   solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details}
   if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;

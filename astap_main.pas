@@ -1254,7 +1254,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.350 dated 2020-04-27';
+  #13+#10+'Version ß0.9.353 dated 2020-04-30';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5373,9 +5373,8 @@ end;
 
 procedure get_hist(colour:integer; img :image_array);
 var
-     i,j,col,his_total,count  :integer;
-     total_value              : double;
-
+     i,j,col,his_total,count, width5, height5   : integer;
+     total_value                                : double;
 begin
   if colour+1>length(img) then {robust detection, case binning is applied and image is mono}
     colour:=0; {used red only}
@@ -5386,12 +5385,15 @@ begin
   his_total:=0;
   total_value:=0;
   count:=1;{prevent divide by zero}
+  width5:=Length(img[0]);    {width}
+  height5:=Length(img[0][0]); {height}
+
 
   if nrbits=24  then {special format}
   begin
-    For i:=0 to height2-1 do
+    For i:=0 to height5-1 do
     begin
-      for j:=0 to width2-1 do
+      for j:=0 to width5-1 do
       begin
         col:=round(img[0,j,i]);
         col:=intensity2(col);{average the 3 colors}
@@ -5407,9 +5409,9 @@ begin
   end
   else
   begin {normal fits, mono or colour}
-    For i:=0 to height2-1 do
+    For i:=0 to height5-1 do
     begin
-      for j:=0 to width2-1 do
+      for j:=0 to width5-1 do
       begin
         col:=round(img[colour,j,i]);{red}
         if ((col>=1) and (col<65000)) then {ignore black overlap areas and bright stars}
@@ -5430,7 +5432,6 @@ begin
   his_total_blue:=his_total;
 
   his_mean[colour]:=round(total_value/count);
-
 
 end;
 
@@ -5886,6 +5887,7 @@ begin
     dum:=initstring.Values['tetrahedron_tolerance']; if dum<>'' then stackmenu1.tetrahedron_tolerance1.text:=dum;
     dum:=initstring.Values['maximum_stars']; if dum<>'' then stackmenu1.max_stars1.text:=dum;
     dum:=initstring.Values['min_star_size']; if dum<>'' then stackmenu1.min_star_size1.text:=dum;
+    dum:=initstring.Values['min_star_size_stacking']; if dum<>'' then stackmenu1.min_star_size_stacking1.text:=dum;
 
     dum:=initstring.Values['manual_centering']; if dum<>'' then stackmenu1.manual_centering1.text:=dum;
 
@@ -6209,6 +6211,7 @@ begin
   initstring.Values['tetrahedron_tolerance']:=stackmenu1.tetrahedron_tolerance1.text;
   initstring.Values['maximum_stars']:=stackmenu1.max_stars1.text;
   initstring.Values['min_star_size']:=stackmenu1.min_star_size1.text;
+  initstring.Values['min_star_size_stacking']:=stackmenu1.min_star_size_stacking1.text;
 
 
   initstring.Values['manual_centering']:=stackmenu1.manual_centering1.text;
@@ -9265,9 +9268,6 @@ begin
 
 end;
 
-
-
-
 procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
 var
   col,fitsX,fitsY,maxsize,i,j,progress_value,progressC,xx,yy        : integer;
@@ -9355,6 +9355,10 @@ begin
 
   if cd1_1<>0 then {update solution for rotation}
   begin
+     if ((crpix1<>0.5+centerxs) or (crpix2<>0.5+centerys)) then {reference is not center}
+     begin
+        {later}
+     end;
      crota2:=fnmodulo(crota2-angle,360);
      crota1:=fnmodulo(crota1-angle,360);
      crpix1:=centerX;
@@ -9512,7 +9516,7 @@ begin
 
 
   {for manual alignment}
-  if ( ((stackmenu1.use_manual_alignment1.checked) and (pos('S',calstat)=0 {if stacked image don't change anything in last selected file} )) or
+  if ( ((stackmenu1.use_manual_alignment1.checked) and (pos('S',calstat)=0 {ignore stacked images unless callled from listview1. See doubleclick listview1} )) or
         (stackmenu1.pagecontrol1.tabindex=8 {photometry})){measure one object in blink routine } then
   begin
     if pos('Comet',stackmenu1.manual_centering1.text)<>0 then
