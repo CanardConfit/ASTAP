@@ -235,8 +235,9 @@ var
   rr_factor, rg_factor, rb_factor,
   gr_factor, gg_factor, gb_factor,
   br_factor, bg_factor, bb_factor,
-  saturated_level,hfd_min,cdelt2_lum                            : double;
-  init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
+  saturated_level,hfd_min                         : double;
+  init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment,
+  use_astrometry_internal,vector_based :boolean;
 begin
   with stackmenu1 do
   begin
@@ -248,7 +249,6 @@ begin
     use_astrometry_internal:=use_astrometry_internal1.checked;
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
-    binning:=report_binning;{select binning}
     counter:=0;
     jd_sum:=0;{sum of Julian midpoints}
     jd_stop:=0;{end observations in Julian day}
@@ -279,6 +279,7 @@ begin
       green_add:=strtofloat2(green_filter_add1.text);
       blue_add:=strtofloat2(blue_filter_add1.text);
 
+
       for c:=0 to length(files_to_process)-1 do  {should contain reference,r,g,b,rgb,l}
       begin
         if c=5 then {all colour files added, correct for the number of pixel values added at one pixel. This can also happen if one colour has an angle and two pixel fit in one!!}
@@ -288,15 +289,10 @@ begin
             for fitsX:=0 to width_max-1 do
                for col:=0 to 2 do
                begin
-                 if img_temp[col,fitsX,fitsY]>1 then  {more then one value added per pixel, divide by the number of values summed} img_average[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY] {scale to one image by diving by the number of pixels added}
-                 else
-                 if ((img_temp[col,fitsX,fitsY]<=0) and (fitsX>0) and (fitsY>0)) then {black spot filter, fix black spot which show up if one image is rotated}
-                 begin
-                   if ((img_temp[col,fitsX-1,fitsY]<>0) and (img_temp[col,fitsX,fitsY-1]<>0){keep borders nice for last pixel right}) then img_average[col,fitsX,fitsY]:=img_average[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
-                  else
-                   if img_temp[col,fitsX,fitsY-1]<>0 then img_average[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY-1];{take nearest pixel y-1 as replacement}
-                 end;{fill black spots}
+                 if img_temp[col,fitsX,fitsY]>1 then  {more then one value added per pixel, divide by the number of values summed} img_average[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY]; {scale to one image by diving by the number of pixels added}
               end;{all colours}
+          memo2_message('Applying black spot filter on interim RGB image.');
+          black_spot_filter(img_average);
         end;{c=5, all colour files added}
 
         if length(files_to_process[c].name)>0 then
@@ -306,29 +302,30 @@ begin
             begin {prepare RGB for applying on luminance channel}
               memo2_message('Applying '+RGB_filter1.text+' filter on interim RGB image before applying on Luminance channel');
 
-
-              case rgb_filter1.itemindex of 0:    mean_filter(3 {colours},3{dept},img_average);
-                                            1:    mean_filter(3 {colours},5{dept},img_average);
-                                            2:    gaussian_blur2(img_average,1);
-                                            3:    gaussian_blur2(img_average,2);
-                                            4:    gaussian_blur2(img_average,3);
-                                            5:    gaussian_blur2(img_average,5);
-                                            6:    gaussian_blur2(img_average,7);
-                                            7:    gaussian_blur2(img_average,10);
-                                            8:    gaussian_blur2(img_average,15);
-                                            9:    gaussian_blur2(img_average,23);
-                                           10:    gaussian_blur2(img_average,35);
-                                           11:    gaussian_blur2(img_average,50);
-                                           12:    smart_colour_smooth(img_average,4,true {get histogram});{smoothen colours}
-                                           13:    smart_colour_smooth(img_average,6,true {get histogram});{smoothen colours}
-                                           14:    smart_colour_smooth(img_average,8,true {get histogram});{smoothen colours}
-                                           15:    smart_colour_smooth(img_average,10,true {get histogram});{smoothen colours}
-                                           16:    smart_colour_smooth(img_average,15,true {get histogram});{smoothen colours}
-                                           17:    smart_colour_smooth(img_average,23,true {get histogram});{smoothen colours}
-                                           18:    smart_colour_smooth(img_average,35,true {get histogram});{smoothen colours}
-                                           19:    smart_colour_smooth(img_average,50,true {get histogram});{smoothen colours}
+                                            {0: no filter}
+              case rgb_filter1.itemindex of 1:    mean_filter(3 {colours},3{dept},img_average);
+                                            2:    mean_filter(3 {colours},5{dept},img_average);
+                                            3:    gaussian_blur2(img_average,1);
+                                            4:    gaussian_blur2(img_average,2);
+                                            5:    gaussian_blur2(img_average,3);
+                                            6:    gaussian_blur2(img_average,5);
+                                            7:    gaussian_blur2(img_average,7);
+                                            8:    gaussian_blur2(img_average,10);
+                                            9:    gaussian_blur2(img_average,15);
+                                           10:    gaussian_blur2(img_average,23);
+                                           11:    gaussian_blur2(img_average,35);
+                                           12:    gaussian_blur2(img_average,50);
+                                           13:    smart_colour_smooth(img_average,4,true {get histogram});{smoothen colours}
+                                           14:    smart_colour_smooth(img_average,6,true {get histogram});{smoothen colours}
+                                           15:    smart_colour_smooth(img_average,8,true {get histogram});{smoothen colours}
+                                           16:    smart_colour_smooth(img_average,10,true {get histogram});{smoothen colours}
+                                           17:    smart_colour_smooth(img_average,15,true {get histogram});{smoothen colours}
+                                           18:    smart_colour_smooth(img_average,23,true {get histogram});{smoothen colours}
+                                           19:    smart_colour_smooth(img_average,35,true {get histogram});{smoothen colours}
+                                           20:    smart_colour_smooth(img_average,50,true {get histogram});{smoothen colours}
                                         end;{case}
 
+              //for testing
               //img_loaded:=img_average;
               //naxis3:=3;
               //height2:=length(img_loaded[0,0]);{height}
@@ -341,6 +338,7 @@ begin
 
 
             filename2:=files_to_process[c].name;
+            if c=0 then memo2_message('Loading reference image: "'+filename2+'".');
             if c=1 then memo2_message('Adding red file: "'+filename2+'"  to final image.');
             if c=2 then memo2_message('Adding green file: "'+filename2+'"  to final image.');
             if c=3 then memo2_message('Adding blue file: "'+filename2+'"  to final image.');
@@ -399,11 +397,11 @@ begin
               memo2_message('Preparing astrometric solution for interim file: '+filename2);
               if cd1_1=0 then solution:= create_internal_solution(img_loaded) else solution:=true;
               if solution=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, No astrometric solution for '+filename2); exit;end;{no solution found}
-              if c=0 then cdelt2_lum:=cdelt2;
-              if ((c=1) or (c=2)  or (c=3) or (c=4)) then
-              begin
-                if cdelt2>cdelt2_lum*1.01 then memo2_message('█ █ █ █ █ █  Warning!! RGB images have a larger pixel size ('+floattostrF(cdelt2*3600,ffgeneral,3,2)+'arcsec) then the luminance image ('+floattostrF(cdelt2_lum*3600,ffgeneral,3,2)+'arcsec). If the stack result is poor, select in tab "stack method" the 3x3 mean or 5x5 mean filter for smoothing interim RGB.');
-              end;
+              //if c=0 then cdelt2_lum:=cdelt2;
+              //if ((c=1) or (c=2)  or (c=3) or (c=4)) then
+              //begin
+              //  if cdelt2>cdelt2_lum*1.01 then memo2_message('█ █ █ █ █ █  Warning!! RGB images have a larger pixel size ('+floattostrF(cdelt2*3600,ffgeneral,3,2)+'arcsec) then the luminance image ('+floattostrF(cdelt2_lum*3600,ffgeneral,3,2)+'arcsec). If the stack result is poor, select in tab "stack method" the 3x3 mean or 5x5 mean filter for smoothing interim RGB.');
+              //end;
             end
             else
             if init=false then {first image}
@@ -415,6 +413,7 @@ begin
               end
               else
               begin
+                binning:=report_binning;{select binning based on the height of the light}
                 bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
                 find_tetrahedrons_ref;{find tetrahedrons for reference image}
               end;
@@ -674,7 +673,6 @@ begin
     jd_sum:=0;{sum of Julian midpoints}
     jd_stop:=0;{end observations in Julian day}
 
-    binning:=report_binning;{select binning}
 
     init:=false;
 
@@ -704,6 +702,8 @@ begin
 
           if init=false then
           begin
+            binning:=report_binning;{select binning based on the height of the first light}
+
             backup_header;{backup header and solution}
 
             initialise1;{set variables correct. Do this before apply dark}
@@ -894,6 +894,8 @@ begin
           finally
         end;
       end;
+
+
       if counter<>0 then
       begin
         height2:=height_max;
@@ -908,7 +910,7 @@ begin
         begin { black spot filter or missing red, green, blue channnel. Note for this version img_temp is counting for each color since they could be different}
           if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
           begin
-            if ((img_temp[col,fitsX-1,fitsY]<>0) and (img_temp[col,fitsX,fitsY-1]<>0){keep borders nice for last pixel right}) then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
+            if ((img_temp[col,fitsX-1,fitsY]<>0) {and (img_temp[col,fitsX,fitsY-1]<>0)}{keep borders nice for last pixel right}) then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
             else
             if img_temp[col,fitsX,fitsY-1]<>0 then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX,fitsY-1]{take nearest pixel y-1 as replacement}
             else
@@ -1118,7 +1120,7 @@ begin
 
             if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
             begin
-              if ((img_temp[0,fitsX-1,fitsY]<>0) and (img_temp[0,fitsX,fitsY-1]<>0){keep borders nice for last pixel right}) then  begin for col:=0 to naxis3-1 do img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY];{take nearest pixel x-1 as replacement}end
+              if ((img_temp[0,fitsX-1,fitsY]<>0) {and (img_temp[0,fitsX,fitsY-1]<>0)}{keep borders nice for last pixel right}) then  begin for col:=0 to naxis3-1 do img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY];{take nearest pixel x-1 as replacement}end
               else
               if img_temp[0,fitsX,fitsY-1]<>0 then begin for col:=0 to naxis3-1 do img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX,fitsY-1];{take nearest pixel y-1 as replacement}end
               else
@@ -1153,7 +1155,6 @@ begin
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
 
-    binning:=report_binning;{select binning}
     counter:=0;
     sum_exp:=0;
     jd_sum:=0;{sum of Julian midpoints}
@@ -1190,8 +1191,8 @@ begin
 
         if init=false then
         begin
+          binning:=report_binning;{select binning based on the height of the light}
           backup_header;{backup header and solution}
-
           initialise1;{set variables correct}
           initialise2;{set variables correct}
           if ((bayerpat='') and (make_osc_color1.checked)) then
@@ -1648,7 +1649,7 @@ begin
             begin { black spot filter. Note for this version img_temp is counting for each color since they could be different}
               if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
               begin
-                if ((img_temp[col,fitsX-1,fitsY]<>0) and (img_temp[col,fitsX,fitsY-1]<>0){keep borders nice for last pixel right}) then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
+                if ((img_temp[col,fitsX-1,fitsY]<>0){and (img_temp[col,fitsX,fitsY-1]<>0)}{keep borders nice for last pixel right}) then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
                 else
                 if img_temp[col,fitsX,fitsY-1]<>0 then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX,fitsY-1]{take nearest pixel y-1 as replacement}
                 else

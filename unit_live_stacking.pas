@@ -35,7 +35,7 @@ uses unit_stack, astap_main,unit_stack_routines,unit_astrometric_solving,unit_st
 
 const
   oldra0  :double=0;
-  olddec0 :double=0;
+  olddec0 :double=-pi/2;
   oldexposure:double=0;
 var
   memo1_text : string;{for backup header}
@@ -153,8 +153,6 @@ begin
     live_stacking:=true;{to block other instruction like solve button}
     reset_var; {reset variables  including init:=false}
 
-    binning:=report_binning;{select binning}
-
     pause_pressed:=false;
     esc_pressed:=false;
     total_counter:=0;
@@ -210,7 +208,9 @@ begin
           if transition_image=false then {else skip this image, could slewed during this image}
           begin
             if init=false then
-           begin
+            begin
+              binning:=report_binning;{select binning based on the height of the first light}
+
               initialise1;{set variables correct. Do this before apply dark}
               initialise2;{set variables correct}
 

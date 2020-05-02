@@ -462,7 +462,7 @@ var
    set_temperature : integer;
    star_level  : double;
    object_name, filter_name,calstat,imagetype ,sitelat, sitelong: string;
-   exposure,focus_temp,centalt,centaz,cblack,cwhite,gain            :double; {from FITS}
+   exposure,focus_temp,centalt,centaz,cblack,cwhite,gain   :double; {from FITS}
    subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
    date_obs,date_avg,ut,pltlabel,plateid,telescop,instrum,origin:string;
 
@@ -1254,7 +1254,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.353 dated 2020-04-30';
+  #13+#10+'Version ß0.9.354 dated 2020-05-2';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3630,7 +3630,7 @@ end;
 
 
 
-procedure demosaic_Malvar_He_Cutler(pattern: integer);{make from sensor bayer pattern the three colors}
+procedure demosaic_Malvar_He_Cutler(pattern: integer);{make from sensor bayer pattern the three colors. Nor very suitable for astro images}
 {Based on paper HIGH-QUALITY LINEAR INTERPOLATION FOR DEMOSAICING OF BAYER-PATTERNED COLOR IMAGES
                 Henrique S. Malvar, Li-wei He, and Ross Cutler, Microsoft Research}
 var
@@ -3884,11 +3884,11 @@ begin
   else
   if pos('AstroC',stackmenu1.demosaic_method1.text)<>0  then
   begin
-    if pos('4095',stackmenu1.demosaic_method1.text)<>0 then demosaic_astroC_bilinear_interpolation(4095 div 2,get_demosaic_pattern){make from sensor bayer pattern the three colors}
+    if datamax_org>16384 then demosaic_astroC_bilinear_interpolation(65535 div 2,get_demosaic_pattern){make from sensor bayer pattern the three colors}
     else
-    if pos('16383',stackmenu1.demosaic_method1.text)<>0 then demosaic_astroC_bilinear_interpolation(16383 div 2,get_demosaic_pattern){make from sensor bayer pattern the three colors}
+    if datamax_org>4096 then demosaic_astroC_bilinear_interpolation(16383 div 2,get_demosaic_pattern){make from sensor bayer pattern the three colors}
     else
-    demosaic_astroC_bilinear_interpolation(65535 div 2,get_demosaic_pattern){make from sensor bayer pattern the three colors}
+    demosaic_astroC_bilinear_interpolation(4095 div 2,get_demosaic_pattern){make from sensor bayer pattern the three colors}
   end
   else
   if pos('AstroM',stackmenu1.demosaic_method1.text)<>0  then {}
@@ -4223,8 +4223,8 @@ function load_fits(filen:string;light {load as light of dark/flat},load_data,res
 {if reset_var=true, reset variables to zero}
 var
    i,j,k,nr,error3,col,naxis1, reader_position            : integer;
-   fract,dummy,scale,exptime,ccd_temperature,measured_max : double;
-   col_float,bscale  : single;
+   fract,dummy,scale,exptime,ccd_temperature              : double;
+   col_float,bscale,measured_max  : single;
    s                 : string[3];
    bzero             : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
    wo                : word;   {for 16 signed integer}
@@ -4346,6 +4346,7 @@ begin
   naxis3:=1;
   bzero:=0;{just for the case it is not available}
   bscale:=1;
+  datamin_org:=0;
   imagetype:='';
   xbinning:=1;{normal}
   ybinning:=1;
@@ -4393,12 +4394,7 @@ begin
       if load_data then mainwindow.memo1.lines.add(aline); {add line to memo}
     end;
     if ((header[i]='B') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) then
-    begin
       nrbits:=round(validate_double);{BITPIX, read integer using double routine}
-      if nrbits=8 then  begin datamin_org:=0;datamax_org:=255; {8 bits files} end
-      else {16, -32 files}
-       begin datamin_org:=0;datamax_org:=$FFFF; end{not always specified. For example in skyview. So refresh here for case brightness is adjusted}
-    end;
     if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {naxis}
        begin
          if (header[i+5]=' ') then naxis:=round(validate_double)   else    {NAXIS number of colors}
@@ -4418,11 +4414,11 @@ begin
                       end;
          end;
        end;
-    if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='A') and (header[i+4]='M')) then   {datamax}
-    begin
-       if ((header[i+5]='I') and (header[i+6]='N')) then datamin_org:=round(validate_double) else {DATAMIN. Note some FIT files contain double}
-       if ((header[i+5]='A') and (header[i+6]='X')) then datamax_org:=round(validate_double);     {DATAMAX. Note some FIT files contain double }
-    end;
+//    if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='A') and (header[i+4]='M')) then   {datamax}
+//    begin
+//       if ((header[i+5]='I') and (header[i+6]='N')) then datamin_org:=round(validate_double) else {DATAMIN. Note some FIT files contain double}
+//       {datamax is no longer read. It is measured}
+//    end;
 
     if (header[i]='B') then
     begin
@@ -4730,8 +4726,6 @@ begin
 
   until (((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D')) or (I>=sizeof(header)-16 ));
 
-  cblack:=datamin_org;{for case histogram is not called}
-  cwhite:=datamax_org;
 
   if ((naxis=3) and (naxis1=3)) then nrbits:=24; {threat RGB fits as 2 dimensional with 24 bits data}
 
@@ -4815,7 +4809,9 @@ begin
           if nrbits=16 then {16 bit FITS}
           begin
             wo:=swap(fitsbuffer2[j]);{move data to wo and therefore sign_int}
-            img_loaded2[k-1,j,i]:=sign_int*bscale + bzero;
+            col_float:=sign_int*bscale + bzero; {save in col_float for measuring measured_max}
+            img_loaded2[k-1,j,i]:=col_float;
+            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
           end
           else
           if nrbits=-32 then {4 byte floating point FITS image}
@@ -4823,11 +4819,13 @@ begin
              x_longword:=swapendian(fitsbuffer4[j]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
              col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
              img_loaded2[k-1,j,i]:=col_float;{store in memory array}
-             if col_float>measured_max then measured_max:=col_float;{find max value for images with 0..1 scale}
+             if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
           end
           else
           if nrbits=8  then {4 byte, 32 bit FITS image}
-             img_loaded2[k-1,j,i]:=(fitsbuffer[j]*bscale + bzero)
+          begin
+             img_loaded2[k-1,j,i]:=(fitsbuffer[j]*bscale + bzero);
+          end
           else
           if nrbits=24 then
           begin
@@ -4835,6 +4833,7 @@ begin
              col:=rgbdummy[2]+rgbdummy[1]*256+rgbdummy[0]*256*256;
              col:=rgb(rgbdummy[0],rgbdummy[1],rgbdummy[2]);
              img_loaded2[k-1,j,i]:=col;{store in memory array}
+             if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
           end
           else
           if nrbits=+32 then
@@ -4842,7 +4841,7 @@ begin
             col_float:=(swapendian(fitsbuffer4[j])*bscale+bzero)/(65535);{scale to 0..64535 or 0..1 float}
                            {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
             img_loaded2[k-1,j,i]:=col_float;{store in memory array}
-            if col_float>measured_max then measured_max:=col_float;{find max value for images with 0..1 scale}
+            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
           end
           else
           if nrbits=-64 then {8 byte floating point FITS image}
@@ -4850,11 +4849,12 @@ begin
             x_int64:=swapendian(fitsbuffer8[j]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
             col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
             img_loaded2[k-1,j,i]:=col_float;{store in memory array}
-            if col_float>measured_max then measured_max:=col_float;{find max value for images with 0..1 scale}
+            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
           end;
         end;
       end;
     end; {colors naxis3 times}
+
 
     {rescale if required}
     if ( ((nrbits<=-32){-32 or -64} or (nrbits=+32)) and  ((measured_max<=1.01) or (datamax_org<=1)) ) then {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..64000 float}
@@ -4863,9 +4863,15 @@ begin
         for i:=0 to height2-1 do
           for j:=0 to width2-1 do
             img_loaded2[k-1,j,i]:= img_loaded2[k-1,j,i]*65535;
-      datamax_org:=65535;
-      cwhite:=65535;
-    end;
+      datamax_org:=measured_max*65535;
+    end
+    else
+    if ((nrbits=8) or (nrbits=24)) then datamax_org:=255 {not measured}
+    else
+    datamax_org:=measured_max;{most common. It set for nrbits=24 in beginning at 255}
+
+    cblack:=datamin_org;{for case histogram is not called}
+    cwhite:=datamax_org;
 
     if commandline_execution=false then update_equalise_background_step(1);{update equalise background menu}
   end;
@@ -5815,7 +5821,7 @@ begin
     i:=stackmenu1.flat_combine_method1.itemindex;  get_int(i,'flat_combine_method');
     i:=stackmenu1.pagecontrol1.tabindex;  get_int(i,'stack_tab');stackmenu1.pagecontrol1.tabindex:=i;
 
-    i:=stackmenu1.demosaic_method1.itemindex;  get_int(i,'demosaic_method');stackmenu1.demosaic_method1.itemindex:=i;
+    i:=stackmenu1.demosaic_method1.itemindex;  get_int(i,'demosaic_method2');stackmenu1.demosaic_method1.itemindex:=i;
     i:=Polynomial1.itemindex;  get_int(i,'polynomial');Polynomial1.itemindex:=i;
 
     i:=stackmenu1.rgb_filter1.itemindex;  get_int(i,'rgb_filter');stackmenu1.rgb_filter1.itemindex:=i;
@@ -6148,7 +6154,7 @@ begin
 
   initstring.Values['bayerpat']:=stackmenu1.bayer_pattern1.text;
 
-  initstring.Values['demosaic_method']:=inttostr(stackmenu1.demosaic_method1.itemindex);
+  initstring.Values['demosaic_method2']:=inttostr(stackmenu1.demosaic_method1.itemindex);
   initstring.Values['polynomial']:=inttostr(polynomial1.itemindex);
 
   initstring.Values['polynomial']:=inttostr(polynomial1.itemindex);
@@ -7532,6 +7538,8 @@ begin
     Statusbar1.Panels[7].text:='w x h   distance[arcsec]  angle';
   end;
 end;
+
+
 
 procedure Tmainwindow.variable_star_annotation1Click(Sender: TObject);
 var
@@ -9356,8 +9364,11 @@ begin
   if cd1_1<>0 then {update solution for rotation}
   begin
      if ((crpix1<>0.5+centerxs) or (crpix2<>0.5+centerys)) then {reference is not center}
-     begin
-        {later}
+     begin  {to much hassle to fix. Just remove the solution}
+       remove_key('CD1_1   ',false);
+       remove_key('CD1_2   ',false);
+       remove_key('CD2_1   ',false);
+       remove_key('CD2_2   ',false);
      end;
      crota2:=fnmodulo(crota2-angle,360);
      crota1:=fnmodulo(crota1-angle,360);

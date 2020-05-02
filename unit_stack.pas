@@ -763,6 +763,8 @@ procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise
 procedure update_stackmenu;{update stackmenu1 menus}
 
 procedure mean_filter(colors,range: integer;var img: image_array);{combine values of pixels, ignore zeros}
+procedure black_spot_filter(var img: image_array);{remove black spots with value zero}
+
 
 function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 function load_wcs_solution(filen: string): boolean; {plate solving, load astrometry.net solution}
@@ -3316,6 +3318,53 @@ begin
   img_temp2:=nil;
 end;
 
+procedure black_spot_filter(var img: image_array);{remove black spots with value zero} {execution time about 0.4 sec}
+var fitsX,fitsY,k,x1,x2,x3,y1,y2,y3,col,w,h,i,j,counter,range : integer;
+   img_temp2 : image_array;
+   value, value2 : single;
+begin
+  col:=length(img);{the real number of colours}
+  h:=length(img[0,0]);{height}
+  w:=length(img[0]);{width}
+
+  range:=1;
+  setlength(img_temp2,col,w,h);{set length of image array}
+  for k:=0 to col-1 do
+  begin
+    for fitsY:=0 to h-1 do
+      for fitsX:=0 to w-1 do
+      begin
+        value:=img[k,fitsX, fitsY];
+        if value<=0 then {black spot or or -99999 saturation marker}
+        begin
+          range:=1;
+          repeat
+            counter:=0;
+            for i:=-range to range do
+            for j:=-range to range do
+            begin
+              x1:=fitsX+i;
+              y1:=fitsY+j;
+              if ((x1>=0) and (x1<=w-1) and (y1>=0) and (y1<=h-1)) then
+              begin
+                value2:=img[k,x1,  y1];
+                if value2>0 then begin value:=value+value2; inc(counter);end;{ignore zeros or -99999 saturation markers}
+              end;
+            end;
+            if counter<>0 then
+                        value:=value/counter
+            else
+            inc(range);
+          until ((counter<>0) or (range>3));{try til (3+3) x (3+3) }
+        end;
+        img_temp2[k,fitsX,fitsY]:=value;
+      end;
+  end;{k}
+
+  img:=img_temp2;{move pointer array}
+  img_temp2:=nil;
+end;
+
 
 procedure Tstackmenu1.test_flat_meanClick(Sender: TObject);
 var    Save_Cursor:TCursor;
@@ -4761,26 +4810,9 @@ begin
       end;
 
       {fix black holes}
-      For fitsY:=0 to height2-1 do
-      for fitsX:=0 to width2-1 do
-      for col:=0 to naxis3-1 do
-      if img_temp[col,fitsX,fitsY]<>0 then img_loaded[col,fitsX,fitsY]:=img_temp[col,fitsX,fitsY]
-      else
-      begin { black spot filter or missing red, green, blue channnel. Note for this version img_temp is counting for each color since they could be different}
-        if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
-        begin
-          if ((img_temp[col,fitsX-1,fitsY]<>0) and (img_temp[col,fitsX,fitsY-1]<>0){keep borders nice for last pixel right}) then img_loaded[col,fitsX,fitsY]:=img_temp[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
-          else
-          if img_temp[col,fitsX,fitsY-1]<>0 then img_loaded[col,fitsX,fitsY]:=img_temp[col,fitsX,fitsY-1]{take nearest pixel y-1 as replacement}
-          else
-          img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded}
-        end {fill black spots}
-        else
-        img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded}
-      end; {black spot filter}
+      img_loaded:=img_temp;
+      black_spot_filter(img_loaded);
 
-
-      //img_loaded:=img_temp;
       if pos('_aligned.fit',filename2)=0 then filename2:=ChangeFileExt(Filename2,'_aligned.fit');{rename only once}
 
       if nrbits=16 then
@@ -6621,7 +6653,7 @@ begin
   begin
     if stackmenu1.listview2.items[c].checked=true then
       if ( (stackmenu1.classify_dark_exposure1.checked=false) or (exposure2=round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure])))) then {exposure correct}
-        if ( (stackmenu1.classify_dark_temperature1.checked=false) or (temperature2=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]))) then {temperature correct}
+        if ( (stackmenu1.classify_dark_temperature1.checked=false) or (abs(temperature2-strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]))<=1 )) then {temperature correct within one degree}
           if  width1=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
           begin
             memo2_message('Loading master dark file '+stackmenu1.ListView2.items[c].caption);
@@ -6642,7 +6674,7 @@ begin
 
   if c<9999999  then
   begin
-    memo2_message('█ █ █ █ █ █ Warning, could not find a suitable dark for temperature "'+inttostr(temperature2)+'"and exposure "'+inttostr(exposure2)+'"! De-classify or add darks. █ █ █ █ █ █ ');
+    memo2_message('█ █ █ █ █ █ Warning, could not find a suitable dark for temperature "'+inttostr(temperature2)+'"and exposure "'+inttostr(exposure2)+'"! De-classify temperature or exposure time or add correct darks. █ █ █ █ █ █ ');
     dark_count:=0;{set back to zero}
   end;
 end;
@@ -6697,7 +6729,7 @@ begin
   end;
   if c<9999999  then
   begin
-     memo2_message('█ █ █ █ █ █ Warning, could not find a suitable flat for "'+filter+'"! De-classify or add correct flat. █ █ █ █ █ █ ');
+     memo2_message('█ █ █ █ █ █ Warning, could not find a suitable flat for "'+filter+'"! De-classify flat filter or add correct flat. █ █ █ █ █ █ ');
      flat_count:=0;{set back to zero}
   end;
 
@@ -7038,13 +7070,13 @@ begin
   else
   begin
     if ((dark_exposure=987654321) {first dark required, any dark will do} or  (stackmenu1.classify_dark_exposure1.checked){suitable dark reguired}) then
-    if  ((light_exposure=dark_exposure) and (light_set_temperature=dark_temperature) )=false then {new dark required}
+    if  ((light_exposure=dark_exposure) and (abs(light_set_temperature-dark_temperature)<=1) )=false then {new dark required}
     begin
       load_master_dark(round(light_exposure),light_set_temperature {set_temperature},light_width, {var}dark_average,dark_sigma); {will only be renewed if different exposure or set_temperature. Note load will overwrite calstat}
       dcount:=dark_count;{protect this global dark_count in dcount for next load_master_flat}
     end;
 
-    if light_naxis3<>length(img_dark) then {colour image with mono dark?}
+    if ((dark_count<>0) and (light_naxis3<>length(img_dark))) then {colour image with mono dark?}
     begin
       dark_count:=0;
       memo2_message('█ █ █ █ █ █  Warning, skipping dark, can'+#39+'t combine mono and colour!!')
@@ -7119,8 +7151,6 @@ begin
   width2:=light_width;
   height2:=light_height;
   set_temperature:=light_set_temperature;
-
-
 end;
 
 

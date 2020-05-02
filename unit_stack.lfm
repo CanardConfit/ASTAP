@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 601
+  Left = 492
   Height = 644
-  Top = 346
+  Top = 240
   Width = 1605
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -1652,6 +1652,7 @@ object stackmenu1: Tstackmenu1
           Width = 264
           ItemHeight = 15
           Items.Strings = (
+            'no filter'
             '3x3 mean'
             '5x5 mean'
             'Gaussian blur (1)'
@@ -1920,9 +1921,7 @@ object stackmenu1: Tstackmenu1
           ItemHeight = 15
           ItemIndex = 0
           Items.Strings = (
-            'AstroC, colour for saturated stars. Range 0-65535'
-            'AstroC, colour for saturated stars. Range 0-16383'
-            'AstroC, colour for saturated stars. Range 0-4095'
+            'AstroC, colour for saturated stars.'
             'AstroM, white stars'
             'Bayer drizzle (many images required)'
             'Super-pixel'
@@ -1933,7 +1932,7 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
           Style = csDropDownList
           TabOrder = 2
-          Text = 'AstroC, colour for saturated stars. Range 0-65535'
+          Text = 'AstroC, colour for saturated stars.'
         end
         object test_pattern1: TButton
           Left = 259
