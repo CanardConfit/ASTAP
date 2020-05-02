@@ -1254,7 +1254,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.354 dated 2020-05-2';
+  #13+#10+'Version ß0.9.355 dated 2020-05-2';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4857,7 +4857,7 @@ begin
 
 
     {rescale if required}
-    if ( ((nrbits<=-32){-32 or -64} or (nrbits=+32)) and  ((measured_max<=1.01) or (datamax_org<=1)) ) then {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..64000 float}
+    if ( ((nrbits<=-32){-32 or -64} or (nrbits=+32)) and  (measured_max<=1.01) ) then {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..64000 float}
     begin
       for k:=1 to naxis3 do {do all colors}
         for i:=0 to height2-1 do
