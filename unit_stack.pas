@@ -70,6 +70,7 @@ type
     ignore_header_solution1: TCheckBox;
     copy_files_to_clipboard1: TMenuItem;
     min_star_size_stacking1: TComboBox;
+    go_step_two1: TBitBtn;
     update_solution1: TCheckBox;
     update_annotations1: TCheckBox;
     Label23: TLabel;
@@ -150,8 +151,6 @@ type
     demosaic_method1: TComboBox;
     downsample_for_solving1: TComboBox;
     downsample_solving_label1: TLabel;
-    drizzle1: TCheckBox;
-    drop_size1: TComboBox;
     Edit_a1: TEdit;
     edit_background1: TEdit;
     Edit_gaussian_blur1: TEdit;
@@ -230,7 +229,6 @@ type
     Label2: TLabel;
     Label20: TLabel;
     Label21: TLabel;
-    Label25: TLabel;
     Label26: TLabel;
     Label27: TLabel;
     Label29: TLabel;
@@ -254,7 +252,6 @@ type
     Label46: TLabel;
     Label47: TLabel;
     Label48: TLabel;
-    Label49: TLabel;
     Label5: TLabel;
     Label50: TLabel;
     Label51: TLabel;
@@ -544,6 +541,7 @@ type
     procedure clear_inspector_list1Click(Sender: TObject);
     procedure curve_fitting1Click(Sender: TObject);
     procedure ephemeris_centering1Change(Sender: TObject);
+    procedure go_step_two1Click(Sender: TObject);
     procedure gridlines1Click(Sender: TObject);
     procedure help_inspector_tab1Click(Sender: TObject);
     procedure help_live_stacking1Click(Sender: TObject);
@@ -779,6 +777,8 @@ procedure sample(fitsx,fitsy : integer);{sampe local colour and fill shape with 
 procedure apply_most_common(sourc,dest: image_array; radius: integer);  {apply most common filter on first array and place result in second array}
 procedure backup_header;{backup solution and header}
 function  restore_header: boolean;{backup solution and header}
+procedure report_results(object_to_process,stack_info :string;object_counter,colorinfo:integer);{report on tab results}
+
 
 const
   I_object=0; {position in listview1}
@@ -1900,8 +1900,10 @@ begin
   begin
     if ((pos1<1) or (pos1>5)) then begin pos1:=1;saved1.caption:=''; end;
 
+    if pos1>1 then go_step_two1.enabled:=true;
     equalise_background_step:=pos1;
     undo_button_equalise_background1.enabled:=true;
+
 
 
     save_result1.Enabled:=false;
@@ -1954,6 +1956,7 @@ begin
   begin
     undo_button_equalise_background1.enabled:=false;
     undo_button_equalise_background1.caption:='';
+    go_step_two1.enabled:=false;
   end;
 end;
 
@@ -2235,7 +2238,7 @@ begin
   step:=size div 2;
   count:=0;
   w:=Length(img[0]); {width}
-  h:=Length(img[0][0]); {height}
+  h:=Length(img[0,0]); {height}
 
   begin
     for j:=y-step to  y+step do
@@ -2263,7 +2266,7 @@ end;
 // begin
 //   colors:=Length(img); {colors}
 //   w:=Length(img[0]); {width}
-//   h:=Length(img[0][0]); {height}
+//   h:=Length(img[0,0]); {height}
 
 //   if (box_size div 2)*2=box_size then box_size:=box_size+1;{requires odd 3,5,7....}
 //   step:=box_size div 2; {for 3*3 it is 1, for 5*5 it is 2...}
@@ -2295,7 +2298,7 @@ procedure artificial_flatV1(var img :image_array; box_size  :integer);
 begin
   colors:=Length(img); {colors}
   w:=Length(img[0]); {width}
-  h:=Length(img[0][0]); {height}
+  h:=Length(img[0,0]); {height}
 
   if (box_size div 2)*2=box_size then box_size:=box_size+1;{requires odd 3,5,7....}
   step:=box_size div 2; {for 3*3 it is 1, for 5*5 it is 2...}
@@ -2329,7 +2332,7 @@ procedure artificial_flatV2(var img :image_array; centrum_diameter:integer);
 begin
   colors:=Length(img); {colors}
   w:=Length(img[0]); {width}
-  h:=Length(img[0][0]); {height}
+  h:=Length(img[0,0]); {height}
 
   centrum_diameter:=round(h*centrum_diameter/100);{transfer percentage to pixels}
   leng:=round(sqrt(sqr(w div 2)+sqr(h div 2)));
@@ -2922,6 +2925,7 @@ begin
         end
         else mainwindow.shape_alignment_marker1.visible:=false;
         if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(0,0,false);{plot any annotations}
+
       end
       else beep;{image not found}
       exit;{done, can display only one image}
@@ -4251,6 +4255,12 @@ begin
   new_analyse_required:=true;{force a new analyse for new x, y position asteroids}
 end;
 
+procedure Tstackmenu1.go_step_two1Click(Sender: TObject);
+begin
+  load_image(mainwindow.image1.visible=false,true {plot});
+  update_equalise_background_step(2); {go to step 3}
+end;
+
 
 procedure Tstackmenu1.gridlines1Click(Sender: TObject);
 begin
@@ -4386,6 +4396,7 @@ begin
 
   stackmenu1.rainbow_panel1.refresh;{plot colour disk in on paint event. Onpaint is required for MacOS}
 end;
+
 
 procedure Tstackmenu1.listview8CustomDrawItem(Sender: TCustomListView;
   Item: TListItem; State: TCustomDrawState; var DefaultDraw: Boolean);
@@ -7315,7 +7326,6 @@ begin
   memo2_message('Oversize '+oversize1.text);
   if make_osc_color1.checked then
               memo2_message('OSC, demosaic method '+demosaic_method1.text);
-  if drizzle1.checked then memo2_message('Drizzle option selected with drop size '+drop_size1.text);
 
   if  ((stackmenu1.use_manual_alignment1.checked) and (pos('Sigma',stackmenu1.stack_method1.text)>0=true) and (pos('Comet',stackmenu1.manual_centering1.text)<>0)) then memo2_message('█ █ █ █ █ █ Warning, use for comet stacking the stack method "Average"!. █ █ █ █ █ █ ');
 
@@ -7360,7 +7370,7 @@ begin
   flat_filter:='987654321';{not done indication}
 
 
-  if pos('Calibration',stackmenu1.stack_method1.text)>0=true then {calibrate images only}
+  if pos('Calibration only',stackmenu1.stack_method1.text)>0=true then {calibrate images only}
   begin
      calibration_only;
      exit;
@@ -7395,8 +7405,6 @@ begin
   {activate scrolling memo2}
   stackmenu1.memo2.SelStart:=Length(stackmenu1.memo2.Lines.Text);
   stackmenu1.memo2.SelLength:=0;
-
-  dropsize:=strtofloat2(stackmenu1.drop_size1.text);
 
   if ((use_astrometry_internal1.checked) or (use_ephemeris_alignment1.checked)) then {astrometric alignment}
   begin
@@ -7602,15 +7610,18 @@ begin
         put_lowest_hfd_on_top(files_to_process);
 
         if pos('Sigma',stackmenu1.stack_method1.text)>0=true then
-             begin
-               if length(files_to_process)<=5 then memo2_message('█ █ █ █ █ █ Method "Sigma Clip average" does not work well for a few images. Try method "Average". █ █ █ █ █ █ ');
-               stack_sigmaclip(over_size,{var}files_to_process,counterL) {sigma clip combining}
-             end
+        begin
+          if length(files_to_process)<=5 then memo2_message('█ █ █ █ █ █ Method "Sigma Clip average" does not work well for a few images. Try method "Average". █ █ █ █ █ █ ');
+          stack_sigmaclip(over_size,{var}files_to_process,counterL) {sigma clip combining}
+        end
         else
 
         if pos('stich',stackmenu1.stack_method1.text)>0=true then stack_mosaic(over_size,{var}files_to_process,counterL) {mosaic combining}
-                                                              else
-                                                               stack_average(over_size,{var}files_to_process,counterL);{average}
+        else
+        if pos('alignment',stackmenu1.stack_method1.text)>0=true then
+          calibration_and_alignment(over_size,{var}files_to_process,counterL){saturation clip average}
+        else
+          stack_average(over_size,{var}files_to_process,counterL);{average}
 
         if counterL>0 then
         begin
@@ -7837,7 +7848,7 @@ begin
 
 
       if pos('Sigma',stackmenu1.stack_method1.text)>0=true then
-        update_text   ('HISTORY 1','  Stacking method SIGMA CLIP MEAN') else
+        update_text   ('HISTORY 1','  Stacking method SIGMA CLIP AVERAGE') else
            update_text   ('HISTORY 1','  Stacking method AVERAGE');{overwrite also any existing header info}
 
       if naxis3>1 then
@@ -7980,7 +7991,6 @@ begin
 
   img_temp:=nil;{remove used memory}
   img_average:=nil;
-  img_average:=nil;
   img_final:=nil;
   img_variance:=nil;
 
@@ -8011,14 +8021,14 @@ end;
 
 procedure Tstackmenu1.stack_method1Change(Sender: TObject);
 var
-   sigm, aver, mosa : boolean;
+   sigm, aver, mosa,satur : boolean;
 begin
   aver:=stack_method1. ItemIndex=0;{average}
   sigm:=stack_method1. ItemIndex=1;{sigma clip}
   mosa:=stack_method1. ItemIndex=2;{mosaic}
+//  satur:=stack_method1.ItemIndex=3;{saturation}
 
   mosaic_box1.enabled:=mosa;
-  stackmenu1.drizzle1.enabled:=(mosa=false);
   sd_factor1.enabled:=sigm;
 
   if ((use_astrometry_internal1.checked=false) and (mosa)) then

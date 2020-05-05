@@ -533,6 +533,7 @@ const
                                           'RGGB',
                                           'GBRG');
    annotation_color: tcolor=clyellow;
+   annotation_diameter : integer=20;
 
 
 
@@ -1254,7 +1255,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.355 dated 2020-05-2';
+  #13+#10+'Version ß0.9.356pre-edition2 dated 2020-05-5';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3884,11 +3885,11 @@ begin
   else
   if pos('AstroC',stackmenu1.demosaic_method1.text)<>0  then
   begin
-    if datamax_org>16384 then demosaic_astroC_bilinear_interpolation(65535 div 2,get_demosaic_pattern){make from sensor bayer pattern the three colors}
+    if datamax_org>16384 then demosaic_astroC_bilinear_interpolation(65535 div 2,get_demosaic_pattern){16 bit image. Make from sensor bayer pattern the three colors}
     else
-    if datamax_org>4096 then demosaic_astroC_bilinear_interpolation(16383 div 2,get_demosaic_pattern){make from sensor bayer pattern the three colors}
+    if datamax_org>4096 then demosaic_astroC_bilinear_interpolation(16383 div 2,get_demosaic_pattern){14 bit image. Make from sensor bayer pattern the three colors}
     else
-    demosaic_astroC_bilinear_interpolation(4095 div 2,get_demosaic_pattern){make from sensor bayer pattern the three colors}
+    demosaic_astroC_bilinear_interpolation(4095 div 2,get_demosaic_pattern){12 bit image. Make from sensor bayer pattern the three colors}
   end
   else
   if pos('AstroM',stackmenu1.demosaic_method1.text)<>0  then {}
@@ -4798,63 +4799,99 @@ begin
 
     setlength(img_loaded2,naxis3,width2,height2);
 
+    if nrbits=16 then
     for k:=1 to naxis3 do {do all colors}
     begin
       For i:=0 to height2-1 do
       begin
         try reader.read(fitsbuffer,width2*round(abs(nrbits/8)));except; end; {read file info}
-
         for j:=0 to width2-1 do
         begin
-          if nrbits=16 then {16 bit FITS}
-          begin
-            wo:=swap(fitsbuffer2[j]);{move data to wo and therefore sign_int}
-            col_float:=sign_int*bscale + bzero; {save in col_float for measuring measured_max}
-            img_loaded2[k-1,j,i]:=col_float;
-            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-          end
-          else
-          if nrbits=-32 then {4 byte floating point FITS image}
-          begin
-             x_longword:=swapendian(fitsbuffer4[j]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
-             col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
-             img_loaded2[k-1,j,i]:=col_float;{store in memory array}
-             if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-          end
-          else
-          if nrbits=8  then {4 byte, 32 bit FITS image}
-          begin
-             img_loaded2[k-1,j,i]:=(fitsbuffer[j]*bscale + bzero);
-          end
-          else
-          if nrbits=24 then
-          begin
-             rgbdummy:=fitsbufferRGB[j];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
-             col:=rgbdummy[2]+rgbdummy[1]*256+rgbdummy[0]*256*256;
-             col:=rgb(rgbdummy[0],rgbdummy[1],rgbdummy[2]);
-             img_loaded2[k-1,j,i]:=col;{store in memory array}
-             if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-          end
-          else
-          if nrbits=+32 then
-          begin
-            col_float:=(swapendian(fitsbuffer4[j])*bscale+bzero)/(65535);{scale to 0..64535 or 0..1 float}
-                           {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
-            img_loaded2[k-1,j,i]:=col_float;{store in memory array}
-            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-          end
-          else
-          if nrbits=-64 then {8 byte floating point FITS image}
-          begin
-            x_int64:=swapendian(fitsbuffer8[j]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
-            col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
-            img_loaded2[k-1,j,i]:=col_float;{store in memory array}
-            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-          end;
+          wo:=swap(fitsbuffer2[j]);{move data to wo and therefore sign_int}
+          col_float:=sign_int*bscale + bzero; {save in col_float for measuring measured_max}
+          img_loaded2[k-1,j,i]:=col_float;
+          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+        end;
+      end;
+    end {colors naxis3 times}
+    else
+    if nrbits=-32 then
+    for k:=1 to naxis3 do {do all colors}
+    begin
+      For i:=0 to height2-1 do
+      begin
+        try reader.read(fitsbuffer,width2*round(abs(nrbits/8)));except; end; {read file info}
+        for j:=0 to width2-1 do
+        begin
+          x_longword:=swapendian(fitsbuffer4[j]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
+          col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
+          img_loaded2[k-1,j,i]:=col_float;{store in memory array}
+          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+        end;
+      end;
+    end {colors naxis3 times}
+    else
+    if nrbits=8 then
+    for k:=1 to naxis3 do {do all colors}
+    begin
+      For i:=0 to height2-1 do
+      begin
+        try reader.read(fitsbuffer,width2*round(abs(nrbits/8)));except; end; {read file info}
+        for j:=0 to width2-1 do
+        begin
+          img_loaded2[k-1,j,i]:=(fitsbuffer[j]*bscale + bzero);
+        end;
+      end;
+    end {colors naxis3 times}
+    else
+    if nrbits=24 then
+    for k:=1 to naxis3 do {do all colors}
+    begin
+      For i:=0 to height2-1 do
+      begin
+        try reader.read(fitsbuffer,width2*round(abs(nrbits/8)));except; end; {read file info}
+        for j:=0 to width2-1 do
+        begin
+          rgbdummy:=fitsbufferRGB[j];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
+          col:=rgbdummy[2]+rgbdummy[1]*256+rgbdummy[0]*256*256;
+          col:=rgb(rgbdummy[0],rgbdummy[1],rgbdummy[2]);
+          img_loaded2[k-1,j,i]:=col;{store in memory array}
+          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+        end;
+      end;
+    end {colors naxis3 times}
+    else
+    if nrbits=+32 then
+    for k:=1 to naxis3 do {do all colors}
+    begin
+      For i:=0 to height2-1 do
+      begin
+        try reader.read(fitsbuffer,width2*round(abs(nrbits/8)));except; end; {read file info}
+        for j:=0 to width2-1 do
+        begin
+          col_float:=(swapendian(fitsbuffer4[j])*bscale+bzero)/(65535);{scale to 0..64535 or 0..1 float}
+                         {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
+          img_loaded2[k-1,j,i]:=col_float;{store in memory array}
+          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+        end;
+      end;
+    end {colors naxis3 times}
+    else
+    if nrbits=-64 then
+    for k:=1 to naxis3 do {do all colors}
+    begin
+      For i:=0 to height2-1 do
+      begin
+        try reader.read(fitsbuffer,width2*round(abs(nrbits/8)));except; end; {read file info}
+        for j:=0 to width2-1 do
+        begin
+          x_int64:=swapendian(fitsbuffer8[j]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
+          col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
+          img_loaded2[k-1,j,i]:=col_float;{store in memory array}
+          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
     end; {colors naxis3 times}
-
 
     {rescale if required}
     if ( ((nrbits<=-32){-32 or -64} or (nrbits=+32)) and  (measured_max<=1.01) ) then {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..64000 float}
@@ -4873,7 +4910,7 @@ begin
     cblack:=datamin_org;{for case histogram is not called}
     cwhite:=datamax_org;
 
-    if commandline_execution=false then update_equalise_background_step(1);{update equalise background menu}
+//    if commandline_execution=false then update_equalise_background_step(1);{update equalise background menu}
   end;
   close_fits_file;
   result:=true;
@@ -4881,7 +4918,10 @@ begin
 end;
 
 
-function load_PPM_PGM(filen:string; var img_loaded2: image_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
+
+
+
+function load_PPM_PGM_PFM(filen:string; var img_loaded2: image_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
    i,j, reader_position  : integer;
    aline,w1,h1,bits  : ansistring;
@@ -4890,8 +4930,12 @@ var
    rgb16dummy        : byteXX3;
    rgbdummy          : byteX3;
    err,err2,err3,package  : integer;
-   comment,color7         : boolean;
-   nrbits_float           : double;
+   comment,color7,pfm    : boolean;
+   range              : double;
+var
+   x_longword  : longword;
+   x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
+
      procedure close_fits_file; inline;
      begin
         Reader.free;
@@ -4966,12 +5010,12 @@ begin
   aline:='';
   try
     for i:=0 to 2 do begin reader.read(ch,1); aline:=aline+ch; inc(reader_position,1);end;
-    if ((aline<>'P5'+#10) and (aline<>'P6'+#10) and (aline<>'PF'+#10)) then
+    if ((aline<>'P5'+#10) and (aline<>'P6'+#10) and (aline<>'PF'+#10) and (aline<>'Pf'+#10)) then
     begin
       close_fits_file;
       beep;
-      mainwindow.statusbar1.panels[7].text:=('Error loading PGM/PPM/PFM file!! Keyword P5, P6, PF not found.');
-      mainwindow.error_label1.caption:=('Error loading PGM/PPM/PFM file!! Keyword P5, P6, PF not found.');
+      mainwindow.statusbar1.panels[7].text:=('Error loading PGM/PPM/PFM file!! Keyword P5, P6, PF, Pf not found.');
+      mainwindow.error_label1.caption:=('Error loading PGM/PPM/PFM file!! Keyword P5, P6, PF. Pf not found.');
       mainwindow.error_label1.visible:=true;
       fits_file:=false;
       exit;
@@ -4981,8 +5025,9 @@ begin
     else
     if aline='P6'+#10 then color7:=true  {colour scale image}
     else
-    if aline='PF'+#10 then color7:=true; {PFM colour scale image, photoshop export float 32 bit}
-    {Pf, gray version of PFM format is not supported}
+    if aline='PF'+#10 then begin color7:=true; pfm:=true; end  {PFM colour scale image, photoshop export float 32 bit}
+    else
+    if aline='Pf'+#10 then begin color7:=false; nrbits:=-32; datamax_org:=$FFFF;end;  {PFM colour scale image, photoshop export float 32 bit grayscale}
 
     i:=0;
     repeat {read header}
@@ -5008,13 +5053,18 @@ begin
 
     val(w1,width2,err);
     val(h1,height2,err2);
-    val(bits,nrbits_float,err3);{number of bits}
 
-    nrbits:=round(nrbits_float);
+    val(bits,range,err3);{number of bits}
 
-    if nrbits=-1 {photoshop -32 bit little endian PFM format} then begin nrbits:=-32; datamax_org:=$FFFF;end else
-    if nrbits=65535 then begin nrbits:=16; datamax_org:=$FFFF;end else
-    if nrbits=255 then begin nrbits:=8;datamax_org:=$FF; end else err3:=999;
+    nrbits:=round(range);
+
+    if pfm then begin nrbits:=-32; datamax_org:=$FFFF;end     {little endian PFM format. If nrbits=-1 then range 0..1. If nrbits=+1 then big endian with range 0..1 }
+    else
+    if nrbits=65535 then begin nrbits:=16; datamax_org:=$FFFF;end
+    else
+    if nrbits=255 then begin nrbits:=8;datamax_org:=$FF; end
+    else
+      err3:=999;
 
     if ((err<>0) or (err2<>0) or (err3<>0)) then
     begin
@@ -5067,8 +5117,20 @@ begin
             begin
               if nrbits=8 then  {8 BITS, mono 1x8bits}
                 img_loaded2[0,j,i]:=fitsbuffer[j]{RGB fits with naxis1=3, treated as 48 bits coded pixels}
-              else {16 bits mono 1x16bits}
-                img_loaded2[0,j,i]:=swap(fitsbuffer2[j]);
+              else
+              if nrbits=16 then {big endian integer}
+                img_loaded2[0,j,i]:=swap(fitsbuffer2[j])
+              else {PFM 32 bits grayscale}
+              if pfm then
+              begin
+                if range<0 then {little endian floats}
+                  img_loaded2[0,j,i]:=fitsbuffersingle[j]*65535/(-range) {PFM little endian float format. if nrbits=-1 then range 0..1. If nrbits=+1 then big endian with range 0..1 }
+                else
+                begin {big endian floats}
+                  x_longword:=swapendian(fitsbuffer4[j]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
+                  img_loaded2[0,j,i]:=x_single*65535/range;
+                end;
+              end;
             end
             else
             begin
@@ -5080,7 +5142,7 @@ begin
                 img_loaded2[2,j,i]:=rgbdummy[2];{store in memory array}
               end
               else
-              if nrbits=16 then {48 BITS colour, 3x16}
+              if nrbits=16 then {48 BITS colour, 3x16 big endian}
               begin {48 bits}
                 rgb16dummy:=fitsbufferRGB16[j];{RGB fits with naxis1=3, treated as 48 bits coded pixels}
                 img_loaded2[0,j,i]:=swap(rgb16dummy[0]);{store in memory array}
@@ -5088,12 +5150,25 @@ begin
                 img_loaded2[2,j,i]:=swap(rgb16dummy[2]);{store in memory array}
               end
               else
-              begin {96 bits colour, 3x32}
-                rgb32dummy:=fitsbufferRGB32[j];{RGB fits with naxis1=3, treated as 96 bits coded pixels}
-                img_loaded2[0,j,i]:=(rgb32dummy[0])*65535;{store in memory array}
-                img_loaded2[1,j,i]:=(rgb32dummy[1])*65535;{store in memory array}
-                img_loaded2[2,j,i]:=(rgb32dummy[2])*65535;{store in memory array}
-              end
+              if pfm then
+              begin {PFM little-endian float 3x 32 bit colour}
+                if range<0 then {little endian}
+                begin
+                  rgb32dummy:=fitsbufferRGB32[j];{RGB fits with naxis1=3, treated as 96 bits coded pixels}
+                  img_loaded2[0,j,i]:=(rgb32dummy[0])*65535/(-range);{store in memory array}
+                  img_loaded2[1,j,i]:=(rgb32dummy[1])*65535/(-range);{store in memory array}
+                  img_loaded2[2,j,i]:=(rgb32dummy[2])*65535/(-range);{store in memory array}
+                end
+                else
+                begin {PFM big-endian float 32 bit colour}
+                  x_longword:=swapendian(fitsbuffer4[j*3]);
+                  img_loaded2[0,j,i]:=x_single*65535/(range);
+                  x_longword:=swapendian(fitsbuffer4[j*3+1]);
+                  img_loaded2[1,j,i]:=x_single*65535/(range);
+                  x_longword:=swapendian(fitsbuffer4[j*3+2]);
+                  img_loaded2[2,j,i]:=x_single*65535/(range);
+                end;
+              end;
             end;
           end;
         end;
@@ -5839,7 +5914,7 @@ begin
     stackmenu1.osc_colour_smooth1.checked:=get_boolean('osc_colour_smooth',true);
 
     stackmenu1.ignore_header_solution1.Checked:= get_boolean('ignore_header_solution',true);
-    stackmenu1.drizzle1.checked:= get_boolean('drizzle',false);
+//    stackmenu1.drizzle1.checked:= get_boolean('drizzle',false);
     stackmenu1.Equalise_background1.checked:= get_boolean('equalise_background',true);{for mosaic mode}
     mainwindow.preview_demosaic1.Checked:=get_boolean('preview_demosaic',false);
 
@@ -5974,7 +6049,7 @@ begin
     dum:=initstring.Values['star_level_colouring']; if dum<>'' then stackmenu1.star_level_colouring1.text:=dum;
     dum:=initstring.Values['filter_artificial_colouring']; if dum<>'' then stackmenu1.filter_artificial_colouring1.text:=dum;
 
-    dum:=initstring.Values['drop_size']; if dum<>'' then stackmenu1.drop_size1.text:=dum;
+//    dum:=initstring.Values['drop_size']; if dum<>'' then stackmenu1.drop_size1.text:=dum;
     dum:=initstring.Values['resize_factor']; if dum<>'' then stackmenu1.resize_factor1.text:=dum;
 
     dum:=initstring.Values['sd_factor_blink']; if dum<>'' then stackmenu1.sd_factor_blink1.text:=dum;
@@ -6010,6 +6085,7 @@ begin
     add_date:=get_boolean('add_date',true);{asteroids}
 
     get_int(annotation_color,'annotation_color');
+    get_int(annotation_diameter,'annotation_diameter');
 
     add_annotations:=get_boolean('add_annotations',false);{asteroids as annotations}
 
@@ -6174,7 +6250,7 @@ begin
 
   initstring.Values['ignore_header_solution']:=BoolStr[stackmenu1.ignore_header_solution1.Checked];
 
-  initstring.Values['drizzle']:=BoolStr[stackmenu1.drizzle1.Checked];
+//  initstring.Values['drizzle']:=BoolStr[stackmenu1.drizzle1.Checked];
   initstring.Values['equalise_background']:=BoolStr[stackmenu1.Equalise_background1.Checked];
 
   initstring.Values['preview_demosaic']:=BoolStr[mainwindow.preview_demosaic1.Checked];
@@ -6284,7 +6360,7 @@ begin
   initstring.Values['star_level_colouring']:=stackmenu1.star_level_colouring1.text;
   initstring.Values['filter_artificial_colouring']:=stackmenu1.filter_artificial_colouring1.text;
 
-  initstring.Values['drop_size']:=stackmenu1.drop_size1.text;
+//  initstring.Values['drop_size']:=stackmenu1.drop_size1.text;
   initstring.Values['resize_factor']:=stackmenu1.resize_factor1.text;
 
   initstring.Values['sd_factor_blink']:=stackmenu1.sd_factor_blink1.text;
@@ -6319,6 +6395,7 @@ begin
   initstring.Values['add_date']:=BoolStr[add_date];{asteroids}
 
   initstring.Values['annotation_color']:=inttostr(annotation_color);
+  initstring.Values['annotation_diameter']:=inttostr(annotation_diameter);
 
   initstring.Values['add_annotations']:=BoolStr[add_annotations];{for asteroids}
 
@@ -6538,7 +6615,7 @@ begin
 
   filename4:=FileName3+'.pgm';
 
-  if load_ppm_pgm(fileName4,img) then {succesfull PGM load}
+  if load_PPM_PGM_PFM(fileName4,img) then {succesfull PGM load}
   begin
     deletefile(filename4);{delete temporary pgm file}
 
@@ -6574,7 +6651,7 @@ var
 begin
   OpenDialog1.Title := 'Select multiple  files to convert';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter :=  'All formats |*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pfm;*.xisf;*.fz;'+
+  opendialog1.Filter :=  'All formats |*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;*.fz;'+
                                        '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                          '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                          '|24 bits PNG, TIFF, JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
@@ -6686,9 +6763,9 @@ begin
   end{raw}
 
   else
-  if ((ext1='.PPM') or (ext1='.PGM') or (ext1='.PFM')) then {PPM/PGM/ PFM}
+  if ((ext1='.PPM') or (ext1='.PGM') or (ext1='.PFM') or (ext1='.PBM')) then {PPM/PGM/ PFM}
   begin
-    if load_ppm_pgm(filename2,img_loaded)=false then exit {load the simple formats ppm color or pgm grayscale, exit on failure}
+    if load_PPM_PGM_PFM(filename2,img_loaded)=false then exit {load the simple formats ppm color or pgm grayscale, exit on failure}
     else
       result:=true;
   end
@@ -6716,6 +6793,8 @@ begin
     mainwindow.demosaicBayermatrix1.Enabled:=true;
     image_move_to_center:=re_center;
     if ((afitsfile) and (annotated) and (mainwindow.annotations_visible1.checked)) then  plot_annotations(0,0,false);
+
+    update_equalise_background_step(1);{update equalise background menu}
 
     add_recent_file(filename_org);{As last action, add to recent file list.}
   end;
@@ -7214,17 +7293,11 @@ end;
 
 procedure Tmainwindow.copy_paste_tool1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,k,oldX2,oldY2,progress_value : integer;
-   median_left_bottom,median_left_top, median_right_top, median_right_bottom,
-   line_bottom, line_top,required_bg,{difference,}most_common : double;
-
-   Save_Cursor:TCursor;
+  dum,k,oldX2,oldY2 : integer;
 begin
   if fits_file=false then exit;
   if  ((abs(oldx-startX)>1)and (abs(oldy-starty)>1)) then
   begin
-//    Save_Cursor := Screen.Cursor;
-//    Screen.Cursor := crHandPoint;
     Screen.Cursor := crDrag;
 
     copy_paste_x:=startX;{save for Application.ProcessMessages;this could change startX, startY}
@@ -7731,7 +7804,7 @@ end;
 
 procedure plot_annotations(xoffset,yoffset:integer;fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
 var
-  count1,x1,y1,x2,y2,text_height,text_width : integer;
+  count1,x1,y1,x2,y2,text_height,text_width,size,xcenter,ycenter : integer;
   typ     : double;
   List: TStrings;
   d: string;
@@ -7781,13 +7854,25 @@ begin
           mainwindow.image1.Canvas.Pen.width:=max(1,round(1*abs(typ))); ;
           mainwindow.image1.Canvas.font.size:=max(12,round(12*abs(typ)));
 
-          if typ>0 then
+          if typ>0 then {single line}
           begin
             mainwindow.image1.Canvas.moveto(x1,y1);
             mainwindow.image1.Canvas.lineto(x2,y2);
           end
           else
-             plot_rectangle(x1,y1,x2,y2); {accurate positioned rectangle on screen coordinates}
+          begin {rectangle or two indicating lines}
+             size:=x2-x1;
+             if size>20 then plot_rectangle(x1,y1,x2,y2) {accurate positioned rectangle on screen coordinates}
+             else
+             begin {two lines}
+               xcenter:=(x2+x1) div 2;
+               ycenter:=(y2+y1) div 2;
+               mainwindow.image1.canvas.moveto(xcenter-(size div 2),ycenter);
+               mainwindow.image1.canvas.lineto(xcenter-(size div 4),ycenter);
+               mainwindow.image1.canvas.moveto(xcenter+(size div 2),ycenter);
+               mainwindow.image1.canvas.lineto(xcenter+(size div 4),ycenter);
+             end;
+          end;
 
           text_height:=round(mainwindow.image1.canvas.Textheight(list[5]));{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
           text_width:=round(mainwindow.image1.canvas.Textwidth(list[5])); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
@@ -9464,30 +9549,32 @@ end;
 
 procedure find_highest_pixel_value(img: image_array;x1,y1: integer; var xc,yc:double);{}
 var
-  i,j,x2,y2  : integer;
+  i,j,x2,y2,w,h  : integer;
   value, val, SumVal,SumValX,SumValY, Xg,Yg : double;
 
 begin
-  x2:=x1;
-  y2:=y1;
-  value:=0;
+  w:=Length(img[0]); {width}
+  h:=Length(img[0,0]); {height}
 
+  if ((x1>=9) and (x1<w-9) and (y1>=9) and (y1<h-9))=false then begin {don't try too close to boundaries} xc:=x1; yc:=y1;  exit end;
+
+  value:=-99999;
   {find highest pixel}
   for i:=x1-6 to x1+6 do
   for j:=y1-6 to y1+6 do
   begin
-    val:=img[0,i,j];
-    if val>value then
-    begin
-      value:=val;
-      x2:=i;
-      y2:=j;
-    end;
+      val:=img[0,i,j];
+      if val>value then
+      begin
+        value:=val;
+        x2:=i;
+        y2:=j;
+      end;
   end;
 
   {find center of gravity for 3x3}
   SumVal:=0;
- SumValX:=0;
+  SumValX:=0;
   SumValY:=0;
 
   for i:=-2 to +2 do
@@ -10412,7 +10499,7 @@ begin
     end;
 end;
 
-function save_PPM_PGM(img: image_array; wide2,height2:integer; filen2:ansistring;ppm,flip_H,flip_V:boolean): boolean;{save to 16 bit portable pixmap/graymap file (PPM/PGM) file }
+function save_PPM_PGM_PFM(img: image_array; wide2,height2,colourdepth:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 16 bit portable pixmap/graymap file (PPM/PGM) file }
 var
   ppmbuffer32: array[0..trunc(bufwide/4)] of Dword; {bufwide is set in astap_main and is 120000}
   ppmbuffer: array[0..bufwide] of byte absolute ppmbuffer32;
@@ -10422,12 +10509,24 @@ var
   i,j,k,m : integer;
   dum: double;
   dummy : word;
+
+  value1   : single;
+  lw       : longword absolute value1;
+
 begin
   result:=false;
-  if ppm then {colour}
+  if colourdepth=48 then {colour}
     header:=pansichar('P6'+#10+inttostr(width2)+#10+inttostr(height2)+#10+'65535'+#10) {colour 48 bit}
-  else {gray}
-    header:=pansichar('P5'+#10+inttostr(width2)+#10+inttostr(height2)+#10+'65535'+#10); {mono 16 bit}
+  else
+  if colourdepth=16 then {gray}
+    header:=pansichar('P5'+#10+inttostr(width2)+#10+inttostr(height2)+#10+'65535'+#10) {mono 16 bit}
+  else
+  if colourdepth=96 then {colour}
+    header:=pansichar('PF'+#10+inttostr(width2)+#10+inttostr(height2)+#10+'-1.0'+#10) {mono 32 bit}
+  else
+  if colourdepth=32 then {gray}
+    header:=pansichar('Pf'+#10+inttostr(width2)+#10+inttostr(height2)+#10+'-1.0'+#10); {colour 32 bit, little-endian=-1, big-endian=+1}
+
 
   if fileexists(filen2)=true then
     if MessageDlg('Existing file ' +filen2+ ' Overwrite?', mtConfirmation, [mbYes, mbNo], 0) <> 6 {mbYes} then
@@ -10444,7 +10543,7 @@ begin
   thefile.writebuffer ( header, strlen(Header));
 
   { Write Image Data }
-  if ppm then {colour}
+  if colourdepth=48 then {colour}
   begin
     for i:=0 to Height2-1 do
     begin
@@ -10466,6 +10565,7 @@ begin
     end;
   end
   else
+  if colourdepth=16 then
   begin  {mono/gray}
     for i:=0 to Height2-1 do
     begin
@@ -10480,6 +10580,42 @@ begin
       thefile.writebuffer(ppmbuffer,wide2*2 {}) ;{works only for byte arrays}
     end;
   end;
+  if colourdepth=96 then {PFM 32 bit float colour files, little endian}
+   begin
+     for i:=0 to Height2-1 do
+     begin
+       if flip_V=false then k:=height2-1-i else k:=i;{reverse fits down to counting}
+       for j:=0 to wide2-1 do
+       begin
+         if flip_H=true then m:=wide2-1-j else m:=j;
+         value1:=img[0,m,k]/65535;
+         ppmbuffer32[m*3]:=lw;
+         value1:=img[1,m,k]/65535;
+         ppmbuffer32[m*3+1]:=lw;
+         value1:=img[2,m,k]/65535;
+         ppmbuffer32[m*3+2]:=lw;
+       end;
+       thefile.writebuffer(ppmbuffer,wide2*4*3{}) ;{works only for byte arrays}
+     end;
+   end
+   else
+   if colourdepth=32 then  {PFM 32 bit float gray scale file, little endian}
+   begin  {mono/gray}
+     for i:=0 to Height2-1 do
+     begin
+       if flip_V=false then k:=height2-1-i else k:=i;{reverse fits down to counting}
+       for j:=0 to wide2-1 do
+       begin
+         if flip_H=true then m:=wide2-1-j else m:=j;
+
+         value1:=img[0,m,k]/65535;
+         ppmbuffer32[m]:=lw;
+       end;
+       thefile.writebuffer(ppmbuffer,wide2*4 {}) ;{works only for byte arrays}
+     end;
+   end;
+
+
 
   thefile.free;
   result:=true;
@@ -10588,7 +10724,7 @@ var
 begin
   OpenDialog1.Title := 'Select multiple  files to convert';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter :=  'All formats except TIF|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.new;*.ppm;*.pgm;*.pfm;*.xisf;*.fz;'+
+  opendialog1.Filter :=  'All formats except TIF|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.new;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;*.fz;'+
                                       '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                          '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                          '|24 bits PNG, JPEG, BMP(*.png, *.jpg,*.bmp)|*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP'+
@@ -10651,8 +10787,8 @@ begin
   filename3:=ChangeFileExt(FileName2,'');
   savedialog1.filename:=filename3;
   if image_path<>'' then savedialog1.initialdir:=image_path;{path from stacking}
-  if naxis3>1 then savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit float|*.tif|PPM 16 bit stretched|*.ppm;|PPM 16 bit|*.ppm'
-              else savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit float|*.tif|PGM 16 bit stretched|*.pgm;|PGM 16 bit|*.pgm';
+  if naxis3>1 then savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit float|*.tif|PPM 16 bit stretched|*.ppm;|PPM 16 bit|*.ppm|PFM 32 bit float|*.pfm'
+              else savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit float|*.tif|PGM 16 bit stretched|*.pgm;|PGM 16 bit|*.pgm|PFM 32 bit float|*.pfm';
   savedialog1.filterindex:=SaveasTIFF1filterindex; {default 1}
   if savedialog1.execute then
   begin
@@ -10685,10 +10821,14 @@ begin
       if savedialog1.filterindex=6 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_PPM_PGM(img_temp,width2,height2,savedialog1.filename,true{colour},Fliphorizontal1.checked,Flipvertical1.checked);
-      end;
+        save_PPM_PGM_PFM(img_temp,width2,height2,48 {colour depth},savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked);
+      end
+      else
       if savedialog1.filterindex=7 then
-          save_PPM_PGM(img_loaded,width2,height2,savedialog1.filename,true{colour},Fliphorizontal1.checked,Flipvertical1.checked);
+          save_PPM_PGM_PFM(img_loaded,width2,height2,48 {colour depth},savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked)
+      else
+      if savedialog1.filterindex=8 then
+          save_PPM_PGM_PFM(img_loaded,width2,height2,96 {colour depth},savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked);
     end {color}
     else
     begin {gray}
@@ -10716,10 +10856,14 @@ begin
       if savedialog1.filterindex=6 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_PPM_PGM(img_temp,width2,height2,savedialog1.filename,false{colour}, Fliphorizontal1.checked,Flipvertical1.checked);
-      end;
+        save_PPM_PGM_PFM(img_temp,width2,height2,16{colour depth}, savedialog1.filename, Fliphorizontal1.checked,Flipvertical1.checked);
+      end
+      else
       if savedialog1.filterindex=7 then
-          save_PPM_PGM(img_loaded,width2,height2,savedialog1.filename,false{colour},Fliphorizontal1.checked,Flipvertical1.checked);
+          save_PPM_PGM_PFM(img_loaded,width2,height2,16{colour depth},savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked)
+      else
+      if savedialog1.filterindex=8 then
+          save_PPM_PGM_PFM(img_loaded,width2,height2,32 {colour depth},savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked);
 
     end;
 
@@ -11052,7 +11196,7 @@ procedure Tmainwindow.LoadFITSPNGBMPJPEG1Click(Sender: TObject);
 begin
   OpenDialog1.Title := 'Open in viewer';
 
-  opendialog1.Filter :=  'All formats |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pfm;*.xisf;*.fz;'+
+  opendialog1.Filter :=  'All formats |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;*.fz;'+
                                       '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                          '|8, 16, 32 and -32 bit FITS files (*.fit*,*.xisf)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.new;*.xisf;*.fz'+
                          '|24 bits PNG, TIFF, JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
@@ -11067,7 +11211,6 @@ begin
      {loadimage}
      if load_image(true,true {plot}){load and center}=false then beep;{image not found}
      LoadFITSPNGBMPJPEG1filterindex:=opendialog1.filterindex;{remember filterindex}
-   //  add_recent_file(filename2);{add to recent file list}
   end;
 end;
 

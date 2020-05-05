@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 492
+  Left = 146
   Height = 644
-  Top = 240
+  Top = 245
   Width = 1605
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -1145,7 +1145,7 @@ object stackmenu1: Tstackmenu1
         Height = 23
         Hint = 'Select combination method'
         Top = 46
-        Width = 175
+        Width = 215
         ItemHeight = 15
         ItemIndex = 0
         Items.Strings = (
@@ -1165,13 +1165,14 @@ object stackmenu1: Tstackmenu1
         Height = 23
         Hint = 'Select stack method.'
         Top = 88
-        Width = 175
+        Width = 215
         ItemHeight = 15
         ItemIndex = 0
         Items.Strings = (
           'Average'
           'Sigma clip average'
           'Image stiching mode'
+          'Calibration & alignment only'
           'Calibration only'
         )
         OnChange = stack_method1Change
@@ -1181,7 +1182,7 @@ object stackmenu1: Tstackmenu1
         Text = 'Average'
       end
       object sd_factor1: TComboBox
-        Left = 680
+        Left = 729
         Height = 23
         Hint = 'Sigma factor to identify outlier pixels. A factor of around 3.0 will remove satellite tracks and hot pixels. Sigma stands for standard deviation.'
         Top = 88
@@ -1199,7 +1200,7 @@ object stackmenu1: Tstackmenu1
         Text = '2.5'
       end
       object oversize1: TComboBox
-        Left = 813
+        Left = 862
         Height = 23
         Hint = 'Will increase the stack space around the reference image. Negative values will crop the images.'
         Top = 88
@@ -1220,9 +1221,9 @@ object stackmenu1: Tstackmenu1
         Text = '0'
       end
       object Label35: TLabel
-        Left = 312
+        Left = 360
         Height = 15
-        Top = 46
+        Top = 49
         Width = 173
         Caption = ' (1/n ∑ [flats] - 1/n ∑ [flat darks] )'
         Color = clBtnFace
@@ -1231,7 +1232,7 @@ object stackmenu1: Tstackmenu1
         Transparent = False
       end
       object Label2: TLabel
-        Left = 592
+        Left = 641
         Height = 15
         Top = 92
         Width = 41
@@ -1242,7 +1243,7 @@ object stackmenu1: Tstackmenu1
         Transparent = False
       end
       object Label6: TLabel
-        Left = 752
+        Left = 801
         Height = 15
         Top = 92
         Width = 44
@@ -1253,7 +1254,7 @@ object stackmenu1: Tstackmenu1
         Transparent = False
       end
       object Label7: TLabel
-        Left = 896
+        Left = 945
         Height = 15
         Top = 92
         Width = 30
@@ -1264,7 +1265,7 @@ object stackmenu1: Tstackmenu1
         Transparent = False
       end
       object Label1: TLabel
-        Left = 311
+        Left = 360
         Height = 15
         Top = 92
         Width = 189
@@ -1683,10 +1684,10 @@ object stackmenu1: Tstackmenu1
         end
       end
       object test_flat_mean: TButton
-        Left = 529
+        Left = 577
         Height = 25
         Hint = 'Test on the current displayed image. Will use mono/red channel only. CTRL-Z to undo.'
-        Top = 44
+        Top = 47
         Width = 110
         AutoSize = True
         Caption = '<- Test flat filter'
@@ -1719,57 +1720,18 @@ object stackmenu1: Tstackmenu1
         Transparent = False
         WordWrap = True
       end
-      object drizzle1: TCheckBox
-        Left = 35
-        Height = 19
-        Hint = 'Drizzle for undersampled images. Resulting images will be double in size.'
-        Top = 156
-        Width = 213
-        Caption = 'Drizzle x2 for undersampled images. '
-        ParentFont = False
-        TabOrder = 6
-      end
-      object Label25: TLabel
-        Left = 360
-        Height = 15
-        Top = 157
-        Width = 140
-        Caption = 'Drizzle drop size or pixfrac:'
-        Color = clBtnFace
-        ParentColor = False
-        ParentFont = False
-        Transparent = False
-      end
-      object drop_size1: TComboBox
-        Left = 568
-        Height = 23
-        Hint = 'Drop size compared with the orginal pizel size. Typcial this value should be 0.65'
-        Top = 152
-        Width = 78
-        ItemHeight = 15
-        Items.Strings = (
-          '0.9'
-          '0,8'
-          '0.7'
-          '0.65'
-          '0.6'
-        )
-        ParentFont = False
-        TabOrder = 9
-        Text = '0,65'
-      end
       object mosaic_box1: TGroupBox
-        Left = 936
+        Left = 1032
         Height = 128
         Hint = 'Tools for equalizing the tiles of the mosaic.'
-        Top = 48
+        Top = 46
         Width = 301
         Caption = 'Image stitching (mosaic) settings'
         ClientHeight = 108
         ClientWidth = 297
         Enabled = False
         ParentFont = False
-        TabOrder = 7
+        TabOrder = 6
         object mosaic_width2: TEdit
           Left = 208
           Height = 23
@@ -1867,7 +1829,7 @@ object stackmenu1: Tstackmenu1
         ClientHeight = 183
         ClientWidth = 404
         ParentFont = False
-        TabOrder = 8
+        TabOrder = 7
         object make_osc_color1: TCheckBox
           Left = 8
           Height = 19
@@ -2047,10 +2009,10 @@ object stackmenu1: Tstackmenu1
         end
       end
       object undo_button6: TBitBtn
-        Left = 656
+        Left = 704
         Height = 30
         Hint = 'Undo last action'
-        Top = 43
+        Top = 46
         Width = 30
         Glyph.Data = {
           36040000424D3604000000000000360000002800000010000000100000000100
@@ -2090,7 +2052,7 @@ object stackmenu1: Tstackmenu1
         }
         OnClick = undo_button2Click
         ParentFont = False
-        TabOrder = 10
+        TabOrder = 8
       end
       object ignore_hotpixels1: TCheckBox
         Left = 35
@@ -2100,7 +2062,7 @@ object stackmenu1: Tstackmenu1
         Width = 136
         Caption = 'Fix variable hot pixels '
         ParentFont = False
-        TabOrder = 11
+        TabOrder = 9
       end
       object hotpixel_sd_factor1: TComboBox
         Left = 296
@@ -2123,7 +2085,7 @@ object stackmenu1: Tstackmenu1
           '50'
         )
         ParentFont = False
-        TabOrder = 12
+        TabOrder = 10
         Text = '10'
       end
       object Label66: TLabel
@@ -3133,15 +3095,6 @@ object stackmenu1: Tstackmenu1
         ParentShowHint = False
         ShowHint = True
         TabOrder = 12
-      end
-      object Label49: TLabel
-        Left = 1544
-        Height = 15
-        Top = 12
-        Width = 40
-        Caption = 'Label49'
-        ParentColor = False
-        ParentFont = False
       end
     end
     object tab_photometry1: TTabSheet
@@ -4388,10 +4341,10 @@ object stackmenu1: Tstackmenu1
         end
         object help_pixel_math1: TLabel
           Cursor = crHandPoint
-          Left = 326
+          Left = 320
           Height = 30
           Hint = 'Help'
-          Top = -8
+          Top = -4
           Width = 9
           Caption = '?'
           Font.Color = clBlue
@@ -4401,6 +4354,54 @@ object stackmenu1: Tstackmenu1
           ParentShowHint = False
           ShowHint = True
           OnClick = help_pixel_math1Click
+        end
+        object go_step_two1: TBitBtn
+          Left = 303
+          Height = 30
+          Hint = 'Go to step 2'
+          Top = 43
+          Width = 32
+          Caption = '2'
+          Enabled = False
+          Glyph.Data = {
+            36040000424D3604000000000000360000002800000010000000100000000100
+            2000000000000004000000000000000000000000000000000000FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
+            C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          }
+          OnClick = go_step_two1Click
+          ParentFont = False
+          TabOrder = 8
         end
       end
       object GroupBox1: TGroupBox

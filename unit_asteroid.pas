@@ -91,6 +91,7 @@ type
     latitude1: TEdit;
     longitude1: TEdit;
     max_magn_asteroids1: TEdit;
+    annotation_size1: TEdit;
     max_nr_asteroids1: TEdit;
     mpcorb_filedate1: TLabel;
     mpcorb_filedate2: TLabel;
@@ -100,7 +101,8 @@ type
     showfullnames1: TCheckBox;
     add_subtitle1: TCheckBox;
     showmagnitude1: TCheckBox;
-    UpDown1: TUpDown;
+    max_magn_asteroids2: TUpDown;
+    annotation_size2: TUpDown;
     up_to_magn1: TLabel;
     up_to_number1: TLabel;
     procedure annotate_asteroids1Click(Sender: TObject);
@@ -1106,7 +1108,14 @@ var txtf : textfile;
            else
            begin
              mainwindow.image1.Canvas.textout(x2+sizebox,y2,thetext);
-             mainwindow.image1.canvas.ellipse(x2-sizebox,y2-sizebox,x2+1+sizebox,y2+1+sizebox);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+             if sizebox>10 then mainwindow.image1.canvas.ellipse(x2-sizebox,y2-sizebox,x2+1+sizebox,y2+1+sizebox){circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+             else
+             begin
+               mainwindow.image1.canvas.moveto(x2-sizebox,y2);
+               mainwindow.image1.canvas.lineto(x2-sizebox div 2,y2);
+               mainwindow.image1.canvas.moveto(x2+sizebox,y2);
+               mainwindow.image1.canvas.lineto(x2+sizebox div 2,y2);
+             end;
            end;
         end;
       end;
@@ -1151,7 +1160,7 @@ var txtf : textfile;
 
                    if mag<=maxmag then
                    begin
-                     if asteroid then plot_asteroid(20) else plot_asteroid(100);
+                     if asteroid then plot_asteroid(annotation_diameter) else plot_asteroid(annotation_diameter*5);
                    end;
 
                    if frac(count/10000)=0 then
@@ -1326,6 +1335,7 @@ begin
   maxmag:=strtofloat2(form_asteroids1.max_magn_asteroids1.text);
 
   annotation_color:=ColorBox1.selected;
+  annotation_diameter:=form_asteroids1.annotation_size2.Position div 2;
 
   showfullnames:=form_asteroids1.showfullnames1.checked;
   showmagnitude:=form_asteroids1.showmagnitude1.checked;
@@ -1443,6 +1453,7 @@ begin
   form_asteroids1.add_subtitle1.checked:=add_date;
 
   ColorBox1.selected:=annotation_color;
+  annotation_size2.position:=annotation_diameter*2;
 
 end;
 

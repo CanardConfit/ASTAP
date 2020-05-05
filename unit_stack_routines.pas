@@ -24,6 +24,7 @@ procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack mosaic/tile mode}
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
+procedure calibration_and_alignment(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 
 {$inline on}  {!!! Set this off for debugging}
 procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
@@ -165,67 +166,6 @@ begin
   bp_1_1_ref:=bp_1_1;
   bp_2_0_ref:=bp_2_0;
 end;
-
-
-
-
-
-procedure drizzle(img: image_array {destination}; x1,y1 {destination position}:double; xs,ys {source position}: integer ); inline; {spread drop pixel flux on subpixel level to img}
-var
-  color1, x_drop,y_drop: double;
-  i, x,y,count  : integer;
-begin
- count:=0;
- y_drop:=y1-0.65;
- repeat  {split drop in 10x10 tiny pixels}
-   x_drop:=x1-0.65;
-   repeat
-     x:=round(x_drop);
-     y:=round(y_drop);
-     try
-       for i:=0 to naxis3-1 do {do the three colors}
-       begin
-         color1:= img_loaded[i,xs,ys];
-         img[i,x,y]:=img[i,x,y] + color1 * 0.01;{1/100 of a pixel}
-         img_temp  [i,x,y]:=img_temp  [i,x ,y] +0.01;{keep track of pixel flux/surface added}
-       end;
-       inc(count);
-       if count>=100 then
-          exit; {stop always at 100 to preserve the flux correctly}
-     except
-     end;
-     x_drop:=x_drop+dropsize/4.9999; {do ten steps in x}
-   until x_drop>=x1+dropsize;
-   y_drop:=y_drop+dropsize/4.9999;{do ten steps in y}
- until y_drop>=y1+dropsize;
-end;
-
-procedure drizzle_single_color(img: image_array {destination}; x1,y1 {destination position}, pixel_value {pixel value source} :double; color1 {red, green, blue}: integer ); {spread drop pixel flux on subpixel level to img}
-var
-  x_drop,y_drop: double;
-  x,y,count : integer;
-begin
- count:=0;
- y_drop:=y1-dropsize;
- repeat  {split drop in 10x10 tiny pixels}
-   x_drop:=x1-dropsize;
-   repeat
-     x:=round(x_drop);
-     y:=round(y_drop);
-     try
-       img[color1,x,y]:=img[color1,x,y] + pixel_value * 0.01;{1/100 of a pixel}
-       img_temp  [color1,x,y]:=img_temp  [color1,x ,y] +0.01;{keep track of pixel flux/surface added}
-       inc(count);
-       if count>=100 then
-          exit; {stop always at 100 to preserve the flux correctly}
-     except
-     end;
-     x_drop:=x_drop+dropsize/4.9999; {do ten steps in x}
-   until x_drop>=x1+dropsize;
-   y_drop:=y_drop+dropsize/4.9999;{do ten steps in y}
- until y_drop>=y1+dropsize;
-end;
-
 
 procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
 var
@@ -653,13 +593,12 @@ end;
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
   fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,drizzle_mode,binning              : integer;
-  background_correction, value, weightF,hfd_min                                                              : double;
+  background_correction, value {, weightF},hfd_min                                                              : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
 begin
   with stackmenu1 do
   begin
     drizzle_mode:=0;
-    if stackmenu1.drizzle1.checked then drizzle_mode:=1;{standard drizzle mode}
     if pos('Bayer',stackmenu1.demosaic_method1.text)<>0  then drizzle_mode:=2; {Bayer drizzle mode}
 
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
@@ -669,9 +608,9 @@ begin
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
     counter:=0;
-    sum_exp:=0;
-    jd_sum:=0;{sum of Julian midpoints}
-    jd_stop:=0;{end observations in Julian day}
+    //sum_exp:=0;
+    //jd_sum:=0;{sum of Julian midpoints}
+    //jd_stop:=0;{end observations in Julian day}
 
 
     init:=false;
@@ -755,7 +694,6 @@ begin
             width_max:=width2+oversize*2;
             height_max:=height2+oversize*2;
 
-            if drizzle_mode=1 then {drizzle} begin width_max:=width_max+width_max; height_max:=height_max+height_max end;
             setlength(img_average,naxis3,width_max,height_max);
             setlength(img_temp,naxis3,width_max,height_max);
             for fitsY:=0 to height_max-1 do
@@ -794,7 +732,7 @@ begin
                 background_correction:=pedestal-cblack;
                 datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
-                find_tetrahedrons_new;{find triangels for new image}
+                find_tetrahedrons_new;{find tetrahedrons for new image}
                 if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
                 memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
                      +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])
@@ -818,8 +756,8 @@ begin
           if solution then
           begin
             inc(counter);
-            sum_exp:=sum_exp+exposure;
-            if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
+            //sum_exp:=sum_exp+exposure;
+            //if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
 
             date_to_jd(date_obs);{convert date-obs to jd}
             if jd>jd_stop then jd_stop:=jd;
@@ -845,13 +783,12 @@ begin
                   for col:=0 to naxis3-1 do {all colors}
                   begin
                     img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1] +background_correction;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
-                    img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples. For each color seperate due to bayer_drizzle}
+                    img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]{+weightF}{typical 1};{count the number of image pixels added=samples. For each color seperate due to bayer_drizzle}
                   end;
                 end;
               end;
             end
-            else
-            if drizzle_mode=2 then {bayer_drizzle}
+            else {bayer_drizzle}
             begin
               {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
               demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
@@ -870,25 +807,12 @@ begin
                     if value>0 then {bayer_drizzle specific}
                     begin
                       img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
-                      img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples}
+                      img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]{+weightF}{typical 1};{count the number of image pixels added=samples}
                     end;
                   end;
                 end;
               end;
-            end
-            else
-            begin {drizzle}
-              if ((weightF<0.999) or (weightF>1.001)) then memo2_message('█ █ █ █ █ █  Warning, different exposure times not supported in combination with drizzle! █ █ █ █ █ █ ');
-              for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
-              for fitsX:=1 to width2  do
-              begin
-                calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-                x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversize;
-                x_new_float:=2*(x_new_float);y_new_float:=2*(y_new_float);
-                if ((x_new_float-dropsize>=-0.499999) and (x_new_float+dropsize<=width_max-1+0.499999) and (y_new_float-dropsize>=-0.499999) and (y_new_float+dropsize<=height_max-1+0.499999)) then {stay one extra pixel away due to overlaying calculation}
-                   drizzle(img_average {destination}, x_new_float,y_new_float {destination pixel position (float)},fitsX-1,fitsY-1{source position}); {add image pixel value on subpixel level to img}
-              end;
-            end;{drizzle}
+            end;
           end;
           progress_indicator(10+89*counter/(length(files_to_Process){ListView1.items.count}),' Stacking');{show progress}
           finally
@@ -922,6 +846,7 @@ begin
       end;
     end;{simple average}
   end;{with stackmenu1}
+  {arrays will be nilled later. This is done for early exits}
 end;
 
 
@@ -1132,6 +1057,8 @@ begin
         end;
     end;{mosaic mode}
   end;{with stackmenu1}
+  {arrays will be nilled later. This is done for early exits}
+
 end;
 
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
@@ -1146,7 +1073,6 @@ begin
     variance_factor:=sqr(strtofloat2(stackmenu1.sd_factor1.text));
 
     drizzle_mode:=0;
-    if stackmenu1.drizzle1.checked then drizzle_mode:=1;{standard drizzle mode}
     if pos('Bayer',stackmenu1.demosaic_method1.text)<>0  then drizzle_mode:=2; {Bayer drizzle mode}
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
@@ -1272,7 +1198,7 @@ begin
                   background_correction:=pedestal-cblack;{correct later for difference in background}
                   datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
-                  find_tetrahedrons_new;{find triangels for new image}
+                  find_tetrahedrons_new;{find tetrahedrons for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),true{save solution}) then {find difference between ref image and new image}
 
                   memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
@@ -1503,9 +1429,6 @@ begin
             width_max:=width2+oversize*2;
             height_max:=height2+oversize*2;
 
-
-            if drizzle_mode=1 then {drizzle} begin width_max:=width_max+width_max; height_max:=height_max+height_max; end;
-
             setlength(img_temp,naxis3,width_max,height_max);
             setlength(img_final,naxis3,width_max,height_max);
             for fitsY:=0 to height_max-1 do
@@ -1582,9 +1505,7 @@ begin
               end;
             end;
           end
-          else
-
-          if drizzle_mode=2 then {bayer_drizzle}
+          else  {bayer_drizzle}
           begin
             {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
             demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
@@ -1607,24 +1528,6 @@ begin
                       img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+ weightF {norm 1};{count the number of image pixels added=samples}
                     end;
                 end;
-              end;
-            end;
-          end
-          else
-
-          begin {drizzle}
-            if ((weightF<0.999) or (weightF>1.001)) then memo2_message('█ █ █ █ █ █  Warning, different exposure times not supported in combination with drizzle! █ █ █ █ █ █ ');
-            for fitsY:=1 to height2 do
-            for fitsX:=1 to width2  do
-            begin
-              calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-              x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversize;  x_new:=round(x_new_float);y_new:=round(y_new_float);
-              begin {drizzle mode}
-                x_new_float:=2*(x_new_float);y_new_float:=2*(y_new_float);{double size}
-                if ((x_new_float-dropsize>=-0.499999) and (x_new_float+dropsize<=width_max-1+0.499999) and (y_new_float-dropsize>=-0.499999) and (y_new_float+dropsize<=height_max-1+0.499999)) then {stay one extra pixel away due to overlaying calculation}
-                for col:=0 to naxis3-1 do {do all colors}
-                if sqr (img_loaded[col,fitsX-1,fitsY-1] + background_correction - img_average[col,x_new,y_new])< variance_factor*{sd sqr}( img_variance[col,x_new,y_new])  then {not an outlier}
-                  drizzle_single_color(img_final {destination}, x_new_float,y_new_float {destination position}, img_loaded[col,fitsX-1,fitsY-1] {value source pixel}, col {red, green, blue}); {spread drop pixel flux on subpixel level to img}
               end;
             end;
           end;
@@ -1662,7 +1565,258 @@ begin
     end;{throw out the outliers of light-dark images}
 
   end;{with stackmenu1}
+  {arrays will be nilled later. This is done for early exits}
+
 end;   {stack using sigma clip average}
+
+procedure calibration_and_alignment(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
+var
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col,  drizzle_mode,binning     : integer;
+    background_correction, variance_factor, weightF,hfd_min          : double;
+    valueR,valueG, valueB                                                                           : single;
+    init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based,saturation :boolean;
+begin
+  with stackmenu1 do
+  begin
+    {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
+    variance_factor:=sqr(strtofloat2(stackmenu1.sd_factor1.text));
+
+    drizzle_mode:=0;
+    if pos('Bayer',stackmenu1.demosaic_method1.text)<>0  then drizzle_mode:=2; {Bayer drizzle mode}
+    hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+
+    use_star_alignment:=stackmenu1.use_star_alignment1.checked;
+    use_manual_align:=stackmenu1.use_manual_alignment1.checked;
+    use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
+    use_astrometry_internal:=use_astrometry_internal1.checked;
+
+    counter:=0;
+    sum_exp:=0;
+    jd_sum:=0;{sum of Julian midpoints}
+    jd_stop:=0;{end observations in Julian day}
+
+    init:=false;
+    background_correction:=0;{required for astrometric alignment}
+    {light average}
+    begin
+      counter:=0;
+      sum_exp:=0;
+
+      init:=false;
+      for c:=0 to length(files_to_process)-1 do
+      if length(files_to_process[c].name)>0 then
+      begin
+      try { Do some lengthy operation }
+        ListView1.Selected :=nil; {remove any selection}
+        ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
+        Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False);{scroll to selected item}
+
+        filename2:=files_to_process[c].name;
+
+        {load image}
+        Application.ProcessMessages;
+        if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
+
+        if init=true then
+        begin
+           if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
+           if naxis3>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
+        end;
+
+
+        if init=false then
+        begin
+          binning:=report_binning;{select binning based on the height of the light}
+          backup_header;{backup header and solution}
+          initialise1;{set variables correct}
+          initialise2;{set variables correct}
+          if ((bayerpat='') and (make_osc_color1.checked)) then
+             if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
+             else
+             if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, monochrome image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
+        end;
+
+        apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
+        {these global variables are passed-on in procedure to protect against overwriting}
+
+        memo2_message('Calibrating and aligning file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
+        Application.ProcessMessages;
+        if esc_pressed then exit;
+
+        if make_osc_color1.checked then
+        begin
+           if drizzle_mode<>2 {<>Bayer drizzle}  then demosaic_bayer {convert OSC image to colour}
+           else naxis3:=3;{for bayer drizzle, demosaic will be done later}
+           {naxis3 is now 3}
+        end;
+
+        if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
+        begin
+          if ((use_manual_align) or (use_ephemeris_alignment)) then
+          begin
+            referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
+            referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
+          end
+          else
+          begin
+            bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
+            find_tetrahedrons_ref;{find tetrahedrons for reference image}
+            pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
+            if pedestal<500 then pedestal:=500;{prevent image noise could go below zero}
+            background_correction:=pedestal-cblack;
+            datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
+          end;
+        end;
+
+
+        if init=false then {init}
+        begin
+          memo2_message('Reference image, largest with best HFD is: '+filename2);
+          image_path:=ExtractFilePath(filename2); {for saving later}
+          width_max:=width2+oversize*2;
+          height_max:=height2+oversize*2;
+
+          setlength(img_average,naxis3,width_max,height_max);
+          setlength(img_temp,naxis3,width_max,height_max);
+          for fitsY:=0 to height_max-1 do
+            for fitsX:=0 to width_max-1 do
+              for col:=0 to naxis3-1 do
+              begin
+                img_average[col,fitsX,fitsY]:=0; {clear img_average}
+                img_temp[col,fitsX,fitsY]:=0; {clear img_temp}
+              end;
+          old_width:=width2;
+          old_height:=height2;
+
+          if ((use_manual_align) or (use_ephemeris_alignment)) then
+          begin
+            referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
+            referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
+          end;
+        end;{init, c=0}
+
+        solution:=true;
+        if use_astrometry_internal then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+        else
+        begin {align using star match}
+          if init=true then {second image}
+          begin
+            if ((use_manual_align) or (use_ephemeris_alignment)) then
+            begin {manual alignment}
+              solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {calculate correction}
+              solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]);
+              memo2_message('Solution x:=x+'+floattostr2(solution_vectorX[2])+',  y:=y+'+floattostr2(solution_vectorY[2]));
+            end
+            else
+            begin{internal alignment}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
+
+              background_correction:=pedestal-cblack;
+              datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
+
+              find_tetrahedrons_new;{find tetrahedrons for new image}
+              if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
+              memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
+                   +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])
+                   +',  y:='+floattostr2(solution_vectorY[0])+'*x+ '+floattostr2(solution_vectorY[1])+'*y+ '+floattostr2(solution_vectorY[2]) )
+
+                else
+                begin
+                  memo2_message('Not enough tetrahedron matches <3 or inconsistent solution, skipping this image.');
+                  files_to_process[c].name:=''; {remove file from list}
+                  solution:=false;
+                  ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[2]:=6;{mark 3th column with exclaimation}
+                  ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[2]:='no solution';{no stack result}
+                end;
+             end;{internal alignment}
+          end
+          else
+          reset_solution_vectors(1);{no influence on the first image}
+        end;
+        init:=true;{initialize for first image done}
+
+
+        if solution then
+        begin
+          inc(counter);
+          //sum_exp:=sum_exp+exposure;
+          //if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
+
+          date_to_jd(date_obs);{convert date-obs to jd}
+          if jd>jd_stop then jd_stop:=jd;
+          jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+
+          {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
+          if drizzle_mode=2 then demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
+
+          vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
+          if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
+          begin
+            astrometric_to_vector;{convert astrometric solution to vector solution}
+            vector_based:=true;
+          end;
+
+          for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
+          for fitsX:=1 to width2  do
+          begin
+            calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
+            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
+
+            if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+            begin
+              for col:=0 to naxis3-1 do
+              begin
+                img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1]+background_correction;{Note fits count from 1, image from zero}
+                img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
+              end;
+            end;
+          end;
+        end;
+
+
+        {scale to number of pixels}
+        height2:=height_max;
+        width2:=width_max;
+        setlength(img_loaded,naxis3,width2,height2);{new size}
+
+        for col:=0 to naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
+          For fitsY:=0 to height2-1 do
+            for fitsX:=0 to width2-1 do
+            if img_temp[col,fitsX,fitsY]<>0 then img_loaded[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY] {scale to one image by diving by the number of pixels added}
+            else
+            begin { black spot filter. Note for this version img_temp is counting for each color since they could be different}
+              if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
+              begin
+                if ((img_temp[col,fitsX-1,fitsY]<>0){and (img_temp[col,fitsX,fitsY-1]<>0)}{keep borders nice for last pixel right}) then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
+                else
+                if img_temp[col,fitsX,fitsY-1]<>0 then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX,fitsY-1]{take nearest pixel y-1 as replacement}
+                else
+                img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
+              end {fill black spots}
+              else
+              img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
+            end; {black spot filter}
+
+        {save}
+        filename2:=ChangeFileExt(Filename2,'_aligned.fit');{rename}
+
+        if nrbits=16 then
+          save_fits(img_loaded,filename2,16,true)
+        else
+        save_fits(img_loaded,filename2,-32,true);
+         memo2_message('New aligned image created: '+filename2);
+        report_results('?',inttostr(round(exposure)),0,999 {color icon});{report result in tab result using modified filename2}
+        progress_indicator(10+round(90*(counter)/length(files_to_process){(ListView1.items.count)}),'Cal');{show progress}
+        finally
+        end;
+      end;{try}
+    end;{}
+  end;  {with stackmenu1}
+
+  counterL:=0; {prevent any stack saving}
+  {arrays will be nilled later. This is done for early exits}
+end;   {calibration and alignment}
+
 
 
 end.

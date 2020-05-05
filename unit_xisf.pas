@@ -249,6 +249,11 @@ begin
 
   filter_name:=extract_string_keyword('FILTER');
   bayerpat:=extract_string_keyword('BAYERPAT');
+  sitelong:=extract_string_keyword('LONG-OBS');
+  sitelat:=extract_string_keyword('LAT-OBS');
+
+
+
   extract_double_keyword('XBAYROFF',Xbayroff);;{offset to used to correct BAYERPAT due to flipping}
   extract_double_keyword('YBAYROFF',Ybayroff);;{offset to used to correct BAYERPAT due to flipping}
 
@@ -417,6 +422,8 @@ begin
   close_fits_file;
   unsaved_import:=true;{file is not available for astrometry.net}
   result:=true;
+
+  //mainwindow.memo1.text:=aline;
 end;
 
 
