@@ -593,9 +593,10 @@ end;
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
   fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,drizzle_mode,binning              : integer;
-  background_correction, value {, weightF},hfd_min                                                              : double;
+  background_correction, value, weightF,hfd_min                                                              : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
 begin
+
   with stackmenu1 do
   begin
     drizzle_mode:=0;
@@ -608,9 +609,9 @@ begin
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
     counter:=0;
-    //sum_exp:=0;
-    //jd_sum:=0;{sum of Julian midpoints}
-    //jd_stop:=0;{end observations in Julian day}
+    sum_exp:=0;
+    jd_sum:=0;{sum of Julian midpoints}
+    jd_stop:=0;{end observations in Julian day}
 
 
     init:=false;
@@ -694,6 +695,7 @@ begin
             width_max:=width2+oversize*2;
             height_max:=height2+oversize*2;
 
+            if drizzle_mode=1 then {drizzle} begin width_max:=width_max+width_max; height_max:=height_max+height_max end;
             setlength(img_average,naxis3,width_max,height_max);
             setlength(img_temp,naxis3,width_max,height_max);
             for fitsY:=0 to height_max-1 do
@@ -732,7 +734,7 @@ begin
                 background_correction:=pedestal-cblack;
                 datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
-                find_tetrahedrons_new;{find tetrahedrons for new image}
+                find_tetrahedrons_new;{find triangels for new image}
                 if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
                 memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
                      +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])
@@ -756,8 +758,8 @@ begin
           if solution then
           begin
             inc(counter);
-            //sum_exp:=sum_exp+exposure;
-            //if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
+            sum_exp:=sum_exp+exposure;
+            if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
 
             date_to_jd(date_obs);{convert date-obs to jd}
             if jd>jd_stop then jd_stop:=jd;
@@ -783,12 +785,13 @@ begin
                   for col:=0 to naxis3-1 do {all colors}
                   begin
                     img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1] +background_correction;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
-                    img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]{+weightF}{typical 1};{count the number of image pixels added=samples. For each color seperate due to bayer_drizzle}
+                    img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples. For each color seperate due to bayer_drizzle}
                   end;
                 end;
               end;
             end
-            else {bayer_drizzle}
+            else
+            if drizzle_mode=2 then {bayer_drizzle}
             begin
               {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
               demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
@@ -807,7 +810,7 @@ begin
                     if value>0 then {bayer_drizzle specific}
                     begin
                       img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
-                      img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]{+weightF}{typical 1};{count the number of image pixels added=samples}
+                      img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples}
                     end;
                   end;
                 end;
@@ -1572,15 +1575,12 @@ end;   {stack using sigma clip average}
 procedure calibration_and_alignment(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 var
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col,  drizzle_mode,binning     : integer;
-    background_correction, variance_factor, weightF,hfd_min          : double;
-    valueR,valueG, valueB                                                                           : single;
-    init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based,saturation :boolean;
+    background_correction, hfd_min      : double;
+    init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
 begin
   with stackmenu1 do
   begin
     {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
-    variance_factor:=sqr(strtofloat2(stackmenu1.sd_factor1.text));
-
     drizzle_mode:=0;
     if pos('Bayer',stackmenu1.demosaic_method1.text)<>0  then drizzle_mode:=2; {Bayer drizzle mode}
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
@@ -1589,11 +1589,6 @@ begin
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
-
-    counter:=0;
-    sum_exp:=0;
-    jd_sum:=0;{sum of Julian midpoints}
-    jd_stop:=0;{end observations in Julian day}
 
     init:=false;
     background_correction:=0;{required for astrometric alignment}
@@ -1739,12 +1734,6 @@ begin
         if solution then
         begin
           inc(counter);
-          //sum_exp:=sum_exp+exposure;
-          //if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
-
-          date_to_jd(date_obs);{convert date-obs to jd}
-          if jd>jd_stop then jd_stop:=jd;
-          jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
           {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
           if drizzle_mode=2 then demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
@@ -1767,7 +1756,7 @@ begin
               for col:=0 to naxis3-1 do
               begin
                 img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1]+background_correction;{Note fits count from 1, image from zero}
-                img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
+                img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+1;{count the number of image pixels added=samples}
               end;
             end;
           end;

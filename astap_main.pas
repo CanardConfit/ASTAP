@@ -1255,7 +1255,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.356pre-edition2 dated 2020-05-5';
+  #13+#10+'Version ß0.9.356pre-edition4 dated 2020-05-5';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);

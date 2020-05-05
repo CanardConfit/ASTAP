@@ -2708,7 +2708,8 @@ begin
 end;
 
 procedure listview_update_keyword(tl : tlistview; keyw,value :string );{update key word of multiple files}
-var index,counter: integer;
+var index,counter,error2: integer;
+    waarde              : double;
 begin
   index:=0;
   counter:=tl.Items.Count;
@@ -2719,12 +2720,18 @@ begin
       filename2:=tl.items[index].caption;
       if load_image(true,true {plot}) then {load and center}
       begin
-        while length(value)<18 do value:=value+' ';{increase length to 18, one space will be added  in front later}
-
         while length(keyw)<8 do keyw:=keyw+' ';{increase length to 8}
         keyw:=copy(keyw,1,8);{decrease if longer then 8}
 
-        update_text(keyw+'=',#39+value+#39+'                                                  ');
+        val(value,waarde,error2); {test for number or text}
+
+        if error2<>0 then {text, not a number}
+        begin
+          while length(value)<18 do value:=value+' ';{increase length to 18, one space will be added  in front later}
+          update_text(keyw+'=',#39+value+#39+'                                                  ');
+        end
+        else
+        update_float  (keyw+'=',' /                                                ' ,waarde);
 
         if nrbits=16 then
         save_fits(img_loaded,filename2,16,true)
@@ -4396,6 +4403,8 @@ begin
 
   stackmenu1.rainbow_panel1.refresh;{plot colour disk in on paint event. Onpaint is required for MacOS}
 end;
+
+
 
 
 procedure Tstackmenu1.listview8CustomDrawItem(Sender: TCustomListView;
