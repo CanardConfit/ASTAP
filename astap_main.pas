@@ -1255,7 +1255,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.356pre-edition4 dated 2020-05-5';
+  #13+#10+'Version ß0.9.357 dated 2020-05-6';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -11218,7 +11218,7 @@ procedure Tmainwindow.minimum1Change(Sender: TObject);
 begin
   min2.text:=inttostr(minimum1.position);
   {$IfDef Darwin}// for OS X,
-   {update after scrolling deosn't work. in macOS. See mainwindow.maximum1Scroll. temporary fix }
+   {update after scrolling doesn't work. in macOS. See mainwindow.maximum1Scroll. temporary fix }
    if ((fits_file) {and (scrollcode=scEndScroll)}) then plot_fits(mainwindow.image1,false,true);
   {$ELSE}
   {$ENDIF}

@@ -767,14 +767,15 @@ begin
           (nr_records<=0)
           )  then    {file_open otherwise sometimes the file routine gets stucked}
       begin
-         if ((file_open<>0) and (nr_records<=0)) then
+         if file_open<>0 then
          begin
-           close_star_database;
-           readdatabase290:=false; {no more data in this file}
-           exit;
+            close_star_database;{close the reader}
+            if nr_records<=0 then
+            begin
+             readdatabase290:=false; {no more data in this file}
+             exit;
+            end;
          end;
-
-         if file_open<>0 then close_star_database;{close the reader}
 
          cos_telescope_dec:=cos(telescope_dec);{here to save CPU time}
 
@@ -795,6 +796,7 @@ begin
          else
          record_size:=ord(database2[109]);{5,6,7,9,10 or 11 bytes record}
          nr_records:= trunc((thefile_stars.size-110)/record_size);{110 header size, correct for above read}
+         ra2:=0; {define ra2 value. Prevent ra2 = -nan(0xffffffffffde9) run time failure when first header record is read}
       end;{einde}
     reader_stars.read(buf2,record_size);
     header_record:=false;
