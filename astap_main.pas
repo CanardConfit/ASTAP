@@ -1255,7 +1255,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.357 dated 2020-05-6';
+  #13+#10+'Version ß0.9.358 dated 2020-05-6';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4764,7 +4764,7 @@ begin
        cdelt2:=scale/3600 {scale is in arcsec/pixel }
      else
      if ((focallen<>0) and (xpixsz<>0)) then
-       cdelt2:=180/(pi*1000)*xpixsz*xbinning/focallen; {use maxim DL key word}
+       cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
   end;
   unsaved_import:=false;{file is available for astrometry.net}
 

@@ -23,12 +23,111 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MinorVersionNr Value="9"/>
-      <RevisionNr Value="1"/>
+      <RevisionNr Value="3"/>
+      <BuildNr Value="4"/>
       <Attributes pvaPreRelease="True"/>
       <StringTable CompanyName="www.hnsky.org" FileDescription="Astrometric STAcking Program" LegalCopyright="Han Kleijn" OriginalFilename="astap.exe" ProductName="ASTAP" ProductVersion="File version refers to the interface standard"/>
     </VersionInfo>
-    <BuildModes Count="1">
+    <BuildModes Count="3">
       <Item1 Name="Default" Default="True"/>
+      <Item2 Name="Debug">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <PathDelim Value="\"/>
+          <Target>
+            <Filename Value="astap.exe"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <UnitOutputDirectory Value="C:\astap.fpc"/>
+          </SearchPaths>
+          <Parsing>
+            <SyntaxOptions>
+              <SyntaxMode Value="Delphi"/>
+              <IncludeAssertionCode Value="True"/>
+            </SyntaxOptions>
+          </Parsing>
+          <CodeGeneration>
+            <Checks>
+              <IOChecks Value="True"/>
+              <RangeChecks Value="True"/>
+              <OverflowChecks Value="True"/>
+              <StackChecks Value="True"/>
+            </Checks>
+            <VerifyObjMethodCallValidity Value="True"/>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <DebugInfoType Value="dsDwarf2Set"/>
+              <UseExternalDbgSyms Value="True"/>
+            </Debugging>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
+          </Linking>
+          <Other>
+            <CustomOptions Value="-dBorland
+-dVer150
+-dDelphi7"/>
+            <OtherDefines Count="5">
+              <Define0 Value="Borland"/>
+              <Define1 Value="Ver150"/>
+              <Define2 Value="Delphi7"/>
+              <Define3 Value="Compiler6_Up"/>
+              <Define4 Value="PUREPASCAL"/>
+            </OtherDefines>
+          </Other>
+        </CompilerOptions>
+      </Item2>
+      <Item3 Name="Release">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <PathDelim Value="\"/>
+          <Target>
+            <Filename Value="astap.exe"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <UnitOutputDirectory Value="C:\astap.fpc"/>
+          </SearchPaths>
+          <Parsing>
+            <SyntaxOptions>
+              <SyntaxMode Value="Delphi"/>
+            </SyntaxOptions>
+          </Parsing>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
+          </Linking>
+          <Other>
+            <CustomOptions Value="-dBorland
+-dVer150
+-dDelphi7"/>
+            <OtherDefines Count="5">
+              <Define0 Value="Borland"/>
+              <Define1 Value="Ver150"/>
+              <Define2 Value="Delphi7"/>
+              <Define3 Value="Compiler6_Up"/>
+              <Define4 Value="PUREPASCAL"/>
+            </OtherDefines>
+          </Other>
+        </CompilerOptions>
+      </Item3>
     </BuildModes>
     <PublishOptions>
       <Version Value="2"/>
@@ -47,7 +146,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="13">
+    <Units Count="16">
       <Unit0>
         <Filename Value="astap.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -71,44 +170,62 @@
         <IsPartOfProject Value="True"/>
       </Unit3>
       <Unit4>
-        <Filename Value="unit_astrometry.pas"/>
+        <Filename Value="unit_gaussian_blur.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit4>
       <Unit5>
-        <Filename Value="unit_gaussian_blur.pas"/>
+        <Filename Value="unit_star_align.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit5>
       <Unit6>
-        <Filename Value="unit_star_align.pas"/>
+        <Filename Value="unit_annotation.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit6>
       <Unit7>
-        <Filename Value="unit_annotation.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit7>
-      <Unit8>
         <Filename Value="unit_thumbnail.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="thumbnails1"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="unit_xisf.pas"/>
+        <IsPartOfProject Value="True"/>
       </Unit8>
       <Unit9>
-        <Filename Value="unit_xisf.pas"/>
+        <Filename Value="unit_stack_routines.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit9>
       <Unit10>
-        <Filename Value="unit_stack_routines.pas"/>
+        <Filename Value="unit_inspector_plot.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit10>
       <Unit11>
-        <Filename Value="unit_inspector_plot.pas"/>
+        <Filename Value="unit_hjd.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit11>
       <Unit12>
-        <Filename Value="unit_hjd.pas"/>
+        <Filename Value="unit_live_stacking.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit12>
+      <Unit13>
+        <Filename Value="unit_image_sharpness.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="unit_asteroid.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="form_asteroids1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit14>
+      <Unit15>
+        <Filename Value="unit_astrometry_net.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="form_astrometry_net1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit15>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -126,6 +243,9 @@
         <SyntaxMode Value="Delphi"/>
       </SyntaxOptions>
     </Parsing>
+    <CodeGeneration>
+      <TargetCPU Value="i386"/>
+    </CodeGeneration>
     <Linking>
       <Debugging>
         <GenerateDebugInfo Value="False"/>
@@ -151,7 +271,7 @@
     </Other>
   </CompilerOptions>
   <Debugging>
-    <Exceptions Count="9">
+    <Exceptions Count="10">
       <Item1>
         <Name Value="EAbort"/>
       </Item1>
@@ -179,6 +299,9 @@
       <Item9>
         <Name Value="RunError(219)"/>
       </Item9>
+      <Item10>
+        <Name Value="Exception"/>
+      </Item10>
     </Exceptions>
   </Debugging>
 </CONFIG>
