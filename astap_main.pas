@@ -593,7 +593,7 @@ function convert_raw_to_fits(filename7 : string) :boolean;{convert raw file to F
 function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
-procedure demosaic_bayer_drizzle(pattern: integer);{make from sensor bayer pattern three colors without interpolation}
+procedure demosaic_bayer_simple(pattern: integer);{make from sensor bayer pattern three colors without interpolation}
 function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 function extract_exposure_from_filename(filename8: string):integer; {try to extract exposure from filename}
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
@@ -1255,7 +1255,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.358 dated 2020-05-6';
+  #13+#10+'Version ß0.9.361 dated 2020-05-7';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3135,11 +3135,12 @@ begin
   naxis:=3; {from 2 to 3 dimensions}
 end;
 
-procedure demosaic_bayer_drizzle(pattern: integer);{make from sensor bayer pattern three colors without interpolation}
+procedure demosaic_bayer_simple(pattern: integer);{Spread each colour pixel to 2x2. Works well for astro oversampled images. Idea by Han.k}
 var
     X,Y,offsetx, offsety: integer;
     red,green_odd,green_even,blue : boolean;
     img_temp2 : image_array;
+    value     : single;
 begin
   case pattern  of
      0: begin offsetx:=0; offsety:=0; end;
@@ -3150,56 +3151,59 @@ begin
 
   setlength(img_temp2,3,width2,height2);{set length of image array color}
 
-  for y := 1 to height2-2 do   {-2 = -1 -1}
+  for y := 0 to height2-2 do   {-2 = -1 -1}
+    for x:=0 to width2-2 do
+  begin {clear green}
+      img_temp2[1,x,y]:=0;
+  end;
+
+  for y := 0 to height2-2 do   {-2 = -1 -1}
   begin
-    for x:=1 to width2-2 do
+    for x:=0 to width2-2 do
     begin
-     {http://cilab.knu.ac.kr/English/research/Color/Interpolation.htm ,  Bilinear interpolation}
       try
       green_even:= ( (odd(x+1+offsetX)) and (odd(y+1+offsetY)) );{even(i) function is odd(i+1), even is here for array position not fits position}
       green_odd := ( (odd(x+offsetX)) and  (odd(y+offsetY)) );
       red :=( (odd(x+offsetX)) and (odd(y+1+offsetY)) );
       blue:=( (odd(x+1+offsetX)) and (odd(y+offsetY)) );
 
-      if green_odd then
+      value:=img_loaded[0,x,  y  ];
+
+      if ((green_odd) or (green_even)) then
       begin
-        img_temp2[0,x,y]:=0;
-        img_temp2[1,x,y]:=img_loaded[0,x,  y  ];
-        img_temp2[2,x,y]:=0;
-      end
-      else
-      if green_even then
-      begin
-        img_temp2[0,x,y]:=0;
-        img_temp2[1,x,y]:=img_loaded[0,x,  y  ];
-        img_temp2[2,x,y]:=0;
+        value:=value/2;
+        img_temp2[1,x,y]:=img_temp2[1,x,y]+value;
+        img_temp2[1,x,y+1]:=img_temp2[1,x,y+1]+value;
+        img_temp2[1,x+1,y]:=img_temp2[1,x+1,y]+value;
+        img_temp2[1,x+1,y+1]:=img_temp2[1,x+1,y+1]+value;
       end
       else
       if red then
       begin
-        img_temp2[0,x,y]:=(img_loaded[0,x,  y  ]);
-        img_temp2[1,x,y]:=0;
-        img_temp2[2,x,y]:=0;
+        img_temp2[0,x,y]:=value;
+        img_temp2[0,x+1,y]:=value;
+        img_temp2[0,x,y+1]:=value;
+        img_temp2[0,x+1,y+1]:=value;
       end
       else
       if blue then
       begin
-        img_temp2[0,x,y]:=0;
-        img_temp2[1,x,y]:=0;
-        img_temp2[2,x,y]:=(img_loaded[0,x,  y  ]);
+        img_temp2[2,x,y]:=value;
+        img_temp2[2,x+1,y]:=value;
+        img_temp2[2,x,y+1]:=value;
+        img_temp2[2,x+1,y+1]:=value;
       end;
       except
       end;
 
     end;{x loop}
   end;{y loop}
-
-
   img_loaded:=img_temp2;
   img_temp2:=nil;{free temp memory}
   naxis3:=3;{now three colors}
   naxis:=3; {from 2 to 3 dimensions}
 end;
+
 
 procedure demosaic_astroM_bilinear_interpolation(pattern: integer);{make from sensor bayer pattern the three colors}
 var
@@ -3713,107 +3717,6 @@ begin
 end;
 
 
-procedure Super_pixel_demosaic(pattern: integer);{make color, create super-pixels from each group of 4 pixels RGGB. Resulting image will be halfsize}
-var                                                               {make from sensor bayer pattern the three colors, simplest method and making it halfsize}
-    fitsX,fitsY,w,h : integer;
-    ratio  : double;
-    img_temp2 : image_array;
-begin
-  setlength(img_temp2,3,width2 div 2,height2 div 2);{set length of image array color}
-
-  Application.ProcessMessages;
-  if esc_pressed then begin exit;end;
-
-
-  ratio:=0.5;
-
-
-  w:=trunc(width2/2);  {half size}
-  h:=trunc(height2/2);
-
-  setlength(img_temp2,3,w,h);
-
-  {1,1   1,2}{bayer matrix}
-  {2,1   2,2}
-
-  case pattern of
-
-  0:  {green, red}
-   for fitsY:=0 to h-2 do {add the red, green1, green2 and blue pixels together}
-   for fitsX:=0 to w-2  do
-    begin
-      img_temp2[0,fitsX,fitsY]:=img_loaded[0,fitsx*2+1,fitsY*2]; {2,1}
-      img_temp2[1,fitsX,fitsY]:=(img_loaded[0,fitsx*2 ,fitsY*2]+img_loaded[0,fitsx*2+1,fitsY*2+1])/2 ; {(1,1  + 2,2) /2}
-      img_temp2[2,fitsX,fitsY]:=img_loaded[0,fitsx*2 ,fitsY*2+1]; {1,2}
-    end;
-
-  1: {blue, green}
-    for fitsY:=0 to h-2 do {add the red, green1, green2 and blue pixels together}
-    for fitsX:=0 to w-2  do
-    begin
-      img_temp2[0,fitsX,fitsY]:=img_loaded[0,fitsx*2+1,fitsY*2+1]; {2,2}
-      img_temp2[1,fitsX,fitsY]:=(img_loaded[0,fitsx*2 ,fitsY*2+1]+img_loaded[0,fitsx*2+1,fitsY*2])/2 ; {(1,2  + 2,1) /2}
-      img_temp2[2,fitsX,fitsY]:=img_loaded[0,fitsx*2,fitsY*2]; {1,1}
-    end;
-
-  2:  {red, green}
-    for fitsY:=0 to h-2 do {add the red, green1, green2 and blue pixels together}
-    for fitsX:=0 to w-2  do
-    begin
-      img_temp2[0,fitsX,fitsY]:=img_loaded[0,fitsx*2,fitsY*2]; {1,1}
-      img_temp2[1,fitsX,fitsY]:=(img_loaded[0,fitsx*2 ,fitsY*2+1]+img_loaded[0,fitsx*2+1,fitsY*2])/2 ; {(1,2  + 2,1) /2}
-      img_temp2[2,fitsX,fitsY]:=img_loaded[0,fitsx*2+1,fitsY*2+1]; {2,2}
-    end;
-
-  3: {green, blue}
-    for fitsY:=0 to h-2 do {add the red, green1, green2 and blue pixels together}
-    for fitsX:=0 to w-2  do
-    begin
-      img_temp2[0,fitsX,fitsY]:=img_loaded[0,fitsx*2  ,fitsY*2+1]; {1,2}
-      img_temp2[1,fitsX,fitsY]:=(img_loaded[0,fitsx*2 ,fitsY*2]+img_loaded[0,fitsx*2+1,fitsY*2+1])/2 ; {(1,1  + 2,2) /2}
-      img_temp2[2,fitsX,fitsY]:=img_loaded[0,fitsx*2+1,fitsY*2];   {2,1}
-    end;
-  end; {case}
-
-
-  width2:=w; {the image is halfsize !!}
-  height2:=h;
-
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-
-  if crpix1<>0 then begin crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
-  if crpix2<>0 then begin crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
-
-  if cdelt1<>0 then begin cdelt1:=cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
-  if cdelt2<>0 then begin cdelt2:=cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
-
-  if cd1_1<>0 then
-  begin
-    cd1_1:=cd1_1/ratio;
-    cd1_2:=cd1_2/ratio;
-    cd2_1:=cd2_1/ratio;
-    cd2_2:=cd2_2/ratio;
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
-  end;
-
-  add_text   ('HISTORY   ','contains one pixel of 2x2 bayer matrix');
-
-  update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING/ratio));
-  update_integer('YBINNING=',' / Binning factor in height                        ' ,round(yBINNING/ratio));
-
-
-  img_loaded:=img_temp2; {the image is halfsize !!}
-  img_temp2:=nil;
-
-  img_temp2:=nil;{free temp memory}
-  naxis3:=3;{now three colors}
-  naxis:=3; {from 2 to 3 dimensions}
-end;
-
 procedure preserve_colour_saturated_bayer;{for bayer matrix}
 var
     fitsX,fitsY,w,h : integer;
@@ -3877,9 +3780,6 @@ begin
   if pos('X-',stackmenu1.bayer_pattern1.Text)<>0  then {}
      demosaic_x_trans{make from Fuji X-trans three colors}
  else
-  if pos('Super',stackmenu1.demosaic_method1.text)<>0  then {use Bilinear interpolation}
-    Super_pixel_demosaic(get_demosaic_pattern){create super-pixels from each group of 4 pixels RGGB}
-  else
   if pos('Bilinear',stackmenu1.demosaic_method1.text)<>0  then {use Bilinear interpolation}
     demosaic_bilinear_interpolation(get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
@@ -3896,7 +3796,7 @@ begin
     demosaic_astroM_bilinear_interpolation(get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
   if pos('Bayer',stackmenu1.demosaic_method1.text)<>0  then {}
-    demosaic_bayer_drizzle(get_demosaic_pattern){make from sensor bayer pattern the three colors}
+    demosaic_bayer_simple(get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
     demosaic_Malvar_He_Cutler(stackmenu1.bayer_pattern1.itemindex);{make from sensor bayer pattern the three colors}
 
@@ -5007,6 +4907,7 @@ begin
   I:=0;
   reader_position:=0;
 
+
   aline:='';
   try
     for i:=0 to 2 do begin reader.read(ch,1); aline:=aline+ch; inc(reader_position,1);end;
@@ -5021,13 +4922,14 @@ begin
       exit;
     end ;{should start with P6}
 
+    pfm:=false;
     if aline='P5'+#10 then color7:=false {gray scale image}
     else
     if aline='P6'+#10 then color7:=true  {colour scale image}
     else
     if aline='PF'+#10 then begin color7:=true; pfm:=true; end  {PFM colour scale image, photoshop export float 32 bit}
     else
-    if aline='Pf'+#10 then begin color7:=false; nrbits:=-32; datamax_org:=$FFFF;end;  {PFM colour scale image, photoshop export float 32 bit grayscale}
+    if aline='Pf'+#10 then begin color7:=false; pfm:=true; end;  {PFM colour scale image, photoshop export float 32 bit grayscale}
 
     i:=0;
     repeat {read header}

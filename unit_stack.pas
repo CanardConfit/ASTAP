@@ -69,6 +69,7 @@ type
     help_stack_menu3: TLabel;
     ignore_header_solution1: TCheckBox;
     copy_files_to_clipboard1: TMenuItem;
+    Label13: TLabel;
     min_star_size_stacking1: TComboBox;
     go_step_two1: TBitBtn;
     update_solution1: TCheckBox;
@@ -243,7 +244,6 @@ type
     Label38: TLabel;
     Label39: TLabel;
     Label4: TLabel;
-    Label40: TLabel;
     Label41: TLabel;
     Label42: TLabel;
     Label43: TLabel;
@@ -7149,6 +7149,7 @@ begin
         for fitsX:=1 to width2 do
         begin
           flat_factor:=flat_norm_value/(img_flat[0,fitsX-1,fitsY-1]+0.001); {bias is already combined in flat in combine_flat}
+          if abs(flat_factor)>3 then flat_factor:=1;{un-used sensor area? Prevent huge gain of areas only containing noise and no flat-light value resulting in very strong disturbing noise or high value if dark is missing. Typical problem for converted RAW's by Libraw}
           for k:=0 to naxis3-1 do {do all colors}
             img_loaded[k,fitsX-1,fitsY-1]:=img_loaded[k,fitsX-1,fitsY-1]*flat_factor;
         end;
@@ -7868,7 +7869,7 @@ begin
           remove_key('XBAYROFF',false{all});{remove key word in header}
           remove_key('YBAYROFF',false{all});{remove key word in header}
           update_text('HISTORY 2','  De-mosaic bayer pattern used '+bayer_pattern[bayerpattern_final]);
-          update_text('HISTORY 3','  Colour conversion: '+ stackmenu1.demosaic_method1.text+ 'interpolation.')
+          update_text('HISTORY 3','  Colour conversion: '+ stackmenu1.demosaic_method1.text+ ' interpolation.')
         end
         else
         update_text('HISTORY 2','  Combined to colour image.');

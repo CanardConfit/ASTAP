@@ -592,16 +592,13 @@ end;
 
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
-  fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,drizzle_mode,binning              : integer;
+  fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning              : integer;
   background_correction, value, weightF,hfd_min                                                              : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
 begin
 
   with stackmenu1 do
   begin
-    drizzle_mode:=0;
-    if pos('Bayer',stackmenu1.demosaic_method1.text)<>0  then drizzle_mode:=2; {Bayer drizzle mode}
-
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
@@ -658,15 +655,14 @@ begin
           apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
           {these global variables are passed-on in procedure to protect against overwriting}
 
+
           memo2_message('Adding file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
           Application.ProcessMessages;
           if esc_pressed then exit;
 
           if make_osc_color1.checked then
           begin
-             if drizzle_mode<>2 {<>Bayer drizzle}  then demosaic_bayer {convert OSC image to colour}
-             else naxis3:=3;{for bayer drizzle, demosaic will be done later}
-             {naxis3 is now 3}
+            demosaic_bayer {convert OSC image to colour}
           end;
 
           if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
@@ -695,7 +691,6 @@ begin
             width_max:=width2+oversize*2;
             height_max:=height2+oversize*2;
 
-            if drizzle_mode=1 then {drizzle} begin width_max:=width_max+width_max; height_max:=height_max+height_max end;
             setlength(img_average,naxis3,width_max,height_max);
             setlength(img_temp,naxis3,width_max,height_max);
             for fitsY:=0 to height_max-1 do
@@ -772,50 +767,22 @@ begin
               vector_based:=true;
             end;
 
-            if drizzle_mode=0 then
+            for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
+            for fitsX:=1 to width2  do
             begin
-              for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
-              for fitsX:=1 to width2  do
+              calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
+              x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversize;
+              x_new:=round(x_new_float);y_new:=round(y_new_float);
+              if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
-                calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-                x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversize;
-                x_new:=round(x_new_float);y_new:=round(y_new_float);
-                if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+                for col:=0 to naxis3-1 do {all colors}
                 begin
-                  for col:=0 to naxis3-1 do {all colors}
-                  begin
-                    img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1] +background_correction;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
-                    img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples. For each color seperate due to bayer_drizzle}
-                  end;
-                end;
-              end;
-            end
-            else
-            if drizzle_mode=2 then {bayer_drizzle}
-            begin
-              {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
-              demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
-
-              for fitsY:=1 to height2 do
-              for fitsX:=1 to width2  do
-              begin
-                calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-                x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversize;
-                x_new:=round(x_new_float);y_new:=round(y_new_float);
-                if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
-                begin
-                  for col:=0 to naxis3-1 do {do all colors}
-                  begin
-                    value:=img_loaded[col,fitsX-1,fitsY-1]+background_correction;
-                    if value>0 then {bayer_drizzle specific}
-                    begin
-                      img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
-                      img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples}
-                    end;
-                  end;
+                  img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1] +background_correction;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                  img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples. For each color seperate due to bayer_drizzle}
                 end;
               end;
             end;
+
           end;
           progress_indicator(10+89*counter/(length(files_to_Process){ListView1.items.count}),' Stacking');{show progress}
           finally
@@ -1066,7 +1033,7 @@ end;
 
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 var
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col,  drizzle_mode,binning     : integer;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning     : integer;
     background_correction, variance_factor, value,weightF,hfd_min                                         : double;
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
 begin
@@ -1075,8 +1042,6 @@ begin
     {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
     variance_factor:=sqr(strtofloat2(stackmenu1.sd_factor1.text));
 
-    drizzle_mode:=0;
-    if pos('Bayer',stackmenu1.demosaic_method1.text)<>0  then drizzle_mode:=2; {Bayer drizzle mode}
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
@@ -1137,12 +1102,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then exit;
 
-        if make_osc_color1.checked then
-        begin
-           if drizzle_mode<>2 {<>Bayer drizzle}  then demosaic_bayer {convert OSC image to colour}
-           else naxis3:=3;{for bayer drizzle, demosaic will be done later}
-           {naxis3 is now 3}
-        end;
+        if make_osc_color1.checked then  demosaic_bayer; {convert OSC image to colour}
 
         if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
         begin
@@ -1237,9 +1197,6 @@ begin
           if jd>jd_stop then jd_stop:=jd;
           jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
-          {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
-          if drizzle_mode=2 then demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
-
           vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
           begin
@@ -1312,12 +1269,8 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if make_osc_color1.checked then
-          begin
-             if drizzle_mode<>2 {Bayer drizzle} then demosaic_bayer {convert OSC image to colour}
-             else naxis3:=3;{for bayer drizzle, demoasic will be done later}
-             {naxis3 is now 3}
-          end;
+          if make_osc_color1.checked then demosaic_bayer; {convert OSC image to colour}
+
           if init=false then {init}
           begin
             width_max:=width2+oversize*2;
@@ -1363,9 +1316,6 @@ begin
             end;
           end;
           init:=true;{initialize for first image done}
-
-          {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
-          if drizzle_mode=2 then demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
 
           vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
@@ -1421,12 +1371,8 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if make_osc_color1.checked then
-          begin
-            if drizzle_mode<>2 {Bayer drizzle} then demosaic_bayer {convert OSC image to colour}
-            else naxis3:=3;{for bayer drizzle, demoasic will be done later}
-             {naxis3 is now 3}
-          end;
+          if make_osc_color1.checked then demosaic_bayer; {convert OSC image to colour}
+
           if init=false then {init}
           begin
             width_max:=width2+oversize*2;
@@ -1485,51 +1431,22 @@ begin
             vector_based:=true;
           end;
 
-          if drizzle_mode=0 then {no drizzle}
+          for fitsY:=1 to height2 do
+          for fitsX:=1 to width2  do
           begin
-            for fitsY:=1 to height2 do
-            for fitsX:=1 to width2  do
+            calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
+            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
+            if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
-              calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-              x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
-              if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+              for col:=0 to naxis3-1 do {do all colors}
               begin
-                for col:=0 to naxis3-1 do {do all colors}
+                value:=img_loaded[col,fitsX-1,fitsY-1]+ background_correction;
+       //         if(( fitsx=100) and (fitsY=100)) then
+      //          beep;
+                if sqr (value - img_average[col,x_new,y_new])< variance_factor*{sd sqr}( img_variance[col,x_new,y_new])  then {not an outlier}
                 begin
-                  value:=img_loaded[col,fitsX-1,fitsY-1]+ background_correction;
-         //         if(( fitsx=100) and (fitsY=100)) then
-        //          beep;
-                  if sqr (value - img_average[col,x_new,y_new])< variance_factor*{sd sqr}( img_variance[col,x_new,y_new])  then {not an outlier}
-                  begin
-                    img_final[col,x_new,y_new]:=img_final[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
-                    img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
-                  end;
-                end;
-              end;
-            end;
-          end
-          else  {bayer_drizzle}
-          begin
-            {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
-            demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
-
-            for fitsY:=1 to height2 do
-            for fitsX:=1 to width2  do
-            begin
-              calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-              x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
-              if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
-              begin
-                for col:=0 to naxis3-1 do {do all colors}
-                begin
-                  value:=img_loaded[col,fitsX-1,fitsY-1]+background_correction;
-                  if value>0 then {bayer_drizzle specific}
-                    if sqr (value - img_average[col,x_new,y_new])< variance_factor*{sd sqr}( img_variance[col,x_new,y_new])  then {not an outlier}
-
-                    begin
-                      img_final[col,x_new,y_new]:=img_final[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
-                      img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+ weightF {norm 1};{count the number of image pixels added=samples}
-                    end;
+                  img_final[col,x_new,y_new]:=img_final[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
+                  img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
                 end;
               end;
             end;
@@ -1574,15 +1491,13 @@ end;   {stack using sigma clip average}
 
 procedure calibration_and_alignment(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 var
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col,  drizzle_mode,binning     : integer;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col,  binning     : integer;
     background_correction, hfd_min      : double;
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
 begin
   with stackmenu1 do
   begin
     {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
-    drizzle_mode:=0;
-    if pos('Bayer',stackmenu1.demosaic_method1.text)<>0  then drizzle_mode:=2; {Bayer drizzle mode}
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
@@ -1638,12 +1553,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then exit;
 
-        if make_osc_color1.checked then
-        begin
-           if drizzle_mode<>2 {<>Bayer drizzle}  then demosaic_bayer {convert OSC image to colour}
-           else naxis3:=3;{for bayer drizzle, demosaic will be done later}
-           {naxis3 is now 3}
-        end;
+        if make_osc_color1.checked then demosaic_bayer; {convert OSC image to colour}
 
         if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
         begin
@@ -1734,9 +1644,6 @@ begin
         if solution then
         begin
           inc(counter);
-
-          {Do Bayer Drizzle after after solving since only red channel is used for solving !!!!!!!!!}
-          if drizzle_mode=2 then demosaic_bayer_drizzle(get_demosaic_pattern);{bayer_drizzle specific, make from sensor bayer pattern the three colors}
 
           vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
