@@ -555,10 +555,10 @@ type
     procedure live_stacking1Click(Sender: TObject);
     procedure copy_files_to_clipboard1Click(Sender: TObject);
     procedure new_saturation1Change(Sender: TObject);
-    procedure pagecontrol1Change(Sender: TObject);
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure rainbow_Panel1Paint(Sender: TObject);
+    procedure remove_luminance1Change(Sender: TObject);
     procedure result_compress1Click(Sender: TObject);
     procedure rename_result1Click(Sender: TObject);
     procedure restore_file_ext1Click(Sender: TObject);
@@ -4296,6 +4296,24 @@ begin
   openurl('http://www.hnsky.org/astap.htm#pixel_math2');
 end;
 
+procedure update_replacement_colour;
+var
+  r,g,b,h,s,v : single;
+  colour : tcolor;
+  saturation : double;
+begin
+  colour:=stackmenu1.colourShape2.brush.color;
+  RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),h,s,v);
+
+  if stackmenu1.remove_luminance1.checked=false then
+    saturation:=stackmenu1.new_saturation1.position /100
+  else
+    saturation:=0;
+  HSV2RGB(h , s * saturation {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
+  stackmenu1.colourshape3.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
+end;
+
+
 procedure sample(fitsx,fitsy : integer);{sampe local colour and fill shape with colour}
 var
     halfboxsize,i,j,counter,fx,fy,col_r,col_g,col_b  :integer;
@@ -4375,8 +4393,7 @@ begin
   begin
     HSV2RGB(h , s {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
     stackmenu1.colourshape2.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
-    HSV2RGB(h , min(1,s * stackmenu1.new_saturation1.position /100) {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
-    stackmenu1.colourshape3.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
+    update_replacement_colour;
   end;
 
 end;
@@ -4496,23 +4513,12 @@ begin
 {$endif}
 end;
 
+
 procedure Tstackmenu1.new_saturation1Change(Sender: TObject);
-var
-  r,g,b,h,s,v : single;
-  colour : tcolor;
 begin
-  colour:=colourShape2.brush.color;
-  RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),h,s,v);
-
-  HSV2RGB(h , s * stackmenu1.new_saturation1.position /100 {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
-  stackmenu1.colourshape3.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
-
+  update_replacement_colour;
 end;
 
-procedure Tstackmenu1.pagecontrol1Change(Sender: TObject);
-begin
-
-end;
 
 
 procedure Tstackmenu1.rainbow_Panel1MouseDown(Sender: TObject;
@@ -4545,12 +4551,14 @@ begin
   end;
   if HueRadioButton2.checked then
   begin
-    colour:=colourShape2.brush.color;
-    RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),oldhue,s,v);
-    HSV2RGB(hue , s {s 0..1}, v {v 0..1},r,g,b);
-    colourShape2.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
-    HSV2RGB(hue , s*new_saturation1.position /100 {s 0..1}, v {v 0..1},r,g,b);
-    colourShape3.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
+    update_replacement_colour;
+
+//    colour:=colourShape2.brush.color;
+//    RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),oldhue,s,v);
+//    HSV2RGB(hue , s {s 0..1}, v {v 0..1},r,g,b);
+//    colourShape2.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
+//    HSV2RGB(hue , s*new_saturation1.position /100 {s 0..1}, v {v 0..1},r,g,b);
+//    colourShape3.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
   end;
 end;
 
@@ -4600,6 +4608,13 @@ begin
 
   end;
 end;
+
+procedure Tstackmenu1.remove_luminance1Change(Sender: TObject);
+begin
+  update_replacement_colour;
+end;
+
+
 
 procedure Tstackmenu1.result_compress1Click(Sender: TObject);
 var index,counter: integer;

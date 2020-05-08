@@ -595,6 +595,7 @@ var
   fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning              : integer;
   background_correction, value, weightF,hfd_min                                                              : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
+  tempval   : single;
 begin
 
   with stackmenu1 do
@@ -692,14 +693,14 @@ begin
             height_max:=height2+oversize*2;
 
             setlength(img_average,naxis3,width_max,height_max);
-            setlength(img_temp,naxis3,width_max,height_max);
+            setlength(img_temp,1,width_max,height_max);
             for fitsY:=0 to height_max-1 do
               for fitsX:=0 to width_max-1 do
+              begin
                 for col:=0 to naxis3-1 do
-                begin
                   img_average[col,fitsX,fitsY]:=0; {clear img_average}
-                  img_temp[col,fitsX,fitsY]:=0; {clear img_temp}
-                end;
+                img_temp[0,fitsX,fitsY]:=0; {clear img_temp}
+              end;
             old_width:=width2;
             old_height:=height2;
 
@@ -776,10 +777,8 @@ begin
               if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
                 for col:=0 to naxis3-1 do {all colors}
-                begin
                   img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1] +background_correction;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
-                  img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples. For each color seperate due to bayer_drizzle}
-                end;
+                img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples.}
               end;
             end;
 
@@ -789,7 +788,6 @@ begin
         end;
       end;
 
-
       if counter<>0 then
       begin
         height2:=height_max;
@@ -798,22 +796,23 @@ begin
 
         For fitsY:=0 to height2-1 do
         for fitsX:=0 to width2-1 do
-        for col:=0 to naxis3-1 do
-        if img_temp[col,fitsX,fitsY]<>0 then img_loaded[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY] {scale to one image by diving by the number of pixels added}
-        else
-        begin { black spot filter or missing red, green, blue channnel. Note for this version img_temp is counting for each color since they could be different}
-          if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
-          begin
-            if ((img_temp[col,fitsX-1,fitsY]<>0) {and (img_temp[col,fitsX,fitsY-1]<>0)}{keep borders nice for last pixel right}) then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
+        begin {pixel loop}
+          tempval:=img_temp[0,fitsX,fitsY];
+          for col:=0 to naxis3-1 do
+          begin {colour loop}
+            if tempval<>0 then img_loaded[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]/tempval {scale to one image by diving by the number of pixels added}
             else
-            if img_temp[col,fitsX,fitsY-1]<>0 then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX,fitsY-1]{take nearest pixel y-1 as replacement}
-            else
-            img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
-          end {fill black spots}
-          else
-          img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
-        end; {black spot filter}
-      end;
+            begin { black spot filter or missing value filter due to image rotation}
+              if ((fitsX>0) and (img_temp[0,fitsX-1,fitsY]<>0)) then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
+              else
+              if ((fitsY>0) and (img_temp[0,fitsX,fitsY-1]<>0)) then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX,fitsY-1]{take nearest pixel y-1 as replacement}
+              else
+              img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
+            end; {black spot}
+          end;{colour loop}
+        end;{pixel loop}
+      end; {counter<>0}
+
     end;{simple average}
   end;{with stackmenu1}
   {arrays will be nilled later. This is done for early exits}
@@ -835,6 +834,7 @@ var
 
     value, background_correction,dummy,median                                                        : double;
     init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
+    tempval                                                                     : single;
 
 begin
   with stackmenu1 do
@@ -859,172 +859,164 @@ begin
       if length(files_to_process[c].name)>0 then
       begin
 
-      try { Do some lengthy operation }
-        ListView1.Selected :=nil; {remove any selection}
-        ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
-        Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False);{scroll to selected item}
+        try { Do some lengthy operation }
+          ListView1.Selected :=nil; {remove any selection}
+          ListView1.ItemIndex := files_to_process[c].listviewindex;{show wich file is processed}
+          Listview1.Items[files_to_process[c].listviewindex].MakeVisible(False);{scroll to selected item}
 
-        filename2:=files_to_process[c].name;
+          filename2:=files_to_process[c].name;
 
-        Application.ProcessMessages;
+          Application.ProcessMessages;
 
-        {load image}
-        if ((esc_pressed) or  (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then  begin memo2_message('Error');{can't load} exit;end;
+          {load image}
+          if ((esc_pressed) or  (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then  begin memo2_message('Error');{can't load} exit;end;
 
-        if init=true then
-        begin
-           // not for mosaic||| if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-           if naxis3>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
-        end;
-
-        if init=false then
-        begin
-          backup_header;{backup header and solution}
-          initialise1;{set variables correct}
-          initialise2;{set variables correct}
-        end;
-
-        apply_dark_flat(filter_name, {var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
-        {these global variables are passed-on in procedure to protect against overwriting}
-
-        memo2_message('Adding file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
-        Application.ProcessMessages;
-        if esc_pressed then exit;
-
-        if make_osc_color1.checked then {do demosaic bayer}
-        begin
-          if pos('Bayer',stackmenu1.demosaic_method1.text)<>0  then  begin memo2_message('█ █ █ █ █ █  This will not work!!! Try an other demosaic method !! █ █ █ █ █ █'); end;
-          demosaic_bayer; {convert OSC image to colour}
-        end;
-        {naxis3 is now 3}
-
-        if use_astrometry_internal=false then begin memo2_message('Abort, only astrometric alignment possible in mosaic mode.'); exit; end;
-
-        if init=false then {init}
-        begin
-          memo2_message('Reference image, largest with best HFD is: '+filename2);
-          image_path:=ExtractFilePath(filename2); {for saving later}
-
-          oversize:=width2*mosaic_width1.position div 2;{increase the oversize to have space for the tiles}
-          width_max:=width2+oversize*2;
-          height_max:=height2+oversize*2;
-
-          setlength(img_average,naxis3,width_max,height_max);
-          setlength(img_temp,1,width_max,height_max);{mono}
-
-      //    setlength(img_variance,naxis3,width_max,height_max);{used for difference}
-
-          for fitsY:=0 to height_max-1 do
-            for fitsX:=0 to width_max-1 do
-            begin
-              for col:=0 to naxis3-1 do
-              begin
-                img_average[col,fitsX,fitsY]:=0; {clear img_average}
-               // img_variance[col,fitsX,fitsY]:=10000;
-              end;
-              img_temp[0,fitsX,fitsY]:=0; {clear img_temp}
-            end;
-        end;{init, c=0}
-
-        solution:=true;
-        if Equalise_background1.checked then
-        begin
-          get_background(0,img_loaded,true{hist},false{noise_level}, {var}background_correction, star_level);
-          background_correction:=1000-background_correction;
-        end
-          else background_correction:=0;
-        if use_astrometry_internal then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
-        else
-        begin memo2_message('Abort, only astrometric alignment possible in mosaic mode.'); exit; end;
-
-        init:=true;{initialize for first image done}
-
-        if solution then
-        begin
-          inc(counter);
-          sum_exp:=sum_exp+exposure;
-
-          date_to_jd(date_obs);{convert date-obs to jd}
-          if jd>jd_stop then jd_stop:=jd;
-          jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
-
-          vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
-          if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
+          if init=true then
           begin
-            astrometric_to_vector;{convert astrometric solution to vector solution}
-            vector_based:=true;
+             // not for mosaic||| if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
+             if naxis3>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
           end;
 
-          cropW:=trunc(stackmenu1.mosaic_crop1.Position*width2/200);
-          cropH:=trunc(stackmenu1.mosaic_crop1.Position*height2/200);
-
-          for fitsY:=1+1+cropH to height2-1-cropH do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
-          for fitsX:=1+1+cropW to width2-1-cropW  do
+          if init=false then
           begin
-            calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
-            if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
-            begin
-              if img_loaded[0,fitsX-1,fitsY-1]>0.0001 then {not a black area around image}
-              begin
-                dummy:=1+minimum_distance_borders(fitsX,fitsY,width2,height2);{minimum distance borders}
-                if img_temp[0,x_new,y_new]=0 then {blank pixel}
-                begin
-                  for col:=0 to naxis3-1 do {all colors}
-                  img_average[col,x_new,y_new]:=img_loaded[col,fitsX-1,fitsY-1]+background_correction;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
-                  img_temp[0,x_new,y_new]:=dummy;
-                end
-                else
-                begin {already pixel filled, try to make an average}
-                  for col:=0 to naxis3-1 do {all colors}
-                  begin
-                    median:=median_background(img_loaded,col,15,fitsX-1,fitsY-1);{find median value in sizeXsize matrix of img}
-                    value:=img_loaded[col,fitsX-1,fitsY-1];
+            backup_header;{backup header and solution}
+            initialise1;{set variables correct}
+            initialise2;{set variables correct}
+          end;
 
-                    if ((value<median+100) and
-                        (img_loaded[col,fitsX-1-1,fitsY-1]<median+100) and (img_loaded[col,fitsX-1+1,fitsY-1]<median+100) and (img_loaded[col,fitsX-1,fitsY-1-1]<median+100) and (img_loaded[col,fitsX-1,fitsY-1+1]<median+100) {check nearest pixels}
-                       ) then {not a star, prevent double stars at overlap area}
-                    img_average[col,x_new,y_new]:=+img_average[col,x_new,y_new]*img_temp[0,x_new,y_new]{distance border}/(dummy+img_temp[0,x_new,y_new])
-                                                  +(value+background_correction)*dummy/(dummy+img_temp[0,x_new,y_new]);{calculate value between the existing and new value depending on BORDER DISTANCE}
+          apply_dark_flat(filter_name, {var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
+          {these global variables are passed-on in procedure to protect against overwriting}
+
+          memo2_message('Adding file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
+          Application.ProcessMessages;
+          if esc_pressed then exit;
+
+          if make_osc_color1.checked then {do demosaic bayer}  demosaic_bayer; {convert OSC image to colour}
+          {naxis3 is now 3}
+
+          if use_astrometry_internal=false then begin memo2_message('Abort, only astrometric alignment possible in mosaic mode.'); exit; end;
+
+          if init=false then {init}
+          begin
+            memo2_message('Reference image, largest with best HFD is: '+filename2);
+            image_path:=ExtractFilePath(filename2); {for saving later}
+
+            oversize:=width2*mosaic_width1.position div 2;{increase the oversize to have space for the tiles}
+            width_max:=width2+oversize*2;
+            height_max:=height2+oversize*2;
+
+            setlength(img_average,naxis3,width_max,height_max);
+            setlength(img_temp,1,width_max,height_max);{gray}
+
+            for fitsY:=0 to height_max-1 do
+              for fitsX:=0 to width_max-1 do
+              begin
+                for col:=0 to naxis3-1 do
+                begin
+                  img_average[col,fitsX,fitsY]:=0; {clear img_average}
+                 // img_variance[col,fitsX,fitsY]:=10000;
+                end;
+                img_temp[0,fitsX,fitsY]:=0; {clear img_temp}
+              end;
+          end;{init, c=0}
+
+          solution:=true;
+          if Equalise_background1.checked then
+          begin
+            get_background(0,img_loaded,true{hist},false{noise_level}, {var}background_correction, star_level);
+            background_correction:=1000-background_correction;
+          end
+            else background_correction:=0;
+          if use_astrometry_internal then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+          else
+          begin memo2_message('Abort, only astrometric alignment possible in mosaic mode.'); exit; end;
+
+          init:=true;{initialize for first image done}
+
+          if solution then
+          begin
+            inc(counter);
+            sum_exp:=sum_exp+exposure;
+
+            date_to_jd(date_obs);{convert date-obs to jd}
+            if jd>jd_stop then jd_stop:=jd;
+            jd_sum:=jd_sum+jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+
+            vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
+            if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
+            begin
+              astrometric_to_vector;{convert astrometric solution to vector solution}
+              vector_based:=true;
+            end;
+
+            cropW:=trunc(stackmenu1.mosaic_crop1.Position*width2/200);
+            cropH:=trunc(stackmenu1.mosaic_crop1.Position*height2/200);
+
+            for fitsY:=1+1+cropH to height2-1-cropH do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
+            for fitsX:=1+1+cropW to width2-1-cropW  do
+            begin
+              calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
+              x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
+              if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+              begin
+                if img_loaded[0,fitsX-1,fitsY-1]>0.0001 then {not a black area around image}
+                begin
+                  dummy:=1+minimum_distance_borders(fitsX,fitsY,width2,height2);{minimum distance borders}
+                  if img_temp[0,x_new,y_new]=0 then {blank pixel}
+                  begin
+                    for col:=0 to naxis3-1 do {all colors}
+                    img_average[col,x_new,y_new]:=img_loaded[col,fitsX-1,fitsY-1]+background_correction;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                    img_temp[0,x_new,y_new]:=dummy;
+                  end
+                  else
+                  begin {already pixel filled, try to make an average}
+                    for col:=0 to naxis3-1 do {all colors}
+                    begin
+                      median:=median_background(img_loaded,col,15,fitsX-1,fitsY-1);{find median value in sizeXsize matrix of img}
+                      value:=img_loaded[col,fitsX-1,fitsY-1];
+
+                      if ((value<median+100) and
+                          (img_loaded[col,fitsX-1-1,fitsY-1]<median+100) and (img_loaded[col,fitsX-1+1,fitsY-1]<median+100) and (img_loaded[col,fitsX-1,fitsY-1-1]<median+100) and (img_loaded[col,fitsX-1,fitsY-1+1]<median+100) {check nearest pixels}
+                         ) then {not a star, prevent double stars at overlap area}
+                      img_average[col,x_new,y_new]:=+img_average[col,x_new,y_new]*img_temp[0,x_new,y_new]{distance border}/(dummy+img_temp[0,x_new,y_new])
+                                                    +(value+background_correction)*dummy/(dummy+img_temp[0,x_new,y_new]);{calculate value between the existing and new value depending on BORDER DISTANCE}
+                    end;
+                    img_temp[0,x_new,y_new]:=dummy;
                   end;
-                  img_temp[0,x_new,y_new]:=dummy;
                 end;
               end;
             end;
           end;
+          progress_indicator(10+89*counter/length(files_to_process){(ListView1.items.count)},' Stacking');{show progress}
+        finally
         end;
-        progress_indicator(10+89*counter/length(files_to_process){(ListView1.items.count)},' Stacking');{show progress}
-      finally
       end;
-    end;
 
-    if counter<>0 then
-    begin
-      height2:=height_max;
-      width2:=width_max;
-      setlength(img_loaded,naxis3,width2,height2);{new size}
-      For fitsY:=0 to height2-1 do
+      if counter<>0 then
+      begin
+        height2:=height_max;
+        width2:=width_max;
+        setlength(img_loaded,naxis3,width2,height2);{new size}
+
+        For fitsY:=0 to height2-1 do
         for fitsX:=0 to width2-1 do
-         if img_temp[0,fitsX,fitsY]<>0 then  {something data written}
-          begin
-            for col:=0 to naxis3-1 do  img_loaded[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY];
-
-          end
-          else
-          begin { black spot filter}
-
-            if ((fitsX>0) and (fitsY>0)) then {black spot filter, fix black spots which show up if one image is rotated}
-            begin
-              if ((img_temp[0,fitsX-1,fitsY]<>0) {and (img_temp[0,fitsX,fitsY-1]<>0)}{keep borders nice for last pixel right}) then  begin for col:=0 to naxis3-1 do img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY];{take nearest pixel x-1 as replacement}end
-              else
-              if img_temp[0,fitsX,fitsY-1]<>0 then begin for col:=0 to naxis3-1 do img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX,fitsY-1];{take nearest pixel y-1 as replacement}end
-              else
-              for col:=0 to naxis3-1 do img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
-            end {fill black spots}
+        begin {pixel loop}
+          tempval:=img_temp[0,fitsX,fitsY]; {if <>0 then something was written}
+          for col:=0 to naxis3-1 do
+          begin {colour loop}
+            if tempval<>0 then img_loaded[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY] {no divide}
             else
-            for col:=0 to naxis3-1 do img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
-          end; {black spot filter}
-        end;
+            begin { black spot filter or missing value filter due to image rotation}
+              if ((fitsX>0) and (img_temp[0,fitsX-1,fitsY]<>0)) then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX-1,fitsY]{take nearest pixel x-1 as replacement}
+              else
+              if ((fitsY>0) and (img_temp[0,fitsX,fitsY-1]<>0)) then img_loaded[col,fitsX,fitsY]:=img_loaded[col,fitsX,fitsY-1]{take nearest pixel y-1 as replacement}
+              else
+              img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
+            end; {black spot}
+          end;{colour loop}
+        end;{pixel loop}
+      end; {counter<>0}
+
     end;{mosaic mode}
   end;{with stackmenu1}
   {arrays will be nilled later. This is done for early exits}

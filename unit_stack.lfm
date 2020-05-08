@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 146
+  Left = 338
   Height = 644
-  Top = 245
+  Top = 227
   Width = 1605
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1604
-    ActivePage = tab_stackmethod1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,9 +225,8 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 5
+    TabIndex = 0
     TabOrder = 5
-    OnChange = pagecontrol1Change
     object Images: TTabSheet
       Hint = 'Select here the light frames'
       Caption = 'Images'
@@ -1875,7 +1874,7 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
         end
         object demosaic_method1: TComboBox
-          Left = 10
+          Left = 8
           Height = 23
           Hint = 'Demosaic method of color filter array.  Best method is AstroC.  For white stars you could AstroM.  Note that super-pixel produces half size images. Use this for over-sampled images.'
           Top = 95
@@ -1885,7 +1884,7 @@ object stackmenu1: Tstackmenu1
           Items.Strings = (
             'AstroC, colour for saturated stars.'
             'AstroM, white stars'
-            'Bayer-Simple'
+            'Simple'
             'Bilinear interpolation'
             'Malvar_He_Cutler (not for astro)'
             ''
@@ -5074,6 +5073,7 @@ object stackmenu1: Tstackmenu1
           Top = 259
           Width = 122
           Caption = 'Remove luminance'
+          OnChange = remove_luminance1Change
           TabOrder = 9
         end
         object saturation_tolerance1: TTrackBar

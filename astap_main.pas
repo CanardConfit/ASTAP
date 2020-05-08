@@ -593,7 +593,7 @@ function convert_raw_to_fits(filename7 : string) :boolean;{convert raw file to F
 function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
-procedure demosaic_bayer_simple(pattern: integer);{make from sensor bayer pattern three colors without interpolation}
+procedure demosaic_simple(pattern: integer);{make from sensor bayer pattern three colors without interpolation}
 function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 function extract_exposure_from_filename(filename8: string):integer; {try to extract exposure from filename}
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
@@ -1255,7 +1255,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.361 dated 2020-05-7';
+  #13+#10+'Version ß0.9.362 dated 2020-05-8';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3124,10 +3124,8 @@ begin
       except
       end;
 
-
     end;{x loop}
   end;{y loop}
-
 
   img_loaded:=img_temp2;
   img_temp2:=nil;{free temp memory}
@@ -3135,7 +3133,7 @@ begin
   naxis:=3; {from 2 to 3 dimensions}
 end;
 
-procedure demosaic_bayer_simple(pattern: integer);{Spread each colour pixel to 2x2. Works well for astro oversampled images. Idea by Han.k}
+procedure demosaic_simple(pattern: integer);{Spread each colour pixel to 2x2. Works well for astro oversampled images. Idea by Han.k}
 var
     X,Y,offsetx, offsety: integer;
     red,green_odd,green_even,blue : boolean;
@@ -3795,8 +3793,8 @@ begin
   if pos('AstroM',stackmenu1.demosaic_method1.text)<>0  then {}
     demosaic_astroM_bilinear_interpolation(get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
-  if pos('Bayer',stackmenu1.demosaic_method1.text)<>0  then {}
-    demosaic_bayer_simple(get_demosaic_pattern){make from sensor bayer pattern the three colors}
+  if pos('Simple',stackmenu1.demosaic_method1.text)<>0  then {}
+    demosaic_simple(get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
     demosaic_Malvar_He_Cutler(stackmenu1.bayer_pattern1.itemindex);{make from sensor bayer pattern the three colors}
 
