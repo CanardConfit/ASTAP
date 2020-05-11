@@ -437,7 +437,7 @@ begin
     img_binned:=nil;
     nrstars:=Length(starlist3[0]);
 
-    if width2<1000 then memo2_message('Info: REDUCE OR REMOVE DOWNSAMPLING IS RECOMMENDED. Set this option in stack menu, tab alignment.');
+    if width2<980 then memo2_message('Info: REDUCE OR REMOVE DOWNSAMPLING IS RECOMMENDED. Set this option in stack menu, tab alignment.');
     width2:=old_width; {restore to original size}
     height2:=old_height;
     naxis3:=old_naxis3;
@@ -516,7 +516,7 @@ begin
   max_fov:=strtofloat2(stackmenu1.max_fov1.caption);{for very large images only}
   max_fov:=min(max_fov,9.53);{warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
 
-  min_star_size_arcsec:=strtofloat2(stackmenu1.min_star_size1.caption); {arc sec};
+  min_star_size_arcsec:=strtofloat2(stackmenu1.min_star_size1.text); {arc sec};
 
   if ((fov_specified=false) and (cdelt2<>0)) then {no fov in native command line and cdelt2 in header}
     fov:=height2*abs(cdelt2) {calculate FOV. PI can give negative CDELT2}

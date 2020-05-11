@@ -775,7 +775,7 @@ procedure update_generic(message_key,message_value,message_comment:string);{upda
 var
    count1: integer;
 begin
-  if ((pos('HISTORY',message_key)=0) and (pos('COMMENT',message_key)=0)) then {allow mulitple lines of hisotry and comments}
+  if ((pos('HISTORY',message_key)=0) and (pos('COMMENT',message_key)=0)) then {allow multiple lines of hisotry and comments}
   begin
     while length(message_value)<20 do message_value:=' '+message_value;{extend length, right aligned}
     while length(message_key)<8 do message_key:=message_key+' ';{make standard lenght of 8}
@@ -1255,7 +1255,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.362 dated 2020-05-8';
+  #13+#10+'Version ß0.9.362c dated 2020-05-11';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7478,6 +7478,8 @@ begin
   form_astrometry_net1.release;
 end;
 
+
+
 procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
 begin
   if add_marker_position1.checked then
@@ -8273,6 +8275,141 @@ begin
   else result:=false; {no parameters specified}
 end;
 
+procedure write_astronomy_wcs;
+var
+  TheFile4 : tfilestream;
+  I : integer;
+  line0       : ansistring;
+  aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
+
+begin
+  try
+   TheFile4:=tfilestream.Create(ChangeFileExt(filename2,'.wcs'), fmcreate );
+
+  {write memo1 header to file}
+   for i:=0 to 79 do empthy_line[i]:=#32;{space}
+   i:=0;
+   repeat
+      if i<mainwindow.memo1.lines.count then
+      begin
+        line0:=mainwindow.memo1.lines[i];
+        while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
+        strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
+        thefile4.writebuffer(aline,80);{write updated header from memo1}
+      end
+      else
+      thefile4.writebuffer(empthy_line,80);{write empthy line}
+      inc(i);
+   until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
+
+  except
+    TheFile4.free;
+    exit;
+  end;
+
+  TheFile4.free;
+
+end;
+
+procedure write_astronomy_xyls(stars: star_list);
+var
+  TheFile4 : tfilestream;
+  I,j        : integer;
+  line0,aantallen       : ansistring;
+  aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
+  data: longword;
+begin
+  add_text ('EXTEND  =','                   T / FITS extension                                 ');
+  add_text ('AN_FILE =',#39+'XYLS    '+#39+' / Astrometry.net file type                                 ');
+  try
+   TheFile4:=tfilestream.Create(ChangeFileExt(filename2,'.xyls'), fmcreate );
+
+  {write memo1 header to file}
+   for i:=0 to 79 do empthy_line[i]:=#32;{space}
+   i:=0;
+   repeat
+      if i<mainwindow.memo1.lines.count then
+      begin
+        line0:=mainwindow.memo1.lines[i];
+        while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
+        strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
+        thefile4.writebuffer(aline,80);{write updated header from memo1}
+      end
+      else
+      thefile4.writebuffer(empthy_line,80);{write empthy line}
+      inc(i);
+   until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
+
+   i:=0;
+   strpcopy(aline,'XTENSION= '+#39+'BINTABLE'+#39+' / FITS Binary Table Extension                              ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80); inc(i);
+   strpcopy(aline,'BITPIX  =                    8 / 8-bits character format                        ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'NAXIS   =                    2 / Tables are 2-D char. array                     ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'NAXIS1  =                    8 / Bytes in row                                   ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+
+   str(length(stars[0]):13,aantallen);
+
+   strpcopy(aline,'NAXIS2  =         '+aantallen+' /                                                ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'PCOUNT  =                    0 / Parameter count always 0                       ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'GCOUNT  =                    1 / Group count always 1                           ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TFIELDS =                    2 / No. of col in table                            ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TFORM1  = '+#39+'E       '+#39+' / Format of field                                          ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TTYPE1  = '+#39+'X       '+#39+' / Field label                                              ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TUNIT1  =                      / Physical unit of field                         ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TFORM2  = '+#39+'E       '+#39+' / Format of field                                          ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TTYPE2  = '+#39+'Y       '+#39+' / Field label                                              ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TUNIT1  =                      / Physical unit of field                         ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'ORIGIN  = '+#39+'ASTAP'+#39+' / Written by ASTAP                                            ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'END                                                                             ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+
+   while  frac(i*80/2880)>0 do
+   begin
+     thefile4.writebuffer(empthy_line,80);{write empthy line}
+     inc(i);
+   end;
+
+   i:=0;
+   repeat
+      data:=INT_IEEE4_reverse(stars[0,i]+1);{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
+      thefile4.writebuffer(data,4);{write x value}
+      data:=INT_IEEE4_reverse(stars[1,i]+1);{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
+      thefile4.writebuffer(data,4);{write x value}
+      inc(i,1);{counter of 8 bytes or 2*4 bytes}
+   until i>=length(stars[0]);
+   j:=80-round(80*frac(i*8/80));{remainder in bytes till written muliple of 80 char}
+   thefile4.writebuffer(empthy_line,j);{write till multiply of 80}
+   i:=(8*i + j*80) div 80 ;{how many 80 bytes record left till multiple of 2880}
+
+   while  frac(i*80/2880)>0 do {write till 2880 block is written}
+   begin
+     thefile4.writebuffer(empthy_line,80);{write empthy line}
+     inc(i);
+   end;
+
+
+  except
+    TheFile4.free;
+    exit;
+  end;
+
+  TheFile4.free;
+
+end;
 
 
 procedure Tmainwindow.FormShow(Sender: TObject);
@@ -8343,6 +8480,7 @@ begin
         '-update  {update the FITS header with the found solution}' +#10+#10+
         '-tofits  binning[1,2,3,4,6,8]  {Make new fits file from PNG/JPG file input}'+#10+
         '-annotate  {Produce deepsky annotated jpg file}' +#10+#10+
+        '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+#10+
         'Preference will be given to the command line values.'
         ), pchar('ASTAP astrometric solver usage:'),MB_OK);
 
@@ -8413,7 +8551,17 @@ begin
           write_ini(true);{write solution to ini file}
 
           add_long_comment('cmdline:'+cmdline);{log command line in wcs file}
-          try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
+          remove_key('NAXIS1  =',true{one});
+          remove_key('NAXIS2  =',true{one});
+          update_integer('NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
+          update_integer('BITPIX  =',' /                                                ' ,8    );
+
+          if hasoption('wcs') then
+            write_astronomy_wcs  {write WCS astronomy.net style}
+          else
+            try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
+
+          if hasoption('xyls') then write_astronomy_xyls(starlist2);
 
           //log_to_file(cmdline+' =>succes');
 
@@ -9694,7 +9842,6 @@ begin
 
       if sumval<100000 then af:=min(0.9,rs/10) {variable asymmetry factor. 1 is allow only prefect symmetrical, 0.000001 if off.  More critital detection if rs is large   }
                        else af:=min(0.7,rs/10);{relax criteria for bright stars. Above 100000 no galaxy or nebula}
-
 
       {check for asymmetry of detected star using the four quadrants}
       if val_00<val_01  then begin faintA:=val_00; brightA:=val_01; end else begin faintA:=val_01; brightA:=val_00; end;

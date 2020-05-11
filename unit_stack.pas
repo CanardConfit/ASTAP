@@ -2000,8 +2000,12 @@ begin
       plot_fits(mainwindow.image1,false,true); {remove tetrahedrons}
     get_background(0,img_loaded,false{histogram already available},true {unknown, calculate also noise level} ,{var}cblack,star_level);
 
-    if use_astrometry_internal1.checked then hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size1.caption){arc sec}/(cdelt2 *3600) ){to ignore hot pixels which are too small}
-                                        else hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+    if use_astrometry_internal1.checked then
+    begin
+      if cdelt2=0 {jpeg} then   cdelt2:=strtofloat2(search_fov1.text)/height2;
+      hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size1.text){arc sec}/(cdelt2 *3600) );{to ignore hot pixels which are too small}
+    end
+    else hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
     find_stars(img_loaded,hfd_min,starlist1);{find stars and put them in a list}
     find_tetrahedrons_ref;{find tetrahedrons for reference image}

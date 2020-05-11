@@ -404,8 +404,7 @@ begin
   begin
   //  memo2_message(inttostr(i)+ ' , '+floattostr2(snr_list[i])) ;
     snr_scaled:=trunc(snr_list[i]*range/highest_snr);
-//    if snr_scaled<=range then  {2019-11-30, this line is not required}
-     snr_histogram[snr_scaled]:=snr_histogram[snr_scaled]+1;{count how often this snr value is measured}
+    snr_histogram[snr_scaled]:=snr_histogram[snr_scaled]+1;{count how often this snr value is measured}
   end;
   count:=0;
   i:=range+1;
