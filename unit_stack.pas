@@ -701,7 +701,7 @@ type
     procedure Viewimage1Click(Sender: TObject);
   private
     { Private declarations }
-     Descending: Boolean;
+//     Descending: Boolean;
      SortedColumn: Integer;
 
   public
@@ -2892,19 +2892,48 @@ end;
 procedure Tstackmenu1.listview1ColumnClick(Sender: TObject;
   Column: TListColumn);
 begin
-  TListView(Sender).SortType := stNone;
-  if Column.Index<>SortedColumn then
-  begin
-    SortedColumn := Column.Index;
-    Descending := False;
-  end
-  else
-  Descending := not Descending;
-  TListView(Sender).SortType := stText;
+//  TListView(Sender).SortType := stNone;
+//  if Column.Index<>SortedColumn then
+//  begin
+//    SortedColumn := Column.Index;
+//    Descending := False;
+//  end
+//  else
+//  Descending := not Descending;
+//  TListView(Sender).SortType := stText;
+
+  SortedColumn:= Column.Index;
 
   {clear alignment}
   if sender=listview6 then
               stackmenu1.clear_blink_alignment1Click(sender);{sequence change, reanalyse for alignment}
+end;
+
+function CompareAnything(const s1, s2: string): Integer;
+var a,b : double;
+    s   : string;
+    error1:integer;
+begin
+  s:=StringReplace(s1,',','.',[]); {replaces komma by dot}
+  s:=trim(s); {remove spaces}
+  val(s,a,error1);
+  if error1=0 then
+  begin
+    s:=StringReplace(s2,',','.',[]); {replaces komma by dot}
+    s:=trim(s); {remove spaces}
+    val(s,b,error1);
+  end;
+
+  if error1=0 then {process as numerical values}
+  begin
+    if  a>b then result:=+1
+    else
+    if  a<b then result:=-1
+    else
+    result:=0;
+  end
+  else
+    result:=CompareText(s1,s2);{compare as text}
 end;
 
 procedure Tstackmenu1.listview1Compare(Sender: TObject; Item1, Item2: TListItem;
@@ -2912,8 +2941,12 @@ procedure Tstackmenu1.listview1Compare(Sender: TObject; Item1, Item2: TListItem;
 begin
   if SortedColumn = 0 then Compare := CompareText(Item1.Caption, Item2.Caption)
   else
-  if SortedColumn <> 0 then Compare := CompareText(Item1.SubItems[SortedColumn-1], Item2.SubItems[SortedColumn-1]);
-  if Descending then Compare := -Compare;
+  if SortedColumn <> 0 then Compare := CompareAnything(Item1.SubItems[SortedColumn-1], Item2.SubItems[SortedColumn-1]);
+//  if Descending then Compare := -Compare;
+
+
+  if TListView(Sender).SortDirection = sdDescending then
+       Compare := -Compare;
 end;
 
 procedure listview_view(tl : tlistview);
@@ -3026,6 +3059,8 @@ begin
         if success then
         begin
           exposure:=extract_exposure_from_filename(filename1); {try to extract exposure time from filename}
+          set_temperature:=extract_temperature_from_filename(filename1);
+          update_text('OBJECT  =',#39+extract_objectname_from_filename(filename1)+#39); {spaces will be added/corrected later}
           success:=save_fits(img,ChangeFileExt(filename1,'.fit'),16,false);
         end;
         if success then lv.items[c].caption:=ChangeFileExt(filename1,'.fit') {change listview name to FITS.}

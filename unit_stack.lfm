@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1604
-    ActivePage = alignment1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 6
+    TabIndex = 0
     TabOrder = 5
     object Images: TTabSheet
       Hint = 'Select here the light frames'
@@ -466,7 +466,7 @@ object stackmenu1: Tstackmenu1
         ScrollBars = ssAutoBoth
         SmallImages = ImageList_colors
         SortColumn = 5
-        SortType = stData
+        SortType = stText
         TabOrder = 3
         ViewStyle = vsReport
         OnColumnClick = listview1ColumnClick
@@ -685,7 +685,7 @@ object stackmenu1: Tstackmenu1
         ScrollBars = ssAutoBoth
         SmallImages = ImageList_colors
         SortColumn = 0
-        SortType = stData
+        SortType = stText
         TabOrder = 3
         ViewStyle = vsReport
         OnColumnClick = listview1ColumnClick
@@ -851,7 +851,7 @@ object stackmenu1: Tstackmenu1
         ScrollBars = ssAutoBoth
         SmallImages = ImageList_colors
         SortColumn = 9
-        SortType = stData
+        SortType = stText
         TabOrder = 4
         ViewStyle = vsReport
         OnColumnClick = listview1ColumnClick
@@ -992,7 +992,7 @@ object stackmenu1: Tstackmenu1
         ScrollBars = ssAutoBoth
         SmallImages = ImageList_colors
         SortColumn = 8
-        SortType = stData
+        SortType = stText
         TabOrder = 3
         ViewStyle = vsReport
         OnColumnClick = listview1ColumnClick
@@ -1085,7 +1085,7 @@ object stackmenu1: Tstackmenu1
         SmallImages = ImageList_colors
         SortColumn = 0
         SortDirection = sdDescending
-        SortType = stData
+        SortType = stText
         TabOrder = 0
         ViewStyle = vsReport
         OnColumnClick = listview1ColumnClick
@@ -2868,7 +2868,7 @@ object stackmenu1: Tstackmenu1
         ScrollBars = ssAutoBoth
         SmallImages = ImageList_colors
         SortColumn = 9
-        SortType = stData
+        SortType = stText
         TabOrder = 0
         ViewStyle = vsReport
         OnColumnClick = listview1ColumnClick
@@ -3327,7 +3327,7 @@ object stackmenu1: Tstackmenu1
         ScrollBars = ssAutoBoth
         SmallImages = ImageList_colors
         SortColumn = 9
-        SortType = stData
+        SortType = stText
         TabOrder = 8
         ViewStyle = vsReport
         OnColumnClick = listview1ColumnClick
@@ -3578,7 +3578,7 @@ object stackmenu1: Tstackmenu1
         ScrollBars = ssAutoBoth
         SmallImages = ImageList_colors
         SortColumn = 12
-        SortType = stData
+        SortType = stText
         TabOrder = 2
         ViewStyle = vsReport
         OnColumnClick = listview1ColumnClick

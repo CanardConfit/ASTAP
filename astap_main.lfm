@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 342
+  Left = 259
   Height = 616
   Hint = ' '
-  Top = 294
+  Top = 291
   Width = 1343
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -181,25 +181,6 @@ object mainwindow: Tmainwindow
     TabOrder = 1
     Text = '+00 00 00.00'
   end
-  object Memo1: TMemo
-    Left = 596
-    Height = 163
-    Top = 5
-    Width = 743
-    Anchors = [akTop, akLeft, akRight]
-    Font.Height = -9
-    Font.Name = 'Courier'
-    Lines.Strings = (
-      ''
-    )
-    OnChange = Memo1Change
-    OnKeyUp = Memo1KeyUp
-    ParentFont = False
-    PopupMenu = PopupMenu_memo1
-    ScrollBars = ssVertical
-    TabOrder = 2
-    WordWrap = False
-  end
   object inversemousewheel1: TCheckBox
     Left = 456
     Height = 19
@@ -216,7 +197,7 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 3
+    TabOrder = 2
   end
   object Panel1: TPanel
     Left = 0
@@ -238,7 +219,7 @@ object mainwindow: Tmainwindow
     ParentColor = False
     ParentFont = False
     ParentShowHint = False
-    TabOrder = 4
+    TabOrder = 3
     OnMouseMove = Panel1MouseMove
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
@@ -356,7 +337,7 @@ object mainwindow: Tmainwindow
     Font.Pitch = fpVariable
     Font.Quality = fqDraft
     ParentFont = False
-    TabOrder = 5
+    TabOrder = 4
     object save1: TButton
       Left = 150
       Height = 30
@@ -415,7 +396,7 @@ object mainwindow: Tmainwindow
     Font.Pitch = fpVariable
     Font.Quality = fqDraft
     ParentFont = False
-    TabOrder = 6
+    TabOrder = 5
     object Label12: TLabel
       Left = 0
       Height = 15
@@ -665,7 +646,7 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 7
+    TabOrder = 6
     Text = 'WCS'
   end
   object StatusBar1: TStatusBar
@@ -716,7 +697,7 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 9
+    TabOrder = 8
   end
   object SpeedButton1: TSpeedButton
     Left = 8
@@ -778,6 +759,65 @@ object mainwindow: Tmainwindow
     ShowHint = True
     ParentFont = False
     ParentShowHint = False
+  end
+  object PageControl1: TPageControl
+    Left = 595
+    Height = 177
+    Top = 0
+    Width = 751
+    ActivePage = TabSheet1
+    Anchors = [akTop, akLeft, akRight]
+    TabIndex = 0
+    TabOrder = 9
+    object TabSheet1: TTabSheet
+      Caption = 'Header'
+      ClientHeight = 149
+      ClientWidth = 743
+      object Memo1: TMemo
+        Left = 0
+        Height = 149
+        Top = 0
+        Width = 743
+        Align = alClient
+        Anchors = [akTop, akLeft, akRight]
+        Font.Height = -9
+        Font.Name = 'Courier'
+        Lines.Strings = (
+          ''
+        )
+        OnChange = Memo1Change
+        OnKeyUp = Memo1KeyUp
+        ParentFont = False
+        PopupMenu = PopupMenu_memo1
+        ScrollBars = ssVertical
+        TabOrder = 0
+        WordWrap = False
+      end
+    end
+    object TabSheet2: TTabSheet
+      Caption = 'Table'
+      ClientHeight = 149
+      ClientWidth = 743
+      object Memo3: TMemo
+        Left = 0
+        Height = 149
+        Top = 0
+        Width = 743
+        Align = alClient
+        Anchors = [akTop, akLeft, akRight]
+        Font.Height = -9
+        Font.Name = 'Courier'
+        Lines.Strings = (
+          ''
+        )
+        OnKeyUp = Memo1KeyUp
+        ParentFont = False
+        ReadOnly = True
+        ScrollBars = ssAutoVertical
+        TabOrder = 0
+        WordWrap = False
+      end
+    end
   end
   object MainMenu1: TMainMenu
     Images = ImageList1
@@ -2636,8 +2676,8 @@ object mainwindow: Tmainwindow
     end
   end
   object PopupMenu_memo1: TPopupMenu
-    left = 1016
-    top = 36
+    left = 1048
+    top = 40
     object Menufind1: TMenuItem
       Caption = 'Find'
       ShortCut = 16454
@@ -2655,6 +2695,38 @@ object mainwindow: Tmainwindow
     object menupaste: TMenuItem
       Caption = 'Paste'
       OnClick = menupasteClick
+    end
+    object select_all1: TMenuItem
+      Caption = 'Select all'
+      ShortCut = 16449
+      OnClick = select_all1Click
+    end
+  end
+  object PopupMenu_memo2: TPopupMenu
+    left = 1120
+    top = 40
+    object Menufind2: TMenuItem
+      Caption = 'Find'
+      ShortCut = 16454
+      OnClick = Menufind1Click
+    end
+    object menufindnext2: TMenuItem
+      Caption = 'Find next'
+      ShortCut = 114
+      OnClick = menufindnext1Click
+    end
+    object menucopy2: TMenuItem
+      Caption = 'Copy'
+      OnClick = menucopy1Click
+    end
+    object menupaste1: TMenuItem
+      Caption = 'Paste'
+      OnClick = menupasteClick
+    end
+    object select_all2: TMenuItem
+      Caption = 'Select all'
+      ShortCut = 16449
+      OnClick = select_all1Click
     end
   end
 end

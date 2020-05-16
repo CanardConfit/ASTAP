@@ -516,6 +516,7 @@ begin
             starlist1[0,nrstars-1]:=xc; {store star position}
             starlist1[1,nrstars-1]:=yc;
             snr_list[nrstars-1]:=snr;{store SNR}
+
             if  snr>highest_snr then highest_snr:=snr;{find to highest snr value}
           end;
         end;
@@ -534,7 +535,7 @@ begin
   SetLength(starlist1,2,nrstars);{set length correct}
   setlength(snr_list,nrstars);{set length correct}
 
-  if nrstars>max_stars then {reduce number of stars if too high}
+   if nrstars>max_stars then {reduce number of stars if too high}
   begin
     if solve_show_log then memo2_message('Selecting the '+ inttostr(max_stars)+' brightest stars only.');
     get_brightest_stars(max_stars, highest_snr, snr_list, starlist1);
