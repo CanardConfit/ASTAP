@@ -6109,7 +6109,7 @@ object stackmenu1: Tstackmenu1
   end
   object OpenDialog1: TOpenDialog
     Title = 'Open an existing file'
-    left = 832
+    left = 744
     top = 528
   end
   object ImageList2: TImageList
@@ -6697,8 +6697,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu1: TPopupMenu
     Images = ImageList2
-    left = 904
-    top = 528
+    left = 824
+    top = 536
     object Viewimage1: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7252,8 +7252,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu2: TPopupMenu
     Images = ImageList2
-    left = 936
-    top = 528
+    left = 888
+    top = 536
     object Viewimage2: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7305,8 +7305,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu3: TPopupMenu
     Images = ImageList2
-    left = 976
-    top = 528
+    left = 944
+    top = 536
     object Viewimage3: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7358,8 +7358,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu4: TPopupMenu
     Images = ImageList2
-    left = 1008
-    top = 528
+    left = 1016
+    top = 536
     object Viewimage4: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7411,8 +7411,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu5: TPopupMenu
     Images = ImageList2
-    left = 1048
-    top = 528
+    left = 1088
+    top = 536
     object Viewimage5: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7536,7 +7536,7 @@ object stackmenu1: Tstackmenu1
       'ColorS=F0FBFF'
       'ColorT=A4A0A0'
     )
-    left = 848
+    left = 752
     top = 584
   end
   object PopupMenu7: TPopupMenu

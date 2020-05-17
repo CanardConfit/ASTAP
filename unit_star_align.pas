@@ -110,7 +110,6 @@ begin
   end;
 end; {lsq_fit}
 
-
 procedure display_tetrahedrons(starlisttetrahedrons :star_list);{draw tetrahedrons}
 var
    i, nrtetrahedrons,x,y, flipx,flipy: integer;
@@ -119,7 +118,6 @@ begin
   mainwindow.image1.Canvas.Pen.Mode := pmMerge;
   mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
   mainwindow.image1.Canvas.brush.Style:=bsClear;
-
 
   if mainwindow.Fliphorizontal1.Checked=true then
   begin

@@ -6087,26 +6087,16 @@ begin
   osc_colour_smooth1.enabled:=make_osc_color1.checked;
 end;
 
-procedure select_all(tt :tlistview);
-var
-  i:integer;
-begin
-  tt.Items.BeginUpdate;
-  for i := 0 to tt.Items.Count-1 do tt.Items[i].Selected:=true;
-  tt.Items.EndUpdate;
-
-  tt.setfocus;{set focus for next ctrl-C. Somehow it is lost}
-end;
-
 procedure Tstackmenu1.selectall1Click(Sender: TObject);
 begin
-  if sender=selectall1 then select_all(listview1);{popupmenu}
-  if sender=selectall2 then select_all(listview2);{popupmenu}
-  if sender=selectall3 then select_all(listview3);{popupmenu}
-  if sender=selectall4 then select_all(listview4);{popupmenu}
-  if sender=selectall6 then select_all(listview6);{popupmenu blink}
-  if sender=selectall7 then select_all(listview7);{popupmenu photometry}
-  if sender=selectall8 then select_all(listview8);{popupmenu photometry}
+  if sender=selectall1 then begin listview1.selectall; listview1.setfocus;{set focus for next ctrl-C. Somehow it is lost}  end;
+  if sender=selectall2 then begin listview2.selectall; listview2.setfocus; end;
+  if sender=selectall3 then begin listview3.selectall; listview3.setfocus; end;
+  if sender=selectall4 then begin listview4.selectall; listview4.setfocus; end;
+
+  if sender=selectall6 then begin listview6.selectall; listview6.setfocus; end;
+  if sender=selectall7 then begin listview7.selectall; listview7.setfocus; end;
+  if sender=selectall8 then begin listview8.selectall; listview8.setfocus; end;
 end;
 
 procedure remove_background( var img: image_array);
@@ -6225,8 +6215,6 @@ begin
     FindClose(SearchRec);
   end;
 end;
-
-
 
 procedure Tstackmenu1.analyseblink1Click(Sender: TObject);
 var
