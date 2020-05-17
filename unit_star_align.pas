@@ -31,7 +31,6 @@ var
    A_XYpositions                          : star_list;
    b_Xrefpositions,b_Yrefpositions        :  array of double;
 
-
    nr_references,nr_references2               : integer;
    solution_vectorX, solution_vectorY,solution_cblack   : solution_vector ;
 
@@ -442,8 +441,9 @@ var
    fitsX, fitsY,nrstars,size,i,j, max_stars,retries    : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level      : double;
    img_temp2       : image_array;
-   snr_list        : array of double;
    solve_show_log  : boolean;
+   snr_list        : array of double;
+
 // flip_vertical,flip_horizontal  : boolean;
 // starX,starY :integer;
    startTick2  : qword;{for timing/speed purposes}

@@ -1421,7 +1421,7 @@ begin
 
   end;{read image}
 
-  if extend then {table behind}
+  if extend then {table behind?}
   begin {read binary table, future}
     if naxis<2 then
     begin
@@ -1518,6 +1518,9 @@ begin
      for k:=0 to tfields-1 do {columns}
         aline:=aline+ttype[k]+#9;
      aline:=aline+sLineBreak;
+
+     setlength(starlist2,2,naxis2);
+
      for j:=0 to naxis2-1 do {rows}
      begin
        if ascii_table then
@@ -1530,7 +1533,7 @@ begin
        begin
          if ascii_table then {ascii table}
          begin
-           if k>0 then insert(#9,field,tbcol[k]+k-1);
+           if k>0 then insert(#9,field,tbcol[k]+k-1);{insert tab}
            if k=tfields-1 then aline:=aline+field;{field is ready}
          end
          else
@@ -1538,6 +1541,7 @@ begin
          begin
            reader.read(fitsbuffer[0],4);
            x_longword:=swapendian(fitsbuffer4[0]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
+           if k<=1 then starlist2[k,j]:=x_single; {import a star list}
            aline:=aline+floattostrF(x_single,FFexponent,7,0)+ #9; {int_IEEE, swap four bytes and the read as floating point}
          end
          else
@@ -1545,6 +1549,7 @@ begin
          begin
            reader.read(fitsbuffer[0],8);
            x_int64:=swapendian(fitsbuffer8[0]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
+           if k<=1 then starlist2[k,j]:=x_double; {import a star list}
            aline:=aline+floattostrF(x_double,FFexponent,7,0)+ #9; {int_IEEE, swap four bytes and the read as floating point}
          end
          else
@@ -2143,7 +2148,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.362g dated 2020-05-16';
+  #13+#10+'Version ß0.9.363 dated 2020-05-17';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -8550,134 +8555,134 @@ begin
 
 end;
 
-//procedure write_astronomy_axy(stars: star_list;snr_list        : array of double );
-//var
-//  TheFile4 : tfilestream;
-//  I,j        : integer;
-//  line0,aantallen       : ansistring;
-//  aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
-//  data: longword;
-//begin
+procedure write_astronomy_axy(stars: star_list;snr_list        : array of double );
+var
+  TheFile4 : tfilestream;
+  I,j        : integer;
+  line0,aantallen       : ansistring;
+  aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
+  data: longword;
+begin
 
-//  remove_key('NAXIS1  =',true{one});     {this will damge the header}
-//  remove_key('NAXIS2  =',true{one});
-//  update_integer('NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
-//  update_integer('BITPIX  =',' /                                                ' ,8    );
+  remove_key('NAXIS1  =',true{one});     {this will damge the header}
+  remove_key('NAXIS2  =',true{one});
+  update_integer('NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
+  update_integer('BITPIX  =',' /                                                ' ,8    );
 
-//  add_text ('EXTEND  =','                   T / There may be FITS extension                    ');
-  //add_text ('AN_FILE =',#39+'XYLS    '+#39+' / Astrometry.net file type                                 ');
+  add_text ('EXTEND  =','                   T / There may be FITS extension                    ');
+  add_text ('AN_FILE =',#39+'XYLS    '+#39+' / Astrometry.net file type                                 ');
 
-//  try
-//   TheFile4:=tfilestream.Create(ChangeFileExt(filename2,'.xyls'), fmcreate );
+  try
+   TheFile4:=tfilestream.Create(ChangeFileExt(filename2,'.xyls'), fmcreate );
 
   {write memo1 header to file}
-//   for i:=0 to 79 do empthy_line[i]:=#32;{space}
-//   i:=0;
-//   repeat
-//      if i<mainwindow.memo1.lines.count then
-//      begin
-//        line0:=mainwindow.memo1.lines[i];
-//        while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
-//        strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
-//        thefile4.writebuffer(aline,80);{write updated header from memo1}
-//      end
-//      else
-//      thefile4.writebuffer(empthy_line,80);{write empthy line}
-//      inc(i);
-//   until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
+   for i:=0 to 79 do empthy_line[i]:=#32;{space}
+   i:=0;
+   repeat
+     if i<mainwindow.memo1.lines.count then
+      begin
+        line0:=mainwindow.memo1.lines[i];
+        while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
+        strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
+        thefile4.writebuffer(aline,80);{write updated header from memo1}
+      end
+      else
+      thefile4.writebuffer(empthy_line,80);{write empthy line}
+     inc(i);
+   until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
 
-//   i:=0;
-//   strpcopy(aline,'XTENSION= '+#39+'BINTABLE'+#39+' / FITS Binary Table Extension                              ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80); inc(i);
-//   strpcopy(aline,'BITPIX  =                    8 / 8-bits character format                        ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'NAXIS   =                    2 / Tables are 2-D char. array                     ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'NAXIS1  =                   16 / Bytes in row                                   ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
+   i:=0;
+   strpcopy(aline,'XTENSION= '+#39+'BINTABLE'+#39+' / FITS Binary Table Extension                              ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80); inc(i);
+   strpcopy(aline,'BITPIX  =                    8 / 8-bits character format                        ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'NAXIS   =                    2 / Tables are 2-D char. array                     ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'NAXIS1  =                   16 / Bytes in row                                   ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
 
-//   str(length(stars[0]):13,aantallen);
+   str(length(stars[0]):13,aantallen);
 
-   //strpcopy(aline,'NAXIS2  =         '+aantallen+' /                                                ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'PCOUNT  =                    0 / Parameter count always 0                       ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'GCOUNT  =                    1 / Group count always 1                           ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'TFIELDS =                    4 / No. of col in table                            ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'TFORM1  = '+#39+'E       '+#39+' / Format of field                                          ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'TTYPE1  = '+#39+'X       '+#39+' / Field label                                              ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'TUNIT1  =                      / Physical unit of field                         ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'TFORM2  = '+#39+'E       '+#39+' / Single precision floating point, 4 bytes                 ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'TTYPE2  = '+#39+'Y       '+#39+' / Field label                                              ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'TUNIT2  =                      / Physical unit of field                         ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'NAXIS2  =         '+aantallen+' /                                                ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'PCOUNT  =                    0 / Parameter count always 0                       ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'GCOUNT  =                    1 / Group count always 1                           ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TFIELDS =                    4 / No. of col in table                            ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TFORM1  = '+#39+'E       '+#39+' / Format of field                                          ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TTYPE1  = '+#39+'X       '+#39+' / Field label                                              ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TUNIT1  =                      / Physical unit of field                         ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TFORM2  = '+#39+'E       '+#39+' / Single precision floating point, 4 bytes                 ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TTYPE2  = '+#39+'Y       '+#39+' / Field label                                              ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TUNIT2  =                      / Physical unit of field                         ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
 
-//   strpcopy(aline,'TFORM3  = '+#39+'E       '+#39+' / Single precision floating point, 4 bytes                 ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'TTYPE3  = '+#39+'FLUX    '+#39+' / Field label                                              ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'TUNIT3  =                      / Physical unit of field                         ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-
-
-//   strpcopy(aline,'TFORM4  = '+#39+'E       '+#39+' / Single precision floating point, 4 bytes                 ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'TTYPE4  = '+#39+'BACKGROUND'+#39+' / Field label                                            ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'TUNIT4  =                      / Physical unit of field                         ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TFORM3  = '+#39+'E       '+#39+' / Single precision floating point, 4 bytes                 ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TTYPE3  = '+#39+'FLUX    '+#39+' / Field label                                              ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TUNIT3  =                      / Physical unit of field                         ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
 
 
-//   strpcopy(aline,'ORIGIN  = '+#39+'ASTAP'+#39+' / Written by ASTAP                                            ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-//   strpcopy(aline,'END                                                                             ');{copy 80 and not more or less}
-//   thefile4.writebuffer(aline,80);inc(i);
-
-//   while  frac(i*80/2880)>0 do
-//   begin
-//     thefile4.writebuffer(empthy_line,80);{write empthy line}
-//     inc(i);
-//   end;
-
-//   i:=0;
-//   repeat
-//      data:=INT_IEEE4_reverse(stars[0,i]+1);{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
-//      thefile4.writebuffer(data,4);{write x value}
-//      data:=INT_IEEE4_reverse(stars[1,i]+1);{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
-//      thefile4.writebuffer(data,4);{write y value}
-//      data:=INT_IEEE4_reverse(snr_list[i]);{snr}
-//      thefile4.writebuffer(data,4);{write y value}
-//      data:=INT_IEEE4_reverse(170);{background}
-//      thefile4.writebuffer(data,4);{write y value}
-//
-//      inc(i,1);{counter of 16 bytes or 4*4 bytes}
-//   until i>=length(stars[0]);
-//   j:=80-round(80*frac(i*16/80));{remainder in bytes till written muliple of 80 char}
-//   thefile4.writebuffer(empthy_line,j);{write till multiply of 80}
-//   i:=(16*i + j*80) div 80 ;{how many 80 bytes record left till multiple of 2880}
-//
-//   while  frac(i*80/2880)>0 do {write till 2880 block is written}
-//   begin
-//     thefile4.writebuffer(empthy_line,80);{write empthy line}
-//     inc(i);
-//   end;
+   strpcopy(aline,'TFORM4  = '+#39+'E       '+#39+' / Single precision floating point, 4 bytes                 ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TTYPE4  = '+#39+'BACKGROUND'+#39+' / Field label                                            ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'TUNIT4  =                      / Physical unit of field                         ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
 
 
-//except
-//    TheFile4.free;
-//    exit;
-//  end;
+   strpcopy(aline,'ORIGIN  = '+#39+'ASTAP'+#39+' / Written by ASTAP                                            ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
+   strpcopy(aline,'END                                                                             ');{copy 80 and not more or less}
+   thefile4.writebuffer(aline,80);inc(i);
 
-//  TheFile4.free;
+   while  frac(i*80/2880)>0 do
+   begin
+     thefile4.writebuffer(empthy_line,80);{write empthy line}
+     inc(i);
+   end;
 
-//end;
+   i:=0;
+   repeat
+      data:=INT_IEEE4_reverse(stars[0,i]+1);{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
+      thefile4.writebuffer(data,4);{write x value}
+      data:=INT_IEEE4_reverse(stars[1,i]+1);{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
+      thefile4.writebuffer(data,4);{write y value}
+      data:=INT_IEEE4_reverse(snr_list[i]);{snr}
+      thefile4.writebuffer(data,4);{write y value}
+      data:=INT_IEEE4_reverse(170);{background}
+      thefile4.writebuffer(data,4);{write y value}
+
+      inc(i,1);{counter of 16 bytes or 4*4 bytes}
+   until i>=length(stars[0]);
+   j:=80-round(80*frac(i*16/80));{remainder in bytes till written muliple of 80 char}
+   thefile4.writebuffer(empthy_line,j);{write till multiply of 80}
+   i:=(16*i + j*80) div 80 ;{how many 80 bytes record left till multiple of 2880}
+
+   while  frac(i*80/2880)>0 do {write till 2880 block is written}
+   begin
+     thefile4.writebuffer(empthy_line,80);{write empthy line}
+     inc(i);
+   end;
+
+
+  except
+    TheFile4.free;
+    exit;
+  end;
+
+  TheFile4.free;
+
+end;
 
 
 procedure Tmainwindow.FormShow(Sender: TObject);
@@ -8765,6 +8770,7 @@ begin
 
         if file_loaded=false then errorlevel:=16;{error file loading}
 
+        file_loaded:=(file_loaded or extend);{axy}
 
         if hasoption('fov') then
         begin
@@ -11200,6 +11206,8 @@ var
   OldCursor : TCursor;
   wo: word;
   rgb  : byteX3;{array [0..2] containing r,g,b colours}
+  aantallen : string;
+  data      : longword;
 begin
   result:=false;
 
@@ -11418,6 +11426,94 @@ begin
     FillChar(fitsbuffer, remain, 0);
     thefile4.writebuffer(fitsbuffer,remain);{write some bytes}
   end;
+
+  if false then {write extension}
+  begin
+    i:=0;
+    strpcopy(aline,'XTENSION= '+#39+'BINTABLE'+#39+' / FITS Binary Table Extension                              ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80); inc(i);
+    strpcopy(aline,'BITPIX  =                    8 / 8-bits character format                        ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80);inc(i);
+    strpcopy(aline,'NAXIS   =                    2 / Tables are 2-D char. array                     ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80);inc(i);
+    strpcopy(aline,'NAXIS1  =                    8 / Bytes in row                                   ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80);inc(i);
+
+    str(length(starlist2[0]):13,aantallen);
+
+    strpcopy(aline,'NAXIS2  =        '+aantallen+' /                                                  ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80);inc(i);
+    strpcopy(aline,'PCOUNT  =                    0 / Parameter count always 0                       ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80);inc(i);
+    strpcopy(aline,'GCOUNT  =                    1 / Group count always 1                           ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80);inc(i);
+    strpcopy(aline,'TFIELDS =                    2 / No. of col in table                            ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80);inc(i);
+    strpcopy(aline,'TFORM1  = '+#39+'E       '+#39+' / Format of field                                          ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80);inc(i);
+    strpcopy(aline,'TTYPE1  = '+#39+'X       '+#39+' / Field label                                              ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80);inc(i);
+    strpcopy(aline,'TUNIT1  =                      / Physical unit of field                         ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80);inc(i);
+    strpcopy(aline,'TFORM2  = '+#39+'E       '+#39+' / Single precision floating point, 4 bytes                 ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80);inc(i);
+    strpcopy(aline,'TTYPE2  = '+#39+'Y       '+#39+' / Field label                                              ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80);inc(i);
+    strpcopy(aline,'TUNIT2  =                      / Physical unit of field                         ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80);inc(i);
+
+//    strpcopy(aline,'TFORM3  = '+#39+'E       '+#39+' / Single precision floating point, 4 bytes                 ');{copy 80 and not more or less}
+//    thefile4.writebuffer(aline,80);inc(i);
+//    strpcopy(aline,'TTYPE3  = '+#39+'FLUX    '+#39+' / Field label                                              ');{copy 80 and not more or less}
+//    thefile4.writebuffer(aline,80);inc(i);
+//    strpcopy(aline,'TUNIT3  =                      / Physical unit of field                         ');{copy 80 and not more or less}
+//    thefile4.writebuffer(aline,80);inc(i);
+
+
+//    strpcopy(aline,'TFORM4  = '+#39+'E       '+#39+' / Single precision floating point, 4 bytes                 ');{copy 80 and not more or less}
+//    thefile4.writebuffer(aline,80);inc(i);
+//    strpcopy(aline,'TTYPE4  = '+#39+'BACKGROUND'+#39+' / Field label                                            ');{copy 80 and not more or less}
+//    thefile4.writebuffer(aline,80);inc(i);
+//    strpcopy(aline,'TUNIT4  =                      / Physical unit of field                         ');{copy 80 and not more or less}
+//    thefile4.writebuffer(aline,80);inc(i);
+
+
+    strpcopy(aline,'ORIGIN  = '+#39+'ASTAP'+#39+' / Written by ASTAP                                            ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80);inc(i);
+    strpcopy(aline,'END                                                                             ');{copy 80 and not more or less}
+    thefile4.writebuffer(aline,80);inc(i);
+
+    while  frac(i*80/2880)>0 do
+    begin
+      thefile4.writebuffer(empthy_line,80);{write empthy line}
+      inc(i);
+    end;
+
+    i:=0;
+    repeat
+       data:=INT_IEEE4_reverse(starlist2[0,i]+1);{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
+       thefile4.writebuffer(data,4);{write x value}
+       data:=INT_IEEE4_reverse(starlist2[1,i]+1);{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
+       thefile4.writebuffer(data,4);{write y value}
+//       data:=INT_IEEE4_reverse(255);{snr}
+//       thefile4.writebuffer(data,4);{write y value}
+//       data:=INT_IEEE4_reverse(1);{background}
+//       thefile4.writebuffer(data,4);{write y value}
+
+       inc(i,1);{counter of 16 bytes or 4*4 bytes}
+    until i>=length(starlist2[0]);
+    j:=80-round(80*frac(i*8/80));{remainder in bytes till written muliple of 80 char}
+    thefile4.writebuffer(empthy_line,j);{write till multiply of 80}
+    i:=(8*i + j*80) div 80 ;{how many 80 bytes record left till multiple of 2880}
+
+    while  frac(i*80/2880)>0 do {write till 2880 block is written}
+    begin
+      thefile4.writebuffer(empthy_line,80);{write empthy line}
+      inc(i);
+    end;
+  end;
+
+
 
   TheFile4.free;
 
