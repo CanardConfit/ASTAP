@@ -1,3 +1,7 @@
+ASTAP is written in Object Pascal using Lazarus the open source cross platform IDE. As compiler the integrated open source Free Pascal Compiler (FPC).
+
+For the Mac use the zipped project files.
+
 {Copyright (C) 2017-2020 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
