@@ -1,10 +1,4 @@
 ﻿unit astap_main;
-
-{$IFDEF fpc}
-  {$MODE Delphi}
-{$else}  {delphi}
-{$endif}
-
 {Copyright (C) 2017, 2020 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
@@ -34,46 +28,30 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 }
 interface
 uses
-  {$IFDEF fpc}
-   LCLIntf,{for selectobject, openURL}
-   LCLProc,
-   FPImage,
-   fpreadTIFF, {all part of fcl-image}
-   fpreadPNG,fpreadBMP,fpreadJPEG,fpreadPNM,  {images}
-   fpwriteTIFF,fpwritePNG,fpwriteBMP,fpwriteJPEG, fptiffcmn,  {images}
-   GraphType, {fastbitmap}
-   LCLVersion,
-  {$else}  {delphi}
-  {$endif}
-
-{$ifdef mswindows}
- Windows,
-   {$IFDEF fpc}{mswindows & FPC}
-    Classes, Controls, Dialogs,StdCtrls, ExtCtrls, ComCtrls, Menus,
-    windirs,{for directories from windows}
-   {$else} {delphi}
-     IOUtils,   {for TPath.GetDocumentsPath}
-     pngimage,
-     jpeg,
-     Vcl.ImgList, Vcl.ToolWin,System.Win.TaskbarCore, Vcl.Taskbar, Vcl.Controls,
-     Vcl.Menus, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ComCtrls, Vcl.ExtCtrls,
-     System.Classes,
-   {$endif}
-{$else} {unix}
-   LCLType, {for vk_...}
-   Unix,  {for console}
-   Classes, Controls, Dialogs,StdCtrls, ExtCtrls, ComCtrls, Menus, {UTF8Process,}process,
-   BaseUnix, {for fpchmod}
+ {$ifdef mswindows}
+  Windows,
+  Classes, Controls, Dialogs,StdCtrls, ExtCtrls, ComCtrls, Menus,
+  windirs,{for directories from windows}
+ {$else} {unix}
+  LCLType, {for vk_...}
+  Unix,  {for console}
+  Classes, Controls, Dialogs,StdCtrls, ExtCtrls, ComCtrls, Menus,process,
+  BaseUnix, {for fpchmod}
  {$endif}
-   {Messages,} SysUtils, Graphics, Forms, strutils, math, clipbrd, {for copy to clipboard}
-   Buttons, PopupNotifier, simpleipc,
-   CustApp, Types;
-
+  LCLIntf,{for selectobject, openURL}
+  LCLProc,
+  FPImage,
+  fpreadTIFF, {all part of fcl-image}
+  fpreadPNG,fpreadBMP,fpreadJPEG,fpreadPNM,  {images}
+  fpwriteTIFF,fpwritePNG,fpwriteBMP,fpwriteJPEG, fptiffcmn,  {images}
+  GraphType, {fastbitmap}
+  LCLVersion, SysUtils, Graphics, Forms, strutils, math,
+  clipbrd, {for copy to clipboard}
+  Buttons, PopupNotifier, simpleipc,
+  CustApp, Types;
 
 type
-
   { Tmainwindow }
-
   Tmainwindow = class(TForm)
     add_marker_position1: TMenuItem;
     BitBtn1: TBitBtn;
@@ -229,11 +207,6 @@ type
     save1: TButton;
     solve_button1: TButton;
     AddplatesolvesolutiontoselectedFITSfiles1: TMenuItem;
-
-    {$IFDEF fpc}
-    {$else} {delphi}
-     Taskbar1: TTaskbar;
-    {$endif}
 
     tools1: TMenuItem;
     TrayIcon1: TTrayIcon;
@@ -466,11 +439,11 @@ var
 
 var
    histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
-   his_total_red, his_total_green,his_total_blue : integer; {histogram number of values}
+   his_total_red, his_total_green,his_total_blue,extend : integer; {histogram number of values}
    histo_peak_position : integer;
    his_mean,noise_level : array[0..2] of integer;
    stretch_c : array[0..32768] of single;{stretch curve}
-   stretch_on, esc_pressed, fov_specified,unsaved_import,extend : boolean;
+   stretch_on, esc_pressed, fov_specified,unsaved_import : boolean;
    set_temperature : integer;
    star_level  : double;
    object_name, filter_name,calstat,imagetype ,sitelat, sitelong: string;
@@ -492,65 +465,62 @@ var
   position_find: Integer; {for fits header memo1 popup menu}
 const
   PatternToFind : string=''; {for fits header memo1 popup menu }
+  max_range  {range histogram 255 or 65535 or streched} : integer=255;
+  width2  : integer=100;
+  height2: integer=100;{do not use reserved word height}
+  naxis  : integer=2;{number of dimensions}
+  naxis3 : integer=1;{number of colors}
+  fits_file: boolean=false;
+  image_move_to_center : boolean=false;
+  ra0 : double=0;
+  dec0: double=0; {plate center values}
+  crpix1: double=0;{reference pixel}
+  crpix2: double=0;
+  cdelt1: double=0;{deg/pixel for x}
+  cdelt2: double=0;
+  xpixsz: double=0;//Pixel Width in microns (after binning)
+  ypixsz: double=0;//Pixel height in microns (after binning)
+  focallen: double=0;
+  down_x: integer=0;
+  down_y: integer=0;
+  width_radians : double=(140/60)*pi/180;
+  height_radians: double=(100/60)*pi/180;
+  mouse_enter : integer=0;{for crop function}
+  application_path:string='';{to be set in main}
+  database_path:string='';{to be set in main}
+  bayerpat: string='';{bayer pattern}
+  bayerpattern_final:integer=0;
+  xbayroff: double=0;{additional bayer pattern offset to apply}
+  Ybayroff: double=0;{additional bayer pattern offset to apply}
+  annotated : boolean=false;{any annotation in fits file?}
+  copy_paste :boolean=false;
 
+  shape_fitsX: double=0;
+  shape_fitsY: double=0;
+  shape_marker1_fitsX: double=10;
+  shape_marker1_fitsY: double=10;
+  shape_marker2_fitsX: double=20;
+  shape_marker2_fitsY: double=20;
+  shape_marker3_fitsX: double=0;
+  shape_marker3_fitsY: double=0;
 
-const
-   max_range  {range histogram 255 or 65535 or streched} : integer=255;
-   width2  : integer=100;
-   height2: integer=100;{do not use reserved word height}
-   naxis  : integer=2;{number of dimensions}
-   naxis3 : integer=1;{number of colors}
-   fits_file: boolean=false;
-   image_move_to_center : boolean=false;
-   ra0 : double=0;
-   dec0: double=0; {plate center values}
-   crpix1: double=0;{reference pixel}
-   crpix2: double=0;
-   cdelt1: double=0;{deg/pixel for x}
-   cdelt2: double=0;
-   xpixsz: double=0;//Pixel Width in microns (after binning)
-   ypixsz: double=0;//Pixel height in microns (after binning)
-   focallen: double=0;
-   down_x: integer=0;
-   down_y: integer=0;
-   width_radians : double=(140/60)*pi/180;
-   height_radians: double=(100/60)*pi/180;
-   mouse_enter : integer=0;{for crop function}
-   application_path:string='';{to be set in main}
-   database_path:string='';{to be set in main}
-   bayerpat: string='';{bayer pattern}
-   bayerpattern_final:integer=0;
-   xbayroff: double=0;{additional bayer pattern offset to apply}
-   Ybayroff: double=0;{additional bayer pattern offset to apply}
-   annotated : boolean=false;{any annotation in fits file?}
-   copy_paste :boolean=false;
+  commandline_execution : boolean=false;{program executed in command line}
+  errorlevel        : integer=0;{report errors when shutdown}
 
-   shape_fitsX: double=0;
-   shape_fitsY: double=0;
-   shape_marker1_fitsX: double=10;
-   shape_marker1_fitsY: double=10;
-   shape_marker2_fitsX: double=20;
-   shape_marker2_fitsY: double=20;
-   shape_marker3_fitsX: double=0;
-   shape_marker3_fitsY: double=0;
-
-   commandline_execution : boolean=false;{program executed in command line}
-   errorlevel        : integer=0;{report errors when shutdown}
-
-   mouse_positionRADEC1 : string='';{For manual reference solving}
-   mouse_positionRADEC2 : string='';{For manual reference solving}
-   flipped_img          : string='';
-   bayer_pattern : array[0..3] of string=('GRBG',
-                                          'BGGR',
-                                          'RGGB',
-                                          'GBRG');
-   annotation_color: tcolor=clyellow;
-   annotation_diameter : integer=20;
+  mouse_positionRADEC1 : string='';{For manual reference solving}
+  mouse_positionRADEC2 : string='';{For manual reference solving}
+  flipped_img          : string='';
+  bayer_pattern : array[0..3] of string=('GRBG',
+                                        'BGGR',
+                                        'RGGB',
+                                        'GBRG');
+  annotation_color: tcolor=clyellow;
+  annotation_diameter : integer=20;
 
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;var sep: double);
-function load_fits(filen:string;light {load as light of dark/flat},load_data,reset_var:boolean;var img_loaded2: image_array): boolean;{load fits file}
+function load_fits(filen:string;light {load as light of dark/flat},load_data :boolean;var img_loaded2: image_array): boolean;{load fits file}
 procedure plot_fits(img: timage;center_image,show_header:boolean);
 procedure getfits_histogram(img: image_array; mode :integer);{get histogram, plot histogram, set min & max}
 procedure HFD(img: image_array; x1,y1,rs{box size}: integer; var hfd1,star_fwhm,snr{peak/sigma noise},flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity}
@@ -560,7 +530,7 @@ function load_image(re_center, plot:boolean) : boolean; {load fits or PNG, BMP, 
 
 procedure demosaic_bayer; {convert OSC image to colour}
 
-Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel floating}
+Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel float}
 function save_fits(img: image_array;filen2:ansistring;type1:integer;override1:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 
 procedure update_text(inpt,comment1:string);{update or insert text in header}
@@ -679,7 +649,6 @@ var
   fitsbufferSINGLE: array[0..round(bufwide/4)] of single absolute fitsbuffer;{buffer for floating bit ( -32) FITS file}
   fitsbufferDouble: array[0..round(bufwide/8)] of double absolute fitsbuffer;{buffer for floating bit ( -64) FITS file}
 
-
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_290, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid, unit_astrometry_net, unit_live_stacking;
@@ -699,49 +668,45 @@ var
 
 const
   use_dataminmax : boolean=false;
-   crMyCursor = 5;
+  crMyCursor = 5;
 
-const
-   bandpass:double=0;{from fits file}
-   equinox:double=0;{from fits file}
-   SaveasTIFF1filterindex : integer=1;
-   SaveasJPGPNGBMP1filterindex : integer=4;
-   LoadFITSPNGBMPJPEG1filterindex: integer=1;
-   marker_position : string='';
+  bandpass:double=0;{from fits file}
+  equinox:double=0;{from fits file}
+  SaveasTIFF1filterindex : integer=1;
+  SaveasJPGPNGBMP1filterindex : integer=4;
+  LoadFITSPNGBMPJPEG1filterindex: integer=1;
+  marker_position : string='';
 
-
-
-function load_fits(filen:string;light {load as light of dark/flat},load_data,reset_var:boolean;var img_loaded2: image_array): boolean;{load fits file}
+function load_fits(filen:string;light {load as light of dark/flat},load_data: boolean ;var img_loaded2: image_array): boolean;{load fits file}
 {if light=true then read also ra0, dec0 ....., else load as dark, flat}
 {if load_data then read all else header only}
 {if reset_var=true, reset variables to zero}
 var
-   header    : array[0..2880] of ansichar;
-   i,j,k,nr,error3,col,naxis1, reader_position            : integer;
-   fract,dummy,scale,exptime,ccd_temperature              : double;
-   col_float,bscale,measured_max  : single;
-   s                 : string[3];
-   bzero             : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
-   wo                : word;   {for 16 signed integer}
-   sign_int          : smallint absolute wo;{for 16 signed integer}
-   aline,number,field : ansistring;
-   rgbdummy          : byteX3;
+  header    : array[0..2880] of ansichar;
+  i,j,k,nr,error3,col,naxis1, reader_position            : integer;
+  fract,dummy,scale,exptime,ccd_temperature              : double;
+  col_float,bscale,measured_max  : single;
+  s                 : string[3];
+  bzero             : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
+  wo                : word;   {for 16 signed integer}
+  sign_int          : smallint absolute wo;{for 16 signed integer}
+  aline,number,field : ansistring;
+  rgbdummy          : byteX3;
 
-     x_longword  : longword;
-    x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
-    x_int64     : int64;
-    x_double    : double absolute x_int64;{for conversion 64 bit "big-endian" data}
+  x_longword  : longword;
+  x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
+  x_int64     : int64;
+  x_double    : double absolute x_int64;{for conversion 64 bit "big-endian" data}
 
-    lw       : int64;
-    fl       : double absolute lw;
+  lw       : int64;
+  fl       : double absolute lw;
 
-    tfields,naxis2, hh: integer;
-    ttype,tform : array of string;
-    tbcol       : array of integer;
-    tform_counter: integer;
-    ascii_table  : boolean;
+  tfields,naxisT, naxisT1,naxisT2, hh: integer;
+  ttype,tform,tunit : array of string;
+  tbcol       : array of integer;
+  tform_counter: integer;
 const
-    end_record : boolean=false;
+  end_record : boolean=false;
 
      procedure close_fits_file; inline;
      begin
@@ -811,7 +776,7 @@ begin
   {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   {Reset variables for case they are not specified in the file}
-  if reset_var then {reset variables in case they are not available. Set this false if reading additional flat/dark}
+  if light  then {reset variables in case they are not available}
   begin
     crota2:=99999;{just for the case it is not available, make it later zero}
     crota1:=99999;
@@ -843,35 +808,41 @@ begin
     x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
     y_coeff[0]:=0;
     a_order:=0; {SIP_polynomial, use for check if there is data}
+
+    extend:=0; {no extensions in the file}
+
+    xbinning:=1;{normal}
+    ybinning:=1;
+
+    date_obs:=''; date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+    sitelat:=''; sitelong:='';
+
+    focus_temp:=999;{assume no data available}
+    focus_pos:=0;{assume no data available}
+    scale:=0;
+
+    annotated:=false; {any annotation in the file}
+
   end;{reset variables}
 
   filter_name:='';
   naxis:=-1;
   naxis1:=0;
-  naxis2:=0;
   naxis3:=1;
   bzero:=0;{just for the case it is not available}
   bscale:=1;
   datamin_org:=0;
   imagetype:='';
-  xbinning:=1;{normal}
-  ybinning:=1;
   exposure:=0;
   exptime:=0;
   ccd_temperature:=999;
   set_temperature:=999;
-  focus_temp:=999;{assume no data available}
-  focus_pos:=0;{assume no data available}
   gain:=999;{assume no data available}
-  date_obs:=''; date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
-  sitelat:=''; sitelong:='';
-  scale:=0;
+
   measured_max:=0;
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
-  annotated:=false; {any annotation in the file}
-  extend:=false; {no extensions in the file}
 
-  mainwindow.pagecontrol1.showtabs:=false;{hide tabs assuming no tabel extension}
+//  mainwindow.pagecontrol1.showtabs:=false;{hide tabs assuming no tabel extension}
   mainwindow.pagecontrol1.Tabindex:=0;{show first tab}
 
   reader_position:=0;
@@ -1136,7 +1107,7 @@ begin
            annotated:=true; {contains annotations}
 
         if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='N') and (header[i+5]='D')) then {EXTEND}
-          extend:=pos('T',get_as_string)>0; {could contain extension}
+          if pos('T',get_as_string)>0 then extend:=1; {could contain extension}
 
 
         {following is only required when using DSS polynome plate fit}
@@ -1260,7 +1231,7 @@ begin
   if crota2>999 then crota2:=0;{not defined, set at 0}
   if crota1>999 then crota1:=crota2; {for case crota1 is not used}
 
-  if ((ra0<>0) and (dec0<>0)) then
+  if ((light) and (ra0<>0) and (dec0<>0)) then
   begin
      mainwindow.ra1.text:=prepare_ra(ra0,' ');
      mainwindow.dec1.text:=prepare_dec(dec0,' ');
@@ -1284,12 +1255,20 @@ begin
      close_fits_file; result:=true; exit;
   end;{only read header for analyse or WCS file}
 
-  if ((naxis<2) and (extend=false)) then {no image or extension table, wcs file }
+  if naxis<2 then
   begin
-     close_fits_file;
-     result:=true;
-     exit;
-  end;{only read header for analyse or WCS file}
+     result:=false; {no image}
+     mainwindow.image1.visible:=false;
+     fits_file:=false;
+     if extend=0 then exit;
+  end;
+
+//  if ((naxis<2) and (extend=0)) then {no image or extension table, wcs file }
+//  begin
+//     close_fits_file;
+//     result:=true;
+//     exit;
+//  end;{only read header for analyse or WCS file}
 
   {############################## read image}
   if naxis>=2 then {image in FITS}
@@ -1421,15 +1400,10 @@ begin
 
   end;{read image}
 
-  if extend then {table behind?}
-  begin {read binary table, future}
-    if naxis<2 then
-    begin
-       result:=false; {no image}
-    end
-    else
-     reader_position:=reader_position + width2*height2*(abs(nrbits) div 8);
-
+  if ((extend>0) and (light)) then {table behind? Do not try to read a table as dark/flat. This will reset global extend variable}
+  begin {read ASCII or binary table}
+    if naxis>=2 then {image was read}
+      reader_position:=reader_position + width2*height2*(abs(nrbits) div 8);
     fract:=frac(reader_position/2880);
     if fract<>0 then
     begin
@@ -1441,7 +1415,7 @@ begin
       end; {skip empty part and go to image data}
       inc(reader_position,i);
     end;
-    extend:=false;{assume no extension}
+    extend:=0;{assume no extension}
 
     repeat {read extension}
       i:=0;
@@ -1453,10 +1427,12 @@ begin
       end;
       inc(reader_position,2880);
       repeat
-        if extend=false then {test for extension}
+        if extend=0 then {test for extension}
         begin
-           extend:=((header[0]='X') and (header[1]='T')  and (header[2]='E') and (header[3]='N') and (header[4]='S') and (header[5]='I') and (header[6]='O'));
-           if extend then ascii_table:=pos('BINTABLE',get_string)=0; { 'BINTABLE' or 'TABLE'};
+           if ((header[0]='X') and (header[1]='T')  and (header[2]='E') and (header[3]='N') and (header[4]='S') and (header[5]='I') and (header[6]='O')) then
+           begin
+             if pos('BINTABLE',get_string)=0 then extend:=1 {ascii_table} else extend:=2; { 'BINTABLE' or 'TABLE'};
+           end;
            if naxis<2 then
            begin
              mainwindow.error_label1.caption:=('Table only');
@@ -1465,13 +1441,13 @@ begin
              mainwindow.memo1.visible:=true;{show memo1 since no plotting is comming}
            end;
         end;
-        if extend then
+        if extend>0 then
         begin
-          if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {naxis}
+          if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {naxisT}
              begin
-               if (header[i+5]=' ') then naxis:=round(validate_double)   else    {NAXIS number of colors}
-               if (header[i+5]='1') then begin naxis1:=round(validate_double); end else {NAXIS1 pixels}
-               if (header[i+5]='2') then naxis2:=round(validate_double) else   {NAXIS2 pixels}
+               if (header[i+5]=' ') then naxisT:=round(validate_double)   else    {naxisT number of colors}
+               if (header[i+5]='1') then begin naxisT1:=round(validate_double); end else {naxisT1 pixels}
+               if (header[i+5]='2') then naxisT2:=round(validate_double) else   {naxisT2 pixels}
              end;
           if ((header[i]='T') and (header[i+1]='F')  and (header[i+2]='I') and (header[i+3]='E') and (header[i+4]='L') and (header[i+5]='D') and (header[i+6]='S')) then {tfields}
           begin
@@ -1479,6 +1455,7 @@ begin
              setlength(ttype,tfields);
              setlength(tform,tfields);
              setlength(tbcol,tfields);
+             setlength(tunit,tfields);
           end;
           if ((header[i]='T') and (header[i+1]='F')  and (header[i+2]='O') and (header[i+3]='R') and (header[i+4]='M')) then
           begin
@@ -1488,6 +1465,7 @@ begin
             if pos('E',tform[tform_counter])>0 then tform[tform_counter]:='E';{remove spaces}
             if pos('D',tform[tform_counter])>0 then tform[tform_counter]:='D';
             if pos('L',tform[tform_counter])>0 then tform[tform_counter]:='L';{logical}
+            if pos('A',tform[tform_counter])>0 then tform[tform_counter]:='A';{Charactor}
             if pos('B',tform[tform_counter])>0 then tform[tform_counter]:='B';{byte}
             if pos('I',tform[tform_counter])>0 then tform[tform_counter]:='I';{16 bit integer}
             if pos('J',tform[tform_counter])>0 then tform[tform_counter]:='J';{32 bit integer}
@@ -1505,6 +1483,12 @@ begin
              number:=trim(header[i+5]+header[i+6]+header[i+7]);
              ttype[strtoint(number)-1]:=get_string;
           end;
+          if ((header[i]='T') and (header[i+1]='U')  and (header[i+2]='N') and (header[i+3]='I') and (header[i+4]='T')) then {unit describtion}
+          begin
+             number:=trim(header[i+5]+header[i+6]+header[i+7]);
+             tunit[strtoint(number)-1]:=get_string;
+          end;
+
           end_record:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D'));{end of header}
 
          inc(i,80);
@@ -1512,76 +1496,74 @@ begin
       until ((i>=2880) or (end_record));
    until end_record;
 
-   if extend then {try to read data table}
+   if extend>0 then {try to read data table}
    begin
      aline:='';
      for k:=0 to tfields-1 do {columns}
         aline:=aline+ttype[k]+#9;
      aline:=aline+sLineBreak;
+     for k:=0 to tfields-1 do {columns}
+        aline:=aline+tunit[k]+#9;
+     aline:=aline+sLineBreak;
 
-     setlength(starlist2,2,naxis2);
+     setlength(starlist2,2,naxisT2);
 
-     for j:=0 to naxis2-1 do {rows}
+     for j:=0 to naxisT2-1 do {rows}
      begin
-       if ascii_table then
-       begin
-         reader.read(fitsbuffer[0],naxis1);{copy complete ascii row}
-         SetString(field, Pansichar(@fitsbuffer[0]),naxis1);{convert to string}
-       end;
+       reader.read(fitsbuffer[0],naxisT1);{copy complete ascii row}
+       if extend=1 {ascii_table} then SetString(field, Pansichar(@fitsbuffer[0]),naxisT1);{convert to string}
+
        for k:=0 to tfields-1 do {columns}
         {read}
        begin
-         if ascii_table then {ascii table}
+         if extend=1 then {ascii table}
          begin
            if k>0 then insert(#9,field,tbcol[k]+k-1);{insert tab}
            if k=tfields-1 then aline:=aline+field;{field is ready}
          end
          else
+
          if tform[k]='E' then {4 byte float}
          begin
-           reader.read(fitsbuffer[0],4);
-           x_longword:=swapendian(fitsbuffer4[0]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
+           x_longword:=swapendian(fitsbuffer4[k]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
+
            if k<=1 then starlist2[k,j]:=x_single; {import a star list}
            aline:=aline+floattostrF(x_single,FFexponent,7,0)+ #9; {int_IEEE, swap four bytes and the read as floating point}
          end
          else
          if tform[k]='D' then {8 byte float}
          begin
-           reader.read(fitsbuffer[0],8);
-           x_int64:=swapendian(fitsbuffer8[0]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
+           x_int64:=swapendian(fitsbuffer8[k]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
            if k<=1 then starlist2[k,j]:=x_double; {import a star list}
            aline:=aline+floattostrF(x_double,FFexponent,7,0)+ #9; {int_IEEE, swap four bytes and the read as floating point}
          end
          else
          if tform[k]='I' then {16 bit}
          begin
-           reader.read(fitsbuffer[0],2);
-           wo:=swap(fitsbuffer2[0]);{move data to wo and therefore sign_int}
+           wo:=swap(fitsbuffer2[k]);{move data to wo and therefore sign_int}
            aline:=aline+inttostr(sign_int)+ #9; {int_IEEE, swap four bytes and the read as floating point}
          end
          else
          if tform[k]='J' then {32 bit}
          begin
-           reader.read(fitsbuffer[0],4);
-           aline:=aline+inttostr(swapendian(fitsbuffer4[0]))+ #9; {int_IEEE, swap four bytes and the read as floating point}
+           aline:=aline+inttostr(swapendian(fitsbuffer4[k]))+ #9; {int_IEEE, swap four bytes and the read as floating point}
          end
          else
          if tform[k]='K' then {64 bit}
          begin
-           reader.read(fitsbuffer[0],8);
-           aline:=aline+inttostr(swapendian(fitsbuffer8[0]))+ #9; {int_IEEE, swap four bytes and the read as floating point}
+           aline:=aline+inttostr(swapendian(fitsbuffer8[k]))+ #9; {int_IEEE, swap four bytes and the read as floating point}
          end
          else
-         if ((tform[k]='L') or (Tform[k]='B')) then {logical or byte}
+         if ((tform[k]='L') or (Tform[k]='B') or (Tform[k]='A')) then {logical, byte or char}
          begin
-           reader.read(fitsbuffer[0],1);
-           aline:=aline+inttostr(fitsbuffer[0])+ #9; {int_IEEE, swap four bytes and the read as floating point}
+           aline:=aline+inttostr(fitsbuffer[k])+ #9;
          end;
        end;
 
        aline:=aline+sLineBreak ;
      end;
      mainwindow.Memo3.lines.text:=aline;
+     mainwindow.Memo3.readonly:=(extend<=1);
      aline:=''; {release memory}
      mainwindow.pagecontrol1.showtabs:=true;{show tabs}
    end;
@@ -1779,7 +1761,7 @@ begin
   exposure:=0;
   set_temperature:=999;
   nrbits:=16;
-  extend:=false; {no extensions in the file}
+  extend:=0; {no extensions in the file, 1 is ascii_table, 2 bintable}
 
 
   if width2<=100 then
@@ -2148,7 +2130,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.363 dated 2020-05-17';
+  #13+#10+'Version ß0.9.365 dated 2020-05-22';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2317,7 +2299,7 @@ var
    ratio                   : double;
 begin
   result:=false;
-  if load_fits(filename2,true {light},true,true {reset var},img_loaded)=false then exit;
+  if load_fits(filename2,true {light},true,img_loaded)=false then exit;
 
   ratio:=0.5;
 
@@ -2399,7 +2381,7 @@ begin
          filename2:=Strings[I];
          {load fits}
          Application.ProcessMessages;
-        if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin Screen.Cursor := Save_Cursor;  exit;end;
+        if ((esc_pressed) or (load_fits(filename2,true {light},true,img_loaded)=false)) then begin Screen.Cursor := Save_Cursor;  exit;end;
          ratio:=0.5;
 
          w:=trunc(width2/2);  {half size}
@@ -3284,9 +3266,11 @@ end;
 
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
 begin
-  if fits<>mainwindow.Saveasfits1.enabled then  {menu requires update}
+
+  mainwindow.Saveasfits1.enabled:=((fits) or (extend>=2){table});
+
+  if fits<>mainwindow.data_range_groupBox1.Enabled then  {menu requires update}
   begin
-    mainwindow.Saveasfits1.enabled:=fits;
     mainwindow.data_range_groupBox1.Enabled:=fits;
     mainwindow.Export_image1.enabled:=fits;
     mainwindow.SaveasJPGPNGBMP1.Enabled:=fits;
@@ -3323,6 +3307,7 @@ begin
 
     stackmenu1.tab_Pixelmath1.enabled:=fits;
     stackmenu1.tab_Pixelmath2.enabled:=fits;
+
   end;{menu change}
 
   mainwindow.SaveFITSwithupdatedheader1.Enabled:=((fits) and (fits_file_name(filename2)) and (fileexists(filename2)));{menu disable, no file available to update header}
@@ -3375,6 +3360,8 @@ begin
     update_statusbar_section5;{update section 5 with image dimensions in degrees}
   end;
   {else do nothing, keep old solution visible if available}
+
+  memo1.Visible:=true; {could be disabled by loading dark/flits due to calibrate prior to solving}
   Screen.Cursor:= OldCursor;
 end;
 
@@ -3486,7 +3473,7 @@ begin
             filename2:=Strings[I];
             {load image}
             Application.ProcessMessages;
-            if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin beep; Screen.Cursor := Save_Cursor; exit;end;
+            if ((esc_pressed) or (load_fits(filename2,true {light},true,img_loaded)=false)) then begin beep; Screen.Cursor := Save_Cursor; exit;end;
 
             ratio:=0.5;
             w:=trunc(width2/2);  {half size}
@@ -3558,7 +3545,7 @@ begin
     begin
       mainwindow.caption:=opendialog1.filename;
       {load image}
-      if load_fits(opendialog1.filename,true {light},true,true {reset var},img_loaded) then
+      if load_fits(opendialog1.filename,true {light},true,img_loaded) then
       begin
         getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
         plot_fits(mainwindow.image1,false {re_center},true);
@@ -5089,7 +5076,7 @@ begin
 
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
   annotated:=false; {any annotation in the file}
-  extend:=false; {no extensions in the file}
+  extend:=0;  {no extensions in the file, 1 is ascii_table, 2 bintable}
 
 
 
@@ -5466,7 +5453,7 @@ begin
 
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
   annotated:=false; {any annotation in the file}
-  extend:=false; {no extensions in the file}
+  extend:=0; {no extensions in the file, 1 is ascii_table, 2 bintable}
 
 
   {set data}
@@ -6856,10 +6843,10 @@ begin
   begin
     mainwindow.caption:=filename2;
     filename_org:=filename2;
-    mainwindow.solve_button1.enabled:=true;
-    mainwindow.astrometric_solve_image1.enabled:=true;
+//    mainwindow.solve_button1.enabled:=true;
+//    mainwindow.astrometric_solve_image1.enabled:=true;
 
-    mainwindow.SaveasJPGPNGBMP1.Enabled:=true;
+//    mainwindow.SaveasJPGPNGBMP1.Enabled:=true;
 
     mainwindow.shape_marker1.visible:=false;
     mainwindow.shape_marker2.visible:=false;
@@ -6875,9 +6862,12 @@ begin
   {fits}
   if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')or (ext1='.WCS') or (ext1='.AXY') or (ext1='.XYLS') or (ext1='.GSC')) then {FITS}
   begin
-    result:=load_fits(filename2,true {light},true,true {reset var},img_loaded);
-    if result=false then exit;{succes?}
-    if naxis<2 then exit; {WCS file}
+    result:=load_fits(filename2,true {light},true,img_loaded);
+    if ((result=false) or (naxis<2))  then {{no image or failure.}
+    begin
+       update_menu(false);
+       exit; {WCS file}
+    end;
     afitsfile:=true;
   end
 
@@ -6886,16 +6876,16 @@ begin
   begin
     if unpack_cfitsio(filename2)=false then begin beep; exit; end
     else{successfull conversion using funpack}
-    result:=load_fits(filename2,true {light},true {load data},true {reset var},img_loaded); {load new fits file}
+    result:=load_fits(filename2,true {light},true {load data},img_loaded); {load new fits file}
 
-    if result=false then exit
+    if result=false then begin update_menu(false);exit; end
     else afitsfile:=true;
   end {fz}
 
   else
   if check_raw_file_extension(ext1) then {raw format}
   begin
-    if convert_load_raw(filename2,img_loaded)=false then begin beep; exit; end
+    if convert_load_raw(filename2,img_loaded)=false then begin update_menu(false);beep; exit; end
     else
     result:=true;
     {successfull conversion using LibRaw}
@@ -6905,7 +6895,7 @@ begin
   else
   if ((ext1='.PPM') or (ext1='.PGM') or (ext1='.PFM') or (ext1='.PBM')) then {PPM/PGM/ PFM}
   begin
-    if load_PPM_PGM_PFM(filename2,img_loaded)=false then exit {load the simple formats ppm color or pgm grayscale, exit on failure}
+    if load_PPM_PGM_PFM(filename2,img_loaded)=false then begin update_menu(false);exit; end {load the simple formats ppm color or pgm grayscale, exit on failure}
     else
       result:=true;
   end
@@ -6913,7 +6903,7 @@ begin
   else
   if ext1='.XISF' then {XISF}
   begin
-    if load_xisf(filename2,img_loaded)=false then exit{load XISF, exit on failure}
+    if load_xisf(filename2,img_loaded)=false then begin update_menu(false);exit; end {load XISF, exit on failure}
     else
       result:=true;
   end
@@ -6921,7 +6911,7 @@ begin
   else
   {tif, png, bmp, jpeg}
   if load_tiffpngJPEG(filename2,img_loaded)=false then
-        exit {load tif, exit on failure}
+        begin update_menu(false);exit; end  {load tif, exit on failure}
   else
     result:=true;
 
@@ -6929,8 +6919,8 @@ begin
   begin
     getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
     plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
-    mainwindow.ShowFITSheader1.enabled:=true;
-    mainwindow.demosaicBayermatrix1.Enabled:=true;
+//    mainwindow.ShowFITSheader1.enabled:=true;
+//    mainwindow.demosaicBayermatrix1.Enabled:=true;
     image_move_to_center:=re_center;
     if ((afitsfile) and (annotated) and (mainwindow.annotations_visible1.checked)) then  plot_annotations(0,0,false);
 
@@ -7005,14 +6995,11 @@ end;
 procedure Tmainwindow.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   esc_pressed:=true;{stop processing. Required for reliable stopping by APT}
-
   save_settings(user_path+'astap.cfg');
-
 end;
 
 procedure Tmainwindow.receivemessage(Sender: TObject);{For OneInstance, called from timer (linux) or SimpleIPCServer1MessageQueued (Windows)}
 begin
-
   if SimpleIPCServer1.PeekMessage(1,True) then
   begin
     BringToFront;
@@ -7107,11 +7094,8 @@ procedure Tmainwindow.FormDropFiles(Sender: TObject;
 begin
  {no check on file extension required}
   filename2:=FileNames[0];
-   if load_image(true,true {plot}){load and center}=false then
-                                                      beep;{image not found}
+   if load_image(true,true {plot}){load and center}=false then beep;{image not found}
 end;
-
-
 
 procedure Tmainwindow.imageflipv1Click(Sender: TObject);
 var
@@ -7175,8 +7159,6 @@ begin
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
 
-
-
 procedure Tmainwindow.measuretotalmagnitude1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,font_height,counter,tx,ty,saturation_counter : integer;
@@ -7184,14 +7166,10 @@ var
    Save_Cursor           : TCursor;
    mag_str               : string;
    bg_array              : array of double;
-
-
 begin
   if ((cd1_1=0) or (fits_file=false)) then exit;
   if  ((abs(oldx-startX)>2)and (abs(oldy-starty)>2)) then
   begin
-
-
     if flux_magn_offset=0 then {calibrate}
        plot_stars(true {if true photometry only}, false {show Distortion});
     if flux_magn_offset=0 then begin beep; exit;end;
@@ -7316,15 +7294,12 @@ begin
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
     backup_img;
-
     bsize:=min(15,abs(oldx-startX));{15 or smaller}
-
 
     startX2:=startX;{save for Application.ProcessMessages;this could change startX, startY}
     startY2:=startY;
     oldX2:=oldX;
     oldY2:=oldY;
-
 
     if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
     begin
@@ -7359,7 +7334,6 @@ begin
     {correct image}
     for k:=0 to naxis3-1 do {do all colors}
     begin
-
       median_left_bottom:=get_most_common(img_loaded,k,startX2-bsize,startX2+bsize,startY2-bsize,startY2+bsize,32000);{find the median of a local area}
       median_left_top:=   get_most_common(img_loaded,k,startX2-bsize,startX2+bsize,oldY2-bsize,oldY2+bsize,32000);{find the median of a local area}
 
@@ -7389,7 +7363,6 @@ begin
             img_loaded[k,fitsX,fitsY]:=img_loaded[k,fitsX,fitsY] +(new_value-img_temp[k,fitsX-startX2,fitsY-startY2]);
           end;
         end;
-
       end;
     end;{k color}
 
@@ -7401,12 +7374,10 @@ begin
   application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
 end;
 
-
 procedure Tmainwindow.menucopy1Click(Sender: TObject);{for fits header memo1 popup menu}
 begin
   Clipboard.AsText:=copy(Memo1.Text,Memo1.SelStart+1, Memo1.SelLength);
 end;
-
 
 procedure Tmainwindow.Menufind1Click(Sender: TObject); {for fits header memo1 popup menu}
 begin
@@ -7429,7 +7400,6 @@ begin
      Memo1.SelLength := Length(PatternToFind);
      Memo1.SetFocus; // necessary so highlight is visible
   end;
-
 end;
 
 procedure Tmainwindow.copy_paste_tool1Click(Sender: TObject);
@@ -7440,7 +7410,6 @@ begin
   if  ((abs(oldx-startX)>1)and (abs(oldy-starty)>1)) then
   begin
     Screen.Cursor := crDrag;
-
     copy_paste_x:=startX;{save for Application.ProcessMessages;this could change startX, startY}
     copy_paste_y:=startY;
     oldX2:=oldX;
@@ -7471,7 +7440,6 @@ begin
   end {fits file}
   else
   application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
-
 end;
 
 procedure Tmainwindow.MenuItem21Click(Sender: TObject);
@@ -7526,25 +7494,19 @@ begin
   search_database;
 end;
 
-
 procedure Tmainwindow.save_settings1Click(Sender: TObject);
 begin
   save_settings(user_path+'astap.cfg');
 end;
-
 
 procedure measure_magnitudes(var stars :star_list);{find stars and return, x,y, hfd, flux}
 var
   fitsX,fitsY,size, i, j,nrstars    : integer;
   hfd1,star_fwhm,snr,flux,xc,yc : double;
 begin
-
   SetLength(stars,4,5000);{set array length}
-
   setlength(img_temp,1,width2,height2);{set length of image array}
-
   get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
-
   nrstars:=0;{set counters at zero}
 
   for fitsY:=0 to height2-1 do
@@ -7599,11 +7561,8 @@ begin
       end;
     end;
   end;
-
   img_temp:=nil;{free mem}
-
   SetLength(stars,4,nrstars+1);{set length correct}
-
 end;
 
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
@@ -7663,9 +7622,7 @@ var
   Save_Cursor:TCursor;
   skipped, nrannotated :integer;
   dobackup : boolean;
-
 begin
-
   OpenDialog1.Title := 'Select multiple  files to add asteroid annotation to the header';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS';
@@ -7692,7 +7649,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
 
-          if load_fits(filename2,true {light},true,true {reset var},img_loaded) then {load image success}
+          if load_fits(filename2,true {light},true,img_loaded) then {load image success}
           begin
             if cd1_1=0 then
             begin
@@ -7707,8 +7664,6 @@ begin
             end;
           end;
         end;
-
-
       finally
       if dobackup then restore_img;{for the viewer}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
@@ -7737,6 +7692,7 @@ begin
   else
     mainwindow.shape_marker3.visible:=false;
 end;
+
 procedure Tmainwindow.SimpleIPCServer1MessageQueued(Sender: TObject);{For OneInstance, this event only occurs in Windows}
 begin
   {$ifdef mswindows}
@@ -7758,8 +7714,6 @@ begin
   end;
 end;
 
-
-
 procedure Tmainwindow.variable_star_annotation1Click(Sender: TObject);
 var
   Save_Cursor:TCursor;
@@ -7771,7 +7725,6 @@ begin
   plot_deepsky;{plot the deep sky object on the image}
   Screen.Cursor:=Save_Cursor;
 end;
-
 
 procedure check_second_instance;{For OneInstance, check for other instance of the application. If so send paramstr(1) and quit}
 var
@@ -7927,13 +7880,8 @@ end;
 procedure Tmainwindow.FormDestroy(Sender: TObject);
 begin
   settingstring.free;
-
-//  bmp_ctrlz.Free;
-
   deepstring.free;{free deepsky}
   recent_files.free;
-
-//system.exitcode:=777;
 end;
 
 procedure plot_rectangle(x1,y1,x2,y2: integer); {accurate positioned rectangle on screen coordinates}
@@ -8031,7 +7979,6 @@ begin
           if fill_combo then {add asteroid annotations to combobox for ephemeris alignment}
             stackmenu1.ephemeris_centering1.Additem(list[5],nil);
         end;
-
       end;
       count1:=count1-1;
     end;
@@ -8039,7 +7986,6 @@ begin
   finally
     List.Free;
   end;
-
 end;
 
 
@@ -8048,7 +7994,6 @@ var
   value : string;
   text_height,text_width,text_x,text_y   : integer;
   boldness                               : double;
-
 begin
   backup_img;
   value:=InputBox('Label input:','','' );
@@ -8060,7 +8005,6 @@ begin
   image1.Canvas.brush.Style:=bsClear;
   image1.Canvas.font.color:=annotation_color;
   image1.Canvas.font.size:=max(12,round(12*width2/image1.width));
-
 
   image1.Canvas.moveto(startX,startY);
   if ((oldx<>startx) or (oldY<>startY) )=true then {rubber rectangle in action}
@@ -8078,7 +8022,6 @@ begin
      image1.Canvas.lineto(text_X,text_Y)
   else
      plot_rectangle(startX,startY,text_X,text_Y);{plot accuratea rectangle. x and y are in range 1..., convert to range 0....}
-
 
   {$ifdef mswindows}
   SetTextAlign(image1.canvas.handle, ta_left or ta_top or TA_NOUPDATECP);{always, since Linux is doing this fixed}
@@ -8116,24 +8059,20 @@ end;
 
 procedure Tmainwindow.Exit1Click(Sender: TObject);
 begin
-//  application.terminate;
   esc_pressed:=true; {stop photometry loop}
   Application.MainForm.Close {this will call an on-close event for saving settings}
 end;
 
-
-
 procedure FITS_BMP(filen:string);{save FITS to BMP file}
 var filename3:string;
 begin
-  if load_fits(filen,true {light},true,true {reset var},img_loaded) {load now normal} then
+  if load_fits(filen,true {light},true,img_loaded) {load now normal} then
   begin
     getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
     filename3:=ChangeFileExt(Filen,'.bmp');
     mainwindow.image1.picture.SaveToFile(filename3);
   end;
 end;
-
 
 procedure Tmainwindow.ShowFITSheader1Click(Sender: TObject);
 var bericht: array[0..512] of char;{make this one not too short !}
@@ -8149,7 +8088,6 @@ begin
   'Bandpass: '+floattostr(bandpass)+#13+#10+
   'Equinox: '+floattostr(equinox)+#13+#10+
   'Exposure-time: '+floattostr(exposure));
-
   messagebox(mainwindow.handle,bericht,'FITS HEADER',MB_OK);
 end;
 
@@ -8201,8 +8139,13 @@ var
     h,w,mw: integer;
 begin
 
- panel1.Top:=max(memo1.Height+10, data_range_groupBox1.top+data_range_groupBox1.height+5);
+{$IfDef Darwin}//{MacOS}
+ PageControl1.height:=168;{height changes depending on tabs on off, keep a little more tolerance}
+{$ENDIF}
+
+ panel1.Top:=max(PageControl1.height, data_range_groupBox1.top+data_range_groupBox1.height+5);
  panel1.left:=0;
+
 
  mw:=mainwindow.width;
  h:=StatusBar1.top-panel1.top;
@@ -8239,7 +8182,6 @@ end;
 //  width2:=mainwindow.Image1.Picture.width;
 //  height2:=mainwindow.Image1.Picture.height;
 //end;
-
 
 function load_and_solve : boolean; {load image and plate solve}
 begin
@@ -8283,7 +8225,6 @@ begin
   JPG.Free;
   end;
 end;
-
 
 function read_astap_solution(filen {fits file name} : string; var ra1,dec1,crota :double): boolean; {read ASTAP solution from INI file}
 var
@@ -8365,8 +8306,6 @@ var
   dummy,field_size,search_field : double;
   source_fits,solved,apt_request,file_loaded:boolean;
 begin
-
-//  logging:=true;
   settingstring := Tstringlist.Create;
  {load program parameters, overriding initial settings if any}
   with mainwindow do
@@ -8674,7 +8613,6 @@ end;
 //     inc(i);
 //   end;
 
-
 //  except
 //    TheFile4.free;
 //    exit;
@@ -8683,7 +8621,6 @@ end;
 //  TheFile4.free;
 
 //end;
-
 
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
@@ -8770,7 +8707,7 @@ begin
 
         if file_loaded=false then errorlevel:=16;{error file loading}
 
-        file_loaded:=(file_loaded or extend);{axy}
+        file_loaded:=((file_loaded) or (extend>0));{axy}
 
         if hasoption('fov') then
         begin
@@ -8829,7 +8766,6 @@ begin
           else
             try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
 
-
           //log_to_file(cmdline+' =>succes');
 
           if hasoption('update') then mainwindow.SaveFITSwithupdatedheader1Click(nil); {update the fits file header}
@@ -8870,10 +8806,7 @@ begin
         esc_pressed:=true;{kill any running activity. This for APT}
 
         if hasoption('log') then stackmenu1.Memo2.Lines.SavetoFile(ChangeFileExt(filename2,'.log'));{save Memo3 log to log file}
-
-        //sleep(300);
-
-        halt(errorlevel); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
+         halt(errorlevel); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
 
         //  Exit status:
         //  0 no errors.
@@ -8899,8 +8832,6 @@ begin
   end
   else
   Mainwindow.stretch1Change(nil);{create gamma curve for image if loaded later and set gamma_on}
-
-
 end;
 
 procedure Tmainwindow.AddplatesolvesolutiontoselectedFITSfiles1Click(
@@ -8912,11 +8843,9 @@ var
   dobackup : boolean;
 
 begin
-
   OpenDialog1.Title := 'Select multiple  files to add plate solution';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS';
-//  fits_file:=true;
   data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
 
@@ -8941,7 +8870,7 @@ begin
           if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
 
           {load image and solve image}
-          if load_fits(filename2,true {light},true,true {reset var},img_loaded) then {load image success}
+          if load_fits(filename2,true {light},true,img_loaded) then {load image success}
           begin
             if ((cd1_1<>0) and (stackmenu1.ignore_header_solution1.checked=false)) then
             begin
@@ -8993,7 +8922,6 @@ begin
   end;
 end;
 
-
 procedure Sort(var list: array of double);{taken from CCDciel code}
 var sorted: boolean;
     tmp: double;
@@ -9014,7 +8942,6 @@ repeat
   end;
 until sorted;
 end;
-
 
 function SMedian(list: array of double): double;{get median of an array of double, taken from CCDciel code}
 var
@@ -9041,14 +8968,13 @@ begin
   end;
 end;
 
-
 procedure Tmainwindow.CCDinspector1Click(Sender: TObject);
 var
  fitsX,fitsY,size, i, j,starX,starY, retries,max_stars,
  nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,x1,x2,x3,x4,y1,y2,y3,y4,fontsize : integer;
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
- hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right, median_top_left, median_top_right : double;
+ hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right, median_top_left, median_top_right,hfd_min : double;
  hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
  starlistXY    :array of array of integer;
  mess1,mess2,hfd_value,hfd_arcsec      : string;
@@ -9056,7 +8982,6 @@ var
  Fliphorizontal, Flipvertical: boolean;
 const
    len : integer=1000;
-
 begin
   if fits_file=false then exit; {file loaded?}
   Save_Cursor := Screen.Cursor;
@@ -9066,210 +8991,201 @@ begin
 
   with mainwindow do
   begin
-    Flipvertical:=mainwindow.Flipvertical1.Checked;
-    Fliphorizontal:=mainwindow.Fliphorizontal1.Checked;
+      Flipvertical:=mainwindow.Flipvertical1.Checked;
+      Fliphorizontal:=mainwindow.Fliphorizontal1.Checked;
 
 
-    image1.Canvas.Pen.Mode := pmMerge;
-    image1.Canvas.brush.Style:=bsClear;
-    image1.Canvas.font.color:=clyellow;
-    image1.Canvas.Pen.Color := clred;
-    image1.Canvas.Pen.width := round(1+height2/image1.height);{thickness lines}
-    fontsize:=round(max(10,8*height2/image1.height));{adapt font to image dimensions}
-    image1.Canvas.font.size:=fontsize;
+      image1.Canvas.Pen.Mode := pmMerge;
+      image1.Canvas.brush.Style:=bsClear;
+      image1.Canvas.font.color:=clyellow;
+      image1.Canvas.Pen.Color := clred;
+      image1.Canvas.Pen.width := round(1+height2/image1.height);{thickness lines}
+      fontsize:=round(max(10,8*height2/image1.height));{adapt font to image dimensions}
+      image1.Canvas.font.size:=fontsize;
 
-  hfd_median:=0;
-  median_center:=0;
-  median_outer_ring:=0;
-  median_bottom_left:=0;
-  median_bottom_right:=0;
-  median_top_left:=0;
-  median_top_right:=0;
-
-
-  SetLength(hfdlist,len*4);{set array length on a starting value}
-  SetLength(starlistXY,2,len*4);{x,y positions}
-
-  SetLength(hfdlist_center,len);
-  SetLength(hfdlist_outer_ring,len*2);
-
-  SetLength(hfdlist_top_left,len);
-  SetLength(hfdlist_top_right,len);
-  SetLength(hfdlist_bottom_left,len);
-  SetLength(hfdlist_bottom_right,len);
-  setlength(img_temp,1,width2,height2);{set length of image array}
-
-  get_background(0,img_loaded,{cblack=0} false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
-
-  detection_level:=star_level; {level above background. Start with a high value}
-
-  retries:=2; {try up to three times to get enough stars from the image}
-  repeat
-    nhfd:=0;{set counters at zero}
-    nhfd_top_left:=0;
-    nhfd_top_right:=0;
-    nhfd_bottom_left:=0;
-    nhfd_bottom_right:=0;
-    nhfd_center:=0;
-    nhfd_outer_ring:=0;
+    hfd_median:=0;
+    median_center:=0;
+    median_outer_ring:=0;
+    median_bottom_left:=0;
+    median_bottom_right:=0;
+    median_top_left:=0;
+    median_top_right:=0;
 
 
-    for fitsY:=0 to height2-1 do
-      for fitsX:=0 to width2-1  do
-        img_temp[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+    SetLength(hfdlist,len*4);{set array length on a starting value}
+    SetLength(starlistXY,2,len*4);{x,y positions}
 
-    for fitsY:=0 to height2-1-1  do
-    begin
-      for fitsX:=0 to width2-1-1 do
+    SetLength(hfdlist_center,len);
+    SetLength(hfdlist_outer_ring,len*2);
+
+    SetLength(hfdlist_top_left,len);
+    SetLength(hfdlist_top_right,len);
+    SetLength(hfdlist_bottom_left,len);
+    SetLength(hfdlist_bottom_right,len);
+    setlength(img_temp,1,width2,height2);{set length of image array}
+
+    hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+    get_background(0,img_loaded,{cblack=0} false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
+
+    detection_level:=star_level; {level above background. Start with a high value}
+
+    retries:=2; {try up to three times to get enough stars from the image}
+    repeat
+      nhfd:=0;{set counters at zero}
+      nhfd_top_left:=0;
+      nhfd_top_right:=0;
+      nhfd_bottom_left:=0;
+      nhfd_bottom_right:=0;
+      nhfd_center:=0;
+      nhfd_outer_ring:=0;
+
+
+      for fitsY:=0 to height2-1 do
+        for fitsX:=0 to width2-1  do
+          img_temp[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+
+      for fitsY:=0 to height2-1-1  do
       begin
-        if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed}  and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
+        for fitsX:=0 to width2-1-1 do
         begin
-          HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-
-          if ((hfd1<=99) and (snr>10) and (hfd1>0.8) {two pixels minimum} { and (flux/(hfd1*hfd1)<0.25*pi*100000)}{not saturated} ) then
+          if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed}  and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
           begin
-//            size:=round(5*hfd1);
-            if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);
-            if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
+            HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
-//            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-//            mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
-
-            size:=round(3*hfd1);
-            for j:=fitsY-size to fitsY+size do {mark the whole star area as surveyed}
-              for i:=fitsX-size to fitsX+size do
-                if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
-                  img_temp[0,i,j]:=1;
-
-            {store values}
-            hfdlist[nhfd]:=hfd1;
-            starlistXY[0,nhfd]:=starX; {store star position in image coordinates, not FITS coordinates}
-            starlistXY[1,nhfd]:=starY;
-            inc(nhfd); if nhfd>=length(hfdlist) then
+            if ((hfd1<=99) and (snr>10) and (hfd1>hfd_min) ) then
             begin
-              SetLength(hfdlist,nhfd+100); {adapt length if required and store hfd value}
-              SetLength(starlistXY,2,nhfd+100);{adapt array size if required}
-            end;
+  //            size:=round(5*hfd1);
+              if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);
+              if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
 
-            if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))<sqr(0.25)*(sqr(width2 div 2)+sqr(height2 div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
-            else
-            begin
-              if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))>sqr(0.75)*(sqr(width2 div 2)+sqr(height2 div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
+  //            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+  //            mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
-              if ( (starX<(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
-              if ( (starX>(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
-              if ( (starX<(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+100);        end;
-              if ( (starX>(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
+              size:=round(3*hfd1);
+              for j:=fitsY-size to fitsY+size do {mark the whole star area as surveyed}
+                for i:=fitsX-size to fitsX+size do
+                  if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
+                    img_temp[0,i,j]:=1;
+
+              {store values}
+              hfdlist[nhfd]:=hfd1;
+              starlistXY[0,nhfd]:=starX; {store star position in image coordinates, not FITS coordinates}
+              starlistXY[1,nhfd]:=starY;
+              inc(nhfd); if nhfd>=length(hfdlist) then
+              begin
+                SetLength(hfdlist,nhfd+100); {adapt length if required and store hfd value}
+                SetLength(starlistXY,2,nhfd+100);{adapt array size if required}
+              end;
+
+              if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))<sqr(0.25)*(sqr(width2 div 2)+sqr(height2 div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
+              else
+              begin
+                if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))>sqr(0.75)*(sqr(width2 div 2)+sqr(height2 div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
+
+                if ( (starX<(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
+                if ( (starX>(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
+                if ( (starX<(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+100);        end;
+                if ( (starX>(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
+              end;
             end;
           end;
         end;
       end;
-    end;
 
-    dec(retries);{try again with lower detection level}
-    if retries =1 then begin if 15*noise_level[0]<star_level then detection_level:=15*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
-    if retries =0 then begin if  5*noise_level[0]<star_level then detection_level:= 5*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
+      dec(retries);{try again with lower detection level}
+      if retries =1 then begin if 15*noise_level[0]<star_level then detection_level:=15*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
+      if retries =0 then begin if  5*noise_level[0]<star_level then detection_level:= 5*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
 
-  until ((nhfd>=max_stars) or (retries<0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
+    until ((nhfd>=max_stars) or (retries<0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
-
-  if nhfd>0 then
-  begin
-    for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
+    if nhfd>0 then
     begin
-      hfd1:=hfdlist[i];
-      size:=round(5*hfd1);
-      starX:=starlistXY[0,i];
-      starY:=starlistXY[1,i];
-      mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-      mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
-    end;
+      for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
+      begin
+        hfd1:=hfdlist[i];
+        size:=round(5*hfd1);
+        starX:=starlistXY[0,i];
+        starY:=starlistXY[1,i];
+        mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+        mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+      end;
+
+      if ((nhfd_center>0) and (nhfd_outer_ring>0)) then  {enough information for curvature calculation}
+      begin
+        SetLength(hfdlist_center,nhfd_center); {set length correct}
+        SetLength(hfdlist_outer_ring,nhfd_outer_ring);
+
+        median_center:=SMedian(hfdlist_center);
+        median_outer_ring:=SMedian(hfdlist_outer_ring);
+        mess1:='  Off-axis aberration[HFD]='+floattostrF2(median_outer_ring-(median_center),0,2);{}
+      end
+      else
+      mess1:='';
+
+      if ((nhfd_top_left>0) and (nhfd_top_right>0) and (nhfd_bottom_left>0) and (nhfd_bottom_right>0)) then  {enough information for tilt calculation}
+      begin
+        SetLength(hfdlist_bottom_left,nhfd_bottom_left); {set length correct}
+        SetLength(hfdlist_bottom_right,nhfd_bottom_right);
+        SetLength(hfdlist_top_left,nhfd_top_left);
+        SetLength(hfdlist_top_right,nhfd_top_right);
+
+        median_top_left:=SMedian(hfdList_top_left);
+        median_top_right:=SMedian(hfdList_top_right);
+        median_bottom_left:=SMedian(hfdList_bottom_left);
+        median_bottom_right:=SMedian(hfdList_bottom_right);
+        median_best:=min(min(median_top_left, median_top_right),min(median_bottom_left,median_bottom_right));{find best corner}
+        median_worst:=max(max(median_top_left, median_top_right),max(median_bottom_left,median_bottom_right));{find worst corner}
+
+        scale_factor:=width2*0.25/median_worst;
+        x1:=round(-median_bottom_left*scale_factor+width2/2);y1:=round(-median_bottom_left*scale_factor+height2/2);{calculate coordinates counter clockwise}
+        x2:=round(+median_bottom_right*scale_factor+width2/2);y2:=round(-median_bottom_right*scale_factor+height2/2);
+        x3:=round(+median_top_right*scale_factor+width2/2);y3:=round(+median_top_right*scale_factor+height2/2);
+        x4:=round(-median_top_left*scale_factor+width2/2);y4:=round(+median_top_left*scale_factor+height2/2);
+
+        image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
+
+        image1.Canvas.pen.color:=clyellow;
+
+        image1.Canvas.moveto(x1,y1);{draw trapezium}
+        image1.Canvas.lineto(x2,y2);{draw trapezium}
+        image1.Canvas.lineto(x3,y3);{draw trapezium}
+        image1.Canvas.lineto(x4,y4);{draw trapezium}
+        image1.Canvas.lineto(x1,y1);{draw trapezium}
+
+        image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
+        image1.Canvas.lineto(x2,y2);{draw diagonal}
+        image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
+        image1.Canvas.lineto(x3,y3);{draw diagonal}
+        image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
+        image1.Canvas.lineto(x4,y4);{draw diagonal}
+        mess2:='  Tilt[HFD]='+floattostrF2(median_worst-median_best,0,2);{estimate tilt value}
 
 
+        image1.Canvas.font.size:=fontsize*4;
+        image1.Canvas.textout(x4,y4,floattostrF2(median_top_left,0,2));
+        image1.Canvas.textout(x3,y3,floattostrF2(median_top_right,0,2));
+        image1.Canvas.textout(x1,y1,floattostrF2(median_bottom_left,0,2));
+        image1.Canvas.textout(x2,y2,floattostrF2(median_bottom_right,0,2));
+        image1.Canvas.textout(width2 div 2,height2 div 2,floattostrF2(median_center,0,2));
+      end
+      else
+      mess2:='';
 
-    if ((nhfd_center>0) and (nhfd_outer_ring>0)) then  {enough information for curvature calculation}
-    begin
-      SetLength(hfdlist_center,nhfd_center); {set length correct}
-      SetLength(hfdlist_outer_ring,nhfd_outer_ring);
+      SetLength(hfdlist,nhfd);{set length correct}
+      hfd_median:=SMedian(hfdList);
+      str(hfd_median:0:1,hfd_value);
+      if cdelt2<>0 then begin str(hfd_median*cdelt2*3600:0:1,hfd_arcsec); hfd_arcsec:=' ('+hfd_arcsec+'")'; end else hfd_arcsec:='';
+      mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
 
-      median_center:=SMedian(hfdlist_center);
-      median_outer_ring:=SMedian(hfdlist_outer_ring);
-      mess1:='  Off-axis aberration[HFD]='+floattostrF2(median_outer_ring-(median_center),0,2);{}
+      image1.Canvas.font.size:=fontsize*2;
+      image1.Canvas.font.color:=clwhite;
+      image1.Canvas.textout(round(fontsize*2),height2-round(4*fontsize),mess2);{median HFD and tilt indication}
     end
     else
-    mess1:='';
-
-
-
-    if ((nhfd_top_left>0) and (nhfd_top_right>0) and (nhfd_bottom_left>0) and (nhfd_bottom_right>0)) then  {enough information for tilt calculation}
     begin
-      SetLength(hfdlist_bottom_left,nhfd_bottom_left); {set length correct}
-      SetLength(hfdlist_bottom_right,nhfd_bottom_right);
-      SetLength(hfdlist_top_left,nhfd_top_left);
-      SetLength(hfdlist_top_right,nhfd_top_right);
-
-
-      median_top_left:=SMedian(hfdList_top_left);
-      median_top_right:=SMedian(hfdList_top_right);
-      median_bottom_left:=SMedian(hfdList_bottom_left);
-      median_bottom_right:=SMedian(hfdList_bottom_right);
-      median_best:=min(min(median_top_left, median_top_right),min(median_bottom_left,median_bottom_right));{find best corner}
-      median_worst:=max(max(median_top_left, median_top_right),max(median_bottom_left,median_bottom_right));{find worst corner}
-
-      scale_factor:=width2*0.25/median_worst;
-      x1:=round(-median_bottom_left*scale_factor+width2/2);y1:=round(-median_bottom_left*scale_factor+height2/2);{calculate coordinates counter clockwise}
-      x2:=round(+median_bottom_right*scale_factor+width2/2);y2:=round(-median_bottom_right*scale_factor+height2/2);
-      x3:=round(+median_top_right*scale_factor+width2/2);y3:=round(+median_top_right*scale_factor+height2/2);
-      x4:=round(-median_top_left*scale_factor+width2/2);y4:=round(+median_top_left*scale_factor+height2/2);
-
-      image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
-
-      image1.Canvas.pen.color:=clyellow;
-
-      image1.Canvas.moveto(x1,y1);{draw trapezium}
-      image1.Canvas.lineto(x2,y2);{draw trapezium}
-      image1.Canvas.lineto(x3,y3);{draw trapezium}
-      image1.Canvas.lineto(x4,y4);{draw trapezium}
-      image1.Canvas.lineto(x1,y1);{draw trapezium}
-
-      image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
-      image1.Canvas.lineto(x2,y2);{draw diagonal}
-      image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
-      image1.Canvas.lineto(x3,y3);{draw diagonal}
-      image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
-      image1.Canvas.lineto(x4,y4);{draw diagonal}
-      mess2:='  Tilt[HFD]='+floattostrF2(median_worst-median_best,0,2);{estimate tilt value}
-
-
-      image1.Canvas.font.size:=fontsize*4;
-      image1.Canvas.textout(x4,y4,floattostrF2(median_top_left,0,2));
-      image1.Canvas.textout(x3,y3,floattostrF2(median_top_right,0,2));
-      image1.Canvas.textout(x1,y1,floattostrF2(median_bottom_left,0,2));
-      image1.Canvas.textout(x2,y2,floattostrF2(median_bottom_right,0,2));
-      image1.Canvas.textout(width2 div 2,height2 div 2,floattostrF2(median_center,0,2));
-    end
-    else
-    mess2:='';
-
-
-    SetLength(hfdlist,nhfd);{set length correct}
-    hfd_median:=SMedian(hfdList);
-    str(hfd_median:0:1,hfd_value);
-    if cdelt2<>0 then begin str(hfd_median*cdelt2*3600:0:1,hfd_arcsec); hfd_arcsec:=' ('+hfd_arcsec+'")'; end else hfd_arcsec:='';
-    mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
-
-    image1.Canvas.font.size:=fontsize*2;
-    image1.Canvas.font.color:=clwhite;
-    image1.Canvas.textout(round(fontsize*2),height2-round(4*fontsize),mess2);{median HFD and tilt indication}
-  end
-  else
-  begin
-    image1.Canvas.font.size:=round(image1.Canvas.font.size*20/12);
-    image1.Canvas.textout(round(image1.Canvas.font.size),height2-round(2*image1.Canvas.font.size),'No star detected');
-  end;
-
-
-
+      image1.Canvas.font.size:=round(image1.Canvas.font.size*20/12);
+      image1.Canvas.textout(round(image1.Canvas.font.size),height2-round(2*image1.Canvas.font.size),'No star detected');
+    end;
   end;{with mainwindow}
 
   hfdlist:=nil;{release memory}
@@ -9288,7 +9204,6 @@ begin
 
   Screen.Cursor:= Save_Cursor;
 end;
-
 
 procedure Tmainwindow.DemosaicBayermatrix1Click(Sender: TObject);
 var
@@ -9335,7 +9250,6 @@ begin
       application.hint:=mainwindow.caption;
   end;
 end;
-
 
 procedure Tmainwindow.Copyposition1Click(Sender: TObject);
 var
@@ -9508,6 +9422,7 @@ begin
   dec:=plusmin*(abs(decd)+decm/60+decs/3600)*pi/180;
   errorDEC:=((error1<>0) or (error2>1) or (error3<>0));
 end;
+
 procedure Tmainwindow.dec1Change(Sender: TObject);
 var
    str1     : string;
@@ -9520,9 +9435,7 @@ begin
   dec_label.Caption:=str1;
 
   if (errorDEC) then mainwindow.dec1.color:=clred else mainwindow.dec1.color:=clwindow;
-
 end;
-
 
 procedure Tmainwindow.enterposition1Click(Sender: TObject);
 var
@@ -9544,7 +9457,6 @@ begin
     mouse_positionRADEC2:=InputBox('Enter α, δ of mouse position seperated by a comma:','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',mouse_positionRADEC2);
     if mouse_positionRADEC2=''  then exit;  {cancel used}
     shape_marker2.hint:='Reference 2: '+mouse_positionRADEC2
-
   end;
 
   if ( (mouse_positionRADEC1<>'') and (mouse_positionRADEC2<>'')) then {solve}
@@ -9645,7 +9557,6 @@ begin
 
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
-
 
 procedure Tmainwindow.set_area1Click(Sender: TObject);
 var
@@ -9828,18 +9739,12 @@ begin
   end;
 end;
 
-
 function RGBToH(r,g,b : single): integer;
 {https://en.wikipedia.org/wiki/Hue}
 {Preucil used a polar plot, which he termed a color circle.[8] Using R, G, and B, one may compute hue angle using the following scheme: determine which of the six possible orderings of R, G, and B prevail, then apply the formula given in the table below. }
-//const
-//  range = $1; {RGB range}
 var
   H, D, Cmax, Cmin: Single;
 begin
-//  R := R/range;
-//  G := G/range;
-//  B := B/range;
   Cmax := Max(R, Max(G, B));
   Cmin := Min(R, Min(G, B));
 
@@ -9861,7 +9766,6 @@ begin
   end;
   result:=round(h)
 end;
-
 
 procedure find_highest_pixel_value(img: image_array;x1,y1: integer; var xc,yc:double);{}
 var
@@ -9907,9 +9811,6 @@ begin
   xc:=(x2+Xg);
   yc:=(y2+Yg);
  {center of gravity found}
-
-
-
 end;
 
 procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -9927,7 +9828,6 @@ begin
   {default good values}
   snr:=2;
   hfd2:=2;{just a good value}
-
 
   {for manual alignment}
   if ( ((stackmenu1.use_manual_alignment1.checked) and (pos('S',calstat)=0 {ignore stacked images unless callled from listview1. See doubleclick listview1} )) or
@@ -9959,8 +9859,6 @@ begin
   mainwindow.shape_alignment_marker1.visible:=false;
   {end manual alignment}
 
-
-
   image_move_to_center:=false;{image in moved to center, why is so difficult???}
 
   down_x:=x;
@@ -9990,10 +9888,7 @@ begin
       shape_paste1.visible:=false;
     end;
   end;{left button pressed}
-
-
 end;
-
 
 procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity}
 const
@@ -10026,7 +9921,7 @@ var
     end;
 begin
 
-//  if ((xc>290) and (xc<330) and (yc>130) and (yc<155)) then
+//  if ((x1=852) and (y1=741)) then
 //  beep;
 
   if ((x1-rs-4<=0) or (x1+rs+4>=width2-1) or
@@ -10093,23 +9988,28 @@ begin
       yc:=(y1+Yg);
      {center of gravity found}
 
-
       if ((xc-rs<0) or (xc+rs>width2-1) or (yc-rs<0) or (yc+rs>height2-1) ) then exit;{prevent runtime errors near sides of images}
+
+ //     if ((xc>852) and (xc<855) and (yc>741) and (yc<746)) then
+//      begin
+//        beep;
+  //     rs:=1;
+//      end;
 
   //   Check for asymmetry. Are we testing a group of stars or a defocused star?
       val_00:=0;val_01:=0;val_10:=0;val_11:=0;
 
-      for i:=-rs to 0 do begin
-        for j:=-rs to 0 do begin
-          val_00:=val_00+ value_subpixel(xc+i,yc+j)-bg;
-          val_01:=val_01+ value_subpixel(xc+i,yc-j)-bg;
-          val_10:=val_10+ value_subpixel(xc-i,yc+j)-bg;
-          val_11:=val_11+ value_subpixel(xc-i,yc-j)-bg;
+      for i:=rs downto 1 do begin
+        for j:=rs downto 1 do begin
+          val_00:=val_00+ value_subpixel(xc+i-0.5,yc+j-0.5)-bg;
+          val_01:=val_01+ value_subpixel(xc+i-0.5,yc-j+0.5)-bg;
+          val_10:=val_10+ value_subpixel(xc-i+0.5,yc+j-0.5)-bg;
+          val_11:=val_11+ value_subpixel(xc-i+0.5,yc-j+0.5)-bg;
         end;
       end;
 
       if sumval<100000 then af:=min(0.9,rs/10) {variable asymmetry factor. 1 is allow only prefect symmetrical, 0.000001 if off.  More critital detection if rs is large   }
-                       else af:=min(0.7,rs/10);{relax criteria for bright stars. Above 100000 no galaxy or nebula}
+      else af:=min(0.7,rs/10);{relax criteria for bright stars. Above 100000 no galaxy or nebula}
 
       {check for asymmetry of detected star using the four quadrants}
       if val_00<val_01  then begin faintA:=val_00; brightA:=val_01; end else begin faintA:=val_01; brightA:=val_00; end;
@@ -10122,6 +10022,15 @@ begin
       if asymmetry then  dec(rs,2); {try a smaller window to exclude nearby stars}
       if rs<4 then exit; {try to reduce box up to rs=4 equals 8x8 box else exit with hfd 999}
     until asymmetry=false;{loop and reduce box size until asymmetry is gone.}
+
+    {check on single hot pixels}
+     illuminated_pixels:=0;
+     for i:=-1 to +1 do
+        for j:=-1 to +1 do
+        begin
+          val:=img[0,round(xc)+i,round(yc)+j]-bg;
+          if val>0.50*sumval then exit;
+        end;
 
    // Build signal histogram from center of gravity
     for i:=0 to rs do distance_histogram[i]:=0;{clear signal histogram for the range used}
@@ -10158,12 +10067,6 @@ begin
     except
   end;
 
-  if ri<3 then {small star image}
-  begin
-    if distance_histogram[1]<3 then begin exit; end;// reject single hot pixel if less then 3 pixels are detected around the center of gravity
-    ri:=3; {Minimum 6+1 x 6+1 pixel box}
-  end;
-
   // Get HFD
   SumVal:=0;
   SumValR:=0;
@@ -10184,6 +10087,9 @@ begin
     hfd1:=2*SumValR/flux;
 
     hfd1:=max(0.7,hfd1);
+
+//    if hfd1>1 then mainwindow.image1.Canvas.textout(x1,y1,floattostrF2(hfd1,3,1)+'|'+floattostrF2(distance_histogram[0],0,0)+'.'+floattostrF2(distance_histogram[1],0,0)+'.'+floattostrF2(distance_histogram[2],0,0)+'.'+floattostrF2(distance_histogram[3],0,0)  );
+
     star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
 
     snr:=flux/sqrt(flux +sqr(ri)*pi*sqr(bg_standard_deviation)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
@@ -10236,6 +10142,7 @@ begin
 
   end;
 end;
+
 function SD(x1,y1: integer):double;{calculate standard deviation}
 var i,j,ri  : integer;
     bg_average,bg_standard_deviation: double;
@@ -10279,7 +10186,6 @@ begin
       ratio3:=ratio2*ratio;
       ratio4:=ratio3*ratio;
       ratio5:=ratio4*ratio;
-
 
       temperature:=
                     +4817.4*ratio5
@@ -10348,8 +10254,6 @@ begin
      end;
    end;
  end;{WCS solution}
-
-
 end;
 
 procedure erase_rectangle;
@@ -10566,7 +10470,6 @@ begin
   PopupMenu1.PopUp(x,y);{call popup manually if right key is released, not when clicked. Set in popupmenu autopopup off !!!}
   {$endif}
 
-
   if ((oldx<>startx) or (oldY<>startY) )=false then
   begin {no rubber rectangle in action}
     if abs(y-down_y)>2 then
@@ -10584,7 +10487,6 @@ begin
   end;
   screen.Cursor := crDefault;
 end;
-
 
 procedure Tmainwindow.convertmono1Click(Sender: TObject);
 var
@@ -10614,7 +10516,6 @@ begin
   plot_fits(mainwindow.image1,false,true);{plot}
   Screen.cursor:=Save_Cursor;
 end;
-
 
 procedure Tmainwindow.stretch_draw1Click(Sender: TObject); {stretch draw}
 var
@@ -10842,7 +10743,6 @@ begin
   if colourdepth=32 then {gray}
     header:=pansichar('Pf'+#10+inttostr(width2)+#10+inttostr(height2)+#10+'-1.0'+#10); {colour 32 bit, little-endian=-1, big-endian=+1}
 
-
   if fileexists(filen2)=true then
     if MessageDlg('Existing file ' +filen2+ ' Overwrite?', mtConfirmation, [mbYes, mbNo], 0) <> 6 {mbYes} then
       Exit;
@@ -10929,8 +10829,6 @@ begin
        thefile.writebuffer(ppmbuffer,wide2*4 {}) ;{works only for byte arrays}
      end;
    end;
-
-
 
   thefile.free;
   result:=true;
@@ -11092,8 +10990,6 @@ begin
   end;
 end;
 
-
-
 procedure Tmainwindow.Export_image1Click(Sender: TObject);
 var
   filename3:ansistring;
@@ -11187,26 +11083,57 @@ begin
   end;
 end;
 
-Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel floating}
-var value1   : single;
-    lw       : longword absolute value1;
+function number_of_fields(const C: char; const S: string ): integer; {count number of fields in string with C as seperator}
+var
+  i: Integer;
+begin
+  result := 0;
+  for i := 1 to Length(S) do
+    if S[i] = C then
+      inc(result);
+
+  if copy(s,length(s),1)<>c then inc(result,1);
+end;
+
+function retrieve_memo3_string(x,y :integer;default:string):string; {retrieve string at position x,y. Strings are seperated by #9}
+var
+  m,n1,n2 : integer;
+  tal   : string;
+begin
+  result:='0';
+  m:=-1;
+  n2:=0;
+  tal:=mainwindow.memo3.Lines[y]+#9;
+  repeat
+    inc(m);{counter}
+    n1:=n2+1;
+    n2:=posex(#9,tal,n1);
+  until ((m>=x) or (n2=0));
+  if ((n2<>0) and (n2>n1)) then
+    result:=copy(tal,n1,n2-n1)
+  else
+     result:=default;
+end;
+
+Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel float}
+var
+  value1   : single;
+  lw       : longword absolute value1;
 begin
   value1:=x;
   result:=swapendian(lw);
 end;
 
-
 function save_fits(img: image_array;filen2:ansistring;type1:integer;override1:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 var
   TheFile4 : tfilestream;
-  I,j,k,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, naxis3_local,height5,width5 : integer;
+  I,j,k,r,c,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, naxis3_local,height5,width5,rows : integer;
   dd : single;
-  line0       : ansistring;
+  line0,tal,lab         : ansistring;
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
   OldCursor : TCursor;
   wo: word;
   rgb  : byteX3;{array [0..2] containing r,g,b colours}
-  aantallen : string;
   data      : longword;
 begin
   result:=false;
@@ -11216,6 +11143,8 @@ begin
   width5:=length(img[0]);{width}
   height5:=length(img[0,0]);{length}
   if naxis3_local=1 then dimensions:=2 else dimensions:=3; {number of dimensions or colours}
+  if naxis=0 then
+                type1:=0;{only table}
 
   if ((type1=24) and (naxis3_local<3)) then
   begin
@@ -11224,12 +11153,20 @@ begin
   end;
 
   if ((override1=false) and (fileexists(filen2)) and (pos('ImageToSolve.fit',filen2)=0)) then
-  if MessageDlg('ASTAP: Existing file ' +filen2+ ' Overwrite?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then
-    Exit;
-  if ((override1=false) and (extend)) then {table extensions in the file}
-  if MessageDlg('Extension will be lost. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then
-    exit;
+    if MessageDlg('ASTAP: Existing file ' +filen2+ ' Overwrite?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then  Exit;
 
+  if  override1=false then
+  begin
+    if extend=2 then {bintable extensions in the file}
+    begin
+      if MessageDlg('File bintable extension will be reformatted as single floats only. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then  exit;
+    end
+    else
+    if extend=1 then {ASCII table extensions in the file}
+    begin
+      if MessageDlg('ASCII table extension will be lost. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then  exit;
+    end
+  end;
   filename2:=filen2;
   {$IFDEF fpc}
   progress_indicator(0,'');
@@ -11253,46 +11190,48 @@ begin
   progressC:=0;
 
  {update FITs header}
-  if type1<>24 then {standard FITS}
+  if type1<>0 then {not a table}
   begin
-    update_integer('BITPIX  =',' / Bits per entry                                 ' ,type1); {16 or -32}
-    update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number of dimensions, 2 for mono, 3 for colour}
-    update_integer('NAXIS1  =',' / length of x axis                               ' ,width5);
-    update_integer('NAXIS2  =',' / length of y axis                               ' ,height5);
-    if naxis3_local<>1 then {color image}
-      update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3_local)
-      else
-      remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
-
-    if type1=16 then bzero2:=32768 else bzero2:=0;
-    update_integer('BZERO   =',' / Scaling applied to data                        ' ,bzero2);
-    if type1<>8 then
+    if type1<>24 then {standard FITS}
     begin
-      update_integer('DATAMIN =',' / Minimum data value                             ' ,round(datamin_org));
-      update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
-      update_integer('CBLACK  =',' / Indicates the black point used when displaying the image.' ,round(cblack) ); {2019-4-9}
-      update_integer('CWHITE  =',' / indicates the white point used when displaying the image.' ,round(cwhite) );
-    end
+      update_integer('BITPIX  =',' / Bits per entry                                 ' ,type1); {16 or -32}
+      update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number of dimensions, 2 for mono, 3 for colour}
+      update_integer('NAXIS1  =',' / length of x axis                               ' ,width5);
+      update_integer('NAXIS2  =',' / length of y axis                               ' ,height5);
+      if naxis3_local<>1 then {color image}
+        update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3_local)
+        else
+        remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+
+      if type1=16 then bzero2:=32768 else bzero2:=0;
+      update_integer('BZERO   =',' / Scaling applied to data                        ' ,bzero2);
+      if type1<>8 then
+      begin
+        update_integer('DATAMIN =',' / Minimum data value                             ' ,round(datamin_org));
+        update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
+        update_integer('CBLACK  =',' / Indicates the black point used when displaying the image.' ,round(cblack) ); {2019-4-9}
+        update_integer('CWHITE  =',' / indicates the white point used when displaying the image.' ,round(cwhite) );
+      end
+      else
+      begin {in most case reducing from 16 or flat to 8 bit}
+        update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
+        update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
+      end;
+    end {update existing header}
     else
-    begin {in most case reducing from 16 or flat to 8 bit}
+    begin {special 8 bit with three colors combined in 24 bit}
+      {update FITs header}
+      update_integer('BITPIX  =',' / Bits per entry                                 ' ,8);
+      update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number dimensions, 2 for mono, 3 for color}
+      update_integer('NAXIS1  =',' / length of x axis                               ' ,3);
+      update_integer('NAXIS2  =',' / length of y axis                               ' ,width5);
+      update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,height5);
       update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
       update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
+      update_integer('BZERO   =',' / Scaling applied to data                        ' ,0);
+      {update existing header}
     end;
-  end {update existing header}
-  else
-  begin {special 8 bit with three colors combined in 24 bit}
-    {update FITs header}
-    update_integer('BITPIX  =',' / Bits per entry                                 ' ,8);
-    update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number dimensions, 2 for mono, 3 for color}
-    update_integer('NAXIS1  =',' / length of x axis                               ' ,3);
-    update_integer('NAXIS2  =',' / length of y axis                               ' ,width5);
-    update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,height5);
-    update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-    update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
-    update_integer('BZERO   =',' / Scaling applied to data                        ' ,0);
-    {update existing header}
   end;
-
   {write memo1 header to file}
   for i:=0 to 79 do empthy_line[i]:=#32;{space}
   i:=0;
@@ -11386,13 +11325,6 @@ begin
       begin
         dum:=bzero2+round(img[k,j,i]);{save all colors}
         dum:=dum and $FFFF;{mod 2018-9-10}
-
-//                dum:=round(img[k,j,i]);{save all colors}
-//        if dum<17000 then dum:=1000;
-//          if dum=24672 then dum:=1000+2000;
-//          if dum=65535 then dum:=1000+4000;
-//          dum:=dum+bzero2;
-
         wo:=dum;
         fitsbuffer2[j]:=swap(wo) and $FFFF;{in FITS file hi en low bytes are swapped}
       end;
@@ -11427,60 +11359,59 @@ begin
     thefile4.writebuffer(fitsbuffer,remain);{write some bytes}
   end;
 
-  if false then {write extension}
+  if extend=2 then {write bintable extension}
   begin
+    rows:=number_of_fields(#9,mainwindow.memo3.lines[3]); {first lines could be blank or incomplete}
+
+    tal:=mainwindow.memo3.lines[0];
     i:=0;
-    strpcopy(aline,'XTENSION= '+#39+'BINTABLE'+#39+' / FITS Binary Table Extension                              ');{copy 80 and not more or less}
+
+    strplcopy(aline,'XTENSION= '+#39+'BINTABLE'+#39+' / FITS Binary Table Extension                              ',80);{copy 80 and not more or less in position aline[80] should be #0 from string}
     thefile4.writebuffer(aline,80); inc(i);
-    strpcopy(aline,'BITPIX  =                    8 / 8-bits character format                        ');{copy 80 and not more or less}
-    thefile4.writebuffer(aline,80);inc(i);
-    strpcopy(aline,'NAXIS   =                    2 / Tables are 2-D char. array                     ');{copy 80 and not more or less}
-    thefile4.writebuffer(aline,80);inc(i);
-    strpcopy(aline,'NAXIS1  =                    8 / Bytes in row                                   ');{copy 80 and not more or less}
+
+    strplcopy(aline,  'BITPIX  =                    8 / 8-bits character format                                  ',80);
     thefile4.writebuffer(aline,80);inc(i);
 
-    str(length(starlist2[0]):13,aantallen);
-
-    strpcopy(aline,'NAXIS2  =        '+aantallen+' /                                                  ');{copy 80 and not more or less}
-    thefile4.writebuffer(aline,80);inc(i);
-    strpcopy(aline,'PCOUNT  =                    0 / Parameter count always 0                       ');{copy 80 and not more or less}
-    thefile4.writebuffer(aline,80);inc(i);
-    strpcopy(aline,'GCOUNT  =                    1 / Group count always 1                           ');{copy 80 and not more or less}
-    thefile4.writebuffer(aline,80);inc(i);
-    strpcopy(aline,'TFIELDS =                    2 / No. of col in table                            ');{copy 80 and not more or less}
-    thefile4.writebuffer(aline,80);inc(i);
-    strpcopy(aline,'TFORM1  = '+#39+'E       '+#39+' / Format of field                                          ');{copy 80 and not more or less}
-    thefile4.writebuffer(aline,80);inc(i);
-    strpcopy(aline,'TTYPE1  = '+#39+'X       '+#39+' / Field label                                              ');{copy 80 and not more or less}
-    thefile4.writebuffer(aline,80);inc(i);
-    strpcopy(aline,'TUNIT1  =                      / Physical unit of field                         ');{copy 80 and not more or less}
-    thefile4.writebuffer(aline,80);inc(i);
-    strpcopy(aline,'TFORM2  = '+#39+'E       '+#39+' / Single precision floating point, 4 bytes                 ');{copy 80 and not more or less}
-    thefile4.writebuffer(aline,80);inc(i);
-    strpcopy(aline,'TTYPE2  = '+#39+'Y       '+#39+' / Field label                                              ');{copy 80 and not more or less}
-    thefile4.writebuffer(aline,80);inc(i);
-    strpcopy(aline,'TUNIT2  =                      / Physical unit of field                         ');{copy 80 and not more or less}
+    strplcopy(aline,  'NAXIS   =                    2 / Tables are 2-D char. array                               ',80);
     thefile4.writebuffer(aline,80);inc(i);
 
-//    strpcopy(aline,'TFORM3  = '+#39+'E       '+#39+' / Single precision floating point, 4 bytes                 ');{copy 80 and not more or less}
-//    thefile4.writebuffer(aline,80);inc(i);
-//    strpcopy(aline,'TTYPE3  = '+#39+'FLUX    '+#39+' / Field label                                              ');{copy 80 and not more or less}
-//    thefile4.writebuffer(aline,80);inc(i);
-//    strpcopy(aline,'TUNIT3  =                      / Physical unit of field                         ');{copy 80 and not more or less}
-//    thefile4.writebuffer(aline,80);inc(i);
-
-
-//    strpcopy(aline,'TFORM4  = '+#39+'E       '+#39+' / Single precision floating point, 4 bytes                 ');{copy 80 and not more or less}
-//    thefile4.writebuffer(aline,80);inc(i);
-//    strpcopy(aline,'TTYPE4  = '+#39+'BACKGROUND'+#39+' / Field label                                            ');{copy 80 and not more or less}
-//    thefile4.writebuffer(aline,80);inc(i);
-//    strpcopy(aline,'TUNIT4  =                      / Physical unit of field                         ');{copy 80 and not more or less}
-//    thefile4.writebuffer(aline,80);inc(i);
-
-
-    strpcopy(aline,'ORIGIN  = '+#39+'ASTAP'+#39+' / Written by ASTAP                                            ');{copy 80 and not more or less}
+    str(rows*4:13,tal); {write only 4 byte floats}
+    strplcopy(        aline,'NAXIS1  =        '+tal+' / Bytes in row                                             ',80);
     thefile4.writebuffer(aline,80);inc(i);
-    strpcopy(aline,'END                                                                             ');{copy 80 and not more or less}
+
+    str(mainwindow.memo3.lines.count-1-1 :13,tal);
+    strplcopy(aline,      'NAXIS2  =        '+tal  +' /                                                          ',80);
+    thefile4.writebuffer(aline,80);inc(i);
+
+    strplcopy(  aline,'PCOUNT  =                    0 / Parameter count always 0                                 ',80);
+    thefile4.writebuffer(aline,80);inc(i);
+
+    strplcopy(aline,  'GCOUNT  =                    1 / Group count always 1                                     ',80);
+    thefile4.writebuffer(aline,80);inc(i);
+
+    str(rows  :3,tal);
+    strplcopy(aline,'TFIELDS =                  '+tal+            ' / No. of col in table                                      ',80);
+    thefile4.writebuffer(aline,80);inc(i);
+
+
+    for k:=1 to rows do
+    begin
+      str(k:0,tal); tal:=copy(tal+'  ',1,3);
+      strplcopy(aline,'TFORM'+tal+'= '+#39+'E       '+#39+'           / Format of field                                          ',80);
+      thefile4.writebuffer(aline,80);inc(i);
+
+      lab:=retrieve_memo3_string(k-1,0,'col'+inttostr(k)); {retrieve type from memo3}
+      strplcopy(aline,'TTYPE'+tal+'= '+#39+lab+#39+' / Field label                                                                                                        ',80);
+      thefile4.writebuffer(aline,80);inc(i);
+
+      lab:=retrieve_memo3_string(k-1,1,'unit'+inttostr(k)); {retrieve unit from memo3}
+      strplcopy(aline,'TUNIT'+tal+'= '+#39+lab+#39+' / Physical unit of field                                                                                             ',80);
+      thefile4.writebuffer(aline,80);inc(i);
+    end;
+
+    strplcopy(  aline,'ORIGIN  = '    +#39+'ASTAP   '+#39+'           / Written by ASTAP                                         ',80);
+    thefile4.writebuffer(aline,80);inc(i);
+    strpcopy(aline,'END                                                                             ');
     thefile4.writebuffer(aline,80);inc(i);
 
     while  frac(i*80/2880)>0 do
@@ -11489,22 +11420,22 @@ begin
       inc(i);
     end;
 
+    {write datablock}
     i:=0;
-    repeat
-       data:=INT_IEEE4_reverse(starlist2[0,i]+1);{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
-       thefile4.writebuffer(data,4);{write x value}
-       data:=INT_IEEE4_reverse(starlist2[1,i]+1);{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
-       thefile4.writebuffer(data,4);{write y value}
-//       data:=INT_IEEE4_reverse(255);{snr}
-//       thefile4.writebuffer(data,4);{write y value}
-//       data:=INT_IEEE4_reverse(1);{background}
-//       thefile4.writebuffer(data,4);{write y value}
+    for r:=2 to mainwindow.memo3.lines.count-1 do {rows}
+    begin
+       for j:=0 to rows-1 do {columns}
+       begin
+         tal:=retrieve_memo3_string(j {x},r {y},'0'); {retrieve string value from memo3 at position k,m}
+         fitsbuffer4[j]:=INT_IEEE4_reverse(strtofloat2(tal));{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
+       end;
+       thefile4.writebuffer(fitsbuffer[0],rows*4);{write one row}
+       i:=i+rows*4; {byte counter}
+    end;
 
-       inc(i,1);{counter of 16 bytes or 4*4 bytes}
-    until i>=length(starlist2[0]);
-    j:=80-round(80*frac(i*8/80));{remainder in bytes till written muliple of 80 char}
+    j:=80-round(80*frac(i/80));{remainder in bytes till written muliple of 80 char}
     thefile4.writebuffer(empthy_line,j);{write till multiply of 80}
-    i:=(8*i + j*80) div 80 ;{how many 80 bytes record left till multiple of 2880}
+    i:=(i + j*80) div 80 ;{how many 80 bytes record left till multiple of 2880}
 
     while  frac(i*80/2880)>0 do {write till 2880 block is written}
     begin
@@ -11512,8 +11443,6 @@ begin
       inc(i);
     end;
   end;
-
-
 
   TheFile4.free;
 
@@ -11527,7 +11456,6 @@ begin
   result:=true;
 end;
 
-
 function TextfileSize(const name: string): LongInt;
 var
   SRec: TSearchRec;
@@ -11540,7 +11468,6 @@ begin
   else
     Result := 0;
 end;
-
 
 procedure Tmainwindow.solve_button1Click(Sender: TObject);
 begin
@@ -11598,7 +11525,6 @@ begin
   mainwindow.SaveFITSwithupdatedheader1.Enabled:=true; {menu enable, header can be updated again}
 end;
 
-
 procedure Tmainwindow.LoadFITSPNGBMPJPEG1Click(Sender: TObject);
 begin
   OpenDialog1.Title := 'Open in viewer';
@@ -11631,7 +11557,6 @@ begin
    if ((fits_file) {and (scrollcode=scEndScroll)}) then plot_fits(mainwindow.image1,false,true);
   {$ELSE}
   {$ENDIF}
-
 end;
 
 procedure Tmainwindow.maximum1Change(Sender: TObject);
@@ -11652,17 +11577,13 @@ begin
   mainwindow.range1.itemindex:=7; {manual}
 end;
 
+{#######################################}
 begin
   {$ifdef CPUARM}
-    size_backup:= 0; {0, one backup images for ctrl-z}
-    index_backup:=size_backup;
+  size_backup:= 0; {0, one backup images for ctrl-z}
+  index_backup:=size_backup;
   {$else}
-    size_backup:=2; {0,1,2 three backup images for ctrl-z}
-    index_backup:=size_backup;
-
-//    size_backup:=0; {0, one backup images for ctrl-z}
-//    index_backup:=size_backup;
-
+  size_backup:=2; {0,1,2 three backup images for ctrl-z}
+  index_backup:=size_backup;
   {$endif}
-
 end.

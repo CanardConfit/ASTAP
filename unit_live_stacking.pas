@@ -101,7 +101,7 @@ begin
   ext1:=uppercase(ExtractFileExt(filen));
 
   if ((ext1='.FIT') or (ext1='.FITS')) then
-    result:= load_fits(filen,true {light},true,true {reset var},img_loaded)
+    result:= load_fits(filen,true {light},true,img_loaded)
   else
   if check_raw_file_extension(ext1) then {check if extension is from raw file}
     result:=convert_load_raw(filen,img_loaded) {raw}

@@ -471,7 +471,7 @@ end;
 function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
   nrstars,nrstars_required,count,max_distance,nr_tetrahedrons, minimum_tetrahedrons,i,database_stars,distance,binning : integer;
-  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov, max_fov,oversize,sep,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min: double;
+  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,oversize,sep,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min: double;
   solution, go_ahead,solve_show_log  : boolean;
   Save_Cursor     : TCursor;
   startTick  : qword;{for timing/speed purposes}
@@ -519,40 +519,49 @@ begin
   min_star_size_arcsec:=strtofloat2(stackmenu1.min_star_size1.text); {arc sec};
 
   if ((fov_specified=false) and (cdelt2<>0)) then {no fov in native command line and cdelt2 in header}
-    fov:=height2*abs(cdelt2) {calculate FOV. PI can give negative CDELT2}
+    fov_org:=height2*abs(cdelt2) {calculate FOV. PI can give negative CDELT2}
   else
-    fov:=strtofloat2(stackmenu1.search_fov1.text);{use specfied FOV in stackmenu}
+    fov_org:=strtofloat2(stackmenu1.search_fov1.text);{use specfied FOV in stackmenu}
 
-  autoFOV:=(fov=0);{specified auto FOV}
+  autoFOV:=(fov_org=0);{specified auto FOV}
 
   repeat {autoFOV loop}
     if autoFOV then
     begin
-      if fov=0 then fov:=9.5 else fov:=fov/1.5;
-      memo2_message('Trying FOV: '+floattostrF2(fov,0,1));
+      if fov_org=0 then fov_org:=9.5 else fov_org:=fov_org/1.5;
+      memo2_message('Trying FOV: '+floattostrF2(fov_org,0,1));
     end;
+
+
+    if fov_org>max_fov then
+    begin
+      cropping:=max_fov/fov_org;
+      fov2:=max_fov; {temporary cropped image, adjust FOV to adapt}
+    end
+    else
+    begin
+      cropping:=1;
+      fov2:=fov_org;
+    end;
+
+    hfd_min:=max(0.8,min_star_size_arcsec/(binning*fov_org*3600/height2) );{to ignore hot pixels which are too small}
+
+    if extend<>2{axy} then  bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2){bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
+                      else  memo2_message('Using X,Y table from file.');
+
+//    bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
+
+    nrstars:=Length(starlist2[0]);
+
 
     {prepare popupnotifier1 text}
     if stackmenu1.force_oversize1.checked=false then info_message:='▶▶' {normal} else info_message:='▶'; {slow}
-    info_message:= ' [' +stackmenu1.radius_search1.text+'°]'+#9+#9+info_message+
-                    #10+'↕ '+floattostrf2(fov,0,2)+'°'+ #9+#9+inttostr(binning)+'x'+inttostr(binning)+' ⇒ '+inttostr(width2)+'x'+inttostr(height2)+
+    info_message:= ' [' +stackmenu1.radius_search1.text+'°]'+#9+#9+info_message+#9+#9+inttostr(nrstars)+' 🟊' +
+                    #10+'↕ '+floattostrf2(fov_org,0,2)+'°'+ #9+#9+inttostr(binning)+'x'+inttostr(binning)+' ⇒ '+inttostr(width2)+'x'+inttostr(height2)+
                     warning+
                     #10+mainwindow.ra1.text+'h,'+mainwindow.dec1.text+'°'+{for tray icon}
                     #10+filename2;
 
-    if fov>max_fov then
-    begin
-      cropping:=max_fov/fov;
-      fov:=max_fov; {temporary cropped image, adjust FOV to adapt}
-    end
-    else cropping:=1;
-
-    hfd_min:=max(0.8,min_star_size_arcsec/(binning*fov*3600/height2) );{to ignore hot pixels which are too small}
-
-    if extend=false{axy} then  bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2){bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
-                         else  memo2_message('Using X,Y table from file.');
-
-    nrstars:=Length(starlist2[0]);
     nrstars_required:=round(nrstars*(height2/width2)*1.25);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
   //  nrstars_required:=round(nrstars*(height2/width2)*factorX);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
 
@@ -583,8 +592,8 @@ begin
 
       radius:=strtofloat2(stackmenu1.radius_search1.text);{radius search field}
 
-      max_distance:=round(radius/(fov+0.00001));
-      memo2_message(inttostr(nrstars)+' stars selected and '+inttostr(nr_tetrahedrons)+' tetrahedrons selected in the image. '+inttostr(nrstars_required)+' database stars required for the square search field of '+floattostrF2(fov,0,1)+'°. '+oversize_mess );
+      max_distance:=round(radius/(fov2+0.00001));
+      memo2_message(inttostr(nrstars)+' stars selected and '+inttostr(nr_tetrahedrons)+' tetrahedrons selected in the image. '+inttostr(nrstars_required)+' database stars required for the square search field of '+floattostrF2(fov2,0,1)+'°. '+oversize_mess );
 
       if nr_tetrahedrons>500 then minimum_tetrahedrons:=10 else {prevent false detections for star rich images}
       if nr_tetrahedrons>200 then minimum_tetrahedrons:=6 else  {prevent false detections for star rich images}
@@ -608,7 +617,7 @@ begin
       end
       else stackmenu1.star_database1.text:=name_star;
 
-      search_field:=fov*(pi/180);
+      search_field:=fov2*(pi/180);
       STEP_SIZE:=search_field;{fixed step size search spiral. Prior to version 0.9.211 this was reduced for small star counts}
 
 
@@ -656,7 +665,7 @@ begin
             if ((spiral_x>distance) or (spiral_y>distance)) then {new distance reached. Update once in the square spiral, so not too often since it cost CPU time}
             begin
               distance:=max(spiral_x,spiral_y);{update status}
-              distancestr:=inttostr(  round((distance) * fov{/overlap}))+'°';{show on stackmenu what's happening}
+              distancestr:=inttostr(  round((distance) * fov2))+'°';{show on stackmenu what's happening}
               stackmenu1.actual_search_distance1.caption:=distancestr;
               stackmenu1.caption:= 'Search distance:  '+distancestr;
               mainwindow.caption:= 'Search distance:  '+distancestr;
@@ -717,7 +726,7 @@ begin
 
     end; {enough tetrahedrons in image}
 
-  until ((autoFOV=false) or (solution) or (fov<=0.38)); {loop for autoFOV from 9.5 to 0.37 degrees. Will lock between 9.5*1.25 downto  0.37/1.25  or 11.9 downto 0.3 degrees}
+  until ((autoFOV=false) or (solution) or (fov2<=0.38)); {loop for autoFOV from 9.5 to 0.37 degrees. Will lock between 9.5*1.25 downto  0.37/1.25  or 11.9 downto 0.3 degrees}
 
   if solution then
   begin
@@ -802,7 +811,7 @@ begin
       memo2_message('See viewer image for image stars used (red) and database star used (yellow)');
     end;
 
-    if ( (fov>1.05*(height2*cdelt2) ) or (fov<0.95*(height2*cdelt2)) ) then
+    if ( (fov_org>1.05*(height2*cdelt2) ) or (fov_org<0.95*(height2*cdelt2)) ) then
     begin
       if xpixsz<>0 then suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF2(height2*cdelt2,0,2)+'d, scale='+floattostrF2(cdelt2*3600,0,1)+'", FL='+inttostr(round((180/(pi*1000)*xpixsz/cdelt2)) )+'mm'
                    else suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF2(height2*cdelt2,0,2)+'d, scale='+floattostrF2(cdelt2*3600,0,1)+'"';

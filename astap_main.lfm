@@ -224,9 +224,9 @@ object mainwindow: Tmainwindow
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
     object Image1: TImage
-      Left = 448
+      Left = 192
       Height = 264
-      Top = 32
+      Top = 72
       Width = 608
       Anchors = [akLeft, akRight, akBottom]
       OnMouseDown = Image1MouseDown
@@ -389,6 +389,7 @@ object mainwindow: Tmainwindow
     Caption = 'Data range'
     ClientHeight = 100
     ClientWidth = 413
+    Enabled = False
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
     Font.Height = -12
@@ -812,7 +813,6 @@ object mainwindow: Tmainwindow
         )
         OnKeyUp = Memo1KeyUp
         ParentFont = False
-        ReadOnly = True
         ScrollBars = ssAutoVertical
         TabOrder = 0
         WordWrap = False
@@ -821,8 +821,8 @@ object mainwindow: Tmainwindow
   end
   object MainMenu1: TMainMenu
     Images = ImageList1
-    left = 696
-    top = 31
+    left = 856
+    top = 207
     object File1: TMenuItem
       Caption = '&File'
       Hint = 'Load a FITS, PNG, JPG or BPM file.'
@@ -1326,18 +1326,18 @@ object mainwindow: Tmainwindow
     Filter = 'Flexible image transport system files|*.fit*'
     Options = [ofEnableSizing, ofForceShowHidden, ofViewDetail]
     OnSelectionChange = OpenDialog1SelectionChange
-    left = 784
-    top = 16
+    left = 944
+    top = 192
   end
   object SaveDialog1: TSaveDialog
-    left = 792
-    top = 80
+    left = 1040
+    top = 264
   end
   object PopupMenu1: TPopupMenu
     Images = ImageList1
     AutoPopup = False
-    left = 728
-    top = 104
+    left = 976
+    top = 288
     object Enterlabel1: TMenuItem
       Caption = 'Add annotation'
       Hint = 'Add label to current mouse position. Hold left mouse button down and pull a rectangle with mouse to extend connecting line.'
@@ -1514,8 +1514,8 @@ object mainwindow: Tmainwindow
   end
   object ImageList1: TImageList
     ShareImages = True
-    left = 864
-    top = 36
+    left = 1024
+    top = 207
     Bitmap = {
       4C69210000001000000010000000000000000000000000000000000000000000
       00000000000000000000A0A0A0FFA0A0A0FF0000000000000000000000000000
@@ -2609,8 +2609,8 @@ object mainwindow: Tmainwindow
       0000
     }
     Hint = 'ASTAP'
-    left = 872
-    top = 104
+    left = 1120
+    top = 288
   end
   object PopupNotifier1: TPopupNotifier
     Color = clInfoBk
@@ -2644,8 +2644,8 @@ object mainwindow: Tmainwindow
     Text = 'Text'
     Title = 'ASTAP astrometric solver'
     Visible = False
-    left = 960
-    top = 112
+    left = 1208
+    top = 296
   end
   object SimpleIPCServer1: TSimpleIPCServer
     Active = False
@@ -2655,12 +2655,12 @@ object mainwindow: Tmainwindow
     OnMessageQueued = SimpleIPCServer1MessageQueued
     MaxQueue = 0
     MaxAction = ipcmoaNone
-    left = 1024
-    top = 96
+    left = 1272
+    top = 280
   end
   object PopupMenu_ra_dec1: TPopupMenu
-    left = 936
-    top = 32
+    left = 1096
+    top = 208
     object radec_search1: TMenuItem
       Caption = 'Search database'
       Hint = 'Search for a deepsky object position.'
@@ -2676,8 +2676,8 @@ object mainwindow: Tmainwindow
     end
   end
   object PopupMenu_memo1: TPopupMenu
-    left = 1048
-    top = 40
+    left = 1208
+    top = 216
     object Menufind1: TMenuItem
       Caption = 'Find'
       ShortCut = 16454
@@ -2703,8 +2703,8 @@ object mainwindow: Tmainwindow
     end
   end
   object PopupMenu_memo2: TPopupMenu
-    left = 1120
-    top = 40
+    left = 1280
+    top = 216
     object Menufind2: TMenuItem
       Caption = 'Find'
       ShortCut = 16454

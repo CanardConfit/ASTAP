@@ -287,7 +287,7 @@ begin
 
             {load image}
             Application.ProcessMessages;
-            if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin memo2_message('Error');exit;end;
+            if ((esc_pressed) or (load_fits(filename2,true {light},true,img_loaded)=false)) then begin memo2_message('Error');exit;end;
 
             if init=false then
             begin
@@ -630,7 +630,7 @@ begin
 
           Application.ProcessMessages;
           {load image}
-          if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
+          if ((esc_pressed) or (load_fits(filename2,true {light},true,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
 
           if init=true then {first file done}
           begin
@@ -869,7 +869,7 @@ begin
           Application.ProcessMessages;
 
           {load image}
-          if ((esc_pressed) or  (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then  begin memo2_message('Error');{can't load} exit;end;
+          if ((esc_pressed) or  (load_fits(filename2,true {light},true,img_loaded)=false)) then  begin memo2_message('Error');{can't load} exit;end;
 
           if init=true then
           begin
@@ -1066,7 +1066,7 @@ begin
 
         {load image}
         Application.ProcessMessages;
-        if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
+        if ((esc_pressed) or (load_fits(filename2,true {light},true,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
 
         if init=true then
         begin
@@ -1247,7 +1247,7 @@ begin
 
           {load image}
           Application.ProcessMessages;
-          if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
+          if ((esc_pressed) or (load_fits(filename2,true {light},true,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
 
           if init=false then
           begin
@@ -1355,7 +1355,7 @@ begin
 
           {load file}
           Application.ProcessMessages;
-          if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
+          if ((esc_pressed) or (load_fits(filename2,true {light},true,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
 
           apply_dark_flat(filter_name, {var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
 
@@ -1517,7 +1517,7 @@ begin
 
         {load image}
         Application.ProcessMessages;
-        if ((esc_pressed) or (load_fits(filename2,true {light},true,true {reset var},img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
+        if ((esc_pressed) or (load_fits(filename2,true {light},true,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
 
         if init=true then
         begin
