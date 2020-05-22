@@ -842,7 +842,7 @@ begin
   measured_max:=0;
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
 
-//  mainwindow.pagecontrol1.showtabs:=false;{hide tabs assuming no tabel extension}
+  mainwindow.pagecontrol1.showtabs:=false;{hide tabs assuming no tabel extension}
   mainwindow.pagecontrol1.Tabindex:=0;{show first tab}
 
   reader_position:=0;
