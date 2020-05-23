@@ -2130,7 +2130,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.365 dated 2020-05-22';
+  #13+#10+'Version ß0.9.366 dated 2020-05-23';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -10023,13 +10023,20 @@ begin
       if rs<4 then exit; {try to reduce box up to rs=4 equals 8x8 box else exit with hfd 999}
     until asymmetry=false;{loop and reduce box size until asymmetry is gone.}
 
+
+    //     if ((xc>1332) and (xc<1336) and (yc>767) and (yc<771)) then
+//        begin
+  //         beep;
+     //     rs:=1;
+    //     end;
+
+
     {check on single hot pixels}
-     illuminated_pixels:=0;
      for i:=-1 to +1 do
         for j:=-1 to +1 do
         begin
-          val:=img[0,round(xc)+i,round(yc)+j]-bg;
-          if val>0.50*sumval then exit;
+          val:=img[0,round(xc)+i,round(yc)+j]-bg; {no subpixel calculation here}
+          if val>0.5*sumval then exit;
         end;
 
    // Build signal histogram from center of gravity

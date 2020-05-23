@@ -706,7 +706,9 @@ begin
               end
               else mess:='';
               memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(telescope_ra,': ')+#9+prepare_dec(telescope_dec,'° ')+#9+' Up to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(length(starlisttetrahedrons1[0]))+' database tetrahedrons to compare.'+mess);
-            end;
+            end
+            else
+            if (nrstars_required>database_stars+4) then inc(limit_counter);
 
             // for testing purposes
             // create supplement lines for sky coverage testing
@@ -821,12 +823,19 @@ begin
   end
   else
   begin
-    if (nrstars_required>database_stars) then memo2_message('Warning, reached maximum magnitude of star database!');
     memo2_message('No solution found!  :(');
     mainwindow.caption:='No solution found!  :(';
     update_text   ('PLTSOLVD=','                   F / No plate solution found.   ');
     remove_key('COMMENT 6',false{all});
   end;
+
+  if limit_counter>5 then
+  begin
+    memo2_message('Warning, reached maximum magnitude of star database '+inttostr(limit_counter)+' times!');
+    warning_str:=warning_str+'Star database limit was reached '+inttostr(limit_counter)+'x!';
+  end;
+
+
   if warning_str<>'' then
   begin
      update_text('WARNING =',#39+warning_str+#39);
