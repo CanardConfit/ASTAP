@@ -2130,7 +2130,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.366 dated 2020-05-23';
+  #13+#10+'Version ß0.9.367 dated 2020-05-25';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -9894,11 +9894,11 @@ procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; var hfd1,star_fwhm,s
 const
   max_ri=50; //should be larger or equalsmaller then rssqrt(sqr(rs+rs)+sqr(rs+rs))+1;
 var
-  i,j,counter, ri, distance,distance_top_value,illuminated_pixels:integer;
+  i,j,counter, ri, distance,distance_top_value,illuminated_pixels,signal_counter:integer;
   SumVal,SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
   val,bg_average,bg,bg_standard_deviation,pixel_counter,valmax,
   val_00,val_01,val_10,val_11,af, faintA,faintB, brightA,brightB,faintest,brightest : double;
-  HistStart,asymmetry : boolean;
+  HistStart,asymmetry,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
 
     function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
@@ -9920,10 +9920,6 @@ var
       end;
     end;
 begin
-
-//  if ((x1=852) and (y1=741)) then
-//  beep;
-
   if ((x1-rs-4<=0) or (x1+rs+4>=width2-1) or
       (y1-rs-4<=0) or (y1+rs+4>=height2-1) )
     then begin hfd1:=999; snr:=0; exit;end;
@@ -9969,6 +9965,8 @@ begin
       SumVal:=0;
       SumValX:=0;
       SumValY:=0;
+      signal_counter:=0;
+
       for i:=-rs to rs do
       for j:=-rs to rs do
       begin
@@ -9978,6 +9976,7 @@ begin
           SumVal:=SumVal+val;
           SumValX:=SumValX+val*(i);
           SumValY:=SumValY+val*(j);
+           inc(signal_counter); {how many pixels are illuminated}
         end;
       end;
       if sumval<= 12*bg_standard_deviation then exit; {no star found, too noisy, exit with hfd=999}
@@ -9990,55 +9989,28 @@ begin
 
       if ((xc-rs<0) or (xc+rs>width2-1) or (yc-rs<0) or (yc+rs>height2-1) ) then exit;{prevent runtime errors near sides of images}
 
- //     if ((xc>852) and (xc<855) and (yc>741) and (yc<746)) then
-//      begin
-//        beep;
-  //     rs:=1;
-//      end;
+      boxed:=(signal_counter>=(2/9)*sqr(rs+rs+1));{are inside the box 2 of the 9 of the pixels illuminated?}
 
-  //   Check for asymmetry. Are we testing a group of stars or a defocused star?
-      val_00:=0;val_01:=0;val_10:=0;val_11:=0;
-
-      for i:=rs downto 1 do begin
-        for j:=rs downto 1 do begin
-          val_00:=val_00+ value_subpixel(xc+i-0.5,yc+j-0.5)-bg;
-          val_01:=val_01+ value_subpixel(xc+i-0.5,yc-j+0.5)-bg;
-          val_10:=val_10+ value_subpixel(xc-i+0.5,yc+j-0.5)-bg;
-          val_11:=val_11+ value_subpixel(xc-i+0.5,yc-j+0.5)-bg;
-        end;
+      if boxed=false then
+      begin
+        if rs>4 then dec(rs,2) else dec(rs,1); {try a smaller window to exclude nearby stars}
       end;
 
-      if sumval<100000 then af:=min(0.9,rs/10) {variable asymmetry factor. 1 is allow only prefect symmetrical, 0.000001 if off.  More critital detection if rs is large   }
-      else af:=min(0.7,rs/10);{relax criteria for bright stars. Above 100000 no galaxy or nebula}
-
-      {check for asymmetry of detected star using the four quadrants}
-      if val_00<val_01  then begin faintA:=val_00; brightA:=val_01; end else begin faintA:=val_01; brightA:=val_00; end;
-      if val_10<val_11  then begin faintB:=val_10; brightB:=val_11; end else begin faintB:=val_11; brightB:=val_10; end;
-      if faintA<faintB  then faintest:=faintA else faintest:=faintB;{find faintest quadrant}
-      if brightA>brightB  then brightest:=brightA else brightest:=brightB;{find brightest quadrant}
-      asymmetry:=(brightest*af>=faintest); {if true then detected star has asymmetry, ovals/galaxies or double stars will not be accepted}
+//      if ((abs(xc-471)<5) and  (abs(yc-2308)<5)) then
+  //        begin
+    //        beep;
+      //     end;
 
 
-      if asymmetry then  dec(rs,2); {try a smaller window to exclude nearby stars}
-      if rs<4 then exit; {try to reduce box up to rs=4 equals 8x8 box else exit with hfd 999}
-    until asymmetry=false;{loop and reduce box size until asymmetry is gone.}
+      {check on hot pixels}
+      if signal_counter<=1 then exit {one hot pixel}
+      else
+      if ((signal_counter=2) and (img[0,round(xc)+i,round(yc)+j]-bg<3*bg_standard_deviation)) then exit; {two hot pixels}
 
 
-    //     if ((xc>1332) and (xc<1336) and (yc>767) and (yc<771)) then
-//        begin
-  //         beep;
-     //     rs:=1;
-    //     end;
+    until ((boxed) or (rs<=1)) ;{loop and reduce box size until star is boxed}
 
-
-    {check on single hot pixels}
-     for i:=-1 to +1 do
-        for j:=-1 to +1 do
-        begin
-          val:=img[0,round(xc)+i,round(yc)+j]-bg; {no subpixel calculation here}
-          if val>0.5*sumval then exit;
-        end;
-
+    inc(rs,2);{add some space}
    // Build signal histogram from center of gravity
     for i:=0 to rs do distance_histogram[i]:=0;{clear signal histogram for the range used}
     for i:=-rs to rs do begin
@@ -10095,7 +10067,10 @@ begin
 
     hfd1:=max(0.7,hfd1);
 
-//    if hfd1>1 then mainwindow.image1.Canvas.textout(x1,y1,floattostrF2(hfd1,3,1)+'|'+floattostrF2(distance_histogram[0],0,0)+'.'+floattostrF2(distance_histogram[1],0,0)+'.'+floattostrF2(distance_histogram[2],0,0)+'.'+floattostrF2(distance_histogram[3],0,0)  );
+///    if hfd1>1 then mainwindow.image1.Canvas.textout(x1,y1,floattostrF2(hfd1,3,1)+'|'+floattostrF2(distance_histogram[0],0,0)+'.'+floattostrF2(distance_histogram[1],0,0)+'.'+floattostrF2(distance_histogram[2],0,0)+'.'+floattostrF2(distance_histogram[3],0,0)  );
+
+//     if hfd1>1 then  mainwindow.image1.Canvas.textout(round(xc),round(yc),{floattostrF2(faintest/brightest,3,2)+'|'+ }floattostrF2(flux,5,0)+'|'+ floattostrF2(rs,2,0));
+
 
     star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
 
