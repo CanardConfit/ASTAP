@@ -156,7 +156,8 @@ begin
   sincos(dec0  ,sin_dec0 ,cos_dec0);
   x:=x *cdelt/ (3600*180/pi);{scale CCD pixels to standard coordinates (tang angle)}
   y:=y *cdelt/ (3600*180/pi);
-  ra  := ra0 + arctan (-x / (cos_DEC0- y*sin_DEC0) );
+
+  ra  := ra0 + arctan2 (-x, cos_DEC0- y*sin_DEC0);{atan2 is required for images containing celestial pole}
   dec := arcsin ( (sin_dec0+y*cos_dec0)/sqrt(1.0+x*x+y*y) );
 end;
 
@@ -563,6 +564,7 @@ begin
                     #10+filename2;
 
     nrstars_required:=round(nrstars*(height2/width2)*1.25);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
+//    nrstars_required:=round(nrstars*(height2/width2)*1);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
   //  nrstars_required:=round(nrstars*(height2/width2)*factorX);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
 
     solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details}
@@ -654,10 +656,12 @@ begin
 
         if ((telescope_dec<=pi/2+search_field) and (telescope_dec>=-pi/2-search_field)) then {within dec range}
         begin {dec withing range}
+//          if telescope_dec>pi/2-search_field then telescope_dec:=pi/2-search_field;
+
           telescope_ra_offset:= (STEP_SIZE*spiral_x/cos(telescope_dec));{step larger near pole. This telescope_ra is an offsett from zero}
+
           if ((telescope_ra_offset<=pi+search_field*2 {required for 180 degrees coverage}) and (telescope_ra_offset>=-pi-search_field*2) ) then {ra and dec within in range, near poles ra goes  much faster}
           begin
-            //telescope_ra:= telescope_ra+ra_radians;
             telescope_ra:=fnmodulo(ra_radians+telescope_ra_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
 
             {info reporting}
@@ -774,6 +778,7 @@ begin
     cd1_2:=(ra7-ra0)*cos(dec0)*(180/pi);
     cd2_2:=(dec7-dec0)*(180/pi);
 
+    ra0:=fnmodulo(ra0,pi*2);
     new_to_old_WCS;
     solved_in:=' Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}
     ang_sep(ra_radians,dec_radians,ra0,dec0, sep);

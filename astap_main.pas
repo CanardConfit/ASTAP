@@ -92,6 +92,7 @@ type
     MenuItem21: TMenuItem;
     extract_pixel_22: TMenuItem;
     batch_solve_astrometry_net: TMenuItem;
+    remove_longitude_latitude1: TMenuItem;
     menupaste1: TMenuItem;
     PopupMenu_memo2: TPopupMenu;
     select_all1: TMenuItem;
@@ -269,6 +270,7 @@ type
     procedure menufindnext1Click(Sender: TObject);
     procedure copy_paste_tool1Click(Sender: TObject);
     procedure MenuItem21Click(Sender: TObject);
+    procedure remove_longitude_latitude1Click(Sender: TObject);
     procedure select_all1Click(Sender: TObject);
     procedure save_to_tiff1Click(Sender: TObject);
     procedure menupasteClick(Sender: TObject);
@@ -683,7 +685,7 @@ function load_fits(filen:string;light {load as light of dark/flat},load_data: bo
 {if reset_var=true, reset variables to zero}
 var
   header    : array[0..2880] of ansichar;
-  i,j,k,nr,error3,col,naxis1, reader_position            : integer;
+  i,j,k,nr,error3,col,naxis1, reader_position,n,p,nrchars  : integer;
   fract,dummy,scale,exptime,ccd_temperature              : double;
   col_float,bscale,measured_max  : single;
   s                 : string[3];
@@ -1207,7 +1209,7 @@ begin
       end;{read as light #####################################################################################################################################3#############################}
 
 
-      end_record:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D'));{end of header}
+      end_record:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D') and (header[i+3]=' '));{end of header. Note keyword ENDIAN exist, so test space behind END}
       inc(i,80);{go to next 80 bytes record}
     until ((i>=2880) or (end_record));
   until end_record;
@@ -1465,11 +1467,15 @@ begin
             if pos('E',tform[tform_counter])>0 then tform[tform_counter]:='E';{remove spaces}
             if pos('D',tform[tform_counter])>0 then tform[tform_counter]:='D';
             if pos('L',tform[tform_counter])>0 then tform[tform_counter]:='L';{logical}
-            if pos('A',tform[tform_counter])>0 then tform[tform_counter]:='A';{Charactor}
             if pos('B',tform[tform_counter])>0 then tform[tform_counter]:='B';{byte}
             if pos('I',tform[tform_counter])>0 then tform[tform_counter]:='I';{16 bit integer}
             if pos('J',tform[tform_counter])>0 then tform[tform_counter]:='J';{32 bit integer}
             if pos('K',tform[tform_counter])>0 then tform[tform_counter]:='K';{64 bit integer}
+            p:=pos('A',tform[tform_counter]);
+            if p>0 then
+            begin
+               aline:=copy(tform[tform_counter],1,p-1);
+               tform[tform_counter]:='A';{Charactor} nrchars:=strtoint(aline); if nrchars=0 then nrchars:=1; end;  {e.g. 12A for astrometry.net first index table}
           end;
           if ((header[i]='T') and (header[i+1]='B')  and (header[i+2]='C') and (header[i+3]='O') and (header[i+4]='L')) then
           begin
@@ -1489,7 +1495,7 @@ begin
              tunit[strtoint(number)-1]:=get_string;
           end;
 
-          end_record:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D'));{end of header}
+          end_record:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D') and (header[i+3]=' '));{end of header}
 
          inc(i,80);
          end;
@@ -1554,10 +1560,18 @@ begin
            aline:=aline+inttostr(swapendian(fitsbuffer8[k]))+ #9; {int_IEEE, swap four bytes and the read as floating point}
          end
          else
-         if ((tform[k]='L') or (Tform[k]='B') or (Tform[k]='A')) then {logical, byte or char}
+         if ((tform[k]='L') or (Tform[k]='B')) then {logical, byte }
          begin
            aline:=aline+inttostr(fitsbuffer[k])+ #9;
          end;
+         if ((Tform[k]='A')) then {chars}
+         begin
+           reader.read(fitsbuffer[0],nrchars);{copy complete ascii row}
+           field:='';
+           for n:=0 to nrchars-1 do field:=field+hexstr(fitsbuffer[n],2)+' ';
+           aline:=aline+field+ #9;
+         end;
+
        end;
 
        aline:=aline+sLineBreak ;
@@ -2130,7 +2144,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.367 dated 2020-05-25';
+  #13+#10+'Version ß0.9.368 dated 2020-05-28';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6860,7 +6874,7 @@ begin
   result:=false;{assume failure}
   afitsfile:=false;
   {fits}
-  if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')or (ext1='.WCS') or (ext1='.AXY') or (ext1='.XYLS') or (ext1='.GSC')) then {FITS}
+  if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')or (ext1='.WCS') or (ext1='.AXY') or (ext1='.XYLS') or (ext1='.GSC') or (ext1='.BAK')) then {FITS}
   begin
     result:=load_fits(filename2,true {light},true,img_loaded);
     if ((result=false) or (naxis<2))  then {{no image or failure.}
@@ -7445,6 +7459,61 @@ end;
 procedure Tmainwindow.MenuItem21Click(Sender: TObject);
 begin
   split_raw(2,1);{extract one of the Bayer matrix pixels}
+end;
+
+procedure Tmainwindow.remove_longitude_latitude1Click(Sender: TObject);
+var
+  I: integer;
+  Save_Cursor:TCursor;
+  err   : boolean;
+  dobackup : boolean;
+begin
+  OpenDialog1.Title := 'Select multiple  files to remove the observation location from';
+  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter :=  'All formats except TIF|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.new;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;*.fz;'+
+                                      '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
+                         '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
+                         '|24 bits PNG, JPEG, BMP(*.png, *.jpg,*.bmp)|*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP'+
+                         '|Compressed FITS files|*.fz';
+  opendialog1.initialdir:=ExtractFileDir(filename2);
+  fits_file:=false;
+  data_range_groupBox1.Enabled:=true;
+  esc_pressed:=false;
+  err:=false;
+  if OpenDialog1.Execute then
+  begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    dobackup:=img_loaded<>nil;
+    if dobackup then backup_img;{preserve img array and fits header of the viewer}
+
+    try { Do some lengthy operation }
+      with OpenDialog1.Files do
+      for I := 0 to Count - 1 do
+      begin
+        Application.ProcessMessages;
+        if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+        filename2:=Strings[I];
+        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
+        if load_image(false {recenter},false {plot}) then
+        begin
+          remove_key('SITELAT =',true{all});
+          remove_key('SITELONG=',true{all});
+          SaveFITSwithupdatedheader1Click(nil);
+        end
+        else err:=true;
+      end;
+      if err=false then mainwindow.caption:='Completed, all files converted.'
+      else
+      begin
+        beep;
+        ShowMessage('Errors!! Files modified but with errors!!');
+      end;
+      finally
+      if dobackup then restore_img;{for the viewer}
+      Screen.Cursor := Save_Cursor;  { Always restore to normal }
+    end;
+  end;
 end;
 
 procedure Tmainwindow.select_all1Click(Sender: TObject);
@@ -9890,6 +9959,250 @@ begin
   end;{left button pressed}
 end;
 
+
+procedure HFDold(img: image_array;x1,y1,rs {boxsize}: integer; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity}
+const
+  max_ri=50; //should be larger or equalsmaller then rssqrt(sqr(rs+rs)+sqr(rs+rs))+1;
+var
+  i,j,counter, ri, distance,distance_top_value,illuminated_pixels:integer;
+  SumVal,SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
+  val,bg_average,bg,bg_standard_deviation,pixel_counter,valmax,
+  val_00,val_01,val_10,val_11,af, faintA,faintB, brightA,brightB,faintest,brightest : double;
+  HistStart,asymmetry : boolean;
+  distance_histogram : array [0..max_ri] of integer;
+
+    function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
+    var
+      x_trunc,y_trunc: integer;
+      x_frac,y_frac  : double;
+    begin
+      x_trunc:=trunc(x1);
+      y_trunc:=trunc(y1);
+      if ((x_trunc<=0) or (x_trunc>=(width2-2)) or (y_trunc<=0) or (y_trunc>=(height2-2))) then begin result:=0; exit;end;
+      x_frac :=frac(x1);
+      y_frac :=frac(y1);
+      try
+        result:=         (img[0,x_trunc  ,y_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
+        result:=result + (img[0,x_trunc+1,y_trunc  ]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
+        result:=result + (img[0,x_trunc  ,y_trunc+1]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
+        result:=result + (img[0,x_trunc+1,y_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
+      except
+      end;
+    end;
+begin
+
+//  if ((xc>290) and (xc<330) and (yc>130) and (yc<155)) then
+//  beep;
+
+  if ((x1-rs-4<=0) or (x1+rs+4>=width2-1) or
+      (y1-rs-4<=0) or (y1+rs+4>=height2-1) )
+    then begin hfd1:=999; snr:=0; exit;end;
+
+  bg:=0;
+  valmax:=0;
+  hfd1:=999;
+
+  try
+    counter:=0;
+    bg_average:=0;
+    for i:=-rs-4 to rs+4 do {calculate mean at square boundaries of detection box}
+    for j:=-rs-4 to rs+4 do
+    begin
+      if ( (abs(i)>rs) and (abs(j)>rs) ) then {measure only outside the box}
+      begin
+        bg_average:=bg_average+img[0,x1+i,y1+j];
+        inc(counter)
+      end;
+    end;
+    bg_average:=bg_average/counter; {mean value background}
+    bg:=bg_average;
+
+    counter:=0;
+    bg_standard_deviation:=0;
+    for i:=-rs-4 to rs+4 do {calculate standard deviation background at the square boundaries of detection box}
+      for j:=-rs-4 to rs+4 do
+      begin
+        if ( (abs(i)>rs) and (abs(j)>rs) ) then {measure only outside the box}
+        begin
+            val:=img[0,x1+i,y1+j];
+            if val<=2*bg_average then {not an outlier}
+            begin
+              bg_standard_deviation:=bg_standard_deviation+sqr(bg_average-val);
+              inc(counter);
+            end;
+        end;
+    end;
+    bg_standard_deviation:=sqrt(bg_standard_deviation/(counter+0.0001)); {standard deviation in background}
+
+    repeat {reduce box size till symmetry to remove stars}
+ // Get center of gravity whithin star detection box and count signal pixels
+      SumVal:=0;
+      SumValX:=0;
+      SumValY:=0;
+      for i:=-rs to rs do
+      for j:=-rs to rs do
+      begin
+        val:=(img[0,x1+i,y1+j])- bg;
+        if val>3*bg_standard_deviation then
+        begin
+          SumVal:=SumVal+val;
+          SumValX:=SumValX+val*(i);
+          SumValY:=SumValY+val*(j);
+        end;
+      end;
+      if sumval<= 12*bg_standard_deviation then exit; {no star found, too noisy, exit with hfd=999}
+
+      Xg:=SumValX/SumVal;
+      Yg:=SumValY/SumVal;
+      xc:=(x1+Xg);
+      yc:=(y1+Yg);
+     {center of gravity found}
+
+
+      if ((xc-rs<0) or (xc+rs>width2-1) or (yc-rs<0) or (yc+rs>height2-1) ) then exit;{prevent runtime errors near sides of images}
+
+  //   Check for asymmetry. Are we testing a group of stars or a defocused star?
+      val_00:=0;val_01:=0;val_10:=0;val_11:=0;
+
+      for i:=-rs to 0 do begin
+        for j:=-rs to 0 do begin
+          val_00:=val_00+ value_subpixel(xc+i,yc+j)-bg;
+          val_01:=val_01+ value_subpixel(xc+i,yc-j)-bg;
+          val_10:=val_10+ value_subpixel(xc-i,yc+j)-bg;
+          val_11:=val_11+ value_subpixel(xc-i,yc-j)-bg;
+        end;
+      end;
+
+      if sumval<100000 then af:=min(0.9,rs/10) {variable asymmetry factor. 1 is allow only prefect symmetrical, 0.000001 if off.  More critital detection if rs is large   }
+                       else af:=min(0.7,rs/10);{relax criteria for bright stars. Above 100000 no galaxy or nebula}
+
+
+      {check for asymmetry of detected star using the four quadrants}
+      if val_00<val_01  then begin faintA:=val_00; brightA:=val_01; end else begin faintA:=val_01; brightA:=val_00; end;
+      if val_10<val_11  then begin faintB:=val_10; brightB:=val_11; end else begin faintB:=val_11; brightB:=val_10; end;
+      if faintA<faintB  then faintest:=faintA else faintest:=faintB;{find faintest quadrant}
+      if brightA>brightB  then brightest:=brightA else brightest:=brightB;{find brightest quadrant}
+      asymmetry:=(brightest*af>=faintest); {if true then detected star has asymmetry, ovals/galaxies or double stars will not be accepted}
+
+
+      if asymmetry then  dec(rs,2); {try a smaller window to exclude nearby stars}
+      if rs<4 then exit; {try to reduce box up to rs=4 equals 8x8 box else exit with hfd 999}
+    until asymmetry=false;{loop and reduce box size until asymmetry is gone.}
+
+   // Build signal histogram from center of gravity
+    for i:=0 to rs do distance_histogram[i]:=0;{clear signal histogram for the range used}
+    for i:=-rs to rs do begin
+      for j:=-rs to rs do begin
+
+        distance:=round(sqrt(i*i + j*j)); {distance from gravity center} {modA}
+        if distance<=rs then {build histogram for circel with radius rs}
+        begin
+          val:=value_subpixel(xc+i,yc+j)-bg;
+          if val>((3*bg_standard_deviation)) then {3 * sd should be signal }
+          begin
+            distance_histogram[distance]:=distance_histogram[distance]+1;{build distance histogram up to circel with diameter rs}
+            if val>valmax then valmax:=val;{record the peak value of the star}
+          end;
+        end;
+      end;
+    end;
+
+    ri:=-1;
+    distance_top_value:=0;
+    HistStart:=false;
+    illuminated_pixels:=0;
+    repeat
+      inc(ri);
+      illuminated_pixels:=illuminated_pixels+distance_histogram[ri];
+      if distance_histogram[ri]>0 then HistStart:=true;{continue until we found a value>0, center of defocused star image can be black having a central obstruction in the telescope}
+      if distance_top_value<distance_histogram[ri] then distance_top_value:=distance_histogram[ri]; {this should be 2*pi*ri if it is nice defocused star disk}
+    until ( (ri>=rs) or (HistStart and (distance_histogram[ri]<=0.1*distance_top_value {drop-off detection})));{find a distance where there is no pixel illuminated, so the border of the star image of interest}
+    if ri>=rs then exit; {star is equal or larger then box, abort}
+
+    if (ri>2)and(illuminated_pixels<0.35*sqr(ri+ri-2)){35% surface} then exit;  {not a star disk but stars, abort with hfd 999}
+
+    except
+  end;
+
+  if ri<3 then {small star image}
+  begin
+    if distance_histogram[1]<3 then begin exit; end;// reject single hot pixel if less then 3 pixels are detected around the center of gravity
+    ri:=3; {Minimum 6+1 x 6+1 pixel box}
+  end;
+
+  // Get HFD
+  SumVal:=0;
+  SumValR:=0;
+  pixel_counter:=0;
+
+  begin   // Get HFD using the aproximation routine assuming that HFD line divides the star in equal portions of gravity:
+    for i:=-ri to ri do {Make steps of one pixel}
+    for j:=-ri to ri do
+    begin
+      Val:=value_subpixel(xc+i,yc+j)-bg; {The calculated center of gravity is a floating point position and can be anyware, so calculate pixel values on sub-pixel level}
+      r:=sqrt(i*i+j*j); {Distance from star gravity center}
+      SumVal:=SumVal+Val; {Sumval will be star total flux value}
+      SumValR:=SumValR+Val*r; {Method Kazuhisa Miyashita, see notes of HFD calculation method}
+      if val>=valmax*0.5 then pixel_counter:=pixel_counter+1;{How many pixels are above half maximum}
+    end;
+    if Sumval<0.00001 then flux:=0.00001 else flux:=Sumval;{prevent dividing by zero or negative values}
+
+    hfd1:=2*SumValR/flux;
+
+    hfd1:=max(0.7,hfd1);
+    star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
+
+    snr:=flux/sqrt(flux +sqr(ri)*pi*sqr(bg_standard_deviation)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
+
+//    log_to_file('snr_test.csv',inttostr(round(snr*1000))+','+inttostr(round(snr_old*1000)));
+
+    {==========Notes on HFD calculation method=================
+      https://en.wikipedia.org/wiki/Half_flux_diameter
+      http://www005.upp.so-net.ne.jp/k_miyash/occ02/halffluxdiameter/halffluxdiameter_en.html       by Kazuhisa Miyashita. No sub-pixel calculation
+      https://www.lost-infinity.com/night-sky-image-processing-part-6-measuring-the-half-flux-diameter-hfd-of-a-star-a-simple-c-implementation/
+      http://www.ccdware.com/Files/ITS%20Paper.pdf     See page 10, HFD Measurement Algorithm
+
+      HFD, Half Flux Diameter is defined as: The diameter of circle where total flux value of pixels inside is equal to the outside pixel's.
+      HFR, half flux radius:=0.5*HFD
+      The pixel_flux:=pixel_value - background.
+
+      The approximation routine assumes that the HFD line divides the star in equal portions of gravity:
+          sum(pixel_flux * (distance_from_the_centroid - HFR))=0
+      This can be rewritten as
+         sum(pixel_flux * distance_from_the_centroid) - sum(pixel_values * (HFR))=0
+         or
+         HFR:=sum(pixel_flux * distance_from_the_centroid))/sum(pixel_flux)
+         HFD:=2*HFR
+
+      This is not an exact method but a very efficient routine. Numerical checking with an a highly oversampled artificial Gaussian shaped star indicates the following:
+
+      Perfect two dimensional Gaussian shape with σ=1:   Numerical HFD=2.3548*σ                     Approximation 2.5066, an offset of +6.4%
+      Homogeneous disk of a single value  :              Numerical HFD:=disk_diameter/sqrt(2)       Approximation disk_diameter/1.5, an offset of -6.1%
+
+      The approximation routine is robust and efficient.
+
+      Since the number of pixels illuminated is small and the calculated center of star gravity is not at the center of an pixel, above summation should be calculated on sub-pixel level (as used here)
+      or the image should be re-sampled to a higher resolution.
+
+      A sufficient signal to noise is required to have valid HFD value due to background noise.
+
+      Note that for perfect Gaussian shape both the HFD and FWHM are at the same 2.3548 σ.
+      }
+
+
+     {=============Notes on FWHM:=====================
+        1)	Determine the background level by the averaging the boarder pixels.
+        2)	Calculate the standard deviation of the background.
+
+            Signal is anything 3 * standard deviation above background
+
+        3)	Determine the maximum signal level of region of interest.
+        4)	Count pixels which are equal or above half maximum level.
+        5)	Use the pixel count as area and calculate the diameter of that area  as diameter:=2 *sqrt(count/pi).}
+
+  end;
+end;
+
 procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity}
 const
   max_ri=50; //should be larger or equalsmaller then rssqrt(sqr(rs+rs)+sqr(rs+rs))+1;
@@ -10186,6 +10499,7 @@ begin
 
 end;
 
+
 procedure calculate_equatorial_mouse_position(fitsx,fitsy : double; var   ram,decm  : double {mouse position});
 var
    fits_unsampledX, fits_unsampledY :double;
@@ -10218,7 +10532,9 @@ begin
      dDec:=(cd2_1*(u2)+cd2_2*(v2))*pi/180;
      delta:=cos(dec0)-dDec*sin(dec0);
      gamma:=sqrt(dRa*dRa+delta*delta);
-     ram:=ra0+arctan(Dra/delta);
+
+     RAM:=ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
+     if ram<0 then ram:=ram+2*pi;
      DECM:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
    end
    else
@@ -10230,7 +10546,8 @@ begin
        dDec:=(cd2_1*(fitsx-crpix1)+cd2_2*(fitsy-crpix2))*pi/180;
        delta:=cos(dec0)-dDec*sin(dec0);
        gamma:=sqrt(dRa*dRa+delta*delta);
-       RAM:=ra0+arctan(Dra/delta);
+
+       RAM:=ra0+arctan2(Dra,delta); {arctan2 is required for images containing celestial pole}
        if ram<0 then ram:=ram+2*pi;
        DECM:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
      end;

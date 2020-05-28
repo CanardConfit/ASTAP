@@ -1039,6 +1039,11 @@ object mainwindow: Tmainwindow
             OnClick = extract_pixel_22Click
           end
         end
+        object remove_longitude_latitude1: TMenuItem
+          Caption = 'Remove longitude && latitude info from files'
+          Hint = 'Remove location data from the selected FITS files to protect your privacy. It will remove  SITELAT (latitude) and SITELONG (longitude) keywords from the header. Original files will be renamed to *.bak'
+          OnClick = remove_longitude_latitude1Click
+        end
         object compress_fpack1: TMenuItem
           Caption = 'Batch compress FITS'
           Hint = 'Compress all files using the CFITSIO utility program fpack. Works best for 32 bit floating point fits files. Original files will be kept.'
