@@ -239,7 +239,7 @@ begin
 
     shortest3:=shortest_distance;{store shortest distance3}
 
-    if shortest1/shortest3>min_ratio then {2020. Ignore tetrahedrons with a very short side. Gives some reliability improvment for images with a lot of stars}
+    if shortest1/shortest3>min_ratio then {2020. Ignore tetrahedrons with a short star distance. Gives some reliability improvement for images with a lot of stars}
     begin
       starlisttetrahedrons[8,nrtetrahedrons]:=(starlisttetrahedrons[0,nrtetrahedrons]+starlisttetrahedrons[2,nrtetrahedrons]+starlisttetrahedrons[4,nrtetrahedrons]+starlisttetrahedrons[6,nrtetrahedrons])/4; {center x position}
       starlisttetrahedrons[9,nrtetrahedrons]:=(starlisttetrahedrons[1,nrtetrahedrons]+starlisttetrahedrons[3,nrtetrahedrons]+starlisttetrahedrons[5,nrtetrahedrons]+starlisttetrahedrons[7,nrtetrahedrons])/4; {center y position}

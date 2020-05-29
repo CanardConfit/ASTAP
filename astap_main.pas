@@ -92,6 +92,7 @@ type
     MenuItem21: TMenuItem;
     extract_pixel_22: TMenuItem;
     batch_solve_astrometry_net: TMenuItem;
+    copy_to_clipboard1: TMenuItem;
     remove_longitude_latitude1: TMenuItem;
     menupaste1: TMenuItem;
     PopupMenu_memo2: TPopupMenu;
@@ -257,6 +258,7 @@ type
     procedure batch_solve_astrometry_netClick(Sender: TObject);
     procedure ccd_inspector_plot1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
+    procedure copy_to_clipboard1Click(Sender: TObject);
     procedure extract_pixel_11Click(Sender: TObject);
     procedure extract_pixel_12Click(Sender: TObject);
     procedure extract_pixel_22Click(Sender: TObject);
@@ -2144,7 +2146,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.368 dated 2020-05-28';
+  #13+#10+'Version ß0.9.369 dated 2020-05-29';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7086,6 +7088,11 @@ begin
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
   end;
+end;
+
+procedure Tmainwindow.copy_to_clipboard1Click(Sender: TObject);
+begin
+  Clipboard.Assign(Image1.Picture.Bitmap);
 end;
 
 procedure Tmainwindow.extract_pixel_11Click(Sender: TObject);

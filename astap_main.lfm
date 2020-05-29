@@ -1411,6 +1411,12 @@ object mainwindow: Tmainwindow
     object N7: TMenuItem
       Caption = '-'
     end
+    object copy_to_clipboard1: TMenuItem
+      Caption = 'Copy image to clipboard'
+      Hint = 'Copies the image to the clipboard'
+      ShortCut = 16451
+      OnClick = copy_to_clipboard1Click
+    end
     object Copyposition1: TMenuItem
       Caption = 'Copy position to clipboard'
       Enabled = False
