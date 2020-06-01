@@ -158,6 +158,8 @@ begin
   y:=y *cdelt/ (3600*180/pi);
 
   ra  := ra0 + arctan2 (-x, cos_DEC0- y*sin_DEC0);{atan2 is required for images containing celestial pole}
+  if ra>pi*2 then ra:=ra-pi*2; {prevent values above 2*pi which confuses the direction detection later}
+  if ra<0 then ra:=ra+pi*2;
   dec := arcsin ( (sin_dec0+y*cos_dec0)/sqrt(1.0+x*x+y*y) );
 end;
 
@@ -472,7 +474,7 @@ end;
 function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
   nrstars,nrstars_required,count,max_distance,nr_tetrahedrons, minimum_tetrahedrons,i,database_stars,distance,binning : integer;
-  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,oversize,sep,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min: double;
+  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,oversize,sep,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra: double;
   solution, go_ahead,solve_show_log  : boolean;
   Save_Cursor     : TCursor;
   startTick  : qword;{for timing/speed purposes}
@@ -547,8 +549,8 @@ begin
 
     hfd_min:=max(0.8,min_star_size_arcsec/(binning*fov_org*3600/height2) );{to ignore hot pixels which are too small}
 
-    if extend<>2{axy} then  bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2){bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
-                      else  memo2_message('Using X,Y table from file.');
+    if extend<3{xy table inserted} then  bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2){bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
+                                    else  memo2_message('Using X,Y table from file.');
 
 //    bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
 
@@ -765,7 +767,10 @@ begin
         1, {CCD scale}
         ra7 ,dec7{center equatorial position});
 
-    cd1_1:=(ra7-ra0)*cos(dec0)*(180/pi);
+    delta_ra:=ra7-ra0;
+    if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
+    if delta_ra<-pi then delta_ra:=delta_ra-2*pi; {1  -> 359,  -2:=(1-359) -360  }
+    cd1_1:=(delta_ra)*cos(dec0)*(180/pi);
     cd2_1:=(dec7-dec0)*(180/pi);
 
     //make 1 step in direction crpix2
@@ -775,10 +780,12 @@ begin
          1, {CCD scale}
         ra7 ,dec7{center equatorial position});
 
-    cd1_2:=(ra7-ra0)*cos(dec0)*(180/pi);
+    delta_ra:=ra7-ra0;
+    if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
+    if delta_ra<-pi then delta_ra:=delta_ra-2*pi; {1  -> 359,  -2:=(1-359) -360  }
+    cd1_2:=(delta_ra)*cos(dec0)*(180/pi);
     cd2_2:=(dec7-dec0)*(180/pi);
 
-    ra0:=fnmodulo(ra0,pi*2);
     new_to_old_WCS;
     solved_in:=' Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}
     ang_sep(ra_radians,dec_radians,ra0,dec0, sep);
@@ -796,7 +803,6 @@ begin
 
     update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,ra0*180/pi);
     update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,dec0*180/pi);
-
 
     update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);
     update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);

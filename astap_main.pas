@@ -1489,7 +1489,7 @@ begin
           if ((header[i]='T') and (header[i+1]='T')  and (header[i+2]='Y') and (header[i+3]='P') and (header[i+4]='E')) then {field describtion like X, Y}
           begin
              number:=trim(header[i+5]+header[i+6]+header[i+7]);
-             ttype[strtoint(number)-1]:=get_string;
+             ttype[strtoint(number)-1]:=trim(get_string);
           end;
           if ((header[i]='T') and (header[i+1]='U')  and (header[i+2]='N') and (header[i+3]='I') and (header[i+4]='T')) then {unit describtion}
           begin
@@ -1514,7 +1514,11 @@ begin
         aline:=aline+tunit[k]+#9;
      aline:=aline+sLineBreak;
 
-     setlength(starlist2,2,naxisT2);
+     if ((ttype[0]='X_IMAGE') and (ttype[1]='Y_IMAGE') and (extend=2)) then {x y table of stars}
+     begin
+       extend:=3; {table usable for solving}
+       setlength(starlist2,2,naxisT2)
+     end;
 
      for j:=0 to naxisT2-1 do {rows}
      begin
@@ -1535,14 +1539,14 @@ begin
          begin
            x_longword:=swapendian(fitsbuffer4[k]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
 
-           if k<=1 then starlist2[k,j]:=x_single; {import a star list}
+           if ((extend=3) and (k<=1)) then starlist2[k,j]:=x_single-1; {import a star list for solving. Subtract -1 for conversion fits coordinates 1.. to array cordinates 0..}
            aline:=aline+floattostrF(x_single,FFexponent,7,0)+ #9; {int_IEEE, swap four bytes and the read as floating point}
          end
          else
          if tform[k]='D' then {8 byte float}
          begin
            x_int64:=swapendian(fitsbuffer8[k]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
-           if k<=1 then starlist2[k,j]:=x_double; {import a star list}
+           if ((extend=3) and (k<=1)) then starlist2[k,j]:=x_double-1; {import a star list for solving. Subtract -1 for conversion fits coordinates 1.. to array cordinates 0..}
            aline:=aline+floattostrF(x_double,FFexponent,7,0)+ #9; {int_IEEE, swap four bytes and the read as floating point}
          end
          else
@@ -2146,7 +2150,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.369 dated 2020-05-29';
+  #13+#10+'Version ß0.9.370 dated 2020-05-31';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -10540,9 +10544,10 @@ begin
      delta:=cos(dec0)-dDec*sin(dec0);
      gamma:=sqrt(dRa*dRa+delta*delta);
 
-     RAM:=ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
+     ram:=ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
      if ram<0 then ram:=ram+2*pi;
-     DECM:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
+     if ram>pi*2 then ram:=ram-pi*2;
+     decm:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
    end
    else
    if (mainwindow.Polynomial1.itemindex=0) then
@@ -10554,9 +10559,10 @@ begin
        delta:=cos(dec0)-dDec*sin(dec0);
        gamma:=sqrt(dRa*dRa+delta*delta);
 
-       RAM:=ra0+arctan2(Dra,delta); {arctan2 is required for images containing celestial pole}
+       ram:=ra0+arctan2(Dra,delta); {arctan2 is required for images containing celestial pole}
        if ram<0 then ram:=ram+2*pi;
-       DECM:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
+       if ram>pi*2 then ram:=ram-pi*2;
+       decm:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
      end;
    end;
  end;{WCS solution}
@@ -11463,7 +11469,7 @@ begin
 
   if  override1=false then
   begin
-    if extend=2 then {bintable extensions in the file}
+    if extend>=2 then {bintable extensions in the file}
     begin
       if MessageDlg('File bintable extension will be reformatted as single floats only. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then  exit;
     end
@@ -11665,7 +11671,7 @@ begin
     thefile4.writebuffer(fitsbuffer,remain);{write some bytes}
   end;
 
-  if extend=2 then {write bintable extension}
+  if extend>=2 then {write bintable extension}
   begin
     rows:=number_of_fields(#9,mainwindow.memo3.lines[3]); {first lines could be blank or incomplete}
 
