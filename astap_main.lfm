@@ -203,7 +203,7 @@ object mainwindow: Tmainwindow
     Left = 0
     Height = 445
     Hint = 'hint'
-    Top = 176
+    Top = 168
     Width = 1368
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
@@ -565,6 +565,7 @@ object mainwindow: Tmainwindow
         '4'
         '8'
         '10'
+        '15'
         '20'
         '30'
         '40'
@@ -822,7 +823,7 @@ object mainwindow: Tmainwindow
   object MainMenu1: TMainMenu
     Images = ImageList1
     left = 856
-    top = 207
+    top = 208
     object File1: TMenuItem
       Caption = '&File'
       Hint = 'Load a FITS, PNG, JPG or BPM file.'
@@ -1015,6 +1016,18 @@ object mainwindow: Tmainwindow
           Hint = 'Bin 2x2 all selected images'
           OnClick = bin2x2Click
         end
+        object MenuItem22: TMenuItem
+          Caption = 'Rotate'
+          object batch_rotate_left1: TMenuItem
+            Caption = 'Rotate 90 degrees left'
+            Hint = 'Rotate the FITS image 90 degrees left'
+            OnClick = batch_rotate_left1Click
+          end
+          object batch_rotate_right1: TMenuItem
+            Caption = 'Rotate 90 degrees right'
+            Hint = 'Rotate the FITS image 90 degrees right'
+          end
+        end
         object split_osc1: TMenuItem
           Caption = 'Extract one Bayer matrix pixel position from raw OSC images'
           Hint = 'This will extract one of the the Bayer 2x2 matrix pixels representing red, green, green and blue and write to seperate files. If your image Ha with your OSC, one position will contain the red data only.'
@@ -1124,7 +1137,7 @@ object mainwindow: Tmainwindow
       object stretch_draw1: TMenuItem
         Caption = 'Stretch draw'
         Enabled = False
-        Hint = 'Like binning reduce the resolution permanently using current zoom factor. To be used to reduce size of annotated images.'
+        Hint = 'Like binning reduce the displayed resolution temporary using current zoom factor. To be used to create images of reduced resolution and to save to file or copy to clipboard.'
         OnClick = stretch_draw1Click
       end
       object Undo1: TMenuItem

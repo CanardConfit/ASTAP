@@ -255,14 +255,14 @@ begin
                                            10:    gaussian_blur2(img_average,23);
                                            11:    gaussian_blur2(img_average,35);
                                            12:    gaussian_blur2(img_average,50);
-                                           13:    smart_colour_smooth(img_average,4,true {get histogram});{smoothen colours}
-                                           14:    smart_colour_smooth(img_average,6,true {get histogram});{smoothen colours}
-                                           15:    smart_colour_smooth(img_average,8,true {get histogram});{smoothen colours}
-                                           16:    smart_colour_smooth(img_average,10,true {get histogram});{smoothen colours}
-                                           17:    smart_colour_smooth(img_average,15,true {get histogram});{smoothen colours}
-                                           18:    smart_colour_smooth(img_average,23,true {get histogram});{smoothen colours}
-                                           19:    smart_colour_smooth(img_average,35,true {get histogram});{smoothen colours}
-                                           20:    smart_colour_smooth(img_average,50,true {get histogram});{smoothen colours}
+                                           13:    smart_colour_smooth(img_average,4,3,true {get histogram});{smoothen colours}
+                                           14:    smart_colour_smooth(img_average,6,3,true {get histogram});{smoothen colours}
+                                           15:    smart_colour_smooth(img_average,8,3,true {get histogram});{smoothen colours}
+                                           16:    smart_colour_smooth(img_average,10,3,true {get histogram});{smoothen colours}
+                                           17:    smart_colour_smooth(img_average,15,3,true {get histogram});{smoothen colours}
+                                           18:    smart_colour_smooth(img_average,23,3,true {get histogram});{smoothen colours}
+                                           19:    smart_colour_smooth(img_average,35,3,true {get histogram});{smoothen colours}
+                                           20:    smart_colour_smooth(img_average,50,3,true {get histogram});{smoothen colours}
                                         end;{case}
 
               //for testing
@@ -361,8 +361,8 @@ begin
 
             if init=false then {init}
             begin
-              memo2_message('Reference image, largest with best HFD is: '+filename2);
-              image_path:=ExtractFilePath(filename2); {for saving later}
+              memo2_message('Largest reference image with best HFD is: '+filename2);
+//              image_path:=ExtractFilePath(filename2); {for saving later}
               width_max:=width2+oversize*2;
               height_max:=height2+oversize*2;
 
@@ -687,8 +687,8 @@ begin
 
           if init=false then {init}
           begin
-            memo2_message('Reference image, largest with best HFD is: '+filename2);
-            image_path:=ExtractFilePath(filename2); {for saving later}
+            memo2_message('Largest reference image with best HFD is: '+filename2);
+//            image_path:=ExtractFilePath(filename2); {for saving later}
             width_max:=width2+oversize*2;
             height_max:=height2+oversize*2;
 
@@ -898,8 +898,8 @@ begin
 
           if init=false then {init}
           begin
-            memo2_message('Reference image, largest with best HFD is: '+filename2);
-            image_path:=ExtractFilePath(filename2); {for saving later}
+            memo2_message('Largest reference image with best HFD is: '+filename2);
+//            image_path:=ExtractFilePath(filename2); {for saving later}
 
             oversize:=width2*mosaic_width1.position div 2;{increase the oversize to have space for the tiles}
             width_max:=width2+oversize*2;
@@ -1117,7 +1117,7 @@ begin
 
         if init=false then {init}
         begin
-          image_path:=ExtractFilePath(filename2); {for saving later}
+//          image_path:=ExtractFilePath(filename2); {for saving later}
           width_max:=width2+oversize*2;
           height_max:=height2+oversize*2;
 
@@ -1568,8 +1568,8 @@ begin
 
         if init=false then {init}
         begin
-          memo2_message('Reference image, largest with best HFD is: '+filename2);
-          image_path:=ExtractFilePath(filename2); {for saving later}
+          memo2_message('Largest reference image with best HFD is: '+filename2);
+//          image_path:=ExtractFilePath(filename2); {for saving later}
           width_max:=width2+oversize*2;
           height_max:=height2+oversize*2;
 

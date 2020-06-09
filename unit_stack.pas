@@ -64,14 +64,23 @@ type
     analyse_objects_visibles1: TButton;
     binning_for_solving_label4: TLabel;
     calculated_scale1: TLabel;
+    osc_colour_smooth1: TCheckBox;
+    smart_colour_sd1: TComboBox;
+    raw_conversion_program1: TComboBox;
+    GroupBox15: TGroupBox;
     focallength1: TEdit;
     GroupBox13: TGroupBox;
     help_stack_menu3: TLabel;
     ignore_header_solution1: TCheckBox;
     copy_files_to_clipboard1: TMenuItem;
+    interim_to_clipboard1: TCheckBox;
     Label13: TLabel;
+    Label22: TLabel;
+    Label25: TLabel;
     min_star_size_stacking1: TComboBox;
     go_step_two1: TBitBtn;
+    osc_smart_colour_sd1: TComboBox;
+    osc_smart_smooth_width1: TComboBox;
     update_solution1: TCheckBox;
     update_annotations1: TCheckBox;
     Label23: TLabel;
@@ -325,7 +334,7 @@ type
     nr_total_darks1: TLabel;
     nr_total_flats1: TLabel;
     nr_total_photometry1: TLabel;
-    osc_colour_smooth1: TCheckBox;
+    osc_auto_level1: TCheckBox;
     oversize1: TComboBox;
     pagecontrol1: TPageControl;
     panel_manual1: TPanel;
@@ -339,6 +348,7 @@ type
     scale_calc1: TLabel;
     auto_rotate1: TCheckBox;
     use_ephemeris_alignment1: TRadioButton;
+    write_jpeg1: TCheckBox;
     xxxxxxx: TComboBox;
     rainbow_Panel1: TPanel;
     rb1: TEdit;
@@ -743,7 +753,7 @@ const
   dark_temperature: integer=987654321;
   flat_filter : string='987654321';{not done indication}
 
-  image_path: string='';
+//  image_path: string='';
   dropsize: double=0.65; {should be between 1 and 0.5}
   new_analyse_required: boolean=false;{if changed then reanalyse}
   tetrahedrons_displayed:boolean=false;{no tetrahedrons visible, so no refresh required}
@@ -765,7 +775,7 @@ procedure black_spot_filter(var img: image_array);{remove black spots with value
 
 function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer) inline; {apply dark, flat if required, renew if different exposure or ccd temp}
-procedure smart_colour_smooth( var img: image_array; wide : integer; measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
+procedure smart_colour_smooth( var img: image_array; wide, sd:double; measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 procedure date_to_jd(date_time:string);{get julian day for date_obs, so the start of the observation or for date_avg. Set global variable jd}
 function JdToDate(jd:double):string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
@@ -965,6 +975,8 @@ begin
 end;
 
 procedure update_stackmenu;{update stackmenu1 menus, called onshow stackmenu1}
+var
+  osc_color :boolean;
 begin
   with stackmenu1 do
   begin
@@ -1005,14 +1017,14 @@ begin
       panel_ephemeris1.color:=clBtnFace;
     end;
 
-
-
-    osc_colour_smooth1.enabled:=make_osc_color1.checked;
-    bayer_pattern1.enabled:=make_osc_color1.checked;
-    test_pattern1.enabled:=make_osc_color1.checked;
-    demosaic_method1.enabled:=make_osc_color1.checked;
-    osc_colour_smooth1.enabled:=make_osc_color1.checked;
-
+    osc_color:=make_osc_color1.checked;
+    osc_auto_level1.enabled:=osc_color;
+    bayer_pattern1.enabled:=osc_color;
+    test_pattern1.enabled:=osc_color;
+    demosaic_method1.enabled:=osc_color;
+    osc_colour_smooth1.enabled:=osc_color;
+    osc_smart_colour_sd1.enabled:=osc_color;
+    osc_smart_smooth_width1.enabled:=osc_color;
   end;{stack menu}
 end;
 
@@ -5785,7 +5797,7 @@ begin
 end;
 
 
-procedure smart_colour_smooth( var img: image_array; wide : integer; measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
+procedure smart_colour_smooth( var img: image_array; wide, sd:double; measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 var fitsX,fitsY,x,y,step,x2,y2,count,width5,height5  : integer;
     img_temp2            : image_array;
     luminance,red,green,blue,rgb,r,g,b,sqr_dist,highest,top,bg,r2,g2,b2,noise_level1, peak,bgR2,bgB2,bgG2  : single;
@@ -5800,7 +5812,7 @@ begin
 
   setlength(img_temp2,3,width5,height5);{set length of image array}
 
-  step:= wide div 2;
+  step:= round(wide) div 2;
 
   get_background(0,img,measurehist {hist},true  {noise level},{var} bgR,star_level);{calculate red background, noise_level and star_level}
   get_background(1,img,measurehist {hist},false{noise level},{var} bgG,star_level);{calculate green background}
@@ -5830,7 +5842,7 @@ begin
 //    if luminance>3*noise_level[0] then
 //    if luminance>5000 then
 
-    if ( (r2>3*noise_level1) or (g2>3*noise_level1) or (b2>3*noise_level1) ) then {some relative flux}
+    if ( (r2>sd*noise_level1) or (g2>sd*noise_level1) or (b2>sd*noise_level1) ) then {some relative flux}
     begin
       for y:=-step to step do
         for x:=-step to step do
@@ -5928,7 +5940,7 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   backup_img;
 
-  smart_colour_smooth(img_loaded, round(strtofloat2(smart_smooth_width1.text)),false);
+  smart_colour_smooth(img_loaded, strtofloat2(smart_smooth_width1.text),strtofloat2(smart_colour_sd1.text),false);
 
   plot_fits(mainwindow.image1,false,true);{plot real}
 
@@ -6087,11 +6099,11 @@ begin
   end;
 
   {enabe/disable related menu options}
-  osc_colour_smooth1.enabled:=make_osc_color1.checked;
+  osc_auto_level1.enabled:=make_osc_color1.checked;
   bayer_pattern1.enabled:=make_osc_color1.checked;
   test_pattern1.enabled:=make_osc_color1.checked;
   demosaic_method1.enabled:=make_osc_color1.checked;
-  osc_colour_smooth1.enabled:=make_osc_color1.checked;
+  osc_auto_level1.enabled:=make_osc_color1.checked;
 end;
 
 procedure Tstackmenu1.selectall1Click(Sender: TObject);
@@ -6972,6 +6984,7 @@ begin
           if specified=false then
           begin
             filter:=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter];
+
             width1:=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]);
             if flat_dark_width=0 then memo2_message('Warning no flat-dark/bias found!!')
             else
@@ -7345,7 +7358,7 @@ begin
   if counterB<>0 then result:=result+inttostr(counterB)+'x'+inttostr(exposureB)+'B ';
   if counterRGB<>0 then result:=result+inttostr(counterRGB)+'x'+inttostr(exposureRGB)+'RGB ';
   if counterL<>0 then result:=result+inttostr(counterL)+'x'+inttostr(exposureL)+'L '; {exposure}
-  result:=StringReplace(result,' ,',',',[rfReplaceAll]);{remove all spaces in front of comma's}
+  result:=StringReplace(trim(result),' ,',',',[rfReplaceAll]);{remove all spaces in front of comma's}
 
   if telescop<>'' then result:=result+', '+telescop;
   if ((filter_name<>'') and (counterR=0) and (counterG=0) and (counterB=0) and (counterRGB=0)) then result:=result+', '+filter_name;
@@ -7836,14 +7849,15 @@ begin
 
     if ((monofile){success none lrgb loop} or (counter_colours<>0{length(extra2)>=2} {lrgb loop})) then
     begin
-      if ((stackmenu1.make_osc_color1.checked) and (stackmenu1.osc_colour_smooth1.checked)) then
+      if ((stackmenu1.make_osc_color1.checked) and (stackmenu1.osc_auto_level1.checked)) then
       begin
         memo2_message('Adjusting colour levels and applying colour-smoothing filter on stacked colour image. See pixel math tab for more manual options.');
         stackmenu1.auto_background_level1Click(nil);
         apply_factors;{histogram is after this action invalid}
         stackmenu1.reset_factors1Click(nil);{reset factors to default}
         getfits_histogram(img_loaded,0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
-        smart_colour_smooth(img_loaded,10,false {get  hist});{histogram doesn't needs an update}
+        if stackmenu1.osc_colour_smooth1.checked then
+           smart_colour_smooth(img_loaded,strtofloat2(osc_smart_smooth_width1.text),strtofloat2(osc_smart_colour_sd1.text),false {get  hist});{histogram doesn't needs an update}
       end
       else
         getfits_histogram(img_loaded,0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
@@ -8003,7 +8017,7 @@ begin
                   else report_results(object_to_process,stack_info,object_counter,4 {gray icon}); {report result in tab results}
 
 
-      DeleteFiles(image_path,'*.astap_solution');{delete solution files}
+      DeleteFiles(ExtractFilePath(filename2){image_path},'*.astap_solution');{delete solution files}
 
       memo2.lines.add('Finished in '+IntToStr( round((gettickcount64 - startTick)/1000)) + ' sec. The FITS header contains a detailed history.');
 

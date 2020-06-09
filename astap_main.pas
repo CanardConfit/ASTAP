@@ -93,6 +93,9 @@ type
     extract_pixel_22: TMenuItem;
     batch_solve_astrometry_net: TMenuItem;
     copy_to_clipboard1: TMenuItem;
+    MenuItem22: TMenuItem;
+    batch_rotate_left1: TMenuItem;
+    batch_rotate_right1: TMenuItem;
     remove_longitude_latitude1: TMenuItem;
     menupaste1: TMenuItem;
     PopupMenu_memo2: TPopupMenu;
@@ -272,6 +275,7 @@ type
     procedure menufindnext1Click(Sender: TObject);
     procedure copy_paste_tool1Click(Sender: TObject);
     procedure MenuItem21Click(Sender: TObject);
+    procedure batch_rotate_left1Click(Sender: TObject);
     procedure remove_longitude_latitude1Click(Sender: TObject);
     procedure select_all1Click(Sender: TObject);
     procedure save_to_tiff1Click(Sender: TObject);
@@ -2150,7 +2154,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.370 dated 2020-05-31';
+  #13+#10+'Version ß0.9.372 dated 2020-06-09';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2401,7 +2405,7 @@ begin
          filename2:=Strings[I];
          {load fits}
          Application.ProcessMessages;
-        if ((esc_pressed) or (load_fits(filename2,true {light},true,img_loaded)=false)) then begin Screen.Cursor := Save_Cursor;  exit;end;
+         if ((esc_pressed) or (load_fits(filename2,true {light},true,img_loaded)=false)) then begin Screen.Cursor := Save_Cursor;  exit;end;
          ratio:=0.5;
 
          w:=trunc(width2/2);  {half size}
@@ -2926,9 +2930,10 @@ begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-  backup_img;
+  if ((sender=batch_rotate_right1) or (sender=batch_rotate_left1))=false then
+    backup_img;
 
-  right:= (sender=rotateright1); {rotate right?}
+  right:= ((sender=rotateright1) or (sender=batch_rotate_right1)); {rotate right?}
 
   if Fliphorizontal1.checked then right:= (right=false);{change rotation if flipped}
   if Flipvertical1.checked then   right:= (right=false);{change rotation if flipped}
@@ -5555,6 +5560,8 @@ procedure get_hist(colour:integer; img :image_array);
 var
      i,j,col,his_total,count, width5, height5   : integer;
      total_value                                : double;
+const
+   offset=10; {ignore boundaries}
 begin
   if colour+1>length(img) then {robust detection, case binning is applied and image is mono}
     colour:=0; {used red only}
@@ -5571,9 +5578,9 @@ begin
 
   if nrbits=24  then {special format}
   begin
-    For i:=0 to height5-1 do
+    For i:=0+offset to height5-1-offset do
     begin
-      for j:=0 to width5-1 do
+      for j:=0+offset to width5-1-offset do
       begin
         col:=round(img[0,j,i]);
         col:=intensity2(col);{average the 3 colors}
@@ -5589,9 +5596,9 @@ begin
   end
   else
   begin {normal fits, mono or colour}
-    For i:=0 to height5-1 do
+    For i:=0+offset to height5-1-offset do
     begin
-      for j:=0 to width5-1 do
+      for j:=0+offset to width5-1-offset do
       begin
         col:=round(img[colour,j,i]);{red}
         if ((col>=1) and (col<65000)) then {ignore black overlap areas and bright stars}
@@ -5997,6 +6004,8 @@ begin
     i:=stackmenu1.pagecontrol1.tabindex;  get_int(i,'stack_tab');stackmenu1.pagecontrol1.tabindex:=i;
 
     i:=stackmenu1.demosaic_method1.itemindex;  get_int(i,'demosaic_method2');stackmenu1.demosaic_method1.itemindex:=i;
+    i:=stackmenu1.raw_conversion_program1.itemindex;  get_int(i,'conversion_program');stackmenu1.raw_conversion_program1.itemindex:=i;
+
     i:=Polynomial1.itemindex;  get_int(i,'polynomial');Polynomial1.itemindex:=i;
 
     i:=stackmenu1.rgb_filter1.itemindex;  get_int(i,'rgb_filter');stackmenu1.rgb_filter1.itemindex:=i;
@@ -6011,10 +6020,10 @@ begin
     add_marker_position1.checked:=get_boolean('add_marker',false);{popup marker selected?}
 
     stackmenu1.make_osc_color1.checked:=get_boolean('osc_color_convert',false);
+    stackmenu1.osc_auto_level1.checked:=get_boolean('osc_auto_level',true);
     stackmenu1.osc_colour_smooth1.checked:=get_boolean('osc_colour_smooth',true);
 
     stackmenu1.ignore_header_solution1.Checked:= get_boolean('ignore_header_solution',true);
-//    stackmenu1.drizzle1.checked:= get_boolean('drizzle',false);
     stackmenu1.Equalise_background1.checked:= get_boolean('equalise_background',true);{for mosaic mode}
     mainwindow.preview_demosaic1.Checked:=get_boolean('preview_demosaic',false);
 
@@ -6193,6 +6202,10 @@ begin
     show_console:=get_boolean('show_console',true);
     dum:=initstring.Values['cygwin_path']; if dum<>'' then cygwin_path:=dum;
 
+    stackmenu1.write_jpeg1.Checked:=get_boolean('write_jpeg',false);{live stacking}
+    stackmenu1.interim_to_clipboard1.Checked:=get_boolean('to_clipboard',false);{live stacking}
+
+
     c:=0;
     repeat {add images}
        dum:=initstring.Values['image'+inttostr(c)];
@@ -6331,7 +6344,7 @@ begin
   initstring.Values['bayerpat']:=stackmenu1.bayer_pattern1.text;
 
   initstring.Values['demosaic_method2']:=inttostr(stackmenu1.demosaic_method1.itemindex);
-  initstring.Values['polynomial']:=inttostr(polynomial1.itemindex);
+  initstring.Values['conversion_program']:=inttostr(stackmenu1.raw_conversion_program1.itemindex);
 
   initstring.Values['polynomial']:=inttostr(polynomial1.itemindex);
 
@@ -6346,6 +6359,7 @@ begin
   initstring.Values['add_marker']:=BoolStr[add_marker_position1.checked];
 
   initstring.Values['osc_color_convert']:=BoolStr[stackmenu1.make_osc_color1.checked];
+  initstring.Values['osc_auto_level']:=BoolStr[stackmenu1.osc_auto_level1.checked];
   initstring.Values['osc_colour_smooth']:=BoolStr[stackmenu1.osc_colour_smooth1.checked];
 
   initstring.Values['ignore_header_solution']:=BoolStr[stackmenu1.ignore_header_solution1.Checked];
@@ -6502,7 +6516,9 @@ begin
   initstring.Values['cygwin_path']:=cygwin_path;
   initstring.Values['show_console']:=BoolStr[show_console];
   initstring.Values['astrometry_extra_options']:=astrometry_extra_options;
-  ;
+
+  initstring.Values['write_jpeg']:=BoolStr[stackmenu1.write_jpeg1.checked];{live stacking}
+  initstring.Values['to_clipboard']:=BoolStr[stackmenu1.interim_to_clipboard1.checked];{live stacking}
 
   for c:=0 to stackmenu1.ListView1.items.count-1 do {add light images}
   begin
@@ -6684,7 +6700,7 @@ begin
     memo2_message('Extracted temperature from file name');
   end
   else
-  memo2_message('Failed to extract exposure time from file name. Expects ...C ');
+  memo2_message('Failed to extract temperature from the file name. Expects ...C ');
 end;
 
 
@@ -6737,28 +6753,102 @@ var
   filename4 :string;
   JD2                               : double;
   fa                                : integer;
+  dcraw                             : boolean;
+  libraw                            : boolean;
+var
+  commando  :string;
+
 begin
-  result:=false;
+  result:=false; {assume failure}
 
-  {$ifdef mswindows}
-  if fileexists(application_path+'unprocessed_raw.exe')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'unprocessed_raw.exe !!, Download, libraw and place in program directory' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
-  ExecuteAndWait(application_path+'unprocessed_raw.exe "'+filename3+'"',false);{execute command and wait}
-  {$endif}
-  {$ifdef Darwin}{MacOS}
-  if fileexists(application_path+'/unprocessed_raw')=false then begin result:=false; application.messagebox(pchar('Could not find: '+application_path+'unprocessed_raw' ),pchar('Error'),MB_ICONWARNING+MB_OK);exit; end;
-  execute_unix2(application_path+'/unprocessed_raw "'+filename3+'"');
-   {$endif}
-   {$ifdef linux}
-  if fileexists('/usr/lib/libraw/unprocessed_raw')=false then
+  dcraw:=stackmenu1.raw_conversion_program1.itemindex=0; {DCRaw specified}
+  libraw:=false;
+
+  if dcraw then {dcraw specified}
   begin
-    if fileexists('/usr/bin/unprocessed_raw')=false then
-    begin result:=false; application.messagebox(pchar('Could not find program unprocessed_raw !!, Install libraw. Eg: sudo apt-get install libraw-bin' ),pchar('Error'),MB_ICONWARNING+MB_OK);;exit; end;
-    execute_unix2('/usr/bin/unprocessed_raw "'+filename3+'"');
-  end;
-  execute_unix2('/usr/lib/libraw/unprocessed_raw "'+filename3+'"');
-  {$endif}
+    commando:='-D -4';
+    {$ifdef mswindows}
+    if fileexists(application_path+'dcraw.exe')=false then
+      dcraw:=false
+    else
+      ExecuteAndWait(application_path+'dcraw.exe '+commando+ ' "'+filename3+'"',false);{execute command and wait}
 
-  filename4:=FileName3+'.pgm';
+    {$endif}
+    {$ifdef Linux}
+    if fileexists('/usr/bin/dcraw')=false then
+      dcraw:=true
+    else
+      execute_unix2('/usr/bin/dcraw '+commando+' "'+filename3+'"');
+    {$endif}
+    {$ifdef Darwin} {MacOS}
+    if fileexists(application_path+'/dcraw')=false then
+      dcraw:=false
+    else
+      execute_unix2(application_path+'/dcraw '+commando+' "'+filename3+'"');
+    {$endif}
+     if dcraw=false then memo2_message('DCRAW executable not found! Will try unprocessed_raw as alternative.');
+  end;
+
+  if dcraw=false then {dcraw not specified of failed, try with Libraw}
+  begin
+    libraw:=true; {assume success}
+    {$ifdef mswindows}
+    if fileexists(application_path+'unprocessed_raw.exe')=false then
+      libraw:=false
+    else
+       ExecuteAndWait(application_path+'unprocessed_raw.exe "'+filename3+'"',false);{execute command and wait}
+    {$endif}
+    {$ifdef linux}
+     if fileexists('/usr/lib/libraw/unprocessed_raw')=false then
+     begin
+       if fileexists('/usr/bin/unprocessed_raw')=false then
+         libraw:=false
+       else
+         execute_unix2('/usr/bin/unprocessed_raw "'+filename3+'"');
+     end
+     else
+     execute_unix2('/usr/lib/libraw/unprocessed_raw "'+filename3+'"');
+   {$endif}
+    {$ifdef Darwin}{MacOS}
+    if fileexists(application_path+'/unprocessed_raw')=false then
+      libraw:=false
+    else
+      execute_unix2(application_path+'/unprocessed_raw "'+filename3+'"');
+     {$endif}
+    filename4:=FileName3+'.pgm';
+  end
+  else filename4:=ChangeFileExt(FileName3,'.pgm');{for DCRaw}
+
+  if ((dcraw=false) and (libraw=false)) then {no conversion program}
+  begin
+    if dcraw=false then
+    begin
+    {$ifdef mswindows}
+     application.messagebox(pchar('Could not find: '+application_path+'dcraw.exe !!' ),pchar('Error'),MB_ICONWARNING+MB_OK);
+    {$endif}
+    {$ifdef Linux}
+    application.messagebox(pchar('Could not find program dcdraw !!, Install this program. Eg: sudo apt-get install dcraw' ),pchar('Error'),MB_ICONWARNING+MB_OK);
+    {$endif}
+    {$ifdef Darwin} {MacOS}
+    application.messagebox(pchar('Could not find: '+application_path+'dcraw' ),pchar('Error'),MB_ICONWARNING+MB_OK);
+    {$endif}
+    end;
+
+    if libraw=false then
+    begin {libraw}
+      {$ifdef mswindows}
+      application.messagebox(pchar('Could not find: '+application_path+'unprocessed_raw.exe !!, Download, libraw and place in program directory' ),pchar('Error'),MB_ICONWARNING+MB_OK);
+      {$endif}
+      {$ifdef linux}
+       application.messagebox(pchar('Could not find program unprocessed_raw !!, Install libraw. Eg: sudo apt-get install libraw-bin' ),pchar('Error'),MB_ICONWARNING+MB_OK);
+      {$endif}
+      {$ifdef Darwin}{MacOS}
+      application.messagebox(pchar('Could not find: '+application_path+'unprocessed_raw' ),pchar('Error'),MB_ICONWARNING+MB_OK);
+      {$endif}
+    end;
+
+    exit;
+  end;
 
   if load_PPM_PGM_PFM(fileName4,img) then {succesfull PGM load}
   begin
@@ -7470,6 +7560,43 @@ end;
 procedure Tmainwindow.MenuItem21Click(Sender: TObject);
 begin
   split_raw(2,1);{extract one of the Bayer matrix pixels}
+end;
+
+procedure Tmainwindow.batch_rotate_left1Click(Sender: TObject);
+var
+  img_temp2 : image_array;
+  I, FitsX, fitsY,k,w,h   : integer;
+  ratio                   : double;
+  dobackup : boolean;
+begin
+
+  OpenDialog1.Title := 'Select multiple  files to rotate 90 degrees';
+  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.FIT*';
+  data_range_groupBox1.Enabled:=true;
+  esc_pressed:=false;
+
+  if OpenDialog1.Execute then
+  begin
+    dobackup:=img_loaded<>nil;
+    if dobackup then backup_img;{preserve img array and fits header of the viewer}
+
+    try { Do some lengthy operation }
+       with OpenDialog1.Files do
+       for I := 0 to Count - 1 do
+       begin
+         filename2:=Strings[I];
+         {load fits}
+         Application.ProcessMessages;
+         if ((esc_pressed) or (load_fits(filename2,true {light},true,img_loaded)=false)) then begin exit;end;
+
+         rotateleft1Click(Sender);
+         save_fits(img_loaded,FileName2,16,true);{overwrite}
+      end;
+      finally
+      if dobackup then restore_img;{for the viewer}
+    end;
+  end;
 end;
 
 procedure Tmainwindow.remove_longitude_latitude1Click(Sender: TObject);
@@ -9304,7 +9431,9 @@ begin
   {colours are now created, redraw histogram}
   getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
 
-  smart_colour_smooth(img_loaded,10,false {get red hist});
+ // smart_colour_smooth(img_loaded,10,false {get red hist});
+  smart_colour_smooth(img_loaded,strtofloat2(stackmenu1.osc_smart_smooth_width1.text),strtofloat2(stackmenu1.osc_smart_colour_sd1.text),false {get  hist});{histogram doesn't needs an update}
+
 
   remove_key('BAYERPAT',false{all});{remove key word in header}
   remove_key('XBAYROFF',false{all});{remove key word in header}
@@ -10838,7 +10967,7 @@ begin
   OldCursor := Screen.Cursor;
   Screen.Cursor:= crHourGlass;
 
-  if paramcount=0 {<>platesolve2 command} then backup_img;
+  backup_img;
   try
     TmpBmp := TBitmap.Create;
     try
@@ -10852,11 +10981,11 @@ begin
     end;
     except
   end;
-  mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
-  memo1.clear;
-  width2:=mainwindow.Image1.Picture.bitmap.Width;
-  height2:=mainwindow.Image1.Picture.bitmap.Height;
-  update_menu(false);{set file:=false and update menu}
+//  mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
+//  memo1.clear;
+//  width2:=mainwindow.Image1.Picture.bitmap.Width;
+//  height2:=mainwindow.Image1.Picture.bitmap.Height;
+//  update_menu(false);{set file:=false and update menu}
   Screen.Cursor:=OldCursor;
 end;
 
@@ -10879,7 +11008,6 @@ begin
   save1.Enabled:=true;
 end;
 
-
 procedure Tmainwindow.SaveasJPGPNGBMP1Click(Sender: TObject);
 var filename3:ansistring;
    {$IFDEF fpc}
@@ -10891,6 +11019,7 @@ var filename3:ansistring;
 
 begin
   filename3:=ChangeFileExt(FileName2,'');
+  savedialog1.initialdir:=ExtractFilePath(filename3);
   savedialog1.filename:=filename3;
   savedialog1.Filter := 'PNG 8 bit(*.png)|*.png;|BMP 8 bit(*.bmp)|*.bmp;|JPG 100% compression quality (*.jpg)|*.jpg;|JPG 90% compression quality (*.jpg)|*.jpg;|JPG 80% compression quality (*.jpg)|*.jpg;|JPG 70% compression quality (*.jpg)|*.jpg;';
   savedialog1.filterindex:=SaveasJPGPNGBMP1filterindex; {4 or jpg 90%}
@@ -11309,7 +11438,8 @@ var
 begin
   filename3:=ChangeFileExt(FileName2,'');
   savedialog1.filename:=filename3;
-  if image_path<>'' then savedialog1.initialdir:=image_path;{path from stacking}
+  savedialog1.initialdir:=ExtractFilePath(filename3);
+
   if naxis3>1 then savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit float|*.tif|PPM 16 bit stretched|*.ppm;|PPM 16 bit|*.ppm|PFM 32 bit float|*.pfm'
               else savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit float|*.tif|PGM 16 bit stretched|*.pgm;|PGM 16 bit|*.pgm|PFM 32 bit float|*.pfm';
   savedialog1.filterindex:=SaveasTIFF1filterindex; {default 1}
@@ -11802,7 +11932,11 @@ begin
   if pos('.fit',filename2)=0 then savedialog1.filename:=ChangeFileExt(FileName2,'.fits')
                              else savedialog1.filename:=FileName2;
 
-  if image_path<>'' then savedialog1.initialdir:=image_path;{path from stacking}
+   savedialog1.initialdir:=ExtractFilePath(filename2);
+//   SetCurrentDir(savedialog1.initialdir);
+//  if image_path<>'' then savedialog1.initialdir:=image_path;{path from stacking}
+
+
   savedialog1.Filter := 'IEEE Float (-32) FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS|16 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS|8 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS|8 bit FITS files (special, naxis1=3)(*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   if nrbits=16  then SaveDialog1.FilterIndex:=2
   else

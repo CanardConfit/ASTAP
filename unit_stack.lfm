@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1604
-    ActivePage = Images
+    ActivePage = tab_stackmethod1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 5
     TabOrder = 5
     object Images: TTabSheet
       Hint = 'Select here the light frames'
@@ -1306,9 +1306,9 @@ object stackmenu1: Tstackmenu1
         OnClick = help_stack_menu2Click
       end
       object filter_groupbox1: TGroupBox
-        Left = 450
+        Left = 488
         Height = 203
-        Top = 186
+        Top = 192
         Width = 268
         AutoSize = True
         Caption = 'R+G+B+L stacking, link filters to RGB colours'
@@ -1822,13 +1822,13 @@ object stackmenu1: Tstackmenu1
       end
       object GroupBox8: TGroupBox
         Left = 24
-        Height = 198
+        Height = 232
         Hint = 'Use RAW files for best performance. Use viewer menu TOOLS, conversion DSLR images for import.'
-        Top = 186
-        Width = 408
+        Top = 168
+        Width = 456
         Caption = 'RAW one shot colour images'
-        ClientHeight = 178
-        ClientWidth = 404
+        ClientHeight = 212
+        ClientWidth = 452
         ParentFont = False
         TabOrder = 7
         object make_osc_color1: TCheckBox
@@ -1845,7 +1845,7 @@ object stackmenu1: Tstackmenu1
           TabOrder = 0
         end
         object bayer_pattern1: TComboBox
-          Left = 259
+          Left = 232
           Height = 23
           Top = 14
           Width = 104
@@ -1866,7 +1866,7 @@ object stackmenu1: Tstackmenu1
           Text = 'auto'
         end
         object Label12: TLabel
-          Left = 259
+          Left = 232
           Height = 15
           Top = -4
           Width = 73
@@ -1878,8 +1878,8 @@ object stackmenu1: Tstackmenu1
         object demosaic_method1: TComboBox
           Left = 8
           Height = 23
-          Hint = 'Demosaic method of color filter array.  Best method is AstroC.  For white stars you could AstroM.  Note that super-pixel produces half size images. Use this for over-sampled images.'
-          Top = 95
+          Hint = 'Demosaic method of color filter array.  Best method are AstroC and Simple.  For white stars you could AstroM.  Note that super-pixel produces half size images. Use this for over-sampled images.'
+          Top = 124
           Width = 390
           ItemHeight = 15
           ItemIndex = 0
@@ -1897,10 +1897,10 @@ object stackmenu1: Tstackmenu1
           Text = 'AstroC, colour for saturated stars.'
         end
         object test_pattern1: TButton
-          Left = 259
+          Left = 344
           Height = 25
           Hint = 'Test Bayer demosaic pattern on the image in the viewer. Hit ctrl-Z to restore'
-          Top = 53
+          Top = 14
           Width = 104
           Caption = 'Test pattern'
           Enabled = False
@@ -1911,17 +1911,17 @@ object stackmenu1: Tstackmenu1
         object Label61: TLabel
           Left = 10
           Height = 15
-          Top = 75
+          Top = 104
           Width = 96
           Caption = 'De-bayer method:'
           ParentColor = False
           ParentFont = False
         end
         object undo_button7: TBitBtn
-          Left = 371
+          Left = 416
           Height = 30
           Hint = 'Undo last action'
-          Top = 48
+          Top = 40
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -1965,10 +1965,10 @@ object stackmenu1: Tstackmenu1
         end
         object help_osc_menu1: TLabel
           Cursor = crHandPoint
-          Left = 381
+          Left = 424
           Height = 30
           Hint = 'Help'
-          Top = 8
+          Top = 88
           Width = 9
           Caption = '?'
           Font.Color = clBlue
@@ -1979,13 +1979,13 @@ object stackmenu1: Tstackmenu1
           ShowHint = True
           OnClick = help_osc_menu1Click
         end
-        object osc_colour_smooth1: TCheckBox
+        object osc_auto_level1: TCheckBox
           Left = 8
           Height = 19
-          Hint = 'Auto adjust the colour levels and apply colour smooth'
-          Top = 48
-          Width = 182
-          Caption = 'Auto levels and colour smooth'
+          Hint = 'Auto adjust the colour levels after stacking.'
+          Top = 40
+          Width = 78
+          Caption = 'Auto levels'
           Checked = True
           Color = clDefault
           Enabled = False
@@ -1997,12 +1997,98 @@ object stackmenu1: Tstackmenu1
           TabOrder = 5
         end
         object Label13: TLabel
-          Left = 30
+          Left = 10
           Height = 15
-          Top = 146
+          Top = 149
           Width = 274
           Caption = 'Best debayer methods are AstroC and Bayer-Simple.'
           ParentColor = False
+        end
+        object Label25: TLabel
+          Left = 8
+          Height = 15
+          Top = 178
+          Width = 86
+          Caption = 'Raw conversion:'
+          ParentColor = False
+        end
+        object raw_conversion_program1: TComboBox
+          Left = 144
+          Height = 23
+          Hint = 'Conversion program for raw files. DCRaw is recommended since it doesn''t show unused sensor areas.'
+          Top = 178
+          Width = 254
+          ItemHeight = 15
+          ItemIndex = 0
+          Items.Strings = (
+            'DCRaw'
+            'LibRaw'
+            ''
+          )
+          ParentFont = False
+          Style = csDropDownList
+          TabOrder = 6
+          Text = 'DCRaw'
+        end
+        object osc_colour_smooth1: TCheckBox
+          Left = 8
+          Height = 19
+          Hint = 'Apply colour smooth after stacking.'
+          Top = 64
+          Width = 100
+          Caption = 'Colour smooth'
+          Checked = True
+          Color = clDefault
+          Enabled = False
+          OnChange = make_osc_color1Change
+          OnClick = make_osc_color1Click
+          ParentColor = False
+          ParentFont = False
+          State = cbChecked
+          TabOrder = 7
+        end
+        object osc_smart_colour_sd1: TComboBox
+          Left = 232
+          Height = 23
+          Hint = 'Standard deviation to detect objects to be colour blurred. Default 3'
+          Top = 60
+          Width = 60
+          Enabled = False
+          ItemHeight = 15
+          ItemIndex = 2
+          Items.Strings = (
+            '2.0'
+            '2.5'
+            '3.0'
+            '4.0'
+            '5.0'
+            '6.0'
+          )
+          OnChange = noisefilter_sd1Change
+          ParentFont = False
+          TabOrder = 8
+          Text = '3.0'
+        end
+        object osc_smart_smooth_width1: TComboBox
+          Left = 144
+          Height = 23
+          Hint = 'Colour smoothing range in pixels. This will keep luminance but smooth the colours. Default is 10'
+          Top = 60
+          Width = 60
+          Enabled = False
+          ItemHeight = 15
+          ItemIndex = 2
+          Items.Strings = (
+            '5'
+            '7'
+            '10'
+            '15'
+            '20'
+            '25'
+          )
+          ParentFont = False
+          TabOrder = 9
+          Text = '10'
         end
       end
       object undo_button6: TBitBtn
@@ -3784,6 +3870,43 @@ object stackmenu1: Tstackmenu1
         ShowHint = True
         OnClick = help_live_stacking1Click
       end
+      object GroupBox15: TGroupBox
+        Left = 960
+        Height = 91
+        Top = 32
+        Width = 291
+        AutoSize = True
+        Caption = 'Monitoring'
+        ClientHeight = 71
+        ClientWidth = 287
+        TabOrder = 5
+        object interim_to_clipboard1: TCheckBox
+          Left = 0
+          Height = 19
+          Hint = 'After adding a file copy the interim image to clipboard.'
+          Top = 24
+          Width = 287
+          Caption = 'Copy each time the interim image to the clipboard'
+          TabOrder = 0
+        end
+        object write_jpeg1: TCheckBox
+          Left = 1
+          Height = 19
+          Hint = 'After adding a file write result to file stack.jpeg at the same location as the files.'
+          Top = 0
+          Width = 266
+          Caption = 'Write each time the interim result to stack.jpeg'
+          TabOrder = 1
+        end
+        object Label22: TLabel
+          Left = 1
+          Height = 15
+          Top = 56
+          Width = 174
+          Caption = 'For log use the log option below.'
+          ParentColor = False
+        end
+      end
     end
     object tab_Pixelmath1: TTabSheet
       Hint = 'Pixel math tools'
@@ -4572,10 +4695,10 @@ object stackmenu1: Tstackmenu1
           TabOrder = 1
         end
         object smart_smooth_width1: TComboBox
-          Left = 68
+          Left = 24
           Height = 23
-          Hint = 'Factor for colour smoothing. This will keep luminance but smooth the colours '
-          Top = 3
+          Hint = 'Colour smoothing range in pixels. This will keep luminance but smooth the colours. Default is 10'
+          Top = 7
           Width = 60
           ItemHeight = 15
           ItemIndex = 2
@@ -4636,6 +4759,27 @@ object stackmenu1: Tstackmenu1
           OnClick = undo_button2Click
           ParentFont = False
           TabOrder = 2
+        end
+        object smart_colour_sd1: TComboBox
+          Left = 115
+          Height = 23
+          Hint = 'Standard deviation to detect objects to be colour blurred. Default 3'
+          Top = 7
+          Width = 60
+          ItemHeight = 15
+          ItemIndex = 2
+          Items.Strings = (
+            '2.0'
+            '2.5'
+            '3.0'
+            '4.0'
+            '5.0'
+            '6.0'
+          )
+          OnChange = noisefilter_sd1Change
+          ParentFont = False
+          TabOrder = 3
+          Text = '3.0'
         end
       end
       object GroupBox16: TGroupBox

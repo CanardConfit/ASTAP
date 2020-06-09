@@ -21,7 +21,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 interface
 
 uses
-  Classes, SysUtils,forms,fileutil;
+  Classes, SysUtils,forms,fileutil,
+  clipbrd, {for copy to clipboard}
+  graphics;
 
 procedure stack_live(oversize:integer; path :string);{stack live average}
 
@@ -122,6 +124,22 @@ begin
           inttostr(SS);
 end;
 
+
+procedure save_as_jpg(filename: string);
+var
+  JPG: TJPEGImage;
+begin
+   JPG := TJPEGImage.Create;
+  try
+    JPG.Assign(mainwindow.image1.Picture.Graphic);    //Convert data into JPG
+    JPG.CompressionQuality :=90;
+    JPG.SaveToFile(filename);
+  finally
+   JPG.Free;
+  end;
+end;
+
+
 procedure stack_live(oversize:integer; path :string);{stack live average}
 var
     fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter :  integer;
@@ -159,7 +177,7 @@ begin
 
     mainwindow.memo1.visible:=false;{Hide header}
 
-    colour_correction:=((stackmenu1.make_osc_color1.checked) and (stackmenu1.osc_colour_smooth1.checked));
+    colour_correction:=((stackmenu1.make_osc_color1.checked) and (stackmenu1.osc_auto_level1.checked));
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
 
@@ -193,6 +211,7 @@ begin
             if total_counter<>0 then {new position not caused by start}
             begin
               transition_image:=true; {image with possible slewing involved}
+              stackmenu1.memo2.clear;{clear memo2}
               memo2_message('New telescope position at distance '+floattostrF2(distance*180/pi,0,2)+'°. New stack started. First transition image will be skipped');
             end;
           end
@@ -201,6 +220,7 @@ begin
           if exposure<>oldexposure then
           begin
             reset_var; {reset variables including init:=false}
+            stackmenu1.memo2.clear;{clear memo2}
             memo2_message('New exposure time. New stack started');
           end;
           oldexposure:=exposure;
@@ -243,7 +263,7 @@ begin
             if init=false then {init}
             begin
               memo2_message('Reference image is: '+filename2);
-              image_path:=ExtractFilePath(filename2); {for saving later}
+//              image_path:=ExtractFilePath(filename2); {for saving later}
               width_max:=width2+oversize*2;
               height_max:=height2+oversize*2;
 
@@ -376,6 +396,9 @@ begin
 
               plot_fits(mainwindow.image1,false,false{do not show header in memo1});{plot real}
 
+              if stackmenu1.write_jpeg1.checked then save_as_jpg(ExtractFileDir(filename2)+ {$ifdef mswindows}'\'{$else}{unix} '/' {$endif}+'stack.jpeg');
+              if stackmenu1.interim_to_clipboard1.checked then Clipboard.Assign(mainwindow.Image1.Picture.Bitmap);
+              if stackmenu1.write_log1.checked then Memo2.Lines.SaveToFile(ExtractFileDir(filename2)+ {$ifdef mswindows}'\'{$else}{unix} '/' {$endif}+'log.txt');
             end
             else
             inc(bad_counter);
