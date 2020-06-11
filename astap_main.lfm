@@ -540,7 +540,7 @@ object mainwindow: Tmainwindow
         'Show saturation'
         'Max range'
       )
-      OnChange = stretch1Change
+      OnChange = range1Change
       ParentBidiMode = False
       ParentColor = True
       ParentShowHint = False
@@ -584,23 +584,8 @@ object mainwindow: Tmainwindow
       TabOrder = 5
       Text = 'off'
     end
-    object histogram_UpDown1: TUpDown
-      Left = 267
-      Height = 15
-      Hint = 'Stretch histogram'
-      Top = 0
-      Width = 36
-      Enabled = False
-      Max = 5
-      Min = 0
-      OnChanging = histogram_UpDown1Changing
-      OnClick = histogram_UpDown1Click
-      Orientation = udHorizontal
-      Position = 0
-      TabOrder = 6
-    end
     object saturation_factor_plot1: TTrackBar
-      Left = 393
+      Left = 392
       Height = 48
       Hint = 'Saturation adjust factor. The midde position is neutral.  Above is increase, below is decrease.'
       Top = 52
@@ -621,7 +606,7 @@ object mainwindow: Tmainwindow
       ParentFont = False
       ParentShowHint = False
       ShowHint = True
-      TabOrder = 7
+      TabOrder = 6
     end
   end
   object Polynomial1: TComboBox

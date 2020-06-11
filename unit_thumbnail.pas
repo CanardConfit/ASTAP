@@ -113,7 +113,7 @@ begin
         thumbnails1.caption:=filename2;{show whats happening}
         load_fits(filename2,false {light},true,img_loaded);
         if naxis<2 then exit; {WCS file}
-        getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
         plot_fits(newimage,false,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
 
         newImage.Width := round((thumbnails1.panel1.width-2)/3);

@@ -149,7 +149,6 @@ type
     MenuItem12: TMenuItem;
     show_distortion1: TMenuItem;
     remove_markers1: TMenuItem;
-    histogram_UpDown1: TUpDown;
     SimpleIPCServer1: TSimpleIPCServer;
     zoomin1: TMenuItem;
     zoomout1: TMenuItem;
@@ -266,6 +265,8 @@ type
     procedure extract_pixel_12Click(Sender: TObject);
     procedure extract_pixel_22Click(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
+    procedure histogram_range1MouseUp(Sender: TObject; Button: TMouseButton;
+      Shift: TShiftState; X, Y: Integer);
     procedure imageflipv1Click(Sender: TObject);
     procedure measuretotalmagnitude1Click(Sender: TObject);
     procedure loadsettings1Click(Sender: TObject);
@@ -276,6 +277,7 @@ type
     procedure copy_paste_tool1Click(Sender: TObject);
     procedure MenuItem21Click(Sender: TObject);
     procedure batch_rotate_left1Click(Sender: TObject);
+    procedure range1Change(Sender: TObject);
     procedure remove_longitude_latitude1Click(Sender: TObject);
     procedure select_all1Click(Sender: TObject);
     procedure save_to_tiff1Click(Sender: TObject);
@@ -301,9 +303,6 @@ type
     procedure About1Click(Sender: TObject);
     procedure FormKeyPress(Sender: TObject; var Key: char);
     procedure helponline1Click(Sender: TObject);
-    procedure histogram_UpDown1Changing(Sender: TObject;
-      var AllowChange: Boolean);
-    procedure histogram_UpDown1Click(Sender: TObject; Button: TUDBtnType);
     procedure Image1MouseEnter(Sender: TObject);
     procedure image_cleanup1Click(Sender: TObject);
     procedure deepsky_overlay1Click(Sender: TObject);
@@ -468,12 +467,11 @@ var
    copy_paste_w,
    copy_paste_h : integer;
 
-
 var
   position_find: Integer; {for fits header memo1 popup menu}
 const
   PatternToFind : string=''; {for fits header memo1 popup menu }
-  max_range  {range histogram 255 or 65535 or streched} : integer=255;
+  hist_range  {range histogram 255 or 65535 or streched} : integer=255;
   width2  : integer=100;
   height2: integer=100;{do not use reserved word height}
   naxis  : integer=2;{number of dimensions}
@@ -530,7 +528,7 @@ const
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;var sep: double);
 function load_fits(filen:string;light {load as light of dark/flat},load_data :boolean;var img_loaded2: image_array): boolean;{load fits file}
 procedure plot_fits(img: timage;center_image,show_header:boolean);
-procedure getfits_histogram(img: image_array; mode :integer);{get histogram, plot histogram, set min & max}
+procedure use_histogram(img: image_array; update_hist: boolean);{get histogram}
 procedure HFD(img: image_array; x1,y1,rs{box size}: integer; var hfd1,star_fwhm,snr{peak/sigma noise},flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity}
 procedure backup_img;
 procedure restore_img;
@@ -675,7 +673,6 @@ var
   object_xc,object_yc, object_raM,object_decM  : double; {near mouse auto centered object position}
 
 const
-  use_dataminmax : boolean=false;
   crMyCursor = 5;
 
   bandpass:double=0;{from fits file}
@@ -1908,7 +1905,7 @@ begin
   end;
 
   update_menu(true);{file loaded, update menu for fits. Set fits_file:=true}
-  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,true,true);{plot test image}
 end;
 
@@ -2090,7 +2087,7 @@ begin
     img_loaded:=img_backup[index_backup].img; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
     setlength(img_loaded,naxis3,width2,height2);{force a duplication}
 
-    getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+    use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainwindow.image1,resized,true);{restore image1}
 
     stackmenu1.apply_dpp_button1.Enabled:=true;
@@ -2154,7 +2151,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.372 dated 2020-06-09';
+  #13+#10+'Version ß0.9.373 dated 2020-06-11';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2181,17 +2178,6 @@ end;
 procedure Tmainwindow.helponline1Click(Sender: TObject);
 begin
    openurl('http://www.hnsky.org/astap.htm');
-end;
-
-procedure Tmainwindow.histogram_UpDown1Changing(Sender: TObject;
-  var AllowChange: Boolean);
-begin
-end;
-
-procedure Tmainwindow.histogram_UpDown1Click(Sender: TObject; Button: TUDBtnType  );
-begin
-  getfits_histogram(img_loaded,1);{get histogram NO, plot histogram YES, set min & max YES}
-  plot_fits(mainwindow.image1,false,true);
 end;
 
 procedure update_recent_file_menu;{recent file menu update}
@@ -2473,17 +2459,24 @@ end;
 procedure Tmainwindow.max2EditingDone(Sender: TObject);
 var
   edit_value: integer;
+  histo_update : boolean;
 begin
- edit_value:=min(max(round(strtofloat2(max2.text)),0),65535);{updown in FPC has a maximum of 32767, so not usable}
- if edit_value<>maximum1.Position then {value has reallly changed}
- begin
+  edit_value:=min(max(round(strtofloat2(max2.text)),0),65535);{updown in FPC has a maximum of 32767, so not usable}
+  if edit_value<>maximum1.Position then {value has reallly changed}
+  begin
+    histo_update:=(edit_value>maximum1.max); {histogram update required}
+
+    if histo_update then maximum1.max:=round(edit_value);{update maximum1..max to allow storing the edit value in maximum1.position}
+
     maximum1.Position:=edit_value;
     mainwindow.range1.itemindex:=7; {manual}
-   plot_fits(mainwindow.image1,false,true);
- end;
+
+    if histo_update then {redraw histogram with new range}
+       use_histogram(img_loaded,false {update}); {plot histogram, set sliders}
+
+    plot_fits(mainwindow.image1,false,true);
+  end;
 end;
-
-
 
 procedure Tmainwindow.Memo1KeyUp(Sender: TObject; var Key: Word;
   Shift: TShiftState);
@@ -3321,7 +3314,6 @@ begin
     mainwindow.range1.enabled:=fits;
     mainwindow.min2.enabled:=fits;
     mainwindow.max2.enabled:=fits;
-    mainwindow.histogram_UpDown1.enabled:=fits;
 
     mainwindow.ccdinspector1.enabled:=fits;
     mainwindow.ccd_inspector_plot1.enabled:=fits;
@@ -3572,7 +3564,7 @@ begin
       {load image}
       if load_fits(opendialog1.filename,true {light},true,img_loaded) then
       begin
-        getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
         plot_fits(mainwindow.image1,false {re_center},true);
       end;
     end;
@@ -5622,12 +5614,9 @@ begin
 
 end;
 
-procedure getfits_histogram(img: image_array;mode : integer);{calculate histogram, adapt brightness and background settings}
-{mode 0: get histogram, plot histogram, set min, max}
-{mode 1:                plot histogram, set min, max}
-{mode 2:                                set min, max}
+procedure use_histogram(img: image_array; update_hist: boolean);{calculate histogram}
 var
-  i, minm,maxm, value1,oldvalue1,count,countR,countG,countB,oldXpos,Xpos,steps,max_color,histo_peakR,number_colors  : integer;
+  i, minm,maxm,max_range, value1,oldvalue1,count,countR,countG,countB,oldXpos,Xpos,steps,max_color,histo_peakR,number_colors  : integer;
   above, above_R          : double;
   Save_Cursor:TCursor;
 
@@ -5635,89 +5624,39 @@ begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-  if mode=0 then {get_hist}
+  number_colors:=length(img);
+
+  if update_hist then {get_hist}
   begin
-    number_colors:=length(img);
     get_hist(0, img);
     if number_colors>1 then get_hist(1, img);{green}
     if number_colors>2 then get_hist(2, img);{blue}
   end;
-  if mode<=1 then {plot histogram}
-  begin
-    if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65535;
-    max_range:=round(max_range*(1 - mainwindow.histogram_updown1.Position/(mainwindow.histogram_updown1.max+1)) );
 
-    mainwindow.minimum1.max:= max_range;
-    mainwindow.maximum1.max:= max_range;
 
-    mainwindow.histogram1.canvas.brush.color:=clblack;
-    mainwindow.histogram1.canvas.rectangle(-1,-1, mainwindow.histogram1.width+1, mainwindow.histogram1.height+1);
-    mainwindow.histogram1.Canvas.Pen.Color := clred;
-    histo_peakR:=-99999999;
-    oldXpos:=-1;
-    oldvalue1:=0;
-    countR:=0;
-    countG:=0;
-    countB:=0;
-    count:=0;
-    steps:=0;
+//  if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65535;
 
-    for i := 1 to max_range-1{65535} do {create histogram graph, ignore zero value}
-    begin
-      {calculate peak values for later}
-      if histogram[0,i]>histo_peakR then begin histo_peakR:=histogram[0,i]; histo_peak_position:=i;{find most common value = background.}end;
-
-      countR:=countR+histogram[0,i];{integrate values till new line is drawn}
-      if number_colors>1 then countG:=countG+histogram[1,i];
-      if number_colors>2 then countB:=countB+histogram[2,i];
-      inc(steps);
-
-      Xpos:=round(mainwindow.histogram1.width*i/max_range{65535});
-      if Xpos>oldXpos then {new line to be drawn}
-      begin
-        count:=(countR+countG+countB) div steps;{calculate value per step}
-
-        oldXpos:=Xpos;
-        if count<>0 then
-        begin
-          value1:=round(4*ln(count/3));
-          if value1>mainwindow.histogram1.height then value1:=mainwindow.histogram1.height;
-
-          if value1<>oldvalue1 then  {new value, new plot required}
-          begin
-            oldvalue1:=value1;
-            max_color:=countR; if countG>max_color then max_color:=countG; if countB>max_color then max_color:=countB;
-            mainwindow.histogram1.Canvas.Pen.Color := rgb(255*countR div max_color,255*countG div max_color,255*countB div max_color);
-
-            moveToex(mainwindow.histogram1.Canvas.handle,Xpos,mainwindow.histogram1.height,nil);
-            lineTo(mainwindow.histogram1.Canvas.handle,Xpos ,mainwindow.histogram1.height-value1); {line}
-          end;
-        end;
-        countR:=0;
-        countG:=0;
-        countB:=0;
-        steps:=0;
-      end;{new Xpos}
-    end;
-  end;
-
-  use_dataminmax:=false;
+  max_range:=round(datamax_org); {measured while loading}
 
   case mainwindow.range1.itemindex of
     -1,0,1: above_R:=0.001;{low range}
        2,3: above_R:=0.003; {medium range}
        4,5: above_R:=0.01;  {high range}
-       6: begin  above_R:=0;end;{range}
-       7: begin Screen.Cursor:=Save_Cursor; exit; end;{manual}
-       8: begin use_dataminmax:=true; if nrbits=8 then begin minm:=254; maxm:=255;end else begin minm:=65500; maxm:=65535;end;  end;{use datamin/max}
-       9: begin use_dataminmax:=true; minm:=round(datamin_org); maxm:=round(datamax_org);   end;{use datamin/max}
+       6,7: begin minm:=round(datamin_org);maxm:=round(datamax_org)end;{6=range and 7=manual}
+       8: begin minm:=round(datamax_org*0.95); maxm:=round(datamax_org);  end;{use datamin/max}
+       9: begin minm:=round(datamin_org); maxm:=round(datamax_org);   end;{max range, use datamin/max}
   end;
 
-  if use_dataminmax=false then
+  if mainwindow.range1.itemindex<=5 then {auto detect mode}
   begin
     minm:=0;
     maxm:=0;
     above:=0;
+
+    {calculate peak values }
+    histo_peakR:=-99999999;
+    for i := 1 to max_range-1{65535} do
+      if histogram[0,i]>histo_peakR then begin histo_peakR:=histogram[0,i]; histo_peak_position:=i;{find most common value = background.}end;
 
     i:=histo_peak_position;{typical background position in histogram};
     while ((minm=0) and (i>0)) do
@@ -5733,21 +5672,73 @@ begin
        above:=above+histogram[0,i];
        if above>above_R {0.001}*his_total_red then maxm:=i;
     end;
-
   end;
 
-  case mainwindow.range1.itemindex of
-            1,3,5: mainwindow.minimum1.position:=max(0,round(minm - (maxm-minm)*0.05));{set black at 5%}
-            else mainwindow.minimum1.position:=minm;
+  hist_range:=round(min(datamax_org,2*maxm));{adapt histogram range}
+  mainwindow.minimum1.max:= hist_range;
+  mainwindow.maximum1.max:= hist_range;
+
+  if mainwindow.range1.itemindex<>7 then {<> manual}
+  begin
+    case mainwindow.range1.itemindex of
+              1,3,5: mainwindow.minimum1.position:=max(0,round(minm - (maxm-minm)*0.05));{set black at 5%}
+              else mainwindow.minimum1.position:=minm;
+    end;
+    mainwindow.maximum1.position:=maxm;
+
+    mainwindow.maximum1.smallchange:=1+round(maxm/100);
+    mainwindow.minimum1.smallchange:=1+round(maxm/100);
+    mainwindow.maximum1.largechange:=1+round(maxm/20);
+    mainwindow.minimum1.largechange:=1+round(maxm/20);
   end;
-  mainwindow.maximum1.position:=maxm;
-
-  mainwindow.maximum1.smallchange:=1+round(maxm/100);
-  mainwindow.minimum1.smallchange:=1+round(maxm/100);
-  mainwindow.maximum1.largechange:=1+round(maxm/20);
-  mainwindow.minimum1.largechange:=1+round(maxm/20);
 
 
+  mainwindow.histogram1.canvas.brush.color:=clblack;
+  mainwindow.histogram1.canvas.rectangle(-1,-1, mainwindow.histogram1.width+1, mainwindow.histogram1.height+1);
+  mainwindow.histogram1.Canvas.Pen.Color := clred;
+
+  oldXpos:=-1;
+  oldvalue1:=0;
+  countR:=0;
+  countG:=0;
+  countB:=0;
+  count:=0;
+  steps:=0;
+
+  for i := 1 to hist_range-1{65535} do {create histogram graph, ignore zero value}
+  begin
+    countR:=countR+histogram[0,i];{integrate values till new line is drawn}
+    if number_colors>1 then countG:=countG+histogram[1,i];
+    if number_colors>2 then countB:=countB+histogram[2,i];
+    inc(steps,number_colors);
+
+    Xpos:=round(mainwindow.histogram1.width*i/hist_range {65535});
+    if Xpos>oldXpos then {new line to be drawn}
+    begin
+      count:=(countR+countG+countB) div steps;{calculate value per step}
+
+      oldXpos:=Xpos;
+      if count<>0 then
+      begin
+        value1:=round(4*ln(count/3));
+        if value1>mainwindow.histogram1.height then value1:=mainwindow.histogram1.height;
+
+        if value1<>oldvalue1 then  {new value, new plot required}
+        begin
+          oldvalue1:=value1;
+          max_color:=countR; if countG>max_color then max_color:=countG; if countB>max_color then max_color:=countB;
+          mainwindow.histogram1.Canvas.Pen.Color := rgb(255*countR div max_color,255*countG div max_color,255*countB div max_color);
+
+          moveToex(mainwindow.histogram1.Canvas.handle,Xpos,mainwindow.histogram1.height,nil);
+          lineTo(mainwindow.histogram1.Canvas.handle,Xpos ,mainwindow.histogram1.height-value1); {line}
+        end;
+      end;
+      countR:=0;
+      countG:=0;
+      countB:=0;
+      steps:=0;
+    end;{new Xpos}
+  end;
   Screen.Cursor:=Save_Cursor;
 end;
 
@@ -5999,6 +5990,7 @@ begin
     i:=minimum1.position;  get_int(i,'minimum_position');MINIMUM1.position:=i;
     i:=maximum1.position;  get_int(i,'maximum_position');maximum1.position:=i;
     i:=range1.itemindex;  get_int(i,'range');range1.itemindex:=i;
+
     i:=stackmenu1.stack_method1.itemindex;  get_int(i,'stack_method');stackmenu1.stack_method1.itemindex:=i;
     i:=stackmenu1.flat_combine_method1.itemindex;  get_int(i,'flat_combine_method');
     i:=stackmenu1.pagecontrol1.tabindex;  get_int(i,'stack_tab');stackmenu1.pagecontrol1.tabindex:=i;
@@ -6333,6 +6325,7 @@ begin
   initstring.Values['minimum_position']:=inttostr(MINIMUM1.position);
   initstring.Values['maximum_position']:=inttostr(maximum1.position);
   initstring.Values['range']:=inttostr(range1.itemindex);
+
   initstring.Values['stack_method']:=inttostr(stackmenu1.stack_method1.itemindex);
 
   initstring.Values['mosaic_width']:=inttostr(stackmenu1.mosaic_width1.position);
@@ -7027,7 +7020,7 @@ begin
 
   if plot then
   begin
-    getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+    use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
 //    mainwindow.ShowFITSheader1.enabled:=true;
 //    mainwindow.demosaicBayermatrix1.Enabled:=true;
@@ -7210,6 +7203,13 @@ begin
  {no check on file extension required}
   filename2:=FileNames[0];
    if load_image(true,true {plot}){load and center}=false then beep;{image not found}
+end;
+
+procedure Tmainwindow.histogram_range1MouseUp(Sender: TObject;
+  Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  use_histogram(img_loaded,false {update});{get histogram}
+  plot_fits(mainwindow.image1,false,true);
 end;
 
 procedure Tmainwindow.imageflipv1Click(Sender: TObject);
@@ -7597,6 +7597,33 @@ begin
       if dobackup then restore_img;{for the viewer}
     end;
   end;
+end;
+
+procedure do_stretching;{prepare strecht table and replot image}
+var
+  i: integer;
+  stretch,divider: single;
+begin
+    stretch:=strtofloat2(mainwindow.stretch1.Text);
+    if stretch<=0.5 then {word "off" gives zero}
+    stretch_on:=false
+    else
+    begin
+      stretch_on:=true;
+      divider:=arcsinh(stretch);
+      for i:=0 to 32768 do stretch_c[i]:=arcsinh((i/32768.0)*stretch)/divider;{prepare table}
+    end;
+
+  if mainwindow.stretch1.enabled then {file loaded}
+  begin
+    use_histogram(img_loaded,false {update});{get histogram}
+    plot_fits(mainwindow.image1,false,true);
+  end;
+end;
+
+procedure Tmainwindow.range1Change(Sender: TObject);
+begin
+  do_stretching;
 end;
 
 procedure Tmainwindow.remove_longitude_latitude1Click(Sender: TObject);
@@ -8108,7 +8135,6 @@ var
   count1,x1,y1,x2,y2,text_height,text_width,size,xcenter,ycenter : integer;
   typ     : double;
   List: TStrings;
-  d: string;
 begin
   List := TStringList.Create;
   list.StrictDelimiter:=true;
@@ -8275,7 +8301,7 @@ var filename3:string;
 begin
   if load_fits(filen,true {light},true,img_loaded) {load now normal} then
   begin
-    getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+    use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     filename3:=ChangeFileExt(Filen,'.bmp');
     mainwindow.image1.picture.SaveToFile(filename3);
   end;
@@ -8980,7 +9006,7 @@ begin
           histogram_done:=false;
           if hasoption('annotate') then
           begin
-            getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+            use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
             histogram_done:=true;
             plot_fits(mainwindow.image1,true {center_image},true);{center and stretch with current settings}
             save_annotated_jpg(filename2);{save viewer as annotated jpg}
@@ -8991,7 +9017,7 @@ begin
             begin
               binning:=strtofloat2(GetOptionValue('tofits'));
               resize_img_loaded(1/binning); {resize img_loaded in free ratio}
-              if histogram_done=false then getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+              if histogram_done=false then use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
               save_fits(img_loaded,changeFileExt(filename2,'.fit'),8,true {overwrite});
             end;
           end;
@@ -9104,29 +9130,10 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.stretch1Change(Sender: TObject);
-var
-  i: integer;
-  stretch,divider: single;
-
 begin
-    stretch:=strtofloat2(stretch1.Text);
-    if stretch<=0.5 then {word "off" gives zero}
-    stretch_on:=false
-    else
-    begin
-      stretch_on:=true;
-      //  for i:=0 to 32768 do gamma_c[i]:=power(i/32768.0, gamma);{asinh works a little better, less strong for faint signals}
-      divider:=arcsinh(stretch);
-      for i:=0 to 32768 do stretch_c[i]:=arcsinh((i/32768.0)*stretch)/divider;
-    end;
-
-  if mainwindow.stretch1.enabled then {file loaded}
-  begin
-    getfits_histogram(img_loaded,2);{no new file, only update sliders. get histogram NO, plot histogram NO, set min & max YES}
-
-    plot_fits(mainwindow.image1,false,true);
-  end;
+  do_stretching;
 end;
 
 procedure Sort(var list: array of double);{taken from CCDciel code}
@@ -9429,7 +9436,7 @@ begin
   demosaic_bayer;
   memo2_message('De-mosaic bayer pattern used '+bayer_pattern[bayerpattern_final]);
   {colours are now created, redraw histogram}
-  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
  // smart_colour_smooth(img_loaded,10,false {get red hist});
   smart_colour_smooth(img_loaded,strtofloat2(stackmenu1.osc_smart_smooth_width1.text),strtofloat2(stackmenu1.osc_smart_colour_sd1.text),false {get  hist});{histogram doesn't needs an update}
@@ -9761,7 +9768,7 @@ begin
       end;
   end;
 
-  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);
 
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
@@ -9928,7 +9935,7 @@ procedure Tmainwindow.histogram1MouseMove(Sender: TObject; Shift: TShiftState;
 var
    value: string;
 begin
-   value:=inttostr(round(max_range*x/histogram1.Width));
+   value:=inttostr(round(hist_range*x/histogram1.Width));
    mainwindow.CAPTION:='Histogram value: ' +value;
    application.hint:=mainwindow.caption;
    histogram1.hint:=value;
@@ -10349,9 +10356,8 @@ const
 var
   i,j,counter, ri, distance,distance_top_value,illuminated_pixels,signal_counter:integer;
   SumVal,SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
-  val,bg_average,bg,bg_standard_deviation,pixel_counter,valmax,
-  val_00,val_01,val_10,val_11,af, faintA,faintB, brightA,brightB,faintest,brightest : double;
-  HistStart,asymmetry,boxed : boolean;
+  val,bg_average,bg,bg_standard_deviation,pixel_counter,valmax : double;
+  HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
 
     function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
@@ -10953,7 +10959,7 @@ begin
   add_text('HISTORY   ','Converted to mono');
 
   {colours are now mixed, redraw histogram}
-  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);{plot}
   Screen.cursor:=Save_Cursor;
 end;
@@ -11569,7 +11575,7 @@ end;
 function save_fits(img: image_array;filen2:ansistring;type1:integer;override1:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 var
   TheFile4 : tfilestream;
-  I,j,k,r,c,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, naxis3_local,height5,width5,rows : integer;
+  I,j,k,r,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, naxis3_local,height5,width5,rows : integer;
   dd : single;
   line0,tal,lab         : ansistring;
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}

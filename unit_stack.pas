@@ -1988,7 +1988,7 @@ begin
         begin {subtract view from file}
             img_loaded[col,fitsX,fitsY]:=img_temp[col,fitsX,fitsY]-img_loaded[col,fitsX,fitsY]+1000;
         end;
-    getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+    use_histogram(img_loaded,true);
     plot_fits(mainwindow.image1,false,true);{plot real}
   end;
   update_equalise_background_step(5 {force 5 since equalise background is set to 1 by loading fits file} );{update menu}
@@ -2422,7 +2422,7 @@ begin
     else
     artificial_flatV2(img_loaded, strtoint(StringReplace(ring_equalise_factor1.text,'%','',[])));
 
-  //   getfits_histogram(true);{get histogram}
+  //   use_histogram(true);{get histogram}
      plot_fits(mainwindow.image1,true,true);{plot real}
      Screen.Cursor:=Save_Cursor;
   end;
@@ -2488,7 +2488,7 @@ begin
    Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
    apply_factors;
-   getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+   use_histogram(img_loaded,true);
    plot_fits(mainwindow.image1,false,true);{plot real}
    Screen.Cursor:=Save_Cursor;
   end;
@@ -2559,7 +2559,7 @@ begin
       end;{file loaded}
     end;
     img_temp:=nil;
-    getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+    use_histogram(img_loaded,true);
     plot_fits(mainwindow.image1,false,true);{plot real}
     Screen.Cursor:=Save_Cursor;
   end;
@@ -2624,7 +2624,7 @@ begin
            img_loaded[col,fitsX,fitsY]:=colr;
         end;
      apply_dpp_button1.Enabled:=false;
-     getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
      plot_fits(mainwindow.image1,true,true);{plot real}
 
      Screen.Cursor:=Save_Cursor;
@@ -2843,7 +2843,7 @@ begin
     begin {restart from step 1}
       if load_fits(filename2,true {light},true,img_loaded) then{succes load}
       begin
-        getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
         plot_fits(mainwindow.image1,false,true);{plot real}
       end;
     end
@@ -2893,7 +2893,7 @@ begin
    Screen.Cursor := crHourglass;    { Show hourglass cursor }
    backup_img;
    gaussian_blur2(img_loaded,strtofloat2(blur_factor1.text));
-   getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
    plot_fits(mainwindow.image1,false,true);{plot}
    Screen.cursor:=Save_Cursor;
 end;
@@ -3456,7 +3456,7 @@ begin
   else
   if pos('5x5',stackmenu1.flat_combine_method1.text)>0 then  mean_filter(1 {nr of colors},5,img_loaded); {else do nothing}
 
-  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);{plot real}
 
   Screen.Cursor:=Save_Cursor;
@@ -3679,7 +3679,7 @@ begin
   backup_img;
   resize_img_loaded(width_UpDown1.position/width2 {ratio});
 
-  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,true,true);{plot}
   Screen.cursor:=Save_Cursor;
 end;
@@ -4001,7 +4001,7 @@ begin
         {load image}
         if load_fits(filename2,true {light},true,img_loaded)=false then begin esc_pressed:=true; break;end;
 
-        getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
         {find solution}
         if align_blink1.checked then
@@ -4819,7 +4819,7 @@ begin
   update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3);
   update_text   ('HISTORY 77','  Artificial colour applied.');
 
-  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);{plot real}
   Screen.Cursor:=Save_Cursor;
 end;
@@ -5475,7 +5475,7 @@ begin
         {load image}
         if load_fits(filename2,true {light},true,img_loaded)=false then begin esc_pressed:=true; break;end;
 
-        getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
         {check/prepare photometry}
         if fileexists(ChangeFileExt(Filename2,'.astap_image_stars'))=false then
@@ -6091,6 +6091,8 @@ begin
 end;
 
 procedure Tstackmenu1.make_osc_color1Click(Sender: TObject);
+var
+  osc_color : boolean;
 begin
   if ((make_osc_color1.checked) and (classify_filter1.checked)) then
   begin
@@ -6099,11 +6101,14 @@ begin
   end;
 
   {enabe/disable related menu options}
-  osc_auto_level1.enabled:=make_osc_color1.checked;
-  bayer_pattern1.enabled:=make_osc_color1.checked;
-  test_pattern1.enabled:=make_osc_color1.checked;
-  demosaic_method1.enabled:=make_osc_color1.checked;
-  osc_auto_level1.enabled:=make_osc_color1.checked;
+  osc_color:=make_osc_color1.checked;
+  osc_auto_level1.enabled:=osc_color;
+  bayer_pattern1.enabled:=osc_color;
+  test_pattern1.enabled:=osc_color;
+  demosaic_method1.enabled:=osc_color;
+  osc_colour_smooth1.enabled:=osc_color;
+  osc_smart_colour_sd1.enabled:=osc_color;
+  osc_smart_smooth_width1.enabled:=osc_color;
 end;
 
 procedure Tstackmenu1.selectall1Click(Sender: TObject);
@@ -6351,7 +6356,7 @@ begin
         v_old1:=v;
       end;
     end;
-  //getfits_histogram(0);{get histogram YES, plot histogram YES, set min & max YES}
+  //use_histogram(0);
   plot_fits(mainwindow.image1,false,true);{plot real}
 
   HueRadioButton1.checked:=false;
@@ -6503,7 +6508,7 @@ begin
   backup_img;
   background_noise_filter(img_loaded,strtofloat2(stackmenu1.noisefilter_sd1.text),strtofloat2(stackmenu1.noisefilter_blur1.text));
 
-//  getfits_histogram(true);{get histogram}
+//  use_histogram(true);{get histogram}
   plot_fits(mainwindow.image1,false,true);{plot real}
 
   Screen.Cursor:=Save_Cursor;
@@ -6604,7 +6609,7 @@ begin
         {load image}
         if load_fits(filename2,true {light},true,img_loaded)=false then begin esc_pressed:=true; break;end;
 
-        getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
         plot_fits(mainwindow.image1,false {re_center},true);
 
@@ -7855,13 +7860,12 @@ begin
         stackmenu1.auto_background_level1Click(nil);
         apply_factors;{histogram is after this action invalid}
         stackmenu1.reset_factors1Click(nil);{reset factors to default}
-        getfits_histogram(img_loaded,0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
+        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
         if stackmenu1.osc_colour_smooth1.checked then
            smart_colour_smooth(img_loaded,strtofloat2(osc_smart_smooth_width1.text),strtofloat2(osc_smart_colour_sd1.text),false {get  hist});{histogram doesn't needs an update}
       end
       else
-        getfits_histogram(img_loaded,0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
-
+        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
       restore_header;{restore header and solution}{use saved fits header first FITS file as saved in unit_stack_routines}
 
@@ -8201,7 +8205,7 @@ begin
         end;
   end;{k color}
 
-  getfits_histogram(img_loaded,0);{get histogram YES, plot histogram YES, set min & max YES}
+  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);
 
   memo2_message('Remove gradient done.');

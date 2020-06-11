@@ -392,7 +392,7 @@ begin
               img_loaded:=img_average;{copy the pointer. Both have now access to the data!!}
 
               if counter=1 then {set range correct}
-                   getfits_histogram(img_loaded,0);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
+                   use_histogram(img_loaded,true);{get histogram R,G,B YES, plot histogram YES, set min & max YES}
 
               plot_fits(mainwindow.image1,false,false{do not show header in memo1});{plot real}
 
