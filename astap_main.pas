@@ -48,7 +48,7 @@ uses
   LCLVersion, SysUtils, Graphics, Forms, strutils, math,
   clipbrd, {for copy to clipboard}
   Buttons, PopupNotifier, simpleipc,
-  CustApp, Types;
+  CustApp, Types ;
 
 type
   { Tmainwindow }
@@ -2151,7 +2151,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.373 dated 2020-06-11';
+  #13+#10+'Version ß0.9.374 dated 2020-06-12';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5015,14 +5015,15 @@ end;
 function load_PPM_PGM_PFM(filen:string; var img_loaded2: image_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
    i,j, reader_position  : integer;
-   aline,w1,h1,bits  : ansistring;
+   aline,w1,h1,bits,comm  : ansistring;
    ch                : ansichar;
    rgb32dummy        : byteXXXX3;
    rgb16dummy        : byteXX3;
    rgbdummy          : byteX3;
    err,err2,err3,package  : integer;
-   comment,color7,pfm    : boolean;
-   range              : double;
+   comment,color7,pfm,expdet,timedet,isodet,instdet  : boolean;
+   range, jd2        : double;
+
 var
    x_longword  : longword;
    x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
@@ -5094,7 +5095,7 @@ begin
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
   annotated:=false; {any annotation in the file}
   extend:=0;  {no extensions in the file, 1 is ascii_table, 2 bintable}
-
+  gain:=999;{assume no data available}
 
 
   I:=0;
@@ -5127,10 +5128,35 @@ begin
     i:=0;
     repeat {read header}
       comment:=false;
+      expdet:=false;
+      timedet:=false;
       aline:='';
+      comm:='';
       repeat
         reader.read(ch,1);
         if ch='#' then comment:=true;{reading comment}
+        if comment then
+        begin
+          if ch in [';','#',' ']=false then comm:=comm+ch
+          else
+          begin
+            if expdet then begin exposure:=strtofloat2(comm);expdet:=false; end;{get exposure time from comments,special dcraw 0.9.28dev1}
+            if isodet then begin gain:=strtofloat2(comm);isodet:=false; end;{get iso speed as gain}
+            if instdet then begin instrum:=comm;instdet:=false;end;{camera}
+            if timedet then
+            begin
+              JD2:=2440587.5+ strtoint(comm)/(24*60*60);{convert to Julian Day by adding factor. Unix time is seconds since 1.1.1970}
+              date_obs:=JdToDate(jd2);
+              timedet:=false;
+            end;{get date from comments}
+            comm:='';{clear for next keyword}
+          end;
+          if comm='EXPTIME=' then begin expdet:=true; comm:=''; end;
+          if comm='TIMESTAMP=' then begin timedet:=true; comm:=''; end; {filedate integer}
+          if comm='ISOSPEED=' then  begin isodet:=true; comm:=''; end;
+          if comm='MODEL=' then begin instdet:=true; comm:=''; end; {camera make}
+        end;
+
         if ord(ch)=$0a then comment:=false;{complete comment read}
         if ord(ch)>32 then aline:=aline+ch;; {DCRAW write space #20 between width&length, Photoshop $0a}
         inc(reader_position,1)
@@ -5294,6 +5320,12 @@ begin
     update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3);
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                           ' ,round(datamax_org));
+
+  if exposure<>0 then   update_float('EXPTIME =',' / duration of exposure in seconds                ' ,exposure);
+  if gain<>999 then     update_float('GAIN    =',' / iso speed                                      ' ,gain);
+
+  if date_obs<>'' then update_text   ('DATE-OBS=',#39+date_obs+#39);
+  if instrum<>''  then update_text   ('INSTRUME=',#39+INSTRUM+#39);
 
   update_text   ('BAYERPAT=',#39+'T'+#39+'                  / Unknown Bayer color pattern                  ');
 
@@ -6847,9 +6879,12 @@ begin
   begin
     deletefile(filename4);{delete temporary pgm file}
 
-    JD2:=2415018.5+(FileDateToDateTime(fileage(filename3))); {fileage raw, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
-    date_obs:=JdToDate(jd2);
-    update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
+    if date_obs='' then {no date detected in comments}
+    begin
+      JD2:=2415018.5+(FileDateToDateTime(fileage(filename3))); {fileage raw, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
+      date_obs:=JdToDate(jd2);
+      update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
+    end;
     add_text   ('HISTORY  ','Converted from '+filename3);
     result:=true;
   end;
