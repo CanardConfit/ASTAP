@@ -5137,7 +5137,7 @@ begin
         if ch='#' then comment:=true;{reading comment}
         if comment then
         begin
-          if ch in [';','#',' ']=false then comm:=comm+ch
+          if ch in [';','#',' ',char($0A)]=false then comm:=comm+ch
           else
           begin
             if expdet then begin exposure:=strtofloat2(comm);expdet:=false; end;{get exposure time from comments,special dcraw 0.9.28dev1}
@@ -5153,15 +5153,17 @@ begin
           end;
           if comm='EXPTIME=' then begin expdet:=true; comm:=''; end;
           if comm='TIMESTAMP=' then begin timedet:=true; comm:=''; end; {filedate integer}
-          if comm='ISOSPEED=' then  begin isodet:=true; comm:=''; end;
+          if comm='ISOSPEED=' then
+                           begin isodet:=true; comm:=''; end;
           if comm='MODEL=' then begin instdet:=true; comm:=''; end; {camera make}
-        end;
+        end
+        else
+        if ord(ch)>32 then aline:=aline+ch;; {DCRAW write space #20 between width&length, Photoshop $0a}
 
         if ord(ch)=$0a then comment:=false;{complete comment read}
-        if ord(ch)>32 then aline:=aline+ch;; {DCRAW write space #20 between width&length, Photoshop $0a}
         inc(reader_position,1)
       until ( ((comment=false) and (ord(ch)<=32)) or (reader_position>200)) ;{ignore comments, with till text is read and escape if too long}
-      if (aline[1]<>'#'){comments} then {read header info}
+      if (length(aline)>1){no comments} then {read header info}
       begin
         inc(i);{useful header line}
         if i=1 then w1:=aline {width}
