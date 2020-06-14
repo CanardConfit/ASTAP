@@ -155,7 +155,7 @@ type
     create_test_image_stars1: TButton;
     Darks: TTabSheet;
     dark_areas_box_size1: TComboBox;
-    dark_sport_filter1: TButton;
+    dark_spot_filter1: TButton;
     ddp_filter1: TRadioButton;
     ddp_filter2: TRadioButton;
     demosaic_method1: TComboBox;
@@ -646,7 +646,7 @@ type
     procedure analyseflatsButton3Click(Sender: TObject);
     procedure analyseflatdarksButton4Click(Sender: TObject);
     procedure changekeyword1Click(Sender: TObject);
-    procedure dark_sport_filter1Click(Sender: TObject);
+    procedure dark_spot_filter1Click(Sender: TObject);
     procedure free_resize_fits1Click(Sender: TObject);
     procedure copypath1Click(Sender: TObject);
     procedure help_pixel_math1Click(Sender: TObject);
@@ -3500,7 +3500,7 @@ begin
   listview_update_keyword(lv,uppercase(keyw),value);{update key word}
 end;
 
-procedure Tstackmenu1.dark_sport_filter1Click(Sender: TObject);
+procedure Tstackmenu1.dark_spot_filter1Click(Sender: TObject);
 var
    Save_Cursor : TCursor;
    fitsx,fitsy,i,j,k,x2,y2,radius,most_common,progress_value : integer;
@@ -7141,7 +7141,7 @@ begin
              memo2_message('Skipping dark calibration, already applied. See header keyword CALSTAT')
   else
   begin
-    if ((dark_exposure=987654321) {first dark required, any dark will do} or  (stackmenu1.classify_dark_exposure1.checked){suitable dark reguired}) then
+    if ((dark_exposure=987654321) {first dark required, any dark will do} or  (stackmenu1.classify_dark_exposure1.checked){get dark with correct exposure} or (stackmenu1.classify_dark_temperature1.checked){{get dark with correct temperature}) then
     if  ((light_exposure=dark_exposure) and (abs(light_set_temperature-dark_temperature)<=1) )=false then {new dark required}
     begin
       load_master_dark(round(light_exposure),light_set_temperature {set_temperature},light_width, {var}dark_average,dark_sigma); {will only be renewed if different exposure or set_temperature. Note load will overwrite calstat}

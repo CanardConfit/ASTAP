@@ -2151,7 +2151,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.374 dated 2020-06-12';
+  #13+#10+'Version ß0.9.375 dated 2020-06-13';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5135,7 +5135,7 @@ begin
       repeat
         reader.read(ch,1);
         if ch='#' then comment:=true;{reading comment}
-        if comment then
+        if comment then {this works only for files produced by special custom DCRAW version. Code for identical Libraw modification proposed at Github}
         begin
           if ch in [';','#',' ',char($0A)]=false then comm:=comm+ch
           else
@@ -5151,10 +5151,9 @@ begin
             end;{get date from comments}
             comm:='';{clear for next keyword}
           end;
-          if comm='EXPTIME=' then begin expdet:=true; comm:=''; end;
-          if comm='TIMESTAMP=' then begin timedet:=true; comm:=''; end; {filedate integer}
-          if comm='ISOSPEED=' then
-                           begin isodet:=true; comm:=''; end;
+          if comm='EXPTIME=' then begin expdet:=true; comm:=''; end else
+          if comm='TIMESTAMP=' then begin timedet:=true; comm:=''; end else
+          if comm='ISOSPEED=' then begin isodet:=true; comm:=''; end else
           if comm='MODEL=' then begin instdet:=true; comm:=''; end; {camera make}
         end
         else
@@ -6803,7 +6802,7 @@ begin
     {$endif}
     {$ifdef Linux}
     if fileexists('/usr/bin/dcraw')=false then
-      dcraw:=true
+      dcraw:=false
     else
       execute_unix2('/usr/bin/dcraw '+commando+' "'+filename3+'"');
     {$endif}

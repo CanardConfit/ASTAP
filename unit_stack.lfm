@@ -4428,14 +4428,14 @@ object stackmenu1: Tstackmenu1
           Transparent = False
           WordWrap = True
         end
-        object dark_sport_filter1: TButton
+        object dark_spot_filter1: TButton
           Left = 24
           Height = 30
           Hint = 'This removes dark spots typical for CMOS images. (uses standard deviation for values below most common value) '
           Top = 237
           Width = 278
           Caption = 'Dark spot filter'
-          OnClick = dark_sport_filter1Click
+          OnClick = dark_spot_filter1Click
           ParentFont = False
           TabOrder = 7
         end
