@@ -1093,14 +1093,6 @@ object mainwindow: Tmainwindow
         ShortCut = 119
         OnClick = DemosaicBayermatrix1Click
       end
-      object autocorrectcolours1: TMenuItem
-        Caption = 'Auto correct colours.'
-        Enabled = False
-        Hint = 'Will adjust color settings to get gray background and average white stars. This is the same function as in tab pixel math'
-        ImageIndex = 15
-        ShortCut = 120
-        OnClick = autocorrectcolours1Click
-      end
       object inversimage1: TMenuItem
         Caption = 'Inverse image'
         Enabled = False

@@ -786,6 +786,7 @@ procedure apply_most_common(sourc,dest: image_array; radius: integer);  {apply m
 procedure backup_header;{backup solution and header}
 function  restore_header: boolean;{backup solution and header}
 procedure report_results(object_to_process,stack_info :string;object_counter,colorinfo:integer);{report on tab results}
+procedure apply_factors;{apply r,g,b factors to image}
 
 
 const
@@ -2845,6 +2846,7 @@ begin
       begin
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
         plot_fits(mainwindow.image1,false,true);{plot real}
+        update_equalise_background_step(0); {go to step 0}
       end;
     end
     else
@@ -7856,16 +7858,22 @@ begin
     begin
       if ((stackmenu1.make_osc_color1.checked) and (stackmenu1.osc_auto_level1.checked)) then
       begin
-        memo2_message('Adjusting colour levels and applying colour-smoothing filter on stacked colour image. See pixel math tab for more manual options.');
+        memo2_message('Adjusting colour levels as set in tab "stack method"');
         stackmenu1.auto_background_level1Click(nil);
         apply_factors;{histogram is after this action invalid}
         stackmenu1.reset_factors1Click(nil);{reset factors to default}
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
         if stackmenu1.osc_colour_smooth1.checked then
-           smart_colour_smooth(img_loaded,strtofloat2(osc_smart_smooth_width1.text),strtofloat2(osc_smart_colour_sd1.text),false {get  hist});{histogram doesn't needs an update}
+        begin
+          memo2_message('Applying colour-smoothing filter image as set in tab "stack method". Factors are set in tab pixel math 1');
+          smart_colour_smooth(img_loaded,strtofloat2(osc_smart_smooth_width1.text),strtofloat2(osc_smart_colour_sd1.text),false {get  hist});{histogram doesn't needs an update}
+        end
       end
       else
+      begin
+        memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+      end;
 
       restore_header;{restore header and solution}{use saved fits header first FITS file as saved in unit_stack_routines}
 

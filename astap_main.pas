@@ -67,7 +67,6 @@ type
     image_cleanup1: TMenuItem;
     localgaussian1: TMenuItem;
     localcoloursmooth1: TMenuItem;
-    autocorrectcolours1: TMenuItem;
     center_lost_windows: TMenuItem;
     deepsky_annotation1: TMenuItem;
     hyperleda_annotation1: TMenuItem;
@@ -313,7 +312,6 @@ type
     procedure Memo1KeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure localgaussian1Click(Sender: TObject);
     procedure localcoloursmooth1Click(Sender: TObject);
-    procedure autocorrectcolours1Click(Sender: TObject);
     procedure hyperleda_annotation1Click(Sender: TObject);
     procedure ra1DblClick(Sender: TObject);
     procedure clean_up1Click(Sender: TObject);
@@ -581,7 +579,7 @@ function convert_raw_to_fits(filename7 : string) :boolean;{convert raw file to F
 function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
-procedure demosaic_simple(pattern: integer);{make from sensor bayer pattern three colors without interpolation}
+procedure demosaic_astrosimple(pattern: integer);{make from sensor bayer pattern three colors without interpolation}
 function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 function extract_exposure_from_filename(filename8: string):integer; {try to extract exposure from filename}
 function extract_temperature_from_filename(filename8: string): integer; {try to extract temperature from filename}
@@ -2151,7 +2149,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.375 dated 2020-06-13';
+  #13+#10+'Version ß0.9.377 dated 2020-06-19';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2693,12 +2691,6 @@ begin
   else
   application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
 
-end;
-
-procedure Tmainwindow.autocorrectcolours1Click(Sender: TObject);
-begin
- stackmenu1.auto_background_level1Click(nil);
- stackmenu1.apply_factor1Click(nil);
 end;
 
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
@@ -3295,7 +3287,6 @@ begin
 
     mainwindow.ShowFITSheader1.enabled:=fits;
     mainwindow.demosaicBayermatrix1.Enabled:=fits;
-    mainwindow.autocorrectcolours1.Enabled:=fits;
     mainwindow.stretch_draw1.Enabled:=fits;
 
     mainwindow.CropFITSimage1.Enabled:=fits;
@@ -4029,7 +4020,7 @@ begin
   naxis:=3; {from 2 to 3 dimensions}
 end;
 
-procedure demosaic_simple(pattern: integer);{Spread each colour pixel to 2x2. Works well for astro oversampled images. Idea by Han.k}
+procedure demosaic_astrosimple(pattern: integer);{Spread each colour pixel to 2x2. Works well for astro oversampled images. Idea by Han.k}
 var
     X,Y,offsetx, offsety: integer;
     red,green_odd,green_even,blue : boolean;
@@ -4671,12 +4662,6 @@ procedure demosaic_bayer; {convert OSC image to colour}
 var
   s :string;
 begin
-  if pos('X-',stackmenu1.bayer_pattern1.Text)<>0  then {}
-     demosaic_x_trans{make from Fuji X-trans three colors}
- else
-  if pos('Bilinear',stackmenu1.demosaic_method1.text)<>0  then {use Bilinear interpolation}
-    demosaic_bilinear_interpolation(get_demosaic_pattern){make from sensor bayer pattern the three colors}
-  else
   if pos('AstroC',stackmenu1.demosaic_method1.text)<>0  then
   begin
     if datamax_org>16384 then demosaic_astroC_bilinear_interpolation(65535 div 2,get_demosaic_pattern){16 bit image. Make from sensor bayer pattern the three colors}
@@ -4686,16 +4671,46 @@ begin
     demosaic_astroC_bilinear_interpolation(4095 div 2,get_demosaic_pattern){12 bit image. Make from sensor bayer pattern the three colors}
   end
   else
+  if pos('Simple',stackmenu1.demosaic_method1.text)<>0  then {}
+    demosaic_astrosimple(get_demosaic_pattern){make from sensor bayer pattern the three colors}
+  else
+  if pos('Bilinear',stackmenu1.demosaic_method1.text)<>0  then {use Bilinear interpolation}
+    demosaic_bilinear_interpolation(get_demosaic_pattern){make from sensor bayer pattern the three colors}
+  else
   if pos('AstroM',stackmenu1.demosaic_method1.text)<>0  then {}
     demosaic_astroM_bilinear_interpolation(get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
-  if pos('Simple',stackmenu1.demosaic_method1.text)<>0  then {}
-    demosaic_simple(get_demosaic_pattern){make from sensor bayer pattern the three colors}
+  if pos('X-',stackmenu1.bayer_pattern1.Text)<>0  then {}
+     demosaic_x_trans{make from Fuji X-trans three colors}
   else
     demosaic_Malvar_He_Cutler(stackmenu1.bayer_pattern1.itemindex);{make from sensor bayer pattern the three colors}
-
-
 end;
+
+procedure demosaic_advanced;
+begin
+  demosaic_bayer;
+  memo2_message('De-mosaic bayer pattern used '+bayer_pattern[bayerpattern_final]);
+
+  if ({(stackmenu1.make_osc_color1.checked) and} (stackmenu1.osc_auto_level1.checked)) then
+  begin
+    memo2_message('Adjusting colour levels as set in tab "stack method"');
+    stackmenu1.auto_background_level1Click(nil);
+    apply_factors;{histogram is after this action invalid}
+    stackmenu1.reset_factors1Click(nil);{reset factors to default}
+    use_histogram(img_loaded,true {update}); {plot histogram in colour, set sliders}
+  if stackmenu1.osc_colour_smooth1.checked then
+  begin
+    memo2_message('Applying colour-smoothing filter image as set in tab "stack method". Factors are set in tab "pixel math 1"');
+    smart_colour_smooth(img_loaded,strtofloat2(stackmenu1.osc_smart_smooth_width1.text),strtofloat2(stackmenu1.osc_smart_colour_sd1.text),false {get  hist});{histogram doesn't needs an update}
+  end;
+  end
+  else
+  begin
+    memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
+    use_histogram(img_loaded,true {update}); {plot histogram in colour, set sliders}
+  end;
+end;
+
 
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 const
@@ -4802,10 +4817,7 @@ begin
                     mainwindow.shape_alignment_marker1.visible:=false; {hide shape if stacked image is plotted}
   if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then
   begin
-    if pos('X-',stackmenu1.bayer_pattern1.Text)<>0  then {}
-       demosaic_x_trans{make from Fuji X-trans three colors}
-    else
-       demosaic_bilinear_interpolation(stackmenu1.bayer_pattern1.itemindex -1);{convert to colour}
+    demosaic_advanced;{demoasic and set levels}
   end;
 
   cblack:=mainwindow.minimum1.position;
@@ -5583,10 +5595,8 @@ end;
 
 procedure get_hist(colour:integer; img :image_array);
 var
-     i,j,col,his_total,count, width5, height5   : integer;
+     i,j,col,his_total,count, width5, height5,offsetW,offsetH : integer;
      total_value                                : double;
-const
-   offset=10; {ignore boundaries}
 begin
   if colour+1>length(img) then {robust detection, case binning is applied and image is mono}
     colour:=0; {used red only}
@@ -5600,12 +5610,14 @@ begin
   width5:=Length(img[0]);    {width}
   height5:=Length(img[0][0]); {height}
 
+  offsetW:=trunc(width5*0.042); {if Libraw is used, ignored unused sensor areas up to 4.2%}
+  offsetH:=trunc(height5*0.015); {if Libraw is used, ignored unused sensor areas up to 1.5%}
 
   if nrbits=24  then {special format}
   begin
-    For i:=0+offset to height5-1-offset do
+    For i:=0+offsetH to height5-1-offsetH do
     begin
-      for j:=0+offset to width5-1-offset do
+      for j:=0+offsetW to width5-1-offsetW do
       begin
         col:=round(img[0,j,i]);
         col:=intensity2(col);{average the 3 colors}
@@ -5621,9 +5633,9 @@ begin
   end
   else
   begin {normal fits, mono or colour}
-    For i:=0+offset to height5-1-offset do
+    For i:=0+offsetH to height5-1-offsetH do
     begin
-      for j:=0+offset to width5-1-offset do
+      for j:=0+offsetW to width5-1-offsetW do
       begin
         col:=round(img[colour,j,i]);{red}
         if ((col>=1) and (col<65000)) then {ignore black overlap areas and bright stars}
@@ -9455,6 +9467,7 @@ begin
   Screen.Cursor:= Save_Cursor;
 end;
 
+
 procedure Tmainwindow.DemosaicBayermatrix1Click(Sender: TObject);
 var
     oldcursor: tcursor;
@@ -9469,14 +9482,7 @@ begin
   Screen.Cursor:= crHourGlass;
   backup_img;
 
-  demosaic_bayer;
-  memo2_message('De-mosaic bayer pattern used '+bayer_pattern[bayerpattern_final]);
-  {colours are now created, redraw histogram}
-  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-
- // smart_colour_smooth(img_loaded,10,false {get red hist});
-  smart_colour_smooth(img_loaded,strtofloat2(stackmenu1.osc_smart_smooth_width1.text),strtofloat2(stackmenu1.osc_smart_colour_sd1.text),false {get  hist});{histogram doesn't needs an update}
-
+  demosaic_advanced;
 
   remove_key('BAYERPAT',false{all});{remove key word in header}
   remove_key('XBAYROFF',false{all});{remove key word in header}

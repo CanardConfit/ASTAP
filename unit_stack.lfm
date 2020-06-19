@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1604
-    ActivePage = Images
+    ActivePage = tab_stackmethod1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 5
     TabOrder = 5
     object Images: TTabSheet
       Hint = 'Select here the light frames'
@@ -1886,7 +1886,7 @@ object stackmenu1: Tstackmenu1
           Items.Strings = (
             'AstroC, colour for saturated stars.'
             'AstroM, white stars'
-            'Simple'
+            'AstroSimple'
             'Bilinear interpolation'
             'Malvar_He_Cutler (not for astro)'
             ''
@@ -2000,8 +2000,8 @@ object stackmenu1: Tstackmenu1
           Left = 10
           Height = 15
           Top = 149
-          Width = 274
-          Caption = 'Best debayer methods are AstroC and Bayer-Simple.'
+          Width = 268
+          Caption = 'Best debayer methods are AstroC and AstroSimple.'
           ParentColor = False
         end
         object Label25: TLabel
