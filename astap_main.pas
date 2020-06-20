@@ -2149,7 +2149,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.377 dated 2020-06-19';
+  #13+#10+'Version ß0.9.378 dated 2020-06-20';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5681,7 +5681,7 @@ begin
 
 //  if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65535;
 
-  max_range:=round(datamax_org); {measured while loading}
+  max_range:=round(min(datamax_org,65535)); {measured while loading, Prevent runtime error if datamax_org>65535}
 
   case mainwindow.range1.itemindex of
     -1,0,1: above_R:=0.001;{low range}
@@ -6036,6 +6036,8 @@ begin
     i:=maximum1.position;  get_int(i,'maximum_position');maximum1.position:=i;
     i:=range1.itemindex;  get_int(i,'range');range1.itemindex:=i;
 
+    i:=saturation_factor_plot1.position;  get_int(i,'saturation_factor');saturation_factor_plot1.position:=i;
+
     i:=stackmenu1.stack_method1.itemindex;  get_int(i,'stack_method');stackmenu1.stack_method1.itemindex:=i;
     i:=stackmenu1.flat_combine_method1.itemindex;  get_int(i,'flat_combine_method');
     i:=stackmenu1.pagecontrol1.tabindex;  get_int(i,'stack_tab');stackmenu1.pagecontrol1.tabindex:=i;
@@ -6370,6 +6372,8 @@ begin
   initstring.Values['minimum_position']:=inttostr(MINIMUM1.position);
   initstring.Values['maximum_position']:=inttostr(maximum1.position);
   initstring.Values['range']:=inttostr(range1.itemindex);
+
+  initstring.Values['saturation_factor']:=inttostr(saturation_factor_plot1.position);
 
   initstring.Values['stack_method']:=inttostr(stackmenu1.stack_method1.itemindex);
 
