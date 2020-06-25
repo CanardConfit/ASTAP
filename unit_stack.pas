@@ -3164,7 +3164,7 @@ begin
             begin
               lv.Items.item[c].subitems.Strings[P_date]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
               date_to_jd(date_obs);{convert date-obs to jd}
-              jd:=jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+              jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
               lv.Items.item[c].subitems.Strings[P_jd_mid]:=floattostrF2(jd,0,5);{julian day}
 
               hjd:=JD_to_HJD(jd,RA0,DEC0);{conversion JD to HJD}

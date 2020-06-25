@@ -185,7 +185,7 @@ procedure Tform_asteroids1.longitude1Change(Sender: TObject);{han.k}
 var
   errordecode:boolean;
 begin
-  ra_text_to_radians(longitude1.Text,site_long_radians,errordecode);
+  dec_text_to_radians(longitude1.Text,site_long_radians,errordecode);
   if errordecode then longitude1.color:=clred else longitude1.color:=clwindow;
 end;
 
@@ -715,7 +715,7 @@ PROCEDURE PRECART(A:double33;VAR X,Y,Z:double);
 
 PROCEDURE PARALLAX_XYZ(WTIME,latitude : double;var X,Y,Z: double); { {X,Y,Z in AU,  By Han Kleijn}
 {wtime= Sidereal time at greenwich - longitude, equals azimuth position of the sky for the observer.
-{ wtime:=limit_radialen((-longitude*pi/180)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi);
+{ wtime:=limit_radialen((+longitude*pi/180)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi);{longitude positive is east}
 { siderealtime2000=(280.46061837-90)*pi/180       earth_angular_velocity=pi*2*1.00273790935}
 {see also new meeus page 78}
 {parallax can be 8.8 arcsec  per au distance. }
@@ -1215,7 +1215,7 @@ begin
   end;
 
   if midpoint=false then
-     jd:=jd-exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+     jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
   dec_text_to_radians(sitelat,site_lat_radians,errordecode);
   if errordecode then memo2_message('Warning observatory latitude not found in the fits header');
@@ -1327,7 +1327,11 @@ begin
   mpcorb_path:=form_asteroids1.mpcorb_path1.caption;
   cometels_path:=form_asteroids1.mpcorb_path2.caption;
 
-  date_avg:=date_obs1.Text;
+  if midpoint=false then
+    date_obs:=date_obs1.Text
+  else
+    date_avg:=date_obs1.Text;
+
 
   maxcount_asteroid:=max_nr_asteroids1.text;
   maxcount:=strtoint(form_asteroids1.max_nr_asteroids1.text);

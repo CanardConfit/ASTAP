@@ -704,7 +704,7 @@ var
   lw       : int64;
   fl       : double absolute lw;
 
-  tfields,naxisT, naxisT1,naxisT2, hh: integer;
+  tfields{,naxisT}, naxisT1,naxisT2: integer;
   ttype,tform,tunit : array of string;
   tbcol       : array of integer;
   tform_counter: integer;
@@ -1448,7 +1448,7 @@ begin
         begin
           if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {naxisT}
              begin
-               if (header[i+5]=' ') then naxisT:=round(validate_double)   else    {naxisT number of colors}
+               //if (header[i+5]=' ') then naxisT:=round(validate_double)   else    {naxisT number of colors}
                if (header[i+5]='1') then begin naxisT1:=round(validate_double); end else {naxisT1 pixels}
                if (header[i+5]='2') then naxisT2:=round(validate_double) else   {naxisT2 pixels}
              end;
@@ -2149,7 +2149,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.379 dated 2020-06-25';
+  #13+#10+'Version ß0.9.380 dated 2020-06-25';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5413,7 +5413,7 @@ end;
 
 function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
-  i,j,r,g   : integer;
+  i,j   : integer;
   jd2   : double;
   image: TFPCustomImage;
   reader: TFPCustomImageReader;
@@ -7616,9 +7616,7 @@ end;
 
 procedure Tmainwindow.batch_rotate_left1Click(Sender: TObject);
 var
-  img_temp2 : image_array;
-  I, FitsX, fitsY,k,w,h   : integer;
-  ratio                   : double;
+  I                       : integer;
   dobackup : boolean;
 begin
 
@@ -8912,7 +8910,7 @@ var
     s,old      : string;
     source_fits,histogram_done,file_loaded: boolean;
     binning, backgr, hfd_median : double;
-    hfd_counter,i : integer;
+    hfd_counter                 : integer;
 begin
   user_path:=GetAppConfigDir(false);{get user path for app config}
 
