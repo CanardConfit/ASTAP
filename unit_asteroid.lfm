@@ -353,7 +353,7 @@ object form_asteroids1: Tform_asteroids1
     object longitude1: TEdit
       Left = 127
       Height = 23
-      Hint = 'The longitude of the observatory in degrees. For east enter negative, for west enter positive values.'
+      Hint = 'The longitude of the observatory in degrees. For east enter positive, for west enter negative values.'
       Top = 72
       Width = 113
       OnChange = longitude1Change

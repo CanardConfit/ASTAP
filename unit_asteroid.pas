@@ -1220,12 +1220,13 @@ begin
   dec_text_to_radians(sitelat,site_lat_radians,errordecode);
   if errordecode then memo2_message('Warning observatory latitude not found in the fits header');
 
-  ra_text_to_radians(sitelong,site_long_radians,errordecode);
+  dec_text_to_radians(sitelong,site_long_radians,errordecode); {longitude is in degrees, not in hours. East is positive according ESA standard and diffractionlimited}
+                                                               {see https://indico.esa.int/event/124/attachments/711/771/06_ESA-SSA-NEO-RS-0003_1_6_FITS_keyword_requirements_2014-08-01.pdf}
   if errordecode then memo2_message('Warning observatory longitude not found in the fits header');
 
   delta_t:=deltaT_calc(jd); {calculate delta_T in days}
 
-  wtime2actual:=limit_radialen((-site_long_radians)+siderealtime2000 +(jd-2451545 )* earth_angular_velocity,2*pi);
+  wtime2actual:=limit_radialen(site_long_radians+siderealtime2000 +(jd-2451545 )* earth_angular_velocity,2*pi);  {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
         {change by time & longitude in 0 ..pi*2, simular as siderial time}
         {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
 
