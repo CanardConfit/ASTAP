@@ -1075,10 +1075,29 @@ begin
            ybayroff:=validate_double;{offset to used to correct BAYERPAT due to flipping}
 
 
-        if ((header[i]='S') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='L') and (header[i+5]='A') and (header[i+6]='T')) then
-           sitelat:=get_as_string;{universal, site latitude as string}
-        if ((header[i]='S') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='L') and (header[i+5]='O') and (header[i+6]='N')) then
-           sitelong:=get_as_string;{universal, site longitude as string}
+        if ((header[i]='S') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='L')) then  {site latitude, longitude}
+        begin
+          if ((header[i+5]='A') and (header[i+6]='T')) then
+            sitelat:=get_as_string;{universal, site latitude as string}
+          if ((header[i+5]='O') and (header[i+6]='N')) then
+             sitelong:=get_as_string;{universal, site longitude as string}
+        end;
+        if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='S'))  then  {site latitude, longitude}
+        begin
+          if ( ((header[i+3]='L') and (header[i+4]='A') and (header[i+5]='T')) or ((header[i+3]='-') and (header[i+4]='L') and(header[i+5]='A')) ) then  {OBSLAT or OBS-LAT}
+            sitelat:=get_as_string;{universal, site latitude as string}
+          if ( ((header[i+3]='L') and (header[i+4]='O') and(header[i+5]='N')) or ((header[i+3]='-') and (header[i+4]='L') and(header[i+5]='O')) ) then  {OBSLONG or OBS-LONG}
+             sitelong:=get_as_string;{universal, site longitude as string}
+
+          if ((header[i+3]='G') and (header[i+4]='E') and (header[i+5]='O') and(header[i+6]='-')) then {OBSGEO-L, OBSGEO-B}
+          begin
+            if (header[i+7]='B') then
+              sitelat:=get_as_string {universal, site latitude as string}
+            else
+            if (header[i+7]='L') then
+              sitelong:=get_as_string;{universal, site longitude as string}
+          end;
+        end;
 
         if ((header[i]='U') and (header[i+1]='T')) then
                  UT:=get_string;
@@ -2149,7 +2168,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.380 dated 2020-06-25';
+  #13+#10+'Version ß0.9.382 dated 2020-07-1';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -9176,7 +9195,7 @@ begin
       if dobackup then restore_img;{for the viewer}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
-    memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(OpenDialog1.Files.count-nrsolved-skipped)+' solve failures, '+inttostr(skipped)+' images skipped. For re-solve set option "ignore fits header solution".');
+    memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(OpenDialog1.Files.count-nrsolved-skipped)+' solve failures, '+inttostr(skipped)+' images skipped. For re-solve set option "Ignore existing fits header solution".');
   end;
 end;
 

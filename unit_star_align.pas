@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 }
 interface
 
-uses Classes, SysUtils,Graphics,math,
+uses Classes, SysUtils,Graphics,
      astap_main, unit_stack;
 type
    star_list= array of array of double;
@@ -159,17 +159,14 @@ begin
   end;
 end;
 
-procedure find_tetrahedrons(starlist :star_list; var starlisttetrahedrons :star_list);  {find closest stars}
+procedure find_tetrahedrons(starlist :star_list; var starlisttetrahedrons :star_list);  {build tetrahedrons using closest stars, revised 2020-7-1, 25% percent faster}
 var
-   i,j,k,nrstars_min_one,j_used1,j_used2,nrtetrahedrons : integer;
-   shortest_distance,distance,shortest1,shortest2,shortest3,min_ratio  : double;
+   i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrtetrahedrons,buffersize : integer;
+   distance,distance1,distance2,distance3                       : double;
    identical_tetrahedron : boolean;
-const
-   buffersize=1000;{1000}
 begin
   nrstars_min_one:=Length(starlist[0])-1;
-
-  min_ratio:=(0.15/500)*nrstars_min_one;
+  buffersize:=nrstars_min_one;{number of tetrahedrons will be lower}
 
   if nrstars_min_one<3 then
   begin {not enough stars for tetrahedrons}
@@ -179,87 +176,85 @@ begin
 
   nrtetrahedrons:=0;
 
-  SetLength(starlisttetrahedrons,10,buffersize);{set array length to 100}
+  SetLength(starlisttetrahedrons,10,buffersize);{set array length to buffer size}
+
+  j_used1:=0;{give it a default value}
+  j_used2:=0;
+  j_used3:=0;
+
 
   for i:=0 to nrstars_min_one do
   begin
-    shortest_distance:=1E99;
-    starlisttetrahedrons[0,nrtetrahedrons]:=starlist[0,i];
-    starlisttetrahedrons[1,nrtetrahedrons]:=starlist[1,i];
-    j_used1:=-1;
-    for j:=0 to nrstars_min_one do {find closest star}
+    distance1:=1E99;{distance closest star}
+    distance2:=1E99;{distance second closest star}
+    distance3:=1E99;{distance third closest star}
+
+    for j:=0 to nrstars_min_one do {find closest stars}
     begin
-      if j<>i{not used} then
+      if j<>i{not the first star} then
       begin
           distance:=sqr(starlist[0,j]-starlist[0,i])+ sqr(starlist[1,j]-starlist[1,i]);
-          if distance<shortest_distance then
+          if distance<distance1 then
           begin
-            shortest_distance:=distance;
-            starlisttetrahedrons[2,nrtetrahedrons]:=starlist[0,j];
-            starlisttetrahedrons[3,nrtetrahedrons]:=starlist[1,j];
+            distance3:=distance2;{distance third closest star}
+            j_used3:=j_used2;
+
+            distance2:=distance1;{distance second closest star}
+            j_used2:=j_used1;
+
+            distance1:=distance;{distance closest star}
             j_used1:=j;{mark later as used}
-         end;
-      end;
-    end;{j}
-
-
-    shortest1:=shortest_distance;{store shortest distance1}
-    shortest_distance:=1E99;
-    j_used2:=-1;
-    for j:=0 to nrstars_min_one do{find second closest star}
-      begin
-        if ((j<>i) and (j<>j_used1)) {not used} then
-        begin
-          distance:=sqr(starlist[0,j]-starlist[0,i])+ sqr(starlist[1,j]-starlist[1,i]);
-          if ((distance<shortest_distance) and (distance>shortest1)) then
+          end
+          else
+          if distance<distance2 then
           begin
-            shortest_distance:=distance;
-            starlisttetrahedrons[4,nrtetrahedrons]:=starlist[0,j];
-           starlisttetrahedrons[5,nrtetrahedrons]:=starlist[1,j];
-            j_used2:=j;{mark later as used}
-          end;
-        end;
-      end;{j}
+            distance3:=distance2;{distance third closest star}
+            j_used3:=j_used2;
 
-    shortest2:=shortest_distance;{store shortest distance2}
-    shortest_distance:=1E99;
-    for j:=0 to nrstars_min_one do{find third closest star}
-    begin
-      if ((j<>i) and (j<>j_used1) and (j<>j_used2)) {not used} then
-      begin
-        distance:=sqr(starlist[0,j]-starlist[0,i])+ sqr(starlist[1,j]-starlist[1,i]);
-        if ((distance<shortest_distance) and (distance>shortest2)) then
-        begin
-          shortest_distance:=distance;
-          starlisttetrahedrons[6,nrtetrahedrons]:=starlist[0,j];
-          starlisttetrahedrons[7,nrtetrahedrons]:=starlist[1,j];
-        end;
+            distance2:=distance;{distance second closest star}
+            j_used2:=j;
+          end
+          else
+          if distance<distance3 then
+          begin
+            distance3:=distance;{third closest star}
+            j_used3:=j;
+          end
       end;
     end;{j}
 
-    shortest3:=shortest_distance;{store shortest distance3}
+    starlisttetrahedrons[0,nrtetrahedrons]:=starlist[0,i]; {copy first star position to the tetrahedron array}
+    starlisttetrahedrons[1,nrtetrahedrons]:=starlist[1,i];
 
-    if shortest1/shortest3>min_ratio then {2020. Ignore tetrahedrons with a short star distance. Gives some reliability improvement for images with a lot of stars}
+    starlisttetrahedrons[2,nrtetrahedrons]:=starlist[0,j_used1]; {copy the second star position to the tetrahedron array}
+    starlisttetrahedrons[3,nrtetrahedrons]:=starlist[1,j_used1];
+
+    starlisttetrahedrons[4,nrtetrahedrons]:=starlist[0,j_used2];
+    starlisttetrahedrons[5,nrtetrahedrons]:=starlist[1,j_used2];
+
+    starlisttetrahedrons[6,nrtetrahedrons]:=starlist[0,j_used3];
+    starlisttetrahedrons[7,nrtetrahedrons]:=starlist[1,j_used3];
+
+
+    starlisttetrahedrons[8,nrtetrahedrons]:=(starlisttetrahedrons[0,nrtetrahedrons]+starlisttetrahedrons[2,nrtetrahedrons]+starlisttetrahedrons[4,nrtetrahedrons]+starlisttetrahedrons[6,nrtetrahedrons])/4; {center x position}
+    starlisttetrahedrons[9,nrtetrahedrons]:=(starlisttetrahedrons[1,nrtetrahedrons]+starlisttetrahedrons[3,nrtetrahedrons]+starlisttetrahedrons[5,nrtetrahedrons]+starlisttetrahedrons[7,nrtetrahedrons])/4; {center y position}
+
+    identical_tetrahedron:=false;
+    if nrtetrahedrons>=1 then {already a tetrahedron stored}
+    for k:=0 to nrtetrahedrons-1 do
+    if ((round(starlisttetrahedrons[8,nrtetrahedrons])=round(starlisttetrahedrons[8,k]) ) and
+        (round(starlisttetrahedrons[9,nrtetrahedrons])=round(starlisttetrahedrons[9,k]) ) ) then {same center position, found identical tetrahedron already in the list}
+           identical_tetrahedron:=true;
+
+    if identical_tetrahedron=false then  {new tetrahedron found}
     begin
-      starlisttetrahedrons[8,nrtetrahedrons]:=(starlisttetrahedrons[0,nrtetrahedrons]+starlisttetrahedrons[2,nrtetrahedrons]+starlisttetrahedrons[4,nrtetrahedrons]+starlisttetrahedrons[6,nrtetrahedrons])/4; {center x position}
-      starlisttetrahedrons[9,nrtetrahedrons]:=(starlisttetrahedrons[1,nrtetrahedrons]+starlisttetrahedrons[3,nrtetrahedrons]+starlisttetrahedrons[5,nrtetrahedrons]+starlisttetrahedrons[7,nrtetrahedrons])/4; {center y position}
-
-      identical_tetrahedron:=false;
-      if nrtetrahedrons>=1 then {already a tetrahedron stored}
-      for k:=0 to nrtetrahedrons-1 do
-      if ((round(starlisttetrahedrons[8,nrtetrahedrons])=round(starlisttetrahedrons[8,k]) ) and
-          (round(starlisttetrahedrons[9,nrtetrahedrons])=round(starlisttetrahedrons[9,k]) ) ) then {found identical tetrahedron already in the list}
-             identical_tetrahedron:=true;
-
-      if identical_tetrahedron=false then  {new tetrahedron found}
-      begin
-        inc(nrtetrahedrons); {new unique tetrahedron found}
-        if nrtetrahedrons>=buffersize then setlength(starlisttetrahedrons,10,length(starlisttetrahedrons[0])+buffersize);{get more space}
-      end;
+      inc(nrtetrahedrons); {new unique tetrahedron found}
+      //will never happen:
+      //if nrtetrahedrons>=buffersize then setlength(starlisttetrahedrons,10,length(starlisttetrahedrons[0])+buffersize);{get more space}
     end;
   end;{i}
 
-  SetLength(starlisttetrahedrons,10,nrtetrahedrons);{set array length to tetrahedrons one shorter since last entry is not filled}
+  SetLength(starlisttetrahedrons,10,nrtetrahedrons);{reduce array length to number tetrahedrons one shorter since last entry is not filled}
 end;
 
 procedure calc_tetrahedron_lengths(starlisttetrahedrons3: star_list; var star_tetrahedron_lengths: star_list);{calc and sort the six edges lengths, longest first}
