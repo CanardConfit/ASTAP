@@ -1,5 +1,5 @@
 object mainwindow: Tmainwindow
-  Left = 259
+  Left = 564
   Height = 616
   Hint = ' '
   Top = 291

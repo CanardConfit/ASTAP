@@ -763,12 +763,13 @@ begin
 
   {do image stars}
   nrstars:=length(starlist2[0]);
+  mainwindow.image1.Canvas.Pen.Mode := pmMerge;
+  mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
+  mainwindow.image1.Canvas.brush.Style:=bsClear;
+  mainwindow.image1.Canvas.Pen.Color :=clred;
+
   for i:=0 to nrstars-1 do
   begin
-    mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-    mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
-    mainwindow.image1.Canvas.brush.Style:=bsClear;
-    mainwindow.image1.Canvas.Pen.Color :=clred;
 
     if flip_horizontal=true then starX:=round((width2-starlist2[0,i]))  else starX:=round(starlist2[0,i]);
     if flip_vertical=false  then starY:=round((height2-starlist2[1,i])) else starY:=round(starlist2[1,i]);
@@ -778,10 +779,9 @@ begin
 
   {do database stars}
   nrstars:=length(starlist1[0]);
+  mainwindow.image1.Canvas.Pen.Color := clyellow;
   for i:=0 to nrstars-1 do
   begin
-    mainwindow.image1.Canvas.Pen.Color := clyellow;
-
     xx:=(starlist1[0,i]-correctionX)/(cdelt1*3600);{apply correction for database stars center and image center and convert arc seconds to pixels}
     yy:=(starlist1[1,i]-correctionY)/(cdelt2*3600);
     rotate((90-crota2)*pi/180,xx,yy,X,Y);{rotate to screen orientation}
