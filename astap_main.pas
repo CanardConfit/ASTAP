@@ -527,7 +527,7 @@ procedure ang_sep(ra1,dec1,ra2,dec2 : double;var sep: double);
 function load_fits(filen:string;light {load as light of dark/flat},load_data :boolean;var img_loaded2: image_array): boolean;{load fits file}
 procedure plot_fits(img: timage;center_image,show_header:boolean);
 procedure use_histogram(img: image_array; update_hist: boolean);{get histogram}
-procedure HFD(img: image_array; x1,y1,rs{box size}: integer; var hfd1,star_fwhm,snr{peak/sigma noise},flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity}
+procedure HFD(img: image_array; x1,y1,rs{box size}: integer; var hfd1,star_fwhm,snr{peak/sigma noise},flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity. All x,y coordinates in array[0..] positions}
 procedure backup_img;
 procedure restore_img;
 function load_image(re_center, plot:boolean) : boolean; {load fits or PNG, BMP, TIF}
@@ -2168,7 +2168,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.383 dated 2020-07-5';
+  #13+#10+'Version ß0.9.385 dated 2020-07-6';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -10181,251 +10181,7 @@ begin
   end;{left button pressed}
 end;
 
-
-procedure HFDold(img: image_array;x1,y1,rs {boxsize}: integer; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity}
-const
-  max_ri=50; //should be larger or equalsmaller then rssqrt(sqr(rs+rs)+sqr(rs+rs))+1;
-var
-  i,j,counter, ri, distance,distance_top_value,illuminated_pixels:integer;
-  SumVal,SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
-  val,bg_average,bg,bg_standard_deviation,pixel_counter,valmax,
-  val_00,val_01,val_10,val_11,af, faintA,faintB, brightA,brightB,faintest,brightest : double;
-  HistStart,asymmetry : boolean;
-  distance_histogram : array [0..max_ri] of integer;
-
-    function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
-    var
-      x_trunc,y_trunc: integer;
-      x_frac,y_frac  : double;
-    begin
-      x_trunc:=trunc(x1);
-      y_trunc:=trunc(y1);
-      if ((x_trunc<=0) or (x_trunc>=(width2-2)) or (y_trunc<=0) or (y_trunc>=(height2-2))) then begin result:=0; exit;end;
-      x_frac :=frac(x1);
-      y_frac :=frac(y1);
-      try
-        result:=         (img[0,x_trunc  ,y_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
-        result:=result + (img[0,x_trunc+1,y_trunc  ]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
-        result:=result + (img[0,x_trunc  ,y_trunc+1]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
-        result:=result + (img[0,x_trunc+1,y_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
-      except
-      end;
-    end;
-begin
-
-//  if ((xc>290) and (xc<330) and (yc>130) and (yc<155)) then
-//  beep;
-
-  if ((x1-rs-4<=0) or (x1+rs+4>=width2-1) or
-      (y1-rs-4<=0) or (y1+rs+4>=height2-1) )
-    then begin hfd1:=999; snr:=0; exit;end;
-
-  bg:=0;
-  valmax:=0;
-  hfd1:=999;
-
-  try
-    counter:=0;
-    bg_average:=0;
-    for i:=-rs-4 to rs+4 do {calculate mean at square boundaries of detection box}
-    for j:=-rs-4 to rs+4 do
-    begin
-      if ( (abs(i)>rs) and (abs(j)>rs) ) then {measure only outside the box}
-      begin
-        bg_average:=bg_average+img[0,x1+i,y1+j];
-        inc(counter)
-      end;
-    end;
-    bg_average:=bg_average/counter; {mean value background}
-    bg:=bg_average;
-
-    counter:=0;
-    bg_standard_deviation:=0;
-    for i:=-rs-4 to rs+4 do {calculate standard deviation background at the square boundaries of detection box}
-      for j:=-rs-4 to rs+4 do
-      begin
-        if ( (abs(i)>rs) and (abs(j)>rs) ) then {measure only outside the box}
-        begin
-            val:=img[0,x1+i,y1+j];
-            if val<=2*bg_average then {not an outlier}
-            begin
-              bg_standard_deviation:=bg_standard_deviation+sqr(bg_average-val);
-              inc(counter);
-            end;
-        end;
-    end;
-    bg_standard_deviation:=sqrt(bg_standard_deviation/(counter+0.0001)); {standard deviation in background}
-
-    repeat {reduce box size till symmetry to remove stars}
- // Get center of gravity whithin star detection box and count signal pixels
-      SumVal:=0;
-      SumValX:=0;
-      SumValY:=0;
-      for i:=-rs to rs do
-      for j:=-rs to rs do
-      begin
-        val:=(img[0,x1+i,y1+j])- bg;
-        if val>3*bg_standard_deviation then
-        begin
-          SumVal:=SumVal+val;
-          SumValX:=SumValX+val*(i);
-          SumValY:=SumValY+val*(j);
-        end;
-      end;
-      if sumval<= 12*bg_standard_deviation then exit; {no star found, too noisy, exit with hfd=999}
-
-      Xg:=SumValX/SumVal;
-      Yg:=SumValY/SumVal;
-      xc:=(x1+Xg);
-      yc:=(y1+Yg);
-     {center of gravity found}
-
-
-      if ((xc-rs<0) or (xc+rs>width2-1) or (yc-rs<0) or (yc+rs>height2-1) ) then exit;{prevent runtime errors near sides of images}
-
-  //   Check for asymmetry. Are we testing a group of stars or a defocused star?
-      val_00:=0;val_01:=0;val_10:=0;val_11:=0;
-
-      for i:=-rs to 0 do begin
-        for j:=-rs to 0 do begin
-          val_00:=val_00+ value_subpixel(xc+i,yc+j)-bg;
-          val_01:=val_01+ value_subpixel(xc+i,yc-j)-bg;
-          val_10:=val_10+ value_subpixel(xc-i,yc+j)-bg;
-          val_11:=val_11+ value_subpixel(xc-i,yc-j)-bg;
-        end;
-      end;
-
-      if sumval<100000 then af:=min(0.9,rs/10) {variable asymmetry factor. 1 is allow only prefect symmetrical, 0.000001 if off.  More critital detection if rs is large   }
-                       else af:=min(0.7,rs/10);{relax criteria for bright stars. Above 100000 no galaxy or nebula}
-
-
-      {check for asymmetry of detected star using the four quadrants}
-      if val_00<val_01  then begin faintA:=val_00; brightA:=val_01; end else begin faintA:=val_01; brightA:=val_00; end;
-      if val_10<val_11  then begin faintB:=val_10; brightB:=val_11; end else begin faintB:=val_11; brightB:=val_10; end;
-      if faintA<faintB  then faintest:=faintA else faintest:=faintB;{find faintest quadrant}
-      if brightA>brightB  then brightest:=brightA else brightest:=brightB;{find brightest quadrant}
-      asymmetry:=(brightest*af>=faintest); {if true then detected star has asymmetry, ovals/galaxies or double stars will not be accepted}
-
-
-      if asymmetry then  dec(rs,2); {try a smaller window to exclude nearby stars}
-      if rs<4 then exit; {try to reduce box up to rs=4 equals 8x8 box else exit with hfd 999}
-    until asymmetry=false;{loop and reduce box size until asymmetry is gone.}
-
-   // Build signal histogram from center of gravity
-    for i:=0 to rs do distance_histogram[i]:=0;{clear signal histogram for the range used}
-    for i:=-rs to rs do begin
-      for j:=-rs to rs do begin
-
-        distance:=round(sqrt(i*i + j*j)); {distance from gravity center} {modA}
-        if distance<=rs then {build histogram for circel with radius rs}
-        begin
-          val:=value_subpixel(xc+i,yc+j)-bg;
-          if val>((3*bg_standard_deviation)) then {3 * sd should be signal }
-          begin
-            distance_histogram[distance]:=distance_histogram[distance]+1;{build distance histogram up to circel with diameter rs}
-            if val>valmax then valmax:=val;{record the peak value of the star}
-          end;
-        end;
-      end;
-    end;
-
-    ri:=-1;
-    distance_top_value:=0;
-    HistStart:=false;
-    illuminated_pixels:=0;
-    repeat
-      inc(ri);
-      illuminated_pixels:=illuminated_pixels+distance_histogram[ri];
-      if distance_histogram[ri]>0 then HistStart:=true;{continue until we found a value>0, center of defocused star image can be black having a central obstruction in the telescope}
-      if distance_top_value<distance_histogram[ri] then distance_top_value:=distance_histogram[ri]; {this should be 2*pi*ri if it is nice defocused star disk}
-    until ( (ri>=rs) or (HistStart and (distance_histogram[ri]<=0.1*distance_top_value {drop-off detection})));{find a distance where there is no pixel illuminated, so the border of the star image of interest}
-    if ri>=rs then exit; {star is equal or larger then box, abort}
-
-    if (ri>2)and(illuminated_pixels<0.35*sqr(ri+ri-2)){35% surface} then exit;  {not a star disk but stars, abort with hfd 999}
-
-    except
-  end;
-
-  if ri<3 then {small star image}
-  begin
-    if distance_histogram[1]<3 then begin exit; end;// reject single hot pixel if less then 3 pixels are detected around the center of gravity
-    ri:=3; {Minimum 6+1 x 6+1 pixel box}
-  end;
-
-  // Get HFD
-  SumVal:=0;
-  SumValR:=0;
-  pixel_counter:=0;
-
-  begin   // Get HFD using the aproximation routine assuming that HFD line divides the star in equal portions of gravity:
-    for i:=-ri to ri do {Make steps of one pixel}
-    for j:=-ri to ri do
-    begin
-      Val:=value_subpixel(xc+i,yc+j)-bg; {The calculated center of gravity is a floating point position and can be anyware, so calculate pixel values on sub-pixel level}
-      r:=sqrt(i*i+j*j); {Distance from star gravity center}
-      SumVal:=SumVal+Val; {Sumval will be star total flux value}
-      SumValR:=SumValR+Val*r; {Method Kazuhisa Miyashita, see notes of HFD calculation method}
-      if val>=valmax*0.5 then pixel_counter:=pixel_counter+1;{How many pixels are above half maximum}
-    end;
-    if Sumval<0.00001 then flux:=0.00001 else flux:=Sumval;{prevent dividing by zero or negative values}
-
-    hfd1:=2*SumValR/flux;
-
-    hfd1:=max(0.7,hfd1);
-    star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
-
-    snr:=flux/sqrt(flux +sqr(ri)*pi*sqr(bg_standard_deviation)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
-
-//    log_to_file('snr_test.csv',inttostr(round(snr*1000))+','+inttostr(round(snr_old*1000)));
-
-    {==========Notes on HFD calculation method=================
-      https://en.wikipedia.org/wiki/Half_flux_diameter
-      http://www005.upp.so-net.ne.jp/k_miyash/occ02/halffluxdiameter/halffluxdiameter_en.html       by Kazuhisa Miyashita. No sub-pixel calculation
-      https://www.lost-infinity.com/night-sky-image-processing-part-6-measuring-the-half-flux-diameter-hfd-of-a-star-a-simple-c-implementation/
-      http://www.ccdware.com/Files/ITS%20Paper.pdf     See page 10, HFD Measurement Algorithm
-
-      HFD, Half Flux Diameter is defined as: The diameter of circle where total flux value of pixels inside is equal to the outside pixel's.
-      HFR, half flux radius:=0.5*HFD
-      The pixel_flux:=pixel_value - background.
-
-      The approximation routine assumes that the HFD line divides the star in equal portions of gravity:
-          sum(pixel_flux * (distance_from_the_centroid - HFR))=0
-      This can be rewritten as
-         sum(pixel_flux * distance_from_the_centroid) - sum(pixel_values * (HFR))=0
-         or
-         HFR:=sum(pixel_flux * distance_from_the_centroid))/sum(pixel_flux)
-         HFD:=2*HFR
-
-      This is not an exact method but a very efficient routine. Numerical checking with an a highly oversampled artificial Gaussian shaped star indicates the following:
-
-      Perfect two dimensional Gaussian shape with σ=1:   Numerical HFD=2.3548*σ                     Approximation 2.5066, an offset of +6.4%
-      Homogeneous disk of a single value  :              Numerical HFD:=disk_diameter/sqrt(2)       Approximation disk_diameter/1.5, an offset of -6.1%
-
-      The approximation routine is robust and efficient.
-
-      Since the number of pixels illuminated is small and the calculated center of star gravity is not at the center of an pixel, above summation should be calculated on sub-pixel level (as used here)
-      or the image should be re-sampled to a higher resolution.
-
-      A sufficient signal to noise is required to have valid HFD value due to background noise.
-
-      Note that for perfect Gaussian shape both the HFD and FWHM are at the same 2.3548 σ.
-      }
-
-
-     {=============Notes on FWHM:=====================
-        1)	Determine the background level by the averaging the boarder pixels.
-        2)	Calculate the standard deviation of the background.
-
-            Signal is anything 3 * standard deviation above background
-
-        3)	Determine the maximum signal level of region of interest.
-        4)	Count pixels which are equal or above half maximum level.
-        5)	Use the pixel count as area and calculate the diameter of that area  as diameter:=2 *sqrt(count/pi).}
-
-  end;
-end;
-
-procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity}
+procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity. All x,y coordinates in array[0..] positions}
 const
   max_ri=50; //should be larger or equalsmaller then rssqrt(sqr(rs+rs)+sqr(rs+rs))+1;
 var
@@ -10530,12 +10286,6 @@ begin
         if rs>4 then dec(rs,2) else dec(rs,1); {try a smaller window to exclude nearby stars}
       end;
 
-//      if ((abs(xc-471)<5) and  (abs(yc-2308)<5)) then
-  //        begin
-    //        beep;
-      //     end;
-
-
       {check on hot pixels}
       if signal_counter<=1 then exit {one hot pixel}
       else
@@ -10602,7 +10352,6 @@ begin
     hfd1:=max(0.7,hfd1);
 
 ///    if hfd1>1 then mainwindow.image1.Canvas.textout(x1,y1,floattostrF2(hfd1,3,1)+'|'+floattostrF2(distance_histogram[0],0,0)+'.'+floattostrF2(distance_histogram[1],0,0)+'.'+floattostrF2(distance_histogram[2],0,0)+'.'+floattostrF2(distance_histogram[3],0,0)  );
-
 //     if hfd1>1 then  mainwindow.image1.Canvas.textout(round(xc),round(yc),{floattostrF2(faintest/brightest,3,2)+'|'+ }floattostrF2(flux,5,0)+'|'+ floattostrF2(rs,2,0));
 
 
@@ -10953,7 +10702,9 @@ begin
 
 
    hfd2:=999;
-   HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),14{box size},hfd2,fwhm_star2,snr,flux,object_xc,object_yc) ;
+   HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),14{box size},hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
+
+   //mainwindow.caption:=floattostr(mouse_fitsX)+',   '+floattostr(mouse_fitsy)+',         '+floattostr(object_xc)+',   '+floattostr(object_yc);
 
    if ((hfd2<99) and (hfd2>0)) then
    begin
@@ -10967,7 +10718,7 @@ begin
      end
      else mag_str:='';
 
-     calculate_equatorial_mouse_position(object_xc,object_yc,object_raM,object_decM);
+     calculate_equatorial_mouse_position(object_xc+1,object_yc+1,object_raM,object_decM);{input in FITS coordinates}
      mainwindow.statusbar1.panels[1].text:=prepare_ra2(object_raM,': ')+'   '+prepare_dec2(object_decM,'° ');
      mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', SNR='+snr_str+mag_str;
    end

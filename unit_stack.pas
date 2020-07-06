@@ -4007,8 +4007,7 @@ begin
 //    memo2_message(inttostr(i));
 
     mainwindow.image1.Canvas.Pen.Color := clgreen;
-//    if starX=1177 then
-//     beep;
+
     movement_shortest:=1E99;
     for j:=0 to nrstars1-1 do
     begin
@@ -4028,8 +4027,6 @@ begin
     end;
     movement_shortest:=sqrt(movement_shortest);{calculate actual distance}
 
-
-
     if ((movement_shortest>= minimum_distance) and (movement_shortest<50)) then
     begin
       speed:=movement_shortest/(jd2-jd1);
@@ -4042,10 +4039,6 @@ begin
       mainwindow.image1.canvas.ellipse(starX-len*2,starY-len*2,starX+1+len*2,starY+1+len*2);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
       mainwindow.image1.Canvas.textout(starX,starY,floattostr2(speed)+','+floattostr2(angle*180/pi));
       mainwindow.image1.Canvas.textout(starX,starY+10,floattostr2(x_old-starlistx2[0,i])+','+floattostr2(starlistx2[1,i]-y_old));
-
-//      if i>=781 then
- //     beep;
-
 
       {store values}
       inc(nrasteroids);
@@ -4073,7 +4066,7 @@ end;
 
 procedure  annotate_moving_asteroid(nrrows,c: integer);
 var
-  i,j,k, asteroidY,asteroidX,matches, nrasteroids    : integer;
+  i,j,k, asteroidY,asteroidX,matches, nrasteroids, rowswithdata,matches_required  : integer;
   speed, speed2,angle,angle2,flux,flux2,speed_tolerance,flux_tolerance     : double;
   flipvertical, fliphorizontal                       : boolean;
 
@@ -4091,6 +4084,12 @@ begin
   mainwindow.image1.Canvas.Pen.Color := clyellow;
 
   nrasteroids:=length(asteroidlist[0,0])-1;
+
+  {calcualte number of matches required}
+  rowswithdata:=0;
+  for k:=0 to nrrows-1 do {compare with other detections}
+    if  asteroidlist[k,0,0]<>0 then inc(rowswithdata); {count number of rows with data}
+  matches_required:=min(3,rowswithdata-1);{2 -> 1, 3-> 2, 4 or more -> 3}
 
   for k:=0 to nrasteroids do {compare with other detections}
 
@@ -4123,12 +4122,12 @@ begin
       end;
     end;
 
-    if matches>=2 then
+    if matches>=matches_required then
     begin
       if Flipvertical=false then  asteroidY:=round(height2-(asteroidlist[c,1,k])) else asteroidY:=round(asteroidlist[c,1,k]);
       if Fliphorizontal     then asteroidX:=round(width2-asteroidlist[c,0,k])  else asteroidX:=round(asteroidlist[c,0,k]);
-      mainwindow.image1.Canvas.ellipse(asteroidX-20,asteroidY-20, asteroidX+20, asteroidY+20);{indicate outlier rectangle}
-      mainwindow.image1.Canvas.textout(asteroidX+20,asteroidY+20,floattostrf(asteroidlist[c,2,k], ffgeneral, 3,0));{add movement as text}
+      mainwindow.image1.Canvas.ellipse(asteroidX-20,asteroidY-20, asteroidX+20, asteroidY+20);{indicate moving object with circle}
+      mainwindow.image1.Canvas.textout(asteroidX+20,asteroidY+20,floattostrf(asteroidlist[c,2,k], ffgeneral, 3,0)+' pix/d' );{add movement as text}
     end;
 
   end;
@@ -4152,25 +4151,18 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
 
- if listview6.Items.item[listview6.items.count-1].subitems.Strings[B_exposure]='' {exposure} then
-      analyse_listview(listview6,true {light},false {full fits},false{refresh});
+  if listview6.Items.item[listview6.items.count-1].subitems.Strings[B_exposure]='' {exposure} then
+    stackmenu1.analyseblink1Click(nil);
 
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
   esc_pressed:=false;
-
-//  back_ground1:=-1;{not done yet indication}
-//  noise_level1:=-1;
   first_image:=-1;
-//  backup_reference:=false;
 
-//  asteroidlist:=nil;
   SetLength(asteroidlist,listview6.items.count,5,arraylen);{set array length}
   for c:=0 to listview6.items.count-1 do for i:=0 to 4 do for j:=0 to arraylen-1 do asteroidlist[c,i,j]:=0;
 
   nrrows:=listview6.items.count;
-
-  //memo2_message('Blinking started');
 
   stepnr:=0;
   if ((sender=blink_button1) or (detect_movement1.checked)) then init:=true {start at beginning}
@@ -4209,8 +4201,6 @@ begin
             begin
               memo2_message('Working on star alignment solutions. Blink frequency will increase after completion.');
               get_background(0,img_loaded,false {no histogram already done},true {unknown, calculate also datamax}, {var} cblack,star_level);
-//              back_ground1:=cblack;
-//              noise_level1:=noise_level[0]; {remember for difference}
               find_stars(img_loaded,hfd_min,starlist1);{find stars and put them in a list}
               find_tetrahedrons_ref;{find tetrahedrons for reference image}
 
@@ -4218,8 +4208,6 @@ begin
               save_solution_to_disk;{write solution_vectorX, solution_vectorY and solution_datamin to disk. Including solution_cblack[1]:=flux_magn_offset;}
               reference_done:=true;
               solut:=true;
-
-
             end
             else
             begin
@@ -4259,16 +4247,14 @@ begin
           setlength(img_temp,naxis3,width2,height2);{new size}
 
 
+          for fitsY:=0 to height2-1 do
+          for fitsX:=0 to width2-1  do
           begin
-            for fitsY:=0 to height2-1 do
-            for fitsX:=0 to width2-1  do
-            begin
-              x_new:=round(solution_vectorX[0]*(fitsx)+solution_vectorX[1]*(fitsY)+solution_vectorX[2]); {correction x:=aX+bY+c}
-              y_new:=round(solution_vectorY[0]*(fitsx)+solution_vectorY[1]*(fitsY)+solution_vectorY[2]); {correction y:=aX+bY+c}
+            x_new:=round(solution_vectorX[0]*(fitsx)+solution_vectorX[1]*(fitsY)+solution_vectorX[2]); {correction x:=aX+bY+c}
+            y_new:=round(solution_vectorY[0]*(fitsx)+solution_vectorY[1]*(fitsY)+solution_vectorY[2]); {correction y:=aX+bY+c}
 
-              if ((x_new>=0) and (x_new<=width2-1) and (y_new>=0) and (y_new<=height2-1)) then
-              for col:=0 to naxis3-1 do {all colors} img_temp[col,x_new,y_new]:=img_loaded[col,fitsX,fitsY] ;
-            end;
+            if ((x_new>=0) and (x_new<=width2-1) and (y_new>=0) and (y_new<=height2-1)) then
+            for col:=0 to naxis3-1 do {all colors} img_temp[col,x_new,y_new]:=img_loaded[col,fitsX,fitsY] ;
           end;
 
           img_loaded:=img_temp;
@@ -4285,8 +4271,14 @@ begin
         begin
           if asteroidlist[c,0,0]=0 then {no measure_magnitudes applied on this image}
           begin
+            jd:=3;
             if date_avg<>'' then date_to_jd(date_avg){convert date-AVG to jd}
               else date_to_jd(date_obs);{convert date-OBS to jd}
+            if jd=0 then
+            begin
+              memo2_message('Abort, no valid observation date found in the header of '+filename2);
+              exit;
+            end;
 
             measure_magnitudes(false {unsaturated_only},strtofloat2(snr_asteroid_min1.text),starlistx2); {measure all object magnitudes. with high sensitivity}
             if c<>first_image then
@@ -4304,7 +4296,6 @@ begin
 
           annotate_moving_asteroid(nrrows,c);
           application.processmessages;
-
         end;
       end;
       inc(c);
@@ -4318,8 +4309,6 @@ begin
 
   starlistx1:=nil;{free memory}
   starlistx2:=nil;{free memory}
-
-  //memo2_message('Blinking stopped.');
 
   Screen.Cursor :=Save_Cursor;{back to normal }
 end;
@@ -5590,7 +5579,8 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
 
- if listview7.Items.item[listview7.items.count-1].subitems.Strings[B_exposure]='' {exposure} then  analyse_listview(listview7,true {light},false {full fits},false{refresh});
+ if listview7.Items.item[listview7.items.count-1].subitems.Strings[B_exposure]='' {exposure} then
+    stackmenu1.analysephotometry1Click(nil);
 
   flipvertical:=mainwindow.Flipvertical1.Checked;
   fliphorizontal:=mainwindow.Fliphorizontal1.Checked;
@@ -6447,8 +6437,7 @@ begin
     else
     listview6.Items.item[c].subitems.Strings[B_solution]:='';{clear alignment marks}
   end;
-
-  listview6.alphasort;
+  listview6.alphasort; {sort on time}
 end;
 
 procedure Tstackmenu1.analysephotometry1Click(Sender: TObject);
@@ -6467,6 +6456,7 @@ begin
     else
     listview7.Items.item[c].subitems.Strings[P_photometric]:='';
   end;
+  listview7.alphasort;{sort on time}
 end;
 
 procedure Tstackmenu1.analyse_inspector1Click(Sender: TObject);
