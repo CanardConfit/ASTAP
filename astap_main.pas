@@ -587,7 +587,7 @@ function extract_objectname_from_filename(filename8: string): string; {try to ex
 
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
 function fnmodulo (x,range: double):double;
-procedure measure_magnitudes(unsaturated_only : boolean;snr_min: double; var stars :star_list);{find stars and return, x,y, hfd, flux. If unsaturated_only is false then saturation is accepted and maximum sensitivity is set}
+procedure measure_magnitudes(var stars :star_list);{find stars and return, x,y, hfd, flux}
 function binx2 : boolean; {converts filename2 to binx2 version}
 procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean); {convert ra in text to double in radians}
 procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
@@ -2168,7 +2168,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.385 dated 2020-07-6';
+  #13+#10+'Version ß0.9.386 dated 2020-07-7';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6124,11 +6124,6 @@ begin
 
     stackmenu1.align_blink1.Checked:=get_boolean('align_blink',true);{blink}
 
-    dum:= initstring.Values['snr_asteroid_min'];if dum<>'' then stackmenu1.snr_asteroid_min1.text:=dum;
-    dum:= initstring.Values['minimum_distance'];if dum<>'' then stackmenu1.minimum_distance1.text:=dum;
-    dum:= initstring.Values['speed_tolerance'];if dum<>'' then stackmenu1.speed_tolerance1.text:=dum;
-    dum:= initstring.Values['flux_tolerance'];if dum<>'' then stackmenu1.flux_tolerance1.text:=dum;
-
     stackmenu1.force_oversize1.Checked:=get_boolean('force_slow',false);
     stackmenu1.calibrate_prior_solving1.Checked:=get_boolean('calibrate_prior_solving',false);
 
@@ -6315,7 +6310,7 @@ begin
       dum:=initstring.Values['blink'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
       begin
-        listview_add2(stackmenu1.listview6,dum,9);
+        listview_add2(stackmenu1.listview6,dum,10);
         stackmenu1.ListView6.items[c].Checked:=get_boolean('blink'+inttostr(c)+'_check',true);
       end;
       inc(c);
@@ -6445,11 +6440,6 @@ begin
   initstring.Values['write_log']:=BoolStr[stackmenu1.write_log1.checked];{write log to file}
 
   initstring.Values['align_blink']:=BoolStr[stackmenu1.align_blink1.checked];{blink}
-
-  initstring.Values['snr_asteroid_min']:=stackmenu1.snr_asteroid_min1.text;
-  initstring.Values['minimum_distance']:=stackmenu1.minimum_distance1.text ;
-  initstring.Values['speed_tolerance']:=stackmenu1.speed_tolerance1.text ;
-  initstring.Values['flux_tolerance']:= stackmenu1.flux_tolerance1.text ;
 
   initstring.Values['force_slow']:=BoolStr[stackmenu1.force_oversize1.checked];
   initstring.Values['calibrate_prior_solving']:=BoolStr[stackmenu1.calibrate_prior_solving1.checked];
@@ -7806,18 +7796,17 @@ begin
   save_settings(user_path+'astap.cfg');
 end;
 
-procedure measure_magnitudes(unsaturated_only : boolean;snr_min: double; var stars :star_list);{find stars and return, x,y, hfd, flux. If unsaturated_only is false then saturation is accepted and maximum sensitivity is set}
+procedure measure_magnitudes(var stars :star_list);{find stars and return, x,y, hfd, flux}
 var
-  fitsX,fitsY,size, i, j,nrstars                : integer;
-  hfd1,star_fwhm,snr,flux,xc,yc,detection_level : double;
+  fitsX,fitsY,size, i, j,nrstars    : integer;
+  hfd1,star_fwhm,snr,flux,xc,yc : double;
 begin
-  SetLength(stars,4,5000);{set array length}
-  setlength(img_temp,1,width2,height2);{set length of image array}
-  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
-  detection_level:=star_level;
-  if unsaturated_only=false then {accept saturation and high sensitivity}
-             begin if 5*noise_level[0]<star_level then detection_level:= 5*noise_level[0]; end;
+  SetLength(stars,4,5000);{set array length}
+
+  setlength(img_temp,1,width2,height2);{set length of image array}
+
+  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
   nrstars:=0;{set counters at zero}
 
@@ -7829,10 +7818,10 @@ begin
   begin
     for fitsX:=0 to width2-1-1  do
     begin
-      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star})  then {new star}
+      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>star_level{ 5*noise_level[0]}){star}) then {new star}
       begin
         HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-          if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>snr_min {typical 10}) and (flux>1){rare but happens}) then {star detected in img_loaded}
+        if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
         begin
           {for testing}
           //if flipvertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
@@ -7841,8 +7830,7 @@ begin
           //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
-          if ( (unsaturated_only=false) {accept saturation} or
-             ((img_loaded[0,round(xc),round(yc)]<65000) and
+          if ((img_loaded[0,round(xc),round(yc)]<65000) and
               (img_loaded[0,round(xc-1),round(yc)]<65000) and
               (img_loaded[0,round(xc+1),round(yc)]<65000) and
               (img_loaded[0,round(xc),round(yc-1)]<65000) and
@@ -7851,9 +7839,7 @@ begin
               (img_loaded[0,round(xc-1),round(yc-1)]<65000) and
               (img_loaded[0,round(xc-1),round(yc+1)]<65000) and
               (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
-              (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) )
-
-           then {not saturated}
+              (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
            begin
              size:=round(3*hfd1);
              for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
@@ -7876,9 +7862,14 @@ begin
       end;
     end;
   end;
+
   img_temp:=nil;{free mem}
+
   SetLength(stars,4,nrstars+1);{set length correct}
+
 end;
+
+
 
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
@@ -7909,7 +7900,7 @@ var
   image1.Canvas.font.size:=10; //round(max(10,8*height2/image1.height));{adapt font to image dimensions}
   mainwindow.image1.Canvas.Pen.Color := clred;
 
-  measure_magnitudes(true {unsaturated_only},10 {snr_min}, stars);
+  measure_magnitudes(stars);
 
   for i:=0 to  length(stars[0])-2 do
   begin

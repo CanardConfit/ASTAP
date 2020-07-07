@@ -64,10 +64,7 @@ type
     analyse_objects_visibles1: TButton;
     binning_for_solving_label4: TLabel;
     calculated_scale1: TLabel;
-    snr_asteroid_min1: TComboBox;
-    speed_tolerance1: TComboBox;
     osc_colour_smooth1: TCheckBox;
-    minimum_distance1: TComboBox;
     smart_colour_sd1: TComboBox;
     raw_conversion_program1: TComboBox;
     GroupBox15: TGroupBox;
@@ -84,7 +81,7 @@ type
     go_step_two1: TBitBtn;
     osc_smart_colour_sd1: TComboBox;
     osc_smart_smooth_width1: TComboBox;
-    flux_tolerance1: TComboBox;
+    update_annotation1: TCheckBox;
     update_solution1: TCheckBox;
     update_annotations1: TCheckBox;
     Label23: TLabel;
@@ -123,7 +120,7 @@ type
     blink_button1: TButton;
     blink_button2: TButton;
     blink_button4: TButton;
-    detect_movement1: TCheckBox;
+    solve_and_annotate1: TCheckBox;
     blink_stop1: TButton;
     blink_stop2: TButton;
     blink_unaligned_multi_step1: TButton;
@@ -549,7 +546,6 @@ type
     procedure analyse_objects_visibles1Click(Sender: TObject);
     procedure clear_inspector_list1Click(Sender: TObject);
     procedure curve_fitting1Click(Sender: TObject);
-    procedure detect_movement1Change(Sender: TObject);
     procedure ephemeris_centering1Change(Sender: TObject);
     procedure go_step_two1Click(Sender: TObject);
     procedure gridlines1Click(Sender: TObject);
@@ -605,6 +601,7 @@ type
     procedure reset_factors1Click(Sender: TObject);
     procedure search_fov1Change(Sender: TObject);
     procedure noisefilter_sd1Change(Sender: TObject);
+    procedure solve_and_annotate1Change(Sender: TObject);
     procedure star_database1DropDown(Sender: TObject);
 
     procedure test_pattern1Click(Sender: TObject);
@@ -837,6 +834,7 @@ const
   B_date=6;
   B_calibration=7;
   B_solution=8;
+  B_annotated=9;
 
   P_exposure=0;
   P_temperature=1;
@@ -2185,7 +2183,7 @@ begin
   begin
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      if sender=browse_blink1 then listview_add2(listview6,OpenDialog1.Files[i],9)
+      if sender=browse_blink1 then listview_add2(listview6,OpenDialog1.Files[i],10)
       else
       if sender=browse_photometry1 then listview_add2(listview7,OpenDialog1.Files[i],17)
       else
@@ -3159,6 +3157,7 @@ begin
             begin
               lv.Items.item[c].subitems.Strings[B_date]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
               lv.Items.item[c].subitems.Strings[B_calibration]:=calstat; {calibration calstat info DFB}
+              if annotated then lv.Items.item[c].subitems.Strings[B_annotated ]:='✓' else  lv.Items.item[c].subitems.Strings[B_annotated ]:='';
             end;
 
             if lv.name=stackmenu1.listview7.name then {photometry tab}
@@ -3946,204 +3945,13 @@ begin
   end;
 end;
 
-
-
-procedure record_movement(c: integer;jd2,jd1: double; starlistx1,starlistx2 : star_list); { using starlist1,starlist2, solution}
-var
-   i,j, nrstars1,nrstars2,starX,starY,nrasteroids,ii,jj : integer;
-   x_new, y_new, x_old,y_old,movement,movement_shortest,speed,angle,flux,oldflux,flux_tolerance, minimum_distance :double;
-   match,match2,flip_vertical,flip_horizontal : boolean;
-//   asteroidlist :star_list;
-
-const
-   len=10;
-begin
-  if ((starlistx1=nil) or (starlistx2=nil)) then exit;
-
-  flip_vertical:=mainwindow.Flipvertical1.Checked;
-  flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
-
-  flux_tolerance:=strtofloat2(stackmenu1.flux_tolerance1.text)/100;
-  minimum_distance:=strtofloat2(stackmenu1.minimum_distance1.text);
-
-
-  mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-  mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
-  mainwindow.image1.Canvas.brush.Style:=bsClear;
-  mainwindow.image1.Canvas.Pen.Color := clyellow;
-
-  nrstars1:=length(starlistx1[0]);
-  nrstars2:=length(starlistx2[0]);
-
-  mainwindow.image1.Canvas.font.Color := clyellow;
-
-  mainwindow.image1.Canvas.Pen.Color := clred;
-  for i:=0 to nrstars1-1 do {plot starlistx1}
-  begin
-    x_new:=(starlistx1[0,i]);
-    y_new:=(starlistx1[1,i]);
-    if flip_horizontal=true then starX:=round((width2-x_new))  else starX:=round(x_new);
-    if flip_vertical=false  then starY:=round((height2-y_new)) else starY:=round(y_new);
-    mainwindow.image1.canvas.ellipse(starX-len+2,starY-len+2,starX+1+len+2,starY+1+len+2);
- //    mainwindow.image1.Canvas.textout(starX,starY+10,inttostr(i)+','+inttostr(starX)+','+inttostr(stary));
-  end;
-
-  for i:=0 to nrstars2-1 do {plot starlistx1}
-  begin
-    x_new:=starlistx2[0,i]; {no correction required img_loaded is aligned}
-    y_new:=starlistx2[1,i];
-    mainwindow.image1.Canvas.Pen.Color := clyellow;
-    if flip_horizontal=true then starX:=round((width2-x_new))  else starX:=round(x_new);
-    if flip_vertical=false  then starY:=round((height2-y_new)) else starY:=round(y_new);
-     mainwindow.image1.canvas.ellipse(starX-len,starY-len,starX+1+len,starY+1+len);
-   //  mainwindow.image1.Canvas.textout(starX,starY,inttostr(i)+','+inttostr(starX)+','+inttostr(stary));
-  end;
-
-
-  nrasteroids:=0;
-
-  for i:=0 to nrstars2-1 do
-  begin
-//    memo2_message(inttostr(i));
-
-    mainwindow.image1.Canvas.Pen.Color := clgreen;
-
-    movement_shortest:=1E99;
-    for j:=0 to nrstars1-1 do
-    begin
-      oldflux:=starlistx1[3,j]; {old flux}
-      flux:=starlistx2[3,i];
-      if  ((flux<(1+flux_tolerance)*oldflux) and (flux>(1-flux_tolerance)*oldflux)) then {flux about equal}
-      begin
-        movement:=sqr(starlistx2[0,i]-starlistx1[0,j])+sqr(starlistx2[1,i]-starlistx1[1,j]); {calculate distance in pixels}
-        if movement<movement_shortest then
-        begin
-          movement_shortest:=movement;{find shortest distance}
-          x_old:=starlistx1[0,j];
-          y_old:=starlistx1[1,j];
-
-        end;
-      end;
-    end;
-    movement_shortest:=sqrt(movement_shortest);{calculate actual distance}
-
-    if ((movement_shortest>= minimum_distance) and (movement_shortest<50)) then
-    begin
-      speed:=movement_shortest/(jd2-jd1);
-      angle:=arctan2(x_old-starlistx2[0,i],starlistx2[1,i]-y_old);
-      if speed<0 then {go back in time} begin speed:=abs(speed); angle:=angle+pi; end;
-      angle:=fnmodulo(angle,2*pi);
-
-      if flip_horizontal=true then starX:=round((width2-starlistx2[0,i]))  else starX:=round(starlistx2[0,i]);
-      if flip_vertical=false  then starY:=round((height2-starlistx2[1,i])) else starY:=round(starlistx2[1,i]);
-      mainwindow.image1.canvas.ellipse(starX-len*2,starY-len*2,starX+1+len*2,starY+1+len*2);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-      mainwindow.image1.Canvas.textout(starX,starY,floattostr2(speed)+','+floattostr2(angle*180/pi));
-      mainwindow.image1.Canvas.textout(starX,starY+10,floattostr2(x_old-starlistx2[0,i])+','+floattostr2(starlistx2[1,i]-y_old));
-
-      {store values}
-      inc(nrasteroids);
-      if nrasteroids>=length(asteroidlist[0,0]) then {make size only bigger}
-      begin
-         memo2_message('█ █ █ █ █ █ Warning too many asteroids detected in '+filename2+'!! restrict with settings █ █ █ █ █ █');
-      end
-      else
-      begin
-        asteroidlist[c,0,nrasteroids-1]:=starlistx2[0,i]; {store x,y asteroid position}
-        asteroidlist[c,1,nrasteroids-1]:=starlistx2[1,i];
-        asteroidlist[c,2,nrasteroids-1]:=speed; {store speed in pixels/day}
-        asteroidlist[c,3,nrasteroids-1]:=angle;
-        asteroidlist[c,4,nrasteroids-1]:=starlistx2[3,i]; {flux}
-      end;
-
-      //memo2_message(inttostr(c)+#9+inttostr(c)+#9+floattostr2(starlistx2[0,i])+#9+floattostr2(starlistx2[1,i])+#9+floattostr2(speed)+#9+ floattostr2(angle));
-    end;
-  end;
-
-  //application.processmessages;
-  //beep;
-
-end;
-
-procedure  annotate_moving_asteroid(nrrows,c: integer);
-var
-  i,j,k, asteroidY,asteroidX,matches, nrasteroids, rowswithdata,matches_required  : integer;
-  speed, speed2,angle,angle2,flux,flux2,speed_tolerance,flux_tolerance     : double;
-  flipvertical, fliphorizontal                       : boolean;
-
-begin
-  flipvertical:=mainwindow.Flipvertical1.Checked;
-  fliphorizontal:=mainwindow.Fliphorizontal1.Checked;
-
-  speed_tolerance:=strtofloat2(stackmenu1.speed_tolerance1.text)/100;
-  flux_tolerance:=strtofloat2(stackmenu1.flux_tolerance1.text)/100;
-
-
-  mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-  mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
-  mainwindow.image1.Canvas.brush.Style:=bsClear;
-  mainwindow.image1.Canvas.Pen.Color := clyellow;
-
-  nrasteroids:=length(asteroidlist[0,0])-1;
-
-  {calcualte number of matches required}
-  rowswithdata:=0;
-  for k:=0 to nrrows-1 do {compare with other detections}
-    if  asteroidlist[k,0,0]<>0 then inc(rowswithdata); {count number of rows with data}
-  matches_required:=min(3,rowswithdata-1);{2 -> 1, 3-> 2, 4 or more -> 3}
-
-  for k:=0 to nrasteroids do {compare with other detections}
-
-  if (asteroidlist[c,2,k]<>0) then {length data}
-  begin
-    matches:=0;
-
-    for i:=0 to nrrows-1 do {compare with other images}
-    begin
-      speed:=asteroidlist[c,2,k];
-      angle:=asteroidlist[c,3,k];
-      flux:=asteroidlist[c,4,k];
-      if i<>c then {do not check against itself}
-      begin
-        for j:=0 to nrasteroids do {compare with other detections}
-        begin
-          if ( asteroidlist[i,2,j]<>0) then {length data}
-          begin
-            speed2:=asteroidlist[i,2,j];
-            angle2:=asteroidlist[i,3,j];
-            flux2:=asteroidlist[i,4,j];
-            if ((speed2<(1+speed_tolerance)*speed) and (speed2>(1-speed_tolerance)*speed)) then
-            if ((angle2<(1+speed_tolerance)*angle) and (angle2>(1-speed_tolerance)*angle)) then
-            if ((flux2<(1+flux_tolerance)*flux) and (flux2>(1-flux_tolerance)*flux)) then
-            begin
-              inc(matches);
-            end;
-          end;
-        end;
-      end;
-    end;
-
-    if matches>=matches_required then
-    begin
-      if Flipvertical=false then  asteroidY:=round(height2-(asteroidlist[c,1,k])) else asteroidY:=round(asteroidlist[c,1,k]);
-      if Fliphorizontal     then asteroidX:=round(width2-asteroidlist[c,0,k])  else asteroidX:=round(asteroidlist[c,0,k]);
-      mainwindow.image1.Canvas.ellipse(asteroidX-20,asteroidY-20, asteroidX+20, asteroidY+20);{indicate moving object with circle}
-      mainwindow.image1.Canvas.textout(asteroidX+20,asteroidY+20,floattostrf(asteroidlist[c,2,k], ffgeneral, 3,0)+' pix/d' );{add movement as text}
-    end;
-
-  end;
-  application.processmessages; {show plot}
-end;
-
 procedure Tstackmenu1.blink_button1Click(Sender: TObject);
 var
   c,i,j: integer;
   Save_Cursor          : TCursor;
-  hfd_min,jd_ref         : double;
-  x_new,y_new,fitsX,fitsY,col,first_image,stepnr,nrrows : integer;
-  reference_done, init,solut,annotated                  : boolean;
-  starlistx1,starlistx2 :star_list;
-const
-  arraylen=500;
+  hfd_min,jd_ref          : double;
+  x_new,y_new,fitsX,fitsY,col,first_image,stepnr,nrrows, nrstars2,starX,starY,cycle,count : integer;
+  reference_done, init,solut,astro_solved       : boolean;
 
 begin
   if listview6.items.count<=1 then exit; {no files}
@@ -4159,13 +3967,12 @@ begin
   esc_pressed:=false;
   first_image:=-1;
 
-  SetLength(asteroidlist,listview6.items.count,5,arraylen);{set array length}
-  for c:=0 to listview6.items.count-1 do for i:=0 to 4 do for j:=0 to arraylen-1 do asteroidlist[c,i,j]:=0;
+  cycle:=0;
 
   nrrows:=listview6.items.count;
 
   stepnr:=0;
-  if ((sender=blink_button1) or (detect_movement1.checked)) then init:=true {start at beginning}
+  if ((sender=blink_button1) or (solve_and_annotate1.checked)) then init:=true {start at beginning}
     else init:=false;{start at selection}
   reference_done:=false;{ check if reference image is loaded. Could be after first image if abort was given}
   repeat
@@ -4191,6 +3998,50 @@ begin
         if load_fits(filename2,true {light},true,img_loaded)=false then begin esc_pressed:=true; break;end;
 
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+
+        if first_image=c then inc(cycle);
+        if cycle>=2 then stackmenu1.update_annotation1.checked:=false;{reset any request to update fits header annotations}
+
+        if solve_and_annotate1.checked then
+        begin
+          astro_solved:=false;{assume failure}
+          if cd1_1=0 then {get astrometric solution}
+          begin
+            listview7.Selected :=nil; {remove any selection}
+            listview7.ItemIndex := c;{mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+            listview7.Items[c].MakeVisible(False);{scroll to selected item}
+            memo2_message(filename2+ ' Adding astrometric solution to files to allow flux to magnitude calibration using the star database.');
+            Application.ProcessMessages;
+
+            if solve_image(img_loaded,true  {get hist}) then
+            begin{match between loaded image and star database}
+              //mainwindow.SaveFITSwithupdatedheader1Click(nil);
+              //listview6.Items.item[c].subitems.Strings[P_astrometric]:='✓';
+              astro_solved:=true;
+              memo2_message(filename2+ ' astrometric solved.');
+              //plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations});
+             // memo2_message(filename2+ ' annotatation add to the FITS header.');
+            end
+            else
+            begin
+              //listview6.Items[c].Checked:=false;
+              //listview6.Items.item[c].subitems.Strings[P_astrometric]:='';
+              memo2_message(filename2+ 'No astrometric solution found for this file.');
+            end;
+          end;
+
+          //listview6.Items.item[c].subitems.Strings[P_astrometric]:='✓';
+          if cd1_1<>0 then
+          begin
+            if ((annotated=false) or (stackmenu1.update_annotation1.checked)) then
+            begin
+               plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations});
+               listview6.Items.item[c].subitems.Strings[B_annotated ]:='✓';
+            end;
+            if astro_solved then
+               mainwindow.SaveFITSwithupdatedheader1Click(nil);{save solution and annotation}
+          end;
+        end;{astrometric solve and annotate}
 
         {find solution}
         if align_blink1.checked then
@@ -4266,37 +4117,11 @@ begin
         plot_fits(mainwindow.image1,false {re_center},true);
         if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(round(solution_vectorX[2]),round(solution_vectorY[2]),false); {correct annotations in shift only}
 
-        {mark moving asteroids}
-        if detect_movement1.checked then
-        begin
-          if asteroidlist[c,0,0]=0 then {no measure_magnitudes applied on this image}
-          begin
-            jd:=3;
-            if date_avg<>'' then date_to_jd(date_avg){convert date-AVG to jd}
-              else date_to_jd(date_obs);{convert date-OBS to jd}
-            if jd=0 then
-            begin
-              memo2_message('Abort, no valid observation date found in the header of '+filename2);
-              exit;
-            end;
+//        {mark moving asteroids}
+//        if solve_and_annotate1.checked then
+//        begin
+//        end;
 
-            measure_magnitudes(false {unsaturated_only},strtofloat2(snr_asteroid_min1.text),starlistx2); {measure all object magnitudes. with high sensitivity}
-            if c<>first_image then
-            begin
-              record_movement(c,jd,jd_ref,starlistx1,starlistx2);
-
-              if asteroidlist[first_image,0,0]=0 then
-                           record_movement(first_image,jd_ref,jd,starlistx2,starlistx1);{do first image in the list by going back in time}
-            end;
-
-            {move reference to last plotted image}
-            jd_ref:=jd;
-            starlistx1:=starlistx2;
-          end;
-
-          annotate_moving_asteroid(nrrows,c);
-          application.processmessages;
-        end;
       end;
       inc(c);
     until c>=nrrows;
@@ -4305,11 +4130,6 @@ begin
   until ((esc_pressed) or (sender=blink_button1 {single run}));
 
   img_temp:=nil;{free memory}
-  asteroidlist:=nil;
-
-  starlistx1:=nil;{free memory}
-  starlistx2:=nil;{free memory}
-
   Screen.Cursor :=Save_Cursor;{back to normal }
 end;
 
@@ -4489,14 +4309,6 @@ begin
     else
     if i=1 then memo2_message('█ █ █ █ █ █  Error, four or more images are required at different focus positions! █ █ █ █ █ █ ');
   end;
-end;
-
-procedure Tstackmenu1.detect_movement1Change(Sender: TObject);
-begin
-  minimum_distance1.enabled:=detect_movement1.checked;
-  speed_tolerance1.enabled:=detect_movement1.checked;
-  flux_tolerance1.enabled:=detect_movement1.checked;
-  snr_asteroid_min1.enabled:=detect_movement1.checked;
 end;
 
 procedure Tstackmenu1.ephemeris_centering1Change(Sender: TObject);
@@ -5254,7 +5066,7 @@ begin
       case pagecontrol1.pageindex of    1:   listview_add2(listview2,FileNames[i],9);{darks}
                                         2:   listview_add2(listview3,FileNames[i],10);{flats}
                                         3:   listview_add2(listview4,FileNames[i],9);{flat darks}
-                                        7:   listview_add2(listview6,FileNames[i],9);{blink}
+                                        7:   listview_add2(listview6,FileNames[i],10);{blink}
                                         8:   listview_add2(listview7,FileNames[i],17);{photometry}
                                        else
                                        begin {images}
@@ -5676,7 +5488,7 @@ begin
             listview7.Items.item[c].subitems.Strings[P_photometric]:='✓';
           end;
           memo2_message(inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.'+extra_message);
-          measure_magnitudes(true {unsaturated_only},10 {snr_min},starlistx); {analyse}
+          measure_magnitudes(starlistx); {analyse}
           save_stars_to_disk(filename2, starlistx)  ;{write to disk including flux_magn_offset}
         end
         else
@@ -6405,6 +6217,11 @@ begin
 
 end;
 
+procedure Tstackmenu1.solve_and_annotate1Change(Sender: TObject);
+begin
+ update_annotation1.enabled:=solve_and_annotate1.checked;{update menu}
+end;
+
 procedure Tstackmenu1.star_database1DropDown(Sender: TObject);
 var
   SearchRec: TSearchRec;
@@ -6707,7 +6524,7 @@ end;
 
 procedure Tstackmenu1.align_blink1Change(Sender: TObject);
 begin
-  detect_movement1.enabled:=align_blink1.checked;
+  solve_and_annotate1.enabled:=align_blink1.checked;
 end;
 
 procedure Tstackmenu1.alignment1ContextPopup(Sender: TObject; MousePos: TPoint;

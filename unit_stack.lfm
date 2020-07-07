@@ -2,11 +2,11 @@ object stackmenu1: Tstackmenu1
   Left = 39
   Height = 644
   Top = 243
-  Width = 1605
+  Width = 1578
   AllowDropFiles = True
   Caption = 'stack menu'
   ClientHeight = 644
-  ClientWidth = 1605
+  ClientWidth = 1578
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -51,7 +51,7 @@ object stackmenu1: Tstackmenu1
     Left = 0
     Height = 134
     Top = 510
-    Width = 1605
+    Width = 1578
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -198,7 +198,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1587
+    Left = 1560
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     Height = 448
     Hint = 'Stack menu'
     Top = 0
-    Width = 1604
+    Width = 1577
     ActivePage = tab_blink1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
@@ -231,7 +231,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the light frames'
       Caption = 'Images'
       ClientHeight = 420
-      ClientWidth = 1596
+      ClientWidth = 1569
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -305,7 +305,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1596
+        Width = 1569
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -567,7 +567,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 420
-      ClientWidth = 1596
+      ClientWidth = 1569
       ImageIndex = 1
       ParentFont = False
       object browse_darks1: TButton
@@ -600,9 +600,9 @@ object stackmenu1: Tstackmenu1
         Height = 25
         Hint = 'Clear image list'
         Top = 6
-        Width = 53
+        Width = 71
         AutoSize = True
-        Caption = 'Clear'
+        Caption = 'Clear list'
         OnClick = clear_dark_list1Click
         ParentFont = False
         ParentShowHint = False
@@ -614,7 +614,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1595
+        Width = 1568
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -723,7 +723,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 420
-      ClientWidth = 1596
+      ClientWidth = 1569
       ImageIndex = 2
       ParentFont = False
       object browse_flats1: TButton
@@ -776,7 +776,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1596
+        Width = 1569
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -878,7 +878,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
       ClientHeight = 420
-      ClientWidth = 1596
+      ClientWidth = 1569
       ImageIndex = 3
       ParentFont = False
       object browse_bias1: TButton
@@ -919,7 +919,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1596
+        Width = 1569
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -1019,7 +1019,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
       ClientHeight = 420
-      ClientWidth = 1596
+      ClientWidth = 1569
       ImageIndex = 6
       ParentFont = False
       object listview5: TListView
@@ -1027,7 +1027,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1596
+        Width = 1569
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Columns = <        
@@ -2875,7 +2875,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 420
-      ClientWidth = 1596
+      ClientWidth = 1569
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
@@ -2883,7 +2883,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1596
+        Width = 1569
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -2947,7 +2947,12 @@ object stackmenu1: Tstackmenu1
             Alignment = taRightJustify
             Caption = 'Solution'
             MinWidth = 90
-            Width = 631
+            Width = 90
+          end        
+          item
+            Caption = 'Annotated'
+            MinWidth = 90
+            Width = 90
           end>
         GridLines = True
         HideSelection = False
@@ -3052,19 +3057,19 @@ object stackmenu1: Tstackmenu1
         State = cbChecked
         TabOrder = 6
       end
-      object detect_movement1: TCheckBox
-        Left = 624
+      object solve_and_annotate1: TCheckBox
+        Left = 816
         Height = 19
-        Hint = 'Annotate moving objects. At least three images are required.'
-        Top = 17
-        Width = 139
-        Caption = 'Detect moving objects'
-        OnChange = detect_movement1Change
+        Hint = 'Solve images and annotate with MPCORB database.  For setting see viewer, tools, annotate asteroids.'
+        Top = 0
+        Width = 212
+        Caption = 'Solve images and annotate asteroids'
+        OnChange = solve_and_annotate1Change
         ParentFont = False
         TabOrder = 7
       end
       object clear_blink_alignment1: TButton
-        Left = 1304
+        Left = 1096
         Height = 25
         Hint = 'Clear alignment and photometric calibration. Apply this if alignment is poor.'
         Top = 5
@@ -3118,102 +3123,22 @@ object stackmenu1: Tstackmenu1
         ShowHint = True
         TabOrder = 10
       end
-      object minimum_distance1: TComboBox
-        Left = 952
-        Height = 23
-        Hint = 'Minimum movement of object in pixels. Default is 2'
-        Top = 9
-        Width = 48
-        BorderSpacing.Around = 5
+      object update_annotation1: TCheckBox
+        Left = 816
+        Height = 19
+        Hint = 'Update existing FITS header annotations.'
+        Top = 16
+        Width = 124
+        Caption = 'Update annotations'
         Enabled = False
-        ItemHeight = 15
-        ItemIndex = 2
-        Items.Strings = (
-          '0.5'
-          '0.7'
-          '1'
-          '2'
-          '3'
-          '4'
-          '5'
-        )
         ParentFont = False
         TabOrder = 11
-        Text = '1'
-      end
-      object speed_tolerance1: TComboBox
-        Left = 1008
-        Height = 23
-        Hint = 'Object speed and angle tolerance in %'
-        Top = 9
-        Width = 48
-        BorderSpacing.Around = 5
-        Enabled = False
-        ItemHeight = 15
-        ItemIndex = 2
-        Items.Strings = (
-          '5'
-          '10'
-          '15'
-          '20'
-          '30'
-          ''
-        )
-        ParentFont = False
-        TabOrder = 12
-        Text = '15'
-      end
-      object flux_tolerance1: TComboBox
-        Left = 1064
-        Height = 23
-        Hint = 'Object flux tolerance in %'
-        Top = 9
-        Width = 48
-        BorderSpacing.Around = 5
-        Enabled = False
-        ItemHeight = 15
-        ItemIndex = 2
-        Items.Strings = (
-          '10'
-          '20'
-          '30'
-          '50'
-          '75'
-          '100'
-        )
-        ParentFont = False
-        TabOrder = 13
-        Text = '30'
-      end
-      object snr_asteroid_min1: TComboBox
-        Left = 896
-        Height = 23
-        Hint = 'Minimum SNR value of detected objects. Default is 5. Typical values 3 to 10'
-        Top = 9
-        Width = 48
-        BorderSpacing.Around = 5
-        Enabled = False
-        ItemHeight = 15
-        ItemIndex = 2
-        Items.Strings = (
-          '3'
-          '4'
-          '5'
-          '6'
-          '7'
-          '8'
-          '9'
-          '10'
-        )
-        ParentFont = False
-        TabOrder = 14
-        Text = '5'
       end
     end
     object tab_photometry1: TTabSheet
       Caption = 'Photometry'
       ClientHeight = 420
-      ClientWidth = 1596
+      ClientWidth = 1569
       ImageIndex = 11
       ParentFont = False
       object browse_photometry1: TButton
@@ -3327,7 +3252,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1596
+        Width = 1569
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
