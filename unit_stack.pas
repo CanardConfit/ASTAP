@@ -4007,30 +4007,20 @@ begin
           astro_solved:=false;{assume failure}
           if cd1_1=0 then {get astrometric solution}
           begin
-            listview7.Selected :=nil; {remove any selection}
-            listview7.ItemIndex := c;{mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
-            listview7.Items[c].MakeVisible(False);{scroll to selected item}
-            memo2_message(filename2+ ' Adding astrometric solution to files to allow flux to magnitude calibration using the star database.');
-            Application.ProcessMessages;
+            listview6.Selected :=nil; {remove any selection}
+            listview6.ItemIndex := c;{mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+            listview6.Items[c].MakeVisible(False);{scroll to selected item}
+            memo2_message(filename2+ ' Adding astrometric solution to files.');
 
             if solve_image(img_loaded,true  {get hist}) then
             begin{match between loaded image and star database}
-              //mainwindow.SaveFITSwithupdatedheader1Click(nil);
-              //listview6.Items.item[c].subitems.Strings[P_astrometric]:='✓';
-              astro_solved:=true;
+              astro_solved:=true;{saving will be done later}
               memo2_message(filename2+ ' astrometric solved.');
-              //plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations});
-             // memo2_message(filename2+ ' annotatation add to the FITS header.');
             end
             else
-            begin
-              //listview6.Items[c].Checked:=false;
-              //listview6.Items.item[c].subitems.Strings[P_astrometric]:='';
               memo2_message(filename2+ 'No astrometric solution found for this file.');
-            end;
           end;
 
-          //listview6.Items.item[c].subitems.Strings[P_astrometric]:='✓';
           if cd1_1<>0 then
           begin
             if ((annotated=false) or (stackmenu1.update_annotation1.checked)) then
@@ -4043,7 +4033,7 @@ begin
           end;
         end;{astrometric solve and annotate}
 
-        {find solution}
+        {find align solution}
         if align_blink1.checked then
         begin
           if fileexists(ChangeFileExt(Filename2,'.astap_solution'))=false then
