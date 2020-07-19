@@ -67,6 +67,7 @@ type
     image_cleanup1: TMenuItem;
     localgaussian1: TMenuItem;
     localcoloursmooth1: TMenuItem;
+    autocorrectcolours1: TMenuItem;
     center_lost_windows: TMenuItem;
     deepsky_annotation1: TMenuItem;
     hyperleda_annotation1: TMenuItem;
@@ -95,6 +96,7 @@ type
     MenuItem22: TMenuItem;
     batch_rotate_left1: TMenuItem;
     batch_rotate_right1: TMenuItem;
+    remove_atmouse1: TMenuItem;
     remove_longitude_latitude1: TMenuItem;
     menupaste1: TMenuItem;
     PopupMenu_memo2: TPopupMenu;
@@ -255,6 +257,7 @@ type
     procedure add_marker_position1Click(Sender: TObject);
     procedure annotate_with_measured_magnitudes1Click(Sender: TObject);
     procedure annotations_visible1Click(Sender: TObject);
+    procedure autocorrectcolours1Click(Sender: TObject);
     procedure batch_annotate1Click(Sender: TObject);
     procedure batch_solve_astrometry_netClick(Sender: TObject);
     procedure ccd_inspector_plot1Click(Sender: TObject);
@@ -277,6 +280,7 @@ type
     procedure MenuItem21Click(Sender: TObject);
     procedure batch_rotate_left1Click(Sender: TObject);
     procedure range1Change(Sender: TObject);
+    procedure remove_atmouse1Click(Sender: TObject);
     procedure remove_longitude_latitude1Click(Sender: TObject);
     procedure select_all1Click(Sender: TObject);
     procedure save_to_tiff1Click(Sender: TObject);
@@ -689,12 +693,12 @@ var
   i,j,k,nr,error3,col,naxis1, reader_position,n,p,nrchars  : integer;
   fract,dummy,scale,exptime,ccd_temperature              : double;
   col_float,bscale,measured_max  : single;
-  s                 : string[3];
-  bzero             : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
-  wo                : word;   {for 16 signed integer}
-  sign_int          : smallint absolute wo;{for 16 signed integer}
+  s                  : string[3];
+  bzero              : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
+  wo                 : word;   {for 16 signed integer}
+  sign_int           : smallint absolute wo;{for 16 signed integer}
   aline,number,field : ansistring;
-  rgbdummy          : byteX3;
+  rgbdummy           : byteX3;
 
   x_longword  : longword;
   x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
@@ -770,7 +774,7 @@ begin
      exit;
   end;
   fits_file:=false; {assume failure}
-  mainwindow.error_label1.visible:=false;
+//  mainwindow.error_label1.visible:=false;
 
   mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
   mainwindow.memo1.clear;{clear memo for new header}
@@ -2168,7 +2172,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.387 dated 2020-07-8';
+  #13+#10+'Version ß0.9.389 dated 2020-07-19';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2232,7 +2236,7 @@ end;
 
 procedure Tmainwindow.image_cleanup1Click(Sender: TObject);
 begin
-  mainwindow.error_label1.visible:=false;
+//  mainwindow.error_label1.visible:=false;
   plot_fits(mainwindow.image1,false,true);
 end;
 
@@ -2787,15 +2791,11 @@ end;
 
 
 procedure Tmainwindow.ra1DblClick(Sender: TObject); {retrieve object position from database}
-var
-   ra0,dec0,length0,width0,pa : double;
-   objname : string;
 begin
-   {$IfDef Darwin}// for OS X,
-     exit; {double click is also triggered by single click.}
-   {$ENDIF}
+  {$IfDef Darwin}// for OS X,
+    exit; {double click is also triggered by single click.}
+  {$ENDIF}
   search_database;
-
 end;
 
 procedure Tmainwindow.clean_up1Click(Sender: TObject);
@@ -3172,7 +3172,7 @@ begin
   if mainwindow.inversemousewheel1.checked then  zoom(1.2) else zoom(1/1.2);
   Handled := True;{prevent that in win7 the combobox is moving up/down if it has focus}
 
-  error_label1.visible:=false;
+//  error_label1.visible:=false;
 
 end;
 
@@ -3189,7 +3189,7 @@ begin
   if mainwindow.inversemousewheel1.checked then  zoom(1/1.2) else zoom(1.2);
   Handled := True;{prevent that in win7 the combobox is moving up/down if it has focus}
 
-  error_label1.visible:=false;
+//  error_label1.visible:=false;
 
 end;
 
@@ -3306,6 +3306,7 @@ begin
 
     mainwindow.ShowFITSheader1.enabled:=fits;
     mainwindow.demosaicBayermatrix1.Enabled:=fits;
+    mainwindow.autocorrectcolours1.Enabled:=fits;
     mainwindow.stretch_draw1.Enabled:=fits;
 
     mainwindow.CropFITSimage1.Enabled:=fits;
@@ -3346,11 +3347,11 @@ begin
 
   stackmenu1.focallength1.Text:=floattostrF2(focallen,0,0);
   stackmenu1.pixelsize1.Text:=floattostrF2(xpixsz,0,1);
-  stackmenu1.focallength1Change(nil); {update calculation pixel size in arc seconds}
-
-//  update_equalise_background_step(1);{update equalise background menu} moved to load_fits
+  stackmenu1.focallength1Exit(nil); {update calculation}
 
   fits_file:=fits;{update}
+  mainwindow.error_label1.visible:=(fits=false);
+
 end;
 
 
@@ -3358,7 +3359,6 @@ end;
 procedure Tmainwindow.astrometric_solve_image1Click(Sender: TObject);
 var
    OldCursor : TCursor;
-   colour,old_nrbits,old_naxis3   : integer;
 begin
   if live_stacking {ongoing}  then
   begin
@@ -3853,20 +3853,26 @@ end;
 
 procedure new_to_old_WCS;{convert new style FITsS to old style}
 var
-   sign        : integer;
+   sign     ,i,j   : integer;
+   crota2old,crota2old2 :double;
 begin
-  { convert to old WCS. Based on draft 1988 , do not cuse onversion article Alain Klotz, give sometimes zero CROTA}
+  { convert to old WCS. Based on draft 1988 , do not use conversion article Alain Klotz, give sometimes zero CROTA}
   if (cd1_1*cd2_2-cd1_2*cd2_1)>=0 then sign:=+1 else sign:=-1;
 
   cdelt1:=sqrt(sqr(cd1_1)+sqr(cd2_1))*sign;{if no old wcs header use cd2_2 of new WCS style for pixel size}
   cdelt2:=sqrt(sqr(cd1_2)+sqr(cd2_2));{if no old wcs header use cd2_2 of new WCS style for pixel size}
 
-  crota1:= atn_2(sign*cd1_2,cd2_2);
-  crota2:= atn_2(sign*cd1_1,cd2_1)-pi/2;
-  {note 2013 CROTA1=arctan2(-CD1_2,CD2_2)} {in y}
-  {note 2013 CROTA2=arctan2(CD1_1,CD2_1)}  {in x}
-  crota1:= crota1*180/pi;{convert now radians to degrees as standard}
-  crota2:= crota2*180/pi;{convert now radians to degrees as standard}
+  crota1:= +arctan2(sign*cd1_2,cd2_2)*180/pi;
+  crota2:= -arctan2(cd2_1,sign*cd1_1)*180/pi;  //  crota2old := (atn_2(sign*cd1_1,cd2_1)-pi/2)*180/pi;
+
+//  for i:=-1000 to 1000 do
+//  for j:=-1000 to 1000 do
+//  begin
+//    crota2old := atn_2(i,j);
+//    crota2old2 := arctan2(i,j);
+//    if abs(crota2old-crota2old2)>0.00000001 then
+//       beep;
+//  end;
 end;
 
 function fnmodulo (x,range: double):double;
@@ -5567,7 +5573,7 @@ begin
         img_loaded2[0,j,height2-1-i]:=image.Colors[j,i].red;
   end;
 
-  update_menu(true);{file loaded, update menu for fits}
+ // update_menu(true);{file loaded, update menu for fits}
 
   if tiff then
   begin
@@ -6807,7 +6813,6 @@ function convert_load_raw(filename3: string;var img: image_array): boolean; {con
 var
   filename4 :string;
   JD2                               : double;
-  fa                                : integer;
   dcraw                             : boolean;
   libraw                            : boolean;
 var
@@ -7011,11 +7016,6 @@ begin
   begin
     mainwindow.caption:=filename2;
     filename_org:=filename2;
-//    mainwindow.solve_button1.enabled:=true;
-//    mainwindow.astrometric_solve_image1.enabled:=true;
-
-//    mainwindow.SaveasJPGPNGBMP1.Enabled:=true;
-
     mainwindow.shape_marker1.visible:=false;
     mainwindow.shape_marker2.visible:=false;
   end;
@@ -7087,8 +7087,6 @@ begin
   begin
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
-//    mainwindow.ShowFITSheader1.enabled:=true;
-//    mainwindow.demosaicBayermatrix1.Enabled:=true;
     image_move_to_center:=re_center;
     if ((afitsfile) and (annotated) and (mainwindow.annotations_visible1.checked)) then  plot_annotations(0,0,false);
 
@@ -7689,6 +7687,21 @@ begin
   do_stretching;
 end;
 
+procedure Tmainwindow.remove_atmouse1Click(Sender: TObject);
+var
+  left_dist, right_dist, top_dist, bottom_dist : double;
+begin
+  left_dist:=down_x/image1.width;{range 0..1}
+  right_dist:=1-left_dist;{range 0..1}
+  top_dist:=down_y/image1.height;{range 0..1}
+  bottom_dist:=1-top_dist;{range 0..1}
+
+  if ((left_dist<right_dist) and (left_dist<top_dist) and (left_dist<bottom_dist)) then mainwindow.remove_left1Click(nil) else
+  if ((right_dist<left_dist) and (right_dist<top_dist) and (right_dist<bottom_dist)) then mainwindow.remove_right1Click(nil) else
+  if ((top_dist<left_dist) and (top_dist<right_dist) and (top_dist<bottom_dist)) then mainwindow.remove_above1Click(nil) else
+  if ((bottom_dist<left_dist) and (bottom_dist<right_dist) and   (bottom_dist<top_dist)) then mainwindow.remove_below1Click(nil);
+end;
+
 procedure Tmainwindow.remove_longitude_latitude1Click(Sender: TObject);
 var
   I: integer;
@@ -7920,6 +7933,12 @@ begin
     plot_fits(mainwindow.image1,false,true)
   else
   if annotated then plot_annotations(0,0,false);
+end;
+
+procedure Tmainwindow.autocorrectcolours1Click(Sender: TObject);
+begin
+  stackmenu1.auto_background_level1Click(nil);
+  stackmenu1.apply_factor1Click(nil);
 end;
 
 procedure Tmainwindow.batch_annotate1Click(Sender: TObject);
@@ -8643,8 +8662,6 @@ begin
         result:=true;
         commandline_execution:=true; {later required for trayicon and popup notifier}
 
-        stackmenu1.use_astrometry_internal1.checked:=true; {use internal solver}
-
         filename2:=list[5];
         source_fits:=fits_file_name(filename2);{fits file extension?}
         file_loaded:=load_image(false,false {plot});{load file first to give commandline parameters later priority}
@@ -8699,7 +8716,7 @@ begin
 
         // .1844945, .72046475, 1
         // 2.7668, 180.73,-1.0001,-.00015, 416
-        //Valid plate solution
+        // Valid plate solution
 
         //  0.16855631,0.71149576,0.0296,0.02268,999,c:\temp\3.fits,0   {m31}
 
@@ -8930,7 +8947,7 @@ end;
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
     s,old      : string;
-    source_fits,histogram_done,file_loaded: boolean;
+    source_fits,histogram_done,file_loaded,debug: boolean;
     binning, backgr, hfd_median : double;
     hfd_counter                 : integer;
 begin
@@ -8940,25 +8957,6 @@ begin
   begin
     if DirectoryExists(user_path)=false then ForceDirectories(user_path);{create c:\users\yourname\appdata\local\astap   or /users/../.config/astap
                    Force directories will make also .config if missing. Using createdir doesn't work if both a directory and subdirectory are to be made in Linux and Mac}
-
-    {begin remove 2020}
-    {$ifdef mswindows}
-     old:=GetUserDir+'astap.cfg';
-    if load_settings(old) {load configuration at old location} then
-    begin
-      save_settings(user_path+'astap.cfg');
-      deletefile(old) ;
-    end;
-    {$else} {unix}
-    old:=expandfilename('~/.astap/')+'astap.cfg';
-    if load_settings(old){load configuration at old location} then
-    begin
-      save_settings(user_path+'astap.cfg');
-      deletefile(old) ;
-      removedir(expandfilename('~/.astap/'))
-    end;
-    {$endif}
-    {end remove 2020}
   end;
 
   fov_specified:=false;{assume no FOV specification in commandline}
@@ -8991,29 +8989,39 @@ begin
         '-speed mode[auto/slow] {Slow is forcing small search steps to improve detection.}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-analyse {Analyse only and report in the errorlevel the median HFD * 100M + number of stars used}'+#10+
+        '-annotate  {Produce deepsky annotated jpg file}' +#10+
+        '-debug  {Show GUI and stop prior to solving}' +#10+
         '-log   {Write the solver log to file}'+#10+
-        '-update  {update the FITS header with the found solution}' +#10+#10+
         '-tofits  binning[1,2,3,4,6,8]  {Make new fits file from PNG/JPG file input}'+#10+
-        '-annotate  {Produce deepsky annotated jpg file}' +#10+#10+
-        '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+#10+
+        '-update  {update the FITS header with the found solution}' +#10+
+        '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
         'Preference will be given to the command line values.'
         ), pchar('ASTAP astrometric solver usage:'),MB_OK);
 
         esc_pressed:=true;{kill any running activity. This for APT}
         halt(0); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
       end;
-      if hasoption('f') then
+
+      debug:=hasoption('debug'); {The debug option allows to set some solving parameters in the GUI (graphical user interface) and to test the commandline. In debug mode all commandline parameters are set and the specified image is shown in the viewer. Only the solve command has to be given manuallydebug mode }
+
+      if ((hasoption('f')) or (debug)) then
       begin
         commandline_execution:=true;{later required for trayicon and popup notifier and Memo3 scroll in Linux}
 
         filename2:=GetOptionValue('f');
         source_fits:=fits_file_name(filename2);{fits file extension?}
-        file_loaded:=load_image(false,false {plot});{load file first to give commandline parameters later priority}
+
+        if debug=false then
+          file_loaded:=load_image(false,false {plot}) {load file first to give commandline parameters later priority}
+        else
+          load_image(true,true {plot});{load and show image}
+
 
         if file_loaded=false then errorlevel:=16;{error file loading}
 
         file_loaded:=((file_loaded) or (extend>0));{axy}
 
+        {apply now overriding parameters}
         if hasoption('fov') then
         begin
           fov_specified:=true; {do not calculate it from header};
@@ -9039,102 +9047,115 @@ begin
         if hasoption('m') then stackmenu1.min_star_size1.text:=GetOptionValue('m');
         if hasoption('speed') then stackmenu1.force_oversize1.checked:=pos('slow',GetOptionValue('speed'))<>0;
 
-
-        if ((file_loaded) and (hasoption('analyse'))) then {analyse fits and report HFD value in errorlevel }
+        if debug=false then {standard solve via command line}
         begin
-           analyse_fits(img_loaded,hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
-           halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
-        end;{analyse fits and report HFD value}
-
-        {$ifdef CPUARM}
-        {set tray icon visible gives a fatal error in old compiler for armhf}
-        {$else}
-          trayicon1.visible:=true;{show progress in hint of trayicon}
-        {$endif}
-
-        stackmenu1.use_astrometry_internal1.checked:=true; {use internal solver}
-
-        if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
-        begin
-          if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
-
-          write_ini(true);{write solution to ini file}
-
-          add_long_comment('cmdline:'+cmdline);{log command line in wcs file}
-          remove_key('NAXIS1  =',true{one});
-          remove_key('NAXIS2  =',true{one});
-          update_integer('NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
-          update_integer('BITPIX  =',' /                                                ' ,8    );
-
-          if hasoption('wcs') then
-            write_astronomy_wcs  {write WCS astronomy.net style}
-          else
-            try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
-
-          //log_to_file(cmdline+' =>succes');
-
-          if hasoption('update') then mainwindow.SaveFITSwithupdatedheader1Click(nil); {update the fits file header}
-
-          histogram_done:=false;
-          if hasoption('annotate') then
+          if ((file_loaded) and (hasoption('analyse'))) then {analyse fits and report HFD value in errorlevel }
           begin
-            use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-            histogram_done:=true;
-            plot_fits(mainwindow.image1,true {center_image},true);{center and stretch with current settings}
-            save_annotated_jpg(filename2);{save viewer as annotated jpg}
-          end;
-          if hasoption('tofits') then {still to be tested}
+             analyse_fits(img_loaded,hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
+             halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
+          end;{analyse fits and report HFD value}
+
+          {$ifdef CPUARM}
+          {set tray icon visible gives a fatal error in old compiler for armhf}
+          {$else}
+            trayicon1.visible:=true;{show progress in hint of trayicon}
+          {$endif}
+
+          if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
           begin
-            if source_fits=false {no fits file?} then
+            if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
+
+            write_ini(true);{write solution to ini file}
+
+            add_long_comment('cmdline:'+cmdline);{log command line in wcs file}
+            remove_key('NAXIS1  =',true{one});
+            remove_key('NAXIS2  =',true{one});
+            update_integer('NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
+            update_integer('BITPIX  =',' /                                                ' ,8);
+
+            if hasoption('wcs') then
+              write_astronomy_wcs  {write WCS astronomy.net style}
+            else
+              try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
+
+            if hasoption('update') then mainwindow.SaveFITSwithupdatedheader1Click(nil); {update the fits file header}
+
+            histogram_done:=false;
+            if hasoption('annotate') then
             begin
-              binning:=strtofloat2(GetOptionValue('tofits'));
-              resize_img_loaded(1/binning); {resize img_loaded in free ratio}
-              if histogram_done=false then use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-              save_fits(img_loaded,changeFileExt(filename2,'.fit'),8,true {overwrite});
+              use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+              histogram_done:=true;
+              plot_fits(mainwindow.image1,true {center_image},true);{center and stretch with current settings}
+              save_annotated_jpg(filename2);{save viewer as annotated jpg}
             end;
-          end;
+            if hasoption('tofits') then {still to be tested}
+            begin
+              if source_fits=false {no fits file?} then
+              begin
+                binning:=strtofloat2(GetOptionValue('tofits'));
+                resize_img_loaded(1/binning); {resize img_loaded in free ratio}
+                if histogram_done=false then use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+                save_fits(img_loaded,changeFileExt(filename2,'.fit'),8,true {overwrite});
+              end;
+            end;
 
-          if  ((fov_specified) and (stackmenu1.search_fov1.text='0' ) {auto}) then {preserve new found fov}
-          begin
-            stackmenu1.search_fov1.text:=floattostrF2(height2*abs(cdelt2),0,2);
-            save_settings(user_path+'astap.cfg');{save settings with correct fov}
+            if  ((fov_specified) and (stackmenu1.search_fov1.text='0' ) {auto}) then {preserve new found fov}
+            begin
+              stackmenu1.search_fov1.text:=floattostrF2(height2*abs(cdelt2),0,2);
+              save_settings(user_path+'astap.cfg');{save settings with correct fov}
+            end;
+          end {solution}
+          else
+          begin {no solution}
+            if hasoption('o') then filename2:=GetOptionValue('o'); {change file name for .ini file}
+            write_ini(false);{write solution to ini file}
+            errorlevel:=1;{no solution}
           end;
-        end {solution}
+          esc_pressed:=true;{kill any running activity. This for APT}
+
+          if hasoption('log') then stackmenu1.Memo2.Lines.SavetoFile(ChangeFileExt(filename2,'.log'));{save Memo3 log to log file}
+
+          halt(errorlevel); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
+
+          //  Exit status:
+          //  0 no errors.
+          //  1 no solution.
+          //  2 not enough stars detected.
+
+          // 16 error reading image file.
+
+          // 32 no star database found.
+          // 33 error reading star database.
+
+          // ini file is always written. Could contain:
+          // ERROR=......
+          // WARNING=......
+
+          // wcs file is written when there is a solution. Could contain:
+          // WARNING =.........
+        end {standard solve via command line}
         else
-        begin {no solution}
-          if hasoption('o') then filename2:=GetOptionValue('o'); {change file name for .ini file}
-          write_ini(false);{write solution to ini file}
-          errorlevel:=1;{no solution}
+        begin {debug mode, so tab alignment for settings and testing}
+          stackmenu1.formstyle:=fsSystemStayOnTop;
+          stackmenu1.pagecontrol1.tabindex:=6; {alignment}
+          stackmenu1.panel_manual1.enabled:=false;{hide for user}
+          stackmenu1.panel_ephemeris1.enabled:=false;{hide for user}
+          stackmenu1.ignore_header_solution1.enabled:=false;{hide for user}
+          stackmenu1.classify_groupbox1.enabled:=false;{hide for user}
+          stackmenu1.save_settings_extra_button1.visible:=true;
+          stackmenu1.visible:=true;
+          stackmenu1.setfocus;
 
-         //  log_to_file(cmdline+' =>failure');
+          Mainwindow.stretch1Change(nil);{create gamma curve}
+          exit;
         end;
-        esc_pressed:=true;{kill any running activity. This for APT}
+      end;{-f option}
+    end;{with application}
 
-        if hasoption('log') then stackmenu1.Memo2.Lines.SavetoFile(ChangeFileExt(filename2,'.log'));{save Memo3 log to log file}
-         halt(errorlevel); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
-
-        //  Exit status:
-        //  0 no errors.
-        //  1 no solution.
-        //  2 not enough stars detected.
-
-        // 16 error reading image file.
-
-        // 32 no star database found.
-        // 33 error reading star database.
-
-        // ini file is always written. Could contain:
-        // ERROR=......
-        // WARNING=......
-
-        // wcs file is written when there is a solution. Could contain:
-        // WARNING =.........
-
-      end;
-    end;
+    {filename as parameter 1}
     Mainwindow.stretch1Change(nil);{create gamma curve}
     load_image(true,true {plot});{show image of parameter1}
-  end
+  end {paramcount>0}
   else
   Mainwindow.stretch1Change(nil);{create gamma curve for image if loaded later and set gamma_on}
 end;
@@ -9768,8 +9789,8 @@ begin
 
     {find crota2}
    {see meeus new formula 46.5, angel of moon limb}
-    angle2:=atn_2(cos(dec2)*sin(ra2-ra0),sin(dec2)*cos(dec0) - cos(dec2)*sin(dec0)*cos(ra2-ra0)); {angle between line between the two stars and north}
-    angle3:=atn_2(shape_marker2_fitsX- shape_marker1_fitsX,shape_marker2_fitsY- shape_marker1_fitsY); {angle between top and line between two reference pixels}
+    angle2:=arctan2(cos(dec2)*sin(ra2-ra0),sin(dec2)*cos(dec0) - cos(dec2)*sin(dec0)*cos(ra2-ra0)); {angle between line between the two stars and north}
+    angle3:=arctan2(shape_marker2_fitsX- shape_marker1_fitsX,shape_marker2_fitsY- shape_marker1_fitsY); {angle between top and line between two reference pixels}
 
     if flipped then
       angle:=(angle2+angle3)  ELSE angle:=(-angle2+angle3);{swapped n-s or e-w image}
@@ -10558,7 +10579,7 @@ begin
    begin
      if abs(y-down_y)>2 then
      begin
-       error_label1.visible:=false;{kill error label}
+//       error_label1.visible:=false;{kill error label}
 
     //   mainwindow.image1.Top:= mainwindow.image1.Top+(y-down_y);
         timage(sender).Top:= timage(sender).Top+(y-down_y);{could be used for second image}
@@ -10620,7 +10641,7 @@ begin
          dist_str:=floattostrF(pixel_distance/3600,ffgeneral,3,2)+'°';
        end
        else dist_str:='';
-       if cdelt2<>0 then angle_str:='∠='+inttostr(round(fnmodulo (atn_2(flipH*(X_sized-startX),flipV*(startY-Y_sized))*180/pi + crota2,360)) )+'°' else  angle_str:=''; ;
+       if cdelt2<>0 then angle_str:='∠='+inttostr(round(fnmodulo (arctan2(flipH*(X_sized-startX),flipV*(startY-Y_sized))*180/pi + crota2,360)) )+'°' else  angle_str:=''; ;
        mainwindow.statusbar1.panels[7].text:=inttostr(abs(X_sized-startX))+' x '+inttostr(abs(startY-Y_sized))+'    '+dist_str+'    '+angle_str;{indicate rectangl size}
      end
      else

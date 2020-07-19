@@ -51,7 +51,7 @@ object mainwindow: Tmainwindow
   OnResize = FormResize
   OnShow = FormShow
   ParentFont = True
-  LCLVersion = '2.0.6.0'
+  LCLVersion = '2.0.10.0'
   object Label1: TLabel
     Left = 54
     Height = 25
@@ -807,8 +807,8 @@ object mainwindow: Tmainwindow
   end
   object MainMenu1: TMainMenu
     Images = ImageList1
-    left = 856
-    top = 208
+    Left = 856
+    Top = 208
     object File1: TMenuItem
       Caption = '&File'
       Hint = 'Load a FITS, PNG, JPG or BPM file.'
@@ -1057,7 +1057,7 @@ object mainwindow: Tmainwindow
         Caption = '-'
       end
       object ccdinspector1: TMenuItem
-        Caption = 'CCD inspector'
+        Caption = 'Image (CCD) inspector'
         Enabled = False
         Hint = 'Calculate average HFD value , curvature and tilt. The absolute font size will be smaller if you zoom in.'
         ImageIndex = 17
@@ -1065,7 +1065,7 @@ object mainwindow: Tmainwindow
         OnClick = CCDinspector1Click
       end
       object ccd_inspector_plot1: TMenuItem
-        Caption = 'CCD inspector HFD plot'
+        Caption = 'Image (CCD) inspector HFD plot'
         Enabled = False
         Hint = 'Plot HFD values as grey values. '
         OnClick = ccd_inspector_plot1Click
@@ -1092,6 +1092,14 @@ object mainwindow: Tmainwindow
         ImageIndex = 14
         ShortCut = 119
         OnClick = DemosaicBayermatrix1Click
+      end
+      object autocorrectcolours1: TMenuItem
+        Caption = 'Auto correct colours.'
+        Enabled = False
+        Hint = 'Will adjust color settings to get gray background and average white stars. This is the same function as in tab pixel math'
+        ImageIndex = 15
+        ShortCut = 120
+        OnClick = autocorrectcolours1Click
       end
       object inversimage1: TMenuItem
         Caption = 'Inverse image'
@@ -1321,18 +1329,18 @@ object mainwindow: Tmainwindow
     Filter = 'Flexible image transport system files|*.fit*'
     Options = [ofEnableSizing, ofForceShowHidden, ofViewDetail]
     OnSelectionChange = OpenDialog1SelectionChange
-    left = 944
-    top = 192
+    Left = 944
+    Top = 192
   end
   object SaveDialog1: TSaveDialog
-    left = 1040
-    top = 264
+    Left = 1040
+    Top = 264
   end
   object PopupMenu1: TPopupMenu
     Images = ImageList1
     AutoPopup = False
-    left = 976
-    top = 288
+    Left = 976
+    Top = 288
     object Enterlabel1: TMenuItem
       Caption = 'Add annotation'
       Hint = 'Add label to current mouse position. Hold left mouse button down and pull a rectangle with mouse to extend connecting line.'
@@ -1481,6 +1489,11 @@ object mainwindow: Tmainwindow
     object MenuItem8: TMenuItem
       Caption = 'Remove borders'
       ImageIndex = 8
+      object remove_atmouse1: TMenuItem
+        Caption = 'At mouse cursor'
+        Hint = 'Remove border where mouse is positioned'
+        OnClick = remove_atmouse1Click
+      end
       object remove_left1: TMenuItem
         Caption = 'LEFT of mouse cursor'
         ImageIndex = 10
@@ -1514,8 +1527,8 @@ object mainwindow: Tmainwindow
   end
   object ImageList1: TImageList
     ShareImages = True
-    left = 1024
-    top = 207
+    Left = 1024
+    Top = 207
     Bitmap = {
       4C69210000001000000010000000000000000000000000000000000000000000
       00000000000000000000A0A0A0FFA0A0A0FF0000000000000000000000000000
@@ -2609,8 +2622,8 @@ object mainwindow: Tmainwindow
       0000
     }
     Hint = 'ASTAP'
-    left = 1120
-    top = 288
+    Left = 1120
+    Top = 288
   end
   object PopupNotifier1: TPopupNotifier
     Color = clInfoBk
@@ -2644,23 +2657,21 @@ object mainwindow: Tmainwindow
     Text = 'Text'
     Title = 'ASTAP astrometric solver'
     Visible = False
-    left = 1208
-    top = 296
+    Left = 1208
+    Top = 296
   end
   object SimpleIPCServer1: TSimpleIPCServer
     Active = False
     ServerID = 'astap'
-    ThreadTimeOut = 50
     Global = True
     OnMessageQueued = SimpleIPCServer1MessageQueued
-    MaxQueue = 0
-    MaxAction = ipcmoaNone
-    left = 1272
-    top = 280
+    Threaded = False
+    Left = 1272
+    Top = 280
   end
   object PopupMenu_ra_dec1: TPopupMenu
-    left = 1096
-    top = 208
+    Left = 1096
+    Top = 208
     object radec_search1: TMenuItem
       Caption = 'Search database'
       Hint = 'Search for a deepsky object position.'
@@ -2676,8 +2687,8 @@ object mainwindow: Tmainwindow
     end
   end
   object PopupMenu_memo1: TPopupMenu
-    left = 1208
-    top = 216
+    Left = 1208
+    Top = 216
     object Menufind1: TMenuItem
       Caption = 'Find'
       ShortCut = 16454
@@ -2703,8 +2714,8 @@ object mainwindow: Tmainwindow
     end
   end
   object PopupMenu_memo2: TPopupMenu
-    left = 1280
-    top = 216
+    Left = 1280
+    Top = 216
     object Menufind2: TMenuItem
       Caption = 'Find'
       ShortCut = 16454

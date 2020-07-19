@@ -6,6 +6,7 @@ unit unit_dss;
 
 interface
 
+uses math;
 
 var  {input}
      x_coeff: array[0..19] of double;{amdx1 ..20}
@@ -20,31 +21,8 @@ var  {input}
      dec_sign      : double;
 
 Procedure DSSPOS (xpix ,ypix : double; var xpos, ypos : double);
-FUNCTION ATN_2(Y,X:double):double;
-
 
 implementation
-
-(*-----------------------------------------------------------------------*)
-(* ATN_2: arctangent of y/x for two arguments                             *)
-(*       (correct quadrant; -pi rad <= ATN2 <= +pi rad)                  *)
-(*-----------------------------------------------------------------------*)
-FUNCTION ATN_2(Y,X:double):double;
-  VAR   AX,AY,PHI: double;
-  BEGIN
-    IF (X=0.0) AND (Y=0.0)
-      THEN ATN_2:=0.0
-      ELSE
-        BEGIN
-          AX:=ABS(X); AY:=ABS(Y);
-          IF (AX>AY)
-            THEN PHI:=ARCTAN(AY/AX)
-            ELSE PHI:=(pi/2)-ARCTAN(AX/AY);
-          IF (X<0.0) THEN PHI:=pi-PHI;
-          IF (Y<0.0) THEN PHI:=-PHI;
-          ATN_2:=PHI;
-        END;
-  END;
 
 
 Procedure DSSPOS (xpix ,ypix : double; var xpos, ypos: double);
@@ -115,7 +93,7 @@ Procedure DSSPOS (xpix ,ypix : double; var xpos, ypos: double);
     ctan := sin ( plate_dec )/cos(plate_dec );{tan is sin/cos}
     ccos := cos ( plate_dec );
 
-    raoff := atn_2 (xir / ccos ,1.0-etar *ctan );
+    raoff := arctan2(xir / ccos ,1.0-etar *ctan );
     ra := raoff + plate_ra ;
     if (ra <0.0) then ra := ra +twopi ;
     xpos := ra  ;

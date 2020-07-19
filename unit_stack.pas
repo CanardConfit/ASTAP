@@ -63,6 +63,7 @@ type
     binning_for_solving_label3: TLabel;
     analyse_objects_visibles1: TButton;
     binning_for_solving_label4: TLabel;
+    save_settings_extra_button1: TButton;
     calculated_scale1: TLabel;
     osc_colour_smooth1: TCheckBox;
     smart_colour_sd1: TComboBox;
@@ -547,6 +548,7 @@ type
     procedure clear_inspector_list1Click(Sender: TObject);
     procedure curve_fitting1Click(Sender: TObject);
     procedure ephemeris_centering1Change(Sender: TObject);
+    procedure focallength1Exit(Sender: TObject);
     procedure go_step_two1Click(Sender: TObject);
     procedure gridlines1Click(Sender: TObject);
     procedure help_inspector_tab1Click(Sender: TObject);
@@ -587,6 +589,7 @@ type
     procedure photometry_binx2Click(Sender: TObject);
     procedure photometry_button1Click(Sender: TObject);
     procedure saturation_tolerance1Change(Sender: TObject);
+    procedure save_settings_extra_button1Click(Sender: TObject);
     procedure smart_colour_smooth_button1Click(Sender: TObject);
     procedure classify_filter1Click(Sender: TObject);
     procedure apply_get_background1Click(Sender: TObject);
@@ -2790,15 +2793,8 @@ end;
 
 
 procedure Tstackmenu1.focallength1Change(Sender: TObject);
-var
-   fl,d : double;
 begin
-  fl:=0.0001+strtofloat2(stackmenu1.focallength1.text);
-  d:=strtofloat2(stackmenu1.pixelsize1.text);
-  calc_scale:=(d/fl)*(180*3600/1000)/pi; {arcsec per pixel}
-  calculated_scale1.caption:=floattostrf(calc_scale, ffgeneral, 3, 3)+' "/pixel';
-  if fits_file then scale_calc1.Caption:=floattostrf((width2*d/fl)*(180/1000)/pi,ffgeneral, 3, 3)+'° x '+floattostrf((height2*d/fl)*(180/1000)/pi, ffgeneral, 3, 3)+'°'
-               else scale_calc1.Caption:='- - -';
+
 end;
 
 procedure Tstackmenu1.FormResize(Sender: TObject);
@@ -4306,6 +4302,41 @@ begin
   new_analyse_required:=true;{force a new analyse for new x, y position asteroids}
 end;
 
+procedure Tstackmenu1.focallength1Exit(Sender: TObject);
+var
+   fl,d : double;
+begin
+
+  if cdelt2<>0 then {solved image}
+  begin
+    calc_scale:=3600*cdelt2;
+    if sender=focallength1 then {calculate pixelsize from cdelt2 and focallength}
+    begin
+      fl:=strtofloat2(stackmenu1.focallength1.text);
+      d:=calc_scale*fl/((180*3600/1000)/pi);
+      stackmenu1.pixelsize1.text:=floattostrf(d,ffgeneral, 3, 3);
+    end
+    else
+    if sender=pixelsize1 then {calculate focal length from cdelt2 and pixelsize1}
+    begin
+      d:=strtofloat2(stackmenu1.pixelsize1.text);{micrometer}
+      fl:=(d/calc_scale)*(180*3600/1000)/pi; {arcsec per pixel}
+      stackmenu1.focallength1.text:=floattostrf(fl,ffgeneral, 3, 3);
+    end;
+  end
+  else
+  begin {not a solved image}
+    fl:=0.0001+strtofloat2(stackmenu1.focallength1.text);
+    d:=strtofloat2(stackmenu1.pixelsize1.text);{micrometer}
+    calc_scale:=(d/fl)*(180*3600/1000)/pi; {arcsec per pixel}
+  end;
+  calculated_scale1.caption:=floattostrf(calc_scale, ffgeneral, 3, 3)+' "/pixel';
+
+  if ((fits_file) and (fl>1)) then scale_calc1.Caption:=floattostrf((width2*d/fl)*(180/1000)/pi,ffgeneral, 3, 3)+'° x '+floattostrf((height2*d/fl)*(180/1000)/pi, ffgeneral, 3, 3)+'°'
+                 else scale_calc1.Caption:='- - -';
+
+end;
+
 procedure Tstackmenu1.go_step_two1Click(Sender: TObject);
 begin
   load_image(mainwindow.image1.visible=false,true {plot});
@@ -4562,8 +4593,6 @@ procedure Tstackmenu1.new_saturation1Change(Sender: TObject);
 begin
   update_replacement_colour;
 end;
-
-
 
 procedure Tstackmenu1.rainbow_Panel1MouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -5600,6 +5629,11 @@ end;
 procedure Tstackmenu1.saturation_tolerance1Change(Sender: TObject);
 begin
   stackmenu1.rainbow_panel1.refresh;{plot colour disk in on paint event. Onpaint is required for MacOS}
+end;
+
+procedure Tstackmenu1.save_settings_extra_button1Click(Sender: TObject);
+begin
+  save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
 end;
 
 
@@ -8099,6 +8133,8 @@ begin
 
   classify_object1.enabled:=(mosa=false); {in mosaic mode ignore object name}
   oversize1.enabled:=(mosa=false); {in mosaic mode ignore this oversize setting}
+
+  stack_button1.caption:='Stack ('+stack_method1.text+')';
 end;
 
 procedure Tstackmenu1.use_astrometry_internal1Change(Sender: TObject);

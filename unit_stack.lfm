@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 39
+  Left = 374
   Height = 644
-  Top = 243
+  Top = 292
   Width = 1578
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -46,7 +46,7 @@ object stackmenu1: Tstackmenu1
   OnPaint = FormPaint
   OnResize = FormResize
   OnShow = FormShow
-  LCLVersion = '2.0.6.0'
+  LCLVersion = '2.0.10.0'
   object Memo2: TMemo
     Left = 0
     Height = 134
@@ -187,7 +187,7 @@ object stackmenu1: Tstackmenu1
   object stack_button1: TBitBtn
     Left = 24
     Height = 41
-    Hint = 'Stack images using darks, flats and flat dark frames.'
+    Hint = 'Stack check marked images using darks, flats and flat dark frames.'
     Top = 460
     Width = 248
     Caption = 'Stack check marked images'
@@ -1124,7 +1124,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 420
-      ClientWidth = 1596
+      ClientWidth = 1569
       ImageIndex = 5
       ParentFont = False
       object Label3: TLabel
@@ -2187,7 +2187,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the alignment options'
       Caption = 'Alignment'
       ClientHeight = 420
-      ClientWidth = 1596
+      ClientWidth = 1569
       ImageIndex = 7
       OnContextPopup = alignment1ContextPopup
       ParentFont = False
@@ -2723,6 +2723,17 @@ object stackmenu1: Tstackmenu1
             Caption = 'Ignore existing FITS header solution for astrometric stacking'
             ParentFont = False
             TabOrder = 8
+          end
+          object save_settings_extra_button1: TButton
+            Left = 776
+            Height = 25
+            Hint = 'Save settings'
+            Top = 8
+            Width = 75
+            Caption = 'Save'
+            OnClick = save_settings_extra_button1Click
+            TabOrder = 9
+            Visible = False
           end
         end
       end
@@ -5197,7 +5208,7 @@ object stackmenu1: Tstackmenu1
     object tab_Pixelmath2: TTabSheet
       Caption = 'Pixel math 2'
       ClientHeight = 420
-      ClientWidth = 1596
+      ClientWidth = 1569
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox
@@ -6143,6 +6154,7 @@ object stackmenu1: Tstackmenu1
           Width = 48
           BorderSpacing.Around = 5
           OnChange = focallength1Change
+          OnExit = focallength1Exit
           ParentFont = False
           TabOrder = 0
           Text = '500'
@@ -6169,6 +6181,7 @@ object stackmenu1: Tstackmenu1
           Width = 48
           BorderSpacing.Around = 5
           OnChange = focallength1Change
+          OnExit = focallength1Exit
           ParentFont = False
           TabOrder = 1
           Text = '6.4'
@@ -6210,12 +6223,12 @@ object stackmenu1: Tstackmenu1
   end
   object OpenDialog1: TOpenDialog
     Title = 'Open an existing file'
-    left = 744
-    top = 528
+    Left = 744
+    Top = 528
   end
   object ImageList2: TImageList
-    left = 1344
-    top = 528
+    Left = 1344
+    Top = 528
     Bitmap = {
       4C69120000001000000010000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -6798,8 +6811,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu1: TPopupMenu
     Images = ImageList2
-    left = 824
-    top = 536
+    Left = 824
+    Top = 536
     object Viewimage1: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -6865,8 +6878,8 @@ object stackmenu1: Tstackmenu1
     end
   end
   object ImageList_colors: TImageList
-    left = 1312
-    top = 584
+    Left = 1312
+    Top = 584
     Bitmap = {
       4C690F00000010000000100000000000FF000000FF000000FF000000FF000000
       FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF000000
@@ -7353,8 +7366,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu2: TPopupMenu
     Images = ImageList2
-    left = 888
-    top = 536
+    Left = 888
+    Top = 536
     object Viewimage2: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7406,8 +7419,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu3: TPopupMenu
     Images = ImageList2
-    left = 944
-    top = 536
+    Left = 944
+    Top = 536
     object Viewimage3: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7459,8 +7472,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu4: TPopupMenu
     Images = ImageList2
-    left = 1016
-    top = 536
+    Left = 1016
+    Top = 536
     object Viewimage4: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7512,8 +7525,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu5: TPopupMenu
     Images = ImageList2
-    left = 1088
-    top = 536
+    Left = 1088
+    Top = 536
     object Viewimage5: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7564,8 +7577,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu6: TPopupMenu
     Images = ImageList2
-    left = 1160
-    top = 528
+    Left = 1160
+    Top = 528
     object Viewimage6: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7637,13 +7650,13 @@ object stackmenu1: Tstackmenu1
       'ColorS=F0FBFF'
       'ColorT=A4A0A0'
     )
-    left = 752
-    top = 584
+    Left = 752
+    Top = 584
   end
   object PopupMenu7: TPopupMenu
     Images = ImageList2
-    left = 1240
-    top = 528
+    Left = 1240
+    Top = 528
     object Viewimage7: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7693,8 +7706,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu8: TPopupMenu
     Images = ImageList2
-    left = 1288
-    top = 528
+    Left = 1288
+    Top = 528
     object Viewimage8: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click

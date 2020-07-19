@@ -524,7 +524,7 @@ begin
   if ((fov_specified=false) and (cdelt2<>0)) then {no fov in native command line and cdelt2 in header}
     fov_org:=height2*abs(cdelt2) {calculate FOV. PI can give negative CDELT2}
   else
-    fov_org:=strtofloat2(stackmenu1.search_fov1.text);{use specfied FOV in stackmenu}
+    fov_org:=min(180,strtofloat2(stackmenu1.search_fov1.text));{use specfied FOV in stackmenu. 180 max to prevent runtime errors later}
 
   autoFOV:=(fov_org=0);{specified auto FOV}
 
