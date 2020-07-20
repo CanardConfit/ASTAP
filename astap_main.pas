@@ -765,7 +765,7 @@ begin
   {house keeping done}
 
   try
-    TheFile3:=tfilestream.Create( filen, fmOpenRead );
+    TheFile3:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
   except
      beep;
      mainwindow.statusbar1.panels[7].text:='Error accessing file!';
@@ -2172,7 +2172,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.389 dated 2020-07-19';
+  #13+#10+'Version ß0.9.390 dated 2020-07-20';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5076,7 +5076,7 @@ begin
   result:=false; {assume failure}
 
   try
-    TheFile3:=tfilestream.Create( filen, fmOpenRead );
+    TheFile3:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
   except
      beep;
      mainwindow.statusbar1.panels[7].text:=('Error, accessing the file!');
@@ -5844,7 +5844,7 @@ var
 begin
 
   try
-    TheFile3:=tfilestream.Create(filen, fmOpenRead );
+    TheFile3:=tfilestream.Create(filen, fmOpenRead or fmShareDenyWrite);
   except
     close_fits_files;
     exit;
