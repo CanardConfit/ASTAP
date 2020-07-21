@@ -603,7 +603,6 @@ type
     procedure apply_remove_background_colour1Click(Sender: TObject);
     procedure reset_factors1Click(Sender: TObject);
     procedure search_fov1Change(Sender: TObject);
-    procedure noisefilter_sd1Change(Sender: TObject);
     procedure solve_and_annotate1Change(Sender: TObject);
     procedure star_database1DropDown(Sender: TObject);
 
@@ -696,7 +695,6 @@ type
     procedure unselect1Click(Sender: TObject);
     procedure unselect_area1Click(Sender: TObject);
     procedure UpDown1Click(Sender: TObject; Button: TUDBtnType);
-    procedure focallength1Change(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure listview1ColumnClick(Sender: TObject; Column: TListColumn);
     procedure listview1Compare(Sender: TObject; Item1, Item2: TListItem;
@@ -2792,11 +2790,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.focallength1Change(Sender: TObject);
-begin
-
-end;
-
 procedure Tstackmenu1.FormResize(Sender: TObject);
 var
    newtop : integer;
@@ -2822,7 +2815,6 @@ begin
   edit_background1.Text:='';
   stackmenu1.stack_method1Change(nil);{update dark pixel filter}
 
-  stackmenu1.focallength1Change(nil); {update calculation pixel size in arc seconds}
   stackmenu1.width_UpDown1.position:=round(width2*strtofloat2(stackmenu1.resize_factor1.caption));
   stackmenu1.make_osc_color1Change(nil);{update glyph stack button}
 
@@ -4307,7 +4299,7 @@ var
    fl,d : double;
 begin
 
-  if cdelt2<>0 then {solved image}
+  if cd1_1<>0 then {solved image}
   begin
     calc_scale:=3600*cdelt2;
     if sender=focallength1 then {calculate pixelsize from cdelt2 and focallength}
@@ -4317,11 +4309,10 @@ begin
       stackmenu1.pixelsize1.text:=floattostrf(d,ffgeneral, 3, 3);
     end
     else
-    if sender=pixelsize1 then {calculate focal length from cdelt2 and pixelsize1}
-    begin
+    begin {calculate focal length from cdelt2 and pixelsize1}
       d:=strtofloat2(stackmenu1.pixelsize1.text);{micrometer}
       fl:=(d/calc_scale)*(180*3600/1000)/pi; {arcsec per pixel}
-      stackmenu1.focallength1.text:=floattostrf(fl,ffgeneral, 3, 3);
+      stackmenu1.focallength1.text:=floattostrf(fl,fffixed, 4, 0);
     end;
   end
   else
@@ -6235,11 +6226,6 @@ begin
   fov_specified:=true;{user has entered a FOV manually}
 end;
 
-procedure Tstackmenu1.noisefilter_sd1Change(
-  Sender: TObject);
-begin
-
-end;
 
 procedure Tstackmenu1.solve_and_annotate1Change(Sender: TObject);
 begin
@@ -8123,13 +8109,6 @@ begin
     memo2_message('Switched to INTERNAL ASTROMETRIC alignment. You could switch to astrometry.net for high accuracy. Set the oversize high enough to have enough work space.');
   end;
   if mosa then memo2_message('Astrometric image stitching mode. This will stich astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the crop function or negative oversize prior to stacking.');
-
-//  if ((use_star_alignment1.checked=false) and (use_manual_alignment1.checked=false)) then
-//    if ((aver) or (sigm)) then
-//    begin
-//      use_star_alignment1.checked:=true;
-//      memo2_message('Switched to INTERNAL STAR alignment. You could switch to astrometric alignment if required.');
-//    end;
 
   classify_object1.enabled:=(mosa=false); {in mosaic mode ignore object name}
   oversize1.enabled:=(mosa=false); {in mosaic mode ignore this oversize setting}

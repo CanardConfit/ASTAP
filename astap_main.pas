@@ -463,7 +463,8 @@ var
    datamin_org, datamax_org,
    old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
 
-   warning_str :string; {for solver}
+   warning_str,{for solver}
+   roworder                  :string;
    copy_paste_x,
    copy_paste_y,
    copy_paste_w,
@@ -791,6 +792,7 @@ begin
     dec0:=0;
     cdelt1:=0;
     cdelt2:=0;
+    scale:=0; {SGP files}
     xpixsz:=0;
     ypixsz:=0;
     focallen:=0;
@@ -802,6 +804,7 @@ begin
     bayerpat:='';{reset bayer pattern}
     xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
     ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
+    roworder:='';{'BOTTOM-UP'= lower-left corner first in the file.  or 'TOP-DOWN'= top-left corner first in the file.}
 
     a_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
     a_0_2:=0; a_0_3:=0; a_1_1:=0; a_1_2:=0;a_2_0:=0; a_2_1:=0; a_3_0:=0;
@@ -826,7 +829,6 @@ begin
 
     focus_temp:=999;{assume no data available}
     focus_pos:=0;{assume no data available}
-    scale:=0;
 
     annotated:=false; {any annotation in the file}
 
@@ -1070,7 +1072,7 @@ begin
             end;
 
         if ((header[i]='B') and (header[i+1]='A')  and (header[i+2]='Y') and (header[i+3]='E') and (header[i+4]='R') and (header[i+5]='P') and (header[i+6]='A')) then
-           bayerpat:=get_string;{BAYERPAT, bayer patern such as RGGB}
+           bayerpat:=get_string;{BAYERPAT, bayer pattern such as RGGB}
 
        if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='A') and (header[i+3]='Y') and (header[i+4]='R') and (header[i+5]='O') and (header[i+6]='F')) then
            xbayroff:=validate_double;{offset to used to correct BAYERPAT due to flipping}
@@ -1078,6 +1080,8 @@ begin
         if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='A') and (header[i+3]='Y') and (header[i+4]='R') and (header[i+5]='O') and (header[i+6]='F')) then
            ybayroff:=validate_double;{offset to used to correct BAYERPAT due to flipping}
 
+        if ((header[i]='R') and (header[i+1]='O')  and (header[i+2]='W') and (header[i+3]='O') and (header[i+4]='R') and (header[i+5]='D') and (header[i+6]='E')) then
+                   roworder:=get_string;
 
         if ((header[i]='S') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='L')) then  {site latitude, longitude}
         begin
@@ -2172,7 +2176,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.390 dated 2020-07-20';
+  #13+#10+'Version ß0.9.391 dated 2020-07-21';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3291,6 +3295,8 @@ begin
   mainwindow.Copyposition1.enabled:=yes;{enable popup menu}
   mainwindow.Copypositioninhrs1.enabled:=yes;{enable popup menu}
   mainwindow.Copypositioninradians1.enabled:=yes;{enable popup menu}
+
+  stackmenu1.focallength1Exit(nil); {update output calculator}
 end;
 
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
@@ -3338,6 +3344,9 @@ begin
 
   end;{menu change}
 
+  fits_file:=fits;{update}
+  mainwindow.error_label1.visible:=(fits=false);
+
   mainwindow.SaveFITSwithupdatedheader1.Enabled:=((fits) and (fits_file_name(filename2)) and (fileexists(filename2)));{menu disable, no file available to update header}
   mainwindow.saturation_factor_plot1.enabled:=naxis3=3;{colour};
   mainwindow.Polynomial1Change(nil);{update color}
@@ -3347,11 +3356,7 @@ begin
 
   stackmenu1.focallength1.Text:=floattostrF2(focallen,0,0);
   stackmenu1.pixelsize1.Text:=floattostrF2(xpixsz,0,1);
-  stackmenu1.focallength1Exit(nil); {update calculation}
-
-  fits_file:=fits;{update}
-  mainwindow.error_label1.visible:=(fits=false);
-
+  stackmenu1.focallength1Exit(nil); {update calculator}
 end;
 
 
@@ -4658,6 +4663,8 @@ function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
 var
   pattern: string;
   automatic :boolean;
+  ybayroff2 : double;
+
 begin
   automatic:=stackmenu1.bayer_pattern1.Text='auto';
   if automatic then
@@ -4675,11 +4682,28 @@ begin
   else
   result:=2;{empthy no bayer pattern, take default RGGB}
 
-  if automatic then
+
+ {corrections for xbayroff,ybayroff, TOP-DOWN}
+  ybayroff2:=ybayroff;
+  if pos('BOT', roworder)>0 then
+                    ybayroff2:=ybayroff2+1;{'BOTTOM-UP'= lower-left corner first in the file. (normal) or 'TOP-DOWN'= top-left corner first in the file.}
+
+  if odd(round(xbayroff)) then
   begin
-    if odd(round(xbayroff)) then begin if result<2 then result:=result+2 else result:=result-2;{shifted bayer pattern due to flip or sub section}end;
-    if odd(round(ybayroff)) then begin if result<3 then result:=result+1 else result:=result-1;{shifted bayer pattern due to flip or sub section}end;
+    if result=2 then result:=0 else
+    if result=0 then result:=2 else
+    if result=1 then result:=3 else
+    if result=3 then result:=1; {shifted bayer pattern due to flip or sub section}
   end;
+
+  if odd(round(ybayroff2)) then
+  begin
+    if result=1 then result:=0 else
+    if result=0 then result:=1 else
+    if result=3 then result:=2 else
+    if result=2 then result:=3; {shifted bayer pattern due to flip or sub section}
+  end;
+
   bayerpattern_final:=result; {store for global use}
 end;
 
@@ -5128,6 +5152,7 @@ begin
   bayerpat:='T';{assume image is from Raw DSLR image}
   xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
   ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
+  roworder:='';{'BOTTOM-UP'= lower-left corner first in the file.  or 'TOP-DOWN'= top-left corner first in the file.}
 
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
   annotated:=false; {any annotation in the file}
@@ -8947,7 +8972,7 @@ end;
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
     s,old      : string;
-    source_fits,histogram_done,file_loaded,debug: boolean;
+    histogram_done,file_loaded,debug,filespecified: boolean;
     binning, backgr, hfd_median : double;
     hfd_counter                 : integer;
 begin
@@ -9003,23 +9028,25 @@ begin
       end;
 
       debug:=hasoption('debug'); {The debug option allows to set some solving parameters in the GUI (graphical user interface) and to test the commandline. In debug mode all commandline parameters are set and the specified image is shown in the viewer. Only the solve command has to be given manuallydebug mode }
+      filespecified:=hasoption('f');
 
-      if ((hasoption('f')) or (debug)) then
+      if ((filespecified) or (debug)) then
       begin
         commandline_execution:=true;{later required for trayicon and popup notifier and Memo3 scroll in Linux}
 
-        filename2:=GetOptionValue('f');
-        source_fits:=fits_file_name(filename2);{fits file extension?}
+        if filespecified then
+        begin
+          filename2:=GetOptionValue('f');
+          if debug=false then
+            file_loaded:=load_image(false,false {plot}) {load file first to give commandline parameters later priority}
+          else
+            load_image(true,true {plot});{load and show image}
 
-        if debug=false then
-          file_loaded:=load_image(false,false {plot}) {load file first to give commandline parameters later priority}
+          if file_loaded=false then errorlevel:=16;{error file loading}
+          file_loaded:=((file_loaded) or (extend>0));{axy}
+        end
         else
-          load_image(true,true {plot});{load and show image}
-
-
-        if file_loaded=false then errorlevel:=16;{error file loading}
-
-        file_loaded:=((file_loaded) or (extend>0));{axy}
+        file_loaded:=false;
 
         {apply now overriding parameters}
         if hasoption('fov') then
@@ -9090,7 +9117,7 @@ begin
             end;
             if hasoption('tofits') then {still to be tested}
             begin
-              if source_fits=false {no fits file?} then
+              if fits_file_name(filename2)=false {no fits file?} then
               begin
                 binning:=strtofloat2(GetOptionValue('tofits'));
                 resize_img_loaded(1/binning); {resize img_loaded in free ratio}

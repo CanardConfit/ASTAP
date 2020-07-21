@@ -42,7 +42,7 @@ implementation
 function load_xisf(filen:string;var img_loaded2: image_array) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
 var
    i,j,k, reader_position,a,b,c,d,e : integer;
-   scale,exptime,ccd_temperature : double;
+   exptime,ccd_temperature : double;
    aline,message1,message_key,message_value,message_comment    : ansistring;
    attachment,start_image  : integer;
    error2                  : integer;
@@ -137,6 +137,7 @@ begin
   bayerpat:='';{reset bayer pattern}
   xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
   ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
+  roworder:='';{'BOTTOM-UP'= lower-left corner first in the file.  or 'TOP-DOWN'= top-left corner first in the file.}
 
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
   annotated:=false; {any annotation in the file}
@@ -256,7 +257,7 @@ begin
 
   extract_double_keyword('XBAYROFF',Xbayroff);;{offset to used to correct BAYERPAT due to flipping}
   extract_double_keyword('YBAYROFF',Ybayroff);;{offset to used to correct BAYERPAT due to flipping}
-
+  roworder:=extract_string_keyword('ROWORDER');
 
   {update memo keywords and variables for floats}
   extract_double_keyword('CD1_1',cd1_1);{extract float value from XML header and add keyword to FITS memo header, ignoring comments.}
@@ -274,8 +275,20 @@ begin
   extract_double_keyword('CROTA2',crota2);
   extract_double_keyword('CDELT1',cdelt1);
   extract_double_keyword('CDELT2',cdelt2);
-  if cdelt1=0 then begin extract_double_keyword('SECPIX1',cdelt1);cdelt1:=cdelt1/3600;end;
-  if cdelt2=0 then begin extract_double_keyword('SECPIX2',cdelt2);cdelt2:=cdelt2/3600;end;
+
+  extract_double_keyword('FOCALLEN',focallen);
+  extract_double_keyword('XPIXSZ',xpixsz);
+
+  if cd1_1=0  then {try to retrieve pixel scale CDELT2. Else will be calculated in new_to_old_WCS procedure from the CD matrix}
+  begin
+    if ((focallen<>0) and (xpixsz<>0)) then cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word}
+
+    if cdelt2=0 then begin extract_double_keyword('SCALE',cdelt2); cdelt2:=cdelt2/3600 {scale is in arcsec/pixel }  end;{use sgp file keyword}
+
+    if cdelt2=0 then begin extract_double_keyword('SECPIX1',cdelt1);cdelt1:=cdelt1/3600;end;
+    if cdelt2=0 then begin extract_double_keyword('SECPIX2',cdelt2);cdelt2:=cdelt2/3600; end;
+  end;
+
   extract_double_keyword('CRVAL1',ra0);
   extract_double_keyword('CRVAL2',dec0);
   if ra0=0 then extract_double_keyword('RA',ra0);
@@ -356,14 +369,6 @@ begin
     mainwindow.dec1change(nil);
    {$ENDIF}
   end;
-  if ((cd1_1=0) and (cdelt2=0)) then  {no scale, try to fix it}
-  begin
-    if scale<>0 then {sgp file, use scale to find image dimensions}
-     cdelt2:=scale/3600 {scale is in arcsec/pixel }
-     else
-     if ((focallen<>0) and (xpixsz<>0)) then
-       cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word}
-  end;
 
  {read rest of header containing zero's}
   if attachment-reader_position>0 then {header contains zero's}
@@ -418,7 +423,7 @@ begin
     end; {colors naxis3 times}
   end;
 
-  update_menu(true);{file loaded, update menu for fits and set fits_file:=true}
+///  update_menu(true);{file loaded, update menu for fits and set fits_file:=true}
   close_fits_file;
   unsaved_import:=true;{file is not available for astrometry.net}
   result:=true;

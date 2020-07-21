@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 374
+  Left = 573
   Height = 644
-  Top = 292
+  Top = 215
   Width = 1578
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -2064,7 +2064,6 @@ object stackmenu1: Tstackmenu1
             '5.0'
             '6.0'
           )
-          OnChange = noisefilter_sd1Change
           ParentFont = False
           TabOrder = 8
           Text = '3.0'
@@ -3876,7 +3875,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools'
       Caption = 'Pixel math 1'
       ClientHeight = 420
-      ClientWidth = 1596
+      ClientWidth = 1569
       ImageIndex = 4
       ParentFont = False
       object GroupBox5: TGroupBox
@@ -4740,7 +4739,6 @@ object stackmenu1: Tstackmenu1
             '5.0'
             '6.0'
           )
-          OnChange = noisefilter_sd1Change
           ParentFont = False
           TabOrder = 3
           Text = '3.0'
@@ -4784,7 +4782,6 @@ object stackmenu1: Tstackmenu1
             '2.5'
             '3.0'
           )
-          OnChange = noisefilter_sd1Change
           ParentFont = False
           TabOrder = 0
           Text = '2.0'
@@ -6153,7 +6150,6 @@ object stackmenu1: Tstackmenu1
           Top = 8
           Width = 48
           BorderSpacing.Around = 5
-          OnChange = focallength1Change
           OnExit = focallength1Exit
           ParentFont = False
           TabOrder = 0
@@ -6180,7 +6176,6 @@ object stackmenu1: Tstackmenu1
           Top = 48
           Width = 48
           BorderSpacing.Around = 5
-          OnChange = focallength1Change
           OnExit = focallength1Exit
           ParentFont = False
           TabOrder = 1
