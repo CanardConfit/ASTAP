@@ -1850,7 +1850,6 @@ object stackmenu1: Tstackmenu1
           Top = 14
           Width = 104
           ItemHeight = 15
-          ItemIndex = 0
           Items.Strings = (
             'auto'
             'GRBG'
@@ -1863,7 +1862,6 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
           Style = csDropDownList
           TabOrder = 1
-          Text = 'auto'
         end
         object Label12: TLabel
           Left = 232
@@ -2782,16 +2780,16 @@ object stackmenu1: Tstackmenu1
           BorderSpacing.Around = 5
           DropDownCount = 20
           ItemHeight = 15
-          ItemIndex = 0
           Items.Strings = (
             'Star centering'
-            'Comet centering'
+            'Comet centering (small object)'
+            'Comet centering (medium object)'
+            'Comet centering (large object)'
             'No centering'
           )
           ParentFont = False
           Style = csDropDownList
           TabOrder = 0
-          Text = 'Star centering'
         end
       end
       object use_ephemeris_alignment1: TRadioButton

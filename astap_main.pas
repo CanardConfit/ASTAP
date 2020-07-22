@@ -2176,7 +2176,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.391 dated 2020-07-21';
+  #13+#10+'Version ß0.9.392 dated 2020-07-22';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4682,11 +4682,10 @@ begin
   else
   result:=2;{empthy no bayer pattern, take default RGGB}
 
-
  {corrections for xbayroff,ybayroff, TOP-DOWN}
   ybayroff2:=ybayroff;
   if pos('BOT', roworder)>0 then
-                    ybayroff2:=ybayroff2+1;{'BOTTOM-UP'= lower-left corner first in the file. (normal) or 'TOP-DOWN'= top-left corner first in the file.}
+                    ybayroff2:=ybayroff2+1;{'BOTTOM-UP'= lower-left corner first in the file. or 'TOP-DOWN'= top-left corner first in the file.(default)}
 
   if odd(round(xbayroff)) then
   begin
@@ -4711,6 +4710,8 @@ procedure demosaic_bayer; {convert OSC image to colour}
 var
   s :string;
 begin
+
+  if stackmenu1.bayer_pattern1.Text='' then memo2_message('█ █ █ █ █ █ Update required. Please test and set Bayer pattern in tab "Stack method"! █ █ █ █ █ █ ');
   if pos('AstroC',stackmenu1.demosaic_method1.text)<>0  then
   begin
     if datamax_org>16384 then demosaic_astroC_bilinear_interpolation(65535 div 2,get_demosaic_pattern){16 bit image. Make from sensor bayer pattern the three colors}
@@ -6169,18 +6170,12 @@ begin
 
     dum:=initstring.Values['manual_centering']; if dum<>'' then stackmenu1.manual_centering1.text:=dum;
 
-
-    {remove binning in 2020. Replaced by downsample}
-    dum:=initstring.Values['binning']; if dum<>'' then stackmenu1.downsample_for_solving1.text:=dum;
-
     dum:=initstring.Values['downsample']; if dum<>'' then stackmenu1.downsample_for_solving1.text:=dum;
     dum:=initstring.Values['max_fov']; if ((dum<>'') and (dum<>'3')) then stackmenu1.max_fov1.text:=dum;{remove 2020-6  dum<>3}
 
     dum:=initstring.Values['oversize'];if dum<>'' then stackmenu1.oversize1.text:=dum;
     dum:=initstring.Values['sd_factor']; if dum<>'' then stackmenu1.sd_factor1.text:=dum;
 
-//    dum:=initstring.Values['pixel_size']; if dum<>'' then stackmenu1.pixelsize1.text:=dum;
-//    dum:=initstring.Values['focal_length']; if dum<>'' then stackmenu1.focallength1.text:=dum;
     dum:=initstring.Values['most_common_filter_radius']; if dum<>'' then stackmenu1.most_common_filter_radius1.text:=dum;
 
     dum:=initstring.Values['extract_background_box_size']; if dum<>'' then stackmenu1.extract_background_box_size1.text:=dum;
@@ -6194,16 +6189,7 @@ begin
     stackmenu1.ignore_hotpixels1.checked:= get_boolean('ignore_hotpixels',false);
     dum:=initstring.Values['hotpixel_sd_factor']; if dum<>'' then stackmenu1.hotpixel_sd_factor1.text:=dum;
 
-    dum:=initstring.Values['bayerpat']; if dum<>'' then stackmenu1.bayer_pattern1.text:=dum
-    else
-    begin  {remove the following lines in dec 2020}
-       i:=9;  get_int(i,'bayer_pattern');
-       if i=0 then stackmenu1.bayer_pattern1.text:='GRBG';
-       if i=1 then stackmenu1.bayer_pattern1.text:='BGGR';
-       if i=2 then stackmenu1.bayer_pattern1.text:='RGGB';
-       if i=3 then stackmenu1.bayer_pattern1.text:='GBRG';
-       if i=9 then stackmenu1.bayer_pattern1.text:='auto';{new installation}
-    end;
+    dum:=initstring.Values['bayer_pat']; if dum<>'' then stackmenu1.bayer_pattern1.text:=dum;
 
     dum:=initstring.Values['red_filter1']; if dum<>'' then stackmenu1.red_filter1.text:=dum;
     dum:=initstring.Values['red_filter2']; if dum<>'' then stackmenu1.red_filter2.text:=dum;
@@ -6430,7 +6416,7 @@ begin
   initstring.Values['flat_combine_method']:=inttostr(stackmenu1.flat_combine_method1.itemindex);
   initstring.Values['stack_tab']:=inttostr(stackmenu1.pagecontrol1.tabindex);
 
-  initstring.Values['bayerpat']:=stackmenu1.bayer_pattern1.text;
+  initstring.Values['bayer_pat']:=stackmenu1.bayer_pattern1.text;
 
   initstring.Values['demosaic_method2']:=inttostr(stackmenu1.demosaic_method1.itemindex);
   initstring.Values['conversion_program']:=inttostr(stackmenu1.raw_conversion_program1.itemindex);
@@ -10097,49 +10083,78 @@ begin
   result:=round(h)
 end;
 
-procedure find_highest_pixel_value(img: image_array;x1,y1: integer; var xc,yc:double);{}
+procedure find_highest_pixel_value(img: image_array;box, x1,y1: integer; var xc,yc:double);{}
 var
-  i,j,x2,y2,w,h  : integer;
+  i,j,k,x2,y2,w,h, box2  : integer;
   value, val, SumVal,SumValX,SumValY, Xg,Yg : double;
 
+  function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
+  var
+    x_trunc,y_trunc: integer;
+    x_frac,y_frac  : double;
+  begin
+    x_trunc:=trunc(x1);
+    y_trunc:=trunc(y1);
+    if ((x_trunc<=0) or (x_trunc>=(width2-2)) or (y_trunc<=0) or (y_trunc>=(height2-2))) then begin result:=0; exit;end;
+    x_frac :=frac(x1);
+    y_frac :=frac(y1);
+    try
+      result:=         (img[0,x_trunc  ,y_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
+      result:=result + (img[0,x_trunc+1,y_trunc  ]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
+      result:=result + (img[0,x_trunc  ,y_trunc+1]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
+      result:=result + (img[0,x_trunc+1,y_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
+    except
+    end;
+  end;
+
 begin
+
   w:=Length(img[0]); {width}
   h:=Length(img[0,0]); {height}
 
-  if ((x1>=9) and (x1<w-9) and (y1>=9) and (y1<h-9))=false then begin {don't try too close to boundaries} xc:=x1; yc:=y1;  exit end;
+  if ((x1>=box) and (x1<w-box) and (y1>=box) and (y1<h-box))=false then begin {don't try too close to boundaries} xc:=x1; yc:=y1;  exit end;
 
-  value:=-99999;
-  {find highest pixel}
-  for i:=x1-6 to x1+6 do
-  for j:=y1-6 to y1+6 do
+
+  xc:=x1;
+  yc:=y1;
+
+  for k:=1 to 2 do {repeat for maximum accuracy}
   begin
-      val:=img[0,i,j];
-      if val>value then
-      begin
-        value:=val;
-        x2:=i;
-        y2:=j;
-      end;
-  end;
 
-  {find center of gravity for 3x3}
-  SumVal:=0;
-  SumValX:=0;
-  SumValY:=0;
+    value:=-99999;
+    {find highest pixel}
+    for i:=round(xc)-box to round(xc)+box do
+    for j:=round(yc)-box to round(yc)+box do
+    begin
+        val:=img[0,i,j];
+        if val>value then
+        begin
+          value:=val;
+        end;
+    end;
 
-  for i:=-2 to +2 do
-  for j:=-2 to +2 do
-  begin
-    val:=img[0,x2+i,y2+j]-cblack;
-    SumVal:=SumVal+val;
-    SumValX:=SumValX+val*(i);
-    SumValY:=SumValY+val*(j);
-  end;
+    {find center of gravity}
+    SumVal:=0;
+    SumValX:=0;
+    SumValY:=0;
 
-  Xg:=SumValX/SumVal;
-  Yg:=SumValY/SumVal;
-  xc:=(x2+Xg);
-  yc:=(y2+Yg);
+    box2:=box div 3;
+
+    for i:=-box to +box do
+    for j:=-box to +box do
+    begin
+      val:=value_subpixel(xc+i,yc+j) - value/2;{use only the brightets parts above half max}
+      if val>0 then val:=sqr(val);{sqr highest pixels}
+      SumVal:=SumVal+val;
+      SumValX:=SumValX+val*(i);
+      SumValY:=SumValY+val*(j);
+    end;
+    Xg:=SumValX/SumVal;{offset}
+    Yg:=SumValY/SumVal;
+    xc:=(xc+Xg);
+    yc:=(yc+Yg);
+  end;{repeat}
+
  {center of gravity found}
 end;
 
@@ -10163,10 +10178,21 @@ begin
   if ( ((stackmenu1.use_manual_alignment1.checked) and (pos('S',calstat)=0 {ignore stacked images unless callled from listview1. See doubleclick listview1} )) or
         (stackmenu1.pagecontrol1.tabindex=8 {photometry})){measure one object in blink routine } then
   begin
-    if pos('Comet',stackmenu1.manual_centering1.text)<>0 then
+    if pos('small',stackmenu1.manual_centering1.text)<>0 then {comet}
     begin
-      find_highest_pixel_value(img_loaded,round(fitsX-1),round(fitsY-1),xc,yc);
+      find_highest_pixel_value(img_loaded,10,round(fitsX-1),round(fitsY-1),xc,yc);
     end
+    else
+    if pos('medium',stackmenu1.manual_centering1.text)<>0 then {comet}
+    begin
+      find_highest_pixel_value(img_loaded,20,round(fitsX-1),round(fitsY-1),xc,yc);
+    end
+    else
+    if pos('large',stackmenu1.manual_centering1.text)<>0 then {comet}
+    begin
+      find_highest_pixel_value(img_loaded,30,round(fitsX-1),round(fitsY-1),xc,yc);
+    end
+
     else
     if pos('No',stackmenu1.manual_centering1.text)<>0 then {no centering}
     begin
@@ -10177,7 +10203,7 @@ begin
     HFD(img_loaded,round(fitsX-1),round(fitsY-1),14{box size},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
 
 
-    if hfd2<15 then {detected something}
+    if hfd2<90 then {detected something}
     begin
       shape_fitsX:=xc+1;{calculate fits positions}
       shape_fitsY:=yc+1;
