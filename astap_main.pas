@@ -96,6 +96,7 @@ type
     MenuItem22: TMenuItem;
     batch_rotate_left1: TMenuItem;
     batch_rotate_right1: TMenuItem;
+    gradient_removal1: TMenuItem;
     remove_atmouse1: TMenuItem;
     remove_longitude_latitude1: TMenuItem;
     menupaste1: TMenuItem;
@@ -281,6 +282,7 @@ type
     procedure batch_rotate_left1Click(Sender: TObject);
     procedure range1Change(Sender: TObject);
     procedure remove_atmouse1Click(Sender: TObject);
+    procedure gradient_removal1Click(Sender: TObject);
     procedure remove_longitude_latitude1Click(Sender: TObject);
     procedure select_all1Click(Sender: TObject);
     procedure save_to_tiff1Click(Sender: TObject);
@@ -2176,7 +2178,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.392 dated 2020-07-22';
+  #13+#10+'Version ß0.9.393 dated 2020-07-23';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7711,6 +7713,70 @@ begin
   if ((right_dist<left_dist) and (right_dist<top_dist) and (right_dist<bottom_dist)) then mainwindow.remove_right1Click(nil) else
   if ((top_dist<left_dist) and (top_dist<right_dist) and (top_dist<bottom_dist)) then mainwindow.remove_above1Click(nil) else
   if ((bottom_dist<left_dist) and (bottom_dist<right_dist) and   (bottom_dist<top_dist)) then mainwindow.remove_below1Click(nil);
+end;
+
+procedure Tmainwindow.gradient_removal1Click(Sender: TObject);
+var
+   colrr1,colgg1,colbb1,colrr2,colgg2,colbb2                      : single;
+   a,b,c,p : double;
+
+   fitsX,fitsY,dum,k,bsize  : integer;
+   line_bottom, line_top : double;
+
+   Save_Cursor:TCursor;
+begin
+  if fits_file=false then exit;
+  if  ((abs(oldx-startX)>100)and (abs(oldy-starty)>100)) then
+  begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+    backup_img;
+
+    if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+    begin
+      starty:=height2-1-starty;
+      oldY:=height2-1-oldY;
+    end;
+
+    if mainwindow.Fliphorizontal1.Checked then
+    begin
+      startX:=width2-1-startX;
+      oldX:=width2-1-oldX;
+    end;
+
+    bsize:=20;
+    colrr1:=get_most_common(img_loaded,0,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
+    if naxis3>1 then colgg1:=get_most_common(img_loaded,1,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
+    if naxis3>2 then colbb1:=get_most_common(img_loaded,2,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
+
+    colrr2:=get_most_common(img_loaded,0,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize,65535);{find most common colour of a local area}
+    if naxis3>1 then colgg2:=get_most_common(img_loaded,0,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize,65535);{find most common colour of a local area}
+    if naxis3>2 then colbb2:=get_most_common(img_loaded,0,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize,65535);{find most common colour of a local area}
+
+    a:=sqrt(sqr(oldX-startX)+sqr(oldY-startY)); {distance between bright and dark area}
+
+    for fitsY:=0 to height2-1 do
+      for fitsX:=0 to width2-1 do
+      begin
+        b:=sqrt(sqr(fitsX-startX)+sqr(fitsY-startY)); {distance from dark spot}
+        c:=sqrt(sqr(fitsX-oldX)+sqr(fitsY-oldY)); {distance from bright spot}
+        p:=-((sqr(b)-sqr(a)-sqr(c))/(2*a)); {projectiestelling scheefhoekige driehoek (Dutch), polytechnisch zakboekje 42 edition, a2/24 3.2}
+
+        img_loaded[0,fitsX,fitsY]:=img_loaded[0,fitsX,fitsY]-(colrr2-colrr1)*(a-p)/a;
+        if naxis3>1 then img_loaded[1,fitsX,fitsY]:=img_loaded[1,fitsX,fitsY]-(colgg2-colgg1)*(a-p)/a;
+        if naxis3>2 then img_loaded[2,fitsX,fitsY]:=img_loaded[2,fitsX,fitsY]-(colbb2-colbb1)*(a-p)/a;
+      end;
+
+    use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+    plot_fits(mainwindow.image1,false {re_center},true);
+
+    Screen.Cursor:=Save_Cursor;
+  end {fits file}
+  else
+  application.messagebox(pchar('Pull first a rectangle from a DARK to BRIGHT area with the mouse while holding the right mouse button down'+#10+#10+
+                               'Try to select two areas without a deepsky object within 20 pixels.'+#10+#10+
+                               'Moving from the dark area to the bright area should follow the direction of the gradient.'),'',MB_OK);
 end;
 
 procedure Tmainwindow.remove_longitude_latitude1Click(Sender: TObject);

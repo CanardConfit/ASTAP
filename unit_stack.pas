@@ -4380,16 +4380,17 @@ begin
 end;
 
 
+
 procedure sample(fitsx,fitsy : integer);{sampe local colour and fill shape with colour}
 var
     halfboxsize,i,j,counter,fx,fy,col_r,col_g,col_b  :integer;
     r,g,b,h,s,v,colrr,colgg,colbb,luminance, luminance_stretched,factor, largest : single;
-    RadioButton1,radiobutton2: boolean;
+    dummy1,radiobutton2: boolean;
 begin
-  radiobutton1:=stackmenu1.HueRadioButton1.checked;
+  dummy1:=stackmenu1.HueRadioButton1.checked;
   radiobutton2:=stackmenu1.HueRadioButton2.checked;
 
-  if ((radiobutton1=false) and (radiobutton2=false)) then exit;
+  if ((dummy1=false) and (radiobutton2=false)) then exit;
   halfboxsize:=(stackmenu1.sample_size1.itemindex);
   counter:=0;
   colrr:=0;
@@ -4448,7 +4449,7 @@ begin
 
   RGB2HSV(col_r,col_g,col_b,h,s,v); {RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 
-  if radiobutton1 then
+  if dummy1 then
   begin
     HSV2RGB(h , s {s 0..1}, v {v 0..1},r,g,b); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
     stackmenu1.colourshape1.brush.color:=rgb(trunc(r),trunc(g),trunc(b));
@@ -6309,6 +6310,8 @@ begin
   end;
 end;
 
+//procedure correct_gradient(x1,y1,x2,y2 {positions of two point}: integer; r1,g1,b1,r2,g2,b2 {color of the two points}:single); {correct a gradient in image1}
+
 procedure Tstackmenu1.apply_hue1Click(Sender: TObject);
 var fitsX, fitsY,fuzziness :integer;
     r,g,b,h,s,s_new,v,oldhue,newhue,dhue,saturation_factor,v_old1,v_old2,v_old3,s_old,saturation_tol : single;
@@ -7170,6 +7173,11 @@ begin
              begin
                img_loaded[k,fitsX,fitsY]:=min(img_loaded[k,fitsX-1,fitsY],img_loaded[k,fitsX,fitsY-1]);  {take the lowest value of the neighbour pixels}
                inc(hotpixelcounter,1);
+               if hotpixelcounter>=1000 then
+               begin
+                  ignore_hotpixels:=false;
+                  memo2_message('Fix variable hotpixels stopped. Abnormal amount of hotpixels detected.');
+               end;
              end
              else
              {apply dark normal}
@@ -7303,7 +7311,7 @@ procedure put_lowest_hfd_on_top(var files_to_process : array of TfileToDo);{find
 var
    lowest, x  : double;
    first, best,i, width1, largest_width  : integer;
-   dummy: string;
+   dummy1: string;
    file_to_do : Tfiletodo;
 begin
   first:=-1;
@@ -7317,8 +7325,8 @@ begin
       width1:=strtoint(stackmenu1.ListView1.Items.item[i].subitems.Strings[I_width]);
       if first=-1 then begin first:=i; largest_width:=width1  end;
 
-      dummy:=stackmenu1.ListView1.Items.item[i].subitems.Strings[I_hfd];{hfd}
-      if length(dummy)>1 then x:=strtofloat2(dummy);{hfd available}
+      dummy1:=stackmenu1.ListView1.Items.item[i].subitems.Strings[I_hfd];{hfd}
+      if length(dummy1)>1 then x:=strtofloat2(dummy1);{hfd available}
 
       if width1>largest_width then {larger image found, give this one preference}
       begin
@@ -7457,7 +7465,7 @@ begin
         Listview1.Items[c].MakeVisible(False);{scroll to selected item}
         if length(ListView1.Items.item[c].subitems.Strings[I_X])<=1 then {no manual position added}
         begin
-          memo2_message('█ █ █  Abort! █ █ █  Reference object missing for one file. Double click on all file names and mark with the mouse the reference object. The file name will then turn green.');
+          memo2_message('█ █ █  Abort! █ █ █  Reference object missing for one or more files. Double click on all file names and mark with the mouse the reference object. The file name will then turn green.');
           Screen.Cursor := Save_Cursor;
           exit;
         end;
