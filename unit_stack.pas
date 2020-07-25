@@ -63,6 +63,12 @@ type
     binning_for_solving_label3: TLabel;
     analyse_objects_visibles1: TButton;
     binning_for_solving_label4: TLabel;
+    Label36: TLabel;
+    Label49: TLabel;
+    Label54: TLabel;
+    Label62: TLabel;
+    most_common_mono1: TButton;
+    correct_gradient_label1: TLabel;
     save_settings_extra_button1: TButton;
     calculated_scale1: TLabel;
     osc_colour_smooth1: TCheckBox;
@@ -240,8 +246,6 @@ type
     Label2: TLabel;
     Label20: TLabel;
     Label21: TLabel;
-    Label26: TLabel;
-    Label27: TLabel;
     Label29: TLabel;
     Label3: TLabel;
     Label30: TLabel;
@@ -267,7 +271,6 @@ type
     Label51: TLabel;
     Label52: TLabel;
     Label53: TLabel;
-    Label54: TLabel;
     Label55: TLabel;
     Label56: TLabel;
     Label57: TLabel;
@@ -401,9 +404,7 @@ type
     list_to_clipboard1: TMenuItem;
     selectall8: TMenuItem;
     show_tetrahedrons1: TBitBtn;
-    sigma_factor_remove_background_colourB1: TComboBox;
-    sigma_factor_remove_background_colourG1: TComboBox;
-    sigma_factor_remove_background_colourR1: TComboBox;
+    sigma_decolour1: TComboBox;
     smart_colour_smooth_button1: TButton;
     smart_smooth_width1: TComboBox;
     solve1: TButton;
@@ -562,6 +563,7 @@ type
       var DefaultDraw: Boolean);
     procedure live_stacking1Click(Sender: TObject);
     procedure copy_files_to_clipboard1Click(Sender: TObject);
+    procedure most_common_mono1Click(Sender: TObject);
     procedure new_saturation1Change(Sender: TObject);
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -1920,6 +1922,8 @@ begin
     save_result1.Enabled:=false;
     remove_deepsky_label1.enabled:=false;
     most_common_filter_tool1.enabled:=false;
+    most_common_mono1.enabled:=false;
+    correct_gradient_label1.enabled:=false;
     apply_gaussian_filter1.enabled:=false;
     subtract_background1.enabled:=false;
     save_result1.Enabled:=false;
@@ -1927,8 +1931,8 @@ begin
 
     case pos1 of
             1: begin save_as_new_file1.Enabled:=true; save_result1.Enabled:=true; remove_deepsky_label1.enabled:=true;undo_button_equalise_background1.caption:=''; end;{step 1,6}
-            2: begin most_common_filter_tool1.enabled:=true;{step 3}remove_deepsky_label1.enabled:=true; undo_button_equalise_background1.caption:='1'; end;
-            3: begin apply_gaussian_filter1.enabled:=true;{step 4}undo_button_equalise_background1.caption:='3'; end;
+            2: begin most_common_filter_tool1.enabled:=true;{step 3}most_common_mono1.enabled:=true;remove_deepsky_label1.enabled:=true; undo_button_equalise_background1.caption:='1'; end;
+            3: begin apply_gaussian_filter1.enabled:=true;{step 4}correct_gradient_label1.enabled:=true;undo_button_equalise_background1.caption:='3'; end;
             4: begin subtract_background1.enabled:=true;{step 5}undo_button_equalise_background1.caption:='4';end;
             5: begin save_result1.Enabled:=true;{step 5}undo_button_equalise_background1.caption:='1';end;
           end;{case}
@@ -1944,6 +1948,7 @@ begin
     memo2_message('Error, no image in viewer loaded!');
     exit;
   end;
+  if pos('.fit',filename2)=0 then filename2:=changeFileExt(filename2,'.fits'); {rename png, XISF file to fits}
   if pos(' equalised',filename2)=0 then
   begin
     dot_pos:=length(filename2);
@@ -1972,7 +1977,7 @@ begin
 end;
 
 procedure Tstackmenu1.subtract_background1Click(Sender: TObject);
-var fitsX, fitsY,col :integer;
+var fitsX, fitsY,col,col2,nrcolours :integer;
    Save_Cursor:TCursor;
 begin
   if fits_file=false then exit;
@@ -1981,14 +1986,20 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   backup_img;
 
+
   if load_fits(filename2,true {light},true,img_temp) then {success load}
   begin
+    nrcolours:=length(img_loaded)-1;{nr colours - 1}
     for col:=0 to naxis3-1 do {all colors}
+    begin {subtract view from file}
+      col2:=min(nrcolours,col); {allow subtracting mono images from colour}
       for fitsY:=0 to height2-1 do
-       for fitsX:=0 to width2-1 do
-        begin {subtract view from file}
-            img_loaded[col,fitsX,fitsY]:=img_temp[col,fitsX,fitsY]-img_loaded[col,fitsX,fitsY]+1000;
-        end;
+        for fitsX:=0 to width2-1 do
+          img_temp[col,fitsX,fitsY]:=img_temp[col,fitsX,fitsY] - img_loaded[col2,fitsX,fitsY]+1000;  {use temp as temporary rather then img_loaded since img_loaded could be mono}
+    end;
+
+    img_loaded:=img_temp; {use result}
+
     use_histogram(img_loaded,true);
     plot_fits(mainwindow.image1,false,true);{plot real}
   end;
@@ -4580,6 +4591,11 @@ begin
 {$endif}
 end;
 
+procedure Tstackmenu1.most_common_mono1Click(Sender: TObject);
+begin
+  mainwindow.convertmono1Click(nil); {back is made in mono procedure}
+end;
+
 
 procedure Tstackmenu1.new_saturation1Change(Sender: TObject);
 begin
@@ -6163,7 +6179,7 @@ procedure Tstackmenu1.apply_remove_background_colour1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
    fitsX,fitsY: integer;
-   background_r,background_g,background_b, red,green,blue,signal_R,signal_G,signal_B,sigmaR, sigmaG, sigmaB : double;
+   background_r,background_g,background_b, red,green,blue,signal_R,signal_G,signal_B,sigma,lumn : double;
 begin
   if naxis3<3 then exit;{prevent run time error mono images}
 //  if fits_file=false then exit;
@@ -6172,10 +6188,7 @@ begin
 
   backup_img;
 
-  sigmaR:=strtofloat2(sigma_factor_remove_background_colourR1.text);{standard deviation factor used}
-  sigmaG:=strtofloat2(sigma_factor_remove_background_colourG1.text);{standard deviation factor used}
-  sigmaB:=strtofloat2(sigma_factor_remove_background_colourB1.text);{standard deviation factor used}
-
+  sigma:=strtofloat2(sigma_decolour1.text);{standard deviation factor used}
 
   get_background(1,img_loaded,true {hist},true {noise level},{var}background_G, star_level);{calculate background and noise_level}
   get_background(2,img_loaded,true {hist},true {noise level}, {var}background_B, star_level);{calculate background and noise_level}
@@ -6191,14 +6204,15 @@ begin
         green:=img_loaded[1,fitsX,fitsY];
         blue:=img_loaded[2,fitsX,fitsY];
 
-        if ((red-background_r<sigmaR*noise_level[0]) and (green-background_G<sigmaG*noise_level[1]) and (blue-background_B<sigmaB*noise_level[2])) then
+        if ((red-background_r<sigma*noise_level[0]) and (green-background_G<sigma*noise_level[1]) and (blue-background_B<sigma*noise_level[2])) then {low luminance signal}
         begin {distribute the colour to luminance}
-          signal_R:=(red-background_r)/3;
-          signal_G:=(green-background_G)/3;
-          signal_B:=(blue-background_B)/3;
-          red:=background_r+signal_R+signal_G+signal_B;
-          green:=background_G+signal_R+signal_G+signal_B;
-          blue:=background_B+signal_R+signal_G+signal_B;
+          signal_R:=red-background_R;
+          signal_G:=green-background_G;
+          signal_B:=blue-background_B;
+          lumn:=(signal_R+signal_G+signal_B)/3;{make mono}
+          red:=background_r+lumn;
+          green:=background_G+lumn;
+          blue:=background_B+lumn;
         end;
         img_loaded[0,fitsX  ,  fitsY  ]:=red;
         img_loaded[1,fitsX  ,  fitsY  ]:=green;

@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 232
+  Left = 898
   Height = 644
-  Top = 83
+  Top = 143
   Width = 1578
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -4188,7 +4188,7 @@ object stackmenu1: Tstackmenu1
           Left = 24
           Height = 26
           Hint = 'Test on the current displayed image. CTRL-Z to undo.'
-          Top = 80
+          Top = 112
           Width = 278
           Caption = 'Apply "most common" filter to remove stars'
           Enabled = False
@@ -4200,7 +4200,7 @@ object stackmenu1: Tstackmenu1
           Left = 305
           Height = 23
           Hint = 'Median filter factor (box size). Typical value is 20'
-          Top = 80
+          Top = 112
           Width = 32
           ParentFont = False
           TabOrder = 2
@@ -4210,7 +4210,7 @@ object stackmenu1: Tstackmenu1
           Left = 24
           Height = 26
           Hint = 'Applied on the current displayed image. CTRL-Z to undo.'
-          Top = 114
+          Top = 177
           Width = 278
           Caption = 'Apply gaussian filter'
           Enabled = False
@@ -4222,7 +4222,7 @@ object stackmenu1: Tstackmenu1
           Left = 303
           Height = 30
           Hint = 'Undo last action'
-          Top = 179
+          Top = 242
           Width = 32
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -4265,12 +4265,13 @@ object stackmenu1: Tstackmenu1
           TabOrder = 6
         end
         object remove_deepsky_label1: TLabel
-          Left = 8
+          Left = 24
           Height = 29
-          Top = 44
-          Width = 294
+          Hint = 'See viewer  popup menu'
+          Top = 73
+          Width = 278
           AutoSize = False
-          Caption = '2)   Remove deep sky with right mouse button tool'
+          Caption = 'Remove deep sky with right mouse button tool'
           Color = clBtnFace
           Enabled = False
           ParentColor = False
@@ -4281,7 +4282,7 @@ object stackmenu1: Tstackmenu1
         object Label41: TLabel
           Left = 8
           Height = 15
-          Top = 84
+          Top = 116
           Width = 10
           Caption = '3)'
           Color = clBtnFace
@@ -4292,7 +4293,7 @@ object stackmenu1: Tstackmenu1
         object Label42: TLabel
           Left = 8
           Height = 15
-          Top = 119
+          Top = 182
           Width = 10
           Caption = '4)'
           Color = clBtnFace
@@ -4303,7 +4304,7 @@ object stackmenu1: Tstackmenu1
         object Label44: TLabel
           Left = 8
           Height = 15
-          Top = 188
+          Top = 251
           Width = 10
           Caption = '6)'
           Color = clBtnFace
@@ -4315,7 +4316,7 @@ object stackmenu1: Tstackmenu1
           Left = 24
           Height = 26
           Hint = 'Subtract the created background from the orginal image and display the result.'
-          Top = 149
+          Top = 212
           Width = 278
           Caption = 'Subtract background from saved image.'
           Enabled = False
@@ -4326,7 +4327,7 @@ object stackmenu1: Tstackmenu1
         object Label45: TLabel
           Left = 8
           Height = 15
-          Top = 154
+          Top = 217
           Width = 10
           Caption = '5)'
           Color = clBtnFace
@@ -4337,7 +4338,7 @@ object stackmenu1: Tstackmenu1
         object Label46: TLabel
           Left = 8
           Height = 15
-          Top = 18
+          Top = 14
           Width = 10
           Caption = '1)'
           Color = clBtnFace
@@ -4349,7 +4350,7 @@ object stackmenu1: Tstackmenu1
           Left = 24
           Height = 26
           Hint = 'Save to file with equalised added to the filename.'
-          Top = 12
+          Top = 8
           Width = 278
           Caption = 'Save current view as new file'
           OnClick = save_as_new_file1Click
@@ -4360,7 +4361,7 @@ object stackmenu1: Tstackmenu1
           Left = 24
           Height = 26
           Hint = 'Save to file with equalised added to the filename.'
-          Top = 183
+          Top = 246
           Width = 278
           Caption = 'Save result'
           Enabled = False
@@ -4376,47 +4377,23 @@ object stackmenu1: Tstackmenu1
           ParentColor = False
           ParentFont = False
         end
-        object Label27: TLabel
-          Left = 24
-          Height = 47
-          Top = 295
-          Width = 280
-          AutoSize = False
-          Caption = 'If still unequal, small areas could be equalised with the pop-up menu tools.'
-          Color = clBtnFace
-          ParentColor = False
-          ParentFont = False
-          Transparent = False
-          WordWrap = True
-        end
         object dark_spot_filter1: TButton
-          Left = 24
+          Left = 88
           Height = 30
           Hint = 'This removes dark spots typical for CMOS images. (uses standard deviation for values below most common value) '
-          Top = 237
-          Width = 278
+          Top = 313
+          Width = 214
           Caption = 'Dark spot filter'
           OnClick = dark_spot_filter1Click
           ParentFont = False
           TabOrder = 7
         end
         object Label52: TLabel
-          Left = 8
+          Left = 24
           Height = 15
-          Top = 247
-          Width = 10
-          Caption = '7)'
-          Color = clBtnFace
-          ParentColor = False
-          ParentFont = False
-          Transparent = False
-        end
-        object Label54: TLabel
-          Left = 8
-          Height = 15
-          Top = 295
-          Width = 10
-          Caption = '8)'
+          Top = 321
+          Width = 46
+          Caption = 'Optional'
           Color = clBtnFace
           ParentColor = False
           ParentFont = False
@@ -4442,7 +4419,7 @@ object stackmenu1: Tstackmenu1
           Left = 303
           Height = 30
           Hint = 'Go to step 2'
-          Top = 43
+          Top = 72
           Width = 32
           Caption = '2'
           Enabled = False
@@ -4486,6 +4463,66 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
           TabOrder = 8
         end
+        object most_common_mono1: TButton
+          Left = 88
+          Height = 26
+          Hint = 'Convert to mono. This will effect the background gradient correction only and could improve the end result.'
+          Top = 39
+          Width = 212
+          Caption = 'Convert to mono'
+          Enabled = False
+          OnClick = most_common_mono1Click
+          ParentFont = False
+          TabOrder = 9
+        end
+        object Label49: TLabel
+          Left = 24
+          Height = 15
+          Top = 44
+          Width = 46
+          Caption = 'Optional'
+          Color = clBtnFace
+          ParentColor = False
+          ParentFont = False
+          Transparent = False
+        end
+        object correct_gradient_label1: TLabel
+          Left = 88
+          Height = 26
+          Hint = 'See viewer popup menu. The background gradient should be smooth. Remove abnormal spots.'
+          Top = 143
+          Width = 212
+          AutoSize = False
+          Caption = 'Correct gradient with copy+paste tool.'
+          Color = clBtnFace
+          Enabled = False
+          ParentColor = False
+          ParentFont = False
+          Transparent = False
+          WordWrap = True
+        end
+        object Label54: TLabel
+          Left = 24
+          Height = 15
+          Top = 149
+          Width = 46
+          Caption = 'Optional'
+          Color = clBtnFace
+          ParentColor = False
+          ParentFont = False
+          Transparent = False
+        end
+        object Label62: TLabel
+          Left = 8
+          Height = 15
+          Top = 80
+          Width = 10
+          Caption = '2)'
+          Color = clBtnFace
+          ParentColor = False
+          ParentFont = False
+          Transparent = False
+        end
       end
       object GroupBox1: TGroupBox
         Left = 355
@@ -4498,93 +4535,38 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         TabOrder = 3
         object apply_remove_background_colour1: TButton
-          Left = 212
+          Left = 272
           Height = 30
           Hint = 'This command removes the background colour.'
           Top = 24
-          Width = 160
+          Width = 100
           Caption = 'Apply'
           OnClick = apply_remove_background_colour1Click
           ParentFont = False
-          TabOrder = 3
+          TabOrder = 1
         end
-        object Label26: TLabel
-          Left = 4
-          Height = 15
-          Top = 7
-          Width = 129
-          Caption = 'Smooth below σ factors:'
-          ParentColor = False
-          ParentFont = False
-        end
-        object sigma_factor_remove_background_colourR1: TComboBox
-          Left = 4
+        object sigma_decolour1: TComboBox
+          Left = 152
           Height = 23
           Hint = 'Standard deviation of background noise. Normal value 2.5 to 3.0. Could influence faint nebula.'
-          Top = 26
+          Top = 12
           Width = 60
-          Color = 13158655
           ItemHeight = 15
-          ItemIndex = 4
+          ItemIndex = 5
           Items.Strings = (
-            '0'
-            '1.0'
+            '0.3'
+            '0.5'
+            '0.7'
+            '1'
             '1.5'
-            '2.0'
-            '2.5'
-            '3.0'
+            '2'
+            '3'
             '3.5'
-            '4.0'
+            '4'
           )
           ParentFont = False
           TabOrder = 0
-          Text = '2.5'
-        end
-        object sigma_factor_remove_background_colourG1: TComboBox
-          Left = 68
-          Height = 23
-          Hint = 'Standard deviation of background noise. Normal value 2.5 to 3.0. Could influence faint nebula.'
-          Top = 26
-          Width = 60
-          Color = 13172680
-          ItemHeight = 15
-          ItemIndex = 4
-          Items.Strings = (
-            '0'
-            '1.0'
-            '1.5'
-            '2.0'
-            '2.5'
-            '3.0'
-            '3.5'
-            '4.0'
-          )
-          ParentFont = False
-          TabOrder = 1
-          Text = '2.5'
-        end
-        object sigma_factor_remove_background_colourB1: TComboBox
-          Left = 132
-          Height = 23
-          Hint = 'Standard deviation of background noise. Normal value 2.5 to 3.0. Could influence faint nebula.'
-          Top = 26
-          Width = 60
-          Color = 16763080
-          ItemHeight = 15
-          ItemIndex = 2
-          Items.Strings = (
-            '0'
-            '1.0'
-            '1.5'
-            '2.0'
-            '2.5'
-            '3.0'
-            '3.5'
-            '4.0'
-          )
-          ParentFont = False
-          TabOrder = 2
-          Text = '1.5'
+          Text = '2'
         end
         object undo_button9: TBitBtn
           Left = 387
@@ -4630,7 +4612,16 @@ object stackmenu1: Tstackmenu1
           }
           OnClick = undo_button2Click
           ParentFont = False
-          TabOrder = 4
+          TabOrder = 2
+        end
+        object Label36: TLabel
+          Left = 64
+          Height = 15
+          Top = 15
+          Width = 80
+          Caption = 'Signal below σ:'
+          ParentColor = False
+          ParentFont = False
         end
       end
       object GroupBox2: TGroupBox

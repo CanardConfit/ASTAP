@@ -1463,7 +1463,11 @@ begin
         begin
            if ((header[0]='X') and (header[1]='T')  and (header[2]='E') and (header[3]='N') and (header[4]='S') and (header[5]='I') and (header[6]='O')) then
            begin
-             if pos('BINTABLE',get_string)=0 then extend:=1 {ascii_table} else extend:=2; { 'BINTABLE' or 'TABLE'};
+             if pos('BINTABLE',get_string)>0 then extend:=2 { 'BINTABLE' or 'TABLE'}
+             else
+             if pos('TABLE ',get_string)>0 then extend:=1 {ascii_table identifier}
+             else
+             extend:=0; {second (thumbnail) image}
            end;
            if naxis<2 then
            begin
@@ -2174,11 +2178,11 @@ begin
   #13+#10+
   #13+#10+about_message4+about_message5+
   #13+#10+
-  #13+#10+'Send an e-mail if you like this free program. Feel free to distribute !'+
+  #13+#10+'Send an e-mail if you like this free program. Feel free to distribute!'+
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.393 dated 2020-07-23';
+  #13+#10+'Version ß0.9.394a dated 2020-07-25';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6240,9 +6244,7 @@ begin
     dum:=initstring.Values['mark_outliers_upto']; if dum<>'' then stackmenu1.mark_outliers_upto1.text:=dum;
 
 
-    dum:=initstring.Values['background_sigma_R']; if dum<>'' then stackmenu1.sigma_factor_remove_background_colourR1.text:=dum;
-    dum:=initstring.Values['background_sigma_G']; if dum<>'' then stackmenu1.sigma_factor_remove_background_colourG1.text:=dum;
-    dum:=initstring.Values['background_sigma_B']; if dum<>'' then stackmenu1.sigma_factor_remove_background_colourB1.text:=dum;
+    dum:=initstring.Values['sigma_decolour']; if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
 
     dum:=initstring.Values['sd_factor_list']; if dum<>'' then stackmenu1.sd_factor_list1.text:=dum;
 
@@ -6556,9 +6558,7 @@ begin
   initstring.Values['mark_outliers_upto']:=stackmenu1.mark_outliers_upto1.text;
 
 
-  initstring.Values['background_sigma_R']:=stackmenu1.sigma_factor_remove_background_colourR1.text;
-  initstring.Values['background_sigma_G']:=stackmenu1.sigma_factor_remove_background_colourG1.text;
-  initstring.Values['background_sigma_B']:=stackmenu1.sigma_factor_remove_background_colourB1.text;
+  initstring.Values['sigma_decolour']:=stackmenu1.sigma_decolour1.text;
 
   initstring.Values['sd_factor_list']:=stackmenu1.sd_factor_list1.text;
   initstring.Values['noisefilter_blur']:=stackmenu1.noisefilter_blur1.text;
@@ -7726,7 +7726,7 @@ var
    Save_Cursor:TCursor;
 begin
   if fits_file=false then exit;
-  if  ((abs(oldx-startX)>100)and (abs(oldy-starty)>100)) then
+  if  ((abs(oldx-startX)>100) OR (abs(oldy-starty)>100)) then {or function since it could be parallel to x or y axis}
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -8300,9 +8300,10 @@ end;
 
 procedure plot_annotations(xoffset,yoffset:integer;fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
 var
-  count1,x1,y1,x2,y2,text_height,text_width,size,xcenter,ycenter : integer;
+  count1,x1,y1,x2,y2,text_height,text_width,size,xcenter,ycenter,dum : integer;
   typ     : double;
   List: TStrings;
+  magn : string;
 begin
   List := TStringList.Create;
   list.StrictDelimiter:=true;
@@ -8325,7 +8326,7 @@ begin
       if copy(mainwindow.Memo1.Lines[count1],1,8)='ANNOTATE' then {found}
       begin
         List.Clear;
-        ExtractStrings([';'], [], PChar(copy(mainwindow.Memo1.Lines[count1],12,80-12)),List);
+        ExtractStrings([';'], [], PChar(copy(mainwindow.Memo1.Lines[count1],12,posex(#39,mainwindow.Memo1.Lines[count1],20)-12)),List);
 
         if list.count>=6  then {correct annotation}
         begin
@@ -8375,7 +8376,8 @@ begin
           if x2>=x1 then text_width:=0;
           if y2>=y1 then text_height:=text_height div 3;
 
-          mainwindow.image1.Canvas.textout( -text_width+x2, -text_height + y2,list[5]+list[6]{magnitude});
+          if list.count>6  then  magn:=list[6] else magn:='';
+          mainwindow.image1.Canvas.textout( -text_width+x2, -text_height + y2,list[5]{name}+magn{magnitude});
 
           if fill_combo then {add asteroid annotations to combobox for ephemeris alignment}
             stackmenu1.ephemeris_centering1.Additem(list[5],nil);
