@@ -44,7 +44,7 @@ var
 begin
   result:=false;
 
-  value:=InputBox('Video frame rate in [frames/second]:','','1' );
+  value:=InputBox('Video frame rate in [frames/second]:','','3' );
   if value=''  then exit;
 
   try

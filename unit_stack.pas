@@ -2969,6 +2969,7 @@ begin
     if TL.Items[index].Selected then
     begin
       filename2:=TL.items[index].caption;
+      if ExtractFileExt(filename2)='.y4m' then begin memo2_message('Can not run videos'); exit; end;{video}
       if load_image(mainwindow.image1.visible=false,true {plot}) {for the first image set the width and length of image1 correct} then
       begin
         if ((tl=stackmenu1.listview1) and (stackmenu1.use_manual_alignment1.checked)) then {manual alignment}
@@ -8278,7 +8279,10 @@ begin
     write_YUV4MPEG2_header(mainwindow.savedialog1.filename, ((naxis3>1) or (mainwindow.preview_demosaic1.checked)) );
     stackmenu1.blink_button1Click(Sender);{blink and write video frames}
     close_YUV4MPEG2;
-    memo2_message('Ready!. The video written as '+mainwindow.savedialog1.filename);
+    memo2_message('Ready!. See tab results. The video written as '+mainwindow.savedialog1.filename);
+
+    filename2:=mainwindow.savedialog1.filename;
+    report_results('Video file','',0,15 {video icon});{report result in tab results}
   end;
 end;
 

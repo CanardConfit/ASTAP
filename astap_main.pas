@@ -2178,7 +2178,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.395 dated 2020-07-29';
+  #13+#10+'Version ß0.9.395a dated 2020-07-29';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
