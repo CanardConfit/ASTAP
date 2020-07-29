@@ -394,7 +394,6 @@ type
     procedure maximum1Change(Sender: TObject);
     procedure minimum1Change(Sender: TObject);
     procedure CCDinspector1Click(Sender: TObject);
-
   private
     { Private declarations }
   public
@@ -539,7 +538,7 @@ procedure backup_img;
 procedure restore_img;
 function load_image(re_center, plot:boolean) : boolean; {load fits or PNG, BMP, TIF}
 
-procedure demosaic_bayer; {convert OSC image to colour}
+procedure demosaic_bayer(var img: image_array); {convert OSC image to colour}
 
 Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel float}
 function save_fits(img: image_array;filen2:ansistring;type1:integer;override1:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
@@ -586,7 +585,6 @@ function convert_raw_to_fits(filename7 : string) :boolean;{convert raw file to F
 function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
-procedure demosaic_astrosimple(pattern: integer);{make from sensor bayer pattern three colors without interpolation}
 function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 function extract_exposure_from_filename(filename8: string):integer; {try to extract exposure from filename}
 function extract_temperature_from_filename(filename8: string): integer; {try to extract temperature from filename}
@@ -608,6 +606,7 @@ function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
 procedure listview_add_xy(fitsX,fitsY: double);{add x,y position to listview}
 Function LeadingZero(w : integer) : String;
 procedure log_to_file(logf,mess : string);{for testing}
+procedure demosaic_advanced(var img : image_array);{demosaic img_loaded}
 
 const   bufwide=1024*120;{buffer size in bytes}
 
@@ -1295,13 +1294,6 @@ begin
      if extend=0 then exit;
   end;
 
-//  if ((naxis<2) and (extend=0)) then {no image or extension table, wcs file }
-//  begin
-//     close_fits_file;
-//     result:=true;
-//     exit;
-//  end;{only read header for analyse or WCS file}
-
   {############################## read image}
   if naxis>=2 then {image in FITS}
   begin {image}
@@ -1467,7 +1459,11 @@ begin
              else
              if pos('TABLE ',get_string)>0 then extend:=1 {ascii_table identifier}
              else
-             extend:=0; {second (thumbnail) image}
+             begin
+               extend:=0; {second (thumbnail) image}
+               mainwindow.Memo3.lines.text:='File contains a second image. Will not be processed or preserved.';
+               mainwindow.pagecontrol1.showtabs:=true;{show tabs}
+             end;
            end;
            if naxis<2 then
            begin
@@ -2182,7 +2178,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.394a dated 2020-07-25';
+  #13+#10+'Version ß0.9.395 dated 2020-07-29';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3905,7 +3901,7 @@ begin
   intensityRGB[2]:=getBvalue(x);
 end;
 
-procedure demosaic_bilinear_interpolation(pattern: integer);{make from sensor bayer pattern the three colors}
+procedure demosaic_bilinear_interpolation(var img:image_array;pattern: integer);{make from sensor bayer pattern the three colors}
 var
     X,Y,offsetx, offsety: integer;
     red,green_odd,green_even,blue : boolean;
@@ -3933,29 +3929,25 @@ begin
       red :=( (odd(x+offsetX)) and (odd(y+1+offsetY)) );
       blue:=( (odd(x+1+offsetX)) and (odd(y+offsetY)) );
 
- //     if ((x=3963) and (y=692)) then
- //     beep;
-
-
       if green_odd then begin
-                   img_temp2[0,x,y]:=     (img_loaded[0,x  ,y-1] + img_loaded[0,x  ,y+1])/2; {red neighbor pixels };
-                   img_temp2[1,x,y]:=     (img_loaded[0,x,  y  ] );
-                   img_temp2[2,x,y]:=     (img_loaded[0,x-1,y  ] + img_loaded[0,x+1,y  ])/2; {blue neighbor pixels }end
+                   img_temp2[0,x,y]:=     (img[0,x  ,y-1] + img[0,x  ,y+1])/2; {red neighbor pixels };
+                   img_temp2[1,x,y]:=     (img[0,x,  y  ] );
+                   img_temp2[2,x,y]:=     (img[0,x-1,y  ] + img[0,x+1,y  ])/2; {blue neighbor pixels }end
       else
       if green_even then begin
-                   img_temp2[0,x,y]:=     (img_loaded[0,x-1,y  ] + img_loaded[0,x+1,y  ])/2; {red neighbor pixels };
-                   img_temp2[1,x,y]:=     (img_loaded[0,x,  y  ] );
-                   img_temp2[2,x,y]:=     (img_loaded[0,x  ,y-1] + img_loaded[0,x  ,y+1])/2; {blue neighbor pixels }end
+                   img_temp2[0,x,y]:=     (img[0,x-1,y  ] + img[0,x+1,y  ])/2; {red neighbor pixels };
+                   img_temp2[1,x,y]:=     (img[0,x,  y  ] );
+                   img_temp2[2,x,y]:=     (img[0,x  ,y-1] + img[0,x  ,y+1])/2; {blue neighbor pixels }end
       else
       if red then begin
-                   img_temp2[0,x,y]:=     (img_loaded[0,x,  y  ]);
-                   img_temp2[1,x,y]:=     (img_loaded[0,x-1,y  ] + img_loaded[0,x+1,y  ] + img_loaded[0,x  ,y-1]+ img_loaded[0,x  ,y+1])/4;{green neighbours}
-                   img_temp2[2,x,y]:=     (img_loaded[0,x-1,y-1] + img_loaded[0,x-1,y+1] + img_loaded[0,x+1,y-1]+ img_loaded[0,x+1,y+1])/4 ; end {blue neighbor pixels }
+                   img_temp2[0,x,y]:=     (img[0,x,  y  ]);
+                   img_temp2[1,x,y]:=     (img[0,x-1,y  ] + img[0,x+1,y  ] + img[0,x  ,y-1]+ img[0,x  ,y+1])/4;{green neighbours}
+                   img_temp2[2,x,y]:=     (img[0,x-1,y-1] + img[0,x-1,y+1] + img[0,x+1,y-1]+ img[0,x+1,y+1])/4 ; end {blue neighbor pixels }
       else
       if blue then begin
-                   img_temp2[0,x,y]:=     (img_loaded[0,x-1,y-1] + img_loaded[0,x-1,y+1]+ img_loaded[0,x+1,y-1]+ img_loaded[0,x+1,y+1])/4;
-                   img_temp2[1,x,y]:=     (img_loaded[0,x-1,y  ] + img_loaded[0,x+1,y  ]+ img_loaded[0,x  ,y-1]+ img_loaded[0,x,  y+1])/4;
-                   img_temp2[2,x,y]:=     (img_loaded[0,x,  y  ]  ); end;
+                   img_temp2[0,x,y]:=     (img[0,x-1,y-1] + img[0,x-1,y+1]+ img[0,x+1,y-1]+ img[0,x+1,y+1])/4;
+                   img_temp2[1,x,y]:=     (img[0,x-1,y  ] + img[0,x+1,y  ]+ img[0,x  ,y-1]+ img[0,x,  y+1])/4;
+                   img_temp2[2,x,y]:=     (img[0,x,  y  ]  ); end;
       except
       end;
 
@@ -3964,13 +3956,13 @@ begin
   end;{y loop}
 
 
-  img_loaded:=img_temp2;
+  img:=img_temp2;
   img_temp2:=nil;{free temp memory}
   naxis3:=3;{now three colors}
   naxis:=3; {from 2 to 3 dimensions}
 end;
 
-procedure demosaic_x_trans;{make from Fuji X-trans three colors}
+procedure demosaic_x_trans(var img:image_array);{make from Fuji X-trans three colors}
 var
     X,Y,x2,y2,xpos,ypos,xpos6,ypos6: integer;
     red,blue  : single;
@@ -3997,46 +3989,46 @@ begin
       {use only one neighbour pixel with preference go right, go below, go left. Use only on neighbour pixel for maximum sharpness }
 
       if ((xpos=1) and (ypos=1)) then {green}begin
-                   red             :=   img_loaded[0,x  ,y+1]; {near red pixel};
-                   img_temp2[1,x,y]:=   img_loaded[0,x,  y  ] ;
-                   blue            :=   img_loaded[0,x+1,y  ]; {near blue pixel} end else
+                   red             :=   img[0,x  ,y+1]; {near red pixel};
+                   img_temp2[1,x,y]:=   img[0,x,  y  ] ;
+                   blue            :=   img[0,x+1,y  ]; {near blue pixel} end else
       if ((xpos=3) and (ypos=1)) then {green}begin
-                   red             :=   img_loaded[0,x  ,y+1]; {near red pixel};
-                   img_temp2[1,x,y]:=   img_loaded[0,x,  y  ] ;
-                   blue            :=   img_loaded[0,x-1,y  ]; {near blue pixel} end else
+                   red             :=   img[0,x  ,y+1]; {near red pixel};
+                   img_temp2[1,x,y]:=   img[0,x,  y  ] ;
+                   blue            :=   img[0,x-1,y  ]; {near blue pixel} end else
       if ((xpos=2) and (ypos=2)) then {green}begin
-                   red             :=   img_loaded[0,x+1,y  ]; {near red pixel};
-                   img_temp2[1,x,y]:=   img_loaded[0,x,  y  ] ;
-                   blue:=   img_loaded[0,x  ,y+1]; {near blue pixel} end else
+                   red             :=   img[0,x+1,y  ]; {near red pixel};
+                   img_temp2[1,x,y]:=   img[0,x,  y  ] ;
+                   blue:=   img[0,x  ,y+1]; {near blue pixel} end else
       if ((xpos=1) and (ypos=3)) then {green}begin
-                   red             :=   img_loaded[0,x  ,y-1]; {near red pixel};
-                   img_temp2[1,x,y]:=   img_loaded[0,x,  y  ] ;
-                   blue:=   img_loaded[0,x+1,y  ]; {near blue pixel} end else
+                   red             :=   img[0,x  ,y-1]; {near red pixel};
+                   img_temp2[1,x,y]:=   img[0,x,  y  ] ;
+                   blue:=   img[0,x+1,y  ]; {near blue pixel} end else
       if ((xpos=3) and (ypos=3)) then {green}begin
-                   red             :=   img_loaded[0,x  ,y-1]; {near red pixel};
-                   img_temp2[1,x,y]:=   img_loaded[0,x,  y  ] ;
-                   blue            :=   img_loaded[0,x-1,y  ]; {near blue pixel} end else
+                   red             :=   img[0,x  ,y-1]; {near red pixel};
+                   img_temp2[1,x,y]:=   img[0,x,  y  ] ;
+                   blue            :=   img[0,x-1,y  ]; {near blue pixel} end else
 
 
       if ((xpos=2) and (ypos=1)) then {blue}begin
-                   red             :=   img_loaded[0,x,y-1] ; {near red pixel};
-                   img_temp2[1,x,y]:=   img_loaded[0,x+1 ,y  ]; {near green pixel};
-                   blue            :=   img_loaded[0,x ,y  ]; end else
+                   red             :=   img[0,x,y-1] ; {near red pixel};
+                   img_temp2[1,x,y]:=   img[0,x+1 ,y  ]; {near green pixel};
+                   blue            :=   img[0,x ,y  ]; end else
       if ((xpos=2) and (ypos=3)) then {blue}begin
-                   red             :=   img_loaded[0,x ,y+1]; {near red pixel};
-                   img_temp2[1,x,y]:=   img_loaded[0,x+1 ,y  ]; {near green pixel};
-                   blue            :=   img_loaded[0,x ,y  ]; end else
+                   red             :=   img[0,x ,y+1]; {near red pixel};
+                   img_temp2[1,x,y]:=   img[0,x+1 ,y  ]; {near green pixel};
+                   blue            :=   img[0,x ,y  ]; end else
 
 
       if ((xpos=1) and (ypos=2)) then {red}begin
-                   red             :=   img_loaded[0,x  ,y  ];
-                   img_temp2[1,x,y]:=   img_loaded[0,x+1 ,y ];   {near green pixel(s)};
-                   blue            :=   img_loaded[0,x-1,y ]; {near blue pixel(s)} end else
+                   red             :=   img[0,x  ,y  ];
+                   img_temp2[1,x,y]:=   img[0,x+1 ,y ];   {near green pixel(s)};
+                   blue            :=   img[0,x-1,y ]; {near blue pixel(s)} end else
 
       if ((xpos=3) and (ypos=2)) then {red}begin
-                   red             :=   img_loaded[0,x  ,y  ];
-                   img_temp2[1,x,y]:=   img_loaded[0,x  ,y+1];   {near green pixel(s)};
-                   blue            :=   img_loaded[0,x+1,y  ]; {near blue pixel(s)} end;
+                   red             :=   img[0,x  ,y  ];
+                   img_temp2[1,x,y]:=   img[0,x  ,y+1];   {near green pixel(s)};
+                   blue            :=   img[0,x+1,y  ]; {near blue pixel(s)} end;
 
       {fix red and green swap}
       if ((xpos6<=3) and (ypos6<=3)) then begin img_temp2[0,x,y]:=red;  img_temp2[2,x,y]:=blue;end else
@@ -4050,13 +4042,13 @@ begin
     end;{x loop}
   end;{y loop}
 
-  img_loaded:=img_temp2;
+  img:=img_temp2;
   img_temp2:=nil;{free temp memory}
   naxis3:=3;{now three colors}
   naxis:=3; {from 2 to 3 dimensions}
 end;
 
-procedure demosaic_astrosimple(pattern: integer);{Spread each colour pixel to 2x2. Works well for astro oversampled images. Idea by Han.k}
+procedure demosaic_astrosimple(var img:image_array;pattern: integer);{Spread each colour pixel to 2x2. Works well for astro oversampled images. Idea by Han.k}
 var
     X,Y,offsetx, offsety: integer;
     red,green_odd,green_even,blue : boolean;
@@ -4088,7 +4080,7 @@ begin
       red :=( (odd(x+offsetX)) and (odd(y+1+offsetY)) );
       blue:=( (odd(x+1+offsetX)) and (odd(y+offsetY)) );
 
-      value:=img_loaded[0,x,  y  ];
+      value:=img[0,x,  y  ];
 
       if ((green_odd) or (green_even)) then
       begin
@@ -4119,14 +4111,14 @@ begin
 
     end;{x loop}
   end;{y loop}
-  img_loaded:=img_temp2;
+  img:=img_temp2;
   img_temp2:=nil;{free temp memory}
   naxis3:=3;{now three colors}
   naxis:=3; {from 2 to 3 dimensions}
 end;
 
 
-procedure demosaic_astroM_bilinear_interpolation(pattern: integer);{make from sensor bayer pattern the three colors}
+procedure demosaic_astroM_bilinear_interpolation(var img:image_array;pattern: integer);{make from sensor bayer pattern the three colors}
 var
     X,Y,offsetx, offsety, count: integer;
     red,green_odd,green_even,blue : boolean;
@@ -4149,10 +4141,10 @@ begin
   for y:= 10 to (height2-10) div 100  do
   for x:=10 to (width2-10) div 100 do
   begin
-    bg:=bg+img_loaded[0,x  ,y  ]+
-    img_loaded[0,x+1,y  ]+
-    img_loaded[0,x  ,y+1]+
-    img_loaded[0,x+1,y+1];
+    bg:=bg+img[0,x  ,y  ]+
+    img[0,x+1,y  ]+
+    img[0,x  ,y+1]+
+    img[0,x+1,y+1];
     inc(count,4)
   end;
   bg:=bg/count;{average background value}
@@ -4173,14 +4165,14 @@ begin
 
       if green_odd then
                  begin
-                   a1:=img_loaded[0,x  ,y-1];
-                   a2:=img_loaded[0,x  ,y+1];
+                   a1:=img[0,x  ,y-1];
+                   a2:=img[0,x  ,y+1];
                    average1:=(a1+a2)/2;{red neighbor pixels };
 
-                   average2:=(img_loaded[0,x,  y  ] );
+                   average2:=(img[0,x,  y  ] );
 
-                   a3:=img_loaded[0,x-1,y  ];
-                   a4:=img_loaded[0,x+1,y  ];
+                   a3:=img[0,x-1,y  ];
+                   a4:=img[0,x+1,y  ];
                    average3:=(a3+a4)/2; {blue neighbor pixels }
 
                    if ((a1>average1+signal) or (a2>average1+signal) or (a3>average2+signal) or (a4>average2+signal)) {severe slope} then
@@ -4201,14 +4193,14 @@ begin
       else
       if green_even then
                     begin
-                      a1:=img_loaded[0,x-1,y  ];
-                      a2:=img_loaded[0,x+1,y  ];
+                      a1:=img[0,x-1,y  ];
+                      a2:=img[0,x+1,y  ];
                       average1:=(a1+a2)/2;{red neighbor pixels };
 
-                      average2:=     (img_loaded[0,x,  y  ] );
+                      average2:=     (img[0,x,  y  ] );
 
-                      a3:=img_loaded[0,x  ,y-1];
-                      a4:=img_loaded[0,x  ,y+1];
+                      a3:=img[0,x  ,y-1];
+                      a4:=img[0,x  ,y+1];
                       average3:=(a3+a4)/2; {blue neighbor pixels };
 
                       if ((a1>average1+signal) or (a2>average1+signal) or (a3>average2+signal) or (a4>average2+signal)) {severe slope} then
@@ -4228,19 +4220,19 @@ begin
                    end
       else
       if red then begin
-                   average1:=(img_loaded[0,x,  y  ]);
+                   average1:=(img[0,x,  y  ]);
 
-                   a1:= img_loaded[0,x-1,y  ];
-                   a2:= img_loaded[0,x+1,y  ];
-                   a3:= img_loaded[0,x  ,y-1];
-                   a4:= img_loaded[0,x  ,y+1];{green neighbours}
+                   a1:= img[0,x-1,y  ];
+                   a2:= img[0,x+1,y  ];
+                   a3:= img[0,x  ,y-1];
+                   a4:= img[0,x  ,y+1];{green neighbours}
                    average2:=(a1+a2+a3+a4)/4;
 
 
-                   a5:= img_loaded[0,x-1,y-1];
-                   a6:= img_loaded[0,x-1,y+1];
-                   a7:= img_loaded[0,x+1,y-1];
-                   a8:= img_loaded[0,x+1,y+1];{blue neighbours}
+                   a5:= img[0,x-1,y-1];
+                   a6:= img[0,x-1,y+1];
+                   a7:= img[0,x+1,y-1];
+                   a8:= img[0,x+1,y+1];{blue neighbours}
                    average3:=(a5+a6+a7+a8)/4;
 
                    if ((a1>average2+signal2) or (a2>average2+signal2) or (a3>average2+signal2) or (a4>average2+signal2) or
@@ -4263,21 +4255,21 @@ begin
       else
       if blue then
                  begin
-                   average1:=(img_loaded[0,x,  y  ]);
+                   average1:=(img[0,x,  y  ]);
 
-                   a1:= img_loaded[0,x-1,y-1];
-                   a2:= img_loaded[0,x-1,y+1];
-                   a3:= img_loaded[0,x+1,y-1];
-                   a4:= img_loaded[0,x+1,y+1];{red neighbours}
+                   a1:= img[0,x-1,y-1];
+                   a2:= img[0,x-1,y+1];
+                   a3:= img[0,x+1,y-1];
+                   a4:= img[0,x+1,y+1];{red neighbours}
                    average1:=(a1+a2+a3+a4)/4;
 
-                   a5:= img_loaded[0,x-1,y  ];
-                   a6:= img_loaded[0,x+1,y  ];
-                   a7:= img_loaded[0,x  ,y-1];
-                   a8:= img_loaded[0,x  ,y+1];{green neighbours}
+                   a5:= img[0,x-1,y  ];
+                   a6:= img[0,x+1,y  ];
+                   a7:= img[0,x  ,y-1];
+                   a8:= img[0,x  ,y+1];{green neighbours}
                    average2:=(a5+a6+a7+a8)/4;
 
-                   average3:=img_loaded[0,x,  y  ];
+                   average3:=img[0,x,  y  ];
 
                    if ((a1>average1+signal2) or (a2>average1+signal2) or (a3>average1+signal2) or (a4>average1+signal2) or
                        (a5>average2+signal2) or (a6>average2+signal2) or (a7>average2+signal2) or (a8>average2+signal2) ) then {severe slope}
@@ -4306,13 +4298,13 @@ begin
   end;{y loop}
 
 
-  img_loaded:=img_temp2;
+  img:=img_temp2;
   img_temp2:=nil;{free temp memory}
   naxis3:=3;{now three colors}
   naxis:=3; {from 2 to 3 dimensions}
 end;
 
-procedure demosaic_astroC_bilinear_interpolation(saturation {saturation point}, pattern: integer);{make from sensor bayer pattern the three colors}
+procedure demosaic_astroC_bilinear_interpolation(var img:image_array;saturation {saturation point}, pattern: integer);{make from sensor bayer pattern the three colors}
 var
     X,Y,offsetx, offsety, counter,fitsX,fitsY,x2,y2: integer;
     red,green_odd,green_even,blue : boolean;
@@ -4346,14 +4338,14 @@ begin
       blue:=( (odd(x+1+offsetX)) and (odd(y+offsetY)) );
       if green_odd then
                  begin
-                   a1:=img_loaded[0,x  ,y-1];
-                   a2:=img_loaded[0,x  ,y+1];
+                   a1:=img[0,x  ,y-1];
+                   a2:=img[0,x  ,y+1];
                    average1:=(a1+a2)/2;{red neighbor pixels };
 
-                   average2:=(img_loaded[0,x,  y  ] );
+                   average2:=(img[0,x,  y  ] );
 
-                   a3:=img_loaded[0,x-1,y  ];
-                   a4:=img_loaded[0,x+1,y  ];
+                   a3:=img[0,x-1,y  ];
+                   a4:=img[0,x+1,y  ];
                    average3:=(a3+a4)/2; {blue neighbor pixels }
 
                    if ((a1>saturation) or (a2>saturation) or (a3>saturation) or (a4>saturation)) {saturation} then
@@ -4371,14 +4363,14 @@ begin
       else
       if green_even then
                     begin
-                      a1:=img_loaded[0,x-1,y  ];
-                      a2:=img_loaded[0,x+1,y  ];
+                      a1:=img[0,x-1,y  ];
+                      a2:=img[0,x+1,y  ];
                       average1:=(a1+a2)/2;{red neighbor pixels };
 
-                      average2:=     (img_loaded[0,x,  y  ] );
+                      average2:=     (img[0,x,  y  ] );
 
-                      a3:=img_loaded[0,x  ,y-1];
-                      a4:=img_loaded[0,x  ,y+1];
+                      a3:=img[0,x  ,y-1];
+                      a4:=img[0,x  ,y+1];
                       average3:=(a3+a4)/2; {blue neighbor pixels };
 
                      if ((a1>saturation) or (a2>saturation) or (a3>saturation) or (a4>saturation)) {saturation} then
@@ -4396,19 +4388,19 @@ begin
                    end
       else
       if red then begin
-                   average1:=(img_loaded[0,x,  y  ]);
+                   average1:=(img[0,x,  y  ]);
 
-                   a1:= img_loaded[0,x-1,y  ];
-                   a2:= img_loaded[0,x+1,y  ];
-                   a3:= img_loaded[0,x  ,y-1];
-                   a4:= img_loaded[0,x  ,y+1];{green neighbours}
+                   a1:= img[0,x-1,y  ];
+                   a2:= img[0,x+1,y  ];
+                   a3:= img[0,x  ,y-1];
+                   a4:= img[0,x  ,y+1];{green neighbours}
                    average2:=(a1+a2+a3+a4)/4;
 
 
-                   a5:= img_loaded[0,x-1,y-1];
-                   a6:= img_loaded[0,x-1,y+1];
-                   a7:= img_loaded[0,x+1,y-1];
-                   a8:= img_loaded[0,x+1,y+1];{blue neighbours}
+                   a5:= img[0,x-1,y-1];
+                   a6:= img[0,x-1,y+1];
+                   a7:= img[0,x+1,y-1];
+                   a8:= img[0,x+1,y+1];{blue neighbours}
                    average3:=(a5+a6+a7+a8)/4;
 
                    if ((a1>saturation) or (a2>saturation) or (a3>saturation) or (a4>saturation) or
@@ -4434,21 +4426,21 @@ begin
       else
       if blue then
                  begin
-                   average1:=(img_loaded[0,x,  y  ]);
+                   average1:=(img[0,x,  y  ]);
 
-                   a1:= img_loaded[0,x-1,y-1];
-                   a2:= img_loaded[0,x-1,y+1];
-                   a3:= img_loaded[0,x+1,y-1];
-                   a4:= img_loaded[0,x+1,y+1];{red neighbours}
+                   a1:= img[0,x-1,y-1];
+                   a2:= img[0,x-1,y+1];
+                   a3:= img[0,x+1,y-1];
+                   a4:= img[0,x+1,y+1];{red neighbours}
                    average1:=(a1+a2+a3+a4)/4;
 
-                   a5:= img_loaded[0,x-1,y  ];
-                   a6:= img_loaded[0,x+1,y  ];
-                   a7:= img_loaded[0,x  ,y-1];
-                   a8:= img_loaded[0,x  ,y+1];{green neighbours}
+                   a5:= img[0,x-1,y  ];
+                   a6:= img[0,x+1,y  ];
+                   a7:= img[0,x  ,y-1];
+                   a8:= img[0,x  ,y+1];{green neighbours}
                    average2:=(a5+a6+a7+a8)/4;
 
-                   average3:=img_loaded[0,x,  y  ];
+                   average3:=img[0,x,  y  ];
 
                    if ((a1>saturation) or (a2>saturation) or (a3>saturation) or (a4>saturation) or
                        (a5>saturation) or (a6>saturation) or (a7>saturation) or (a8>saturation) ) then {saturation}
@@ -4471,7 +4463,7 @@ begin
     end;{x loop}
   end;{y loop}
 
-  img_loaded:=img_temp2;
+  img:=img_temp2;
 
   if counter>0 then {not fully saturated image}
   begin
@@ -4525,14 +4517,14 @@ begin
         if colred>colblue then lowest:=colblue else lowest:=colred;
         if colgreen<lowest {purple} then colgreen:=lowest; {prevent purple stars, purple stars are physical not possible}
         rgb:=(colred+colgreen+colblue+0.00001)/3; {0.00001, prevent dividing by zero}
-        img_loaded[0,fitsX  ,  fitsY  ]:=bg+ luminance*colred/rgb;
-        img_loaded[1,fitsX  ,  fitsY  ]:=bg+ luminance*colgreen/rgb;
-        img_loaded[2,fitsX  ,  fitsY  ]:=bg+ luminance*colblue/rgb;
+        img[0,fitsX  ,  fitsY  ]:=bg+ luminance*colred/rgb;
+        img[1,fitsX  ,  fitsY  ]:=bg+ luminance*colgreen/rgb;
+        img[2,fitsX  ,  fitsY  ]:=bg+ luminance*colblue/rgb;
       end
       else
       begin
-       img_loaded[1,fitsX  ,  fitsY  ]:=img_temp2[0,fitsX  ,  fitsY  ];
-       img_loaded[2,fitsX  ,  fitsY  ]:=img_temp2[0,fitsX  ,  fitsY  ];
+       img[1,fitsX  ,  fitsY  ]:=img_temp2[0,fitsX  ,  fitsY  ];
+       img[2,fitsX  ,  fitsY  ]:=img_temp2[0,fitsX  ,  fitsY  ];
 
       end;
     end;
@@ -4542,9 +4534,9 @@ begin
     for fitsY:=0 to height2-1 do
     for fitsX:=0 to width2-1 do
     begin
-      img_loaded[0,fitsX  ,  fitsY  ]:=saturation;
-      img_loaded[1,fitsX  ,  fitsY  ]:=saturation;
-      img_loaded[2,fitsX  ,  fitsY  ]:=saturation;
+      img[0,fitsX  ,  fitsY  ]:=saturation;
+      img[1,fitsX  ,  fitsY  ]:=saturation;
+      img[2,fitsX  ,  fitsY  ]:=saturation;
     end;
   end;
 
@@ -4556,7 +4548,7 @@ end;
 
 
 
-procedure demosaic_Malvar_He_Cutler(pattern: integer);{make from sensor bayer pattern the three colors. Nor very suitable for astro images}
+procedure demosaic_Malvar_He_Cutler(var img:image_array;pattern: integer);{make from sensor bayer pattern the three colors. Nor very suitable for astro images}
 {Based on paper HIGH-QUALITY LINEAR INTERPOLATION FOR DEMOSAICING OF BAYER-PATTERNED COLOR IMAGES
                 Henrique S. Malvar, Li-wei He, and Ross Cutler, Microsoft Research}
 var
@@ -4582,55 +4574,55 @@ begin
       red :=( (odd(x+offsetX)) and (odd(y+1+offsetY)) );
       blue:=( (odd(x+1+offsetX)) and (odd(y+offsetY)) );
       if green_odd then begin {red up and down, blue left and right }
-                   img_temp2[0,x,y]:=(  5*img_loaded[0,x,y]
-                                      + 4*img_loaded[0,x,y+1] + 4*img_loaded[0,x,y-1]
-                                      -img_loaded[0,x-1,y-1] -img_loaded[0,x+1,y-1] -img_loaded[0,x-1,y+1] -img_loaded[0,x+1,y+1]
-                                      -img_loaded[0,x,y-2  ] -img_loaded[0,x,y+2  ]
-                                      +0.5*img_loaded[0,x-2 ,y]   +0.5*img_loaded[0,x+2,y])/8;
-                   img_temp2[1,x,y]:= (img_loaded[0,x,  y  ] );
-                   img_temp2[2,x,y]:=(  5*img_loaded[0,x,y]
-                                      + 4*img_loaded[0,x-1,y]     +4*img_loaded[0,x+1,y]
-                                         -img_loaded[0,x-1,y-1]     -img_loaded[0,x+1,y-1] -img_loaded[0,x-1,y+1] -img_loaded[0,x+1,y+1]
-                                         -img_loaded[0,x-2,y  ]     -img_loaded[0,x+2,y  ]
-                                     +0.5*img_loaded[0,x  ,y-2] +0.5*img_loaded[0,x  ,y+2])/8;end
+                   img_temp2[0,x,y]:=(  5*img[0,x,y]
+                                      + 4*img[0,x,y+1] + 4*img[0,x,y-1]
+                                      -img[0,x-1,y-1] -img[0,x+1,y-1] -img[0,x-1,y+1] -img[0,x+1,y+1]
+                                      -img[0,x,y-2  ] -img[0,x,y+2  ]
+                                      +0.5*img[0,x-2 ,y]   +0.5*img[0,x+2,y])/8;
+                   img_temp2[1,x,y]:= (img[0,x,  y  ] );
+                   img_temp2[2,x,y]:=(  5*img[0,x,y]
+                                      + 4*img[0,x-1,y]     +4*img[0,x+1,y]
+                                         -img[0,x-1,y-1]     -img[0,x+1,y-1] -img[0,x-1,y+1] -img[0,x+1,y+1]
+                                         -img[0,x-2,y  ]     -img[0,x+2,y  ]
+                                     +0.5*img[0,x  ,y-2] +0.5*img[0,x  ,y+2])/8;end
       else
       if green_even then begin {red left and right, blue up and down }
-                   img_temp2[0,x,y]:=(  5*img_loaded[0,x,y]
-                                      + 4*img_loaded[0,x-1,y]    + 4*img_loaded[0,x+1,y]
-                                         -img_loaded[0,x-1,y-1]     -img_loaded[0,x+1,y-1] -img_loaded[0,x-1,y+1] -img_loaded[0,x+1,y+1]
-                                         -img_loaded[0,x-2,y  ]     -img_loaded[0,x+2,y  ]
-                                     +0.5*img_loaded[0,x  ,y-2] +0.5*img_loaded[0,x  ,y+2])/8;
-                   img_temp2[1,x,y]:= (img_loaded[0,x,  y  ] );
-                   img_temp2[2,x,y]:=(5*img_loaded[0,x,y]
-                                      + 4*img_loaded[0,x  ,y-1] +4*img_loaded[0,x  ,y+1]
-                                         -img_loaded[0,x-1,y-1]   -img_loaded[0,x+1,y-1] -img_loaded[0,x-1,y+1] -img_loaded[0,x+1,y+1]
-                                         -img_loaded[0,x  ,y-2]   -img_loaded[0,x  ,y+2]
-                                     +0.5*img_loaded[0,x-2,y] +0.5*img_loaded[0,x+2,y])/8;end
+                   img_temp2[0,x,y]:=(  5*img[0,x,y]
+                                      + 4*img[0,x-1,y]    + 4*img[0,x+1,y]
+                                         -img[0,x-1,y-1]     -img[0,x+1,y-1] -img[0,x-1,y+1] -img[0,x+1,y+1]
+                                         -img[0,x-2,y  ]     -img[0,x+2,y  ]
+                                     +0.5*img[0,x  ,y-2] +0.5*img[0,x  ,y+2])/8;
+                   img_temp2[1,x,y]:= (img[0,x,  y  ] );
+                   img_temp2[2,x,y]:=(5*img[0,x,y]
+                                      + 4*img[0,x  ,y-1] +4*img[0,x  ,y+1]
+                                         -img[0,x-1,y-1]   -img[0,x+1,y-1] -img[0,x-1,y+1] -img[0,x+1,y+1]
+                                         -img[0,x  ,y-2]   -img[0,x  ,y+2]
+                                     +0.5*img[0,x-2,y] +0.5*img[0,x+2,y])/8;end
       else
       if red then begin
-                   img_temp2[0,x,y]:=  (img_loaded[0,x,  y  ]);
-                   img_temp2[1,x,y]:=(4*img_loaded[0,x,y]
-                                     +2*img_loaded[0,x-1,y  ]+2*img_loaded[0,x+1,y  ]+2*img_loaded[0,x  ,y-1]+2*img_loaded[0,x  ,y+1]
-                                     -img_loaded[0,x-2,y  ]    -img_loaded[0,x+2,y  ]  -img_loaded[0,x  ,y-2]  -img_loaded[0,x  ,y+2])/8;
-                   img_temp2[2,x,y]:=(  6*img_loaded[0,x,y]
-                                       +2*img_loaded[0,x-1,y-1]  +2*img_loaded[0,x+1,y-1]   +2*img_loaded[0,x-1,y+1]+2*img_loaded[0,x+1,y+1]
-                                     -1.5*img_loaded[0,x-2,y  ]-1.5*img_loaded[0,x+2,y  ]-1.5*img_loaded[0,x  ,y-2]-1.5*img_loaded[0,x  ,y+2])/8; end
+                   img_temp2[0,x,y]:=  (img[0,x,  y  ]);
+                   img_temp2[1,x,y]:=(4*img[0,x,y]
+                                     +2*img[0,x-1,y  ]+2*img[0,x+1,y  ]+2*img[0,x  ,y-1]+2*img[0,x  ,y+1]
+                                     -img[0,x-2,y  ]    -img[0,x+2,y  ]  -img[0,x  ,y-2]  -img[0,x  ,y+2])/8;
+                   img_temp2[2,x,y]:=(  6*img[0,x,y]
+                                       +2*img[0,x-1,y-1]  +2*img[0,x+1,y-1]   +2*img[0,x-1,y+1]+2*img[0,x+1,y+1]
+                                     -1.5*img[0,x-2,y  ]-1.5*img[0,x+2,y  ]-1.5*img[0,x  ,y-2]-1.5*img[0,x  ,y+2])/8; end
       else
       if blue then begin
-                   img_temp2[0,x,y]:=(  6*img_loaded[0,x,y]
-                                       +2*img_loaded[0,x-1,y-1]  +2*img_loaded[0,x+1,y-1]  +2*img_loaded[0,x-1,y+1]  +2*img_loaded[0,x+1,y+1]
-                                     -1.5*img_loaded[0,x-2,y  ]-1.5*img_loaded[0,x+2,y  ]-1.5*img_loaded[0,x  ,y-2]-1.5*img_loaded[0,x  ,y+2])/8;
-                   img_temp2[1,x,y]:=(4*img_loaded[0,x,y]
-                                     +2*img_loaded[0,x-1,y  ]+2*img_loaded[0,x+1,y  ]+2*img_loaded[0,x  ,y-1]+2*img_loaded[0,x  ,y+1]
-                                       -img_loaded[0,x-2,y  ]  -img_loaded[0,x+2,y  ]  -img_loaded[0,x  ,y-2]  -img_loaded[0,x  ,y+2])/8;
-                   img_temp2[2,x,y]:=  (img_loaded[0,x,  y  ]  ); end;
+                   img_temp2[0,x,y]:=(  6*img[0,x,y]
+                                       +2*img[0,x-1,y-1]  +2*img[0,x+1,y-1]  +2*img[0,x-1,y+1]  +2*img[0,x+1,y+1]
+                                     -1.5*img[0,x-2,y  ]-1.5*img[0,x+2,y  ]-1.5*img[0,x  ,y-2]-1.5*img[0,x  ,y+2])/8;
+                   img_temp2[1,x,y]:=(4*img[0,x,y]
+                                     +2*img[0,x-1,y  ]+2*img[0,x+1,y  ]+2*img[0,x  ,y-1]+2*img[0,x  ,y+1]
+                                       -img[0,x-2,y  ]  -img[0,x+2,y  ]  -img[0,x  ,y-2]  -img[0,x  ,y+2])/8;
+                   img_temp2[2,x,y]:=  (img[0,x,  y  ]  ); end;
       except
       end;
 
     end;{x loop}
   end;{y loop}
 
-  img_loaded:=img_temp2;
+  img:=img_temp2;
 
   img_temp2:=nil;{free temp memory}
   naxis3:=3;{now three colors}
@@ -4638,7 +4630,7 @@ begin
 end;
 
 
-procedure preserve_colour_saturated_bayer;{for bayer matrix}
+procedure preserve_colour_saturated_bayer(img: image_array);{for bayer matrix}
 var
     fitsX,fitsY,w,h : integer;
 begin
@@ -4651,15 +4643,15 @@ begin
   for fitsY:=0 to h-1 do {go through all 2x2 and replace and if saturated replace with previous 2x2}
    for fitsX:=1 to w-1  do
     begin
-      if ((img_loaded[0,fitsx*2  ,fitsY*2  ]>65500) or
-          (img_loaded[0,fitsx*2+1,fitsY*2  ]>65500) or
-          (img_loaded[0,fitsx*2  ,fitsY*2+1]>65500) or
-          (img_loaded[0,fitsx*2+1,fitsY*2+1]>65500) )   then {saturation}
+      if ((img[0,fitsx*2  ,fitsY*2  ]>65500) or
+          (img[0,fitsx*2+1,fitsY*2  ]>65500) or
+          (img[0,fitsx*2  ,fitsY*2+1]>65500) or
+          (img[0,fitsx*2+1,fitsY*2+1]>65500) )   then {saturation}
       begin
-       img_loaded[0,fitsx*2  ,fitsY*2  ]:=img_loaded[0,(fitsx-1)*2  ,fitsY*2  ];
-       img_loaded[0,fitsx*2+1,fitsY*2  ]:=img_loaded[0,(fitsx-1)*2+1,fitsY*2  ];
-       img_loaded[0,fitsx*2  ,fitsY*2+1]:=img_loaded[0,(fitsx-1)*2  ,fitsY*2+1];
-       img_loaded[0,fitsx*2+1,fitsY*2+1]:=img_loaded[0,(fitsx-1)*2+1,fitsY*2+1];
+       img[0,fitsx*2  ,fitsY*2  ]:=img[0,(fitsx-1)*2  ,fitsY*2  ];
+       img[0,fitsx*2+1,fitsY*2  ]:=img[0,(fitsx-1)*2+1,fitsY*2  ];
+       img[0,fitsx*2  ,fitsY*2+1]:=img[0,(fitsx-1)*2  ,fitsY*2+1];
+       img[0,fitsx*2+1,fitsY*2+1]:=img[0,(fitsx-1)*2+1,fitsY*2+1];
 
       end;
     end;
@@ -4712,7 +4704,7 @@ begin
   bayerpattern_final:=result; {store for global use}
 end;
 
-procedure demosaic_bayer; {convert OSC image to colour}
+procedure demosaic_bayer(var img: image_array); {convert OSC image to colour}
 var
   s :string;
 begin
@@ -4720,31 +4712,31 @@ begin
   if stackmenu1.bayer_pattern1.Text='' then memo2_message('█ █ █ █ █ █ Update required. Please test and set Bayer pattern in tab "Stack method"! █ █ █ █ █ █ ');
   if pos('AstroC',stackmenu1.demosaic_method1.text)<>0  then
   begin
-    if datamax_org>16384 then demosaic_astroC_bilinear_interpolation(65535 div 2,get_demosaic_pattern){16 bit image. Make from sensor bayer pattern the three colors}
+    if datamax_org>16384 then demosaic_astroC_bilinear_interpolation(img,65535 div 2,get_demosaic_pattern){16 bit image. Make from sensor bayer pattern the three colors}
     else
-    if datamax_org>4096 then demosaic_astroC_bilinear_interpolation(16383 div 2,get_demosaic_pattern){14 bit image. Make from sensor bayer pattern the three colors}
+    if datamax_org>4096 then demosaic_astroC_bilinear_interpolation(img,16383 div 2,get_demosaic_pattern){14 bit image. Make from sensor bayer pattern the three colors}
     else
-    demosaic_astroC_bilinear_interpolation(4095 div 2,get_demosaic_pattern){12 bit image. Make from sensor bayer pattern the three colors}
+    demosaic_astroC_bilinear_interpolation(img,4095 div 2,get_demosaic_pattern){12 bit image. Make from sensor bayer pattern the three colors}
   end
   else
   if pos('Simple',stackmenu1.demosaic_method1.text)<>0  then {}
-    demosaic_astrosimple(get_demosaic_pattern){make from sensor bayer pattern the three colors}
+    demosaic_astrosimple(img,get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
   if pos('Bilinear',stackmenu1.demosaic_method1.text)<>0  then {use Bilinear interpolation}
-    demosaic_bilinear_interpolation(get_demosaic_pattern){make from sensor bayer pattern the three colors}
+    demosaic_bilinear_interpolation(img,get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
   if pos('AstroM',stackmenu1.demosaic_method1.text)<>0  then {}
-    demosaic_astroM_bilinear_interpolation(get_demosaic_pattern){make from sensor bayer pattern the three colors}
+    demosaic_astroM_bilinear_interpolation(img,get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
   if pos('X-',stackmenu1.bayer_pattern1.Text)<>0  then {}
-     demosaic_x_trans{make from Fuji X-trans three colors}
+     demosaic_x_trans(img){make from Fuji X-trans three colors}
   else
-    demosaic_Malvar_He_Cutler(stackmenu1.bayer_pattern1.itemindex);{make from sensor bayer pattern the three colors}
+    demosaic_Malvar_He_Cutler(img,stackmenu1.bayer_pattern1.itemindex);{make from sensor bayer pattern the three colors}
 end;
 
-procedure demosaic_advanced;
+procedure demosaic_advanced(var img : image_array);{demosaic img}
 begin
-  demosaic_bayer;
+  demosaic_bayer(img);
   memo2_message('De-mosaic bayer pattern used '+bayer_pattern[bayerpattern_final]);
 
   if ({(stackmenu1.make_osc_color1.checked) and} (stackmenu1.osc_auto_level1.checked)) then
@@ -4753,17 +4745,17 @@ begin
     stackmenu1.auto_background_level1Click(nil);
     apply_factors;{histogram is after this action invalid}
     stackmenu1.reset_factors1Click(nil);{reset factors to default}
-    use_histogram(img_loaded,true {update}); {plot histogram in colour, set sliders}
+    use_histogram(img,true {update}); {plot histogram in colour, set sliders}
   if stackmenu1.osc_colour_smooth1.checked then
   begin
     memo2_message('Applying colour-smoothing filter image as set in tab "stack method". Factors are set in tab "pixel math 1"');
-    smart_colour_smooth(img_loaded,strtofloat2(stackmenu1.osc_smart_smooth_width1.text),strtofloat2(stackmenu1.osc_smart_colour_sd1.text),false {get  hist});{histogram doesn't needs an update}
+    smart_colour_smooth(img,strtofloat2(stackmenu1.osc_smart_smooth_width1.text),strtofloat2(stackmenu1.osc_smart_colour_sd1.text),false {get  hist});{histogram doesn't needs an update}
   end;
   end
   else
   begin
     memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
-    use_histogram(img_loaded,true {update}); {plot histogram in colour, set sliders}
+    use_histogram(img,true {update}); {plot histogram in colour, set sliders}
   end;
 end;
 
@@ -4873,7 +4865,7 @@ begin
                     mainwindow.shape_alignment_marker1.visible:=false; {hide shape if stacked image is plotted}
   if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then
   begin
-    demosaic_advanced;{demoasic and set levels}
+    demosaic_advanced(img_loaded);{demosaic and set levels}
   end;
 
   cblack:=mainwindow.minimum1.position;
@@ -9608,7 +9600,7 @@ begin
   Screen.Cursor:= crHourGlass;
   backup_img;
 
-  demosaic_advanced;
+  demosaic_advanced(img_loaded);
 
   remove_key('BAYERPAT',false{all});{remove key word in header}
   remove_key('XBAYROFF',false{all});{remove key word in header}

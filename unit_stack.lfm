@@ -1,12 +1,12 @@
 object stackmenu1: Tstackmenu1
-  Left = 898
+  Left = 104
   Height = 644
-  Top = 143
-  Width = 1578
+  Top = 140
+  Width = 1619
   AllowDropFiles = True
   Caption = 'stack menu'
   ClientHeight = 644
-  ClientWidth = 1578
+  ClientWidth = 1619
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -51,7 +51,7 @@ object stackmenu1: Tstackmenu1
     Left = 0
     Height = 134
     Top = 510
-    Width = 1578
+    Width = 1619
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -198,7 +198,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1560
+    Left = 1601
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -216,8 +216,8 @@ object stackmenu1: Tstackmenu1
     Height = 448
     Hint = 'Stack menu'
     Top = 0
-    Width = 1577
-    ActivePage = Images
+    Width = 1618
+    ActivePage = tab_blink1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 7
     TabOrder = 5
     object Images: TTabSheet
       Hint = 'Select here the light frames'
@@ -2883,7 +2883,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 420
-      ClientWidth = 1569
+      ClientWidth = 1610
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
@@ -2891,7 +2891,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1569
+        Width = 1610
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3023,7 +3023,7 @@ object stackmenu1: Tstackmenu1
         Left = 440
         Height = 26
         Hint = 'Blink check-marked images once'
-        Top = 6
+        Top = 5
         Width = 75
         Caption = '>'
         OnClick = blink_button1Click
@@ -3103,10 +3103,10 @@ object stackmenu1: Tstackmenu1
       end
       object help_blink1: TLabel
         Cursor = crHandPoint
-        Left = 1440
+        Left = 1360
         Height = 30
         Hint = 'Online help about blink and photometry'
-        Top = 0
+        Top = 1
         Width = 9
         Caption = '?'
         Font.Color = clBlue
@@ -3141,6 +3141,16 @@ object stackmenu1: Tstackmenu1
         Enabled = False
         ParentFont = False
         TabOrder = 11
+      end
+      object write_video1: TButton
+        Left = 1400
+        Height = 25
+        Hint = 'Write image list as YUV4MPEG2 video with extension y4m.'
+        Top = 5
+        Width = 75
+        Caption = 'Write video'
+        OnClick = write_video1Click
+        TabOrder = 12
       end
     end
     object tab_photometry1: TTabSheet

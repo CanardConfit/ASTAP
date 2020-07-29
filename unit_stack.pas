@@ -63,6 +63,7 @@ type
     binning_for_solving_label3: TLabel;
     analyse_objects_visibles1: TButton;
     binning_for_solving_label4: TLabel;
+    write_video1: TButton;
     Label36: TLabel;
     Label49: TLabel;
     Label54: TLabel;
@@ -709,9 +710,9 @@ type
     procedure use_star_alignment1Change(Sender: TObject);
     procedure apply_vertical_gradient1Click(Sender: TObject);
     procedure Viewimage1Click(Sender: TObject);
+    procedure write_video1Click(Sender: TObject);
   private
     { Private declarations }
-//     Descending: Boolean;
      SortedColumn: Integer;
 
   public
@@ -864,7 +865,7 @@ const
 
 implementation
 
-uses  unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd, unit_live_stacking, unit_hyperbola, unit_asteroid;
+uses  unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd, unit_live_stacking, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2;
 
 type
    theaderbackup  = record
@@ -3971,7 +3972,7 @@ begin
   nrrows:=listview6.items.count;
 
   stepnr:=0;
-  if ((sender=blink_button1) or (solve_and_annotate1.checked)) then init:=true {start at beginning}
+  if ((sender=blink_button1) or (solve_and_annotate1.checked) or (sender=write_video1)) then init:=true {start at beginning}
     else init:=false;{start at selection}
   reference_done:=false;{ check if reference image is loaded. Could be after first image if abort was given}
   repeat
@@ -4076,12 +4077,17 @@ begin
             AssignFile(savefile,ChangeFileExt(Filename2,'.astap_solution'));
             Reset(saveFile);
             read(savefile, solution_vectorX);
-             read(savefile, solution_vectorY);
-             CloseFile(saveFile);
-             solut:=true;
+            read(savefile, solution_vectorY);
+            CloseFile(saveFile);
+            solut:=true;
           end;
 
           if solut then listview6.Items.item[c].subitems.Strings[B_solution]:='✓' else  listview6.Items.item[c].subitems.Strings[B_solution]:='';
+
+          if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then
+          begin
+            demosaic_advanced(img_loaded);{demosaic and set levels}
+          end;
 
           setlength(img_temp,naxis3,0,0);{set to zero to clear old values (at the edges}
           setlength(img_temp,naxis3,width2,height2);{new size}
@@ -4094,7 +4100,9 @@ begin
             y_new:=round(solution_vectorY[0]*(fitsx)+solution_vectorY[1]*(fitsY)+solution_vectorY[2]); {correction y:=aX+bY+c}
 
             if ((x_new>=0) and (x_new<=width2-1) and (y_new>=0) and (y_new<=height2-1)) then
-            for col:=0 to naxis3-1 do {all colors} img_temp[col,x_new,y_new]:=img_loaded[col,fitsX,fitsY] ;
+            for col:=0 to naxis3-1 do {all colors}
+                                img_temp[col,x_new,y_new]:=img_loaded[col,fitsX,fitsY] ;
+
           end;
 
           img_loaded:=img_temp;
@@ -4105,18 +4113,20 @@ begin
         end;
         plot_fits(mainwindow.image1,false {re_center},true);
         if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(round(solution_vectorX[2]),round(solution_vectorY[2]),false); {correct annotations in shift only}
-
-//        {mark moving asteroids}
-//        if solve_and_annotate1.checked then
-//        begin
-//        end;
-
+        if sender=write_video1 then {write video frame}
+        begin
+          if write_yuv4mpeg2_frame(naxis3>1)=false then
+          begin
+             memo2_message('Error writing video'); ;
+             c:=999999; {stop}
+          end;
+        end;
       end;
       inc(c);
     until c>=nrrows;
 
 
-  until ((esc_pressed) or (sender=blink_button1 {single run}));
+  until ((esc_pressed) or (sender=blink_button1 {single run}) or (sender=write_video1));
 
   img_temp:=nil;{free memory}
   Screen.Cursor :=Save_Cursor;{back to normal }
@@ -7291,7 +7301,7 @@ begin
         if esc_pressed then exit;
 
         if make_osc_color1.checked then {do demosaic bayer}
-            demosaic_bayer; {convert OSC image to colour}
+            demosaic_bayer(img_loaded); {convert OSC image to colour}
          {naxis3 is now 3}
 
         restore_header;{restore header and solution}
@@ -8251,6 +8261,25 @@ begin
   if sender=Viewimage6 then listview_view(listview6);{popup menu blink}
   if sender=Viewimage7 then listview_view(listview7);
   if sender=Viewimage8 then listview_view(listview8);{inspector}
+end;
+
+procedure Tstackmenu1.write_video1click(Sender: TObject);
+var i:integer ;
+begin
+  mainwindow.savedialog1.filename:=ChangeFileExt(FileName2,'.y4m');
+  mainwindow.savedialog1.initialdir:=ExtractFilePath(filename2);
+
+  mainwindow.savedialog1.Filter := ' *.y4m|*.y4m';
+  if mainwindow.savedialog1.execute then
+  begin
+    if listview6.Items.item[listview6.items.count-1].subitems.Strings[B_exposure]='' {exposure} then
+      stackmenu1.analyseblink1Click(nil);  {analyse and secure the dimension values width2, height2 from images}
+
+    write_YUV4MPEG2_header(mainwindow.savedialog1.filename, ((naxis3>1) or (mainwindow.preview_demosaic1.checked)) );
+    stackmenu1.blink_button1Click(Sender);{blink and write video frames}
+    close_YUV4MPEG2;
+    memo2_message('Ready!. The video written as '+mainwindow.savedialog1.filename);
+  end;
 end;
 
 end.

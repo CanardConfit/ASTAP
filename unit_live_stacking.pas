@@ -249,7 +249,7 @@ begin
 //            if esc_pressed then exit;
 
             if make_osc_color1.checked then
-               demosaic_bayer; {convert OSC image to colour}
+               demosaic_bayer(img_loaded); {convert OSC image to colour}
 
             if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
 

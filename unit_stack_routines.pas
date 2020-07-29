@@ -663,7 +663,7 @@ begin
 
           if make_osc_color1.checked then
           begin
-            demosaic_bayer {convert OSC image to colour}
+            demosaic_bayer(img_loaded); {convert OSC image to colour}
           end;
 
           if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
@@ -891,7 +891,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if make_osc_color1.checked then {do demosaic bayer}  demosaic_bayer; {convert OSC image to colour}
+          if make_osc_color1.checked then {do demosaic bayer}  demosaic_bayer(img_loaded); {convert OSC image to colour}
           {naxis3 is now 3}
 
           if use_astrometry_internal=false then begin memo2_message('Abort, only astrometric alignment possible in mosaic mode.'); exit; end;
@@ -1094,7 +1094,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then exit;
 
-        if make_osc_color1.checked then  demosaic_bayer; {convert OSC image to colour}
+        if make_osc_color1.checked then  demosaic_bayer(img_loaded); {convert OSC image to colour}
 
         if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
         begin
@@ -1261,7 +1261,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if make_osc_color1.checked then demosaic_bayer; {convert OSC image to colour}
+          if make_osc_color1.checked then demosaic_bayer(img_loaded); {convert OSC image to colour}
 
           if init=false then {init}
           begin
@@ -1363,7 +1363,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if make_osc_color1.checked then demosaic_bayer; {convert OSC image to colour}
+          if make_osc_color1.checked then demosaic_bayer(img_loaded); {convert OSC image to colour}
 
           if init=false then {init}
           begin
@@ -1545,7 +1545,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then exit;
 
-        if make_osc_color1.checked then demosaic_bayer; {convert OSC image to colour}
+        if make_osc_color1.checked then demosaic_bayer(img_loaded); {convert OSC image to colour}
 
         if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
         begin
