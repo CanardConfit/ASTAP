@@ -10,7 +10,7 @@ object form_asteroids1: Tform_asteroids1
   OnKeyPress = FormKeyPress
   OnShow = FormShow
   Position = poScreenCenter
-  LCLVersion = '2.0.6.0'
+  LCLVersion = '2.0.10.0'
   object annotate_asteroids1: TButton
     Left = 192
     Height = 25
@@ -365,7 +365,7 @@ object form_asteroids1: Tform_asteroids1
   end
   object OpenDialog1: TOpenDialog
     Title = 'Open an existing file'
-    left = 32
-    top = 288
+    Left = 32
+    Top = 288
   end
 end

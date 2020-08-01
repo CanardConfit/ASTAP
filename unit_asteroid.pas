@@ -147,7 +147,6 @@ type
   double33= array[1..3,1..3] of double;
 
 var
-   x_sun,y_sun,z_sun : double; {of earth}
    X_pln,Y_pln,Z_pln : double; {of planet}
 
    wtime2actual: double;
@@ -162,8 +161,7 @@ const
 
 
 VAR DAY : INTEGER;
-    HOUR, T, TEQX,  XP_ecl_helio,YP_ecl_helio,ZP_ecl_helio, XS,YS,ZS,xe,ye,ze {earth},xeb,yeb,zeb {earth tov Bary centre},
-                    xsb,ysb,zsb, {Sun t.o.v Bary centre} xa,ya,za {astroid}, sun_geodist, L,B,R,LS,BS,RS,
+    HOUR, T, TEQX,  XS,YS,ZS, xa,ya,za {astroid},LS,BS,RS,
                     VX,VY,VZ {comet}     : double;
 
 
@@ -1015,14 +1013,12 @@ begin
 end;
 procedure convert_comet_line(txt : string; var desn,name: string; var yy,mm,dd, ecc,q,inc2,lan,aop,H,k: double); {han.k}
 var
-  code2,error1    : integer;
+  error1          : integer;
   g               : double;
-  date_regel      : STRING[5];
-  centuryA,monthA,dayA:string[2];
 begin
   desn:='';{assume failure}
 
-  date_regel:=copy(txt,21,25-21+1); {21 -  25  a5     Epoch (in packed form, .0 TT), see http://www.minorplanetcenter.net/iau/info/MPOrbitFormat.html}
+  //date_regel:=copy(txt,21,25-21+1); {21 -  25  a5     Epoch (in packed form, .0 TT), see http://www.minorplanetcenter.net/iau/info/MPOrbitFormat.html}
 
   yy:=strtofloat(copy(txt,15,4));{epoch year}
 
@@ -1059,15 +1055,13 @@ end;
 procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot :boolean) ;{read MPCORB.dat}{han.k}
 const
    a_g : double =0.15;{asteroid_slope_factor}
-   Gauss_gravitational_constant: double=0.01720209895*180/pi;
 
 var txtf : textfile;
     count,fontsize           : integer;
-    yy,mm,dd,h,g,a_anm,aop,lan,incl,ecc,a_a,q, DELTA,sun_delta,degrees_to_perihelion,c_epochdelta,ra2,dec2,mag,phase,delta_t,
+    yy,mm,dd,h,aop,lan,incl,ecc,q, DELTA,sun_delta,ra2,dec2,mag,phase,delta_t,
     SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec     : double;
     desn,name,s, thetext:string;
     flip_horizontal, flip_vertical,form_existing, errordecode : boolean;
-
 
       procedure plot_asteroid(sizebox :integer);
       var
@@ -1183,12 +1177,11 @@ begin
   if fits_file=false then exit;
   if cd1_1=0 then begin memo2_message('Abort, first solve the image!');exit;end;
 
-
   cos_telescope_dec:=cos(dec0);
   fov:=1.5*sqrt(sqr(0.5*width2*cdelt1)+sqr(0.5*height2*cdelt2))*pi/180; {field of view with 50% extra}
 
-  flip_vertical:=mainwindow.Flipvertical1.Checked;
-  flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
+  flip_vertical:=mainwindow.flip_vertical1.Checked;
+  flip_horizontal:=mainwindow.flip_horizontal1.Checked;
   mainwindow.image1.Canvas.brush.Style:=bsClear;
 
   form_existing:=assigned(form_asteroids1);{form existing}
@@ -1314,15 +1307,13 @@ begin
 end;
 
 procedure Tform_asteroids1.annotate_asteroids1Click(Sender: TObject); {han.k}
-var errordecode: boolean;
-    maxcount : integer;
+var maxcount : integer;
     maxmag   : double;
     Save_Cursor: TCursor;
 
 
 begin
   if ((test_mpcorb=false) and (test_cometels=false)) then begin exit; end;{file not found}
-
 
   mpcorb_path:=form_asteroids1.mpcorb_path1.caption;
   cometels_path:=form_asteroids1.mpcorb_path2.caption;
@@ -1362,6 +1353,7 @@ begin
   mainwindow.setfocus;
 end;
 
+
 procedure Tform_asteroids1.BitBtn1Click(Sender: TObject);
 begin
   mpcorb_path1.caption:='';
@@ -1369,12 +1361,14 @@ begin
   test_mpcorb;
 end;
 
+
 procedure Tform_asteroids1.BitBtn2Click(Sender: TObject);
 begin
   mpcorb_path2.caption:='';
   cometels_path:='';
   test_cometels;
 end;
+
 
 procedure Tform_asteroids1.cancel_button1Click(Sender: TObject); {han.k}
 begin
@@ -1388,6 +1382,7 @@ begin
   openurl('https://minorplanetcenter.net/iau/MPCORB.html');
 end;
 
+
 procedure Tform_asteroids1.file_to_add1Click(Sender: TObject); {han.k}
 begin
   OpenDialog1.Title := 'Select MPCORB.DAT to use';
@@ -1399,6 +1394,7 @@ begin
     test_mpcorb;
   end;
 end;
+
 
 procedure Tform_asteroids1.file_to_add2Click(Sender: TObject);
 begin
@@ -1412,6 +1408,7 @@ begin
   end;
 end;
 
+
 procedure Tform_asteroids1.FormKeyPress(Sender: TObject; var Key: char);{han.k}
 begin {set form keypreview:=on}
   if key=#27 then
@@ -1419,6 +1416,7 @@ begin {set form keypreview:=on}
     esc_pressed:=true;
   end;
 end;
+
 
 procedure Tform_asteroids1.FormShow(Sender: TObject);{han.k}
 var
@@ -1461,6 +1459,7 @@ begin
   annotation_size2.position:=annotation_diameter*2;
 
 end;
+
 
 procedure Tform_asteroids1.GroupBox1Click(Sender: TObject);
 begin

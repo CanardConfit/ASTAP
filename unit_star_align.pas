@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 }
+
 interface
 
 uses Classes, SysUtils,Graphics,
@@ -119,7 +120,7 @@ begin
   mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
   mainwindow.image1.Canvas.brush.Style:=bsClear;
 
-  if mainwindow.Fliphorizontal1.Checked=true then
+  if mainwindow.flip_horizontal1.Checked=true then
   begin
     flipx:=-1;
     x:=width2;
@@ -129,7 +130,7 @@ begin
     flipx:=1;
     x:=0;
   end;
-  if mainwindow.flipvertical1.Checked=false then
+  if mainwindow.flip_vertical1.Checked=false then
   begin
     flipy:=-1;
     y:=height2;
@@ -159,6 +160,7 @@ begin
   end;
 end;
 
+
 procedure find_tetrahedrons(starlist :star_list; var starlisttetrahedrons :star_list);  {build tetrahedrons using closest stars, revised 2020-7-1, 25% percent faster}
 var
    i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrtetrahedrons,buffersize : integer;
@@ -181,7 +183,6 @@ begin
   j_used1:=0;{give it a default value}
   j_used2:=0;
   j_used3:=0;
-
 
   for i:=0 to nrstars_min_one do
   begin
@@ -253,9 +254,9 @@ begin
       //if nrtetrahedrons>=buffersize then setlength(starlisttetrahedrons,10,length(starlisttetrahedrons[0])+buffersize);{get more space}
     end;
   end;{i}
-
   SetLength(starlisttetrahedrons,10,nrtetrahedrons);{reduce array length to number tetrahedrons one shorter since last entry is not filled}
 end;
+
 
 procedure calc_tetrahedron_lengths(starlisttetrahedrons3: star_list; var star_tetrahedron_lengths: star_list);{calc and sort the six edges lengths, longest first}
 var
@@ -437,6 +438,7 @@ begin
   starlist1:=starlist2;{move pointer}
 end;
 
+
 procedure find_stars(img :image_array;hfd_min:double;var starlist1: star_list);{find stars and put them in a list}
 var
    fitsX, fitsY,nrstars,size,i,j, max_stars,retries    : integer;
@@ -458,8 +460,8 @@ begin
 //   mainwindow.image1.Canvas.font.color:=$FF;
 //   mainwindow.image1.Canvas.font.size:=10;
 //   mainwindow.image1.Canvas.Pen.Color := $FF;
-//   flip_vertical:=mainwindow.Flipvertical1.Checked;
-//   flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
+//   flip_vertical:=mainwindow.flip_vertical1.Checked;
+//   flip_horizontal:=mainwindow.Flip_horizontal1.Checked;
 
  // hfd_min:=4;
 
@@ -544,16 +546,20 @@ begin
   if solve_show_log then memo2_message('Finding stars done in '+ inttostr(gettickcount64 - startTick2)+ ' ms');
 end;
 
+
 procedure find_tetrahedrons_ref;{find tetrahedrons for reference image}
 begin
   find_tetrahedrons(starlist1,starlisttetrahedrons1);
   calc_tetrahedron_lengths(starlisttetrahedrons1,star_tetrahedron_lengths1);{calc the three sides, longest first}
 end;
+
+
 procedure find_tetrahedrons_new;{find star tetrahedrons for new image}
 begin
   find_tetrahedrons(starlist2,starlisttetrahedrons2);
   calc_tetrahedron_lengths(starlisttetrahedrons2,star_tetrahedron_lengths2);{calc the three sides, longest first}
 end;
+
 
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
 begin
@@ -564,8 +570,8 @@ begin
   solution_vectorY[0]:=0; // y:=s[1]x+s[2]y+s[3]
   solution_vectorY[1]:=factor;{should be one}
   solution_vectorY[2]:=0;
-
 end;
+
 
 procedure save_solution_to_disk;{write to disk}
 begin
@@ -580,6 +586,7 @@ begin
   Write(savefile, solution_cblack);{save background value}
   CloseFile(saveFile);
 end;
+
 
 function find_offset_and_rotation(minimum_tetrahedrons: integer;tolerance:double;save_solution:boolean) : boolean; {find difference between ref image and new image}
 var

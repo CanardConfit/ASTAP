@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 104
+  Left = 708
   Height = 644
-  Top = 140
+  Top = 189
   Width = 1619
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -751,7 +751,7 @@ object stackmenu1: Tstackmenu1
       object clear_selection2: TButton
         Left = 736
         Height = 25
-        Hint = 'Remove file list.'
+        Hint = 'Clear image list'
         Top = 6
         Width = 53
         AutoSize = True
@@ -776,7 +776,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1569
+        Width = 1610
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -894,7 +894,7 @@ object stackmenu1: Tstackmenu1
       object clear_selection3: TButton
         Left = 664
         Height = 25
-        Hint = 'Remove file list.'
+        Hint = 'Clear image list'
         Top = 6
         Width = 53
         AutoSize = True
@@ -919,7 +919,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1569
+        Width = 1610
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -1876,7 +1876,7 @@ object stackmenu1: Tstackmenu1
         object demosaic_method1: TComboBox
           Left = 8
           Height = 23
-          Hint = 'Demosaic method of color filter array.  Best method are AstroC and Simple.  For white stars you could AstroM.  Note that super-pixel produces half size images. Use this for over-sampled images.'
+          Hint = 'Demosaic method of color filter array.  Best method are AstroC and Simple.  For pure white stars you could AstroM. '
           Top = 124
           Width = 390
           ItemHeight = 15
@@ -1910,8 +1910,8 @@ object stackmenu1: Tstackmenu1
           Left = 10
           Height = 15
           Top = 104
-          Width = 96
-          Caption = 'De-bayer method:'
+          Width = 105
+          Caption = 'De-mosaic method:'
           ParentColor = False
           ParentFont = False
         end
@@ -1998,8 +1998,8 @@ object stackmenu1: Tstackmenu1
           Left = 10
           Height = 15
           Top = 149
-          Width = 268
-          Caption = 'Best debayer methods are AstroC and AstroSimple.'
+          Width = 277
+          Caption = 'Best demosaic methods are AstroC and AstroSimple.'
           ParentColor = False
         end
         object Label25: TLabel
@@ -3515,7 +3515,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1596
+        Width = 1610
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -6217,12 +6217,12 @@ object stackmenu1: Tstackmenu1
   end
   object OpenDialog1: TOpenDialog
     Title = 'Open an existing file'
-    Left = 744
+    Left = 392
     Top = 528
   end
   object ImageList2: TImageList
-    Left = 1344
-    Top = 528
+    Left = 480
+    Top = 592
     Bitmap = {
       4C69130000001000000010000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -6837,8 +6837,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu1: TPopupMenu
     Images = ImageList2
-    Left = 824
-    Top = 536
+    Left = 480
+    Top = 528
     object Viewimage1: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -6904,8 +6904,8 @@ object stackmenu1: Tstackmenu1
     end
   end
   object ImageList_colors: TImageList
-    Left = 1312
-    Top = 584
+    Left = 576
+    Top = 592
     Bitmap = {
       4C691000000010000000100000000000FF000000FF000000FF000000FF000000
       FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF000000
@@ -7424,8 +7424,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu2: TPopupMenu
     Images = ImageList2
-    Left = 888
-    Top = 536
+    Left = 576
+    Top = 528
     object Viewimage2: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7477,8 +7477,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu3: TPopupMenu
     Images = ImageList2
-    Left = 944
-    Top = 536
+    Left = 664
+    Top = 528
     object Viewimage3: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7530,8 +7530,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu4: TPopupMenu
     Images = ImageList2
-    Left = 1016
-    Top = 536
+    Left = 768
+    Top = 528
     object Viewimage4: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7583,8 +7583,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu5: TPopupMenu
     Images = ImageList2
-    Left = 1088
-    Top = 536
+    Left = 856
+    Top = 528
     object Viewimage5: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7635,7 +7635,7 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu6: TPopupMenu
     Images = ImageList2
-    Left = 1160
+    Left = 936
     Top = 528
     object Viewimage6: TMenuItem
       Caption = 'View image'
@@ -7708,12 +7708,12 @@ object stackmenu1: Tstackmenu1
       'ColorS=F0FBFF'
       'ColorT=A4A0A0'
     )
-    Left = 752
+    Left = 392
     Top = 584
   end
   object PopupMenu7: TPopupMenu
     Images = ImageList2
-    Left = 1240
+    Left = 1016
     Top = 528
     object Viewimage7: TMenuItem
       Caption = 'View image'
@@ -7764,7 +7764,7 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu8: TPopupMenu
     Images = ImageList2
-    Left = 1288
+    Left = 1104
     Top = 528
     object Viewimage8: TMenuItem
       Caption = 'View image'

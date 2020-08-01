@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 564
+  Left = 623
   Height = 616
   Hint = ' '
-  Top = 291
+  Top = 271
   Width = 1343
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -440,8 +440,10 @@ object mainwindow: Tmainwindow
       Width = 210
       OnMouseMove = histogram1MouseMove
       ParentShowHint = False
+      PopupMenu = PopupMenu_histogram1
       ShowHint = True
-      Stretch = True
+      StretchOutEnabled = False
+      StretchInEnabled = False
     end
     object Label5: TLabel
       Left = 4
@@ -462,7 +464,7 @@ object mainwindow: Tmainwindow
       Left = 68
       Height = 15
       Hint = 'Adjust the black level'
-      Top = 58
+      Top = 57
       Width = 260
       Enabled = False
       Max = 65535
@@ -607,6 +609,17 @@ object mainwindow: Tmainwindow
       ParentShowHint = False
       ShowHint = True
       TabOrder = 6
+    end
+    object shape_histogram1: TShape
+      Left = 72
+      Height = 54
+      Top = 1
+      Width = 1
+      Brush.Color = clNone
+      Brush.Style = bsClear
+      Pen.Color = clWhite
+      Pen.Style = psDot
+      Visible = False
     end
   end
   object Polynomial1: TComboBox
@@ -1085,13 +1098,13 @@ object mainwindow: Tmainwindow
         Caption = 'Activate/deactivate auto de-mosaic'
         Hint = 'If checked, any new image in viewer will be demosaiced using bilinear interpolation.'
       end
-      object DemosaicBayermatrix1: TMenuItem
+      object demosaic_bayermatrix1: TMenuItem
         Caption = 'De-mosaic Bayer matrix '
         Enabled = False
         Hint = 'Convert RAW to colour using interpolation.  Set first correct Bayer pattern in the stack menu.'
         ImageIndex = 14
         ShortCut = 119
-        OnClick = DemosaicBayermatrix1Click
+        OnClick = demosaic_bayermatrix1Click
       end
       object autocorrectcolours1: TMenuItem
         Caption = 'Auto correct colours.'
@@ -1254,21 +1267,21 @@ object mainwindow: Tmainwindow
       object MenuItem11: TMenuItem
         Caption = '-'
       end
-      object Fliphorizontal1: TMenuItem
+      object flip_horizontal1: TMenuItem
         AutoCheck = True
         Caption = 'Flip horizontal'
         Hint = 'Flip the image horizontal.'
         ImageIndex = 22
         ShortCut = 16456
-        OnClick = Fliphorizontal1Click
+        OnClick = flip_horizontal1Click
       end
-      object Flipvertical1: TMenuItem
+      object flip_vertical1: TMenuItem
         AutoCheck = True
         Caption = 'Flip vertical'
         Hint = 'Flip image vertical.'
         ImageIndex = 23
         ShortCut = 16470
-        OnClick = Flipvertical1Click
+        OnClick = flip_vertical1Click
       end
       object MenuItem20: TMenuItem
         Caption = '-'
@@ -1329,18 +1342,18 @@ object mainwindow: Tmainwindow
     Filter = 'Flexible image transport system files|*.fit*'
     Options = [ofEnableSizing, ofForceShowHidden, ofViewDetail]
     OnSelectionChange = OpenDialog1SelectionChange
-    Left = 944
-    Top = 192
+    Left = 936
+    Top = 208
   end
   object SaveDialog1: TSaveDialog
-    Left = 1040
-    Top = 264
+    Left = 952
+    Top = 288
   end
   object PopupMenu1: TPopupMenu
     Images = ImageList1
     AutoPopup = False
-    Left = 976
-    Top = 288
+    Left = 856
+    Top = 296
     object Enterlabel1: TMenuItem
       Caption = 'Add annotation'
       Hint = 'Add label to current mouse position. Hold left mouse button down and pull a rectangle with mouse to extend connecting line.'
@@ -2660,7 +2673,7 @@ object mainwindow: Tmainwindow
       0000
     }
     Hint = 'ASTAP'
-    Left = 1120
+    Left = 1048
     Top = 288
   end
   object PopupNotifier1: TPopupNotifier
@@ -2695,8 +2708,8 @@ object mainwindow: Tmainwindow
     Text = 'Text'
     Title = 'ASTAP astrometric solver'
     Visible = False
-    Left = 1208
-    Top = 296
+    Left = 1128
+    Top = 288
   end
   object SimpleIPCServer1: TSimpleIPCServer
     Active = False
@@ -2704,11 +2717,11 @@ object mainwindow: Tmainwindow
     Global = True
     OnMessageQueued = SimpleIPCServer1MessageQueued
     Threaded = False
-    Left = 1272
-    Top = 280
+    Left = 1216
+    Top = 288
   end
   object PopupMenu_ra_dec1: TPopupMenu
-    Left = 1096
+    Left = 1128
     Top = 208
     object radec_search1: TMenuItem
       Caption = 'Search database'
@@ -2725,8 +2738,8 @@ object mainwindow: Tmainwindow
     end
   end
   object PopupMenu_memo1: TPopupMenu
-    Left = 1208
-    Top = 216
+    Left = 856
+    Top = 376
     object Menufind1: TMenuItem
       Caption = 'Find'
       ShortCut = 16454
@@ -2752,8 +2765,8 @@ object mainwindow: Tmainwindow
     end
   end
   object PopupMenu_memo2: TPopupMenu
-    Left = 1280
-    Top = 216
+    Left = 976
+    Top = 376
     object Menufind2: TMenuItem
       Caption = 'Find'
       ShortCut = 16454
@@ -2776,6 +2789,15 @@ object mainwindow: Tmainwindow
       Caption = 'Select all'
       ShortCut = 16449
       OnClick = select_all1Click
+    end
+  end
+  object PopupMenu_histogram1: TPopupMenu
+    Left = 1080
+    Top = 376
+    object histogram_values_to_clipboard1: TMenuItem
+      Caption = 'Copy values to clipboard'
+      Hint = 'Copies histogram to the clipboard. The value and red, green, blue pixel count'
+      OnClick = histogram_values_to_clipboard1Click
     end
   end
 end

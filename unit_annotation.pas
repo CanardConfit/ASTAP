@@ -345,8 +345,8 @@ begin
      Save_Cursor := Screen.Cursor;
      Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-    flip_vertical:=mainwindow.Flipvertical1.Checked;
-    flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
+    flip_vertical:=mainwindow.flip_vertical1.Checked;
+    flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
     {6. Passage (x,y) -> (RA,DEC) to find RA0,DEC0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
     dRa :=(cd1_1*((width2/2)-crpix1)+cd1_2*((height2/2)-crpix2))*pi/180; {also valid for case crpix1,crpix2 is not in the middle}
@@ -551,22 +551,16 @@ end;
 
 procedure plot_stars(photometry_only,show_distortion: boolean);{plot stars on the image}
 var
-  fitsX,fitsY, fitsX_middle, fitsY_middle,screenX_middle,screenY_middle,
-  dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
-  xx,yy,mag2,Bp_Rp,
-  hfd1,star_fwhm,snr, flux,xc,yc,area_visible,ln_area_per_star,magn  :double;
-  delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh : double;
-
-  x,y,star_counter,star_total_counter,x2,y2,len, max_nr_stars                                   : integer;
-  flip_horizontal, flip_vertical: boolean;
-  mag_offset_array : array of double;
-  frac1,frac2,frac3,frac4  : double;
-  area1,area2,area3,area4,nrstars_required2  : integer;
-  Save_Cursor: TCursor;
+  fitsX,fitsY, fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
+  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4                           : double;
+  x,y,star_counter,star_total_counter,x2,y2,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2 : integer;
+  flip_horizontal, flip_vertical   : boolean;
+  mag_offset_array                 : array of double;
+  Save_Cursor                      : TCursor;
 
     procedure plot_star;
     begin
-
      {5. Conversion (RA,DEC) -> (x,y)}
       sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
       delta_ra:=ra2-ra0;
@@ -651,19 +645,15 @@ begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-    flip_vertical:=mainwindow.Flipvertical1.Checked;
-    flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
+    flip_vertical:=mainwindow.flip_vertical1.Checked;
+    flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
     counter_flux_measured:=0;
 
     bp_rp:=999;{not defined in mono versions}
-//    totalX:=0;
-//    totalY:=0;
 
     fitsX_middle:=(width2+1)/2;{range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
     fitsY_middle:=(height2+1)/2;
-    screenX_middle:=(width2-1)/2;{range 0..width2-1, if range 0,1,2,3  then middle is 1.5=(4-1)/2 }
-    screenY_middle:=(height2-1)/2;
 
     dRa :=(cd1_1*(fitsx_middle-crpix1)+cd1_2*(fitsy_middle-crpix2))*pi/180;
     dDec:=(cd2_1*(fitsx_middle-crpix1)+cd2_2*(fitsy_middle-crpix2))*pi/180;
@@ -758,8 +748,8 @@ var
   flip_horizontal, flip_vertical: boolean;
   xx,yy,x,y                     :double;
 begin
-  flip_vertical:=mainwindow.Flipvertical1.Checked;
-  flip_horizontal:=mainwindow.Fliphorizontal1.Checked;
+  flip_vertical:=mainwindow.flip_vertical1.Checked;
+  flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
   {do image stars}
   nrstars:=length(starlist2[0]);

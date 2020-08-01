@@ -593,7 +593,7 @@ end;
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
   fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning              : integer;
-  background_correction, value, weightF,hfd_min                                                              : double;
+  background_correction, weightF,hfd_min                                                         : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
   tempval   : single;
 begin
@@ -610,7 +610,6 @@ begin
     sum_exp:=0;
     jd_sum:=0;{sum of Julian midpoints}
     jd_stop:=0;{end observations in Julian day}
-
 
     init:=false;
 
@@ -652,10 +651,8 @@ begin
                if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, monochrome image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
           end;
 
-
           apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
           {these global variables are passed-on in procedure to protect against overwriting}
-
 
           memo2_message('Adding file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
           Application.ProcessMessages;
@@ -684,11 +681,9 @@ begin
             end;
           end;
 
-
           if init=false then {init}
           begin
             memo2_message('Largest reference image with best HFD is: '+filename2);
-//            image_path:=ExtractFilePath(filename2); {for saving later}
             width_max:=width2+oversize*2;
             height_max:=height2+oversize*2;
 
@@ -819,7 +814,6 @@ begin
 end;
 
 
-
 function minimum_distance_borders(fitsX,fitsY,w,h: integer): single;
 begin
   result:=min(fitsX,w-fitsX);
@@ -827,15 +821,13 @@ begin
   result:=min(h-fitsY,result);
 end;
 
+
 procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{mosaic/tile mode}
 var
-    fitsX,fitsY,c,width_max, height_max,x_new,y_new,col,
-    cropW,cropH : integer;
-
-    value, background_correction,dummy,median                                                        : double;
-    init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
-    tempval                                                                     : single;
-
+    fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH : integer;
+    value, background_correction,dummy,median                        : double;
+    tempval                                                          : single;
+    init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment,  use_astrometry_internal,vector_based  :boolean;
 begin
   with stackmenu1 do
   begin
@@ -899,7 +891,6 @@ begin
           if init=false then {init}
           begin
             memo2_message('Largest reference image with best HFD is: '+filename2);
-//            image_path:=ExtractFilePath(filename2); {for saving later}
 
             oversize:=width2*mosaic_width1.position div 2;{increase the oversize to have space for the tiles}
             width_max:=width2+oversize*2;
@@ -1020,8 +1011,8 @@ begin
     end;{mosaic mode}
   end;{with stackmenu1}
   {arrays will be nilled later. This is done for early exits}
-
 end;
+
 
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 var
@@ -1117,7 +1108,6 @@ begin
 
         if init=false then {init}
         begin
-//          image_path:=ExtractFilePath(filename2); {for saving later}
           width_max:=width2+oversize*2;
           height_max:=height2+oversize*2;
 
@@ -1569,7 +1559,6 @@ begin
         if init=false then {init}
         begin
           memo2_message('Largest reference image with best HFD is: '+filename2);
-//          image_path:=ExtractFilePath(filename2); {for saving later}
           width_max:=width2+oversize*2;
           height_max:=height2+oversize*2;
 

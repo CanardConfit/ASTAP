@@ -97,6 +97,8 @@ type
     batch_rotate_left1: TMenuItem;
     batch_rotate_right1: TMenuItem;
     gradient_removal1: TMenuItem;
+    histogram_values_to_clipboard1: TMenuItem;
+    PopupMenu_histogram1: TPopupMenu;
     remove_atmouse1: TMenuItem;
     remove_longitude_latitude1: TMenuItem;
     menupaste1: TMenuItem;
@@ -124,6 +126,7 @@ type
     select_all2: TMenuItem;
     set_area1: TMenuItem;
     rotate_arbitrary1: TMenuItem;
+    shape_histogram1: TShape;
     shape_paste1: TShape;
     submenurotate1: TMenuItem;
     imageflipv1: TMenuItem;
@@ -217,11 +220,11 @@ type
     tools1: TMenuItem;
     TrayIcon1: TTrayIcon;
     View1: TMenuItem;
-    Fliphorizontal1: TMenuItem;
-    Flipvertical1: TMenuItem;
+    flip_horizontal1: TMenuItem;
+    flip_vertical1: TMenuItem;
     N5: TMenuItem;
     SaveFITSwithupdatedheader1: TMenuItem;
-    DemosaicBayermatrix1: TMenuItem;
+    demosaic_bayermatrix1: TMenuItem;
     N6: TMenuItem;
     Undo1: TMenuItem;
     stretch_draw1: TMenuItem;
@@ -270,6 +273,7 @@ type
     procedure FormDropFiles(Sender: TObject; const FileNames: array of String);
     procedure histogram_range1MouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
+    procedure histogram_values_to_clipboard1Click(Sender: TObject);
     procedure imageflipv1Click(Sender: TObject);
     procedure measuretotalmagnitude1Click(Sender: TObject);
     procedure loadsettings1Click(Sender: TObject);
@@ -371,9 +375,9 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure FormResize(Sender: TObject);
     procedure AddplatesolvesolutiontoselectedFITSfiles1Click(Sender: TObject);
-    procedure Fliphorizontal1Click(Sender: TObject);
-    procedure Flipvertical1Click(Sender: TObject);
-    procedure DemosaicBayermatrix1Click(Sender: TObject);
+    procedure flip_horizontal1Click(Sender: TObject);
+    procedure flip_vertical1Click(Sender: TObject);
+    procedure demosaic_bayermatrix1Click(Sender: TObject);
     procedure star_annotation1Click(Sender: TObject);
     procedure Undo1Click(Sender: TObject);
     procedure stretch_draw1Click(Sender: TObject);
@@ -2178,7 +2182,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.395a dated 2020-07-29';
+  #13+#10+'Version ß0.9.396 dated 2020-07-30';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2273,13 +2277,13 @@ begin
 
     backup_img;
 
-    if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
     begin
       startY2:=height2-1-startY2;
       oldY2:=height2-1-oldY2;
     end;
 
-    if mainwindow.Fliphorizontal1.Checked then
+    if mainwindow.flip_horizontal1.Checked then
     begin
       startX2:=width2-1-startX2;
       oldX2:=width2-1-oldX2;
@@ -2332,7 +2336,7 @@ end;
 function binx2 : boolean; {converts filename2 to binx2 version}
 var
    img_temp2 : image_array;
-   I, FitsX, fitsY,k,w,h   : integer;
+   FitsX, fitsY,k,w,h      : integer;
    ratio                   : double;
 begin
   result:=false;
@@ -2526,13 +2530,13 @@ begin
 
     backup_img;
 
-    if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
     begin
       starty:=height2-1-starty;
       oldY:=height2-1-oldY;
     end;
 
-    if mainwindow.Fliphorizontal1.Checked then
+    if mainwindow.flip_horizontal1.Checked then
     begin
       startX:=width2-1-startX;
       oldX:=width2-1-oldX;
@@ -2611,13 +2615,13 @@ begin
 
     bsize:=10;  // min(10,abs(oldx-startX));{5 or smaller}
 
-    if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
     begin
       starty:=height2-1-starty;
       oldY:=height2-1-oldY;
     end;
 
-    if mainwindow.Fliphorizontal1.Checked then
+    if mainwindow.flip_horizontal1.Checked then
     begin
       startX:=width2-1-startX;
       oldX:=width2-1-oldX;
@@ -2725,10 +2729,16 @@ end;
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
 var RdivG :single;                                  {excel polynom fit based on data from http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html}
 begin                                               {range 2000 till 20000k}
-//  if ((b<0.5*r) or (b>1.5*r)) then {too red or too blue}  begin
-   if ((b<($12/$FF)*r) or (b>($FF/$AD)*r)) then {too red or too blue}  begin
-     result:=1; exit; end;
-  if ((r<=1) or (g<=1) or (b<=1)) then begin result:=0; exit; end;
+  if ((b<($12/$FF)*r) or (b>($FF/$AD)*r)) then {too red or too blue}
+  begin
+    result:=1;
+    exit;
+  end;
+  if ((r<=1) or (g<=1) or (b<=1)) then
+  begin
+    result:=0;
+    exit;
+  end;
   RdivG:=r/g;
   result:=abs((b/g)-(0.6427*sqr(RdivG)-2.868*RdivG+3.3035));
 end;
@@ -2747,7 +2757,7 @@ end;
 
 function extract_objectname_from_filename(filename8: string): string; {try to extract exposure from filename}
 var
-  i,x   : integer;
+  i   : integer;
 begin
   {try to reconstruct object name from filename}
   result:='';
@@ -2812,7 +2822,7 @@ end;
 
 procedure Tmainwindow.remove_colour1Click(Sender: TObject);{make local area monochrome}
 var
-   fitsX,fitsY,dum,k : integer;
+   fitsX,fitsY,dum    : integer;
    val  : single;
    Save_Cursor:TCursor;
 begin
@@ -2824,13 +2834,13 @@ begin
 
     backup_img;
 
-    if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
     begin
       starty:=height2-1-starty;
       oldY:=height2-1-oldY;
     end;
 
-    if mainwindow.Fliphorizontal1.Checked then
+    if mainwindow.flip_horizontal1.Checked then
     begin
       startX:=width2-1-startX;
       oldX:=width2-1-oldX;
@@ -2893,8 +2903,8 @@ begin
 
   mainwindow.image_north_arrow1.Canvas.Pen.Color := clred;
 
-  if mainwindow.Fliphorizontal1.checked then flipH:=-1 else flipH:=+1;
-  if mainwindow.Flipvertical1.checked then flipV:=-1 else flipV:=+1;
+  if mainwindow.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
+  if mainwindow.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
 
   cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{lenght of a pixel diagonal in direction RA in arcseconds}
 
@@ -2945,8 +2955,8 @@ begin
 
   right:= ((sender=rotateright1) or (sender=batch_rotate_right1)); {rotate right?}
 
-  if Fliphorizontal1.checked then right:= (right=false);{change rotation if flipped}
-  if Flipvertical1.checked then   right:= (right=false);{change rotation if flipped}
+  if flip_horizontal1.checked then right:= (right=false);{change rotation if flipped}
+  if flip_vertical1.checked then   right:= (right=false);{change rotation if flipped}
 
   setlength(img_temp,naxis3, height2,width2);{set length of image with swapped width and height}
 
@@ -3064,8 +3074,8 @@ begin
   xF:=(fitsX-0.5)*(mainwindow.image1.width/width2)-0.5; //inverse of  fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
   yF:=-(fitsY-height2-0.5)*(mainwindow.image1.height/height2)-0.5; //inverse of fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
 
-  if mainwindow.Fliphorizontal1.Checked then x:=mainwindow.image1.width-xF else x:=xF;
-  if mainwindow.Flipvertical1.Checked then y:=mainwindow.image1.height-yF else y:=yF;
+  if mainwindow.Flip_horizontal1.Checked then x:=mainwindow.image1.width-xF else x:=xF;
+  if mainwindow.flip_vertical1.Checked then y:=mainwindow.image1.height-yF else y:=yF;
 
   mainwindow.shape_alignment_marker1.height:=max(10,round(20*mainwindow.image1.height/height2));
   mainwindow.shape_alignment_marker1.width:= max(10,round(20*mainwindow.image1.width/width2));
@@ -3094,8 +3104,8 @@ begin
   xF:=(fitsX-0.5)*(mainwindow.image1.width/width2)-0.5; //inverse of  fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
   yF:=-(fitsY-height2-0.5)*(mainwindow.image1.height/height2)-0.5; //inverse of fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
 
-  if mainwindow.Fliphorizontal1.Checked then x:=mainwindow.image1.width-xF else x:=xF;
-  if mainwindow.Flipvertical1.Checked then y:=mainwindow.image1.height-yF else y:=yF;
+  if mainwindow.Flip_horizontal1.Checked then x:=mainwindow.image1.width-xF else x:=xF;
+  if mainwindow.flip_vertical1.Checked then y:=mainwindow.image1.height-yF else y:=yF;
 
   with shape do
   begin
@@ -3313,12 +3323,11 @@ begin
     mainwindow.SaveasJPGPNGBMP1.Enabled:=fits;
 
     mainwindow.ShowFITSheader1.enabled:=fits;
-    mainwindow.demosaicBayermatrix1.Enabled:=fits;
+    mainwindow.demosaic_Bayermatrix1.Enabled:=fits;
     mainwindow.autocorrectcolours1.Enabled:=fits;
     mainwindow.stretch_draw1.Enabled:=fits;
 
     mainwindow.CropFITSimage1.Enabled:=fits;
-
 
     mainwindow.stretch1.enabled:=fits;
     mainwindow.rotateleft1.enabled:=fits;
@@ -3360,7 +3369,6 @@ begin
   stackmenu1.pixelsize1.Text:=floattostrF2(xpixsz,0,1);
   stackmenu1.focallength1Exit(nil); {update calculator}
 end;
-
 
 
 procedure Tmainwindow.astrometric_solve_image1Click(Sender: TObject);
@@ -3422,6 +3430,7 @@ begin
   oldx:=width2-1;
   mainwindow.CropFITSimage1Click(nil);
  end;
+
 
 procedure Tmainwindow.remove_below1Click(Sender: TObject);
 begin
@@ -3627,13 +3636,13 @@ begin
 
     bsize:=min(10,abs(oldx-startX));{10 or smaller}
 
-    if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
     begin
       starty:=height2-1-starty;
       oldY:=height2-1-oldY;
     end;
 
-    if mainwindow.Fliphorizontal1.Checked then
+    if mainwindow.Flip_horizontal1.Checked then
     begin
       startX:=width2-1-startX;
       oldX:=width2-1-oldX;
@@ -3848,7 +3857,7 @@ end;
 
 procedure old_to_new_WCS;{ convert old WCS to new}
 var
-   sign        : integer;
+   sign  : integer;
 begin
   cd1_1:=cdelt1*cos(crota2*pi/180); {note 2013 should be crota1 if skewed}
   if cdelt1>=0 then sign:=+1 else sign:=-1;
@@ -3858,10 +3867,10 @@ begin
   cd2_2:= cdelt2*cos(crota2*pi/180);
 end;
 
+
 procedure new_to_old_WCS;{convert new style FITsS to old style}
 var
-   sign     ,i,j   : integer;
-   crota2old,crota2old2 :double;
+   sign  : integer;
 begin
   { convert to old WCS. Based on draft 1988 , do not use conversion article Alain Klotz, give sometimes zero CROTA}
   if (cd1_1*cd2_2-cd1_2*cd2_1)>=0 then sign:=+1 else sign:=-1;
@@ -3871,16 +3880,8 @@ begin
 
   crota1:= +arctan2(sign*cd1_2,cd2_2)*180/pi;
   crota2:= -arctan2(cd2_1,sign*cd1_1)*180/pi;  //  crota2old := (atn_2(sign*cd1_1,cd2_1)-pi/2)*180/pi;
-
-//  for i:=-1000 to 1000 do
-//  for j:=-1000 to 1000 do
-//  begin
-//    crota2old := atn_2(i,j);
-//    crota2old2 := arctan2(i,j);
-//    if abs(crota2old-crota2old2)>0.00000001 then
-//       beep;
-//  end;
 end;
+
 
 function fnmodulo (x,range: double):double;
 begin
@@ -3894,12 +3895,15 @@ function intensity2(x:tcolor):integer;
 begin
   intensity2:=round((GetBValue(x)+getGvalue(x)+getRvalue(x))/3);{get red, green blue value as intensity}
 end;
+
+
 function intensityRGB(x:tcolor): byteX3;
 begin
   intensityRGB[0]:=getRvalue(x);{get red, green blue value as intensity}
   intensityRGB[1]:=getGvalue(x);
   intensityRGB[2]:=getBvalue(x);
 end;
+
 
 procedure demosaic_bilinear_interpolation(var img:image_array;pattern: integer);{make from sensor bayer pattern the three colors}
 var
@@ -4132,9 +4136,7 @@ begin
      2: begin offsetx:=1; offsety:=0; end;
      3: begin offsetx:=1; offsety:=1; end;
   end;
-
   setlength(img_temp2,3,width2,height2);{set length of image array color}
-
   {calculate mean background value}
   count:=0;
   bg:=0;
@@ -4288,12 +4290,8 @@ begin
 
                    end;
                  end;
-
-
-
       except
       end;
-
     end;{x loop}
   end;{y loop}
 
@@ -4303,6 +4301,7 @@ begin
   naxis3:=3;{now three colors}
   naxis:=3; {from 2 to 3 dimensions}
 end;
+
 
 procedure demosaic_astroC_bilinear_interpolation(var img:image_array;saturation {saturation point}, pattern: integer);{make from sensor bayer pattern the three colors}
 var
@@ -4420,9 +4419,7 @@ begin
                      bg:=bg+average1+average2+average3;
                      inc(counter,3); {added red, green, blue values}
                    end;
-
       end
-
       else
       if blue then
                  begin
@@ -4456,7 +4453,6 @@ begin
 
                    end;
                  end;
-
       except
       end;
 
@@ -4618,12 +4614,10 @@ begin
                    img_temp2[2,x,y]:=  (img[0,x,  y  ]  ); end;
       except
       end;
-
     end;{x loop}
   end;{y loop}
 
   img:=img_temp2;
-
   img_temp2:=nil;{free temp memory}
   naxis3:=3;{now three colors}
   naxis:=3; {from 2 to 3 dimensions}
@@ -4656,6 +4650,7 @@ begin
       end;
     end;
 end;
+
 
 function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
 var
@@ -4705,10 +4700,7 @@ begin
 end;
 
 procedure demosaic_bayer(var img: image_array); {convert OSC image to colour}
-var
-  s :string;
 begin
-
   if stackmenu1.bayer_pattern1.Text='' then memo2_message('█ █ █ █ █ █ Update required. Please test and set Bayer pattern in tab "Stack method"! █ █ █ █ █ █ ');
   if pos('AstroC',stackmenu1.demosaic_method1.text)<>0  then
   begin
@@ -4761,8 +4753,6 @@ end;
 
 
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
-const
-    range=$FFFF;
 var
     h2,h2mod2,m,c,x: single;
 begin
@@ -5050,8 +5040,8 @@ begin
   begin
 
     {next two could be written more efficient using previous bitmap}
-    if mainwindow.Fliphorizontal1.Checked then mainwindow.Fliphorizontal1Click(nil);
-    if mainwindow.Flipvertical1.Checked then mainwindow.Flipvertical1Click(nil);
+    if mainwindow.Flip_horizontal1.Checked then mainwindow.Flip_horizontal1Click(nil);
+    if mainwindow.flip_vertical1.Checked then mainwindow.flip_vertical1Click(nil);
 
     plot_north; {draw arrow or clear indication position north depending on value cd1_1}
     if mainwindow.add_marker_position1.checked then
@@ -6103,8 +6093,8 @@ begin
 
 
     inversemousewheel1.checked:=get_boolean('inversemousewheel',false);
-    fliphorizontal1.checked:=get_boolean('fliphorizontal',false);
-    Flipvertical1.checked:=get_boolean('Flipvertical',false);
+    flip_horizontal1.checked:=get_boolean('fliphorizontal',false);
+    flip_vertical1.checked:=get_boolean('Flipvertical',false);
     add_marker_position1.checked:=get_boolean('add_marker',false);{popup marker selected?}
 
     stackmenu1.make_osc_color1.checked:=get_boolean('osc_color_convert',false);
@@ -6425,8 +6415,8 @@ begin
   initstring.Values['rgb_filter']:=inttostr(stackmenu1.rgb_filter1.itemindex);
 
   initstring.Values['inversemousewheel']:=BoolStr[inversemousewheel1.checked];
-  initstring.Values['fliphorizontal']:=BoolStr[Fliphorizontal1.checked];
-  initstring.Values['Flipvertical']:=BoolStr[Flipvertical1.checked];
+  initstring.Values['fliphorizontal']:=BoolStr[flip_horizontal1.checked];
+  initstring.Values['Flipvertical']:=BoolStr[flip_vertical1.checked];
   initstring.Values['add_marker']:=BoolStr[add_marker_position1.checked];
 
   initstring.Values['osc_color_convert']:=BoolStr[stackmenu1.make_osc_color1.checked];
@@ -6640,7 +6630,7 @@ begin
 end;
 
 
-procedure Tmainwindow.Fliphorizontal1Click(Sender: TObject);
+procedure Tmainwindow.flip_horizontal1Click(Sender: TObject);
 var bmp: TBitmap;
     w, h, x, y: integer;
 type
@@ -7107,7 +7097,7 @@ begin
   end;
 end;
 
-//procedure Tmainwindow.Flipvertical1Click(Sender: TObject);
+//procedure Tmainwindow.flip_vertical1Click(Sender: TObject);
 //var src, dest: TRect;
 //    bmp: TBitmap;
 //    w, h: integer;
@@ -7132,7 +7122,7 @@ end;
 //end;
 
 
-procedure Tmainwindow.Flipvertical1Click(Sender: TObject);
+procedure Tmainwindow.flip_vertical1Click(Sender: TObject);
 var bmp: TBitmap;
     w, h, x, y: integer;
 type
@@ -7280,6 +7270,23 @@ begin
   plot_fits(mainwindow.image1,false,true);
 end;
 
+procedure Tmainwindow.histogram_values_to_clipboard1Click(Sender: TObject); {copy histogram values to clipboard}
+var
+  c    : integer;
+  info : string;
+begin
+//  histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
+  info:='';
+  for c := 0 to 65535 do
+  begin
+     info:=info+inttostr(c)+#9+inttostr(histogram[0,c]);
+     if naxis3>1 then info:=info+#9+inttostr(histogram[1,c])+#9+inttostr(histogram[2,c]);{add green and blue if colour image}
+     if c=0 then info:=info+ #9+'Value, Red count, Green count, Blue count';
+     info:=info+slinebreak;
+  end;
+  Clipboard.AsText:=info;
+end;
+
 procedure Tmainwindow.imageflipv1Click(Sender: TObject);
 var
   col,fitsX,fitsY : integer;
@@ -7365,13 +7372,13 @@ begin
     tx:=oldX;
     ty:=oldY;
 
-    if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
     begin
       starty:=height2-1-starty;
       oldY:=height2-1-oldY;
     end;
 
-    if mainwindow.Fliphorizontal1.Checked then
+    if mainwindow.Flip_horizontal1.Checked then
     begin
       startX:=width2-1-startX;
       oldX:=width2-1-oldX;
@@ -7484,13 +7491,13 @@ begin
     oldX2:=oldX;
     oldY2:=oldY;
 
-    if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
     begin
       startY2:=height2-1-startY2;
       oldY2:=height2-1-oldY2;
     end;
 
-    if mainwindow.Fliphorizontal1.Checked then
+    if mainwindow.Flip_horizontal1.Checked then
     begin
       startX2:=width2-1-startX2;
       oldX2:=width2-1-oldX2;
@@ -7600,13 +7607,13 @@ begin
 
     backup_img;{required in case later ctrl-z is used}
 
-    if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
     begin
       copy_paste_y:=height2-1-copy_paste_y;
       oldY2:=height2-1-oldY2;
     end;
 
-    if mainwindow.Fliphorizontal1.Checked then
+    if mainwindow.Flip_horizontal1.Checked then
     begin
       copy_paste_x:=width2-1-copy_paste_x;
       oldX2:=width2-1-oldX2;
@@ -7665,6 +7672,9 @@ begin
   end;
 end;
 
+
+
+
 procedure do_stretching;{prepare strecht table and replot image}
 var
   i: integer;
@@ -7712,8 +7722,7 @@ var
    colrr1,colgg1,colbb1,colrr2,colgg2,colbb2                      : single;
    a,b,c,p : double;
 
-   fitsX,fitsY,dum,k,bsize  : integer;
-   line_bottom, line_top : double;
+   fitsX,fitsY,bsize  : integer;
 
    Save_Cursor:TCursor;
 begin
@@ -7725,13 +7734,13 @@ begin
 
     backup_img;
 
-    if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
     begin
       starty:=height2-1-starty;
       oldY:=height2-1-oldY;
     end;
 
-    if mainwindow.Fliphorizontal1.Checked then
+    if mainwindow.Flip_horizontal1.Checked then
     begin
       startX:=width2-1-startX;
       oldX:=width2-1-oldX;
@@ -7972,8 +7981,8 @@ var
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
-  Flipvertical:=mainwindow.Flipvertical1.Checked;
-  Fliphorizontal:=mainwindow.Fliphorizontal1.Checked;
+  Flipvertical:=mainwindow.flip_vertical1.Checked;
+  Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
 
   image1.Canvas.Pen.Mode := pmMerge;
   image1.Canvas.Pen.width :=1; // round(1+height2/image1.height);{thickness lines}
@@ -8108,6 +8117,7 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.variable_star_annotation1Click(Sender: TObject);
 var
   Save_Cursor:TCursor;
@@ -8215,8 +8225,8 @@ procedure set_marker1XY(show: boolean);
 begin
   if show then
   begin
-    if mainwindow.Fliphorizontal1.Checked then xf:=mainwindow.image1.width-down_x else xf:=down_x;;
-    if mainwindow.Flipvertical1.Checked then yf:=mainwindow.image1.height-down_y else yf:=down_y;
+    if mainwindow.Flip_horizontal1.Checked then xf:=mainwindow.image1.width-down_x else xf:=down_x;;
+    if mainwindow.flip_vertical1.Checked then yf:=mainwindow.image1.height-down_y else yf:=down_y;
 
     shape_marker1_fitsX:=0.5+(0.5+xf)/(mainwindow.image1.width/width2);{starts at 1}
     shape_marker1_fitsY:=0.5+height2-(0.5+yf)/(mainwindow.image1.height/height2); {from bottom to top, starts at 1}
@@ -8233,8 +8243,8 @@ procedure set_marker2XY(show: boolean);
 begin
   if show then
   begin
-    if mainwindow.Fliphorizontal1.Checked then xf:=mainwindow.image1.width-down_x else xf:=down_x;;
-    if mainwindow.Flipvertical1.Checked then yf:=mainwindow.image1.height-down_y else yf:=down_y;
+    if mainwindow.Flip_horizontal1.Checked then xf:=mainwindow.image1.width-down_x else xf:=down_x;;
+    if mainwindow.flip_vertical1.Checked then yf:=mainwindow.image1.height-down_y else yf:=down_y;
 
     shape_marker2_fitsX:=0.5+(0.5+xf)/(mainwindow.image1.width/width2);{starts at 1}
     shape_marker2_fitsY:=0.5+height2-(0.5+yf)/(mainwindow.image1.height/height2); {from bottom to top, starts at 1}
@@ -8292,7 +8302,7 @@ end;
 
 procedure plot_annotations(xoffset,yoffset:integer;fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
 var
-  count1,x1,y1,x2,y2,text_height,text_width,size,xcenter,ycenter,dum : integer;
+  count1,x1,y1,x2,y2,text_height,text_width,size,xcenter,ycenter : integer;
   typ     : double;
   List: TStrings;
   magn : string;
@@ -8327,12 +8337,12 @@ begin
           x2:=round(strtofloat2(list[2]))-1 +xoffset;
           y2:=round(strtofloat2(list[3]))-1 +yoffset;
 
-          if mainwindow.Fliphorizontal1.Checked then {restore based on flipped conditions}
+          if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
           begin
             x1:=(width2-1)-x1;
             x2:=(width2-1)-x2;
           end;
-          if mainwindow.Flipvertical1.Checked=false then
+          if mainwindow.flip_vertical1.Checked=false then
           begin
             y1:=(height2-1)-y1;
             y2:=(height2-1)-y2;
@@ -8433,12 +8443,12 @@ begin
   image1.Canvas.textout( -text_width+text_X, -text_height + text_Y, value);
 
   {store annotations}
-  if Fliphorizontal1.Checked then {flip to fits style, range 0..}
+  if flip_horizontal1.Checked then {flip to fits style, range 0..}
   begin
     startX:=(width2-1)-startX;
     text_X:=(width2-1)-text_X;
   end;
-  if Flipvertical1.Checked=false then
+  if flip_vertical1.Checked=false then
   begin
     startY:=(height2-1)-startY;
     text_Y:=(height2-1)-text_Y;
@@ -8507,8 +8517,8 @@ begin
   begin
     image1.Canvas.font.color:=$00AAFF;
 
-    if mainwindow.Fliphorizontal1.Checked=true then x7:=round(width2-object_xc) else x7:=round(object_xc);
-    if mainwindow.Flipvertical1.Checked=false then y7:=round(height2-object_yc) else y7:=round(object_yc);
+    if mainwindow.Flip_horizontal1.Checked=true then x7:=round(width2-object_xc) else x7:=round(object_xc);
+    if mainwindow.flip_vertical1.Checked=false then y7:=round(height2-object_yc) else y7:=round(object_yc);
 
     image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+prepare_ra2(object_raM,': ')+','+prepare_dec2(object_decM,'° '));
   end
@@ -9371,8 +9381,8 @@ begin
 
   with mainwindow do
   begin
-      Flipvertical:=mainwindow.Flipvertical1.Checked;
-      Fliphorizontal:=mainwindow.Fliphorizontal1.Checked;
+      Flipvertical:=mainwindow.flip_vertical1.Checked;
+      Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
 
 
       image1.Canvas.Pen.Mode := pmMerge;
@@ -9586,7 +9596,7 @@ begin
 end;
 
 
-procedure Tmainwindow.DemosaicBayermatrix1Click(Sender: TObject);
+procedure Tmainwindow.demosaic_bayermatrix1Click(Sender: TObject);
 var
     oldcursor: tcursor;
 begin
@@ -9662,13 +9672,13 @@ begin
 
    backup_img;
 
-   if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+   if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
    begin
      starty:=height2-1-starty;
      oldY:=height2-1-oldY;
    end;
 
-   if mainwindow.Fliphorizontal1.Checked then
+   if mainwindow.Flip_horizontal1.Checked then
    begin
      startX:=width2-1-startX;
      oldX:=width2-1-oldX;
@@ -9939,13 +9949,13 @@ var
     dum : integer;
 begin
 
-  if mainwindow.Flipvertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+  if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
    begin
      starty:=height2-1-starty;
      oldY:=height2-1-oldY;
    end;
 
-   if mainwindow.Fliphorizontal1.Checked then
+   if mainwindow.flip_horizontal1.Checked then
    begin
      startX:=width2-1-startX;
      oldX:=width2-1-oldX;
@@ -9983,8 +9993,8 @@ begin
   memo2_message('Start rotation. This takes some time.');
   backup_img;
 
-  if Fliphorizontal1.checked then angle:=-angle;{change rotation if flipped}
-  if Flipvertical1.checked then   angle:=-angle;{change rotation if flipped}
+  if flip_horizontal1.checked then angle:=-angle;{change rotation if flipped}
+  if flip_vertical1.checked then   angle:=-angle;{change rotation if flipped}
 
   if width2<>height2 then {fresh image}
     maxsize:=round(1+sqrt(sqr(height2)+sqr(width2))) {add one pixel otherwise not enough resulting in runtime errors}
@@ -10145,7 +10155,7 @@ end;
 
 procedure find_highest_pixel_value(img: image_array;box, x1,y1: integer; var xc,yc:double);{}
 var
-  i,j,k,x2,y2,w,h, box2  : integer;
+  i,j,k,w,h  : integer;
   value, val, SumVal,SumValX,SumValY, Xg,Yg : double;
 
   function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
@@ -10198,8 +10208,6 @@ begin
     SumValX:=0;
     SumValY:=0;
 
-    box2:=box div 3;
-
     for i:=-box to +box do
     for j:=-box to +box do
     begin
@@ -10224,8 +10232,8 @@ var
   xf,yf,k, fx,fy: integer;
   fitsX,fitsY,hfd2,fwhm_star2,snr,flux,xc,yc: double;
 begin
-  if Fliphorizontal1.Checked then xf:=image1.width-x else xf:=x;;
-  if Flipvertical1.Checked then yf:=image1.height-y else yf:=y;
+  if flip_horizontal1.Checked then xf:=image1.width-x else xf:=x;;
+  if flip_vertical1.Checked then yf:=image1.height-y else yf:=y;
 
   fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
   fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
@@ -10714,8 +10722,8 @@ begin
      exit;{no more to do}
    end;
 
-   if Fliphorizontal1.Checked then flipH:=-1 else flipH:=1;
-   if Flipvertical1.Checked then  flipV:=-1 else flipV:=1;
+   if flip_horizontal1.Checked then flipH:=-1 else flipH:=1;
+   if flip_vertical1.Checked then  flipV:=-1 else flipV:=1;
 
 //  rubber rectangle
    x_sized:=trunc(x*width2/image1.width);
@@ -11410,70 +11418,70 @@ begin
       if savedialog1.filterindex=1 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_png16(img_temp,naxis3,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked);
+        save_png16(img_temp,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=2 then
-        save_png16(img_loaded,naxis3,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked)
+        save_png16(img_loaded,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=3 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_tiff16(img_temp,naxis3,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked);
+        save_tiff16(img_temp,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=4 then
-        save_tiff16(img_loaded,naxis3,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked)
+        save_tiff16(img_loaded,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=5 then
-      save_tiff_96(img_loaded,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked) {old uncompressed routine in unit_tiff}
+      save_tiff_96(img_loaded,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked) {old uncompressed routine in unit_tiff}
       else
       if savedialog1.filterindex=6 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_PPM_PGM_PFM(img_temp,width2,height2,48 {colour depth},savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked);
+        save_PPM_PGM_PFM(img_temp,width2,height2,48 {colour depth},savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=7 then
-          save_PPM_PGM_PFM(img_loaded,width2,height2,48 {colour depth},savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked)
+          save_PPM_PGM_PFM(img_loaded,width2,height2,48 {colour depth},savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=8 then
-          save_PPM_PGM_PFM(img_loaded,width2,height2,96 {colour depth},savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked);
+          save_PPM_PGM_PFM(img_loaded,width2,height2,96 {colour depth},savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked);
     end {color}
     else
     begin {gray}
       if savedialog1.filterindex=1 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_png16(img_temp,naxis3,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked);
+        save_png16(img_temp,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=2 then
-        save_png16(img_loaded,naxis3,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked)
+        save_png16(img_loaded,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=3 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_tiff16(img_temp,naxis3,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked);
+        save_tiff16(img_temp,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=4 then
-      save_tiff16(img_loaded,naxis3,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked)
+      save_tiff16(img_loaded,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=5 then
-        save_tiff_32(img_loaded,width2,height2,savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked){old uncompressed routine in unit_tiff}
+        save_tiff_32(img_loaded,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked){old uncompressed routine in unit_tiff}
       else
       if savedialog1.filterindex=6 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_PPM_PGM_PFM(img_temp,width2,height2,16{colour depth}, savedialog1.filename, Fliphorizontal1.checked,Flipvertical1.checked);
+        save_PPM_PGM_PFM(img_temp,width2,height2,16{colour depth}, savedialog1.filename, flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=7 then
-          save_PPM_PGM_PFM(img_loaded,width2,height2,16{colour depth},savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked)
+          save_PPM_PGM_PFM(img_loaded,width2,height2,16{colour depth},savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=8 then
-          save_PPM_PGM_PFM(img_loaded,width2,height2,32 {colour depth},savedialog1.filename,Fliphorizontal1.checked,Flipvertical1.checked);
+          save_PPM_PGM_PFM(img_loaded,width2,height2,32 {colour depth},savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked);
 
     end;
 
@@ -11955,28 +11963,33 @@ end;
 procedure Tmainwindow.minimum1Change(Sender: TObject);
 begin
   min2.text:=inttostr(minimum1.position);
-  {$IfDef Darwin}// for OS X,
-   {update after scrolling doesn't work. in macOS. See mainwindow.maximum1Scroll. temporary fix }
-   if ((fits_file) {and (scrollcode=scEndScroll)}) then plot_fits(mainwindow.image1,false,true);
-  {$ELSE}
-  {$ENDIF}
+  shape_histogram1.left:=1+(histogram1.left) + round(histogram1.width * minimum1.position/minimum1.max);
 end;
 
 procedure Tmainwindow.maximum1Change(Sender: TObject);
 begin
   max2.text:=inttostr(maximum1.position);
-
-  {$IfDef Darwin}// {MacOS}
-   {update after scrolling deosn't work. in macOS. See mainwindow.maximum1Scroll. temporary fix }
-   if ((fits_file) {and (scrollcode=scEndScroll)}) then plot_fits(mainwindow.image1,false,true);
-  {$ELSE}
-  {$ENDIF}
+  shape_histogram1.left:=1+histogram1.left+ round(histogram1.width * maximum1.position/maximum1.max);
 end;
 
 procedure Tmainwindow.maximum1Scroll(Sender: TObject; ScrollCode: TScrollCode;
   var ScrollPos: Integer);
 begin
-  if ((fits_file) and (scrollcode=scEndScroll)) then plot_fits(mainwindow.image1,false,true);
+  if fits_file then
+  begin
+    {$IfDef Darwin}// for OS X,
+     if true then {temporary fix. scendscroll doesnt work. See bug report https://bugs.freepascal.org/view.php?id=37454}
+     {$ELSE}
+      if scrollcode=scEndScroll then
+     {$ENDIF}
+    begin
+      plot_fits(mainwindow.image1,false,true);
+      shape_histogram1.visible:=false;
+    end
+    else
+      shape_histogram1.visible:=true;
+  end;
+
   mainwindow.range1.itemindex:=7; {manual}
 end;
 
