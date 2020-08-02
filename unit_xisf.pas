@@ -365,8 +365,8 @@ begin
     mainwindow.ra1.text:=prepare_ra(ra0,' ');
     mainwindow.dec1.text:=prepare_dec(dec0,' ');
    {$IfDef Darwin}// {MacOS}
-    mainwindow.ra1change(nil);{OSX doesn't trigger an event}
-    mainwindow.dec1change(nil);
+    //mainwindow.ra1change(nil);{OSX doesn't trigger an event}
+    //mainwindow.dec1change(nil);
    {$ENDIF}
   end;
 

@@ -42,7 +42,8 @@ uses
   LCLProc,
   FPImage,
   fpreadTIFF, {all part of fcl-image}
-  fpreadPNG,fpreadBMP,fpreadJPEG,fpreadPNM,  {images}
+  fpreadPNG,fpreadBMP,fpreadJPEG,
+//  fpwritePNM,  {images}
   fpwriteTIFF,fpwritePNG,fpwriteBMP,fpwriteJPEG, fptiffcmn,  {images}
   GraphType, {fastbitmap}
   LCLVersion, SysUtils, Graphics, Forms, strutils, math,
@@ -1015,17 +1016,17 @@ begin
           if ((header[i+5]='R') and (header[i+6]='A')) then
           begin
             mainwindow.ra1.text:=get_string;
-           {$IfDef Darwin}//{MacOS}   {still required???}
-            mainwindow.ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
-          {$ENDIF}
+           //{$IfDef Darwin}//{MacOS}   {still required???}
+           // mainwindow.ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
+           //{$ENDIF}
           end
           else
           if ((header[i+5]='D') and (header[i+6]='E')) then
           begin
             mainwindow.dec1.text:=get_string;
-           {$IfDef Darwin}//{MacOS}
-            mainwindow.dec1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
-           {$ENDIF}
+           //{$IfDef Darwin}//{MacOS}
+           // mainwindow.dec1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
+           //{$ENDIF}
           end
           else
           if ((header[i+5]='A') and (header[i+6]='Z')) then centaz:=strtofloat2(get_string) {for MaximDL5}
@@ -1270,10 +1271,10 @@ begin
   begin
      mainwindow.ra1.text:=prepare_ra(ra0,' ');
      mainwindow.dec1.text:=prepare_dec(dec0,' ');
-     {$IfDef Darwin}// {MacOS}
-       mainwindow.ra1change(nil);{OSX doesn't trigger an event}
-       mainwindow.dec1change(nil);
-     {$ENDIF}
+     //{$IfDef Darwin}// {MacOS}
+     // mainwindow.ra1change(nil);{OSX doesn't trigger an event}
+     //  mainwindow.dec1change(nil);
+     //{$ENDIF}
   end;
 
   if ((cd1_1=0) and (cdelt2=0)) then  {no scale, try to fix it}
@@ -1646,7 +1647,7 @@ procedure update_float(inpt,comment1:string;x:double);{update keyword of fits he
 begin
   str(x:20,s);
 
-  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
+  count1:=mainwindow.Memo1.Lines.Count-1;
   while count1>=0 do {update keyword}
   begin
     if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
@@ -1660,7 +1661,7 @@ begin
     count1:=count1-1;
   end;
   {not found, add to the end}
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inpt+' '+s+comment1);
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+s+comment1);
 end;
 procedure update_integer(inpt,comment1:string;x:integer);{update or insert variable in header}
  var
@@ -1669,7 +1670,7 @@ procedure update_integer(inpt,comment1:string;x:integer);{update or insert varia
 begin
   str(x:20,s);
 
-  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
+  count1:=mainwindow.Memo1.Lines.Count-1;
   while count1>=0 do {update keyword}
   begin
     if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
@@ -1686,14 +1687,14 @@ begin
   if inpt='NAXIS1  =' then mainwindow.memo1.lines.insert(3,inpt+' '+s+comment1) else{PixInsight requires to have it on 3th place}
   if inpt='NAXIS2  =' then mainwindow.memo1.lines.insert(4,inpt+' '+s+comment1) else{PixInsight requires to have it on 4th place}
   if inpt='NAXIS3  =' then mainwindow.memo1.lines.insert(5,inpt+' '+s+comment1) else{PixInsight requires to have it on this place}
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inpt+' '+s+comment1);
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+s+comment1);
 end;
 procedure add_integer(inpt,comment1:string;x:integer);{add integer variable to header}
  var
    s        : string;
 begin
   str(x:20,s);
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inpt+' '+s+comment1);
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+s+comment1);
 end;
 
 procedure update_generic(message_key,message_value,message_comment:string);{update header using text only}
@@ -1705,7 +1706,7 @@ begin
     while length(message_value)<20 do message_value:=' '+message_value;{extend length, right aligned}
     while length(message_key)<8 do message_key:=message_key+' ';{make standard lenght of 8}
 
-   count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
+   count1:=mainwindow.Memo1.Lines.Count-1;
     while count1>=0 do {update keyword}
     begin
       if pos(message_key,mainwindow.Memo1.Lines[count1])>0 then {found}
@@ -1716,10 +1717,10 @@ begin
       count1:=count1-1;
     end;
     {not found, add to the end}
-    mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},message_key+'= '+message_value+' / '+message_comment);
+    mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,message_key+'= '+message_value+' / '+message_comment);
   end {no history of comment keyword}
   else
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},message_key+' '+message_value+message_comment);
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,message_key+' '+message_value+message_comment);
 end;
 
 procedure update_text(inpt,comment1:string);{update or insert text in header}
@@ -1727,7 +1728,7 @@ var
    count1: integer;
 begin
 
-  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
+  count1:=mainwindow.Memo1.Lines.Count-1;
   while count1>=0 do {update keyword}
   begin
     if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
@@ -1738,12 +1739,12 @@ begin
     count1:=count1-1;
   end;
   {not found, add to the end}
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inpt+' '+comment1);
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+comment1);
 end;
 
 procedure add_text(inpt,comment1:string);{add text to header memo}
 begin
-  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},inpt+' '+copy(comment1,1,79-length(inpt)));  {add to the end. Limit to 80 char max as specified by FITS standard}
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+copy(comment1,1,79-length(inpt)));  {add to the end. Limit to 80 char max as specified by FITS standard}
 end;
 
 procedure add_long_comment(descrip:string);{add long text to header memo. Split description over several lines if required}
@@ -1754,7 +1755,7 @@ begin
   j:=length(descrip);
   while i<j do
   begin
-    mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF},'COMMENT '+copy(descrip,I,72) );  {add to the end. Limit line length to 80}
+    mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,'COMMENT '+copy(descrip,I,72) );  {add to the end. Limit line length to 80}
     inc(i,72);
   end;
 end;
@@ -1764,7 +1765,7 @@ var
    count1: integer;
 begin
 
-  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
+  count1:=mainwindow.Memo1.Lines.Count-1;
   while count1>=0 do {update keyword}
   begin
     if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
@@ -2164,7 +2165,7 @@ begin
 
  {$IFDEF fpc}
  {$MACRO ON} {required for FPC_fullversion}
-  about_message5:=' Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version;
+  about_message5:=' Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version+' '+inttostr(lcl_fullversion);
  {$ELSE} {delphi}
   about_message5:='';
  {$ENDIF}
@@ -2182,7 +2183,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.396 dated 2020-07-30';
+  #13+#10+'Version ß0.9.397 dated 2020-08-2';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2808,9 +2809,9 @@ end;
 
 procedure Tmainwindow.ra1DblClick(Sender: TObject); {retrieve object position from database}
 begin
-  {$IfDef Darwin}// for OS X,
-    exit; {double click is also triggered by single click.}
-  {$ENDIF}
+//  {$IfDef Darwin}// for OS X,
+//    exit; {double click is also triggered by single click.} //SEE https://bugs.freepascal.org/view.php?id=36621
+//  {$ENDIF}
   search_database;
 end;
 
@@ -5425,7 +5426,7 @@ begin
   a_order:=0; {reset SIP_polynomial, use for check if there is data}
 
 
-  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF}-1;
+  count1:=mainwindow.Memo1.Lines.Count-1-1;
   while count1>1 do {read bare minimum keys since TIFF is not required for stacking}
   begin
     key:=copy(mainwindow.Memo1.Lines[count1],1,9);
@@ -5456,12 +5457,14 @@ var
   jd2   : double;
   image: TFPCustomImage;
   reader: TFPCustomImageReader;
-  tiff, colour,saved_header  : boolean;
+  tiff, png,jpeg,colour,saved_header  : boolean;
   ext,descrip   : string;
 begin
   naxis:=0; {0 dimensions}
   result:=false; {assume failure}
   tiff:=false;
+  jpeg:=false;
+  png:=false;
   saved_header:=false;
   ext:=uppercase(ExtractFileExt(filen));
   try
@@ -5473,13 +5476,21 @@ begin
        tiff:=true;
     end
     else
-    if ext='.PNG' then  Reader :=  TFPReaderPNG.Create
+    if ext='.PNG' then begin
+      Reader :=  TFPReaderPNG.Create;
+      png:=true;
+    end
     else
-    if ((ext='.JPG') or (ext='.JPEG')) then Reader :=  TFPReaderJPEG.Create
+    if ((ext='.JPG') or (ext='.JPEG')) then
+    begin
+      Reader :=  TFPReaderJPEG.Create;
+      jpeg:=true;
+    end
     else
     if ext='.BMP' then Reader :=  TFPReaderBMP.create
     else
-    //    if ((ext='.PPM') or (ext='.PGM')) then Reader :=  TFPReaderPNM.Create else {doesn't work yet for 16 bit}
+    //  if ((ext='.PPM') or (ext='.PGM')) then
+    //    Reader :=  TFPReaderPNM.Create else {not used since comment have to be read}
     exit;
 
     Image.LoadFromFile(filen, Reader);
@@ -5491,6 +5502,13 @@ begin
      exit;
   end;
 
+  {$IF FPC_FULLVERSION >= 30200} {FPC3.2.0}
+  colour:=true;
+  if ((tiff) and (Image.Extra[TiffGrayBits]<>'0')) then colour:=false; {image grayscale?}
+  if ((png) and (TFPReaderPNG(reader).grayscale)) then colour:=false; {image grayscale?}
+  if ((jpeg) and (TFPReaderJPEG(reader).grayscale)) then colour:=false; {image grayscale?}
+  {BMP always colour}
+  {$else} {for older compiler versions}
   colour:=false;
   with image do {temporary till grayscale is implemented in fcl-image}
   begin
@@ -5509,6 +5527,7 @@ begin
       inc(j);
     end;
   end;
+  {$ENDIF}
 
   if colour=false then
   begin
@@ -5520,9 +5539,6 @@ begin
     naxis:=3; {three dimensions, x,y and 3 colours}
     naxis3:=3;
   end;
-
-//  if ((png) and (TFPReaderPNG(reader).grayscale)) then naxis3:=1;
- // if (ext<>'.PGM') then naxis3:=3 else naxis3:=1;
 
   mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
   mainwindow.memo1.clear;{clear memo for new header}
@@ -5586,8 +5602,6 @@ begin
       for j:=0 to width2-1 do
         img_loaded2[0,j,height2-1-i]:=image.Colors[j,i].red;
   end;
-
- // update_menu(true);{file loaded, update menu for fits}
 
   if tiff then
   begin
@@ -6123,8 +6137,8 @@ begin
     dec1.text:= initstring.Values['dec'];
 
     {$IfDef Darwin}//{MacOS}
-      mainwindow.ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
-      mainwindow.dec1change(nil);
+//      mainwindow.ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
+//      mainwindow.dec1change(nil);
     {$ENDIF}
     stretch1.text:= initstring.Values['gamma'];
     if pos('0.',stretch1.text)>0 then stretch1.text:='100'; {upgrade, temporary, remove mid 2019}
@@ -6475,8 +6489,8 @@ begin
   initstring.Values['downsample']:=stackmenu1.downsample_for_solving1.text;
   initstring.Values['max_fov']:=stackmenu1.max_fov1.text;
 
-  initstring.Values['pixel_size']:=stackmenu1.pixelsize1.text;
-  initstring.Values['focal_length']:=stackmenu1.focallength1.text;
+//  initstring.Values['pixel_size']:=stackmenu1.pixelsize1.text;
+//  initstring.Values['focal_length']:=stackmenu1.focallength1.text;
   initstring.Values['oversize']:=stackmenu1.oversize1.text;
 
   initstring.Values['sd_factor']:=stackmenu1.sd_factor1.text;
@@ -8321,7 +8335,7 @@ begin
   {$else} {Linux}
   {$endif}
 
-  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
+  count1:=mainwindow.Memo1.Lines.Count-1;
   try
     while count1>=0 do {plot annotations}
     begin
@@ -8546,11 +8560,15 @@ begin
 
 {$IfDef Darwin}//{MacOS}
  PageControl1.height:=168;{height changes depending on tabs on off, keep a little more tolerance}
+
+// minimum1.left:=histogram1.left-0;
+// maximum.left:=histogram1.left-0;
+// minimum1.width:=histogram1.width-0;
+// maximum1.width:=histogram1.width-0;
 {$ENDIF}
 
  panel1.Top:=max(PageControl1.height, data_range_groupBox1.top+data_range_groupBox1.height+5);
  panel1.left:=0;
-
 
  mw:=mainwindow.width;
  h:=StatusBar1.top-panel1.top;
@@ -9241,6 +9259,12 @@ begin
   end {paramcount>0}
   else
   Mainwindow.stretch1Change(nil);{create gamma curve for image if loaded later and set gamma_on}
+
+  {$IfDef Darwin}// for OS X,
+  {$IF FPC_FULLVERSION <= 30200} {FPC3.2.0}
+     application.messagebox( pchar('Warning this code requires later LAZARUS 2.1 and FPC 3.3.1 version!!!'), pchar('Warning'),MB_OK);
+  {$ENDIF}
+  {$ENDIF}
 end;
 
 procedure Tmainwindow.AddplatesolvesolutiontoselectedFITSfiles1Click(
@@ -11240,7 +11264,7 @@ begin
   result:=true;
 end;
 
-function save_PNG16(img: image_array; colors,wide2,height2:integer; filen2:string;flip_H,flip_V:boolean): boolean;{save to 48=3x16 color TIFF file }
+function save_PNG16(img: image_array; colors,wide2,height2:integer; filen2:string;flip_H,flip_V:boolean): boolean;{save to PNG file }
 var
   i, j, k,m      :integer;
   image: TFPCustomImage;
@@ -11279,6 +11303,44 @@ begin
   image.Free;
   writer.Free;
 end;
+
+//function save_PNM16(img: image_array; colors,wide2,height2:integer; filen2:string;flip_H,flip_V:boolean): boolean;{save to PNM file }
+//var
+//  i, j, k,m      :integer;
+//  image: TFPCustomImage;
+//  writer: TFPCustomImageWriter;
+//  thecolor  :Tfpcolor;
+//begin
+//  Image := TFPMemoryImage.Create(width2, height2);
+//  Writer := TFPWriterPNM.Create;
+
+//  with TFPWriterPNM(Writer) do
+//  begin
+//    FullWidth:=true;{16 bit}
+//  end;
+//  For i:=0 to height2-1 do
+//  begin
+//    if flip_V=false then k:=height2-1-i else k:=i;{reverse fits down to counting}
+//    for j:=0 to width2-1 do
+//    begin
+//      if flip_H=true then m:=wide2-1-j else m:=j;
+//      thecolor.red:=min(round(img[0,m,k]), $FFFF);
+//      if colors>1 then thecolor.green:=min(round(img[1,m,k]), $FFFF)  else thecolor.green:=thecolor.red;
+//      if colors>2 then thecolor.blue:=min(round(img[2,m,k]), $FFFF)   else thecolor.blue:=thecolor.red;
+//      thecolor.alpha:=65535;
+//      image.Colors[j,i]:=thecolor;
+//    end;
+//  end;
+//  try
+//  Image.SaveToFile(filen2, Writer);
+//  except
+//    result:=false;
+//    exit;
+//  end;
+//  image.Free;
+//  writer.Free;
+//end;
+
 
 function save_tiff16(img: image_array; colors,wide2,height2:integer; filen2:string;flip_H,flip_V:boolean): boolean;{save to 48=3x16 color TIFF file }
 var

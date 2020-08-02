@@ -1538,7 +1538,7 @@ begin
 
   name:=stackmenu1.ephemeris_centering1.text;{asteroid to center on}
 
-  count1:=mainwindow.Memo1.Lines.Count{$IfDef Darwin}-2{$ELSE}-1{$ENDIF};
+  count1:=mainwindow.Memo1.Lines.Count-1;
   try
     while count1>=0 do {plot annotations}
     begin
