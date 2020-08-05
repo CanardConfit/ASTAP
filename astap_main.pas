@@ -2159,13 +2159,13 @@ const
   {$ENDIF}
 begin
   if sizeof(IntPtr) = 8 then
-  about_message4:='64 bit version,'
+  about_message4:='64 bit'
   else
-  about_message4:='32 bit version,';
+  about_message4:='32 bit';
 
  {$IFDEF fpc}
  {$MACRO ON} {required for FPC_fullversion}
-  about_message5:=' Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version+' '+inttostr(lcl_fullversion);
+  about_message5:='Build using Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version;
  {$ELSE} {delphi}
   about_message5:='';
  {$ENDIF}
@@ -2177,13 +2177,13 @@ begin
   #13+#10+
   #13+#10+'It uses an internal star matching routine, internal astrometric solving routine or a local version of astrometry.net for alignment.'+' For RAW file conversion it uses the external program LibRaw.'+
   #13+#10+
-  #13+#10+about_message4+about_message5+
+  #13+#10+about_message5+
   #13+#10+
   #13+#10+'Send an e-mail if you like this free program. Feel free to distribute!'+
   #13+#10+
-  #13+#10+'© 2018, 2020  by Han Kleijn. Webpage: www.hnsky.org'+
+  #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'Version ß0.9.397 dated 2020-08-2';
+  #13+#10+'ASTAP version ß0.9.398, '+about_message4+', dated 2020-08-5';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -8559,12 +8559,12 @@ var
 begin
 
 {$IfDef Darwin}//{MacOS}
- PageControl1.height:=168;{height changes depending on tabs on off, keep a little more tolerance}
+  PageControl1.height:=168;{height changes depending on tabs on off, keep a little more tolerance}
 
-// minimum1.left:=histogram1.left-0;
-// maximum.left:=histogram1.left-0;
-// minimum1.width:=histogram1.width-0;
-// maximum1.width:=histogram1.width-0;
+  minimum1.left:=histogram1.left-11;{adapt to different slider dimensions in Mac}
+  maximum1.left:=histogram1.left-11;
+  minimum1.width:=histogram1.width+24;
+  maximum1.width:=histogram1.width+24;
 {$ENDIF}
 
  panel1.Top:=max(PageControl1.height, data_range_groupBox1.top+data_range_groupBox1.height+5);

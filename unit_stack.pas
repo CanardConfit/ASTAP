@@ -6942,7 +6942,7 @@ begin
         listview_add2(listview2,path1,9);{add master}
         listview2.Items.EndUpdate;
 
-        analyse_listview(listview2,false {light},false {full fits},false{refresh});{update the tab information}
+        analyse_listview(listview2,false {light},true {full fits},false{refresh});{update the tab information}
       end;
       img_dark:=nil;
     end;
@@ -7086,7 +7086,7 @@ begin
           end;
           listview_add2(listview3,path1,10);{add master}
           listview3.Items.EndUpdate;
-          analyse_listview(listview3,false {light},false {full fits},false{refresh});{update the tab information}
+          analyse_listview(listview3,false {light},true {full fits (for standard deviation)},false{refresh});{update the tab information}
         end;
         img_flat:=nil;
       end;
