@@ -5850,7 +5850,7 @@ begin
        2,3: above_R:=0.003; {medium range}
        4,5: above_R:=0.01;  {high range}
        6,7: begin minm:=round(datamin_org);maxm:=round(datamax_org)end;{6=range and 7=manual}
-       8: begin minm:=round(datamax_org*0.95); maxm:=round(datamax_org);  end;{use datamin/max}
+       8: begin minm:=round(max_range*0.95); maxm:=round(max_range);  end;{Show saturation}
        9: begin minm:=round(datamin_org); maxm:=round(datamax_org);   end;{max range, use datamin/max}
   end;
 
