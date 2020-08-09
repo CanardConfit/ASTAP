@@ -160,11 +160,13 @@ begin
   end;
 end;
 
+const
+    debugnr:integer=0;
 
 procedure find_tetrahedrons(starlist :star_list; var starlisttetrahedrons :star_list);  {build tetrahedrons using closest stars, revised 2020-7-1, 25% percent faster}
 var
    i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrtetrahedrons,buffersize : integer;
-   distance,distance1,distance2,distance3                       : double;
+   distance,distance1,distance2,distance3{,dummy }                         : double;
    identical_tetrahedron : boolean;
 begin
   nrstars_min_one:=Length(starlist[0])-1;
@@ -224,6 +226,10 @@ begin
       end;
     end;{j}
 
+//    inc(debugnr);
+//    if debugnr>=29070 then
+//    beep;
+
     starlisttetrahedrons[0,nrtetrahedrons]:=starlist[0,i]; {copy first star position to the tetrahedron array}
     starlisttetrahedrons[1,nrtetrahedrons]:=starlist[1,i];
 
@@ -254,7 +260,11 @@ begin
       //if nrtetrahedrons>=buffersize then setlength(starlisttetrahedrons,10,length(starlisttetrahedrons[0])+buffersize);{get more space}
     end;
   end;{i}
+
+//  dummy:=starlisttetrahedrons[0,nrtetrahedrons-1];
   SetLength(starlisttetrahedrons,10,nrtetrahedrons);{reduce array length to number tetrahedrons one shorter since last entry is not filled}
+//  if dummy<>starlisttetrahedrons[0,nrtetrahedrons-1] then
+ // beep;
 end;
 
 
@@ -266,30 +276,35 @@ begin
   nrtetrahedrons:=Length(starlisttetrahedrons3[0]);{nrtetrahedrons+1}
   SetLength(star_tetrahedron_lengths,6,nrtetrahedrons);
 
-  for i:=0 to nrtetrahedrons-1 do
-  begin
-    leng1:=sqrt(sqr(starlisttetrahedrons3[0,i]-starlisttetrahedrons3[2,i])+ sqr(starlisttetrahedrons3[1,i]-starlisttetrahedrons3[3,i]));{distance star1-star2}
-    leng2:=sqrt(sqr(starlisttetrahedrons3[0,i]-starlisttetrahedrons3[4,i])+ sqr(starlisttetrahedrons3[1,i]-starlisttetrahedrons3[5,i]));{distance star1-star3}
-    leng3:=sqrt(sqr(starlisttetrahedrons3[0,i]-starlisttetrahedrons3[6,i])+ sqr(starlisttetrahedrons3[1,i]-starlisttetrahedrons3[7,i]));{distance star1-star4}
-    leng4:=sqrt(sqr(starlisttetrahedrons3[2,i]-starlisttetrahedrons3[4,i])+ sqr(starlisttetrahedrons3[3,i]-starlisttetrahedrons3[5,i]));{distance star2-star3}
-    leng5:=sqrt(sqr(starlisttetrahedrons3[2,i]-starlisttetrahedrons3[6,i])+ sqr(starlisttetrahedrons3[3,i]-starlisttetrahedrons3[7,i]));{distance star2-star4}
-    leng6:=sqrt(sqr(starlisttetrahedrons3[4,i]-starlisttetrahedrons3[6,i])+ sqr(starlisttetrahedrons3[5,i]-starlisttetrahedrons3[7,i]));{distance star3-star4}
-
-    {sort edges length of triangular tetrahedrons}
-    for j:=1 to 6 do {sort on length}
+  try
+    for i:=0 to nrtetrahedrons-1 do
     begin
-      if leng6>leng5 then begin dummy:=leng5; leng5:=leng6; leng6:=dummy; end;
-      if leng5>leng4 then begin dummy:=leng4; leng4:=leng5; leng5:=dummy; end;
-      if leng4>leng3 then begin dummy:=leng3; leng3:=leng4; leng4:=dummy; end;
-      if leng3>leng2 then begin dummy:=leng2; leng2:=leng3; leng3:=dummy; end;
-      if leng2>leng1 then begin dummy:=leng1; leng1:=leng2; leng2:=dummy; end;
+      leng1:=sqrt(sqr(starlisttetrahedrons3[0,i]-starlisttetrahedrons3[2,i])+ sqr(starlisttetrahedrons3[1,i]-starlisttetrahedrons3[3,i]));{distance star1-star2}
+      leng2:=sqrt(sqr(starlisttetrahedrons3[0,i]-starlisttetrahedrons3[4,i])+ sqr(starlisttetrahedrons3[1,i]-starlisttetrahedrons3[5,i]));{distance star1-star3}
+      leng3:=sqrt(sqr(starlisttetrahedrons3[0,i]-starlisttetrahedrons3[6,i])+ sqr(starlisttetrahedrons3[1,i]-starlisttetrahedrons3[7,i]));{distance star1-star4}
+      leng4:=sqrt(sqr(starlisttetrahedrons3[2,i]-starlisttetrahedrons3[4,i])+ sqr(starlisttetrahedrons3[3,i]-starlisttetrahedrons3[5,i]));{distance star2-star3}
+      leng5:=sqrt(sqr(starlisttetrahedrons3[2,i]-starlisttetrahedrons3[6,i])+ sqr(starlisttetrahedrons3[3,i]-starlisttetrahedrons3[7,i]));{distance star2-star4}
+      leng6:=sqrt(sqr(starlisttetrahedrons3[4,i]-starlisttetrahedrons3[6,i])+ sqr(starlisttetrahedrons3[5,i]-starlisttetrahedrons3[7,i]));{distance star3-star4}
+
+      {sort edges length of triangular tetrahedrons}
+      for j:=1 to 6 do {sort on length}
+      begin
+        if leng6>leng5 then begin dummy:=leng5; leng5:=leng6; leng6:=dummy; end;
+        if leng5>leng4 then begin dummy:=leng4; leng4:=leng5; leng5:=dummy; end;
+        if leng4>leng3 then begin dummy:=leng3; leng3:=leng4; leng4:=dummy; end;
+        if leng3>leng2 then begin dummy:=leng2; leng2:=leng3; leng3:=dummy; end;
+        if leng2>leng1 then begin dummy:=leng1; leng1:=leng2; leng2:=dummy; end;
+      end;
+      star_tetrahedron_lengths[0,i]:=leng1;
+      star_tetrahedron_lengths[1,i]:=leng2/leng1;{scale relative to largest edge length}
+      star_tetrahedron_lengths[2,i]:=leng3/leng1;
+      star_tetrahedron_lengths[3,i]:=leng4/leng1;
+      star_tetrahedron_lengths[4,i]:=leng5/leng1;
+      star_tetrahedron_lengths[5,i]:=leng6/leng1;
     end;
-    star_tetrahedron_lengths[0,i]:=leng1;
-    star_tetrahedron_lengths[1,i]:=leng2/leng1;{scale relative to largest edge length}
-    star_tetrahedron_lengths[2,i]:=leng3/leng1;
-    star_tetrahedron_lengths[3,i]:=leng4/leng1;
-    star_tetrahedron_lengths[4,i]:=leng5/leng1;
-    star_tetrahedron_lengths[5,i]:=leng6/leng1;
+
+  except
+    memo2_message('Exception in procedure calc_tetrahedron_lengths');{bug in fpc 3.20? Sets in once case the last elements of array to zero for file 4254816 new_image.fit'}
   end;
 end;
 
@@ -550,14 +565,14 @@ end;
 procedure find_tetrahedrons_ref;{find tetrahedrons for reference image}
 begin
   find_tetrahedrons(starlist1,starlisttetrahedrons1);
-  calc_tetrahedron_lengths(starlisttetrahedrons1,star_tetrahedron_lengths1);{calc the three sides, longest first}
+  calc_tetrahedron_lengths(starlisttetrahedrons1,star_tetrahedron_lengths1);{calc the six sides, longest first}
 end;
 
 
 procedure find_tetrahedrons_new;{find star tetrahedrons for new image}
 begin
   find_tetrahedrons(starlist2,starlisttetrahedrons2);
-  calc_tetrahedron_lengths(starlisttetrahedrons2,star_tetrahedron_lengths2);{calc the three sides, longest first}
+  calc_tetrahedron_lengths(starlisttetrahedrons2,star_tetrahedron_lengths2);{calc the six sides, longest first}
 end;
 
 

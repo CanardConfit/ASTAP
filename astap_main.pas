@@ -99,6 +99,7 @@ type
     batch_rotate_right1: TMenuItem;
     gradient_removal1: TMenuItem;
     histogram_values_to_clipboard1: TMenuItem;
+    show_statistics1: TMenuItem;
     PopupMenu_histogram1: TPopupMenu;
     remove_atmouse1: TMenuItem;
     remove_longitude_latitude1: TMenuItem;
@@ -341,6 +342,7 @@ type
       MousePos: TPoint; var Handled: Boolean);
     procedure Panel1MouseWheelUp(Sender: TObject; Shift: TShiftState;
       MousePos: TPoint; var Handled: Boolean);
+    procedure show_statistics1Click(Sender: TObject);
     procedure SimpleIPCServer1MessageQueued(Sender: TObject);
     procedure StatusBar1MouseEnter(Sender: TObject);
     procedure variable_star_annotation1Click(Sender: TObject);
@@ -2183,7 +2185,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.398, '+about_message4+', dated 2020-08-5';
+  #13+#10+'ASTAP version ß0.9.399, '+about_message4+', dated 2020-08-8';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3210,6 +3212,111 @@ begin
 
 end;
 
+procedure Tmainwindow.show_statistics1Click(Sender: TObject);
+var
+   fitsX,fitsY,dum,font_height,counter,col,size : integer;
+   flux,bg_median,
+   value    : double;
+   sd,mean,minimum, maximum,max_counter, saturated : array[0..2] of double;
+   Save_Cursor              : TCursor;
+   info_message,info_median : string;
+   median_array             : array of double;
+const
+  median_max_size=50000;
+
+begin
+  if  ((abs(oldx-startX)>2)and (abs(oldy-starty)>2)) then
+  begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+    begin
+      starty:=height2-1-starty;
+      oldY:=height2-1-oldY;
+    end;
+
+    if mainwindow.Flip_horizontal1.Checked then
+    begin
+      startX:=width2-1-startX;
+      oldX:=width2-1-oldX;
+    end;
+
+
+    if startX>oldX then begin dum:=oldX; oldx:=startX; startX:=dum; end;{swap}
+    if startY>oldY then begin dum:=oldY; oldy:=startY; startY:=dum; end;
+
+    info_message:='';
+
+    {measure the median of the suroundings}
+    for col:=0 to 2 do
+    begin
+      sd[col]:=0;
+      mean[col]:=0;
+      minimum[col]:=999999999;
+      maximum[col]:=0;
+      max_counter[col]:=1;
+    end;
+
+    size:=(oldY-1-startY) * (oldX-1-startX);
+    if size<=median_max_size then setlength(median_array,size);
+
+    for col:=0 to naxis3-1 do  {do all colours}
+    begin
+      {mean}
+      counter:=0;
+      for fitsY:=startY+1 to oldY-1 do {within rectangle}
+      for fitsX:=startX+1 to oldX-1 do
+      begin
+        if size<=median_max_size then median_array[counter]:=value;
+        inc(counter);
+        value:=img_loaded[col,fitsX+1,fitsY+1];
+        mean[col]:=mean[col]+value;
+        if value=maximum[col] then max_counter[col]:=max_counter[col]+1;
+        if value>maximum[col] then maximum[col]:=value;
+        if value<minimum[col] then minimum[col]:=value;
+        if value>=64000 then saturated[col]:=saturated[col]+1;
+
+
+       end;
+      mean[col]:=mean[col]/counter;
+
+
+      {sd}
+      for fitsY:=startY to oldY-1 do
+      for fitsX:=startX to oldX-1 do
+      begin
+        sd[col]:=sd[col]+sqr(mean[col]-img_loaded[col,fitsX,fitsY]);
+      end;
+      sd[col]:=sqrt(sd[col]/counter);
+
+
+      if size<=median_max_size then info_median:=floattostrf(smedian(median_array),ffgeneral, 5, 5) else info_median:='- - -';
+
+
+      if naxis3>1 then if col=0 then info_message:=info_message+'Red:'+#10;
+      if col=1 then info_message:=info_message+#10+#10+'Green:'+#10;
+      if col=2 then info_message:=info_message+#10+#10+'Blue:'+#10;
+
+      info_message:=info_message+  'x̄      '+floattostrf(mean[col],ffgeneral, 5, 5)+#10+             {mean}
+                                   'x̃  :   '+info_median+#10+ {median}
+                                   'σ  :   '+floattostrf(sd[col],ffgeneral, 5, 5)+#10+               {standard deviation}
+                                   'm :   '+floattostrf(minimum[col],ffgeneral, 5, 5)+#10+
+                                   'M :   '+floattostrf(maximum[col],ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter[col]))+' x)'+#10+
+                                   '≥64E3 :  '+inttostr(round(saturated[col]));
+
+    end;
+
+    application.messagebox(pchar(info_message),pchar('Statistics within rectangle '+inttostr(oldX-1-startX)+' x '+inttostr(oldY-1-startY) ) ,MB_OK);
+
+    median_array:=nil;{free mem}
+
+    Screen.Cursor:=Save_Cursor;
+  end{fits file}
+  else
+  application.messagebox(pchar('Pull first a rectangle around the object with the mouse while holding the right mouse button down'),'',MB_OK);
+end;
+
 
 
 function place_marker_radec(str1: string): boolean;{place ra,dec marker in image}
@@ -3327,6 +3434,8 @@ begin
     mainwindow.demosaic_Bayermatrix1.Enabled:=fits;
     mainwindow.autocorrectcolours1.Enabled:=fits;
     mainwindow.stretch_draw1.Enabled:=fits;
+    mainwindow.show_statistics1.Enabled:=fits;
+
 
     mainwindow.CropFITSimage1.Enabled:=fits;
 
@@ -3366,8 +3475,8 @@ begin
   stackmenu1.resize_factor1Change(nil);{update dimensions binning menu}
   stackmenu1.test_pattern1.Enabled:=naxis3=1;{mono}
 
-  stackmenu1.focallength1.Text:=floattostrF2(focallen,0,0);
-  stackmenu1.pixelsize1.Text:=floattostrF2(xpixsz,0,1);
+  stackmenu1.focallength1.Text:=floattostrf(focallen,ffgeneral, 4, 4);
+  stackmenu1.pixelsize1.text:=floattostrf(xpixsz,ffgeneral, 4, 4);
   stackmenu1.focallength1Exit(nil); {update calculator}
 end;
 
@@ -6489,13 +6598,11 @@ begin
   initstring.Values['downsample']:=stackmenu1.downsample_for_solving1.text;
   initstring.Values['max_fov']:=stackmenu1.max_fov1.text;
 
-//  initstring.Values['pixel_size']:=stackmenu1.pixelsize1.text;
-//  initstring.Values['focal_length']:=stackmenu1.focallength1.text;
   initstring.Values['oversize']:=stackmenu1.oversize1.text;
 
   initstring.Values['sd_factor']:=stackmenu1.sd_factor1.text;
-  initstring.Values['pixel_size']:=stackmenu1.pixelsize1.text;
-  initstring.Values['focal_length']:=stackmenu1.focallength1.text;
+//  initstring.Values['pixel_size']:=stackmenu1.pixelsize1.text;
+//  initstring.Values['focal_length']:=stackmenu1.focallength1.text;
   initstring.Values['blur_factor']:=stackmenu1.blur_factor1.text;
   initstring.Values['most_common_filter_radius']:=stackmenu1.most_common_filter_radius1.text;
 
@@ -7407,8 +7514,8 @@ begin
     {measure the median of the suroundings}
     counter:=0;
     sd:=0;
-    for fitsY:=startY-5 to oldY-1+5 do {calculate mean at square boundaries of detection box}
-    for fitsX:=startX-5 to oldX-1+5 do
+    for fitsY:=startY+1-5 to oldY-1+5 do {calculate mean at square boundaries of detection box}
+    for fitsX:=startX+1-5 to oldX-1+5 do
     begin
       if ( (fitsX<startX) or  (fitsX>oldX-1) or (fitsY<startY) or  (fitsY>oldY-1) ) then {measure only outside the box}
       begin
@@ -7427,10 +7534,10 @@ begin
 
     saturation_counter:=0;
     flux:=0;
-    for fitsY:=startY to oldY-1 do
-    for fitsX:=startX to oldX-1 do
+    for fitsY:=startY+1 to oldY-1 do {within rectangle}
+    for fitsX:=startX+1 to oldX-1 do
     begin
-      value:=img_loaded[0,fitsX,fitsY]- bg_median;
+      value:=img_loaded[0,fitsX+1,fitsY+1]- bg_median;
       flux:=flux+value;{add all flux. Without stars it should average zero. Detecting flux using >3*sd misses too much signal comets}
       if value>65000 then inc(saturation_counter);{keep track of number of saturated pixels}
     end;
@@ -7685,6 +7792,7 @@ begin
     end;
   end;
 end;
+
 
 
 
@@ -10590,7 +10698,7 @@ begin
   begin
     bg_standard_deviation:=bg_standard_deviation+sqr(bg_average-img_loaded[0,x1+i,y1+j]);
   end;
-  result:=sqrt({0.0001+}bg_standard_deviation/((ri+ri+1)*(ri+ri+1))); {standard deviation in background}
+  result:=sqrt(bg_standard_deviation/((ri+ri+1)*(ri+ri+1))); {standard deviation in background}
 end;
 
 function rgb_kelvin(red,blue :single):string;{range 2000-20000 kelvin}
@@ -10726,8 +10834,8 @@ begin
      begin
 //       error_label1.visible:=false;{kill error label}
 
-    //   mainwindow.image1.Top:= mainwindow.image1.Top+(y-down_y);
-        timage(sender).Top:= timage(sender).Top+(y-down_y);{could be used for second image}
+       mainwindow.image1.Top:= mainwindow.image1.Top+(y-down_y);
+     //   timage(sender).Top:= timage(sender).Top+(y-down_y);{could be used for second image}
 
        mainwindow.shape_marker1.Top:= mainwindow.shape_marker1.Top+(y-down_y);{normal marker}
        mainwindow.shape_marker2.Top:= mainwindow.shape_marker2.Top+(y-down_y);{normal marker}
@@ -10735,8 +10843,8 @@ begin
      end;
      if abs(x-down_x)>2 then
      begin
-      // mainwindow.image1.left:= mainwindow.image1.left+(x-down_x);
-        timage(sender).left:= timage(sender).left+(x-down_x);
+       mainwindow.image1.left:= mainwindow.image1.left+(x-down_x);
+      //  timage(sender).left:= timage(sender).left+(x-down_x);
 
        mainwindow.shape_marker1.left:= mainwindow.shape_marker1.left+(x-down_x);{normal marker}
        mainwindow.shape_marker2.left:= mainwindow.shape_marker2.left+(x-down_x);{normal marker}
@@ -10787,7 +10895,7 @@ begin
        end
        else dist_str:='';
        if cdelt2<>0 then angle_str:='∠='+inttostr(round(fnmodulo (arctan2(flipH*(X_sized-startX),flipV*(startY-Y_sized))*180/pi + crota2,360)) )+'°' else  angle_str:=''; ;
-       mainwindow.statusbar1.panels[7].text:=inttostr(abs(X_sized-startX))+' x '+inttostr(abs(startY-Y_sized))+'    '+dist_str+'    '+angle_str;{indicate rectangl size}
+       mainwindow.statusbar1.panels[7].text:=inttostr(abs(X_sized-startX)-1)+' x '+inttostr(abs(startY-Y_sized)-1)+'    '+dist_str+'    '+angle_str;{indicate rectangl size}
      end
      else
      begin

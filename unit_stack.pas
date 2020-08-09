@@ -1149,7 +1149,7 @@ begin
     while fitsY<=height5-1 do
     begin
       value:=img2[colour,fitsX,fitsY];
-      if value<backgr*2 then {not an outlier, noise should be symmetrical so should be less then twice background}
+      if ((value<backgr*2) and (value<>0)) then {not an outlier, noise should be symmetrical so should be less then twice background}
       begin
         result:=result+sqr(value-backgr);
         inc(counter);{keep record of number of pixels processed}
@@ -3567,7 +3567,7 @@ var
 begin
   x_trunc:=trunc(x1);
   y_trunc:=trunc(y1);
-  if ((x_trunc<=0) or (x_trunc>=(width2-2)) or (y_trunc<=0) or (y_trunc>=(height2-2))) then begin result:=0; exit;end;
+  if ((x_trunc<0) or (x_trunc>(width2-1)) or (y_trunc<0) or (y_trunc>(height2-1))) then begin result:=0; exit;end;
   x_frac :=frac(x1);
   y_frac :=frac(y1);
 
@@ -4317,37 +4317,41 @@ begin
 end;
 
 procedure Tstackmenu1.focallength1Exit(Sender: TObject);
-var
-   fl,d : double;
+
 begin
+ if sender=focallength1 then {manual entered}
+     focallen:=strtofloat2(stackmenu1.focallength1.text);{manual entered focal length, update focallen}
+
+ if sender=pixelsize1 then {manual entered}
+      xpixsz:=strtofloat2(stackmenu1.pixelsize1.text);{manual entered micrometer, update xpixsz}
 
   if cd1_1<>0 then {solved image}
   begin
     calc_scale:=3600*cdelt2;
-    if sender=focallength1 then {calculate pixelsize from cdelt2 and focallength}
+    if sender=focallength1 then {calculate pixelsize from cdelt2 and manual entered focallen}
     begin
-      fl:=strtofloat2(stackmenu1.focallength1.text);
-      d:=calc_scale*fl/((180*3600/1000)/pi);
-      stackmenu1.pixelsize1.text:=floattostrf(d,ffgeneral, 3, 3);
+      xpixsz:=calc_scale*focallen/((180*3600/1000)/pi);
+      stackmenu1.pixelsize1.text:=floattostrf(xpixsz,ffgeneral, 4, 4);
     end
     else
-    begin {calculate focal length from cdelt2 and pixelsize1}
-      d:=strtofloat2(stackmenu1.pixelsize1.text);{micrometer}
-      fl:=(d/calc_scale)*(180*3600/1000)/pi; {arcsec per pixel}
-      stackmenu1.focallength1.text:=floattostrf(fl,fffixed, 4, 0);
+    begin  {calculate focal length from cdelt2 and pixelsize1}
+      focallen:=(xpixsz/calc_scale)*(180*3600/1000)/pi; {arcsec per pixel}
+      stackmenu1.focallength1.text:=floattostrf(focallen,ffgeneral, 4, 4);
     end;
   end
   else
   begin {not a solved image}
-    fl:=0.0001+strtofloat2(stackmenu1.focallength1.text);
-    d:=strtofloat2(stackmenu1.pixelsize1.text);{micrometer}
-    calc_scale:=(d/fl)*(180*3600/1000)/pi; {arcsec per pixel}
+    if focallen<>0 then calc_scale:=(xpixsz/focallen)*(180*3600/1000)/pi {arcsec per pixel}
+                   else calc_scale:=0;
   end;
-  calculated_scale1.caption:=floattostrf(calc_scale, ffgeneral, 3, 3)+' "/pixel';
 
-  if ((fits_file) and (fl>1)) then scale_calc1.Caption:=floattostrf((width2*d/fl)*(180/1000)/pi,ffgeneral, 3, 3)+'° x '+floattostrf((height2*d/fl)*(180/1000)/pi, ffgeneral, 3, 3)+'°'
-                 else scale_calc1.Caption:='- - -';
+  if calc_scale<> 0 then calculated_scale1.caption:=floattostrf(calc_scale, ffgeneral, 3, 3)+' "/pixel'
+                    else calculated_scale1.caption:='- - -';
 
+  if ((xpixsz<>0) and (focallen<>0)) then
+    scale_calc1.Caption:=floattostrf((width2*xpixsz/focallen)*(180/1000)/pi,ffgeneral, 3, 3)+'° x '+floattostrf((height2*xpixsz/focallen)*(180/1000)/pi, ffgeneral, 3, 3)+'°'
+  else
+    scale_calc1.Caption:='- - -';
 end;
 
 procedure Tstackmenu1.go_step_two1Click(Sender: TObject);
