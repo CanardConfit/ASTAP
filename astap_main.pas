@@ -99,6 +99,8 @@ type
     batch_rotate_right1: TMenuItem;
     gradient_removal1: TMenuItem;
     histogram_values_to_clipboard1: TMenuItem;
+    Stretchdrawmenu1: TMenuItem;
+    stretch_draw_fits1: TMenuItem;
     show_statistics1: TMenuItem;
     PopupMenu_histogram1: TPopupMenu;
     remove_atmouse1: TMenuItem;
@@ -345,6 +347,7 @@ type
     procedure show_statistics1Click(Sender: TObject);
     procedure SimpleIPCServer1MessageQueued(Sender: TObject);
     procedure StatusBar1MouseEnter(Sender: TObject);
+    procedure stretch_draw_fits1Click(Sender: TObject);
     procedure variable_star_annotation1Click(Sender: TObject);
     procedure zoomin1Click(Sender: TObject);
     procedure zoomout1Click(Sender: TObject);
@@ -2185,7 +2188,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.399, '+about_message4+', dated 2020-08-8';
+  #13+#10+'ASTAP version ß0.9.400, '+about_message4+', dated 2020-08-11';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2909,7 +2912,7 @@ begin
   if mainwindow.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
   if mainwindow.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
 
-  cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{lenght of a pixel diagonal in direction RA in arcseconds}
+  cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{length of a pixel diagonal in direction RA in arcseconds}
 
   moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);
   det:=CD2_2*CD1_1-CD1_2*CD2_1;{this result can be negative !!}
@@ -3214,15 +3217,15 @@ end;
 
 procedure Tmainwindow.show_statistics1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,font_height,counter,col,size : integer;
+   fitsX,fitsY,dum,font_height,counter,col,size,counter_median,required_size : integer;
    flux,bg_median,
-   value    : double;
+   value,stepsize,median_position    : double;
    sd,mean,minimum, maximum,max_counter, saturated : array[0..2] of double;
    Save_Cursor              : TCursor;
-   info_message,info_median : string;
+   info_message             : string;
    median_array             : array of double;
 const
-  median_max_size=50000;
+  median_max_size=10000;
 
 begin
   if  ((abs(oldx-startX)>2)and (abs(oldy-starty)>2)) then
@@ -3242,13 +3245,11 @@ begin
       oldX:=width2-1-oldX;
     end;
 
-
     if startX>oldX then begin dum:=oldX; oldx:=startX; startX:=dum; end;{swap}
     if startY>oldY then begin dum:=oldY; oldy:=startY; startY:=dum; end;
 
+    {reset variables}
     info_message:='';
-
-    {measure the median of the suroundings}
     for col:=0 to 2 do
     begin
       sd[col]:=0;
@@ -3258,28 +3259,40 @@ begin
       max_counter[col]:=1;
     end;
 
-    size:=(oldY-1-startY) * (oldX-1-startX);
-    if size<=median_max_size then setlength(median_array,size);
+    {limit points to take median from at median_max_size}
+    size:=(oldY-1-startY) * (oldX-1-startX);{number of pixels within the rectangle}
+    stepsize:=median_max_size/size;
+    if stepsize<1 then required_size:=median_max_size {pixels will be skippped. Limit sampling to median_max_size}
+                  else required_size:=size;
+    setlength(median_array,required_size);
 
+    {measure the median of the suroundings}
     for col:=0 to naxis3-1 do  {do all colours}
     begin
       {mean}
       counter:=0;
+      counter_median:=0;
       for fitsY:=startY+1 to oldY-1 do {within rectangle}
       for fitsX:=startX+1 to oldX-1 do
       begin
-        if size<=median_max_size then median_array[counter]:=value;
-        inc(counter);
         value:=img_loaded[col,fitsX+1,fitsY+1];
-        mean[col]:=mean[col]+value;
-        if value=maximum[col] then max_counter[col]:=max_counter[col]+1;
-        if value>maximum[col] then maximum[col]:=value;
-        if value<minimum[col] then minimum[col]:=value;
-        if value>=64000 then saturated[col]:=saturated[col]+1;
 
+        {median sampling}
+        median_position:=counter*stepsize;
+        if  trunc(median_position)>counter_median then {pixels will be skippped. Limit sampling to median_max_size}
+        begin
+          inc(counter_median);
+          median_array[counter_median]:=value; {fill array with sampling data. Smedian will be applied later}
+        end;
 
+        inc(counter);
+        mean[col]:=mean[col]+value; {mean}
+        if value=maximum[col] then max_counter[col]:=max_counter[col]+1; {counter at max}
+        if value>maximum[col] then maximum[col]:=value; {max}
+        if value<minimum[col] then minimum[col]:=value; {min}
+        if value>=64000 then saturated[col]:=saturated[col]+1;{saturation counter}
        end;
-      mean[col]:=mean[col]/counter;
+      mean[col]:=mean[col]/counter;{calculate the mean}
 
 
       {sd}
@@ -3290,16 +3303,12 @@ begin
       end;
       sd[col]:=sqrt(sd[col]/counter);
 
-
-      if size<=median_max_size then info_median:=floattostrf(smedian(median_array),ffgeneral, 5, 5) else info_median:='- - -';
-
-
       if naxis3>1 then if col=0 then info_message:=info_message+'Red:'+#10;
       if col=1 then info_message:=info_message+#10+#10+'Green:'+#10;
       if col=2 then info_message:=info_message+#10+#10+'Blue:'+#10;
 
       info_message:=info_message+  'x̄      '+floattostrf(mean[col],ffgeneral, 5, 5)+#10+             {mean}
-                                   'x̃  :   '+info_median+#10+ {median}
+                                   'x̃  :   '+floattostrf(smedian(median_array),ffgeneral, 5, 5)+#10+ {median}
                                    'σ  :   '+floattostrf(sd[col],ffgeneral, 5, 5)+#10+               {standard deviation}
                                    'm :   '+floattostrf(minimum[col],ffgeneral, 5, 5)+#10+
                                    'M :   '+floattostrf(maximum[col],ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter[col]))+' x)'+#10+
@@ -3434,6 +3443,7 @@ begin
     mainwindow.demosaic_Bayermatrix1.Enabled:=fits;
     mainwindow.autocorrectcolours1.Enabled:=fits;
     mainwindow.stretch_draw1.Enabled:=fits;
+    mainwindow.stretch_draw_fits1.Enabled:=fits;
     mainwindow.show_statistics1.Enabled:=fits;
 
 
@@ -8239,6 +8249,94 @@ begin
   end;
 end;
 
+procedure Tmainwindow.stretch_draw_fits1Click(Sender: TObject);
+var
+  tmpbmp: TBitmap;
+  ARect: TRect;
+  oldcursor: tcursor;
+  x, y    : Integer;
+  xLine: PByteArray;
+  ratio    : double;
+begin
+  OldCursor := Screen.Cursor;
+  Screen.Cursor:= crHourGlass;
+
+  backup_img;
+  try
+    TmpBmp := TBitmap.Create;
+    try
+      TmpBmp.Width  := mainwindow.image1.width;
+      TmpBmp.Height := mainwindow.image1.height;
+      ARect := Rect(0,0, mainwindow.image1.width, mainwindow.image1.height);
+      TmpBmp.Canvas.StretchDraw(ARect, mainwindow.Image1.Picture.bitmap);
+
+//      mainwindow.Image1.Picture.bitmap.Assign(TmpBmp);
+      {move to array}
+      ratio:=TmpBmp.width/width2;
+
+      width2:=TmpBmp.width;
+      height2:=TmpBmp.Height;
+
+      setlength(img_loaded,naxis3,width2,height2);
+
+      for y := 0 to height2 -1 do begin {place in array}
+        xLine := TmpBmp.ScanLine[y];
+        for x := 0 to width2 -1 do
+        begin
+          img_loaded[0,x,y]:=xLine^[x*3];{red}
+          if naxis3>1 then img_loaded[1,x,y]:=xLine^[x*3+1];{green}
+          if naxis3>2 then img_loaded[2,x,y]:=xLine^[x*3+2];{blue}
+        end;
+      end;
+
+      update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
+      update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+      datamax_org:=255;
+      update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
+
+
+      if crpix1<>0 then begin crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
+      if crpix2<>0 then begin crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
+
+      if cdelt1<>0 then begin cdelt1:=cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
+      if cdelt2<>0 then begin cdelt2:=cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
+
+      if cd1_1<>0 then
+      begin
+        cd1_1:=cd1_1/ratio;
+        cd1_2:=cd1_2/ratio;
+        cd2_1:=cd2_1/ratio;
+        cd2_2:=cd2_2/ratio;
+        update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
+        update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
+        update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
+        update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+      end;
+
+      update_float  ('XBINNING=',' / Binning factor in width                         ' ,XBINNING/ratio);
+      update_float  ('YBINNING=',' / Binning factor in height                        ' ,YBINNING/ratio);
+
+      if XPIXSZ<>0 then
+      begin
+        update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ' ,XPIXSZ/ratio);{note: comment will be never used since it is an existing keyword}
+        update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ' ,YPIXSZ/ratio);
+      end;
+      add_text   ('HISTORY   ','Image stretched with factor '+ floattostr2(ratio));
+
+      {plot result}
+      use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+      plot_fits(mainwindow.image1,true {center_image},true);{center and stretch with current settings}
+
+    finally
+       TmpBmp.Free;
+    end;
+    except
+  end;
+
+
+  Screen.Cursor:=OldCursor;
+end;
+
 
 procedure Tmainwindow.variable_star_annotation1Click(Sender: TObject);
 var
@@ -11057,9 +11155,9 @@ end;
 
 procedure Tmainwindow.stretch_draw1Click(Sender: TObject); {stretch draw}
 var
-    tmpbmp: TBitmap;
+  tmpbmp: TBitmap;
   ARect: TRect;
-    oldcursor: tcursor;
+  oldcursor: tcursor;
 begin
   OldCursor := Screen.Cursor;
   Screen.Cursor:= crHourGlass;
@@ -11078,11 +11176,6 @@ begin
     end;
     except
   end;
-//  mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
-//  memo1.clear;
-//  width2:=mainwindow.Image1.Picture.bitmap.Width;
-//  height2:=mainwindow.Image1.Picture.bitmap.Height;
-//  update_menu(false);{set file:=false and update menu}
   Screen.Cursor:=OldCursor;
 end;
 

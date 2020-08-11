@@ -5857,7 +5857,8 @@ object stackmenu1: Tstackmenu1
             'Subtract file from view +1000'
             'Subtract view from file'
             'Subtract view from file +1000'
-            'Apply file as flat field'
+            'Apply file as flat field (divide normalized)'
+            'Multiply (normalised) file'
             ''
           )
           ParentFont = False

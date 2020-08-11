@@ -1132,11 +1132,21 @@ object mainwindow: Tmainwindow
       object N3: TMenuItem
         Caption = '-'
       end
-      object stretch_draw1: TMenuItem
+      object Stretchdrawmenu1: TMenuItem
         Caption = 'Stretch draw'
-        Enabled = False
-        Hint = 'Like binning reduce the displayed resolution temporary using current zoom factor. To be used to create images of reduced resolution and to save to file or copy to clipboard.'
-        OnClick = stretch_draw1Click
+        Hint = 'Stretch image'
+        object stretch_draw1: TMenuItem
+          Caption = 'Stretch draw'
+          Enabled = False
+          Hint = 'Like binning reduce the displayed resolution temporary using current zoom factor. To be used to create images of reduced resolution and to save to file or copy to clipboard.'
+          OnClick = stretch_draw1Click
+        end
+        object stretch_draw_fits1: TMenuItem
+          Caption = 'Stretch draw to FITS'
+          Enabled = False
+          Hint = 'Convert current view to a FITS image. This will use the current contrast setting and reduce resolution. '
+          OnClick = stretch_draw_fits1Click
+        end
       end
       object Undo1: TMenuItem
         Caption = 'Undo'

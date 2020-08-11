@@ -2461,6 +2461,7 @@ begin
   largest:=scaleR;
   if scaleG>largest then largest:=scaleG;
   if scaleB>largest then largest:=scaleB;
+  if largest=0 then largest:=1; {prevent division by zero}
   {use largest to scale to maximum 65535}
 
   if ((multiply_red<>1) or (multiply_green<>1) or (multiply_blue<>1) or (add_valueR<>0) or (add_valueG<>0)or (add_valueB<>0)) then
@@ -2469,7 +2470,7 @@ begin
     for fitsX:=0 to width2-1 do
     begin
       dum:=img_loaded[0,fitsX,fitsY];
-      if dum<>0 then {signal}
+   //   if dum<>0 then {signal}
       begin
         dum:=(dum+add_valueR)*multiply_red/largest;
         if dum<0 then dum:=0; img_loaded[0,fitsX,fitsY]:=dum;
@@ -2477,11 +2478,21 @@ begin
 
       if naxis3>1 then {colour}
       begin
-        dum:=img_loaded[1,fitsX,fitsY];   if dum<>0 then {signal} begin dum:=(dum+add_valueG)*multiply_green/largest; if dum<0 then dum:=0; img_loaded[1,fitsX,fitsY]:=dum;end;
+        dum:=img_loaded[1,fitsX,fitsY];
+//        if dum<>0 then {signal}
+        begin
+          dum:=(dum+add_valueG)*multiply_green/largest;
+          if dum<0 then dum:=0; img_loaded[1,fitsX,fitsY]:=dum;
+        end;
       end;
       if naxis3>2 then {colour}
       begin
-        dum:=img_loaded[2,fitsX,fitsY]; if dum<>0 then {signal} begin dum:=(dum+add_valueB)*multiply_blue/largest; if dum<0 then dum:=0; img_loaded[2,fitsX,fitsY]:=dum;end;
+        dum:=img_loaded[2,fitsX,fitsY];
+//        if dum<>0 then {signal}
+        begin
+          dum:=(dum+add_valueB)*multiply_blue/largest;
+          if dum<0 then dum:=0; img_loaded[2,fitsX,fitsY]:=dum;
+        end;
       end;
     end;
   end;
@@ -2524,19 +2535,28 @@ begin
     begin
       if load_fits(image_to_add1.Caption,false {dark/flat},true {load data},img_temp) then {succes load}
       begin
-        if idx=5 then {apply file as flat}
+        if ((idx=5) or (idx=6)) then {apply file as flat or multiply}
         begin
+
           flat_norm_value:=0;
-          for fitsY:=-2 to 3 do {do even times, 6x6}
-             for fitsX:=-2 to 3 do
+          for fitsY:=-14 to 15 do {do even times, 30x30}
+             for fitsX:=-14 to 15 do
                flat_norm_value:=flat_norm_value+img_temp[0,fitsX+(width2 div 2),fitsY +(height2 div 2)];
-          flat_norm_value:=round(flat_norm_value/36);
+          flat_norm_value:=round(flat_norm_value/(30*30));
+
           for fitsY:=1 to height2 do
             for fitsX:=1 to width2 do
             begin
-             for col:=0 to old_naxis3-1 do {do all colors. Viewer colours are stored in old_naxis3 by backup}
-             begin
-               flat_factor:=flat_norm_value/(img_temp[min(col,naxis3-1),fitsX-1,fitsY-1]+0.001); {This works both for color and mono flats. Bias should be combined in flat}
+              for col:=0 to old_naxis3-1 do {do all colors. Viewer colours are stored in old_naxis3 by backup}
+              begin
+                if idx=5 then {as flat=divide}
+                begin
+                  flat_factor:=flat_norm_value/(img_temp[min(col,naxis3-1),fitsX-1,fitsY-1]+0.0001); {This works both for color and mono flats. Bias should be combined in flat}
+                end
+                else
+                begin {multiply}
+                  flat_factor:=img_temp[min(col,naxis3-1),fitsX-1,fitsY-1]/flat_norm_value; {This works both for color and mono flats. Bias should be combined in flat}
+                end;
                 img_loaded[col,fitsX-1,fitsY-1]:=img_loaded[col,fitsX-1,fitsY-1]*flat_factor ;
               end;
             end;
