@@ -268,6 +268,7 @@ type
     procedure autocorrectcolours1Click(Sender: TObject);
     procedure batch_annotate1Click(Sender: TObject);
     procedure batch_solve_astrometry_netClick(Sender: TObject);
+    procedure bin3x3Click(Sender: TObject);
     procedure ccd_inspector_plot1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
     procedure copy_to_clipboard1Click(Sender: TObject);
@@ -288,6 +289,7 @@ type
     procedure copy_paste_tool1Click(Sender: TObject);
     procedure MenuItem21Click(Sender: TObject);
     procedure batch_rotate_left1Click(Sender: TObject);
+    procedure Panel1Click(Sender: TObject);
     procedure range1Change(Sender: TObject);
     procedure remove_atmouse1Click(Sender: TObject);
     procedure gradient_removal1Click(Sender: TObject);
@@ -603,7 +605,7 @@ function extract_objectname_from_filename(filename8: string): string; {try to ex
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
 function fnmodulo (x,range: double):double;
 procedure measure_magnitudes(var stars :star_list);{find stars and return, x,y, hfd, flux}
-function binx2 : boolean; {converts filename2 to binx2 version}
+function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2 or bin3 version}
 procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean); {convert ra in text to double in radians}
 procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
 function image_file_name(inp : string): boolean; {readable image name?}
@@ -617,6 +619,7 @@ procedure listview_add_xy(fitsX,fitsY: double);{add x,y position to listview}
 Function LeadingZero(w : integer) : String;
 procedure log_to_file(logf,mess : string);{for testing}
 procedure demosaic_advanced(var img : image_array);{demosaic img_loaded}
+procedure bin_X2X3(binfactor:integer);{bin img_loaded 2x or 3x}
 
 const   bufwide=1024*120;{buffer size in bytes}
 
@@ -2188,7 +2191,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.400, '+about_message4+', dated 2020-08-11';
+  #13+#10+'ASTAP version ß0.9.401, '+about_message4+', dated 2020-08-11';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2339,75 +2342,124 @@ begin
 
 end;
 
-function binx2 : boolean; {converts filename2 to binx2 version}
-var
-   img_temp2 : image_array;
-   FitsX, fitsY,k,w,h      : integer;
-   ratio                   : double;
+
+procedure bin_X2X3(binfactor:integer);{bin img_loaded 2x or 3x}
+  var fitsX,fitsY,k, w,h  : integer;
+      img_temp2 : image_array;
+
 begin
-  result:=false;
-  if load_fits(filename2,true {light},true,img_loaded)=false then exit;
 
-  ratio:=0.5;
+  w:=trunc(width2/binfactor);  {half size & cropped. Use trunc for image 1391 pixels wide like M27 test image. Otherwise exception error}
+  h:=trunc(height2/binfactor);
 
-  w:=trunc(width2/2);  {half size}
-  h:=trunc(height2/2);
+  setlength(img_temp2,naxis3,w,h);
 
-  setlength(img_temp2,naxis3,w,h);;
-  for k:=0 to naxis3-1 do
-    for fitsY:=0 to h-1 do
-       for fitsX:=0 to w-1  do
-       begin
-         img_temp2[k,fitsX,fitsY]:=(img_loaded[k,fitsx*2,fitsY*2]+
-                                    img_loaded[k,fitsx*2 +1,fitsY*2]+
-                                    img_loaded[k,fitsx*2   ,fitsY*2+1]+
-                                    img_loaded[k,fitsx*2 +1,fitsY*2+1])/4;
-         end;
+  if binfactor=2 then
+  begin
+    for k:=0 to naxis3-1 do
+      for fitsY:=0 to h-1 do
+         for fitsX:=0 to w-1  do
+         begin
+           img_temp2[k,fitsX,fitsY]:=(img_loaded[k,fitsx*2,fitsY*2]+
+                                      img_loaded[k,fitsx*2 +1,fitsY*2]+
+                                      img_loaded[k,fitsx*2   ,fitsY*2+1]+
+                                      img_loaded[k,fitsx*2 +1,fitsY*2+1])/4;
+           end;
+
+  end
+  else
+  begin {bin3x3}
+    for k:=0 to naxis3-1 do
+      for fitsY:=0 to h-1 do
+         for fitsX:=0 to w-1  do
+         begin
+           img_temp2[k,fitsX,fitsY]:=(img_loaded[k,fitsX*3   ,fitsY*3  ]+
+                                      img_loaded[k,fitsX*3   ,fitsY*3+1]+
+                                      img_loaded[k,fitsX*3   ,fitsY*3+2]+
+                                      img_loaded[k,fitsX*3 +1,fitsY*3  ]+
+                                      img_loaded[k,fitsX*3 +1,fitsY*3+1]+
+                                      img_loaded[k,fitsX*3 +1,fitsY*3+2]+
+                                      img_loaded[k,fitsX*3 +2,fitsY*3  ]+
+                                      img_loaded[k,fitsX*3 +2,fitsY*3+1]+
+                                      img_loaded[k,fitsX*3 +2,fitsY*3+2])/9;
+
+
+           end;
+
+  end;
   img_loaded:=img_temp2;
   width2:=w;
   height2:=h;
+  img_temp2:=nil;
 
   update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
 
-  if crpix1<>0 then begin crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
-  if crpix2<>0 then begin crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
+  if crpix1<>0 then begin crpix1:=crpix1/binfactor; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
+  if crpix2<>0 then begin crpix2:=crpix2/binfactor; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
 
-  if cdelt1<>0 then begin cdelt1:=cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
-  if cdelt2<>0 then begin cdelt2:=cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
+  if cdelt1<>0 then begin cdelt1:=cdelt1*binfactor; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
+  if cdelt2<>0 then begin cdelt2:=cdelt2*binfactor; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
 
   if cd1_1<>0 then
   begin
-    cd1_1:=cd1_1/ratio;
-    cd1_2:=cd1_2/ratio;
-    cd2_1:=cd2_1/ratio;
-    cd2_2:=cd2_2/ratio;
+    cd1_1:=cd1_1*binfactor;
+    cd1_2:=cd1_2*binfactor;
+    cd2_1:=cd2_1*binfactor;
+    cd2_2:=cd2_2*binfactor;
     update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
     update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
     update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
     update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
   end;
 
-  update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING/ratio));
-  update_integer('YBINNING=',' / Binning factor in height                        ' ,round(yBINNING/ratio));
+  update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING*binfactor));
+  update_integer('YBINNING=',' / Binning factor in height                        ' ,round(yBINNING*binfactor));
+
+
+   if XPIXSZ<>0 then
+   begin
+     update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,XPIXSZ*binfactor);{note: comment will be never used since it is an existing keyword}
+     update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,YPIXSZ*binfactor);
+   end;
+
   add_text   ('HISTORY   ','BIN2x2 version of '+filename2);
 
-  filename2:=ChangeFileExt(Filename2,'_bin2x2.fit');
-  result:=save_fits(img_loaded,filename2,nrbits,true);{overwrite}
+end;
 
-  img_temp2:=nil;
+
+function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2 or bin3 version}
+var
+   img_temp2 : image_array;
+   FitsX, fitsY,k,w,h      : integer;
+begin
+  result:=false;
+  if load_fits(filename2,true {light},true {load data},img_loaded)=false then exit;
+
+  bin_X2X3(binfactor);{bin img_loaded 2x or 3x}
+
+  if binfactor=2 then filename2:=ChangeFileExt(Filename2,'_bin2x2.fit')
+                 else filename2:=ChangeFileExt(Filename2,'_bin3x3.fit');
+  result:=save_fits(img_loaded,filename2,nrbits,true);{overwrite}
 end;
 
 procedure Tmainwindow.bin2x2Click(Sender: TObject);
 var
   Save_Cursor:TCursor;
-  img_temp2 : image_array;
-  I, FitsX, fitsY,k,w,h   : integer;
-  ratio                   : double;
+  I, binfactor   : integer;
   dobackup : boolean;
 begin
 
-  OpenDialog1.Title := 'Select multiple  files to reduce in size (bin2x2)';
+  if sender=bin2x2 then
+  begin
+    OpenDialog1.Title := 'Select multiple  files to reduce in size (bin2x2)';
+    binfactor:=2;
+  end
+  else
+  begin
+    OpenDialog1.Title := 'Select multiple  files to reduce in size (bin3x3)';
+    binfactor:=3;
+  end;
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.FIT*';
 //  fits_file:=true;
@@ -2423,68 +2475,13 @@ begin
 
     try { Do some lengthy operation }
        with OpenDialog1.Files do
-       for I := 0 to Count - 1 do
-       begin
-         filename2:=Strings[I];
-         {load fits}
-         Application.ProcessMessages;
-         if ((esc_pressed) or (load_fits(filename2,true {light},true,img_loaded)=false)) then begin Screen.Cursor := Save_Cursor;  exit;end;
-         ratio:=0.5;
-
-         w:=trunc(width2/2);  {half size}
-         h:=trunc(height2/2);
-
-         setlength(img_temp2,naxis3,w,h);;
-         for k:=0 to naxis3-1 do
-           for fitsY:=0 to h-1 do
-              for fitsX:=0 to w-1  do
-              begin
-                img_temp2[k,fitsX,fitsY]:=(img_loaded[k,fitsx*2,fitsY*2]+
-                                           img_loaded[k,fitsx*2 +1,fitsY*2]+
-                                           img_loaded[k,fitsx*2   ,fitsY*2+1]+
-                                           img_loaded[k,fitsx*2 +1,fitsY*2+1])/4;
-                end;
-         img_loaded:=img_temp2;
-         width2:=w;
-         height2:=h;
-
-         update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-         update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-
-         if crpix1<>0 then begin crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
-         if crpix2<>0 then begin crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
-
-         if cdelt1<>0 then begin cdelt1:=cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
-         if cdelt2<>0 then begin cdelt2:=cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
-
-         if cd1_1<>0 then
-         begin
-           cd1_1:=cd1_1/ratio;
-           cd1_2:=cd1_2/ratio;
-           cd2_1:=cd2_1/ratio;
-           cd2_2:=cd2_2/ratio;
-           update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
-           update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
-           update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
-           update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
-         end;
-
-         update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING/ratio));
-         update_integer('YBINNING=',' / Binning factor in height                        ' ,round(YBINNING/ratio));
-
-         if XPIXSZ<>0 then
-         begin
-           update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,XPIXSZ/ratio);{note: comment will be never used since it is an existing keyword}
-           update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,YPIXSZ/ratio);
-         end;
-
-         add_text   ('HISTORY   ','BIN2x2 version of '+extractfilename(Strings[I]));
-
-
-         save_fits(img_loaded,ChangeFileExt(FileName2,'_bin2x2.fit'),16,true);{overwrite}
-
-         img_temp2:=nil;
-
+      for I := 0 to Count - 1 do
+      begin
+        filename2:=Strings[I];
+        {load fits}
+        Application.ProcessMessages;
+        if ((esc_pressed) or
+            (binX2X3_file(binfactor)=false) {do the binning}) then begin Screen.Cursor := Save_Cursor;  exit;end;
       end;
       finally
       if dobackup then restore_img;{for the viewer}
@@ -2912,7 +2909,7 @@ begin
   if mainwindow.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
   if mainwindow.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
 
-  cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{length of a pixel diagonal in direction RA in arcseconds}
+  cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{length of one pixel step to the north}
 
   moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);
   det:=CD2_2*CD1_1-CD1_2*CD2_1;{this result can be negative !!}
@@ -3228,102 +3225,103 @@ const
   median_max_size=10000;
 
 begin
-  if  ((abs(oldx-startX)>2)and (abs(oldy-starty)>2)) then
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  if ((abs(oldx-startX)>2)and (abs(oldy-starty)>2))=false then {do statistics on whole image}
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    startx:=0;oldx:=width2-1;
+    starty:=0;oldy:=height2-1;
+  end;
 
-    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+  if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
+  begin
+    starty:=height2-1-starty;
+    oldY:=height2-1-oldY;
+  end;
+
+  if mainwindow.Flip_horizontal1.Checked then
+  begin
+    startX:=width2-1-startX;
+    oldX:=width2-1-oldX;
+  end;
+
+  if startX>oldX then begin dum:=oldX; oldx:=startX; startX:=dum; end;{swap}
+  if startY>oldY then begin dum:=oldY; oldy:=startY; startY:=dum; end;
+
+  {reset variables}
+  info_message:='';
+  for col:=0 to 2 do
+  begin
+    sd[col]:=0;
+    mean[col]:=0;
+    minimum[col]:=999999999;
+    maximum[col]:=0;
+    max_counter[col]:=1;
+  end;
+
+  {limit points to take median from at median_max_size}
+  size:=(oldY-1-startY) * (oldX-1-startX);{number of pixels within the rectangle}
+  stepsize:=median_max_size/size;
+  if stepsize<1 then required_size:=median_max_size {pixels will be skippped. Limit sampling to median_max_size}
+                else required_size:=size;
+  setlength(median_array,required_size);
+
+  {measure the median of the suroundings}
+  for col:=0 to naxis3-1 do  {do all colours}
+  begin
+    {mean}
+    counter:=0;
+    counter_median:=0;
+    for fitsY:=startY+1 to oldY-1 do {within rectangle}
+    for fitsX:=startX+1 to oldX-1 do
     begin
-      starty:=height2-1-starty;
-      oldY:=height2-1-oldY;
-    end;
+      value:=img_loaded[col,fitsX+1,fitsY+1];
 
-    if mainwindow.Flip_horizontal1.Checked then
-    begin
-      startX:=width2-1-startX;
-      oldX:=width2-1-oldX;
-    end;
-
-    if startX>oldX then begin dum:=oldX; oldx:=startX; startX:=dum; end;{swap}
-    if startY>oldY then begin dum:=oldY; oldy:=startY; startY:=dum; end;
-
-    {reset variables}
-    info_message:='';
-    for col:=0 to 2 do
-    begin
-      sd[col]:=0;
-      mean[col]:=0;
-      minimum[col]:=999999999;
-      maximum[col]:=0;
-      max_counter[col]:=1;
-    end;
-
-    {limit points to take median from at median_max_size}
-    size:=(oldY-1-startY) * (oldX-1-startX);{number of pixels within the rectangle}
-    stepsize:=median_max_size/size;
-    if stepsize<1 then required_size:=median_max_size {pixels will be skippped. Limit sampling to median_max_size}
-                  else required_size:=size;
-    setlength(median_array,required_size);
-
-    {measure the median of the suroundings}
-    for col:=0 to naxis3-1 do  {do all colours}
-    begin
-      {mean}
-      counter:=0;
-      counter_median:=0;
-      for fitsY:=startY+1 to oldY-1 do {within rectangle}
-      for fitsX:=startX+1 to oldX-1 do
+      {median sampling}
+      median_position:=counter*stepsize;
+      if  trunc(median_position)>counter_median then {pixels will be skippped. Limit sampling to median_max_size}
       begin
-        value:=img_loaded[col,fitsX+1,fitsY+1];
-
-        {median sampling}
-        median_position:=counter*stepsize;
-        if  trunc(median_position)>counter_median then {pixels will be skippped. Limit sampling to median_max_size}
-        begin
-          inc(counter_median);
-          median_array[counter_median]:=value; {fill array with sampling data. Smedian will be applied later}
-        end;
-
-        inc(counter);
-        mean[col]:=mean[col]+value; {mean}
-        if value=maximum[col] then max_counter[col]:=max_counter[col]+1; {counter at max}
-        if value>maximum[col] then maximum[col]:=value; {max}
-        if value<minimum[col] then minimum[col]:=value; {min}
-        if value>=64000 then saturated[col]:=saturated[col]+1;{saturation counter}
-       end;
-      mean[col]:=mean[col]/counter;{calculate the mean}
-
-
-      {sd}
-      for fitsY:=startY to oldY-1 do
-      for fitsX:=startX to oldX-1 do
-      begin
-        sd[col]:=sd[col]+sqr(mean[col]-img_loaded[col,fitsX,fitsY]);
+        inc(counter_median);
+        median_array[counter_median]:=value; {fill array with sampling data. Smedian will be applied later}
       end;
-      sd[col]:=sqrt(sd[col]/counter);
 
-      if naxis3>1 then if col=0 then info_message:=info_message+'Red:'+#10;
-      if col=1 then info_message:=info_message+#10+#10+'Green:'+#10;
-      if col=2 then info_message:=info_message+#10+#10+'Blue:'+#10;
+      inc(counter);
+      mean[col]:=mean[col]+value; {mean}
+      if value=maximum[col] then max_counter[col]:=max_counter[col]+1; {counter at max}
+      if value>maximum[col] then maximum[col]:=value; {max}
+      if value<minimum[col] then minimum[col]:=value; {min}
+      if value>=64000 then saturated[col]:=saturated[col]+1;{saturation counter}
+     end;
+    mean[col]:=mean[col]/counter;{calculate the mean}
 
-      info_message:=info_message+  'x̄      '+floattostrf(mean[col],ffgeneral, 5, 5)+#10+             {mean}
-                                   'x̃  :   '+floattostrf(smedian(median_array),ffgeneral, 5, 5)+#10+ {median}
-                                   'σ  :   '+floattostrf(sd[col],ffgeneral, 5, 5)+#10+               {standard deviation}
-                                   'm :   '+floattostrf(minimum[col],ffgeneral, 5, 5)+#10+
-                                   'M :   '+floattostrf(maximum[col],ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter[col]))+' x)'+#10+
-                                   '≥64E3 :  '+inttostr(round(saturated[col]));
 
+    {sd}
+    for fitsY:=startY to oldY-1 do
+    for fitsX:=startX to oldX-1 do
+    begin
+      sd[col]:=sd[col]+sqr(mean[col]-img_loaded[col,fitsX,fitsY]);
     end;
+    sd[col]:=sqrt(sd[col]/counter);
 
-    application.messagebox(pchar(info_message),pchar('Statistics within rectangle '+inttostr(oldX-1-startX)+' x '+inttostr(oldY-1-startY) ) ,MB_OK);
+    if naxis3>1 then if col=0 then info_message:=info_message+'Red:'+#10;
+    if col=1 then info_message:=info_message+#10+#10+'Green:'+#10;
+    if col=2 then info_message:=info_message+#10+#10+'Blue:'+#10;
 
-    median_array:=nil;{free mem}
+    info_message:=info_message+  'x̄      '+floattostrf(mean[col],ffgeneral, 5, 5)+#10+             {mean}
+                                 'x̃  :   '+floattostrf(smedian(median_array),ffgeneral, 5, 5)+#10+ {median}
+                                 'σ  :   '+floattostrf(sd[col],ffgeneral, 5, 5)+#10+               {standard deviation}
+                                 'm :   '+floattostrf(minimum[col],ffgeneral, 5, 5)+#10+
+                                 'M :   '+floattostrf(maximum[col],ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter[col]))+' x)'+#10+
+                                 '≥64E3 :  '+inttostr(round(saturated[col]));
 
-    Screen.Cursor:=Save_Cursor;
-  end{fits file}
-  else
-  application.messagebox(pchar('Pull first a rectangle around the object with the mouse while holding the right mouse button down'),'',MB_OK);
+  end;
+
+  application.messagebox(pchar(info_message),pchar('Statistics within rectangle '+inttostr(oldX-1-startX)+' x '+inttostr(oldY-1-startY) ) ,MB_OK);
+
+  median_array:=nil;{free mem}
+
+  Screen.Cursor:=Save_Cursor;
 end;
 
 
@@ -7803,9 +7801,10 @@ begin
   end;
 end;
 
+procedure Tmainwindow.Panel1Click(Sender: TObject);
+begin
 
-
-
+end;
 
 procedure do_stretching;{prepare strecht table and replot image}
 var
@@ -8213,6 +8212,13 @@ begin
   form_astrometry_net1.ShowModal;
   form_astrometry_net1.release;
 end;
+
+procedure Tmainwindow.bin3x3Click(Sender: TObject);
+begin
+
+end;
+
+
 
 procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
 begin

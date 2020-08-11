@@ -63,6 +63,10 @@ type
     binning_for_solving_label3: TLabel;
     analyse_objects_visibles1: TButton;
     binning_for_solving_label4: TLabel;
+    bin_image1: TButton;
+    GroupBox17: TGroupBox;
+    bin_factor1: TComboBox;
+    undo_button12: TBitBtn;
     write_video1: TButton;
     Label36: TLabel;
     Label49: TLabel;
@@ -532,8 +536,6 @@ type
     Viewimage4: TMenuItem;
     Viewimage5: TMenuItem;
     procedure add_noise1Click(Sender: TObject);
-    procedure alignment1ContextPopup(Sender: TObject; MousePos: TPoint;
-      var Handled: Boolean);
     procedure align_blink1Change(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
     procedure analysephotometry1Click(Sender: TObject);
@@ -542,6 +544,7 @@ type
     procedure auto_background_level1Click(Sender: TObject);
     procedure apply_background_noise_filter1Click(Sender: TObject);
     procedure bayer_pattern1Select(Sender: TObject);
+    procedure bin_image1Click(Sender: TObject);
     procedure blink_stop1Click(Sender: TObject);
     procedure blink_unaligned_multi_step1Click(Sender: TObject);
     procedure browse_dark1Click(Sender: TObject);
@@ -5224,7 +5227,7 @@ begin
 
       Application.ProcessMessages;
       if ((esc_pressed) or
-          (binX2=false)) {converts filename2 to binx2 version}
+          (binX2X3_file(2)=false)) {converts filename2 to binx2 version}
           then exit;
       listview7.Items[c].Checked:=false;
       listview_add2(listview7,filename2,17);{add binx2 file}
@@ -6572,16 +6575,29 @@ begin
   demosaic_method1.enabled:=pos('X-Trans',bayer_pattern1.text )=0; {disable method is X-trans is selected}
 end;
 
+procedure Tstackmenu1.bin_image1Click(Sender: TObject);
+var
+  Save_Cursor:TCursor;
+begin
+  if fits_file=true then
+  begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+    backup_img; {move viewer data to img_backup}
+    if bin_factor1.itemindex=0 then bin_X2X3(2)
+                               else bin_X2X3(3);
+
+    plot_fits(mainwindow.image1,true,true);{plot real}
+    Screen.Cursor:=Save_Cursor;
+  end;
+end;
+
 procedure Tstackmenu1.align_blink1Change(Sender: TObject);
 begin
   solve_and_annotate1.enabled:=align_blink1.checked;
 end;
 
-procedure Tstackmenu1.alignment1ContextPopup(Sender: TObject; MousePos: TPoint;
-  var Handled: Boolean);
-begin
-
-end;
 
 procedure Tstackmenu1.add_noise1Click(Sender: TObject);
 var

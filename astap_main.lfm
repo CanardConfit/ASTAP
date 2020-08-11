@@ -220,6 +220,7 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     TabOrder = 3
+    OnClick = Panel1Click
     OnMouseMove = Panel1MouseMove
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
@@ -1014,6 +1015,11 @@ object mainwindow: Tmainwindow
           Hint = 'Bin 2x2 all selected images'
           OnClick = bin2x2Click
         end
+        object bin3x3: TMenuItem
+          Caption = 'Batch convert bin3x3'
+          Hint = 'Bin 3x3 all selected images'
+          OnClick = bin2x2Click
+        end
         object MenuItem22: TMenuItem
           Caption = 'Rotate'
           object batch_rotate_left1: TMenuItem
@@ -1405,7 +1411,7 @@ object mainwindow: Tmainwindow
     object show_statistics1: TMenuItem
       Caption = 'Show statistics within rectangle'
       Enabled = False
-      Hint = 'Calculate mean, median standard deviation, minimum and maximum values within the rectangle. The median is limited to 50000 pixels max.'
+      Hint = 'Calculate mean, median standard deviation, minimum and maximum values within the rectangle.'
       ImageIndex = 34
       OnClick = show_statistics1Click
     end

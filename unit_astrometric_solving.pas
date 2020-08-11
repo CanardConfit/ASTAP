@@ -108,8 +108,6 @@ uses   Classes,SysUtils,controls,forms,math,
 function solve_image(img :image_array; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; var starlist3:star_list);{bin, measure background, find stars}
 function report_binning : integer;{select the binning}
-//procedure standard_equatorial(ra0,dec0,x,y,cdelt: double; var ra,dec : double); {transformation from CCD coordinates into equatorial coordinates}
-//procedure equatorial_standard(ra0,dec0,ra,dec, cdelt : double; var xx,yy: double);
 
 var
   star1   : array[0..2] of array of single;
@@ -290,7 +288,7 @@ begin
 end;
 
 
-procedure binX2_crop(crop {0..1}:double; img : image_array; var img2: image_array);{combine values of 4 pixels and crop is required}
+procedure binX2_crop(crop {0..1}:double; img : image_array; var img2: image_array);{combine values of 4 pixels and crop is required, Result is mono}
   var fitsX,fitsY,k, w,h,  shiftX,shiftY,nrcolors,width5,height5: integer;
       val       : single;
 begin
@@ -325,7 +323,7 @@ begin
    naxis3:=1;
  end;
 
-procedure binX3_crop(crop {0..1}:double; img : image_array; var img2: image_array);{combine values of 9 pixels and crop is required}
+procedure binX3_crop(crop {0..1}:double; img : image_array; var img2: image_array);{combine values of 9 pixels and crop is required. Result is mono}
   var fitsX,fitsY,k, w,h,  shiftX,shiftY,nrcolors,width5,height5: integer;
       val       : single;
 begin
@@ -363,7 +361,8 @@ begin
   naxis3:=1;
 end;
 
-procedure binX4_crop(crop {0..1}:double;img : image_array; var img2: image_array);{combine values of 16 pixels and crop is required}
+
+procedure binX4_crop(crop {0..1}:double;img : image_array; var img2: image_array);{combine values of 16 pixels and crop is required. Result is mono}
   var fitsX,fitsY,k, w,h,  shiftX,shiftY,nrcolors,width5,height5: integer;
       val       : single;
 begin

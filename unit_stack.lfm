@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1618
-    ActivePage = tab_Pixelmath2
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 12
+    TabIndex = 0
     TabOrder = 5
     object Images: TTabSheet
       Hint = 'Select here the light frames'
@@ -2186,7 +2186,6 @@ object stackmenu1: Tstackmenu1
       ClientHeight = 420
       ClientWidth = 1610
       ImageIndex = 7
-      OnContextPopup = alignment1ContextPopup
       ParentFont = False
       object use_star_alignment1: TRadioButton
         Left = 8
@@ -5834,10 +5833,10 @@ object stackmenu1: Tstackmenu1
         end
       end
       object GroupBox6: TGroupBox
-        Left = 288
+        Left = 289
         Height = 88
         Hint = 'Apply a flat image or add or subtract an image. '
-        Top = 192
+        Top = 184
         Width = 425
         Caption = 'Apply file to image in viewer'
         ClientHeight = 68
@@ -5972,7 +5971,7 @@ object stackmenu1: Tstackmenu1
       object GroupBox10: TGroupBox
         Left = 288
         Height = 64
-        Top = 288
+        Top = 272
         Width = 426
         Caption = 'Resize current viewer image'
         ClientHeight = 44
@@ -5982,7 +5981,7 @@ object stackmenu1: Tstackmenu1
         object Button_free_resize_fits1: TButton
           Left = 296
           Height = 30
-          Hint = 'Resize current image in the viewer'
+          Hint = 'Resize current image in the viewer. Sizing factor is free selectable but there is no significant noise reducement.'
           Top = 5
           Width = 80
           Caption = 'Resize'
@@ -6208,6 +6207,91 @@ object stackmenu1: Tstackmenu1
           Caption = '-->'
           ParentColor = False
           ParentFont = False
+        end
+      end
+      object GroupBox17: TGroupBox
+        Left = 288
+        Height = 60
+        Top = 336
+        Width = 424
+        Caption = 'Binning'
+        ClientHeight = 40
+        ClientWidth = 420
+        TabOrder = 10
+        object bin_factor1: TComboBox
+          Left = 8
+          Height = 23
+          Hint = 'Bin current image in the viewer. Noise will be reduced.'
+          Top = 5
+          Width = 81
+          ItemHeight = 15
+          ItemIndex = 0
+          Items.Strings = (
+            '2x2'
+            '3x3'
+          )
+          OnChange = resize_factor1Change
+          ParentFont = False
+          Style = csDropDownList
+          TabOrder = 0
+          Text = '2x2'
+        end
+        object undo_button12: TBitBtn
+          Left = 383
+          Height = 30
+          Hint = 'Undo last action'
+          Top = 5
+          Width = 30
+          Glyph.Data = {
+            36040000424D3604000000000000360000002800000010000000100000000100
+            2000000000000004000000000000000000000000000000000000FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+            FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
+            FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
+            C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+            FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          }
+          OnClick = undo_button2Click
+          ParentFont = False
+          TabOrder = 1
+        end
+        object bin_image1: TButton
+          Left = 296
+          Height = 30
+          Hint = 'Bin current image in the viewer. Noise will be reduced.'
+          Top = 5
+          Width = 80
+          Caption = 'Apply'
+          OnClick = bin_image1Click
+          ParentFont = False
+          TabOrder = 2
         end
       end
     end
