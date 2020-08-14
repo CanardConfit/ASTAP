@@ -316,7 +316,6 @@ object mainwindow: Tmainwindow
       ParentShowHint = False
       Pen.Color = clBlue
       Pen.Mode = pmNotXor
-      Pen.Style = psDot
       Pen.Width = 2
       ShowHint = True
       Visible = False

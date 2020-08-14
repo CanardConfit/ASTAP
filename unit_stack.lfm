@@ -666,9 +666,9 @@ object stackmenu1: Tstackmenu1
             Width = 90
           end        
           item
-            Caption = 'σ'
-            MaxWidth = 50
-            MinWidth = 50
+            Caption = 'σ centre'
+            MinWidth = 60
+            Width = 60
           end        
           item
             Caption = 'Gain'
@@ -829,8 +829,9 @@ object stackmenu1: Tstackmenu1
           end        
           item
             Alignment = taRightJustify
-            Caption = 'σ'
-            MinWidth = 50
+            Caption = 'σ centre'
+            MinWidth = 60
+            Width = 60
           end        
           item
             Caption = 'Gain'
@@ -973,9 +974,9 @@ object stackmenu1: Tstackmenu1
             Width = 90
           end        
           item
-            Caption = 'σ'
-            MaxWidth = 50
-            MinWidth = 50
+            Caption = 'σ centre'
+            MinWidth = 60
+            Width = 60
           end        
           item
             Caption = 'Gain'

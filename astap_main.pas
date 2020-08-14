@@ -55,6 +55,7 @@ type
   { Tmainwindow }
   Tmainwindow = class(TForm)
     add_marker_position1: TMenuItem;
+    bin3x3: TMenuItem;
     BitBtn1: TBitBtn;
     ccdinspector1: TMenuItem;
     error_label1: TLabel;
@@ -620,6 +621,8 @@ Function LeadingZero(w : integer) : String;
 procedure log_to_file(logf,mess : string);{for testing}
 procedure demosaic_advanced(var img : image_array);{demosaic img_loaded}
 procedure bin_X2X3(binfactor:integer);{bin img_loaded 2x or 3x}
+function sd(x1,y1, ri{regio of interest} : integer; img : image_array):double;{calculate standard deviation in img at position x1, y1 in a rectangle with sides 2*ri+1}
+
 
 const   bufwide=1024*120;{buffer size in bytes}
 
@@ -698,6 +701,9 @@ const
   SaveasJPGPNGBMP1filterindex : integer=4;
   LoadFITSPNGBMPJPEG1filterindex: integer=1;
   marker_position : string='';
+  mouse_fitsx : double=0;
+  mouse_fitsy : double=0;
+
 
 function load_fits(filen:string;light {load as light of dark/flat},load_data: boolean ;var img_loaded2: image_array): boolean;{load fits file}
 {if light=true then read also ra0, dec0 ....., else load as dark, flat}
@@ -2191,12 +2197,11 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.401, '+about_message4+', dated 2020-08-11';
+  #13+#10+'ASTAP version ß0.9.403, '+about_message4+', dated 2020-08-14';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
 end;
-
 
 
 procedure Tmainwindow.FormKeyPress(Sender: TObject; var Key: char);
@@ -2215,10 +2220,12 @@ begin {set form keypreview:=on}
    end;
 end;
 
+
 procedure Tmainwindow.helponline1Click(Sender: TObject);
 begin
    openurl('http://www.hnsky.org/astap.htm');
 end;
+
 
 procedure update_recent_file_menu;{recent file menu update}
 begin
@@ -2231,6 +2238,8 @@ begin
   if recent_files.count>=7 then begin mainwindow.recent7.visible:=true;mainwindow.recent7.caption:=recent_files[6];end else mainwindow.recent7.visible:=false;
   if recent_files.count>=8 then begin mainwindow.recent8.visible:=true;mainwindow.recent8.caption:=recent_files[7];end else mainwindow.recent8.visible:=false;
 end;
+
+
 procedure add_recent_file(f: string);{add to recent file list. if existing in list then update recent files list by moving this one up to first position}
 var i: integer;
 begin
@@ -2253,17 +2262,19 @@ begin
   if mouse_enter=0 then mouse_enter:=1;
 end;
 
+
 procedure Tmainwindow.image_cleanup1Click(Sender: TObject);
 begin
-//  mainwindow.error_label1.visible:=false;
   plot_fits(mainwindow.image1,false,true);
 end;
+
 
 procedure Tmainwindow.deepsky_overlay1Click(Sender: TObject);
 begin
   load_deep;{load the deepsky database once. If loaded no action}
   plot_deepsky;
 end;
+
 
 procedure Tmainwindow.brighten_area1Click(Sender: TObject);
 var
@@ -2348,7 +2359,6 @@ procedure bin_X2X3(binfactor:integer);{bin img_loaded 2x or 3x}
       img_temp2 : image_array;
 
 begin
-
   w:=trunc(width2/binfactor);  {half size & cropped. Use trunc for image 1391 pixels wide like M27 test image. Otherwise exception error}
   h:=trunc(height2/binfactor);
 
@@ -2462,7 +2472,6 @@ begin
   end;
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.FIT*';
-//  fits_file:=true;
   data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
 
@@ -2490,6 +2499,7 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.max2EditingDone(Sender: TObject);
 var
   edit_value: integer;
@@ -2512,6 +2522,7 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.Memo1KeyUp(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
@@ -2519,6 +2530,7 @@ begin
    statusbar1.SimplePanel:=true;
    statusbar1.Simpletext:=mainwindow.caption;
 end;
+
 
 procedure Tmainwindow.localgaussian1Click(Sender: TObject);
 var
@@ -3160,6 +3172,9 @@ begin
       show_marker_shape(mainwindow.shape_marker2,20,20,shape_marker2_fitsX, shape_marker2_fitsY);
     if mainwindow.shape_marker3.visible then {do this only when visible}
       show_marker_shape(mainwindow.shape_marker3,20,20,shape_marker3_fitsX, shape_marker3_fitsY);
+
+     if copy_paste then show_marker_shape(mainwindow.shape_paste1,copy_paste_w,copy_paste_h, mouse_fitsx, mouse_fitsy);{show the paste shape}
+
 
     {reference point manual alignment}
     if mainwindow.shape_alignment_marker1.visible then {For manual alignment. Do this only when visible}
@@ -7729,10 +7744,10 @@ begin
   if  ((abs(oldx-startX)>1)and (abs(oldy-starty)>1)) then
   begin
     Screen.Cursor := crDrag;
-    copy_paste_x:=startX;{save for Application.ProcessMessages;this could change startX, startY}
-    copy_paste_y:=startY;
-    oldX2:=oldX;
-    oldY2:=oldY;
+    copy_paste_x:=startX+1;{take the inside of the rectangle} {save for Application.ProcessMessages;this could change startX, startY}
+    copy_paste_y:=startY+1;
+    oldX2:=oldX-1;{take the inside of the rectangle}
+    oldY2:=oldY-1;
 
     backup_img;{required in case later ctrl-z is used}
 
@@ -7752,8 +7767,8 @@ begin
     if copy_paste_y>oldY2 then begin dum:=oldY2; oldY2:=copy_paste_y; copy_paste_y:=dum; end;
 
 
-    copy_paste_w:=oldX2-copy_paste_x;
-    copy_paste_h:=oldY2-copy_paste_y;
+    copy_paste_w:=oldX2-copy_paste_x+1;
+    copy_paste_h:=oldY2-copy_paste_y+1;
     copy_paste:=true;
 
   end {fits file}
@@ -7768,7 +7783,7 @@ end;
 
 procedure Tmainwindow.batch_rotate_left1Click(Sender: TObject);
 var
-  I                       : integer;
+  i         : integer;
   dobackup : boolean;
 begin
 
@@ -7785,9 +7800,9 @@ begin
 
     try { Do some lengthy operation }
        with OpenDialog1.Files do
-       for I := 0 to Count - 1 do
+       for i := 0 to Count - 1 do
        begin
-         filename2:=Strings[I];
+         filename2:=Strings[i];
          {load fits}
          Application.ProcessMessages;
          if ((esc_pressed) or (load_fits(filename2,true {light},true,img_loaded)=false)) then begin exit;end;
@@ -10777,32 +10792,35 @@ begin
   end;
 end;
 
-function SD(x1,y1: integer):double;{calculate standard deviation}
-var i,j,ri  : integer;
-    bg_average,bg_standard_deviation: double;
+function sd(x1,y1, ri{regio of interest} : integer; img : image_array):double;{calculate standard deviation in img at position x1, y1 in a rectangle with sides 2*ri+1}
+var i,j,counter : integer;
+    average,sd,val: double;
 begin
-  ri:=10;{region of interest}
-
   if ((x1-ri<0) or (x1+ri>width2-1) or
       (y1-ri<0) or (y1+ri>height2-1) )
     then begin result:=999;  exit;end;
 
-  bg_average:=0;
-
+  average:=0;
   for i:=-ri to ri do {calculate average background at the square boundaries of region of interest}
   for j:=-ri to ri do {calculate average background at the square boundaries of region of interest}
   begin
-    bg_average:=bg_average+img_loaded[0,x1+i,y1+j];
+    average:=average+img[0,x1+i,y1+j];
   end;
-  bg_average:=bg_average/sqr(ri+ri+1); {background average}
+  average:=average/sqr(ri+ri+1); {background average}
 
-  bg_standard_deviation:=0;
+  sd:=0;
+  counter:=0;
   for i:=-ri to ri do {calculate standard deviation  of region of interest}
   for j:=-ri to ri do {calculate standard deviation  of region of interest}
   begin
-    bg_standard_deviation:=bg_standard_deviation+sqr(bg_average-img_loaded[0,x1+i,y1+j]);
+    val:=img[0,x1+i,y1+j];
+    if val<2*average then {ignore hot pixels}
+    begin
+      sd:=sd+sqr(average-img[0,x1+i,y1+j]);
+      inc(counter);
+    end;
   end;
-  result:=sqrt(bg_standard_deviation/((ri+ri+1)*(ri+ri+1))); {standard deviation in background}
+  result:=sqrt(sd/counter); {standard deviation in background}
 end;
 
 function rgb_kelvin(red,blue :single):string;{range 2000-20000 kelvin}
@@ -10898,16 +10916,21 @@ end;
 
 procedure erase_rectangle;
 begin
-  mainwindow.image1.Canvas.Pen.color:=clblack;{define otherwise problems in Linux}
-  mainwindow.image1.Canvas.Pen.Mode := pmNotXor;       { use XOR mode to draw/erase }
-  mainwindow.image1.Canvas.Pen.width := round(1+width2/mainwindow.image1.width);{thick lines because image is stretched smaller and otherwise line can't been seen}
-  mainwindow.image1.Canvas.MoveTo(startx , startY );   { move pen back to origin }
+//  if  rectangle_drawn then
+  begin
+    mainwindow.image1.Canvas.Pen.color:=clblack;{define otherwise problems in Linux}
+    mainwindow.image1.Canvas.Pen.Mode := pmNotXor;       { use XOR mode to draw/erase }
+    mainwindow.image1.Canvas.Pen.width := round(1+width2/mainwindow.image1.width);{thick lines because image is stretched smaller and otherwise line can't been seen}
+    mainwindow.image1.Canvas.MoveTo(startx , startY );   { move pen back to origin }
 
-  mainwindow.image1.Canvas.LineTo(oldx,startY);        { erase the old line }
-  mainwindow.image1.Canvas.LineTo(oldx,oldy);          { erase the old line }
-  mainwindow.image1.Canvas.LineTo(startX,oldy);        { erase the old line }
-  mainwindow.image1.Canvas.LineTo(startX,startY);      { erase the old line }
-  mainwindow.image1.Canvas.Pen.Mode := pmCopy;{back to normal}
+    mainwindow.image1.Canvas.LineTo(oldx,startY);        { erase the old line }
+    mainwindow.image1.Canvas.LineTo(oldx,oldy);          { erase the old line }
+    mainwindow.image1.Canvas.LineTo(startX,oldy);        { erase the old line }
+    mainwindow.image1.Canvas.LineTo(startX,startY);      { erase the old line }
+    mainwindow.image1.Canvas.Pen.Mode := pmCopy;{back to normal}
+  //  rectangle_drawn:=false;
+  end;
+
 end;
 
 procedure draw_rectangle(x_sized,y_sized:integer);
@@ -10920,13 +10943,14 @@ begin
   mainwindow.image1.Canvas.LineTo(startX, Y_sized);    { draw the new line }
   mainwindow.image1.Canvas.LineTo(startX, startY);     { draw the new line }
   mainwindow.image1.Canvas.Pen.Mode := pmCopy;{back to normal}
+ // rectangle_drawn:=true;
 end;
 
 procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
   Y: Integer);
 
 var
-  mouse_fitsx,mouse_fitsy,hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance : double;
+  hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance : double;
   s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str      : string;
   x_sized,y_sized,factor,flipH,flipV :integer;
   color1:tcolor;
@@ -10936,8 +10960,6 @@ begin
    begin
      if abs(y-down_y)>2 then
      begin
-//       error_label1.visible:=false;{kill error label}
-
        mainwindow.image1.Top:= mainwindow.image1.Top+(y-down_y);
      //   timage(sender).Top:= timage(sender).Top+(y-down_y);{could be used for second image}
 
@@ -11033,8 +11055,10 @@ begin
    if mouse_fitsY>height2 then mouse_fitsY:=height2;
    if mouse_fitsX>width2 then mouse_fitsX:=width2;
 
-   if copy_paste then show_marker_shape(mainwindow.shape_paste1,copy_paste_w,copy_paste_h, mouse_fitsx, mouse_fitsy);{show the paste shape}
+//        mainwindow.shape_paste1.pen.width:=max(1,min(3,min(copy_paste_w,copy_paste_h) div 10) );{reduce width is shape size is small}
 
+
+   if copy_paste then show_marker_shape(mainwindow.shape_paste1,copy_paste_w,copy_paste_h, mouse_fitsx, mouse_fitsy);{show the paste shape}
    try color1:=ColorToRGB(mainwindow.image1.canvas.pixels[trunc(x*width2/image1.width),trunc(y*height2/image1.height)]); ;except;end;  {note  getpixel(image1.canvas.handle,x,y) doesn't work well since X,Y follows zoom  factor !!!}
 
    if naxis3=3 then {for star temperature}
@@ -11069,7 +11093,6 @@ begin
 
    end;
 
-
    hfd2:=999;
    HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),14{box size},hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
 
@@ -11095,7 +11118,7 @@ begin
    begin
      object_xc:=-999999;
      mainwindow.statusbar1.panels[1].text:='';
-     mainwindow.statusbar1.panels[2].text:='σ = '+ floattostrf( SD(round(mouse_fitsX-1),round(mouse_fitsY-1)),ffFixed{ ffgeneral}, 4, 1);
+     mainwindow.statusbar1.panels[2].text:='σ = '+ floattostrf( sd(round(mouse_fitsX-1),round(mouse_fitsY-1),10, img_loaded),ffFixed{ ffgeneral}, 4, 1);
    end;
   calculate_equatorial_mouse_position(mouse_fitsx,mouse_fitsy,raM,decM);
   mainwindow.statusbar1.panels[0].text:=prepare_ra2(raM,': ')+'   '+prepare_dec2(decM,'° ');
@@ -11106,12 +11129,14 @@ procedure Tmainwindow.Image1MouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 begin
   if button=mbright then
-  {$ifdef fpc}
-  PopupMenu1.PopUp;{call popup manually if right key is released, not when clicked. Set in popupmenu autopopup off !!!}
-  {$else} {delphi}
-  PopupMenu1.PopUp(x,y);{call popup manually if right key is released, not when clicked. Set in popupmenu autopopup off !!!}
-  {$endif}
-
+  begin
+   {$ifdef fpc}
+    PopupMenu1.PopUp;{call popup manually if right key is released, not when clicked. Set in popupmenu autopopup off !!!}
+   {$else} {delphi}
+    PopupMenu1.PopUp(x,y);{call popup manually if right key is released, not when clicked. Set in popupmenu autopopup off !!!}
+   {$endif}
+    erase_rectangle;
+  end;
   if ((oldx<>startx) or (oldY<>startY) )=false then
   begin {no rubber rectangle in action}
     if abs(y-down_y)>2 then
@@ -11122,10 +11147,6 @@ begin
     begin
       mainwindow.image1.left:= mainwindow.image1.left+(x-down_x)
     end;
-  end
-  else
-  begin
-    erase_rectangle;
   end;
   screen.Cursor := crDefault;
 end;

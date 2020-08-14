@@ -1133,23 +1133,25 @@ begin
   stackmenu1.nr_selected1.caption:=inttostr(images_selected);{update menu info}
 end;
 
-function get_standard_deviation(backgr: double {value background}; colour : integer; img2: image_array): double;{get the background standard deviation using 10000 pixels}
+
+function get_standard_deviation(backgr: double {value background}; colour : integer; img2: image_array): double;{get the background standard deviation using 10000 pixels. As reference the backgr value is used}
 var
  fitsX, fitsY,counter,stepsize,width5,height5 : integer;
  value : double;
 begin
   result:=0;
   counter:=1; {never divide by zero}
+
   fitsX:=15;
   stepsize:=round(height2/102);{get about 10000 samples. Use 102 rather then 100 to prevent problems with artifical generated stars which is using repeat of 100}
 
   width5:=Length(img2[0]);    {width}
   height5:=Length(img2[0][0]); {height}
 
-  while fitsX<=width5-1 do
+  while fitsX<=width5-1-15 do
   begin
     fitsY:=15;
-    while fitsY<=height5-1 do
+    while fitsY<=height5-1-15 do
     begin
       value:=img2[colour,fitsX,fitsY];
       if ((value<backgr*2) and (value<>0)) then {not an outlier, noise should be symmetrical so should be less then twice background}
@@ -1212,6 +1214,7 @@ begin
     if starlevel<= background then starlevel:=background+1 {no or very few stars}
     else
     starlevel:=starlevel-background-1;{star level above background. Important subtract 1 for saturated images. Otherwise no stars are detected}
+
     {calculate noise level}
     noise_level[colour]:= round(get_standard_deviation(background,colour,img));
   end;
@@ -3141,16 +3144,7 @@ begin
       filename1:=lv.items[c].caption;
       Application.ProcessMessages; if esc_pressed then begin break;{leave loop}end;
 
-//      if amode=0 then loaded:=load_fits(filename1,false{reduced header, do not update ra0....},false {header only},img) {for flats}
-//      else
-//      if amode=1 then loaded:=load_fits(filename1,true{ full header},false {header only},img)   {blink, photometry}
-//      else
-//      if amode=2 then loaded:=load_fits(filename1,false{reduced  header},true {full fits},img) {for darks}
-//      else
-//      loaded:=load_fits(filename1,true {light, so also position ra0..},true {full fits},img); {for background or background+hfd+star}
-
       loaded:=load_fits(filename1,light {light or dark/flat},full {full fits},img); {for background or background+hfd+star}
-
 
       if loaded then
       begin {success loading header only}
@@ -3166,10 +3160,12 @@ begin
             lv.Items.item[c].subitems.Strings[D_type]:=imagetype;{image type}
             if ((light=false) and (full=true)) {amode=2} then {dark/flats}
             begin {analyse background and noise}
-              get_background(0,img,true {update_hist},true {calculate noise level}, {var} backgr,star_level);
+              get_background(0,img,true {update_hist},false {calculate noise level}, {var} backgr,star_level);
+              noise_level[0]:= round(sd(width2 div 2, height2 div 2, 100,img));{ analyse centre only. Suitable for flats and dark with amp glow}
+
               lv.Items.item[c].subitems.Strings[D_background]:=inttostr5(round(backgr));
               if ((lv.name=stackmenu1.listview2.name) or (lv.name=stackmenu1.listview3.name) or (lv.name=stackmenu1.listview4.name)) then
-              lv.Items.item[c].subitems.Strings[D_sigma]:=inttostr(noise_level[0]); {noise level}
+                     lv.Items.item[c].subitems.Strings[D_sigma]:=inttostr(noise_level[0]); {noise level}
               lv.Items.item[c].subitems.Strings[D_gain]:=inttostr(round(gain)); {camera gain}
             end;
             if lv.name=stackmenu1.listview3.name then
@@ -6964,7 +6960,7 @@ begin
       if save_fits(img_dark,path1,-32,false) then {saved}
       begin
         listview2.Items.BeginUpdate;
-        for i:=0 to  file_count do
+        for i:=0 to  file_count-1 do
         begin
           c:=0;
           counter:=listview2.Items.Count;
