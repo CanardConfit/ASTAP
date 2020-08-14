@@ -7191,12 +7191,6 @@ begin
       dcount:=dark_count;{protect this global dark_count in dcount for next load_master_flat}
     end;
 
-    if ((dark_count<>0) and (light_naxis3<>length(img_dark))) then {colour image with mono dark?}
-    begin
-      dark_count:=0;
-      memo2_message('█ █ █ █ █ █  Warning, skipping dark, can'+#39+'t combine mono and colour!!')
-    end;
-
     if dark_count>0 then
     begin
       dark_outlier_level:=strtofloat2(stackmenu1.hotpixel_sd_factor1.text)* dark_sigma + dark_average;{pixels above this level are hot}
@@ -7204,7 +7198,7 @@ begin
         for fitsX:=0 to width2-1  do
           for k:=0 to naxis3-1 do {do all colors}
           begin
-             value:=img_dark[k,fitsX,fitsY];
+             value:=img_dark[0,fitsX,fitsY]; {Darks are always made mono when making master dark}
              if ((ignore_hotpixels) and (value>dark_outlier_level) and (fitsx>0) and (fitsY>0)) then {case dark hot pixel replace image pixels with image neighbour pixels}
              begin
                img_loaded[k,fitsX,fitsY]:=min(img_loaded[k,fitsX-1,fitsY],img_loaded[k,fitsX,fitsY-1]);  {take the lowest value of the neighbour pixels}

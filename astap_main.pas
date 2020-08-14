@@ -290,7 +290,6 @@ type
     procedure copy_paste_tool1Click(Sender: TObject);
     procedure MenuItem21Click(Sender: TObject);
     procedure batch_rotate_left1Click(Sender: TObject);
-    procedure Panel1Click(Sender: TObject);
     procedure range1Change(Sender: TObject);
     procedure remove_atmouse1Click(Sender: TObject);
     procedure gradient_removal1Click(Sender: TObject);
@@ -2197,7 +2196,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.403, '+about_message4+', dated 2020-08-14';
+  #13+#10+'ASTAP version ß0.9.404, '+about_message4+', dated 2020-08-14';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3723,6 +3722,7 @@ begin
       {load image}
       if load_fits(opendialog1.filename,true {light},true,img_loaded) then
       begin
+        if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
         plot_fits(mainwindow.image1,false {re_center},true);
       end;
@@ -4986,10 +4986,7 @@ begin
 
   if pos('S',calstat)>0 then
                     mainwindow.shape_alignment_marker1.visible:=false; {hide shape if stacked image is plotted}
-  if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then
-  begin
-    demosaic_advanced(img_loaded);{demosaic and set levels}
-  end;
+//  if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
 
   cblack:=mainwindow.minimum1.position;
   cwhite:=mainwindow.maximum1.position;
@@ -7224,6 +7221,7 @@ begin
 
   if plot then
   begin
+    if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
     image_move_to_center:=re_center;
@@ -7816,10 +7814,7 @@ begin
   end;
 end;
 
-procedure Tmainwindow.Panel1Click(Sender: TObject);
-begin
 
-end;
 
 procedure do_stretching;{prepare strecht table and replot image}
 var
@@ -10820,7 +10815,8 @@ begin
       inc(counter);
     end;
   end;
-  result:=sqrt(sd/counter); {standard deviation in background}
+  if counter<>0 then result:=sqrt(sd/counter) {standard deviation in background}
+                else result:=999;
 end;
 
 function rgb_kelvin(red,blue :single):string;{range 2000-20000 kelvin}
@@ -11163,6 +11159,7 @@ begin
   backup_img;
 
   setlength(img_loaded,1,width2,height2);{set length of image array mono}
+
   for fitsY:=0 to height2-1 do
     for fitsX:=0 to width2-1 do
      img_loaded[0,fitsx,fitsy]:=(img_backup[index_backup].img[0,fitsx,fitsy]+img_backup[index_backup].img[1,fitsx,fitsy]+img_backup[index_backup].img[2,fitsx,fitsy])/3;
@@ -11178,6 +11175,7 @@ begin
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);{plot}
   Screen.cursor:=Save_Cursor;
+
 end;
 
 procedure Tmainwindow.stretch_draw1Click(Sender: TObject); {stretch draw}

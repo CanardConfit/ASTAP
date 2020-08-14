@@ -658,9 +658,12 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if make_osc_color1.checked then
+          if make_osc_color1.checked then {do demosaic bayer}
           begin
+            if naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+            else
             demosaic_bayer(img_loaded); {convert OSC image to colour}
+           {naxis3 is now 3}
           end;
 
           if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
@@ -883,8 +886,13 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if make_osc_color1.checked then {do demosaic bayer}  demosaic_bayer(img_loaded); {convert OSC image to colour}
-          {naxis3 is now 3}
+          if make_osc_color1.checked then {do demosaic bayer}
+          begin
+            if naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+            else
+            demosaic_bayer(img_loaded); {convert OSC image to colour}
+           {naxis3 is now 3}
+          end;
 
           if use_astrometry_internal=false then begin memo2_message('Abort, only astrometric alignment possible in mosaic mode.'); exit; end;
 
@@ -1085,7 +1093,13 @@ begin
         Application.ProcessMessages;
         if esc_pressed then exit;
 
-        if make_osc_color1.checked then  demosaic_bayer(img_loaded); {convert OSC image to colour}
+        if make_osc_color1.checked then {do demosaic bayer}
+        begin
+          if naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+          else
+          demosaic_bayer(img_loaded); {convert OSC image to colour}
+         {naxis3 is now 3}
+        end;
 
         if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
         begin
@@ -1251,7 +1265,13 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if make_osc_color1.checked then demosaic_bayer(img_loaded); {convert OSC image to colour}
+          if make_osc_color1.checked then {do demosaic bayer}
+          begin
+            if naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+            else
+            demosaic_bayer(img_loaded); {convert OSC image to colour}
+           {naxis3 is now 3}
+          end;
 
           if init=false then {init}
           begin
@@ -1353,7 +1373,13 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if make_osc_color1.checked then demosaic_bayer(img_loaded); {convert OSC image to colour}
+          if make_osc_color1.checked then {do demosaic bayer}
+          begin
+            if naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+            else
+            demosaic_bayer(img_loaded); {convert OSC image to colour}
+           {naxis3 is now 3}
+          end;
 
           if init=false then {init}
           begin
@@ -1535,7 +1561,13 @@ begin
         Application.ProcessMessages;
         if esc_pressed then exit;
 
-        if make_osc_color1.checked then demosaic_bayer(img_loaded); {convert OSC image to colour}
+        if make_osc_color1.checked then {do demosaic bayer}
+        begin
+          if naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+          else
+          demosaic_bayer(img_loaded); {convert OSC image to colour}
+         {naxis3 is now 3}
+        end;
 
         if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
         begin
