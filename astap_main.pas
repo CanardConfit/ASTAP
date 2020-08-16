@@ -1363,7 +1363,7 @@ begin
     begin
       For j:=0 to height2-1 do
       begin
-        try reader.read(fitsbuffer,width2*8);except; end; {read file info}
+        try reader.read(fitsbuffer,width2);except; end; {read file info}
         for i:=0 to width2-1 do
         begin
           img_loaded2[k,i,j]:=(fitsbuffer[j]*bscale + bzero);
