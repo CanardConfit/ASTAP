@@ -702,27 +702,6 @@ const
   mouse_fitsy : double=0;
 
 
-procedure special_array_to_standard_array(var img : image_array); {convert to array with colours in 3 byte words to seperate sections}
-var
-  i, j          : integer;
-  val: single;
-  img_temp2  : image_array;
-begin
-  setlength(img_temp2,3,width2,height2);{set length of image array}
-  for j:=0 to height2-1 do
-    for i:=0 to width2-1  do
-    begin
-      val:=img[0,i,j];
-      img_temp2[0,i,j]:=getRvalue(round(val));
-      img_temp2[1,i,j]:=getGvalue(round(val));
-      img_temp2[2,i,j]:=getBvalue(round(val));
-    end;
-  naxis3:=3;
-  nrbits:=8;
-  img:=img_temp2;
-  img_temp2:=nil;{free mem}
-end;
-
 function load_fits(filen:string;light {load as light of dark/flat},load_data: boolean ;var img_loaded2: image_array): boolean;{load fits file}
 {if light=true then read also ra0, dec0 ....., else load as dark, flat}
 {if load_data then read all else header only}
@@ -813,7 +792,6 @@ begin
      exit;
   end;
   fits_file:=false; {assume failure}
-//  mainwindow.error_label1.visible:=false;
 
   mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
   mainwindow.memo1.clear;{clear memo for new header}
@@ -1281,8 +1259,11 @@ begin
   until end_record;
 
 
-  if ((naxis=3) and (naxis1=3)) then nrbits:=24; {threat RGB fits as 2 dimensional with 24 bits data}
-
+  if ((naxis=3) and (naxis1=3)) then
+  begin
+     nrbits:=24; {threat RGB fits as 2 dimensional with 24 bits data}
+     naxis3:=3; {will be converted while reading}
+  end;
   if ( ((cdelt1=0) or (crota2>=999)) and (cd1_1<>0)) then
   begin
     new_to_old_WCS;{ convert old WCS to new}
@@ -1346,94 +1327,90 @@ begin
     setlength(img_loaded2,naxis3,width2,height2);
 
     if nrbits=16 then
-    for k:=1 to naxis3 do {do all colors}
+    for k:=0 to naxis3-1 do {do all colors}
     begin
-      For i:=0 to height2-1 do
+      For j:=0 to height2-1 do
       begin
-        try reader.read(fitsbuffer,width2*round(abs(nrbits/8)));except; end; {read file info}
-        for j:=0 to width2-1 do
+        try reader.read(fitsbuffer,width2*2);except; end; {read file info}
+        for i:=0 to width2-1 do
         begin
-          wo:=swap(fitsbuffer2[j]);{move data to wo and therefore sign_int}
+          wo:=swap(fitsbuffer2[i]);{move data to wo and therefore sign_int}
           col_float:=sign_int*bscale + bzero; {save in col_float for measuring measured_max}
-          img_loaded2[k-1,j,i]:=col_float;
+          img_loaded2[k,i,j]:=col_float;
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
     end {colors naxis3 times}
     else
     if nrbits=-32 then
-    for k:=1 to naxis3 do {do all colors}
+    for k:=0 to naxis3-1 do {do all colors}
     begin
-      For i:=0 to height2-1 do
+      For j:=0 to height2-1 do
       begin
-        try reader.read(fitsbuffer,width2*round(abs(nrbits/8)));except; end; {read file info}
-        for j:=0 to width2-1 do
+        try reader.read(fitsbuffer,width2*4);except; end; {read file info}
+        for i:=0 to width2-1 do
         begin
-          x_longword:=swapendian(fitsbuffer4[j]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
+          x_longword:=swapendian(fitsbuffer4[i]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
           col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
-          img_loaded2[k-1,j,i]:=col_float;{store in memory array}
+          img_loaded2[k,i,j]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
     end {colors naxis3 times}
     else
     if nrbits=8 then
-    for k:=1 to naxis3 do {do all colors}
+    for k:=0 to naxis3-1 do {do all colors}
     begin
-      For i:=0 to height2-1 do
+      For j:=0 to height2-1 do
       begin
-        try reader.read(fitsbuffer,width2*round(abs(nrbits/8)));except; end; {read file info}
-        for j:=0 to width2-1 do
+        try reader.read(fitsbuffer,width2*8);except; end; {read file info}
+        for i:=0 to width2-1 do
         begin
-          img_loaded2[k-1,j,i]:=(fitsbuffer[j]*bscale + bzero);
+          img_loaded2[k,i,j]:=(fitsbuffer[j]*bscale + bzero);
         end;
       end;
     end {colors naxis3 times}
     else
     if nrbits=24 then
-    for k:=1 to naxis3 do {do all colors}
+    For j:=0 to height2-1 do
     begin
-      For i:=0 to height2-1 do
+      try reader.read(fitsbuffer,width2*3);except; end; {read file info}
+      for i:=0 to width2-1 do
       begin
-        try reader.read(fitsbuffer,width2*round(abs(nrbits/8)));except; end; {read file info}
-        for j:=0 to width2-1 do
-        begin
-          rgbdummy:=fitsbufferRGB[j];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
-          col:=rgbdummy[2]+rgbdummy[1]*256+rgbdummy[0]*256*256;
-          col:=rgb(rgbdummy[0],rgbdummy[1],rgbdummy[2]);
-          img_loaded2[k-1,j,i]:=col;{store in memory array}
-          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-        end;
+        rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
+        img_loaded2[0,i,j]:=rgbdummy[0];{store in memory array}
+        img_loaded2[1,i,j]:=rgbdummy[1];{store in memory array}
+        img_loaded2[2,i,j]:=rgbdummy[2];{store in memory array}
       end;
-    end {colors naxis3 times}
+    end
     else
     if nrbits=+32 then
-    for k:=1 to naxis3 do {do all colors}
+    for k:=0 to naxis3-1 do {do all colors}
     begin
-      For i:=0 to height2-1 do
+      For j:=0 to height2-1 do
       begin
-        try reader.read(fitsbuffer,width2*round(abs(nrbits/8)));except; end; {read file info}
-        for j:=0 to width2-1 do
+        try reader.read(fitsbuffer,width2*4);except; end; {read file info}
+        for i:=0 to width2-1 do
         begin
-          col_float:=(swapendian(fitsbuffer4[j])*bscale+bzero)/(65535);{scale to 0..64535 or 0..1 float}
+          col_float:=(swapendian(fitsbuffer4[i])*bscale+bzero)/(65535);{scale to 0..64535 or 0..1 float}
                          {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
-          img_loaded2[k-1,j,i]:=col_float;{store in memory array}
+          img_loaded2[k,i,j]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
     end {colors naxis3 times}
     else
     if nrbits=-64 then
-    for k:=1 to naxis3 do {do all colors}
+    for k:=0 to naxis3-1 do {do all colors}
     begin
-      For i:=0 to height2-1 do
+      For j:=0 to height2-1 do
       begin
-        try reader.read(fitsbuffer,width2*round(abs(nrbits/8)));except; end; {read file info}
-        for j:=0 to width2-1 do
+        try reader.read(fitsbuffer,width2*8);except; end; {read file info}
+        for i:=0 to width2-1 do
         begin
-          x_int64:=swapendian(fitsbuffer8[j]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
+          x_int64:=swapendian(fitsbuffer8[i]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
           col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
-          img_loaded2[k-1,j,i]:=col_float;{store in memory array}
+          img_loaded2[k,i,j]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
@@ -1454,9 +1431,9 @@ begin
     if nrbits=24 then
     begin
       datamax_org:=255;
-      special_array_to_standard_array(img_loaded);{convert to array with colours in 3 byte words to seperate sections}
+      nrbits:=8; {already converted to array with seperate colour sections}
     end
-    else
+    else {16, -32 bit}
     datamax_org:=measured_max;{most common. It set for nrbits=24 in beginning at 255}
 
     cblack:=datamin_org;{for case histogram is not called}
@@ -1464,7 +1441,6 @@ begin
 
     result:=true;
     fits_file:=true;{succes}
-
   end;{read image}
 
   if ((extend>0) and (light)) then {table behind? Do not try to read a table as dark/flat. This will reset global extend variable}
@@ -1520,7 +1496,6 @@ begin
         begin
           if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {naxisT}
              begin
-               //if (header[i+5]=' ') then naxisT:=round(validate_double)   else    {naxisT number of colors}
                if (header[i+5]='1') then begin naxisT1:=round(validate_double); end else {naxisT1 pixels}
                if (header[i+5]='2') then naxisT2:=round(validate_double) else   {naxisT2 pixels}
              end;
@@ -2222,7 +2197,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.406, '+about_message4+', dated 2020-08-16';
+  #13+#10+'ASTAP version ß0.9.406a, '+about_message4+', dated 2020-08-16';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
