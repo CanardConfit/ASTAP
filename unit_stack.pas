@@ -6619,8 +6619,7 @@ begin
     plot_fits(mainwindow.image1,false,true);{plot real}
     Screen.Cursor:=Save_Cursor;
    end;
-
-   get_hist(0 {colour},img_loaded);{update for the noise. Better for test solving}
+   use_histogram(img_loaded,true {update}); {update for the noise, plot histogram, set sliders}
 end;
 
 procedure Tstackmenu1.blink_stop1Click(Sender: TObject);
@@ -7196,11 +7195,12 @@ begin
       dark_outlier_level:=strtofloat2(stackmenu1.hotpixel_sd_factor1.text)* dark_sigma + dark_average;{pixels above this level are hot}
       for fitsY:=0 to height2-1 do  {apply the dark}
         for fitsX:=0 to width2-1  do
-          for k:=0 to naxis3-1 do {do all colors}
+        begin
+          value:=img_dark[0,fitsX,fitsY]; {Darks are always made mono when making master dark}
+          if ((ignore_hotpixels) and (value>dark_outlier_level) and (fitsx>0) and (fitsY>0)) then {case dark hot pixel replace image pixels with image neighbour pixels}
           begin
-             value:=img_dark[0,fitsX,fitsY]; {Darks are always made mono when making master dark}
-             if ((ignore_hotpixels) and (value>dark_outlier_level) and (fitsx>0) and (fitsY>0)) then {case dark hot pixel replace image pixels with image neighbour pixels}
-             begin
+            for k:=0 to naxis3-1 do {do all colors}
+            begin
                img_loaded[k,fitsX,fitsY]:=min(img_loaded[k,fitsX-1,fitsY],img_loaded[k,fitsX,fitsY-1]);  {take the lowest value of the neighbour pixels}
                inc(hotpixelcounter,1);
                if hotpixelcounter>=1000 then
@@ -7208,11 +7208,14 @@ begin
                   ignore_hotpixels:=false;
                   memo2_message('Fix variable hotpixels stopped. Abnormal amount of hotpixels detected.');
                end;
-             end
-             else
-             {apply dark normal}
-             img_loaded[k,fitsX,fitsY]:=img_loaded[k,fitsX,fitsY] - value;
-          end;
+            end;
+          end
+          else  {apply dark normal}
+          for k:=0 to naxis3-1 do {do all colors}
+                      img_loaded[k,fitsX,fitsY]:=img_loaded[k,fitsX,fitsY] - value;
+
+        end;
+
       calstat_local:=calstat_local+'D'; {dark applied}
       datamax_light:=datamax_light - dark_average;  {correct datamax with average dark value subtracted}
       if hotpixelcounter>0 then memo2_message('Dark applied. For '+inttostr(hotpixelcounter)+' hot pixels replacement values used.');

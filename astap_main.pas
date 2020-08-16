@@ -401,8 +401,7 @@ type
     procedure CropFITSimage1Click(Sender: TObject);
     procedure maximum1Scroll(Sender: TObject; ScrollCode: TScrollCode; var ScrollPos: Integer);
     procedure stretch1Change(Sender: TObject);
-    procedure histogram1MouseMove(Sender: TObject; Shift: TShiftState; X,
-      Y: Integer);
+    procedure histogram1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
     procedure maximum1Change(Sender: TObject);
     procedure minimum1Change(Sender: TObject);
     procedure CCDinspector1Click(Sender: TObject);
@@ -569,7 +568,6 @@ function TextfileSize(const name: string): LongInt;
 function floattostr2(x:double):string;
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
 procedure get_hist(colour:integer;img :image_array);{get histogram of img_loaded}
-function intensity2(x:tcolor):integer;
 procedure save_settings(lpath:string);
 procedure progress_indicator(i:double; info:string);{0 to 100% indication of progress}
 {$ifdef mswindows}
@@ -703,6 +701,27 @@ const
   mouse_fitsx : double=0;
   mouse_fitsy : double=0;
 
+
+procedure special_array_to_standard_array(var img : image_array); {convert to array with colours in 3 byte words to seperate sections}
+var
+  i, j          : integer;
+  val: single;
+  img_temp2  : image_array;
+begin
+  setlength(img_temp2,3,width2,height2);{set length of image array}
+  for j:=0 to height2-1 do
+    for i:=0 to width2-1  do
+    begin
+      val:=img[0,i,j];
+      img_temp2[0,i,j]:=getRvalue(round(val));
+      img_temp2[1,i,j]:=getGvalue(round(val));
+      img_temp2[2,i,j]:=getBvalue(round(val));
+    end;
+  naxis3:=3;
+  nrbits:=8;
+  img:=img_temp2;
+  img_temp2:=nil;{free mem}
+end;
 
 function load_fits(filen:string;light {load as light of dark/flat},load_data: boolean ;var img_loaded2: image_array): boolean;{load fits file}
 {if light=true then read also ra0, dec0 ....., else load as dark, flat}
@@ -1423,14 +1442,20 @@ begin
     {rescale if required}
     if ( ((nrbits<=-32){-32 or -64} or (nrbits=+32)) and  (measured_max<=1.01) ) then {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..64000 float}
     begin
-      for k:=1 to naxis3 do {do all colors}
-        for i:=0 to height2-1 do
-          for j:=0 to width2-1 do
-            img_loaded2[k-1,j,i]:= img_loaded2[k-1,j,i]*65535;
+      for k:=0 to naxis3-1 do {do all colors}
+        for j:=0 to height2-1 do
+          for i:=0 to width2-1 do
+            img_loaded2[k,i,j]:= img_loaded2[k,i,j]*65535;
       datamax_org:=measured_max*65535;
     end
     else
-    if ((nrbits=8) or (nrbits=24)) then datamax_org:=255 {not measured}
+    if nrbits=8 then datamax_org:=255 {not measured}
+    else
+    if nrbits=24 then
+    begin
+      datamax_org:=255;
+      special_array_to_standard_array(img_loaded);{convert to array with colours in 3 byte words to seperate sections}
+    end
     else
     datamax_org:=measured_max;{most common. It set for nrbits=24 in beginning at 255}
 
@@ -1989,8 +2014,8 @@ end;
 
 function get_most_common(img :image_array;colorm,xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer):integer;{find the most common value of a local area and assume this is the best average background value}
 var
-   i,j,col,value_count,width3,height3  :integer;
-   histogram : array[0..65535] of integer;
+   i,j,val,value_count,width3,height3  :integer;
+   histogram : array of integer;
 begin
   height3:=length(img[0,0]);{length}
   width3:=length(img[0]);{width}
@@ -2000,38 +2025,41 @@ begin
   if ymin<0 then ymin:=0;
   if ymax>height3-1 then ymax:=height3-1;
 
-  for i := 0 to max1 do
-         histogram[i] := 0;{clear histogram}
+  setlength(histogram,max1+1);
 
-  For i:=ymin to  ymax do
-  begin
-    for j:=xmin to xmax do
+
+  for i := 0 to max1 do  histogram[i] := 0;{clear histogram}
+
+
+  for i:=ymin to  ymax do
     begin
-      if nrbits=24 then col:=intensity2(col) {average the 3 colors}
-      else
-      col:=round(img[colorM,j,i]);{get one color value}
-      if ((col>=1) and (col<max1)) then {ignore black areas and bright stars}
-       inc(histogram[col],1);{calculate histogram}
-    end;{j}
-  end; {i}
+      for j:=xmin to xmax do
+      begin
+        val:=round(img[colorM,j,i]);{get one color value}
+        if ((val>=1) and (val<max1)) then {ignore black areas and bright stars}
+        inc(histogram[val],1);{calculate histogram}
+      end;{j}
+    end; {i}
 
   result:=0; {for case histogram is empthy due to black area}
   value_count:=0;
   for i := 1 to max1 do {get most common but ignore 0}
   begin
-    if  histogram[i]>value_count then
+    val:=histogram[i];
+    if  val>value_count then
     begin
-      value_count:=histogram[i]; {find most common}
+      value_count:=val; {find most common in histogram}
       result:=i;
     end;
   end;
+  histogram:=nil;{free mem}
 end;
 
 function get_negative_noise_level(img :image_array;colorm,xmin,xmax,ymin,ymax: integer;common_level:double): double;{find the negative noise level below most_common_level  of a local area}
 var
    i,j,col,count_neg  :integer;
 begin
-  if xmin<0 then xmin:=0;
+   if xmin<0 then xmin:=0;
   if xmax>width2-1 then xmax:=width2-1;
   if ymin<0 then ymin:=0;
   if ymax>height2-1 then ymax:=height2-1;
@@ -2042,8 +2070,6 @@ begin
   begin
     for j:=xmin to xmax do
     begin
-      if nrbits=24 then col:=intensity2(col) {average the 3 colors}
-      else
       col:=round(img[colorM,j,i]);{get one color value}
       if ((col>=1) and (col<=common_level))  then {ignore black areas }
       begin
@@ -2196,7 +2222,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.404, '+about_message4+', dated 2020-08-14';
+  #13+#10+'ASTAP version ß0.9.406, '+about_message4+', dated 2020-08-16';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2391,11 +2417,9 @@ begin
                                       img_loaded[k,fitsX*3 +2,fitsY*3  ]+
                                       img_loaded[k,fitsX*3 +2,fitsY*3+1]+
                                       img_loaded[k,fitsX*3 +2,fitsY*3+2])/9;
-
-
            end;
-
   end;
+
   img_loaded:=img_temp2;
   width2:=w;
   height2:=h;
@@ -2438,9 +2462,6 @@ end;
 
 
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2 or bin3 version}
-var
-   img_temp2 : image_array;
-   FitsX, fitsY,k,w,h      : integer;
 begin
   result:=false;
   if load_fits(filename2,true {light},true {load data},img_loaded)=false then exit;
@@ -2452,13 +2473,13 @@ begin
   result:=save_fits(img_loaded,filename2,nrbits,true);{overwrite}
 end;
 
+
 procedure Tmainwindow.bin2x2Click(Sender: TObject);
 var
   Save_Cursor:TCursor;
   I, binfactor   : integer;
   dobackup : boolean;
 begin
-
   if sender=bin2x2 then
   begin
     OpenDialog1.Title := 'Select multiple  files to reduce in size (bin2x2)';
@@ -3230,7 +3251,7 @@ procedure Tmainwindow.show_statistics1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,font_height,counter,col,size,counter_median,required_size : integer;
    flux,bg_median,
-   value,stepsize,median_position    : double;
+   value,stepsize,median_position, most_common    : double;
    sd,mean,minimum, maximum,max_counter, saturated : array[0..2] of double;
    Save_Cursor              : TCursor;
    info_message             : string;
@@ -3318,16 +3339,23 @@ begin
     end;
     sd[col]:=sqrt(sd[col]/counter);
 
+    most_common:=get_most_common(img_loaded,col,startx,oldX,starty,oldY,32000);
+
     if naxis3>1 then if col=0 then info_message:=info_message+'Red:'+#10;
     if col=1 then info_message:=info_message+#10+#10+'Green:'+#10;
     if col=2 then info_message:=info_message+#10+#10+'Blue:'+#10;
 
-    info_message:=info_message+  'x̄      '+floattostrf(mean[col],ffgeneral, 5, 5)+#10+             {mean}
+
+
+    info_message:=info_message+  'x̄ :    '+floattostrf(mean[col],ffgeneral, 5, 5)+#10+             {mean}
                                  'x̃  :   '+floattostrf(smedian(median_array),ffgeneral, 5, 5)+#10+ {median}
-                                 'σ  :   '+floattostrf(sd[col],ffgeneral, 5, 5)+#10+               {standard deviation}
+                                 'σ :   '+floattostrf(sd[col],ffgeneral, 5, 5)+#10+               {standard deviation}
                                  'm :   '+floattostrf(minimum[col],ffgeneral, 5, 5)+#10+
                                  'M :   '+floattostrf(maximum[col],ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter[col]))+' x)'+#10+
-                                 '≥64E3 :  '+inttostr(round(saturated[col]));
+                                 '≥64E3 :  '+inttostr(round(saturated[col]))+#10+
+                                 'Most common value :  '+floattostrf(most_common,ffgeneral, 5, 5)+#10+
+                                 'Background σ :   '+floattostrf(get_negative_noise_level(img_loaded,col,startx,oldX,starty,oldY,most_common),ffgeneral, 5, 5)
+                                 ;
 
   end;
 
@@ -3445,6 +3473,7 @@ begin
 
   mainwindow.Saveasfits1.enabled:=((fits) or (extend>=2){table});
 
+
   if fits<>mainwindow.data_range_groupBox1.Enabled then  {menu requires update}
   begin
     mainwindow.data_range_groupBox1.Enabled:=fits;
@@ -3456,8 +3485,6 @@ begin
     mainwindow.autocorrectcolours1.Enabled:=fits;
     mainwindow.stretch_draw1.Enabled:=fits;
     mainwindow.stretch_draw_fits1.Enabled:=fits;
-    mainwindow.show_statistics1.Enabled:=fits;
-
 
     mainwindow.CropFITSimage1.Enabled:=fits;
 
@@ -3486,6 +3513,7 @@ begin
     stackmenu1.tab_Pixelmath2.enabled:=fits;
 
   end;{menu change}
+
 
   fits_file:=fits;{update}
   mainwindow.error_label1.visible:=(fits=false);
@@ -4022,11 +4050,6 @@ begin
   x:=range *frac(X /range); {quick method for big numbers}
   if x<0 then x:=x+range;   {do not like negative numbers}
   fnmodulo:=x;
-end;
-
-function intensity2(x:tcolor):integer;
-begin
-  intensity2:=round((GetBValue(x)+getGvalue(x)+getRvalue(x))/3);{get red, green blue value as intensity}
 end;
 
 
@@ -4952,7 +4975,6 @@ type
   TRGBTripleArray = array[0..trunc(bufwide/3)] of TRGBTriple; {for fast pixel routine}
   {$else} {unix}
   TRGBTripleArray = array[0..trunc(bufwide/3)] of tagRGBQUAD; {for fast pixel routine}
-
   {$endif}
 
 var
@@ -4986,82 +5008,12 @@ begin
 
   if pos('S',calstat)>0 then
                     mainwindow.shape_alignment_marker1.visible:=false; {hide shape if stacked image is plotted}
-//  if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
 
   cblack:=mainwindow.minimum1.position;
   cwhite:=mainwindow.maximum1.position;
   if cwhite<=cblack then cwhite:=cblack+1;
 
-  if nrbits=24 then {RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions or 24 bits FITS}
-  For i:=0 to height2-1 do
-  begin
-    pixelrow := Bitmap.ScanLine[(height2-1)-i];{height2-1)-i, FITS count from bottom, windows from top}
-    for j:=0 to width2-1 do
-    begin
-      col:=round(img_loaded[0,j,i]);
-      col_r:=getRvalue(col);{3 byte colors packed in integerl}
-      col_g:=getGvalue(col);
-      col_b:=getBvalue(col);
-
-      {power :=EXP(tweedevar*LN(eerstevar))}
-      colbb:=(col_b-cblack)/(cwhite-cblack);{scale to 1}
-      colgg:=(col_g-cblack)/(cwhite-cblack);{scale to 1}
-      colrr:=(col_r-cblack)/(cwhite-cblack);{scale to 1}
-
-      if colrr<=0.00000000001 then colrr:=0.00000000001;
-      if colgg<=0.00000000001 then colgg:=0.00000000001;
-      if colbb<=0.00000000001 then colbb:=0.00000000001;
-
-      {find brightest colour and resize all if above 1}
-      largest:=colrr;
-      if colgg>largest then largest:=colgg;
-      if colbb>largest then largest:=colbb;
-      if largest>1 then {clamp to 1 but preserve colour, so ratio r,g,b}
-      begin
-        colrr:=colrr/largest;
-        colgg:=colgg/largest;
-        colbb:=colbb/largest;
-        largest:=1;
-      end;
-
-
-      if stretch_on then {Stretch luminance only. Keep RGB ratio !!}
-      begin
-        luminance:=(colrr+colgg+colbb)/3;{luminance in range 0..1}
-        luminance_stretched:=stretch_c[trunc(32768*luminance)];
-        factor:=luminance_stretched/luminance;
-        if factor*largest>1 then factor:=1/largest; {clamp again, could be higher then 1}
-        col_r:=round(colrr*factor*255);{stretch only luminance but keep rgb ratio!}
-        col_g:=round(colgg*factor*255);{stretch only luminance but keep rgb ratio!}
-        col_b:=round(colbb*factor*255);{stretch only luminance but keep rgb ratio!}
-      end
-      else
-      begin
-        col_r:=round(255*colrr);
-        col_g:=round(255*colgg);
-        col_b:=round(255*colbb);
-      end;
-
-      {$ifdef mswindows}
-          pixelrow[j].rgbtRed  := col_r;
-          pixelrow[j].rgbtGreen:= col_g;
-          pixelrow[j].rgbtBlue := col_b;{fast pixel write routine }
-       {$endif}
-       {$ifdef linux}
-          pixelrow[j].rgbRed  := col_r;
-          pixelrow[j].rgbGreen:= col_g;
-          pixelrow[j].rgbBlue := col_b;
-        {$endif}
-        {$ifdef darwin} {MacOS}
-         pixelrow[j].rgbreserved:= col_b; {different color arrangment in Macos !!!!!}
-         pixelrow[j].rgbRed  := col_g;
-         pixelrow[j].rgbGreen:= col_r;
-        {$endif}
-    end;{j}
-  end {i}
-
-  else {normal fits image}
-  For i:=0 to height2-1 do
+  for i:=0 to height2-1 do
   begin
     pixelrow := Bitmap.ScanLine[(height2-1)-i];{height2-1)-i, FITS count from bottom, windows from top}
     for j:=0 to width2-1 do
@@ -5141,19 +5093,14 @@ begin
        pixelrow[j].rgbRed  := col_g;
        pixelrow[j].rgbGreen:= col_r;
       {$endif}
-
-
     end;{j}
   end; {i}
-
-
 
   img.picture.Graphic := Bitmap; {show image}
   Bitmap.Free;
 
   img.Picture.Bitmap.Transparent := True;
   img.Picture.Bitmap.TransparentColor := clblack;
-
 
   if center_image then {image new of resized}
   begin
@@ -5191,6 +5138,7 @@ begin
 
   Screen.cursor:= Save_Cursor;
 end;
+
 
 function load_PPM_PGM_PFM(filen:string; var img_loaded2: image_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
@@ -5795,41 +5743,21 @@ begin
   offsetW:=trunc(width5*0.042); {if Libraw is used, ignored unused sensor areas up to 4.2%}
   offsetH:=trunc(height5*0.015); {if Libraw is used, ignored unused sensor areas up to 1.5%}
 
-  if nrbits=24  then {special format}
+
+  For i:=0+offsetH to height5-1-offsetH do
   begin
-    For i:=0+offsetH to height5-1-offsetH do
+    for j:=0+offsetW to width5-1-offsetW do
     begin
-      for j:=0+offsetW to width5-1-offsetW do
+      col:=round(img[colour,j,i]);{red}
+      if ((col>=1) and (col<65000)) then {ignore black overlap areas and bright stars}
       begin
-        col:=round(img[0,j,i]);
-        col:=intensity2(col);{average the 3 colors}
-        if ((col>=1) and (col<65000)) then {ignore black overlap areas and bright stars}
-        begin
-          inc(histogram[0,col],1);{calculate histogram, do here only red for all colours}
-          his_total:=his_total+1;
-          total_value:=total_value+col;
-          inc(count);
-        end;
-      end;{j}
-    end; {i}
-  end
-  else
-  begin {normal fits, mono or colour}
-    For i:=0+offsetH to height5-1-offsetH do
-    begin
-      for j:=0+offsetW to width5-1-offsetW do
-      begin
-        col:=round(img[colour,j,i]);{red}
-        if ((col>=1) and (col<65000)) then {ignore black overlap areas and bright stars}
-        begin
-          inc(histogram[colour,col],1);{calculate histogram}
-          his_total:=his_total+1;
-          total_value:=total_value+col;
-          inc(count);
-        end;
-      end;{j}
-    end; {i}
-  end;{normal fits}
+        inc(histogram[colour,col],1);{calculate histogram}
+        his_total:=his_total+1;
+        total_value:=total_value+col;
+        inc(count);
+      end;
+    end;{j}
+  end; {i}
 
   if colour=0 then his_total_red:=his_total
   else
@@ -5859,9 +5787,6 @@ begin
     if number_colors>1 then get_hist(1, img);{green}
     if number_colors>2 then get_hist(2, img);{blue}
   end;
-
-
-//  if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65535;
 
   max_range:=round(min(datamax_org,65535)); {measured while loading, Prevent runtime error if datamax_org>65535}
 
@@ -7614,7 +7539,7 @@ procedure Tmainwindow.localbackgroundequalise1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,k,bsize,startX2,startY2,oldX2,oldY2,progress_value  : integer;
    median_left_bottom,median_left_top, median_right_top, median_right_bottom,
-   center_x,center_y,a,b,angle_from_center,new_value,old_value : double;
+   center_x,center_y,a,b,angle_from_center,new_value : double;
    line_bottom, line_top : double;
 
    Save_Cursor:TCursor;
@@ -10173,7 +10098,7 @@ begin
 
   backup_img;
 
-  if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65535;
+  if nrbits=8 then max_range:= 255 else max_range:=65535;
 
   for col:=0 to naxis3-1 do {do all colours}
   begin
@@ -10793,7 +10718,8 @@ var i,j,counter : integer;
 begin
   if ((x1-ri<0) or (x1+ri>width2-1) or
       (y1-ri<0) or (y1+ri>height2-1) )
-    then begin result:=999;  exit;end;
+    then begin result:=999; exit;end;
+
 
   average:=0;
   for i:=-ri to ri do {calculate average background at the square boundaries of region of interest}
@@ -10805,6 +10731,7 @@ begin
 
   sd:=0;
   counter:=0;
+
   for i:=-ri to ri do {calculate standard deviation  of region of interest}
   for j:=-ri to ri do {calculate standard deviation  of region of interest}
   begin
@@ -11078,8 +11005,6 @@ begin
                                        '  '+rgb_kelvin(r,b) ;
 
    try
-
-     if nrbits=24 then mainwindow.statusbar1.panels[3].text:='' else
      if naxis3=1 then mainwindow.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsX)-1,round(mouse_fitsY)-1],ffgeneral,5,0)+']' else
      if naxis3=3 then mainwindow.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsX)-1,round(mouse_fitsY)-1],ffgeneral,5,0)+'/'+ {color}
                                                                               floattostrF(img_loaded[1,round(mouse_fitsX)-1,round(mouse_fitsY)-1],ffgeneral,5,0)+'/'+
@@ -12042,6 +11967,8 @@ begin
       for j:=0 to width5-1 do
       begin
        // img[0,j,i]:=341.7177734375;  {equals non intel 3772492355}
+     //  if img[k,j,i]>4100 then img[k,j,i]:=4100;
+
         fitsbuffer4[j]:=INT_IEEE4_reverse(img[k,j,i]);{in FITS file hi en low bytes are swapped}
       end;
       thefile4.writebuffer(fitsbuffer4,width5*4); {write as bytes}

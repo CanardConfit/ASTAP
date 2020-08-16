@@ -1408,7 +1408,6 @@ object mainwindow: Tmainwindow
     end
     object show_statistics1: TMenuItem
       Caption = 'Show statistics within rectangle'
-      Enabled = False
       Hint = 'Calculate mean, median standard deviation, minimum and maximum values within the rectangle.'
       ImageIndex = 34
       OnClick = show_statistics1Click
