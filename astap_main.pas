@@ -3328,7 +3328,7 @@ begin
                                  'm :   '+floattostrf(minimum[col],ffgeneral, 5, 5)+#10+
                                  'M :   '+floattostrf(maximum[col],ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter[col]))+' x)'+#10+
                                  '≥64E3 :  '+inttostr(round(saturated[col]))+#10+
-                                 'Mo :  '+floattostrf(most_common,ffgeneral, 5, 5)+'  (Mode)'+#10+
+                                 'Mo :  '+floattostrf(most_common,ffgeneral, 5, 5)+#10+
                                  'Background σ :   '+floattostrf(get_negative_noise_level(img_loaded,col,startx,oldX,starty,oldY,most_common),ffgeneral, 5, 5)
                                  ;
 
@@ -3341,10 +3341,17 @@ begin
     mc_4:=mode(img_loaded,0,width2-1-50{x1},width2-1{x2},           0{y1},50       {y2},32000);
 
     info_message:=info_message+#10+#10+'Vignetting [Mo corners/Mo]: '+inttostr(round(100*(1-(mc_1+mc_2+mc_3+mc_4)/(most_common*4))))+'%';
-    application.messagebox(pchar(info_message),pchar('Statistics image '+inttostr(oldX-1-startX)+' x '+inttostr(oldY-1-startY) ) ,MB_OK);
-  end
-  else
-  application.messagebox(pchar(info_message),pchar('Statistics within rectangle '+inttostr(oldX-1-startX)+' x '+inttostr(oldY-1-startY) ) ,MB_OK);
+  end;
+
+  info_message:=info_message+#10+#10+#10+'Legend: '+#10+
+                                         'x̄ = mean ,  x̃  = median, σ =  standard deviation, m = minimum, M = maximum, ≥64E3 = number of values equal or above 64000,'+
+                                         ' Mo = mode or most common pixel value or peak histogram so the best estimate for the background mean value,'+ 
+                                         ' background σ = standard deviation of the background calculated from values below Mo.';
+
+  case  QuestionDlg (pchar('Statistics within rectangle '+inttostr(oldX-1-startX)+' x '+inttostr(oldY-1-startY) ),pchar(info_message),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
+           mrYes: Clipboard.AsText:=info_message;
+  end;
+
 
   median_array:=nil;{free mem}
 
@@ -7888,6 +7895,7 @@ end;
 
 procedure Tmainwindow.select_all1Click(Sender: TObject);
 begin
+   memo1.setfocus;{required for selectall since hideselection is enabled when not having focus}
    Memo1.SelectAll;
 end;
 
