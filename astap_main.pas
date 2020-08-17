@@ -576,7 +576,7 @@ procedure ExecuteAndWait(const aCommando: string; show_console:boolean);
 procedure execute_unix(const execut:string; param: TStringList; show_output: boolean);{execute linux program and report output}
 procedure execute_unix2(s:string);
 {$endif}
-function get_most_common(img :image_array;colorm,xmin,xmax,ymin,ymax,max1:integer):integer;{find the most common value of a local area and assume this is the best average background value}
+function mode(img :image_array;colorm,xmin,xmax,ymin,ymax,max1:integer):integer;{find the most common value of a local area and assume this is the best average background value}
 function get_negative_noise_level(img :image_array;colorm,xmin,xmax,ymin,ymax: integer;common_level:double): double;{find the negative noise level below most_common_level  of a local area}
 function prepare_ra5(rax:double; sep:string):string; {radialen to text  format 24h 00.0}
 function prepare_dec5(decx:double;sep:string):string; {radialen to text  format 90d 00 }
@@ -1987,7 +1987,7 @@ begin
   sep:=arccos(cos_sep);
 end;
 
-function get_most_common(img :image_array;colorm,xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer):integer;{find the most common value of a local area and assume this is the best average background value}
+function mode(img :image_array;colorm,xmin,xmax,ymin,ymax,max1 {maximum background expected}:integer):integer;{find the most common value of a local area and assume this is the best average background value}
 var
    i,j,val,value_count,width3,height3  :integer;
    histogram : array of integer;
@@ -2197,7 +2197,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.406a, '+about_message4+', dated 2020-08-16';
+  #13+#10+'ASTAP version ß0.9.407, '+about_message4+', dated 2020-08-17';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2279,7 +2279,7 @@ end;
 procedure Tmainwindow.brighten_area1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,k,startX2,startY2,oldX2,oldY2,progress_value : integer;
-   median_left_bottom,median_left_top, median_right_top, median_right_bottom,
+   mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,
    line_bottom, line_top,required_bg,{difference,}most_common : double;
 
    Save_Cursor:TCursor;
@@ -2314,11 +2314,11 @@ begin
 
     for k:=0 to naxis3-1 do {do all colors}
     begin
-      median_left_bottom:=get_most_common(img_loaded,k,startX2-10,startX2+10,startY2-10,startY2+10,32000);{find the median of a local area}
-      median_left_top:=   get_most_common(img_loaded,k,startX2-10,startX2+10,oldY2-10,oldY2+10,32000);{find the median of a local area}
+      mode_left_bottom:=mode(img_loaded,k,startX2-10,startX2+10,startY2-10,startY2+10,32000);{for this area get most common value equals peak in histogram}
+      mode_left_top:=   mode(img_loaded,k,startX2-10,startX2+10,oldY2-10,oldY2+10,32000);{for this area get most common value equals peak in histogram}
 
-      median_right_bottom:=get_most_common(img_loaded,k,oldX2-10,oldX2+10,startY2-10,startY2+10,32000);{find the median of a local area}
-      median_right_top:=   get_most_common(img_loaded,k,oldX2-10,oldX2+10,oldY2-10,oldY2+10,32000);{find the median of a local area}
+      mode_right_bottom:=mode(img_loaded,k,oldX2-10,oldX2+10,startY2-10,startY2+10,32000);{for this area get most common value equals peak in histogram}
+      mode_right_top:=   mode(img_loaded,k,oldX2-10,oldX2+10,oldY2-10,oldY2+10,32000);{for this area get most common value equals peak in histogram}
 
 
       for fitsY:=startY2 to oldY2-1 do
@@ -2334,11 +2334,11 @@ begin
 
         for fitsX:=startX2 to oldX2-1 do
         begin
-            line_bottom:=median_left_bottom*(oldX2-fitsx)/(oldX2-startX2)+ median_right_bottom *(fitsx-startX2)/(oldX2-startX2);{median value at bottom line}
-            line_top:=  median_left_top *   (oldX2-fitsx)/(oldX2-startX2)+ median_right_top*(fitsx-startX2)/(oldX2-startX2);{median value at top line}
+            line_bottom:=mode_left_bottom*(oldX2-fitsx)/(oldX2-startX2)+ mode_right_bottom *(fitsx-startX2)/(oldX2-startX2);{median value at bottom line}
+            line_top:=  mode_left_top *   (oldX2-fitsx)/(oldX2-startX2)+ mode_right_top*(fitsx-startX2)/(oldX2-startX2);{median value at top line}
             required_bg:=line_bottom*(oldY2-fitsY)/(oldY2-startY2)+line_top*(fitsY-startY2)/(oldY2-startY2);{median value at position FitsX, fitsY}
 
-            most_common:=get_most_common(img_loaded,k,fitsX,fitsX+5,fitsY,fitsY+5,32000 );
+            most_common:=mode(img_loaded,k,fitsX,fitsX+5,fitsY,fitsY+5,32000 );
             if most_common<0.99*required_bg then
               img_loaded[k,fitsX,fitsY]:=img_loaded[k,fitsX,fitsY]-(most_common-required_bg)*0.5;
         end;
@@ -2594,7 +2594,7 @@ var
    noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,
    center_x,center_y,a,b,angle_from_center,mean_value,old_value : double;
    line_bottom, line_top,rgb,luminance : double;
-   colour,median_left_bottom,median_left_top, median_right_top, median_right_bottom,noise_level,mean_value2,new_noise  : array[0..2] of double;
+   colour,mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,noise_level,mean_value2,new_noise  : array[0..2] of double;
    Save_Cursor:TCursor;
 
    function checkY(y: integer): integer;
@@ -2649,16 +2649,16 @@ begin
     for k:=0 to naxis3-1 do {do all colors}
     begin
 
-      median_left_bottom[k]:=get_most_common(img_loaded,k,startx-bsize,startx,starty-bsize,starty,32000);{find the median of a local area}
-      median_left_top[k]:=   get_most_common(img_loaded,k,startx-bsize,startx,oldy,oldY+bsize,32000);{find the median of a local area}
+      mode_left_bottom[k]:=mode(img_loaded,k,startx-bsize,startx,starty-bsize,starty,32000);{for this area get most common value equals peak in histogram}
+      mode_left_top[k]:=   mode(img_loaded,k,startx-bsize,startx,oldy,oldY+bsize,32000);{for this area get most common value equals peak in histogram}
 
-      median_right_bottom[k]:=get_most_common(img_loaded,k,oldX,oldX+bsize,starty-bsize,starty,32000);{find the median of a local area}
-      median_right_top[k]:=   get_most_common(img_loaded,k,oldX,oldX+bsize,oldY,oldY+bsize,32000);{find the median of a local area}
+      mode_right_bottom[k]:=mode(img_loaded,k,oldX,oldX+bsize,starty-bsize,starty,32000);{for this area get most common value equals peak in histogram}
+      mode_right_top[k]:=   mode(img_loaded,k,oldX,oldX+bsize,oldY,oldY+bsize,32000);{for this area get most common value equals peak in histogram}
 
-      noise_left_bottom:=  get_negative_noise_level(img_loaded,k,startx-bsize,startx,starty-bsize,starty, median_left_bottom[k]);{find the negative noise level below most_common_level of a local area}
-      noise_left_top:=     get_negative_noise_level(img_loaded,k,startx-bsize,startx,oldy,oldY+bsize, median_left_top[k]);{find the negative noise level below most_common_level of a local area}
-      noise_right_bottom:= get_negative_noise_level(img_loaded,k,oldX,oldX+bsize,starty-bsize,starty, median_right_bottom[k]);{find the negative noise level below most_common_level of a local area}
-      noise_right_top:=    get_negative_noise_level(img_loaded,k,oldX,oldX+bsize,oldY,oldY+bsize, median_right_top[k]);{find the negative noise level below most_common_level of a local area}
+      noise_left_bottom:=  get_negative_noise_level(img_loaded,k,startx-bsize,startx,starty-bsize,starty, mode_left_bottom[k]);{find the negative noise level below most_common_level of a local area}
+      noise_left_top:=     get_negative_noise_level(img_loaded,k,startx-bsize,startx,oldy,oldY+bsize, mode_left_top[k]);{find the negative noise level below most_common_level of a local area}
+      noise_right_bottom:= get_negative_noise_level(img_loaded,k,oldX,oldX+bsize,starty-bsize,starty, mode_right_bottom[k]);{find the negative noise level below most_common_level of a local area}
+      noise_right_top:=    get_negative_noise_level(img_loaded,k,oldX,oldX+bsize,oldY,oldY+bsize, mode_right_top[k]);{find the negative noise level below most_common_level of a local area}
       noise_level[k]:=(noise_left_bottom + noise_left_top + noise_right_top + noise_right_bottom)/4;
     end;{k color}
 
@@ -2675,8 +2675,8 @@ begin
         for k:=0 to naxis3-1 do {do all colors}
         begin
           begin
-            line_bottom:=median_left_bottom[k]*(oldx-fitsx)/(oldx-startx)+ median_right_bottom[k] *(fitsx-startX)/(oldx-startx);{median value at bottom line}
-            line_top:=  median_left_top[k] *   (oldx-fitsx)/(oldx-startx)+ median_right_top[k]*(fitsx-startX)/(oldx-startx);{median value at top line}
+            line_bottom:=mode_left_bottom[k]*(oldx-fitsx)/(oldx-startx)+ mode_right_bottom[k] *(fitsx-startX)/(oldx-startx);{median value at bottom line}
+            line_top:=  mode_left_top[k] *   (oldx-fitsx)/(oldx-startx)+ mode_right_top[k]*(fitsx-startX)/(oldx-startx);{median value at top line}
             mean_value:=line_bottom*(oldY-fitsY)/(oldY-startY)+line_top*(fitsY-startY)/(oldY-startY);{median value at position FitsX, fitsY}
             old_value:=img_loaded[k,fitsX,fitsY];
             if old_value-3*noise_level[k]>mean_value  then
@@ -2697,8 +2697,8 @@ begin
         begin
           for k:=0 to naxis3-1 do {do all colors}
           begin
-            line_bottom:=median_left_bottom[k]*(oldx-fitsx)/(oldx-startx)+ median_right_bottom[k] *(fitsx-startX)/(oldx-startx);{median value at bottom line}
-            line_top:=  median_left_top[k] *   (oldx-fitsx)/(oldx-startx)+ median_right_top[k]*(fitsx-startX)/(oldx-startx);{median value at top line}
+            line_bottom:=mode_left_bottom[k]*(oldx-fitsx)/(oldx-startx)+ mode_right_bottom[k] *(fitsx-startX)/(oldx-startx);{median value at bottom line}
+            line_top:=  mode_left_top[k] *   (oldx-fitsx)/(oldx-startx)+ mode_right_top[k]*(fitsx-startX)/(oldx-startx);{median value at top line}
             mean_value2[k]:=line_bottom*(oldY-fitsY)/(oldY-startY)+line_top*(fitsY-startY)/(oldY-startY);{median value at position FitsX, fitsY}
           end;
 
@@ -3226,7 +3226,7 @@ procedure Tmainwindow.show_statistics1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,font_height,counter,col,size,counter_median,required_size : integer;
    flux,bg_median,
-   value,stepsize,median_position, most_common    : double;
+   value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4   : double;
    sd,mean,minimum, maximum,max_counter, saturated : array[0..2] of double;
    Save_Cursor              : TCursor;
    info_message             : string;
@@ -3314,7 +3314,7 @@ begin
     end;
     sd[col]:=sqrt(sd[col]/counter);
 
-    most_common:=get_most_common(img_loaded,col,startx,oldX,starty,oldY,32000);
+    most_common:=mode(img_loaded,col,startx,oldX,starty,oldY,32000);
 
     if naxis3>1 then if col=0 then info_message:=info_message+'Red:'+#10;
     if col=1 then info_message:=info_message+#10+#10+'Green:'+#10;
@@ -3328,12 +3328,22 @@ begin
                                  'm :   '+floattostrf(minimum[col],ffgeneral, 5, 5)+#10+
                                  'M :   '+floattostrf(maximum[col],ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter[col]))+' x)'+#10+
                                  '≥64E3 :  '+inttostr(round(saturated[col]))+#10+
-                                 'Most common value :  '+floattostrf(most_common,ffgeneral, 5, 5)+#10+
+                                 'Mo :  '+floattostrf(most_common,ffgeneral, 5, 5)+'  (Mode)'+#10+
                                  'Background σ :   '+floattostrf(get_negative_noise_level(img_loaded,col,startx,oldX,starty,oldY,most_common),ffgeneral, 5, 5)
                                  ;
 
   end;
+  if ((abs(oldx-startx)>=width2-1) and (most_common<>0){prevent division by zero}) then
+  begin
+    mc_1:=mode(img_loaded,0,          0{x1},      50{x2},           0{y1},       50{y2},32000);{for this area get most common value equals peak in histogram}
+    mc_2:=mode(img_loaded,0,          0{x1},      50{x2},height2-1-50{y1},height2-1{y2},32000);
+    mc_3:=mode(img_loaded,0,width2-1-50{x1},width2-1{x2},height2-1-50{y1},height2-1{y2},32000);
+    mc_4:=mode(img_loaded,0,width2-1-50{x1},width2-1{x2},           0{y1},50       {y2},32000);
 
+    info_message:=info_message+#10+#10+'Vignetting [Mo corners/Mo]: '+inttostr(round(100*(1-(mc_1+mc_2+mc_3+mc_4)/(most_common*4))))+'%';
+    application.messagebox(pchar(info_message),pchar('Statistics image '+inttostr(oldX-1-startX)+' x '+inttostr(oldY-1-startY) ) ,MB_OK);
+  end
+  else
   application.messagebox(pchar(info_message),pchar('Statistics within rectangle '+inttostr(oldX-1-startX)+' x '+inttostr(oldY-1-startY) ) ,MB_OK);
 
   median_array:=nil;{free mem}
@@ -3755,7 +3765,7 @@ end;
 procedure Tmainwindow.Remove_deep_sky_object1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,k,bsize  : integer;
-   median_left_bottom,median_left_top, median_right_top, median_right_bottom,
+   mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,
    noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,noise_level,
    center_x,center_y,a,b,angle_from_center,new_value,old_value : double;
    line_bottom, line_top : double;
@@ -3796,16 +3806,16 @@ begin
     for k:=0 to naxis3-1 do {do all colors}
     begin
 
-      median_left_bottom:=get_most_common(img_loaded,k,startx-bsize,startx+bsize,starty-bsize,starty+bsize,32000);{find the median of a local area}
-      median_left_top:=   get_most_common(img_loaded,k,startx-bsize,startx+bsize,oldy-bsize,oldY+bsize,32000);{find the median of a local area}
+      mode_left_bottom:=mode(img_loaded,k,startx-bsize,startx+bsize,starty-bsize,starty+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_left_top:=   mode(img_loaded,k,startx-bsize,startx+bsize,oldy-bsize,oldY+bsize,32000);{for this area get most common value equals peak in histogram}
 
-      median_right_bottom:=get_most_common(img_loaded,k,oldX-bsize,oldX+bsize,starty-bsize,starty+bsize,32000);{find the median of a local area}
-      median_right_top:=   get_most_common(img_loaded,k,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize,32000);{find the median of a local area}
+      mode_right_bottom:=mode(img_loaded,k,oldX-bsize,oldX+bsize,starty-bsize,starty+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_right_top:=   mode(img_loaded,k,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize,32000);{for this area get most common value equals peak in histogram}
 
-      noise_left_bottom:=get_negative_noise_level(img_loaded,k,startx-bsize,startx+bsize,starty-bsize,starty+bsize, median_left_bottom);{find the negative noise level below most_common_level of a local area}
-      noise_left_top:=get_negative_noise_level(img_loaded,k,startx-bsize,startx+bsize,oldy-bsize,oldY+bsize, median_left_top);{find the negative noise level below most_common_level of a local area}
-      noise_right_bottom:=get_negative_noise_level(img_loaded,k,oldX-bsize,oldX+bsize,starty-bsize,starty+bsize, median_right_bottom);{find the negative noise level below most_common_level of a local area}
-      noise_right_top:=get_negative_noise_level(img_loaded,k,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize, median_right_top);{find the negative noise level below most_common_level of a local area}
+      noise_left_bottom:=get_negative_noise_level(img_loaded,k,startx-bsize,startx+bsize,starty-bsize,starty+bsize, mode_left_bottom);{find the negative noise level below most_common_level of a local area}
+      noise_left_top:=get_negative_noise_level(img_loaded,k,startx-bsize,startx+bsize,oldy-bsize,oldY+bsize, mode_left_top);{find the negative noise level below most_common_level of a local area}
+      noise_right_bottom:=get_negative_noise_level(img_loaded,k,oldX-bsize,oldX+bsize,starty-bsize,starty+bsize, mode_right_bottom);{find the negative noise level below most_common_level of a local area}
+      noise_right_top:=get_negative_noise_level(img_loaded,k,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize, mode_right_top);{find the negative noise level below most_common_level of a local area}
       noise_level:=(noise_left_bottom + noise_left_top + noise_right_top + noise_right_bottom)/4;
 
       for fitsY:=startY to oldY-1 do
@@ -3814,8 +3824,8 @@ begin
         angle_from_center:=arctan(abs(fitsY-center_Y)/max(1,abs(fitsX-center_X)));
         if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
         begin
-          line_bottom:=median_left_bottom*(oldx-fitsx)/(oldx-startx)+ median_right_bottom *(fitsx-startX)/(oldx-startx);{median value at bottom line}
-          line_top:=  median_left_top *   (oldx-fitsx)/(oldx-startx)+ median_right_top*(fitsx-startX)/(oldx-startx);{median value at top line}
+          line_bottom:=mode_left_bottom*(oldx-fitsx)/(oldx-startx)+ mode_right_bottom *(fitsx-startX)/(oldx-startx);{median value at bottom line}
+          line_top:=  mode_left_top *   (oldx-fitsx)/(oldx-startx)+ mode_right_top*(fitsx-startX)/(oldx-startx);{median value at top line}
           new_value:=line_bottom*(oldY-fitsY)/(oldY-startY)+line_top*(fitsY-startY)/(oldY-startY);{median value at position FitsX, fitsY}
           old_value:=img_loaded[k,fitsX,fitsY];
           if ((old_value-3*noise_level>new_value) or (old_value+3*noise_level<new_value)) then img_loaded[k,fitsX,fitsY]:=new_value;{adapt only if pixel value is 3*noise level different}
@@ -7513,7 +7523,7 @@ end;
 procedure Tmainwindow.localbackgroundequalise1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,k,bsize,startX2,startY2,oldX2,oldY2,progress_value  : integer;
-   median_left_bottom,median_left_top, median_right_top, median_right_bottom,
+   mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,
    center_x,center_y,a,b,angle_from_center,new_value : double;
    line_bottom, line_top : double;
 
@@ -7566,11 +7576,11 @@ begin
     {correct image}
     for k:=0 to naxis3-1 do {do all colors}
     begin
-      median_left_bottom:=get_most_common(img_loaded,k,startX2-bsize,startX2+bsize,startY2-bsize,startY2+bsize,32000);{find the median of a local area}
-      median_left_top:=   get_most_common(img_loaded,k,startX2-bsize,startX2+bsize,oldY2-bsize,oldY2+bsize,32000);{find the median of a local area}
+      mode_left_bottom:=mode(img_loaded,k,startX2-bsize,startX2+bsize,startY2-bsize,startY2+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_left_top:=   mode(img_loaded,k,startX2-bsize,startX2+bsize,oldY2-bsize,oldY2+bsize,32000);{for this area get most common value equals peak in histogram}
 
-      median_right_bottom:=get_most_common(img_loaded,k,oldX2-bsize,oldX2+bsize,startY2-bsize,startY2+bsize,32000);{find the median of a local area}
-      median_right_top:=   get_most_common(img_loaded,k,oldX2-bsize,oldX2+bsize,oldY2-bsize,oldY2+bsize,32000);{find the median of a local area}
+      mode_right_bottom:=mode(img_loaded,k,oldX2-bsize,oldX2+bsize,startY2-bsize,startY2+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_right_top:=   mode(img_loaded,k,oldX2-bsize,oldX2+bsize,oldY2-bsize,oldY2+bsize,32000);{for this area get most common value equals peak in histogram}
 
       {apply correction}
       for fitsY:=startY2 to oldY2-1 do
@@ -7588,8 +7598,8 @@ begin
           angle_from_center:=arctan(abs(fitsY-center_Y)/max(1,abs(fitsX-center_X)));
           if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
           begin
-            line_bottom:=median_left_bottom*(oldX2-fitsx)/(oldX2-startX2)+ median_right_bottom *(fitsx-startX2)/(oldX2-startX2);{median value at bottom line}
-            line_top:=  median_left_top *   (oldX2-fitsx)/(oldX2-startX2)+ median_right_top*(fitsx-startX2)/(oldX2-startX2);{median value at top line}
+            line_bottom:=mode_left_bottom*(oldX2-fitsx)/(oldX2-startX2)+ mode_right_bottom *(fitsx-startX2)/(oldX2-startX2);{median value at bottom line}
+            line_top:=  mode_left_top *   (oldX2-fitsx)/(oldX2-startX2)+ mode_right_top*(fitsx-startX2)/(oldX2-startX2);{median value at top line}
             new_value:=line_bottom*(oldY2-fitsY)/(oldY2-startY2)+line_top*(fitsY-startY2)/(oldY2-startY2);{median value at position FitsX, fitsY}
 
             img_loaded[k,fitsX,fitsY]:=img_loaded[k,fitsX,fitsY] +(new_value-img_temp[k,fitsX-startX2,fitsY-startY2]);
@@ -7788,13 +7798,13 @@ begin
     end;
 
     bsize:=20;
-    colrr1:=get_most_common(img_loaded,0,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
-    if naxis3>1 then colgg1:=get_most_common(img_loaded,1,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
-    if naxis3>2 then colbb1:=get_most_common(img_loaded,2,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
+    colrr1:=mode(img_loaded,0,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
+    if naxis3>1 then colgg1:=mode(img_loaded,1,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
+    if naxis3>2 then colbb1:=mode(img_loaded,2,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
 
-    colrr2:=get_most_common(img_loaded,0,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize,65535);{find most common colour of a local area}
-    if naxis3>1 then colgg2:=get_most_common(img_loaded,0,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize,65535);{find most common colour of a local area}
-    if naxis3>2 then colbb2:=get_most_common(img_loaded,0,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize,65535);{find most common colour of a local area}
+    colrr2:=mode(img_loaded,0,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize,65535);{find most common colour of a local area}
+    if naxis3>1 then colgg2:=mode(img_loaded,0,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize,65535);{find most common colour of a local area}
+    if naxis3>2 then colbb2:=mode(img_loaded,0,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize,65535);{find most common colour of a local area}
 
     a:=sqrt(sqr(oldX-startX)+sqr(oldY-startY)); {distance between bright and dark area}
 

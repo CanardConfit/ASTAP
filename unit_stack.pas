@@ -2286,38 +2286,6 @@ begin
   result:=intArray[count div 2];  {for 3x3 matrix the median is 5th element equals in range 0..8 equals intArray[4]}
 end;
 
-//procedure median_smooth(var img :image_array; box_size  :integer); {replace array values with median value}
-//  var
-//     fitsx,fitsy,i,j,col,step,
-//     colors,w,h                   :integer;
-//     offset                   : single;
-
-// begin
-//   colors:=Length(img); {colors}
-//   w:=Length(img[0]); {width}
-//   h:=Length(img[0,0]); {height}
-
-//   if (box_size div 2)*2=box_size then box_size:=box_size+1;{requires odd 3,5,7....}
-//   step:=box_size div 2; {for 3*3 it is 1, for 5*5 it is 2...}
-
-//    for col:=0 to colors-1 do {do all colours}
-//    begin
-//      for fitsY:=0 to h-1 do
-//        for fitsX:=0 to w-1 do
-//          if ((frac(fitsX/box_size)=0) and (frac(fitsy/box_size)=0)) then
-//          begin
-//            offset:=median_background(img,col,box_size {3x3},fitsX,fitsY);
-//            begin
-//              for j:=fitsy-step to  fitsy+step do
-//                for i:=fitsx-step to fitsx+step do
-//                  if ((i>=0) and (i<w) and (j>=0) and (j<h) ) then {within the boundaries of the image array}
-//                    img[col,i,j]:=offset;
-//            end;
-//          end;
-//    end;{all colors}
-//  end;
-
-
 procedure artificial_flatV1(var img :image_array; box_size  :integer);
  var
     fitsx,fitsy,i,j,col,step,
@@ -2684,7 +2652,7 @@ begin
      begin
        x:=fitsX*diameter;
        y:=fitsY*diameter;
-       most_common:=get_most_common(sourc,k,x-radius,x+radius-1,y-radius,y+radius-1,32000);
+       most_common:=mode(sourc,k,x-radius,x+radius-1,y-radius,y+radius-1,32000);
        for i:=-radius to +radius-1 do
          for j:=-radius to +radius-1 do
          begin
@@ -3556,7 +3524,7 @@ begin
          begin
            if ((frac(fitsx/10)=0) and (frac(fitsY/10)=0)) then
            begin
-             most_common:=get_most_common(img_backup[index_backup].img,k,fitsX-radius,fitsX+radius-1,fitsY-radius,fitsY+radius-1,32000);
+             most_common:=mode(img_backup[index_backup].img,k,fitsX-radius,fitsX+radius-1,fitsY-radius,fitsY+radius-1,32000);
              neg_noise_level:=get_negative_noise_level(img_backup[index_backup].img,k,fitsX-radius,fitsX+radius,fitsY-radius,fitsY+radius,most_common);{find the most common value of a local area and calculate negative noise level}
              for i:=-radius to +radius-1 do
                   for j:=-radius to +radius-1 do
@@ -6007,75 +5975,6 @@ begin
 end;
 
 
-
-
-{most common filter works better
-//procedure extraxt_background(box_size: integer);
-// var
-//    fitsx,fitsy,i,j,col,step,count : integer;
-//    median,variance,sigma,value,mean  : double;
-
-// begin
-//   memo2_message('Extract background of '+filename2);
-
-//   if (box_size div 2)*2=box_size then box_size:=box_size+1;{requires odd 3,5,7....}
-//   step:=box_size div 2; {for 3*3 it is 1, for 5*5 it is 2...}
-
-//   for col:=0 to naxis3-1 do {do all colours}
-//   for fitsY:=0 to height2-1 do
-//   begin
-//     for fitsX:=0 to width2-1 do
-//     begin
-//       if ((frac(fitsX/box_size)=0) and (frac(fitsy/box_size)=0)) then
-//       begin
-//         median:=median_background(col,box_size,fitsX,fitsY);
-
-         {get sigma/standard deviation}
-//         variance:=0;
-//         count:=0;
-//       for j:=fitsy-step to  fitsy+step do
-//         for i:=fitsx-step to fitsx+step do
-//         begin
-//           if ((i>=0) and (i<width2) and (j>=0) and (j<height2) ) then {within the boundaries of the image array}
-//          begin
-//               variance:= variance+sqr(img_loaded[col,i,j]-median);
-//               inc(count);
-//             end;
-//           end;
-//           variance:=variance/count;
-
-         {remove outliers and calculate mean}
-//         count:=0;
-//         mean:=0;
-//         for j:=fitsy-step to  fitsy+step do
-//           for i:=fitsx-step to fitsx+step do
-//           begin
-//             if ((i>=0) and (i<width2) and (j>=0) and (j<height2) ) then {within the boundaries of the image array}
-//             begin
-//               value:=img_loaded[col,i,j];
-//               if sqr(value-median)< variance* sqr(2.5) then
-//                mean:=mean+value;
-//                inc(count)
-//             end;
-//           end;
-//        mean:=mean/count;
-
-        {replace values by mean}
-//        count:=0;
-//        for j:=fitsy-step to  fitsy+step do
-//          for i:=fitsx-step to fitsx+step do
-//          begin
-//            if ((i>=0) and (i<width2) and (j>=0) and (j<height2) ) then {within the boundaries of the image array}
-//            begin
-//              img_loaded[col,i,j]:=mean;
-//            end;
-//          end;
-//
-//       end;
-//     end;
-//   end;
-// end;
-
 procedure Tstackmenu1.apply_get_background1Click(Sender: TObject);
 var
    Save_Cursor : TCursor;
@@ -8180,7 +8079,7 @@ begin
      begin
        y1:=(step+1)*fitsY-(step div 2);
        y2:=(step+1)*fitsY+(step div 2);
-       most_common:=get_most_common(img_backup[index_backup].img,k,0,width2-1,y1,y2,32000);
+       most_common:=mode(img_backup[index_backup].img,k,0,width2-1,y1,y2,32000);
        mean:=mean+most_common;
        inc(counter);
        for i:=y1 to y2 do
@@ -8200,7 +8099,7 @@ begin
      begin
        x1:=(step+1)*fitsX-(step div 2);
        x2:=(step+1)*fitsX+(step div 2);
-       most_common:=get_most_common(img_backup[index_backup].img,k,x1,x2,0,height2-1,32000);
+       most_common:=mode(img_backup[index_backup].img,k,x1,x2,0,height2-1,32000);
        mean:=mean+most_common;
        inc(counter);
        for i:=x1 to x2 do

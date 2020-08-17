@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1618
-    ActivePage = Images
+    ActivePage = tab_Pixelmath1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 11
     TabOrder = 5
     object Images: TTabSheet
       Hint = 'Select here the light frames'
@@ -4165,7 +4165,7 @@ object stackmenu1: Tstackmenu1
           Left = 198
           Height = 23
           Hint = 'Ring equalise: specify object size in the center of the image in percentage of the image height. This area will then be protected against the correction. '
-          Top = 8
+          Top = 5
           Width = 72
           ItemHeight = 15
           ItemIndex = 1
@@ -4200,7 +4200,7 @@ object stackmenu1: Tstackmenu1
           Hint = 'Test on the current displayed image. CTRL-Z to undo.'
           Top = 112
           Width = 278
-          Caption = 'Apply "most common" filter to remove stars'
+          Caption = 'Apply "mode" filter to remove stars'
           Enabled = False
           OnClick = most_common_filter_tool1Click
           ParentFont = False
@@ -4280,6 +4280,7 @@ object stackmenu1: Tstackmenu1
           Hint = 'See viewer  popup menu'
           Top = 73
           Width = 278
+          Alignment = taCenter
           AutoSize = False
           Caption = 'Remove deep sky with right mouse button tool'
           Color = clBtnFace
@@ -4502,6 +4503,7 @@ object stackmenu1: Tstackmenu1
           Hint = 'See viewer popup menu. The background gradient should be smooth. Remove abnormal spots.'
           Top = 143
           Width = 212
+          Alignment = taCenter
           AutoSize = False
           Caption = 'Correct gradient with copy+paste tool.'
           Color = clBtnFace
