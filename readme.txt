@@ -2,7 +2,7 @@ ASTAP is written in Object Pascal using Lazarus the open source cross platform I
 
 For the Windows use the astap.lpi project file.
 For the Mac use the astap_mac.lpi project file.
-For Linux use the astap_linux..lpi project file.
+For Linux use the astap_linux.lpi project file.
 
 {Copyright (C) 2017-2020 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org

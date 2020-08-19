@@ -277,7 +277,8 @@ begin
         for I := 0 to Count - 1 do
         begin
           filename2:=Strings[I];
-          fileprocessed1.caption:='Solving: '+filename2;
+          fileprocessed1.caption:='Solving '+inttostr(i)+'-'+inttostr(Count-1)+': '+filename2;
+          progress_indicator(100*i/(count),' Solving');{show progress}
 
           Application.ProcessMessages;
           if esc_pressed then
@@ -291,6 +292,7 @@ begin
              begin inc(failed); failed1.caption:= 'Failed: '+inttostr(failed);memo2_message('Failed: '+filename2); end
         end;
       finally
+      progress_indicator(-100,'');{progresss done}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
   end;

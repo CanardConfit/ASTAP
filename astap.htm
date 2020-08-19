@@ -1,0 +1,3123 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html><head>
+    <meta content="text/html; charset=windows-1252" http-equiv="Content-Type">
+    <meta name="description" content="ASTAP, ASTrometric Stacking
+      Program, astrometric solver, stacking of images, photometry and
+      FITS viewer.">
+    <meta name="keywords" content="ASTAP, Astrometric Stacking Program,
+      FITS viewer, PlateSolve2 replacement, astrometry.net, plate
+      solver, astrometric solver, photometry">
+    <meta name="author" content="Han K">
+    <title>ASTAP, Astrometric Stacking Program</title></head>
+<body style="background-attachment: fixed; color: rgb(0, 0, 0); background-color: rgb(255, 255, 255); background-image: url(astap_background.gif);" fixed="" alink="#000099" link="#000099" vlink="#990099">
+    <center>
+      <div style="text-align: left;"> <a href="http://www.hnsky.org/astap.htm"><img style="border: 0px solid ; width: 48px; height: 48px;" src="astap.png" alt="astap.png"></a> <big style="font-family: Arial;"><big><big>ASTAP,
+the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourceforge.net/p/astap-program/discussion/">ASTAP
+                    Forum</a> &nbsp; &nbsp; &nbsp; &nbsp;<a href="astap.htm#index">Documentation</a> &nbsp; &nbsp;&nbsp;<a href="history_astap.htm">Version history</a> &nbsp; <a href="http://www.hnsky.org/astap.htm#conditions">Checklist for solving</a>&nbsp;</big> <big><big><b><small><small>&nbsp;<a href="https://www.youtube.com/channel/UC31VsnorldNC7pJMUL0uniw"><img title="Some demonstration videos" style="border: 0px solid ; width: 93px; height: 42px;" alt="" src="Youtube.gif"></a></small></small></b></big></big><br>&nbsp;&nbsp;&nbsp;
+        &nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;<big>
+          astrometric (plate) solver, stacking of images, photometry and
+          FITS viewer</big><br><br>
+      </div>
+      <big><big><big></big></big></big>
+      
+      <div style="text-align: left;"><big style="font-weight: bold;"><big><br>
+            Download: <br>
+            <br>
+          </big></big><big><big>For MS Windows 64 bit:<br>
+          </big></big><big><big><span style="color: red; font-weight: bold;"></span></big></big>
+        <ul>
+          <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
+            &nbsp;<big>version 0.9.404 dated 2020-8-14. </big>&nbsp;Alternative
+            link, very latest development version 0.9.409 <a href="astap_setup.exe">ASTAP installer</a>
+            , <a href="astap.zip">ASTAP
+              executable only</a></li>
+          <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.exe/download">G17
+star
+              database installer</a></big>&nbsp;&nbsp; (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;
+for
+            the internal astrometric solver. Contains 105 million
+            stars up to magnitude 17. A 500 MB&nbsp; file.</li><li>Optional:</li><ul><li>For photometry you
+            could download and install the&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/v16_star_database_mag16_astap.exe/download">V16&nbsp;star
+database
+              colour</a> up to magnitude 17 or the <a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_astap.exe/download">V17</a> up to magnitude 17. They contain&nbsp;the calculated Johnson-V magnitude and
+            colour
+            information (GBp-GRp) for star annotations.&nbsp;</li><li>For telescope with a small field of view &lt;20 arcmin you could download the installer <a href="https://drive.google.com/file/d/1EzsNp-IH5DDv0S0DjjhJLT1hmPm81Ni4/view?usp=sharing">G18 up to magnitude 18</a> or a zipped <a href="https://sourceforge.net/projects/astap-program/files/star_databases/g18_star_database_mag18.zip/download">G18 star database</a>
+for manual install. at the program directory c:\program files\astap.
+&nbsp;Remove the G17 files or force use of the G18 in ASTAP. tab
+alignment.</li><li><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.exe/download">Hyperleda</a>,
+            a very large galaxy database for deep sky annotation.
+            2.190.000
+            objects.
+            Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
+            placed in
+            the program
+            directory.</li><li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/fpack_funpack.exe/download">Fpack
+              &amp; Funpack</a>,
+            fits image compression &amp; decompression programs from
+            Nasa HEASARC.
+            &nbsp;Only required if you have files with the .fz
+            &nbsp;extension.<br>
+          </li></ul>
+          
+          
+        </ul>
+        <big><big><a href="https://sourceforge.net/projects/astap-program/files/"><br>
+            </a>For MS Windows 32 bit:</big></big><big style="font-weight: bold;"><big><br>
+          </big></big><span style="font-family: Arial;"></span>
+        <ul>
+          <li><a href="astapwin32.zip"><big style="font-weight: bold;"><big>ASTAP
+zipped
+                  package</big></big></a><big>
+              version
+              0.9.404 dated 2020-8-14. Extract in directory c:\ program
+              files\astap
+              or c:\astap. Note that the execution speed of the 32 bit
+              version is
+              lower then the&nbsp;64 bit version. &nbsp;Alternative link</big>&nbsp;<a href="astapwin32.zip">ASTAP zipped</a><big><big>
+              </big></big></li>
+          <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.exe/download">G17
+star
+              database installer</a></big><span style="font-weight: bold;"> </span>(at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;
+for
+            the internal astrometric solver. Contains 105 million
+            stars up to magnitude 17. A 500 MB&nbsp; file.&nbsp;&nbsp;</li><li>Optional:</li><ul><li>For photometry you
+            could download and install the&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/v16_star_database_mag16_astap.exe/download">V16&nbsp;star
+database</a>.
+            Contains 60 million
+            stars up to Johnson-V magnitude 16. A 320 MB&nbsp;
+            file.&nbsp;The V16
+            contains both the calculated Johnson-V magnitude and colour
+            information (GBp-GRp) for star annotations.</li><li><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.exe/download">Hyperleda</a>,
+            a very large galaxy database for deep sky annotation.
+            2.190.000
+            objects.
+            Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
+            placed in
+            the program
+            directory.<big><big><a href="https://sourceforge.net/projects/astap-program/files/">
+                </a></big></big></li></ul>
+          
+        </ul>
+        <big><big>For Linux 64 bit:</big></big>
+        <ul>
+        </ul>
+        <ul>
+          <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.deb/download">ASTAP
+debian
+                  package</a></big></big><big> </big><big>&nbsp;or </big><big>and&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.rpm/download">ASTAP
+rpm
+                package</a> </big><big>version
+              0.9.404 dated 2020-8-14. Alternative link, development version 0.9.407</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big>&nbsp;</big></li>
+          <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.deb/download">G17
+star
+              database debian package</a></big>&nbsp; (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;
+for
+            internal astrometric solver. Contains 105 million
+            stars up to magnitude 17. A 500 MB&nbsp;file.&nbsp;</li><li>Optional:</li><ul><li><a href="dcraw_amd64.deb">dcraw support program for raw files</a>, special version which write camera metadata to comment section of ppm file. Will read exposure, and iso (gain) settings.</li><li>For photometry you
+            could download and install the&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/v16_star_database_mag16_astap.deb/download">V16&nbsp;star
+              database</a> upt to magnitude 16 or the <a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_astap.deb/download">V17</a> up to magnitude 17.&nbsp;They contain&nbsp;the calculated Johnson-V magnitude and
+            colour
+            information (GBp-GRp) for star annotations.&nbsp;</li><li>For a telescope with a small field of view &lt;20 arcmin you could download the&nbsp;<a href="https://drive.google.com/file/d/1xN581MoN83YfBUN1nwg2PmyVi-vm5zff/view?usp=sharing">debian installer G18</a> star database up to mag 18 or the&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/g18_star_database_mag18.zip/download">zipped G18</a> star database
+for manual install. at the program directory /opt/astap.&nbsp;Remove
+the G17 files or force use of the G18 in ASTAP. tab alignment.</li><li><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.deb/download">Hyperleda</a>,
+            a very large galaxy database for deep sky annotation.
+            2.1940.000
+            objects.
+            Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
+            placed in
+            the program
+            directory.<big><big><a href="https://sourceforge.net/projects/astap-program/files/">
+                </a></big></big></li></ul>
+          
+        </ul>
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+        &nbsp;&nbsp; <br>
+        <big><big>For Linux 32 bit:</big></big>
+        <ul>
+          <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_i386.deb/download">ASTAP
+debian
+                  package</a></big></big><big>&nbsp;</big><big>version
+              0.9.404 dated 2020-8-14. &nbsp;</big></li>
+          <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.deb/download">G17
+star
+              database debian package</a></big>&nbsp; (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;
+for
+            internal astrometric solver. Contains 105 million
+            stars up to magnitude 17. A 500 MB&nbsp;file.&nbsp;&nbsp;</li><li>Optional:</li><ul><li>For photometry you
+            could download and install the &nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/v16_star_database_mag16_astap.deb/download">V16&nbsp;</a>star
+              database up to magnitude 16 or the <a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_astap.deb/download">V17</a> up to magnitude 17.&nbsp;They contain&nbsp;the calculated Johnson-V magnitude and
+            colour
+            information (GBp-GRp) for star annotations.&nbsp;</li><li>For a telescope with a small field of view &lt;20 arcmin you could download the&nbsp;<a href="https://drive.google.com/file/d/1xN581MoN83YfBUN1nwg2PmyVi-vm5zff/view?usp=sharing">debian installer G18</a> star database up to mag 18 or the&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/g18_star_database_mag18.zip/download">zipped G18</a> star database
+for manual install. at the program directory /opt/astap.&nbsp;Remove
+the G17 files or force use of the G18 in ASTAP. tab alignment.</li><li><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.deb/download">Hyperleda</a>,
+            a very large galaxy database for deep sky annotation.
+            2.1940.000
+            objects.
+            Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
+            placed in
+            the program
+            directory.</li></ul>
+          
+        </ul>
+        <ul style="margin-left: 40px;">
+        </ul>
+        <br>
+        <big><big>For Raspberry PI, 32 bit:&nbsp;</big></big>
+        <ul>
+          <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_armhf.deb/download">ASTAP
+debian
+                  package</a></big></big><big>&nbsp;</big>
+            (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/">link</a>)
+            &nbsp;<big>version
+              0.9.388 dated&nbsp;</big><big>2020-7-16</big><big>. This version can be used as an
+              astrometric
+              solver. E.g. for CCDCIEL.</big></li>
+          <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.deb/download">G17
+star
+              database debian package</a></big><span style="text-decoration: underline; font-weight: bold;"></span>&nbsp;
+            (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;
+for
+            internal astrometric solver. Contains 105 million
+            stars up to magnitude 17.&nbsp;A 500
+            MB&nbsp;file.&nbsp;</li><li>Optional:</li><ul><li>For photometry you
+            could download and install the <a href="https://sourceforge.net/projects/astap-program/files/star_databases/v16_star_database_mag16_astap.deb/download">V16</a>&nbsp;star
+              database up to magnitude 16 or the <a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_astap.deb/download">V17</a> up to magnitude 17.&nbsp;They contain&nbsp;the calculated Johnson-V magnitude and
+            colour
+            information (GBp-GRp) for star annotations.&nbsp;</li><li>For a telescope with a small field of view &lt;20 arcmin you could download the&nbsp;<a href="https://drive.google.com/file/d/1xN581MoN83YfBUN1nwg2PmyVi-vm5zff/view?usp=sharing">debian installer G18</a> star database up to mag 18 or the&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/g18_star_database_mag18.zip/download">zipped G18</a> star database
+for manual install. at the program directory /opt/astap.&nbsp;Remove
+the G17 files or force use of the G18 in ASTAP. tab alignment.</li><li><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.deb/download">Hyperleda</a>,
+            a very large galaxy database for deep sky annotation.
+            2.1940.000
+            objects.
+            Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
+            placed in
+            the program
+            directory.</li></ul>
+          
+        </ul>
+        <big><big><br>
+            For Raspberry PI, 64 bit:&nbsp;</big></big>
+        <ul>
+          <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_arm64.deb/download">ASTAP
+debian
+                  package</a></big></big><big>&nbsp;</big>
+            (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/">link</a>)
+            &nbsp;<big>version
+              0.9.387 dated&nbsp;</big><big>2020-7-8</big><big>. This version can be used as an
+              astrometric
+              solver. E.g. for CCDCIEL.</big></li>
+          <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.deb/download">G17
+star
+              database debian package</a><span style="text-decoration: underline; font-weight: bold;"></span></big>&nbsp;
+            (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;
+for
+            internal astrometric solver. Contains 105 million
+            stars up to magnitude 17.&nbsp;A 500
+            MB&nbsp;file.</li><li>Optional:</li><ul><li>For photometry you
+            could download and install the&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/v16_star_database_mag16_astap.deb/download">V16</a>&nbsp;star
+              database up to magnitude 16 or the <a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_astap.deb/download">V17</a> up to magnitude 17.&nbsp;They contain&nbsp;the calculated Johnson-V magnitude and
+            colour
+            information (GBp-GRp) for star annotations.&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/v16_star_database_mag16_astap.deb/download"></a></li><li>For a telescope with a small field of view &lt;20 arcmin you could download the&nbsp;<a href="https://drive.google.com/file/d/1xN581MoN83YfBUN1nwg2PmyVi-vm5zff/view?usp=sharing">debian installer G18</a> star database up to mag 18 or the&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/g18_star_database_mag18.zip/download">zipped G18</a> star database
+for manual install. at the program directory /opt/astap.&nbsp;Remove
+the G17 files or force use of the G18 in ASTAP. tab alignment.</li><li><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.deb/download">Hyperleda</a>,
+            a very large galaxy database for deep sky annotation.
+            2.1940.000
+            objects.
+            Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
+            placed in
+            the program
+            directory.</li></ul>
+          
+        </ul>
+        <br>
+        <big><big>For MacOS&nbsp;64 bit. &nbsp; &nbsp;&nbsp;&nbsp;<small> <span style="color: red;">NOTE&nbsp;FOR THE MAC, THE STAR DATABASES ARE A NOW SEPERATE DOWNLOAD!</span></small></big></big>
+        <ul>
+          <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/astap.pkg/download">ASTAP
+                  pkg&nbsp;installer</a></big></big><big>
+              &nbsp;(</big>at&nbsp;<a href="https://sourceforge.net/projects/astap-program/">link</a>)
+            <big>version
+              0.9.404 dated 2020-8-14.</big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.pkg/download">G17
+star
+              database installer</a><span style="text-decoration: underline;"></span></big>&nbsp;
+            (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;
+for
+            internal astrometric solver. Contains 105 million
+            stars up to magnitude 17.&nbsp;A 500
+            MB&nbsp;file. &nbsp;<big>Will be installed at /usr/local/opt/astap. The
+              Deepsky,&nbsp;HyperLeda and variable star database are included with the G17.</big></li><li><big>Optional:<br></big></li><ul><li>For photometry you
+            could also
+            download and install the <a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_astap.pkg/download">V17&nbsp;star
+              database</a> containing&nbsp;105 million
+            stars up to Johnson-V magnitude 17.&nbsp;The
+              Deepsky,&nbsp;HyperLeda and variable star database are included with the V17.&nbsp;</li><li>For a telescope with a small field of view &lt;20 arcmin you could download the <a href="https://drive.google.com/file/d/1qAlTWqEqLpnoPOebXtmDYZULedh3gUBR/view?usp=sharing">g18 star database installer up to mag 18</a>&nbsp;or &nbsp;zipped <a href="https://sourceforge.net/projects/astap-program/files/star_databases/g18_star_database_mag18.zip/download">G18 star database up to mag 18</a> for manual install at&nbsp; /usr/local/opt/astap.. Remove the G17 files or force use of the G18 in ASTAP. tab alignment.</li></ul>
+        </ul>
+        <big style="font-weight: bold;"><big><br>
+          </big></big></div>
+      <div style="text-align: left;">
+        <ul>
+          <li><big><big>Questions, feedback: <a href="https://sourceforge.net/p/astap-program/discussion/">ASTAP
+                    Forum</a></big></big></li>
+          <li><big><big>Older versions are available
+                at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/">Sourceforge</a></big></big></li>
+          
+          <li><big><big><a href="history_astap.htm">Version history</a><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.zip/download"></a><br>
+                        </big></big></li>
+          <li><big><big><a href="astap_source.zip">Source
+                        code (Object
+                        Pascal,&nbsp;Lazarus/FPC)</a></big></big></li>
+          <li><big><big><b><small><small>&nbsp;<a href="https://www.youtube.com/channel/UC31VsnorldNC7pJMUL0uniw"><img title="Some demonstration videos" style="border: 0px solid ; width: 93px; height: 42px;" alt="" src="Youtube.gif"></a></small></small></b></big></big></li>
+        </ul>
+        &nbsp;
+        <ul>
+        </ul>
+        <big><big>Donations are welcome:</big></big>
+        <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+<input name="cmd" value="_s-xclick" type="hidden">
+<input name="encrypted" value="-----BEGIN PKCS7-----MIIHXwYJKoZIhvcNAQcEoIIHUDCCB0wCAQExggEwMIIBLAIBADCBlDCBjjELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAkNBMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MRQwEgYDVQQKEwtQYXlQYWwgSW5jLjETMBEGA1UECxQKbGl2ZV9jZXJ0czERMA8GA1UEAxQIbGl2ZV9hcGkxHDAaBgkqhkiG9w0BCQEWDXJlQHBheXBhbC5jb20CAQAwDQYJKoZIhvcNAQEBBQAEgYCpHpXcwxmSRif3SXaUmVDkGTQXDhNIxpKM+fw40I6lntyfGZHADTZcbDrW6tI+dAoMidCnn9iVgFK+fOiAQq1g8JVbFi7QExrHKBfVbzR4hIApzdNBWTJ8D7xBxaLrsr2T0Vtxwb5oEUUGfUcvd05XI9uLj3CxFyFrdkj4p+dyljELMAkGBSsOAwIaBQAwgdwGCSqGSIb3DQEHATAUBggqhkiG9w0DBwQIhV6xg0gIKEmAgbjYVwOPDYvk9fF7BKvCl8M52qSVEDHXZPEGKyaR2eUR5fPL/HNNE6WK/qYDXTsTan7ATshBtJlCUE3im1qpew3xyLm1yJhlqsDd2FO4E4qD7IWDzHopnRBUK8bPN8PfWVnb3caV/HQxzIlUFaNr0MlITz2trp9b09Ncq+cKVL/URAa8iaChM6GRRuPiYcEAsj3v1Ks7kVhg323xhsIeyS8X/YmN4zk/4RqMQcDV6eVwA/q/RynliXU+oIIDhzCCA4MwggLsoAMCAQICAQAwDQYJKoZIhvcNAQEFBQAwgY4xCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJDQTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzEUMBIGA1UEChMLUGF5UGFsIEluYy4xEzARBgNVBAsUCmxpdmVfY2VydHMxETAPBgNVBAMUCGxpdmVfYXBpMRwwGgYJKoZIhvcNAQkBFg1yZUBwYXlwYWwuY29tMB4XDTA0MDIxMzEwMTMxNVoXDTM1MDIxMzEwMTMxNVowgY4xCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJDQTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzEUMBIGA1UEChMLUGF5UGFsIEluYy4xEzARBgNVBAsUCmxpdmVfY2VydHMxETAPBgNVBAMUCGxpdmVfYXBpMRwwGgYJKoZIhvcNAQkBFg1yZUBwYXlwYWwuY29tMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDBR07d/ETMS1ycjtkpkvjXZe9k+6CieLuLsPumsJ7QC1odNz3sJiCbs2wC0nLE0uLGaEtXynIgRqIddYCHx88pb5HTXv4SZeuv0Rqq4+axW9PLAAATU8w04qqjaSXgbGLP3NmohqM6bV9kZZwZLR/klDaQGo1u9uDb9lr4Yn+rBQIDAQABo4HuMIHrMB0GA1UdDgQWBBSWn3y7xm8XvVk/UtcKG+wQ1mSUazCBuwYDVR0jBIGzMIGwgBSWn3y7xm8XvVk/UtcKG+wQ1mSUa6GBlKSBkTCBjjELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAkNBMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MRQwEgYDVQQKEwtQYXlQYWwgSW5jLjETMBEGA1UECxQKbGl2ZV9jZXJ0czERMA8GA1UEAxQIbGl2ZV9hcGkxHDAaBgkqhkiG9w0BCQEWDXJlQHBheXBhbC5jb22CAQAwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOBgQCBXzpWmoBa5e9fo6ujionW1hUhPkOBakTr3YCDjbYfvJEiv/2P+IobhOGJr85+XHhN0v4gUkEDI8r2/rNk1m0GA8HKddvTjyGw/XqXa+LSTlDYkqI8OwR8GEYj4efEtcRpRYBxV8KxAW93YDWzFGvruKnnLbDAF6VR5w/cCMn5hzGCAZowggGWAgEBMIGUMIGOMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0ExFjAUBgNVBAcTDU1vdW50YWluIFZpZXcxFDASBgNVBAoTC1BheVBhbCBJbmMuMRMwEQYDVQQLFApsaXZlX2NlcnRzMREwDwYDVQQDFAhsaXZlX2FwaTEcMBoGCSqGSIb3DQEJARYNcmVAcGF5cGFsLmNvbQIBADAJBgUrDgMCGgUAoF0wGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTgwOTI0MTQyMjQ0WjAjBgkqhkiG9w0BCQQxFgQUIcURtih35wGY4E8yj8T20ZGnwgYwDQYJKoZIhvcNAQEBBQAEgYA+UouILVoTgtyPHphydsBEIuaMxz2t8HouPQsXm+ps9uROTGNmpCVlvbQAjquoFM4zoQcNyX4q0NAkMUiWSoyTssOOCh5WcQ+/EyMRrbuJnTt4cCWY9ZFeMGczEXIAGC+nXk/SW23b0EICv3KrlmG3yximEAPFAKospqROSkJjKQ==-----END PKCS7-----" type="hidden">
+<input src="https://www.paypalobjects.com/en_US/GB/i/btn/btn_donateCC_LG.gif" name="submit" alt="PayPal – The safer, easier way to pay online!" border="0" type="image">
+<img alt="" src="https://www.paypalobjects.com/nl_NL/i/scr/pixel.gif" border="0" height="1" width="1"><br><a name="index"></a>
+</form>
+        <ul>
+          <li><big><a href="#introduction">Introduction</a></big></li>
+          <li><big><a href="#installation">Program
+                installation</a></big></li>
+          <li><big><a href="#operation">Program
+                operation, stacking astronomical images</a></big></li>
+          <li><big><a href="#stack_menu"><big style="font-weight: bold;">Stack
+                  menu</big>&nbsp;</a></big></li>
+          <ul>
+            <li><big><a href="#images">Images, darks,
+                  flats, flat darks tab</a></big></li>
+          </ul>
+          <ul>
+            <li><big><a href="#alignment_menu">Alignment
+                  menu tab</a></big></li>
+            <ul>
+              <li><big><a href="#internal_alignment">Internal_alignment</a></big></li>
+              <li><big><a href="#astrometric_alignment">Astrometric_alignment</a></big></li>
+              <ul></ul>
+              <li><big><a href="astap.htm#manual_alignment">Manual
+                    alignment</a></big></li><li><big><a href="astap.htm#ephemeris_alignment">Ephemeris alignment</a><br></big></li>
+            </ul>
+            <li><big><a href="#results">Results tab</a></big></li>
+            <li><big><a href="#stack_menu2">Stack
+                  method tab</a></big></li>
+            <ul>
+              <li><big><a href="astap.htm#mosaic">Image
+                    stiching</a></big></li><li><big><a href="astap.htm#osc_menu">OSC menu</a></big></li>
+            </ul>
+            <li><big><a href="#blink">Blink tab</a></big></li>
+            <li><big><a href="#photometry">Photometry tab</a></big></li><li><big><a href="#inspector_tab">Inspector tab</a><br></big></li><li><big><a href="#live_stacking">Live stacking</a></big></li>
+            <li><big><a href="#pixel_math">Pixel math
+                  tab</a></big></li>
+            <li><big><a href="astap.htm#background">Background
+                  equalization tool</a></big></li>
+            <li><big><a href="astap.htm#export_data">Popup
+                  menu</a></big></li>
+            <ul>
+              <li><big><a href="#export_data">Export
+                    FITS data to spreadsheet for analyses</a></big></li>
+            </ul>
+          </ul>
+        </ul>
+        <ul>
+          <ul>
+            <ul>
+            </ul>
+          </ul>
+          <li style="font-weight: bold;"><big><big><a href="#viewer">Viewer:</a></big></big></li>
+          <ul>
+            <li><big><a href="#viewer_preview">Opening,
+                  preview&nbsp;files</a><br>
+              </big></li>
+          </ul>
+          <ul>
+            <li><big><a href="astap.htm#thumbnail">FITS
+                  thumbnail viewer</a></big></li>
+            <li><big>Tools menu:<br>
+              </big></li>
+            <ul>
+              <li><big><a href="astap.htm#import">Batch
+                    conversion&nbsp;raw images</a></big><big style="font-weight: bold;"><span style="text-decoration: underline;"></span></big></li>
+              <li><big><a href="astap.htm#deep_sky_annotation">Deep
+                    sky annotation</a></big></li>
+              <li><big><a href="#star_annotation">Star
+                    annotation and photometry</a></big></li><li><big><a href="#asteroid_annotation">Asteroid
+                    annotation</a></big></li>
+              <li><big><a href="astap.htm#inspector">CCD
+                    inspector</a></big></li>
+              <li><big><a href="astap.htm#batch_conversion">Batch
+                    conversion</a></big></li>
+            </ul>
+            <li><big><a href="#viewmenu">View menu</a></big></li>
+            <li><big><a href="#viewer_popup">Popup menu</a></big></li><li><big><a href="#fits_tables">FITS tables </a><br></big></li>
+          </ul>
+          <br>
+          <li><big><a href="astap.htm#command_line"><big><span style="font-weight: bold;">Solver,</span></big>
+                usage as
+                astrometric solver and command
+                line options</a></big></li>
+          <ul>
+            <li><big><a href="astap.htm#conditions">Conditions
+                  required for solving</a></big></li>
+            <li><big><a href="astap.htm#astap_command_line">ASTAP
+                  native command line&nbsp;</a></big></li>
+            <ul>
+              <li><big><a href="astap.htm#performance_blind">Performance
+                    blind solving</a></big></li>
+              <li><big><a href="#popup_notifier">Popup
+                    notifier</a></big></li>
+            </ul>
+            <li><big><a href="astap.htm#platesolve2">Usage&nbsp;as
+                  a solver with other programs or as PlateSolve2
+                  substitute</a></big></li>
+            <ul>
+              
+              <li><big><a href="#apt">Using with APT,
+                    &nbsp;Astro Photography Tool</a></big></li><li><big><a href="astap.htm#ccdciel">Using with
+                    CCDCIEL</a></big></li><li><big><a href="astap.htm#modelcreator">Using
+                    with ModelCreator</a></big></li>
+              <li><big><a href="#nina">Using with
+                    NINA,&nbsp;Nighttime Imaging ‘N’ Astronomy</a></big></li>
+              <li><big><a href="#sgp">Using with SGP,
+                    Sequence Generator Pro</a></big></li><li><big><a href="astap.htm#sharpcap">Using with SharpCap</a></big></li>
+              
+              <li><big><a href="#voyager">Using with
+                    Voyager</a></big></li>
+            </ul><li><big><a href="astap.htm#solver_installation">Installation
+of the
+external astrometry.net&nbsp;solver&nbsp;</a></big></li></ul></ul><br>
+        <ul>
+          <li><big><a href="astap.htm#stack_process">Appendix
+                1 stack process</a></big></li>
+          <li><big><a href="astap_astrometric_solving.htm">Background
+                info,&nbsp;how
+                does the ASTAP astrometric solving works internally</a></big></li>
+        </ul>
+        <big><br>
+          <br>
+        </big></div>
+      <font size="-2"><br>
+      </font>
+      <div style="text-align: left;"><big style="text-decoration: underline;"><big><span style="font-weight: bold;"><a name="introduction"></a>ASTAP
+              introduction</span></big></big><br>
+        <br style="font-family: Arial;">
+        <span style="font-family: Arial;">ASTAP is a free stacking
+          and astrometric solver (plate solver) program for deep sky
+          images. In
+          works
+          with&nbsp;astronomical images in the FITS format, but&nbsp;can
+          import
+          RAW DSLR images or XISF, PGM, PPM, TIF, PNG and JPG
+          &nbsp;images</span><span style="font-family: Arial;"></span><span style="font-family: Arial;">.
+          It has a powerful FITS viewer and the native astrometric
+          solver&nbsp;can be
+          used &nbsp;by CCDCiel, NINA, APT or SGP imaging programs
+          to&nbsp;synchronise&nbsp;the mount based on an image taken. <br>
+        </span><br style="font-family: Arial;">
+        <span style="font-family: Arial;">Main features:</span>
+        <ol>
+          <li><span style="font-family: Arial;">Native
+              astrometric
+              solver, <a href="astap.htm#platesolve2">command line</a>
+              compatible with&nbsp;PlateSolve2.</span></li>
+          <li><span style="font-family: Arial;"></span><span style="font-family: Arial;">Stacking
+              astronomical images including dark frame and flat field
+              correction.&nbsp;</span></li>
+          <ul>
+            <li><span style="font-family: Arial;">Filtering of
+                deep sky images based on HFD value and average value.</span></li>
+            <li><span style="font-family: Arial;">Alignment
+                using an internal star match routine,&nbsp; internal
+                astrometric
+                solver.</span></li>
+            <li><span style="font-family: Arial;"><span style="font-family: Arial;">Mosaic
+                  building covering&nbsp;large areas using the
+                  astrometric linear
+                  solution WCS or WCS+SIP polynomial.&nbsp;</span></span></li>
+            <li><span style="font-family: Arial;"><span style="font-family: Arial;"><span style="font-family: Arial;">Background
+                    equalizing.</span></span></span></li>
+          </ul>
+          <li><span style="font-family: Arial;">FITS viewer
+              with swipe functionality, deep sky and star annotation,
+              photometry and
+              CCD inspector.</span></li>
+          <ul>
+            <li><span style="font-family: Arial;">FITS
+                thumbnail viewer.<br>
+              </span></li>
+            <li><span style="font-family: Arial;">Results can
+                be saved to 16 bit or float (-32) FITS files.</span></li>
+            <li><span style="font-family: Arial;"><a href="#file_formats">Export</a> to&nbsp; JPEG, PNG, TIFF, PFM, PPM, PGM&nbsp; files.</span></li>
+            <li><span style="font-family: Arial;">FITS header
+                edit.</span></li>
+            <li><span style="font-family: Arial;"><span style="font-family: Arial;">FITS crop
+                  function.</span></span></li>
+            <li><span style="font-family: Arial;"><span style="font-family: Arial;">Automatic photometry
+                  calibration against Gaia database, Johnson -V or Gaia
+                  Bm</span></span></li>
+            <li><span style="font-family: Arial;"><span style="font-family: Arial;">CCD inspector</span></span></li>
+            <li><span style="font-family: Arial;"><span style="font-family: Arial;">Deepsky and Hyperleda
+                  annotation</span></span></li><li><span style="font-family: Arial;"><span style="font-family: Arial;">Solar object annotation using MPC ephemerides</span></span></li><li><span style="font-family: Arial;"><span style="font-family: Arial;">Read/writes<a href="#fits_tables"> FITS binary and reads ASCII tables</a>.<br></span></span></li>
+          </ul>
+          <li><span style="font-family: Arial;">Some pixel
+              math functions and <a href="http://www.asahi-net.or.jp/%7Ert6k-okn/ddp/digital.htm">digital
+development
+                process</a></span></li>
+          <li><span style="font-family: Arial;">Blink routine.</span></li>
+          
+          <ul>
+          </ul>
+          <li><span style="font-family: Arial;">Photometry routine</span></li><li><span style="font-family: Arial;">Available
+              for MS-Windows </span><span style="font-family: Arial;">32 &amp; 64 bit</span><span style="font-family: Arial;">,&nbsp; Linux 32, 64 bit,
+              MacOS 64 bit,
+              Raspberry-Pi Linux 32 and 64 bit.</span></li>
+          <ul>
+          </ul>
+        </ol>
+        <br>
+        <span style="font-family: Arial;"><span style="text-decoration: underline;">Stacking of images:</span><br>
+        </span><span style="font-family: Arial;"><br>
+          Stacking
+          of astronomical images is done to achieve a greater signal to
+          noise
+          ratio, prevent sensor saturation&nbsp;and correct the images
+          for
+          dark
+          current and flat field. Additional imperfect images&nbsp;due
+          to
+          guiding, focus&nbsp; problems or clouds can be removed.<br>
+          <br>
+          <a name="images"></a>This is a screen short
+          of the stack
+          menu. It contains several tabs for the file list and settings.
+          File can
+          be sorted on quality and values.The image can be visually
+          inspected in
+          the
+          viewer by a double click on the file or using the pop-up menu.<br>
+          <br>
+        </span><img style="width: 1744px; height: 678px;" alt="" src="astap_stack_menu.png"><br style="font-family: Arial;">
+        <span style="font-family: Arial;"><br>
+          Program requires FITS
+          images or RAW files as input for stacking, but it&nbsp;can
+          also
+          view 16 bit PGM /PPM files, XISF files
+          or &nbsp;in 8 bit&nbsp; PNG, TIFF or BMP
+          files. For importing DSLR raw images &nbsp;the program</span><big><a href="https://www.cybercom.net/%7Edcoffin/dcraw/"> DCRAW</a>
+          from David Coffin</big><span style="font-family: Arial;">
+          is used.</span><br style="font-family: Arial;">
+        <ul>
+          <li><span style="font-family: Arial;">Stacking
+              methods: average and sigma-clipping-average.. Internal
+              calculation
+              using
+              floating point numbers.</span></li>
+          <li><span style="font-family: Arial;">Simple and
+              intuitive user interface.</span></li>
+          <li><span style="font-family: Arial;">Automatic
+              saving of selected options and
+              files.</span></li>
+          <li><span style="font-family: Arial;">Can create
+              master files for dark and flat &amp; flat-darks to reduce
+              processing time.</span></li>
+          <li><span style="font-family: Arial;">Limited&nbsp;memory
+              use, independent of the number of images stacked.</span></li>
+          <li><span style="font-family: Arial;">Bayer
+              algorithm for DSLR/OSC cameras</span></li>
+        </ul>
+        <span style="font-family: Arial;">For stacking </span><span style="font-family: Arial;">the internal routine compares
+          the image star positions to align. <br>
+          <br>
+          </span><span style="font-family: Arial;"><a name="uncheck_outliers"></a>To uncheck/untick
+          poor images there is an option to do that
+          automatically. First check mark the option "After analyse
+          untick worst
+          images". Then press button&nbsp;</span><span style="background-color: rgb(153, 153, 153);"> Analyse and organise images &nbsp;</span><span style="font-family: Arial;">. The images will
+          be
+          analysed and the images with abnormal&nbsp;(outliers) HFD
+          values or
+          &nbsp;"Number of star detected" will be unchecked. The
+          adjustable
+          factor used is&nbsp;the<a href="https://en.wikipedia.org/wiki/Standard_deviation">
+            standard deviation</a>
+          represented by the Greek lower case sigma &#963; letter. To undo
+          you
+          have to check the images manually again, e.q. with the popup
+          menu of
+          the right
+          mouse button.</span><br><span style="font-family: Arial;"></span><span style="font-family: Arial;">
+          <br>
+          For a normal distribution you could expect the following:<br>
+          <br>
+        </span>
+        <table style="width: 368px; height: 172px; text-align: left; margin-left: auto; margin-right: auto;" border="1" cellpadding="2" cellspacing="2">
+          <tbody>
+            <tr>
+              <td style="background-color: silver;"><span style="font-weight: bold;">Confidence interval</span></td>
+              <td style="font-weight: bold; background-color: silver;">Proportion
+                within</td>
+            </tr>
+            <tr>
+              <td>1<i>&#963;</i></td>
+              <td>68%</td>
+            </tr>
+            <tr>
+              <td><span class="nowrap">1.5<span style="font-style: italic;"></span></span><i>&#963;</i></td>
+              <td>87%</td>
+            </tr>
+            <tr>
+              <td>2<i>&#963;</i></td>
+              <td>95 %</td>
+            </tr>
+            <tr>
+              <td>2.5<i>&#963;</i></td>
+              <td>98.8%</td>
+            </tr>
+            <tr>
+              <td>3<i>&#963;</i></td>
+              <td>99.7%</td>
+            </tr>
+          </tbody>
+        </table>
+        <span style="font-family: Arial;"><br>
+          There
+is no need to exclude outliers. A better method is&nbsp;to sort the images
+in the list by clicking on the column title. So you sort on HFD (half
+flux diameter) , Star detections, Star level , Background, sharpness<br><br></span><ul><li><span style="font-family: Arial;">HFD is the image median HFD. The lower the better. Depending on focus and guiding.&nbsp;</span></li><li><span style="font-family: Arial;">Star detections. </span><span style="font-family: Arial;">The higher the better. </span><span style="font-family: Arial;">Number of star detections. Depending on sky transparancy of the sky and focus.&nbsp;</span></li><li><span style="font-family: Arial;">Star level. </span><span style="font-family: Arial;">The higher the better. </span><span style="font-family: Arial;">Depending on</span><span style="font-family: Arial;"> transparancy of the sky and focus.&nbsp;</span></li><li><span style="font-family: Arial;">Background.
+Depending on sky darkness and transparancy. The lower the better. A
+higher value means in most cases a cloud was blocking the sky.</span></li><li><span style="font-family: Arial;">Sharpness.
+The lower the better.Measures the&nbsp;change between dark and bright
+pixels. The measurement is very sensitive to satellite tracks. Could be
+used to detect satellite track when compared with HFD value. Could also
+be used to sort images of the Moon and Sun on sharpness.(but they
+ccan't be stacked) For correct sharpness measurement of OSC images
+either the FITS header should contain the keyword BAYERPAT or
+check-mark "Convert OSC to colour" in&nbsp;tab "Stack method". </span></li></ul><span style="font-family: Arial;"><span style="font-weight: bold;">Best approach is to remove poor images as follows:</span><br><br>Sort on HFD and visually inspect&nbsp;images with a too high HFD for inspection by </span><span style="font-family: Arial;">double click on the row</span><span style="font-family: Arial;">.
+If poor, rename images with right mouse button popup menu "rename to
+*.bak" for deletion later. Check also the lowest HFD values for
+possible guiding problems.<br>Sort on number of star detections. Check
+images with the lowest values by double click and&nbsp; inspect on
+possible guiding problems.<br>Sort on background and &nbsp;</span><span style="font-family: Arial;">by double click and&nbsp;inspect too high values on possible cloud coverage or twilight conditions.<br><br>If&nbsp;after
+stacking with "sigma clip average" there are still satellite tracks
+visible, you could lower the sigma factor from 2.5 to maybe 2.2 in tab
+"Stack method". An other way is the blink/scroll&nbsp; through the
+images with the &nbsp;</span><span style="background-color: rgb(153, 153, 153);"> &gt;&gt; &nbsp;</span><span style="font-family: Arial;">
+button. As soon you see an abnormal bright track on the image stop the
+blinking by esc and inspect visually the image(s)&nbsp; involved by
+double click on the row. Remove any poor image&nbsp;by using right
+mouse button popup menu "rename to *.bak"<br></span><span style="font-family: Arial;"><br>
+          <br>
+          <span style="text-decoration: underline;">Astrometric
+            Solving:</span></span><br>
+        <span style="font-family: Arial;"><br>
+          ASTAP can be </span><big><a href="astap.htm#command_line">used
+            as
+            astrometric solver</a></big><span style="font-family: Arial;">
+          to synchronise the telescope mount position&nbsp;with center
+          position
+          of an image taken with the&nbsp;telescope. Existing images can
+          be
+          solved to&nbsp;</span><big><a href="astap.htm#star_annotation">annotate,&nbsp;for
+            photometry</a></big><span style="font-family: Arial;">
+          or&nbsp;the measure positions of unknown objects.<br>
+          <br>
+          The
+          ASTAP solver aims at a robust star pattern recognition using
+          the
+          catalog star coordinates in Equinox J2000. The solution is not
+          corrected for
+          optical distortion, refraction, proper&nbsp; motion&nbsp;
+          of&nbsp; stars and other
+          minor effects all to be very minor. <br>
+          <br>
+          The
+          process astrometric solving is&nbsp;often referred to as a
+          "plate
+          solve". That was a correct&nbsp;description in the past, but
+          in
+          modern
+          times there are no photographic plates involved in the
+          process.<br>
+          </span><br>
+        <br>
+        <a href="#index">Back to index</a><br>
+        <br style="font-family: Arial;">
+        <big style="text-decoration: underline;"><span style="font-family: Arial; font-weight: bold;"><a name="installation"></a>Program
+            installation:
+          </span></big><br style="font-family: Arial;">
+        <br>
+        <span style="font-family: Arial;"><span style="font-weight: bold;">MS-Windows</span>: <br>
+          <br>
+        </span>
+        <div style="margin-left: 40px;"><span style="font-family: Arial;">The installer will defaullt
+            install it at
+            c:\Program Files\astap . The single executable astap.exe
+            can be
+            used anywhere.&nbsp;</span><span style="font-family: Arial;"></span><br>
+          <span style="font-family: Arial;"></span></div>
+        <br>
+        <span style="font-weight: bold;"><big>Linux
+            installation:<br>
+            <br>
+          </big></span>
+        <div style="margin-left: 40px;"><span style="font-family: Arial;">The program is provide as an
+            debian archive </span><span style="font-family: Arial;">astap_amd64.deb
+          </span><span style="font-family: Arial;">which can
+            be installed with the default installer.&nbsp; Executable
+            will be
+            placed in /opt/astap</span></div>
+        <span style="font-family: Arial;"><br>
+        </span><span style="font-weight: bold;"><big>MacOS
+            installation:<br>
+            <br>
+          </big></span>
+        <div style="margin-left: 40px;"><span style="font-family: Arial;">The program is provide as pkg
+            file.&nbsp;</span><big>If
+MacOS doesn't allow to install, go to Apple Icon, System preferences,
+Security &amp; Privacy and allow astap.pkg to be installed. Install
+also a stardatabase, either the G17 (Gaia Bm magnitude for CCD) or/and
+the V17 (Johnson-V for photometry). The G17 star database and HyperLeda
+deep sky database are included with the star databases. &nbsp;</big><span style="font-family: Arial;"></span></div>
+        <span style="font-family: Arial;"><br>
+        </span><br>
+        <br>
+        <big style="font-weight: bold;"><span style="text-decoration: underline;"><a name="operation"></a>Program
+            operation, stacking astronomical images:</span></big><br>
+        <br>
+        <span style="font-family: Arial;">The purpose of the
+          stacking routine is to&nbsp;combine astronomical images to
+          reduced
+          noise and to flatten the image.<br>
+          <br>
+          &nbsp;Ideally you should have collected <br>
+        </span><big><span style="text-decoration: underline;"></span><br>
+        </big>
+        <ul>
+          <li><big>1a) Several <span style="font-weight: bold;">light
+                frames</span>. Images of deep sky object unprocessed.</big></li>
+          <li><big>1b) Several <span style="font-weight: bold;">dark
+                frames</span>
+of the same temperature and exposure as the light frames. A dark frame
+is a frame that represents an exposure done in total darkness. This
+signal includes the bias signal, but also includes any dark current
+charge accumulation, and thus any dark current noise that exists within
+the dark current signal. For darks suburban area (SQM=20.4) you should
+take about the same amount or more darks as lights. For a light
+polluted area you could take less darks then lights since the noise in
+the lights generated by the sky background will be abundant.</big></li>
+          <li><big>2a) Several <span style="font-weight: bold;">flat
+                frames</span>.
+              A flat frame is a frame that represents the field flatness
+              and taken
+              from an uniform light source. Ideally with a significant
+              signal level.
+              This to compensate for vignetting and dust particles.
+              Vignetting can
+              greatly darken the corners of your image&nbsp;and have to be
+              compensated. </big></li>
+          <li><big>2b) <span style="font-weight: bold;">Flat
+                dark frames</span> or <span style="font-weight: bold;">bias
+                frames</span>
+              ideally of the same temperature and exposure duration as
+              the flats.
+              Since flats are taken with very short exposure times,
+              either flat dark
+              of bias image of almost zero&nbsp;seconds will do.</big></li>
+        </ul>
+        <big>Only light frames are essential. <br>
+          <br>
+          The automatic stacking process in ASTAP goes through the
+          following
+          steps:<br>
+        </big>
+        <ol>
+          <li><big>The </big><big>flats </big><big>will
+              be combined to an average and the combined average
+              flat-darks will be
+              subtracted to&nbsp; have a near ideal presentation of the
+              vignetting
+              called the master flat frame. </big></li>
+          <li><big>The dark</big><big>s </big><big>will
+              be combined to an average&nbsp;</big><big>master dark.</big></li><li><big>Optional on the master flat a&nbsp;</big><big> 2x2, 3x3&nbsp;or 4x4 mean filter
+              is applied</big><big> to reduce
+              noise</big>.</li><li><big>From each light frame the master dark will
+              be subtracted to extract the pure deep
+              sky signal. </big></li>
+          <li><big>Each light frame will be
+              flattened by
+              dividing it by the master-flat resulting in the corrected light frames.</big></li><li><big>The
+corrected light frames are combined to the final image using the
+average or sigma clip mean (to remove outliers as satellite tracks)
+method.&nbsp;</big></li></ol><span style="font-family: Arial;">Step 3,4,5,6 are done in memory. No intermediate&nbsp;results are stored on disk.<br><br>It is possible to mix different exposure times but it is not recommended.<br><br><br>
+          <span style="text-decoration: underline;">Operation of the
+            stacking program</span> <br>
+          <br>
+          Start the ASTAP program.
+          (In MS-Windows astap.exe, in Linux astap)</span><br style="font-family: Arial;">
+        <br style="font-family: Arial;">
+        <span style="font-family: Arial;"></span><span style="font-family: Arial;">Call up the stack
+          menu window using the&nbsp;</span><span style="background-color: rgb(153, 153, 153);">&nbsp;&#8721; &nbsp;</span><span style="font-family: Arial;"> button.<br>
+          <br>
+          <span style="text-decoration: underline;">a)
+            Select&nbsp;frames</span><br>
+          In tab </span><span style="font-family: Arial;">
+          images, dark, flats, flat darks, select the&nbsp;</span><span style="font-family: Arial;">select
+          the images, dark, flats, flat darks
+          (bias) frames. In most cases you could select all frames in
+          tab images.
+          The program will move the fames to the corresponding tab
+          during analyse.<br>
+          <span style="font-weight: bold;"><br>
+          </span><span style="text-decoration: underline;">b)
+            Analyse and remove bad frames</span><span style="font-weight: bold;"><br>
+            I</span>n
+          tab images (for the light frames), press analyse and remove
+          manually
+          any poor image. Poor images can be detected by a too
+          high&nbsp;HFD
+          (Half flux diamater stars), low number of stars or high
+          background
+          value( by clouds) . </span><span style="font-family: Arial;">
+          Loss of tracking could result in too low HFD value. If
+          required inspect
+          each image by double on the file name. The</span><span style="font-family: Arial;">
+          list can be sorted by clicking on the corresponding columns.
+          Using the
+          pop-up menu selected bad frames can be renamed to *.bak for
+          deletion
+          later.<span style="font-weight: bold;"><br style="font-family: Arial;">
+          </span></span><br>
+        <span style="font-family: Arial; text-decoration: underline;">c)
+          Set parameters in tab stack method</span><br style="font-family: Arial;">
+        <span style="font-family: Arial;">In tab stack method
+          select the stacking
+          method, average or sigma-clip-average.</span> <span style="font-family: Arial;">For&nbsp;OSC camera
+          images&nbsp;
+          select "Convert OSC images to colour". Select the
+          correct&nbsp;Bayer
+          pattern
+          (4 options). Test the required
+          pattern first in the viewer with a single image. The source
+          images
+          should be raw (gray) &nbsp;without colour produced by
+          &nbsp;astronomical camera's.<br>
+          <br>
+        </span><span style="font-family: Arial; text-decoration: underline;">d)
+          Set parameters in tab alignment<br>
+        </span><span style="font-family: Arial;">Leave this
+          to the default star alignment. Leave the parameters "star
+          alignment and
+          astrometric alignment at default values.</span><span style="font-family: Arial; text-decoration: underline;"><br style="font-family: Arial;">
+        </span><br>
+        <span style="font-family: Arial;"><span style="text-decoration: underline;">e) Classify by check
+            marks</span><br>
+          Leave&nbsp;all check marks&nbsp;</span><span style="font-family: Arial;">initially</span><span style="font-family: Arial;">
+          unchecked. These classify options can be used later to combine
+          the
+          correct darks and flats and to stack several image series in
+          one
+          operation. <br>
+          <br>
+          </span><span style="font-family: Arial;"><span style="text-decoration: underline;">f) Press the
+            </span></span><span style="background-color: rgb(153, 153, 153);">&nbsp;Stack check marked images</span><span style="font-family: Arial;"><span style="text-decoration: underline;"> button.</span></span><br><span style="font-family: Arial;"><span style="text-decoration: underline;"></span></span><span style="font-family: Arial;"><span style="text-decoration: underline;">
+          </span>The
+          darks and flats &amp; flat-darks will be combined in a master
+          dark
+          and
+          master flat frame. Then the program will combine the light
+          frames to
+          the final image and save it automatically. This will take some
+          time.<br>
+          <br>
+        </span><big><span style="text-decoration: underline;">g)
+            Export</span><br style="font-family: Arial;">
+          Use
+          the resulting FITS file. Crop the sides if required using the
+          pop-up
+          menu. Equalise the back ground if required using the tool in
+          tab <a href="astap.htm#pixel_math">pixel
+          math</a>.
+Export as stretched JPG or&nbsp;16 bit bit stretched/unstretched&nbsp;
+PNG / TIFF. &nbsp;The stretched export follows the gamma and stretch
+setting of the display. &nbsp;For further image processing you could
+export to 32 bit float TIFF or 32 bit float PFM&nbsp;format.<br><br><a name="file_formats"></a><br></big><table style="text-align: left; width: 914px; height: 172px;" border="1" cellpadding="2" cellspacing="2"><tbody><tr><td>File formats ASTAP</td><td style="font-weight: bold;">8 bit</td><td style="font-weight: bold;">16 bit</td><td style="font-weight: bold;">32 bit</td></tr><tr><td><span style="font-weight: bold;">Import</span></td><td>FITS, JPEG, PNG, TIFF</td><td>FITS,&nbsp;PNG, TIFF, PPM, PGM,&nbsp;raw formats</td><td>FITS,&nbsp;PFM</td></tr><tr><td><span style="font-weight: bold;">Export</span></td><td>FITS, JPEG, PNG, TIFF</td><td>FITS,&nbsp;PNG, TIFF, PPM, PGM</td><td>FITS,&nbsp;TIFF, PFM</td></tr></tbody></table><br><br>
+        &nbsp;&nbsp;<img style="width: 1416px; height: 756px;" alt="" src="astap_stacking.jpg"><br>
+        <br>
+        <br>
+        <big>All the program settings and file selections will be save
+          by
+          leaving the program or click on the </big><span style="background-color: rgb(153, 153, 153);">&nbsp;Stack check marked images &nbsp;</span><big> button.<br>
+          <br>
+        </big><a href="astap.htm#index">Back to index</a><br>
+        <br>
+        <big><span style="text-decoration: underline; font-weight: bold;"><br>
+          </span></big><br>
+        <a href="astap.htm#index">Back to index</a><br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <span style="font-weight: bold; text-decoration: underline;"><a name="stack_menu"></a>The stack menu:<br>
+          <br>
+        </span><img style="width: 1744px; height: 678px;" alt="" src="astap_stack_menu.png"><br>
+        <br>
+        <big>Images, darks, flats can be added using the </big><span style="background-color: rgb(153, 153, 153);">&nbsp;Browse &nbsp;</span><big> button or </big><big>can be drag dropped on the&nbsp;form.</big><br><big><br>For a generic description how to stack see</big> <big><a href="astap.htm#operation">Program operation, stacking
+            astronomical images</a><br>
+          <br>
+          Poor images can be filtered by either 1) HFD value, &nbsp;2)
+          Star detections, &nbsp;3) Star-level or &nbsp;4) Background
+          value.<br>
+        </big>
+        <br>
+        <span style="font-weight: bold;"></span><big><span style="font-weight: bold;">Stack multiple objects</span>:
+          Several
+          objects can be stacked in one run. If the classify-by-object
+          is
+          check-marked, the program will stack all objects and save the
+          results
+          using
+          the
+          available darks and flats. <br>
+          <br>
+          <span style="font-weight: bold;">Analysing and removing of
+            the bad ones:</span>
+          Before stacking the images can be analysed with the </big><span style="background-color: rgb(153, 153, 153);">&nbsp;Analyse</span><big>
+          button.
+          Images with a high HFD value are most likely unsharp and can
+          be
+          inspected in the viewer by double click on the filename. The
+          file can
+          be renamed to *.bak by the pop-up menu to be
+          removed&nbsp;later.
+          Images
+          with a high background indicating clouds or
+          twilight&nbsp;should be
+          removed/renamed to *.bak. <br>
+          <br>
+          <span style="font-weight: bold;">Sorting:</span>
+          Images can be sorted on any of the columns. For example if you
+          click on
+          HFD, the images will be sorted&nbsp;on HDF. You could
+          then&nbsp;remove
+          the images with the highest value or inspect them by double
+          click on
+          the file name.<br>
+          <br>
+          <span style="font-weight: bold;">Dark classification:</span>
+          If classify by exposure time and/or exposure time is
+          check-marked the
+          program will automatically select the correct darks or master
+          dark. So
+          it is possible to keep several dark files check-marked in the
+          darks tab
+          and the correct master dark will be selected automatically.<br>
+          <br>
+          <span style="font-weight: bold;">Colour stack and Colour
+            filter classification:</span> If </big><big>the
+          classify-by-filter is check-marked, the stack routine will
+          combine the
+          available </big><big>filters
+          to a RGB image. If only Red + Green +Blue&nbsp;image are
+          available
+          they
+          will be combined in a RGB image. If&nbsp;Luminance images are
+          available
+          it will first stack the RGB colors and then apply a
+          most-common-filter
+          and Gaussian blur on
+          the&nbsp;RGB result. Finally&nbsp;the luminance image is
+          coloured with
+          the RGB result. The filter factor&nbsp;should be set typically
+          near
+          20. <br>
+          <br>
+          For
+          nebula you could combine RGB or LRGB. If a luminance filter is
+          detected
+          the LRGB mode is used. First the RGB is combined, stars are
+          removed
+          using a most common filter, the image is then blurred with a
+          Gaussian
+          blur and and the colour is then applied luminance channel.
+          Star colour
+          is lost with this process. The filter names can be set in tab
+          <a href="#stack_menu2">alignment</a><br>
+          <br>
+          To record star colours use&nbsp;RGB only.<br>
+          <br>
+          It could be better to stack in two steps. First prepare the
+          Red, Green,
+          Blue and
+          Luminance stacks. Then run a stack again with the&nbsp;</big><big>Red,
+Green,
+          Blue and optional Luminance</big><big>.
+          Or if you could revisit the produced interim results in the
+          RESULTS tab
+          en copy them to the IMAGES tab using the pop-up menu. You
+          could&nbsp;try different colout factors.<br>
+          <br>
+          Image file names containing "_stacked" will be </big><big>
+          un-checked </big><big>by default to
+          prevent stacks by accident&nbsp;are&nbsp;re-used</big><big>.
+          If required, just select the file and check-makr it again.<br>
+          <br>
+          <span style="font-weight: bold;">Organising images, darks,
+            flats and flat-darks</span>: Images placed in the first tab
+          will
+          be organised based on the FITS header keyword </big><big>
+          IMAGETYP</big><big>.
+          So as soon you click on&nbsp;the image </big><span style="background-color: rgb(153, 153, 153);">&nbsp;Analyse &nbsp;</span><big> button,&nbsp;dark and
+          flats and
+          flat darks/bias images will be move to the corresponding tab.<br>
+          <br>
+          <span style="font-weight: bold;">Keyword modification:</span>
+          The pop-up menu has option to update a keyword of multiple
+          files if
+          required.<br>
+          <br>
+          <span style="font-weight: bold;">OSC images (one shot
+            colour images)</span>: To import raw files from digital
+          camera,
+          ASTAP can execute the command line program<a href="https://www.cybercom.net/%7Edcoffin/dcraw/"> DCRAW</a>
+          from David Coffin. This program is included with the ASTAP
+          Windows
+          version. For Linux install by e.g. "sudo apt-get install
+          dcraw.&nbsp;
+          See <a href="#import">import</a><br>
+          The stacking of &nbsp;OSC images
+          works best if you start with raw image before it is converted
+          to
+          colour. The raw colour images look mono, but the program will
+          convert
+          them later in the stacking process. There are 4 different
+          Bayer
+          pattern. They are identified as 00, 1,0, 0,1, 11 and can be
+          set in </big><big>the
+          stack tab "stack method"</big><big>.
+          Try emperish which will result in the correct colours. Load a
+          raw image
+          in the viewer and convert it using tools menu option "convert
+          bayer
+          matrix"(CTRL+0). If the colours are not correct, just hit
+          CTRL-Z to
+          recover and try an other bayer pattern setting in stack tab
+          "stack
+          method"<br>
+          <br>
+          Select for OSC image 2x2 mean for flats, see&nbsp;<a href="stack_menu2">tab stack method</a>. This will
+          prevent
+          any interfering patterns due to the 2x2 Bayer matrix.<br>
+          <br>
+          <span style="font-weight: bold;">Power down option after
+            completion</span>:&nbsp;
+          If stacking takes a long time you could activate this option
+          and the
+          program will be power-down the computer after completion. <br>
+          <br>
+        </big><span style="background-color: rgb(153, 153, 153); font-weight: bold;">&nbsp; Clear &nbsp;</span>, button to
+        remove all files from the list.<br>
+        <p align="left"><span style="font-weight: bold; background-color: rgb(153, 153, 153);"><big>&nbsp; &nbsp;||</big>
+            &nbsp; &nbsp;&nbsp; &nbsp; </span>, button to
+          stop&nbsp;blinking cycle.</p>
+        <p align="left"><span style="font-weight: bold; background-color: rgb(153, 153, 153);">&nbsp; &nbsp;
+            &gt;&gt; &nbsp; &nbsp;</span>,
+          starts a continuous un-aligned blinking cycle. This is
+          intended to find
+          visually outlier images where guiding has briefly failed.</p>
+        <br>
+        <p align="left"><big><br>
+            <a name="results"></a><span style="text-decoration: underline;">Results tab.</span></big></p>
+        <p align="left"><big>The
+            stack results are reported in the results tab. By a double
+            click
+            they&nbsp;can be viewed&nbsp;the viewer. The number of files
+            and
+            exposure&nbsp;times are given. With the pop-up menu it is
+            possible
+            to
+            copy the image file path to the clipboard for use in a file
+            explorer. <br>
+          </big><big><span style="text-decoration: underline;"><span style="font-weight: bold;"></span></span>&nbsp;</big><br>
+          <a href="astap.htm#index"><img style="border: 0px solid ; width: 1414px; height: 632px;" alt="" src="astap_stack_menu4.png"></a></p>
+        <p align="left"><big><br>
+          </big><a href="astap.htm#index">Back to index</a><br>
+        </p>
+        <big><br>
+        </big><span style="font-weight: bold; text-decoration: underline;"><a name="stack_menu2"></a></span><big><span style="text-decoration: underline;">Stack method tab</span></big>
+      </div>
+      <div style="text-align: left;"><img style="width: 1264px; height: 580px;" alt="" src="astap_stack_menu2.png"><br>
+        <big><br>
+          <span style="font-weight: bold;">Master flat</span>:&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;
+&nbsp;
+          Typical setting 2x2 mean<br>
+          <br>
+          <span style="font-weight: bold;">Darks
+            filter:</span>&nbsp;&nbsp; &nbsp;&nbsp;
+          &nbsp;&nbsp;
+          Typical setting, apply
+          Gaussian blur of 3.0 below </big><span style="font-family: Arial;">the noise&nbsp;<a href="https://en.wikipedia.org/wiki/Standard_deviation">standard
+            deviation</a>&nbsp;&#963;&nbsp;</span><span style="font-family: Arial;">=2.5</span><big>.
+          For noise &nbsp;CMOS sensor you could select restore hot pixel
+          above </big><span style="font-family: Arial;">&#963;.</span><br>
+        <big><br>
+          <span style="font-weight: bold;">Stacked
+            image:</span>&nbsp;&nbsp;&nbsp; Best option is "Sigma
+          clip
+          average". For only
+          2 or 3 images or when you are in a hurry "average"will do.<br>
+          <span style="font-weight: bold;"><a name="osc_menu"></a><br>
+            Raw one shot colour images (OSC):</span>
+          &nbsp; </big><big>RAW
+          images of &nbsp;DSLR cameras /</big><big>One shot color
+          cameras </big><big>are monochrome and have to be converted
+          into colour images (</big><big>after
+          applying darks and flats). This
+          converson is
+          called <a href="https://en.wikipedia.org/wiki/Demosaicing">demosaic</a>
+          or debayer. </big><big> First set Bayer
+          pattern
+          correctly by loading a raw image (grayscale) in the viewer and
+          try one
+          of the bayer patterns till the image colours match in viewer.
+          If
+          not hit CNTRL-Z to undo and try a different Bayer pattern. <br>
+          <br>
+          There are several methods to convert (demosaic/debayer ) the
+          raw
+          image&nbsp; to colour:<br>
+        </big>
+        <div style="margin-left: 40px;">
+          <ul>
+            <li><big><span style="font-weight: bold;">AstroC,
+                  colour for saturated stars</span>,
+                as bilinear method but for saturated stars the program
+                tries
+                reconstruct the star colour. Select the range which
+                matches with the value of brightest stars.</big></li>
+            <li><big><span style="font-weight: bold;">AstroM,
+                  white stars</span>,
+                as bilinear method but if there is an unbalance between
+                the 4 red, 4
+                blue or 2 green pixels it uses luminance only. Effective
+                for unsampled
+                images and stacks of a few images only. Star colour is
+                lossed if
+                undersampled but star will become white.</big></li>
+            <li><big style="font-weight: bold;">AstroSimple</big><big style="font-weight: bold;">, </big><big>each
+R,G, G, B pixel colour information is used in a&nbsp;2x2 pixel range. Simple but very effective for
+astro images. Works best for a little oversampled images. Stars have very few artifact if any.&nbsp;</big></li>
+            <li><big style="font-weight: bold;">Malvar-He-Cutler
+              </big><big><small><small><a href="https://www.ipol.im/pub/art/2011/g_mhcd/article.pdf">1)</a></small></small></big><big style="font-weight: bold;">, </big><big>advanced
+                method for interpolation developed for terrestial images
+                but less suitable for OSC
+                astro images. The background noise is lower.</big></li></ul><br>
+          <big>What to select:</big><br>
+        </div>
+        <ul style="margin-left: 40px;">
+          <li><big>In general de-mosaiced OSC astro images </big><big>are
+suffering
+              from colour artifacts due to the small size of stars and
+              pixel saturation. If the pixels iluminated by a star are
+              saturated, the
+              red, green and blue values will have the same maximum
+              value and the
+              star centre will appear white. In most case this can be
+              avoid by taking
+              short exposures of 60 seconds or shorter.</big></li>
+          <li><big>Best results are achieved with de-mosaic method <span style="font-weight: bold;">AstroC</span> and <span style="font-weight: bold;">Simple</span>.&nbsp;</big></li>
+          <li><big>In most cases the option "<span style="font-style: italic;">Auto level and colour smooth</span>"
+              is required for the correct colour balance and colour
+              smooth. First the
+              three colour channels are adjusted to make the background
+              colour
+              neutral and the stars average white. Secondly the bright
+              stars are
+              smoothed. Both actions can be done manual in the tab <a href="astap.htm#pixel_math">pixel
+              math</a>, option
+              "<span style="font-style: italic;">colour correction</span>"
+              and "<span style="font-style: italic;">smart colur
+                smoothing</span>"<br>
+            </big></li>
+          <li><big>If the images are under-sampled and&nbsp;the
+              star colour is random after stacking, use&nbsp;</big><big><span style="font-weight: bold;">AstroM, white stars</span></big><big><span style="font-weight: bold;">. </span>Stars will be
+              whiter. Star colour will be lost.&nbsp;</big></li>
+        </ul><br>The principle of the AstroSimple demosaic method:<br><br><div style="text-align: center;"><img style="width: 1309px; height: 715px;" alt="The ASTAP demosaic method Simple" src="astap_simple.png"></div>
+        <big><span style="font-weight: bold;"></span></big><br>
+        <big>The background colour noise can be removed with option
+          "Background colour removal" in the <a href="astap.htm#pixel_math">pixel math</a> tab of the
+          stacking menu.<br>
+          <br>
+          The
+          DSLR OSC images will be automatic converted to FITS files by
+          the DRAW
+          program included (Windows, MacOS) or for Linux install by
+          &nbsp;command
+          line "sudo apt-get install dcraw".</big><br>
+        <br>
+        <big><span style="font-weight: bold;">Oversize:</span>
+          This could be 0, 100 or&nbsp;larger. This overlap was
+          introduced to
+          show overlapping images. If you don't want a black area around
+          the image set this value to zero.<br>
+          <br>
+        </big><big>If your using a monochrome filter like H-alpha, use
+          the viewer
+          Tool menu to split the images in R, G, G, B before stacking
+          and use the
+          R=red image for future processing. <br>
+        </big><big><br>
+          The program settings will be saved automatically if your
+          either exit the
+          program or start a stack.<br>
+          <br>
+          There is a test button for the flat filter. It will be applied
+          on
+          the image in the viewer, so load the flat first by double
+          click on the
+          fat file name.</big><br>
+        <big><br>
+          <br>
+        </big><big><span style="text-decoration: underline; font-weight: bold;"><a name="mosaic"></a>Image stiching method (Mosaic)<br>
+            <br>
+          </span>Astrometric
+image stiching is&nbsp;possible with the internal astrometric solver. The reference of each pixel is the
+astronomical position. So stacking is not done against a reference
+image but against&nbsp;an position array set by the first image.
+&nbsp;You have to set the in tab alignment the settings for "Image
+stiching (method)" correctly.&nbsp;If you stitch 4 images, you have set
+"Mosaic width/height&nbsp; in tiles:" at 2. This will provide enough
+space to place for the 2x2 mosaic.<br>
+          <br>
+        </big><span style="font-family: Arial;"></span><big>Here a suggested work method:<br>
+        </big>
+        <ol>
+          <li><big>Stack the tiles
+              separately using method "SIGMA-CLIP-average" and use for the
+              alignment
+              the internal STAR alignment&nbsp;method.
+              &nbsp;Inspect the resulting tiles and crop them if
+              required. You
+              can
+              also crop them later automatically with "Mosaic skip
+              outside pixels"
+              Do this for each color separately if you have separate
+              files.</big></li><li><big>In tab&nbsp;</big><big> "stack method" select option </big><big>"IMAGE STICHING METHOD" and
+              select
+              astrometic alignment using either the internal solver.</big></li><li><big>In
+tab "stack method", set the "mosaic width/height" correct and
+check-mark the option&nbsp;"equalise background". &nbsp;If the input
+images have poor borders, set option crop images larger then 0%.</big></li><li><big>Select the files. Most likely the files names contain "_stacked, so you have the check-mark the files after selection.<br></big><big></big></li>
+          <li><big>Click on the button&nbsp;</big><span style="background-color: rgb(153, 153, 153);"><big> &nbsp;Stack check marked images|</big>&nbsp;&nbsp;</span><big> </big></li>
+          <li><big>Crop the stacked result
+              using the image crop option in the viewer mouse pop-up menu.</big></li><li><big>Adjusted the stretch
+              range and save
+              as JPEG, 90% quality.</big></li>
+        </ol>
+        <big>Here an example mosaic x 4 of M31 made with ASTAP:</big><br>
+        <br>
+        <img style="width: 1000px; height: 758px;" alt="" src="astap_mosaic%20x%204.jpg"><br>
+        <br>
+        <br>
+        <br>
+        Here an
+        example of a mosaic build of DSS images:<br>
+        <img style="width: 947px; height: 847px;" alt="" src="astap_mosaic.png"><br>
+        The size can be reduced by a crop function (right mouse button)
+        later.
+        Making the oversize too large could result in memory overload.<br>
+        <br>
+        <big><br>
+          <br>
+        </big><a href="astap.htm#index">Back to index</a><br>
+        <br>
+        <br>
+        <big><span style="text-decoration: underline;"><a name="alignment_menu"></a><span style="font-weight: bold;">The
+              alignment menu tab:<br>
+              <br>
+            </span></span>For
+          alignment there are four options, internal star alignment,
+          &nbsp;native astrometric solver, <a href="manual_alignment">manual alignment</a> or <a href="ephemeris_alignment">ephemeris alignment</a>. For mosaic building you have to use
+          the
+          internal astrometric solver.<br>
+          <br>
+        </big><big><br>
+        </big><big><span style="text-decoration: underline; font-weight: bold;">&nbsp;<a name="internal_alignment"></a></span><span style="text-decoration: underline;">Internal star alignment</span><span style="text-decoration: underline; font-weight: bold;"><br>
+            <br>
+          </span></big><big><span style="text-decoration: underline; font-weight: bold;"><img style="width: 1569px; height: 651px;" alt="" src="astap_stack_menu3.png"><br>
+          </span></big><big><br>
+          This
+          internal star matching alignment is the best and fastest
+          option to
+          stack images. It is not
+          suitable for mosaics. No settings, fully automatics alignment
+          for shift
+          in x, y, flipped or any rotation using the stars in the image.
+          It will
+          work&nbsp;for images of different size/camera's with some
+          limitations.<br>
+          <br>
+          The
+          program combines four close stars into an irregular 2D
+          tetrahedron or
+          kite like figure (and
+          compares the six irregular tetrahedron dimensions with
+          irregular
+          tetrahedrons
+          of the first/reference image. It
+          selects at least the six&nbsp;best matches and uses the centre
+          position
+          of the irregular tetrahedrons in a least square fitting
+          routine for
+          alignment.&nbsp; <br>
+          <br>
+          There is only two&nbsp;settings relevant but normally you
+          don't
+          have to change them.<br>
+        </big>
+        <ul>
+          <li><big><strong>Tetrahedron</strong></big><big><strong>
+                tolerance &nbsp;</strong></big><big>No
+              need to change it. Leave this at 0.005 unless you have
+              severe
+              optical distortion. If you have false detections, set this
+              lower at
+              0.003.</big></li>
+          <li><big><span style="font-weight: bold;">Maximum
+                number of stars</span>. Typically set at 500.</big></li>
+        </ul>
+        <big><br>
+          The following image shows the irregular tetrahedrons
+          used&nbsp;in
+          an
+          astronomical image:<br>
+          <img style="width: 791px; height: 798px;" alt="" src="astap_pyramids.jpg"><br>
+          <br>
+          Background
+          info:&nbsp;A irregular tetrahedron (or triangular pyramid)
+          drawn
+          from 4 star
+          positions has
+          six edges.
+          The five shortest edges are divided by the longest side to
+          scale
+          them&nbsp;independent of the image scale. &nbsp;The final
+          irregular tetrahedron
+          definition is then the scaled length of the five edges, the
+          centre mean
+          position and the
+          pixel length of the longest edge. For tetrahedron matching the
+          scaled
+          five edges are used. There scaled lengths
+          will be independent on the image scaling. This will give a
+          number
+          of tetrahedron matches. From the matching tetrahedrons
+          list,&nbsp;
+          the not
+          scaled
+          sixth edge is used to calculate the&nbsp;mean and&nbsp;</big><span style="font-family: Arial;"><a href="https://en.wikipedia.org/wiki/Standard_deviation">standard
+deviation
+          </a></span><span style="font-family: Arial;"></span><big>and
+          outliers of more then 3 *&nbsp;</big><span style="font-family: Arial;"></span><a href="https://en.wikipedia.org/wiki/Standard_deviation"><span style="font-family: Arial;"></span></a><span style="font-family: Arial;">&#963;&nbsp;</span><big>are
+          removed. (three times
+          the standard
+          deviation). From the remaining list of tetrahedrons, the
+          central mean
+          positions are used for LSQ fitting in two
+          dimensions</big><span style="font-style: italic;"><big>.<br>
+            <br>
+          </big></span><big>For
+          each star, the &nbsp;tetrahedron is constructed from the
+          nearest
+          stars. Some
+          edges could overlap. Duplicates are removed. Duplicates could
+          occur
+          from four close but lonely stars. The tetrahedron selection
+          can be
+          demonstrated by the&nbsp;</big><span style="background-color: rgb(153, 153, 153);"><big> &nbsp;Draw tetrahedrons|</big>&nbsp;&nbsp;</span><big>&nbsp;button in the alignment
+          tab. You
+          could reduce the number of tetrahedrons drawn by the
+          setting"maximum
+          number
+          stars used". <br>
+          <br>
+          The process is described here </big><span style="font-family: Arial;"><span style="text-decoration: underline;"></span></span><a href="astap_astrometric_solving.htm">Background
+          info,&nbsp;how
+          does the ASTAP astrometric solving works internally</a><br>
+        <span style="font-style: italic;"><br>
+        </span><big><br>
+          <a name="astrometric_alignment"></a><span style="text-decoration: underline;">Astrometric alignment.<br>
+          </span></big><big><span style="text-decoration: underline;"><span style="font-weight: bold;"></span></span> <br>
+        </big><big>&nbsp;
+          &nbsp;<span style="font-weight: bold;">Internal
+            astrometric solver</span> (plate solver). The works with
+          the
+          same four star tetrahedrons as for the Star alignment option.
+          The
+          tetrahedrons
+          are compared with
+          the G17 star database (to be installed in the program
+          directory). It
+          has the following settings:<br>
+          <br>
+        </big>
+        <ul>
+          <li><big><strong>Field height</strong>:
+&nbsp;This is the square size of the star field in degrees used for
+detection and will be set automatically for most FITS files.&nbsp;It
+should equal to the image height in degrees. If unknown, you could try
+initaly the option "auto".</big></li>
+          <li><big><strong>Radius search</strong>:
+              Search radius in degrees. If there is no match, the
+              program will
+              move&nbsp;the search field
+              around in a&nbsp;square spiral and increasing the distance
+              form the
+              initial position up to the radius specified. &nbsp;A
+              radius of 30
+              degrees could be searched in a few minutes.</big></li>
+          <li><big><strong>Maximum number of stars to use</strong>:
+              &nbsp;No need to change it. This could be set between 100
+              and 1000.</big></li>
+          <li><big><strong>Tetrahedron&nbsp;tolerance</strong>:
+              &nbsp;No need to change it. Leave this at 0.005 unless you
+              have
+              severe
+              optical distortion. If you have false detections, set this
+              lower at
+              0.003. If you have severe optical distortion or a
+              low resolution image set this at 0.007</big></li>
+          <li><big><strong>Downsample</strong>:
+              &nbsp;For large image above 3000 pixels wide&nbsp;down
+              sampling
+              will speed up the solving and increase the signal noise
+              ration of the
+              stars. Also colours are combined to monochromatic so this
+              option is
+              beneficial for DSLR images</big></li>
+          <li><big><strong>Cropping</strong>:
+              &nbsp;For very large image above typical 3 degrees height
+              the
+              solver will only look to the center of the image.</big></li>
+          <li><big><span style="font-weight: bold;">Force
+                small search steps</span>.
+              This will force a 50% overlap between search fields. Use
+              this if
+              &nbsp;solving fails. I applied this will slow down blind
+              solvingC&nbsp;</big></li><li><big><span style="font-weight: bold;">Calibrate prior to solving.</span>&nbsp; </big><big>If
+your image is full of hot pixels and soling is less reliable you could
+try this option. The image will be calibrated with a dark prior to
+solving removing the hot pixels. Select in the darks tab, a dark or
+darks with similar exposure duration as the lights you trying to solve.
+If your select several darks with&nbsp; different exposure length,
+check-mark the option classify, "Dark exposure time".&nbsp;</big></li>
+        </ul>
+        <big><big>The internal plate solver works best with raw
+            unstretched and
+            sharp images of sufficient resolution where stars can be
+            very faint.
+            Exposures 5 to 300 seconds. Heavily stretched or photo
+            shopped images
+            are problematic.&nbsp;<br>
+          </big><br>
+          For those are interested: &nbsp;</big><span style="font-family: Arial;"><span style="text-decoration: underline;"><a href="astap_astrometric_solving.htm">Background
+info,&nbsp;how
+does
+              the ASTAP astrometric solving works internally</a><br>
+          </span></span><br>
+        <img style="width: 1445px; height: 631px;" alt="" src="astap_stack_menu3_astro.png"><br>
+        <br>
+        <big><span style="font-weight: bold;"></span></big><br>
+        <big><a href="manual_alignment" name="manual_alignment"></a><span style="text-decoration: underline;">Manual alignment.<br><br>Manual alignment<br>
+            <br>
+          </span>This
+          option allows alignment of the images based on a single star,
+          asteroid
+          or comet. If this option is activated, the list of images in
+          the image
+          tab turns red. Double click on each image in the list and
+          click on the
+          star/comet of asteroid to be used as reference. This object is
+          then
+          marked with a little purple circle. The position&nbsp;will be
+          auto
+          centered. (and
+          the X,Y position will be added to the list) A poor lock is
+          indicated by
+          a square. If so try again till it is a circle. If all images
+          in
+          the list
+          are turned green, so contain a value, then click on the&nbsp;</big><span style="background-color: rgb(153, 153, 153);">&nbsp;
+            Stack button &nbsp;</span><big>. <br><br>Options:<br></big><div style="margin-left: 40px;"><ul><li><big>Star centering</big></li><li><big>Comet centering</big></li><li><big>No alignment</big></li></ul></div><big>
+          <br><br>
+          For objects which are moving in the sky, select the stack
+          option
+          "average" and not option "sigma clip".<br><br></big><big><img style="width: 1036px; height: 591px;" alt="" src="astap_manual_alignment.png"><br><br><span style="text-decoration: underline;"><a name="ephemeris_alignment"></a>Ephemeris alignment<br><br></span>Rather
+then manual selecting the center point it is also possible to use the
+ephemeris of an asteroid or comet. In ASTAP this is reallised by using the
+annotation markers written in the header.&nbsp;</big><br><br><big>To align go through the follow steps:<br><br>Preperation:&nbsp; &nbsp;<br></big><ul><li><big>Configure and test the viewer&nbsp;<a href="#asteroid_annotation">asteroid annotation menu</a> shortcut CTRL+Q</big></li></ul><big>Stacking:<br></big><ul><li><big>Select&nbsp;ephemeris alignment</big></li><li><big>Browse for all the images in the image tab and add if available the dark, flats.</big></li><li><big>Press the button </big><span style="background-color: rgb(153, 153, 153);"><big> &nbsp; Analyse the selected file| in tab images</big> &nbsp;</span>.</li><li><big>Select from the&nbsp;combobox the asteroid or comet to align on. See screenshot below.</big></li><li><big>Hit the </big><span style="background-color: rgb(153, 153, 153);"><big> &nbsp;Stack check marked images|</big>&nbsp;&nbsp;</span><big> button.&nbsp;</big></li><li><big>After the stacking is finished, it is possible to annotate the result. &nbsp;</big></li></ul><br><big>Only the object selected will be sharp. The stars will form trails <br><br></big><img style="width: 1505px; height: 615px;" alt="" src="astap_ephemeris_alignment.png"><br>
+      </div>
+      <p align="left"><a href="astap.htm#index">Back
+          to index</a></p>
+      <p align="left"></p>
+      <p align="left"><big><a name="blink"></a><big><span style="text-decoration: underline;">Blink tab</span></big><br>
+        </big><big><span style="text-decoration: underline;"><span style="font-weight: bold;"></span></span></big></p>
+      <p align="left"><big>
+          This tab allows to blink images and to measure variable
+          stars.&nbsp;</big></p>
+      <p style="text-decoration: underline;" align="left"></p>
+      <p style="text-decoration: underline;" align="left"><big>Blink
+          comparator</big></p>
+      <p align="left">This
+option allows rapidly cycle (blinking) through the images taken of the
+same area of the sky at different times. This will allow the user to
+spot easier moving objects. &nbsp;While blinking the result can be
+demosaiced (slow) if the "auto demosaic" option in the viewer is
+activated.</p>
+      <p align="left"><span style="font-weight: bold; background-color: rgb(153, 153, 153);"><big>&nbsp; &nbsp;&nbsp; |</big>|
+          &nbsp;&nbsp;&nbsp; &nbsp;</span>, button stops the blink
+        cycle. &nbsp;</p>
+      <p align="left"><span style="font-weight: bold; background-color: rgb(153, 153, 153);">&nbsp; &nbsp; &nbsp;&gt; &nbsp;
+          &nbsp;&nbsp; </span>, button starts one blink cycle.</p>
+      <p align="left"><span style="font-weight: bold; background-color: rgb(153, 153, 153);">&nbsp; &nbsp; &nbsp;&gt;&gt; &nbsp; </span>,
+        starts a continuous blink cycle.</p>
+      <p align="left"><span style="font-weight: bold; background-color: silver;">&#9745;&nbsp;Align images</span>.
+        With this option check-marked,the images will be aligned using
+        star
+        alignment.&nbsp; The alignment will be refreshed after pressing
+        "clear
+        alignment"</p>
+      <p align="left"><span style="font-weight: bold; background-color: silver;">&#9745;&nbsp;Filter out stars based on first image</span>,
+        &nbsp;With
+        this option check-marked,the stars will covered with a black
+        circle
+        allowing easier to spot moving objects.. The black cover size
+        can be
+        increased with option "star suppression diameter". &nbsp;The
+        star
+        detection can be optimised with the <span class="ILfuVd"><span class="e24Kjd"> "&#963;</span></span>&nbsp;factor".</p>
+      <p align="left"><span style="background-color: rgb(153, 153, 153); font-weight: bold;">&nbsp; Clear</span>, button to
+        remove all files from the list.</p>
+      
+      <p align="left"><span style="font-weight: bold; background-color: rgb(153, 153, 153);">Export video</span>
+&nbsp; This button will export the blink result to an uncompressed .y4m
+video file (YUV4MPEG2). For OSC images, activate in the viewer&nbsp;
+the "auto demosaic" option. The menu will ask for a video file name and
+desired frame rates per seconds. Compression can be achieved in
+an external program like VLC or leave it to YouTube. (from ASTAP version
+0.9.395)<br><br><span style="font-weight: bold; background-color: rgb(153, 153, 153);">Export aligned</span>&nbsp;This
+        button allow the creation of aligned FITS images.&nbsp;If&nbsp;
+        blinking with alignment works well, stop blinking and hit this
+        button&nbsp; All images will be aligned copied&nbsp;to new files
+        ending
+        _aligned.fit.&nbsp;Alignment will be done against the first
+        image in
+        the list.</p><br><p align="left"><big><a name="photometry"></a><big><span style="text-decoration: underline;">Photometry tab</span></big></big></p>
+      <p align="left">This tab allows measuring the magnitude change of
+        one
+        object in a series of images and detects automatically the four
+        most&nbsp;variable objects. &nbsp;The&nbsp;butttons work the
+        same as in
+        the blink tab.</p>
+      <p align="left">Select the images to
+        analyse.&nbsp;Click
+        on one of the arrow buttons to cycle trough the images.
+        Initially it
+        will&nbsp; go a little slow till all data is analysed.&nbsp; The
+        program
+        will
+        do the following:</p>
+      <ol style="text-align: left;">
+        <li>Cycle 1, Find
+          an astrometric solution for all selected images and write the
+          solution
+          to the FITS file header.&nbsp;</li>
+        <li>Cycle
+          2. In a second cycle, the program will identify stars in the
+          image and
+          measure the&nbsp;star flux against
+          the star database. The median flux/magnitude factor will be
+          used later
+          to measure the magnitude of any object in the image series. So
+          prior to
+          this install and use the V16,&nbsp; Johnson-V
+          version of the star Gaia database provided.</li>
+        <li>At the end of cycle 2, it will mark the&nbsp;four most
+          variable stars with a yellow circle.</li>
+        <li>Click&nbsp;on any of the stars. A purple circle will mark
+          the object. The measured
+          magnitude of each image in the series will be
+          written to the file list. This complete list can be exported
+          to a
+          spreadsheet using the pop-up menu allowing the creation a
+          magnitude curve
+          over time.</li>
+      </ol>
+      <div style="text-align: left;">
+        For maximum accuracy it is better to first to calibrate the
+        images with
+        darks,&nbsp; flats &amp; flat darks. This can be
+        done&nbsp;using&nbsp;
+        the "calibration only"option in tab "stack method" and then
+        executing
+        the regular stack procedure. <br>
+        <br>
+        Note
+        that the measured star flux is compared and calibrated with the
+        star database.
+        For most cases
+        you should either install the V16 or V17 star database&nbsp;containing the Johnson-V
+        magnitudes.&nbsp;After stopping the cycle it is possible to measure
+        any
+        object using the mouse pointer.<br>
+        <br>
+        Alignment
+        of the images is done using the astrometric (plate) solution.
+        &nbsp;The
+        photometric solution is stored in seperate files. The
+        astrometric
+        solution is written to the orginal file header. You
+        can refresh the&nbsp;photometric and astrometricc calibration
+        using the dedicated buttons for this<span style="background-color: rgb(153, 153, 153);"></span><span style="background-color: rgb(153, 153, 153);"></span>.<br>
+        <br>
+        The list contains three dates:<br>
+        <ul>
+          <li><span style="font-weight: bold;">Date/time (start</span>)
+            in YYYY-MM-DDTHH:MM:SS. This is date &amp; time from the
+            header key
+            word DATE-OBS. This is normally the universal time at the
+            start of the
+            exposure.</li>
+          <li><span style="font-weight: bold;">JD (mid exposure)</span>
+            This is the Julian Day of the exposure midpoint. This time
+            is
+            calculated from the key word DATE-OBS and half of the
+            exposure time is
+            added.</li>
+          <li><span style="font-weight: bold;">HJD (helio</span>) <a href="https://en.wikipedia.org/wiki/Heliocentric_Julian_Day">Heliocentric
+              Julian Day</a>
+            at the exposure midpoint expressed in UTC. This is the event
+            time as
+            seen from the Sun center compensation the maximum ± 500
+            seconds time
+            difference depending on the positions of the Earth, the
+            object outside
+            the Solar system and Sun. For plotting purposes only the
+            fraction is displayed.</li>
+        </ul>
+        To convert the Julian Day to a date and time in the
+        spreadsheet, subtract&nbsp;the Julian Day by -2415018.5
+        and format as date or time.<br>
+        <br>
+        For
+        a series of images, the standard deviation of the measured star
+        magnitudes&nbsp;is typical better then 0.02 magnitudes. The star
+        flux
+        values should be below saturation (65500) &nbsp;but reasonable
+        high.<br>
+        <br>
+        Note that it is beneficial to de-focus an image a little to
+        prevent
+        pixel saturation and spread the flux measurement over more
+        pixels. It also allows&nbsp;longer exposure times. However
+        the image should reasonable focused to allow solving. </div>
+      <p align="left"><img style="width: 1805px; height: 933px;" alt="" src="astap_photometry.png"><br>
+      </p>
+      <p align="left"></p>
+      <p align="left">
+        Here an example of an exoplanet transit measured using the
+        blink&amp;photometry tab:</p>
+      <p align="left"><img style="width: 906px; height: 317px;" alt="" src="astap_transit.png"></p>
+      <p align="left"></p>
+      <p align="left">A demonstration is available at&nbsp;YouTube:</p>
+      <p style="margin-left: 40px;" align="left"><a href="https://www.youtube.com/watch?v=4orWemJYzMw&amp;feature=youtu.be">Measure
+          variable stars</a></p>
+      <br>
+      <p align="left"></p>
+      <p align="left"><a href="astap.htm#index">Back
+          to index</a></p><p style="text-align: left;"></p><div style="text-align: left;"><span style="text-decoration: underline;"></span><br><span style="text-decoration: underline;"></span><big><a name="inspector_tab"></a><span style="text-decoration: underline;">Inspector tab.<br></span><br>This
+tab is intended to measure accurately the tilt and curvature of your
+telescope &amp; camera setup. It's done by calculating the best focus
+position for each image area. To do this it requires a series of images
+taken at several focuser positions.The routine will calculate from
+these images the best focus point of each&nbsp;area. It will measure
+the median HFD values of each image and area and build a table HFD as
+function of the focuser position. Form this data, curve fitting will
+give the transfer fucntion and the best focus position expressed in
+focuser steps. The focus point differences between the image areas will
+indicate the tilt of each area. The&nbsp;difference between the centrum
+and outer areas focus point will indicate the curvature.<br><br></big><p><big>
+	The usage is as follows:
+</big></p>
+
+<ul><li><big>
+		Prepare a series of short exposure images with different focuser 
+positions and a lot of stars. Exposure time a few seconds. Move for each
+ image the focuser a small fixed step but only in one way to prevent backlash 
+problems. Images with stars having an hfd above 20 will not be 
+analysed correctly.
+	</big></li><li><big>
+		Browse with ASTAP inspector tab&nbsp;to the images.
+	</big></li><li><big>
+		Press&nbsp;curve fitting.</big></li><li><big>The difference between the focus point of each image area will be reported in focuser steps.</big></li></ul><big><span style="text-decoration: underline;"></span></big><br><big>The reported hfd values can be selected and copied for further analysis in a spreadsheet.<br></big><br><br><br><big><span style="text-decoration: underline;"></span></big><a href="astap.htm#index">Back
+          to index</a></div><p style="text-align: left;"></p><p align="left"><a href="astap.htm#index"></a></p>
+      <div style="text-align: left;">
+      <big><a name="live_stacking"></a><span style="text-decoration: underline;">Live stacking tab.<br><br></span></big>All file(s) in the specified directory will be stacked live. If it is finished 
+it will wait for new file(s). If a file is detected which is 0.2°
+away from the previous files a new stack will be started 
+automatically. You can save the stack results from the viewer menu .<br>
+<br>To identify  files which are processed , they are renamed to the 
+extension *.fts. You can rename them back with the button at the bottom.<br><br><big><span style="text-decoration: underline;"><img style="width: 1499px; height: 723px;" alt="" src="astap_live_stacking1.png"><br><br></span>Note there is no rejection of poor images. All images are added with equal influence:<br><br>Assuming the images are A,B,C,D, E... then<br><br>Simple serial stacking:<br><br>result1:=A<br>result2:=(result1+B )/2<br>result3:=(result2*2+C)/3<br>result4:=(result3*3+D)/4<br>result5:=(result4*4+E)/5<span style="text-decoration: underline;"><br><br><br></span></big><a href="astap.htm#index">Back
+          to index</a><br><big><span style="text-decoration: underline;"></span></big></div>
+      <p align="left"><big><a name="pixel_math"></a><span style="text-decoration: underline;">Pixel math1 tab.</span><br>
+        </big><big><span style="text-decoration: underline;"><span style="font-weight: bold;"></span></span></big></p>
+      <p align="left">&nbsp;Several options including
+        background equalising.</p><p align="left"></p>
+      <p align="left"><big><a name="background"></a>Background
+          equalization tool:</big><br>
+        <br>
+        <br>
+        <img style="width: 1412px; height: 598px;" alt="" src="astap_equalise_tool.png">
+      </p>
+      <p align="left"><a href="astap.htm#index">Back
+          to index</a></p><p align="left"></p><p align="left"><big><a name="pixel_math2"></a><span style="text-decoration: underline;">Pixel math2 tab.</span><br>
+        </big><big><span style="text-decoration: underline;"><span style="font-weight: bold;"></span></span></big></p>
+      <p align="left">&nbsp;Several options.</p><p align="left"></p>
+      <big></big><p align="left"><a href="astap.htm#index">Back
+          to index</a></p>
+      <div style="text-align: left;"></div>
+      <p align="left"><big style="font-weight: bold;"><a name="export_data"></a>Export
+          FITS data to a spreadsheet</big><span style="font-weight: bold;">:<br>
+          <br>
+        </span>To
+        analyse the relation between the HFD value, focuser position,
+        temperature and altitude it is possible to copy the data from a
+        FITS&nbsp;image list to the operating system clipboard.<br>
+        <br>
+        Just
+        select a number of images, click on the <span style="background-color: rgb(153, 153, 153);"><big> &nbsp;Analyse</big>&nbsp;&nbsp;</span> button. Then
+        select all
+        relevant files and copy the data with right mouse button. Then
+        copy the
+        data into a spreadsheet for analysis.<br>
+        <br>
+        <img style="width: 1905px; height: 605px;" alt="" src="astap_export_data.png"><br>
+        <br>
+        <br>
+        <br>
+        Here and example of the result in a spreadheet:<span style="font-weight: bold;"><br>
+          <img style="width: 1050px; height: 818px;" alt="" src="astap_focus_trend.png"><br>
+          <br>
+        </span><a href="astap.htm#index">Back
+          to index</a><a href="astap.htm#index"><br>
+        </a></p>
+      <br>
+      <p style="font-weight: bold; text-decoration: underline;" align="left"><big><big><a name="viewer"></a>Viewer:</big></big></p>
+      <div style="text-align: left;"><img style="width: 1416px; height: 756px;" alt="" src="astap_stacking.jpg"><br>
+        <br>
+        <span style="font-weight: bold;"></span></div>
+      <div style="text-align: left;"><big><span style="font-weight: bold;"></span>If
+          the program is associated with&nbsp;FITS image files or any
+          other
+          format, it
+          will show the image as soon you click image file. Only one
+          instance of
+          ASTAP will be allowed. After clicking on the second image it
+          will be
+          show in the first instance of ASTAP. If you want to open a
+          second
+          instance, just start ASTAP. If the program is started without
+          parameters, you can open more instances.<br><br>Images can be loaded from the file menu or can be drag dropped on the main form.<br>
+          <br>
+          Besides
+          all FITS formats, the viewer support most image formats in
+          8/24 bit of
+          16/48 bit format. It can export to any FITS format and 16/48
+          bit PNG
+          and TIFF formats.<br><br>
+          <br>
+        </big>This ASTAP version can import&nbsp;raw
+        images from almost any digital camera, For this ASTAP executes
+        the Libraw tool&nbsp; Unprocessed_raw which is included with the ASTAP
+        Windows
+        edition and can be installed in Linux by the "sudo apt-get
+        install
+        libraw-bin" command.&nbsp; <br><br><table style="text-align: left; width: 914px; height: 172px;" border="1" cellpadding="2" cellspacing="2"><tbody><tr><td>File formats ASTAP</td><td style="font-weight: bold;">8 bit</td><td style="font-weight: bold;">16 bit</td><td style="font-weight: bold;">32 bit</td></tr><tr><td><span style="font-weight: bold;">Import</span></td><td>FITS, JPEG, PNG, TIFF</td><td>FITS,&nbsp;PNG, TIFF, PPM, PGM,&nbsp;raw formats</td><td>FITS,&nbsp;PFM</td></tr><tr><td><span style="font-weight: bold;">Export</span></td><td>FITS, JPEG, PNG, TIFF</td><td>FITS,&nbsp;PNG, TIFF, PPM, PGM</td><td>FITS,&nbsp;TIFF, PFM</td></tr></tbody></table><br>
+        <big><br>
+          <a name="viewer_preview"></a>The
+          viewer has a preview function. After opening select "Preview
+          FITS
+          files".
+          The preview is displayed in the ASTAP viewer. The current zoom
+          and
+          position is maintained so you could study the corner of a
+          series images
+          on image quality.<br>
+          <br>
+          The file open menu with preview selected:<br>
+        </big><big><img style="width: 729px; height: 424px;" alt="" src="astap_preview.png"><br>
+          <br>
+        </big><big><br>
+        </big>
+        <div style="text-align: left;">
+          <p align="left"><span style="font-family: Arial;"><span style="font-weight: bold; text-decoration: underline;"><a name="thumbnail"></a></span></span><span style="font-family: Arial;"><span style="text-decoration: underline;"></span></span><big style="font-weight: bold;"><span style="text-decoration: underline;">Thumbnail
+                viewer for
+                FITS files</span></big></p>
+          <br>
+          ASTAP&nbsp;has
+          a FITS thumbnail viewer (ctrl-T). This could be useful to
+          browse your
+          FITS files. By clicking on the thumbnail it will be opened in
+          the
+          viewer. With a right mouse button click some options are
+          available as
+          changing directory, copy, move, rename or rename to *.bak. <br>
+          <br>
+          The
+          thumbnail size is depending on the form size. Make it larger,
+          the
+          thumbnails will follow. Thumbnails are organized in 3*X. So
+          the
+          thumbnails are pretty big by purpose. The images are fully
+          loaded in
+          memory so it will consume some memory and time. So don't try
+          get
+          thumbnails of 400 images.<br>
+          <br>
+          <img style="width: 590px; height: 522px;" alt="" src="astap_thumbnails.jpg"><br>
+          <br>
+          <br>
+          <a href="astap.htm#index">Back to index</a></div>
+        <br>
+        <big><br>
+          ASTAP viewer screen shot:</big><br>
+        <img style="width: 1464px; height: 740px;" alt="" src="astap_viewer.jpg"><br>
+        <br>
+        <br>
+        <span style="font-weight: bold;"><a name="viewer_solve"></a><big>Astrometric
+solving
+            the image in the viewer</big><br>
+          <br>
+          &nbsp;&nbsp; <br>
+        </span><big>With
+          the&nbsp;</big><span style="background-color: rgb(153, 153, 153);"><big> &nbsp;Solve|</big>&nbsp;&nbsp;</span><big> button it is possible to find an astrometric
+          solution of the
+          image loaded. For this&nbsp;the estimated celestial center
+          position
+        </big><span class="st"><big><big><em style="font-weight: bold;">&#945;</em><span style="font-weight: bold;">,&nbsp;&#948;</span></big></big>
+        </span><big>should
+          be available. This position is normally retrieved from the
+          FITS header.
+          Secondly the estimated image height in degrees should be
+          specified in
+          the stack menu, <a href="#alignment_menu">tab alignment</a>.
+          &nbsp;In the same tab alignment you can specify the search
+          radius
+          and down sampling. For successful solving see <a href="#conditions">conditions
+            required for solving</a>. <br>
+          <br>
+          For solving JPG, PNG or RAW files it is possible to add the
+          object
+          position as center position using the deep sky database.
+          Double click
+          on RA position in
+          viewer and enter the object name. The position will be
+          retrieved from
+          the database.&nbsp;This position will be used as a start point
+          for
+          the solver. <br>
+          <br>
+          <img style="width: 814px; height: 267px;" alt="" src="astap_retrieve_position.png"></big><br>
+        <br>
+        <a href="astap.htm#index">Back to index</a><br>
+        <br>
+        <br>
+        <br>
+        <p align="left"><span style="font-family: Arial;"><span style="font-weight: bold; text-decoration: underline;"><a name="import"></a></span></span><span style="font-family: Arial;"><span style="text-decoration: underline;"></span></span><big style="font-weight: bold;"><span style="text-decoration: underline;">Batch conversion
+              of&nbsp; raw
+              images from digital cameras</span></big></p>
+        <p align="left"><br>
+          The viewer menu tools has a batch convert option. ASTAP will
+          execute
+          DCRAW&nbsp;with
+          parameters -D -4 and this will produce 16 bit PGM raw
+          files.&nbsp;ASTAP
+          can read these PGM files and convert them to a 16 bit FITS.
+          After
+          conversion the intermediate PGM are no longer required and can
+          be
+          deleted manually. The FITS can be used in the stacking. The
+          Bayer
+          matrix conversion to colour will be applied later in ASTAP.
+          With this
+          method the full depth of the original RAW files will be
+          preserved</p>
+        This conversion is not required for ASTAP. Automatic conversion
+        is
+        integrated in the menus.<br>
+        <a href="astap.htm#index">Back
+          to index</a><br>
+        <br>
+        <br>
+        <span style="font-weight: bold;"><a name="deep_sky_annotation"></a><big>Deep
+            sky
+            annotations</big>&nbsp;&nbsp;</span><br>
+        <br>
+        If the image is solved, it is possible to add deep sky
+        annotations. See
+        pull-down menu TOOLS:<br>
+        <br>
+        <img style="width: 759px; height: 963px;" alt="" src="astap_annotations.jpg"><br>
+        <br>
+        <a href="astap.htm#index">Back to index</a><br>
+        <br>
+        <span style="font-weight: bold;"><a name="star_annotation"></a><big>Star
+            annotation
+            and photometry</big><br>
+          <br>
+        </span>A
+second menu option is to annotate the stars and auto calibrate the
+program for photometry. This can be done best with either&nbsp;the V16
+or V17 cotaining the calculated Johnson-V magnitudes.<br>
+        <br>
+        Below,
+        the image is 1) solved, 2) auto calibrated (using the V16)
+        &nbsp;
+        The
+        cursor is at a star and based on the flux of all know stars, the
+        star
+        Johnson-V magnitude is estimated to be 16.1. The stars are
+        marked with
+        the Johnson-V magnitude and &nbsp;Bp-Rp color indication,<br>
+        <br>
+        <img style="width: 761px; height: 967px;" alt="" src="astap_star_annotations.jpg"><br>
+        <br>
+        <br>
+        A
+        third tools option is "Annotate stars with measured magnitude".
+        The
+        measured star flux is calibrated with the star database. If the
+        Johnson-V version of the star database is used, the results
+        match very
+        accurate with AAVSO charts as demonstrated below. Camera was an
+        ASI1600
+        with only an UV-IR block filter:<br>
+        <br>
+        <img style="width: 1189px; height: 568px;" alt="" src="astap_photometry_m31.jpg"><br>
+        <br>
+        For best accuracy the image should be monochrome and one of the
+        Gaia Johnson-V star databases should have been installed and
+        selected (V16 or V17). The image should
+        have&nbsp; taken with a Johnson-V filter or none (clear). The
+        measured pixel values should be below saturation.
+        <br>
+        <br>
+        See&nbsp;also&nbsp;<a href="#blink">blink and photometry</a><br><br><br>
+        <br>
+        <a href="astap.htm#index">Back to index</a><br>
+        <br><span style="font-weight: bold;"><a name="asteroid_annotation"></a><big>Asteroid and comet annotation</big><br>
+          <br><br></span>This
+option will annotate asteroids using&nbsp;the orbital elements taken
+from the MPCORB.DAT file and for comets the ComeEls.txt from the <a href="https://www.minorplanetcenter.net/data">Minor Planet Center</a>.<br><br><span style="font-weight: bold;">
+        </span>Usage:<br><br>- Solve an image.<br>- Go to to the viewer "Tools" menu, "Asteroid annotation".<br>- First time download the full <a href="https://minorplanetcenter.net/iau/MPCORB.html">MPCORB.DAT</a> from the minor planet center. Link is available from the blue down arrow. Set the path to MPCORB.DAT correct.<br>- Set the limiting magnitude and maximum number of asteroids to read.<br>- Press the button&nbsp;<span style="background-color: rgb(153, 153, 153);"><big> &nbsp;Asteroid &amp; comet annotation</big>&nbsp;&nbsp;</span>&nbsp;.<br><br>Remarks:<br><br>Renew the MPCORB.DAT and CometEls.txt&nbsp; files every few months.<br><br>The
+observation date and time are extracted from the FITS header (date-obs,
+date-avg) or for other files the file date is taken. &nbsp;If date
+average is not available it will be calculated from the exposure time
+and date-obs from the FITS header.<br><br>The
+latitude and longitude of the observation location are also taken from
+the header. If not available enter them manually or leave them at 0.<br>
+        <br>
+        <br>
+        <a href="astap.htm#index">Back to index</a><br>
+<br>
+        <br>
+        <big style="text-decoration: underline;"><span style="font-weight: bold;"><a name="inspector"></a>CCD
+            inspector</span></big><br>
+        <br>
+        The viewer&nbsp;has a CCD inspector under menu tools.&nbsp; By
+        reporting the median HFD value, sensor tilt and curvature the
+        inspector
+        will quickly show any problem of the imaging system.&nbsp;<br>
+        <br>
+        The
+        image used for testing should&nbsp;be a single raw image
+        with&nbsp;sufficient stars and not containing&nbsp;a disturbing
+        large
+        and bright deep sky object. &nbsp;The exposure length should be
+        long
+        enough to image many stars but not too long&nbsp;preventing star
+        saturation.<br>
+        <br>
+        The routine will detect and annotate the stars with their HFD
+        value and
+        plot a tilt indicator in the image. A star rich image containing a few hunderd stars or more gives the best accuracy.
+        <p>The following will be reported:
+        </p>
+        <ul>
+          <li>Image <strong>median hfd</strong> which is an
+            excellent indicator of the quality of focusing. The lower
+            the value the
+            better the focusing, the sharper the stars are. The value is
+            also
+            depending on the astronomical seeing and the quality of the
+            optics. If the image is solved it will also be indicated in arc seconds. </li>
+          <li><strong>Sensor tilt</strong> as the
+            percentage&nbsp;ratio between the best and worst corner
+            median
+            values. In addition as an graphical indication it draws an
+            trapezium in
+            the image based on the four median values.<br>
+            There can be some variation in images of the same series, so
+            a tilt of
+            maybe 20% looks normal but anything more indicates a camera
+            mounting
+            problem. The lower the value the better. The unit if expressed in delta HFD.&nbsp;
+          </li>
+          <li><strong>Off-axis abberation</strong>
+as the delta between the HFD value in the center and in the outer areas
+of the image. The stars in the outer area are normally a little larger,
+oval or comet shaped due to the optics or curvature giving an higher
+HFD value. The lower this value the better the optics. This value could
+&nbsp;be a help to adjust the optimal distance between the field
+flattener and the camera. This measurement is only a valid if the focus
+for the center area is perfect. A more advanced measuring
+method&nbsp;is available in <a href="#inspector_tab">tab CCD Inspector</a>.
+          </li>
+        </ul>
+        <br>
+        <img src="astap_ccd_inspector.jpg" alt="" style="width: 1053px; height: 797px;"><br>
+        <br>
+        <br>
+        In addition an HFD plot is available. White areas indicate a
+        star with
+        an high HFD value. Darker areas indicate a lower value. <br>
+        <br>
+        <img style="width: 1051px; height: 797px;" alt="" src="astap_ccd_inspector2.png"><br>
+        <br>
+        <span style="font-weight: bold;"><a name="viewmenu"></a>View
+          menu</span><br>
+        <br>
+        This menu has the following options:<br>
+        <ul>
+          <li>Image clean up Ctrl+space</li>
+          <li>Center lost windows Ctrl+F12 &nbsp;Use this if you have
+            multiple screens and once window is out of site for some
+            reasons.</li>
+          <li>Flip horizontal Ctrl+H</li>
+          <li>Flip vertical Ctrl+H</li>
+          <li>Zoom out &nbsp;PgUp</li>
+          <li>Zoom in &nbsp; &nbsp; PgDn</li>
+        </ul>
+        <a href="astap.htm#index">Back to index</a><br><br><a href="astap.htm#index"></a></div>
+      <br>
+      <p style="font-weight: bold;" align="left"><big><a name="batch_conversion"></a>Batch conversion:</big></p>
+      <p align="left"><big>With the batch routine
+          several&nbsp;FITS image
+          can be
+          "astrometric solved". &nbsp; Raw&nbsp;images
+          of OSC (color) sensors using a Bayer matrix can be converted
+          to color.</big></p><p align="left"><br><big style="font-weight: bold;"><span style="text-decoration: underline;"><a name="fits_tables"></a>FITS tables<br><br></span></big>The
+viewer has limited support for displaying FITS binary and ASCII tables.
+It can read and write binary tables and read ASCII tables only. They
+are displayed in the memo. Values are separated by a tab #9 and can be
+selected and copied to a spreadsheet. It can display only one table and
+will display the first table only. The file can be saved again but all
+binary values will be all written as 4 byte float.<big style="font-weight: bold;"><span style="text-decoration: underline;"><br><br></span></big>
+        <a href="astap.htm#index">Back to index</a></p><div style="text-align: left;"><br>
+        <big style="font-weight: bold;"><big><span style="text-decoration: underline;"></span></big></big></div>
+      <div style="text-align: left;"><br>
+        <big style="font-weight: bold;"><big><span style="text-decoration: underline;"><a name="viewer_popup"></a>Viewer
+popup
+              menu:</span></big></big><br>
+        <br>
+        <span style="font-weight: bold;"></span><img style="width: 745px; height: 844px;" alt="" src="astap_viewer_popup.png"><br>
+        <br>
+        <span style="font-weight: bold;">Add annotation, </span>&nbsp;free
+text label at a x,y position. It can be connected via a line by first
+holding the right mouse button and moving the mouse away. See sample
+above.&nbsp; Persistent by annotation keyword in the FITS header. The
+annotation can be switched off in pulldown menu "View". Remove by
+removing the annotation line in the header. <br>
+        <span style="font-weight: bold;"><br>
+          Add marker, </span>rectangle
+marker at x,y position. Draw the rectangle first by holding the right
+mouse button down and moving the mouse away. See sample above. The
+Persistent by annotation keyword in the FITS header. The annotation can
+be switched off in
+pulldown menu "View". Remove by removing the annotation line in the
+header.<br>
+        <br>
+        <span style="font-weight: bold;">Add object position</span>,
+        Enabled after astrometric solve. Will add the&nbsp;&#945;,&nbsp;&#948; at
+        the
+        mouse position. Orange if a lock is possible, see above sample, red if not. Not persistent after image clean up.<br>
+        <br>
+        <span style="font-weight: bold;">Add marker at &nbsp;&#945;,&nbsp;
+          &#948;&nbsp;position</span>,
+will place a yellow square on an object for identification by on the
+entered position.&nbsp; See above sample for orange star. Enabled after
+astrometric solve. Will add <span style="font-weight: bold;"> </span>square marker
+        at&nbsp;&nbsp;&#945;,&nbsp; &#948; position. Persistent. Position will be
+        save with "save settings"<br>
+        <br>
+        <span style="font-weight: bold;">Measure total magnitude within
+          rectangle</span>,
+        Enabled after astrometric solve. The program will measure the
+        flux and
+        try to estimate the magnitude. Hold the right mouse down and
+        pull a
+        rectangle around the deep sky object,&nbsp;release mouse
+        button&nbsp;and then select this menu.
+        &nbsp;For best accuracy the image should be monochrome and one
+        of the
+        Johnson-V star databases should have be installed and selected
+        (V16 or
+        V17). The image could have been taken
+        with&nbsp;a
+        Johnson-V filter for best results or none. The measured pixel values should be&nbsp;below
+        saturation.<br>
+        <br>
+        <img style="width: 703px; height: 740px;" alt="" src="astap_measure_magnitude1.jpg"><br>
+        <br>
+        A demonstration is available at YouTube: &nbsp;<a href="https://youtu.be/wfFWmtj9Oes">Photometry in the viewer</a><br>
+        <br>
+        The measuring principle is as follows:
+
+
+
+
+
+
+
+
+
+<ol><li>Use the star database to measure the MEDIAN relation between&nbsp;flux of the detected stars 
+and star magnitude from the database. (That's why solving is required 
+and best result are achieved with the V16 or V17 Johnson-V star 
+databases based on Gaia DR2)&nbsp;</li><li>Measure
+the MEDIAN background 1 to 10 pixels wide outside the rectangle box.
+This median measurement will ignore stars in the field.</li><li>Measure the MEAN&nbsp; flux inside the box.</li><li>Calculate the magnitude for the "inside&nbsp;mean flux" minus "median outside box flux" using the relation found for the stars.</li></ol>
+
+
+
+<p>&nbsp;You could argue that a Johnson-V filter or green channel is required 
+for the image but in practice the error is limited depending on the 
+spectrum.</p><br><span style="font-weight: bold;"><br>Remove all markers and labels</span>.
+        Will remove all none persistent labels.<br>
+        <br>
+        <span style="font-weight: bold;">Copy position to clipboard,</span>
+        Enabled after astrometric solve. Copies the&nbsp;&#945;,&nbsp; &#948;
+        position to the clipboard.<br>
+        <span style="font-weight: bold;">Copy position to clipboard
+          in&nbsp;</span><span style="font-weight: bold;" class="symbol">°</span><span style="font-weight: bold;"> ,</span> Enabled after astrometric
+        solve. Copies the&nbsp;&#945;,&nbsp; &#948; position in degrees to the
+        clipboard.<br>
+        <span style="font-weight: bold;">Copy position to clipboard in
+          radians,</span> Enabled after astrometric solve. Copies
+        the&nbsp;&#945;,&nbsp; &#948; position in radians to the clipboard.<br>
+        <br>
+        <span style="font-weight: bold;">Remove deep sky &nbsp;object.</span>
+        Removes an deep sky object as part of the <a href="astap.htm#pixel_math">pixel math</a> tab routine
+        "equalise background tool". &nbsp;Hold the right mouse down and
+        pull a
+        rectangle around the deep sky object,&nbsp;release mouse
+        button&nbsp;and then and then select this menu. <br>
+        <br>
+        <span style="font-weight: bold;">Local colour smooth</span><br>
+        <br style="font-weight: bold;">
+        <span style="font-weight: bold;">Local remove colour</span>.<br>
+        <br>
+        <span style="font-weight: bold;">Local Gaussian blur.</span><br>
+        <br>
+        <span style="font-weight: bold;">Local equalise tool.</span><br>
+        <br>
+        <span style="font-weight: bold;">Brighten a small area based on
+          the corner values.<br><br>Gradient removal tool<br><br></span>To&nbsp;remove
+a linear gradient caused by&nbsp;light pollution or&nbsp;twilight. The
+routine need two empty areas 40x40 pixels in the image to measure the
+gradient. The area may contain stars but no deepsky object. The area
+are selected by pressing the right mouse button(first area) and while
+holding the mouse button move to the second area in the direction of
+the gradient. Then select in the popup menu "Gradient removal tool".
+Try to maximise the distance ideally the full image range. <br><br><img style="width: 763px; height: 765px;" alt="" src="astap_gradient_removal.jpg"><br><br><span style="font-weight: bold;"><br>Copy paste tool<br><br></span>Powerful
+touch-up tool &nbsp;for cosmetic corrections. Small sections of the
+image can be copied as pasted on hot pixels or artifacts. Select the
+good part by holding the right mouse button and pulling a rectangle
+with the mouse and move the copied part to the part to be touched up..<br><br><span style="font-weight: bold;"><br>Set area<br><br></span>Set an area for the colour replacement tool in tab pixel math 1.<br><br><span style="font-weight: bold;"></span><span style="font-weight: bold;"></span>
+        <br>
+        <span style="font-weight: bold;">Remove borders</span>. This
+        menu allows to remove parts of the image near de borders.<br>
+        <br>
+        <span style="font-weight: bold;">Crop fits image.</span>
+        This allows the crop the image. Hold the right mouse down and
+        pull a
+        rectangle,&nbsp;release mouse button&nbsp;and then and the
+        select this
+        menu<br>
+        <br>
+        <p align="left"><a href="astap.htm#index">Back
+            to index</a></p>
+        <br><hr style="width: 100%; height: 2px;"><br>
+      </div>
+      <p align="left"><span style="font-family: Arial;"><span style="font-weight: bold; text-decoration: underline;"><a name="command_line"></a></span></span><span style="font-family: Arial;"><span style="font-weight: bold; text-decoration: underline;">Usage
+            as astrometric solver and command
+            line options</span>: </span></p>
+      <div style="text-align: left;"></div>
+      <p align="left"><big><span style="text-decoration: underline;">For
+            images in the viewer:</span></big></p>
+      <p align="left"><big>The simplest
+          way to solve an image is just to load an image in the viewer
+
+
+          and hit
+          the&nbsp;</big><big>solve button. Some settings are available in the&nbsp;</big><span style="background-color: rgb(153, 153, 153);"></span><span style="background-color: rgb(153, 153, 153);"> &nbsp;&#8721; &nbsp;</span><big> menu
+          under
+          tab alignment.&nbsp;</big></p>
+      <ul style="text-align: left;">
+        <li><big><strong>Diameter
+              field</strong>:
+            &nbsp;This is the square size of the star
+            field in degrees used for detection and will be set
+            automatically for
+            most FITS files.&nbsp;It should be in range with&nbsp;the
+            image
+            diameter.</big></li>
+        <li><big><strong>Radius search</strong>:
+            Search radius in degrees. If there is no match, the program
+            will
+            move&nbsp;the search field
+            around in a&nbsp;square spiral and increasing the distance
+            form the
+            initial position up to the radius specified. &nbsp;A radius
+            of 30
+            degrees could be searched in a few minutes.</big></li>
+        <li><big><strong>Maximum number of stars to use</strong>:
+            &nbsp;No need to change it. This could be set between 100
+            and 1000. Default 500.</big></li>
+        <li><big><strong>Tetrahedron&nbsp;tolerance</strong>:
+            &nbsp;No need to change it. Leave this at 0.003 unless you
+            have
+            severe
+            optical distortion.&nbsp;If you have severe optical
+            distortion or a
+            low resolution image set this at 0.008</big></li>
+        <li><big><strong>Downsampling</strong>:
+            &nbsp;For large image with a height above 3000 pixels
+            select&nbsp;downsampling factor 2 or to
+            speed up the solving and increase the signal noise ration of
+            the stars.
+            Also colours are combined to monochromatic so this option is
+            beneficial
+            for DSLR images</big></li>
+      </ul>
+      <br>
+      <p align="left"><big>The
+          solution will be added to the fits header and center of the
+          image will
+          be
+          displayed in the log of the&nbsp;</big><span style="background-color: rgb(153, 153, 153);"> &#8721; &nbsp;</span><big>&nbsp;menu</big><big>.
+          Click on the save button to save the FITS
+          file with the solution. With the solution, the status bar will
+          show
+          the&nbsp;astronomical position of the mouse pointer.</big></p>
+      <div style="text-align: left;"><big><span style="text-decoration: underline;"><a name="conditions"></a><span style="font-weight: bold;">Conditions required
+              for&nbsp;solving:<br></span></span><br>Quick checklist for solving:
+<br></big><div style="margin-left: 40px;"><ul><li><big>At least 30 stars are visible.</big></li><li><big>
+Reasonable round stars.</big></li><li><big>
+Image dimensions at least 1280x960 pixels.
+</big></li><li><big>An approximate position for a spiral search is
+specified correctly This should be displayed in the left top of the
+viewer. (unless you do a 180 degrees search)</big></li><li><big>
+Image is not stretched or heavily photo-shopped.</big></li><li><big>
+Correct image height in degrees specified within 5% accuracy. This
+should be displayed in the status bar of the viewer and in tab
+alignment under "Field of view (height)" (Check focal length, sensor
+size settings or try FOV=auto once)" You set/force a </big><big>"Field of view (height)" in tab Alignment.</big></li></ul></div>If
+you still have problems with solving, you could send me a link to
+the&nbsp;file involved (FITS is preferred) and if I have time I
+could&nbsp;have a look. Upload it e.g. to <a href="http://nova.astrometry.net/">http://nova.astrometry.net</a> or <a href="https://ufile.io/">https://ufile.io/</a> and
+give me the link. For privacy reasons, prior to uploading you
+could&nbsp;remove your latitude/longitude information from the header
+using the viewer "Tools", "Batch processing", "Remove longitude
+latitude information" menu.<br><br><big><span style="text-decoration: underline;"><span style="font-weight: bold;"></span></span>
+          The
+          internal
+          astrometric solver works best with raw unstretched and
+          sharp images of sufficient resolution where stars can be very
+          faint.
+          Heavily stretched, saturated, out-of-focus or photo shopped
+          images are
+          problematic.&nbsp;It requires
+          minimum about 30 stars in the image to solve. Images
+          containing of a
+          few hundred
+          stars stars
+          are ideal. For star rich images, the program will reduce the
+          detection
+          limit to
+          limit the number of stars. This will only work for unstretched
+          images
+          where brighter stars have a greater intensity then fainter
+          stars. <span style="font-weight: bold;">So ASTAP requires
+            three star
+            dimensions&nbsp;for solving. The star x, y coordinates and
+            star
+            intensity.</span>&nbsp;Oval stars due to tracking errors or
+          severe optical distortion will be
+          ignored and solving could fail.<br>
+          <br>
+          Check list for successful solving with ASTAP:<br>
+        </big>
+        <ol>
+          <li>Estimated
+            celestial center position of &nbsp;image should be
+            entered/available in
+            the viewer &#945; and &#948;
+            input or passed&nbsp;by the command line.&nbsp;For FITS file
+            this is
+            normally read from the FITS file header and set
+            automatically. In case
+            you view an an&nbsp; JPEG, TIFF image, double click
+            on&nbsp;&#945;
+            input to search for a know deep sky object position from the
+            database.</li>
+          <li>Field of
+            view of the camera should be available. This is the height
+            of the image
+            in degrees. See &#8721; window, tab alignment,
+            group-box&nbsp;astrometric
+            settings. For FITS images this is normally automatic
+            calculated from
+            the header.</li>
+          <li>Image
+height in pixels&nbsp;after ASTAP subsampling should be somewhere
+between 1000 and 3000. If it is higher set&nbsp;subsample at 2. If you
+specify 0 for subsampling, the program will select a subsampling factor
+automatically.</li>
+          <li>Search
+            radius should be set large enough.&nbsp;See&nbsp;<span style="background-color: rgb(153, 153, 153);">&nbsp;&#8721; &nbsp;</span> window, tab
+            alignment,
+            group-box&nbsp;astrometric settings. &nbsp;You could set
+            this
+            at 30° or
+            larger up to 180°.</li>
+          <li>Stars
+            in the image should be pretty round and camera in focus. You
+            could
+            verify the star
+            detection
+            by the <a href="ccd_inspector">CCD inspector</a> or&nbsp;by&nbsp; the <span style="background-color: rgb(153, 153, 153);">&nbsp;Test button to show tetrahedrons&nbsp;</span>&nbsp;in the&nbsp;<span style="background-color: rgb(153, 153, 153);">&nbsp;&#8721; &nbsp;</span> window, tab alignment). Most
+            stars
+            should be
+            detected.</li>
+          <li>As a minimum about 30 stars&nbsp;should be visible in
+            the image. They can be very faint stars, barely visible in the
+            noise.</li>
+          <li>For
+            images filled with&nbsp;stars, only a few stars should be
+            saturated. The
+            total exposure time could be hours as long it is possible to
+            separate
+            the
+            brightest stars from the faint&nbsp;by intensity.</li>
+          <li>For
+bayered images (OSC cameras)&nbsp;or &nbsp;large images use the
+&nbsp;factor 2 downsample option.&nbsp;See &#8721; window, tab alignment,
+group-box&nbsp;astrometric settings. Save settings if modified (Viewer
+pull down menu, file, exit (and save settings). You could also try auto
+auto selection of binning equals 0.</li>
+          <li>If
+your image is full of hot pixels you could try the option "calibrate
+prior to solving". Select in the darks tab, a dark or darks with
+similar exposure duration as the lights you trying to solve. If your
+select several darks with&nbsp; different exposure length, check-mark
+the option classify, "Dark exposure time".&nbsp;</li><li>The maximum
+number of stars to use should be defined. Typical set at 500.&nbsp;See
+&#8721;&nbsp;window, tab alignment. If your images has large dimensions and
+due to a long exposure time is full of &nbsp;tiny, stars you could try
+&nbsp;increase the maximum number of stars to 1000 or more. For short
+exposures this is not required.</li>
+          <li>Tetrahedron&nbsp;tolerance should be defined. Typical
+            set at 0.005. If you expect optical distortion set it
+            higher.&nbsp;
+            See
+            solver window, tab alignment. &nbsp;Solving of wide field
+            images covering a field of 10 degrees or more will most
+            likely
+            fail.&nbsp;</li>
+          <li>For
+            some failures you could force in
+            ASTAP the option "force large search window" (-speed)&nbsp; for
+            more reliable solving. The
+            reliability will be very high but speed two or three times
+            slower.</li><li>In
+case of excellent seeing and using a small band filter, the imaged star
+could be smaller then 1.5" . &nbsp;Reduce the setting "Ignore stars
+less then 1.5"&nbsp;in tab "Alignment". &nbsp;If the imaged star size
+is about one pixel after downsampling reduce the downsampling to 1
+(auto is often&nbsp;2). Improvements are detectable in the log by the
+number of matching tetrahedrons.</li>
+        </ol>
+        Above options can be set using the ASTAP style command line.<br><br><br><big>Warnings:</big><br><ul><li>In case you get regular a warning "Star database limit reached" replace
+the G17 database by the G18.&nbsp; This could happen if your field of view
+is small. The G18 is not available as installer. Download and unpack
+and move the files to the program directory. Remove the G17 files.</li></ul><br>Support is available via the&nbsp;<a href="http://www.hnsky.org/forum/index.php"><big style="font-family: Arial;"></big></a><big style="font-family: Arial;"><a href="https://sourceforge.net/p/astap-program/discussion/">ASTAP
+                    Forum</a></big><big>
+        </big></div>
+      <p align="left"></p>
+      <p align="left"><big style="text-decoration: underline; font-weight: bold;"><a name="astap_command_line"></a>Command
+          line, ASTAP style</big></p>
+      <big><span style="font-family: Arial;"><span style="font-weight: bold;"></span></span></big>
+      <p style="text-align: left;"><big>The program can be
+          executed using&nbsp;command line options to solve images </big><big>astrometric
+        </big><big>.&nbsp;E.g.&nbsp; ASTAP -f&nbsp;
+          home/test/2.fits &nbsp;&nbsp;-r 30</big>&nbsp;</p>
+      <p style="text-align: left;"><big>The program will
+          accept FITS files, JPG, PNG, BMP, XISF or TIF files.</big></p>
+      <br>
+      <table style="background-color: rgb(204, 204, 255); width: 547px; height: 745px;" border="1" cellpadding="2" cellspacing="2">
+        <tbody>
+          <tr>
+            <td style="font-weight: bold; text-decoration: underline;"><br>
+            </td>
+            <td style="font-weight: bold; text-decoration: underline;"><big><big>ASTAP
+astrometric
+                  solver command line </big></big></td>
+            <td><br>
+            </td>
+            <td><small>The FOV, RA,DEC options are intended for
+                none FITS files. <br>
+                Not required for FITS files having the values in the
+                header.</small></td>
+          </tr>
+          <tr>
+            <td>
+              <div style="text-align: left;"><span style="font-weight: bold;">command</span></div>
+            </td>
+            <td> <span style="font-weight: bold;">parameter</span></td>
+            <td><span style="font-weight: bold;">unit</span></td>
+            <td><span style="font-weight: bold;">remarks</span></td>
+          </tr>
+          <tr>
+            <td>-h</td>
+            <td><br>
+            </td>
+            <td><br>
+            </td>
+            <td>help info</td>
+          </tr>
+          <tr>
+            <td>-help</td>
+            <td><br>
+            </td>
+            <td><br>
+            </td>
+            <td>help info</td>
+          </tr>
+          <tr>
+            <td>-f</td>
+            <td>file_name</td>
+            <td><br>
+            </td>
+            <td>File to solve astrometric.</td>
+          </tr>
+          <tr>
+            <td>-r </td>
+            <td>radius_search_field</td>
+            <td>degrees</td>
+            <td> The program will search in a square spiral around the
+              start position up to this radius * </td>
+          </tr>
+          <tr>
+            <td>-fov </td>
+            <td>field_height_of_image</td>
+            <td>degrees</td>
+            <td>Optional. Normally calculated from FITS header. Use value 0 for auto.&nbsp;
+             If 0 is specified the fov found by solving will be saved for next time.(learn mode)&nbsp; *</td>
+          </tr>
+          <tr>
+            <td>-ra </td>
+            <td>center_right_ascension </td>
+            <td><span style="font-weight: bold;">hours</span></td>
+            <td>Optional start value.&nbsp;Normally calculated from
+              FITS header.</td>
+          </tr>
+          <tr>
+            <td>-spd </td>
+            <td>center_south_pole_distance<br>
+              (dec+90)</td>
+            <td>degrees</td>
+            <td>Normally calculated from FITS header *<br>
+              The declination is given in south pole distance, so always
+              positive.</td>
+          </tr>
+          <tr>
+            <td>-z </td>
+            <td>down_sample_factor<br>
+            </td>
+            <td>0,1,2,3,4</td>
+            <td>Down sample prior to solving. Also called binning. A value "0" will result in auto selection downsampling. *</td>
+          </tr>
+          <tr>
+            <td>-s</td>
+            <td>max_number_of_stars</td>
+            <td><br>
+            </td>
+            <td>Limits the number of star used for the solution.
+              Typical value 500. *</td>
+          </tr>
+          <tr>
+            <td>-t</td>
+            <td>tolerance</td>
+            <td><br>
+            </td>
+            <td>Tolerance used to compare tetrahedrons. Typical values
+              0.003 to 0.007. *</td>
+          </tr>
+          <tr><td>-m</td><td>minimum star size</td><td>arcsec</td><td>This could be used to filter out hot pixels.</td></tr><tr>
+            <td>-speed</td>
+            <td>mode<br>
+            </td>
+            <td>slow / auto</td>
+            <td>"slow" is forcing of reading a larger area from the star
+              database (more overlap)&nbsp; to
+              improve&nbsp;detection. *</td>
+          </tr>
+          <tr>
+            <td>-o</td>
+            <td><br>
+              file<br>
+            </td>
+            <td><br>
+            </td>
+            <td>Name the output files with this base path &amp; file
+              name</td>
+          </tr>
+          <tr><td>-analyse</td><td></td><td></td><td>Analyse only and report in the errorlevel the median HFD * 100M + number of stars used. So the HFD is trunc(errorlevel/1M)/100</td></tr><tr><td>-annotate</td><td></td><td></td><td>Produce a deep sky annotated jpeg file with same name as
+              input file extended with _annotated *</td></tr><tr><td>-debug</td><td></td><td></td><td>Show GUI and stop prior to solving</td></tr><tr><td>-log</td><td></td><td></td><td>Write solver log to file with extension .log</td></tr><tr><td>-tofits</td><td>binning</td><td>1,2,3,4,6,8</td><td>Produce binned FITS file from input png/jpg *</td></tr><tr>
+            <td>-update</td>
+            <td><br>
+            </td>
+            <td><br>
+            </td>
+            <td>Update the fits header with the found solution *</td>
+          </tr>
+          
+          
+          <tr>
+            <td>-wcs<br>
+            </td>
+            <td><br>
+            </td>
+            <td><br>
+            </td>
+            <td>Write a .wcs file &nbsp;in&nbsp;similar format as&nbsp;Astrometry.net. Else text style.<br>
+            </td>
+          </tr>
+          <tr>
+            <td><br>
+            </td>
+            <td><br>
+            </td>
+            <td><br>
+            </td>
+            <td>* Defaults can be set in the program. Shortcut CTRL-A,
+              tab alignment</td>
+          </tr>
+        </tbody>
+      </table>
+      <font face="Courier New, Courier, monospace">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</font>
+      <p style="text-align: left;"><big>Commandline parameters have priority above fits header values. Front-end
+          programs
+          should provide access to -z and -r options. Default value for -z should be 0 (auto).</big></p>
+      <br>
+      <p style="text-align: left;"><big>Typical command
+          lines</big><big><span style="font-weight: bold;">:</span></big></p>
+      <p style="text-align: left; margin-left: 40px; font-family: monospace; font-weight: bold;"><big>astap.exe
+          -f image.fits &nbsp;-r 50&nbsp;</big></p>
+      <p style="text-align: left; margin-left: 40px; font-weight: bold; font-family: monospace;"><big>astap.exe
+          -f c:\images\image.png &nbsp;-ra 23.000&nbsp; -spd 179.000
+          &nbsp;-fov 1.3 &nbsp;-r
+          50&nbsp;</big></p><p style="text-align: left; margin-left: 40px; font-weight: bold; font-family: monospace;"><br>
+      </p>
+      <p style="text-align: left;"><big>For most FITS
+          files the command line
+          can be short since telescope position and field of view can be
+          retrieved from the FITS header. If
+          a FITS file is not available, preference is a non lossless
+          image format
+          like .PNG or .TIFF or RAW like .CR2.&nbsp; If possible in 16
+          bit or
+          original 12 bit format. Not stretched or saturated, as raw as
+          possible.
+          For formats other then FITS the RA,DEC position and -fov
+          (image HEIGHT
+          in degrees !!) should be added.</big></p><p style="text-align: left;">If the&nbsp;FOV  (image height in degrees) &nbsp;is
+unspecified in the command-line for RAW, PNG, TIFF files, ASTAP will
+use the FOV as set in the program, stack menu, tab alignment. This
+setting can be learned and updated automatically with the parameters
+-fov 0. ASTAP will try all FOV between 10 degrees and and 0.5 degrees.
+E.g.</p><p style="text-align: left; font-family: monospace;"><big>&nbsp; &nbsp; <span style="font-weight: bold;">astap.exe
+          -f c:\images\image.png &nbsp;-ra 23.000&nbsp; -spd 179.000
+          &nbsp;&nbsp;-r
+          30&nbsp;</span></big><big style="font-weight: bold;">-fov 0</big></p><p style="text-align: left;"><big>After
+a successful solve, the correct FOV will be stored in the ASTAP
+settings. For the next solve using&nbsp;images from the same source
+the&nbsp;-fov 0 parameters can be omitted and solving will be fast.</big></p><p style="text-align: left;"><big></big></p><p style="text-align: left;"><big>The
+debug option allows to set some solving parameters in the GUI
+(graphical user interface) and to test the commandline. In debug mode
+all commandline parameters are set and the specified image is shown in
+the viewer. Only the solve command has to be given manually:</big><br></p><p style="text-align: left; font-family: monospace;"><big>&nbsp; &nbsp; <span style="font-weight: bold;">astap.exe
+          -f c:\images\image.png &nbsp;-ra 23.000&nbsp; -spd 179.000
+          &nbsp;&nbsp;-r
+          30&nbsp;</span></big><big style="font-weight: bold;">-debug</big></p><p style="text-align: left; font-family: monospace;"><big style="font-weight: bold;">or</big></p><p style="text-align: left; font-family: monospace;"><big>&nbsp; &nbsp; <span style="font-weight: bold;">astap.exe&nbsp;</span></big><big style="font-weight: bold;">-debug</big></p>
+      <big> </big><p style="text-align: left;"><big><span style="text-decoration: underline; font-weight: bold;">Command-line, output files</span></big></p><p style="text-align: left;"><big>In command line
+          mode the program
+          produces&nbsp;two output files at the same location as the
+          input
+          image. Im case a solution is found it will write a .wcs file containing the solved FITS header
+          only.&nbsp;In any case it will write&nbsp;an INI file using the standard FITS keywords.</big></p>
+      <div style="text-align: left;"> Example&nbsp;of the INI output
+        file after an successful solve:</div>
+      <p style="text-align: left;"><font face="Courier New, Courier,
+          monospace">PLTSOLVD=T
+          &nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp; // T=true, F=false<br>
+          CRPIX1= 1.1645000000000000E+003&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; </font><font face="Courier New, Courier,
+          monospace">// X of reference
+          &amp; centre
+          pixel</font><br>
+        <font face="Courier New, Courier, monospace"> CRPIX2=
+          8.8050000000000000E+002 &nbsp; &nbsp; &nbsp; &nbsp;
+          &nbsp; &nbsp; &nbsp; &nbsp;</font><font face="Courier New,
+          Courier, monospace">// Y of reference
+          &amp; centre pixel</font><font face="Courier New, Courier,
+          monospace">
+          &nbsp;<br>
+          CRVAL1= 1.5463033992314939E+002&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; // RA (J2000) of the reference pixel
+          [deg]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </font><br>
+        <font face="Courier New, Courier, monospace"> CRVAL2=
+          2.2039358425145043E+001&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; // DEC (J2000)of the reference pixel
+          [deg]
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </font><br>
+        <font face="Courier New, Courier, monospace">
+          CDELT1=-7.4798001762187193E-004&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;&nbsp;</font><font face="Courier New,
+          Courier, monospace">// X pixel size [deg]</font><br>
+        <font face="Courier New, Courier, monospace"> CDELT2=
+          7.4845252983311850E-004&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;&nbsp;</font><font face="Courier New,
+          Courier, monospace">// Y pixel size [deg]</font><br>
+        <font face="Courier New, Courier, monospace">
+          CROTA1=-1.1668387329628058E+000&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;&nbsp;</font><font face="Courier New,
+          Courier, monospace">// Image twist of X
+          axis
+          [deg]</font><br>
+        <font face="Courier New, Courier, monospace">
+          CROTA2=-1.1900321176194073E+000 &nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; </font><font face="Courier New, Courier,
+          monospace">// Image twist of Y
+          axis
+          [deg]</font><font face="Courier New, Courier, monospace">&nbsp;
+&nbsp;
+&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;&nbsp;</font><br>
+        <font face="Courier New, Courier, monospace">
+          CD1_1=-7.4781868711882519E-004&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;</font><font face="Courier New,
+          Courier, monospace">// CD matrix to
+          convert (x,y) to (Ra, Dec)</font><font face="Courier New,
+          Courier, monospace">&nbsp;&nbsp; <br>
+          CD1_2= 1.5241315209850368E-005&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp; </font><font face="Courier New,
+          Courier, monospace">// CD matrix to
+          convert (x,y) to (Ra, Dec)</font><font face="Courier New,
+          Courier, monospace">
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp; &nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;</font><font face="Courier New,
+          Courier, monospace"><br>
+          CD2_1= 1.5534412042060001E-005 &nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;</font><font face="Courier New,
+          Courier, monospace">// CD matrix to
+          convert (x,y) to (Ra, Dec)</font><font face="Courier New,
+          Courier, monospace">&nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;</font><font face="Courier New,
+          Courier, monospace"><br></font><font face="Courier New,
+          Courier, monospace">
+          CD2_2= 7.4829732842251226E-004</font><font face="Courier New,
+          Courier, monospace"> &nbsp;
+          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+          &nbsp; // CD matrix to
+          convert (x,y) to (Ra, Dec)<br></font><font face="Courier New,
+          Courier, monospace">CMDLINE=......</font><font face="Courier New,
+          Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+          &nbsp; // Text message containing command line used<br></font><font face="Courier New,
+          Courier, monospace"></font><font face="Courier New,
+          Courier, monospace">WARNING=......</font><font face="Courier New,
+          Courier, monospace"> &nbsp;
+          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; // Text message containing warning(s)</font></p><div style="text-align: left;"><big><br></big></div><div style="text-align: left;"><big><br>The reference
+          pixel is always specified for the centre of the image.&nbsp;The decimal separator is always a dot as for FITS headers.</big><br></div><br><div style="text-align: left;"> Example&nbsp;of the INI output
+        file in case of solve failure:</div>
+      <p style="text-align: left;"><font face="Courier New, Courier,
+          monospace">PLTSOLVD=F
+          &nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          &nbsp;&nbsp; // T=true, F=false<br></font><font face="Courier New,
+          Courier, monospace">CMDLINE=......</font><font face="Courier New,
+          Courier, monospace">&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+          &nbsp; // Text message containing command line used<br></font><font face="Courier New,
+          Courier, monospace">ERROR= .....</font><font face="Courier New,
+          Courier, monospace"> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+          &nbsp; // Text message containing any error(s). Same as exit code errors<br>WARNING= .....</font><font face="Courier New,
+          Courier, monospace"> &nbsp;
+          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; //&nbsp;</font><font face="Courier New,
+          Courier, monospace">Text message containing any warnings(s)</font></p>
+      <p style="text-align: left;">The
+.wcs file contains the original FITS header with the solution added. No
+data, just the header. Any warning is added to the .wcs file using the
+keyword WARNING. This warning could be presented to the user for
+information.</p><p style="text-align: left;"></p><p style="text-align: left; text-decoration: underline; font-weight: bold;"><big>Command-line, error codes</big></p><p style="text-align: left;"><big>In
+the command-line mode errors are reported&nbsp;by
+an error code / errorlevel&nbsp;{%errorlevel%}. This is the same error as reported in the .ini file in case of failure.</big></p><table style="background-color: rgb(204, 204, 255); height: 257px; margin-left: 0px; width: 380px;" border="1" cellpadding="2" cellspacing="2"><tbody><tr><td style="width: 129px;"><big><span style="font-weight: bold;">Error code</span></big></td><td style="width: 233px;"><big><span style="font-weight: bold;">Describtion</span></big></td></tr><tr><td style="width: 129px;">0</td><td style="width: 233px;">No errors</td></tr><tr><td style="width: 129px;">1</td><td style="width: 233px;">No solution</td></tr><tr><td style="width: 129px;">2</td><td style="width: 233px;">Not enough stars detected</td></tr><tr><td style="width: 129px;"></td><td style="width: 233px;"></td></tr><tr><td style="width: 129px;">16</td><td style="width: 233px;">Error reading image file</td></tr><tr><td style="width: 129px;"></td><td style="width: 233px;"></td></tr><tr><td style="width: 129px;">32</td><td style="width: 233px;">No star database found</td></tr><tr><td style="width: 129px;">33</td><td style="width: 233px;">Error reading star database</td></tr></tbody></table><br><br><p align="left"><a name="popup_notifier"></a><big style="text-decoration: underline; font-weight: bold;">Command-line pop-up notifier</big></p><p align="left"><big>If
+          the ASTAP is command-line
+          executed&nbsp;in MS-Windows, it will be shown by a small ASTAP
+          tray
+          icon on the right side of the status bar. If you move the
+          mouse to the
+          ASTAP tray icon, the hint will show the search radius reached.
+          To
+          refresh the value move the mouse away and back.&nbsp;</big></p>
+      <p align="left"><big>If
+          the search spiral has reached a distance more then 2 degrees
+          from
+          the&nbsp;start position then&nbsp;a popup notifier will show
+          the actual
+          search distance and solver
+          settings:</big></p>
+      <p align="left"><img style="width: 325px; height: 110px;" alt="" src="astap_popup_notifier.png"></p>
+      <ol style="text-align: left;">
+        <li>The first line indicates the search spiral distance (8<span class="st">º</span>) from the start position and the
+          maximum search radius (90<span class="st">º</span>)</li>
+        <li>The image height in degrees.&nbsp;</li>
+        <li>Downsample
+          setting and the input dimensions of the image to solve.&nbsp;</li>
+        <li>The &#945; and &#948; of the start position.&nbsp;</li>
+        <li>Speed normal (&#9654;&#9654;) &nbsp;or small steps (&#9654;)</li>
+      </ol><br><br><div style="text-align: left;"><big>See&nbsp;<a href="astap.htm#conditions">conditions required for solving
+          </a>to
+          fix solve failures.</big></div>
+      <p align="left"><big>Tray
+          icons are default off&nbsp;in the latest Win10 version. To set
+          the
+          ASTAP tray icon on, start a solve via the imaging program, go
+          to
+          Windows&nbsp; "<span style="font-weight: bold;">Settings</span>",
+          "<span style="font-weight: bold;">Taskbar</span>", "<span style="font-weight: bold;">Turn system icons on or off</span>"
+          and set the ASTAP tray icon permanent "<span style="font-weight: bold;">on</span>" as shown below:</big></p>
+      <p align="left"><img style="width: 572px; height: 281px;" alt="" src="astap_tray_icon.png"></p><p align="left"></p><p style="text-align: left;"><a name="performance_blind"></a><big style="font-weight: bold; text-decoration: underline;">Blind solving performance</big></p>
+      <p style="text-align: left;"><big>Blind solving
+          performance for a 90 degrees offset:</big></p>
+      <table style="text-align: left; width: 808px; height: 184px; background-color: rgb(204, 204, 255);" border="1" cellpadding="2" cellspacing="2">
+        <tbody>
+          <tr>
+            <td colspan="3"><big>ASTAP blind solver
+                performance. Solving a 50 seconds exposed monochrome
+                image of M24, 2328x1760 pixels covering a field of 1.75
+                x 1.32°
+                starting 90 degrees more north at position
+                18:17,&nbsp;+72d
+                00&nbsp;</big></td>
+          </tr>
+          <tr>
+            <td><br>
+            </td>
+            <td><br>
+            </td>
+            <td><br>
+            </td>
+          </tr>
+          <tr>
+            <td style="text-align: left; font-weight: bold; text-decoration: underline;">Maximum&nbsp;stars
+              set </td>
+            <td style="font-weight: bold; text-decoration: underline;">Tolerance
+              set</td>
+            <td style="font-weight: bold; text-decoration: underline;">Astrometric
+solving
+              &nbsp;time</td>
+          </tr>
+          <tr>
+            <td>500</td>
+            <td>0.005</td>
+            <td>147 sec.</td>
+          </tr>
+          <tr>
+            <td>250</td>
+            <td>0.005</td>
+            <td>103 sec</td>
+          </tr>
+          <tr>
+            <td>150</td>
+            <td>0.005</td>
+            <td>92 sec</td>
+          </tr>
+          <tr>
+            <td>100</td>
+            <td>0.005</td>
+            <td>70 sec</td>
+          </tr>
+          <tr>
+            <td><br>
+            </td>
+            <td><br>
+            </td>
+            <td><br>
+            </td>
+          </tr>
+          <tr>
+            <td colspan="3">Reducing the "maximum number of
+              stars to use" will result in a faster
+              solving&nbsp;but also an increased risk of solve failure.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="text-align: left;"><big><br>
+        </big></p><p align="left"></p>
+      <p align="left"><big> </big></p>
+      <p align="left"><big style="text-decoration: underline;"><a name="platesolve2"></a><span style="font-weight: bold;"></span></big><big style="font-weight: bold; text-decoration: underline;">Usage&nbsp;as
+a
+          solver with other programs or as PlateSolve2 substitute</big></p>
+      <ul style="text-align: left;"><li><big><a href="astap.htm#apt">Using with APT,
+                    &nbsp;Astro Photography Tool</a></big></li><li><big><a href="astap.htm#ccdciel">Using with
+                    CCDCIEL</a></big></li><li><big><a href="astap.htm#modelcreator">Using
+                    with ModelCreator</a></big></li><li><big><a href="astap.htm#nina">Using with
+                    NINA,&nbsp;Nighttime Imaging ‘N’ Astronomy</a></big></li><li><big><a href="astap.htm#sgp">Using with SGP,
+                    Sequence Generator Pro</a></big></li><li><big><a href="astap.htm#sharpcap">Using with SharpCap</a></big></li><li><big><a href="astap.htm#voyager">Using with
+                    Voyager</a></big>
+      </li>
+      </ul><p align="left"><a href="astap.htm#index">Back
+          to index</a></p>
+      <hr style="width: 100%; height: 2px;"><big><span style="font-weight: bold;"></span></big>
+      <p style="font-weight: bold;" align="left"><big><a name="ccdciel"></a>
+          <span style="text-decoration: underline;">CCDCIEL, using ASTAP
+            as
+            solver.</span></big></p>
+      <p align="left"><big>ASTAP is a menu option in the <a href="https://www.ap-i.net/ccdciel/en/start">CCDCIEL</a>
+          program. </big><big>Install both ASTAP and
+the G17 star
+database. Select in CCDCiel&nbsp;</big><big> menu ASTAP as solver and follow the guidelines in the
+          help
+          file.&nbsp;</big></p>
+      <p align="left"><big>Progress is shown in&nbsp;<a href="astap.htm#popup_notifier">tray icon and popup notifier</a><span style="font-weight: bold;"></span>.</big></p>
+      <p align="left"><big>Solving should be reliable. In
+          case of failure, have a look to&nbsp;<a href="astap.htm#conditions">conditions required for solving.</a></big></p>
+      <p align="left"><a href="astap.htm#index">Back
+          to index</a></p>
+      <hr style="width: 100%; height: 2px;"><big><span style="font-weight: bold;"></span></big>
+      <p align="left"><big><span style="font-weight: bold;"></span></big></p>
+      <p style="font-weight: bold;" align="left"><big><a name="apt"></a><span style="text-decoration: underline;">APT: using ASTAP as
+            solver</span></big></p><p align="left"><big>Since
+ATP version&nbsp;3.85.1, APT fully supports ASTAP. Just select
+ASTAP&nbsp;in the APT pointcraft menu after installing both ASTAP and
+the G17 star
+database.&nbsp;For solving it is important that the correct filed of
+view is
+calculated from the Tools, Object calculator. So set the focal length
+and "CCD width x height" correctly.</big></p><p align="left"><big>Once installed you could now test it
+          with a saved image. The solver needs an initial position guess.</big></p><p align="left"><big> To modify the ASTAP default settings,
+          see&nbsp;<a href="command_line">&nbsp;</a><a href="astap.htm#astrometric_solving">astrometric_solving</a></big><br></p><p align="left"><big>Progress is shown in&nbsp;<a href="astap.htm#popup_notifier">tray icon and popup notifier</a><span style="font-weight: bold;"></span>. &nbsp;In case of solve failure please check the FOV indicated.&nbsp;</big></p>
+      <p align="left"><big></big></p><p align="left"><big>Solving should be reliable. In
+          case of failure, have a look to&nbsp;<a href="astap.htm#conditions">conditions required for solving.</a></big></p><p align="left"><big></big></p><p align="left"><big>Screenshot APT using ASTAP:
+      </big></p><p align="left"><big><span style="font-weight: bold;"><img style="width: 1024px; height: 768px;" alt="" src="apt_astap_screenshot.jpg"></span></big></p>
+      <p align="left">For older <a href="https://ideiki.com/astro/Default.aspx">APT, Astro
+          Photography Tool</a> use it a PlateSolve2 substitute by renaming ASTAP.EXE program as
+          Platesolve2.exe. and select it as PlateSolve2</p><p align="left"></p>
+      <p align="left"><big><span style="font-weight: bold;"></span></big><a href="astap.htm#index">Back
+          to index</a></p>
+      <hr style="width: 100%; height: 2px;">
+      <p align="left"><big><span style="font-weight: bold;"><a name="modelcreator"></a><span style="text-decoration: underline;">ModelCreator:</span></span></big></p>
+      <p align="left">Installation as solver for&nbsp;<a href="https://www.astromi.ch/">ModelCreator:</a><strong></strong></p>
+      <ol style="text-align: left;"><li>Install ASTAP and additional install the G17&nbsp;star
+          database.&nbsp;</li><li><strong><span style="font-weight: normal;">In ModelCreator select&nbsp;ASTAP</span></strong><strong><span style="font-weight: normal;"> as plate solver.</span><br>
+          </strong></li></ol>
+      <div style="text-align: left;">
+        <p align="left"><big>Solving should be reliable. In
+            case of failure, have a look to&nbsp;<a href="astap.htm#conditions">conditions required for
+              solving.</a></big></p>
+        <p align="left"><img style="width: 1126px; height: 498px;" alt="" src="modelcreator.png"></p>
+      </div>
+      <p align="left"><a href="astap.htm#index">Back
+          to index</a><br>
+      </p>
+      <hr style="width: 100%; height: 2px;"><big><span style="font-weight: bold;"></span></big><p align="left"><big><span style="font-weight: bold;"><a name="nina"></a></span><span style="font-weight: bold; text-decoration: underline;">NINA,&nbsp;Nighttime
+            Imaging ‘N’ Astronomy</span></big></p>
+      <div style="text-align: left;">For<a href="https://nighttime-imaging.eu/"> NINA</a> version
+        1.9<br>
+      </div>
+      <ol style="text-align: left;">
+        <li>Install ASTAP and additional&nbsp;the G17&nbsp;star
+          database.</li>
+        
+        <li>Other settings as below:</li>
+      </ol>
+      <div style="text-align: left;"><img style="width: 751px; height: 468px;" alt="" src="astap_nina.png"><br>
+      </div>
+      <p align="left">To modify the ASTAP default settings,
+        see&nbsp;<a href="astap.htm#astrometric_solving">astrometric_solving</a></p>
+      <p align="left"><big>Solving progress is shown in&nbsp;<a href="astap.htm#popup_notifier">tray icon and popup notifier</a><span style="font-weight: bold;"></span>.</big></p>
+      <p align="left"><big>Solving should be reliable. In
+          case of failure, have a look to&nbsp;<a href="astap.htm#conditions">conditions required for solving.</a></big></p>
+      <p align="left"><a href="astap.htm#index">Back
+          to index</a></p>
+      <hr style="width: 100%; height: 2px;"><big><span style="font-weight: bold;"></span></big>
+      <p align="left"><big><span style="font-weight: bold;"></span></big><a href="astap.htm#index">Back
+          to index</a>
+      </p><hr style="width: 100%; height: 2px;">
+      <p align="left"><big><span style="font-weight: bold;"><a name="sharpcap"></a><span style="text-decoration: underline;">SharpCap:</span></span></big></p>
+      <p align="left">Installation as solver for&nbsp;<a href="https://www.sharpcap.co.uk/">SharpCap:</a><strong></strong></p>
+      <ol style="text-align: left;"><li>Install ASTAP and additional install the G17&nbsp;star
+          database.</li><li><strong><span style="font-weight: normal;">In SharpCap&nbsp;select&nbsp;ASTAP</span></strong><strong><span style="font-weight: normal;"> as plate solver.</span><br>
+          </strong></li></ol>
+      <div style="text-align: left;">
+        <p align="left"><big>Solving should be reliable. In
+            case of failure, have a look to&nbsp;<a href="astap.htm#conditions">conditions required for
+              solving.</a></big></p>
+        <p align="left"><img style="width: 626px; height: 673px;" alt="" src="sharpcap.png"><br></p>
+      </div>
+      <p align="left"><a href="astap.htm#index">Back
+          to index</a><br>
+      </p>
+      <hr style="width: 100%; height: 2px;"><big><span style="font-weight: bold;"></span></big><big><span style="font-weight: bold;"></span></big>
+      <p align="left"><big><span style="font-weight: bold;"><a name="sgp"></a><span style="text-decoration: underline;">SGP,
+              Sequence
+              Generator Pro:</span></span></big></p><p align="left"><big>The
+latest SGP versions support ASTAP as solver. Just install ASTAP and G17
+database. Select ASTAP as solver. Set binning at 1x1 or 2x2. See <a href="astap.htm#conditions">conditions required for
+              solving.</a></big></p><p align="left"><big>Solving progress is shown in&nbsp;<a href="astap.htm#popup_notifier">tray icon and popup notifier</a><span style="font-weight: bold;"></span>.</big></p><p align="left"><big>Solving should be reliable. In
+            case of failure, have a look to&nbsp;<a href="astap.htm#conditions">conditions required for
+              solving.</a></big><big><span style="font-weight: bold;"><span style="text-decoration: underline;"></span></span></big></p><p align="left"><big><span style="font-weight: bold;"><span style="text-decoration: underline;"></span></span></big>For older SGP versions: you could use ASTAP as PlateSolve2 substitute:</p><p align="left"><small><small>The orginal
+        PlateSolve2.exe is
+        located at C:\Users\you\AppData\Local\SequenceGenerator\ &nbsp;
+        &nbsp; Where "you" is your user name. &nbsp;You can access this
+        directory also directly by %LOCALAPPDATA%\SequenceGenerator<br>
+        <br>
+      </small></small></p>
+      <ol style="text-align: left;"><small><small>
+        </small></small><li><small><small>Install ASTAP and additional install the G17&nbsp;star
+          database in the same directory. Typical c:\program files\astap</small></small></li><small><small></small></small><small><small></small></small><li><small><small>Copy or move the astap.exe &nbsp;and all 290 files with
+          extension .290&nbsp; to
+          C:\Users\you\AppData\Local\SequenceGenerator\</small></small></li><small><small>
+        </small></small><li><small><small>Rename the original Platesolve2.exe to something
+          like&nbsp;PlateSolve2ORG.exe</small></small></li><small><small>
+        </small></small><li><small><small>Rename ASTAP.exe to PlateSolve2.exe</small></small></li><small><small>
+        </small></small><li><small><small>Test it with SGP. The confidence will be always 999. No
+          PlateSolve2 window will be shown.</small></small></li><small><small>
+      </small></small></ol>
+      <div style="text-align: left;">
+        <p align="left"><small>Progress is shown in&nbsp;<a href="astap.htm#popup_notifier">tray icon and popup
+              notifier</a><span style="font-weight: bold;"></span>.</small></p>
+        <small>I</small><big><small><small>f you select in SGP the PlateSolve2
+          setting "Max
+          Regions" (=3000) this will force a search up to 90 degrees
+          diameter.
+          However the solver
+          will be&nbsp;most likely stopped halfway by a SGP timeout.<br><br></small></small></big><big><a href="astap.htm#conditions"></a></big>
+      </div>
+      <p align="left"><a href="astap.htm#index">Back
+          to index</a></p><p align="left"><a href="astap.htm#index"></a></p>
+      
+      <hr style="width: 100%; height: 2px;">
+      <p align="left"><big><span style="font-weight: bold;"><a name="voyager"></a><span style="text-decoration: underline;">Voyager:</span></span></big></p><p align="left"><big>The
+latest<big> </big><a href="https://software.starkeeper.it/index.php/voyager/">Voyager</a></big><big><big> </big>versions support ASTAP as solver. Just install ASTAP and G17
+database. Select ASTAP as solver.</big></p><p align="left"><big>Solving progress is shown in&nbsp;<a href="astap.htm#popup_notifier">tray icon and popup notifier</a><span style="font-weight: bold;"></span>.</big></p><p align="left"><big>Solving should be reliable. In
+            case of failure, have a look to&nbsp;<a href="astap.htm#conditions">conditions required for
+              solving.</a></big><big><span style="font-weight: bold;"><span style="text-decoration: underline;"></span></span></big></p>
+      <p align="left"><big><span style="font-weight: bold;"><span style="text-decoration: underline;"></span></span></big>For older Voyager versions: you could use ASTAP as PlateSolve2 substitute. <small>The original
+        PlateSolve2.exe is
+        located at&nbsp;<strong> C:\Program Files (x86)\Voyager</strong>&nbsp;</small></p>
+      <ol style="text-align: left;"><small>
+        </small><li><small>Install ASTAP and additional install the G17&nbsp;star
+          database in the same directory. Typical c:\program files\astap</small></li><small>
+        
+        </small><li><small>Copy or move the astap.exe &nbsp;and all 290 files with
+          extension .290&nbsp; to&nbsp;<strong> C:\Program Files
+            (x86)\Voyager</strong></small></li><small>
+        </small><li><small>Rename the original&nbsp; Platesolve2.exe to something
+          like&nbsp;PlateSolve2ORG.exe</small></li><small>
+        </small><li><small>Rename ASTAP.exe to PlateSolve2.exe</small></li><small>
+        </small><li><small>Test
+          it with Voyager. E.g. in the OnTheFly section. Confidence will
+          be
+          reported as 999. &nbsp;E.g. Solved (J2000) =&gt; RA 19 59
+          36,167&nbsp;
+          DEC 22 42 36,31&nbsp; PA 277,4 Res. 1,17 [as/px] FL 1131,77
+          [mm]
+          Star/s
+          999</small></li><small>
+      </small></ol>
+      <div style="text-align: left;"><br></div>
+      <p align="left"><a href="astap.htm#index">Back
+          to index</a></p>
+      <span style="font-family: Arial;"><span style="font-weight: bold; text-decoration: underline;"></span></span>
+      <hr style="width: 100%; height: 2px;">
+      <div style="text-align: left;"><p align="left"><br>
+</p>
+<hr style="width: 100%; height: 2px;">
+<p align="left"><span style="font-family: Arial;"><span style="font-weight: bold; text-decoration: underline;"><a name="solver_installation"></a></span></span><span style="font-family: Arial;"><span style="font-weight: bold; text-decoration: underline;">Installation
+of the external Astrometry.net&nbsp;solver</span>: </span></p>
+<p align="left"><span style="text-decoration: underline;"></span></p>
+<p align="left"><span style="font-family: Arial;"><span style="font-weight: bold;">MS-Windows</span>: <br>
+</span><span style="font-family: Arial;"></span><br>
+<span style="font-family: Arial;"></span><span style="font-family: Arial;">Install a local copy
+of Astrometry.net (</span><span style="font-family: Arial;">via</span><span style="font-family: Arial;"> <a href="http://adgsoftware.com/ansvr/" rel="external nofollow" target="_blank">ANSVR</a> &nbsp;or&nbsp;</span><span style="font-family: Arial;">&nbsp;<a href="https://sourceforge.net/p/astrotortilla/home/Home/">Astrotortilla)</a>&nbsp;&nbsp;
+as the&nbsp;astrometric
+solver. Or&nbsp;alternatively if you have Win10, 64 bit Creation
+edition you use the new Linux sub-system<br>
+</span></p><br><span style="font-weight: bold;">ANSVR</span>: The
+ANSVR link contains a newer compilation of astrometry.net made for SGP.
+It runs as a Linux program under Cygwin in MSWindows. Follow up to
+installation step 9. The link you have to put in ASTAP is as follows:<br><div style="margin-left: 40px; text-align: left;">
+<br>
+C:\Users\user_name\AppData\Local\cygwin_ansvr\bin\bash.exe &nbsp; &nbsp;&nbsp;<br>
+<br>
+Adapt "user_name" to the login name used in Windows. <br>
+<br>
+The server program ANSVR is not required. Remove the ANSVR
+shortcut&nbsp;in the startup menu. Location:<br>
+<br>
+C:\Users\user_name\AppData\Roaming\Microsoft\Windows\Start
+Menu\Programs\Startup<br>
+<br>
+<br>
+Alternative <a href="linux_subsyst.htm"><span style="font-weight: bold;">Linux sub-system in Win10 64bit
+Creators edition</span></a><br>
+<br>
+Path for the astrometry.net solver program<br>
+ANSVR installation:<br>
+&nbsp;&nbsp;&nbsp;
+C:\Users\user_name\AppData\Local\cygwin_ansvr\bin\bash.exe<br>
+Astrotortilla installation: <br>
+&nbsp;&nbsp;&nbsp; C:\cygwin\bin\bash.exe<br>
+Win10 subsystem:<br>
+&nbsp;&nbsp;&nbsp; C:\Windows\System32\bash.exe<br>
+</div>
+<div style="margin-left: 80px;"><br>
+</div>
+<br>
+<div style="text-align: left;"><span style="font-weight: bold;">Linux installation:</span><br>
+</div>
+<div style="margin-left: 40px; text-align: left;">The
+single executable astap could be
+used anywhere. Standard directory could be c:/opt/astap but also at
+your home folder.<br>
+<br>
+If you want to use&nbsp; <a href="http://astrometry.net/use.html">astrometry.net</a>&nbsp;
+this is described at <a href="http://astrometry.net/doc/readme.html#installing">installation</a>.
+To get the Astrometry.net solver&nbsp;type:&nbsp;sudo apt-get
+install libcairo2-dev
+libnetpbm10-dev netpbm libpng-dev libjpeg-dev python-numpy
+python-pyfits python-dev zlib1g-dev libbz2-dev swig libcfitsio-dev
+&nbsp; You also have to download index files.<br>
+<br>
+Path to the astrometry.net solver program "solve-field" could be:<br>
+<br>
+/usr/bin/<br>
+or<br>
+/usr/local/astrometry/bin<br>
+</div><br></div><br><br>
+      <div style="text-align: left;"><big style="font-weight: bold;"><a name="stack_process"></a><span style="text-decoration: underline;">Appendix 1, the stack
+            process:</span></big><br>
+        <div style="margin-left: 40px;">The stacking process for
+          one shot color color camera's will be mathematically executed
+          as
+          follows:<br>
+          <br>
+          The master flat is calculated as:<br>
+          <br>
+          <b>master flat: = (1/n &#8721; [flat] - 1/n &#8721; [flat darks] )</b><br>
+          <br>
+          Where a bias image could be used as flat-dark image. The
+          master flat
+          should be averaged by a 2x2mean to remove Bayer matrix
+          artifacts.<br>
+          <br>
+          Each image is calculated as:<br>
+          <br>
+          <b>(image- {&#8721; [darks]/n} ) / master flat</b><br>
+          <br>
+          Then the Bayer matrix is applied and finally the images are
+          stacked in
+          mode average or sigma clipped.<br>
+          <br>
+          So for average stack:<br>
+          <br>
+          <b>final image:= 1/n &#8721; Bayer(image)</b></div>
+        <p align="left"></p>
+        <p align="left"> <a href="astap.htm#index">Back
+            to index</a></p>
+      </div>
+      <br>
+      <big style="font-weight: bold;"><span style="text-decoration: underline;"></span></big>
+      <hr size="1"></center>
+    <br>
+    <p align="left">Send a message if you like this free
+      program. Feel free to distribute ! </p>
+    <p align="left"> Succes, &nbsp;Han &nbsp;K</p>
+    <p align="left"> <img src="hanemail.gif"></p>
+    <ul>
+      <li> <a href="software.htm">Back to the HNSKY
+          software page.</a></li>
+    </ul>
+    <br>
+    <div style="text-align: center;">Counter since 2017-11-15:
+    </div>
+    <p><!-- BEGIN: Powered by Supercounters.com -->
+    </p>
+    <center>
+      <script type="text/javascript" src="//widget.supercounters.com/ssl/hit.js"></script>
+      <script type="text/javascript">sc_hit(1455527,0,5);</script><br>
+      <noscript><a href="http://www.supercounters.com">free Hit
+Counter</a></noscript>
+    </center>
+    <!-- END: Powered by Supercounters.com -->
+    <!-- BEGIN: Powered by Supercounters.com -->
+    <center>
+      <script type="text/javascript" src="//widget.supercounters.com/ssl/map.js"></script>
+      <script type="text/javascript">var sc_map_var = sc_map_var || [];sc_map(1459341,"112288","ff0000",1)</script><br>
+      <noscript><a href="http://www.supercounters.com/">Visitor
+Map Widget</a></noscript>
+    </center>
+    <!-- END: Powered by Supercounters.com -->
+    <p></p>
+  </body></html>

@@ -1366,7 +1366,7 @@ begin
         try reader.read(fitsbuffer,width2);except; end; {read file info}
         for i:=0 to width2-1 do
         begin
-          img_loaded2[k,i,j]:=(fitsbuffer[j]*bscale + bzero);
+          img_loaded2[k,i,j]:=(fitsbuffer[i]*bscale + bzero);
         end;
       end;
     end {colors naxis3 times}
@@ -2197,7 +2197,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.407, '+about_message4+', dated 2020-08-17';
+  #13+#10+'ASTAP version ß0.9.409a, '+about_message4+', dated 2020-08-18';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3224,15 +3224,15 @@ end;
 
 procedure Tmainwindow.show_statistics1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,font_height,counter,col,size,counter_median,required_size : integer;
+   fitsX,fitsY,dum,font_height,counter,col,size,counter_median,required_size, iterations : integer;
    flux,bg_median,
-   value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4   : double;
-   sd,mean,minimum, maximum,max_counter, saturated : array[0..2] of double;
+   value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4,
+   sd,sd_old,mean,median,minimum, maximum,max_counter, saturated : double;
    Save_Cursor              : TCursor;
    info_message             : string;
    median_array             : array of double;
 const
-  median_max_size=10000;
+  median_max_size=5000;
 
 begin
   Save_Cursor := Screen.Cursor;
@@ -3261,14 +3261,6 @@ begin
 
   {reset variables}
   info_message:='';
-  for col:=0 to 2 do
-  begin
-    sd[col]:=0;
-    mean[col]:=0;
-    minimum[col]:=999999999;
-    maximum[col]:=0;
-    max_counter[col]:=1;
-  end;
 
   {limit points to take median from at median_max_size}
   size:=(oldY-1-startY) * (oldX-1-startX);{number of pixels within the rectangle}
@@ -3278,41 +3270,65 @@ begin
   setlength(median_array,required_size);
 
   {measure the median of the suroundings}
+
   for col:=0 to naxis3-1 do  {do all colours}
   begin
-    {mean}
-    counter:=0;
-    counter_median:=0;
-    for fitsY:=startY+1 to oldY-1 do {within rectangle}
-    for fitsX:=startX+1 to oldX-1 do
-    begin
-      value:=img_loaded[col,fitsX+1,fitsY+1];
+    sd:=999999999999;
+    iterations:=0;
+    mean:=0;
+    median:=0;
+    minimum:=999999999;
+    maximum:=0;
+    max_counter:=1;
+    saturated:=0;
 
-      {median sampling}
-      median_position:=counter*stepsize;
-      if  trunc(median_position)>counter_median then {pixels will be skippped. Limit sampling to median_max_size}
+    repeat
+      {mean, median}
+      counter:=0;
+      counter_median:=0;
+      for fitsY:=startY+1 to oldY-1 do {within rectangle}
+      for fitsX:=startX+1 to oldX-1 do
       begin
-        inc(counter_median);
-        median_array[counter_median]:=value; {fill array with sampling data. Smedian will be applied later}
+        value:=img_loaded[col,fitsX+1,fitsY+1];
+        if  ((iterations=0) or (abs(value-median)<=3*sd)) then  {ignore outliers after first run}
+        begin
+          {median sampling}
+          median_position:=counter*stepsize;
+          if  trunc(median_position)>counter_median then {pixels will be skippped. Limit sampling to median_max_size}
+          begin
+            inc(counter_median);
+            median_array[counter_median]:=value; {fill array with sampling data. Smedian will be applied later}
+          end;
+
+          inc(counter);
+          mean:=mean+value; {mean}
+          if value=maximum then max_counter:=max_counter+1; {counter at max}
+          if value>maximum then maximum:=value; {max}
+          if value<minimum then minimum:=value; {min}
+          if value>=64000 then saturated:=saturated+1;{saturation counter}
+         end;
+       end;{filter outliers}
+      if counter<>0 then mean:=mean/counter {calculate the mean};
+      median:=smedian(median_array);
+
+      {sd}
+      sd_old:=sd;
+      counter:=0;
+      for fitsY:=startY to oldY-1 do
+      for fitsX:=startX to oldX-1 do
+      begin
+        value:=img_loaded[col,fitsX+1,fitsY+1];
+        if value<2*median then {not a large outlier}
+        if ((iterations=0) or (abs(value-median)<=3*sd_old)) then {ignore outliers after first run}
+        begin
+          sd:=sd+sqr(median-value);
+          inc(counter);
+        end;
       end;
+      if counter<>0 then sd:=sqrt(sd/counter);
 
-      inc(counter);
-      mean[col]:=mean[col]+value; {mean}
-      if value=maximum[col] then max_counter[col]:=max_counter[col]+1; {counter at max}
-      if value>maximum[col] then maximum[col]:=value; {max}
-      if value<minimum[col] then minimum[col]:=value; {min}
-      if value>=64000 then saturated[col]:=saturated[col]+1;{saturation counter}
-     end;
-    mean[col]:=mean[col]/counter;{calculate the mean}
-
-
-    {sd}
-    for fitsY:=startY to oldY-1 do
-    for fitsX:=startX to oldX-1 do
-    begin
-      sd[col]:=sd[col]+sqr(mean[col]-img_loaded[col,fitsX,fitsY]);
-    end;
-    sd[col]:=sqrt(sd[col]/counter);
+      inc(iterations);
+    until (((sd_old-sd)<0.005*sd) or (iterations>=10));{repeat until sd is stable or 10 iterations}
 
     most_common:=mode(img_loaded,col,startx,oldX,starty,oldY,32000);
 
@@ -3322,16 +3338,14 @@ begin
 
 
 
-    info_message:=info_message+  'x̄ :    '+floattostrf(mean[col],ffgeneral, 5, 5)+#10+             {mean}
-                                 'x̃  :   '+floattostrf(smedian(median_array),ffgeneral, 5, 5)+#10+ {median}
-                                 'σ :   '+floattostrf(sd[col],ffgeneral, 5, 5)+#10+               {standard deviation}
-                                 'm :   '+floattostrf(minimum[col],ffgeneral, 5, 5)+#10+
-                                 'M :   '+floattostrf(maximum[col],ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter[col]))+' x)'+#10+
-                                 '≥64E3 :  '+inttostr(round(saturated[col]))+#10+
+    info_message:=info_message+  'x̄ :    '+floattostrf(mean,ffgeneral, 5, 5)+#10+             {mean}
+                                 'x̃  :   '+floattostrf(median,ffgeneral, 5, 5)+#10+ {median}
                                  'Mo :  '+floattostrf(most_common,ffgeneral, 5, 5)+#10+
-                                 'Background σ :   '+floattostrf(get_negative_noise_level(img_loaded,col,startx,oldX,starty,oldY,most_common),ffgeneral, 5, 5)
-                                 ;
-
+                                 'σ :   '+floattostrf(sd,ffgeneral, 5, 5)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+               {standard deviation}
+                                 'σ_2:   '+floattostrf(get_negative_noise_level(img_loaded,col,startx,oldX,starty,oldY,most_common),ffgeneral, 5, 5)+#10+
+                                 'm :   '+floattostrf(minimum,ffgeneral, 5, 5)+#10+
+                                 'M :   '+floattostrf(maximum,ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter))+' x)'+#10+
+                                 '≥64E3 :  '+inttostr(round(saturated));
   end;
   if ((abs(oldx-startx)>=width2-1) and (most_common<>0){prevent division by zero}) then
   begin
@@ -3344,9 +3358,11 @@ begin
   end;
 
   info_message:=info_message+#10+#10+#10+'Legend: '+#10+
-                                         'x̄ = mean ,  x̃  = median, σ =  standard deviation, m = minimum, M = maximum, ≥64E3 = number of values equal or above 64000,'+
-                                         ' Mo = mode or most common pixel value or peak histogram so the best estimate for the background mean value,'+ 
-                                         ' background σ = standard deviation of the background calculated from values below Mo.';
+                                            'x̄ = mean background | x̃  = median background | '+
+                                            'Mo = mode or most common pixel value or peak histogram, so the best estimate for the background mean value | '+
+                                            'σ =  standard deviation background using median and sigma clipping| ' +
+                                            'σ_2 = standard deviation background using values below Mo only | '+
+                                            'm = minimum image | M = maximum image | ≥64E3 = number of values equal or above 64000';
 
   case  QuestionDlg (pchar('Statistics within rectangle '+inttostr(oldX-1-startX)+' x '+inttostr(oldY-1-startY) ),pchar(info_message),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
            mrYes: Clipboard.AsText:=info_message;
@@ -9427,6 +9443,7 @@ begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
+
     nrsolved:=0;
     skipped:=0;
 
@@ -9438,7 +9455,9 @@ begin
         for I := 0 to Count - 1 do
         begin
           filename2:=Strings[I];
-          memo2_message('Solving: '+filename2);
+          memo2_message('Solving '+inttostr(i)+'-'+inttostr(Count-1)+': '+filename2);
+          progress_indicator(100*i/(count),' Solving');{show progress}
+
           Application.ProcessMessages;
           if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
 
@@ -9466,6 +9485,7 @@ begin
       if dobackup then restore_img;{for the viewer}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
+    progress_indicator(-100,'');{progresss done}
     memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(OpenDialog1.Files.count-nrsolved-skipped)+' solve failures, '+inttostr(skipped)+' images skipped. For re-solve set option "Ignore existing fits header solution".');
   end;
 end;
@@ -9545,17 +9565,17 @@ begin
 
   with mainwindow do
   begin
-      Flipvertical:=mainwindow.flip_vertical1.Checked;
-      Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
+    Flipvertical:=mainwindow.flip_vertical1.Checked;
+    Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
 
 
-      image1.Canvas.Pen.Mode := pmMerge;
-      image1.Canvas.brush.Style:=bsClear;
-      image1.Canvas.font.color:=clyellow;
-      image1.Canvas.Pen.Color := clred;
-      image1.Canvas.Pen.width := round(1+height2/image1.height);{thickness lines}
-      fontsize:=round(max(10,8*height2/image1.height));{adapt font to image dimensions}
-      image1.Canvas.font.size:=fontsize;
+    image1.Canvas.Pen.Mode := pmMerge;
+    image1.Canvas.brush.Style:=bsClear;
+    image1.Canvas.font.color:=clyellow;
+    image1.Canvas.Pen.Color := clred;
+    image1.Canvas.Pen.width := round(1+height2/image1.height);{thickness lines}
+    fontsize:=round(max(10,8*height2/image1.height));{adapt font to image dimensions}
+    image1.Canvas.font.size:=fontsize;
 
     hfd_median:=0;
     median_center:=0;
@@ -9731,14 +9751,16 @@ begin
       if cdelt2<>0 then begin str(hfd_median*cdelt2*3600:0:1,hfd_arcsec); hfd_arcsec:=' ('+hfd_arcsec+'")'; end else hfd_arcsec:='';
       mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
 
-      image1.Canvas.font.size:=fontsize*2;
+      fontsize:=width2 div 60;
+      image1.Canvas.font.size:=fontsize;
       image1.Canvas.font.color:=clwhite;
-      image1.Canvas.textout(round(fontsize*2),height2-round(4*fontsize),mess2);{median HFD and tilt indication}
+
+      image1.Canvas.textout(round(fontsize*2),height2-round(2*fontsize),mess2);{median HFD and tilt indication}
     end
     else
     begin
       image1.Canvas.font.size:=round(image1.Canvas.font.size*20/12);
-      image1.Canvas.textout(round(image1.Canvas.font.size),height2-round(2*image1.Canvas.font.size),'No star detected');
+      image1.Canvas.textout(round(fontsize*2),height2-round(2*fontsize),'No stars detected');
     end;
   end;{with mainwindow}
 
@@ -10480,11 +10502,11 @@ end;
 
 procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity. All x,y coordinates in array[0..] positions}
 const
-  max_ri=50; //should be larger or equalsmaller then rssqrt(sqr(rs+rs)+sqr(rs+rs))+1;
+  max_ri=50; //should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1;
 var
-  i,j,counter, ri, distance,distance_top_value,illuminated_pixels,signal_counter:integer;
+  i,j, ri, distance,distance_top_value,illuminated_pixels,signal_counter,iterations,counter :integer;
   SumVal,SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
-  val,bg_average,bg,bg_standard_deviation,pixel_counter,valmax : double;
+  val,bg_average,bg,sd,sd_old,pixel_counter,valmax : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
 
@@ -10511,44 +10533,57 @@ begin
       (y1-rs-4<=0) or (y1+rs+4>=height2-1) )
     then begin hfd1:=999; snr:=0; exit;end;
 
-  bg:=0;
   valmax:=0;
   hfd1:=999;
 
   try
-    counter:=0;
-    bg_average:=0;
-    for i:=-rs-4 to rs+4 do {calculate mean at square boundaries of detection box}
-    for j:=-rs-4 to rs+4 do
-    begin
-      if ( (abs(i)>rs) and (abs(j)>rs) ) then {measure only outside the box}
-      begin
-        bg_average:=bg_average+img[0,x1+i,y1+j];
-        inc(counter)
-      end;
-    end;
-    bg_average:=bg_average/counter; {mean value background}
-    bg:=bg_average;
+    sd:=99999999999;
+    bg:=0;
+    iterations:=0;
 
-    counter:=0;
-    bg_standard_deviation:=0;
-    for i:=-rs-4 to rs+4 do {calculate standard deviation background at the square boundaries of detection box}
+    repeat {find background by repeat and exclude values above 3*sd}
+      counter:=0;
+      bg_average:=0;
+      for i:=-rs-4 to rs+4 do {calculate mean at square boundaries of detection box}
       for j:=-rs-4 to rs+4 do
       begin
         if ( (abs(i)>rs) and (abs(j)>rs) ) then {measure only outside the box}
         begin
-            val:=img[0,x1+i,y1+j];
-            if val<=2*bg_average then {not an outlier}
-            begin
-              bg_standard_deviation:=bg_standard_deviation+sqr(bg_average-val);
-              inc(counter);
-            end;
+          val:=img[0,x1+i,y1+j];
+          if  ((iterations=0) or (abs(val-bg)<=3*sd)) then  {ignore extreme outliers after first run}
+          begin
+            bg_average:=bg_average+val;
+            inc(counter);
+          end;
         end;
-    end;
-    bg_standard_deviation:=sqrt(bg_standard_deviation/(counter+0.0001)); {standard deviation in background}
+      end;
+      bg:=bg_average/counter; {mean value background}
 
-    repeat {reduce box size till symmetry to remove stars}
- // Get center of gravity whithin star detection box and count signal pixels
+      counter:=0;
+      sd_old:=sd;
+      sd:=0;
+      for i:=-rs-4 to rs+4 do {calculate standard deviation background at the square boundaries of detection box}
+        for j:=-rs-4 to rs+4 do
+        begin
+          if ( (abs(i)>rs) and (abs(j)>rs) ) then {measure only outside the box}
+          begin
+              val:=img[0,x1+i,y1+j];
+              if val<=2*bg then {not an extreme outlier}
+              if ((iterations=0) or (abs(val-bg)<=3*sd_old)) then {ignore extreme outliers after first run}
+              begin
+                sd:=sd+sqr(val-bg);
+                inc(counter);
+              end;
+          end;
+      end;
+      sd:=sqrt(sd/(counter+0.0001)); {standard deviation in background}
+
+      inc(iterations);
+    until (((sd_old-sd)<0.1*sd) or (iterations>=3));{repeat until sd is stable or enough iterations}
+    sd:=max(sd,1); {add some value for images with zero noise background. This will prevent that background is seen as a star. E.g. some jpg processed by nova.astrometry.net}
+
+     repeat {reduce box size till symmetry to remove stars}
+    // Get center of gravity whithin star detection box and count signal pixels
       SumVal:=0;
       SumValX:=0;
       SumValY:=0;
@@ -10558,15 +10593,15 @@ begin
       for j:=-rs to rs do
       begin
         val:=(img[0,x1+i,y1+j])- bg;
-        if val>3*bg_standard_deviation then
+        if val>3*sd then
         begin
           SumVal:=SumVal+val;
           SumValX:=SumValX+val*(i);
           SumValY:=SumValY+val*(j);
-           inc(signal_counter); {how many pixels are illuminated}
+          inc(signal_counter); {how many pixels are illuminated}
         end;
       end;
-      if sumval<= 12*bg_standard_deviation then exit; {no star found, too noisy, exit with hfd=999}
+      if sumval<= 12*sd then exit; {no star found, too noisy, exit with hfd=999}
 
       Xg:=SumValX/SumVal;
       Yg:=SumValY/SumVal;
@@ -10584,9 +10619,10 @@ begin
       end;
 
       {check on hot pixels}
-      if signal_counter<=1 then exit {one hot pixel}
+      if signal_counter<=1  then
+      exit {one hot pixel}
       else
-      if ((signal_counter=2) and (img[0,round(xc)+i,round(yc)+j]-bg<3*bg_standard_deviation)) then exit; {two hot pixels}
+      if ((signal_counter=2) and (img[0,round(xc)+i,round(yc)+j]-bg<3*sd)) then exit; {two hot pixels}
 
 
     until ((boxed) or (rs<=1)) ;{loop and reduce box size until star is boxed}
@@ -10601,7 +10637,7 @@ begin
         if distance<=rs then {build histogram for circel with radius rs}
         begin
           val:=value_subpixel(xc+i,yc+j)-bg;
-          if val>((3*bg_standard_deviation)) then {3 * sd should be signal }
+          if val>3*sd then {3 * sd should be signal }
           begin
             distance_histogram[distance]:=distance_histogram[distance]+1;{build distance histogram up to circel with diameter rs}
             if val>valmax then valmax:=val;{record the peak value of the star}
@@ -10654,7 +10690,7 @@ begin
 
     star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
 
-    snr:=flux/sqrt(flux +sqr(ri)*pi*sqr(bg_standard_deviation)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
+    snr:=flux/sqrt(flux +sqr(ri)*pi*sqr(sd)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
 
 //    log_to_file('snr_test.csv',inttostr(round(snr*1000))+','+inttostr(round(snr_old*1000)));
 
@@ -10704,6 +10740,7 @@ begin
 
   end;
 end;
+
 
 function sd(x1,y1, ri{regio of interest} : integer; img : image_array):double;{calculate standard deviation in img at position x1, y1 in a rectangle with sides 2*ri+1}
 var i,j,counter : integer;
