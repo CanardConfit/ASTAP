@@ -2647,10 +2647,10 @@ object stackmenu1: Tstackmenu1
             end
           end
           object calibrate_prior_solving1: TCheckBox
-            Left = 696
+            Left = 680
             Height = 19
             Hint = 'Calibrate the images prior to solving. Use this for noisy images.'
-            Top = 135
+            Top = 127
             Width = 136
             BorderSpacing.Around = 5
             Caption = 'Calibrate prior solving'
@@ -2660,10 +2660,10 @@ object stackmenu1: Tstackmenu1
             TabOrder = 6
           end
           object force_oversize1: TCheckBox
-            Left = 696
+            Left = 680
             Height = 19
             Hint = 'Check-mark  this to improve solving reliability in some cases. Search window will be always large with overlap but it will slow down solving.  Default this is off.  If off  the search window size will be automatically reduced if sufficient stars are found. This option is equivalent to command line option -speed'
-            Top = 112
+            Top = 104
             Width = 45
             BorderSpacing.Around = 5
             Caption = 'Slow'

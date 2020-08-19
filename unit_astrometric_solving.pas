@@ -548,13 +548,11 @@ begin
 
     hfd_min:=max(0.8,min_star_size_arcsec/(binning*fov_org*3600/height2) );{to ignore hot pixels which are too small}
 
-    if extend<3{xy table inserted} then  bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2){bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
-                                    else  memo2_message('Using X,Y table from file.');
-
-//    bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
+    bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
+//    if extend<3{xy table inserted} then  bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2){bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
+//                                    else  memo2_message('Using X,Y table from file.');
 
     nrstars:=Length(starlist2[0]);
-
 
     {prepare popupnotifier1 text}
     if stackmenu1.force_oversize1.checked=false then info_message:='▶▶' {normal} else info_message:='▶'; {slow}
@@ -564,8 +562,9 @@ begin
                     #10+mainwindow.ra1.text+'h,'+mainwindow.dec1.text+'°'+{for tray icon}
                     #10+filename2;
 
-    nrstars_required:=round(nrstars*(height2/width2)*1.25);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
-//    nrstars_required:=round(nrstars*(height2/width2)*1);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
+
+     nrstars_required:=round(nrstars*(height2/width2)*1.125);{square search field based on height. The 1.125 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
+
   //  nrstars_required:=round(nrstars*(height2/width2)*factorX);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
 
     solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details}

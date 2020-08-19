@@ -708,7 +708,7 @@ function load_fits(filen:string;light {load as light of dark/flat},load_data: bo
 {if reset_var=true, reset variables to zero}
 var
   header    : array[0..2880] of ansichar;
-  i,j,k,nr,error3,col,naxis1, reader_position,n,p,nrchars  : integer;
+  i,j,k,nr,error3,naxis1, reader_position,n,p,nrchars  : integer;
   fract,dummy,scale,exptime,ccd_temperature              : double;
   col_float,bscale,measured_max  : single;
   s                  : string[3];
@@ -1560,11 +1560,11 @@ begin
         aline:=aline+tunit[k]+#9;
      aline:=aline+sLineBreak;
 
-     if ((ttype[0]='X_IMAGE') and (ttype[1]='Y_IMAGE') and (extend=2)) then {x y table of stars}
-     begin
-       extend:=3; {table usable for solving}
-       setlength(starlist2,2,naxisT2)
-     end;
+ //    if ((ttype[0]='X_IMAGE') and (ttype[1]='Y_IMAGE') and (extend=2)) then {x y table of stars}
+//     begin
+//       extend:=3; {table usable for solving}
+//       setlength(starlist2,2,naxisT2)
+//     end;
 
      for j:=0 to naxisT2-1 do {rows}
      begin
@@ -1585,14 +1585,14 @@ begin
          begin
            x_longword:=swapendian(fitsbuffer4[k]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
 
-           if ((extend=3) and (k<=1)) then starlist2[k,j]:=x_single-1; {import a star list for solving. Subtract -1 for conversion fits coordinates 1.. to array cordinates 0..}
+//           if ((extend=3) and (k<=1)) then starlist2[k,j]:=x_single-1; {import a star list for solving. Subtract -1 for conversion fits coordinates 1.. to array cordinates 0..}
            aline:=aline+floattostrF(x_single,FFexponent,7,0)+ #9; {int_IEEE, swap four bytes and the read as floating point}
          end
          else
          if tform[k]='D' then {8 byte float}
          begin
            x_int64:=swapendian(fitsbuffer8[k]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
-           if ((extend=3) and (k<=1)) then starlist2[k,j]:=x_double-1; {import a star list for solving. Subtract -1 for conversion fits coordinates 1.. to array cordinates 0..}
+//           if ((extend=3) and (k<=1)) then starlist2[k,j]:=x_double-1; {import a star list for solving. Subtract -1 for conversion fits coordinates 1.. to array cordinates 0..}
            aline:=aline+floattostrF(x_double,FFexponent,7,0)+ #9; {int_IEEE, swap four bytes and the read as floating point}
          end
          else
@@ -2197,7 +2197,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.409a, '+about_message4+', dated 2020-08-18';
+  #13+#10+'ASTAP version ß0.9.410, '+about_message4+', dated 2020-08-19';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -9201,7 +9201,7 @@ end;
 
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
-    s,old      : string;
+    s      : string;
     histogram_done,file_loaded,debug,filespecified: boolean;
     binning, backgr, hfd_median : double;
     hfd_counter                 : integer;
@@ -9428,8 +9428,9 @@ procedure Tmainwindow.AddplatesolvesolutiontoselectedFITSfiles1Click(
 var
   I: integer;
   Save_Cursor:TCursor;
-  skipped, nrsolved :integer;
+  nrskipped, nrsolved,nrfailed :integer;
   dobackup : boolean;
+  failed,skipped   : string;
 
 begin
   OpenDialog1.Title := 'Select multiple  files to add plate solution';
@@ -9445,8 +9446,9 @@ begin
 
 
     nrsolved:=0;
-    skipped:=0;
-
+    nrskipped:=0;
+    failed:='Failed files:';
+    skipped:='Skipped files:';
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
@@ -9466,8 +9468,9 @@ begin
           begin
             if ((cd1_1<>0) and (stackmenu1.ignore_header_solution1.checked=false)) then
             begin
-              skipped:=skipped+1; {plate solved}
+              nrskipped:=nrskipped+1; {plate solved}
               memo2_message('Skipped: '+filename2);
+              skipped:=skipped+#13+#10+extractfilename(filename2);
             end
             else
             if solve_image(img_loaded,true {get hist}) then {match between loaded image and star database}
@@ -9476,7 +9479,10 @@ begin
               nrsolved:=nrsolved+1;
             end
             else
-            memo2_message('Solve failure: '+filename2);
+            begin
+              memo2_message('Solve failure: '+filename2);
+              failed:=failed+#13+#10+extractfilename(filename2);
+            end;
           end;
         end;
 
@@ -9486,7 +9492,10 @@ begin
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
     progress_indicator(-100,'');{progresss done}
-    memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(OpenDialog1.Files.count-nrsolved-skipped)+' solve failures, '+inttostr(skipped)+' images skipped. For re-solve set option "Ignore existing fits header solution".');
+    nrfailed:=OpenDialog1.Files.count-nrsolved-nrskipped;
+    if nrfailed<>0 then memo2_message(failed);
+    if nrskipped<>0 then memo2_message(skipped);
+    memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(nrfailed)+' solve failures, '+inttostr(nrskipped)+' images skipped. For re-solve set option "Ignore existing fits header solution".');
   end;
 end;
 
