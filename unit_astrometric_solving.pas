@@ -472,8 +472,9 @@ end;
 
 function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
-  nrstars,nrstars_required,count,max_distance,nr_tetrahedrons, minimum_tetrahedrons,i,database_stars,distance,binning : integer;
-  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,oversize,sep,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra: double;
+  nrstars,nrstars_required,count,max_distance,nr_tetrahedrons, minimum_tetrahedrons,i,database_stars,distance,binning,match_nr   : integer;
+  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,oversize,sep,ra7,dec7,
+  centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist: double;
   solution, go_ahead,solve_show_log  : boolean;
   Save_Cursor     : TCursor;
   startTick  : qword;{for timing/speed purposes}
@@ -625,111 +626,133 @@ begin
 
       memo2_message('Using star database '+name_star);
 
-      count:=0;{search field counter}
       stackmenu1.Memo2.Lines.BeginUpdate;{do not update tmemo, very very slow and slows down program}
 
-      distance:=0; {required for reporting no too often}
-      {spiral variables}
-      spiral_x :=0;
-      spiral_y :=0;
-      spiral_dx := 0;{first step size x}
-      spiral_dy := -1;{first step size y}
+
+      match_nr:=0;
+      repeat {Maximum accuracy loop. In case math is found on a corner, do a second solve. Result will be more accurate using all stars of the image}
+
+        count:=0;{search field counter}
+        distance:=0; {required for reporting no too often}
+        {spiral variables}
+        spiral_x :=0;
+        spiral_y :=0;
+        spiral_dx := 0;{first step size x}
+        spiral_dy := -1;{first step size y}
 
 
-      repeat {search in squared spiral}
+        repeat {search in squared spiral}
 
-        {begin spiral routine, find a new squared spiral position position}
-        if count<>0 then {first do nothing, start with [0 0] then start with [1 0],[1 1],[0 1],[-1 1],[-1 0],[-1 -1],[0 -1],[1 -1],[2 -1].[2 0] ..............}
-        begin {start spiral around [0 0]}
-          if ( (spiral_x = spiral_y) or ((spiral_x < 0) and (spiral_x = -spiral_y)) or ((spiral_x > 0) and (spiral_x = 1-spiral_y))) then {turning point}
-          begin {swap dx by negative dy and dy by negative dx}
-            spiral_t:=spiral_dx;
-            spiral_dx := -spiral_dy;
-            spiral_dy := spiral_t;
-          end;
-          spiral_x :=spiral_x+ spiral_dx;{walk through square}
-          spiral_y :=spiral_y+ spiral_dy;{walk through square}
-        end;{end spiral around [0 0]
+          {begin spiral routine, find a new squared spiral position position}
+          if count<>0 then {first do nothing, start with [0 0] then start with [1 0],[1 1],[0 1],[-1 1],[-1 0],[-1 -1],[0 -1],[1 -1],[2 -1].[2 0] ..............}
+          begin {start spiral around [0 0]}
+            if ( (spiral_x = spiral_y) or ((spiral_x < 0) and (spiral_x = -spiral_y)) or ((spiral_x > 0) and (spiral_x = 1-spiral_y))) then {turning point}
+            begin {swap dx by negative dy and dy by negative dx}
+              spiral_t:=spiral_dx;
+              spiral_dx := -spiral_dy;
+              spiral_dy := spiral_t;
+            end;
+            spiral_x :=spiral_x+ spiral_dx;{walk through square}
+            spiral_y :=spiral_y+ spiral_dy;{walk through square}
+          end;{end spiral around [0 0]
 
-        {adapt search field to matrix position, +0+0/+1+0,+1+1,+0+1,-1+1,-1+0,-1-1,+0-1,+1-1..}
-        telescope_dec:=STEP_SIZE*spiral_y+dec_radians;
+          {adapt search field to matrix position, +0+0/+1+0,+1+1,+0+1,-1+1,-1+0,-1-1,+0-1,+1-1..}
+          telescope_dec:=STEP_SIZE*spiral_y+dec_radians;
 
-        if ((telescope_dec<=pi/2+search_field) and (telescope_dec>=-pi/2-search_field)) then {within dec range}
-        begin {dec withing range}
-//          if telescope_dec>pi/2-search_field then telescope_dec:=pi/2-search_field;
+          if ((telescope_dec<=pi/2+search_field) and (telescope_dec>=-pi/2-search_field)) then {within dec range}
+          begin {dec withing range}
+            telescope_ra_offset:= (STEP_SIZE*spiral_x/cos(telescope_dec));{step larger near pole. This telescope_ra is an offsett from zero}
 
-          telescope_ra_offset:= (STEP_SIZE*spiral_x/cos(telescope_dec));{step larger near pole. This telescope_ra is an offsett from zero}
-
-          if ((telescope_ra_offset<=pi+search_field*2 {required for 180 degrees coverage}) and (telescope_ra_offset>=-pi-search_field*2) ) then {ra and dec within in range, near poles ra goes  much faster}
-          begin
-            telescope_ra:=fnmodulo(ra_radians+telescope_ra_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
-
-            {info reporting}
-            stackmenu1.field1.caption:= '['+inttostr(spiral_x)+','+inttostr(spiral_y)+']';{show on stackmenu what's happening}
-            if ((spiral_x>distance) or (spiral_y>distance)) then {new distance reached. Update once in the square spiral, so not too often since it cost CPU time}
+            if ((telescope_ra_offset<=pi+search_field*2 {required for 180 degrees coverage}) and (telescope_ra_offset>=-pi-search_field*2) ) then {ra and dec within in range, near poles ra goes  much faster}
             begin
-              distance:=max(spiral_x,spiral_y);{update status}
-              distancestr:=inttostr(  round((distance) * fov2))+'°';{show on stackmenu what's happening}
-              stackmenu1.actual_search_distance1.caption:=distancestr;
-              stackmenu1.caption:= 'Search distance:  '+distancestr;
-              mainwindow.caption:= 'Search distance:  '+distancestr;
+              telescope_ra:=fnmodulo(ra_radians+telescope_ra_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
 
-              if commandline_execution then {command line execution}
+              {info reporting}
+              stackmenu1.field1.caption:= '['+inttostr(spiral_x)+','+inttostr(spiral_y)+']';{show on stackmenu what's happening}
+              if ((spiral_x>distance) or (spiral_y>distance)) then {new distance reached. Update once in the square spiral, so not too often since it cost CPU time}
               begin
-                 {$ifdef CPUARM}
-                 { tray icon  gives a fatal execution error in the old compiler for armhf}
-                 {$else}
-                 mainwindow.TrayIcon1.hint:=distancestr+info_message;
-                 {$endif}
+                distance:=max(spiral_x,spiral_y);{update status}
+                distancestr:=inttostr(  round((distance) * fov2))+'°';{show on stackmenu what's happening}
+                stackmenu1.actual_search_distance1.caption:=distancestr;
+                stackmenu1.caption:= 'Search distance:  '+distancestr;
+                mainwindow.caption:= 'Search distance:  '+distancestr;
 
-                 if distance>2 then {prevent flash for short distance solving}
-                 begin
-                   if popupnotifier_visible=false then begin mainwindow.popupnotifier1.visible:=true; popupnotifier_visible:=true; end; {activate only once}
-                   mainwindow.popupnotifier1.text:=distancestr+info_message;
-                 end;
+                if commandline_execution then {command line execution}
+                begin
+                   {$ifdef CPUARM}
+                   { tray icon  gives a fatal execution error in the old compiler for armhf}
+                   {$else}
+                   mainwindow.TrayIcon1.hint:=distancestr+info_message;
+                   {$endif}
+
+                   if distance>2 then {prevent flash for short distance solving}
+                   begin
+                     if popupnotifier_visible=false then begin mainwindow.popupnotifier1.visible:=true; popupnotifier_visible:=true; end; {activate only once}
+                     mainwindow.popupnotifier1.text:=distancestr+info_message;
+                   end;
+                end;
               end;
-            end;
-            {info reporting}
+              {info reporting}
 
-            {from version 0.9.212, the step size is fixed. If a low amount of  tetrahedrons are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all tetrahedrons of the image are compared with the database tetrahedrons while stepping through the sky}
-            {read nrstars_required stars from database. If search field is oversized, number of required stars increases with the power of the oversize factor. So the star density will be the same as in the image to solve}
-            if read_stars(telescope_ra,telescope_dec,search_field*oversize,round(nrstars_required*oversize*oversize) ,{var}database_stars)= false then
-            begin
-              application.messagebox(pchar('Error, some of the 290 star database files are missing!'+#13+'Download the g17 (or g16 or g18) and extract the files to the program directory.'),0 );
-              errorlevel:=33;{read error star database}
-              exit; {no stars}
-            end;
-
-            find_tetrahedrons_ref;{find star tetrahedrons, use database as reference image}
-            if solve_show_log then
-            begin
-              if (nrstars_required>database_stars+4) then
+              {from version 0.9.212, the step size is fixed. If a low amount of  tetrahedrons are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all tetrahedrons of the image are compared with the database tetrahedrons while stepping through the sky}
+              {read nrstars_required stars from database. If search field is oversized, number of required stars increases with the power of the oversize factor. So the star density will be the same as in the image to solve}
+              if read_stars(telescope_ra,telescope_dec,search_field*oversize,round(nrstars_required*oversize*oversize) ,{var}database_stars)= false then
               begin
-                  inc(limit_counter);
-                  mess:=#9+' Warning, reached maximum magnitude of star database! '+' Stars required:'+ inttostr(nrstars_required)+'  From database:'+inttostr(database_stars)+'  Warning nr:'+inttostr(limit_counter);
+                application.messagebox(pchar('Error, some of the 290 star database files are missing!'+#13+'Download the g17 (or g16 or g18) and extract the files to the program directory.'),0 );
+                errorlevel:=33;{read error star database}
+                exit; {no stars}
+              end;
+
+              find_tetrahedrons_ref;{find star tetrahedrons, use database as reference image}
+              if solve_show_log then
+              begin
+                if (nrstars_required>database_stars+4) then
+                begin
+                    inc(limit_counter);
+                    mess:=#9+' Warning, reached maximum magnitude of star database! '+' Stars required:'+ inttostr(nrstars_required)+'  From database:'+inttostr(database_stars)+'  Warning nr:'+inttostr(limit_counter);
+                end
+                else mess:='';
+                memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(telescope_ra,': ')+#9+prepare_dec(telescope_dec,'° ')+#9+' Up to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(length(starlisttetrahedrons1[0]))+' database tetrahedrons to compare.'+mess);
               end
-              else mess:='';
-              memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(telescope_ra,': ')+#9+prepare_dec(telescope_dec,'° ')+#9+' Up to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(length(starlisttetrahedrons1[0]))+' database tetrahedrons to compare.'+mess);
-            end
-            else
-            if (nrstars_required>database_stars+4) then inc(limit_counter);
+              else
+              if (nrstars_required>database_stars+4) then inc(limit_counter);
 
-            // for testing purposes
-            // create supplement lines for sky coverage testing
-            // stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
+              // for testing purposes
+              // create supplement lines for sky coverage testing
+              // stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
 
-            if length(starlisttetrahedrons1[0])>=3 then {enough tetrahedrons, lets try to find a match}
-               solution:=find_offset_and_rotation(minimum_tetrahedrons {>=3},strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false);{find an solution}
+              if length(starlisttetrahedrons1[0])>=3 then {enough tetrahedrons, lets try to find a match}
+                 solution:=find_offset_and_rotation(minimum_tetrahedrons {>=3},strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false);{find an solution}
 
-            Application.ProcessMessages;
-            if esc_pressed then  begin  stackmenu1.Memo2.Lines.EndUpdate; Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-          end;{ra in range}
-        end;{dec within range}
-        inc(count);{step further in spiral}
+              Application.ProcessMessages;
+              if esc_pressed then  begin  stackmenu1.Memo2.Lines.EndUpdate; Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+            end;{ra in range}
+          end;{dec within range}
+          inc(count);{step further in spiral}
 
-      until ((solution) or (spiral_x>max_distance));
+        until ((solution) or (spiral_x>max_distance));
+
+        if solution then
+        begin
+          centerX:=(width2-1)/2 ;{center image in 0..width2-1 range}
+          centerY:=(height2-1)/2;{center image in 0..height2-1 range}
+          crpix1:=centerX+1;{center image in fits coordinate range 1..width2}
+          crpix2:=centery+1;
+
+          standard_equatorial( telescope_ra,telescope_dec,
+              (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x}
+              (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
+              1, {CCD scale}
+              ra0 ,dec0{center equatorial position});
+          if match_nr=0 then ang_sep(ra_radians,dec_radians,ra0,dec0, sep);{offset found}
+          ra_radians:=ra0;
+          dec_radians:=dec0;
+          current_dist:=sqrt(sqr(solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]) + sqr(solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]))/3600; {current distance telescope and image center in degrees}
+          inc(match_nr);
+        end;
+      until ((solution=false) or (current_dist<fov2*0.05){within 5% if image height from center}  or (match_nr>=2));{Maximum accurcy loop. After match possible on a corner do a second solve using the found ra9,dec0 for maximum accuracy USING ALL STARS}
+
       stackmenu1.Memo2.Lines.EndUpdate;
-
     end; {enough tetrahedrons in image}
 
   until ((autoFOV=false) or (solution) or (fov2<=0.38)); {loop for autoFOV from 9.5 to 0.37 degrees. Will lock between 9.5*1.25 downto  0.37/1.25  or 11.9 downto 0.3 degrees}
@@ -739,17 +762,6 @@ begin
     memo2_message(inttostr(nr_references)+ ' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
                    +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])
                    +',  y:='+floattostr2(solution_vectorY[0])+'*x+ '+floattostr2(solution_vectorY[1])+'*y+ '+floattostr2(solution_vectorY[2]) );
-    centerX:=(width2-1)/2 ;{center image in 0..width2-1 range}
-    centerY:=(height2-1)/2;{center image in 0..height2-1 range}
-    crpix1:=centerX+1;{center image in fits coordinate range 1..width2}
-    crpix2:=centery+1;
-
-    standard_equatorial( telescope_ra,telescope_dec,
-        (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x}
-        (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
-        1, {CCD scale}
-        ra0 ,dec0{center equatorial position});
-
     //  following doesn't give maximum angle accuracy, so is not used.
     //    cd1_1:= - solution_vectorX[0]/3600;{/3600, arcsec to degrees conversion}
     //    cd1_2:= - solution_vectorX[1]/3600;
@@ -786,7 +798,7 @@ begin
 
     new_to_old_WCS;
     solved_in:=' Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}
-    ang_sep(ra_radians,dec_radians,ra0,dec0, sep);
+
     offset_found:=' Offset was '+floattostrF2(sep*180/pi,0,3)+' deg.';
     memo2_message('Solution found: '+  prepare_ra(ra0,': ')+#9+prepare_dec(dec0,'° ') +#9+ solved_in+offset_found+#9+' Used stars up to magnitude: '+floattostrF2(mag2/10,0,1) );
     mainwindow.caption:=('Solution found:    '+  prepare_ra(ra0,': ')+'     '+prepare_dec(dec0,'° ')  );

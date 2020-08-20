@@ -2197,7 +2197,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.410, '+about_message4+', dated 2020-08-19';
+  #13+#10+'ASTAP version ß0.9.411, '+about_message4+', dated 2020-08-20';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2467,7 +2467,7 @@ begin
   end;
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.FIT*';
-  data_range_groupBox1.Enabled:=true;
+  //data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
 
   if OpenDialog1.Execute then
@@ -3667,7 +3667,7 @@ begin
     OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
     opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
     fits_file:=true;
-    data_range_groupBox1.Enabled:=true;
+   // data_range_groupBox1.Enabled:=true;
     esc_pressed:=false;
 
     if OpenDialog1.Execute then
@@ -7027,7 +7027,7 @@ begin
                          '|Compressed FITS files|*.fz';
   opendialog1.initialdir:=ExtractFileDir(filename2);
   fits_file:=false;
-  data_range_groupBox1.Enabled:=true;
+ // data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
   err:=false;
   if OpenDialog1.Execute then
@@ -7721,7 +7721,7 @@ begin
   OpenDialog1.Title := 'Select multiple  files to rotate 90 degrees';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.FIT*';
-  data_range_groupBox1.Enabled:=true;
+  //data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
 
   if OpenDialog1.Execute then
@@ -7870,7 +7870,7 @@ begin
                          '|Compressed FITS files|*.fz';
   opendialog1.initialdir:=ExtractFileDir(filename2);
   fits_file:=false;
-  data_range_groupBox1.Enabled:=true;
+ // data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
   err:=false;
   if OpenDialog1.Execute then
@@ -8104,7 +8104,7 @@ begin
   OpenDialog1.Title := 'Select multiple  files to add asteroid annotation to the header';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS';
-  data_range_groupBox1.Enabled:=true;
+ // data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
 
   if OpenDialog1.Execute then
@@ -9436,7 +9436,7 @@ begin
   OpenDialog1.Title := 'Select multiple  files to add plate solution';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS';
-  data_range_groupBox1.Enabled:=true;
+ // data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
 
   if OpenDialog1.Execute then
@@ -11602,7 +11602,7 @@ begin
                          '|Compressed FITS files|*.fz';
   opendialog1.initialdir:=ExtractFileDir(filename2);
   fits_file:=false;
-  data_range_groupBox1.Enabled:=true;
+//  data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
   err:=false;
   if OpenDialog1.Execute then
