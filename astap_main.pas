@@ -2197,7 +2197,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.411, '+about_message4+', dated 2020-08-20';
+  #13+#10+'ASTAP version ß0.9.412a, '+about_message4+', dated 2020-08-21';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5142,7 +5142,7 @@ begin
   {do refresh at the end for smooth display, especially for blinking }
   img.refresh;{important, show update}
 
-  tetrahedrons_displayed:=false; {displaying tetrahedrons doesn't require a screen refresh}
+  quads_displayed:=false; {displaying quads doesn't require a screen refresh}
 
   Screen.cursor:= Save_Cursor;
 end;
@@ -6227,7 +6227,7 @@ begin
     dum:=initstring.Values['solve_search_field']; if dum<>'' then stackmenu1.search_fov1.text:=dum;
 
     dum:=initstring.Values['radius_search']; if dum<>'' then stackmenu1.radius_search1.text:=dum;
-    dum:=initstring.Values['tetrahedron_tolerance']; if dum<>'' then stackmenu1.tetrahedron_tolerance1.text:=dum;
+    dum:=initstring.Values['quad_tolerance']; if dum<>'' then stackmenu1.quad_tolerance1.text:=dum;
     dum:=initstring.Values['maximum_stars']; if dum<>'' then stackmenu1.max_stars1.text:=dum;
     dum:=initstring.Values['min_star_size']; if dum<>'' then stackmenu1.min_star_size1.text:=dum;
     dum:=initstring.Values['min_star_size_stacking']; if dum<>'' then stackmenu1.min_star_size_stacking1.text:=dum;
@@ -6540,7 +6540,7 @@ begin
   initstring.Values['star_database']:=stackmenu1.star_database1.text;
   initstring.Values['solve_search_field']:=stackmenu1.search_fov1.text;
   initstring.Values['radius_search']:=stackmenu1.radius_search1.text;
-  initstring.Values['tetrahedron_tolerance']:=stackmenu1.tetrahedron_tolerance1.text;
+  initstring.Values['quad_tolerance']:=stackmenu1.quad_tolerance1.text;
   initstring.Values['maximum_stars']:=stackmenu1.max_stars1.text;
   initstring.Values['min_star_size']:=stackmenu1.min_star_size1.text;
   initstring.Values['min_star_size_stacking']:=stackmenu1.min_star_size_stacking1.text;
@@ -9300,7 +9300,7 @@ begin
                  stackmenu1.downsample_for_solving1.text:=GetOptionValue('z');
         if hasoption('s') then
                  stackmenu1.max_stars1.text:=GetOptionValue('s');
-        if hasoption('t') then stackmenu1.tetrahedron_tolerance1.text:=GetOptionValue('t');
+        if hasoption('t') then stackmenu1.quad_tolerance1.text:=GetOptionValue('t');
         if hasoption('m') then stackmenu1.min_star_size1.text:=GetOptionValue('m');
         if hasoption('speed') then stackmenu1.force_oversize1.checked:=pos('slow',GetOptionValue('speed'))<>0;
 

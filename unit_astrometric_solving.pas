@@ -38,8 +38,8 @@ will allow specification of the α, δ equatorial positions of each pixel. For s
 six plate constants are a relative astrometric solution. The position of the reference image is not required. Pixels of the solved image can be stacked with reference image using
 the six plate constants only.
 
-To automate this process rather then using reference stars the matching reference objects are the center positions of tetrahedrons made of four close stars. Comparing the length ratios
-of the sides of the tetrahedrons allows automated matching.
+To automate this process rather then using reference stars the matching reference objects are the center positions of quads made of four close stars. Comparing the length ratios
+of the sides of the quads allows automated matching.
 
 Below a brief flowchart of the ASTAP astrometric solving process:
 }
@@ -53,22 +53,23 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 //                                                                               | Convert the α, δ equatorial coordinates into standard coordinates
 //                                                                               | (CCD pixel x,y coordinates for optical projection), rigid method
 //
-//3) 	Use the extracted stars to construct the smallest irregular tetrahedrons | Uses the stars to construct the smallest irregular tetrahedrons of four
-//      of four  star (quads). Calculate the length of the six tetrahedron edges | stars (quads). Calculate the length of the six tetrahedron edges
-//      in pixels and the mean x,y position of the tetrahedrons.                 | in pixels and the mean x, y position of the tetrahedrons.
+//3) 	Use the extracted stars to construct the smallest irregular tetrahedrons | Use the extracted stars to construct the smallest irregular tetrahedrons
+//      figures of four  star called quads. Calculate the six distance between   | figures of four  star called quads. Calculate the six distance between
+//      the four stars and the mean x,y position of the quad                     | the four stars and the mean x,y position of the quad
 //                                                                               |
-//4) 	Sort the six tetrahedron edges on length for each tetrahedron. 	         | Sort the six tetrahedron edges on length for each tetrahedron.
-//      e1 is the longest and e6 shortest.                                       | e1 is the longest and e6 shortest.
+//4) 	For each quad sort the six quad distances on size.                   	 | For each quad sort the six quad distances on size.
+//      d1 is the longest and d6 the shortest.                                   | d1 is the longest and d6 the shortest.
 //                                                                               |
-//5) 	Scale the tetrahedron edges as (e1, e2/e1,e3/e1,e4/e1,e5/e1,e6/e1)       | Scale the tetrahedron edges as (e1, e2/e1,e3/e1,e4/e1,e5/e1,e6/e1)
+//5) 	Scale the quad star distance as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1)      | Scale the quad star distance as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1)
+//      These are the image hash codes.                                          | These are the database hash codes.
 //
 //                           => matching process <=
-//6)                         Find tetrahedrons matches where edges e2/e1 to e6/e1 match within a small tolerance.
+//6)                         Find quad has code matches where the distances d2/d1 to d6/d1 match within a small tolerance.
 //
-//7) 		             For matching tetrahedrons, calculate the size ratio e1_found/e1_reference and find μ (mean), σ (standard deviation) of these ratios.
-//                           Remove the outlier tetrahedrons with a ratio above 3 * σ.
+//7) 		             For matching quad has codes, calculate the size ratio d1_found/d1_reference and find μ (mean), σ (standard deviation) of these ratios.
+//                           Remove the quads where the size ratio is 3 * σ above the mean.
 //
-//8)                         From the remaining matching tetrahedrons, prepare the "A"matrix/array containing the x,y center positions of the test image tetrahedrons in standard coordinates
+//8)                         From the remaining matching quads, prepare the "A"matrix/array containing the x,y center positions of the test image quads in standard coordinates
 //                           and  the array X_ref, Y_ref containing the x, y center positions of the reference imagete trahedrons in standard coordinates.
 //
 //                           A:                  Sx:         X_ref:
@@ -472,7 +473,7 @@ end;
 
 function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
-  nrstars,nrstars_required,count,max_distance,nr_tetrahedrons, minimum_tetrahedrons,i,database_stars,distance,binning,match_nr   : integer;
+  nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,i,database_stars,distance,binning,match_nr   : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,oversize,sep,ra7,dec7,
   centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist: double;
   solution, go_ahead,solve_show_log  : boolean;
@@ -572,18 +573,18 @@ begin
     solution:=false; {assume no match is found}
     go_ahead:=(nrstars>=6); {should be more but let's try}
 
-    if go_ahead then {enough stars, lets find tetrahedrons}
+    if go_ahead then {enough stars, lets find quads}
     begin
-      find_tetrahedrons_new;{find tetrahedrons for new image}
-      nr_tetrahedrons:=Length(starlisttetrahedrons2[0]);
-      go_ahead:=nr_tetrahedrons>=3; {enough tetrahedrons?}
+      find_quads_new;{find quads for new image}
+      nr_quads:=Length(starlistquads2[0]);
+      go_ahead:=nr_quads>=3; {enough quads?}
 
-      {from version 0.9.212, the step size is fixed. If a low amount of  tetrahedrons are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all tetrahedrons of the image are compared with the database tetrahedrons while stepping through the sky}
-      if nr_tetrahedrons<25  then oversize:=2 {make dimensions of square search window twice then the image height}
+      {from version 0.9.212, the step size is fixed. If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
+      if nr_quads<25  then oversize:=2 {make dimensions of square search window twice then the image height}
       else
-      if nr_tetrahedrons>100 then oversize:=1 {make dimensions of square search window equal to the image height}
+      if nr_quads>100 then oversize:=1 {make dimensions of square search window equal to the image height}
       else
-      oversize:=2*sqrt(25/nr_tetrahedrons);{calculate between 25 th=2 and 100 th=1, tetrahedrons are area related so take sqrt to get oversize}
+      oversize:=2*sqrt(25/nr_quads);{calculate between 25 th=2 and 100 th=1, quads are area related so take sqrt to get oversize}
 
       if stackmenu1.force_oversize1.checked then
       begin
@@ -591,16 +592,16 @@ begin
         oversize_mess:='Search window at 200%'
       end
       else
-      oversize_mess:='Search window at '+ inttostr(round((oversize)*100)) +'% based on the number of tetrahedrons. Step size at 100% of image height';
+      oversize_mess:='Search window at '+ inttostr(round((oversize)*100)) +'% based on the number of quads. Step size at 100% of image height';
 
       radius:=strtofloat2(stackmenu1.radius_search1.text);{radius search field}
 
       max_distance:=round(radius/(fov2+0.00001));
-      memo2_message(inttostr(nrstars)+' stars selected and '+inttostr(nr_tetrahedrons)+' tetrahedrons selected in the image. '+inttostr(nrstars_required)+' database stars required for the square search field of '+floattostrF2(fov2,0,1)+'°. '+oversize_mess );
+      memo2_message(inttostr(nrstars)+' stars selected and '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(nrstars_required)+' database stars required for the square search field of '+floattostrF2(fov2,0,1)+'°. '+oversize_mess );
 
-      if nr_tetrahedrons>500 then minimum_tetrahedrons:=10 else {prevent false detections for star rich images}
-      if nr_tetrahedrons>200 then minimum_tetrahedrons:=6 else  {prevent false detections for star rich images}
-      minimum_tetrahedrons:=3;
+      if nr_quads>500 then minimum_quads:=10 else {prevent false detections for star rich images}
+      if nr_quads>200 then minimum_quads:=6 else  {prevent false detections for star rich images}
+      minimum_quads:=3;
 
     end
     else
@@ -694,7 +695,7 @@ begin
               end;
               {info reporting}
 
-              {from version 0.9.212, the step size is fixed. If a low amount of  tetrahedrons are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all tetrahedrons of the image are compared with the database tetrahedrons while stepping through the sky}
+              {from version 0.9.212, the step size is fixed. If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
               {read nrstars_required stars from database. If search field is oversized, number of required stars increases with the power of the oversize factor. So the star density will be the same as in the image to solve}
               if read_stars(telescope_ra,telescope_dec,search_field*oversize,round(nrstars_required*oversize*oversize) ,{var}database_stars)= false then
               begin
@@ -703,7 +704,7 @@ begin
                 exit; {no stars}
               end;
 
-              find_tetrahedrons_ref;{find star tetrahedrons, use database as reference image}
+              find_quads_ref;{find star quads, use database as reference image}
               if solve_show_log then
               begin
                 if (nrstars_required>database_stars+4) then
@@ -712,7 +713,7 @@ begin
                     mess:=#9+' Warning, reached maximum magnitude of star database! '+' Stars required:'+ inttostr(nrstars_required)+'  From database:'+inttostr(database_stars)+'  Warning nr:'+inttostr(limit_counter);
                 end
                 else mess:='';
-                memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(telescope_ra,': ')+#9+prepare_dec(telescope_dec,'° ')+#9+' Up to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(length(starlisttetrahedrons1[0]))+' database tetrahedrons to compare.'+mess);
+                memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(telescope_ra,': ')+#9+prepare_dec(telescope_dec,'° ')+#9+' Up to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(length(starlistquads1[0]))+' database quads to compare.'+mess);
               end
               else
               if (nrstars_required>database_stars+4) then inc(limit_counter);
@@ -721,8 +722,8 @@ begin
               // create supplement lines for sky coverage testing
               // stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
 
-              if length(starlisttetrahedrons1[0])>=3 then {enough tetrahedrons, lets try to find a match}
-                 solution:=find_offset_and_rotation(minimum_tetrahedrons {>=3},strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false);{find an solution}
+              if length(starlistquads1[0])>=3 then {enough quads, lets try to find a match}
+                 solution:=find_offset_and_rotation(minimum_quads {>=3},strtofloat2(stackmenu1.quad_tolerance1.text),false);{find an solution}
 
               Application.ProcessMessages;
               if esc_pressed then  begin  stackmenu1.Memo2.Lines.EndUpdate; Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
@@ -753,13 +754,13 @@ begin
       until ((solution=false) or (current_dist<fov2*0.05){within 5% if image height from center}  or (match_nr>=2));{Maximum accurcy loop. After match possible on a corner do a second solve using the found ra9,dec0 for maximum accuracy USING ALL STARS}
 
       stackmenu1.Memo2.Lines.EndUpdate;
-    end; {enough tetrahedrons in image}
+    end; {enough quads in image}
 
   until ((autoFOV=false) or (solution) or (fov2<=0.38)); {loop for autoFOV from 9.5 to 0.37 degrees. Will lock between 9.5*1.25 downto  0.37/1.25  or 11.9 downto 0.3 degrees}
 
   if solution then
   begin
-    memo2_message(inttostr(nr_references)+ ' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
+    memo2_message(inttostr(nr_references)+ ' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                    +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])
                    +',  y:='+floattostr2(solution_vectorY[0])+'*x+ '+floattostr2(solution_vectorY[1])+'*y+ '+floattostr2(solution_vectorY[2]) );
     //  following doesn't give maximum angle accuracy, so is not used.

@@ -256,7 +256,7 @@ begin
             if init=false then {first image}
             begin
               bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
-              find_tetrahedrons_ref;{find tetrahedrons for reference image}
+              find_quads_ref;{find quads for reference image}
             end;
 
 
@@ -309,15 +309,15 @@ begin
             begin{internal alignment}
               bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
 
-              find_tetrahedrons_new;{find triangels for new image}
-              if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
-              memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
+              find_quads_new;{find triangels for new image}
+              if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
+              memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                      +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])
                      +',  y:='+floattostr2(solution_vectorY[0])+'*x+ '+floattostr2(solution_vectorY[1])+'*y+ '+floattostr2(solution_vectorY[2]) )
 
                else
                begin
-                 memo2_message('Not enough tetrahedron matches <3 or inconsistent solution, skipping this image.');
+                 memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
                  solution:=false;
                end;
              end{internal alignment}

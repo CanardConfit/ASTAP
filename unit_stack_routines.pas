@@ -178,6 +178,7 @@ var
   saturated_level,hfd_min                         : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment,
   use_astrometry_internal,vector_based :boolean;
+
 begin
   with stackmenu1 do
   begin
@@ -355,7 +356,7 @@ begin
               begin
                 binning:=report_binning;{select binning based on the height of the light}
                 bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
-                find_tetrahedrons_ref;{find tetrahedrons for reference image}
+                find_quads_ref;{find quads for reference image}
               end;
             end;
 
@@ -371,9 +372,9 @@ begin
               for fitsY:=0 to height_max-1 do
                 for fitsX:=0 to width_max-1 do
                 begin
-                  img_average[0,fitsX,fitsY]:=0; {clear img_average}
-                  img_average[1,fitsX,fitsY]:=0; {clear img_average}
-                  img_average[2,fitsX,fitsY]:=0; {clear img_average}
+                  img_average[0,fitsX,fitsY]:=500; {clear img_average. Set default at 500}
+                  img_average[1,fitsX,fitsY]:=500; {clear img_average}
+                  img_average[2,fitsX,fitsY]:=500; {clear img_average}
                   img_temp[0,fitsX,fitsY]:=0;
                   img_temp[1,fitsX,fitsY]:=0; {clear img_temp}
                   img_temp[2,fitsX,fitsY]:=0; {clear img_temp}
@@ -396,15 +397,15 @@ begin
                 begin{internal alignment}
                   bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
 
-                  find_tetrahedrons_new;{find tetrahedrons for new image}
-                  if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
-                  memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
+                  find_quads_new;{find quads for new image}
+                  if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
+                  memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                        +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])
                        +',  y:='+floattostr2(solution_vectorY[0])+'*x+ '+floattostr2(solution_vectorY[1])+'*y+ '+floattostr2(solution_vectorY[2]) )
 
                     else
                     begin
-                      memo2_message('Not enough tetrahedron matches <3 or inconsistent solution, skipping this image.');
+                      memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
                       files_to_process[c].name:=''; {remove file from list}
                      solution:=false;
                       ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[2]:=6;{mark 3th column with exclaimation}
@@ -449,9 +450,9 @@ begin
                     else
                     begin
                       value:=(value-background_r);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
-                      if rr_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + rr_factor*value+500;{execute only if greater then zero for speed}img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                      if rg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + rg_factor*value+500;img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                      if rb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + rb_factor*value+500; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                      if rr_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + rr_factor*value;{execute only if greater then zero for speed}img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                      if rg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + rg_factor*value;img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                      if rb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + rb_factor*value; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1;{count the number of image pixels added=samples} end;
                     end;
                   end;
                   if c=2 {green} then
@@ -466,9 +467,9 @@ begin
                     else
                     begin
                       value:=(value-background_g);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
-                      if gr_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + gr_factor*value+500;{execute only if greater then zero for speed}img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                      if gg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + gg_factor*value+500;img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                      if gb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + gb_factor*value+500; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                      if gr_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + gr_factor*value;{execute only if greater then zero for speed}img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                      if gg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + gg_factor*value;img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                      if gb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + gb_factor*value; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1;{count the number of image pixels added=samples} end;
                     end;
                   end;
                   if c=3 {blue}  then
@@ -483,16 +484,16 @@ begin
                     else
                     begin
                       value:=(value-background_b);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
-                      if br_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + br_factor*value+500;{execute only if greater then zero for speed}img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                      if bg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + bg_factor*value+500; img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                      if bb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + bb_factor*value+500; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                      if br_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + br_factor*value;{execute only if greater then zero for speed}img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                      if bg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + bg_factor*value; img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                      if bb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + bb_factor*value; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1;{count the number of image pixels added=samples} end;
                     end;
                   end;
                   if c=4 {RGB image, naxis3=3}   then
                   begin
-                    begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + img_loaded[0,fitsX-1,fitsY-1]-background_r+500; img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                    begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + img_loaded[1,fitsX-1,fitsY-1]-background_g+500; img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                    begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + img_loaded[2,fitsX-1,fitsY-1]-background_b+500; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                    begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + img_loaded[0,fitsX-1,fitsY-1]-background_r; img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                    begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + img_loaded[1,fitsX-1,fitsY-1]-background_g; img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                    begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + img_loaded[2,fitsX-1,fitsY-1]-background_b; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1;{count the number of image pixels added=samples} end;
 
 //                    if ((x_new=1908) and (y_new=604)) then
 //                    beep;
@@ -506,13 +507,12 @@ begin
 //                  if ((x_new=1908) and (y_new=604)) then
 //                  beep;
 
-
                     colr:=img_average[0,x_new,y_new] - 475 + red_add; {lowest_most_common is around 450 to 500}
                     colg:=img_average[1,x_new,y_new] - 475 + green_add;
                     colb:=img_average[2,x_new,y_new] - 475 + blue_add;
 
-                    rgbsum:=colr+colg+colb; if rgbsum<0.1 then begin rgbsum:=0.1; red_f:=rgbsum/3; green_f:=red_f; blue_f:=red_f;end
-                    else
+
+                    rgbsum:=colr+colg+colb; {if rgbsum<0.1 then begin rgbsum:=0.1; red_f:=rgbsum/3; green_f:=red_f; blue_f:=red_f;end else}
                     begin
                       red_f:=colr/rgbsum;   if red_f<0   then red_f:=0;  if red_f>1 then   red_f:=1;
                       green_f:=colg/rgbsum; if green_f<0 then green_f:=0;if green_f>1 then green_f:=1;
@@ -676,7 +676,7 @@ begin
             else
             begin
               bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
-              find_tetrahedrons_ref;{find tetrahedrons for reference image}
+              find_quads_ref;{find quads for reference image}
               pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
               if pedestal<500 then pedestal:=500;{prevent image noise could go below zero}
               background_correction:=pedestal-cblack;
@@ -728,15 +728,15 @@ begin
                 background_correction:=pedestal-cblack;
                 datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
-                find_tetrahedrons_new;{find triangels for new image}
-                if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
-                memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
+                find_quads_new;{find triangels for new image}
+                if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
+                memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                      +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])
                      +',  y:='+floattostr2(solution_vectorY[0])+'*x+ '+floattostr2(solution_vectorY[1])+'*y+ '+floattostr2(solution_vectorY[2]) )
 
                   else
                   begin
-                    memo2_message('Not enough tetrahedron matches <3 or inconsistent solution, skipping this image.');
+                    memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
                     files_to_process[c].name:=''; {remove file from list}
                     solution:=false;
                     ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[2]:=6;{mark 3th column with exclaimation}
@@ -1112,7 +1112,7 @@ begin
           begin
             bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
 
-            find_tetrahedrons_ref;{find tetrahedrons for reference image}
+            find_quads_ref;{find quads for reference image}
             pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
             if pedestal<500 then pedestal:=500;{prevent image noise could go below zero}
             background_correction:=pedestal-cblack;
@@ -1157,16 +1157,16 @@ begin
                   background_correction:=pedestal-cblack;{correct later for difference in background}
                   datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
-                  find_tetrahedrons_new;{find tetrahedrons for new image}
-                  if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),true{save solution}) then {find difference between ref image and new image}
+                  find_quads_new;{find quads for new image}
+                  if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),true{save solution}) then {find difference between ref image and new image}
 
-                  memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
+                  memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                        +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])
                        +',  y:='+floattostr2(solution_vectorY[0])+'*x+ '+floattostr2(solution_vectorY[1])+'*y+ '+floattostr2(solution_vectorY[2]) )
 
                     else
                     begin
-                      memo2_message('Not enough tetrahedron matches <3 or inconsistent solution, skipping this image.');
+                      memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
                       files_to_process[c].name:=''; {remove file from list}
                       solution:=false;
                       ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[2]:=6;{mark 3th column with exclamation}
@@ -1579,7 +1579,7 @@ begin
           else
           begin
             bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
-            find_tetrahedrons_ref;{find tetrahedrons for reference image}
+            find_quads_ref;{find quads for reference image}
             pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
             if pedestal<500 then pedestal:=500;{prevent image noise could go below zero}
             background_correction:=pedestal-cblack;
@@ -1632,15 +1632,15 @@ begin
               background_correction:=pedestal-cblack;
               datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
-              find_tetrahedrons_new;{find tetrahedrons for new image}
-              if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
-              memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
+              find_quads_new;{find quads for new image}
+              if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
+              memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                    +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])
                    +',  y:='+floattostr2(solution_vectorY[0])+'*x+ '+floattostr2(solution_vectorY[1])+'*y+ '+floattostr2(solution_vectorY[2]) )
 
                 else
                 begin
-                  memo2_message('Not enough tetrahedron matches <3 or inconsistent solution, skipping this image.');
+                  memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
                   files_to_process[c].name:=''; {remove file from list}
                   solution:=false;
                   ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[2]:=6;{mark 3th column with exclaimation}

@@ -9,7 +9,7 @@ object form_astrometry_net1: Tform_astrometry_net1
   KeyPreview = True
   OnKeyPress = FormKeyPress
   OnShow = FormShow
-  LCLVersion = '2.0.6.0'
+  LCLVersion = '2.0.10.0'
   object cygwin1: TComboBox
     Left = 112
     Height = 23
@@ -54,15 +54,14 @@ object form_astrometry_net1: Tform_astrometry_net1
     Width = 671
     BorderSpacing.Around = 5
     ItemHeight = 15
-    ItemIndex = 2
     Items.Strings = (
-      '--downsample 2 --no-fits2fits'
-      '--downsample 4 --no-fits2fits'
-      '--downsample 2'
-      '--downsample 4'
-      '--downsample 2 --no-verify'
-      '--downsample 2 --no-verify --sigma 20'
-      '--downsample 2  --no-fits2fits --no-verify --sigma 20'
+      '--downsample 2 --no-fits2fits --crpix-center'
+      '--downsample 4 --no-fits2fits --crpix-center'
+      '--downsample 2 --crpix-center'
+      '--downsample 4 --crpix-center'
+      '--downsample 2 --no-verify --crpix-center'
+      '--downsample 2 --no-verify --sigma 20 --crpix-center'
+      '--downsample 2  --no-fits2fits --no-verify --sigma 20 --crpix-center'
     )
     ParentColor = True
     ParentFont = False

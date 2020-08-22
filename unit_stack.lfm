@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1618
-    ActivePage = Images
+    ActivePage = alignment1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 6
     TabOrder = 5
     object Images: TTabSheet
       Hint = 'Select here the light frames'
@@ -2535,13 +2535,13 @@ object stackmenu1: Tstackmenu1
                 Alignment = taRightJustify
                 AutoSize = False
                 BorderSpacing.Around = 5
-                Caption = 'Tetrahedron tolerance:'
+                Caption = 'Hash code tolerance:'
                 Color = clBtnFace
                 ParentColor = False
                 ParentFont = False
                 Transparent = False
               end
-              object tetrahedron_tolerance1: TComboBox
+              object quad_tolerance1: TComboBox
                 Left = 264
                 Height = 23
                 Hint = 'If detections fails increase tolerance. Typical value 0.003 up to 0.008'
@@ -2734,14 +2734,14 @@ object stackmenu1: Tstackmenu1
           end
         end
       end
-      object show_tetrahedrons1: TBitBtn
+      object show_quads1: TBitBtn
         Left = 1104
         Height = 30
-        Hint = 'Show triangular pyramids or irregular tetrahedrons in current image.'
+        Hint = 'Show quads connections  as irregular tetrahedrons in the current image.'
         Top = 16
         Width = 320
         BorderSpacing.Around = 5
-        Caption = 'Test button to show tetrahedrons'
+        Caption = 'Test button to show quads'
         Glyph.Data = {
           F6000000424DF600000000000000760000002800000010000000100000000100
           0400000000008000000000000000000000000000000000000000000000000000
@@ -2752,7 +2752,7 @@ object stackmenu1: Tstackmenu1
           7DD7DD7DDD7DDDDDD7D7DD7DD7DDDDDDDD77D7DD7DDDDDDDDDD7D7D7DDDDDDD7
           777DD77DDDD7777DDDDD77D7777DDDDDDDDD777DDDDDDDDDDDDD
         }
-        OnClick = show_tetrahedrons1Click
+        OnClick = show_quads1Click
         ParentFont = False
         ParentShowHint = False
         ShowHint = True

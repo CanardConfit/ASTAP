@@ -408,7 +408,7 @@ type
     selectall7: TMenuItem;
     list_to_clipboard1: TMenuItem;
     selectall8: TMenuItem;
-    show_tetrahedrons1: TBitBtn;
+    show_quads1: TBitBtn;
     sigma_decolour1: TComboBox;
     smart_colour_smooth_button1: TButton;
     smart_smooth_width1: TComboBox;
@@ -438,7 +438,7 @@ type
     tab_stackmethod1: TTabSheet;
     test_flat_mean: TButton;
     test_pattern1: TButton;
-    tetrahedron_tolerance1: TComboBox;
+    quad_tolerance1: TComboBox;
     uncheck_outliers1: TCheckBox;
     undo_button1: TBitBtn;
     undo_button10: TBitBtn;
@@ -669,7 +669,7 @@ type
     procedure help_stack_menu1Click(Sender: TObject);
     procedure help_internal_alignment1Click(Sender: TObject);
     procedure removeselected1Click(Sender: TObject);
-    procedure show_tetrahedrons1Click(Sender: TObject);
+    procedure show_quads1Click(Sender: TObject);
     procedure subtract_background1Click(Sender: TObject);
     procedure browse1Click(Sender: TObject);
     procedure save_as_new_file1Click(Sender: TObject);
@@ -761,7 +761,7 @@ const
 //  image_path: string='';
   dropsize: double=0.65; {should be between 1 and 0.5}
   new_analyse_required: boolean=false;{if changed then reanalyse}
-  tetrahedrons_displayed:boolean=false;{no tetrahedrons visible, so no refresh required}
+  quads_displayed:boolean=false;{no quads visible, so no refresh required}
   equalise_background_step: integer=1;
 
 
@@ -2010,7 +2010,7 @@ begin
   Screen.Cursor:=Save_Cursor;
 end;
 
-procedure Tstackmenu1.show_tetrahedrons1Click(Sender: TObject);
+procedure Tstackmenu1.show_quads1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
    hfd_min   : double;
@@ -2021,8 +2021,8 @@ begin
     Save_Cursor := Screen.Cursor;
     screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-    if  tetrahedrons_displayed then
-      plot_fits(mainwindow.image1,false,true); {remove tetrahedrons}
+    if  quads_displayed then
+      plot_fits(mainwindow.image1,false,true); {remove quads}
     get_background(0,img_loaded,false{histogram already available},true {unknown, calculate also noise level} ,{var}cblack,star_level);
 
     if use_astrometry_internal1.checked then
@@ -2033,9 +2033,9 @@ begin
     else hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
     find_stars(img_loaded,hfd_min,starlist1);{find stars and put them in a list}
-    find_tetrahedrons_ref;{find tetrahedrons for reference image}
-    display_tetrahedrons(starlisttetrahedrons1);
-    tetrahedrons_displayed:=true;
+    find_quads_ref;{find quads for reference image}
+    display_quads(starlistquads1);
+    quads_displayed:=true;
 
     Screen.Cursor:=Save_Cursor;
   end;
@@ -4032,7 +4032,7 @@ begin
               memo2_message('Working on star alignment solutions. Blink frequency will increase after completion.');
               get_background(0,img_loaded,false {no histogram already done},true {unknown, calculate also datamax}, {var} cblack,star_level);
               find_stars(img_loaded,hfd_min,starlist1);{find stars and put them in a list}
-              find_tetrahedrons_ref;{find tetrahedrons for reference image}
+              find_quads_ref;{find quads for reference image}
 
               reset_solution_vectors(1);{no influence on the first image since reference}
               save_solution_to_disk;{write solution_vectorX, solution_vectorY and solution_datamin to disk. Including solution_cblack[1]:=flux_magn_offset;}
@@ -4044,17 +4044,17 @@ begin
               mainwindow.caption:=filename2+' Working on star solutions, be patient.';
               get_background(0,img_loaded,false {no histogram already done} ,true {unknown, calculate also noise_level} , {var} cblack,star_level);
               find_stars(img_loaded,hfd_min,starlist2);{find stars and put them in a list}
-              find_tetrahedrons_new;{find tetrahedrons for new image}
-              if find_offset_and_rotation(3,strtofloat2(stackmenu1.tetrahedron_tolerance1.text),true{save solution}) then {find difference between ref image and new image}
+              find_quads_new;{find quads for new image}
+              if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),true{save solution}) then {find difference between ref image and new image}
               begin
-                memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' tetrahedrons selected matching within '+stackmenu1.tetrahedron_tolerance1.text+' tolerance.'
+                memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                    +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])
                    +',  y:='+floattostr2(solution_vectorY[0])+'*x+ '+floattostr2(solution_vectorY[1])+'*y+ '+floattostr2(solution_vectorY[2]) );
                 solut:=true;
               end
               else
               begin
-                memo2_message('Not enough tetrahedron matches <3 or inconsistent solution, skipping this image.');
+                memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
                 reset_solution_vectors(1);{default for no solution}
                 solut:=false;
               end;
@@ -6577,46 +6577,54 @@ end;
 
 
 procedure Tstackmenu1.luminance_filter1Change(Sender: TObject);
+var
+  err :boolean;
 begin
   new_analyse_required:=true;
-
+  err:=false;
   {remove duplication because they will be ignored later. Follow execution of stacking routine (for i:=0 to 4) so red, green, blue luminance}
-  if  AnsiCompareText(green_filter1.text,red_filter1.text)=0 then green_filter1.text:='';
-  if  AnsiCompareText(green_filter1.text,red_filter2.text)=0 then green_filter1.text:='';
+  if  AnsiCompareText(green_filter1.text,red_filter1.text)=0 then begin err:=true;green_filter1.text:=''; end;
+  if  AnsiCompareText(green_filter1.text,red_filter2.text)=0 then begin err:=true;green_filter1.text:=''; end;
 
-  if  AnsiCompareText(green_filter2.text,red_filter1.text)=0 then green_filter2.text:='';
-  if  AnsiCompareText(green_filter2.text,red_filter2.text)=0 then green_filter2.text:='';
+  if  AnsiCompareText(green_filter2.text,red_filter1.text)=0 then begin err:=true;green_filter2.text:=''; end;
+  if  AnsiCompareText(green_filter2.text,red_filter2.text)=0 then begin err:=true;green_filter2.text:=''; end;
 
-  if  AnsiCompareText(blue_filter1.text,red_filter1.text)=0 then blue_filter1.text:='';
-  if  AnsiCompareText(blue_filter1.text,red_filter2.text)=0 then blue_filter1.text:='';
+  if  AnsiCompareText(blue_filter1.text,red_filter1.text)=0 then begin err:=true;blue_filter1.text:=''; end;
+  if  AnsiCompareText(blue_filter1.text,red_filter2.text)=0 then begin err:=true;blue_filter1.text:=''; end;
 
-  if  AnsiCompareText(blue_filter2.text,red_filter1.text)=0 then blue_filter2.text:='';
-  if  AnsiCompareText(blue_filter2.text,red_filter2.text)=0 then blue_filter2.text:='';
+  if  AnsiCompareText(blue_filter2.text,red_filter1.text)=0 then begin err:=true;blue_filter2.text:=''; end;
+  if  AnsiCompareText(blue_filter2.text,red_filter2.text)=0 then begin err:=true;blue_filter2.text:=''; end;
 
-  if  AnsiCompareText(blue_filter1.text,green_filter1.text)=0 then blue_filter1.text:='';
-  if  AnsiCompareText(blue_filter1.text,green_filter2.text)=0 then blue_filter1.text:='';
+  if  AnsiCompareText(blue_filter1.text,green_filter1.text)=0 then begin err:=true;blue_filter1.text:=''; end;
+  if  AnsiCompareText(blue_filter1.text,green_filter2.text)=0 then begin err:=true;blue_filter1.text:=''; end;
 
-  if  AnsiCompareText(blue_filter2.text,green_filter1.text)=0 then blue_filter2.text:='';
-  if  AnsiCompareText(blue_filter2.text,green_filter2.text)=0 then blue_filter2.text:='';
+  if  AnsiCompareText(blue_filter2.text,green_filter1.text)=0 then begin err:=true;blue_filter2.text:=''; end;
+  if  AnsiCompareText(blue_filter2.text,green_filter2.text)=0 then begin err:=true;blue_filter2.text:=''; end;
 
 
-  if  AnsiCompareText(luminance_filter1.text,red_filter1.text)=0 then luminance_filter1.text:='';
-  if  AnsiCompareText(luminance_filter1.text,red_filter2.text)=0 then luminance_filter1.text:='';
+  if  AnsiCompareText(luminance_filter1.text,red_filter1.text)=0 then begin err:=true;luminance_filter1.text:=''; end;
+  if  AnsiCompareText(luminance_filter1.text,red_filter2.text)=0 then begin err:=true;luminance_filter1.text:=''; end;
 
-  if  AnsiCompareText(luminance_filter2.text,red_filter1.text)=0 then luminance_filter2.text:='';
-  if  AnsiCompareText(luminance_filter2.text,red_filter2.text)=0 then luminance_filter2.text:='';
+  if  AnsiCompareText(luminance_filter2.text,red_filter1.text)=0 then begin err:=true;luminance_filter2.text:=''; end;
+  if  AnsiCompareText(luminance_filter2.text,red_filter2.text)=0 then begin err:=true;luminance_filter2.text:=''; end;
 
-  if  AnsiCompareText(luminance_filter1.text,green_filter1.text)=0 then luminance_filter1.text:='';
-  if  AnsiCompareText(luminance_filter1.text,green_filter2.text)=0 then luminance_filter1.text:='';
+  if  AnsiCompareText(luminance_filter1.text,green_filter1.text)=0 then begin err:=true;luminance_filter1.text:=''; end;
+  if  AnsiCompareText(luminance_filter1.text,green_filter2.text)=0 then begin err:=true;luminance_filter1.text:=''; end;
 
-  if  AnsiCompareText(luminance_filter2.text,green_filter1.text)=0 then luminance_filter2.text:='';
-  if  AnsiCompareText(luminance_filter2.text,green_filter2.text)=0 then luminance_filter2.text:='';
+  if  AnsiCompareText(luminance_filter2.text,green_filter1.text)=0 then begin err:=true;luminance_filter2.text:=''; end;
+  if  AnsiCompareText(luminance_filter2.text,green_filter2.text)=0 then begin err:=true;luminance_filter2.text:=''; end;
 
-  if  AnsiCompareText(luminance_filter1.text,blue_filter1.text)=0 then luminance_filter1.text:='';
-  if  AnsiCompareText(luminance_filter1.text,blue_filter2.text)=0 then luminance_filter1.text:='';
+  if  AnsiCompareText(luminance_filter1.text,blue_filter1.text)=0 then begin err:=true;luminance_filter1.text:=''; end;
+  if  AnsiCompareText(luminance_filter1.text,blue_filter2.text)=0 then begin err:=true;luminance_filter1.text:=''; end;
 
-  if  AnsiCompareText(luminance_filter2.text,blue_filter1.text)=0 then luminance_filter2.text:='';
-  if  AnsiCompareText(luminance_filter2.text,blue_filter2.text)=0 then luminance_filter2.text:='';
+  if  AnsiCompareText(luminance_filter2.text,blue_filter1.text)=0 then begin err:=true;luminance_filter2.text:=''; end;
+  if  AnsiCompareText(luminance_filter2.text,blue_filter2.text)=0 then begin err:=true;luminance_filter2.text:=''; end;
+
+  if err=true then
+  begin
+    beep;
+    memo2_message('Filter name can be used only once! If required duplicate the file and modify filter new name in the header.');
+  end;
 end;
 
 
@@ -7636,7 +7644,8 @@ begin
                    1: begin filter_name1:=(green_filter1.text);filter_name2:=(green_filter2.text);end;
                    2: begin filter_name1:=(blue_filter1.text);filter_name2:=(blue_filter2.text);end;
                    3: begin filter_name1:='colour';filter_name2:='Colour';end;
-                 else begin filter_name1:=(luminance_filter1.text);filter_name2:=(luminance_filter2.text);end;
+                 else
+                 begin filter_name1:=(luminance_filter1.text);filter_name2:=(luminance_filter2.text);end;
         end;{case}
         nrfiles:=0;
 

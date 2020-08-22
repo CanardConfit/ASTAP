@@ -27,8 +27,8 @@ type
 
 var
    starlist1, starlist2          :star_list;
-   starlisttetrahedrons1, starlisttetrahedrons2 :star_list;{contain the three positions of the triangular tetrahedron stars}
-   star_tetrahedron_lengths1, star_tetrahedron_lengths2: star_list;
+   starlistquads1, starlistquads2 :star_list;{contain the three positions of the triangular quad stars}
+   quad_star_distances1, quad_star_distances2: star_list;
    A_XYpositions                          : star_list;
    b_Xrefpositions,b_Yrefpositions        :  array of double;
 
@@ -38,11 +38,11 @@ var
    Savefile: file of solution_vector;{to save solution if required for second and third step stacking}
 
 procedure find_stars(img :image_array;hfd_min:double;var starlist1: star_list);{find stars and put them in a list}
-procedure find_tetrahedrons_ref;  {find star tetrahedrons for ref image}
-procedure find_tetrahedrons_new;  {find star tetrahedrons for new image}
-function find_offset_and_rotation(minimum_tetrahedrons: integer;tolerance:double;save_solution:boolean) : boolean; {find difference between ref image and new image}
+procedure find_quads_ref;  {find star quads for ref image}
+procedure find_quads_new;  {find star quads for new image}
+function find_offset_and_rotation(minimum_quads: integer;tolerance:double;save_solution:boolean) : boolean; {find difference between ref image and new image}
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
-procedure display_tetrahedrons(starlisttetrahedrons :star_list);{draw tetrahedrons}
+procedure display_quads(starlistquads :star_list);{draw quads}
 procedure save_solution_to_disk;{write to disk}
 
 implementation
@@ -111,9 +111,9 @@ begin
   end;
 end; {lsq_fit}
 
-procedure display_tetrahedrons(starlisttetrahedrons :star_list);{draw tetrahedrons}
+procedure display_quads(starlistquads :star_list);{draw quads}
 var
-   i, nrtetrahedrons,x,y, flipx,flipy: integer;
+   i, nrquads,x,y, flipx,flipy: integer;
 begin
   if fits_file=false then exit; {file loaded?}
   mainwindow.image1.Canvas.Pen.Mode := pmMerge;
@@ -141,46 +141,46 @@ begin
     y:=0;
   end;
 
-  nrtetrahedrons:=Length(starlisttetrahedrons[0])-1;
+  nrquads:=Length(starlistquads[0])-1;
 
-  for i:=0 to  nrtetrahedrons do
+  for i:=0 to  nrquads do
   begin
     mainwindow.image1.Canvas.Pen.Color :=$606060 +random($9F9F9F);
     if odd(i) then mainwindow.image1.Canvas.Pen.Style := pssolid
        else  mainwindow.image1.Canvas.Pen.Style := psdot;
-    mainwindow.image1.Canvas.moveto(x+flipx*round(starlisttetrahedrons[0,i]),y+flipy*round(starlisttetrahedrons[1,i]));{move to star 1}
-    mainwindow.image1.Canvas.lineto(x+flipx*round(starlisttetrahedrons[2,i]),y+flipy*round(starlisttetrahedrons[3,i]));{draw line star1-star2}
+    mainwindow.image1.Canvas.moveto(x+flipx*round(starlistquads[0,i]),y+flipy*round(starlistquads[1,i]));{move to star 1}
+    mainwindow.image1.Canvas.lineto(x+flipx*round(starlistquads[2,i]),y+flipy*round(starlistquads[3,i]));{draw line star1-star2}
 
-    mainwindow.image1.Canvas.lineto(x+flipx*round(starlisttetrahedrons[4,i]),y+flipy*round(starlisttetrahedrons[5,i]));{draw line star2-star3}
-    mainwindow.image1.Canvas.lineto(x+flipx*round(starlisttetrahedrons[0,i]),y+flipy*round(starlisttetrahedrons[1,i]));{draw line star3-star1}
-    mainwindow.image1.Canvas.lineto(x+flipx*round(starlisttetrahedrons[6,i]),y+flipy*round(starlisttetrahedrons[7,i]));{draw line star1-star4}
-    mainwindow.image1.Canvas.lineto(x+flipx*round(starlisttetrahedrons[4,i]),y+flipy*round(starlisttetrahedrons[5,i]));{draw line star4-star3}
-    mainwindow.image1.Canvas.moveto(x+flipx*round(starlisttetrahedrons[6,i]),y+flipy*round(starlisttetrahedrons[7,i]));{move to star4}
-    mainwindow.image1.Canvas.lineto(x+flipx*round(starlisttetrahedrons[2,i]),y+flipy*round(starlisttetrahedrons[3,i]));{draw line star4-star2}
+    mainwindow.image1.Canvas.lineto(x+flipx*round(starlistquads[4,i]),y+flipy*round(starlistquads[5,i]));{draw line star2-star3}
+    mainwindow.image1.Canvas.lineto(x+flipx*round(starlistquads[0,i]),y+flipy*round(starlistquads[1,i]));{draw line star3-star1}
+    mainwindow.image1.Canvas.lineto(x+flipx*round(starlistquads[6,i]),y+flipy*round(starlistquads[7,i]));{draw line star1-star4}
+    mainwindow.image1.Canvas.lineto(x+flipx*round(starlistquads[4,i]),y+flipy*round(starlistquads[5,i]));{draw line star4-star3}
+    mainwindow.image1.Canvas.moveto(x+flipx*round(starlistquads[6,i]),y+flipy*round(starlistquads[7,i]));{move to star4}
+    mainwindow.image1.Canvas.lineto(x+flipx*round(starlistquads[2,i]),y+flipy*round(starlistquads[3,i]));{draw line star4-star2}
   end;
 end;
 
 const
     debugnr:integer=0;
 
-procedure find_tetrahedrons(starlist :star_list; var starlisttetrahedrons :star_list);  {build tetrahedrons using closest stars, revised 2020-7-1, 25% percent faster}
+procedure find_quads(starlist :star_list; var starlistquads :star_list);  {build quads using closest stars, revised 2020-7-1, 25% percent faster}
 var
-   i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrtetrahedrons,buffersize : integer;
+   i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrquads,buffersize : integer;
    distance,distance1,distance2,distance3{,dummy }                         : double;
-   identical_tetrahedron : boolean;
+   identical_quad : boolean;
 begin
   nrstars_min_one:=Length(starlist[0])-1;
-  buffersize:=nrstars_min_one;{number of tetrahedrons will be lower}
+  buffersize:=nrstars_min_one;{number of quads will be lower}
 
   if nrstars_min_one<3 then
-  begin {not enough stars for tetrahedrons}
-    SetLength(starlisttetrahedrons,10,0);
+  begin {not enough stars for quads}
+    SetLength(starlistquads,10,0);
     exit;
   end;
 
-  nrtetrahedrons:=0;
+  nrquads:=0;
 
-  SetLength(starlisttetrahedrons,10,buffersize);{set array length to buffer size}
+  SetLength(starlistquads,10,buffersize);{set array length to buffer size}
 
   j_used1:=0;{give it a default value}
   j_used2:=0;
@@ -230,109 +230,109 @@ begin
 //    if debugnr>=29070 then
 //    beep;
 
-    starlisttetrahedrons[0,nrtetrahedrons]:=starlist[0,i]; {copy first star position to the tetrahedron array}
-    starlisttetrahedrons[1,nrtetrahedrons]:=starlist[1,i];
+    starlistquads[0,nrquads]:=starlist[0,i]; {copy first star position to the quad array}
+    starlistquads[1,nrquads]:=starlist[1,i];
 
-    starlisttetrahedrons[2,nrtetrahedrons]:=starlist[0,j_used1]; {copy the second star position to the tetrahedron array}
-    starlisttetrahedrons[3,nrtetrahedrons]:=starlist[1,j_used1];
+    starlistquads[2,nrquads]:=starlist[0,j_used1]; {copy the second star position to the quad array}
+    starlistquads[3,nrquads]:=starlist[1,j_used1];
 
-    starlisttetrahedrons[4,nrtetrahedrons]:=starlist[0,j_used2];
-    starlisttetrahedrons[5,nrtetrahedrons]:=starlist[1,j_used2];
+    starlistquads[4,nrquads]:=starlist[0,j_used2];
+    starlistquads[5,nrquads]:=starlist[1,j_used2];
 
-    starlisttetrahedrons[6,nrtetrahedrons]:=starlist[0,j_used3];
-    starlisttetrahedrons[7,nrtetrahedrons]:=starlist[1,j_used3];
+    starlistquads[6,nrquads]:=starlist[0,j_used3];
+    starlistquads[7,nrquads]:=starlist[1,j_used3];
 
 
-    starlisttetrahedrons[8,nrtetrahedrons]:=(starlisttetrahedrons[0,nrtetrahedrons]+starlisttetrahedrons[2,nrtetrahedrons]+starlisttetrahedrons[4,nrtetrahedrons]+starlisttetrahedrons[6,nrtetrahedrons])/4; {center x position}
-    starlisttetrahedrons[9,nrtetrahedrons]:=(starlisttetrahedrons[1,nrtetrahedrons]+starlisttetrahedrons[3,nrtetrahedrons]+starlisttetrahedrons[5,nrtetrahedrons]+starlisttetrahedrons[7,nrtetrahedrons])/4; {center y position}
+    starlistquads[8,nrquads]:=(starlistquads[0,nrquads]+starlistquads[2,nrquads]+starlistquads[4,nrquads]+starlistquads[6,nrquads])/4; {center x position}
+    starlistquads[9,nrquads]:=(starlistquads[1,nrquads]+starlistquads[3,nrquads]+starlistquads[5,nrquads]+starlistquads[7,nrquads])/4; {center y position}
 
-    identical_tetrahedron:=false;
-    if nrtetrahedrons>=1 then {already a tetrahedron stored}
-    for k:=0 to nrtetrahedrons-1 do
-    if ((round(starlisttetrahedrons[8,nrtetrahedrons])=round(starlisttetrahedrons[8,k]) ) and
-        (round(starlisttetrahedrons[9,nrtetrahedrons])=round(starlisttetrahedrons[9,k]) ) ) then {same center position, found identical tetrahedron already in the list}
-           identical_tetrahedron:=true;
+    identical_quad:=false;
+    if nrquads>=1 then {already a quad stored}
+    for k:=0 to nrquads-1 do
+    if ((round(starlistquads[8,nrquads])=round(starlistquads[8,k]) ) and
+        (round(starlistquads[9,nrquads])=round(starlistquads[9,k]) ) ) then {same center position, found identical quad already in the list}
+           identical_quad:=true;
 
-    if identical_tetrahedron=false then  {new tetrahedron found}
+    if identical_quad=false then  {new quad found}
     begin
-      inc(nrtetrahedrons); {new unique tetrahedron found}
+      inc(nrquads); {new unique quad found}
       //will never happen:
-      //if nrtetrahedrons>=buffersize then setlength(starlisttetrahedrons,10,length(starlisttetrahedrons[0])+buffersize);{get more space}
+      //if nrquads>=buffersize then setlength(starlistquads,10,length(starlistquads[0])+buffersize);{get more space}
     end;
   end;{i}
 
-//  dummy:=starlisttetrahedrons[0,nrtetrahedrons-1];
-  SetLength(starlisttetrahedrons,10,nrtetrahedrons);{reduce array length to number tetrahedrons one shorter since last entry is not filled}
-//  if dummy<>starlisttetrahedrons[0,nrtetrahedrons-1] then
+//  dummy:=starlistquads[0,nrquads-1];
+  SetLength(starlistquads,10,nrquads);{reduce array length to number quads one shorter since last entry is not filled}
+//  if dummy<>starlistquads[0,nrquads-1] then
  // beep;
 end;
 
 
-procedure calc_tetrahedron_lengths(starlisttetrahedrons3: star_list; var star_tetrahedron_lengths: star_list);{calc and sort the six edges lengths, longest first}
+procedure calc_quad_distances(starlistquads3: star_list; var quad_star_distances: star_list);{calc and sort the six edges lengths, longest first}
 var
-   leng1,leng2,leng3,leng4,leng5,leng6,dummy  :double;
-   nrtetrahedrons, i,j: integer;
+   dist1,dist2,dist3,dist4,dist5,dist6,dummy  :double;
+   nrquads, i,j: integer;
 begin
-  nrtetrahedrons:=Length(starlisttetrahedrons3[0]);{nrtetrahedrons+1}
-  SetLength(star_tetrahedron_lengths,6,nrtetrahedrons);
+  nrquads:=Length(starlistquads3[0]);{nrquads+1}
+  SetLength(quad_star_distances,6,nrquads);
 
   try
-    for i:=0 to nrtetrahedrons-1 do
+    for i:=0 to nrquads-1 do
     begin
-      leng1:=sqrt(sqr(starlisttetrahedrons3[0,i]-starlisttetrahedrons3[2,i])+ sqr(starlisttetrahedrons3[1,i]-starlisttetrahedrons3[3,i]));{distance star1-star2}
-      leng2:=sqrt(sqr(starlisttetrahedrons3[0,i]-starlisttetrahedrons3[4,i])+ sqr(starlisttetrahedrons3[1,i]-starlisttetrahedrons3[5,i]));{distance star1-star3}
-      leng3:=sqrt(sqr(starlisttetrahedrons3[0,i]-starlisttetrahedrons3[6,i])+ sqr(starlisttetrahedrons3[1,i]-starlisttetrahedrons3[7,i]));{distance star1-star4}
-      leng4:=sqrt(sqr(starlisttetrahedrons3[2,i]-starlisttetrahedrons3[4,i])+ sqr(starlisttetrahedrons3[3,i]-starlisttetrahedrons3[5,i]));{distance star2-star3}
-      leng5:=sqrt(sqr(starlisttetrahedrons3[2,i]-starlisttetrahedrons3[6,i])+ sqr(starlisttetrahedrons3[3,i]-starlisttetrahedrons3[7,i]));{distance star2-star4}
-      leng6:=sqrt(sqr(starlisttetrahedrons3[4,i]-starlisttetrahedrons3[6,i])+ sqr(starlisttetrahedrons3[5,i]-starlisttetrahedrons3[7,i]));{distance star3-star4}
+      dist1:=sqrt(sqr(starlistquads3[0,i]-starlistquads3[2,i])+ sqr(starlistquads3[1,i]-starlistquads3[3,i]));{distance star1-star2}
+      dist2:=sqrt(sqr(starlistquads3[0,i]-starlistquads3[4,i])+ sqr(starlistquads3[1,i]-starlistquads3[5,i]));{distance star1-star3}
+      dist3:=sqrt(sqr(starlistquads3[0,i]-starlistquads3[6,i])+ sqr(starlistquads3[1,i]-starlistquads3[7,i]));{distance star1-star4}
+      dist4:=sqrt(sqr(starlistquads3[2,i]-starlistquads3[4,i])+ sqr(starlistquads3[3,i]-starlistquads3[5,i]));{distance star2-star3}
+      dist5:=sqrt(sqr(starlistquads3[2,i]-starlistquads3[6,i])+ sqr(starlistquads3[3,i]-starlistquads3[7,i]));{distance star2-star4}
+      dist6:=sqrt(sqr(starlistquads3[4,i]-starlistquads3[6,i])+ sqr(starlistquads3[5,i]-starlistquads3[7,i]));{distance star3-star4}
 
-      {sort edges length of triangular tetrahedrons}
-      for j:=1 to 6 do {sort on length}
+      {sort 6 distance on size}
+      for j:=1 to 6 do {sort on distance}
       begin
-        if leng6>leng5 then begin dummy:=leng5; leng5:=leng6; leng6:=dummy; end;
-        if leng5>leng4 then begin dummy:=leng4; leng4:=leng5; leng5:=dummy; end;
-        if leng4>leng3 then begin dummy:=leng3; leng3:=leng4; leng4:=dummy; end;
-        if leng3>leng2 then begin dummy:=leng2; leng2:=leng3; leng3:=dummy; end;
-        if leng2>leng1 then begin dummy:=leng1; leng1:=leng2; leng2:=dummy; end;
+        if dist6>dist5 then begin dummy:=dist5; dist5:=dist6; dist6:=dummy; end;
+        if dist5>dist4 then begin dummy:=dist4; dist4:=dist5; dist5:=dummy; end;
+        if dist4>dist3 then begin dummy:=dist3; dist3:=dist4; dist4:=dummy; end;
+        if dist3>dist2 then begin dummy:=dist2; dist2:=dist3; dist3:=dummy; end;
+        if dist2>dist1 then begin dummy:=dist1; dist1:=dist2; dist2:=dummy; end;
       end;
-      star_tetrahedron_lengths[0,i]:=leng1;
-      star_tetrahedron_lengths[1,i]:=leng2/leng1;{scale relative to largest edge length}
-      star_tetrahedron_lengths[2,i]:=leng3/leng1;
-      star_tetrahedron_lengths[3,i]:=leng4/leng1;
-      star_tetrahedron_lengths[4,i]:=leng5/leng1;
-      star_tetrahedron_lengths[5,i]:=leng6/leng1;
+      quad_star_distances[0,i]:=dist1;
+      quad_star_distances[1,i]:=dist2/dist1;{scale relative to largest distance}
+      quad_star_distances[2,i]:=dist3/dist1;
+      quad_star_distances[3,i]:=dist4/dist1;
+      quad_star_distances[4,i]:=dist5/dist1;
+      quad_star_distances[5,i]:=dist6/dist1;
     end;
 
   except
-    memo2_message('Exception in procedure calc_tetrahedron_lengths');{bug in fpc 3.20? Sets in once case the last elements of array to zero for file 4254816 new_image.fit'}
+    memo2_message('Exception in procedure calc_quad_distances');{bug in fpc 3.20? Sets in once case the last elements of array to zero for file 4254816 new_image.fit'}
   end;
 end;
 
 
-procedure find_fit( minimum_count: integer; tetrahedron_tolerance: double);
+procedure find_fit( minimum_count: integer; quad_tolerance: double);
 var
-   nrtetrahedrons1,nrtetrahedrons2, i,j,k   : integer;
+   nrquads1,nrquads2, i,j,k   : integer;
    mean_ratio1,  variance_ratio1,variance_factor : double;
    matchList1, matchlist2  : array of array of integer;
 begin
-  nrtetrahedrons1:=Length(star_tetrahedron_lengths1[0]);
-  nrtetrahedrons2:=Length(star_tetrahedron_lengths2[0]);
+  nrquads1:=Length(quad_star_distances1[0]);
+  nrquads2:=Length(quad_star_distances2[0]);
 
   {minimum_count required, 6 for stacking, 3 for plate solving}
-  if ((nrtetrahedrons1<minimum_count) or (nrtetrahedrons2< minimum_count)) then begin nr_references:=0; exit; end;{no solution abort before run time errors}
+  if ((nrquads1<minimum_count) or (nrquads2< minimum_count)) then begin nr_references:=0; exit; end;{no solution abort before run time errors}
 
-  {Find a tolerance resulting in 6 or more of the best matching tetrahedrons}
+  {Find a tolerance resulting in 6 or more of the best matching quads}
   setlength(matchlist2,2,1000);
   nr_references2:=0;
   i:=0;
   repeat
     j:=0;
     repeat
-      if abs(star_tetrahedron_lengths1[1,i] - star_tetrahedron_lengths2[1,j])<=tetrahedron_tolerance then {all length are scaled to the longest length so scale independent}
-      if abs(star_tetrahedron_lengths1[2,i] - star_tetrahedron_lengths2[2,j])<=tetrahedron_tolerance then
-      if abs(star_tetrahedron_lengths1[3,i] - star_tetrahedron_lengths2[3,j])<=tetrahedron_tolerance then
-      if abs(star_tetrahedron_lengths1[4,i] - star_tetrahedron_lengths2[4,j])<=tetrahedron_tolerance then
-      if abs(star_tetrahedron_lengths1[5,i] - star_tetrahedron_lengths2[5,j])<=tetrahedron_tolerance then
+      if abs(quad_star_distances1[1,i] - quad_star_distances2[1,j])<=quad_tolerance then {all length are scaled to the longest length so scale independent}
+      if abs(quad_star_distances1[2,i] - quad_star_distances2[2,j])<=quad_tolerance then
+      if abs(quad_star_distances1[3,i] - quad_star_distances2[3,j])<=quad_tolerance then
+      if abs(quad_star_distances1[4,i] - quad_star_distances2[4,j])<=quad_tolerance then
+      if abs(quad_star_distances1[5,i] - quad_star_distances2[5,j])<=quad_tolerance then
       begin
         matchlist2[0,nr_references2]:=i;{store match position}
         matchlist2[1,nr_references2]:=j;
@@ -340,26 +340,26 @@ begin
         if nr_references2>=length(matchlist2[0]) then setlength(matchlist2,2,nr_references2+1000);{get more space}
       end;
       inc(j);
-    until j>=nrtetrahedrons2;{j loop}
+    until j>=nrquads2;{j loop}
     inc(i);
-  until i>=nrtetrahedrons1;{i loop}
+  until i>=nrquads1;{i loop}
 
  //memo2_message('Found '+inttostr( nr_references2)+ ' references');
 
   if nr_references2< minimum_count then begin nr_references:=0; exit; end;{no solution abort before run time errors}
 
-  {find outliers for largest length of the tetrahedron}
+  {find outliers for largest length of the quad}
   mean_ratio1:=0;
   for k:=0 to nr_references2-1 do
   begin
-    mean_ratio1:=mean_ratio1+(star_tetrahedron_lengths1[0,matchlist2[0,k]]/star_tetrahedron_lengths2[0,matchlist2[1,k]]); {ratio between largest length of found and reference tetrahedron}
+    mean_ratio1:=mean_ratio1+(quad_star_distances1[0,matchlist2[0,k]]/quad_star_distances2[0,matchlist2[1,k]]); {ratio between largest length of found and reference quad}
   end;
   mean_ratio1:=mean_ratio1/nr_references2;
 
   variance_ratio1:=0;
-  for k:=0 to nr_references2-1 do {find standard deviation orientation tetrahedrons}
+  for k:=0 to nr_references2-1 do {find standard deviation orientation quads}
   begin
-    variance_ratio1:=variance_ratio1+sqr(mean_ratio1-(star_tetrahedron_lengths1[0,matchlist2[0,k]]/star_tetrahedron_lengths2[0,matchlist2[1,k]]));
+    variance_ratio1:=variance_ratio1+sqr(mean_ratio1-(quad_star_distances1[0,matchlist2[0,k]]/quad_star_distances2[0,matchlist2[1,k]]));
   end;
   variance_ratio1:=variance_ratio1/nr_references2;{variance or SD^2}
 
@@ -372,7 +372,7 @@ begin
 
   for k:=0 to nr_references2-1 do {throw outliers out}
   begin
-    if  sqr(mean_ratio1-(star_tetrahedron_lengths1[0,matchlist2[0,k]]/star_tetrahedron_lengths2[0,matchlist2[1,k]]))<=variance_factor*variance_ratio1 then {reference image better then 1.5 or 2.5 times standard deviation, keeping the best matches}
+    if  sqr(mean_ratio1-(quad_star_distances1[0,matchlist2[0,k]]/quad_star_distances2[0,matchlist2[1,k]]))<=variance_factor*variance_ratio1 then {reference image better then 1.5 or 2.5 times standard deviation, keeping the best matches}
     begin
       matchlist1[0,nr_references]:=matchlist2[0,k];{copy match position which are <3*SD}
       matchlist1[1,nr_references]:=matchlist2[1,k];
@@ -391,12 +391,12 @@ begin
 
   for k:=0 to nr_references-1 do
   begin
-    A_XYpositions[k,0]:=starlisttetrahedrons2[8,matchlist1[1,k]]; {average x position of tetrahedron}
-    A_XYpositions[k,1]:=starlisttetrahedrons2[9,matchlist1[1,k]]; {average y position of tetrahedron}
+    A_XYpositions[k,0]:=starlistquads2[8,matchlist1[1,k]]; {average x position of quad}
+    A_XYpositions[k,1]:=starlistquads2[9,matchlist1[1,k]]; {average y position of quad}
     A_XYpositions[k,2]:=1;
 
-    b_Xrefpositions[k]:=starlisttetrahedrons1[8,matchlist1[0,k]]; {x position of ref tetrahedron}
-    b_Yrefpositions[k]:=starlisttetrahedrons1[9,matchlist1[0,k]]; {Y position of ref tetrahedron}
+    b_Xrefpositions[k]:=starlistquads1[8,matchlist1[0,k]]; {x position of ref quad}
+    b_Yrefpositions[k]:=starlistquads1[9,matchlist1[0,k]]; {Y position of ref quad}
 
     {in matrix calculations, b_refpositionX[0..nr_equations-1,0..2]:=solution_vectorX[0..2] * A_XYpositions[0..nr_equations-1,0..2]}
     {                        b_refpositionY[0..nr_equations-1,0..2]:=solution_matrixY[0..2] * A_XYpositions[0..nr_equations-1,0..2]}
@@ -562,17 +562,17 @@ begin
 end;
 
 
-procedure find_tetrahedrons_ref;{find tetrahedrons for reference image}
+procedure find_quads_ref;{find quads for reference image}
 begin
-  find_tetrahedrons(starlist1,starlisttetrahedrons1);
-  calc_tetrahedron_lengths(starlisttetrahedrons1,star_tetrahedron_lengths1);{calc the six sides, longest first}
+  find_quads(starlist1,starlistquads1);
+  calc_quad_distances(starlistquads1,quad_star_distances1);{calc the six sides, longest first}
 end;
 
 
-procedure find_tetrahedrons_new;{find star tetrahedrons for new image}
+procedure find_quads_new;{find star quads for new image}
 begin
-  find_tetrahedrons(starlist2,starlisttetrahedrons2);
-  calc_tetrahedron_lengths(starlisttetrahedrons2,star_tetrahedron_lengths2);{calc the six sides, longest first}
+  find_quads(starlist2,starlistquads2);
+  calc_quad_distances(starlistquads2,quad_star_distances2);{calc the six sides, longest first}
 end;
 
 
@@ -603,12 +603,12 @@ begin
 end;
 
 
-function find_offset_and_rotation(minimum_tetrahedrons: integer;tolerance:double;save_solution:boolean) : boolean; {find difference between ref image and new image}
+function find_offset_and_rotation(minimum_quads: integer;tolerance:double;save_solution:boolean) : boolean; {find difference between ref image and new image}
 var
   xy_sqr_ratio   : double;
 begin
 
-  find_fit(minimum_tetrahedrons, tolerance);
+  find_fit(minimum_quads, tolerance);
 
   if nr_references<3 then
   begin
