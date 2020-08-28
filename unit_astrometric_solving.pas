@@ -475,7 +475,7 @@ function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{
 var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,i,database_stars,distance,binning,match_nr   : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,oversize,sep,ra7,dec7,
-  centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist: double;
+  centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,quad_tolerance: double;
   solution, go_ahead,solve_show_log  : boolean;
   Save_Cursor     : TCursor;
   startTick  : qword;{for timing/speed purposes}
@@ -516,7 +516,7 @@ begin
   end
   else warning:='';
 
-
+  quad_tolerance:=strtofloat2(stackmenu1.quad_tolerance1.text);
   max_fov:=strtofloat2(stackmenu1.max_fov1.caption);{for very large images only}
   max_fov:=min(max_fov,9.53);{warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
 
@@ -615,7 +615,7 @@ begin
       if select_star_database(stackmenu1.star_database1.text)=false then
       begin
         result:=false;
-        application.messagebox(pchar('No star database found in the program directory!'+#13+'Download the g17 (or g16 or g18) and install'), pchar('ASTAP error:'),0);
+        application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download the g17 (or v16, g16, v17 or g18) and install'), pchar('ASTAP error:'),0);
         errorlevel:=32;{no star database}
         exit;
       end
@@ -723,7 +723,7 @@ begin
               // stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
 
               if length(starlistquads1[0])>=3 then {enough quads, lets try to find a match}
-                 solution:=find_offset_and_rotation(minimum_quads {>=3},strtofloat2(stackmenu1.quad_tolerance1.text),false);{find an solution}
+                 solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance,false);{find an solution}
 
               Application.ProcessMessages;
               if esc_pressed then  begin  stackmenu1.Memo2.Lines.EndUpdate; Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;

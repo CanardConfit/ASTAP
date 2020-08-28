@@ -3554,7 +3554,7 @@ var
 begin
   x_trunc:=trunc(x1);
   y_trunc:=trunc(y1);
-  if ((x_trunc<0) or (x_trunc>(width2-1)) or (y_trunc<0) or (y_trunc>(height2-1))) then begin result:=0; exit;end;
+  if ((x_trunc<0) or (x_trunc>(width2-2)) or (y_trunc<0) or (y_trunc>(height2-2))) then begin result:=0; exit;end;
   x_frac :=frac(x1);
   y_frac :=frac(y1);
 
@@ -3614,12 +3614,12 @@ begin
     setlength(img_temp2,naxis3,w,h);;
     for k:=0 to naxis3-1 do
       for fitsY:=0 to h-1 do
-         for fitsX:=0 to w-1  do
-         begin
-           X:=(fitsX*width2/w);
-           Y:=(fitsY*height2/h);
-           img_temp2[k,fitsX,fitsY]:=value_sub_pixel(k,x,y);
-         end;
+        for fitsX:=0 to w-1  do
+        begin
+          X:=(fitsX*width2/w);
+          Y:=(fitsY*height2/h);
+          img_temp2[k,fitsX,fitsY]:=value_sub_pixel(k,x,y);
+        end;
     img_loaded:=img_temp2;
     width2:=w;
     height2:=h;

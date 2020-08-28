@@ -2197,7 +2197,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.412a, '+about_message4+', dated 2020-08-21';
+  #13+#10+'ASTAP version ß0.9.413, '+about_message4+', dated 2020-08-28';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -8353,10 +8353,18 @@ begin
 
   application_path:= extractfilepath(application.location);{for u290, set path}
 
+
   {$IfDef Darwin}// for OS X,
     database_path:='/usr/local/opt/astap/';
   {$else}
     database_path:=application_path;
+
+    {$ifdef mswindows}
+    {$else} {unix}
+    if copy(database_path,1,4)='/usr' then {for Linux distributions}
+      database_path:='/usr/share/astap/data/';
+    {$endif}
+
   {$endif}
 
 

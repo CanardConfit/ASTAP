@@ -362,17 +362,17 @@ begin
     if cdelt1*cdelt2>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;
 
     mainwindow.image1.canvas.pen.color:=clyellow;
-    if  ((deepstring.count>10000) and (deepstring.count<50000)) then {deepsky.csv}
-    begin {default deep sky database 30.000 objects}
-       hf:=max(mainwindow.panel1.height,mainwindow.image1.height);
-       mainwindow.image1.Canvas.font.size:=max(8,round(14*height2/hf));{adapt font to image dimensions}
-       mainwindow.image1.Canvas.Pen.width :=max(1,round(height2/hf));{thickness lines}
-    end
-    else
-    begin{for HyperLeda, variables}
-      mainwindow.image1.Canvas.font.size:=8;
-      mainwindow.image1.Canvas.Pen.width :=1;
-    end;
+//    if  ((deepstring.count>10000) and (deepstring.count<50000)) then {deepsky.csv}
+//    begin {default deep sky database 30.000 objects}
+//       hf:=max(mainwindow.panel1.height,mainwindow.image1.height);
+//       mainwindow.image1.Canvas.font.size:=max(8,round(14*height2/hf));{adapt font to image dimensions}
+//       mainwindow.image1.Canvas.Pen.width :=max(1,round(height2/hf));{thickness lines}
+//    end
+//    else
+//    begin{for HyperLeda, variables}
+//      mainwindow.image1.Canvas.font.size:=8;
+//      mainwindow.image1.Canvas.Pen.width :=1;
+//    end;
 
     mainwindow.image1.Canvas.brush.Style:=bsClear;
     mainwindow.image1.Canvas.font.color:=clyellow;
@@ -417,6 +417,10 @@ begin
           if naam4='' then name:=naam2+'/'+naam3
           else
           name:=naam2+'/'+naam3+'/'+naam4;
+
+          len:=length1/(abs(cdelt2)*60*10*2); {Length in pixels}
+          mainwindow.image1.Canvas.font.size:= round(min(50,max(8,len /2)));
+
 
           {get text dimensions}
           th:=mainwindow.image1.Canvas.textheight(name);
@@ -476,8 +480,12 @@ begin
 
        {plot deepsky object}
        if width1=0 then begin width1:=length1;pa:=999;end;
-       len:=length1/(abs(cdelt2)*60*10*2); {Length in pixels}
 
+ //      if len>100 then mainwindow.image1.Canvas.Pen.width :=hf
+ //      else max(1,round(len/70));
+       mainwindow.image1.Canvas.Pen.width :=min(4,max(1,round(len/70)));
+
+       {len is already calculated earlier for the font size}
        if len<=2 then {too small to plot an elipse or circle, plot just four dots}
        begin
          mainwindow.image1.canvas.pixels[x-2,y+2]:=clyellow;
