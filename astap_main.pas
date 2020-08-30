@@ -2178,7 +2178,7 @@ begin
   about_message4:='32 bit';
 
  {$IFDEF fpc}
- {$MACRO ON} {required for FPC_fullversion}
+ {$MACRO ON} {required for FPC_fullversion info}
   about_message5:='Build using Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version;
  {$ELSE} {delphi}
   about_message5:='';
@@ -2197,7 +2197,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.413, '+about_message4+', dated 2020-08-28';
+  #13+#10+'ASTAP version ß0.9.414, '+about_message4+', dated 2020-08-30';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);

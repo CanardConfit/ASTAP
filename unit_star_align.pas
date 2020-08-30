@@ -309,12 +309,13 @@ begin
 end;
 
 
-procedure find_fit( minimum_count: integer; quad_tolerance: double);
+function find_fit( minimum_count: integer; quad_tolerance: double) : boolean;
 var
-   nrquads1,nrquads2, i,j,k   : integer;
+   nrquads1,nrquads2, i,j,k,kd4   : integer;
    mean_ratio1,  variance_ratio1,variance_factor : double;
    matchList1, matchlist2  : array of array of integer;
 begin
+  result:=false; {assume failure}
   nrquads1:=Length(quad_star_distances1[0]);
   nrquads2:=Length(quad_star_distances2[0]);
 
@@ -381,27 +382,65 @@ begin
     end;
   end;
   {outliers in largest length removed}
- if (nr_references<3) then begin exit; end;{no solution abort before run time errors. Requires 3 equations minimum}
-
-  {fill equations}
-  setlength(A_XYpositions,nr_references,3);
-  setlength(b_Xrefpositions,nr_references);
-  setlength(b_Yrefpositions,nr_references);
 
 
-  for k:=0 to nr_references-1 do
+  {2 quads are required giving 8 star references or 3 quads giving 3 center quad references}
+  if (nr_references>=3) then {use 3 quads center position}
   begin
-    A_XYpositions[k,0]:=starlistquads2[8,matchlist1[1,k]]; {average x position of quad}
-    A_XYpositions[k,1]:=starlistquads2[9,matchlist1[1,k]]; {average y position of quad}
-    A_XYpositions[k,2]:=1;
+    {fill equations}
+    setlength(A_XYpositions,nr_references,3);
+    setlength(b_Xrefpositions,nr_references);
+    setlength(b_Yrefpositions,nr_references);
 
-    b_Xrefpositions[k]:=starlistquads1[8,matchlist1[0,k]]; {x position of ref quad}
-    b_Yrefpositions[k]:=starlistquads1[9,matchlist1[0,k]]; {Y position of ref quad}
+    for k:=0 to nr_references-1 do
+    begin
+      A_XYpositions[k,0]:=starlistquads2[8,matchlist1[1,k]]; {average x position of quad}
+      A_XYpositions[k,1]:=starlistquads2[9,matchlist1[1,k]]; {average y position of quad}
+      A_XYpositions[k,2]:=1;
 
-    {in matrix calculations, b_refpositionX[0..nr_equations-1,0..2]:=solution_vectorX[0..2] * A_XYpositions[0..nr_equations-1,0..2]}
-    {                        b_refpositionY[0..nr_equations-1,0..2]:=solution_matrixY[0..2] * A_XYpositions[0..nr_equations-1,0..2]}
+      b_Xrefpositions[k]:=starlistquads1[8,matchlist1[0,k]]; {x position of ref quad}
+      b_Yrefpositions[k]:=starlistquads1[9,matchlist1[0,k]]; {Y position of ref quad}
 
-  end;
+      {in matrix calculations, b_refpositionX[0..nr_equations-1,0..2]:=solution_vectorX[0..2] * A_XYpositions[0..nr_equations-1,0..2]}
+      {                        b_refpositionY[0..nr_equations-1,0..2]:=solution_matrixY[0..2] * A_XYpositions[0..nr_equations-1,0..2]}
+      result:=true;{3 or more references}
+    end;
+  end
+  else
+  if (nr_references>=2) then {use 8 stars of 2 quads as reference. Solver requires 3 equations minimum}
+  begin
+    {fill equations}
+    setlength(A_XYpositions,nr_references*4,3);{use 4 stars as reference instead of quads center}
+    setlength(b_Xrefpositions,nr_references*4);
+    setlength(b_Yrefpositions,nr_references*4);
+
+    for k:=0 to (nr_references*4)-1 do {use 2 * 4 stars of 2 quads}
+    begin
+      kd4:=k div 4;
+      A_XYpositions[kd4,0]:=starlistquads2[0,matchlist1[1,kd4]]; {x position of star}
+      A_XYpositions[kd4,1]:=starlistquads2[1,matchlist1[1,kd4]]; {y position of star}
+      A_XYpositions[kd4,2]:=1;
+      A_XYpositions[kd4+1,0]:=starlistquads2[2,matchlist1[1,kd4]]; {x position of star}
+      A_XYpositions[kd4+1,1]:=starlistquads2[3,matchlist1[1,kd4]]; {y position of star}
+      A_XYpositions[kd4+1,2]:=1;
+      A_XYpositions[kd4+2,0]:=starlistquads2[4,matchlist1[1,kd4]]; {x position of star}
+      A_XYpositions[kd4+2,1]:=starlistquads2[5,matchlist1[1,kd4]]; {y position of star}
+      A_XYpositions[kd4+2,2]:=1;
+      A_XYpositions[kd4+3,0]:=starlistquads2[6,matchlist1[1,kd4]]; {x position of star}
+      A_XYpositions[kd4+3,1]:=starlistquads2[7,matchlist1[1,kd4]]; {y position of star}
+      A_XYpositions[kd4+3,2]:=1;
+
+      b_Xrefpositions[kd4]:=starlistquads1[0,matchlist1[0,kd4]]; {x position of ref star}
+      b_Yrefpositions[kd4]:=starlistquads1[1,matchlist1[0,kd4]]; {Y position of ref star}
+      b_Xrefpositions[kd4+1]:=starlistquads1[2,matchlist1[0,kd4]]; {x position of ref star}
+      b_Yrefpositions[kd4+1]:=starlistquads1[3,matchlist1[0,kd4]]; {Y position of ref star}
+      b_Xrefpositions[kd4+2]:=starlistquads1[4,matchlist1[0,kd4]]; {x position of ref star}
+      b_Yrefpositions[kd4+2]:=starlistquads1[5,matchlist1[0,kd4]]; {Y position of ref star}
+      b_Xrefpositions[kd4+3]:=starlistquads1[6,matchlist1[0,kd4]]; {x position of ref star}
+      b_Yrefpositions[kd4+3]:=starlistquads1[7,matchlist1[0,kd4]]; {Y position of ref star}
+      result:=true;{8 star references from 2 quads}
+    end;
+ end;
   matchlist2:=nil;
   matchlist1:=nil;
 end;
@@ -607,16 +646,13 @@ function find_offset_and_rotation(minimum_quads: integer;tolerance:double;save_s
 var
   xy_sqr_ratio   : double;
 begin
-
-  find_fit(minimum_quads, tolerance);
-
-  if nr_references<3 then
+  if find_fit(minimum_quads, tolerance)=false then
   begin
     result:=false;
     reset_solution_vectors(0.001);{nullify}
     exit;
   end;
-  result:=true;
+  result:=true;{2 quads are required giving 8 star references or 3 quads giving 3 center quad references}
 
   {in matrix calculations, b_refpositionX[0..nr_equations-1,0..2]:=solution_vectorX[0..2] * A_XYpositions[0..nr_equations-1,0..2]}
   {                        b_refpositionY[0..nr_equations-1,0..2]:=solution_vectorY[0..2] * A_XYpositions[0..nr_equations-1,0..2]}
@@ -629,7 +665,9 @@ begin
 
 
   xy_sqr_ratio:=(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]) ) / (0.00000001+ sqr(solution_vectorY[0])+sqr(solution_vectorY[1]) );
-  if ((xy_sqr_ratio<0.9) or (xy_sqr_ratio>1.1)) then {dimensions x, y are not the same, something wrong}
+
+
+  if ((xy_sqr_ratio<0.99) or (xy_sqr_ratio>1.01)) then {dimensions x, y are not the same, something wrong}
   begin
     result:=false;
     reset_solution_vectors(0.001);{nullify}

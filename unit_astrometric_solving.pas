@@ -571,13 +571,13 @@ begin
 
     solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details}
     solution:=false; {assume no match is found}
-    go_ahead:=(nrstars>=6); {should be more but let's try}
+    go_ahead:=(nrstars>=5); {bare minimum for two quads}
 
     if go_ahead then {enough stars, lets find quads}
     begin
       find_quads_new;{find quads for new image}
       nr_quads:=Length(starlistquads2[0]);
-      go_ahead:=nr_quads>=3; {enough quads?}
+      go_ahead:=nr_quads>=2; {enough quads?}
 
       {from version 0.9.212, the step size is fixed. If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
       if nr_quads<25  then oversize:=2 {make dimensions of square search window twice then the image height}
@@ -601,7 +601,7 @@ begin
 
       if nr_quads>500 then minimum_quads:=10 else {prevent false detections for star rich images}
       if nr_quads>200 then minimum_quads:=6 else  {prevent false detections for star rich images}
-      minimum_quads:=3;
+      minimum_quads:=2; {2 quads are required giving 8 star references or 3 quads giving 3 center quad references}
 
     end
     else
@@ -722,7 +722,8 @@ begin
               // create supplement lines for sky coverage testing
               // stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
 
-              if length(starlistquads1[0])>=3 then {enough quads, lets try to find a match}
+//              if length(starlistquads1[0])>=3 then {enough quads, lets try to find a match}
+              if length(starlistquads1[0])>=2 then {enough quads, lets try to find a match}
                  solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance,false);{find an solution}
 
               Application.ProcessMessages;
@@ -760,7 +761,7 @@ begin
 
   if solution then
   begin
-    memo2_message(inttostr(nr_references)+ ' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
+    memo2_message(inttostr(nr_references)+ ' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'  {2 quads are required giving 8 star references or 3 quads giving 3 center quad references}
                    +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])
                    +',  y:='+floattostr2(solution_vectorY[0])+'*x+ '+floattostr2(solution_vectorY[1])+'*y+ '+floattostr2(solution_vectorY[2]) );
     //  following doesn't give maximum angle accuracy, so is not used.
@@ -801,6 +802,7 @@ begin
     solved_in:=' Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}
 
     offset_found:=' Offset was '+floattostrF2(sep*180/pi,0,3)+' deg.';
+
     memo2_message('Solution found: '+  prepare_ra(ra0,': ')+#9+prepare_dec(dec0,'° ') +#9+ solved_in+offset_found+#9+' Used stars up to magnitude: '+floattostrF2(mag2/10,0,1) );
     mainwindow.caption:=('Solution found:    '+  prepare_ra(ra0,': ')+'     '+prepare_dec(dec0,'° ')  );
     result:=true;
