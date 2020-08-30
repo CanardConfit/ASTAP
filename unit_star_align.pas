@@ -160,13 +160,12 @@ begin
   end;
 end;
 
-const
-    debugnr:integer=0;
-
+//const
+//    debugnr:integer=0;
 procedure find_quads(starlist :star_list; var starlistquads :star_list);  {build quads using closest stars, revised 2020-7-1, 25% percent faster}
 var
-   i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrquads,buffersize : integer;
-   distance,distance1,distance2,distance3{,dummy }                         : double;
+   i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrquads,buffersize               : integer;
+   distance,distance1,distance2,distance3{,dummy },x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
    identical_quad : boolean;
 begin
   nrstars_min_one:=Length(starlist[0])-1;
@@ -230,31 +229,49 @@ begin
 //    if debugnr>=29070 then
 //    beep;
 
-    starlistquads[0,nrquads]:=starlist[0,i]; {copy first star position to the quad array}
-    starlistquads[1,nrquads]:=starlist[1,i];
+    x1:=starlist[0,i]; {copy first star position to the quad array}
+    y1:=starlist[1,i];
+    starlistquads[0,nrquads]:=x1; {copy first star position to the quad array}
+    starlistquads[1,nrquads]:=y1;
 
-    starlistquads[2,nrquads]:=starlist[0,j_used1]; {copy the second star position to the quad array}
-    starlistquads[3,nrquads]:=starlist[1,j_used1];
+    x2:=starlist[0,j_used1]; {copy the second star position to the quad array}
+    y2:=starlist[1,j_used1];
+    starlistquads[2,nrquads]:=x2; {copy the second star position to the quad array}
+    starlistquads[3,nrquads]:=y2;
 
-    starlistquads[4,nrquads]:=starlist[0,j_used2];
-    starlistquads[5,nrquads]:=starlist[1,j_used2];
+    x3:=starlist[0,j_used2];
+    y3:=starlist[1,j_used2];
+    starlistquads[4,nrquads]:=x3;
+    starlistquads[5,nrquads]:=y3;
 
-    starlistquads[6,nrquads]:=starlist[0,j_used3];
-    starlistquads[7,nrquads]:=starlist[1,j_used3];
+    x4:=starlist[0,j_used3];
+    y4:=starlist[1,j_used3];
+    starlistquads[6,nrquads]:=x4;
+    starlistquads[7,nrquads]:=y4;
 
-
-    starlistquads[8,nrquads]:=(starlistquads[0,nrquads]+starlistquads[2,nrquads]+starlistquads[4,nrquads]+starlistquads[6,nrquads])/4; {center x position}
-    starlistquads[9,nrquads]:=(starlistquads[1,nrquads]+starlistquads[3,nrquads]+starlistquads[5,nrquads]+starlistquads[7,nrquads])/4; {center y position}
+    xt:=(x1+x2+x3+x4)/4; {mean x position quad}
+    yt:=(y1+y2+y3+y4)/4; {mean y position quad}
 
     identical_quad:=false;
     if nrquads>=1 then {already a quad stored}
-    for k:=0 to nrquads-1 do
-    if ((round(starlistquads[8,nrquads])=round(starlistquads[8,k]) ) and
-        (round(starlistquads[9,nrquads])=round(starlistquads[9,k]) ) ) then {same center position, found identical quad already in the list}
-           identical_quad:=true;
+    begin
+     k:=0;
+     repeat {check for identical quads}
+       if ( (abs(xt-starlistquads[8,k])<1) and
+            (abs(yt-starlistquads[9,k])<1) ) then {same center position, found identical quad already in the list}
+           begin
+             identical_quad:=true;
+             k:=999999999;{stop}
+           end;
+
+       inc(k);
+     until k>=nrquads;
+    end;
 
     if identical_quad=false then  {new quad found}
     begin
+      starlistquads[8,nrquads]:=xt;{store mean x position}
+      starlistquads[9,nrquads]:=yt;{store mean y position}
       inc(nrquads); {new unique quad found}
       //will never happen:
       //if nrquads>=buffersize then setlength(starlistquads,10,length(starlistquads[0])+buffersize);{get more space}
