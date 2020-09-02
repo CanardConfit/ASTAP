@@ -207,7 +207,7 @@ begin
     length_regel:=length(regel);
 
     repeat
-      {fast replacement for y:=posEx(',',regel,y+1); if y=0 then} {last field?}  {y:=length(regel)+1;}   {new fast routine nov 2015, use posEx rather then pos in Delphi}
+      {fast replacement for y:=posEx(',',regel,y+1); if y=0 then} {last field?}  {y:=length(regel)+1;}
       while ((y<length_regel) and (p1^<>',')) do
              begin inc(y); inc(p1,1) end;
       inc(y); inc(p1,1);
@@ -243,18 +243,21 @@ begin
                      naam2:='';{for case data1='';}
                      naam3:='';
                      naam4:='';
-                     while (data1[1]=' ') do delete(data1,1,1); {remove spaces in front of the name, in practice faster then trimleft}
-                     backsl1:=pos('/',data1);
-                     if backsl1=0 then naam2:=data1
-                     else
+                     if length(data1)>0 then
                      begin
-                       naam2:=copy(data1,1,backsl1-1);
-                       backsl2:=posEX('/',data1,backsl1+2);     { could also use LastDelimiter}
-                       if backsl2=0 then naam3:=copy(data1,backsl1+1,length(data1)-backsl1+1)
+                       while (data1[1]=' ') do delete(data1,1,1); {remove spaces in front of the name, in practice faster then trimleft}
+                       backsl1:=pos('/',data1);
+                       if backsl1=0 then naam2:=data1
                        else
                        begin
-                         naam3:=copy(data1,backsl1+1,backsl2-backsl1-1);
-                         naam4:=copy(data1,backsl2+1,length(data1)-backsl2+1);
+                         naam2:=copy(data1,1,backsl1-1);
+                         backsl2:=posEX('/',data1,backsl1+2);     { could also use LastDelimiter}
+                         if backsl2=0 then naam3:=copy(data1,backsl1+1,length(data1)-backsl1+1)
+                         else
+                         begin
+                           naam3:=copy(data1,backsl1+1,backsl2-backsl1-1);
+                           naam4:=copy(data1,backsl2+1,length(data1)-backsl2+1);
+                         end;
                        end;
                      end;
                    end;
@@ -362,17 +365,6 @@ begin
     if cdelt1*cdelt2>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;
 
     mainwindow.image1.canvas.pen.color:=clyellow;
-//    if  ((deepstring.count>10000) and (deepstring.count<50000)) then {deepsky.csv}
-//    begin {default deep sky database 30.000 objects}
-//       hf:=max(mainwindow.panel1.height,mainwindow.image1.height);
-//       mainwindow.image1.Canvas.font.size:=max(8,round(14*height2/hf));{adapt font to image dimensions}
-//       mainwindow.image1.Canvas.Pen.width :=max(1,round(height2/hf));{thickness lines}
-//    end
-//    else
-//    begin{for HyperLeda, variables}
-//      mainwindow.image1.Canvas.font.size:=8;
-//      mainwindow.image1.Canvas.Pen.width :=1;
-//    end;
 
     mainwindow.image1.Canvas.brush.Style:=bsClear;
     mainwindow.image1.Canvas.font.color:=clyellow;
@@ -404,13 +396,15 @@ begin
         gx_orientation:=pa*flipped+crota2;
         if flip_horizontal then begin x:=(width2-1)-x; gx_orientation:=-gx_orientation; end;
         if flip_vertical then gx_orientation:=-gx_orientation else y:=(height2-1)-y;
+        len:=length1/(abs(cdelt2)*60*10*2); {Length in pixels}
 
         {Plot deepsky text labels on an empthy text space.}
         { 1) If the center of the deepsky object is outside the image then don't plot text}
         { 2) If the text space is occupied, then move the text down. If the text crosses the bottom then use the original text position.}
         { 3) If the text crosses the right side of the image then move the text to the left.}
         { 4) If the text is moved in y then connect the text to the deepsky object with a vertical line.}
-        if ( (x>=0) and (x<=width2-1) and (y>=0) and (y<=height2-1) ) then {plot only text if center object is visible}
+
+        if ( (x>=0) and (x<=width2-1) and (y>=0) and (y<=height2-1) and (naam2<>'') ) then {plot only text if center object is visible and has a name}
         begin
           if naam3='' then name:=naam2
           else
@@ -418,7 +412,6 @@ begin
           else
           name:=naam2+'/'+naam3+'/'+naam4;
 
-          len:=length1/(abs(cdelt2)*60*10*2); {Length in pixels}
           mainwindow.image1.Canvas.font.size:= round(min(50,max(8,len /2)));
 
 
@@ -480,9 +473,6 @@ begin
 
        {plot deepsky object}
        if width1=0 then begin width1:=length1;pa:=999;end;
-
- //      if len>100 then mainwindow.image1.Canvas.Pen.width :=hf
- //      else max(1,round(len/70));
        mainwindow.image1.Canvas.Pen.width :=min(4,max(1,round(len/70)));
 
        {len is already calculated earlier for the font size}

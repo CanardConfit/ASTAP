@@ -2197,7 +2197,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.414a, '+about_message4+', dated 2020-08-30';
+  #13+#10+'ASTAP version ß0.9.415, '+about_message4+', dated 2020-09-2';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3534,7 +3534,7 @@ begin
   stackmenu1.test_pattern1.Enabled:=naxis3=1;{mono}
 
   stackmenu1.focallength1.Text:=floattostrf(focallen,ffgeneral, 4, 4);
-  stackmenu1.pixelsize1.text:=floattostrf(xpixsz,ffgeneral, 4, 4);
+  stackmenu1.pixelsize1.text:=floattostrf(xpixsz*XBINNING,ffgeneral, 4, 4);
   stackmenu1.focallength1Exit(nil); {update calculator}
 end;
 
