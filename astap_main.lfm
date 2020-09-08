@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 648
+  Left = 490
   Height = 616
   Hint = ' '
-  Top = 153
+  Top = 176
   Width = 1343
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -1406,6 +1406,11 @@ object mainwindow: Tmainwindow
       Hint = 'This will report the total magnitude within the pulled rectangle. Best results are achieved using monochrome images.'
       OnClick = measuretotalmagnitude1Click
     end
+    object angular_distance1: TMenuItem
+      Caption = 'Angular distance'
+      ImageIndex = 35
+      OnClick = angular_distance1Click
+    end
     object show_statistics1: TMenuItem
       Caption = 'Show statistics within rectangle'
       Hint = 'Calculate mean, median standard deviation, minimum and maximum values within the rectangle.'
@@ -1443,8 +1448,8 @@ object mainwindow: Tmainwindow
       Caption = '-'
     end
     object copy_to_clipboard1: TMenuItem
-      Caption = 'Copy image to clipboard'
-      Hint = 'Copies the image to the clipboard'
+      Caption = 'Copy image (selection) to clipboard'
+      Hint = 'Copies the image or a image selection to the clipboard. Selection orientation is dependent on the selection direction used.'
       OnClick = copy_to_clipboard1Click
     end
     object Copyposition1: TMenuItem
@@ -1468,30 +1473,34 @@ object mainwindow: Tmainwindow
     object N9: TMenuItem
       Caption = '-'
     end
-    object localcoloursmooth1: TMenuItem
-      Caption = 'Local colour smooth'
-      Hint = 'Smooth the colour of the selected rectangle. Luminance is not changed.'
-      OnClick = localcoloursmooth1Click
-    end
-    object remove_colour1: TMenuItem
-      Caption = 'Local remove colour'
-      Hint = 'Intended for some ugly coloured stars in OSC images'
-      OnClick = remove_colour1Click
-    end
-    object localgaussian1: TMenuItem
-      Caption = 'Local Gaussian blur'
-      Hint = 'Local Gaussian blur with factor as set in pixel math'
-      OnClick = localgaussian1Click
-    end
-    object localbackgroundequalise1: TMenuItem
-      Caption = 'Equalise background tool'
-      Hint = 'Equalises bright or dark background within the pulled rectangle. '
-      OnClick = localbackgroundequalise1Click
-    end
-    object brighten_area1: TMenuItem
-      Caption = 'Brighten dark area tool'
-      Hint = 'Place the rectangle around the (small) darker area.  Area will be brightened based on the corner values.  Apply a few times.'
-      OnClick = brighten_area1Click
+    object local_adjustments1: TMenuItem
+      Caption = 'Local adjustments'
+      Hint = 'Local adjustments'
+      object localcoloursmooth1: TMenuItem
+        Caption = 'Local colour smooth'
+        Hint = 'Smooth the colour of the selected rectangle. Luminance is not changed.'
+        OnClick = localcoloursmooth1Click
+      end
+      object remove_colour1: TMenuItem
+        Caption = 'Local remove colour'
+        Hint = 'Intended for some ugly coloured stars in OSC images'
+        OnClick = remove_colour1Click
+      end
+      object localgaussian1: TMenuItem
+        Caption = 'Local Gaussian blur'
+        Hint = 'Local Gaussian blur with factor as set in pixel math'
+        OnClick = localgaussian1Click
+      end
+      object localbackgroundequalise1: TMenuItem
+        Caption = 'Equalise background tool'
+        Hint = 'Equalises bright or dark background within the pulled rectangle. '
+        OnClick = localbackgroundequalise1Click
+      end
+      object brighten_area1: TMenuItem
+        Caption = 'Brighten dark area tool'
+        Hint = 'Place the rectangle around the (small) darker area.  Area will be brightened based on the corner values.  Apply a few times.'
+        OnClick = brighten_area1Click
+      end
     end
     object gradient_removal1: TMenuItem
       Caption = 'Gradient removal tool'
@@ -1569,7 +1578,7 @@ object mainwindow: Tmainwindow
     Left = 1024
     Top = 207
     Bitmap = {
-      4C69230000001000000010000000000000000000000000000000000000000000
+      4C69240000001000000010000000000000000000000000000000000000000000
       00000000000000000000A0A0A0FFA0A0A0FF0000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000A0A0A0FFA0A0A0FFA0A0A0FFA0A0A0FF00000000000000000000
@@ -2689,7 +2698,39 @@ object mainwindow: Tmainwindow
       FF00808080FF808080FF808080FF808080FFFFFFFF00FFFFFF00FFFFFF00FFFF
       FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
       FF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFFFF00FFFF
-      FF00FFFFFF00FFFFFF00FFFFFF00
+      FF00FFFFFF00FFFFFF00FFFFFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00808080FF808080FF8080
+      80FF808080FFFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00808080FF808080FFFF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00808080FFFF00FF008080
+      80FFFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00808080FFFF00FF00FF00
+      FF00808080FFFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00808080FFFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00808080FFFF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00808080FFFF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00808080FFFF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00808080FFFF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00808080FFFF00
+      FF00FF00FF00808080FFFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF008080
+      80FFFF00FF00808080FFFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00808080FF808080FFFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00808080FF8080
+      80FF808080FF808080FFFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00
     }
   end
   object TrayIcon1: TTrayIcon

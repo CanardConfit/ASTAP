@@ -100,6 +100,8 @@ type
     batch_rotate_right1: TMenuItem;
     gradient_removal1: TMenuItem;
     histogram_values_to_clipboard1: TMenuItem;
+    local_adjustments1: TMenuItem;
+    angular_distance1: TMenuItem;
     Stretchdrawmenu1: TMenuItem;
     stretch_draw_fits1: TMenuItem;
     show_statistics1: TMenuItem;
@@ -290,6 +292,7 @@ type
     procedure copy_paste_tool1Click(Sender: TObject);
     procedure MenuItem21Click(Sender: TObject);
     procedure batch_rotate_left1Click(Sender: TObject);
+    procedure angular_distance1Click(Sender: TObject);
     procedure range1Change(Sender: TObject);
     procedure remove_atmouse1Click(Sender: TObject);
     procedure gradient_removal1Click(Sender: TObject);
@@ -504,6 +507,10 @@ const
   focallen: double=0;
   down_x: integer=0;
   down_y: integer=0;
+  startX: integer=0; {range 0..}
+  startY: integer=0;
+  stopX: integer=0; {range 0..}
+  stopY: integer=0;
   width_radians : double=(140/60)*pi/180;
   height_radians: double=(100/60)*pi/180;
   mouse_enter : integer=0;{for crop function}
@@ -588,7 +595,7 @@ function floattostrF2(const x:double; width1,decimals1 :word): string;
 procedure DeleteFiles(lpath,FileSpec: string);{delete files such  *.wcs}
 procedure new_to_old_WCS;{convert new style FITsS to old style}
 procedure old_to_new_WCS;{ convert old WCS to new}
-procedure show_shape(good_lock: boolean;fitsX,fitsY: double);{show shape}
+procedure show_marker_shape(shape: TShape;shape_type,w,h,minimum:integer; fitsX,fitsY: double);{show manual alignment shape}
 procedure create_test_image(type_test : integer);{create an artificial test image}
 function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
 function convert_raw_to_fits(filename7 : string) :boolean;{convert raw file to FITS format}
@@ -686,7 +693,7 @@ uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, 
 
 var
   recent_files : tstringlist;
-  oldx, oldy, startX,startY                    :integer; {for rubber rectangle}
+  stop_RX, stop_RY, start_RX,start_RY                    :integer; {for rubber rectangle}
   object_xc,object_yc, object_raM,object_decM  : double; {near mouse auto centered object position}
 
 const
@@ -2197,7 +2204,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.415, '+about_message4+', dated 2020-09-2';
+  #13+#10+'ASTAP version ß0.9.417, '+about_message4+', dated 2020-09-8';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2278,65 +2285,53 @@ end;
 
 procedure Tmainwindow.brighten_area1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,k,startX2,startY2,oldX2,oldY2,progress_value : integer;
+   fitsX,fitsY,dum,k,startX2,startY2,stopX2,stopY2,progress_value : integer;
    mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,
    line_bottom, line_top,required_bg,{difference,}most_common : double;
 
    Save_Cursor:TCursor;
 begin
   if fits_file=false then exit;
-  if  ((abs(oldx-startX)>10)and (abs(oldy-starty)>10)) then
+  if  ((abs(stopX-startX)>10)and (abs(stopY-starty)>10)) then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
     startX2:=startX;{save for Application.ProcessMessages;this could change startX, startY}
     startY2:=startY;
-    oldX2:=oldX;
-    oldY2:=oldY;
+    stopX2:=stopX;
+    stopY2:=stopY;
 
     backup_img;
 
-    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
-    begin
-      startY2:=height2-1-startY2;
-      oldY2:=height2-1-oldY2;
-    end;
-
-    if mainwindow.flip_horizontal1.Checked then
-    begin
-      startX2:=width2-1-startX2;
-      oldX2:=width2-1-oldX2;
-    end;
-
-    if startX2>oldX2 then begin dum:=oldX2; oldX2:=startX2; startX2:=dum; end;{swap}
-    if startY2>oldY2 then begin dum:=oldY2; oldY2:=startY2; startY2:=dum; end;
+    if startX2>stopX2 then begin dum:=stopX2; stopX2:=startX2; startX2:=dum; end;{swap}
+    if startY2>stopY2 then begin dum:=stopY2; stopY2:=startY2; startY2:=dum; end;
 
     for k:=0 to naxis3-1 do {do all colors}
     begin
       mode_left_bottom:=mode(img_loaded,k,startX2-10,startX2+10,startY2-10,startY2+10,32000);{for this area get most common value equals peak in histogram}
-      mode_left_top:=   mode(img_loaded,k,startX2-10,startX2+10,oldY2-10,oldY2+10,32000);{for this area get most common value equals peak in histogram}
+      mode_left_top:=   mode(img_loaded,k,startX2-10,startX2+10,stopY2-10,stopY2+10,32000);{for this area get most common value equals peak in histogram}
 
-      mode_right_bottom:=mode(img_loaded,k,oldX2-10,oldX2+10,startY2-10,startY2+10,32000);{for this area get most common value equals peak in histogram}
-      mode_right_top:=   mode(img_loaded,k,oldX2-10,oldX2+10,oldY2-10,oldY2+10,32000);{for this area get most common value equals peak in histogram}
+      mode_right_bottom:=mode(img_loaded,k,stopX2-10,stopX2+10,startY2-10,startY2+10,32000);{for this area get most common value equals peak in histogram}
+      mode_right_top:=   mode(img_loaded,k,stopX2-10,stopX2+10,stopY2-10,stopY2+10,32000);{for this area get most common value equals peak in histogram}
 
 
-      for fitsY:=startY2 to oldY2-1 do
+      for fitsY:=startY2 to stopY2-1 do
       begin
 
         if frac(fitsY/50)=0 then
         begin
           Application.ProcessMessages;{this could change startX, startY}
           if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-          progress_value:=round(100*( k/naxis3 +  0.3333*(fitsY-startY2)/(oldY2-startY2)));
+          progress_value:=round(100*( k/naxis3 +  0.3333*(fitsY-startY2)/(stopY2-startY2)));
           progress_indicator(progress_value,'');{report progress}
         end;
 
-        for fitsX:=startX2 to oldX2-1 do
+        for fitsX:=startX2 to stopX2-1 do
         begin
-            line_bottom:=mode_left_bottom*(oldX2-fitsx)/(oldX2-startX2)+ mode_right_bottom *(fitsx-startX2)/(oldX2-startX2);{median value at bottom line}
-            line_top:=  mode_left_top *   (oldX2-fitsx)/(oldX2-startX2)+ mode_right_top*(fitsx-startX2)/(oldX2-startX2);{median value at top line}
-            required_bg:=line_bottom*(oldY2-fitsY)/(oldY2-startY2)+line_top*(fitsY-startY2)/(oldY2-startY2);{median value at position FitsX, fitsY}
+            line_bottom:=mode_left_bottom*(stopX2-fitsx)/(stopX2-startX2)+ mode_right_bottom *(fitsx-startX2)/(stopX2-startX2);{median value at bottom line}
+            line_top:=  mode_left_top *   (stopX2-fitsx)/(stopX2-startX2)+ mode_right_top*(fitsx-startX2)/(stopX2-startX2);{median value at top line}
+            required_bg:=line_bottom*(stopY2-fitsY)/(stopY2-startY2)+line_top*(fitsY-startY2)/(stopY2-startY2);{median value at position FitsX, fitsY}
 
             most_common:=mode(img_loaded,k,fitsX,fitsX+5,fitsY,fitsY+5,32000 );
             if most_common<0.99*required_bg then
@@ -2533,34 +2528,22 @@ var
    Save_Cursor:TCursor;
 begin
   if fits_file=false then exit;
-  if  ((abs(oldx-startX)>2)and (abs(oldy-starty)>2)) then
+  if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
     backup_img;
 
-    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
-    begin
-      starty:=height2-1-starty;
-      oldY:=height2-1-oldY;
-    end;
+    if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
+    if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
 
-    if mainwindow.flip_horizontal1.Checked then
-    begin
-      startX:=width2-1-startX;
-      oldX:=width2-1-oldX;
-    end;
-
-    if startX>oldX then begin dum:=oldX; oldx:=startX; startX:=dum; end;{swap}
-    if startY>oldY then begin dum:=oldY; oldy:=startY; startY:=dum; end;
-
-    setlength(img_temp,naxis3,oldX-startX,oldY-startY);
+    setlength(img_temp,naxis3,stopX-startX,stopY-startY);
 
     for k:=0 to naxis3-1 do {do all colors}
     begin
-      for fitsY:=startY to oldY-1 do
-      for fitsX:=startX to oldX-1 do
+      for fitsY:=startY to stopY-1 do
+      for fitsX:=startX to stopX-1 do
       begin
         begin
           img_temp[k,fitsX-startX,fitsY-startY]:=img_loaded[k,fitsX,fitsY];{copy the area of interest to img_temp}
@@ -2571,8 +2554,8 @@ begin
 
     for k:=0 to naxis3-1 do {do all colors}
     begin
-      for fitsY:=startY to oldY-1 do
-      for fitsX:=startX to oldX-1 do
+      for fitsY:=startY to stopY-1 do
+      for fitsX:=startX to stopX-1 do
       begin
         begin
           img_loaded[k,fitsX,fitsY]:=img_temp[k,fitsX-startX,fitsY-startY];{copy the area of interest back}
@@ -2616,49 +2599,37 @@ var
 
 begin
   if fits_file=false then exit;
-  if  ((abs(oldx-startX)>2)and (abs(oldy-starty)>2)) then
+  if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
     backup_img;
 
-    bsize:=10;  // min(10,abs(oldx-startX));{5 or smaller}
+    bsize:=10;  // min(10,abs(stopX-startX));{5 or smaller}
 
-    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
-    begin
-      starty:=height2-1-starty;
-      oldY:=height2-1-oldY;
-    end;
-
-    if mainwindow.flip_horizontal1.Checked then
-    begin
-      startX:=width2-1-startX;
-      oldX:=width2-1-oldX;
-    end;
-
-    if startX>oldX then begin dum:=oldX; oldx:=startX; startX:=dum; end;{swap}
-    if startY>oldY then begin dum:=oldY; oldy:=startY; startY:=dum; end;
+    if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
+    if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
 
     {ellipse parameters}
-    center_x:=(startx+oldX-1)/2;
-    center_y:=(startY+oldY-1)/2;
-    a:=(oldX-1-startx)/2;
-    b:=(oldY-1-startY)/2;
+    center_x:=(startx+stopX-1)/2;
+    center_y:=(startY+stopY-1)/2;
+    a:=(stopX-1-startx)/2;
+    b:=(stopY-1-startY)/2;
 
     for k:=0 to naxis3-1 do {do all colors}
     begin
 
       mode_left_bottom[k]:=mode(img_loaded,k,startx-bsize,startx,starty-bsize,starty,32000);{for this area get most common value equals peak in histogram}
-      mode_left_top[k]:=   mode(img_loaded,k,startx-bsize,startx,oldy,oldY+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_left_top[k]:=   mode(img_loaded,k,startx-bsize,startx,stopY,stopY+bsize,32000);{for this area get most common value equals peak in histogram}
 
-      mode_right_bottom[k]:=mode(img_loaded,k,oldX,oldX+bsize,starty-bsize,starty,32000);{for this area get most common value equals peak in histogram}
-      mode_right_top[k]:=   mode(img_loaded,k,oldX,oldX+bsize,oldY,oldY+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_right_bottom[k]:=mode(img_loaded,k,stopX,stopX+bsize,starty-bsize,starty,32000);{for this area get most common value equals peak in histogram}
+      mode_right_top[k]:=   mode(img_loaded,k,stopX,stopX+bsize,stopY,stopY+bsize,32000);{for this area get most common value equals peak in histogram}
 
       noise_left_bottom:=  get_negative_noise_level(img_loaded,k,startx-bsize,startx,starty-bsize,starty, mode_left_bottom[k]);{find the negative noise level below most_common_level of a local area}
-      noise_left_top:=     get_negative_noise_level(img_loaded,k,startx-bsize,startx,oldy,oldY+bsize, mode_left_top[k]);{find the negative noise level below most_common_level of a local area}
-      noise_right_bottom:= get_negative_noise_level(img_loaded,k,oldX,oldX+bsize,starty-bsize,starty, mode_right_bottom[k]);{find the negative noise level below most_common_level of a local area}
-      noise_right_top:=    get_negative_noise_level(img_loaded,k,oldX,oldX+bsize,oldY,oldY+bsize, mode_right_top[k]);{find the negative noise level below most_common_level of a local area}
+      noise_left_top:=     get_negative_noise_level(img_loaded,k,startx-bsize,startx,stopY,stopY+bsize, mode_left_top[k]);{find the negative noise level below most_common_level of a local area}
+      noise_right_bottom:= get_negative_noise_level(img_loaded,k,stopX,stopX+bsize,starty-bsize,starty, mode_right_bottom[k]);{find the negative noise level below most_common_level of a local area}
+      noise_right_top:=    get_negative_noise_level(img_loaded,k,stopX,stopX+bsize,stopY,stopY+bsize, mode_right_top[k]);{find the negative noise level below most_common_level of a local area}
       noise_level[k]:=(noise_left_bottom + noise_left_top + noise_right_top + noise_right_bottom)/4;
     end;{k color}
 
@@ -2667,17 +2638,17 @@ begin
     colour[1]:=0;
     colour[2]:=0;
 
-    for fitsY:=startY to oldY-1 do
-      for fitsX:=startX to oldX-1 do
+    for fitsY:=startY to stopY-1 do
+      for fitsX:=startX to stopX-1 do
       begin
         angle_from_center:=arctan(abs(fitsy-center_Y)/max(1,abs(fitsX-center_X)));
         if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
         for k:=0 to naxis3-1 do {do all colors}
         begin
           begin
-            line_bottom:=mode_left_bottom[k]*(oldx-fitsx)/(oldx-startx)+ mode_right_bottom[k] *(fitsx-startX)/(oldx-startx);{median value at bottom line}
-            line_top:=  mode_left_top[k] *   (oldx-fitsx)/(oldx-startx)+ mode_right_top[k]*(fitsx-startX)/(oldx-startx);{median value at top line}
-            mean_value:=line_bottom*(oldY-fitsY)/(oldY-startY)+line_top*(fitsY-startY)/(oldY-startY);{median value at position FitsX, fitsY}
+            line_bottom:=mode_left_bottom[k]*(stopX-fitsx)/(stopX-startx)+ mode_right_bottom[k] *(fitsx-startX)/(stopX-startx);{median value at bottom line}
+            line_top:=  mode_left_top[k] *   (stopX-fitsx)/(stopX-startx)+ mode_right_top[k]*(fitsx-startX)/(stopX-startx);{median value at top line}
+            mean_value:=line_bottom*(stopY-fitsY)/(stopY-startY)+line_top*(fitsY-startY)/(stopY-startY);{median value at position FitsX, fitsY}
             old_value:=img_loaded[k,fitsX,fitsY];
             if old_value-3*noise_level[k]>mean_value  then
               colour[k]:=colour[k]+old_value-mean_value;{adapt only if pixel value is 3*noise level different}
@@ -2689,17 +2660,17 @@ begin
     {smooth all pixel to same colour}
     x2:=0;
     y2:=0;
-    for fitsY:=startY to oldY-1 do
-      for fitsX:=startX to oldX-1 do
+    for fitsY:=startY to stopY-1 do
+      for fitsX:=startX to stopX-1 do
       begin
         angle_from_center:=arctan(abs(fitsy-center_Y)/max(1,abs(fitsX-center_X)));
         if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
         begin
           for k:=0 to naxis3-1 do {do all colors}
           begin
-            line_bottom:=mode_left_bottom[k]*(oldx-fitsx)/(oldx-startx)+ mode_right_bottom[k] *(fitsx-startX)/(oldx-startx);{median value at bottom line}
-            line_top:=  mode_left_top[k] *   (oldx-fitsx)/(oldx-startx)+ mode_right_top[k]*(fitsx-startX)/(oldx-startx);{median value at top line}
-            mean_value2[k]:=line_bottom*(oldY-fitsY)/(oldY-startY)+line_top*(fitsY-startY)/(oldY-startY);{median value at position FitsX, fitsY}
+            line_bottom:=mode_left_bottom[k]*(stopX-fitsx)/(stopX-startx)+ mode_right_bottom[k] *(fitsx-startX)/(stopX-startx);{median value at bottom line}
+            line_top:=  mode_left_top[k] *   (stopX-fitsx)/(stopX-startx)+ mode_right_top[k]*(fitsx-startX)/(stopX-startx);{median value at top line}
+            mean_value2[k]:=line_bottom*(stopY-fitsY)/(stopY-startY)+line_top*(fitsY-startY)/(stopY-startY);{median value at position FitsX, fitsY}
           end;
 
           luminance:=( img_loaded[0,fitsX,fitsY]-mean_value2[0]
@@ -2707,18 +2678,18 @@ begin
                         +img_loaded[2,fitsX,fitsY]-mean_value2[2])/3;
 
           {walk the top and bottom boundary for noise}
-          inc(x2); if x2>=oldX-startX then begin x2:=0;inc(y2);end;
+          inc(x2); if x2>=stopX-startX then begin x2:=0;inc(y2);end;
           if y2>15 then y2:=0;
 
           for k:=0 to 2 do
           begin
             new_noise[k]:=img_loaded[k,checkX(startX+x2),checkY(startY-y2)]-mean_value2[k]; {background noise from bottom boundary}
             if new_noise[k]>3*noise_level[k] then {star in field}
-            new_noise[k]:=img_loaded[k,checkX(startX+x2),checkY(oldY+y2)]-mean_value2[k]; {background noise from top boundary}
+            new_noise[k]:=img_loaded[k,checkX(startX+x2),checkY(stopY+y2)]-mean_value2[k]; {background noise from top boundary}
             if new_noise[k]>3*noise_level[k] then {star in field}
             new_noise[k]:=img_loaded[k,checkX(startX+x2),checkY(startY-y2-10)]-mean_value2[k]; {background noise from bottom boundary-10}
             if new_noise[k]>3*noise_level[k] then {star in field}
-            new_noise[k]:=img_loaded[k,checkX(startX+x2),checkY(oldY+y2+10)]-mean_value2[k]; {background noise from top boundary+10}
+            new_noise[k]:=img_loaded[k,checkX(startX+x2),checkY(stopY+y2+10)]-mean_value2[k]; {background noise from top boundary+10}
           end;
 
           {apply average colour to pixel}
@@ -2837,31 +2808,20 @@ var
    Save_Cursor:TCursor;
 begin
   if ((naxis3<>3) or (fits_file=false)) then exit;
-  if  ((abs(oldx-startX)>2)and (abs(oldy-starty)>2)) then
+  if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
     backup_img;
 
-    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
-    begin
-      starty:=height2-1-starty;
-      oldY:=height2-1-oldY;
-    end;
 
-    if mainwindow.flip_horizontal1.Checked then
-    begin
-      startX:=width2-1-startX;
-      oldX:=width2-1-oldX;
-    end;
-
-    if startX>oldX then begin dum:=oldX; oldx:=startX; startX:=dum; end;{swap}
-    if startY>oldY then begin dum:=oldY; oldy:=startY; startY:=dum; end;
+    if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
+    if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
 
 
-    for fitsY:=startY to oldY-1 do
-    for fitsX:=startX to oldX-1 do
+    for fitsY:=startY to stopY-1 do
+    for fitsX:=startX to stopX-1 do
     begin
        val:=(img_loaded[0,fitsX,fitsY]+img_loaded[1,fitsX,fitsY]+img_loaded[2,fitsX,fitsY])/3;
        img_loaded[0,fitsX,fitsY]:=val;
@@ -3077,37 +3037,7 @@ begin
   if ((annotated) and (annotations_visible1.checked)) then plot_annotations(0,0,false);
 end;
 
-procedure show_shape(good_lock : boolean;fitsX,fitsY: double);{show manual alignment shape}
-var
-  xf,yf,x,y : double;
-begin
-  xF:=(fitsX-0.5)*(mainwindow.image1.width/width2)-0.5; //inverse of  fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
-  yF:=-(fitsY-height2-0.5)*(mainwindow.image1.height/height2)-0.5; //inverse of fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
-
-  if mainwindow.Flip_horizontal1.Checked then x:=mainwindow.image1.width-xF else x:=xF;
-  if mainwindow.flip_vertical1.Checked then y:=mainwindow.image1.height-yF else y:=yF;
-
-  mainwindow.shape_alignment_marker1.height:=max(10,round(20*mainwindow.image1.height/height2));
-  mainwindow.shape_alignment_marker1.width:= max(10,round(20*mainwindow.image1.width/width2));
-
-  mainwindow.shape_alignment_marker1.left:=round(mainwindow.image1.left + x-mainwindow.shape_alignment_marker1.width/2);
-  mainwindow.shape_alignment_marker1.top:=round(mainwindow.image1.top   + y-mainwindow.shape_alignment_marker1.height/2);
-
-  if good_lock=false then {low snr/oval}
-  begin
-    mainwindow.shape_alignment_marker1.shape:=stsquare;
-    mainwindow.shape_alignment_marker1.showHint:=true;
-  end
-  else
-  begin {good lock on object}
-    mainwindow.shape_alignment_marker1.shape:=stcircle;
-    mainwindow.shape_alignment_marker1.showHint:=false;
-  end;
-
-  mainwindow.shape_alignment_marker1.visible:=true;
-end;
-
-procedure show_marker_shape(shape: TShape; w,h:integer; fitsX,fitsY: double);{show manual alignment shape}
+procedure show_marker_shape(shape: TShape;shape_type,w,h,minimum:integer; fitsX,fitsY: double);{show manual alignment shape}
 var
    xf,yf,x,y : double;
 begin
@@ -3117,12 +3047,30 @@ begin
   if mainwindow.Flip_horizontal1.Checked then x:=mainwindow.image1.width-xF else x:=xF;
   if mainwindow.flip_vertical1.Checked then y:=mainwindow.image1.height-yF else y:=yF;
 
+  if w=0 then {auto size}
+  begin
+  end;
+
   with shape do
   begin
-     height:=round(h*mainwindow.image1.height/height2);
-     width:= round(w*mainwindow.image1.width/width2);
+     height:=max(minimum,round(h*mainwindow.image1.height/height2));
+     width:= max(minimum,round(w*mainwindow.image1.width/width2));
      left:=round(mainwindow.image1.left + x - width/2);
      top:=round(mainwindow.image1.top   + y - height/2);
+
+     if shape_type=0 then {rectangle}
+     begin
+       shape:=stRectangle;
+       hint:='no lock';
+     end
+     else
+     if shape_type=1 then {circle}
+     begin {good lock on object}
+       shape:=stcircle;
+       hint:='locked';
+     end;
+     {else keep as it is}
+
      visible:=true;
   end;
 end;
@@ -3150,6 +3098,7 @@ begin
     image_left:=mainwindow.image1.left; {preserve for shape position calculation}
     image_top:=mainwindow.image1.top;
 
+
     mainwindow.image1.height:=round(mainwindow.image1.height * mousewheelfactor);
     mainwindow.image1.width:= round(mainwindow.image1.width * mousewheelfactor);
 
@@ -3162,19 +3111,25 @@ begin
 
     {marker}
     if mainwindow.shape_marker1.visible then {do this only when visible}
-      show_marker_shape(mainwindow.shape_marker1,20,20,shape_marker1_fitsX, shape_marker1_fitsY);
+      show_marker_shape(mainwindow.shape_marker1,2 {no change in shape and hint},20,20,10{minimum},shape_marker1_fitsX, shape_marker1_fitsY);
     if mainwindow.shape_marker2.visible then {do this only when visible}
-      show_marker_shape(mainwindow.shape_marker2,20,20,shape_marker2_fitsX, shape_marker2_fitsY);
+      show_marker_shape(mainwindow.shape_marker2,2 {no change in shape and hint},20,20,10{minimum},shape_marker2_fitsX, shape_marker2_fitsY);
     if mainwindow.shape_marker3.visible then {do this only when visible}
-      show_marker_shape(mainwindow.shape_marker3,20,20,shape_marker3_fitsX, shape_marker3_fitsY);
+      show_marker_shape(mainwindow.shape_marker3,2 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
 
-     if copy_paste then show_marker_shape(mainwindow.shape_paste1,copy_paste_w,copy_paste_h, mouse_fitsx, mouse_fitsy);{show the paste shape}
+     if copy_paste then show_marker_shape(mainwindow.shape_paste1,0 {rectangle},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
 
 
     {reference point manual alignment}
     if mainwindow.shape_alignment_marker1.visible then {For manual alignment. Do this only when visible}
-      show_shape(true,shape_fitsX, shape_fitsY);
+//      show_shape(true,shape_fitsX, shape_fitsY);
+     show_marker_shape(mainwindow.shape_alignment_marker1,2 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
   end;
+
+// mainwindow.image1.height:=mainwindow.image1.picture.height*3 ;
+//  mainwindow.image1.width:=mainwindow.image1.picture.width*3;
+
+
 end;
 
 procedure Tmainwindow.zoomin1Click(Sender: TObject);
@@ -3238,32 +3193,20 @@ begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-  if ((abs(oldx-startX)>2)and (abs(oldy-starty)>2))=false then {do statistics on whole image}
+  if ((abs(stopX-startX)>2)and (abs(stopY-starty)>2))=false then {do statistics on whole image}
   begin
-    startx:=0;oldx:=width2-1;
-    starty:=0;oldy:=height2-1;
+    startx:=0;stopX:=width2-1;
+    starty:=0;stopY:=height2-1;
   end;
 
-  if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
-  begin
-    starty:=height2-1-starty;
-    oldY:=height2-1-oldY;
-  end;
-
-  if mainwindow.Flip_horizontal1.Checked then
-  begin
-    startX:=width2-1-startX;
-    oldX:=width2-1-oldX;
-  end;
-
-  if startX>oldX then begin dum:=oldX; oldx:=startX; startX:=dum; end;{swap}
-  if startY>oldY then begin dum:=oldY; oldy:=startY; startY:=dum; end;
+  if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
+  if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
 
   {reset variables}
   info_message:='';
 
   {limit points to take median from at median_max_size}
-  size:=(oldY-1-startY) * (oldX-1-startX);{number of pixels within the rectangle}
+  size:=(stopY-1-startY) * (stopX-1-startX);{number of pixels within the rectangle}
   stepsize:=median_max_size/size;
   if stepsize<1 then required_size:=median_max_size {pixels will be skippped. Limit sampling to median_max_size}
                 else required_size:=size;
@@ -3286,8 +3229,8 @@ begin
       {mean, median}
       counter:=0;
       counter_median:=0;
-      for fitsY:=startY+1 to oldY-1 do {within rectangle}
-      for fitsX:=startX+1 to oldX-1 do
+      for fitsY:=startY+1 to stopY-1 do {within rectangle}
+      for fitsX:=startX+1 to stopX-1 do
       begin
         value:=img_loaded[col,fitsX+1,fitsY+1];
         if  ((iterations=0) or (abs(value-median)<=3*sd)) then  {ignore outliers after first run}
@@ -3314,8 +3257,8 @@ begin
       {sd}
       sd_old:=sd;
       counter:=0;
-      for fitsY:=startY to oldY-1 do
-      for fitsX:=startX to oldX-1 do
+      for fitsY:=startY to stopY-1 do
+      for fitsX:=startX to stopX-1 do
       begin
         value:=img_loaded[col,fitsX+1,fitsY+1];
         if value<2*median then {not a large outlier}
@@ -3330,7 +3273,7 @@ begin
       inc(iterations);
     until (((sd_old-sd)<0.005*sd) or (iterations>=10));{repeat until sd is stable or 10 iterations}
 
-    most_common:=mode(img_loaded,col,startx,oldX,starty,oldY,32000);
+    most_common:=mode(img_loaded,col,startx,stopX,starty,stopY,32000);
 
     if naxis3>1 then if col=0 then info_message:=info_message+'Red:'+#10;
     if col=1 then info_message:=info_message+#10+#10+'Green:'+#10;
@@ -3342,12 +3285,12 @@ begin
                                  'x̃  :   '+floattostrf(median,ffgeneral, 5, 5)+#10+ {median}
                                  'Mo :  '+floattostrf(most_common,ffgeneral, 5, 5)+#10+
                                  'σ :   '+floattostrf(sd,ffgeneral, 5, 5)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+               {standard deviation}
-                                 'σ_2:   '+floattostrf(get_negative_noise_level(img_loaded,col,startx,oldX,starty,oldY,most_common),ffgeneral, 5, 5)+#10+
+                                 'σ_2:   '+floattostrf(get_negative_noise_level(img_loaded,col,startx,stopX,starty,stopY,most_common),ffgeneral, 5, 5)+#10+
                                  'm :   '+floattostrf(minimum,ffgeneral, 5, 5)+#10+
                                  'M :   '+floattostrf(maximum,ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter))+' x)'+#10+
                                  '≥64E3 :  '+inttostr(round(saturated));
   end;
-  if ((abs(oldx-startx)>=width2-1) and (most_common<>0){prevent division by zero}) then
+  if ((abs(stopX-startx)>=width2-1) and (most_common<>0){prevent division by zero}) then
   begin
     mc_1:=mode(img_loaded,0,          0{x1},      50{x2},           0{y1},       50{y2},32000);{for this area get most common value equals peak in histogram}
     mc_2:=mode(img_loaded,0,          0{x1},      50{x2},height2-1-50{y1},height2-1{y2},32000);
@@ -3364,7 +3307,7 @@ begin
                                             'σ_2 = standard deviation background using values below Mo only | '+
                                             'm = minimum image | M = maximum image | ≥64E3 = number of values equal or above 64000';
 
-  case  QuestionDlg (pchar('Statistics within rectangle '+inttostr(oldX-1-startX)+' x '+inttostr(oldY-1-startY) ),pchar(info_message),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
+  case  QuestionDlg (pchar('Statistics within rectangle '+inttostr(stopX-1-startX)+' x '+inttostr(stopY-1-startY) ),pchar(info_message),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
            mrYes: Clipboard.AsText:=info_message;
   end;
 
@@ -3412,7 +3355,7 @@ begin
 
     shape_marker3_fitsX:=fitsX;
     shape_marker3_fitsY:=fitsY;
-    show_marker_shape(mainwindow.shape_marker3,20,20,shape_marker3_fitsX, shape_marker3_fitsY);
+    show_marker_shape(mainwindow.shape_marker3,0 {rectangle},20,20,10,shape_marker3_fitsX, shape_marker3_fitsY);
 
   end
   else
@@ -3591,42 +3534,42 @@ end;
 
 procedure Tmainwindow.remove_above1Click(Sender: TObject);
 begin
-  {calculate in screen coordinates}
-  starty:=trunc(down_Y/(image1.height/height2));
-  oldy:=height2-1;
+  {calculate in array coordinates}
+  {startY is already defined by mousedown}
+  if flip_vertical1.checked=false then stopY:=0 else stopY:=height2-1;
   startx:=0;
-  oldx:=width2-1;
+  stopX:=width2-1;
   mainwindow.CropFITSimage1Click(nil);
  end;
 
 
 procedure Tmainwindow.remove_below1Click(Sender: TObject);
 begin
-  {calculate in screen coordinates}
-  starty:=0;
-  oldy:=trunc(down_Y/(image1.height/height2));{0.5, pixel position is in the iddel of the pixel}
+  {calculate in array coordinates}
+  {startY is already defined by mousedown}
+  if flip_vertical1.checked then stopY:=0 else stopY:=height2-1;
   startx:=0;
-  oldx:=width2-1;
+  stopX:=width2-1;
   mainwindow.CropFITSimage1Click(nil);
 end;
 
 procedure Tmainwindow.remove_left1Click(Sender: TObject);
 begin
-  {calculate in screen coordinates}
+  {calculate in array coordinates}
   starty:=0;{no change in y}
-  oldy:=height2-1;
-  startx:=trunc(down_x/(image1.width/width2));
-  oldx:=width2-1;
+  stopY:=height2-1;
+  {startx is already defined by mousedown}
+  if flip_horizontal1.checked then stopX:=0 else stopX:=width2-1;
   mainwindow.CropFITSimage1Click(nil);
 end;
 
 procedure Tmainwindow.remove_right1Click(Sender: TObject);
 begin
-  {calculate in screen coordinates}
+  {calculate in array coordinates}
   starty:=0;{no change in y}
-  oldy:=height2-1;
-  startx:=0;
-  oldx:=trunc(down_x/(image1.width/width2));
+  stopY:=height2-1;
+  {startx is already defined by mousedown}
+  if flip_horizontal1.checked=false then stopX:=0 else stopX:=width2-1;
   mainwindow.CropFITSimage1Click(nil);
 end;
 
@@ -3796,60 +3739,48 @@ var
    Save_Cursor:TCursor;
 begin
   if fits_file=false then exit;
-  if  ((abs(oldx-startX)>2)and (abs(oldy-starty)>2)) then
+  if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
     backup_img;
 
-    bsize:=min(10,abs(oldx-startX));{10 or smaller}
+    bsize:=min(10,abs(stopX-startX));{10 or smaller}
 
-    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
-    begin
-      starty:=height2-1-starty;
-      oldY:=height2-1-oldY;
-    end;
-
-    if mainwindow.Flip_horizontal1.Checked then
-    begin
-      startX:=width2-1-startX;
-      oldX:=width2-1-oldX;
-    end;
-
-    if startX>oldX then begin dum:=oldX; oldx:=startX; startX:=dum; end;{swap}
-    if startY>oldY then begin dum:=oldY; oldy:=startY; startY:=dum; end;
+    if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
+    if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
 
     {ellipse parameters}
-    center_x:=(startx+oldX-1)/2;
-    center_y:=(startY+oldY-1)/2;
-    a:=(oldX-1-startx)/2;
-    b:=(oldY-1-startY)/2;
+    center_x:=(startx+stopX-1)/2;
+    center_y:=(startY+stopY-1)/2;
+    a:=(stopX-1-startx)/2;
+    b:=(stopY-1-startY)/2;
 
     for k:=0 to naxis3-1 do {do all colors}
     begin
 
       mode_left_bottom:=mode(img_loaded,k,startx-bsize,startx+bsize,starty-bsize,starty+bsize,32000);{for this area get most common value equals peak in histogram}
-      mode_left_top:=   mode(img_loaded,k,startx-bsize,startx+bsize,oldy-bsize,oldY+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_left_top:=   mode(img_loaded,k,startx-bsize,startx+bsize,stopY-bsize,stopY+bsize,32000);{for this area get most common value equals peak in histogram}
 
-      mode_right_bottom:=mode(img_loaded,k,oldX-bsize,oldX+bsize,starty-bsize,starty+bsize,32000);{for this area get most common value equals peak in histogram}
-      mode_right_top:=   mode(img_loaded,k,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_right_bottom:=mode(img_loaded,k,stopX-bsize,stopX+bsize,starty-bsize,starty+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_right_top:=   mode(img_loaded,k,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,32000);{for this area get most common value equals peak in histogram}
 
       noise_left_bottom:=get_negative_noise_level(img_loaded,k,startx-bsize,startx+bsize,starty-bsize,starty+bsize, mode_left_bottom);{find the negative noise level below most_common_level of a local area}
-      noise_left_top:=get_negative_noise_level(img_loaded,k,startx-bsize,startx+bsize,oldy-bsize,oldY+bsize, mode_left_top);{find the negative noise level below most_common_level of a local area}
-      noise_right_bottom:=get_negative_noise_level(img_loaded,k,oldX-bsize,oldX+bsize,starty-bsize,starty+bsize, mode_right_bottom);{find the negative noise level below most_common_level of a local area}
-      noise_right_top:=get_negative_noise_level(img_loaded,k,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize, mode_right_top);{find the negative noise level below most_common_level of a local area}
+      noise_left_top:=get_negative_noise_level(img_loaded,k,startx-bsize,startx+bsize,stopY-bsize,stopY+bsize, mode_left_top);{find the negative noise level below most_common_level of a local area}
+      noise_right_bottom:=get_negative_noise_level(img_loaded,k,stopX-bsize,stopX+bsize,starty-bsize,starty+bsize, mode_right_bottom);{find the negative noise level below most_common_level of a local area}
+      noise_right_top:=get_negative_noise_level(img_loaded,k,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize, mode_right_top);{find the negative noise level below most_common_level of a local area}
       noise_level:=(noise_left_bottom + noise_left_top + noise_right_top + noise_right_bottom)/4;
 
-      for fitsY:=startY to oldY-1 do
-      for fitsX:=startX to oldX-1 do
+      for fitsY:=startY to stopY-1 do
+      for fitsX:=startX to stopX-1 do
       begin
         angle_from_center:=arctan(abs(fitsY-center_Y)/max(1,abs(fitsX-center_X)));
         if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
         begin
-          line_bottom:=mode_left_bottom*(oldx-fitsx)/(oldx-startx)+ mode_right_bottom *(fitsx-startX)/(oldx-startx);{median value at bottom line}
-          line_top:=  mode_left_top *   (oldx-fitsx)/(oldx-startx)+ mode_right_top*(fitsx-startX)/(oldx-startx);{median value at top line}
-          new_value:=line_bottom*(oldY-fitsY)/(oldY-startY)+line_top*(fitsY-startY)/(oldY-startY);{median value at position FitsX, fitsY}
+          line_bottom:=mode_left_bottom*(stopX-fitsx)/(stopX-startx)+ mode_right_bottom *(fitsx-startX)/(stopX-startx);{median value at bottom line}
+          line_top:=  mode_left_top *   (stopX-fitsx)/(stopX-startx)+ mode_right_top*(fitsx-startX)/(stopX-startx);{median value at top line}
+          new_value:=line_bottom*(stopY-fitsY)/(stopY-startY)+line_top*(fitsY-startY)/(stopY-startY);{median value at position FitsX, fitsY}
           old_value:=img_loaded[k,fitsX,fitsY];
           if ((old_value-3*noise_level>new_value) or (old_value+3*noise_level<new_value)) then img_loaded[k,fitsX,fitsY]:=new_value;{adapt only if pixel value is 3*noise level different}
         end;
@@ -5779,7 +5710,7 @@ end;
 
 procedure use_histogram(img: image_array; update_hist: boolean);{calculate histogram}
 var
-  i, minm,maxm,max_range, value1,oldvalue1,count,countR,countG,countB,oldXpos,Xpos,steps,max_color,histo_peakR,number_colors  : integer;
+  i, minm,maxm,max_range, value1,oldvalue1,count,countR,countG,countB,stopXpos,Xpos,steps,max_color,histo_peakR,number_colors  : integer;
   above, above_R          : double;
   Save_Cursor:TCursor;
 
@@ -5857,7 +5788,7 @@ begin
   mainwindow.histogram1.canvas.rectangle(-1,-1, mainwindow.histogram1.width+1, mainwindow.histogram1.height+1);
   mainwindow.histogram1.Canvas.Pen.Color := clred;
 
-  oldXpos:=-1;
+  stopXpos:=-1;
   oldvalue1:=0;
   countR:=0;
   countG:=0;
@@ -5873,11 +5804,11 @@ begin
     inc(steps,number_colors);
 
     Xpos:=round(mainwindow.histogram1.width*i/hist_range {65535});
-    if Xpos>oldXpos then {new line to be drawn}
+    if Xpos>stopXpos then {new line to be drawn}
     begin
       count:=(countR+countG+countB) div steps;{calculate value per step}
 
-      oldXpos:=Xpos;
+      stopXpos:=Xpos;
       if count<>0 then
       begin
         value1:=round(4*ln(count/3));
@@ -7311,8 +7242,37 @@ begin
 end;
 
 procedure Tmainwindow.copy_to_clipboard1Click(Sender: TObject);
+var
+  tmpbmp: TBitmap;
+  x1,x2,y1,y2,dum  : integer;
+  SRect,DRect: TRect;
+
 begin
-  Clipboard.Assign(Image1.Picture.Bitmap);
+  if abs(startX-stopX)<4 then
+    Clipboard.Assign(Image1.Picture.Bitmap)
+  else
+  begin {selection}
+    try
+      TmpBmp := TBitmap.Create;
+      try
+        {convert array coordinates to screen coordinates}
+        if flip_horizontal1.Checked then begin x1:=width2-1-startX;x2:=width2-stopX; end else begin x1:=startx;x2:=stopX;end;
+        if flip_vertical1.Checked=false then begin y1:=height2-1-startY;y2:=height2-1-stopY; end else begin y1:=startY;y2:=stopY;end;
+
+        TmpBmp.Width  := abs(x2-x1);
+        TmpBmp.Height := abs(y2-y1);
+
+        TmpBmp.Canvas.CopyMode := cmSrcCopy;
+        SRect := Rect(x1,y1,x2,y2);
+        DRect := Rect(0,0,TmpBmp.Width,TmpBmp.height);
+        TmpBmp.Canvas.copyrect(DRect, mainwindow.Image1.canvas,SRect);
+        Clipboard.Assign(TmpBmp);
+      finally
+         TmpBmp.Free;
+      end;
+      except
+    end;
+  end;
 end;
 
 procedure Tmainwindow.extract_pixel_11Click(Sender: TObject);
@@ -7433,7 +7393,7 @@ var
    bg_array              : array of double;
 begin
   if ((cd1_1=0) or (fits_file=false)) then exit;
-  if  ((abs(oldx-startX)>2)and (abs(oldy-starty)>2)) then
+  if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
     if flux_magn_offset=0 then {calibrate}
        plot_stars(true {if true photometry only}, false {show Distortion});
@@ -7444,34 +7404,21 @@ begin
 
     backup_img;
 
-    tx:=oldX;
-    ty:=oldY;
+    tx:=stopX;
+    ty:=stopY;
 
-    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
-    begin
-      starty:=height2-1-starty;
-      oldY:=height2-1-oldY;
-    end;
-
-    if mainwindow.Flip_horizontal1.Checked then
-    begin
-      startX:=width2-1-startX;
-      oldX:=width2-1-oldX;
-    end;
-
-    if startX>oldX then begin dum:=oldX; oldx:=startX; startX:=dum; end;{swap}
-    if startY>oldY then begin dum:=oldY; oldy:=startY; startY:=dum; end;
-
+    if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
+    if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
 
     setlength(bg_array,5000);
 
     {measure the median of the suroundings}
     counter:=0;
     sd:=0;
-    for fitsY:=startY+1-5 to oldY-1+5 do {calculate mean at square boundaries of detection box}
-    for fitsX:=startX+1-5 to oldX-1+5 do
+    for fitsY:=startY+1-5 to stopY-1+5 do {calculate mean at square boundaries of detection box}
+    for fitsX:=startX+1-5 to stopX-1+5 do
     begin
-      if ( (fitsX<startX) or  (fitsX>oldX-1) or (fitsY<startY) or  (fitsY>oldY-1) ) then {measure only outside the box}
+      if ( (fitsX<startX) or  (fitsX>stopX-1) or (fitsY<startY) or  (fitsY>stopY-1) ) then {measure only outside the box}
       begin
         if counter>=length(bg_array) then  SetLength(bg_array,counter+5000);{increase length}
         bg_array[counter]:=img_loaded[0,fitsX,fitsY];
@@ -7488,8 +7435,8 @@ begin
 
     saturation_counter:=0;
     flux:=0;
-    for fitsY:=startY+1 to oldY-1 do {within rectangle}
-    for fitsX:=startX+1 to oldX-1 do
+    for fitsY:=startY+1 to stopY-1 do {within rectangle}
+    for fitsX:=startX+1 to stopX-1 do
     begin
       value:=img_loaded[0,fitsX+1,fitsY+1]- bg_median;
       flux:=flux+value;{add all flux. Without stars it should average zero. Detecting flux using >3*sd misses too much signal comets}
@@ -7545,7 +7492,7 @@ end;
 
 procedure Tmainwindow.localbackgroundequalise1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,k,bsize,startX2,startY2,oldX2,oldY2,progress_value  : integer;
+   fitsX,fitsY,dum,k,bsize,startX2,startY2,stopX2,stopY2,progress_value  : integer;
    mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,
    center_x,center_y,a,b,angle_from_center,new_value : double;
    line_bottom, line_top : double;
@@ -7553,46 +7500,34 @@ var
    Save_Cursor:TCursor;
 begin
   if fits_file=false then exit;
-  if  ((abs(oldx-startX)>2)and (abs(oldy-starty)>2)) then
+  if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
     backup_img;
-    bsize:=min(15,abs(oldx-startX));{15 or smaller}
+    bsize:=min(15,abs(stopX-startX));{15 or smaller}
 
     startX2:=startX;{save for Application.ProcessMessages;this could change startX, startY}
     startY2:=startY;
-    oldX2:=oldX;
-    oldY2:=oldY;
+    stopX2:=stopX;
+    stopY2:=stopY;
 
-    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
-    begin
-      startY2:=height2-1-startY2;
-      oldY2:=height2-1-oldY2;
-    end;
-
-    if mainwindow.Flip_horizontal1.Checked then
-    begin
-      startX2:=width2-1-startX2;
-      oldX2:=width2-1-oldX2;
-    end;
-
-    if startX2>oldX2 then begin dum:=oldX2; oldX2:=startX2; startX2:=dum; end;{swap}
-    if startY2>oldY2 then begin dum:=oldY2; oldY2:=startY2; startY2:=dum; end;
+    if startX2>stopX2 then begin dum:=stopX2; stopX2:=startX2; startX2:=dum; end;{swap}
+    if startY2>stopY2 then begin dum:=stopY2; stopY2:=startY2; startY2:=dum; end;
 
     {ellipse parameters}
-    center_x:=(startX2+oldX2-1)/2;
-    center_y:=(startY2+oldY2-1)/2;
-    a:=(oldX2-1-startX2)/2;
-    b:=(oldY2-1-startY2)/2;
+    center_x:=(startX2+stopX2-1)/2;
+    center_y:=(startY2+stopY2-1)/2;
+    a:=(stopX2-1-startX2)/2;
+    b:=(stopY2-1-startY2)/2;
 
     {prepare a smooth background image}
-    setlength(img_buffer,naxis3,oldX2-startX2,oldY2-startY2);{new size}
-    setlength(img_temp,naxis3,oldX2-startX2,oldY2-startY2);{new size}
+    setlength(img_buffer,naxis3,stopX2-startX2,stopY2-startY2);{new size}
+    setlength(img_temp,naxis3,stopX2-startX2,stopY2-startY2);{new size}
     for k:=0 to naxis3-1 do
-    for fitsY:=startY2 to oldY2-1 do
-    for fitsX:=startX2 to oldX2-1 do img_buffer[k,fitsX-startX2,fitsY-startY2]:=img_loaded[k,fitsX,fitsY];{copy section of interest}
+    for fitsY:=startY2 to stopY2-1 do
+    for fitsX:=startX2 to stopX2-1 do img_buffer[k,fitsX-startX2,fitsY-startY2]:=img_loaded[k,fitsX,fitsY];{copy section of interest}
     apply_most_common(img_buffer,img_temp,bsize); {apply most common filter on first array and place result in second array}
     gaussian_blur2(img_temp,bsize+bsize);
 
@@ -7600,30 +7535,30 @@ begin
     for k:=0 to naxis3-1 do {do all colors}
     begin
       mode_left_bottom:=mode(img_loaded,k,startX2-bsize,startX2+bsize,startY2-bsize,startY2+bsize,32000);{for this area get most common value equals peak in histogram}
-      mode_left_top:=   mode(img_loaded,k,startX2-bsize,startX2+bsize,oldY2-bsize,oldY2+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_left_top:=   mode(img_loaded,k,startX2-bsize,startX2+bsize,stopY2-bsize,stopY2+bsize,32000);{for this area get most common value equals peak in histogram}
 
-      mode_right_bottom:=mode(img_loaded,k,oldX2-bsize,oldX2+bsize,startY2-bsize,startY2+bsize,32000);{for this area get most common value equals peak in histogram}
-      mode_right_top:=   mode(img_loaded,k,oldX2-bsize,oldX2+bsize,oldY2-bsize,oldY2+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_right_bottom:=mode(img_loaded,k,stopX2-bsize,stopX2+bsize,startY2-bsize,startY2+bsize,32000);{for this area get most common value equals peak in histogram}
+      mode_right_top:=   mode(img_loaded,k,stopX2-bsize,stopX2+bsize,stopY2-bsize,stopY2+bsize,32000);{for this area get most common value equals peak in histogram}
 
       {apply correction}
-      for fitsY:=startY2 to oldY2-1 do
+      for fitsY:=startY2 to stopY2-1 do
       begin
         if frac(fitsY/50)=0 then
         begin
           Application.ProcessMessages;{this could change startX, startY}
           if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-          progress_value:=round(100*( k/naxis3 +  0.3333*(fitsY-startY2)/(oldY2-startY2)));
+          progress_value:=round(100*( k/naxis3 +  0.3333*(fitsY-startY2)/(stopY2-startY2)));
           progress_indicator(progress_value,'');{report progress}
         end;
 
-        for fitsX:=startX2 to oldX2-1 do
+        for fitsX:=startX2 to stopX2-1 do
         begin
           angle_from_center:=arctan(abs(fitsY-center_Y)/max(1,abs(fitsX-center_X)));
           if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
           begin
-            line_bottom:=mode_left_bottom*(oldX2-fitsx)/(oldX2-startX2)+ mode_right_bottom *(fitsx-startX2)/(oldX2-startX2);{median value at bottom line}
-            line_top:=  mode_left_top *   (oldX2-fitsx)/(oldX2-startX2)+ mode_right_top*(fitsx-startX2)/(oldX2-startX2);{median value at top line}
-            new_value:=line_bottom*(oldY2-fitsY)/(oldY2-startY2)+line_top*(fitsY-startY2)/(oldY2-startY2);{median value at position FitsX, fitsY}
+            line_bottom:=mode_left_bottom*(stopX2-fitsx)/(stopX2-startX2)+ mode_right_bottom *(fitsx-startX2)/(stopX2-startX2);{median value at bottom line}
+            line_top:=  mode_left_top *   (stopX2-fitsx)/(stopX2-startX2)+ mode_right_top*(fitsx-startX2)/(stopX2-startX2);{median value at top line}
+            new_value:=line_bottom*(stopY2-fitsY)/(stopY2-startY2)+line_top*(fitsY-startY2)/(stopY2-startY2);{median value at position FitsX, fitsY}
 
             img_loaded[k,fitsX,fitsY]:=img_loaded[k,fitsX,fitsY] +(new_value-img_temp[k,fitsX-startX2,fitsY-startY2]);
           end;
@@ -7669,37 +7604,25 @@ end;
 
 procedure Tmainwindow.copy_paste_tool1Click(Sender: TObject);
 var
-  dum,k,oldX2,oldY2 : integer;
+  dum,k,stopX2,stopY2 : integer;
 begin
   if fits_file=false then exit;
-  if  ((abs(oldx-startX)>1)and (abs(oldy-starty)>1)) then
+  if  ((abs(stopX-startX)>1)and (abs(stopY-starty)>1)) then
   begin
     Screen.Cursor := crDrag;
     copy_paste_x:=startX+1;{take the inside of the rectangle} {save for Application.ProcessMessages;this could change startX, startY}
     copy_paste_y:=startY+1;
-    oldX2:=oldX-1;{take the inside of the rectangle}
-    oldY2:=oldY-1;
+    stopX2:=stopX-1;{take the inside of the rectangle}
+    stopY2:=stopY-1;
 
     backup_img;{required in case later ctrl-z is used}
 
-    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
-    begin
-      copy_paste_y:=height2-1-copy_paste_y;
-      oldY2:=height2-1-oldY2;
-    end;
-
-    if mainwindow.Flip_horizontal1.Checked then
-    begin
-      copy_paste_x:=width2-1-copy_paste_x;
-      oldX2:=width2-1-oldX2;
-    end;
-
-    if copy_paste_x>oldX2 then begin dum:=oldX2; oldX2:=copy_paste_x; copy_paste_x:=dum; end;{swap}
-    if copy_paste_y>oldY2 then begin dum:=oldY2; oldY2:=copy_paste_y; copy_paste_y:=dum; end;
+    if copy_paste_x>stopX2 then begin dum:=stopX2; stopX2:=copy_paste_x; copy_paste_x:=dum; end;{swap}
+    if copy_paste_y>stopY2 then begin dum:=stopY2; stopY2:=copy_paste_y; copy_paste_y:=dum; end;
 
 
-    copy_paste_w:=oldX2-copy_paste_x+1;
-    copy_paste_h:=oldY2-copy_paste_y+1;
+    copy_paste_w:=stopX2-copy_paste_x+1;
+    copy_paste_h:=stopY2-copy_paste_y+1;
     copy_paste:=true;
 
   end {fits file}
@@ -7745,6 +7668,78 @@ begin
       if dobackup then restore_img;{for the viewer}
     end;
   end;
+end;
+
+procedure Tmainwindow.angular_distance1Click(Sender: TObject);
+var
+   fitsX,fitsY,dum,shapetype                 : integer;
+   hfd1,star_fwhm,snr,flux,xc,yc,
+   hfd2,star_fwhm2,snr2,flux2,xc2,yc2,angle,shape_fitsX,shape_fitsY     : double;
+   info_message,info_message2 : string;
+   Save_Cursor              : TCursor;
+const
+  median_max_size=5000;
+
+begin
+  if fits_file=false then exit;
+//  if  ((abs(stopX-startX)>2) or (abs(stopY-starty)>2)) then
+  if true then
+  begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+    backup_img;
+
+    HFD(img_loaded,startX,startY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+
+    if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
+    begin
+      shapetype:=1;{circle}
+      shape_marker1_fitsX:=xc+1;{store fits value for zoom}
+      shape_marker1_fitsY:=yc+1;
+    end
+    else
+    begin
+       info_message:='Object 1, no lock'+#10;
+       shape_marker1_fitsX:=startX+1;{store fits value for zoom}
+       shape_marker1_fitsY:=startY+1;
+       shapetype:=0;{rectangle}
+    end;
+    show_marker_shape(mainwindow.shape_marker1,shapetype,20,20,10{minimum}, shape_marker1_fitsX,shape_marker1_fitsY);
+
+    HFD(img_loaded,stopX,stopY,14{box size}, hfd2,star_fwhm2,snr2,flux2,xc2,yc2);{star HFD and FWHM}
+    if ((hfd2<15) and (hfd2>=0.8) {two pixels minimum} and (snr2>10) and (flux2>1){rare but happens}) then {star detected in img_loaded}
+    begin
+      shapetype:=1;{circle}
+      shape_marker2_fitsX:=xc2+1;{store fits value for zoom}
+      shape_marker2_fitsY:=yc2+1;
+    end
+    else
+    begin
+       info_message:=info_message+'Object 2, no lock'+#10;
+       shape_marker2_fitsX:=stopX+1;{store fits value for zoom}
+       shape_marker2_fitsY:=stopY+1;
+       shapetype:=0;{rectangle}
+    end;
+    show_marker_shape(mainwindow.shape_marker2,shapetype,20,20,10{minimum},shape_marker2_fitsX,shape_marker2_fitsY);
+
+    angle:=fnmodulo (arctan2(shape_marker2_fitsX-shape_marker1_fitsX,shape_marker2_fitsY-shape_marker1_fitsY)*180/pi + crota2,360);
+    info_message2:=floattostrf(angle,ffgeneral,5,5)+'°,  ';
+
+    info_message2:=info_message2+floattostrf(sqrt(sqr(shape_marker2_fitsX-shape_marker1_fitsX)+sqr(shape_marker2_fitsY-shape_marker1_fitsY))*cdelt2*3600,ffgeneral,5,5);
+    if cdelt2<>0 then  info_message2:=info_message2+'"'
+                 else  info_message2:=info_message2+' pixels';
+
+
+    case  QuestionDlg (pchar('Angular distance '),pchar(info_message+info_message2),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
+             mrYes: Clipboard.AsText:=info_message2;
+    end;
+
+    Screen.Cursor:=Save_Cursor;
+  end {fits file}
+  else
+  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
+
 end;
 
 
@@ -7801,41 +7796,29 @@ var
    Save_Cursor:TCursor;
 begin
   if fits_file=false then exit;
-  if  ((abs(oldx-startX)>100) OR (abs(oldy-starty)>100)) then {or function since it could be parallel to x or y axis}
+  if  ((abs(stopX-startX)>100) OR (abs(stopY-starty)>100)) then {or function since it could be parallel to x or y axis}
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
     backup_img;
 
-    if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
-    begin
-      starty:=height2-1-starty;
-      oldY:=height2-1-oldY;
-    end;
-
-    if mainwindow.Flip_horizontal1.Checked then
-    begin
-      startX:=width2-1-startX;
-      oldX:=width2-1-oldX;
-    end;
-
     bsize:=20;
     colrr1:=mode(img_loaded,0,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
     if naxis3>1 then colgg1:=mode(img_loaded,1,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
     if naxis3>2 then colbb1:=mode(img_loaded,2,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
 
-    colrr2:=mode(img_loaded,0,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize,65535);{find most common colour of a local area}
-    if naxis3>1 then colgg2:=mode(img_loaded,0,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize,65535);{find most common colour of a local area}
-    if naxis3>2 then colbb2:=mode(img_loaded,0,oldX-bsize,oldX+bsize,oldY-bsize,oldY+bsize,65535);{find most common colour of a local area}
+    colrr2:=mode(img_loaded,0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
+    if naxis3>1 then colgg2:=mode(img_loaded,0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
+    if naxis3>2 then colbb2:=mode(img_loaded,0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
 
-    a:=sqrt(sqr(oldX-startX)+sqr(oldY-startY)); {distance between bright and dark area}
+    a:=sqrt(sqr(stopX-startX)+sqr(stopY-startY)); {distance between bright and dark area}
 
     for fitsY:=0 to height2-1 do
       for fitsX:=0 to width2-1 do
       begin
         b:=sqrt(sqr(fitsX-startX)+sqr(fitsY-startY)); {distance from dark spot}
-        c:=sqrt(sqr(fitsX-oldX)+sqr(fitsY-oldY)); {distance from bright spot}
+        c:=sqrt(sqr(fitsX-stopX)+sqr(fitsY-stopY)); {distance from bright spot}
         p:=-((sqr(b)-sqr(a)-sqr(c))/(2*a)); {projectiestelling scheefhoekige driehoek (Dutch), polytechnisch zakboekje 42 edition, a2/24 3.2}
 
         img_loaded[0,fitsX,fitsY]:=img_loaded[0,fitsX,fitsY]-(colrr2-colrr1)*(a-p)/a;
@@ -8397,46 +8380,13 @@ begin
   Screen.Cursor:=Save_Cursor;
 end;
 
-procedure set_marker1XY(show: boolean);
-  var
-    xf,yf: integer;
-begin
-  if show then
-  begin
-    if mainwindow.Flip_horizontal1.Checked then xf:=mainwindow.image1.width-down_x else xf:=down_x;;
-    if mainwindow.flip_vertical1.Checked then yf:=mainwindow.image1.height-down_y else yf:=down_y;
-
-    shape_marker1_fitsX:=0.5+(0.5+xf)/(mainwindow.image1.width/width2);{starts at 1}
-    shape_marker1_fitsY:=0.5+height2-(0.5+yf)/(mainwindow.image1.height/height2); {from bottom to top, starts at 1}
-
-    show_marker_shape(mainwindow.shape_marker1,20,20,shape_marker1_fitsX, shape_marker1_fitsY);
-  end
-  else
-    mainwindow.shape_marker1.visible:=false;
-end;
-
-procedure set_marker2XY(show: boolean);
-  var
-    xf,yf: integer;
-begin
-  if show then
-  begin
-    if mainwindow.Flip_horizontal1.Checked then xf:=mainwindow.image1.width-down_x else xf:=down_x;;
-    if mainwindow.flip_vertical1.Checked then yf:=mainwindow.image1.height-down_y else yf:=down_y;
-
-    shape_marker2_fitsX:=0.5+(0.5+xf)/(mainwindow.image1.width/width2);{starts at 1}
-    shape_marker2_fitsY:=0.5+height2-(0.5+yf)/(mainwindow.image1.height/height2); {from bottom to top, starts at 1}
-
-    show_marker_shape(mainwindow.shape_marker2,20,20,shape_marker2_fitsX, shape_marker2_fitsY);
-  end
-  else
-    mainwindow.shape_marker1.visible:=false;
-end;
 
 procedure Tmainwindow.add_marker1Click(Sender: TObject);
 begin
-   set_marker1XY(add_marker1.checked);
-   shape_marker1.hint:='Marker';
+  shape_marker1_fitsX:=startX+1;
+  shape_marker1_fitsY:=startY+1;
+  show_marker_shape(mainwindow.shape_marker1,0 {rectangle},20,20,0 {minimum size},shape_marker1_fitsX, shape_marker1_fitsY);
+  shape_marker1.hint:='Marker';
 end;
 
 procedure Tmainwindow.center_lost_windowsClick(Sender: TObject);
@@ -8477,13 +8427,58 @@ begin
      lineto(x1,y1);
    end;
 end;
+procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string);
+var
+  size,xcenter,ycenter,text_height,text_width  :integer;
+begin
+  if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
+  begin
+    x1:=(width2-1)-x1;
+    x2:=(width2-1)-x2;
+  end;
+  if mainwindow.flip_vertical1.Checked=false then
+  begin
+    y1:=(height2-1)-y1;
+    y2:=(height2-1)-y2;
+  end;
+  mainwindow.image1.Canvas.Pen.width:=max(1,round(1*abs(typ))); ;
+  mainwindow.image1.Canvas.font.size:=max(12,round(12*abs(typ)));
+
+  if typ>0 then {single line}
+  begin
+    mainwindow.image1.Canvas.moveto(x1,y1);
+    mainwindow.image1.Canvas.lineto(x2,y2);
+  end
+  else
+  begin {rectangle or two indicating lines}
+     size:=abs(x2-x1);
+     if size>20 then plot_rectangle(x1,y1,x2,y2) {accurate positioned rectangle on screen coordinates}
+     else
+     begin {two lines}
+       xcenter:=(x2+x1) div 2;
+       ycenter:=(y2+y1) div 2;
+       mainwindow.image1.canvas.moveto(xcenter-(size div 2),ycenter);
+       mainwindow.image1.canvas.lineto(xcenter-(size div 4),ycenter);
+       mainwindow.image1.canvas.moveto(xcenter+(size div 2),ycenter);
+       mainwindow.image1.canvas.lineto(xcenter+(size div 4),ycenter);
+     end;
+  end;
+
+  text_height:=round(mainwindow.image1.canvas.Textheight(name));{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
+  text_width:=round(mainwindow.image1.canvas.Textwidth(name)); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
+
+  if x2>=x1 then text_width:=0;
+  if y2>=y1 then text_height:=text_height div 3;
+  mainwindow.image1.Canvas.textout( -text_width+x2, -text_height + y2,name{name}+magn{magnitude});
+
+end;
 
 procedure plot_annotations(xoffset,yoffset:integer;fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
 var
-  count1,x1,y1,x2,y2,text_height,text_width,size,xcenter,ycenter : integer;
+  count1,x1,y1,x2,y2 : integer;
   typ     : double;
   List: TStrings;
-  magn : string;
+  name,magn : string;
 begin
   List := TStringList.Create;
   list.StrictDelimiter:=true;
@@ -8515,52 +8510,14 @@ begin
           x2:=round(strtofloat2(list[2]))-1 +xoffset;
           y2:=round(strtofloat2(list[3]))-1 +yoffset;
 
-          if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
-          begin
-            x1:=(width2-1)-x1;
-            x2:=(width2-1)-x2;
-          end;
-          if mainwindow.flip_vertical1.Checked=false then
-          begin
-            y1:=(height2-1)-y1;
-            y2:=(height2-1)-y2;
-          end;
-
           typ:=strtofloat2(list[4]);
-          mainwindow.image1.Canvas.Pen.width:=max(1,round(1*abs(typ))); ;
-          mainwindow.image1.Canvas.font.size:=max(12,round(12*abs(typ)));
-
-          if typ>0 then {single line}
-          begin
-            mainwindow.image1.Canvas.moveto(x1,y1);
-            mainwindow.image1.Canvas.lineto(x2,y2);
-          end
-          else
-          begin {rectangle or two indicating lines}
-             size:=x2-x1;
-             if size>20 then plot_rectangle(x1,y1,x2,y2) {accurate positioned rectangle on screen coordinates}
-             else
-             begin {two lines}
-               xcenter:=(x2+x1) div 2;
-               ycenter:=(y2+y1) div 2;
-               mainwindow.image1.canvas.moveto(xcenter-(size div 2),ycenter);
-               mainwindow.image1.canvas.lineto(xcenter-(size div 4),ycenter);
-               mainwindow.image1.canvas.moveto(xcenter+(size div 2),ycenter);
-               mainwindow.image1.canvas.lineto(xcenter+(size div 4),ycenter);
-             end;
-          end;
-
-          text_height:=round(mainwindow.image1.canvas.Textheight(list[5]));{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
-          text_width:=round(mainwindow.image1.canvas.Textwidth(list[5])); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
-
-          if x2>=x1 then text_width:=0;
-          if y2>=y1 then text_height:=text_height div 3;
-
+          name:=list[5];
           if list.count>6  then  magn:=list[6] else magn:='';
-          mainwindow.image1.Canvas.textout( -text_width+x2, -text_height + y2,list[5]{name}+magn{magnitude});
+
+          plot_the_annotation(x1,y1,x2,y2,typ, name,magn);
 
           if fill_combo then {add asteroid annotations to combobox for ephemeris alignment}
-            stackmenu1.ephemeris_centering1.Additem(list[5],nil);
+            stackmenu1.ephemeris_centering1.Additem(name,nil);
         end;
       end;
       count1:=count1-1;
@@ -8575,7 +8532,8 @@ end;
 procedure Tmainwindow.Enterlabel1Click(Sender: TObject);
 var
   value : string;
-  text_height,text_width,text_x,text_y   : integer;
+  text_height,text_width,text_x,text_y,
+  startX_screen,startY_screen,text_X_screen,text_Y_screen: integer;
   boldness                               : double;
 begin
   backup_img;
@@ -8590,21 +8548,16 @@ begin
   image1.Canvas.font.size:=max(12,round(12*width2/image1.width));
 
   image1.Canvas.moveto(startX,startY);
-  if ((oldx<>startx) or (oldY<>startY) )=true then {rubber rectangle in action}
+  if ((stopX<>startx) or (stopY<>startY) )=true then {rubber rectangle in action}
   begin
-    text_x:=oldX;
-    text_y:=oldY;
+    text_x:=stopX;
+    text_y:=stopY;
   end
   else
   begin
     text_x:=startX+image1.Canvas.font.size;
     text_y:=startY+image1.Canvas.font.size;
   end;
-
-  if sender<>Enter_rectangle_with_label1 then
-     image1.Canvas.lineto(text_X,text_Y)
-  else
-     plot_rectangle(startX,startY,text_X,text_Y);{plot accuratea rectangle. x and y are in range 1..., convert to range 0....}
 
   {$ifdef mswindows}
   SetTextAlign(image1.canvas.handle, ta_left or ta_top or TA_NOUPDATECP);{always, since Linux is doing this fixed}
@@ -8615,27 +8568,17 @@ begin
   text_height:=round(image1.canvas.Textheight(value));{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
   text_width:=round(image1.canvas.Textwidth(value)); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
 
-  if oldX>=startX then text_width:=0;
-  if oldY>=startY then text_height:=text_height div 3;
+  if stopX>=startX then text_width:=0;
+  if stopY>=startY then text_height:=text_height div 3;
 
-  image1.Canvas.textout( -text_width+text_X, -text_height + text_Y, value);
-
-  {store annotations}
-  if flip_horizontal1.Checked then {flip to fits style, range 0..}
-  begin
-    startX:=(width2-1)-startX;
-    text_X:=(width2-1)-text_X;
-  end;
-  if flip_vertical1.Checked=false then
-  begin
-    startY:=(height2-1)-startY;
-    text_Y:=(height2-1)-text_Y;
-  end;
   startX:=startX+1; {convert to fits range 1...}
   startY:=startY+1; {convert to fits range 1...}
   text_X:=text_X+1; {convert to fits range 1...}
   text_Y:=text_Y+1; {convert to fits range 1...}
+
   if sender<>Enter_rectangle_with_label1 then boldness:=width2/image1.width else boldness:=-width2/image1.width;
+
+  plot_the_annotation(startX,startY,text_X,text_Y,boldness,value,'');
   add_text ('ANNOTATE=',#39+inttostr(startX)+';'+inttostr(startY)+';'+inttostr(text_X)+';'+inttostr(text_Y)+';'+floattostr2(boldness)+';'+value+';'+#39);
   annotated:=true; {header contains annotations}
 end;
@@ -9868,35 +9811,23 @@ procedure Tmainwindow.CropFITSimage1Click(Sender: TObject);
 var fitsX,fitsY,dum : integer;
    Save_Cursor:TCursor;
 begin
-  if ((fits_file=true) and (abs(oldx-startX)>10)and (abs(oldy-starty)>10)) then
+  if ((fits_file=true) and (abs(stopX-startX)>10)and (abs(stopY-starty)>10)) then
   begin
    Save_Cursor := Screen.Cursor;
    Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
    backup_img;
 
-   if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
-   begin
-     starty:=height2-1-starty;
-     oldY:=height2-1-oldY;
-   end;
+   if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
+   if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
 
-   if mainwindow.Flip_horizontal1.Checked then
-   begin
-     startX:=width2-1-startX;
-     oldX:=width2-1-oldX;
-   end;
-
-   if startX>oldX then begin dum:=oldX; oldx:=startX; startX:=dum; end;{swap}
-   if startY>oldY then begin dum:=oldY; oldy:=startY; startY:=dum; end;
-
-   width2:=oldx-startx+1;
-   height2:=oldy-starty+1;
+   width2:=stopX-startx+1;
+   height2:=stopY-starty+1;
    setlength(img_temp,naxis3,width2,height2);{set length of image array}
 
 
-   for fitsY:=startY to oldY do
-     for fitsX:=startX to oldX do {crop image INCLUDING rectangle. Do this that if used near corners they are included}
+   for fitsY:=startY to stopY do
+     for fitsX:=startX to stopX do {crop image INCLUDING rectangle. Do this that if used near corners they are included}
       begin
         img_temp[0,fitsX-startX,fitsY-startY]:=img_loaded[0,fitsX,fitsY];
         if naxis3>1 then img_temp[1,fitsX-startX,fitsY-startY]:=img_loaded[1,fitsX,fitsY];{color}
@@ -10034,7 +9965,10 @@ var
 begin
   if sender=enterposition1 then
   begin
-    set_marker1XY(true); {set also shape_marker1_fitsX, Y}
+    shape_marker1_fitsX:=startX+1;
+    shape_marker1_fitsY:=startY+1;
+    show_marker_shape(mainwindow.shape_marker1,0 {rectangle},20,20,0 {minimum size},shape_marker1_fitsX, shape_marker1_fitsY);
+
     mouse_positionRADEC1:=InputBox('Enter α, δ of mouse position seperated by a comma:','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',mouse_positionRADEC1);
     if mouse_positionRADEC1=''  then exit; {cancel used}
     shape_marker1.hint:='Reference 1: '+mouse_positionRADEC1
@@ -10042,7 +9976,10 @@ begin
   else
   if sender=enterposition2 then
   begin
-    set_marker2XY(true);  {set also shape_marker2_fitsX, Y}
+    shape_marker2_fitsX:=startX+1;
+    shape_marker2_fitsY:=startY+1;
+    show_marker_shape(mainwindow.shape_marker2,0 {rectangle},20,20,0 {minimum size},shape_marker2_fitsX, shape_marker2_fitsY);
+
     mouse_positionRADEC2:=InputBox('Enter α, δ of mouse position seperated by a comma:','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',mouse_positionRADEC2);
     if mouse_positionRADEC2=''  then exit;  {cancel used}
     shape_marker2.hint:='Reference 2: '+mouse_positionRADEC2
@@ -10151,30 +10088,16 @@ procedure Tmainwindow.set_area1Click(Sender: TObject);
 var
     dum : integer;
 begin
-
-  if mainwindow.flip_vertical1.Checked=false then {fits image coordinates start at left bottom, so are flipped vertical for screen coordinates}
-   begin
-     starty:=height2-1-starty;
-     oldY:=height2-1-oldY;
-   end;
-
-   if mainwindow.flip_horizontal1.Checked then
-   begin
-     startX:=width2-1-startX;
-     oldX:=width2-1-oldX;
-   end;
-
-   if startX>oldX then begin dum:=oldX; oldx:=startX; startX:=dum; end;{swap}
-   if startY>oldY then begin dum:=oldY; oldy:=startY; startY:=dum; end;
+  if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
+  if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
 
 
-   {selected area colour replace}
-   areax1:=startX;
-   areay1:=startY;
-   areax2:=oldX;
-   areay2:=oldY;
-   stackmenu1.area_set1.caption:='✓';
-
+  {selected area colour replace}
+  areax1:=startX;
+  areay1:=startY;
+  areax2:=stopX;
+  areay2:=stopY;
+  stackmenu1.area_set1.caption:='✓';
 end;
 
 procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
@@ -10432,14 +10355,17 @@ end;
 procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
-  xf,yf,k, fx,fy: integer;
-  fitsX,fitsY,hfd2,fwhm_star2,snr,flux,xc,yc: double;
+  xf,yf,k, fx,fy, shapetype                 : integer;
+  {fitsX,fitsY,}hfd2,fwhm_star2,snr,flux,xc,yc,d1,d2: double;
 begin
-  if flip_horizontal1.Checked then xf:=image1.width-x else xf:=x;;
-  if flip_vertical1.Checked then yf:=image1.height-y else yf:=y;
+  if flip_horizontal1.Checked then xf:=image1.width-1-x else xf:=x;;
+  if flip_vertical1.Checked then yf:=image1.height-1-y else yf:=y;
 
-  fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
-  fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
+  startX:=round(-0.5+(xf+0.5)/(image1.width/width2));{starts at -0.5 and  middle pixels is 0}
+  startY:=round(-0.5+height2-(yf+0.5)/(image1.height/height2)); {from bottom to top, starts at -0.5 and 0 at middle first pixel}
+
+  stopX:=startX;{prevent random crop and other actions}
+  stopY:=startY;
 
   {default good values}
   snr:=2;
@@ -10451,27 +10377,27 @@ begin
   begin
     if pos('small',stackmenu1.manual_centering1.text)<>0 then {comet}
     begin
-      find_highest_pixel_value(img_loaded,10,round(fitsX-1),round(fitsY-1),xc,yc);
+      find_highest_pixel_value(img_loaded,10,startX,startY,xc,yc);
     end
     else
     if pos('medium',stackmenu1.manual_centering1.text)<>0 then {comet}
     begin
-      find_highest_pixel_value(img_loaded,20,round(fitsX-1),round(fitsY-1),xc,yc);
+      find_highest_pixel_value(img_loaded,20,startX,startY,xc,yc);
     end
     else
     if pos('large',stackmenu1.manual_centering1.text)<>0 then {comet}
     begin
-      find_highest_pixel_value(img_loaded,30,round(fitsX-1),round(fitsY-1),xc,yc);
+      find_highest_pixel_value(img_loaded,30,startX,startY,xc,yc);
     end
 
     else
     if pos('No',stackmenu1.manual_centering1.text)<>0 then {no centering}
     begin
-      xc:=fitsX-1;{0..width2-1}
-      yc:=fitsY-1;
+      xc:=startX;{0..width2-1}
+      yc:=startY;
     end
     else {star alignment}
-    HFD(img_loaded,round(fitsX-1),round(fitsY-1),14{box size},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
+    HFD(img_loaded,startX,startY,14{box size},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
 
 
     if hfd2<90 then {detected something}
@@ -10479,7 +10405,8 @@ begin
       shape_fitsX:=xc+1;{calculate fits positions}
       shape_fitsY:=yc+1;
       listview_add_xy(shape_fitsX,shape_fitsY);{add to list}
-      show_shape(snr>1 {good lock?},shape_fitsX, shape_fitsY);
+      if snr>1 then shapetype:=1 {circle} else shapetype:=0;{square}
+      show_marker_shape(mainwindow.shape_alignment_marker1,shapetype,20,20,10{minimum},shape_fitsX, shape_fitsY);
     end;
   end
   else
@@ -10497,7 +10424,7 @@ begin
 
     if naxis3=3 then {for colour replace function}
     begin
-      sample(round(fitsx),round(fitsy));
+      sample(startX,startY);
     end;
 
     if copy_paste then {paste copied image part}
@@ -10507,7 +10434,7 @@ begin
         for fy:=copy_paste_y to copy_paste_y+copy_paste_h-1 do
         for fX:=copy_paste_x to copy_paste_x+copy_paste_w-1 do
         begin
-          img_loaded[k,max(0,min(width2-1,round(fitsX-1+(fx-copy_paste_x)- (copy_paste_w div 2)))),max(0,min(height2-1,round(fitsY-1+(fy-copy_paste_y) - (copy_paste_h div 2))))]:=img_backup[index_backup].img[k,fx,fy];{use backup for case overlap occurs}
+          img_loaded[k,max(0,min(width2-1,round(startX+(fx-copy_paste_x)- (copy_paste_w div 2)))),max(0,min(height2-1,round(startY+(fy-copy_paste_y) - (copy_paste_h div 2))))]:=img_backup[index_backup].img[k,fx,fy];{use backup for case overlap occurs}
         end;
       end;{k color}
       plot_fits(mainwindow.image1,false,true);
@@ -10552,6 +10479,7 @@ begin
 
   valmax:=0;
   hfd1:=999;
+  snr:=0;
 
   try
     sd:=99999999999;
@@ -10886,35 +10814,34 @@ end;
 
 procedure erase_rectangle;
 begin
-//  if  rectangle_drawn then
   begin
     mainwindow.image1.Canvas.Pen.color:=clblack;{define otherwise problems in Linux}
     mainwindow.image1.Canvas.Pen.Mode := pmNotXor;       { use XOR mode to draw/erase }
     mainwindow.image1.Canvas.Pen.width := round(1+width2/mainwindow.image1.width);{thick lines because image is stretched smaller and otherwise line can't been seen}
-    mainwindow.image1.Canvas.MoveTo(startx , startY );   { move pen back to origin }
+    mainwindow.image1.Canvas.MoveTo(start_RX , start_RY);   { move pen back to origin }
 
-    mainwindow.image1.Canvas.LineTo(oldx,startY);        { erase the old line }
-    mainwindow.image1.Canvas.LineTo(oldx,oldy);          { erase the old line }
-    mainwindow.image1.Canvas.LineTo(startX,oldy);        { erase the old line }
-    mainwindow.image1.Canvas.LineTo(startX,startY);      { erase the old line }
+    mainwindow.image1.Canvas.LineTo(stop_RX,start_RY);        { erase the old line }
+    mainwindow.image1.Canvas.LineTo(stop_RX,stop_RY);          { erase the old line }
+    mainwindow.image1.Canvas.LineTo(start_RX,stop_RY);        { erase the old line }
+    mainwindow.image1.Canvas.LineTo(start_RX,start_RY);      { erase the old line }
     mainwindow.image1.Canvas.Pen.Mode := pmCopy;{back to normal}
-  //  rectangle_drawn:=false;
   end;
 
 end;
+
 
 procedure draw_rectangle(x_sized,y_sized:integer);
 begin
   mainwindow.image1.Canvas.Pen.color:=clblack;
   mainwindow.image1.Canvas.Pen.Mode := pmNotXor;       { use XOR mode to draw/erase }
   mainwindow.image1.Canvas.Pen.width := round(1+width2/mainwindow.image1.width);{thick lines because image is stretched smaller and otherwise line can't been seen}
-  mainwindow.image1.Canvas.LineTo(X_sized, startY);    { draw the new line }
+  mainwindow.image1.Canvas.LineTo(X_sized, start_RY);    { draw the new line }
   mainwindow.image1.Canvas.LineTo(X_sized, Y_sized);   { draw the new line }
-  mainwindow.image1.Canvas.LineTo(startX, Y_sized);    { draw the new line }
-  mainwindow.image1.Canvas.LineTo(startX, startY);     { draw the new line }
+  mainwindow.image1.Canvas.LineTo(start_RX, Y_sized);    { draw the new line }
+  mainwindow.image1.Canvas.LineTo(start_RX, start_RY);     { draw the new line }
   mainwindow.image1.Canvas.Pen.Mode := pmCopy;{back to normal}
- // rectangle_drawn:=true;
 end;
+
 
 procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
   Y: Integer);
@@ -10961,10 +10888,10 @@ begin
    begin
      if mouse_enter=1 then
      begin
-       startx:= x_sized;
-       starty:= y_sized;
-       oldx:= x_sized;
-       oldy:= y_sized;
+       start_RX:= x_sized;
+       start_RY:= y_sized;
+       stop_RX:= x_sized;
+       stop_RY:= y_sized;
      end;
      mouse_enter:=2;{right button pressed}
    end
@@ -10973,7 +10900,7 @@ begin
 
 
    factor:=round(1+width2/image1.width);
-   if ((abs(oldx -x)>factor) and (abs(oldy -y)>factor))then
+   if ((abs(stop_RX -x)>factor) and (abs(stop_RY -y)>factor))then
    begin
      if ssright in shift then {rubber rectangle}
      begin
@@ -10982,7 +10909,7 @@ begin
 
        if cdelt2<>0 then
        begin
-         pixel_distance:= 3600*sqrt (sqr((X_sized-startX)*cdelt1)+sqr((startY-Y_sized)*cdelt2));{pixel distance in arcsec}
+         pixel_distance:= 3600*sqrt (sqr((X_sized-start_RX)*cdelt1)+sqr((start_RY-Y_sized)*cdelt2));{pixel distance in arcsec}
          if pixel_distance<60 then dist_str:=inttostr(round(pixel_distance))+'"'
          else
          if pixel_distance<3600 then dist_str:=floattostrF(pixel_distance/60,ffgeneral,3,2)+#39
@@ -10990,17 +10917,17 @@ begin
          dist_str:=floattostrF(pixel_distance/3600,ffgeneral,3,2)+'°';
        end
        else dist_str:='';
-       if cdelt2<>0 then angle_str:='∠='+inttostr(round(fnmodulo (arctan2(flipH*(X_sized-startX),flipV*(startY-Y_sized))*180/pi + crota2,360)) )+'°' else  angle_str:=''; ;
-       mainwindow.statusbar1.panels[7].text:=inttostr(abs(X_sized-startX)-1)+' x '+inttostr(abs(startY-Y_sized)-1)+'    '+dist_str+'    '+angle_str;{indicate rectangl size}
+       if cdelt2<>0 then angle_str:='∠='+inttostr(round(fnmodulo (arctan2(flipH*(X_sized-start_RX),flipV*(start_RY-Y_sized))*180/pi + crota2,360)) )+'°' else  angle_str:=''; ;
+       mainwindow.statusbar1.panels[7].text:=inttostr(abs(X_sized-start_RX)-1)+' x '+inttostr(abs(start_RY-Y_sized)-1)+'    '+dist_str+'    '+angle_str;{indicate rectangl size}
      end
      else
      begin
-       startx:=x_sized;
-       starty:=y_sized;
+       start_RX:=x_sized;
+       start_RY:=y_sized;
        mainwindow.statusbar1.panels[7].text:='';{remove crop size}
      end;
-     oldx:=x_sized;
-     oldy:=y_sized;
+     stop_RX:=x_sized;
+     stop_RY:=y_sized;
    end;
   {end rubber rectangle}
 
@@ -11009,11 +10936,12 @@ begin
 
    if ssright in shift then exit; {rubber rectangle with update statusbar is very slow. Does it trigger an event???}
 
-   if flipH=-1 then xf:=image1.width-x else xf:=x;;
-   if flipV=-1 then yf:=image1.height-y else yf:=y;
+   if flipH=-1 then xf:=image1.width-1-x else xf:=x;;
+   if flipV=-1 then yf:=image1.height-1-y else yf:=y;
 
    mouse_fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
    mouse_fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
+
 
    {give screen pixel value}
    str(mouse_fitsx:4:1,s1);  {fits images start with 1 and not with 0}
@@ -11028,7 +10956,8 @@ begin
 //        mainwindow.shape_paste1.pen.width:=max(1,min(3,min(copy_paste_w,copy_paste_h) div 10) );{reduce width is shape size is small}
 
 
-   if copy_paste then show_marker_shape(mainwindow.shape_paste1,copy_paste_w,copy_paste_h, mouse_fitsx, mouse_fitsy);{show the paste shape}
+   if copy_paste then
+        show_marker_shape(mainwindow.shape_paste1,0 {rectangle},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
    try color1:=ColorToRGB(mainwindow.image1.canvas.pixels[trunc(x*width2/image1.width),trunc(y*height2/image1.height)]); ;except;end;  {note  getpixel(image1.canvas.handle,x,y) doesn't work well since X,Y follows zoom  factor !!!}
 
    if naxis3=3 then {for star temperature}
@@ -11095,6 +11024,8 @@ end;
 
 procedure Tmainwindow.Image1MouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
+var
+  xf, yf : integer;
 begin
   if button=mbright then
   begin
@@ -11105,7 +11036,7 @@ begin
    {$endif}
     erase_rectangle;
   end;
-  if ((oldx<>startx) or (oldY<>startY) )=false then
+  if ((stop_RX<>start_RX) or (stop_RY<>start_RY) )=false then
   begin {no rubber rectangle in action}
     if abs(y-down_y)>2 then
     begin
@@ -11115,7 +11046,16 @@ begin
     begin
       mainwindow.image1.left:= mainwindow.image1.left+(x-down_x)
     end;
+  end
+  else
+  begin
+    if flip_horizontal1.Checked then xf:=image1.width-1-x else xf:=x;;
+    if flip_vertical1.Checked then yf:=image1.height-1-y else yf:=y;
+
+    stopX:=round(-0.5+(xf+0.5)/(image1.width/width2));{starts at -0.5 and  middle pixels is 0}
+    stopY:=round(-0.5+height2-(yf+0.5)/(image1.height/height2)); {from bottom to top, starts at -0.5 and 0 at middle first pixel}
   end;
+
   screen.Cursor := crDefault;
 end;
 

@@ -512,7 +512,9 @@ begin
                     colb:=img_average[2,x_new,y_new] - 475 + blue_add;
 
 
-                    rgbsum:=colr+colg+colb; {if rgbsum<0.1 then begin rgbsum:=0.1; red_f:=rgbsum/3; green_f:=red_f; blue_f:=red_f;end else}
+                    rgbsum:=colr+colg+colb;
+                    if rgbsum<0.1 then begin rgbsum:=0.1; red_f:=rgbsum/3; green_f:=red_f; blue_f:=red_f;end
+                    else
                     begin
                       red_f:=colr/rgbsum;   if red_f<0   then red_f:=0;  if red_f>1 then   red_f:=1;
                       green_f:=colg/rgbsum; if green_f<0 then green_f:=0;if green_f>1 then green_f:=1;
@@ -1709,6 +1711,16 @@ begin
         {save}
         filename2:=ChangeFileExt(Filename2,'_aligned.fit');{rename}
 
+        restore_header;
+        update_text   ('COMMENT 1','  Calibrated & aligned by ASTAP. www.hnsky.org');
+        update_text   ('CALSTAT =',#39+calstat+#39); {calibration status}
+        add_integer('DARK_CNT=',' / Darks used for luminance.               ' ,dark_count);{for interim lum,red,blue...files. Compatible with master darks}
+        add_integer('FLAT_CNT=',' / Flats used for luminance.               ' ,flat_count);{for interim lum,red,blue...files. Compatible with master flats}
+        add_integer('BIAS_CNT=',' / Flat-darks used for luminance.          ' ,flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
+         { ASTAP keyword standard:}
+         { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
+         { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
+
         if nrbits=16 then
           save_fits(img_loaded,filename2,16,true)
         else
@@ -1721,8 +1733,6 @@ begin
       end;{try}
     end;{}
   end;  {with stackmenu1}
-
-  counterL:=0; {prevent any stack saving}
   {arrays will be nilled later. This is done for early exits}
 end;   {calibration and alignment}
 

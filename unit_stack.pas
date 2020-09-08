@@ -786,7 +786,7 @@ function JdToDate(jd:double):string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
 function median_background(var img :image_array;color,size,x,y:integer): double;{find median value in sizeXsize matrix of img}
 procedure analyse_fits(img : image_array; var star_counter : integer; var backgr, hfd_median : double); {find background, number of stars, median HFD}
-procedure sample(fitsx,fitsy : integer);{sampe local colour and fill shape with colour}
+procedure sample(sx,sy : integer);{sampe local colour and fill shape with colour}
 procedure apply_most_common(sourc,dest: image_array; radius: integer);  {apply most common filter on first array and place result in second array}
 procedure backup_header;{backup solution and header}
 function  restore_header: boolean;{backup solution and header}
@@ -2952,7 +2952,7 @@ begin
 end;
 
 procedure listview_view(tl : tlistview);
-var index : integer;
+var index      : integer;
     fitsX,fitsY: double;
 begin
   for index:=0 to TL.Items.Count-1 do
@@ -2968,7 +2968,8 @@ begin
           calstat:=''; {allow manual stack for stacked images in listview1}
           fitsX:=strtofloat2(tl.Items.item[index].subitems.Strings[I_X]);
           fitsY:=strtofloat2(tl.Items.item[index].subitems.Strings[I_Y]);
-          show_shape(true {assume good lock},fitsX,fitsY);
+          //show_shape(true {assume good lock},fitsX,fitsY);
+          show_marker_shape(mainwindow.shape_alignment_marker1,1 {circle, assume a good lock},20,20,10 {minimum size},fitsX,fitsY);
         end
         else mainwindow.shape_alignment_marker1.visible:=false;
         if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(0,0,false);{plot any annotations}
@@ -4394,7 +4395,7 @@ end;
 
 
 
-procedure sample(fitsx,fitsy : integer);{sampe local colour and fill shape with colour}
+procedure sample(sx,sy : integer);{sampe local colour and fill shape with colour}
 var
     halfboxsize,i,j,counter,fx,fy,col_r,col_g,col_b  :integer;
     r,g,b,h,s,v,colrr,colgg,colbb,luminance, luminance_stretched,factor, largest : single;
@@ -4412,14 +4413,14 @@ begin
   for i:=-halfboxsize to halfboxsize do
   for j:=-halfboxsize to halfboxsize do {average local colour}
   begin
-    fx:=i+fitsX-1;
-    fy:=j+fitsY-1;
+    fx:=i+sX;
+    fy:=j+sY;
     if ((fx>=0) and (fx<width2) and (fy>=0) and (fy<height2) ) then
     begin
       inc(counter);
-      colrr:=colrr+img_loaded[0,round(fitsX)-1,round(fitsY)-1];
-      colgg:=colgg+img_loaded[1,round(fitsX)-1,round(fitsY)-1];
-      colbb:=colbb+img_loaded[2,round(fitsX)-1,round(fitsY)-1];
+      colrr:=colrr+img_loaded[0,sX,sY];
+      colgg:=colgg+img_loaded[1,sX,sY];
+      colbb:=colbb+img_loaded[2,sX,sY];
    end;
   end;
 
@@ -6566,7 +6567,10 @@ begin
 
         {show alignment marker}
         if (stackmenu1.use_manual_alignment1.checked) then {manual alignment}
-          show_shape(true {assume good lock},strtofloat2(listview1.Items.item[c].subitems.Strings[I_X]),strtofloat2(listview1.Items.item[c].subitems.Strings[I_Y]))
+        begin
+//          show_shape(true {assume good lock},strtofloat2(listview1.Items.item[c].subitems.Strings[I_X]),strtofloat2(listview1.Items.item[c].subitems.Strings[I_Y]))
+          show_marker_shape(mainwindow.shape_alignment_marker1,1 {circle, assume a good lock},20,20,10{minimum},strtofloat2(listview1.Items.item[c].subitems.Strings[I_X]),strtofloat2(listview1.Items.item[c].subitems.Strings[I_Y]));
+        end
         else mainwindow.shape_alignment_marker1.visible:=false;
       end;
       inc(c);
@@ -6860,7 +6864,7 @@ begin
 
 
       update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1);{for the rare case the darks are coloured. Should normally be not the case since it expects raw mono FITS files without bayer matrix applied !!}
-      update_text   ('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
+      update_text   ('COMMENT 1','  Written by ASTAP. www.hnsky.org');
       naxis3:=1; {any color is made mono in the routine}
 
       if save_fits(img_dark,path1,-32,false) then {saved}
@@ -7004,7 +7008,7 @@ begin
         { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
         { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
-        update_text   ('COMMENT 1','  Created by Astrometric Stacking Program. www.hnsky.org');
+        update_text   ('COMMENT 1','  Created by ASTAP www.hnsky.org');
         update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1); {for the rare case the darks are coloured. Should normally be not the case since it expects raw mono FITS files without bayer matrix applied !!}
         naxis3:=1; {any color is made mono in the routine}
 
@@ -7212,8 +7216,15 @@ begin
 
         restore_header;{restore header and solution}
 
-        update_text   ('COMMENT 1','  Calibrated by Astrometric Stacking Program. www.hnsky.org');
+        update_text   ('COMMENT 1','  Calibrated by ASTAP. www.hnsky.org');
         update_text   ('CALSTAT =',#39+calstat+#39); {calibration status}
+        add_integer('DARK_CNT=',' / Darks used for luminance.               ' ,dark_count);{for interim lum,red,blue...files. Compatible with master darks}
+        add_integer('FLAT_CNT=',' / Flats used for luminance.               ' ,flat_count);{for interim lum,red,blue...files. Compatible with master flats}
+        add_integer('BIAS_CNT=',' / Flat-darks used for luminance.          ' ,flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
+         { ASTAP keyword standard:}
+         { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
+         { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
+
 
         filename2:=StringReplace(ChangeFileExt(filename2,'.fit'),'.fit','_cal.fit',[]);{give new file name }
         memo2_message('█ █ █  Saving calibrated file as '+filename2);
@@ -7319,7 +7330,7 @@ var
    Save_Cursor:TCursor;
    i,c,over_size,over_sizeL,nrfiles, image_counter,object_counter, first_file, total_counter,counter_colours: integer;
    filter_name1, filter_name2, filename3, extra1,extra2,object_to_process,stack_info         : string;
-   lrgb,solution,monofile,ignore  : boolean;
+   lrgb,solution,monofile,ignore,cal_and_align  : boolean;
    startTick      : qword;{for timing/speed purposes}
 begin
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
@@ -7574,7 +7585,8 @@ begin
     exposureL:=0;
     inc(object_counter);
 
-    lrgb:=classify_filter1.checked;
+    cal_and_align:=pos('alignment',stackmenu1.stack_method1.text)>0; {calibration and alignment only}
+    lrgb:=((classify_filter1.checked) and (cal_and_align=false));{ignore lrgb for calibration and alignmentis true}
     over_size:=round(strtofloat2(stackmenu1.oversize1.Text));{accept also commas but round later}
     if lrgb=false then
     begin
@@ -7613,8 +7625,11 @@ begin
 
         if pos('stich',stackmenu1.stack_method1.text)>0=true then stack_mosaic(over_size,{var}files_to_process,counterL) {mosaic combining}
         else
-        if pos('alignment',stackmenu1.stack_method1.text)>0=true then
+        if cal_and_align then {calibration & alignment only}
+        begin
+          memo2_message('---------- Calibration & alignment for object: '+object_to_process+' -----------');
           calibration_and_alignment(over_size,{var}files_to_process,counterL){saturation clip average}
+        end
         else
           stack_average(over_size,{var}files_to_process,counterL);{average}
 
@@ -7694,7 +7709,7 @@ begin
               if crpix2<>0 then begin crpix2:=crpix2+over_size; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
             end;
 
-            update_text('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
+            update_text('COMMENT 1','  Written by ASTAP. www.hnsky.org');
             update_text('CALSTAT =',#39+calstat+#39);
 
             if pos('D',calstat)>0 then
@@ -7783,6 +7798,7 @@ begin
     fits_file:=true;
     nrbits:=-32; {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
 
+    if cal_and_align=false then {do not do this for calibration and alignment only}
     if ((monofile){success none lrgb loop} or (counter_colours<>0{length(extra2)>=2} {lrgb loop})) then
     begin
       if ((stackmenu1.make_osc_color1.checked) and (stackmenu1.osc_auto_level1.checked)) then
@@ -7825,7 +7841,7 @@ begin
       { interim files can contain keywords: EXPTIME, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
       { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
-      update_text   ('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
+      update_text   ('COMMENT 1','  Written by ASTAP. www.hnsky.org');
       calstat:=calstat+'S'; {status stacked}
       update_text ('CALSTAT =',#39+calstat+#39); {calibration status}
 
@@ -8015,10 +8031,12 @@ end;
 
 procedure Tstackmenu1.stack_method1Change(Sender: TObject);
 var
-   sigm, mosa : boolean;
+   sigm, mosa,cal_and_align,cal_only : boolean;
 begin
-  sigm:=stack_method1. ItemIndex=1;{sigma clip}
-  mosa:=stack_method1. ItemIndex=2;{mosaic}
+  sigm:=stack_method1.ItemIndex=1;{sigma clip}
+  mosa:=stack_method1.ItemIndex=2;{mosaic}
+  cal_and_align:=stack_method1.ItemIndex=3;{}
+  cal_only:=stack_method1.ItemIndex=4;{}
 
   mosaic_box1.enabled:=mosa;
   sd_factor1.enabled:=sigm;
@@ -8032,6 +8050,9 @@ begin
 
   classify_object1.enabled:=(mosa=false); {in mosaic mode ignore object name}
   oversize1.enabled:=(mosa=false); {in mosaic mode ignore this oversize setting}
+
+  classify_filter1.enabled:=((cal_and_align=false) and (cal_only=false));
+  classify_object1.enabled:=(cal_only=false);
 
   stack_button1.caption:='Stack ('+stack_method1.text+')';
 end;
