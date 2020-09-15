@@ -102,6 +102,9 @@ type
     histogram_values_to_clipboard1: TMenuItem;
     local_adjustments1: TMenuItem;
     angular_distance1: TMenuItem;
+    j2000_1: TMenuItem;
+    galactic1: TMenuItem;
+    popupmenu_frame1: TPopupMenu;
     Stretchdrawmenu1: TMenuItem;
     stretch_draw_fits1: TMenuItem;
     show_statistics1: TMenuItem;
@@ -293,6 +296,8 @@ type
     procedure MenuItem21Click(Sender: TObject);
     procedure batch_rotate_left1Click(Sender: TObject);
     procedure angular_distance1Click(Sender: TObject);
+    procedure j2000_1Click(Sender: TObject);
+    procedure galactic1Click(Sender: TObject);
     procedure range1Change(Sender: TObject);
     procedure remove_atmouse1Click(Sender: TObject);
     procedure gradient_removal1Click(Sender: TObject);
@@ -610,7 +615,7 @@ function extract_objectname_from_filename(filename8: string): string; {try to ex
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
 function fnmodulo (x,range: double):double;
 procedure measure_magnitudes(var stars :star_list);{find stars and return, x,y, hfd, flux}
-function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2 or bin3 version}
+function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2,binx3, binx4 version}
 procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean); {convert ra in text to double in radians}
 procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
 function image_file_name(inp : string): boolean; {readable image name?}
@@ -624,7 +629,7 @@ procedure listview_add_xy(fitsX,fitsY: double);{add x,y position to listview}
 Function LeadingZero(w : integer) : String;
 procedure log_to_file(logf,mess : string);{for testing}
 procedure demosaic_advanced(var img : image_array);{demosaic img_loaded}
-procedure bin_X2X3(binfactor:integer);{bin img_loaded 2x or 3x}
+procedure bin_X2X3X4(binfactor:integer);{bin img_loaded 2x or 3x or 4x}
 function sd(x1,y1, ri{regio of interest} : integer; img : image_array):double;{calculate standard deviation in img at position x1, y1 in a rectangle with sides 2*ri+1}
 
 
@@ -681,7 +686,8 @@ var
 
 implementation
 
-uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_290, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid, unit_astrometry_net, unit_live_stacking;
+uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_290, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
+ unit_astrometry_net, unit_live_stacking, unit_hjd;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -693,7 +699,7 @@ uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, 
 
 var
   recent_files : tstringlist;
-  stop_RX, stop_RY, start_RX,start_RY                    :integer; {for rubber rectangle}
+  stop_RX, stop_RY, start_RX,start_RY                    :integer; {for rubber rectangle. These values are the same startX,.... except if image is flipped}
   object_xc,object_yc, object_raM,object_decM  : double; {near mouse auto centered object position}
 
 const
@@ -707,6 +713,7 @@ const
   marker_position : string='';
   mouse_fitsx : double=0;
   mouse_fitsy : double=0;
+  coord_frame : integer=0; {J2000=0 or galactic=1}
 
 
 function load_fits(filen:string;light {load as light of dark/flat},load_data: boolean ;var img_loaded2: image_array): boolean;{load fits file}
@@ -2204,7 +2211,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.417, '+about_message4+', dated 2020-09-8';
+  #13+#10+'ASTAP version ß0.9.418, '+about_message4+', dated 2020-09-15';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2349,11 +2356,14 @@ begin
 end;
 
 
-procedure bin_X2X3(binfactor:integer);{bin img_loaded 2x or 3x}
+procedure bin_X2X3X4(binfactor:integer);{bin img_loaded 2x or 3x}
   var fitsX,fitsY,k, w,h  : integer;
       img_temp2 : image_array;
+      fact      : string;
 
 begin
+  binfactor:=min(4,binfactor);{max factor is 4}
+
   w:=trunc(width2/binfactor);  {half size & cropped. Use trunc for image 1391 pixels wide like M27 test image. Otherwise exception error}
   h:=trunc(height2/binfactor);
 
@@ -2373,6 +2383,7 @@ begin
 
   end
   else
+  if binfactor=3 then
   begin {bin3x3}
     for k:=0 to naxis3-1 do
       for fitsY:=0 to h-1 do
@@ -2387,6 +2398,30 @@ begin
                                       img_loaded[k,fitsX*3 +2,fitsY*3  ]+
                                       img_loaded[k,fitsX*3 +2,fitsY*3+1]+
                                       img_loaded[k,fitsX*3 +2,fitsY*3+2])/9;
+           end;
+  end
+  else
+  begin {bin4x4}
+    for k:=0 to naxis3-1 do
+      for fitsY:=0 to h-1 do
+         for fitsX:=0 to w-1  do
+         begin
+           img_temp2[k,fitsX,fitsY]:=(img_loaded[k,fitsX*4   ,fitsY*4  ]+
+                                      img_loaded[k,fitsX*4   ,fitsY*4+1]+
+                                      img_loaded[k,fitsX*4   ,fitsY*4+2]+
+                                      img_loaded[k,fitsX*4   ,fitsY*4+3]+
+                                      img_loaded[k,fitsX*4 +1,fitsY*4  ]+
+                                      img_loaded[k,fitsX*4 +1,fitsY*4+1]+
+                                      img_loaded[k,fitsX*4 +1,fitsY*4+2]+
+                                      img_loaded[k,fitsX*4 +1,fitsY*4+3]+
+                                      img_loaded[k,fitsX*4 +2,fitsY*4  ]+
+                                      img_loaded[k,fitsX*4 +2,fitsY*4+1]+
+                                      img_loaded[k,fitsX*4 +2,fitsY*4+2]+
+                                      img_loaded[k,fitsX*4 +2,fitsY*4+3]+
+                                      img_loaded[k,fitsX*4 +3,fitsY*4  ]+
+                                      img_loaded[k,fitsX*4 +3,fitsY*4+1]+
+                                      img_loaded[k,fitsX*4 +3,fitsY*4+2]+
+                                      img_loaded[k,fitsX*4 +3,fitsY*4+3])/16;
            end;
   end;
 
@@ -2426,7 +2461,9 @@ begin
      update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,YPIXSZ*binfactor);
    end;
 
-  add_text   ('HISTORY   ','BIN2x2 version of '+filename2);
+  fact:=inttostr(binfactor);
+  fact:=fact+'x'+fact;
+  add_text   ('HISTORY   ','BIN'+fact+' version of '+filename2);
 
 end;
 
@@ -2436,7 +2473,7 @@ begin
   result:=false;
   if load_fits(filename2,true {light},true {load data},img_loaded)=false then exit;
 
-  bin_X2X3(binfactor);{bin img_loaded 2x or 3x}
+  bin_X2X3X4(binfactor);{bin img_loaded 2x or 3x}
 
   if binfactor=2 then filename2:=ChangeFileExt(Filename2,'_bin2x2.fit')
                  else filename2:=ChangeFileExt(Filename2,'_bin3x3.fit');
@@ -7384,6 +7421,7 @@ begin
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
 
+
 procedure Tmainwindow.measuretotalmagnitude1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,font_height,counter,tx,ty,saturation_counter : integer;
@@ -7740,6 +7778,24 @@ begin
   else
   application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
 
+end;
+
+procedure Tmainwindow.j2000_1Click(Sender: TObject);
+begin
+   if j2000_1.checked then
+   begin
+     coord_frame:=0;
+     galactic1.checked:=false;
+   end;
+end;
+
+procedure Tmainwindow.galactic1Click(Sender: TObject);
+begin
+  if galactic1.checked then
+  begin
+    coord_frame:=1;
+    j2000_1.checked:=false;
+   end;
 end;
 
 
@@ -8617,6 +8673,20 @@ begin
   messagebox(mainwindow.handle,bericht,'FITS HEADER',MB_OK);
 end;
 
+function position_to_string(sep:string; ra,dec:double):string;
+var
+  l, b : double;
+begin
+  if coord_frame=0 then
+    result:=prepare_ra2(ra,': ')+sep+prepare_dec2(dec,'° ')
+  else
+  begin
+    EQU_GAL(ra,dec,l,b);{equatorial to galactic coordinates}
+    result:=floattostrF(l*180/pi, FFfixed, 0, 3)+sep+floattostrF(b*180/pi, FFfixed, 0, 3)+' ° gal';
+  end;
+
+end;
+
 procedure Tmainwindow.writeposition1Click(Sender: TObject);
 var  font_height:integer;
      x7,y7 : integer;
@@ -8641,12 +8711,12 @@ begin
     if mainwindow.Flip_horizontal1.Checked=true then x7:=round(width2-object_xc) else x7:=round(object_xc);
     if mainwindow.flip_vertical1.Checked=false then y7:=round(height2-object_yc) else y7:=round(object_yc);
 
-    image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+prepare_ra2(object_raM,': ')+','+prepare_dec2(object_decM,'° '));
+    image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+position_to_string(',',object_raM,object_decM));
   end
   else
   begin {no object sync, give mouse position}
     image1.Canvas.font.color:=clred;
-    image1.Canvas.textout(round(3+down_x   /(image1.width/width2)),round(-font_height +(down_y+10)/(image1.height/height2)),'_'+prepare_ra2(object_raM,': ')+','+prepare_dec2(object_decM,'° '));
+    image1.Canvas.textout(round(3+down_x   /(image1.width/width2)),round(-font_height +(down_y)/(image1.height/height2)),'_'+position_to_string(',',object_raM,object_decM));
   end;
 
 end;
@@ -8798,8 +8868,8 @@ begin
     writeln(f,'CRPIX1='+floattostr3(crpix1));// X of reference pixel
     writeln(f,'CRPIX2='+floattostr3(crpix2));// Y of reference pixel
 
-    writeln(f,'CRVAL1='+floattostr3(ra0*180/pi)); // RA (J2000) of reference pixel [deg]
-    writeln(f,'CRVAL2='+floattostr3(dec0*180/pi));// DEC (J2000) of reference pixel [deg]
+    writeln(f,'CRVAL1='+floattostr3(ra0*180/pi)); // RA (j2000_1) of reference pixel [deg]
+    writeln(f,'CRVAL2='+floattostr3(dec0*180/pi));// DEC (j2000_1) of reference pixel [deg]
     writeln(f,'CDELT1='+floattostr3(cdelt1));     // X pixel size [deg]
     writeln(f,'CDELT2='+floattostr3(cdelt2));     // Y pixel size [deg]
     writeln(f,'CROTA1='+floattostr3(crota1));    // Image twist of X axis [deg]
@@ -9154,8 +9224,8 @@ procedure Tmainwindow.FormShow(Sender: TObject);
 var
     s      : string;
     histogram_done,file_loaded,debug,filespecified: boolean;
-    binning, backgr, hfd_median : double;
-    hfd_counter                 : integer;
+    backgr, hfd_median                 : double;
+    hfd_counter,binning                : integer;
 begin
   user_path:=GetAppConfigDir(false);{get user path for app config}
 
@@ -9198,7 +9268,7 @@ begin
         '-annotate  {Produce deepsky annotated jpg file}' +#10+
         '-debug  {Show GUI and stop prior to solving}' +#10+
         '-log   {Write the solver log to file}'+#10+
-        '-tofits  binning[1,2,3,4,6,8]  {Make new fits file from PNG/JPG file input}'+#10+
+        '-tofits  binning[1,2,3,4]  {Make new fits file from PNG/JPG file input}'+#10+
         '-update  {update the FITS header with the found solution}' +#10+
         '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
         'Preference will be given to the command line values.'
@@ -9300,8 +9370,8 @@ begin
             begin
               if fits_file_name(filename2)=false {no fits file?} then
               begin
-                binning:=strtofloat2(GetOptionValue('tofits'));
-                resize_img_loaded(1/binning); {resize img_loaded in free ratio}
+                binning:=round(strtofloat2(GetOptionValue('tofits')));
+                if binning>1 then bin_X2X3X4(binning);{bin img_loaded 2x or 3x or 4x}
                 if histogram_done=false then use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
                 save_fits(img_loaded,changeFileExt(filename2,'.fit'),8,true {overwrite});
               end;
@@ -10847,7 +10917,7 @@ procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
   Y: Integer);
 
 var
-  hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance : double;
+  hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance          : double;
   s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str      : string;
   x_sized,y_sized,factor,flipH,flipV :integer;
   color1:tcolor;
@@ -10922,11 +10992,11 @@ begin
      end
      else
      begin
-       start_RX:=x_sized;
+       start_RX:=x_sized; {These values are the same startX,.... except if image is flipped}
        start_RY:=y_sized;
        mainwindow.statusbar1.panels[7].text:='';{remove crop size}
      end;
-     stop_RX:=x_sized;
+     stop_RX:=x_sized; {These values are the same startX,.... except if image is flipped}
      stop_RY:=y_sized;
    end;
   {end rubber rectangle}
@@ -10979,7 +11049,6 @@ begin
                                        + floattostrF(GetGValue(color1),ffgeneral,5,0)+'/'
                                        + floattostrF(GetBValue(color1),ffgeneral,5,0)+
                                        '  '+rgb_kelvin(r,b) ;
-
    try
      if naxis3=1 then mainwindow.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsX)-1,round(mouse_fitsY)-1],ffgeneral,5,0)+']' else
      if naxis3=3 then mainwindow.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsX)-1,round(mouse_fitsY)-1],ffgeneral,5,0)+'/'+ {color}
@@ -11018,7 +11087,9 @@ begin
      mainwindow.statusbar1.panels[2].text:='σ = '+ floattostrf( sd(round(mouse_fitsX-1),round(mouse_fitsY-1),10, img_loaded),ffFixed{ ffgeneral}, 4, 1);
    end;
   calculate_equatorial_mouse_position(mouse_fitsx,mouse_fitsy,raM,decM);
-  mainwindow.statusbar1.panels[0].text:=prepare_ra2(raM,': ')+'   '+prepare_dec2(decM,'° ');
+
+   mainwindow.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
+
 //  mainwindow.caption:=floattostr(xc)+'/'+floattostr(yc);
 end;
 
@@ -11282,6 +11353,7 @@ begin
       end;
     end;
 end;
+
 
 function save_PPM_PGM_PFM(img: image_array; wide2,height2,colourdepth:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 16 bit portable pixmap/graymap file (PPM/PGM) file }
 var

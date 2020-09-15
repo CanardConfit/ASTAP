@@ -64,10 +64,9 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 //      These are the image hash codes.                                          | These are the database hash codes.
 //
 //                           => matching process <=
-//6)                         Find quad has code matches where the distances d2/d1 to d6/d1 match within a small tolerance.
+//6)                         Find quad hash code matches where the distances d2/d1 to d6/d1 match within a small tolerance.
 //
-//7) 		             For matching quad has codes, calculate the size ratio d1_found/d1_reference and find μ (mean), σ (standard deviation) of these ratios.
-//                           Remove the quads where the size ratio is 3 * σ above the mean.
+//7) 		             For matching quad hash codes, calculate the size ratios d1_found/d1_reference. Calculate the median ratio. Compare the quads ratios with the median value and remove quads outside a small tolerance.
 //
 //8)                         From the remaining matching quads, prepare the "A"matrix/array containing the x,y center positions of the test image quads in standard coordinates
 //                           and  the array X_ref, Y_ref containing the x, y center positions of the reference imagete trahedrons in standard coordinates.
@@ -476,7 +475,7 @@ var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,i,database_stars,distance,binning,match_nr   : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,oversize,sep,ra7,dec7,
   centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,quad_tolerance: double;
-  solution, go_ahead,solve_show_log  : boolean;
+  solution, go_ahead       : boolean;
   Save_Cursor     : TCursor;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,info_message,warning,suggest_str,memo1_backup  :string;
@@ -569,7 +568,6 @@ begin
 
   //  nrstars_required:=round(nrstars*(height2/width2)*factorX);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
 
-    solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details}
     solution:=false; {assume no match is found}
     go_ahead:=(nrstars>=5); {bare minimum for two quads}
 
@@ -705,7 +703,7 @@ begin
               end;
 
               find_quads_ref;{find star quads, use database as reference image}
-              if solve_show_log then
+              if solve_show_log then {global variable set in find stars}
               begin
                 if (nrstars_required>database_stars+4) then
                 begin
@@ -830,7 +828,7 @@ begin
     update_text   ('PLTSOLVD=','                   T / ASTAP internal solver      ');
     update_text   ('COMMENT 6', solved_in+offset_found);
 
-    if solve_show_log then
+    if solve_show_log then {global variable set in find stars}
     begin
       equatorial_standard(telescope_ra,telescope_dec,ra0,dec0,1,correctionX,correctionY);{calculate correction for x,y position of database center and image center}
       plot_stars_used_for_solving(correctionX,correctionY); {plot image stars and database stars used for the solution}

@@ -28,7 +28,7 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
             &nbsp;<big>version 0.9.415 dated 2020-9-2. </big>&nbsp;Alternative
-            link, very latest development version 0.9.416 <a href="astap_setup.exe">ASTAP installer</a>
+            link, very latest development version 0.9.417 <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.exe/download">G17
@@ -2038,9 +2038,13 @@ This median measurement will ignore stars in the field.</li><li>Measure the MEAN
 <p>&nbsp;You could argue that a Johnson-V filter or green channel is required 
 for the image but in practice the error is limited depending on the 
 spectrum.</p><br><span style="font-weight: bold;"><br>Remove all markers and labels</span>.
-        Will remove all none persistent labels.<br>
+Will remove all none persistent labels. &nbsp;Persistent annotations
+can be switches off in the viewer pulldown menu VIEW.<br>
         <br>
-        <span style="font-weight: bold;">Copy position to clipboard,</span>
+        <span style="font-weight: bold;">Copy image (selection) to the clipboard,</span>
+copies the displayed image or a selection of the image to the
+clipboard. The orientation is depending on the selection direction..
+(v0.9.417)<br><span style="font-weight: bold;">Copy position to clipboard,</span>
         Enabled after astrometric solve. Copies the&nbsp;&#945;,&nbsp; &#948;
         position to the clipboard.<br>
         <span style="font-weight: bold;">Copy position to clipboard
@@ -2428,7 +2432,7 @@ astrometric
               name</td>
           </tr>
           <tr><td>-analyse</td><td></td><td></td><td>Analyse only and report in the errorlevel the median HFD * 100M + number of stars used. So the HFD is trunc(errorlevel/1M)/100</td></tr><tr><td>-annotate</td><td></td><td></td><td>Produce a deep sky annotated jpeg file with same name as
-              input file extended with _annotated *</td></tr><tr><td>-debug</td><td></td><td></td><td>Show GUI and stop prior to solving</td></tr><tr><td>-log</td><td></td><td></td><td>Write solver log to file with extension .log</td></tr><tr><td>-tofits</td><td>binning</td><td>1,2,3,4,6,8</td><td>Produce binned FITS file from input png/jpg *</td></tr><tr>
+              input file extended with _annotated *</td></tr><tr><td>-debug</td><td></td><td></td><td>Show GUI and stop prior to solving</td></tr><tr><td>-log</td><td></td><td></td><td>Write solver log to file with extension .log</td></tr><tr><td>-tofits</td><td>binning</td><td>1,2,3,4</td><td>Produce binned FITS file from input png/jpg *</td></tr><tr>
             <td>-update</td>
             <td><br>
             </td>

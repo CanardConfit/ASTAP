@@ -26,6 +26,8 @@ uses
   Classes, SysUtils, math;
 
 function JD_to_HJD(jd,ra_object,dec_object: double): double;{conversion JD to HJD}  {see https://en.wikipedia.org/wiki/Heliocentric_Julian_Day}
+procedure EQU_GAL(ra,dec:double;var l,b: double);{equatorial to galactic coordinates}
+
 
 implementation
 
@@ -57,7 +59,7 @@ procedure sun(jd:real; var ra,dec: double); {jd  var ra 0..2*pi, dec [0..pi/2] o
     if (ra<0) then ra:=ra+(2*pi);
   end;
 
-procedure precession(jd, ra1,dec1 : double; var ra2,dec2 : double); {precession correction,  simple formula, new Meeus chapter precission}
+procedure precession(jd, ra1,dec1 : double; var ra2,dec2 : double); {precession correction,  simple formula, new Meeus chapter precession}
 var
   t,dra,ddec,sin_ra1,cos_ra1,m,n,n2  : double;
 
@@ -87,6 +89,30 @@ begin
 
   result:=jd - 500{sec}*(1/(24*3600))*(sin_dec_object* sin_dec_sun + cos_dec_object * cos_dec_sun * cos(ra_object -  ra_sun));  {assume 500 sec travel time Sun- Earth}
 end;
+
+
+procedure EQU_GAL(ra,dec:double;var l,b: double);{equatorial to galactic coordinates}
+const
+  {North_galactic pole (J2000)}
+  pole_ra : double = 192.8595*pi/180;
+  pole_dec: double =  27.1283*pi/180;
+  posangle: double =  32.9319*pi/180;
+
+// Converting between galactic to equatorial coordinates
+// The galactic north pole is at RA = 12:51.4, Dec = +27:07 (2000.0),
+// the galactic center at RA = 17:45.6, Dec = -28:56 (2000.0).
+// The inclination of the galactic equator to the celestial equator is thus 62.9°.
+// The intersection, or node line, of the two equators is at
+// RA = 282.25°, Dec = 0:00 (2000.0), and at l = 33°, b=0.
+var
+  sin_b, cos_b, sin_pole_dec, cos_pole_dec :double;
+begin
+  sincos(pole_dec,sin_pole_dec, cos_pole_dec);
+  b:=arcsin(cos(dec)*cos_pole_dec*cos(ra - pole_ra) + sin(dec)*sin_pole_dec);
+  sincos(b,sin_b, cos_b);
+  l:=arctan2(  (sin(dec) - sin_b *sin_pole_dec ) , (cos(dec)*cos_pole_dec*sin(ra - pole_ra)) )  + posangle;
+end;
+
 
 end.
 

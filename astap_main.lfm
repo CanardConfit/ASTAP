@@ -679,6 +679,7 @@ object mainwindow: Tmainwindow
         Width = 300
       end>
     ParentShowHint = False
+    PopupMenu = popupmenu_frame1
     SimplePanel = False
     SizeGrip = False
     OnMouseEnter = StatusBar1MouseEnter
@@ -2891,6 +2892,21 @@ object mainwindow: Tmainwindow
       Caption = 'Copy values to clipboard'
       Hint = 'Copies histogram to the clipboard. The value and red, green, blue pixel count'
       OnClick = histogram_values_to_clipboard1Click
+    end
+  end
+  object popupmenu_frame1: TPopupMenu
+    Left = 1112
+    Top = 472
+    object j2000_1: TMenuItem
+      AutoCheck = True
+      Caption = 'J2000'
+      Checked = True
+      OnClick = j2000_1Click
+    end
+    object galactic1: TMenuItem
+      AutoCheck = True
+      Caption = 'Galactic'
+      OnClick = galactic1Click
     end
   end
 end

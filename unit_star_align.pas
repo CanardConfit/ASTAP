@@ -47,6 +47,8 @@ procedure save_solution_to_disk;{write to disk}
 
 implementation
 
+
+
 {   lsq_fit:                                                                                                                                     }
 {   Find the solution vector of an overdetermined system of linear equations according to the method of least squares using GIVENS rotations     }
 {                                                                                                                                                }
@@ -329,8 +331,9 @@ end;
 function find_fit( minimum_count: integer; quad_tolerance: double) : boolean;
 var
    nrquads1,nrquads2, i,j,k,kd4   : integer;
-   mean_ratio1,  variance_ratio1,variance_factor : double;
+   median_ratio : double;
    matchList1, matchlist2  : array of array of integer;
+   ratios                  : array of double;
 begin
   result:=false; {assume failure}
   nrquads1:=Length(quad_star_distances1[0]);
@@ -366,38 +369,34 @@ begin
 
   if nr_references2< minimum_count then begin nr_references:=0; exit; end;{no solution abort before run time errors}
 
-  {find outliers for largest length of the quad}
-  mean_ratio1:=0;
-  for k:=0 to nr_references2-1 do
-  begin
-    mean_ratio1:=mean_ratio1+(quad_star_distances1[0,matchlist2[0,k]]/quad_star_distances2[0,matchlist2[1,k]]); {ratio between largest length of found and reference quad}
-  end;
-  mean_ratio1:=mean_ratio1/nr_references2;
 
-  variance_ratio1:=0;
-  for k:=0 to nr_references2-1 do {find standard deviation orientation quads}
-  begin
-    variance_ratio1:=variance_ratio1+sqr(mean_ratio1-(quad_star_distances1[0,matchlist2[0,k]]/quad_star_distances2[0,matchlist2[1,k]]));
-  end;
-  variance_ratio1:=variance_ratio1/nr_references2;{variance or SD^2}
+  setlength(ratios,nr_references2);
+  {calculate median of the longest lenght ratio for matching quads}
+  for k:=0 to nr_references2-1 do
+    ratios[k]:=quad_star_distances1[0,matchlist2[0,k]]/quad_star_distances2[0,matchlist2[1,k]]; {ratio between largest length of found and reference quad}
+  median_ratio:=smedian(ratios);
+
+  {calculate median absolute deviation of the longest length ratio for matching quads}
+//  for k:=0 to nr_references2-1 do {find standard deviation orientation quads}
+//    deviations[k]:=abs(median_ratio1-ratios[k]);
+//  mad:=smedian(deviations);{mad is about 0.67499 *sigma for a normal distribution}
+//  memo2_message('mad :'+floattostr2(mad));
 
   nr_references:=0;
   setlength(matchlist1,2,1000);
-
-  if nr_references2<10 then variance_factor:=sqr(2.5) {accept 99% of the data. 2.5 * standard deviation}
-  else
-  variance_factor:=sqr(1.5);{accept 87% of the data, to prevent false detections. 1.5 * standard deviation}
-
   for k:=0 to nr_references2-1 do {throw outliers out}
   begin
-    if  sqr(mean_ratio1-(quad_star_distances1[0,matchlist2[0,k]]/quad_star_distances2[0,matchlist2[1,k]]))<=variance_factor*variance_ratio1 then {reference image better then 1.5 or 2.5 times standard deviation, keeping the best matches}
+    if  abs(median_ratio-ratios[k])<=quad_tolerance*median_ratio then
     begin
       matchlist1[0,nr_references]:=matchlist2[0,k];{copy match position which are <3*SD}
       matchlist1[1,nr_references]:=matchlist2[1,k];
       inc(nr_references);
       if nr_references>=length(matchlist1[0]) then setlength(matchlist1,2,nr_references+1000);{get more space if running out of space}
-    end;
+    end
+    else
+    if solve_show_log then memo2_message('quad outlier removed due to abnormal size: '+floattostr2(100*ratios[k]/median_ratio)+'%');
   end;
+  ratios:=nil; {free mem}
   {outliers in largest length removed}
 
 
@@ -515,7 +514,6 @@ var
    fitsX, fitsY,nrstars,size,i,j, max_stars,retries    : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level      : double;
    img_temp2       : image_array;
-   solve_show_log  : boolean;
    snr_list        : array of double;
 
 // flip_vertical,flip_horizontal  : boolean;
@@ -538,7 +536,7 @@ begin
 
 
   max_stars:=strtoint(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
-  solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details}
+  solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details, global variable}
   if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
 
 

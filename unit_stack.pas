@@ -752,6 +752,7 @@ var
   areax1,areax2,areay1,areay2 : integer;
   hue1,hue2: single;{for colour disk}
   asteroidlist : array of array of array of double;
+  solve_show_log  : boolean;
 
 const
   dark_exposure : integer=987654321;{not done indication}
@@ -1378,9 +1379,6 @@ var
    hfd1,star_fwhm,snr,flux,xc,yc,backgr,detection_level  :double;
    img_temp2  : image_array;
    hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
-//   solve_show_log : boolean;
-
-
 const
    len: integer=1000;
 
@@ -6481,8 +6479,8 @@ begin
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
     backup_img; {move viewer data to img_backup}
-    if bin_factor1.itemindex=0 then bin_X2X3(2)
-                               else bin_X2X3(3);
+    if bin_factor1.itemindex=0 then bin_X2X3X4(2)
+                               else bin_X2X3X4(3);
 
     plot_fits(mainwindow.image1,true,true);{plot real}
     Screen.Cursor:=Save_Cursor;
