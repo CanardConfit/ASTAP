@@ -180,7 +180,6 @@ begin
   end;
 
   nrquads:=0;
-
   SetLength(starlistquads,10,buffersize);{set array length to buffer size}
 
   j_used1:=0;{give it a default value}
@@ -326,6 +325,24 @@ begin
     memo2_message('Exception in procedure calc_quad_distances');{bug in fpc 3.20? Sets in once case the last elements of array to zero for file 4254816 new_image.fit'}
   end;
 end;
+
+procedure calc_quad_average_size(quad_star_distances: star_list);{calc average quad size}
+var
+   tot_dist  :double;
+   nrquads, i,j: integer;
+begin
+  nrquads:=length(quad_star_distances[0]);{nrquads+1}
+
+  tot_dist:=0;
+  for i:=0 to nrquads-1 do
+  begin
+    tot_dist:=tot_dist+quad_star_distances[0,i];
+    //memo2_message(' distance '+floattostr2(quad_star_distances[0,i]));
+  end;
+
+  memo2_message('average distance '+floattostr2(tot_dist/nrquads));
+end;
+
 
 
 function find_fit( minimum_count: integer; quad_tolerance: double) : boolean;
@@ -616,10 +633,14 @@ begin
 end;
 
 
-procedure find_quads_ref;{find quads for reference image}
+procedure find_quads_ref;{find quads for reference image/database}
 begin
   find_quads(starlist1,starlistquads1);
   calc_quad_distances(starlistquads1,quad_star_distances1);{calc the six sides, longest first}
+
+ // calc_quad_average_size(quad_star_distances1);
+// memo2_message('quads '+ inttostr(length(quad_star_distances1[0])) );
+
 end;
 
 
@@ -627,6 +648,8 @@ procedure find_quads_new;{find star quads for new image}
 begin
   find_quads(starlist2,starlistquads2);
   calc_quad_distances(starlistquads2,quad_star_distances2);{calc the six sides, longest first}
+
+ // calc_quad_average_size(quad_star_distances2);
 end;
 
 

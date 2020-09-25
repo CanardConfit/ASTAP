@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 333
+  Left = 305
   Height = 644
-  Top = 93
+  Top = 129
   Width = 1619
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -1149,16 +1149,16 @@ object stackmenu1: Tstackmenu1
         ItemHeight = 15
         ItemIndex = 0
         Items.Strings = (
+          'no filter'
           '2x2 mean'
           '3x3 mean'
           '4x4 mean'
           '5x5 mean'
-          'no filter'
         )
         ParentFont = False
         Style = csDropDownList
         TabOrder = 0
-        Text = '2x2 mean'
+        Text = 'no filter'
       end
       object stack_method1: TComboBox
         Left = 127
@@ -1324,7 +1324,7 @@ object stackmenu1: Tstackmenu1
           Top = 16
           Width = 48
           Color = 11842815
-          OnChange = luminance_filter1Change
+          OnExit = luminance_filter1exit
           ParentFont = False
           TabOrder = 2
           Text = 'Red'
@@ -1336,7 +1336,7 @@ object stackmenu1: Tstackmenu1
           Top = 40
           Width = 48
           Color = 11861940
-          OnChange = luminance_filter1Change
+          OnExit = luminance_filter1exit
           ParentFont = False
           TabOrder = 4
           Text = 'Green'
@@ -1348,7 +1348,7 @@ object stackmenu1: Tstackmenu1
           Top = 64
           Width = 48
           Color = 16757940
-          OnChange = luminance_filter1Change
+          OnExit = luminance_filter1exit
           ParentFont = False
           TabOrder = 6
           Text = 'Blue'
@@ -1360,7 +1360,7 @@ object stackmenu1: Tstackmenu1
           Top = 16
           Width = 48
           Color = 11842815
-          OnChange = luminance_filter1Change
+          OnExit = luminance_filter1exit
           ParentFont = False
           TabOrder = 3
           Text = 'SII'
@@ -1372,7 +1372,7 @@ object stackmenu1: Tstackmenu1
           Top = 40
           Width = 48
           Color = 11861940
-          OnChange = luminance_filter1Change
+          OnExit = luminance_filter1exit
           ParentFont = False
           TabOrder = 5
           Text = 'G'
@@ -1384,7 +1384,7 @@ object stackmenu1: Tstackmenu1
           Top = 64
           Width = 48
           Color = 16757940
-          OnChange = luminance_filter1Change
+          OnExit = luminance_filter1exit
           ParentFont = False
           TabOrder = 7
           Text = 'OIII'
@@ -1456,23 +1456,23 @@ object stackmenu1: Tstackmenu1
           Text = '0.0'
         end
         object luminance_filter1: TEdit
-          Left = 2
+          Left = 0
           Height = 23
           Hint = 'Enter here a filter name for Luminance'
           Top = 112
           Width = 48
-          OnChange = luminance_filter1Change
+          OnExit = luminance_filter1exit
           ParentFont = False
           TabOrder = 0
           Text = 'L'
         end
         object luminance_filter2: TEdit
-          Left = 50
+          Left = 46
           Height = 23
           Hint = 'Enter here a second filter name for Luminance'
           Top = 112
           Width = 48
-          OnChange = luminance_filter1Change
+          OnExit = luminance_filter1exit
           ParentFont = False
           TabOrder = 1
           Text = 'Ha'
@@ -1767,13 +1767,11 @@ object stackmenu1: Tstackmenu1
         object Equalise_background1: TCheckBox
           Left = 8
           Height = 19
-          Hint = 'This is for setting the background level of each tile equal based on the histogram. Not used by the stitching process'
+          Hint = 'This is for setting the background level of each tile equal based on the histogram.'
           Top = 40
           Width = 130
           Caption = 'Equalise background'
-          Checked = True
           ParentFont = False
-          State = cbChecked
           TabOrder = 2
         end
         object Label65: TLabel
@@ -4065,6 +4063,17 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
           TabOrder = 7
         end
+        object ignorezero1: TCheckBox
+          Left = 23
+          Height = 19
+          Hint = 'Do not modifiy values of zero and below'
+          Top = 60
+          Width = 137
+          Caption = 'Ignore zero and below'
+          Checked = True
+          State = cbChecked
+          TabOrder = 10
+        end
       end
       object GroupBox_equalise_tool1: TGroupBox
         Left = 355
@@ -4140,16 +4149,17 @@ object stackmenu1: Tstackmenu1
           Top = 5
           Width = 48
           ItemHeight = 15
-          ItemIndex = 0
+          ItemIndex = 1
           Items.Strings = (
-            '3'
-            '5'
-            '7'
+            '10'
+            '20'
+            '30'
+            '40'
           )
           OnChange = resize_factor1Change
           ParentFont = False
           TabOrder = 0
-          Text = '3'
+          Text = '20'
         end
         object apply_artificial_flat_correctionV2: TButton
           Left = 275
@@ -5756,7 +5766,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         TabOrder = 5
         object apply_gaussian_blur_button1: TButton
-          Left = 82
+          Left = 80
           Height = 30
           Hint = 'Apply gaussian blur after stacking to reduce noise. Hit CTRL-Z to undo'
           Top = 4

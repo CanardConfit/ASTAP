@@ -27,8 +27,8 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
           </big></big><big><big><span style="color: red; font-weight: bold;"></span></big></big>
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
-            &nbsp;<big>version 0.9.415 dated 2020-9-2. </big>&nbsp;Alternative
-            link, very latest development version 0.9.417 <a href="astap_setup.exe">ASTAP installer</a>
+            &nbsp;<big>version 0.9.420 dated 2020-9-18. </big>&nbsp;Alternative
+            link, very latest development version 0.9.420 <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.exe/download">G17
@@ -69,7 +69,7 @@ alignment.</li><li><a href="https://sourceforge.net/projects/astap-program/files
 zipped
                   package</big></big></a><big>
               version
-              0.9.413 dated 2020-8-28. Extract in directory c:\ program
+              0.9.420 dated 2020-8-18. Extract in directory c:\ program
               files\astap
               or c:\astap. Note that the execution speed of the 32 bit
               version is
@@ -105,7 +105,7 @@ database debian Package</a>. or <a href="https://sourceforge.net/projects/hnsky/
           <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.deb/download">ASTAP
 debian
                   package</a></big></big><big> </big><big>&nbsp;or&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.rpm/download">astap_amd64.rpm</a>&nbsp;</big><big> or&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.tar.gz/download">astap_amd64.tar.gz,</a> </big><big>version
-              0.9.415 dated 2020-9-2. Alternative link, development version 0.9.416</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big>&nbsp;</big></li>
+              0.9.420 dated 2020-9-18. Alternative link, development version 0.9.420</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big>&nbsp;</big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.deb/download">G17
 star
               database debian package</a></big>&nbsp; (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;&nbsp;for
@@ -232,7 +232,7 @@ the G17 files or force use of the G18 in ASTAP. tab alignment.</li><li><a href="
                   pkg&nbsp;installer</a></big></big><big>
               &nbsp;(</big>at&nbsp;<a href="https://sourceforge.net/projects/astap-program/">link</a>)
             <big>version
-              0.9.415 dated 2020-9-2.</big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.pkg/download">G17
+              0.9.420 dated 2020-9-22.</big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.pkg/download">G17
 star
               database installer</a><span style="text-decoration: underline;"></span></big>&nbsp;
             (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;
@@ -1033,28 +1033,18 @@ Green,
         <big><br>
         </big><span style="font-weight: bold; text-decoration: underline;"><a name="stack_menu2"></a></span><big><span style="text-decoration: underline;">Stack method tab</span></big>
       </div>
-      <div style="text-align: left;"><img style="width: 1264px; height: 580px;" alt="" src="astap_stack_menu2.png"><br>
+      <div style="text-align: left;"><img style="width: 1368px; height: 604px;" alt="" src="astap_stack_menu2.png"><br>
         <big><br>
           <span style="font-weight: bold;">Master flat</span>:&nbsp;&nbsp;
 &nbsp;&nbsp;&nbsp;
 &nbsp;
           Typical setting 2x2 mean<br>
           <br>
-          <span style="font-weight: bold;">Darks
-            filter:</span>&nbsp;&nbsp; &nbsp;&nbsp;
-          &nbsp;&nbsp;
-          Typical setting, apply
-          Gaussian blur of 3.0 below </big><span style="font-family: Arial;">the noise&nbsp;<a href="https://en.wikipedia.org/wiki/Standard_deviation">standard
-            deviation</a>&nbsp;&#963;&nbsp;</span><span style="font-family: Arial;">=2.5</span><big>.
-          For noise &nbsp;CMOS sensor you could select restore hot pixel
-          above </big><span style="font-family: Arial;">&#963;.</span><br>
-        <big><br>
-          <span style="font-weight: bold;">Stacked
+          <span style="font-weight: bold;"></span></big><big><span style="font-weight: bold;">Stacked
             image:</span>&nbsp;&nbsp;&nbsp; Best option is "Sigma
           clip
           average". For only
-          2 or 3 images or when you are in a hurry "average"will do.<br>
-          <span style="font-weight: bold;"><a name="osc_menu"></a><br>
+          2 or 3 images or when you are in a hurry "average"will do.<br><span style="font-weight: bold;"><a name="osc_menu"></a><br>
             Raw one shot colour images (OSC):</span>
           &nbsp; </big><big>RAW
           images of &nbsp;DSLR cameras /</big><big>One shot color
@@ -1092,14 +1082,18 @@ Green,
                 images and stacks of a few images only. Star colour is
                 lossed if
                 undersampled but star will become white.</big></li>
-            <li><big style="font-weight: bold;">AstroSimple</big><big style="font-weight: bold;">, </big><big>each
+            <li><big style="font-weight: bold;">AstroSimple</big><big style="font-weight: bold;"> </big><span class="ILfuVd"><span class="hgKElc">©</span></span><big style="font-weight: bold;">, </big><big>each
 R,G, G, B pixel colour information is used in a&nbsp;2x2 pixel range. Simple but very effective for
 astro images. Works best for a little oversampled images. Stars have very few artifact if any.&nbsp;</big></li>
             <li><big style="font-weight: bold;">Malvar-He-Cutler
               </big><big><small><small><a href="https://www.ipol.im/pub/art/2011/g_mhcd/article.pdf">1)</a></small></small></big><big style="font-weight: bold;">, </big><big>advanced
                 method for interpolation developed for terrestial images
                 but less suitable for OSC
-                astro images. The background noise is lower.</big></li></ul><br>
+                astro images. The background noise is lower.</big></li></ul><div style="text-align: right;">&nbsp;&nbsp;&nbsp; &nbsp;<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width: 0pt;" src="https://i.creativecommons.org/l/by/4.0/88x31.png"> </a>AstroSimple is <span class="ILfuVd"><span class="hgKElc">© </span></span>Han Kleijn,
+www.hnsky.org,&nbsp;2020. and&nbsp;licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative
+Commons Attribution 4.0 International License</a>.<br>&nbsp;<em>which
+permits unrestricted use, distribution, and reproduction
+in any medium, provided the original work is properly cited</em>.&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; </div>
           <big>What to select:</big><br>
         </div>
         <ul style="margin-left: 40px;">
@@ -1113,7 +1107,7 @@ suffering
               star centre will appear white. In most case this can be
               avoid by taking
               short exposures of 60 seconds or shorter.</big></li>
-          <li><big>Best results are achieved with de-mosaic method <span style="font-weight: bold;">AstroC</span> and <span style="font-weight: bold;">Simple</span>.&nbsp;</big></li>
+          <li><big>Best results are achieved with de-mosaic methods <span style="font-weight: bold;">AstroC</span> and <span style="font-weight: bold;">Simple</span>.&nbsp;</big></li>
           <li><big>In most cases the option "<span style="font-style: italic;">Auto level and colour smooth</span>"
               is required for the correct colour balance and colour
               smooth. First the
@@ -1132,7 +1126,7 @@ suffering
               whiter. Star colour will be lost.&nbsp;</big></li>
         </ul><br>The principle of the AstroSimple demosaic method:<br><br><div style="text-align: center;"><img style="width: 1309px; height: 715px;" alt="The ASTAP demosaic method Simple" src="astap_simple.png"></div>
         <big><span style="font-weight: bold;"></span></big><br>
-        <big>The background colour noise can be removed with option
+        <big><span style="font-weight: bold;">Auto levels: &nbsp;</span></big><big>This is an option to white balance the final colour result. The stars will be average white and the background sky will be gray.<br><br></big><big><span style="font-weight: bold;">Colour smooth: &nbsp;</span></big><big>This is an option to smooth the de-mosaic artifacts. The colour is smoothed while preserving the luminance signal.<br></big><br><br><big><br>The background colour noise can be removed with option
           "Background colour removal" in the <a href="astap.htm#pixel_math">pixel math</a> tab of the
           stacking menu.<br>
           <br>

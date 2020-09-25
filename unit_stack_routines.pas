@@ -22,7 +22,7 @@ uses
 
 procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
-procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack mosaic/tile mode}
+procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo;max_dev_backgr: double; out counter : integer);{stack mosaic/tile mode}
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 procedure calibration_and_alignment(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 
@@ -225,13 +225,6 @@ begin
       begin
         if c=5 then {all colour files added, correct for the number of pixel values added at one pixel. This can also happen if one colour has an angle and two pixel fit in one!!}
         begin {fix RGB stack}
-          memo2_message('Correcting for number of values added for each pixel position');
-          For fitsY:=0 to height_max-1 do
-            for fitsX:=0 to width_max-1 do
-               for col:=0 to 2 do
-               begin
-                 if img_temp[col,fitsX,fitsY]>1 then  {more then one value added per pixel, divide by the number of values summed} img_average[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY]; {scale to one image by diving by the number of pixels added}
-              end;{all colours}
           memo2_message('Applying black spot filter on interim RGB image.');
           black_spot_filter(img_average);
         end;{c=5, all colour files added}
@@ -446,13 +439,16 @@ begin
                       img_temp[0,x_new,y_new]:=-99999; {saturation marker, process later as black spot}
                       img_temp[1,x_new,y_new]:=-99999; {saturation marker}
                       img_temp[2,x_new,y_new]:=-99999; {saturation marker}
+                      img_average[0,x_new,y_new]:=0;
+                      img_average[1,x_new,y_new]:=0;
+                      img_average[2,x_new,y_new]:=0;
                     end
                     else
                     begin
                       value:=(value-background_r);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
-                      if rr_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + rr_factor*value;{execute only if greater then zero for speed}img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                      if rg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + rg_factor*value;img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                      if rb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + rb_factor*value; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                      if rr_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + rr_factor*value;{execute only if greater then zero for speed} end;
+                      if rg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + rg_factor*value; end;
+                      if rb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + rb_factor*value; end;
                     end;
                   end;
                   if c=2 {green} then
@@ -463,13 +459,16 @@ begin
                       img_temp[0,x_new,y_new]:=-99999; {saturation marker, process later as black spot}
                       img_temp[1,x_new,y_new]:=-99999; {saturation marker}
                       img_temp[2,x_new,y_new]:=-99999; {saturation marker}
+                      img_average[0,x_new,y_new]:=0;
+                      img_average[1,x_new,y_new]:=0;
+                      img_average[2,x_new,y_new]:=0;
                     end
                     else
                     begin
                       value:=(value-background_g);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
-                      if gr_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + gr_factor*value;{execute only if greater then zero for speed}img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                      if gg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + gg_factor*value;img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                      if gb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + gb_factor*value; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                      if gr_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + gr_factor*value;{execute only if greater then zero for speed} end;
+                      if gg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + gg_factor*value; end;
+                      if gb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + gb_factor*value;  end;
                     end;
                   end;
                   if c=3 {blue}  then
@@ -480,20 +479,23 @@ begin
                       img_temp[0,x_new,y_new]:=-99999; {saturation marker, process later as black spot}
                       img_temp[1,x_new,y_new]:=-99999; {saturation marker}
                       img_temp[2,x_new,y_new]:=-99999; {saturation marker}
+                      img_average[0,x_new,y_new]:=0;
+                      img_average[1,x_new,y_new]:=0;
+                      img_average[2,x_new,y_new]:=0;
                     end
                     else
                     begin
                       value:=(value-background_b);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
-                      if br_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + br_factor*value;{execute only if greater then zero for speed}img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                      if bg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + bg_factor*value; img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                      if bb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + bb_factor*value; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                      if br_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + br_factor*value;{execute only if greater then zero for speed} end;
+                      if bg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + bg_factor*value; end;
+                      if bb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + bb_factor*value; end;
                     end;
                   end;
                   if c=4 {RGB image, naxis3=3}   then
                   begin
-                    begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + img_loaded[0,fitsX-1,fitsY-1]-background_r; img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                    begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + img_loaded[1,fitsX-1,fitsY-1]-background_g; img_temp[1,x_new,y_new]:=img_temp[1,x_new,y_new]+1;{count the number of image pixels added=samples} end;
-                    begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + img_loaded[2,fitsX-1,fitsY-1]-background_b; img_temp[2,x_new,y_new]:=img_temp[2,x_new,y_new]+1;{count the number of image pixels added=samples} end;
+                    begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + img_loaded[0,fitsX-1,fitsY-1]-background_r; end;
+                    begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + img_loaded[1,fitsX-1,fitsY-1]-background_g; end;
+                    begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + img_loaded[2,fitsX-1,fitsY-1]-background_b; end;
 
 //                    if ((x_new=1908) and (y_new=604)) then
 //                    beep;
@@ -520,7 +522,6 @@ begin
                       green_f:=colg/rgbsum; if green_f<0 then green_f:=0;if green_f>1 then green_f:=1;
                       blue_f:=colb/rgbsum;  if blue_f<0  then blue_f:=0; if blue_f>1 then  blue_f:=1;
                     end;
-
 
                     img_average[0,x_new,y_new]:=1000+(img_loaded[0,fitsX-1,fitsY-1] - background_l)*(red_f);
                     img_average[1,x_new,y_new]:=1000+(img_loaded[0,fitsX-1,fitsY-1] - background_l)*(green_f);
@@ -827,12 +828,14 @@ begin
 end;
 
 
-procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{mosaic/tile mode}
+procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out counter : integer);{mosaic/tile mode}
 var
     fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH : integer;
-    value, background_correction,dummy,median                        : double;
+    value, dummy,median,correction                                   : double;
     tempval                                                          : single;
-    init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment,  use_astrometry_internal,vector_based  :boolean;
+    init, use_star_alignment,use_manual_align,use_ephemeris_alignment,  use_astrometry_internal,vector_based  :boolean;
+    background_correction : array[0..2] of double;
+    counter_overlap       : array[0..2] of integer;
 begin
   with stackmenu1 do
   begin
@@ -921,20 +924,20 @@ begin
               end;
           end;{init, c=0}
 
-          solution:=true;
-          if Equalise_background1.checked then
-          begin
-            get_background(0,img_loaded,true{hist},false{noise_level}, {var}background_correction, star_level);
-            background_correction:=1000-background_correction;
-          end
-            else background_correction:=0;
-          if use_astrometry_internal then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
-          else
-          begin memo2_message('Abort, only astrometric alignment possible in mosaic mode.'); exit; end;
+//          if Equalise_background1.checked then
+//          begin
+//            get_background(0,img_loaded,true{hist},false{noise_level}, {var}background_correction, star_level);
+           // background_correction:=mode(img_loaded,0,0,width2-1,0,height2-1,32000); {most common}
+//            background_correction:=1000 - background_correction;
+//          end
+//            else background_correction:=0;
+          //if use_astrometry_internal then
+          sincos(dec0,SIN_dec0,COS_dec0); {do this in advance since it is for each pixel the same}
+          //else
+          //begin memo2_message('Abort, only astrometric alignment possible in mosaic mode.'); exit; end;
 
-          init:=true;{initialize for first image done}
 
-          if solution then
+          {solutions are already added in unit_stack}
           begin
             inc(counter);
             sum_exp:=sum_exp+exposure;
@@ -953,6 +956,50 @@ begin
             cropW:=trunc(stackmenu1.mosaic_crop1.Position*width2/200);
             cropH:=trunc(stackmenu1.mosaic_crop1.Position*height2/200);
 
+
+            background_correction[0]:=0;
+            background_correction[1]:=0;
+            background_correction[2]:=0;
+
+            if init=true then {check image overlap intensisty differance}
+            begin
+            counter_overlap[0]:=0;
+            counter_overlap[1]:=0;
+            counter_overlap[2]:=0;
+
+              for fitsY:=1+1+cropH to height2-1-cropH do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
+              for fitsX:=1+1+cropW to width2-1-cropW  do
+              begin
+                calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
+                x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
+                if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+                begin
+                  if img_loaded[0,fitsX-1,fitsY-1]>0.0001 then {not a black area around image}
+                  begin
+                    if img_average[0,x_new,y_new]<>0 then {filled pixel}
+                    begin
+                      for col:=0 to naxis3-1 do {all colors}
+                      begin
+                        correction:=round(img_average[col,x_new,y_new]-img_loaded[col,fitsX-1,fitsY-1]);
+                        if abs(correction)<max_dev_backgr*1.5 then {acceptible offset based on the lowest and highest background measured earlier}
+                        begin
+                           background_correction[col]:=background_correction[col]+correction;
+                           counter_overlap[col]:=counter_overlap[col]+1;
+                        end;
+                      end;
+                    end;
+                  end;
+                end;
+              end;
+
+              if counter_overlap[0]>0 then background_correction[0]:=background_correction[0]/counter_overlap[0];
+              if counter_overlap[1]>0 then background_correction[1]:=background_correction[1]/counter_overlap[1];
+              if counter_overlap[2]>0 then background_correction[2]:=background_correction[2]/counter_overlap[2];
+            end;
+
+            init:=true;{initialize for first image done}
+
+
             for fitsY:=1+1+cropH to height2-1-cropH do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
             for fitsX:=1+1+cropW to width2-1-cropW  do
             begin
@@ -966,7 +1013,7 @@ begin
                   if img_temp[0,x_new,y_new]=0 then {blank pixel}
                   begin
                     for col:=0 to naxis3-1 do {all colors}
-                    img_average[col,x_new,y_new]:=img_loaded[col,fitsX-1,fitsY-1]+background_correction;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                     img_average[col,x_new,y_new]:=img_loaded[col,fitsX-1,fitsY-1]+background_correction[col];{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
                     img_temp[0,x_new,y_new]:=dummy;
                   end
                   else
@@ -974,19 +1021,21 @@ begin
                     for col:=0 to naxis3-1 do {all colors}
                     begin
                       median:=median_background(img_loaded,col,15,fitsX-1,fitsY-1);{find median value in sizeXsize matrix of img}
+
                       value:=img_loaded[col,fitsX-1,fitsY-1];
 
                       if ((value<median+100) and
                           (img_loaded[col,fitsX-1-1,fitsY-1]<median+100) and (img_loaded[col,fitsX-1+1,fitsY-1]<median+100) and (img_loaded[col,fitsX-1,fitsY-1-1]<median+100) and (img_loaded[col,fitsX-1,fitsY-1+1]<median+100) {check nearest pixels}
                          ) then {not a star, prevent double stars at overlap area}
                       img_average[col,x_new,y_new]:=+img_average[col,x_new,y_new]*img_temp[0,x_new,y_new]{distance border}/(dummy+img_temp[0,x_new,y_new])
-                                                    +(value+background_correction)*dummy/(dummy+img_temp[0,x_new,y_new]);{calculate value between the existing and new value depending on BORDER DISTANCE}
+                                                    +(value+background_correction[col])*dummy/(dummy+img_temp[0,x_new,y_new]);{calculate value between the existing and new value depending on BORDER DISTANCE}
                     end;
                     img_temp[0,x_new,y_new]:=dummy;
                   end;
                 end;
               end;
             end;
+
           end;
           progress_indicator(10+89*counter/length(files_to_process){(ListView1.items.count)},' Stacking');{show progress}
         finally

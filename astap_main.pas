@@ -705,7 +705,7 @@ var
 const
   crMyCursor = 5;
 
-  bandpass:double=0;{from fits file}
+  bandpass: double=0;{from fits file}
   equinox:double=0;{from fits file}
   SaveasTIFF1filterindex : integer=1;
   SaveasJPGPNGBMP1filterindex : integer=4;
@@ -722,8 +722,8 @@ function load_fits(filen:string;light {load as light of dark/flat},load_data: bo
 {if reset_var=true, reset variables to zero}
 var
   header    : array[0..2880] of ansichar;
-  i,j,k,nr,error3,naxis1, reader_position,n,p,nrchars  : integer;
-  fract,dummy,scale,exptime,ccd_temperature              : double;
+  i,j,k,nr,error3,naxis1, reader_position,n,p,nrchars,dsscol  : integer;
+  fract,dummy,scale,exptime,ccd_temperature                   : double;
   col_float,bscale,measured_max  : single;
   s                  : string[3];
   bzero              : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
@@ -973,6 +973,7 @@ begin
       if ((header[i]='F') and (header[i+1]='I')  and (header[i+2]='L') and (header[i+3]='T') and (header[i+4]='E') and (header[i+5]='R')) then
          filter_name:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
 
+
       {following variable are not set at zero Set at zero somewhere in the code}
       if ((header[i]='L') and (header[i+1]='I')  and (header[i+2]='G') and (header[i+3]='H') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
            light_count:=round(validate_double);{read integer as double value}
@@ -1156,7 +1157,14 @@ begin
                 date_avg:=get_string;
 
         if ((header[i]='B') and (header[i+1]='A')  and (header[i+2]='N') and (header[i+3]='D') and (header[i+4]='P') and (header[i+5]='A') and (header[i+6]='S')) then
-                 BANDPASS:=validate_double;{read integer as double value. Deep sky survey keyword}
+        begin
+           BANDPASS:=validate_double;{read integer as double value. Deep sky survey keyword}
+           if ((bandpass=35) or (bandpass=8)) then filter_name:='red'{ 37 possII IR,  35=possII red, 18=possII blue, 8=POSSI red, 7=POSSI blue}
+           else
+           if ((bandpass=18) or (bandpass=7)) then filter_name:='blue'
+           else
+           filter_name:=floattostr(bandpass);
+        end;
 
         if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
                  xbinning:=round(validate_double);{binning}
@@ -2211,7 +2219,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.418, '+about_message4+', dated 2020-09-15';
+  #13+#10+'ASTAP version ß0.9.421, '+about_message4+', dated 2020-09-25';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3021,8 +3029,8 @@ begin
     update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
     update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
 
+    remove_key('ROWORDER',false{all});{just remove to prevent debayer confusion}
     add_text   ('HISTORY   ','Rotated 90 degrees.');
-
     plot_north;
   end;
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
@@ -6146,7 +6154,6 @@ begin
     stackmenu1.osc_colour_smooth1.checked:=get_boolean('osc_colour_smooth',true);
 
     stackmenu1.ignore_header_solution1.Checked:= get_boolean('ignore_header_solution',true);
-    stackmenu1.Equalise_background1.checked:= get_boolean('equalise_background',true);{for mosaic mode}
     mainwindow.preview_demosaic1.Checked:=get_boolean('preview_demosaic',false);
 
     stackmenu1.classify_object1.checked:= get_boolean('classify_object',false);
@@ -6470,7 +6477,6 @@ begin
   initstring.Values['ignore_header_solution']:=BoolStr[stackmenu1.ignore_header_solution1.Checked];
 
 //  initstring.Values['drizzle']:=BoolStr[stackmenu1.drizzle1.Checked];
-  initstring.Values['equalise_background']:=BoolStr[stackmenu1.Equalise_background1.Checked];
 
   initstring.Values['preview_demosaic']:=BoolStr[mainwindow.preview_demosaic1.Checked];
 
@@ -7414,8 +7420,8 @@ begin
     update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
     update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
 
+    remove_key('ROWORDER',false{all});{just remove to be sure no debayer confusion}
     add_text     ('HISTORY   ','Flipped.                                                           ');
-
     plot_north;
   end;
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
@@ -9708,6 +9714,7 @@ begin
       begin
         hfd1:=hfdlist[i];
         size:=round(5*hfd1);
+
         starX:=starlistXY[0,i];
         starY:=starlistXY[1,i];
         mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}

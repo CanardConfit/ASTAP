@@ -94,9 +94,9 @@ end;
 procedure EQU_GAL(ra,dec:double;var l,b: double);{equatorial to galactic coordinates}
 const
   {North_galactic pole (J2000)}
-  pole_ra : double = 192.8595*pi/180;
-  pole_dec: double =  27.1283*pi/180;
-  posangle: double =  32.9319*pi/180;
+  pole_ra : double = (12+51/60+26.27549/3600)*pi/12; {12h51m26.27549    https://www.aanda.org/articles/aa/pdf/2011/02/aa14961-10.pdf }
+  pole_dec: double = (27+7/60+41.7043/3600)*pi/180; {+27◦07′41.7043′′}
+  posangle: double = (122.93191857-90)*pi/180; {122.93191857◦}
 
 // Converting between galactic to equatorial coordinates
 // The galactic north pole is at RA = 12:51.4, Dec = +27:07 (2000.0),

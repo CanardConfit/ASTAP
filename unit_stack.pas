@@ -64,6 +64,8 @@ type
     analyse_objects_visibles1: TButton;
     binning_for_solving_label4: TLabel;
     bin_image1: TButton;
+    ignorezero1: TCheckBox;
+    Equalise_background1: TCheckBox;
     GroupBox17: TGroupBox;
     bin_factor1: TComboBox;
     undo_button12: TBitBtn;
@@ -180,7 +182,6 @@ type
     edit_k1: TEdit;
     edit_noise1: TEdit;
     Edit_width1: TEdit;
-    Equalise_background1: TCheckBox;
     export_aligned_files1: TButton;
     extract_background_box_size1: TComboBox;
     field1: TLabel;
@@ -555,6 +556,7 @@ type
     procedure ephemeris_centering1Change(Sender: TObject);
     procedure focallength1Exit(Sender: TObject);
     procedure go_step_two1Click(Sender: TObject);
+    procedure luminance_filter1exit(Sender: TObject);
     procedure gridlines1Click(Sender: TObject);
     procedure help_inspector_tab1Click(Sender: TObject);
     procedure help_live_stacking1Click(Sender: TObject);
@@ -572,6 +574,7 @@ type
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure rainbow_Panel1Paint(Sender: TObject);
+    procedure red_filter2Exit(Sender: TObject);
     procedure remove_luminance1Change(Sender: TObject);
     procedure result_compress1Click(Sender: TObject);
     procedure rename_result1Click(Sender: TObject);
@@ -643,7 +646,6 @@ type
       State: TCustomDrawState; var DefaultDraw: Boolean);
     procedure listview6CustomDraw(Sender: TCustomListView; const ARect: TRect;
       var DefaultDraw: Boolean);
-    procedure luminance_filter1Change(Sender: TObject);
     procedure make_osc_color1Change(Sender: TObject);
     procedure MenuItem14Click(Sender: TObject);
     procedure resize_factor1Change(Sender: TObject);
@@ -2290,31 +2292,61 @@ procedure artificial_flatV1(var img :image_array; box_size  :integer);
     colors,w,h                :integer;
     offset                   : single;
     bg                       : double;
+    img_temp2                : image_array;
+
 begin
   colors:=Length(img); {colors}
   w:=Length(img[0]); {width}
   h:=Length(img[0,0]); {height}
 
+  {prepare img_temp2}
+  setlength(img_temp2,colors,w,h);
+  for col:=0 to colors-1 do {do all colours}
+    for fitsY:=0 to h-1 do
+      for fitsX:=0 to w-1 do
+        img_temp2[col,fitsX,fitsY]:=0;
+
+
   if (box_size div 2)*2=box_size then box_size:=box_size+1;{requires odd 3,5,7....}
   step:=box_size div 2; {for 3*3 it is 1, for 5*5 it is 2...}
 
+  {create artificial flat}
    for col:=0 to colors-1 do {do all colours}
    begin
      get_background(col,img,true,false{do not calculate noise_level},bg,star_level); {should be about 500 for mosaic since that is the target value}
      for fitsY:=0 to h-1 do
        for fitsX:=0 to w-1 do
+       begin
+         img_temp2[col,fitsX,fitsY]:=0;
+
          if ((frac(fitsX/box_size)=0) and (frac(fitsy/box_size)=0)) then
          begin
-           offset:=median_background(img,col,box_size {3x3},fitsX,fitsY)-bg;
+           //  offset:=median_background(img,col,box_size {3x3},fitsX,fitsY)-bg;// mode works better then median
+           offset:=mode(img_loaded,col,fitsX-step,fitsX+step,fitsY-step,fitsY+step,32000) -bg; {mode finds most common value}
            if ((offset<0) {and (offset>-200)}) then
            begin
              for j:=fitsy-step to  fitsy+step do
                for i:=fitsx-step to fitsx+step do
                  if ((i>=0) and (i<w) and (j>=0) and (j<h) ) then {within the boundaries of the image array}
-                   img[col,i,j]:=img[col,i,j]-offset;
+                   img_temp2[col,i,j]:=-offset;
            end;
          end;
+       end;
    end;{all colors}
+
+   {smooth flat}
+   gaussian_blur2(img_temp2,box_size*2);
+
+//   img_loaded:=img_temp2;
+//   exit;
+
+   {apply artifical flat}
+   for col:=0 to colors-1 do {do all colours}
+     for fitsY:=0 to h-1 do
+       for fitsX:=0 to w-1 do
+         img[col,fitsX,fitsY]:=img[col,fitsX,fitsY]+img_temp2[col,fitsX,fitsY];
+
+   img_temp2:=nil;
  end;
 
 
@@ -2401,12 +2433,13 @@ begin
      memo2_message('Equalising background of '+filename2);
     {equalize background}
 
-    if sender<>apply_artificial_flat_correctionV2 then artificial_flatV1(img_loaded, box_size)
+    if sender<>apply_artificial_flat_correctionV2 then
+      artificial_flatV1(img_loaded, box_size)
     else
-    artificial_flatV2(img_loaded, strtoint(StringReplace(ring_equalise_factor1.text,'%','',[])));
+      artificial_flatV2(img_loaded, strtoint(StringReplace(ring_equalise_factor1.text,'%','',[])));
 
   //   use_histogram(true);{get histogram}
-     plot_fits(mainwindow.image1,true,true);{plot real}
+     plot_fits(mainwindow.image1,false,true);{plot real}
      Screen.Cursor:=Save_Cursor;
   end;
 end;
@@ -2414,8 +2447,9 @@ end;
 procedure apply_factors;{apply r,g,b factors to image}
 var fitsX, fitsY :integer;
     multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single;
-
+    acceptzero :boolean;
 begin
+  acceptzero:=stackmenu1.ignorezero1.checked=false;
 
   {do factor math behind so "subtract view from file" works in correct direction}
   add_valueR:=strtofloat2(stackmenu1.add_valueR1.Text);
@@ -2442,7 +2476,7 @@ begin
     for fitsX:=0 to width2-1 do
     begin
       dum:=img_loaded[0,fitsX,fitsY];
-   //   if dum<>0 then {signal}
+      if ((acceptzero) or (dum>0)) then {signal}
       begin
         dum:=(dum+add_valueR)*multiply_red/largest;
         if dum<0 then dum:=0; img_loaded[0,fitsX,fitsY]:=dum;
@@ -2451,7 +2485,7 @@ begin
       if naxis3>1 then {colour}
       begin
         dum:=img_loaded[1,fitsX,fitsY];
-//        if dum<>0 then {signal}
+        if ((acceptzero) or (dum>0)) then {signal}
         begin
           dum:=(dum+add_valueG)*multiply_green/largest;
           if dum<0 then dum:=0; img_loaded[1,fitsX,fitsY]:=dum;
@@ -2460,7 +2494,7 @@ begin
       if naxis3>2 then {colour}
       begin
         dum:=img_loaded[2,fitsX,fitsY];
-//        if dum<>0 then {signal}
+        if ((acceptzero) or (dum>0)) then {signal}
         begin
           dum:=(dum+add_valueB)*multiply_blue/largest;
           if dum<0 then dum:=0; img_loaded[2,fitsX,fitsY]:=dum;
@@ -4235,7 +4269,6 @@ begin
 end;
 
 
-
 procedure Tstackmenu1.clear_inspector_list1Click(Sender: TObject);
 begin
   esc_pressed:=true; {stop any running action}
@@ -4344,6 +4377,70 @@ procedure Tstackmenu1.go_step_two1Click(Sender: TObject);
 begin
   load_image(mainwindow.image1.visible=false,true {plot});
   update_equalise_background_step(2); {go to step 3}
+end;
+
+procedure Tstackmenu1.luminance_filter1exit(Sender: TObject);
+var
+  err :boolean;
+
+begin
+  new_analyse_required:=true;
+  err:=false;
+  {remove duplication because they will be ignored later. Follow execution of stacking routine (for i:=0 to 4) so red, green, blue luminance}
+  if  AnsiCompareText(green_filter1.text,red_filter1.text)=0 then begin err:=true;green_filter1.text:=''; end;
+  if  AnsiCompareText(green_filter1.text,red_filter2.text)=0 then begin err:=true;green_filter1.text:=''; end;
+
+  if  AnsiCompareText(green_filter2.text,red_filter1.text)=0 then begin err:=true;green_filter2.text:=''; end;
+  if  AnsiCompareText(green_filter2.text,red_filter2.text)=0 then begin err:=true;green_filter2.text:=''; end;
+
+  if  AnsiCompareText(blue_filter1.text,red_filter1.text)=0 then begin err:=true;blue_filter1.text:=''; end;
+  if  AnsiCompareText(blue_filter1.text,red_filter2.text)=0 then begin err:=true;blue_filter1.text:=''; end;
+
+  if  AnsiCompareText(blue_filter2.text,red_filter1.text)=0 then begin err:=true;blue_filter2.text:=''; end;
+  if  AnsiCompareText(blue_filter2.text,red_filter2.text)=0 then begin err:=true;blue_filter2.text:=''; end;
+
+  if  AnsiCompareText(blue_filter1.text,green_filter1.text)=0 then begin err:=true;blue_filter1.text:=''; end;
+  if  AnsiCompareText(blue_filter1.text,green_filter2.text)=0 then begin err:=true;blue_filter1.text:=''; end;
+
+  if  AnsiCompareText(blue_filter2.text,green_filter1.text)=0 then begin err:=true;blue_filter2.text:=''; end;
+  if  AnsiCompareText(blue_filter2.text,green_filter2.text)=0 then begin err:=true;blue_filter2.text:=''; end;
+
+
+  if  AnsiCompareText(luminance_filter1.text,red_filter1.text)=0 then
+     begin err:=true;luminance_filter1.text:=''; end;
+  if  AnsiCompareText(luminance_filter1.text,red_filter2.text)=0 then
+     begin err:=true;luminance_filter1.text:=''; end;
+
+  if  AnsiCompareText(luminance_filter2.text,red_filter1.text)=0 then
+     begin err:=true;luminance_filter2.text:=''; end;
+  if  AnsiCompareText(luminance_filter2.text,red_filter2.text)=0 then
+     begin err:=true;luminance_filter2.text:=''; end;
+
+  if  AnsiCompareText(luminance_filter1.text,green_filter1.text)=0 then
+     begin err:=true;luminance_filter1.text:=''; end;
+  if  AnsiCompareText(luminance_filter1.text,green_filter2.text)=0 then
+     begin err:=true;luminance_filter1.text:=''; end;
+
+  if  AnsiCompareText(luminance_filter2.text,green_filter1.text)=0 then
+     begin err:=true;luminance_filter2.text:=''; end;
+  if  AnsiCompareText(luminance_filter2.text,green_filter2.text)=0 then
+     begin err:=true;luminance_filter2.text:=''; end;
+
+  if  AnsiCompareText(luminance_filter1.text,blue_filter1.text)=0 then
+     begin err:=true;luminance_filter1.text:=''; end;
+  if  AnsiCompareText(luminance_filter1.text,blue_filter2.text)=0 then
+     begin err:=true;luminance_filter1.text:=''; end;
+
+  if  AnsiCompareText(luminance_filter2.text,blue_filter1.text)=0 then
+     begin err:=true;luminance_filter2.text:=''; end;
+  if  AnsiCompareText(luminance_filter2.text,blue_filter2.text)=0 then
+     begin err:=true;luminance_filter2.text:=''; end;
+
+  if err=true then
+  begin
+   // beep;
+    memo2_message('Filter name can be used only once! If required duplicate the file and modify filter new name in the header.');
+  end;
 end;
 
 
@@ -4580,6 +4677,8 @@ begin
 {$endif}
 end;
 
+
+
 procedure Tstackmenu1.most_common_mono1Click(Sender: TObject);
 begin
   mainwindow.convertmono1Click(nil); {back is made in mono procedure}
@@ -4678,6 +4777,13 @@ begin
 
   end;
 end;
+
+procedure Tstackmenu1.red_filter2Exit(Sender: TObject);
+begin
+
+end;
+
+
 
 procedure Tstackmenu1.remove_luminance1Change(Sender: TObject);
 begin
@@ -6578,57 +6684,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.luminance_filter1Change(Sender: TObject);
-var
-  err :boolean;
-begin
-  new_analyse_required:=true;
-  err:=false;
-  {remove duplication because they will be ignored later. Follow execution of stacking routine (for i:=0 to 4) so red, green, blue luminance}
-  if  AnsiCompareText(green_filter1.text,red_filter1.text)=0 then begin err:=true;green_filter1.text:=''; end;
-  if  AnsiCompareText(green_filter1.text,red_filter2.text)=0 then begin err:=true;green_filter1.text:=''; end;
-
-  if  AnsiCompareText(green_filter2.text,red_filter1.text)=0 then begin err:=true;green_filter2.text:=''; end;
-  if  AnsiCompareText(green_filter2.text,red_filter2.text)=0 then begin err:=true;green_filter2.text:=''; end;
-
-  if  AnsiCompareText(blue_filter1.text,red_filter1.text)=0 then begin err:=true;blue_filter1.text:=''; end;
-  if  AnsiCompareText(blue_filter1.text,red_filter2.text)=0 then begin err:=true;blue_filter1.text:=''; end;
-
-  if  AnsiCompareText(blue_filter2.text,red_filter1.text)=0 then begin err:=true;blue_filter2.text:=''; end;
-  if  AnsiCompareText(blue_filter2.text,red_filter2.text)=0 then begin err:=true;blue_filter2.text:=''; end;
-
-  if  AnsiCompareText(blue_filter1.text,green_filter1.text)=0 then begin err:=true;blue_filter1.text:=''; end;
-  if  AnsiCompareText(blue_filter1.text,green_filter2.text)=0 then begin err:=true;blue_filter1.text:=''; end;
-
-  if  AnsiCompareText(blue_filter2.text,green_filter1.text)=0 then begin err:=true;blue_filter2.text:=''; end;
-  if  AnsiCompareText(blue_filter2.text,green_filter2.text)=0 then begin err:=true;blue_filter2.text:=''; end;
-
-
-  if  AnsiCompareText(luminance_filter1.text,red_filter1.text)=0 then begin err:=true;luminance_filter1.text:=''; end;
-  if  AnsiCompareText(luminance_filter1.text,red_filter2.text)=0 then begin err:=true;luminance_filter1.text:=''; end;
-
-  if  AnsiCompareText(luminance_filter2.text,red_filter1.text)=0 then begin err:=true;luminance_filter2.text:=''; end;
-  if  AnsiCompareText(luminance_filter2.text,red_filter2.text)=0 then begin err:=true;luminance_filter2.text:=''; end;
-
-  if  AnsiCompareText(luminance_filter1.text,green_filter1.text)=0 then begin err:=true;luminance_filter1.text:=''; end;
-  if  AnsiCompareText(luminance_filter1.text,green_filter2.text)=0 then begin err:=true;luminance_filter1.text:=''; end;
-
-  if  AnsiCompareText(luminance_filter2.text,green_filter1.text)=0 then begin err:=true;luminance_filter2.text:=''; end;
-  if  AnsiCompareText(luminance_filter2.text,green_filter2.text)=0 then begin err:=true;luminance_filter2.text:=''; end;
-
-  if  AnsiCompareText(luminance_filter1.text,blue_filter1.text)=0 then begin err:=true;luminance_filter1.text:=''; end;
-  if  AnsiCompareText(luminance_filter1.text,blue_filter2.text)=0 then begin err:=true;luminance_filter1.text:=''; end;
-
-  if  AnsiCompareText(luminance_filter2.text,blue_filter1.text)=0 then begin err:=true;luminance_filter2.text:=''; end;
-  if  AnsiCompareText(luminance_filter2.text,blue_filter2.text)=0 then begin err:=true;luminance_filter2.text:=''; end;
-
-  if err=true then
-  begin
-    beep;
-    memo2_message('Filter name can be used only once! If required duplicate the file and modify filter new name in the header.');
-  end;
-end;
-
 
 procedure Tstackmenu1.make_osc_color1Change(Sender: TObject);
 var
@@ -7328,8 +7383,9 @@ var
    Save_Cursor:TCursor;
    i,c,over_size,over_sizeL,nrfiles, image_counter,object_counter, first_file, total_counter,counter_colours: integer;
    filter_name1, filter_name2, filename3, extra1,extra2,object_to_process,stack_info         : string;
-   lrgb,solution,monofile,ignore,cal_and_align  : boolean;
+   lrgb,solution,monofile,ignore,cal_and_align, mosaic_mode,sigma_mode  : boolean;
    startTick      : qword;{for timing/speed purposes}
+   min_background,max_background,backgr   : double;
 begin
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
   esc_pressed:=false;
@@ -7339,7 +7395,9 @@ begin
   if make_osc_color1.checked then
               memo2_message('OSC, demosaic method '+demosaic_method1.text);
 
-  if  ((stackmenu1.use_manual_alignment1.checked) and (pos('Sigma',stackmenu1.stack_method1.text)>0=true) and (pos('Comet',stackmenu1.manual_centering1.text)<>0)) then memo2_message('█ █ █ █ █ █ Warning, use for comet stacking the stack method "Average"!. █ █ █ █ █ █ ');
+  mosaic_mode:=pos('stich',stackmenu1.stack_method1.text)>0;
+  sigma_mode:=pos('Sigma',stackmenu1.stack_method1.text)>0;
+  if  ((stackmenu1.use_manual_alignment1.checked) and (sigma_mode) and (pos('Comet',stackmenu1.manual_centering1.text)<>0)) then memo2_message('█ █ █ █ █ █ Warning, use for comet stacking the stack method "Average"!. █ █ █ █ █ █ ');
 
   if  stackmenu1.use_ephemeris_alignment1.checked then
   begin
@@ -7379,6 +7437,10 @@ begin
   dark_exposure:=987654321;{not done indication}
   dark_temperature:=987654321;
   flat_filter:='987654321';{not done indication}
+
+  min_background:=65535;
+  max_background:=0;
+
 
   if pos('Calibration only',stackmenu1.stack_method1.text)>0=true then {calibrate images only}
   begin
@@ -7451,6 +7513,14 @@ begin
       end;
     end;
     memo2_message('Astrometric solutions complete.');
+
+    if mosaic_mode then
+    begin
+      SortedColumn:= I_position+1;
+      listview1.sort;
+      memo2_message('Sorted list on RA, DEC position to place tiles with overlap each time later.')
+    end;
+
   end;
 
   if stackmenu1.auto_rotate1.checked  then {fix rotationss}
@@ -7598,7 +7668,7 @@ begin
         if ((ListView1.items[c].Checked=true) and (ListView1.Items.item[c].SubitemImages[2]<0)) then {not done yet}
         begin
           if object_to_process='' then object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[I_object]); {get a object name to stack}
-          if ( (classify_object1.checked=false) or  (pos('stich',stackmenu1.stack_method1.text)>0=true){ignore object name in mosaic} or
+          if ( (classify_object1.checked=false) or  (mosaic_mode){ignore object name in mosaic} or
                ((object_to_process<>'') and (object_to_process=uppercase(ListView1.Items.item[c].subitems.Strings[I_object]))) ) then {correct object?}
           begin {correct object}
             files_to_process[c].name:=ListView1.items[c].caption;
@@ -7607,21 +7677,29 @@ begin
             ListView1.Items.item[c].SubitemImages[I_result]:=5;{mark 3th columns as done using a stacked icon}
             ListView1.Items.item[c].subitems.Strings[I_result]:=inttostr(object_counter)+'  ';{show image result number}
             inc(nrfiles);
+            if mosaic_mode then
+            begin
+              backgr:=strtofloat2(ListView1.Items.item[c].subitems.Strings[I_background]);
+              min_background:=min(backgr,min_background);
+              max_background:=max(backgr,max_background);
+            end;
           end;
         end;
       end;
       if nrfiles>1 then {need at least two files to sort}
       begin
-        put_lowest_hfd_on_top(files_to_process);
+        if mosaic_mode=false then
+             put_lowest_hfd_on_top(files_to_process);
+         {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
 
-        if pos('Sigma',stackmenu1.stack_method1.text)>0=true then
+        if sigma_mode then
         begin
           if length(files_to_process)<=5 then memo2_message('█ █ █ █ █ █ Method "Sigma Clip average" does not work well for a few images. Try method "Average". █ █ █ █ █ █ ');
           stack_sigmaclip(over_size,{var}files_to_process,counterL) {sigma clip combining}
         end
         else
 
-        if pos('stich',stackmenu1.stack_method1.text)>0=true then stack_mosaic(over_size,{var}files_to_process,counterL) {mosaic combining}
+        if mosaic_mode then stack_mosaic(over_size,{var}files_to_process,abs(max_background-min_background),counterL) {mosaic combining}
         else
         if cal_and_align then {calibration & alignment only}
         begin
@@ -7672,7 +7750,7 @@ begin
           begin  {not done yet}
             if object_to_process='' then object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[I_object]); {get a next object name to stack}
 
-            if ((classify_object1.checked=false) or  (pos('stich',stackmenu1.stack_method1.text)>0=true) {ignore object name in mosaic} or
+            if ((classify_object1.checked=false) or  (mosaic_mode) {ignore object name in mosaic} or
                 ((object_to_process<>'') and (object_to_process=uppercase(ListView1.Items.item[c].subitems.Strings[I_object]))) ) {correct object?}
             then
             begin {correct object}
@@ -7685,6 +7763,12 @@ begin
                 inc(nrfiles);
                 first_file:=c; {remember first found for case it is the only file}
                 exposure:= strtofloat2(ListView1.Items.item[c].subitems.Strings[I_exposure]);{remember exposure time in case only one file, so no stack so unknown}
+                if mosaic_mode then
+                begin
+                  backgr:=strtofloat2(ListView1.Items.item[c].subitems.Strings[I_background]);
+                  min_background:=min(backgr,min_background);
+                  max_background:=max(backgr,max_background);
+                end;
               end;
             end;
           end;
@@ -7693,10 +7777,13 @@ begin
         begin
           if nrfiles>1 then {more then one file}
           begin
-            put_lowest_hfd_on_top(files_to_process);
-            if pos('Sigma',stackmenu1.stack_method1.text)>0=true then stack_sigmaclip(over_size,{var}files_to_process, counterL) {sigma clip combining}
+            if mosaic_mode=false then
+               put_lowest_hfd_on_top(files_to_process);
+            {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
+
+            if sigma_mode then stack_sigmaclip(over_size,{var}files_to_process, counterL) {sigma clip combining}
             else
-            if pos('stich',stackmenu1.stack_method1.text)>0=true then stack_mosaic(over_size,{var}files_to_process,counterL) {mosaic combining}
+            if mosaic_mode then stack_mosaic(over_size,{var}files_to_process,abs(max_background-min_background),counterL) {mosaic combining}
                                                                   else stack_average(over_size,{var}files_to_process,counterL);{average}
             over_sizeL:=0; {do oversize only once. Not again in 'L' mode !!}
             if esc_pressed then  begin restore_img; Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
@@ -7716,7 +7803,7 @@ begin
               update_integer('DATAMIN =',' / Minimum data value                             ',round(pedestal));
             end;
 
-            if pos('Sigma',stackmenu1.stack_method1.text)>0=true then
+            if sigma_mode then
               update_text   ('HISTORY 1','  Stacking method SIGMA CLIP AVERAGE')
               else
               update_text   ('HISTORY 1','  Stacking method AVERAGE');
@@ -7799,24 +7886,30 @@ begin
     if cal_and_align=false then {do not do this for calibration and alignment only}
     if ((monofile){success none lrgb loop} or (counter_colours<>0{length(extra2)>=2} {lrgb loop})) then
     begin
-      if ((stackmenu1.make_osc_color1.checked) and (stackmenu1.osc_auto_level1.checked)) then
+       if stackmenu1.make_osc_color1.checked then
       begin
-        memo2_message('Adjusting colour levels as set in tab "stack method"');
-        stackmenu1.auto_background_level1Click(nil);
-        apply_factors;{histogram is after this action invalid}
-        stackmenu1.reset_factors1Click(nil);{reset factors to default}
-        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-        if stackmenu1.osc_colour_smooth1.checked then
+        if  stackmenu1.osc_auto_level1.checked then
         begin
-          memo2_message('Applying colour-smoothing filter image as set in tab "stack method". Factors are set in tab pixel math 1');
-          smart_colour_smooth(img_loaded,strtofloat2(osc_smart_smooth_width1.text),strtofloat2(osc_smart_colour_sd1.text),false {get  hist});{histogram doesn't needs an update}
+          memo2_message('Adjusting colour levels as set in tab "stack method"');
+          stackmenu1.auto_background_level1Click(nil);
+          apply_factors;{histogram is after this action invalid}
+          stackmenu1.reset_factors1Click(nil);{reset factors to default}
+          use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+          if stackmenu1.osc_colour_smooth1.checked then
+          begin
+            memo2_message('Applying colour-smoothing filter image as set in tab "stack method". Factors are set in tab pixel math 1');
+            smart_colour_smooth(img_loaded,strtofloat2(osc_smart_smooth_width1.text),strtofloat2(osc_smart_colour_sd1.text),false {get  hist});{histogram doesn't needs an update}
+          end
         end
+        else
+        begin
+          memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
+          use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+        end;
       end
-      else
-      begin
-        memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
-        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-      end;
+      else {mono or combined RGB files}
+      use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+
 
       restore_header;{restore header and solution}{use saved fits header first FITS file as saved in unit_stack_routines}
 
@@ -7857,7 +7950,7 @@ begin
       end
       else;{keep EXPOSURE and date_obs from reference image for accurate asteroid annotation}
 
-      if pos('Sigma',stackmenu1.stack_method1.text)>0=true then
+      if sigma_mode then
         update_text   ('HISTORY 1','  Stacking method SIGMA CLIP AVERAGE') else
            update_text   ('HISTORY 1','  Stacking method AVERAGE');{overwrite also any existing header info}
 
@@ -8042,7 +8135,7 @@ begin
   if ((use_astrometry_internal1.checked=false) and (mosa)) then
   begin
     use_astrometry_internal1.checked:=true;
-    memo2_message('Switched to INTERNAL ASTROMETRIC alignment. You could switch to astrometry.net for high accuracy. Set the oversize high enough to have enough work space.');
+    memo2_message('Switched to INTERNAL ASTROMETRIC alignment. Set in tab aligment the mosaic width and height high enough to have enough work space.');
   end;
   if mosa then memo2_message('Astrometric image stitching mode. This will stich astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the crop function or negative oversize prior to stacking.');
 

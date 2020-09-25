@@ -412,7 +412,7 @@ begin
           else
           name:=naam2+'/'+naam3+'/'+naam4;
 
-          mainwindow.image1.Canvas.font.size:= round(min(50,max(8,len /2)));
+          mainwindow.image1.Canvas.font.size:= round(min(20,max(8,len /2)));
 
 
           {get text dimensions}
@@ -552,7 +552,7 @@ var
   fitsX,fitsY, fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4                           : double;
-  x,y,star_counter,star_total_counter,x2,y2,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2 : integer;
+  x,y,star_total_counter,x2,y2,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2 : integer;
   flip_horizontal, flip_vertical   : boolean;
   mag_offset_array                 : array of double;
   Save_Cursor                      : TCursor;
@@ -579,20 +579,16 @@ var
           if flip_horizontal then x2:=(width2-1)-x else x2:=x;
           if flip_vertical   then y2:=y         else y2:=(height2-1)-y;
 
-          inc(star_counter);
           inc(star_total_counter);
 
           if Bp_Rp<>999 then {colour version}
           begin
             mainwindow.image1.Canvas.textout(x2,y2,inttostr(round(mag2))+':'+inttostr(round(Bp_Rp)) {   +'<-'+inttostr(area290) });
+
             mainwindow.image1.canvas.pen.color:=Gaia_star_color(round(Bp_Rp));{color circel}
           end
           else
-          if star_counter>=2 then {label some stars}
-          begin
             mainwindow.image1.Canvas.textout(x2,y2,inttostr(round(mag2)) );
-            star_counter:=0;
-          end;
           len:=round((200-mag2)/5.02);
           mainwindow.image1.canvas.ellipse(x2-len,y2-len,x2+1+len,y2+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
         end;
@@ -668,13 +664,25 @@ begin
 
     mainwindow.image1.Canvas.Pen.width :=1; // round(1+height2/mainwindow.image1.height);{thickness lines}
     mainwindow.image1.canvas.pen.color:=$00B0FF ;{orange}
-    mainwindow.image1.Canvas.font.size:=10; //round(14*height2/mainwindow.image1.height);{adapt font to image dimensions}
+
+
+    {$ifdef mswindows}
+    mainwindow.image1.Canvas.Font.Name :='Small Fonts';
+    {$endif}
+    {$ifdef linux}
+    mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
+    {$endif}
+    {$ifdef darwin} {MacOS}
+    mainwindow.image1.Canvas.Font.Name :='Helvetica';
+    {$endif}
+
+    mainwindow.image1.Canvas.font.size:=8; //round(14*height2/mainwindow.image1.height);{adapt font to image dimensions}
     mainwindow.image1.Canvas.brush.Style:=bsClear;
     mainwindow.image1.Canvas.font.color:=$00B0FF ;{orange}
 
     setlength(mag_offset_array,1000);
 
-    star_counter:=999; {for labeling}
+   // star_counter:=999; {for labeling}
     star_total_counter:=0;{total counter}
     max_nr_stars:=round(width2*height2*(1000/(2328*1760)));{display about 1000 stars for ASI1600 in bin 2x2 where height is 1760 pixels}
 
