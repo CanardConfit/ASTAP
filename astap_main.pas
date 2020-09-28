@@ -2219,7 +2219,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.421, '+about_message4+', dated 2020-09-25';
+  #13+#10+'ASTAP version ß0.9.422, '+about_message4+', dated 2020-09-27';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -9484,7 +9484,7 @@ begin
         for I := 0 to Count - 1 do
         begin
           filename2:=Strings[I];
-          memo2_message('Solving '+inttostr(i)+'-'+inttostr(Count-1)+': '+filename2);
+          memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
           progress_indicator(100*i/(count),' Solving');{show progress}
 
           Application.ProcessMessages;
@@ -9496,7 +9496,7 @@ begin
             if ((cd1_1<>0) and (stackmenu1.ignore_header_solution1.checked=false)) then
             begin
               nrskipped:=nrskipped+1; {plate solved}
-              memo2_message('Skipped: '+filename2);
+              memo2_message('Skipped: '+filename2+ '  Already solution in header. Select ignore  in tab alignment to redo.');
               skipped:=skipped+#13+#10+extractfilename(filename2);
             end
             else

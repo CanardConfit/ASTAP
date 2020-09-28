@@ -2014,6 +2014,7 @@ procedure Tstackmenu1.show_quads1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
    hfd_min   : double;
+   starlistquads : star_list;
 begin
   if fits_file=false then application.messagebox( pchar('First load an image in the viewer!'), pchar('No action'),MB_OK)
   else
@@ -2033,9 +2034,10 @@ begin
     else hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
     find_stars(img_loaded,hfd_min,starlist1);{find stars and put them in a list}
-    find_quads_ref;{find quads for reference image}
-    display_quads(starlistquads1);
+    find_quads_xy(starlist1,starlistquads);{find quads}
+    display_quads(starlistquads);
     quads_displayed:=true;
+    starlistquads:=nil;{release memory}
 
     Screen.Cursor:=Save_Cursor;
   end;
@@ -4065,7 +4067,7 @@ begin
               memo2_message('Working on star alignment solutions. Blink frequency will increase after completion.');
               get_background(0,img_loaded,false {no histogram already done},true {unknown, calculate also datamax}, {var} cblack,star_level);
               find_stars(img_loaded,hfd_min,starlist1);{find stars and put them in a list}
-              find_quads_ref;{find quads for reference image}
+              find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
 
               reset_solution_vectors(1);{no influence on the first image since reference}
               save_solution_to_disk;{write solution_vectorX, solution_vectorY and solution_datamin to disk. Including solution_cblack[1]:=flux_magn_offset;}
@@ -4077,7 +4079,7 @@ begin
               mainwindow.caption:=filename2+' Working on star solutions, be patient.';
               get_background(0,img_loaded,false {no histogram already done} ,true {unknown, calculate also noise_level} , {var} cblack,star_level);
               find_stars(img_loaded,hfd_min,starlist2);{find stars and put them in a list}
-              find_quads_new;{find quads for new image}
+              find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),true{save solution}) then {find difference between ref image and new image}
               begin
                 memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'

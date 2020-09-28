@@ -472,14 +472,14 @@ end;
 
 function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
-  nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,i,database_stars,distance,binning,match_nr   : integer;
+  nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,i,database_stars,distance,binning,match_nr,extrastars   : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,oversize,sep,ra7,dec7,
-  centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,quad_tolerance: double;
+  centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,quad_tolerance,dummy : double;
   solution, go_ahead       : boolean;
   Save_Cursor     : TCursor;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,info_message,warning,suggest_str,memo1_backup  :string;
-  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,limit_counter : integer;
+  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t : integer;
   autoFOV : boolean;
 const
    popupnotifier_visible : boolean=false;
@@ -490,7 +490,7 @@ begin
 
   result:=false;
   esc_pressed:=false;
-  limit_counter:=0;
+
   warning_str:='';{for header}
   startTick := GetTickCount64;
 
@@ -573,9 +573,11 @@ begin
 
     if go_ahead then {enough stars, lets find quads}
     begin
-      find_quads_new;{find quads for new image}
-      nr_quads:=Length(starlistquads2[0]);
-      go_ahead:=nr_quads>=2; {enough quads?}
+      find_quads(starlist2,0 {min length}, quad_smallest,quad_star_distances2);{find star quads for new image}
+      nr_quads:=Length(quad_star_distances2[0]);
+      go_ahead:=nr_quads>=3; {enough quads?}
+
+      if solve_show_log then memo2_message('smallest image quad in pixels '+floattostr2(quad_smallest));
 
       {from version 0.9.212, the step size is fixed. If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
       if nr_quads<25  then oversize:=2 {make dimensions of square search window twice then the image height}
@@ -595,7 +597,7 @@ begin
       radius:=strtofloat2(stackmenu1.radius_search1.text);{radius search field}
 
       max_distance:=round(radius/(fov2+0.00001));
-      memo2_message(inttostr(nrstars)+' stars selected and '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(nrstars_required)+' database stars required for the square search field of '+floattostrF2(fov2,0,1)+'°. '+oversize_mess );
+      memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(nrstars_required)+' database stars, '+inttostr(round(nr_quads*nrstars_required/nrstars))+' database quads required for the square search field of '+floattostrF2(fov2,0,1)+'°. '+oversize_mess );
 
       if nr_quads>500 then minimum_quads:=10 else {prevent false detections for star rich images}
       if nr_quads>200 then minimum_quads:=6 else  {prevent false detections for star rich images}
@@ -630,6 +632,7 @@ begin
 
       match_nr:=0;
       repeat {Maximum accuracy loop. In case math is found on a corner, do a second solve. Result will be more accurate using all stars of the image}
+
 
         count:=0;{search field counter}
         distance:=0; {required for reporting no too often}
@@ -695,34 +698,33 @@ begin
 
               {from version 0.9.212, the step size is fixed. If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
               {read nrstars_required stars from database. If search field is oversized, number of required stars increases with the power of the oversize factor. So the star density will be the same as in the image to solve}
-              if read_stars(telescope_ra,telescope_dec,search_field*oversize,round(nrstars_required*oversize*oversize) ,{var}database_stars)= false then
-              begin
-                application.messagebox(pchar('Error, some of the 290 star database files are missing!'+#13+'Download the g17 (or g16 or g18) and extract the files to the program directory.'),0 );
-                errorlevel:=33;{read error star database}
-                exit; {no stars}
-              end;
 
-              find_quads_ref;{find star quads, use database as reference image}
-              if solve_show_log then {global variable set in find stars}
-              begin
-                if (nrstars_required>database_stars+4) then
+              extrastars:=-50;
+              repeat {loop to add extra stars if too many too small quads are excluding. Note the database is made by a space telescope with a resolution exceeding all earth telescopes}
+                extrastars:=extrastars+50;
+                if read_stars(telescope_ra,telescope_dec,search_field*oversize,round(nrstars_required*oversize*oversize+extrastars) ,{var}database_stars)= false then
                 begin
-                    inc(limit_counter);
-                    mess:=#9+' Warning, reached maximum magnitude of star database! '+' Stars required:'+ inttostr(nrstars_required)+'  From database:'+inttostr(database_stars)+'  Warning nr:'+inttostr(limit_counter);
-                end
-                else mess:='';
-                memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(telescope_ra,': ')+#9+prepare_dec(telescope_dec,'° ')+#9+' Up to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(length(starlistquads1[0]))+' database quads to compare.'+mess);
-              end
-              else
-              if (nrstars_required>database_stars+4) then inc(limit_counter);
+                  application.messagebox(pchar('Error, some of the 290 star database files are missing!'+#13+'Download the g17 (or g16 or g18) and extract the files to the program directory.'),0 );
+                  errorlevel:=33;{read error star database}
+                  exit; {no stars}
+                end;
+
+                find_quads(starlist1,quad_smallest*(cdelt2*3600)*0.99 {filter value, convert pixels to arcsec as in database}, dummy,quad_star_distances1);{find quads for reference image/database. Filter out too small quads for aarth based telescopes}
+
+              until ((nrstars_required>database_stars) {no more stars}
+                      or (nr_quads<1.1*Length(quad_star_distances1[0])*nrstars/nrstars_required) {Too many small quads (center m13, M16) where excluded in routine find_quads}
+                      or (extrastars>1500)) {just too many};
+
+              if ((solve_show_log) and  (extrastars>0)) then memo2_message('To many small quads excluded due to higher resolution database, increased the number of stars with '+inttostr(extrastars));
+
+              if solve_show_log then {global variable set in find stars}
+                memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(telescope_ra,': ')+#9+prepare_dec(telescope_dec,'° ')+#9+' Up to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(database_stars)+' database stars' +#9+' '+inttostr(length(quad_star_distances1[0]))+' database quads to compare.'+mess);
 
               // for testing purposes
               // create supplement lines for sky coverage testing
               // stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
 
-//              if length(starlistquads1[0])>=3 then {enough quads, lets try to find a match}
-              if length(starlistquads1[0])>=2 then {enough quads, lets try to find a match}
-                 solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance,false);{find an solution}
+               solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance,false);{find an solution}
 
               Application.ProcessMessages;
               if esc_pressed then  begin  stackmenu1.Memo2.Lines.EndUpdate; Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
@@ -851,10 +853,10 @@ begin
     remove_key('COMMENT 6',false{all});
   end;
 
-  if limit_counter>5 then
+  if nrstars_required>database_stars+4 then
   begin
-    memo2_message('Warning, reached maximum magnitude of star database '+inttostr(limit_counter)+' times!');
-    warning_str:=warning_str+'Star database limit was reached '+inttostr(limit_counter)+'x!';
+    memo2_message('Warning, reached maximum magnitude of star database!');
+    warning_str:=warning_str+'Star database limit was reached! ';
   end;
 
 

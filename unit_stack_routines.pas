@@ -349,7 +349,7 @@ begin
               begin
                 binning:=report_binning;{select binning based on the height of the light}
                 bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
-                find_quads_ref;{find quads for reference image}
+                find_quads(starlist1,0, quad_smallest,quad_star_distances1);{find quads for reference image/database}
               end;
             end;
 
@@ -390,7 +390,7 @@ begin
                 begin{internal alignment}
                   bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
 
-                  find_quads_new;{find quads for new image}
+                  find_quads(starlist2,0, quad_smallest,quad_star_distances2);{find star quads for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
                   memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                        +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])
@@ -679,7 +679,7 @@ begin
             else
             begin
               bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
-              find_quads_ref;{find quads for reference image}
+              find_quads(starlist1,0, quad_smallest,quad_star_distances1);{find quads for reference image}
               pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
               if pedestal<500 then pedestal:=500;{prevent image noise could go below zero}
               background_correction:=pedestal-cblack;
@@ -731,7 +731,7 @@ begin
                 background_correction:=pedestal-cblack;
                 datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
-                find_quads_new;{find triangels for new image}
+                find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
                 if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
                 memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                      +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])
@@ -1163,7 +1163,7 @@ begin
           begin
             bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
 
-            find_quads_ref;{find quads for reference image}
+            find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
             pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
             if pedestal<500 then pedestal:=500;{prevent image noise could go below zero}
             background_correction:=pedestal-cblack;
@@ -1208,7 +1208,7 @@ begin
                   background_correction:=pedestal-cblack;{correct later for difference in background}
                   datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
-                  find_quads_new;{find quads for new image}
+                  find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),true{save solution}) then {find difference between ref image and new image}
 
                   memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
@@ -1630,7 +1630,7 @@ begin
           else
           begin
             bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
-            find_quads_ref;{find quads for reference image}
+            find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
             pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
             if pedestal<500 then pedestal:=500;{prevent image noise could go below zero}
             background_correction:=pedestal-cblack;
@@ -1683,7 +1683,7 @@ begin
               background_correction:=pedestal-cblack;
               datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
-              find_quads_new;{find quads for new image}
+              find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
               memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                    +'  Solution x:='+floattostr2(solution_vectorX[0])+'*x+ '+floattostr2(solution_vectorX[1])+'*y+ '+floattostr2(solution_vectorX[2])

@@ -27,8 +27,8 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
           </big></big><big><big><span style="color: red; font-weight: bold;"></span></big></big>
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
-            &nbsp;<big>version 0.9.420 dated 2020-9-18. </big>&nbsp;Alternative
-            link, very latest development version 0.9.420 <a href="astap_setup.exe">ASTAP installer</a>
+            &nbsp;<big>version 0.9.421 dated 2020-9-25. </big>&nbsp;Alternative
+            link, very latest development version 0.9.421 <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.exe/download">G17
@@ -69,7 +69,7 @@ alignment.</li><li><a href="https://sourceforge.net/projects/astap-program/files
 zipped
                   package</big></big></a><big>
               version
-              0.9.420 dated 2020-8-18. Extract in directory c:\ program
+              0.9.421 dated 2020-9-25. Extract in directory c:\ program
               files\astap
               or c:\astap. Note that the execution speed of the 32 bit
               version is
@@ -105,7 +105,7 @@ database debian Package</a>. or <a href="https://sourceforge.net/projects/hnsky/
           <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.deb/download">ASTAP
 debian
                   package</a></big></big><big> </big><big>&nbsp;or&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.rpm/download">astap_amd64.rpm</a>&nbsp;</big><big> or&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.tar.gz/download">astap_amd64.tar.gz,</a> </big><big>version
-              0.9.420 dated 2020-9-18. Alternative link, development version 0.9.420</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big>&nbsp;</big></li>
+              0.9.421 dated 2020-9-25. Alternative link, development version 0.9.421</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big>&nbsp;</big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.deb/download">G17
 star
               database debian package</a></big>&nbsp; (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;&nbsp;for
@@ -232,7 +232,7 @@ the G17 files or force use of the G18 in ASTAP. tab alignment.</li><li><a href="
                   pkg&nbsp;installer</a></big></big><big>
               &nbsp;(</big>at&nbsp;<a href="https://sourceforge.net/projects/astap-program/">link</a>)
             <big>version
-              0.9.420 dated 2020-9-22.</big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.pkg/download">G17
+              0.9.421 dated 2020-9-25.</big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.pkg/download">G17
 star
               database installer</a><span style="text-decoration: underline;"></span></big>&nbsp;
             (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;
@@ -654,7 +654,7 @@ mouse button popup menu "rename to *.bak"<br></span><span style="font-family: Ar
             installation:<br>
             <br>
           </big></span>
-        <div style="margin-left: 40px;"><span style="font-family: Arial;">The program and database are are provide as an
+        <div style="margin-left: 40px;"><span style="font-family: Arial;">The program and database are&nbsp;provided as a
             Debian package</span><span style="font-family: Arial;">
 and will be installed at&nbsp; /opt/astap. The program is also a rpm
 package is available. &nbsp;In case the executable is manually placed at
@@ -2219,8 +2219,7 @@ latitude information" menu.<br><br><big><span style="text-decoration: underline;
             in degrees. See &#8721; window, tab alignment,
             group-box&nbsp;astrometric
             settings. For FITS images this is normally automatic
-            calculated from
-            the header.</li>
+            calculated from info in the file header.</li>
           <li>Image
 height in pixels&nbsp;after ASTAP subsampling should be somewhere
 between 1000 and 3000. If it is higher set&nbsp;subsample at 2. If you
@@ -2234,7 +2233,7 @@ automatically.</li>
             at 30° or
             larger up to 180°.</li>
           <li>Stars
-            in the image should be pretty round and camera in focus. You
+            in the image should be pretty round and the camera in focus. You
             could
             verify the star
             detection
@@ -2265,32 +2264,30 @@ similar exposure duration as the lights you trying to solve. If your
 select several darks with&nbsp; different exposure length, check-mark
 the option classify, "Dark exposure time".&nbsp;</li><li>The maximum
 number of stars to use should be defined. Typical set at 500.&nbsp;See
-&#8721;&nbsp;window, tab alignment. If your images has large dimensions and
-due to a long exposure time is full of &nbsp;tiny, stars you could try
-&nbsp;increase the maximum number of stars to 1000 or more. For short
-exposures this is not required.</li>
-          <li>Hash code&nbsp;tolerance should be defined. Typical
-            set at 0.005. If you expect optical distortion set it
-            higher.&nbsp;
-            See
-            solver window, tab alignment. &nbsp;Solving of wide field
-            images covering a field of 10 degrees or more will most
-            likely
-            fail.&nbsp;</li>
+&#8721;&nbsp;window, tab alignment.</li>
+          <li>Hash
+code&nbsp;tolerance should be defined. Typical set at 0.007 especially
+for&nbsp;long focal length telescopes which are more sensitive to the
+seeing.. (In previous versions this was set at 0.005). See tab
+alignment.</li>
           <li>For
             some failures you could force in
-            ASTAP the option "force large search window" (-speed)&nbsp; for
+            ASTAP the option "slow" (-speed)&nbsp; for
             more reliable solving. The
-            reliability will be very high but speed two or three times
-            slower.</li><li>In
-case of excellent seeing and using a small band filter, the imaged star
-could be smaller then 1.5" . &nbsp;Reduce the setting "Ignore stars
+            reliability will be very high but solving will be slower.</li><li>In
+case of excellent seeing and small band filter usage the imaged star
+could be smaller then 1.5". &nbsp;Reduce the setting "Ignore stars
 less then 1.5"&nbsp;in tab "Alignment". &nbsp;If the imaged star size
 is about one pixel after downsampling reduce the downsampling to 1
-(auto is often&nbsp;2). Improvements are detectable in the log by the
-number of matching stars.</li>
-        </ol>
-        Above options can be set using the ASTAP style command line.<br><br><br><big>Warnings:</big><br><ul><li>In case you get regular a warning "Star database limit reached" replace
+(auto is often&nbsp;2). Improvements will be reported by a increased number of quad matches.</li><li>For
+long focal length telescopes with a&nbsp;field of view&nbsp;less then
+30 arc minutes it is recommend to install the G18 star database and
+remove the G17 (or force use of the G18 in tab alignment).&nbsp;</li><li>For long focal length telescopes with a small&nbsp;field
+of view where objects like M13 fill the whole image ASTAP could
+struggle to solve. This is caused by the fact that the database has a
+better resolution then the image. Forcing option "slow" could
+&nbsp;help.</li>
+        </ol><br><br><big>Warnings:</big><br><ul><li>In case you get regular a warning "Star database limit reached" replace
 the G17 database by the G18.&nbsp; This could happen if your field of view
 is small. The G18 is not available as installer. Download and unpack
 and move the files to the program directory. Remove the G17 files.</li></ul><br>Support is available via the&nbsp;<a href="http://www.hnsky.org/forum/index.php"><big style="font-family: Arial;"></big></a><big style="font-family: Arial;"><a href="https://sourceforge.net/p/astap-program/discussion/">ASTAP
