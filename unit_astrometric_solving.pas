@@ -459,6 +459,7 @@ begin
   end;
 end;
 
+
 function report_binning : integer;{select the binning}
 begin
   result:=stackmenu1.downsample_for_solving1.itemindex;
@@ -470,17 +471,18 @@ begin
   end;
 end;
 
+
 function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
-  nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,i,database_stars,distance,binning,match_nr,extrastars   : integer;
-  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,oversize,sep,ra7,dec7,
-  centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,quad_tolerance,dummy : double;
-  solution, go_ahead       : boolean;
-  Save_Cursor     : TCursor;
+  nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,i,database_stars,distance,binning,match_nr,
+  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t                                                                  : integer;
+  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,oversize,sep,
+  ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,
+  quad_tolerance,dummy, extrastars                                                                                   : double;
+  solution, go_ahead ,autoFOV      : boolean;
+  Save_Cursor                      : TCursor;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,info_message,warning,suggest_str,memo1_backup  :string;
-  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t : integer;
-  autoFOV : boolean;
 const
    popupnotifier_visible : boolean=false;
 
@@ -576,8 +578,6 @@ begin
       find_quads(starlist2,0 {min length}, quad_smallest,quad_star_distances2);{find star quads for new image}
       nr_quads:=Length(quad_star_distances2[0]);
       go_ahead:=nr_quads>=3; {enough quads?}
-
-      if solve_show_log then memo2_message('smallest image quad in pixels '+floattostr2(quad_smallest));
 
       {from version 0.9.212, the step size is fixed. If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
       if nr_quads<25  then oversize:=2 {make dimensions of square search window twice then the image height}
@@ -693,29 +693,27 @@ begin
                      mainwindow.popupnotifier1.text:=distancestr+info_message;
                    end;
                 end;
-              end;
-              {info reporting}
+              end; {info reporting}
 
-              {from version 0.9.212, the step size is fixed. If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
+
+              {If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
               {read nrstars_required stars from database. If search field is oversized, number of required stars increases with the power of the oversize factor. So the star density will be the same as in the image to solve}
 
-              extrastars:=-50;
+              extrastars:=1/1.1;{star with a factor of one}
               repeat {loop to add extra stars if too many too small quads are excluding. Note the database is made by a space telescope with a resolution exceeding all earth telescopes}
-                extrastars:=extrastars+50;
-                if read_stars(telescope_ra,telescope_dec,search_field*oversize,round(nrstars_required*oversize*oversize+extrastars) ,{var}database_stars)= false then
+                extrastars:=extrastars*1.1;
+                if read_stars(telescope_ra,telescope_dec,search_field*oversize,round(nrstars_required*oversize*oversize*extrastars) ,{var}database_stars)= false then
                 begin
                   application.messagebox(pchar('Error, some of the 290 star database files are missing!'+#13+'Download the g17 (or g16 or g18) and extract the files to the program directory.'),0 );
                   errorlevel:=33;{read error star database}
                   exit; {no stars}
                 end;
+                find_quads(starlist1,quad_smallest*(cdelt2*3600)*0.99 {filter value to exclude too small quads, convert pixels to arcsec as in database}, dummy,quad_star_distances1);{find quads for reference image/database. Filter out too small quads for Earth based telescopes}
+              until ((nrstars_required>database_stars) {No more stars available in the database}
+                      or (nr_quads<1.1*Length(quad_star_distances1[0])*nrstars/nrstars_required) {Enough quads found. The amount quads could be too low because due to filtering out too small database quads (center m13, M16)in routine find_quads}
+                      or (extrastars>15)) {Go up this factor maximum};
 
-                find_quads(starlist1,quad_smallest*(cdelt2*3600)*0.99 {filter value, convert pixels to arcsec as in database}, dummy,quad_star_distances1);{find quads for reference image/database. Filter out too small quads for aarth based telescopes}
-
-              until ((nrstars_required>database_stars) {no more stars}
-                      or (nr_quads<1.1*Length(quad_star_distances1[0])*nrstars/nrstars_required) {Too many small quads (center m13, M16) where excluded in routine find_quads}
-                      or (extrastars>1500)) {just too many};
-
-              if ((solve_show_log) and  (extrastars>0)) then memo2_message('To many small quads excluded due to higher resolution database, increased the number of stars with '+inttostr(extrastars));
+              if ((solve_show_log) and  (extrastars>0)) then memo2_message('To many small quads excluded due to higher resolution database, increased the number of stars with '+inttostr(round(extrastars*100))+'%');
 
               if solve_show_log then {global variable set in find stars}
                 memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(telescope_ra,': ')+#9+prepare_dec(telescope_dec,'° ')+#9+' Up to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(database_stars)+' database stars' +#9+' '+inttostr(length(quad_star_distances1[0]))+' database quads to compare.'+mess);
@@ -732,7 +730,7 @@ begin
           end;{dec within range}
           inc(count);{step further in spiral}
 
-        until ((solution) or (spiral_x>max_distance));
+        until ((solution) or (spiral_x>max_distance));{squared spiral search}
 
         if solution then
         begin
