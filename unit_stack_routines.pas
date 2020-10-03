@@ -169,7 +169,7 @@ end;
 
 procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
 var
-  fitsX,fitsY,c,width_max, height_max, x_new,y_new,col,  binning  : integer;
+  fitsX,fitsY,c,width_max, height_max, x_new,y_new, binning  : integer;
   background_r, background_g, background_b, background_l ,
   rgbsum,red_f,green_f,blue_f, value ,colr, colg,colb, red_add,green_add,blue_add,
   rr_factor, rg_factor, rb_factor,

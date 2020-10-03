@@ -274,7 +274,6 @@ type
     procedure autocorrectcolours1Click(Sender: TObject);
     procedure batch_annotate1Click(Sender: TObject);
     procedure batch_solve_astrometry_netClick(Sender: TObject);
-    procedure bin3x3Click(Sender: TObject);
     procedure ccd_inspector_plot1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
     procedure copy_to_clipboard1Click(Sender: TObject);
@@ -2219,7 +2218,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.423, '+about_message4+', dated 2020-09-29';
+  #13+#10+'ASTAP version ß0.9.425, '+about_message4+', dated 2020-10-3';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2359,7 +2358,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end {fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
+  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 
 end;
 
@@ -2613,7 +2612,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end{fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
+  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
 procedure Tmainwindow.localcoloursmooth1Click(Sender: TObject);
@@ -2748,7 +2747,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end {fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
+  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 
 end;
 
@@ -2877,7 +2876,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end{fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
+  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
 procedure Tmainwindow.Returntodefaultsettings1Click(Sender: TObject);
@@ -3835,7 +3834,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end {fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
+  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 
 end;
 
@@ -6194,6 +6193,7 @@ begin
     stackmenu1.write_log1.Checked:=get_boolean('write_log',true);{write to log file}
 
     stackmenu1.align_blink1.Checked:=get_boolean('align_blink',true);{blink}
+    stackmenu1.timestamp1.Checked:=get_boolean('time_stamp',true);{blink}
 
     stackmenu1.force_oversize1.Checked:=get_boolean('force_slow',false);
     stackmenu1.calibrate_prior_solving1.Checked:=get_boolean('calibrate_prior_solving',false);
@@ -6314,83 +6314,98 @@ begin
     stackmenu1.write_jpeg1.Checked:=get_boolean('write_jpeg',false);{live stacking}
     stackmenu1.interim_to_clipboard1.Checked:=get_boolean('to_clipboard',false);{live stacking}
 
-
+    stackmenu1.listview1.Items.BeginUpdate;
     c:=0;
     repeat {add images}
        dum:=initstring.Values['image'+inttostr(c)];
        if ((dum<>'') and (fileexists(dum))) then
        begin
-         listview_add(dum);
+         listview_add(stackmenu1.listview1,dum,26);
          stackmenu1.ListView1.items[c].Checked:=get_boolean('image'+inttostr(c)+'_check',true);
        end;
        inc(c);
     until (dum='');
+    stackmenu1.listview1.Items.endUpdate;
 
+    stackmenu1.listview2.Items.BeginUpdate;
     c:=0;
     repeat {add  darks}
        dum:=initstring.Values['dark'+inttostr(c)];
        if ((dum<>'') and (fileexists(dum))) then
        begin
-         listview_add2(stackmenu1.listview2,dum,9);
+         listview_add(stackmenu1.listview2,dum,9);
          stackmenu1.ListView2.items[c].Checked:=get_boolean('dark'+inttostr(c)+'_check',true);
        end;
        inc(c);
     until (dum='');
+    stackmenu1.listview2.Items.endUpdate;
 
+    stackmenu1.listview3.Items.BeginUpdate;
     c:=0;
     repeat {add  flats}
       dum:=initstring.Values['flat'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
       begin
-        listview_add2(stackmenu1.listview3,dum,10);
+        listview_add(stackmenu1.listview3,dum,10);
         stackmenu1.ListView3.items[c].Checked:=get_boolean('flat'+inttostr(c)+'_check',true);
       end;
       inc(c);
     until (dum='');
+    stackmenu1.listview3.Items.endUpdate;
 
+    stackmenu1.listview4.Items.BeginUpdate;
     c:=0;
     repeat {add flat darks}
       dum:=initstring.Values['flat_dark'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
       begin
-        listview_add2(stackmenu1.listview4,dum,9);
+        listview_add(stackmenu1.listview4,dum,9);
         stackmenu1.ListView4.items[c].Checked:=get_boolean('flat_dark'+inttostr(c)+'_check',true);
       end;
       inc(c);
     until (dum='');
+    stackmenu1.listview4.Items.endUpdate;
 
+
+    stackmenu1.listview6.Items.BeginUpdate;
     c:=0;
     repeat {add blink files}
       dum:=initstring.Values['blink'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
       begin
-        listview_add2(stackmenu1.listview6,dum,10);
+        listview_add(stackmenu1.listview6,dum,10);
         stackmenu1.ListView6.items[c].Checked:=get_boolean('blink'+inttostr(c)+'_check',true);
       end;
       inc(c);
     until (dum='');
+    stackmenu1.listview6.Items.endUpdate;
 
+    stackmenu1.listview7.Items.BeginUpdate;
     c:=0;
     repeat {add photometry files}
       dum:=initstring.Values['photometry'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
       begin
-        listview_add2(stackmenu1.listview7,dum,17);
+        listview_add(stackmenu1.listview7,dum,17);
         stackmenu1.ListView7.items[c].Checked:=get_boolean('photometry'+inttostr(c)+'_check',true);
       end;
       inc(c);
     until (dum='');
+    stackmenu1.listview7.Items.endUpdate;
 
+
+    stackmenu1.listview8.Items.BeginUpdate;
     c:=0;
     repeat {add inspector files}
       dum:=initstring.Values['inspector'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
       begin
-        listview_add2(stackmenu1.listview8,dum,16);
+        listview_add(stackmenu1.listview8,dum,16);
         stackmenu1.ListView8.items[c].Checked:=get_boolean('inspector'+inttostr(c)+'_check',true);
       end;
       inc(c);
     until (dum='');
+    stackmenu1.listview8.Items.endUpdate;
 
 
     c:=0;
@@ -6493,6 +6508,7 @@ begin
   initstring.Values['write_log']:=BoolStr[stackmenu1.write_log1.checked];{write log to file}
 
   initstring.Values['align_blink']:=BoolStr[stackmenu1.align_blink1.checked];{blink}
+  initstring.Values['time_stamp']:=BoolStr[stackmenu1.timestamp1.checked];{blink}
 
   initstring.Values['force_slow']:=BoolStr[stackmenu1.force_oversize1.checked];
   initstring.Values['calibrate_prior_solving']:=BoolStr[stackmenu1.calibrate_prior_solving1.checked];
@@ -7450,6 +7466,11 @@ begin
 
     tx:=stopX;
     ty:=stopY;
+    if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
+      tx:=width2-1-tx;
+    if mainwindow.flip_vertical1.Checked=false then
+      ty:=height2-1-ty;
+
 
     if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
     if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
@@ -7510,7 +7531,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end{fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle around the object with the mouse while holding the right mouse button down'),'',MB_OK);
+  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
 procedure Tmainwindow.loadsettings1Click(Sender: TObject);
@@ -7615,7 +7636,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end {fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
+  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
 procedure Tmainwindow.menucopy1Click(Sender: TObject);{for fits header memo1 popup menu}
@@ -7648,30 +7669,26 @@ end;
 
 procedure Tmainwindow.copy_paste_tool1Click(Sender: TObject);
 var
-  dum,k,stopX2,stopY2 : integer;
+  dum,stopX2,stopY2, startX2, startY2 : integer;
 begin
   if fits_file=false then exit;
   if  ((abs(stopX-startX)>1)and (abs(stopY-starty)>1)) then
   begin
     Screen.Cursor := crDrag;
-    copy_paste_x:=startX+1;{take the inside of the rectangle} {save for Application.ProcessMessages;this could change startX, startY}
-    copy_paste_y:=startY+1;
-    stopX2:=stopX-1;{take the inside of the rectangle}
-    stopY2:=stopY-1;
-
     backup_img;{required in case later ctrl-z is used}
 
-    if copy_paste_x>stopX2 then begin dum:=stopX2; stopX2:=copy_paste_x; copy_paste_x:=dum; end;{swap}
-    if copy_paste_y>stopY2 then begin dum:=stopY2; stopY2:=copy_paste_y; copy_paste_y:=dum; end;
+    if startX>stopX then begin dum:=stopX; stopX2:=startX; startX2:=dum; end else  begin stopX2:=stopX; startX2:=startX; end; {swap if required}
+    if startY>stopY then begin dum:=stopY; stopY2:=startY; startY2:=dum; end else  begin stopY2:=stopY; startY2:=startY; end;
 
+    copy_paste_x:=startX2+1;{take the inside of the rectangle} {save for Application.ProcessMessages in copy_paste_x; This could change startX, startY}
+    copy_paste_y:=startY2+1;
 
-    copy_paste_w:=stopX2-copy_paste_x+1;
-    copy_paste_h:=stopY2-copy_paste_y+1;
+    copy_paste_w:=stopX2-copy_paste_x;
+    copy_paste_h:=stopY2-copy_paste_y;
     copy_paste:=true;
-
   end {fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
+  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
 procedure Tmainwindow.MenuItem21Click(Sender: TObject);
@@ -7782,7 +7799,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end {fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle with the mouse while holding the right mouse button down'),'',MB_OK);
+  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 
 end;
 
@@ -7894,7 +7911,7 @@ begin
     Screen.Cursor:=Save_Cursor;
   end {fits file}
   else
-  application.messagebox(pchar('Pull first a rectangle from a DARK to BRIGHT area with the mouse while holding the right mouse button down'+#10+#10+
+  application.messagebox(pchar('Place the mouse pointer at a dark area. Hold the right mouse button down and move the mouse pointer to a bright area.'+#10+#10+
                                'Try to select two areas without a deepsky object within 20 pixels.'+#10+#10+
                                'Moving from the dark area to the bright area should follow the direction of the gradient.'),'',MB_OK);
 end;
@@ -8200,11 +8217,6 @@ begin
   form_astrometry_net1:=Tform_astrometry_net1.Create(self); {in project option not loaded automatic}
   form_astrometry_net1.ShowModal;
   form_astrometry_net1.release;
-end;
-
-procedure Tmainwindow.bin3x3Click(Sender: TObject);
-begin
-
 end;
 
 
@@ -8815,6 +8827,30 @@ begin
   writeln(f,mess);
   closefile(f);
 end;
+
+
+//procedure Tmainwindow.Button1Click(Sender: TObject);
+//var i, j,k : integer;
+//begin
+//  for i:=0 to 120 do
+//  BEGIN
+//  k:=i;
+//  if k>25 then k:=k+6;
+//  log_to_file('d:\temp\font.txt', '(');
+//    for j:=0 to 8 do
+//    begin
+//    log_to_file('d:\temp\font.txt', '('+
+//                                        inttostr(round(img_loaded[0,2+I*6,28-j]/65535))+
+//                                    ','+inttostr(round(img_loaded[0,3+i*6,28-j]/65535))+
+//                                    ','+inttostr(round(img_loaded[0,4+i*6,28-j]/65535))+
+//                                    ','+inttostr(round(img_loaded[0,5+i*6,28-j]/65535))+
+//                                    ','+inttostr(round(img_loaded[0,6+i*6,28-j]/65535))+
+//                                    '),');
+//    end;
+//    log_to_file('d:\temp\font.txt', '),'+'{'+inttostr(i*6+3)+'}');
+//  end;
+//end;
+
 
 procedure save_annotated_jpg(filename: string);{save viewer as annotated jpg}
 var
@@ -10433,7 +10469,7 @@ procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
   xf,yf,k, fx,fy, shapetype                 : integer;
-  {fitsX,fitsY,}hfd2,fwhm_star2,snr,flux,xc,yc,d1,d2: double;
+  hfd2,fwhm_star2,snr,flux,xc,yc : double;
 begin
   if flip_horizontal1.Checked then xf:=image1.width-1-x else xf:=x;;
   if flip_vertical1.Checked then yf:=image1.height-1-y else yf:=y;
@@ -10926,7 +10962,7 @@ procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
 var
   hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance          : double;
   s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str      : string;
-  x_sized,y_sized,factor,flipH,flipV :integer;
+  x_sized,y_sized,factor,flipH,flipV                               :integer;
   color1:tcolor;
   r,b :single;
 begin
@@ -10957,6 +10993,13 @@ begin
    if flip_horizontal1.Checked then flipH:=-1 else flipH:=1;
    if flip_vertical1.Checked then  flipV:=-1 else flipV:=1;
 
+   if flipH=-1 then xf:=image1.width-1-x else xf:=x;;
+   if flipV=-1 then yf:=image1.height-1-y else yf:=y;
+
+   mouse_fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at +0.5 and  middle pixels is 1}
+   mouse_fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at +0.5 and 1 at middle first pixel}
+
+
 //  rubber rectangle
    x_sized:=trunc(x*width2/image1.width);
    y_sized:=trunc(y*height2/image1.height);
@@ -10983,6 +11026,9 @@ begin
      begin
        erase_rectangle;
        draw_rectangle(x_sized,y_sized);
+
+       stopX:=round(-1+mouse_fitsX); {starts at -0.5 and  middle pixels is 0}
+       stopY:=round(-1+mouse_fitsY); {from bottom to top, starts at -0.5 and 0 at middle first pixel}
 
        if cdelt2<>0 then
        begin
@@ -11012,13 +11058,6 @@ begin
 
 
    if ssright in shift then exit; {rubber rectangle with update statusbar is very slow. Does it trigger an event???}
-
-   if flipH=-1 then xf:=image1.width-1-x else xf:=x;;
-   if flipV=-1 then yf:=image1.height-1-y else yf:=y;
-
-   mouse_fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
-   mouse_fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
-
 
    {give screen pixel value}
    str(mouse_fitsx:4:1,s1);  {fits images start with 1 and not with 0}
@@ -11105,34 +11144,15 @@ procedure Tmainwindow.Image1MouseUp(Sender: TObject; Button: TMouseButton;
 var
   xf, yf : integer;
 begin
-  if button=mbright then
-  begin
-   {$ifdef fpc}
-    PopupMenu1.PopUp;{call popup manually if right key is released, not when clicked. Set in popupmenu autopopup off !!!}
-   {$else} {delphi}
-    PopupMenu1.PopUp(x,y);{call popup manually if right key is released, not when clicked. Set in popupmenu autopopup off !!!}
-   {$endif}
-    erase_rectangle;
-  end;
-  if ((stop_RX<>start_RX) or (stop_RY<>start_RY) )=false then
-  begin {no rubber rectangle in action}
-    if abs(y-down_y)>2 then
-    begin
-      mainwindow.image1.Top:= mainwindow.image1.Top+(y-down_y)
-    end;
-    if abs(x-down_x)>2 then
-    begin
-      mainwindow.image1.left:= mainwindow.image1.left+(x-down_x)
-    end;
-  end
-  else
-  begin
-    if flip_horizontal1.Checked then xf:=image1.width-1-x else xf:=x;;
-    if flip_vertical1.Checked then yf:=image1.height-1-y else yf:=y;
-
-    stopX:=round(-0.5+(xf+0.5)/(image1.width/width2));{starts at -0.5 and  middle pixels is 0}
-    stopY:=round(-0.5+height2-(yf+0.5)/(image1.height/height2)); {from bottom to top, starts at -0.5 and 0 at middle first pixel}
-  end;
+   if button=mbright then
+   begin
+     PopupMenu1.PopUp;{call popup manually if right key is released, not when clicked. Set in popupmenu autopopup off !!!}
+     {$IfDef Darwin}// for OS X,
+     {not required in Mac. After popup the rectangle is gone}
+      {$ELSE}
+      erase_rectangle;
+     {$ENDIF}
+   end;
 
   screen.Cursor := crDefault;
 end;

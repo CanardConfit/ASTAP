@@ -51,6 +51,7 @@ type
     add_valueR1: TEdit;
     alignment1: TTabSheet;
     align_blink1: TCheckBox;
+    timestamp1: TCheckBox;
     Analyse1: TButton;
     analyseblink1: TButton;
     analysedarksButton2: TButton;
@@ -549,8 +550,10 @@ type
     procedure blink_stop1Click(Sender: TObject);
     procedure blink_unaligned_multi_step1Click(Sender: TObject);
     procedure browse_dark1Click(Sender: TObject);
+    procedure browse_inspector1Click(Sender: TObject);
     procedure browse_live_stacking1Click(Sender: TObject);
     procedure analyse_objects_visibles1Click(Sender: TObject);
+    procedure browse_photometry1Click(Sender: TObject);
     procedure clear_inspector_list1Click(Sender: TObject);
     procedure curve_fitting1Click(Sender: TObject);
     procedure ephemeris_centering1Change(Sender: TObject);
@@ -767,9 +770,7 @@ const
   quads_displayed:boolean=false;{no quads visible, so no refresh required}
   equalise_background_step: integer=1;
 
-
-procedure listview_add(s0 :string);{add items to listview}
-procedure listview_add2(tl: tlistview; s0:string; count:integer);
+procedure listview_add(tl: tlistview; s0:string; count:integer);
 procedure update_equalise_background_step(pos1: integer);{update equalise background menu}
 procedure memo2_message(s: string);{message to memo2}
 
@@ -872,6 +873,7 @@ const
 implementation
 
 uses  unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd, unit_live_stacking, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2;
+
 
 type
    theaderbackup  = record
@@ -1067,43 +1069,20 @@ begin
  {$ENDIF}
 end;
 
-procedure listview_add(s0:string);
-var
-  ListItem: TListItem;
-  i : integer;
-begin
-  with stackmenu1.ListView1 do
-  begin
-    Items.BeginUpdate;
-      ListItem := Items.Add;
-      ListItem.Caption := s0;{with checkbox}
-      ListItem.SubItems.Add('');
-      ListItem.SubItems.Add('');
-      ListItem.SubItems.Add('');
-      ListItem.SubItems.Add('?');
-      ListItem.SubItems.Add('?');
-      ListItem.SubItems.Add('?');
-      ListItem.SubItems.Add('?');
-      for i:=8 to 26 do ListItem.SubItems.Add('-');
-      Items[items.Count-1].Checked:=true;
-    Items.EndUpdate;
-  end;
-end;
-
-procedure listview_add2(tl: tlistview; s0:string; count:integer);
+procedure listview_add(tl: tlistview; s0:string; count:integer);
 var
   ListItem: TListItem;
   i : integer;
 begin
   with tl do {stackmenu.listview2}
   begin
-    Items.BeginUpdate;
-      ListItem := Items.Add;
-      ListItem.Caption := s0;{with checkbox}
-      for i:=1 to count do
-          ListItem.SubItems.Add('');
-      Items[items.Count-1].Checked:=true;
-    Items.EndUpdate;
+    {Items.BeginUpdate; is set before calling this procedure}
+    ListItem := Items.Add;
+    ListItem.Caption := s0;{with checkbox}
+    for i:=1 to count do
+        ListItem.SubItems.Add('');
+    Items[items.Count-1].Checked:=true;
+    {Items.EndUpdate; is set after calling this procedure}
   end;
 end;
 
@@ -1712,7 +1691,9 @@ begin
           if pos('DARK',uppercase(imagetype))>0 then
           begin
             memo2_message('Move file '+filename2+' to tab DARKS');
-            listview_add2(listview2,filename2,9);{move to darks}
+            listview2.Items.beginupdate;
+            listview_add(listview2,filename2,9);{move to darks}
+            listview2.Items.endupdate;
             listview1.Items.Delete(c);
             dec(c);{compensate for delete}
             dec(counts); {compensate for delete}
@@ -1721,7 +1702,9 @@ begin
           if pos('FLAT',uppercase(imagetype))>0 then
           begin
             memo2_message('Move file '+filename2+' to tab FLATS');
-            listview_add2(listview3,filename2,10);
+            listview3.Items.beginupdate;
+            listview_add(listview3,filename2,10);
+            listview3.Items.endupdate;
             listview1.Items.Delete(c);
             dec(c);{compensate for delete}
             dec(counts); {compensate for delete}
@@ -1730,7 +1713,9 @@ begin
           if pos('BIAS',uppercase(imagetype))>0 then
           begin
             memo2_message('Move file '+filename2+' to tab FLAT-DARKS / BIAS');
-            listview_add2(listview4,filename2,9);
+            listview4.Items.beginupdate;
+            listview_add(listview4,filename2,9);
+            listview4.Items.endupdate;
             listview1.Items.Delete(c);
             dec(c);{compensate for delete}
             dec(counts); {compensate for delete}
@@ -1880,14 +1865,16 @@ begin
                         '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
   if opendialog1.execute then
   begin
+    listview1.Items.beginUpdate;
     for i:=0 to OpenDialog1.Files.count-1 do
     begin
-        listview_add(OpenDialog1.Files[i]);
+        listview_add(listview1,OpenDialog1.Files[i],26);
         if  pos('_stacked',OpenDialog1.Files[i])<>0 then {do not check mark images already stacked}
         begin
           listview1.items[ListView1.items.count-1].checked:=false;
         end;
     end;
+    listview1.Items.EndUpdate;
   end;
   count_selected; {report the number of images selected in images_selected and update menu indication}
 end;
@@ -2176,10 +2163,12 @@ begin
   fits_file:=true;
   if opendialog1.execute then
   begin
+    listview4.Items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview_add2(listview4,OpenDialog1.Files[i],9);
+      listview_add(listview4,OpenDialog1.Files[i],9);
     end;
+    listview4.Items.endupdate;
   end;
 end;
 
@@ -2189,7 +2178,6 @@ var
 begin
   OpenDialog1.Title := 'Select images to add';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-//  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
@@ -2198,16 +2186,13 @@ begin
   fits_file:=true;
   if opendialog1.execute then
   begin
+    listview6.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      if sender=browse_blink1 then listview_add2(listview6,OpenDialog1.Files[i],10)
-      else
-      if sender=browse_photometry1 then listview_add2(listview7,OpenDialog1.Files[i],17)
-      else
-      if sender=browse_inspector1 then listview_add2(listview8,OpenDialog1.Files[i],16);
-
+      listview_add(listview6,OpenDialog1.Files[i],10);
       DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
     end;
+    listview6.items.endupdate;
   end;
 end;
 
@@ -2226,10 +2211,13 @@ begin
   fits_file:=true;
   if opendialog1.execute then
   begin
+    listview3.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-       listview_add2(listview3,OpenDialog1.Files[i],10);
+       listview_add(listview3,OpenDialog1.Files[i],10);
     end;
+    listview3.items.endupdate;
+
   end;
 end;
 
@@ -3988,6 +3976,10 @@ begin
 
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
+//  mainwindow.image1.canvas.pen.color:=clyellow;
+  mainwindow.image1.Canvas.brush.Style:=bsClear;
+  mainwindow.image1.canvas.font.color:=$00B0FF ;{orange}
+
   esc_pressed:=false;
   first_image:=-1;
 
@@ -4135,8 +4127,18 @@ begin
         begin
           {nothing to do}
         end;
+
+       if timestamp1.checked then
+       begin
+         if date_avg='' then
+           annotation_to_array('date_obs: '+date_obs,1,10,img_loaded) {date_obs to image array as font. Flicker free method}
+         else
+         annotation_to_array('date_avg: '+date_avg,1,10,img_loaded);{date_obs to image array as font}
+       end;
+
         plot_fits(mainwindow.image1,false {re_center},true);
         if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(round(solution_vectorX[2]),round(solution_vectorY[2]),false); {correct annotations in shift only}
+
         if sender=write_video1 then {write video frame}
         begin
           if write_yuv4mpeg2_frame(naxis3>1)=false then
@@ -4208,10 +4210,35 @@ begin
 //  fits_file:=true;
   if opendialog1.execute then
   begin
+    listview2.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview_add2(listview2,OpenDialog1.Files[i],9);
+      listview_add(listview2,OpenDialog1.Files[i],9);
     end;
+    listview2.items.endupdate;
+  end;
+end;
+
+procedure Tstackmenu1.browse_inspector1Click(Sender: TObject);
+var i: integer;
+begin
+  OpenDialog1.Title := 'Select images to add';
+  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+                        '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
+                        '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+                        '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
+
+  fits_file:=true;
+  if opendialog1.execute then
+  begin
+    listview8.items.beginupdate;
+    for i:=0 to OpenDialog1.Files.count-1 do {add}
+    begin
+      listview_add(listview8,OpenDialog1.Files[i],16);
+      DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
+    end;
+    listview8.items.endupdate;
   end;
 end;
 
@@ -4268,6 +4295,31 @@ begin
   memo2_message('Ready. Select the object to align on.');
   Screen.Cursor :=Save_Cursor;    { back to normal }
 
+end;
+
+procedure Tstackmenu1.browse_photometry1Click(Sender: TObject);
+var
+  i: integer;
+begin
+  OpenDialog1.Title := 'Select images to add';
+  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+//  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
+  opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+                        '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
+                        '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+                        '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
+
+  fits_file:=true;
+  if opendialog1.execute then
+  begin
+    listview7.items.beginupdate;
+    for i:=0 to OpenDialog1.Files.count-1 do {add}
+    begin
+      listview_add(listview7,OpenDialog1.Files[i],17);
+      DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
+    end;
+    listview7.items.endupdate;
+  end;
 end;
 
 
@@ -4692,6 +4744,7 @@ begin
   update_replacement_colour;
 end;
 
+
 procedure Tstackmenu1.rainbow_Panel1MouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
@@ -5028,6 +5081,14 @@ begin
 
       if pos('_aligned.fit',filename2)=0 then filename2:=ChangeFileExt(Filename2,'_aligned.fit');{rename only once}
 
+      if timestamp1.checked then
+      begin
+         if date_avg='' then
+           annotation_to_array('date_obs: '+date_obs,1,10,img_loaded) {date_obs to image array as annotation}
+           else
+           annotation_to_array('date_avg: '+date_avg,1,10,img_loaded);{date_obs to image array as annotation}
+      end;
+
       if nrbits=16 then
          save_fits(img_loaded,filename2,16,true)
         else
@@ -5183,18 +5244,24 @@ procedure Tstackmenu1.FormDropFiles(Sender: TObject;
 var
    i : integer;
 begin
+  listview1.Items.beginUpdate;
+  listview2.Items.beginUpdate;
+  listview3.Items.beginUpdate;
+  listview4.Items.beginUpdate;
+  listview6.Items.beginUpdate;
+  listview7.Items.beginUpdate;
   for i := Low(FileNames) to High(FileNames) do
   begin
     if image_file_name(FileNames[i])=true then {readable image file}
     begin
-      case pagecontrol1.pageindex of    1:   listview_add2(listview2,FileNames[i],9);{darks}
-                                        2:   listview_add2(listview3,FileNames[i],10);{flats}
-                                        3:   listview_add2(listview4,FileNames[i],9);{flat darks}
-                                        7:   listview_add2(listview6,FileNames[i],10);{blink}
-                                        8:   listview_add2(listview7,FileNames[i],17);{photometry}
+      case pagecontrol1.pageindex of    1:   listview_add(listview2,FileNames[i],9);{darks}
+                                        2:   listview_add(listview3,FileNames[i],10);{flats}
+                                        3:   listview_add(listview4,FileNames[i],9);{flat darks}
+                                        7:   listview_add(listview6,FileNames[i],10);{blink}
+                                        8:   listview_add(listview7,FileNames[i],17);{photometry}
                                        else
                                        begin {images}
-                                         listview_add(FileNames[i]);
+                                         listview_add(listview1,FileNames[i],26);
                                          if  pos('_stacked',FileNames[i])<>0 then {do not check mark images already stacked}
                                                listview1.items[ListView1.items.count-1].checked:=false;
                                          count_selected; {report the number of images selected in images_selected and update menu indication}
@@ -5205,6 +5272,12 @@ begin
 
     end;
   end;
+  listview1.Items.EndUpdate;
+  listview2.Items.EndUpdate;
+  listview3.Items.EndUpdate;
+  listview4.Items.EndUpdate;
+  listview6.Items.EndUpdate;
+  listview7.Items.EndUpdate;
 end;
 
 procedure Tstackmenu1.FormPaint(Sender: TObject);
@@ -5279,6 +5352,7 @@ begin
 
   memo2_message('Binning images for better detection. Original files will not be affected.');
 
+  listview7.Items.beginUpdate;
   for c:=0 to listview7.items.count-1 do
   begin
     if ((esc_pressed=false) and (listview7.Items.item[c].checked) )  then
@@ -5301,10 +5375,12 @@ begin
           (binX2X3_file(2)=false)) {converts filename2 to binx2 version}
           then exit;
       listview7.Items[c].Checked:=false;
-      listview_add2(listview7,filename2,17);{add binx2 file}
+      listview_add(listview7,filename2,17);{add binx2 file}
     end;
   end;{for loop for astrometric solving }
   {astrometric calibration}
+  listview7.Items.endUpdate;
+
 end;
 
 
@@ -5693,7 +5769,7 @@ begin
            x_new:=round(solution_vectorX[0]*(starlistx[0,i])+solution_vectorX[1]*(starlistx[1,i])+solution_vectorX[2]); {correction x:=aX+bY+c}
            y_new:=round(solution_vectorY[0]*(starlistx[0,i])+solution_vectorY[1]*(starlistx[1,i])+solution_vectorY[2]); {correction y:=aX+bY+c}
 
-           if Flipvertical=false then  starY:=(height2-y_new) else starY:=(y_new);
+           if flipvertical=false then  starY:=(height2-y_new) else starY:=(y_new);
            if Fliphorizontal     then starX:=(width2-x_new)  else starX:=(x_new);
 
            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
@@ -5712,7 +5788,7 @@ begin
           mainwindow.image1.Canvas.Pen.Color := clyellow;
           for i:=0 to length(outliers[0])-1 do
           begin
-            if Flipvertical=false then  starY:=round(height2-(outliers[1,i])) else starY:=round(outliers[1,i]);
+            if flipvertical=false then  starY:=round(height2-(outliers[1,i])) else starY:=round(outliers[1,i]);
             if Fliphorizontal     then starX:=round(width2-outliers[0,i])  else starX:=round(outliers[0,i]);
             mainwindow.image1.Canvas.ellipse(starX-20,starY-20, starX+20, starY+20);{indicate outlier rectangle}
             mainwindow.image1.Canvas.textout(starX+20,starY+20,'σ '+floattostrf(outliers[2,i], ffgeneral, 3,0));{add hfd as text}
@@ -6703,15 +6779,17 @@ var
   index,counter: integer;
 begin
   index:=0;
+  listview1.Items.beginUpdate;
   counter:=listview5.Items.Count;
   while index<counter do
   begin
     if  listview5.Items[index].Selected then
     begin
-      listview_add(listview5.items[index].caption);
+      listview_add(listview1,listview5.items[index].caption,26);
     end;
     inc(index); {go to next file}
   end;
+  listview1.Items.endUpdate;
 end;
 
 
@@ -6940,7 +7018,7 @@ begin
             inc(c);
           end;
         end;
-        listview_add2(listview2,path1,9);{add master}
+        listview_add(listview2,path1,9);{add master}
         listview2.Items.EndUpdate;
 
         analyse_listview(listview2,false {light},true {full fits},false{refresh});{update the tab information}
@@ -7085,7 +7163,7 @@ begin
               inc(c);
             end;
           end;
-          listview_add2(listview3,path1,10);{add master}
+          listview_add(listview3,path1,10);{add master}
           listview3.Items.EndUpdate;
           analyse_listview(listview3,false {light},true {full fits (for standard deviation)},false{refresh});{update the tab information}
         end;
