@@ -59,6 +59,7 @@ type
     BitBtn1: TBitBtn;
     ccdinspector1: TMenuItem;
     error_label1: TLabel;
+    FontDialog1: TFontDialog;
     Memo1: TMemo;
     Memo3: TMemo;
     menucopy2: TMenuItem;
@@ -104,6 +105,8 @@ type
     angular_distance1: TMenuItem;
     j2000_1: TMenuItem;
     galactic1: TMenuItem;
+    MenuItem23: TMenuItem;
+    selectfont1: TMenuItem;
     popupmenu_frame1: TPopupMenu;
     Stretchdrawmenu1: TMenuItem;
     stretch_draw_fits1: TMenuItem;
@@ -301,6 +304,7 @@ type
     procedure remove_atmouse1Click(Sender: TObject);
     procedure gradient_removal1Click(Sender: TObject);
     procedure remove_longitude_latitude1Click(Sender: TObject);
+    procedure selectfont1Click(Sender: TObject);
     procedure select_all1Click(Sender: TObject);
     procedure save_to_tiff1Click(Sender: TObject);
     procedure menupasteClick(Sender: TObject);
@@ -713,6 +717,19 @@ const
   mouse_fitsx : double=0;
   mouse_fitsy : double=0;
   coord_frame : integer=0; {J2000=0 or galactic=1}
+
+
+  {$IFDEF unix}
+  font_name: string= 'Monospace';
+  font_size : integer= 10;
+  {$ELSE}
+  font_name: string= 'Courier';
+  font_size : integer = 9;
+  {$ENDIF}
+  font_charset : integer=0; {Ansi_char}
+  font_style :   tFontStyles=[];
+  font_color : tcolor= cldefault;
+
 
 
 function load_fits(filen:string;light {load as light of dark/flat},load_data: boolean ;var img_loaded2: image_array): boolean;{load fits file}
@@ -2218,7 +2235,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.425, '+about_message4+', dated 2020-10-3';
+  #13+#10+'ASTAP version ß0.9.426, '+about_message4+', dated 2020-10-6';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6058,6 +6075,32 @@ end;
 {$endif}
 
 
+function StyleToStr(Style: TFontStyles): string;
+const
+  Chars: array [Boolean] of Char = ('F', 'T');
+begin
+  SetLength(Result, 4);
+  Result[1] := Chars[fsBold in Style];
+  Result[2] := Chars[fsItalic in Style];
+  Result[3] := Chars[fsUnderline in Style];
+  Result[4] := Chars[fsStrikeOut in Style];
+end;
+
+function StrToStyle(Str: String): TFontStyles;
+begin
+  Result := [];
+  {T = true, S = false}
+  if Str[1] = 'T' then
+    Include(Result, fsBold);
+  if Str[2] = 'T' then
+    Include(Result, fsItalic);
+  if Str[3] = 'T' then
+    Include(Result, fsUnderLine);
+  if Str[4] = 'T' then
+    Include(Result, fsStrikeOut);
+end;
+
+
 function load_settings(lpath: string)  : boolean;
 var
   dum : string;
@@ -6119,6 +6162,14 @@ begin
     i:=stackmenu1.height;get_int(i,'stackmenu_height'); stackmenu1.height:=i;
     i:=stackmenu1.width;get_int(i,'stackmenu_width'); stackmenu1.width:=i;
 
+    get_int(font_color,'font_color');
+    get_int(font_size,'font_size');
+    dum:=initstring.Values['font_name'];if dum<>'' then font_name:= dum;
+    dum:=initstring.Values['font_style'];if dum<>'' then font_style:= strtostyle(dum);
+    get_int(font_charset,'font_charset');
+
+
+
     i:=stackmenu1.mosaic_width1.position;get_int(i,'mosaic_width'); stackmenu1.mosaic_width1.position:=i;
     i:=stackmenu1.mosaic_crop1.position;get_int(i,'mosaic_crop'); stackmenu1.mosaic_crop1.position:=i;
 
@@ -6153,6 +6204,7 @@ begin
     stackmenu1.osc_colour_smooth1.checked:=get_boolean('osc_colour_smooth',true);
 
     stackmenu1.ignore_header_solution1.Checked:= get_boolean('ignore_header_solution',true);
+    stackmenu1.Equalise_background1.checked:= get_boolean('equalise_background',true);{for mosaic mode}
     mainwindow.preview_demosaic1.Checked:=get_boolean('preview_demosaic',false);
 
     stackmenu1.classify_object1.checked:= get_boolean('classify_object',false);
@@ -6453,6 +6505,11 @@ begin
   initstring.Values['stackmenu_height']:=inttostr(stackmenu1.height);
   initstring.Values['stackmenu_width']:=inttostr(stackmenu1.width);
 
+  initstring.Values['font_color']:=inttostr(font_color);
+  initstring.Values['font_size']:=inttostr(font_size);
+  initstring.Values['font_name']:=font_name;
+  initstring.Values['font_style']:=StyleToStr(font_style);
+  initstring.Values['font_charset']:=inttostr(font_charset);
 
   initstring.Values['minimum_position']:=inttostr(MINIMUM1.position);
   initstring.Values['maximum_position']:=inttostr(maximum1.position);
@@ -6490,8 +6547,7 @@ begin
   initstring.Values['osc_colour_smooth']:=BoolStr[stackmenu1.osc_colour_smooth1.checked];
 
   initstring.Values['ignore_header_solution']:=BoolStr[stackmenu1.ignore_header_solution1.Checked];
-
-//  initstring.Values['drizzle']:=BoolStr[stackmenu1.drizzle1.Checked];
+  initstring.Values['equalise_background']:=BoolStr[stackmenu1.Equalise_background1.Checked];
 
   initstring.Values['preview_demosaic']:=BoolStr[mainwindow.preview_demosaic1.Checked];
 
@@ -6544,8 +6600,6 @@ begin
   initstring.Values['oversize']:=stackmenu1.oversize1.text;
 
   initstring.Values['sd_factor']:=stackmenu1.sd_factor1.text;
-//  initstring.Values['pixel_size']:=stackmenu1.pixelsize1.text;
-//  initstring.Values['focal_length']:=stackmenu1.focallength1.text;
   initstring.Values['blur_factor']:=stackmenu1.blur_factor1.text;
   initstring.Values['most_common_filter_radius']:=stackmenu1.most_common_filter_radius1.text;
 
@@ -6598,7 +6652,6 @@ begin
   initstring.Values['star_level_colouring']:=stackmenu1.star_level_colouring1.text;
   initstring.Values['filter_artificial_colouring']:=stackmenu1.filter_artificial_colouring1.text;
 
-//  initstring.Values['drop_size']:=stackmenu1.drop_size1.text;
   initstring.Values['resize_factor']:=stackmenu1.resize_factor1.text;
 
   initstring.Values['mark_outliers_upto']:=stackmenu1.mark_outliers_upto1.text;
@@ -6639,6 +6692,9 @@ begin
 
   initstring.Values['write_jpeg']:=BoolStr[stackmenu1.write_jpeg1.checked];{live stacking}
   initstring.Values['to_clipboard']:=BoolStr[stackmenu1.interim_to_clipboard1.checked];{live stacking}
+
+
+
 
   for c:=0 to stackmenu1.ListView1.items.count-1 do {add light images}
   begin
@@ -7969,6 +8025,29 @@ begin
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
   end;
+end;
+
+procedure Tmainwindow.selectfont1Click(Sender: TObject);
+begin
+  FontDialog1.font.size:=font_size;
+  FontDialog1.font.color:=font_color;
+  FontDialog1.font.name:=font_name;
+  FontDialog1.font.style:= font_style;
+  FontDialog1.font.charset:=font_charset;  {note Greek=161, Russian or Cyrillic =204}
+
+  FontDialog1.Execute;
+
+  font_color:=FontDialog1.font.color;
+  font_size:=FontDialog1.font.size;
+  font_name:=FontDialog1.font.name;
+  font_style:=FontDialog1.font.style;
+  font_charset:=FontDialog1.font.charset; {select cyrillic for RussiaN}
+
+  memo1.font.color:=font_color;
+  memo1.font.size:=font_size;
+  memo1.font.name:=font_name;
+  memo1.font.style:=font_style;
+  memo1.font.charset:=font_charset;
 end;
 
 procedure Tmainwindow.select_all1Click(Sender: TObject);
@@ -9484,6 +9563,13 @@ begin
      application.messagebox( pchar('Warning this code requires later LAZARUS 2.1 and FPC 3.3.1 version!!!'), pchar('Warning'),MB_OK);
   {$ENDIF}
   {$ENDIF}
+
+
+  memo1.font.size:=font_size;
+  memo1.font.color:=font_color;
+  memo1.font.name:=font_name;
+  memo1.font.style:=font_style;
+  memo1.font.charset:=font_charset;  {note Greek=161, Russian or Cyrillic =204}
 end;
 
 procedure Tmainwindow.AddplatesolvesolutiontoselectedFITSfiles1Click(

@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 35
+  Left = 218
   Height = 644
-  Top = 121
+  Top = 254
   Width = 1619
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -149,7 +149,7 @@ object stackmenu1: Tstackmenu1
     Left = 1000
     Height = 30
     Hint = 'Help'
-    Top = 449
+    Top = 456
     Width = 9
     Caption = '?'
     Font.Color = clBlue
@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1618
-    ActivePage = tab_blink1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 7
+    TabIndex = 0
     TabOrder = 5
     object Images: TTabSheet
       Hint = 'Select here the light frames'
@@ -1771,7 +1771,9 @@ object stackmenu1: Tstackmenu1
           Top = 40
           Width = 130
           Caption = 'Equalise background'
+          Checked = True
           ParentFont = False
+          State = cbChecked
           TabOrder = 2
         end
         object Label65: TLabel
@@ -1819,7 +1821,7 @@ object stackmenu1: Tstackmenu1
         Transparent = False
         WordWrap = True
       end
-      object GroupBox8: TGroupBox
+      object raw_box1: TGroupBox
         Left = 24
         Height = 232
         Hint = 'Use RAW files for best performance. Use viewer menu TOOLS, conversion DSLR images for import.'
@@ -2595,10 +2597,10 @@ object stackmenu1: Tstackmenu1
                 Text = '0'
               end
               object downsample_solving_label1: TLabel
-                Left = 80
+                Left = 8
                 Height = 20
                 Top = 8
-                Width = 176
+                Width = 248
                 Alignment = taRightJustify
                 AutoSize = False
                 BorderSpacing.Around = 5
@@ -2857,7 +2859,7 @@ object stackmenu1: Tstackmenu1
           TabOrder = 2
         end
         object update_annotations1: TCheckBox
-          Left = 624
+          Left = 592
           Height = 19
           Hint = 'Apply this if you change the annotation setting.'
           Top = 8

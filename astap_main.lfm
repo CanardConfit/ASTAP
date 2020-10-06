@@ -2832,8 +2832,8 @@ object mainwindow: Tmainwindow
     end
   end
   object PopupMenu_memo1: TPopupMenu
-    Left = 856
-    Top = 376
+    Left = 776
+    Top = 89
     object Menufind1: TMenuItem
       Caption = 'Find'
       ShortCut = 16454
@@ -2856,6 +2856,14 @@ object mainwindow: Tmainwindow
       Caption = 'Select all'
       ShortCut = 16449
       OnClick = select_all1Click
+    end
+    object MenuItem23: TMenuItem
+      Caption = '-'
+    end
+    object selectfont1: TMenuItem
+      Caption = 'Select font'
+      Hint = 'Select an other monospace font'
+      OnClick = selectfont1Click
     end
   end
   object PopupMenu_memo2: TPopupMenu
@@ -2908,5 +2916,19 @@ object mainwindow: Tmainwindow
       Caption = 'Galactic'
       OnClick = galactic1Click
     end
+  end
+  object FontDialog1: TFontDialog
+    Font.CharSet = ANSI_CHARSET
+    Font.Color = clBlack
+    Font.Height = -12
+    Font.Name = 'Consolas'
+    Font.Pitch = fpFixed
+    Font.Quality = fqDraft
+    Font.Style = [fsBold, fsItalic]
+    MinFontSize = 0
+    MaxFontSize = 0
+    Options = [fdEffects, fdFixedPitchOnly, fdForceFontExist, fdShowHelp, fdWysiwyg]
+    Left = 848
+    Top = 89
   end
 end

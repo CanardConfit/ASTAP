@@ -213,7 +213,7 @@ type
     GroupBox5: TGroupBox;
     GroupBox6: TGroupBox;
     GroupBox7: TGroupBox;
-    GroupBox8: TGroupBox;
+    raw_box1: TGroupBox;
     GroupBox9: TGroupBox;
     GroupBox_astrometric_solver_settings1: TGroupBox;
     groupBox_dvp1: TGroupBox;
@@ -995,38 +995,38 @@ begin
     {set bevel colours}
     Panel_solver1.bevelouter:=bvNone;
     Panel_star_detection1.bevelouter:=bvNone;
-    Panel_solver1.color:=clnone;
-    Panel_star_detection1.color:=clnone;
+    Panel_solver1.color:=clForm;
+    Panel_star_detection1.color:=clForm;
 
-    panel_manual1.color:=clnone;
-    panel_ephemeris1.color:=clnone;
+    panel_manual1.color:=clForm;
+    panel_ephemeris1.color:=clForm;
 
     min_star_size_stacking1.enabled:=false;
 
     if use_star_alignment1.checked then
     begin
        Panel_star_detection1.bevelouter:=bvSpace; {blue corner}
-       Panel_star_detection1.color:=clBtnFace;
+       Panel_star_detection1.color:=CLWindow;
        min_star_size_stacking1.enabled:=true;
     end
     else
     if use_astrometry_internal1.checked then
     begin
       Panel_solver1.bevelouter:=bvSpace;
-      Panel_solver1.color:=clBtnFace;
-      Panel_star_detection1.color:=clBtnFace;
+      Panel_solver1.color:=CLWindow;
+      Panel_star_detection1.color:=CLWindow;
     end
     else
     if use_manual_alignment1.checked then
     begin
       panel_manual1.bevelouter:=bvSpace;
-      panel_manual1.color:=clBtnFace;
+      panel_manual1.color:=CLWindow;
     end
     else
     if use_ephemeris_alignment1.checked then
     begin
       panel_ephemeris1.bevelouter:=bvSpace;
-      panel_ephemeris1.color:=clBtnFace;
+      panel_ephemeris1.color:=CLWindow;
     end;
 
     osc_color:=make_osc_color1.checked;
@@ -2247,7 +2247,7 @@ end;
 
 
 function median_background(var img :image_array;color,size,x,y:integer): double;{find median value in sizeXsize matrix of img}
-var i,j,count,size2,step  : integer;
+var i,j,count,size2,step,value  : integer;
     intArray : array of integer;
     w,h      : integer;
 begin
@@ -2265,8 +2265,12 @@ begin
       begin
         if ((i>=0) and (i<w) and (j>=0) and (j<h) ) then {within the boundaries of the image array}
         begin
-          intArray[count]:=round(img[color,i ,j]);
-          inc(count);
+          value:=round(img[color,i ,j]);
+          if value<>0 then {ignore zero}
+          begin
+            intArray[count]:=value;
+            inc(count);
+          end;
         end;
       end;
   end;
@@ -2303,7 +2307,10 @@ begin
   {create artificial flat}
    for col:=0 to colors-1 do {do all colours}
    begin
-     get_background(col,img,true,false{do not calculate noise_level},bg,star_level); {should be about 500 for mosaic since that is the target value}
+
+ //    get_background(col,img,true,false{do not calculate noise_level},bg,star_level);
+     bg:=mode(img_loaded,col,round(0.25*width2),round(0.75*width2),round(0.25*height2),round(0.75*height2),32000) -bg; {mode finds most common value for the 50% center }
+
      for fitsY:=0 to h-1 do
        for fitsX:=0 to w-1 do
        begin
@@ -7588,7 +7595,12 @@ begin
         end {no solution found}
         else
         memo2_message('Astrometric solution for: "'+filename2+'"');
-        if solution then stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]:='✓' else stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]:=''; {report internal plate solve result}
+        if solution then
+        begin
+          stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]:='✓';
+          stackmenu1.ListView1.Items.item[c].subitems.Strings[I_position]:=prepare_ra5(ra0,': ')+', '+ prepare_dec5(dec0,'° ');{give internal position}
+        end
+        else stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]:=''; {report internal plate solve result}
        finally
       end;
     end;
@@ -7598,7 +7610,7 @@ begin
     begin
       SortedColumn:= I_position+1;
       listview1.sort;
-      memo2_message('Sorted list on RA, DEC position to place tiles with overlap each time later.')
+      memo2_message('Sorted list on RA, DEC position to place tiles in the correct sequence.')
     end;
 
   end;
@@ -8210,6 +8222,8 @@ begin
   cal_only:=stack_method1.ItemIndex=4;{}
 
   mosaic_box1.enabled:=mosa;
+  raw_box1.enabled:=(mosa=false);
+  filter_groupbox1.enabled:=(mosa=false);
   sd_factor1.enabled:=sigm;
 
   if ((use_astrometry_internal1.checked=false) and (mosa)) then
@@ -8217,7 +8231,7 @@ begin
     use_astrometry_internal1.checked:=true;
     memo2_message('Switched to INTERNAL ASTROMETRIC alignment. Set in tab aligment the mosaic width and height high enough to have enough work space.');
   end;
-  if mosa then memo2_message('Astrometric image stitching mode. This will stich astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the crop function or negative oversize prior to stacking.');
+  if mosa then memo2_message('Astrometric image stitching mode. This will stich astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the "Crop each image function". For flat background apply artifical flat in tab pixel math1 in advance if required.');
 
   classify_object1.enabled:=(mosa=false); {in mosaic mode ignore object name}
   oversize1.enabled:=(mosa=false); {in mosaic mode ignore this oversize setting}
