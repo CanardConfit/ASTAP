@@ -47,7 +47,6 @@ procedure save_solution_to_disk;{write to disk}
 implementation
 
 
-
 {   lsq_fit:                                                                                                                                     }
 {   Find the solution vector of an overdetermined system of linear equations according to the method of least squares using GIVENS rotations     }
 {                                                                                                                                                }
@@ -112,7 +111,8 @@ begin
   end;
 end; {lsq_fit}
 
-procedure display_quads(starlistquads :star_list);{draw quads}
+
+procedure display_quads(starlistquads :star_list);{display quads in the viewer}
 var
    i, nrquads,x,y, flipx,flipy: integer;
 begin

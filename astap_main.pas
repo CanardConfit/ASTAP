@@ -718,18 +718,21 @@ const
   mouse_fitsy : double=0;
   coord_frame : integer=0; {J2000=0 or galactic=1}
 
-
-  {$IFDEF unix}
+  {$IFDEF Darwin}
+  font_name: string= 'Courier';
+  font_size : integer = 9;
+  {$else}
+  {$IFDEF mswindows}
   font_name: string= 'Monospace';
   font_size : integer= 10;
   {$ELSE}
   font_name: string= 'Courier';
   font_size : integer = 9;
   {$ENDIF}
+  {$ENDIF}
   font_charset : integer=0; {Ansi_char}
   font_style :   tFontStyles=[];
   font_color : tcolor= cldefault;
-
 
 
 function load_fits(filen:string;light {load as light of dark/flat},load_data: boolean ;var img_loaded2: image_array): boolean;{load fits file}
@@ -1057,17 +1060,11 @@ begin
           if ((header[i+5]='R') and (header[i+6]='A')) then
           begin
             mainwindow.ra1.text:=get_string;
-           //{$IfDef Darwin}//{MacOS}   {still required???}
-           // mainwindow.ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
-           //{$ENDIF}
           end
           else
           if ((header[i+5]='D') and (header[i+6]='E')) then
           begin
             mainwindow.dec1.text:=get_string;
-           //{$IfDef Darwin}//{MacOS}
-           // mainwindow.dec1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
-           //{$ENDIF}
           end
           else
           if ((header[i+5]='A') and (header[i+6]='Z')) then centaz:=strtofloat2(get_string) {for MaximDL5}
@@ -1322,10 +1319,6 @@ begin
   begin
      mainwindow.ra1.text:=prepare_ra(ra0,' ');
      mainwindow.dec1.text:=prepare_dec(dec0,' ');
-     //{$IfDef Darwin}// {MacOS}
-     // mainwindow.ra1change(nil);{OSX doesn't trigger an event}
-     //  mainwindow.dec1change(nil);
-     //{$ENDIF}
   end;
 
   if ((cd1_1=0) and (cdelt2=0)) then  {no scale, try to fix it}
@@ -3444,10 +3437,13 @@ begin
   inp:=uppercase(extractfileext(inp));
   result:=((inp='.FIT') or (inp='.FITS') or (inp='.FTS'));
 end;
+
+
 function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
 begin
   result:=((ext='.RAW') or (ext='.CRW') or (ext='.CR2') or (ext='.CR3')or (ext='.KDC') or (ext='.DCR') or (ext='.MRW') or (ext='.ARW') or (ext='.NEF') or (ext='.NRW') or (ext='.DNG') or (ext='.ORF') or (ext='.PTX') or (ext='.PEF') or (ext='.RW2') or (ext='.SRW') or (ext='.RAF') or (ext='.KDC')); {raw format extension?}
 end;
+
 
 function image_file_name(inp : string): boolean; {readable image name?}
 begin
@@ -3482,9 +3478,7 @@ end;
 
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
 begin
-
   mainwindow.Saveasfits1.enabled:=((fits) or (extend>=2){table});
-
 
   if fits<>mainwindow.data_range_groupBox1.Enabled then  {menu requires update}
   begin
@@ -3525,7 +3519,6 @@ begin
     stackmenu1.tab_Pixelmath2.enabled:=fits;
 
   end;{menu change}
-
 
   fits_file:=fits;{update}
   mainwindow.error_label1.visible:=(fits=false);
@@ -3770,11 +3763,13 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.Panel1MouseMove(Sender: TObject; Shift: TShiftState; X,
   Y: Integer);
 begin
   if (ssright in shift)=false then mouse_enter:=0; {for crop function}
 end;
+
 
 procedure Tmainwindow.recent1Click(Sender: TObject);
 begin
@@ -3875,6 +3870,7 @@ begin
   str(x:5,result);
 end;
 
+
 function strtofloat2(s:string): double;{works with either dot or komma as decimal seperator}
 var
   error1:integer;
@@ -3884,6 +3880,7 @@ begin
   val(s,result,error1);
   if error1<>0 then result:=0;
 end;
+
 
 Function  deg_and_minutes_tofloat(s:string):double;
 var
@@ -3901,6 +3898,7 @@ begin
    end;
    deg_and_minutes_tofloat:=x;
 end;
+
 
 Function LeadingZero(w : integer) : String;
  var
@@ -3926,6 +3924,7 @@ begin
   end;
 end;
 
+
 function prepare_ra5(rax:double; sep:string):string; {radialen to text  format 24h 00.0}
   var
     B : String[2];
@@ -3939,6 +3938,7 @@ begin {make from rax [0..pi*2] a text in array bericht. Length is 8 long}
   Str(trunc(h):2,b);
   prepare_ra5:=b+sep+leadingzero(m)+'.'+ansichar(dm+48);
 end;
+
 
 function prepare_dec5(decx:double;sep:string):string; {radialen to text  format 90d 00 }
  var
@@ -3955,6 +3955,7 @@ begin {make from rax [0..pi*2] a text in array bericht. Length is 10 long}
   prepare_dec5:=sign+b+sep+leadingzero(m);
 end;
 
+
 function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24: 00 00.0 }
  var
    h,m,s,ds  :integer;
@@ -3967,6 +3968,7 @@ function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24
   ds:=trunc((rax-h-m/60-s/3600)*36000);
   prepare_ra:=leadingzero(h)+sep+leadingzero(m)+'  '+leadingzero(s)+'.'+ansichar(ds+48);
 end;
+
 
 function prepare_dec(decx:double; sep:string):string; {radialen to text, format 90d 00 00}
  var
@@ -3981,6 +3983,8 @@ begin {make from rax [0..pi*2] a text in array bericht. Length is 10 long}
   s:=trunc((decx-g-m/60)*3600);
   prepare_dec:=sign+leadingzero(g)+sep+leadingzero(m)+'  '+leadingzero(s);
 end;
+
+
 function prepare_ra2(rax:double; sep:string):string; {radialen to text, format 24: 00 00.00 }
  var
    B       : String[2];
@@ -3995,6 +3999,7 @@ function prepare_ra2(rax:double; sep:string):string; {radialen to text, format 2
   Str(trunc(h):2,b);
   prepare_ra2:=b+sep+leadingzero(m)+'  '+leadingzero(s)+'.'+leadingzero(ds);
 end;
+
 
 Function prepare_dec2(decx:double; sep:string):string; {radialen to text, format 90d 00 00.1}
  var
@@ -4121,6 +4126,7 @@ begin
   naxis3:=3;{now three colors}
   naxis:=3; {from 2 to 3 dimensions}
 end;
+
 
 procedure demosaic_x_trans(var img:image_array);{make from Fuji X-trans three colors}
 var
@@ -5083,15 +5089,16 @@ begin
         pixelrow[j].rgbtGreen:= col_g;
         pixelrow[j].rgbtBlue := col_b;{fast pixel write routine }
      {$endif}
+     {$ifdef darwin} {MacOS}
+      pixelrow[j].rgbreserved:= col_b; {different color arrangment in Macos !!!!!}
+      pixelrow[j].rgbRed  := col_g;
+      pixelrow[j].rgbGreen:= col_r;
+     {$else}
      {$ifdef linux}
         pixelrow[j].rgbRed  := col_r;
         pixelrow[j].rgbGreen:= col_g;
         pixelrow[j].rgbBlue := col_b;
       {$endif}
-      {$ifdef darwin} {MacOS}
-       pixelrow[j].rgbreserved:= col_b; {different color arrangment in Macos !!!!!}
-       pixelrow[j].rgbRed  := col_g;
-       pixelrow[j].rgbGreen:= col_r;
       {$endif}
     end;{j}
   end; {i}
@@ -7789,18 +7796,15 @@ end;
 
 procedure Tmainwindow.angular_distance1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,shapetype                 : integer;
+   shapetype                 : integer;
    hfd1,star_fwhm,snr,flux,xc,yc,
    hfd2,star_fwhm2,snr2,flux2,xc2,yc2,angle,shape_fitsX,shape_fitsY     : double;
    info_message,info_message2 : string;
    Save_Cursor              : TCursor;
-const
-  median_max_size=5000;
-
 begin
   if fits_file=false then exit;
-//  if  ((abs(stopX-startX)>2) or (abs(stopY-starty)>2)) then
-  if true then
+
+  if  ((abs(stopX-startX)>2) or (abs(stopY-starty)>2)) then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -7855,9 +7859,9 @@ begin
     Screen.Cursor:=Save_Cursor;
   end {fits file}
   else
-  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
-
+  application.messagebox(pchar('No distnaceselected! Hold the right mouse button down while moving from first to second star.'),'',MB_OK);
 end;
+
 
 procedure Tmainwindow.j2000_1Click(Sender: TObject);
 begin
@@ -7868,6 +7872,7 @@ begin
    end;
 end;
 
+
 procedure Tmainwindow.galactic1Click(Sender: TObject);
 begin
   if galactic1.checked then
@@ -7876,7 +7881,6 @@ begin
     j2000_1.checked:=false;
    end;
 end;
-
 
 
 procedure do_stretching;{prepare strecht table and replot image}
@@ -7901,10 +7905,12 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.range1Change(Sender: TObject);
 begin
   do_stretching;
 end;
+
 
 procedure Tmainwindow.remove_atmouse1Click(Sender: TObject);
 var
@@ -7920,6 +7926,7 @@ begin
   if ((top_dist<left_dist) and (top_dist<right_dist) and (top_dist<bottom_dist)) then mainwindow.remove_above1Click(nil) else
   if ((bottom_dist<left_dist) and (bottom_dist<right_dist) and   (bottom_dist<top_dist)) then mainwindow.remove_below1Click(nil);
 end;
+
 
 procedure Tmainwindow.gradient_removal1Click(Sender: TObject);
 var
@@ -7972,6 +7979,7 @@ begin
                                'Moving from the dark area to the bright area should follow the direction of the gradient.'),'',MB_OK);
 end;
 
+
 procedure Tmainwindow.remove_longitude_latitude1Click(Sender: TObject);
 var
   I: integer;
@@ -7988,7 +7996,6 @@ begin
                          '|Compressed FITS files|*.fz';
   opendialog1.initialdir:=ExtractFileDir(filename2);
   fits_file:=false;
- // data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
   err:=false;
   if OpenDialog1.Execute then
@@ -8027,6 +8034,7 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.selectfont1Click(Sender: TObject);
 begin
   FontDialog1.font.size:=font_size;
@@ -8050,6 +8058,7 @@ begin
   memo1.font.charset:=font_charset;
 end;
 
+
 procedure Tmainwindow.select_all1Click(Sender: TObject);
 begin
    memo1.setfocus;{required for selectall since hideselection is enabled when not having focus}
@@ -8072,6 +8081,7 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.annotate_minor_planets1Click(Sender: TObject);
 begin
   form_asteroids1:=Tform_asteroids1.Create(self); {in project option not loaded automatic}
@@ -8080,6 +8090,7 @@ begin
   save_settings(user_path+'astap.cfg');
 end;
 
+
 procedure Tmainwindow.radec_copy1Click(Sender: TObject);
 begin
   if ra1.focused then Clipboard.AsText:=ra1.text;
@@ -8087,21 +8098,25 @@ begin
 
 end;
 
+
 procedure Tmainwindow.radec_paste1Click(Sender: TObject);
 begin
   if ra1.focused then ra1.text:=Clipboard.AsText;
   if dec1.focused then dec1.text:=Clipboard.AsText;
 end;
 
+
 procedure Tmainwindow.radec_search1Click(Sender: TObject);
 begin
   search_database;
 end;
 
+
 procedure Tmainwindow.save_settings1Click(Sender: TObject);
 begin
   save_settings(user_path+'astap.cfg');
 end;
+
 
 procedure measure_magnitudes(var stars :star_list);{find stars and return, x,y, hfd, flux}
 var
@@ -8173,9 +8188,7 @@ begin
   img_temp:=nil;{free mem}
 
   SetLength(stars,4,nrstars+1);{set length correct}
-
 end;
-
 
 
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
@@ -8221,6 +8234,7 @@ var
   Screen.Cursor:= Save_Cursor;
 end;
 
+
 procedure Tmainwindow.annotations_visible1Click(Sender: TObject);
 begin
   if annotations_visible1.checked=false then  {clear screen}
@@ -8229,11 +8243,13 @@ begin
   if annotated then plot_annotations(0,0,false);
 end;
 
+
 procedure Tmainwindow.autocorrectcolours1Click(Sender: TObject);
 begin
   stackmenu1.auto_background_level1Click(nil);
   stackmenu1.apply_factor1Click(nil);
 end;
+
 
 procedure Tmainwindow.batch_annotate1Click(Sender: TObject);
 var
@@ -8245,7 +8261,6 @@ begin
   OpenDialog1.Title := 'Select multiple  files to add asteroid annotation to the header';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS';
- // data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
 
   if OpenDialog1.Execute then
@@ -8291,13 +8306,13 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.batch_solve_astrometry_netClick(Sender: TObject);
 begin
   form_astrometry_net1:=Tform_astrometry_net1.Create(self); {in project option not loaded automatic}
   form_astrometry_net1.ShowModal;
   form_astrometry_net1.release;
 end;
-
 
 
 procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
@@ -8314,6 +8329,7 @@ begin
     mainwindow.shape_marker3.visible:=false;
 end;
 
+
 procedure Tmainwindow.SimpleIPCServer1MessageQueued(Sender: TObject);{For OneInstance, this event only occurs in Windows}
 begin
   {$ifdef mswindows}
@@ -8321,6 +8337,7 @@ begin
   {$else} {unix}
   {$endif}
 end;
+
 
 procedure Tmainwindow.StatusBar1MouseEnter(Sender: TObject);
 begin
@@ -8334,6 +8351,7 @@ begin
     Statusbar1.Panels[7].text:='w x h   distance[arcsec]  angle';
   end;
 end;
+
 
 procedure Tmainwindow.stretch_draw_fits1Click(Sender: TObject);
 var
@@ -8418,8 +8436,6 @@ begin
     end;
     except
   end;
-
-
   Screen.Cursor:=OldCursor;
 end;
 
@@ -8435,6 +8451,7 @@ begin
   plot_deepsky;{plot the deep sky object on the image}
   Screen.Cursor:=Save_Cursor;
 end;
+
 
 procedure check_second_instance;{For OneInstance, check for other instance of the application. If so send paramstr(1) and quit}
 var
@@ -8478,6 +8495,7 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.FormCreate(Sender: TObject);
 var
    param1: string;
@@ -8500,10 +8518,7 @@ begin
     if copy(database_path,1,4)='/usr' then {for Linux distributions}
       database_path:='/usr/share/astap/data/';
     {$endif}
-
   {$endif}
-
-
 
   application.HintHidePause:=5000;{display hint 5000 ms instead standard 2500}
   {application.HintPause:=1000;}
@@ -8520,6 +8535,7 @@ begin
   deepstring := Tstringlist.Create;{for deepsky overlay}
   recent_files:= Tstringlist.Create;
 end;
+
 
 procedure Tmainwindow.deepsky_annotation1Click(Sender: TObject);
 var
@@ -8542,6 +8558,7 @@ begin
   shape_marker1.hint:='Marker';
 end;
 
+
 procedure Tmainwindow.center_lost_windowsClick(Sender: TObject);
 begin
   mainwindow.left:=0;
@@ -8549,6 +8566,7 @@ begin
   stackmenu1.left:=0;
   stackmenu1.top:=0;
 end;
+
 
 procedure Tmainwindow.DisplayHint(Sender: TObject);
 begin
@@ -8562,12 +8580,14 @@ begin
   statusbar1.SimplePanel:=false;
 end;
 
+
 procedure Tmainwindow.FormDestroy(Sender: TObject);
 begin
   settingstring.free;
   deepstring.free;{free deepsky}
   recent_files.free;
 end;
+
 
 procedure plot_rectangle(x1,y1,x2,y2: integer); {accurate positioned rectangle on screen coordinates}
 begin
@@ -8580,6 +8600,8 @@ begin
      lineto(x1,y1);
    end;
 end;
+
+
 procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string);
 var
   size,xcenter,ycenter,text_height,text_width  :integer;
@@ -8623,8 +8645,8 @@ begin
   if x2>=x1 then text_width:=0;
   if y2>=y1 then text_height:=text_height div 3;
   mainwindow.image1.Canvas.textout( -text_width+x2, -text_height + y2,name{name}+magn{magnitude});
-
 end;
+
 
 procedure plot_annotations(xoffset,yoffset:integer;fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
 var
@@ -8736,11 +8758,13 @@ begin
   annotated:=true; {header contains annotations}
 end;
 
+
 procedure Tmainwindow.Exit1Click(Sender: TObject);
 begin
   esc_pressed:=true; {stop photometry loop}
   Application.MainForm.Close {this will call an on-close event for saving settings}
 end;
+
 
 procedure FITS_BMP(filen:string);{save FITS to BMP file}
 var filename3:string;
@@ -8752,6 +8776,7 @@ begin
     mainwindow.image1.picture.SaveToFile(filename3);
   end;
 end;
+
 
 procedure Tmainwindow.ShowFITSheader1Click(Sender: TObject);
 var bericht: array[0..512] of char;{make this one not too short !}
@@ -8770,6 +8795,7 @@ begin
   messagebox(mainwindow.handle,bericht,'FITS HEADER',MB_OK);
 end;
 
+
 function position_to_string(sep:string; ra,dec:double):string;
 var
   l, b : double;
@@ -8781,8 +8807,8 @@ begin
     EQU_GAL(ra,dec,l,b);{equatorial to galactic coordinates}
     result:=floattostrF(l*180/pi, FFfixed, 0, 3)+sep+floattostrF(b*180/pi, FFfixed, 0, 3)+' ° gal';
   end;
-
 end;
+
 
 procedure Tmainwindow.writeposition1Click(Sender: TObject);
 var  font_height:integer;
@@ -8815,8 +8841,8 @@ begin
     image1.Canvas.font.color:=clred;
     image1.Canvas.textout(round(3+down_x   /(image1.width/width2)),round(-font_height +(down_y)/(image1.height/height2)),'_'+position_to_string(',',object_raM,object_decM));
   end;
-
 end;
+
 
 procedure Tmainwindow.FormPaint(Sender: TObject);
 begin
@@ -8826,6 +8852,7 @@ begin
      mainwindow.image1.left:=0;
    end;
 end;
+
 
 procedure Tmainwindow.FormResize(Sender: TObject);
 var
@@ -8880,12 +8907,14 @@ end;
 //  height2:=mainwindow.Image1.Picture.height;
 //end;
 
+
 function load_and_solve : boolean; {load image and plate solve}
 begin
   progress_indicator(0,'');
   result:=load_image(false,false {plot});
   result:=((result {succesfull load?}) and (solve_image(img_loaded,true {get hist}) )); {find plate solution}
 end;
+
 
 procedure log_to_file(logf,mess : string);{for testing}
 var
@@ -8896,6 +8925,7 @@ begin
   writeln(f,mess);
   closefile(f);
 end;
+
 
 procedure log_to_file2(logf,mess : string);{used for platesolve2}
 var
@@ -8947,6 +8977,7 @@ begin
   end;
 end;
 
+
 function read_astap_solution(filen {fits file name} : string; var ra1,dec1,crota :double): boolean; {read ASTAP solution from INI file}
 var
   initstring :tstrings;
@@ -8976,6 +9007,7 @@ begin
   get_float(crota,'CROTA2');{in degrees}
   initstring.free;
 end;
+
 
 procedure write_ini(solution:boolean);{write solution to ini file}
 var
@@ -9051,7 +9083,6 @@ begin
          val(list[0],dummy,error1);{extra test, is this a platesolve2 command?}
 
      // application.messagebox( pchar(inttostr(error1)), pchar( 'error1'),MB_OK);
-
       //if logging then log_to_file(command1+'  command line'); {command line is also written to .ini file}
 
       if ((list.count>=6) and (error1=0)) then {this is a platesolve2 command line}
@@ -9152,8 +9183,6 @@ begin
         writeln(f,resultstr);
         closefile(f);
 
-        //write_ini(ra0<>999);{write solution to ini file. Not required but this will contains the command line for debugging}
-
         {note SGP uses PlateSolve2 v2.29. This version writes APM always with dot as decimal seperator}
 
         {extra log}
@@ -9176,6 +9205,7 @@ begin
   end
   else result:=false; {no parameters specified}
 end;
+
 
 procedure write_astronomy_wcs;
 var
@@ -9208,9 +9238,7 @@ begin
     TheFile4.free;
     exit;
   end;
-
   TheFile4.free;
-
 end;
 
 //procedure write_astronomy_axy(stars: star_list;snr_list        : array of double );
@@ -9340,6 +9368,7 @@ end;
 //  TheFile4.free;
 
 //end;
+
 
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
@@ -9572,6 +9601,7 @@ begin
   memo1.font.charset:=font_charset;  {note Greek=161, Russian or Cyrillic =204}
 end;
 
+
 procedure Tmainwindow.AddplatesolvesolutiontoselectedFITSfiles1Click(
   Sender: TObject);
 var
@@ -9585,7 +9615,6 @@ begin
   OpenDialog1.Title := 'Select multiple  files to add plate solution';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS';
- // data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
 
   if OpenDialog1.Execute then
@@ -9654,6 +9683,7 @@ begin
   do_stretching;
 end;
 
+
 procedure Sort(var list: array of double);{taken from CCDciel code}
 var sorted: boolean;
     tmp: double;
@@ -9674,6 +9704,7 @@ repeat
   end;
 until sorted;
 end;
+
 
 function SMedian(list: array of double): double;{get median of an array of double, taken from CCDciel code}
 var
@@ -9699,6 +9730,7 @@ begin
      result:=(list[mid]+list[mid+1])/2;
   end;
 end;
+
 
 procedure Tmainwindow.CCDinspector1Click(Sender: TObject);
 var
@@ -9972,6 +10004,7 @@ begin
  {$endif}
 end;
 
+
 procedure Tmainwindow.star_annotation1Click(Sender: TObject);
 begin
   plot_stars(sender=calibrate_photometry1 {if true photometry only}, false {show Distortion});
@@ -9982,6 +10015,7 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.Copyposition1Click(Sender: TObject);
 var
    Centroid : string;
@@ -9989,6 +10023,7 @@ begin
   if object_xc>0 then Centroid:=#9+'(Centroid)' else Centroid:='';
   Clipboard.AsText:=prepare_ra2(object_raM,': ')+#9+prepare_dec2(object_decM,'° ')+Centroid;
 end;
+
 
 procedure Tmainwindow.Copypositioninhrs1Click(Sender: TObject);
 var
@@ -9998,6 +10033,7 @@ begin
   Clipboard.AsText:=floattostr(object_raM*180/pi)+#9+floattostr(object_decM*180/pi)+Centroid;
 end;
 
+
 procedure Tmainwindow.Copypositioninradians1Click(Sender: TObject);
 var
    Centroid : string;
@@ -10005,6 +10041,7 @@ begin
   if object_xc>0 then Centroid:=#9+'(Centroid)' else Centroid:='';
   Clipboard.AsText:=floattostr(object_raM)+#9+floattostr(object_decM)+Centroid;
 end;
+
 
 procedure Tmainwindow.CropFITSimage1Click(Sender: TObject);
 var fitsX,fitsY,dum : integer;
@@ -10052,8 +10089,8 @@ begin
 
    Screen.Cursor:=Save_Cursor;
   end;
-
 end;
+
 
 procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean); {convert ra in text to double in radians}
 var
@@ -10092,6 +10129,7 @@ begin
   errorRA:=((error1<>0) or (error2>1) or (error3<>0) or (ra>2*pi));
 end;
 
+
 procedure Tmainwindow.ra1Change(Sender: TObject);
 var
     str1   : string;
@@ -10104,6 +10142,7 @@ begin
 
   if errorRA then mainwindow.ra1.color:=clred else mainwindow.ra1.color:=clwindow;
 end;
+
 
 procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert dec in text to double in radians}
 var
@@ -10142,6 +10181,7 @@ begin
   errorDEC:=((error1<>0) or (error2>1) or (error3<>0));
 end;
 
+
 procedure Tmainwindow.dec1Change(Sender: TObject);
 var
    str1     : string;
@@ -10155,6 +10195,7 @@ begin
 
   if (errorDEC) then mainwindow.dec1.color:=clred else mainwindow.dec1.color:=clwindow;
 end;
+
 
 procedure Tmainwindow.enterposition1Click(Sender: TObject);
 var
@@ -10256,6 +10297,7 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.inversimage1Click(Sender: TObject);
 var
   max_range, col,fitsX,fitsY : integer;
@@ -10283,6 +10325,7 @@ begin
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
 
+
 procedure Tmainwindow.set_area1Click(Sender: TObject);
 var
     dum : integer;
@@ -10298,6 +10341,7 @@ begin
   areay2:=stopY;
   stackmenu1.area_set1.caption:='✓';
 end;
+
 
 procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
 var
@@ -10408,9 +10452,6 @@ begin
      update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
      update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
 
-//     update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);
-//     update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);
-
      update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
      update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
 
@@ -10424,6 +10465,7 @@ begin
 
   memo2_message('Rotation done.');
 end;
+
 
 procedure Tmainwindow.histogram1MouseMove(Sender: TObject; Shift: TShiftState;
   X, Y: Integer);
@@ -10449,6 +10491,7 @@ begin
     ListView1.Items.item[i].subitems.Strings[I_Y]:=floattostrF2(fitsY,0,2);
   end;
 end;
+
 
 function RGBToH(r,g,b : single): integer;
 {https://en.wikipedia.org/wiki/Hue}
@@ -10478,6 +10521,7 @@ begin
   result:=round(h)
 end;
 
+
 procedure find_highest_pixel_value(img: image_array;box, x1,y1: integer; var xc,yc:double);{}
 var
   i,j,k,w,h  : integer;
@@ -10503,12 +10547,10 @@ var
   end;
 
 begin
-
   w:=Length(img[0]); {width}
   h:=Length(img[0,0]); {height}
 
   if ((x1>=box) and (x1<w-box) and (y1>=box) and (y1<h-box))=false then begin {don't try too close to boundaries} xc:=x1; yc:=y1;  exit end;
-
 
   xc:=x1;
   yc:=y1;
@@ -10550,6 +10592,7 @@ begin
 
  {center of gravity found}
 end;
+
 
 procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
@@ -10642,6 +10685,7 @@ begin
     end;
   end;{left button pressed}
 end;
+
 
 procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity. All x,y coordinates in array[0..] positions}
 const
@@ -10772,7 +10816,7 @@ begin
     until ((boxed) or (rs<=1)) ;{loop and reduce box size until star is boxed}
 
     inc(rs,2);{add some space}
-   // Build signal histogram from center of gravity
+    // Build signal histogram from center of gravity
     for i:=0 to rs do distance_histogram[i]:=0;{clear signal histogram for the range used}
     for i:=-rs to rs do begin
       for j:=-rs to rs do begin
@@ -10828,9 +10872,8 @@ begin
 
     hfd1:=max(0.7,hfd1);
 
-///    if hfd1>1 then mainwindow.image1.Canvas.textout(x1,y1,floattostrF2(hfd1,3,1)+'|'+floattostrF2(distance_histogram[0],0,0)+'.'+floattostrF2(distance_histogram[1],0,0)+'.'+floattostrF2(distance_histogram[2],0,0)+'.'+floattostrF2(distance_histogram[3],0,0)  );
-//     if hfd1>1 then  mainwindow.image1.Canvas.textout(round(xc),round(yc),{floattostrF2(faintest/brightest,3,2)+'|'+ }floattostrF2(flux,5,0)+'|'+ floattostrF2(rs,2,0));
-
+//    if hfd1>1 then mainwindow.image1.Canvas.textout(x1,y1,floattostrF2(hfd1,3,1)+'|'+floattostrF2(distance_histogram[0],0,0)+'.'+floattostrF2(distance_histogram[1],0,0)+'.'+floattostrF2(distance_histogram[2],0,0)+'.'+floattostrF2(distance_histogram[3],0,0)  );
+//    if hfd1>1 then  mainwindow.image1.Canvas.textout(round(xc),round(yc),{floattostrF2(faintest/brightest,3,2)+'|'+ }floattostrF2(flux,5,0)+'|'+ floattostrF2(rs,2,0));
 
     star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
 
@@ -10839,7 +10882,8 @@ begin
 //    log_to_file('snr_test.csv',inttostr(round(snr*1000))+','+inttostr(round(snr_old*1000)));
 
     {==========Notes on HFD calculation method=================
-      https://en.wikipedia.org/wiki/Half_flux_diameter
+      Documented the HFD defintion also in https://en.wikipedia.org/wiki/Half_flux_diameter
+      References:
       http://www005.upp.so-net.ne.jp/k_miyash/occ02/halffluxdiameter/halffluxdiameter_en.html       by Kazuhisa Miyashita. No sub-pixel calculation
       https://www.lost-infinity.com/night-sky-image-processing-part-6-measuring-the-half-flux-diameter-hfd-of-a-star-a-simple-c-implementation/
       http://www.ccdware.com/Files/ITS%20Paper.pdf     See page 10, HFD Measurement Algorithm
@@ -10881,7 +10925,6 @@ begin
         3)	Determine the maximum signal level of region of interest.
         4)	Count pixels which are equal or above half maximum level.
         5)	Use the pixel count as area and calculate the diameter of that area  as diameter:=2 *sqrt(count/pi).}
-
   end;
 end;
 
@@ -10920,6 +10963,7 @@ begin
                 else result:=999;
 end;
 
+
 function rgb_kelvin(red,blue :single):string;{range 2000-20000 kelvin}
 var
    ratio,ratio2,ratio3,ratio4,ratio5, temperature :double;
@@ -10950,7 +10994,6 @@ begin
   end
   else
   result:='';
-
 end;
 
 
@@ -11011,6 +11054,7 @@ begin
  end;{WCS solution}
 end;
 
+
 procedure erase_rectangle;
 begin
   begin
@@ -11025,7 +11069,6 @@ begin
     mainwindow.image1.Canvas.LineTo(start_RX,start_RY);      { erase the old line }
     mainwindow.image1.Canvas.Pen.Mode := pmCopy;{back to normal}
   end;
-
 end;
 
 
@@ -11140,9 +11183,6 @@ begin
    end;
   {end rubber rectangle}
 
-  //memo2_message('mouse move');
-
-
    if ssright in shift then exit; {rubber rectangle with update statusbar is very slow. Does it trigger an event???}
 
    {give screen pixel value}
@@ -11154,9 +11194,6 @@ begin
    if mouse_fitsX<1 then mouse_fitsX:=1;
    if mouse_fitsY>height2 then mouse_fitsY:=height2;
    if mouse_fitsX>width2 then mouse_fitsX:=width2;
-
-//        mainwindow.shape_paste1.pen.width:=max(1,min(3,min(copy_paste_w,copy_paste_h) div 10) );{reduce width is shape size is small}
-
 
    if copy_paste then
         show_marker_shape(mainwindow.shape_paste1,0 {rectangle},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
@@ -11221,9 +11258,8 @@ begin
   calculate_equatorial_mouse_position(mouse_fitsx,mouse_fitsy,raM,decM);
 
    mainwindow.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
-
-//  mainwindow.caption:=floattostr(xc)+'/'+floattostr(yc);
 end;
+
 
 procedure Tmainwindow.Image1MouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
@@ -11242,6 +11278,7 @@ begin
 
   screen.Cursor := crDefault;
 end;
+
 
 procedure Tmainwindow.convertmono1Click(Sender: TObject);
 var
@@ -11271,8 +11308,8 @@ begin
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);{plot}
   Screen.cursor:=Save_Cursor;
-
 end;
+
 
 procedure Tmainwindow.stretch_draw1Click(Sender: TObject); {stretch draw}
 var
@@ -11314,10 +11351,12 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.Memo1Change(Sender: TObject);
 begin
   save1.Enabled:=true;
 end;
+
 
 procedure Tmainwindow.SaveasJPGPNGBMP1Click(Sender: TObject);
 var filename3:ansistring;
@@ -11359,19 +11398,17 @@ begin
       {$else} {delphi}
       JPG := TJPEGImage.Create;
      {$endif}
-     try
-       JPG.Assign(mainwindow.image1.Picture.Graphic);    //Convert data into JPG
-       if savedialog1.filterindex=3 then JPG.CompressionQuality :=100;
-       if savedialog1.filterindex=4 then JPG.CompressionQuality :=90;
-       if savedialog1.filterindex=5 then JPG.CompressionQuality :=80;
-       if savedialog1.filterindex=6 then JPG.CompressionQuality :=70;
-       savedialog1.filename:=ChangeFileExt(savedialog1.filename,'.jpg');
-       JPG.SaveToFile(savedialog1.filename);
-     finally
-      JPG.Free;
-     end;
-
-
+      try
+        JPG.Assign(mainwindow.image1.Picture.Graphic);    //Convert data into JPG
+        if savedialog1.filterindex=3 then JPG.CompressionQuality :=100;
+        if savedialog1.filterindex=4 then JPG.CompressionQuality :=90;
+        if savedialog1.filterindex=5 then JPG.CompressionQuality :=80;
+        if savedialog1.filterindex=6 then JPG.CompressionQuality :=70;
+        savedialog1.filename:=ChangeFileExt(savedialog1.filename,'.jpg');
+        JPG.SaveToFile(savedialog1.filename);
+      finally
+       JPG.Free;
+      end;
     end
     else  {(savedialog1.filterindex=2)}
     begin {bitmap}
@@ -11381,6 +11418,7 @@ begin
     SaveasJPGPNGBMP1filterindex:=savedialog1.filterindex;{remember}
   end;
 end;
+
 
 function stretch_img(img1: image_array):image_array;{stretch image, three colour or mono}
 var
@@ -11442,11 +11480,9 @@ begin
           col_b:=round(65535*colbb);
         end;
 
-
         result[0,fitsx,fitsy]:=col_r;
         result[1,fitsx,fitsy]:=col_g;
         result[2,fitsx,fitsy]:=col_b;
-
       end {RGB fits with naxis3=3}
       else
       begin {mono, naxis3=1}
@@ -11481,7 +11517,6 @@ var
 
   value1   : single;
   lw       : longword absolute value1;
-
 begin
   result:=false;
   if colourdepth=48 then {colour}
@@ -11719,6 +11754,7 @@ begin
   writer.Free;
 end;
 
+
 procedure Tmainwindow.save_to_tiff1Click(Sender: TObject);
 var
   I: integer;
@@ -11735,7 +11771,6 @@ begin
                          '|Compressed FITS files|*.fz';
   opendialog1.initialdir:=ExtractFileDir(filename2);
   fits_file:=false;
-//  data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
   err:=false;
   if OpenDialog1.Execute then
@@ -11780,6 +11815,7 @@ begin
     end;
   end;
 end;
+
 
 procedure Tmainwindow.Export_image1Click(Sender: TObject);
 var
@@ -11875,6 +11911,7 @@ begin
   end;
 end;
 
+
 function number_of_fields(const C: char; const S: string ): integer; {count number of fields in string with C as seperator}
 var
   i: Integer;
@@ -11886,6 +11923,7 @@ begin
 
   if copy(s,length(s),1)<>c then inc(result,1);
 end;
+
 
 function retrieve_memo3_string(x,y :integer;default:string):string; {retrieve string at position x,y. Strings are seperated by #9}
 var
@@ -11907,6 +11945,7 @@ begin
      result:=default;
 end;
 
+
 Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel float}
 var
   value1   : single;
@@ -11915,6 +11954,7 @@ begin
   value1:=x;
   result:=swapendian(lw);
 end;
+
 
 function save_fits(img: image_array;filen2:ansistring;type1:integer;override1:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 var
@@ -12250,6 +12290,7 @@ begin
   result:=true;
 end;
 
+
 function TextfileSize(const name: string): LongInt;
 var
   SRec: TSearchRec;
@@ -12263,10 +12304,12 @@ begin
     Result := 0;
 end;
 
+
 procedure Tmainwindow.solve_button1Click(Sender: TObject);
 begin
   astrometric_solve_image1Click(Sender);
 end;
+
 
 procedure Tmainwindow.Stackimages1Click(Sender: TObject);
 begin
@@ -12274,21 +12317,19 @@ begin
   stackmenu1.setfocus;
 end;
 
+
 procedure Tmainwindow.Undo1Click(Sender: TObject);
 begin
   restore_img;
 end;
+
 
 procedure Tmainwindow.Saveasfits1Click(Sender: TObject);
 begin
   if pos('.fit',filename2)=0 then savedialog1.filename:=ChangeFileExt(FileName2,'.fits')
                              else savedialog1.filename:=FileName2;
 
-   savedialog1.initialdir:=ExtractFilePath(filename2);
-//   SetCurrentDir(savedialog1.initialdir);
-//  if image_path<>'' then savedialog1.initialdir:=image_path;{path from stacking}
-
-
+  savedialog1.initialdir:=ExtractFilePath(filename2);
   savedialog1.Filter := 'IEEE Float (-32) FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS|16 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS|8 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS|8 bit FITS files (special, naxis1=3)(*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   if nrbits=16  then SaveDialog1.FilterIndex:=2
   else
@@ -12314,14 +12355,13 @@ begin
     begin
       if ((nrbits=8) or (IDYES= Application.MessageBox('8 bit will reduce image quality. Select yes to continue', 'Save as 8 bit FITS', MB_ICONQUESTION + MB_YESNO) )) then {ask queastion if nrbits is reduced}
         save_fits(img_loaded,savedialog1.filename,24,false);
-
     end;
 
     add_recent_file(savedialog1.filename);{add to recent file list}
-
   end;
   mainwindow.SaveFITSwithupdatedheader1.Enabled:=true; {menu enable, header can be updated again}
 end;
+
 
 procedure Tmainwindow.LoadFITSPNGBMPJPEG1Click(Sender: TObject);
 begin
@@ -12347,17 +12387,20 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.minimum1Change(Sender: TObject);
 begin
   min2.text:=inttostr(minimum1.position);
   shape_histogram1.left:=1+(histogram1.left) + round(histogram1.width * minimum1.position/minimum1.max);
 end;
 
+
 procedure Tmainwindow.maximum1Change(Sender: TObject);
 begin
   max2.text:=inttostr(maximum1.position);
   shape_histogram1.left:=1+histogram1.left+ round(histogram1.width * maximum1.position/maximum1.max);
 end;
+
 
 procedure Tmainwindow.maximum1Scroll(Sender: TObject; ScrollCode: TScrollCode;
   var ScrollPos: Integer);
