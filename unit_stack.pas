@@ -1060,7 +1060,11 @@ end;
 
 procedure memo2_message(s: string);{message to memo2. Is also used for log to file in commandline mode}
 begin
-//  if commandline_execution then writeln(s); {log to console when compiler WIN32 gui is off}
+  {$IFDEF LINUX}
+  if commandline_execution then writeln(s); {For windows the log to console when compiler WIN32 gui is off}
+  {$ELSE }
+  //  if commandline_execution then writeln(s); {log to console when compiler WIN32 gui is off}
+  {$ENDIF}
 
   stackmenu1.memo2.lines.add(TimeToStr(time)+'  '+s);
  {$IFDEF LINUX}
