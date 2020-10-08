@@ -51,6 +51,7 @@ type
     add_valueR1: TEdit;
     alignment1: TTabSheet;
     align_blink1: TCheckBox;
+    merge_overlap1: TCheckBox;
     timestamp1: TCheckBox;
     Analyse1: TButton;
     analyseblink1: TButton;
@@ -774,6 +775,7 @@ procedure listview_add(tl: tlistview; s0:string; count:integer);
 procedure update_equalise_background_step(pos1: integer);{update equalise background menu}
 procedure memo2_message(s: string);{message to memo2}
 
+function get_standard_deviation(backgr: double {value background}; colour : integer; img2: image_array): double;{get the background standard deviation using 10000 pixels. As reference the backgr value is used}
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; var background, starlevel: double); {get background and star level from peek histogram}
 
 procedure update_stackmenu;{update stackmenu1 menus}
@@ -1058,6 +1060,8 @@ end;
 
 procedure memo2_message(s: string);{message to memo2. Is also used for log to file in commandline mode}
 begin
+//  if commandline_execution then writeln(s); {log to console when compiler WIN32 gui is off}
+
   stackmenu1.memo2.lines.add(TimeToStr(time)+'  '+s);
  {$IFDEF LINUX}
   if ((commandline_execution=false){save some time and run time error in command line} and (stackmenu1.Memo2.HandleAllocated){prevent run time errors}) then
@@ -2309,7 +2313,7 @@ begin
    begin
 
  //    get_background(col,img,true,false{do not calculate noise_level},bg,star_level);
-     bg:=mode(img_loaded,col,round(0.25*width2),round(0.75*width2),round(0.25*height2),round(0.75*height2),32000) -bg; {mode finds most common value for the 50% center }
+     bg:=mode(img_loaded,col,round(0.2*width2),round(0.8*width2),round(0.2*height2),round(0.8*height2),32000) -bg; {mode finds most common value for the 60% center }
 
      for fitsY:=0 to h-1 do
        for fitsX:=0 to w-1 do
@@ -3026,7 +3030,7 @@ procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse
 var
   c,counts,i : integer;
   hfd_counter : integer;
-  backgr, hfd_median, hjd : double;
+  backgr, hfd_median, hjd,sd, dummy : double;
   filename1,ext        : string;
   Save_Cursor          : TCursor;
   loaded,  success     : boolean;
@@ -3159,7 +3163,11 @@ begin
             if ((light=false) and (full=true)) {amode=2} then {dark/flats}
             begin {analyse background and noise}
               get_background(0,img,true {update_hist},false {calculate noise level}, {var} backgr,star_level);
-              noise_level[0]:= round(sd(width2 div 2, height2 div 2, 100,img));{ analyse centre only. Suitable for flats and dark with amp glow}
+
+              {analyse centre only. Suitable for flats and dark with amp glow}
+              local_sd((width2 div 2)-50,(height2 div 2)-50, (width2 div 2)+50,(height2 div 2)+50{regio of interest},0,img_loaded, sd,dummy {mean});{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+                noise_level[0]:=round(sd);
+//              noise_level[0]:= round(local_sd(width2 div 2, height2 div 2, 100,img));{analyse centre only. Suitable for flats and dark with amp glow}
 
               lv.Items.item[c].subitems.Strings[D_background]:=inttostr5(round(backgr));
               if ((lv.name=stackmenu1.listview2.name) or (lv.name=stackmenu1.listview3.name) or (lv.name=stackmenu1.listview4.name)) then

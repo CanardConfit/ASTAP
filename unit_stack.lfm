@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1618
-    ActivePage = Images
+    ActivePage = tab_stackmethod1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 5
     TabOrder = 5
     object Images: TTabSheet
       Hint = 'Select here the light frames'
@@ -1724,12 +1724,12 @@ object stackmenu1: Tstackmenu1
       end
       object mosaic_box1: TGroupBox
         Left = 1032
-        Height = 128
+        Height = 154
         Hint = 'Tools for equalizing the tiles of the mosaic.'
         Top = 46
         Width = 301
         Caption = 'Image stitching (mosaic) settings'
-        ClientHeight = 108
+        ClientHeight = 134
         ClientWidth = 297
         Enabled = False
         ParentFont = False
@@ -1767,7 +1767,7 @@ object stackmenu1: Tstackmenu1
         object Equalise_background1: TCheckBox
           Left = 8
           Height = 19
-          Hint = 'This is for setting the background level of each tile equal based on the histogram.'
+          Hint = 'This is for setting the background level of each tile equal based on the histogram. Use this option only if most of the image doesn''t contain nebula.'
           Top = 40
           Width = 130
           Caption = 'Equalise background'
@@ -1806,6 +1806,16 @@ object stackmenu1: Tstackmenu1
           MinRepeatInterval = 25
           Position = 0
           TabOrder = 4
+        end
+        object merge_overlap1: TCheckBox
+          Left = 8
+          Height = 19
+          Hint = 'The overlapping areas  are combined except for stars. This could result in better or worse result. If your image shows distortion uncheck this option.'
+          Top = 104
+          Width = 192
+          Caption = 'Merge overlapping backgrounds'
+          ParentFont = False
+          TabOrder = 5
         end
       end
       object Label60: TLabel

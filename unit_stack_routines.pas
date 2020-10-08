@@ -830,21 +830,18 @@ end;
 
 procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out counter : integer);{mosaic/tile mode}
 var
-    fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH : integer;
-    value, dummy,median,median2,delta_median,correction              : double;
-    tempval,background_correction_center                             : single;
-    init, use_star_alignment,use_manual_align,use_ephemeris_alignment,  use_astrometry_internal,vector_based  :boolean;
-    background_correction : array[0..2] of double;
-    counter_overlap       : array[0..2] of integer;
+    fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH        : integer;
+    value, dummy,median,median2,delta_median,correction,maxlevel,mean,noise : double;
+    tempval                                                        : single;
+    init, vector_based,merge_overlap,equalise_background           : boolean;
+    background_correction,background_correction_center,background    : array[0..2] of double;
+    counter_overlap                                                  : array[0..2] of integer;
 begin
   with stackmenu1 do
   begin
     {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
-    use_star_alignment:=stackmenu1.use_star_alignment1.checked;
-    use_manual_align:=stackmenu1.use_manual_alignment1.checked;
-    use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
-    use_astrometry_internal:=use_astrometry_internal1.checked;
-
+    merge_overlap:=merge_overlap1.checked;
+    Equalise_background:=Equalise_background1.checked;
     counter:=0;
     sum_exp:=0;
     jd_sum:=0;{sum of Julian midpoints}
@@ -884,22 +881,9 @@ begin
             initialise2;{set variables correct}
           end;
 
-     ///     apply_dark_flat(filter_name, {var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
-          {these global variables are passed-on in procedure to protect against overwriting}
-
           memo2_message('Adding file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to mosaic.');             // Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
           Application.ProcessMessages;
           if esc_pressed then exit;
-
-   //       if make_osc_color1.checked then {do demosaic bayer}
-   //       begin
-   //         if naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
-   //         else
-   //         demosaic_bayer(img_loaded); {convert OSC image to colour}
-   //        {naxis3 is now 3}
-   //       end;
-
-   //       if use_astrometry_internal=false then begin memo2_message('Abort, only astrometric alignment possible in mosaic mode.'); exit; end;
 
           if init=false then {init}
           begin
@@ -923,12 +907,20 @@ begin
               end;
           end;{init, c=0}
 
-          if Equalise_background1.checked then
+          for col:=0 to naxis3-1 do {calculate background and noise if required}
           begin
-            background_correction_center:=mode(img_loaded,col,round(0.2*width2),round(0.8*width2),round(0.2*height2),round(0.8*height2),32000); {most common 80% center}
-            background_correction_center:=1000 - background_correction_center ;
-          end
-            else background_correction_center:=0;
+            if equalise_background then
+            begin
+                background[col]:=mode(img_loaded,col,round(0.2*width2),round(0.8*width2),round(0.2*height2),round(0.8*height2),32000); {most common 80% center}
+                background_correction_center[col]:=1000 - background[col] ;
+              end
+            else
+            begin
+              background[col]:=0;
+              background_correction_center[col]:=0;
+            end;
+          end;
+
           sincos(dec0,SIN_dec0,COS_dec0); {Alway astrometric. Do this in advance since it is for each pixel the same}
 
           {solutions are already added in unit_stack}
@@ -940,8 +932,8 @@ begin
             if jd>jd_stop then jd_stop:=jd;
             jd_sum:=jd_sum+jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
-            vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
-            if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
+            vector_based:=false;
+            if a_order=0 then {no SIP from astronomy.net}
             begin
               astrometric_to_vector;{convert astrometric solution to vector solution}
               vector_based:=true;
@@ -974,7 +966,7 @@ begin
                     begin
                       for col:=0 to naxis3-1 do {all colors}
                       begin
-                        correction:=round(img_average[col,x_new,y_new]-(img_loaded[col,fitsX-1,fitsY-1]+background_correction_center) );
+                        correction:=round(img_average[col,x_new,y_new]-(img_loaded[col,fitsX-1,fitsY-1]+background_correction_center[col]) );
                         if abs(correction)<max_dev_backgr*1.5 then {acceptable offset based on the lowest and highest background measured earlier}
                         begin
                            background_correction[col]:=background_correction[col]+correction;
@@ -993,7 +985,6 @@ begin
 
             init:=true;{initialize for first image done}
 
-
             for fitsY:=1+1+cropH to height2-1-cropH do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
             for fitsX:=1+1+cropW to width2-1-cropW  do
             begin
@@ -1006,25 +997,34 @@ begin
                   dummy:=1+minimum_distance_borders(fitsX,fitsY,width2,height2);{minimum distance borders}
                   if img_temp[0,x_new,y_new]=0 then {blank pixel}
                   begin
-                    for col:=0 to naxis3-1 do {all colors}
-                     img_average[col,x_new,y_new]:=img_loaded[col,fitsX-1,fitsY-1]+background_correction_center +background_correction[col];{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
-                    img_temp[0,x_new,y_new]:=dummy;
+                     for col:=0 to naxis3-1 do {all colors}
+                     img_average[col,x_new,y_new]:=img_loaded[col,fitsX-1,fitsY-1]+background_correction_center[col] +background_correction[col];{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                     img_temp[0,x_new,y_new]:=dummy;
+
                   end
                   else
                   begin {already pixel filled, try to make an average}
                     for col:=0 to naxis3-1 do {all colors}
                     begin
-                      median:=background_correction_center +background_correction[col]+median_background(img_loaded,col,15,fitsX-1,fitsY-1);{find median value in sizeXsize matrix of img_loaded}
-                      median2:=median_background(img_average,col,15,x_new,y_new);{find median value of the destignation img_average}
-                      delta_median:=median-median2;
-                       img_average[col,x_new,y_new]:= img_average[col,x_new,y_new]+ delta_median*(1-img_temp[0,x_new,y_new]{distance border}/(dummy+img_temp[0,x_new,y_new]));{adapt overlap}
-//                      value:=img_loaded[col,fitsX-1,fitsY-1];
+                      median:=background_correction_center[col] +background_correction[col]+median_background(img_loaded,col,15,fitsX-1,fitsY-1);{find median value in sizeXsize matrix of img_loaded}
 
-//                      if ((value<median+100) and
-  //                        (img_loaded[col,fitsX-1-1,fitsY-1]<median+100) and (img_loaded[col,fitsX-1+1,fitsY-1]<median+100) and (img_loaded[col,fitsX-1,fitsY-1-1]<median+100) and (img_loaded[col,fitsX-1,fitsY-1+1]<median+100) {check nearest pixels}
-    //                     ) then {not a star, prevent double stars at overlap area}
-      //                img_average[col,x_new,y_new]:=+img_average[col,x_new,y_new]*img_temp[0,x_new,y_new]{distance border}/(dummy+img_temp[0,x_new,y_new])
-        //                                            +(value+background_correction[col])*dummy/(dummy+img_temp[0,x_new,y_new]);{calculate value between the existing and new value depending on BORDER DISTANCE}
+                      if merge_overlap=false then {method 2}
+                      begin
+                        median2:=median_background(img_average,col,15,x_new,y_new);{find median value of the destignation img_average}
+                        delta_median:=median-median2;
+                        img_average[col,x_new,y_new]:= img_average[col,x_new,y_new]+ delta_median*(1-img_temp[0,x_new,y_new]{distance border}/(dummy+img_temp[0,x_new,y_new]));{adapt overlap}
+                      end
+                      else
+                      begin {method 1}
+                        value:=img_loaded[col,fitsX-1,fitsY-1]+background_correction_center[col];
+                        local_sd(fitsX-1-15 ,fitsY-1-15, fitsX-1+15,fitsY-1+15,col,img_loaded, {var} noise,mean);{local noise recheck every 10 th pixel}
+                        maxlevel:=median+noise*5;
+                        if ((value<maxlevel) and
+                          (img_loaded[col,fitsX-1-1,fitsY-1]<maxlevel) and (img_loaded[col,fitsX-1+1,fitsY-1]<maxlevel) and (img_loaded[col,fitsX-1,fitsY-1-1]<maxlevel) and (img_loaded[col,fitsX-1,fitsY-1+1]<maxlevel) {check nearest pixels}
+                           ) then {not a star, prevent double stars at overlap area}
+                           img_average[col,x_new,y_new]:=+img_average[col,x_new,y_new]*img_temp[0,x_new,y_new]{distance border}/(dummy+img_temp[0,x_new,y_new])
+                                                        +(value+background_correction[col])*dummy/(dummy+img_temp[0,x_new,y_new]);{calculate value between the existing and new value depending on BORDER DISTANCE}
+                       end;
                     end;
                     img_temp[0,x_new,y_new]:=dummy;
                   end;
