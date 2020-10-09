@@ -541,6 +541,7 @@ const
   shape_marker3_fitsY: double=0;
 
   commandline_execution : boolean=false;{program executed in command line}
+  commandline_log       : boolean=false;{file log request in command line}
   errorlevel        : integer=0;{report errors when shutdown}
 
   mouse_positionRADEC1 : string='';{For manual reference solving}
@@ -2228,7 +2229,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.427a, '+about_message4+', dated 2020-10-8';
+  #13+#10+'ASTAP version ß0.9.427b, '+about_message4+', dated 2020-10-8';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -9402,6 +9403,8 @@ begin
       begin
         commandline_execution:=true;{later required for trayicon and popup notifier and Memo3 scroll in Linux}
 
+        commandline_log:=hasoption('log');{log to file}
+
         if filespecified then
         begin
           filename2:=GetOptionValue('f');
@@ -9508,7 +9511,7 @@ begin
           end;
           esc_pressed:=true;{kill any running activity. This for APT}
 
-          if hasoption('log') then stackmenu1.Memo2.Lines.SavetoFile(ChangeFileExt(filename2,'.log'));{save Memo3 log to log file}
+          if commandline_log then stackmenu1.Memo2.Lines.SavetoFile(ChangeFileExt(filename2,'.log'));{save Memo3 log to log file}
 
 
           halt(errorlevel); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}

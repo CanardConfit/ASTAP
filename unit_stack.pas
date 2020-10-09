@@ -1060,21 +1060,25 @@ end;
 
 procedure memo2_message(s: string);{message to memo2. Is also used for log to file in commandline mode}
 begin
-  {$IFDEF LINUX}
+  {$IFDEF unix}  {linux and mac}
   if commandline_execution then writeln(s); {For windows the log to console when compiler WIN32 gui is off}
   {$ELSE }
   //  if commandline_execution then writeln(s); {log to console when compiler WIN32 gui is off}
   {$ENDIF}
 
-  stackmenu1.memo2.lines.add(TimeToStr(time)+'  '+s);
- {$IFDEF LINUX}
-  if ((commandline_execution=false){save some time and run time error in command line} and (stackmenu1.Memo2.HandleAllocated){prevent run time errors}) then
-  begin  // scroll down:
-    stackmenu1.Memo2.SelStart:=Length(stackmenu1.Memo2.lines.Text)-1;
-    stackmenu1.Memo2.VertScrollBar.Position:=65000;
+  if ((commandline_execution=false) or (commandline_log=true)) then {no commandline or option -log is used}
+  begin
+     stackmenu1.memo2.lines.add(TimeToStr(time)+'  '+s); {fill memo2 with log}
+
+     {$IFDEF unix}
+     if ((commandline_execution=false){save some time and run time error in command line} and (stackmenu1.Memo2.HandleAllocated){prevent run time errors}) then
+     begin  // scroll down:
+       stackmenu1.Memo2.SelStart:=Length(stackmenu1.Memo2.lines.Text)-1;
+       stackmenu1.Memo2.VertScrollBar.Position:=65000;
+     end;
+    {$ELSE }
+    {$ENDIF}
   end;
- {$ELSE }
- {$ENDIF}
 end;
 
 procedure listview_add(tl: tlistview; s0:string; count:integer);
