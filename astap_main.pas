@@ -2228,7 +2228,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.427c, '+about_message4+', dated 2020-10-8';
+  #13+#10+'ASTAP version ß0.9.428, '+about_message4+', dated 2020-10-10';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3129,9 +3129,8 @@ begin
   end;
 end;
 
-procedure zoom(mousewheelfactor:double);
+procedure zoom(mousewheelfactor:double;MousePos: TPoint);
 var
-  image_left,image_top : double;
   maxw  : double;
 begin
   {$ifdef mswindows}
@@ -3142,26 +3141,27 @@ begin
   {$else}
    maxw:=15000;
   {$endif}
- ; {$endif}
+  {$endif}
 
   if ( ((mainwindow.image1.width<=maxw) or (mousewheelfactor<1){zoom out}) and {increased to 65535 for Windows only. Was above 12000 unequal stretch}
        ((mainwindow.image1.width>=100 ) or (mousewheelfactor>1){zoom in})                                                                  )
-
   then
   begin
-    image_left:=mainwindow.image1.left; {preserve for shape position calculation}
-    image_top:=mainwindow.image1.top;
+    {limit the mouse positions to positions within the image1}
+    mousepos.x:=max(MousePos.X,mainwindow.Image1.Left);
+    mousepos.y:=max(MousePos.Y,mainwindow.Image1.top);
+    mousepos.x:=min(MousePos.X,mainwindow.Image1.Left+mainwindow.image1.width);
+    mousepos.y:=min(MousePos.Y,mainwindow.Image1.top++mainwindow.image1.height);
 
+    {scroll to compensate zoom}
+    mainwindow.image1.Left := Round((1 - mousewheelfactor) * MousePos.X + mousewheelfactor * mainwindow.Image1.Left);
+    mainwindow.image1.Top  := Round((1 - mousewheelfactor) * MousePos.Y + mousewheelfactor * mainwindow.Image1.Top);
 
+    {zoom}
     mainwindow.image1.height:=round(mainwindow.image1.height * mousewheelfactor);
     mainwindow.image1.width:= round(mainwindow.image1.width * mousewheelfactor);
 
     //mainwindow.caption:=inttostr(mainwindow.image1.width)+' x '+inttostr(mainwindow.image1.height);
-
-
-    {scroll to compensate zoom}
-    mainwindow.image1.left:=+round(mainwindow.panel1.clientwidth/2  +  (image_left - mainwindow.panel1.clientwidth/2)*mousewheelfactor);
-    mainwindow.image1.top:= +round(mainwindow.panel1.clientheight/2 +  (image_top - mainwindow.panel1.clientheight/2)*mousewheelfactor);
 
     {marker}
     if mainwindow.shape_marker1.visible then {do this only when visible}
@@ -3173,26 +3173,20 @@ begin
 
      if copy_paste then show_marker_shape(mainwindow.shape_paste1,0 {rectangle},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
 
-
     {reference point manual alignment}
     if mainwindow.shape_alignment_marker1.visible then {For manual alignment. Do this only when visible}
-//      show_shape(true,shape_fitsX, shape_fitsY);
-     show_marker_shape(mainwindow.shape_alignment_marker1,2 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
+    show_marker_shape(mainwindow.shape_alignment_marker1,2 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
   end;
-
-// mainwindow.image1.height:=mainwindow.image1.picture.height*3 ;
-//  mainwindow.image1.width:=mainwindow.image1.picture.width*3;
-
-
 end;
 
 procedure Tmainwindow.zoomin1Click(Sender: TObject);
 begin
- zoom(1.2);
+ zoom(1.2, TPoint.Create(Panel1.Width div 2, Panel1.Height div 2){zoom center panel1} );
 end;
 procedure Tmainwindow.zoomout1Click(Sender: TObject);
 begin
-  zoom(1/1.2);
+//  zoom(1/1.2);
+  zoom(1/1.2, TPoint.Create(Panel1.Width div 2, Panel1.Height div 2));
 end;
 
 procedure Tmainwindow.Panel1MouseWheelDown(Sender: TObject; Shift: TShiftState;
@@ -3207,11 +3201,8 @@ begin
 
   if p.y<0 then exit; {not in image range}
 
-  if mainwindow.inversemousewheel1.checked then  zoom(1.2) else zoom(1/1.2);
+  if mainwindow.inversemousewheel1.checked then  zoom(1.2,p) else zoom(1/1.2,p);
   Handled := True;{prevent that in win7 the combobox is moving up/down if it has focus}
-
-//  error_label1.visible:=false;
-
 end;
 
 procedure Tmainwindow.Panel1MouseWheelUp(Sender: TObject; Shift: TShiftState;
@@ -3224,11 +3215,8 @@ begin
   p:=panel1.Screentoclient(p);
   if p.y<0 then exit; {not in image range}
 
-  if mainwindow.inversemousewheel1.checked then  zoom(1/1.2) else zoom(1.2);
+  if mainwindow.inversemousewheel1.checked then  zoom(1/1.2,p) else zoom(1.2,p);
   Handled := True;{prevent that in win7 the combobox is moving up/down if it has focus}
-
-//  error_label1.visible:=false;
-
 end;
 
 procedure Tmainwindow.show_statistics1Click(Sender: TObject);
@@ -7174,8 +7162,8 @@ begin
   begin
     if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-    plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
     image_move_to_center:=re_center;
+    plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
     if ((afitsfile) and (annotated) and (mainwindow.annotations_visible1.checked)) then  plot_annotations(0,0,false);
 
     update_equalise_background_step(1);{update equalise background menu}
@@ -8816,7 +8804,7 @@ begin
    if image_move_to_center then
    begin
      mainwindow.image1.top:=0;
-     mainwindow.image1.left:=0;
+     mainwindow.image1.left:=(mainwindow.panel1.Width - mainwindow.image1.width) div 2;
    end;
 end;
 
@@ -8835,21 +8823,21 @@ begin
   maximum1.width:=histogram1.width+24;
 {$ENDIF}
 
- panel1.Top:=max(PageControl1.height, data_range_groupBox1.top+data_range_groupBox1.height+5);
- panel1.left:=0;
+  panel1.Top:=max(PageControl1.height, data_range_groupBox1.top+data_range_groupBox1.height+5);
+  panel1.left:=0;
 
- mw:=mainwindow.width;
- h:=StatusBar1.top-panel1.top;
- w:=round(h*width2/height2);
+  mw:=mainwindow.width;
+  h:=StatusBar1.top-panel1.top;
+  w:=round(h*width2/height2);
 
- panel1.width:=mw;
- panel1.height:=h;
+  panel1.width:=mw;
+  panel1.height:=h;
 
- mainwindow.image1.height:=h;
- mainwindow.image1.width:=w;
+  mainwindow.image1.height:=h;
+  mainwindow.image1.width:=w;
 
- mainwindow.image1.top:=0;
- mainwindow.image1.left:=0;
+  mainwindow.image1.top:=0;
+  mainwindow.image1.left:=(mw-w) div 2;
 end;
 
 //procedure stretch_image(w,h: integer);

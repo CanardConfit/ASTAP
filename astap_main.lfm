@@ -224,7 +224,7 @@ object mainwindow: Tmainwindow
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
     object Image1: TImage
-      Left = 192
+      Left = 208
       Height = 264
       Top = 72
       Width = 608
