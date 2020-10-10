@@ -1063,7 +1063,10 @@ begin
   {$IFDEF unix}  {linux and mac}
   if commandline_execution then writeln(s); {For windows the log to console when compiler WIN32 gui is off}
   {$ELSE }
-  //  if commandline_execution then writeln(s); {log to console when compiler WIN32 gui is off}
+
+      if ((commandline_execution) and (isConsole)){isconsole, is console available, prevent run time error if compiler option -WH is checked}
+      then writeln(s); {log to console for Windows when compiler WIN32 gui is off}
+
   {$ENDIF}
 
   if ((commandline_execution=false) or (commandline_log=true)) then {no commandline or option -log is used}
@@ -8377,6 +8380,8 @@ end;
 
 
 procedure Tstackmenu1.write_video1click(Sender: TObject);
+var
+  framerate: string;
 begin
   mainwindow.savedialog1.filename:=ChangeFileExt(FileName2,'.y4m');
   mainwindow.savedialog1.initialdir:=ExtractFilePath(filename2);
@@ -8384,10 +8389,14 @@ begin
   mainwindow.savedialog1.Filter := ' *.y4m|*.y4m';
   if mainwindow.savedialog1.execute then
   begin
+
+    framerate:=InputBox('Video frame rate in [frames/second]:','','6' );
+    if framerate=''  then exit;
+
     if listview6.Items.item[listview6.items.count-1].subitems.Strings[B_exposure]='' {exposure} then
       stackmenu1.analyseblink1Click(nil);  {analyse and secure the dimension values width2, height2 from images}
 
-    write_YUV4MPEG2_header(mainwindow.savedialog1.filename, ((naxis3>1) or (mainwindow.preview_demosaic1.checked)) );
+    write_YUV4MPEG2_header(mainwindow.savedialog1.filename,framerate,((naxis3>1) or (mainwindow.preview_demosaic1.checked)) );
     stackmenu1.blink_button1Click(Sender);{blink and write video frames}
     close_YUV4MPEG2;
     memo2_message('Ready!. See tab results. The video written as '+mainwindow.savedialog1.filename);

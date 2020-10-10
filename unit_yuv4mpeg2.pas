@@ -26,7 +26,7 @@ uses
   fpImage, // TFPColor type;
   lclintf;
 
-function write_yuv4mpeg2_header(filen: string; colour : boolean): boolean;{open/create file. Result is false if failure}
+function write_yuv4mpeg2_header(filen, framerate: string; colour : boolean): boolean;{open/create file. Result is false if failure}
 function write_yuv4mpeg2_frame(colour: boolean): boolean; {reads pixels from Timage and writes YUV frames in 444p style, colour or mono. Call this procedure for each image. Result is false if failure}
 procedure close_yuv4mpeg2; {close file}
 
@@ -36,15 +36,11 @@ uses astap_main;
 var
   theFile : tfilestream;
 
-function write_yuv4mpeg2_header(filen: string; colour : boolean): boolean;{open/create file}
+function write_yuv4mpeg2_header(filen, framerate: string; colour : boolean): boolean;{open/create file. Result is false if failure}
 var
   header: array[0..41] of ansichar;
-  value: string;
 begin
   result:=false;
-
-  value:=InputBox('Video frame rate in [frames/second]:','','3' );
-  if value=''  then exit;
 
   try
    TheFile:=tfilestream.Create(filen, fmcreate );
@@ -55,8 +51,8 @@ begin
   {'YUV4MPEG2 W0384 H0288 F01:1 Ip A0:0 C444'+#10}    {See https://wiki.multimedia.cx/index.php/YUV4MPEG2}
   {width2:=mainwindow.image1.Picture.Bitmap.width; Note use external width2 and height since loading an image could be outstanding}
   {height2:=mainwindow.image1.Picture.Bitmap.height;}
-  if colour then header:=pansichar('YUV4MPEG2 W'+inttostr(width2)+' H'+inttostr(height2)+' F'+trim(value)+':1 Ip A0:0 C444'+#10)
-            else header:=pansichar('YUV4MPEG2 W'+inttostr(width2)+' H'+inttostr(height2)+' F'+trim(value)+':1 Ip A0:0 Cmono'+#10);{width, height,frame rate, interlace progressive, unknown aspect, color space}
+  if colour then header:=pansichar('YUV4MPEG2 W'+inttostr(width2)+' H'+inttostr(height2)+' F'+trim(framerate)+':1 Ip A0:0 C444'+#10)
+            else header:=pansichar('YUV4MPEG2 W'+inttostr(width2)+' H'+inttostr(height2)+' F'+trim(framerate)+':1 Ip A0:0 Cmono'+#10);{width, height,frame rate, interlace progressive, unknown aspect, color space}
   { Write header }
   thefile.writebuffer ( header, strlen(Header));
 end;

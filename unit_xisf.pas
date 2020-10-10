@@ -42,7 +42,7 @@ implementation
 function load_xisf(filen:string;var img_loaded2: image_array) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
 var
    i,j,k, reader_position,a,b,c,d,e : integer;
-   exptime,ccd_temperature : double;
+   ccd_temperature                  : double;
    aline,message1,message_key,message_value,message_comment    : ansistring;
    attachment,start_image  : integer;
    error2                  : integer;
@@ -126,7 +126,6 @@ begin
   xbinning:=1;{normal}
   ybinning:=1;
   exposure:=0;
-  exptime:=0;
   ccd_temperature:=999;
   set_temperature:=999;
 
@@ -268,7 +267,7 @@ begin
 //  Not required since XISF is not used for stacking}
 //  extract_double_keyword('CCD-TEMP',ccd_temperature);
 //  extract_double_keyword('SET-TEMP',ccd_temperature);
-//  extract_double_keyword('EXPTIME',exptime);
+//  extract_double_keyword('EXPTIME ',exposure);
 //  extract_double_keyword('EXPOSURE',exposure);
 
   extract_double_keyword('CROTA1',crota1);
@@ -354,8 +353,8 @@ begin
     old_to_new_WCS;{ convert old WCS to new}
   end;
 
-  if exptime>exposure then exposure:=exptime;{both keywords are used}
-  if set_temperature=999 then set_temperature:=round(ccd_temperature); {temperature}
+// not required since xisf are not used for stacking
+//  if set_temperature=999 then set_temperature:=round(ccd_temperature); {temperature}
 
   if crota2>999 then crota2:=0;{not defined, set at 0}
   if crota1>999 then crota1:=crota2; {for case crota1 is not used}

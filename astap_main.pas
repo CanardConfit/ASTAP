@@ -743,7 +743,7 @@ function load_fits(filen:string;light {load as light of dark/flat},load_data: bo
 var
   header    : array[0..2880] of ansichar;
   i,j,k,nr,error3,naxis1, reader_position,n,p,nrchars,dsscol  : integer;
-  fract,dummy,scale,exptime,ccd_temperature                   : double;
+  fract,dummy,scale,ccd_temperature                           : double;
   col_float,bscale,measured_max  : single;
   s                  : string[3];
   bzero              : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
@@ -774,7 +774,7 @@ const
      end;
 
      Function validate_double:double;{read floating point or integer values}
-     var t :shortstring;
+     var t : string[20];
          r,err : integer;
      begin
        t:='';
@@ -893,7 +893,6 @@ begin
   datamin_org:=0;
   imagetype:='';
   exposure:=0;
-  exptime:=0;
   ccd_temperature:=999;
   set_temperature:=999;
   gain:=999;{assume no data available}
@@ -978,8 +977,8 @@ begin
 
       if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='P') and (header[i+3]='O') and (header[i+4]='S') and (header[i+5]='U') and (header[i+6]='R')) then
             exposure:=validate_double;{read double value}
-      if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='P') and (header[i+3]='T') and (header[i+4]='I') and (header[i+5]='M') and (header[i+6]='E')) then
-            exptime:=validate_double;{read double value}
+      if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='P') and (header[i+3]='T') and (header[i+4]='I') and (header[i+5]='M') and (header[i+6]='E') and (header[i+7]=' ')) then {exptime and not exptimer}
+            exposure:=validate_double;{read double value}
 
       if ((header[i]='C') and (header[i+1]='C')  and (header[i+2]='D') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
              ccd_temperature:=validate_double;{read double value}
@@ -1310,7 +1309,7 @@ begin
     old_to_new_WCS;{ convert old WCS to new}
   end;
 
-  if exptime>exposure then exposure:=exptime;{both keywords are used}
+//  if exptime>exposure then exposure:=exptime;{both keywords are used}
   if set_temperature=999 then set_temperature:=round(ccd_temperature); {temperature}
 
   if crota2>999 then crota2:=0;{not defined, set at 0}
@@ -2229,7 +2228,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.427b, '+about_message4+', dated 2020-10-8';
+  #13+#10+'ASTAP version ß0.9.427c, '+about_message4+', dated 2020-10-8';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5890,7 +5889,7 @@ var
      end;
 
      Function validate_double:double;{read values}
-     var t :shortstring;
+     var t :string[20];
          r,err : integer;
          x     :double;
      begin
