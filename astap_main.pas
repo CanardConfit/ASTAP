@@ -515,6 +515,7 @@ const
   focallen: double=0;
   down_x: integer=0;
   down_y: integer=0;
+  down_xy_valid: boolean=false;{required for Linux GTK.}
   startX: integer=0; {range 0..}
   startY: integer=0;
   stopX: integer=0; {range 0..}
@@ -10617,6 +10618,7 @@ begin
 
   down_x:=x;
   down_y:=y;
+  down_xy_valid := True;
 
   if ssleft in shift then
   begin
@@ -11111,7 +11113,7 @@ var
 begin
    if ssleft in shift then {swipe effect}
    begin
-     if abs(y-down_y)>2 then
+     if ((down_xy_valid) and (abs(y-down_y)>2)) then
      begin
        mainwindow.image1.Top:= mainwindow.image1.Top+(y-down_y);
      //   timage(sender).Top:= timage(sender).Top+(y-down_y);{could be used for second image}
@@ -11120,7 +11122,7 @@ begin
        mainwindow.shape_marker2.Top:= mainwindow.shape_marker2.Top+(y-down_y);{normal marker}
        mainwindow.shape_marker3.Top:= mainwindow.shape_marker3.Top+(y-down_y);{normal marker}
      end;
-     if abs(x-down_x)>2 then
+     if ((down_xy_valid) and (abs(x-down_x)>2)) then
      begin
        mainwindow.image1.left:= mainwindow.image1.left+(x-down_x);
       //  timage(sender).left:= timage(sender).left+(x-down_x);
@@ -11131,7 +11133,10 @@ begin
      end;
 
      exit;{no more to do}
-   end;
+   end
+   else
+   down_xy_valid := False; {every move without ssleft will invalidate down_xy}
+
 
    if flip_horizontal1.Checked then flipH:=-1 else flipH:=1;
    if flip_vertical1.Checked then  flipV:=-1 else flipV:=1;
@@ -11292,6 +11297,7 @@ begin
      {$ENDIF}
    end;
 
+  down_xy_valid := False;
   screen.Cursor := crDefault;
 end;
 

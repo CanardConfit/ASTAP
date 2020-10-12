@@ -46,7 +46,7 @@ implementation
 uses
   unit_290, unit_stack, unit_star_align;
 
-const font_5x9 : array[33..126,1..9,1..5] of byte=  {ASTAP font for part of code page 437}
+const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped font for part of code page 437}
 (
 ((0,0,1,0,0),
 (0,0,1,0,0),
