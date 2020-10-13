@@ -9392,6 +9392,7 @@ begin
         commandline_execution:=true;{later required for trayicon and popup notifier and Memo3 scroll in Linux}
 
         commandline_log:=hasoption('log');{log to file}
+        if commandline_log then memo2_message(cmdline);{write the original commmand line}
 
         if filespecified then
         begin
@@ -9500,7 +9501,6 @@ begin
           esc_pressed:=true;{kill any running activity. This for APT}
 
           if commandline_log then stackmenu1.Memo2.Lines.SavetoFile(ChangeFileExt(filename2,'.log'));{save Memo3 log to log file}
-
 
           halt(errorlevel); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
 
