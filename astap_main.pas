@@ -2229,7 +2229,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.429, '+about_message4+', dated 2020-10-12';
+  #13+#10+'ASTAP version ß0.9.430, '+about_message4+', dated 2020-10-14';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7541,6 +7541,7 @@ begin
     font_height:=round(canvas.Textheight('0')*1.0);{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
     {$endif}
 
+    image1.Canvas.font.name:='cldefault';
     image1.Canvas.textout(3+tx,round(-font_height + ty), mag_str);
 
     bg_array:=nil;{free mem}
