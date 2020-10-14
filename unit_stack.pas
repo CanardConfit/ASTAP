@@ -3176,7 +3176,7 @@ begin
               get_background(0,img,true {update_hist},false {calculate noise level}, {var} backgr,star_level);
 
               {analyse centre only. Suitable for flats and dark with amp glow}
-              local_sd((width2 div 2)-50,(height2 div 2)-50, (width2 div 2)+50,(height2 div 2)+50{regio of interest},0,img_loaded, sd,dummy {mean});{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+              local_sd((width2 div 2)-50,(height2 div 2)-50, (width2 div 2)+50,(height2 div 2)+50{regio of interest},0,img, sd,dummy {mean});{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
                 noise_level[0]:=round(sd);
 //              noise_level[0]:= round(local_sd(width2 div 2, height2 div 2, 100,img));{analyse centre only. Suitable for flats and dark with amp glow}
 
