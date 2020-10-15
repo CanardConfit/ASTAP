@@ -106,6 +106,7 @@ type
     j2000_1: TMenuItem;
     galactic1: TMenuItem;
     MenuItem23: TMenuItem;
+    mark_unknown_stars1: TMenuItem;
     selectfont1: TMenuItem;
     popupmenu_frame1: TPopupMenu;
     Stretchdrawmenu1: TMenuItem;
@@ -288,6 +289,7 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure histogram_values_to_clipboard1Click(Sender: TObject);
     procedure imageflipv1Click(Sender: TObject);
+    procedure mark_unknown_stars1Click(Sender: TObject);
     procedure measuretotalmagnitude1Click(Sender: TObject);
     procedure loadsettings1Click(Sender: TObject);
     procedure localbackgroundequalise1Click(Sender: TObject);
@@ -300,6 +302,7 @@ type
     procedure angular_distance1Click(Sender: TObject);
     procedure j2000_1Click(Sender: TObject);
     procedure galactic1Click(Sender: TObject);
+    procedure Panel1Click(Sender: TObject);
     procedure range1Change(Sender: TObject);
     procedure remove_atmouse1Click(Sender: TObject);
     procedure gradient_removal1Click(Sender: TObject);
@@ -619,7 +622,7 @@ function extract_objectname_from_filename(filename8: string): string; {try to ex
 
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
 function fnmodulo (x,range: double):double;
-procedure measure_magnitudes(var stars :star_list);{find stars and return, x,y, hfd, flux}
+procedure measure_magnitudes( var stars :star_list);{find stars and return, x,y, hfd, flux}
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2,binx3, binx4 version}
 procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean); {convert ra in text to double in radians}
 procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
@@ -2229,7 +2232,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.431, '+about_message4+', dated 2020-10-14';
+  #13+#10+'ASTAP version ß0.9.432, '+about_message4+', dated 2020-10-15';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3416,6 +3419,7 @@ begin
 
   mainwindow.show_distortion1.enabled:=yes;{enable menu}
   mainwindow.annotate_with_measured_magnitudes1.enabled:=yes;{enable menu}
+  mainwindow.mark_unknown_stars1.enabled:=yes;{enable menu}
   mainwindow.variable_star_annotation1.enabled:=yes;{enable menu}
   mainwindow.annotate_minor_planets1.enabled:=yes;{enable menu}
   mainwindow.hyperleda_annotation1.enabled:=yes;{enable menu}
@@ -7837,6 +7841,11 @@ begin
    end;
 end;
 
+procedure Tmainwindow.Panel1Click(Sender: TObject);
+begin
+
+end;
+
 
 
 
@@ -8097,7 +8106,7 @@ begin
   begin
     for fitsX:=0 to width2-1-1  do
     begin
-      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>star_level{ 5*noise_level[0]}){star}) then {new star}
+      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack> star_level){star}) then {new star}
       begin
         HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
@@ -8148,6 +8157,162 @@ begin
 end;
 
 
+procedure Tmainwindow.mark_unknown_stars1Click(Sender: TObject);
+var
+  size, i,j, starX, starY,x,y,fitsX,fitsY     : integer;
+  Save_Cursor:TCursor;
+  Fliphorizontal, Flipvertical,astar                                                     : boolean;
+  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit : double;
+  messg : string;
+  img_temp2 :image_array;
+const
+   default=1000;
+
+ begin
+  if fits_file=false then exit; {file loaded?}
+
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  if flux_magn_offset=0 then {calibrate}
+     plot_stars(true {if true photometry only}, false {show Distortion});
+
+ if flux_magn_offset=0 then
+  begin
+    beep;
+    img_temp:=nil;
+    img_temp2:=nil;
+    Screen.Cursor:= Save_Cursor;
+    exit;
+  end;
+
+  Flipvertical:=mainwindow.flip_vertical1.Checked;
+  Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
+  magn_limit:=strtoint(copy(stackmenu1.star_database1.text,2,2)); {g18 => 18}
+
+  image1.Canvas.Pen.Mode := pmMerge;
+  image1.Canvas.Pen.width :=1; // round(1+height2/image1.height);{thickness lines}
+  image1.Canvas.brush.Style:=bsClear;
+  image1.Canvas.font.color:=clyellow;
+  image1.Canvas.font.name:='default';
+  image1.Canvas.font.size:=10; //round(max(10,8*height2/image1.height));{adapt font to image dimensions}
+  mainwindow.image1.Canvas.Pen.Color := clred;
+
+
+  setlength(img_temp2,1,width2,height2);{set length of image array}
+  for fitsY:=0 to height2-1 do
+    for fitsX:=0 to width2-1  do
+      img_temp2[0,fitsX,fitsY]:=default;{clear}
+  plot_artificial_stars(img_temp2);{create artifical image with database stars as pixels}
+//  img_loaded:=img_temp2;
+//  plot_fits(mainwindow.image1,true,true);
+//  exit;
+
+
+
+
+  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
+
+  setlength(img_temp,1,width2,height2);{set length of image array}
+   for fitsY:=0 to height2-1 do
+    for fitsX:=0 to width2-1  do
+      img_temp[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+
+  for fitsY:=0 to height2-1-1 do
+  begin
+    for fitsX:=0 to width2-1-1  do
+    begin
+      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>5*noise_level[0] {star_level} ){star}) then {new star}
+      begin
+        HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
+        begin
+          {for testing}
+          //if flipvertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
+          //if fliphorizontal=true then starX:=round(width2-xc)  else starX:=round(xc);
+          //  size:=round(5*hfd1);
+          //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+          //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+
+
+
+          if ((img_loaded[0,round(xc),round(yc)]<65000) and
+              (img_loaded[0,round(xc-1),round(yc)]<65000) and
+              (img_loaded[0,round(xc+1),round(yc)]<65000) and
+              (img_loaded[0,round(xc),round(yc-1)]<65000) and
+              (img_loaded[0,round(xc),round(yc+1)]<65000) and
+
+              (img_loaded[0,round(xc-1),round(yc-1)]<65000) and
+              (img_loaded[0,round(xc-1),round(yc+1)]<65000) and
+              (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
+              (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
+           begin
+              for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
+               for i:=fitsX-size to fitsX+size do
+                if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
+                  img_temp[0,i,j]:=1;
+
+             measured_magn:=(flux_magn_offset-ln(flux)*2.511886432/ln(10))*10; {magnitude x 10}
+             if magn_limit<measured_magn-10 then {bright enough to be in the database}
+             begin
+               magn_database:=default;{1000}
+               for i:=-2 to 2 do
+                 for j:=-2 to 2 do
+                 begin {database star available?}
+                   magnd:=img_temp2[0,round(xc)+i,round(yc)+j];
+                   if magnd<default then {a star from the database}
+                     magn_database:=min(magnd,magn_database);{take brightest}
+                 end;
+
+               delta_magn:=measured_magn - magn_database; {delta magnitude time 10}
+               if  delta_magn<-10 then {unknown star, 1 magnitude brighter then database}
+               begin {mark}
+                 size:=round(4*hfd1);
+                 if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
+                 if Fliphorizontal     then starX:=round(width2-xc)  else starX:=round(xc);
+
+                 if delta_magn<-500 then
+                 begin
+                   delta_magn:=delta_magn+1000;
+                   messg:='';{unknown star}
+                 end
+                 else
+                 messg:=' Δ'+inttostr(round(delta_magn)); {star but wrong magnitude}
+
+                 image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+                 image1.Canvas.textout(starX+size,starY,inttostr(round(measured_magn))  +messg );{add magnitude as text}
+               end;
+             end;
+          end {not saturated}
+          else
+          begin {saturated, cannot compare magnitudes}
+            astar:=false;
+            for i:=-2 to 2 do
+              for j:=-2 to 2 do
+              begin {database star available?}
+                 if img_temp2[0,round(xc)+i,round(yc)+j]>0 then  astar:=true;
+               end;
+            if astar=false then
+            begin
+              size:=round(4*hfd1);
+              if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
+              if Fliphorizontal     then starX:=round(width2-xc)  else starX:=round(xc);
+              image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate unknown star with rectangle}
+            end;
+          end;
+
+        end;{HFD good}
+      end;
+    end;
+  end;
+
+
+  img_temp2:=nil;{free mem}
+  img_temp:=nil;{free mem}
+
+  Screen.Cursor:= Save_Cursor;
+end;
+
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
  size, i, starX, starY         : integer;
@@ -8157,16 +8322,21 @@ var
 
  begin
   if fits_file=false then exit; {file loaded?}
-  if flux_magn_offset=0 then {calibrate}
-     plot_stars(true {if true photometry only}, false {show Distortion});
-
-  if flux_magn_offset=0 then begin
-    beep;
-    exit;
-  end;
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  if flux_magn_offset=0 then {calibrate}
+     plot_stars(true {if true photometry only}, false {show Distortion});
+
+  if flux_magn_offset=0 then
+  begin
+    beep;
+    img_temp:=nil;
+    Screen.Cursor:= Save_Cursor;
+    exit;
+  end;
+
   Flipvertical:=mainwindow.flip_vertical1.Checked;
   Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
 
@@ -8174,6 +8344,7 @@ var
   image1.Canvas.Pen.width :=1; // round(1+height2/image1.height);{thickness lines}
   image1.Canvas.brush.Style:=bsClear;
   image1.Canvas.font.color:=clyellow;
+  image1.Canvas.font.name:='default';
   image1.Canvas.font.size:=10; //round(max(10,8*height2/image1.height));{adapt font to image dimensions}
   mainwindow.image1.Canvas.Pen.Color := clred;
 
@@ -8186,7 +8357,7 @@ var
     if Fliphorizontal     then starX:=round(width2-stars[0,i])  else starX:=round(stars[0,i]);
 
     image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-    image1.Canvas.textout(starX+size,starY,inttostr(round((flux_magn_offset-ln(stars[3,i]{flux})*2.511886432/ln(10))*10))   );{add hfd as text}
+    image1.Canvas.textout(starX+size,starY,inttostr(round((flux_magn_offset-ln(stars[3,i]{flux})*2.511886432/ln(10))*10))   );{add magnitude as text}
   end;
   Screen.Cursor:= Save_Cursor;
 end;

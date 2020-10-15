@@ -26,7 +26,10 @@ procedure plot_deepsky;{plot the deep sky object on the image}
 procedure load_deep;{load the deepsky database once. If loaded no action}
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 procedure load_variable;{load variable stars. If loaded no action}
-procedure plot_stars(photometry_only,show_distortion: boolean);{plot stars on the image}
+procedure plot_stars(photometry_only,show_distortion : boolean);{plot stars on the image}
+
+procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the mangitude. For super nova search}
+
 procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 procedure read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; var ra2,dec2,length2,width2,pa : double);{deepsky database search}
 procedure annotation_to_array(thestring : ansistring; x,y : integer; var img: image_array);{string with numbers to image array as annotation}
@@ -1609,7 +1612,7 @@ begin
 end;
 
 
-procedure plot_stars(photometry_only,show_distortion: boolean);{plot stars on the image}
+procedure plot_stars(photometry_only,show_distortion : boolean);{plot stars on the image}
 var
   fitsX,fitsY, fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
@@ -1639,7 +1642,7 @@ var
         if photometry_only=false then
         begin {annotate}
           if flip_horizontal then x2:=(width2-1)-x else x2:=x;
-          if flip_vertical   then y2:=y         else y2:=(height2-1)-y;
+          if flip_vertical   then y2:=y            else y2:=(height2-1)-y;
 
           inc(star_total_counter);
 
@@ -1651,6 +1654,7 @@ var
           end
           else
             mainwindow.image1.Canvas.textout(x2,y2,inttostr(round(mag2)) );
+
           len:=round((200-mag2)/5.02);
           mainwindow.image1.canvas.ellipse(x2-len,y2-len,x2+1+len,y2+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
         end;
@@ -1671,7 +1675,7 @@ var
               (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
           begin
             magn:=(-ln(flux)*2.511886432/LN(10));
-            if counter_flux_measured>=length(mag_offset_array) then  SetLength(mag_offset_array,counter_flux_measured+1000);{increase length}
+            if counter_flux_measured>=length(mag_offset_array) then  SetLength(mag_offset_array,counter_flux_measured+1000);{increase length array}
             mag_offset_array[counter_flux_measured]:=mag2/10-magn;
             inc(counter_flux_measured); {increase counter of number of stars analysed}
           end;
@@ -1740,6 +1744,7 @@ begin
 
     mainwindow.image1.Canvas.font.size:=8; //round(14*height2/mainwindow.image1.height);{adapt font to image dimensions}
     mainwindow.image1.Canvas.brush.Style:=bsClear;
+
     mainwindow.image1.Canvas.font.color:=$00B0FF ;{orange}
 
     setlength(mag_offset_array,1000);
@@ -1761,8 +1766,7 @@ begin
     {read 1th area}
     if area1<>0 then {read 1th area}
     begin
-    //  area290:=area1;
-      nrstars_required2:=trunc(max_nr_stars * frac1);
+       nrstars_required2:=trunc(max_nr_stars * frac1);
       while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,area1,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
       close_star_database;{close reader, so next time same file is read from beginning}
     end;
@@ -1770,7 +1774,6 @@ begin
     {read 2th area}
     if area2<>0 then {read 2th area}
     begin
-   //  area290:=area2;
       nrstars_required2:=trunc(max_nr_stars * (frac1+frac2));
       while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,area2,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
       close_star_database;{close reader, so next time same file is read from beginning}
@@ -1779,16 +1782,13 @@ begin
     {read 3th area}
     if area3<>0 then {read 3th area}
     begin
-   //  area290:=area3;
-      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
+       nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
       while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,area3,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
       close_star_database;{close reader, so next time same file is read from beginning}
     end;
     {read 4th area}
     if area4<>0 then {read 4th area}
     begin
-   // area290:=area4;
-
       nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
       while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,area4,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
       close_star_database;{close reader, so next time same file is read from beginning}
@@ -1808,6 +1808,122 @@ begin
 
   end;{fits file}
 end;{plot stars}
+
+
+
+procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the mangitude. For super nova search}
+var
+  fitsX,fitsY, fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
+  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,x,y      : double;
+  star_total_counter,x2,y2,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2 : integer;
+  flip_horizontal, flip_vertical   : boolean;
+  mag_offset_array                 : array of double;
+  Save_Cursor                      : TCursor;
+
+    procedure plot_star;
+    begin
+     {5. Conversion (RA,DEC) -> (x,y)}
+      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
+      delta_ra:=ra2-ra0;
+      sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
+      HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
+      dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
+      dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
+      det:=CD2_2*CD1_1 - CD1_2*CD2_1;
+      fitsX:= +crpix1 - (CD1_2*dDEC - CD2_2*dRA) / det; {1..width2}
+      fitsY:= +crpix2 + (CD1_1*dDEC - CD2_1*dRA) / det; {1..height2}
+      x:=fitsX-1; {0..width2-1}
+      y:=fitsY-1; {0..height2-1}
+
+      if ((x>=0) and (x<=width2-1) and (y>=0) and (y<=height2-1)) then {within image1}
+      begin
+       img[0,round(x),round(y)]:=min(img[0,round(x),round(y)],mag2);{take brightest use trunc and round for best accuracy}
+       img[0,trunc(x),round(y)]:=min(img[0,trunc(x),round(y)],mag2);
+       img[0,round(x),trunc(y)]:=min(img[0,round(x),trunc(y)],mag2);
+       img[0,trunc(x),trunc(y)]:=min(img[0,trunc(x),trunc(y)],mag2);
+      end;
+    end;
+
+
+begin
+
+//  mainwindow.image1.canvas.pixels[0,0]:=$FFFFF;
+
+  if ((fits_file) and (cd1_1<>0)) then
+  begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+    flip_vertical:=mainwindow.flip_vertical1.Checked;
+    flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+
+    counter_flux_measured:=0;
+
+    bp_rp:=999;{not defined in mono versions}
+
+    fitsX_middle:=(width2+1)/2;{range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
+    fitsY_middle:=(height2+1)/2;
+
+    dRa :=(cd1_1*(fitsx_middle-crpix1)+cd1_2*(fitsy_middle-crpix2))*pi/180;
+    dDec:=(cd2_1*(fitsx_middle-crpix1)+cd2_2*(fitsy_middle-crpix2))*pi/180;
+    delta:=cos(dec0)-dDec*sin(dec0);
+    gamma:=sqrt(dRa*dRa+delta*delta);
+    telescope_ra:=ra0+arctan(Dra/delta);
+    telescope_dec:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
+
+    fov:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view with 0% extra}
+
+    fov:=min(fov,9.53*pi/180);{warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+
+    linepos:=2;{Set pointer to the beginning. First two lines are comments}
+
+    if select_star_database(stackmenu1.star_database1.text)=false then
+    begin
+      application.messagebox(pchar('No star database found!'+#13+'Download the g17 (or g16 or g18) and extract the files to the program directory'), pchar('No star database!'),0);
+      exit;
+    end;
+
+    find_areas( telescope_ra,telescope_dec, fov,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
+
+    sincos(dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
+
+    {read 1th area}
+    if area1<>0 then {read 1th area}
+    begin
+      nrstars_required2:=trunc(max_nr_stars * frac1);
+      while readdatabase290(telescope_ra,telescope_dec, fov,area1,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
+      close_star_database;{close reader, so next time same file is read from beginning}
+    end;
+
+    {read 2th area}
+    if area2<>0 then {read 2th area}
+    begin
+      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2));
+      while readdatabase290(telescope_ra,telescope_dec, fov,area2,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
+      close_star_database;{close reader, so next time same file is read from beginning}
+    end;
+
+    {read 3th area}
+    if area3<>0 then {read 3th area}
+    begin
+      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
+      while readdatabase290(telescope_ra,telescope_dec, fov,area3,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
+      close_star_database;{close reader, so next time same file is read from beginning}
+    end;
+    {read 4th area}
+    if area4<>0 then {read 4th area}
+    begin
+      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
+      while readdatabase290(telescope_ra,telescope_dec, fov,area4,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
+      close_star_database;{close reader, so next time same file is read from beginning}
+    end;
+
+    Screen.Cursor:= Save_Cursor;
+
+  end;{fits file}
+end;{plot stars}
+
 
 
 procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot image stars and database stars used for the solution}

@@ -212,14 +212,14 @@ object mainwindow: Tmainwindow
     Color = 2105376
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
+    Font.Height = -16
     Font.Pitch = fpVariable
     Font.Quality = fqDraft
     ParentColor = False
     ParentFont = False
     ParentShowHint = False
     TabOrder = 3
+    OnClick = Panel1Click
     OnMouseMove = Panel1MouseMove
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
@@ -1236,6 +1236,12 @@ object mainwindow: Tmainwindow
         ImageIndex = 18
         ShortCut = 16462
         OnClick = star_annotation1Click
+      end
+      object mark_unknown_stars1: TMenuItem
+        Caption = 'Mark unknown stars'
+        Enabled = False
+        Hint = 'Mark nova and minor planets using the star database. Any star like object missing from the star database will be marked. Also if the measured magnitude is one magnitude brighter then the database.'
+        OnClick = mark_unknown_stars1Click
       end
       object variable_star_annotation1: TMenuItem
         Caption = 'Variable star annotation'
