@@ -219,7 +219,6 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     TabOrder = 3
-    OnClick = Panel1Click
     OnMouseMove = Panel1MouseMove
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
@@ -1237,11 +1236,11 @@ object mainwindow: Tmainwindow
         ShortCut = 16462
         OnClick = star_annotation1Click
       end
-      object mark_unknown_stars1: TMenuItem
-        Caption = 'Mark unknown stars'
+      object annotate_unknown_stars1: TMenuItem
+        Caption = 'Unknown star annotation'
         Enabled = False
-        Hint = 'Mark nova and minor planets using the star database. Any star like object missing from the star database will be marked. Also if the measured magnitude is one magnitude brighter then the database.'
-        OnClick = mark_unknown_stars1Click
+        Hint = 'Annotate nova and minor planets using the star database. It will annotate any star like object one magnitude brighter or missing from the star database. For the G18 it will detect objectx up to magnitude 17.'
+        OnClick = annotate_unknown_stars1Click
       end
       object variable_star_annotation1: TMenuItem
         Caption = 'Variable star annotation'
@@ -1313,6 +1312,12 @@ object mainwindow: Tmainwindow
         Checked = True
         Hint = 'Switches the annotations on/off'
         OnClick = annotations_visible1Click
+      end
+      object northeast1: TMenuItem
+        AutoCheck = True
+        Caption = 'North-East indicator image'
+        Hint = 'Show a north-east indicator on the image.'
+        OnClick = northeast1Click
       end
       object MenuItem15: TMenuItem
         Caption = '-'

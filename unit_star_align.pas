@@ -662,7 +662,7 @@ begin
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(snr, ffgeneral, 2,1));{add hfd as text}
 
-            size:=round(3*hfd1);
+            size:=round(3*hfd1);{for marking area}
             for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
             for i:=fitsX-size to fitsX+size do
               if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}

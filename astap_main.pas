@@ -60,6 +60,7 @@ type
     ccdinspector1: TMenuItem;
     error_label1: TLabel;
     FontDialog1: TFontDialog;
+    image_north_arrow1: TImage;
     Memo1: TMemo;
     Memo3: TMemo;
     menucopy2: TMenuItem;
@@ -106,7 +107,8 @@ type
     j2000_1: TMenuItem;
     galactic1: TMenuItem;
     MenuItem23: TMenuItem;
-    mark_unknown_stars1: TMenuItem;
+    annotate_unknown_stars1: TMenuItem;
+    northeast1: TMenuItem;
     selectfont1: TMenuItem;
     popupmenu_frame1: TPopupMenu;
     Stretchdrawmenu1: TMenuItem;
@@ -225,7 +227,6 @@ type
     inversemousewheel1: TCheckBox;
     LoadFITSPNGBMPJPEG1: TMenuItem;
     SaveasJPGPNGBMP1: TMenuItem;
-    image_north_arrow1: TImage;
     GroupBox1: TGroupBox;
     save1: TButton;
     solve_button1: TButton;
@@ -289,7 +290,7 @@ type
       Shift: TShiftState; X, Y: Integer);
     procedure histogram_values_to_clipboard1Click(Sender: TObject);
     procedure imageflipv1Click(Sender: TObject);
-    procedure mark_unknown_stars1Click(Sender: TObject);
+    procedure annotate_unknown_stars1Click(Sender: TObject);
     procedure measuretotalmagnitude1Click(Sender: TObject);
     procedure loadsettings1Click(Sender: TObject);
     procedure localbackgroundequalise1Click(Sender: TObject);
@@ -302,7 +303,7 @@ type
     procedure angular_distance1Click(Sender: TObject);
     procedure j2000_1Click(Sender: TObject);
     procedure galactic1Click(Sender: TObject);
-    procedure Panel1Click(Sender: TObject);
+    procedure northeast1Click(Sender: TObject);
     procedure range1Change(Sender: TObject);
     procedure remove_atmouse1Click(Sender: TObject);
     procedure gradient_removal1Click(Sender: TObject);
@@ -2232,7 +2233,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.432, '+about_message4+', dated 2020-10-15';
+  #13+#10+'ASTAP version ß0.9.433, '+about_message4+', dated 2020-10-16';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2914,10 +2915,11 @@ var
       dra,ddec,
       cdelt1_a, det,x,y :double;
       flipV, flipH : integer;
+      on_image     : boolean;
 begin
   {clear}
-  mainwindow.image_north_arrow1.canvas.brush.color:=clmenu;
-  mainwindow.image_north_arrow1.canvas.rectangle(-1,-1, mainwindow.image_north_arrow1.width+1, mainwindow.image_north_arrow1.height+1);
+  mainwindow.image_north_arrow1.Canvas.brush.color:=clmenu;
+  mainwindow.image_north_arrow1.Canvas.rectangle(-1,-1, mainwindow.image_north_arrow1.width+1, mainwindow.image_north_arrow1.height+1);
 
   if cd1_1=0 then {remove rotation indication and exit}
   begin
@@ -2925,11 +2927,13 @@ begin
      exit;
   end;
 
+  on_image:=mainwindow.northeast1.checked;
   mainwindow.rotation1.caption:=floattostrf(crota2, FFfixed, 0, 2)+'°';{show rotation}
 
   if ((fits_file=false) or (cd1_1=0)) then exit;
 
   mainwindow.image_north_arrow1.Canvas.Pen.Color := clred;
+  if on_image then  mainwindow.image1.canvas.Pen.Color := clred;
 
   if mainwindow.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
   if mainwindow.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
@@ -2937,36 +2941,49 @@ begin
   cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{length of one pixel step to the north}
 
   moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);
+  if on_image then  moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);
+
   det:=CD2_2*CD1_1-CD1_2*CD2_1;{this result can be negative !!}
   dRa:=0;
   dDec:=cdelt1_a*leng;
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
   lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
+  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
+
+
   dRa:=cdelt1_a*-3;
   dDec:=cdelt1_a*(leng-5);
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
   lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+
   dRa:=cdelt1_a*+3;
   dDec:=cdelt1_a*(leng-5);
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
   lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  if on_image then  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+
   dRa:=0;
   dDec:=cdelt1_a*leng;
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
   lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
 
   moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
+  if on_image then moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
   dRa:= cdelt1_a*leng/3;
   dDec:=0;
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
   lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
+  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
 end;
+
 
 procedure Tmainwindow.rotateleft1Click(Sender: TObject); {rotate left or right 90 degrees}
 var
@@ -3007,7 +3024,6 @@ begin
 
   img_loaded:=img_temp;
   img_temp:=nil;
-  plot_fits(mainwindow.image1,false,true);
 
   if cd1_1<>0 then {update solution for rotation}
   begin
@@ -3044,8 +3060,9 @@ begin
 
     remove_key('ROWORDER',false{all});{just remove to prevent debayer confusion}
     add_text   ('HISTORY   ','Rotated 90 degrees.');
-    plot_north;
   end;
+  plot_fits(mainwindow.image1,false,true);
+
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
 
@@ -3419,7 +3436,7 @@ begin
 
   mainwindow.show_distortion1.enabled:=yes;{enable menu}
   mainwindow.annotate_with_measured_magnitudes1.enabled:=yes;{enable menu}
-  mainwindow.mark_unknown_stars1.enabled:=yes;{enable menu}
+  mainwindow.annotate_unknown_stars1.enabled:=yes;{enable menu}
   mainwindow.variable_star_annotation1.enabled:=yes;{enable menu}
   mainwindow.annotate_minor_planets1.enabled:=yes;{enable menu}
   mainwindow.hyperleda_annotation1.enabled:=yes;{enable menu}
@@ -3525,6 +3542,8 @@ begin
       //mainwindow.dec1change(nil);
     {$ENDIF}
     plot_north;
+    image1.Repaint;{show borth-east indicator}
+
     update_menu_related_to_solver(true);{update menus section}
     update_statusbar_section5;{update section 5 with image dimensions in degrees}
   end;
@@ -5090,6 +5109,7 @@ begin
     if mainwindow.flip_vertical1.Checked then mainwindow.flip_vertical1Click(nil);
 
     plot_north; {draw arrow or clear indication position north depending on value cd1_1}
+
     if mainwindow.add_marker_position1.checked then
       mainwindow.add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
 
@@ -6183,7 +6203,8 @@ begin
 
     inversemousewheel1.checked:=get_boolean('inversemousewheel',false);
     flip_horizontal1.checked:=get_boolean('fliphorizontal',false);
-    flip_vertical1.checked:=get_boolean('Flipvertical',false);
+    flip_vertical1.checked:=get_boolean('flipvertical',false);
+    northeast1.checked:=get_boolean('north_east',false);
     add_marker_position1.checked:=get_boolean('add_marker',false);{popup marker selected?}
 
     stackmenu1.make_osc_color1.checked:=get_boolean('osc_color_convert',false);
@@ -6505,7 +6526,9 @@ begin
 
     initstring.Values['inversemousewheel']:=BoolStr[inversemousewheel1.checked];
     initstring.Values['fliphorizontal']:=BoolStr[flip_horizontal1.checked];
-    initstring.Values['Flipvertical']:=BoolStr[flip_vertical1.checked];
+    initstring.Values['flipvertical']:=BoolStr[flip_vertical1.checked];
+    initstring.Values['north_east']:=BoolStr[northeast1.checked];
+
     initstring.Values['add_marker']:=BoolStr[add_marker_position1.checked];
 
     initstring.Values['osc_color_convert']:=BoolStr[stackmenu1.make_osc_color1.checked];
@@ -7430,7 +7453,6 @@ begin
 
   img_loaded:=img_temp;
   img_temp:=nil;
-  plot_fits(mainwindow.image1,false,true);
 
   if cd1_1<>0 then {update solution for rotation}
   begin
@@ -7459,8 +7481,9 @@ begin
 
     remove_key('ROWORDER',false{all});{just remove to be sure no debayer confusion}
     add_text     ('HISTORY   ','Flipped.                                                           ');
-    plot_north;
   end;
+  plot_fits(mainwindow.image1,false,true);
+
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
 
@@ -7841,12 +7864,10 @@ begin
    end;
 end;
 
-procedure Tmainwindow.Panel1Click(Sender: TObject);
+procedure Tmainwindow.northeast1Click(Sender: TObject);
 begin
-
+  if northeast1.checked then plot_north;
 end;
-
-
 
 
 procedure do_stretching;{prepare strecht table and replot image}
@@ -8118,6 +8139,13 @@ begin
           //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
+          size:=round(3*hfd1);{for marking area}
+          for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
+            for i:=fitsX-size to fitsX+size do
+             if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
+               img_temp[0,i,j]:=1;
+
+
           if ((img_loaded[0,round(xc),round(yc)]<65000) and
               (img_loaded[0,round(xc-1),round(yc)]<65000) and
               (img_loaded[0,round(xc+1),round(yc)]<65000) and
@@ -8128,13 +8156,7 @@ begin
               (img_loaded[0,round(xc-1),round(yc+1)]<65000) and
               (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
               (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
-           begin
-             size:=round(3*hfd1);
-             for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
-               for i:=fitsX-size to fitsX+size do
-                if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
-                  img_temp[0,i,j]:=1;
-
+          begin
             {store values}
             inc(nrstars);
             if nrstars>=length(stars[0]) then
@@ -8157,7 +8179,7 @@ begin
 end;
 
 
-procedure Tmainwindow.mark_unknown_stars1Click(Sender: TObject);
+procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
   size, i,j, starX, starY,x,y,fitsX,fitsY     : integer;
   Save_Cursor:TCursor;
@@ -8188,7 +8210,7 @@ const
 
   Flipvertical:=mainwindow.flip_vertical1.Checked;
   Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
-  magn_limit:=strtoint(copy(stackmenu1.star_database1.text,2,2)); {g18 => 18}
+  magn_limit:=10*strtoint(copy(stackmenu1.star_database1.text,2,2)); {g18 => 180}
 
   image1.Canvas.Pen.Mode := pmMerge;
   image1.Canvas.Pen.width :=1; // round(1+height2/image1.height);{thickness lines}
@@ -8199,7 +8221,7 @@ const
   mainwindow.image1.Canvas.Pen.Color := clred;
 
 
-  setlength(img_temp2,1,width2,height2);{set length of image array}
+  setlength(img_temp2,1,width2,height2);{set size of image array}
   for fitsY:=0 to height2-1 do
     for fitsX:=0 to width2-1  do
       img_temp2[0,fitsX,fitsY]:=default;{clear}
@@ -8225,7 +8247,7 @@ const
       if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>5*noise_level[0] {star_level} ){star}) then {new star}
       begin
         HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-        if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
+        if ((hfd1<10) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
         begin
           {for testing}
           //if flipvertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
@@ -8234,6 +8256,11 @@ const
           //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
+          size:=round(3*hfd1); {for marking area}
+          for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
+            for i:=fitsX-size to fitsX+size do
+             if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
+               img_temp[0,i,j]:=1;
 
 
           if ((img_loaded[0,round(xc),round(yc)]<65000) and
@@ -8247,13 +8274,9 @@ const
               (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
               (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
            begin
-              for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
-               for i:=fitsX-size to fitsX+size do
-                if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
-                  img_temp[0,i,j]:=1;
-
              measured_magn:=(flux_magn_offset-ln(flux)*2.511886432/ln(10))*10; {magnitude x 10}
-             if magn_limit<measured_magn-10 then {bright enough to be in the database}
+
+             if measured_magn<magn_limit-10 then {bright enough to be in the database}
              begin
                magn_database:=default;{1000}
                for i:=-2 to 2 do
@@ -8268,17 +8291,20 @@ const
                if  delta_magn<-10 then {unknown star, 1 magnitude brighter then database}
                begin {mark}
                  size:=round(4*hfd1);
+                 size:=round(hfd1);
                  if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
                  if Fliphorizontal     then starX:=round(width2-xc)  else starX:=round(xc);
 
                  if delta_magn<-500 then
                  begin
                    delta_magn:=delta_magn+1000;
-                   messg:='';{unknown star}
+                   messg:='';{unknown star in the database}
                  end
                  else
-                 messg:=' Δ'+inttostr(round(delta_magn)); {star but wrong magnitude}
-
+                 begin
+                   messg:=' Δ'+inttostr(round(delta_magn)); {star but wrong magnitude}
+                  end;
+                 size:=round(5*hfd1); {for rectangle annotation}
                  image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
                  image1.Canvas.textout(starX+size,starY,inttostr(round(measured_magn))  +messg );{add magnitude as text}
                end;
@@ -8294,7 +8320,7 @@ const
                end;
             if astar=false then
             begin
-              size:=round(4*hfd1);
+              size:=round(5*hfd1); {for rectangle annotation}
               if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
               if Fliphorizontal     then starX:=round(width2-xc)  else starX:=round(xc);
               image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate unknown star with rectangle}
@@ -9956,7 +9982,7 @@ begin
   //            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
   //            mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
-              size:=round(3*hfd1);
+              size:=round(3*hfd1);{for marking area}
               for j:=fitsY-size to fitsY+size do {mark the whole star area as surveyed}
                 for i:=fitsX-size to fitsX+size do
                   if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
@@ -10557,7 +10583,6 @@ begin
 
   img_loaded:=img_temp;
   img_temp:=nil;
-  plot_fits(mainwindow.image1,false,true);
 
   if cd1_1<>0 then {update solution for rotation}
   begin
@@ -10587,9 +10612,9 @@ begin
      update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
 
      add_text   ('HISTORY   ','Rotated by angle '+valueI);
-
-     plot_north;
   end;
+
+  plot_fits(mainwindow.image1,false,true);
 
   progress_indicator(-100,'');{back to normal}
   Screen.Cursor := Save_Cursor;  { Always restore to normal }

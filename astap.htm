@@ -28,7 +28,7 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
             &nbsp;<big>version 0.9.431 dated 2020-10-14. </big>&nbsp;Alternative
-            link, very latest development version 0.9.431 <a href="astap_setup.exe">ASTAP installer</a>
+            link, very latest development version 0.9.432 <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.exe/download">G17
@@ -103,7 +103,7 @@ database debian Package</a>. or <a href="https://sourceforge.net/projects/hnsky/
           <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.deb/download">ASTAP
 debian
                   package</a></big></big><big> </big><big>&nbsp;or&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.rpm/download">astap_amd64.rpm</a>&nbsp;</big><big> or&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.tar.gz/download">astap_amd64.tar.gz,</a> </big><big>version
-              0.9.431 dated 2020-10-14. Alternative link, development version 0.9.431</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big> ,&nbsp;</big><a href="astap_amd64.rpm">ASTAP rpm package</a>,&nbsp;<a href="astap_amd64.tar.gz">ASTAP tar.gz</a><big>&nbsp;</big></li>
+              0.9.431 dated 2020-10-14. Alternative link, development version 0.9.432</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big> ,&nbsp;</big><a href="astap_amd64.rpm">ASTAP rpm package</a>,&nbsp;<a href="astap_amd64.tar.gz">ASTAP tar.gz</a><big>&nbsp;</big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.deb/download">G17
 star
               database debian package</a></big>&nbsp; or&nbsp;<a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.rpm/download">rpm</a>&nbsp; (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;for
@@ -1839,7 +1839,13 @@ or V17 cotaining the calculated Johnson-V magnitudes.<br>
         measured pixel values should be below saturation.
         <br>
         <br>
-        See&nbsp;also&nbsp;<a href="#blink">blink and photometry</a><br><br><br>
+        See&nbsp;also&nbsp;<a href="#blink">blink and photometry</a><br><br><br><span style="font-weight: bold; text-decoration: underline;">Mark unknown stars<br><br></span>There
+is also an option to mark nova and minor planets using the star
+database. Any star like object missing from the star database will be
+marked. Also if the measured magnitude is one magnitude brighter then
+the database. The G18 star database up to magnitude 18 is recommended
+for this option. If the G18 is selected missing object up to magnitude
+17 will be detected.<br><br><br>
         <br>
         <a href="astap.htm#index">Back to index</a><br>
         <br><span style="font-weight: bold;"><a name="asteroid_annotation"></a><big>Asteroid and comet annotation</big><br>

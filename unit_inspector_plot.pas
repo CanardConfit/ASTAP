@@ -140,7 +140,7 @@ var
           HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if (hfd1>=0.8) {two pixels minimum} and (hfd1<99) then
           begin
-            size:=round(3*hfd1);
+            size:=round(3*hfd1);{for marking area}
             for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
               for i:=fitsX-size to fitsX+size do
                 if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
