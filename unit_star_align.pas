@@ -291,7 +291,7 @@ begin
        memo2_message('Exception in procedure calc_quad_distances');{bug in fpc 3.20? Sets in once case the last elements of array to zero for file 4254816 new_image.fit'}
      end;
 
-      if dist1>min_leng then {large enough for eartch telescope}
+      if dist1>min_leng then {large enough for earth based telescope}
       begin
         quad_star_distances[6,nrquads]:=xt;{store mean x position}
         quad_star_distances[7,nrquads]:=yt;{store mean y position}

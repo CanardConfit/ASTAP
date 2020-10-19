@@ -1,6 +1,6 @@
 unit unit_annotation; {deep sky and star annotation & photometry calibation of the image}
 {$mode delphi}
-{Copyright (C) 2018, 2019 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2018, 2020 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 {This program is free software: you can redistribute it and/or modify
@@ -49,9 +49,9 @@ implementation
 uses
   unit_290, unit_stack, unit_star_align;
 
-const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped font for part of code page 437}
-(
-((0,0,1,0,0),
+const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP native font for part of code page 437}
+((
+(0,0,1,0,0),
 (0,0,1,0,0),
 (0,0,1,0,0),
 (0,0,1,0,0),
@@ -60,7 +60,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,1,0,0),
 (0,0,0,0,0),
 (0,0,1,0,0)),{!}
-
 (
 (0,1,0,1,0),
 (0,1,0,1,0),
@@ -71,7 +70,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,0),
 (0,0,0,0,0),
 (0,0,0,0,0)),{"}
-
 (
 (0,1,0,1,0),
 (0,1,0,1,0),
@@ -82,7 +80,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,0,1,0),
 (0,1,0,1,0),
 (0,1,0,1,0)),{#}
-
 (
 (0,0,1,0,0),
 (0,0,1,0,0),
@@ -93,8 +90,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,1,1,1,0),
 (0,0,1,0,0),
 (0,0,1,0,0)),{dollar sign}
-
-
 (
 (1,1,1,0,0),
 (1,0,1,0,0),
@@ -105,8 +100,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,1,1,1),
 (0,0,1,0,1),
 (0,0,1,1,1)),{%}
-
-
 (
 (0,0,0,0,0),
 (0,1,1,0,0),
@@ -117,8 +110,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,1,0),
 (1,0,0,1,1),
 (0,1,1,0,0)),{&}
-
-
 (
 (0,0,1,0,0),
 (0,0,1,0,0),
@@ -129,7 +120,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,0),
 (0,0,0,0,0),
 (0,0,0,0,0)),{'}
-
 (
 (0,0,0,1,0),
 (0,0,1,0,0),
@@ -140,7 +130,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,1,0,0),
 (0,0,1,0,0),
 (0,0,0,1,0)),{(}
-
 (
 (0,1,0,0,0),
 (0,0,1,0,0),
@@ -151,7 +140,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,1,0,0),
 (0,0,1,0,0),
 (0,1,0,0,0)),{)}
-
 (
 (0,0,0,0,0),
 (0,0,1,0,0),
@@ -162,7 +150,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,1,0,1),
 (0,0,1,0,0),
 (0,0,0,0,0)),{*}
-
 (
 (0,0,0,0,0),
 (0,0,0,0,0),
@@ -173,7 +160,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,1,0,0),
 (0,0,0,0,0),
 (0,0,0,0,0)),{+}
-
 (
 (0,0,0,0,0),
 (0,0,0,0,0),
@@ -184,7 +170,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,1,0,0),
 (0,0,1,0,0),
 (0,1,0,0,0)),{,}
-
 (
 (0,0,0,0,0),
 (0,0,0,0,0),
@@ -195,7 +180,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,0),
 (0,0,0,0,0),
 (0,0,0,0,0)),{-}
-
 (
 (0,0,0,0,0),
 (0,0,0,0,0),
@@ -206,7 +190,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,0),
 (0,1,1,0,0),
 (0,1,1,0,0)),{.}
-
 (
 (0,0,0,0,0),
 (0,0,0,1,0),
@@ -217,8 +200,8 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,0,0,0),
 (1,0,0,0,0),
 (1,0,0,0,0)),{/}
-
-((0,1,1,1,0),{0}
+(
+(0,1,1,1,0),{0}
 (1,0,0,0,1),
 (1,0,0,0,1),
 (1,0,0,0,1),
@@ -227,8 +210,8 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),
 (1,0,0,0,1),
 (0,1,1,1,0)),
-
-((0,0,1,0,0),{1}
+(
+(0,0,1,0,0),{1}
 (0,1,1,0,0),
 (0,0,1,0,0),
 (0,0,1,0,0),
@@ -237,8 +220,8 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,1,0,0),
 (0,0,1,0,0),
 (0,1,1,1,0)),
-
-((0,1,1,1,0),{2}
+(
+(0,1,1,1,0),{2}
 (1,0,0,0,1),
 (0,0,0,0,1),
 (0,0,0,0,1),
@@ -247,8 +230,8 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,0,0,0),
 (1,0,0,0,0),
 (1,1,1,1,1)),
-
-((1,1,1,1,0),{3}
+(
+(1,1,1,1,0),{3}
 (0,0,0,0,1),
 (0,0,0,0,1),
 (0,0,0,0,1),
@@ -257,8 +240,8 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,1),
 (0,0,0,0,1),
 (1,1,1,1,0)),
-
-((1,0,0,0,1),{4}
+(
+(1,0,0,0,1),{4}
 (1,0,0,0,1),
 (1,0,0,0,1),
 (1,0,0,0,1),
@@ -267,8 +250,8 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,1),
 (0,0,0,0,1),
 (0,0,0,0,1)),
-
-((1,1,1,1,1),{5}
+(
+(1,1,1,1,1),{5}
 (1,0,0,0,0),
 (1,0,0,0,0),
 (1,0,0,0,0),
@@ -277,8 +260,8 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,1),
 (1,0,0,0,1),
 (0,1,1,1,0)),
-
-((0,1,1,1,0),{6}
+(
+(0,1,1,1,0),{6}
 (1,0,0,0,0),
 (1,0,0,0,0),
 (1,0,0,0,0),
@@ -287,8 +270,8 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),
 (1,0,0,0,1),
 (0,1,1,1,0)),
-
-((1,1,1,1,1),{7}
+(
+(1,1,1,1,1),{7}
 (0,0,0,0,1),
 (0,0,0,0,1),
 (0,0,0,1,0),
@@ -297,8 +280,8 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,1,0,0),
 (0,0,1,0,0),
 (0,0,1,0,0)),
-
-((0,1,1,1,0),{8}
+(
+(0,1,1,1,0),{8}
 (1,0,0,0,1),
 (1,0,0,0,1),
 (1,0,0,0,1),
@@ -307,8 +290,8 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),
 (1,0,0,0,1),
 (0,1,1,1,0)),
-
-((0,1,1,1,0),{9}
+(
+(0,1,1,1,0),{9}
 (1,0,0,0,1),
 (1,0,0,0,1),
 (1,0,0,0,1),
@@ -317,8 +300,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,1),
 (0,0,0,1,0),
 (0,1,1,0,0)),
-
-
 (
 (0,0,0,0,0),
 (0,0,0,0,0),
@@ -380,7 +361,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,0),
 (0,0,1,0,0),
 (0,0,1,0,0)),{?}
-
 (
 (0,1,1,1,0),
 (1,0,0,0,1),
@@ -391,9 +371,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,0),
 (1,0,0,0,1),
 (0,1,1,1,0)),{@}
-
-
-
 (
 (0,0,1,0,0),{A}
 (0,1,0,1,0),{A}
@@ -404,7 +381,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),{A}
 (1,0,0,0,1),{A}
 (1,0,0,0,1)),{A}
-
 (
 (1,1,1,1,0),{B}
 (0,1,0,0,1),{B}
@@ -415,7 +391,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,0,0,1),{B}
 (0,1,0,0,1),{B}
 (1,1,1,1,0)),{B}
-
 (
 (0,1,1,1,0),{C}
 (1,0,0,0,1),{C}
@@ -426,7 +401,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,0),{C}
 (1,0,0,0,1),{C}
 (0,1,1,1,0)),{C}
-
 (
 (1,1,1,1,0),{D}
 (0,1,0,0,1),{D}
@@ -437,7 +411,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,0,0,1),{D}
 (0,1,0,0,1),{D}
 (1,1,1,1,0)),{D}
-
 (
 (1,1,1,1,1),{E}
 (1,0,0,0,0),{E}
@@ -448,7 +421,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,0),{E}
 (1,0,0,0,0),{E}
 (1,1,1,1,1)),{E}
-
 (
 (1,1,1,1,1),{F}
 (1,0,0,0,0),{F}
@@ -459,7 +431,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,0),{F}
 (1,0,0,0,0),{F}
 (1,0,0,0,0)),{F}
-
 (
 (0,1,1,1,0),{G}
 (1,0,0,0,1),{G}
@@ -470,7 +441,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),{G}
 (1,0,0,1,1),{G}
 (0,1,1,0,1)),{G}
-
 (
 (1,0,0,0,1),{H}
 (1,0,0,0,1),{H}
@@ -481,7 +451,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),{H}
 (1,0,0,0,1),{H}
 (1,0,0,0,1)),{H}
-
 (
 (1,1,1,1,1),{I}
 (0,0,1,0,0),{I}
@@ -492,7 +461,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,1,0,0),{I}
 (0,0,1,0,0),{I}
 (1,1,1,1,1)),{I}
-
 (
 (0,0,0,1,1),{J}
 (0,0,0,0,1),{J}
@@ -503,7 +471,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,1),{J}
 (1,0,0,0,1),{J}
 (0,1,1,1,0)),{J}
-
 (
 (1,0,0,0,1),{K}
 (1,0,0,0,1),{K}
@@ -514,7 +481,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,1,0),{K}
 (1,0,0,0,1),{K}
 (1,0,0,0,1)),{K}
-
 (
 (1,0,0,0,0),{L}
 (1,0,0,0,0),{L}
@@ -525,7 +491,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,0),{L}
 (1,0,0,0,0),{L}
 (1,1,1,1,1)),{L}
-
 (
 (1,0,0,0,1),{M}
 (1,1,0,1,1),{M}
@@ -536,7 +501,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),{M}
 (1,0,0,0,1),{M}
 (1,0,0,0,1)),{M}
-
 (
 (1,0,0,0,1),{N}
 (1,1,0,0,1),{N}
@@ -547,7 +511,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,1,1),{N}
 (1,0,0,0,1),{N}
 (1,0,0,0,1)),{N}
-
 (
 (0,1,1,1,0),{O}
 (1,0,0,0,1),{O}
@@ -558,7 +521,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),{O}
 (1,0,0,0,1),{O}
 (0,1,1,1,0)),{O}
-
 (
 (1,1,1,1,0),{P}
 (1,0,0,0,1),{P}
@@ -569,7 +531,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,0),{P}
 (1,0,0,0,0),{P}
 (1,0,0,0,0)),{P}
-
 (
 (0,1,1,1,0),{Q}
 (1,0,0,0,1),{Q}
@@ -580,7 +541,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,1,1,0),{Q}
 (0,0,0,1,0),{Q}
 (0,0,0,0,1)),{Q}
-
 (
 (1,1,1,1,0),{R}
 (1,0,0,0,1),{R}
@@ -591,7 +551,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,1,0,0),{R}
 (1,0,0,1,0),{R}
 (1,0,0,0,1)),{R}
-
 (
 (0,1,1,1,0),{S}
 (1,0,0,0,1),{S}
@@ -602,7 +561,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,1),{S}
 (1,0,0,0,1),{S}
 (0,1,1,1,0)),{S}
-
 (
 (1,1,1,1,1),{T}
 (1,0,1,0,1),{T}
@@ -613,7 +571,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,1,0,0),{T}
 (0,0,1,0,0),{T}
 (0,1,1,1,0)),{T}
-
 (
 (1,0,0,0,1),{U}
 (1,0,0,0,1),{U}
@@ -624,7 +581,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),{U}
 (1,0,0,0,1),{U}
 (0,1,1,1,0)),{U}
-
 (
 (1,0,0,0,1),{V}
 (1,0,0,0,1),{V}
@@ -635,7 +591,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,0,1,0),{V}
 (0,1,0,1,0),{V}
 (0,0,1,0,0)),{V}
-
 (
 (1,0,0,0,1),{W}
 (1,0,0,0,1),{W}
@@ -646,7 +601,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,1,0,1,1),{W}
 (1,1,0,1,1),{W}
 (1,0,0,0,1)),{W}
-
 (
 (1,0,0,0,1),{X}
 (1,0,0,0,1),{X}
@@ -657,7 +611,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,0,1,0),{X}
 (1,0,0,0,1),{X}
 (1,0,0,0,1)),{X}
-
 (
 (1,0,0,0,1),{Y}
 (1,0,0,0,1),{Y}
@@ -668,7 +621,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,1,0,0),{Y}
 (0,0,1,0,0),{Y}
 (0,0,1,0,0)),{Y}
-
 (
 (1,1,1,1,1),{Z}
 (0,0,0,0,1),{Z}
@@ -679,7 +631,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,0),{Z}
 (1,0,0,0,0),{Z}
 (1,1,1,1,1)),{Z}
-
 (
 (0,1,1,1,1),
 (0,1,0,0,0),
@@ -690,7 +641,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,0,0,0),
 (0,1,0,0,0),
 (0,1,1,1,1)),{[}
-
 (
 (0,0,0,0,0),
 (1,0,0,0,0),
@@ -701,7 +651,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,1,0,0),
 (0,0,0,1,0),
 (0,0,0,1,0)),{\}
-
 (
 (1,1,1,1,0),
 (0,0,0,1,0),
@@ -712,7 +661,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,1,0),
 (0,0,0,1,0),
 (1,1,1,1,0)),{]}
-
 (
 (0,0,1,0,0),
 (0,1,0,1,0),
@@ -723,7 +671,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,0),
 (0,0,0,0,0),
 (0,0,0,0,0)),{^}
-
 (
 (0,0,0,0,0),
 (0,0,0,0,0),
@@ -734,7 +681,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,0),
 (0,0,0,0,0),
 (1,1,1,1,1)),{_}
-
 (
 (0,0,1,0,0),
 (0,0,1,0,0),
@@ -745,7 +691,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,0),
 (0,0,0,0,0),
 (0,0,0,0,0)),{`}
-
 (
 (0,0,0,0,0),{a}
 (0,0,0,0,0),{a}
@@ -756,8 +701,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),{a}
 (1,0,0,1,1),{a}
 (0,1,1,0,1)),{a}
-
-
 (
 (0,0,0,0,0),{b}
 (1,0,0,0,0),{b}
@@ -768,7 +711,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),{b}
 (1,0,0,0,1),{b}
 (1,1,1,1,0)),{b}
-
 (
 (0,0,0,0,0),{c}
 (0,0,0,0,0),{c}
@@ -779,7 +721,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,0),{c}
 (1,0,0,0,1),{c}
 (0,1,1,1,0)),{c}
-
 (
 (0,0,0,0,0),{d}
 (0,0,0,0,1),{d}
@@ -790,7 +731,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),{d}
 (1,0,0,1,1),{d}
 (0,1,1,0,1)),{d}
-
 (
 (0,0,0,0,0),{e}
 (0,0,0,0,0),{e}
@@ -801,7 +741,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,1,1,1,0),{e}
 (1,0,0,0,0),{e}
 (0,1,1,1,1)),{e}
-
 (
 (0,0,1,1,0),{f}
 (0,1,0,0,1),{f}
@@ -812,7 +751,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,0,0,0),{f}
 (0,1,0,0,0),{f}
 (0,1,0,0,0)),{f}
-
 (
 (0,0,0,0,0),{g}
 (0,0,0,0,0),{g}
@@ -823,7 +761,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,1,0,1),{g}
 (0,0,0,0,1),{g}
 (1,1,1,1,0)),{g}
-
 (
 (0,0,0,0,0),{h}
 (1,0,0,0,0),{h}
@@ -834,7 +771,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),{h}
 (1,0,0,0,1),{h}
 (1,0,0,0,1)),{h}
-
 (
 (0,0,0,0,0),{i}
 (0,1,1,0,0),{i}
@@ -845,7 +781,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,1,0,0),{i}
 (0,0,1,0,0),{i}
 (1,1,1,1,1)),{i}
-
 (
 (0,0,0,0,0),{j}
 (0,0,0,1,1),{j}
@@ -856,7 +791,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,1),{j}
 (1,0,0,0,1),{j}
 (0,1,1,1,0)),{j}
-
 (
 (0,0,0,0,0),{k}
 (1,0,0,0,0),{k}
@@ -867,7 +801,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,1,0,0),{k}
 (1,0,0,1,0),{k}
 (1,0,0,0,1)),{k}
-
 (
 (0,0,0,0,0),{l}
 (0,0,1,0,0),{l}
@@ -878,7 +811,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,1,0,0),{l}
 (0,0,1,0,0),{l}
 (0,0,1,1,1)),{l}
-
 (
 (0,0,0,0,0),{m}
 (0,0,0,0,0),{m}
@@ -889,7 +821,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,1,0,1),{m}
 (1,0,0,0,1),{m}
 (1,0,0,0,1)),{m}
-
 (
 (0,0,0,0,0),{n}
 (0,0,0,0,0),{n}
@@ -900,7 +831,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),{n}
 (1,0,0,0,1),{n}
 (1,0,0,0,1)),{n}
-
 (
 (0,0,0,0,0),{o}
 (0,0,0,0,0),{o}
@@ -911,7 +841,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),{o}
 (1,0,0,0,1),{o}
 (0,1,1,1,0)),{o}
-
 (
 (0,0,0,0,0),{p}
 (0,0,0,0,0),{p}
@@ -922,7 +851,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,1,1,1,0),{p}
 (1,0,0,0,0),{p}
 (1,0,0,0,0)),{p}
-
 (
 (0,0,0,0,0),{q}
 (0,0,0,0,0),{q}
@@ -933,7 +861,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,1,0,1),{q}
 (0,0,0,0,1),{q}
 (0,0,0,0,1)),{q}
-
 (
 (0,0,0,0,0),{r}
 (0,0,0,0,0),{r}
@@ -944,7 +871,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,0,0,0),{r}
 (0,1,0,0,0),{r}
 (1,1,1,0,0)),{r}
-
 (
 (0,0,0,0,0),{s}
 (0,0,0,0,0),{s}
@@ -955,7 +881,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,0,0,0,1),{s}
 (0,0,0,0,1),{s}
 (1,1,1,1,0)),{s}
-
 (
 (0,0,0,0,0),{t}
 (0,1,0,0,0),{t}
@@ -966,7 +891,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,0,0,0),{t}
 (0,1,0,0,1),{t}
 (0,0,1,1,0)),{t}
-
 (
 (0,0,0,0,0),{u}
 (0,0,0,0,0),{u}
@@ -977,7 +901,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (1,0,0,0,1),{u}
 (1,0,0,1,1),{u}
 (0,1,1,0,1)),{u}
-
 (
 (0,0,0,0,0),{v}
 (0,0,0,0,0),{v}
@@ -988,7 +911,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,0,1,0),{v}
 (0,1,0,1,0),{v}
 (0,0,1,0,0)),{v}
-
 (
 (0,0,0,0,0),{w}
 (0,0,0,0,0),{w}
@@ -1010,7 +932,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,0,1,0),{x}
 (1,0,0,0,1),{x}
 (1,0,0,0,1)),{x}
-
 (
 (0,0,0,0,0),{y}
 (0,0,0,0,0),{y}
@@ -1021,7 +942,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,1,0,1),{y}
 (0,0,0,0,1),{y}
 (1,1,1,1,0)),{y}
-
 (
 (0,0,0,0,0),{z}
 (0,0,0,0,0),{z}
@@ -1032,7 +952,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,0,0,0),{z}
 (1,0,0,0,0),{z}
 (1,1,1,1,1)),{z}
-
 (
 (0,0,1,1,0),
 (0,1,0,0,0),
@@ -1043,7 +962,6 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP own developped
 (0,1,0,0,0),
 (0,1,0,0,0),
 (0,0,1,1,0)),//{
-
 (
 (0,0,1,0,0),
 (0,0,1,0,0),
@@ -1811,12 +1729,12 @@ end;{plot stars}
 
 
 
-procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the mangitude. For super nova search}
+procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
 var
   fitsX,fitsY, fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,x,y      : double;
-  star_total_counter,x2,y2,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2 : integer;
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4              : double;
+  x,y,star_total_counter,x2,y2,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2 : integer;
   flip_horizontal, flip_vertical   : boolean;
   mag_offset_array                 : array of double;
   Save_Cursor                      : TCursor;
@@ -1833,23 +1751,17 @@ var
       det:=CD2_2*CD1_1 - CD1_2*CD2_1;
       fitsX:= +crpix1 - (CD1_2*dDEC - CD2_2*dRA) / det; {1..width2}
       fitsY:= +crpix2 + (CD1_1*dDEC - CD2_1*dRA) / det; {1..height2}
-      x:=fitsX-1; {0..width2-1}
-      y:=fitsY-1; {0..height2-1}
+      x:=round(fitsX-1); {0..width2-1}
+      y:=round(fitsY-1); {0..height2-1}
 
       if ((x>=0) and (x<=width2-1) and (y>=0) and (y<=height2-1)) then {within image1}
       begin
-       img[0,round(x),round(y)]:=min(img[0,round(x),round(y)],mag2);{take brightest use trunc and round for best accuracy}
-       img[0,trunc(x),round(y)]:=min(img[0,trunc(x),round(y)],mag2);
-       img[0,round(x),trunc(y)]:=min(img[0,round(x),trunc(y)],mag2);
-       img[0,trunc(x),trunc(y)]:=min(img[0,trunc(x),trunc(y)],mag2);
+        img[0,x,y]:=min(img[0,x,y],mag2);{take brightest star}
       end;
     end;
 
 
 begin
-
-//  mainwindow.image1.canvas.pixels[0,0]:=$FFFFF;
-
   if ((fits_file) and (cd1_1<>0)) then
   begin
     Save_Cursor := Screen.Cursor;
@@ -1923,7 +1835,6 @@ begin
 
   end;{fits file}
 end;{plot stars}
-
 
 
 procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot image stars and database stars used for the solution}

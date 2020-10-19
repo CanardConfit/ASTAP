@@ -749,7 +749,7 @@ var
   header    : array[0..2880] of ansichar;
   i,j,k,nr,error3,naxis1, reader_position,n,p,nrchars,dsscol  : integer;
   fract,dummy,scale,ccd_temperature                           : double;
-  col_float,bscale,measured_max  : single;
+  col_float,bscale,measured_max,scalefactor  : single;
   s                  : string[3];
   bzero              : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
   wo                 : word;   {for 16 signed integer}
@@ -1388,6 +1388,7 @@ begin
         begin
           x_longword:=swapendian(fitsbuffer4[i]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
           col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
+          if isNan(col_float) then col_float:=measured_max;{not a number prevent errors, can happen in PS1 images with very high floating point values}
           img_loaded2[k,i,j]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
@@ -1453,13 +1454,21 @@ begin
     end; {colors naxis3 times}
 
     {rescale if required}
-    if ( ((nrbits<=-32){-32 or -64} or (nrbits=+32)) and  (measured_max<=1.01) ) then {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..64000 float}
+    if ((nrbits<=-32){-32 or -64} or (nrbits=+32)) then
     begin
-      for k:=0 to naxis3-1 do {do all colors}
-        for j:=0 to height2-1 do
-          for i:=0 to width2-1 do
-            img_loaded2[k,i,j]:= img_loaded2[k,i,j]*65535;
-      datamax_org:=measured_max*65535;
+      scalefactor:=1;
+      if measured_max<=1.01 then scalefactor:=65535 {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..64000 float}
+      else
+      if measured_max>65535 then scalefactor:=65535/measured_max;
+
+      if scalefactor<>1 then {not a 0..65535 range, rescale}
+      begin
+        for k:=0 to naxis3-1 do {do all colors}
+          for j:=0 to height2-1 do
+            for i:=0 to width2-1 do
+              img_loaded2[k,i,j]:= img_loaded2[k,i,j]*scalefactor;
+        datamax_org:=measured_max*scalefactor;
+      end;
     end
     else
     if nrbits=8 then datamax_org:=255 {not measured}
@@ -2233,7 +2242,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.433, '+about_message4+', dated 2020-10-16';
+  #13+#10+'ASTAP version ß0.9.435, '+about_message4+', dated 2020-10-19';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -8279,8 +8288,8 @@ const
              if measured_magn<magn_limit-10 then {bright enough to be in the database}
              begin
                magn_database:=default;{1000}
-               for i:=-2 to 2 do
-                 for j:=-2 to 2 do
+               for i:=-3 to 3 do
+                 for j:=-3 to 3 do
                  begin {database star available?}
                    magnd:=img_temp2[0,round(xc)+i,round(yc)+j];
                    if magnd<default then {a star from the database}

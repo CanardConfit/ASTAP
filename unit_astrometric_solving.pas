@@ -442,8 +442,8 @@ begin
 
     for i:=0 to nrstars-1 do {correct star positions for cropping. Simplest method}
     begin
-      starlist3[0,i]:={(binning-1)/2} + starlist3[0,i]*binning+(width2*(1-cropping)/2);{correct star positions for binning/ cropping}
-      starlist3[1,i]:={(binning-1)/2} + starlist3[1,i]*binning+(height2*(1-cropping)/2);
+      starlist3[0,i]:=starlist3[0,i]*binning+(width2*(1-cropping)/2);{correct star positions for binning/ cropping}
+      starlist3[1,i]:=starlist3[1,i]*binning+(height2*(1-cropping)/2);
     end;
   end
   else
@@ -539,6 +539,7 @@ begin
       fov2:=fov_org;
     end;
 
+
     hfd_min:=max(0.8,min_star_size_arcsec/(binning*fov_org*3600/height2) );{to ignore hot pixels which are too small}
     bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
     nrstars:=Length(starlist2[0]);
@@ -559,7 +560,7 @@ begin
 
     if go_ahead then {enough stars, lets find quads}
     begin
-      find_quads(starlist2,0 {min length}, quad_smallest,quad_star_distances2);{find star quads for new image}
+      find_quads(starlist2,0 {min length}, quad_smallest,quad_star_distances2);{find star quads for new image. Quads and quad_smallest are binning independend}
       nr_quads:=Length(quad_star_distances2[0]);
       go_ahead:=nr_quads>=3; {enough quads?}
 
@@ -683,7 +684,8 @@ begin
                   errorlevel:=33;{read error star database}
                   exit; {no stars}
                 end;
-                find_quads(starlist1,quad_smallest*(cdelt2*3600)*0.99 {filter value to exclude too small quads, convert pixels to arcsec as in database}, dummy,quad_star_distances1);{find quads for reference image/database. Filter out too small quads for Earth based telescopes}
+                find_quads(starlist1,quad_smallest*(fov_org*3600/height2 {pixelsize in"})*0.99 {filter value to exclude too small quads, convert pixels to arcsec as in database}, dummy,quad_star_distances1);{find quads for reference image/database. Filter out too small quads for Earth based telescopes}
+                                     {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
               until ((nrstars_required>database_stars) {No more stars available in the database}
                       or (nr_quads<1.1*Length(quad_star_distances1[0])*nrstars/nrstars_required) {Enough quads found. The amount quads could be too low because due to filtering out too small database quads (center m13, M16)in routine find_quads}
                       or (extrastars>15)) {Go up this factor maximum};
