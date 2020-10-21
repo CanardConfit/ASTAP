@@ -1218,7 +1218,7 @@ object mainwindow: Tmainwindow
       object calibrate_photometry1: TMenuItem
         Caption = 'Calibrate photometry'
         Enabled = False
-        Hint = 'Calibrate photometry using available star database (Gaia BP or V magnitude) Stars should not be saturated. For mono/red channel only.'
+        Hint = 'Calibrate photometry using available star database (Gaia BP or V magnitude) Works best for raw/mono images. For colour images red channel will be used but accuracy will be less.'
         ShortCut = 16464
         OnClick = star_annotation1Click
       end

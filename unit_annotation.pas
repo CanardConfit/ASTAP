@@ -1628,7 +1628,7 @@ begin
 
     counter_flux_measured:=0;
 
-    bp_rp:=999;{not defined in mono versions}
+    bp_rp:=999;{not defined in mono versions of the database}
 
     fitsX_middle:=(width2+1)/2;{range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
     fitsY_middle:=(height2+1)/2;

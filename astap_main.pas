@@ -1457,18 +1457,18 @@ begin
     if ((nrbits<=-32){-32 or -64} or (nrbits=+32)) then
     begin
       scalefactor:=1;
-      if measured_max<=1.01 then scalefactor:=65535 {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..64000 float}
-      else
-      if measured_max>65535 then scalefactor:=65535/measured_max;
-
+      if ((measured_max<=1.01) or (measured_max>65535)) then scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
+                                                                                              {or if values are above 65535}
       if scalefactor<>1 then {not a 0..65535 range, rescale}
       begin
         for k:=0 to naxis3-1 do {do all colors}
           for j:=0 to height2-1 do
             for i:=0 to width2-1 do
               img_loaded2[k,i,j]:= img_loaded2[k,i,j]*scalefactor;
-        datamax_org:=measured_max*scalefactor;
-      end;
+        datamax_org:=65535;
+      end
+      else  datamax_org:=measured_max;
+
     end
     else
     if nrbits=8 then datamax_org:=255 {not measured}
@@ -1478,7 +1478,7 @@ begin
       datamax_org:=255;
       nrbits:=8; {already converted to array with seperate colour sections}
     end
-    else {16, -32 bit}
+    else {16 bit}
     datamax_org:=measured_max;{most common. It set for nrbits=24 in beginning at 255}
 
     cblack:=datamin_org;{for case histogram is not called}
@@ -2242,7 +2242,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.435, '+about_message4+', dated 2020-10-19';
+  #13+#10+'ASTAP version ß0.9.436, '+about_message4+', dated 2020-10-21';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -10177,6 +10177,7 @@ begin
   if flux_magn_offset>0 then
   begin
       mainwindow.caption:='Photometry calibration successfull';
+      if naxis3>1 then memo2_message('Photometric accuracy for colour images is less. Conversion to mono will help.');
       application.hint:=mainwindow.caption;
   end;
 end;
