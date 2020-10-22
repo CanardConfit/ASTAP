@@ -2136,8 +2136,7 @@ var
    resized :boolean;
    old_width2,old_height2 : integer;
 begin
-
-  if mainwindow.Undo1.Enabled=true then
+   if mainwindow.Undo1.Enabled=true then
   begin
     if img_backup=nil then exit;{for some rare cases}
 
@@ -2242,7 +2241,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.436, '+about_message4+', dated 2020-10-21';
+  #13+#10+'ASTAP version ß0.9.437, '+about_message4+', dated 2020-10-22';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -8521,9 +8520,10 @@ var
   tmpbmp: TBitmap;
   ARect: TRect;
   oldcursor: tcursor;
-  x, y    : Integer;
+  x, y,x2,y2 : Integer;
   xLine: PByteArray;
   ratio    : double;
+  flipH,flipV : boolean;
 begin
   OldCursor := Screen.Cursor;
   Screen.Cursor:= crHourGlass;
@@ -8537,12 +8537,13 @@ begin
       ARect := Rect(0,0, mainwindow.image1.width, mainwindow.image1.height);
       TmpBmp.Canvas.StretchDraw(ARect, mainwindow.Image1.Picture.bitmap);
 
-//      mainwindow.Image1.Picture.bitmap.Assign(TmpBmp);
-      {move to array}
       ratio:=TmpBmp.width/width2;
 
       width2:=TmpBmp.width;
       height2:=TmpBmp.Height;
+
+      flipH:=mainwindow.flip_horizontal1.checked;
+      flipV:=mainwindow.flip_vertical1.checked;
 
       setlength(img_loaded,naxis3,width2,height2);
 
@@ -8550,15 +8551,16 @@ begin
         xLine := TmpBmp.ScanLine[y];
         for x := 0 to width2 -1 do
         begin
-          img_loaded[0,x,y]:=xLine^[x*3];{red}
-          if naxis3>1 then img_loaded[1,x,y]:=xLine^[x*3+1];{green}
-          if naxis3>2 then img_loaded[2,x,y]:=xLine^[x*3+2];{blue}
+          if flipH then x2:=width2-1-x else x2:=x;
+          if flipV=false then y2:=height2-1-y else y2:=y;
+          img_loaded[0,x2,y2]:=xLine^[x*3];{red}
+          if naxis3>1 then img_loaded[1,x2,y2]:=xLine^[x*3+1];{green}
+          if naxis3>2 then img_loaded[2,x2,y2]:=xLine^[x*3+2];{blue}
         end;
       end;
 
       update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
       update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-      datamax_org:=255;
       update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
 
 
