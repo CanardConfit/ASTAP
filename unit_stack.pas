@@ -1312,49 +1312,62 @@ end;
 
 procedure analyse_fits(img : image_array;var star_counter : integer; var backgr, hfd_median : double); {find background, number of stars, median HFD}
 var
-   fitsX,fitsY,size,i, j          : integer;
-   hfd1,star_fwhm,snr,flux,xc,yc  :double;
-   hfd_list                       :array of double;
+   fitsX,fitsY,size,i,j,retries,max_stars         : integer;
+   hfd1,star_fwhm,snr,flux,xc,yc,detection_level  : double;
+   hfd_list                                       : array of double;
    img_temp2  : image_array;
 
 const
    len: integer=1000;
 
 begin
+  max_stars:=500;
   star_counter:=0;
   SetLength(hfd_list,len);{set array length to len}
 
   get_background(0,img,true,true {calculate background and also star level end noise level},{var}backgr,star_level);
 
+  detection_level:=star_level; {level above background. Start with a high value}
+  retries:=2; {try up to three times to get enough stars from the image}
+
   if ((backgr<60000) and (backgr>8)) then
   begin
-    setlength(img_temp2,1,width2,height2);{set length of image array}
-    for fitsY:=0 to height2-1 do
-      for fitsX:=0 to width2-1  do
-        img_temp2[0,fitsX,fitsY]:=0;{mark as no surveyed area}
+    repeat
+      setlength(img_temp2,1,width2,height2);{set length of image array}
+      for fitsY:=0 to height2-1 do
+        for fitsX:=0 to width2-1  do
+          img_temp2[0,fitsX,fitsY]:=0;{mark as no surveyed area}
 
-    for fitsY:=0 to height2-1 do
-    begin
-      for fitsX:=0 to width2-1  do
+      for fitsY:=0 to height2-1 do
       begin
-        if (( img_temp2[0,fitsX,fitsY]=0){area not surveyed} and (img[0,fitsX,fitsY]-backgr>star_level)) then {new star. For analyse used sigma is 5, so not too low.}
+        for fitsX:=0 to width2-1  do
         begin
-          HFD(img,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-          if ((hfd1<=15) and (snr>10) and (hfd1>0.8) {two pixels minimum} ) then
+          if (( img_temp2[0,fitsX,fitsY]=0){area not surveyed} and (img[0,fitsX,fitsY]-backgr>detection_level)) then {new star. For analyse used sigma is 5, so not too low.}
           begin
-            hfd_list[star_counter]:=hfd1;{store}
-            inc(star_counter);
-            if star_counter>=len then begin len:=len+1000; SetLength(hfd_list,len);{increase size} end;
-            size:=round(5*hfd1);
+            HFD(img,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            if ((hfd1<=30) and (snr>10) and (hfd1>0.8) {two pixels minimum} ) then
+            begin
+              hfd_list[star_counter]:=hfd1;{store}
+              inc(star_counter);
+              if star_counter>=len then begin len:=len+1000; SetLength(hfd_list,len);{increase size} end;
+              size:=round(5*hfd1);
 
-            for j:=fitsY to fitsY+size do {Mark the whole star area as surveyed}
-               for i:=fitsX-size to fitsX+size do
-                 if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
-                   img_temp2[0,i,j]:=1;
+              for j:=fitsY to fitsY+size do {Mark the whole star area as surveyed}
+                 for i:=fitsX-size to fitsX+size do
+                   if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
+                     img_temp2[0,i,j]:=1;
+            end;
           end;
         end;
       end;
-    end;
+
+      dec(retries);{try again with lower detection level}
+      if retries =1 then begin if 15*noise_level[0]<star_level then detection_level:=15*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
+      if retries =0 then begin if  5*noise_level[0]<star_level then detection_level:= 5*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
+
+    until ((star_counter>=max_stars) or (retries<0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
+
+
     if star_counter>0 then
     begin
       SetLength(hfd_list,star_counter);{set size correctly}
@@ -3214,7 +3227,7 @@ begin
               if full {amode=3} then {listview7 photometry plus mode}
               begin
 
-                analyse_fits(img ,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
+                analyse_fits(img,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
                 lv.Items.item[c].subitems.Strings[P_background]:=inttostr5(round(backgr));
                 lv.Items.item[c].subitems.Strings[P_filter]:=filter_name;
                 lv.Items.item[c].subitems.Strings[P_hfd]:=floattostrF2(hfd_median,0,1);

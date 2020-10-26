@@ -728,7 +728,7 @@ const
   font_name: string= 'Courier';
   font_size : integer = 9;
   {$else}
-  {$IFDEF mswindows}
+  {$IFDEF linux}
   font_name: string= 'Monospace';
   font_size : integer= 10;
   {$ELSE}
@@ -1837,8 +1837,8 @@ end;
 
 procedure create_test_image(type_test : integer);{create an artificial test image}
 var
-   i,j,m,n, factor,stepsize,starcounter,subsampling          : integer;
-   sigma,hole_radius,donut_radius,hfd_diameter,shiftX,shiftY : double;
+   i,j,m,n, factor,stepsize,stepsize2, starcounter,subsampling          : integer;
+   sigma,hole_radius,donut_radius,hfd_diameter,shiftX,shiftY            : double;
    gradient                  : boolean;
 begin
   naxis:=0; {0 dimensions}
@@ -1940,7 +1940,6 @@ begin
     if stepsize<8 then stepsize:=8;{minimum value}
 
     subsampling:=5;
-    stepsize:=stepsize*subsampling;
 
 
     For i:=stepsize to height2-1-stepsize do
@@ -1958,22 +1957,26 @@ begin
          // shifty:=-0.5;
 
           inc(starcounter);
-          for m:=-stepsize to stepsize do for n:=-stepsize to stepsize do
-          begin
-              if sigma*2.5<=5 then
-              begin
-                img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]:= img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]+(65000/power(starcounter,0.8)){Intensity}*(1/(subsampling*subsampling))* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))); {gaussian shaped stars}
-                if frac(starcounter/20)=0 then img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]:=img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]+(65000/power(starcounter,0.7)){Intensity} *(1/(subsampling*subsampling))* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))); {diagonal gaussian shaped stars}
-              end
-              else
-              begin
-                hfd_diameter:=sigma*2.5;
-                hole_radius:=trunc(hfd_diameter/3);
-                donut_radius:=sqrt(2*sqr(hfd_diameter/2)-sqr(hole_radius));
-                if ( (sqrt(n*n+m*m)<=donut_radius) and (sqrt(n*n+m*m)>=hole_radius){hole}) then img_loaded[0,j+n,i+m]:=img_loaded[0,j+n,i+m]+4000*sqr(j/width2) {DONUT SHAPED stars}
-              end;
-          end;
 
+          if sigma*2.5<=5 then {gaussian stars}
+          begin
+            stepsize2:=stepsize*subsampling;
+            for m:=-stepsize2 to stepsize2 do for n:=-stepsize2 to stepsize2 do
+            begin
+              img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]:= img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]+(65000/power(starcounter,0.8)){Intensity}*(1/sqr(subsampling)* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))) ); {gaussian shaped stars}
+              if frac(starcounter/20)=0 then img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]:=img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]+(65000/power(starcounter,0.7)){Intensity} *(1/(subsampling*subsampling))* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))); {diagonal gaussian shaped stars}
+            end;
+          end
+          else
+          begin  {donut stars}
+            for m:=-stepsize to stepsize do for n:=-stepsize to stepsize do
+            begin
+              hfd_diameter:=sigma*2.5;
+              hole_radius:=trunc(hfd_diameter/3);
+              donut_radius:=sqrt(2*sqr(hfd_diameter/2)-sqr(hole_radius));
+              if ( (sqrt(n*n+m*m)<=donut_radius) and (sqrt(n*n+m*m)>=hole_radius){hole}) then img_loaded[0,j+n,i+m]:=img_loaded[0,j+n,i+m]+4000*sqr(j/width2) {DONUT SHAPED stars}
+            end;
+          end;
         end;
       end;
 
@@ -2252,7 +2255,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.439, '+about_message4+', dated 2020-10-25';
+  #13+#10+'ASTAP version ß0.9.440, '+about_message4+', dated 2020-10-26';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6193,7 +6196,7 @@ begin
 
     get_int(font_color,'font_color');
     get_int(font_size,'font_size');
-    dum:=initstring.Values['font_name'];if dum<>'' then font_name:= dum;
+    dum:=initstring.Values['font_name2'];if dum<>'' then font_name:= dum;
     dum:=initstring.Values['font_style'];if dum<>'' then font_style:= strtostyle(dum);
     get_int(font_charset,'font_charset');
 
@@ -6513,7 +6516,7 @@ begin
 
     initstring.Values['font_color']:=inttostr(font_color);
     initstring.Values['font_size']:=inttostr(font_size);
-    initstring.Values['font_name']:=font_name;
+    initstring.Values['font_name2']:=font_name;
     initstring.Values['font_style']:=StyleToStr(font_style);
     initstring.Values['font_charset']:=inttostr(font_charset);
 
@@ -9995,7 +9998,7 @@ begin
           begin
             HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
-            if ((hfd1<=99) and (snr>10) and (hfd1>hfd_min) ) then
+            if ((hfd1<=25) and (snr>10) and (hfd1>hfd_min) ) then
             begin
   //            size:=round(5*hfd1);
               if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);
