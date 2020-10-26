@@ -1837,8 +1837,8 @@ end;
 
 procedure create_test_image(type_test : integer);{create an artificial test image}
 var
-   i,j,m,n, factor,stepsize,starcounter    : integer;
-   sigma,hole_radius,donut_radius,hfd_diameter : double;
+   i,j,m,n, factor,stepsize,starcounter,subsampling          : integer;
+   sigma,hole_radius,donut_radius,hfd_diameter,shiftX,shiftY : double;
    gradient                  : boolean;
 begin
   naxis:=0; {0 dimensions}
@@ -1881,6 +1881,7 @@ begin
     height2:=1800;
   end;{else use width and height of last fits file loaded}
 
+  Randomize; {initialise}
 
   datamin_org:=1000;{for case histogram is not called}
   datamax_org:=65535;
@@ -1938,6 +1939,10 @@ begin
     stepsize:=round(sigma*3);
     if stepsize<8 then stepsize:=8;{minimum value}
 
+    subsampling:=5;
+    stepsize:=stepsize*subsampling;
+
+
     For i:=stepsize to height2-1-stepsize do
     for j:=stepsize to width2-1-stepsize do
     begin
@@ -1946,13 +1951,19 @@ begin
         if i>height2-300 then {hot pixels} img_loaded[0,j,i]:=65535 {hot pixel}
         else {create real stars}
         begin
+          shiftX:=-0.5+random(1000)/1000; {result between -0.5 and +0.5}
+          shiftY:=-0.5+random(1000)/1000; {result between -0.5 and +0.5}
+
+         // shiftx:=-0.5;
+         // shifty:=-0.5;
+
           inc(starcounter);
           for m:=-stepsize to stepsize do for n:=-stepsize to stepsize do
           begin
               if sigma*2.5<=5 then
               begin
-                img_loaded[0,j+n,i+m]:=img_loaded[0,j+n,i+m]+(65000/power(starcounter,0.8)){Intensity} *exp(-0.5/sqr(sigma)*(m*m+n*n)); {gaussian shaped stars}
-                if frac(starcounter/20)=0 then img_loaded[0,180+starcounter+n,130+starcounter+m]:=img_loaded[0,180+starcounter+n,130+starcounter+m]+(65000/power(starcounter,0.7)){Intensity} *exp(-0.5/sqr(sigma)*(m*m+n*n)) {diagonal gaussian shaped stars}
+                img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]:= img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]+(65000/power(starcounter,0.8)){Intensity}*(1/(subsampling*subsampling))* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))); {gaussian shaped stars}
+                if frac(starcounter/20)=0 then img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]:=img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]+(65000/power(starcounter,0.7)){Intensity} *(1/(subsampling*subsampling))* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))); {diagonal gaussian shaped stars}
               end
               else
               begin
@@ -2241,7 +2252,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.437, '+about_message4+', dated 2020-10-22';
+  #13+#10+'ASTAP version ß0.9.439, '+about_message4+', dated 2020-10-25';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -11098,44 +11109,9 @@ begin
 end;
 
 
-function local_sdold(x1,y1, ri{regio of interest} : integer; img : image_array):double;{calculate standard deviation in img at position x1, y1 in a rectangle with sides 2*ri+1}
-var i,j,counter : integer;
-    average,sd,val: double;
-begin
-  if ((x1-ri<0) or (x1+ri>width2-1) or
-      (y1-ri<0) or (y1+ri>height2-1) )
-    then begin result:=999; exit;end;
-
-
-  average:=0;
-  for i:=-ri to ri do {calculate average background at the square boundaries of region of interest}
-  for j:=-ri to ri do {calculate average background at the square boundaries of region of interest}
-  begin
-    average:=average+img[0,x1+i,y1+j];
-  end;
-  average:=average/sqr(ri+ri+1); {background average}
-
-  sd:=0;
-  counter:=0;
-
-  for i:=-ri to ri do {calculate standard deviation  of region of interest}
-  for j:=-ri to ri do {calculate standard deviation  of region of interest}
-  begin
-    val:=img[0,x1+i,y1+j];
-    if val<2*average then {ignore hot pixels}
-    begin
-      sd:=sd+sqr(average-img[0,x1+i,y1+j]);
-      inc(counter);
-    end;
-  end;
-  if counter<>0 then result:=sqrt(sd/counter) {standard deviation in background}
-                else result:=999;
-end;
-
 procedure local_sd(x1,y1, x2,y2,col : integer;{accuracy: double;} img : image_array; var sd,mean :double);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 var i,j,counter,iterations,w,h : integer;
-    value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4,
-    sd_old,meanx, median,minimum, maximum,max_counter, saturated : double;
+    value, sd_old,meanx   : double;
 
 begin
   w:=Length(img[0]); {width}
@@ -11493,8 +11469,6 @@ end;
 
 procedure Tmainwindow.Image1MouseUp(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
-var
-  xf, yf : integer;
 begin
    if button=mbright then
    begin

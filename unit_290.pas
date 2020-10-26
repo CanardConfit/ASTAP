@@ -782,7 +782,7 @@ begin
          name_star:=copy(name_star,1,3)+'_'+filenames290[area290];{tyc0101.290}
          try
            thefile_stars:=tfilestream.Create( database_path+name_star, fmOpenRead or fmShareDenyWrite); {read but do not lock file}
-           Reader_stars := TReader.Create (thefile_stars, 5*6*9*11);{number of hnsky records, multiply off all posible record sizes}
+           Reader_stars := TReader.Create (thefile_stars, 128*1024);{number of hnsky records, multiply off all posible record sizes}
            {thefile_stars.size-reader.position>sizeof(hkyhdr) could also be used but slow down a factor of 2 !!!}
            files_available:=true;
          except
