@@ -9600,7 +9600,7 @@ begin
         '-speed mode[auto/slow] {Slow is forcing small search steps to improve detection.}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-analyse snr_min {Analyse only and report in the errorlevel the median HFD * 100M + number of stars used}'+#10+
-        '-extract snr_min {As -analyse but additionally write a .csv file with detected stars info}'+#10+
+        '-extract snr_min {As -analyse but additionally write a .csv file with the detected stars info}'+#10+
         '-annotate  {Produce deepsky annotated jpg file}' +#10+
         '-debug  {Show GUI and stop prior to solving}' +#10+
         '-log   {Write the solver log to file}'+#10+

@@ -1367,7 +1367,7 @@ begin
 
               if report then
               begin
-                writeln(f,floattostr4(xc)+','+floattostr4(yc)+','+floattostr4(hfd1)+','+inttostr(round(snr))+','+inttostr(round(flux)) );
+                writeln(f,floattostr4(xc+1)+','+floattostr4(yc+1)+','+floattostr4(hfd1)+','+inttostr(round(snr))+','+inttostr(round(flux)) ); {+1 to convert 0... to FITS 1... coordinates}
               end;
 
             end;
