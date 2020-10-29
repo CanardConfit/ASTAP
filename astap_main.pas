@@ -586,7 +586,8 @@ procedure remove_key(inpt:string; all:boolean);{remove key word in header. If al
 
 function strtofloat2(s:string): double;{works with either dot or komma as decimal seperator}
 function TextfileSize(const name: string): LongInt;
-function floattostr2(x:double):string;
+function floattostr6(x:double):string;
+function floattostr4(x:double):string;
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
 procedure get_hist(colour:integer;img :image_array);{get histogram of img_loaded}
 procedure save_settings(lpath:string);
@@ -2002,7 +2003,7 @@ begin
   begin
     update_text   ('COMMENT A','  Artificial image, background has value 1000 with sigma 100 Gaussian noise');
     update_text   ('COMMENT B','  Top rows contain hotpixels with value 65535');
-    update_text   ('COMMENT C','  Rows below have Gaussian stars with a sigma of '+floattostr2(sigma));
+    update_text   ('COMMENT C','  Rows below have Gaussian stars with a sigma of '+floattostr6(sigma));
     update_text   ('COMMENT D','  Which will be measured as HFD '+stackmenu1.hfd_simulation1.text);
     update_text   ('COMMENT E','  Note that theoretical Gaussian stars with a sigma of 1 are');
     update_text   ('COMMENT F','  equivalent to a HFD of 2.354 if subsampled enough.');
@@ -2255,7 +2256,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.440, '+about_message4+', dated 2020-10-26';
+  #13+#10+'ASTAP version ß0.9.442, '+about_message4+', dated 2020-10-29';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3853,11 +3854,17 @@ begin
 
 end;
 
-function floattostr2(x:double):string;
+function floattostr6(x:double):string;{float to string with 6 decimals}
 begin
   str(x:0:6,result);
 end;
-function floattostr3(x:double):string;
+
+function floattostr4(x:double):string;
+begin
+  str(x:0:4,result);
+end;
+
+function floattostrE(x:double):string;
 begin
   str(x,result);
 end;
@@ -5000,16 +5007,17 @@ begin
   img.visible:=true;
   mainwindow.memo1.visible:=show_header;{start updating memo1}
 
-  Bitmap := TBitmap.Create;
-  TRY
-    WITH Bitmap DO
-    BEGIN
-      Width := width2;
-      Height := height2;
+  {create bitmap}
+  bitmap := TBitmap.Create;
+  try
+    with bitmap do
+    begin
+      width := width2;
+      height := height2;
         // Unclear why this must follow width/height to work correctly.
         // If PixelFormat precedes width/height, bitmap will always be black.
-      Bitmap.PixelFormat := pf24bit;
-    END;
+      bitmap.PixelFormat := pf24bit;
+    end;
     except;
   end;
 
@@ -8129,7 +8137,7 @@ end;
 
 procedure measure_magnitudes(var stars :star_list);{find stars and return, x,y, hfd, flux}
 var
-  fitsX,fitsY,size, i, j,nrstars    : integer;
+  fitsX,fitsY,size,diam, i, j,nrstars    : integer;
   hfd1,star_fwhm,snr,flux,xc,yc : double;
 begin
 
@@ -8161,9 +8169,9 @@ begin
           //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
-          size:=round(3*hfd1);{for marking area}
-          for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
-            for i:=fitsX-size to fitsX+size do
+          diam:=round(3*hfd1);{for marking area}
+          for j:=fitsY to fitsY+diam do {mark the whole star area as surveyed}
+            for i:=fitsX-diam to fitsX+diam do
              if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
                img_temp[0,i,j]:=1;
 
@@ -8203,7 +8211,7 @@ end;
 
 procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
-  size, i,j, starX, starY,x,y,fitsX,fitsY     : integer;
+  size,diam, i,j, starX, starY,x,y,fitsX,fitsY     : integer;
   Save_Cursor:TCursor;
   Fliphorizontal, Flipvertical,astar                                                     : boolean;
   hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit : double;
@@ -8278,9 +8286,9 @@ const
           //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
-          size:=round(3*hfd1); {for marking area}
-          for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
-            for i:=fitsX-size to fitsX+size do
+          diam:=round(3*hfd1); {for marking area}
+          for j:=fitsY to fitsY+diam do {mark the whole star area as surveyed}
+            for i:=fitsX-diam to fitsX+diam do
              if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
                img_temp[0,i,j]:=1;
 
@@ -8312,8 +8320,6 @@ const
                delta_magn:=measured_magn - magn_database; {delta magnitude time 10}
                if  delta_magn<-10 then {unknown star, 1 magnitude brighter then database}
                begin {mark}
-                 size:=round(4*hfd1);
-                 size:=round(hfd1);
                  if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
                  if Fliphorizontal     then starX:=round(width2-xc)  else starX:=round(xc);
 
@@ -8400,10 +8406,10 @@ var
 
   for i:=0 to  length(stars[0])-2 do
   begin
-    size:=round(5*stars[2,i]);{5*hfd}
     if Flipvertical=false then  starY:=round(height2-stars[1,i]) else starY:=round(stars[1,i]);
     if Fliphorizontal     then starX:=round(width2-stars[0,i])  else starX:=round(stars[0,i]);
 
+    size:=round(5*stars[2,i]);{5*hfd for marking stars}
     image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
     image1.Canvas.textout(starX+size,starY,inttostr(round((flux_magn_offset-ln(stars[3,i]{flux})*2.511886432/ln(10))*10))   );{add magnitude as text}
   end;
@@ -8604,7 +8610,7 @@ begin
         update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ' ,XPIXSZ/ratio);{note: comment will be never used since it is an existing keyword}
         update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ' ,YPIXSZ/ratio);
       end;
-      add_text   ('HISTORY   ','Image stretched with factor '+ floattostr2(ratio));
+      add_text   ('HISTORY   ','Image stretched with factor '+ floattostr6(ratio));
 
       {plot result}
       use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
@@ -8933,7 +8939,7 @@ begin
   if sender<>Enter_rectangle_with_label1 then boldness:=width2/image1.width else boldness:=-width2/image1.width;
 
   plot_the_annotation(startX,startY,text_X,text_Y,boldness,value,'');
-  add_text ('ANNOTATE=',#39+inttostr(startX)+';'+inttostr(startY)+';'+inttostr(text_X)+';'+inttostr(text_Y)+';'+floattostr2(boldness)+';'+value+';'+#39);
+  add_text ('ANNOTATE=',#39+inttostr(startX)+';'+inttostr(startY)+';'+inttostr(text_X)+';'+inttostr(text_Y)+';'+floattostr6(boldness)+';'+value+';'+#39);
   annotated:=true; {header contains annotations}
 end;
 
@@ -9197,19 +9203,19 @@ begin
   if solution then
   begin
     writeln(f,'PLTSOLVD=T');
-    writeln(f,'CRPIX1='+floattostr3(crpix1));// X of reference pixel
-    writeln(f,'CRPIX2='+floattostr3(crpix2));// Y of reference pixel
+    writeln(f,'CRPIX1='+floattostrE(crpix1));// X of reference pixel
+    writeln(f,'CRPIX2='+floattostrE(crpix2));// Y of reference pixel
 
-    writeln(f,'CRVAL1='+floattostr3(ra0*180/pi)); // RA (j2000_1) of reference pixel [deg]
-    writeln(f,'CRVAL2='+floattostr3(dec0*180/pi));// DEC (j2000_1) of reference pixel [deg]
-    writeln(f,'CDELT1='+floattostr3(cdelt1));     // X pixel size [deg]
-    writeln(f,'CDELT2='+floattostr3(cdelt2));     // Y pixel size [deg]
-    writeln(f,'CROTA1='+floattostr3(crota1));    // Image twist of X axis [deg]
-    writeln(f,'CROTA2='+floattostr3(crota2));    // Image twist of Y axis [deg]
-    writeln(f,'CD1_1='+floattostr3(cd1_1));       // CD matrix to convert (x,y) to (Ra, Dec)
-    writeln(f,'CD1_2='+floattostr3(cd1_2));       // CD matrix to convert (x,y) to (Ra, Dec)
-    writeln(f,'CD2_1='+floattostr3(cd2_1));       // CD matrix to convert (x,y) to (Ra, Dec)
-    writeln(f,'CD2_2='+floattostr3(cd2_2));       // CD matrix to convert (x,y) to (Ra, Dec)
+    writeln(f,'CRVAL1='+floattostrE(ra0*180/pi)); // RA (j2000_1) of reference pixel [deg]
+    writeln(f,'CRVAL2='+floattostrE(dec0*180/pi));// DEC (j2000_1) of reference pixel [deg]
+    writeln(f,'CDELT1='+floattostrE(cdelt1));     // X pixel size [deg]
+    writeln(f,'CDELT2='+floattostrE(cdelt2));     // Y pixel size [deg]
+    writeln(f,'CROTA1='+floattostrE(crota1));    // Image twist of X axis [deg]
+    writeln(f,'CROTA2='+floattostrE(crota2));    // Image twist of Y axis [deg]
+    writeln(f,'CD1_1='+floattostrE(cd1_1));       // CD matrix to convert (x,y) to (Ra, Dec)
+    writeln(f,'CD1_2='+floattostrE(cd1_2));       // CD matrix to convert (x,y) to (Ra, Dec)
+    writeln(f,'CD2_1='+floattostrE(cd2_1));       // CD matrix to convert (x,y) to (Ra, Dec)
+    writeln(f,'CD2_2='+floattostrE(cd2_2));       // CD matrix to convert (x,y) to (Ra, Dec)
   end
   else
   begin
@@ -9275,15 +9281,15 @@ begin
 
         if file_loaded=false then errorlevel:=16;{error file loading}
 
-        ra1.Text:=floattostr2(strtofloat2(list[0])*12/pi);
-        dec1.Text:=floattostr2(strtofloat2(list[1])*180/pi);
+        ra1.Text:=floattostr6(strtofloat2(list[0])*12/pi);
+        dec1.Text:=floattostr6(strtofloat2(list[1])*180/pi);
         {$IfDef Darwin}// for OS X,
           //mainwindow.ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
           //mainwindow.dec1change(nil);
         {$ENDIF}
 
         field_size:=strtofloat2(list[3])*180/pi;{field height in degrees}
-        stackmenu1.search_fov1.text:=floattostr2(field_size);{field width in degrees}
+        stackmenu1.search_fov1.text:=floattostr6(field_size);{field width in degrees}
         fov_specified:=true; {always for platesolve2 command}
         regions:=strtoint(list[4]);{use the number of regions in the platesolve2 command}
         if regions=3000{maximum for SGP, force a field of 90 degrees} then   search_field:=90
@@ -9552,8 +9558,8 @@ end;
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
     s      : string;
-    histogram_done,file_loaded,debug,filespecified: boolean;
-    backgr, hfd_median                 : double;
+    histogram_done,file_loaded,debug,filespecified,analysespecified,extractspecified : boolean;
+    backgr, hfd_median,snr_min          : double;
     hfd_counter,binning                : integer;
 begin
   user_path:=GetAppConfigDir(false);{get user path for app config}
@@ -9593,7 +9599,8 @@ begin
         '-m  minimum_star_size["]'+#10+
         '-speed mode[auto/slow] {Slow is forcing small search steps to improve detection.}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
-        '-analyse {Analyse only and report in the errorlevel the median HFD * 100M + number of stars used}'+#10+
+        '-analyse snr_min {Analyse only and report in the errorlevel the median HFD * 100M + number of stars used}'+#10+
+        '-extract snr_min {As -analyse but additionally write a .csv file with detected stars info}'+#10+
         '-annotate  {Produce deepsky annotated jpg file}' +#10+
         '-debug  {Show GUI and stop prior to solving}' +#10+
         '-log   {Write the solver log to file}'+#10+
@@ -9659,10 +9666,15 @@ begin
 
         if debug=false then {standard solve via command line}
         begin
-          if ((file_loaded) and (hasoption('analyse'))) then {analyse fits and report HFD value in errorlevel }
+          extractspecified:=hasoption('extract');
+          analysespecified:=hasoption('analyse');
+          if ((file_loaded) and ((analysespecified) or (extractspecified)) ) then {analyse fits and report HFD value in errorlevel }
           begin
-             analyse_fits(img_loaded,hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
-             halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
+            if analysespecified then snr_min:=strtofloat2(getoptionvalue('analyse'));
+            if extractspecified then snr_min:=strtofloat2(getoptionvalue('extract'));
+            if snr_min=0 then snr_min:=30;
+            analyse_fits(img_loaded,snr_min,extractspecified, hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
+            halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
           end;{analyse fits and report HFD value}
 
           {$ifdef CPUARM}
@@ -9916,7 +9928,7 @@ end;
 
 procedure Tmainwindow.CCDinspector1Click(Sender: TObject);
 var
- fitsX,fitsY,size, i, j,starX,starY, retries,max_stars,
+ fitsX,fitsY,size,diam, i, j,starX,starY, retries,max_stars,
  nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,x1,x2,x3,x4,y1,y2,y3,y4,fontsize : integer;
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
@@ -9998,18 +10010,18 @@ begin
           begin
             HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
-            if ((hfd1<=25) and (snr>10) and (hfd1>hfd_min) ) then
+            if ((hfd1<=30) and (snr>30) and (hfd1>hfd_min) ) then
             begin
-  //            size:=round(5*hfd1);
               if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);
               if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
 
   //            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
   //            mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
-              size:=round(3*hfd1);{for marking area}
-              for j:=fitsY-size to fitsY+size do {mark the whole star area as surveyed}
-                for i:=fitsX-size to fitsX+size do
+
+              diam:=round(3*hfd1);{for marking area}
+              for j:=fitsY to fitsY+diam do {mark the whole star area as surveyed}
+                for i:=fitsX-diam to fitsX+diam do
                   if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
                     img_temp[0,i,j]:=1;
 
@@ -10053,6 +10065,7 @@ begin
 
         starX:=starlistXY[0,i];
         starY:=starlistXY[1,i];
+
         mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
         mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
       end;

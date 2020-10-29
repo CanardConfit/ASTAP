@@ -165,17 +165,17 @@ begin
 //      paramlist.add('--scale-units');{scale-units arcsecperpix}
 //      paramlist.add('arcsecperpix');
 //      paramlist.add('--scale-low');{scale-low in arcsecperpix}
-//      paramlist.add(floattostr2(scale*0.9));
+//      paramlist.add(floattostr6(scale*0.9));
 //      paramlist.add('--scale-high');{scale-high in arcsecperpix}
-//      paramlist.add(floattostr2(scale*1.1));
+//      paramlist.add(floattostr6(scale*1.1));
 //    end;
 
 //    if stackmenu1.limit_area1.checked then
 //    begin
 //      paramlist.add('--ra');
-//      paramlist.add(floattostr2(ra_radians*180/pi));
+//      paramlist.add(floattostr6(ra_radians*180/pi));
 //      paramlist.add('--dec');
-//      paramlist.add(floattostr2(dec_radians*180/pi));
+//      paramlist.add(floattostr6(dec_radians*180/pi));
 //      paramlist.add('--radius');{radius}
 //      paramlist.add(stackmenu1.search_area1.text);
 //    end;

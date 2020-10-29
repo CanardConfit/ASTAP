@@ -472,7 +472,7 @@ begin
 //  for k:=0 to nr_references2-1 do {find standard deviation orientation quads}
 //    deviations[k]:=abs(median_ratio1-ratios[k]);
 //  mad:=smedian(deviations);{mad is about 0.67499 *sigma for a normal distribution}
-//  memo2_message('mad :'+floattostr2(mad));
+//  memo2_message('mad :'+floattostr6(mad));
 
   nr_references:=0;
   setlength(matchlist1,2,1000);
@@ -486,7 +486,7 @@ begin
       if nr_references>=length(matchlist1[0]) then setlength(matchlist1,2,nr_references+1000);{get more space if running out of space}
     end
     else
-    if solve_show_log then memo2_message('quad outlier removed due to abnormal size: '+floattostr2(100*ratios[k]/median_ratio)+'%');
+    if solve_show_log then memo2_message('quad outlier removed due to abnormal size: '+floattostr6(100*ratios[k]/median_ratio)+'%');
   end;
   ratios:=nil; {free mem}
   {outliers in largest length removed}
@@ -563,7 +563,7 @@ begin
   for i:=0 to length(snr_histogram)-1 do snr_histogram[i]:=0; {clear snr histogram}
   for i:=0 to length(snr_list)-1 do
   begin
-  //  memo2_message(inttostr(i)+ ' , '+floattostr2(snr_list[i])) ;
+  //  memo2_message(inttostr(i)+ ' , '+floattostr6(snr_list[i])) ;
     snr_scaled:=trunc(snr_list[i]*range/highest_snr);
     snr_histogram[snr_scaled]:=snr_histogram[snr_scaled]+1;{count how often this snr value is measured}
   end;
@@ -601,7 +601,7 @@ end;
 
 procedure find_stars(img :image_array;hfd_min:double;var starlist1: star_list);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,size,i,j, max_stars,retries    : integer;
+   fitsX, fitsY,nrstars,size,diam,i,j, max_stars,retries    : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level      : double;
    img_temp2       : image_array;
    snr_list        : array of double;
@@ -662,9 +662,9 @@ begin
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(snr, ffgeneral, 2,1));{add hfd as text}
 
-            size:=round(3*hfd1);{for marking area}
-            for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
-            for i:=fitsX-size to fitsX+size do
+            diam:=round(3*hfd1);{for marking area}
+            for j:=fitsY to fitsY+diam do {mark the whole star area as surveyed}
+            for i:=fitsX-diam to fitsX+diam do
               if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
                 img_temp2[0,i,j]:=1;
 
