@@ -477,11 +477,11 @@ var
 
 var
    histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
-   his_total_red, his_total_green,his_total_blue,extend : integer; {histogram number of values}
+   his_total_red, his_total_green,his_total_blue,extend_type : integer; {histogram number of values}
    histo_peak_position : integer;
    his_mean,noise_level : array[0..2] of integer;
    stretch_c : array[0..32768] of single;{stretch curve}
-   stretch_on, esc_pressed, fov_specified,unsaved_import : boolean;
+   stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
    set_temperature : integer;
    star_level  : double;
    object_name, filter_name,calstat,imagetype ,sitelat, sitelong: string;
@@ -877,8 +877,8 @@ begin
     y_coeff[0]:=0;
     a_order:=0; {SIP_polynomial, use for check if there is data}
 
-    if get_ext=0 then extend:=0 {no extensions in the file}
-                 else extend:=2; {assume something like table}
+    if get_ext=0 then extend_type:=0; {always an image in main data block}
+//                  extend_tpe:=2; {assume something like table}
 
     xbinning:=1;{normal}
     ybinning:=1;
@@ -946,12 +946,12 @@ begin
            bintable:=((header[11]='B') and (header[12]='I')  and (header[13]='N') and (header[14]='T') and (header[15]='A') and (header[16]='B')); {BINTABLE}
            asciitable:=((header[11]='T') and (header[12]='A')  and (header[13]='B') and (header[14]='L') and (header[15]='E') and (header[16]=' ')) ;{ascii_table identifier}
           begin
-            if pos('BINTABLE',get_string)>0 then extend:=2 { 'BINTABLE' or 'TABLE'}
+            if pos('BINTABLE',get_string)>0 then extend_type:=2 { 'BINTABLE' or 'TABLE'}
             else
-            if pos('TABLE ',get_string)>0 then extend:=1 {ascii_table identifier}
+            if pos('TABLE ',get_string)>0 then extend_type:=1 {ascii_table identifier}
             else
             begin
-              extend:=3; {second (thumbnail) image}
+              extend_type:=3; {image in extension}
               mainwindow.Memo3.lines.text:='File contains a second image. Can be extracted but other images will not be processed or preserved!';
               mainwindow.pagecontrol1.showtabs:=true;{show tabs}
             end;
@@ -1232,8 +1232,7 @@ begin
              annotated:=true; {contains annotations}
 
           if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='N') and (header[i+5]='D')) then {EXTEND}
-            if pos('T',get_as_string)>0 then
-                                                  extend:=2;{assume a table}
+            if pos('T',get_as_string)>0 then last_extension:=false;{could be extensions, will be updated later }
 
 
           {following is only required when using DSS polynome plate fit}
@@ -1581,8 +1580,8 @@ begin
   else
   if  ((naxis=2) and ((bintable) or (asciitable)) ) then
   begin {read table ############################################}
-    if bintable then extend:=2;
-    if asciitable then extend:=1;
+    if bintable then extend_type:=2;
+    if asciitable then extend_type:=1;
 
     {try to read data table}
     aline:='';
@@ -1597,12 +1596,12 @@ begin
     begin
       reader.read(fitsbuffer[0],width2);{copy complete ascii row}
 
-      if extend=1 {ascii_table} then SetString(field, Pansichar(@fitsbuffer[0]),width2);{convert to string}
+      if extend_type=1 {ascii_table} then SetString(field, Pansichar(@fitsbuffer[0]),width2);{convert to string}
 
       for k:=0 to tfields-1 do {columns}
       {read}
       begin
-        if extend=1 then {ascii table}
+        if extend_type=1 then {ascii table}
         begin
           if k>0 then insert(#9,field,tbcol[k]+k-1);{insert tab}
           if k=tfields-1 then aline:=aline+field;{field is ready}
@@ -1692,7 +1691,7 @@ begin
       aline:=aline+sLineBreak ;
     end;
     mainwindow.Memo3.lines.text:=aline;
-    mainwindow.Memo3.readonly:=(extend<=1);
+    mainwindow.Memo3.readonly:=(extend_type<=1);
     aline:=''; {release memory}
     mainwindow.memo1.visible:=true;{show header}
     mainwindow.pagecontrol1.showtabs:=true;{show tabs}
@@ -1701,13 +1700,15 @@ begin
 
 
 
-  if extend>0 then {test if extension is possible}
+  if last_extension=false then {test if extension is possible}
   begin
     if file_size-reader_position>2880 then {file size confirms extension}
     begin
       if get_ext=0 then
          mainwindow.Memo3.lines.text:='File contains an extension image or table. Can be extracted but other images will not be processed or preserved!';
       mainwindow.pagecontrol1.showtabs:=true;{show tabs}
+
+      last_extension:=false;
       if naxis<2 then
       begin
         mainwindow.error_label1.caption:=('Contains extension(s)');
@@ -1718,12 +1719,11 @@ begin
     end
     else
     begin
-      if get_ext=0 then extend:=0
-      else
-        extend:=4; {no more extension possible due to file size}
+      last_extension:=true;
     end;
   end;
-
+  if ((last_extension=false) or (extend_type>0)) then
+     mainwindow.tabsheet1.caption:='Header '+inttostr(get_ext+1);
 
   close_fits_file;
 end;
@@ -1918,7 +1918,7 @@ begin
   exposure:=0;
   set_temperature:=999;
   nrbits:=16;
-  extend:=0; {no extensions in the file, 1 is ascii_table, 2 bintable}
+  extend_type:=0; {no extensions in the file, 1 is ascii_table, 2 bintable}
 
 
   if width2<=100 then
@@ -2301,7 +2301,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.443, '+about_message4+', dated 2020-10-31';
+  #13+#10+'ASTAP version ß0.9.444, '+about_message4+', dated 2020-10-31';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3525,8 +3525,8 @@ end;
 
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
 begin
-  mainwindow.Saveasfits1.enabled:=((fits) or (extend>=2){table});
-  mainwindow.updown1.visible:=extend>0;
+  mainwindow.Saveasfits1.enabled:=((fits) or (extend_type>=2){table or image});
+  mainwindow.updown1.visible:=((last_extension=false) or (extend_type>0));
 
   if fits<>mainwindow.data_range_groupBox1.Enabled then  {menu requires update}
   begin
@@ -5289,7 +5289,7 @@ begin
 
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
   annotated:=false; {any annotation in the file}
-  extend:=0;  {no extensions in the file, 1 is ascii_table, 2 bintable}
+  extend_type:=0;  {no extensions in the file, 1 is ascii_table, 2 bintable}
   gain:=999;{assume no data available}
 
 
@@ -5713,7 +5713,7 @@ begin
 
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
   annotated:=false; {any annotation in the file}
-  extend:=0; {no extensions in the file, 1 is ascii_table, 2 bintable}
+  extend_type:=0; {no extensions in the file, 1 is ascii_table, 2 bintable}
 
 
   {set data}
@@ -7198,7 +7198,9 @@ begin
     filename_org:=filename2;
     mainwindow.shape_marker1.visible:=false;
     mainwindow.shape_marker2.visible:=false;
+    mainwindow.updown1.position:=0;{reset muli-extension up down}
   end;
+
   ext1:=uppercase(ExtractFileExt(filename2));
 
   x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
@@ -8673,7 +8675,7 @@ end;
 
 procedure Tmainwindow.UpDown1Click(Sender: TObject; Button: TUDBtnType);
 begin
-  if ((extend=4) and (button=btNext)) then
+  if ((last_extension) and (button=btNext)) then
   begin
     UpDown1.position:=UpDown1.position-1; {no more extensions}
     exit;
@@ -8683,9 +8685,7 @@ begin
     if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainwindow.image1,false {re_center},true);
-//    tabsheet1.caption:='Header '+inttostr(UpDown1.position+1);
   end;
-  tabsheet1.caption:='Header '+inttostr(UpDown1.position+1);
 end;
 
 
@@ -9697,7 +9697,7 @@ begin
             load_image(true,true {plot});{load and show image}
 
           if file_loaded=false then errorlevel:=16;{error file loading}
-          file_loaded:=((file_loaded) or (extend>0));{axy}
+          file_loaded:=((file_loaded) or (extend_type>0));{axy}
         end
         else
         file_loaded:=false;
@@ -12274,15 +12274,21 @@ begin
 
   if  override1=false then
   begin
-    if extend>=2 then {bintable extensions in the file}
+    if extend_type=3 then {image extensions in the file}
+    begin
+      if MessageDlg('Only the current image of the multi-extension FITS will be saved. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then  exit;
+    end
+    else
+    if extend_type=2 then {bintable extensions in the file}
     begin
       if MessageDlg('File bintable extension will be reformatted as single floats only. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then  exit;
     end
     else
-    if extend=1 then {ASCII table extensions in the file}
+    if extend_type=1 then {ASCII table extensions in the file}
     begin
       if MessageDlg('ASCII table extension will be lost. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then  exit;
-    end
+    end;
+    mainwindow.Memo1.Lines[0]:= head1[0]; {replace XTENSION= with SIMPLE = }
   end;
   filename2:=filen2;
   {$IFDEF fpc}
@@ -12478,7 +12484,7 @@ begin
     thefile4.writebuffer(fitsbuffer,remain);{write some bytes}
   end;
 
-  if extend>=2 then {write bintable extension}
+  if extend_type>=2 then {write bintable extension}
   begin
     rows:=number_of_fields(#9,mainwindow.memo3.lines[3]); {first lines could be blank or incomplete}
 
@@ -12611,6 +12617,9 @@ end;
 
 procedure Tmainwindow.Saveasfits1Click(Sender: TObject);
 begin
+  if extend_type>0 then {multi extension file}
+   savedialog1.filename:=ChangeFileExt(FileName2,'.fits')+'_extract.fits' {give it a new name}
+  else
   if pos('.fit',filename2)=0 then savedialog1.filename:=ChangeFileExt(FileName2,'.fits')
                              else savedialog1.filename:=FileName2;
 
@@ -12621,6 +12630,8 @@ begin
   if nrbits=-32 then SaveDialog1.FilterIndex:=1
   else
   if nrbits=8 then SaveDialog1.FilterIndex:=3;
+
+
 
   if savedialog1.execute then
   begin
@@ -12669,7 +12680,6 @@ begin
      load_image(true,true {plot});{load and center}
      //=false then beep;{image not found}
      LoadFITSPNGBMPJPEG1filterindex:=opendialog1.filterindex;{remember filterindex}
-     mainwindow.updown1.Position:=0;
   end;
 end;
 
