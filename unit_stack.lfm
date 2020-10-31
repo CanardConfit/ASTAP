@@ -1276,7 +1276,6 @@ object stackmenu1: Tstackmenu1
         ParentColor = False
         ParentFont = False
         Transparent = False
-        OnClick = Label1Click
       end
       object Label5: TLabel
         Left = 24
@@ -7922,6 +7921,15 @@ object stackmenu1: Tstackmenu1
       ImageIndex = 13
       ShortCut = 16451
       OnClick = list_to_clipboard1Click
+    end
+    object changekeyword_inspector1: TMenuItem
+      Caption = 'Change keyword in selected files'
+      Hint = 'Modify a keyword the selected files'
+      object changekeyword8: TMenuItem
+        Caption = 'Type keyword and new value'
+        Hint = 'All select files will be updated with new keyword value.'
+        OnClick = changekeyword1Click
+      end
     end
     object MenuItem27: TMenuItem
       Caption = '-'

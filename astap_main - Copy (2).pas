@@ -749,8 +749,8 @@ function load_fits(filen:string;light {load as light of dark/flat},load_data: bo
 {if reset_var=true, reset variables to zero}
 var
   header    : array[0..2880] of ansichar;
-  i,j,k,nr,error3,naxis1, reader_position,n,p,file_size  : integer;
-  dummy,scale,ccd_temperature                              : double;
+  i,j,k,nr,error3,naxis1, reader_position,n,p,nrchars,dsscol,file_size  : integer;
+  fract,dummy,scale,ccd_temperature                                    : double;
   col_float,bscale,measured_max,scalefactor  : single;
   s                  : string[3];
   bzero              : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
@@ -767,10 +767,10 @@ var
   lw       : int64;
   fl       : double absolute lw;
 
-  tfields,tform_counter,header_count  : integer;
+  tfields, naxisT1,naxisT2,tform_counter,header_count  : integer;
   ttype,tform,tunit : array of string;
   tbcol            : array of integer;
-  simple,image,bintable,asciitable    : boolean;
+  simple,image,bintable,table       : boolean;
 
 const
   end_record : boolean=false;
@@ -838,7 +838,7 @@ begin
   mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
   mainwindow.memo1.clear;{clear memo for new header}
 
-  Reader := TReader.Create (theFile3,500*2880);{number of records. Buffer but not speed difference between 6*2880 and 1000*2880}
+  Reader := TReader.Create (theFile3,6*2880);{number of records}
   {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   {Reset variables for case they are not specified in the file}
@@ -912,11 +912,11 @@ begin
   mainwindow.pagecontrol1.showtabs:=false;{hide tabs assuming no tabel extension}
   mainwindow.pagecontrol1.Tabindex:=0;{show first tab}
 
-  header_count:=0;
-  bintable:=false;
-  asciitable:=false;
-
   reader_position:=0;
+
+  header_count:=0;
+
+
   repeat {header, 2880 bytes loop}
 
   I:=0;
@@ -942,9 +942,9 @@ begin
         if ((header_count<get_ext) and (header[0]='X') and (header[1]='T')  and (header[2]='E') and (header[3]='N') and (header[4]='S') and (header[5]='I') and (header[6]='O') and (header[7]='N') and (header[8]='=')) then
         begin
            header_count:=header_count+1;
-           image:=   ((header[11]='I') and (header[12]='M')  and (header[13]='A') and (header[14]='G') and (header[15]='E') and (header[16]=' '));
-           bintable:=((header[11]='B') and (header[12]='I')  and (header[13]='N') and (header[14]='T') and (header[15]='A') and (header[16]='B')); {BINTABLE}
-           asciitable:=((header[11]='T') and (header[12]='A')  and (header[13]='B') and (header[14]='L') and (header[15]='E') and (header[16]=' ')) ;{ascii_table identifier}
+           image:=   ((header[10]='I') and (header[11]='M')  and (header[12]='A') and (header[13]='G') and (header[14]='E') and (header[15]=' '));
+           bintable:=((header[10]='B') and (header[11]='I')  and (header[12]='N') and (header[13]='T') and (header[14]='A') and (header[15]='B')); {BINTABLE}
+           table:=   ((header[10]='T') and (header[11]='A')  and (header[12]='B') and (header[13]='L') and (header[14]='E') and (header[15]=' ')) ;{ascii_table identifier}
           begin
             if pos('BINTABLE',get_string)>0 then extend:=2 { 'BINTABLE' or 'TABLE'}
             else
@@ -968,38 +968,36 @@ begin
       end;
     until ((simple) and (header_count>=get_ext)); {simple is true and correct header found}
 
-    repeat  {loop for 80 bytes in 2880 block}
+    repeat
+
+    if image then {read image}
+    begin
       if load_data then
       begin
         SetString(aline, Pansichar(@header[i]), 80);{convert header line to string}
         mainwindow.memo1.lines.add(aline); {add line to memo}
       end;
+      if ((header[i]='B') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) then
+        nrbits:=round(validate_double);{BITPIX, read integer using double routine}
       if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {naxis}
-      begin
-        if (header[i+5]=' ') then naxis:=round(validate_double)
-        else    {NAXIS number of colors}
-        if (header[i+5]='1') then begin naxis1:=round(validate_double);width2:=naxis1; end else {NAXIS1 pixels}
-        if (header[i+5]='2') then height2:=round(validate_double) else   {NAXIS2 pixels}
-        if (header[i+5]='3') then
-        begin
-           naxis3:=round(validate_double); {NAXIS3 number of colors}
-           if ((naxis=3) and (naxis1=3)) {naxis1} then  {type NAXIS = 3 / Number of dimensions
-                                     NAXIS1 = 3 / Number of Colors
-                                     NAXIS2 = 382 / Row length
-                                     NAXIS3 = 255 / Number of rows}
-                      begin   {RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
-                        width2:=height2;
-                        height2:=naxis3;
-                        naxis3:=1;
-                      end;
+         begin
+           if (header[i+5]=' ') then naxis:=round(validate_double)   else    {NAXIS number of colors}
+           if (header[i+5]='1') then begin naxis1:=round(validate_double);width2:=naxis1; end else {NAXIS1 pixels}
+           if (header[i+5]='2') then height2:=round(validate_double) else   {NAXIS2 pixels}
+           if (header[i+5]='3') then
+           begin
+            naxis3:=round(validate_double); {NAXIS3 number of colors}
+            if ((naxis=3) and (naxis1=3)) {naxis1} then  {type NAXIS = 3 / Number of dimensions
+                                       NAXIS1 = 3 / Number of Colors
+                                       NAXIS2 = 382 / Row length
+                                       NAXIS3 = 255 / Number of rows}
+                        begin   {RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
+                          width2:=height2;
+                          height2:=naxis3;
+                          naxis3:=1;
+                        end;
+           end;
          end;
-      end;
-
-
-      if image then {image specific header}
-      begin {read image header}
-        if ((header[i]='B') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) then
-          nrbits:=round(validate_double);{BITPIX, read integer using double routine}
 
         if (header[i]='B') then
         begin
@@ -1232,8 +1230,7 @@ begin
              annotated:=true; {contains annotations}
 
           if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='N') and (header[i+5]='D')) then {EXTEND}
-            if pos('T',get_as_string)>0 then
-                                                  extend:=2;{assume a table}
+            if pos('T',get_as_string)>0 then extend:=2;{assume a table}
 
 
           {following is only required when using DSS polynome plate fit}
@@ -1332,69 +1329,14 @@ begin
 
         end;{read as light #####################################################################################################################################3#############################}
 
-      end {image header}
-      else
-      begin {read table header}
-        if ((header[i]='T') and (header[i+1]='F')  and (header[i+2]='I') and (header[i+3]='E') and (header[i+4]='L') and (header[i+5]='D') and (header[i+6]='S')) then {tfields}
-        begin
-           tfields:=round(validate_double);
-           setlength(ttype,tfields);
-           setlength(tform,tfields);
-           setlength(tbcol,tfields);
-           setlength(tunit,tfields);
-        end;
-        if ((header[i]='T') and (header[i+1]='F')  and (header[i+2]='O') and (header[i+3]='R') and (header[i+4]='M')) then
-        begin
-          number:=trim(header[i+5]+header[i+6]+header[i+7]);
-          tform_counter:=strtoint(number)-1;
-          tform[tform_counter]:=get_string;
-          if pos('E',tform[tform_counter])>0 then tform[tform_counter]:='E';{remove spaces}
-          if pos('D',tform[tform_counter])>0 then tform[tform_counter]:='D';
-          if pos('L',tform[tform_counter])>0 then tform[tform_counter]:='L';{logical}
-          if pos('B',tform[tform_counter])>0 then tform[tform_counter]:='B';{byte}
-          if pos('I',tform[tform_counter])>0 then tform[tform_counter]:='I';{16 bit integer}
-          if pos('J',tform[tform_counter])>0 then tform[tform_counter]:='J';{32 bit integer}
-          if pos('K',tform[tform_counter])>0 then tform[tform_counter]:='K';{64 bit integer}
-          p:=pos('A',tform[tform_counter]);
-          if p>0 then
-             tform[tform_counter]:=trim(copy(tform[tform_counter],1,12));  {e.g. 12A for astrometry.net first index table}
-        end;
-        if ((header[i]='T') and (header[i+1]='B')  and (header[i+2]='C') and (header[i+3]='O') and (header[i+4]='L')) then
-        begin
-          number:=trim(header[i+5]+header[i+6]+header[i+7]);
-          tform_counter:=strtoint(number)-1;
-          tbcol[tform_counter]:=round(validate_double);
-        end;
 
-        if ((header[i]='T') and (header[i+1]='T')  and (header[i+2]='Y') and (header[i+3]='P') and (header[i+4]='E')) then {field describtion like X, Y}
-        begin
-           number:=trim(header[i+5]+header[i+6]+header[i+7]);
-           ttype[strtoint(number)-1]:=trim(get_string);
-        end;
-        if ((header[i]='T') and (header[i+1]='U')  and (header[i+2]='N') and (header[i+3]='I') and (header[i+4]='T')) then {unit describtion}
-        begin
-           number:=trim(header[i+5]+header[i+6]+header[i+7]);
-           tunit[strtoint(number)-1]:=get_string;
-        end;
-      end;
-      end_record:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D') and (header[i+3]=' '));{end of header. Note keyword ENDIAN exist, so test space behind END}
-      inc(i,80);{go to next 80 bytes record}
+        end_record:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D') and (header[i+3]=' '));{end of header. Note keyword ENDIAN exist, so test space behind END}
+        inc(i,80);{go to next 80 bytes record}
 
-    until ((i>=2880) or (end_record)); {loop for 80 bytes in 2880 block}
-  until end_record; {header, 2880 bytes loop}
+      until ((i>=2880) or (end_record));
+    until end_record;
 
 
-  if naxis<2 then
-  begin
-    result:=false; {no image}
-    mainwindow.image1.visible:=false;
-    fits_file:=false;
-    image:=false;
-  end;
-
-
-  if image then {read image data #########################################}
-  begin
     if ((naxis=3) and (naxis1=3)) then
     begin
        nrbits:=24; {threat RGB fits as 2 dimensional with 24 bits data}
@@ -1410,6 +1352,7 @@ begin
       old_to_new_WCS;{ convert old WCS to new}
     end;
 
+  //  if exptime>exposure then exposure:=exptime;{both keywords are used}
     if set_temperature=999 then set_temperature:=round(ccd_temperature); {temperature}
 
     if crota2>999 then crota2:=0;{not defined, set at 0}
@@ -1435,154 +1378,258 @@ begin
        close_fits_file; result:=true; exit;
     end;{only read header for analyse or WCS file}
 
-
-    {############################## read image}
-    i:=round(bufwide/(abs(nrbits/8)));{check if buffer is wide enough for one image line}
-    if width2>i then
+    if naxis<2 then
     begin
-      beep;
-      textout(mainwindow.image1.canvas.handle,30,30,'Too wide FITS file !!!!!',25);
-      close_fits_file;
-      exit;
+       result:=false; {no image}
+       mainwindow.image1.visible:=false;
+       fits_file:=false;
+       if extend=0 then exit;
     end;
 
-    setlength(img_loaded2,naxis3,width2,height2);
+    {############################## read image}
+    if naxis>=2 then {image in FITS}
+    begin {image}
+      i:=round(bufwide/(abs(nrbits/8)));{check if buffer is wide enough for one image line}
+      if width2>i then
+      begin
+        beep;
+        textout(mainwindow.image1.canvas.handle,30,30,'Too wide FITS file !!!!!',25);
+        close_fits_file;
+        exit;
+      end;
 
-    if nrbits=16 then
-    for k:=0 to naxis3-1 do {do all colors}
-    begin
-      For j:=0 to height2-1 do
-      begin
-        try reader.read(fitsbuffer,width2*2);except; end; {read file info}
-        for i:=0 to width2-1 do
-        begin
-          wo:=swap(fitsbuffer2[i]);{move data to wo and therefore sign_int}
-          col_float:=sign_int*bscale + bzero; {save in col_float for measuring measured_max}
-          img_loaded2[k,i,j]:=col_float;
-          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-        end;
-      end;
-    end {colors naxis3 times}
-    else
-    if nrbits=-32 then
-    for k:=0 to naxis3-1 do {do all colors}
-    begin
-      For j:=0 to height2-1 do
-      begin
-        try reader.read(fitsbuffer,width2*4);except; end; {read file info}
-        for i:=0 to width2-1 do
-        begin
-          x_longword:=swapendian(fitsbuffer4[i]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
-          col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
-          if isNan(col_float) then col_float:=measured_max;{not a number prevent errors, can happen in PS1 images with very high floating point values}
-          img_loaded2[k,i,j]:=col_float;{store in memory array}
-          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-        end;
-      end;
-    end {colors naxis3 times}
-    else
-    if nrbits=8 then
-    for k:=0 to naxis3-1 do {do all colors}
-    begin
-      For j:=0 to height2-1 do
-      begin
-        try reader.read(fitsbuffer,width2);except; end; {read file info}
-        for i:=0 to width2-1 do
-        begin
-          img_loaded2[k,i,j]:=(fitsbuffer[i]*bscale + bzero);
-        end;
-      end;
-    end {colors naxis3 times}
-    else
-    if nrbits=24 then
-    For j:=0 to height2-1 do
-    begin
-      try reader.read(fitsbuffer,width2*3);except; end; {read file info}
-      for i:=0 to width2-1 do
-      begin
-        rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
-        img_loaded2[0,i,j]:=rgbdummy[0];{store in memory array}
-        img_loaded2[1,i,j]:=rgbdummy[1];{store in memory array}
-        img_loaded2[2,i,j]:=rgbdummy[2];{store in memory array}
-      end;
-    end
-    else
-    if nrbits=+32 then
-    for k:=0 to naxis3-1 do {do all colors}
-    begin
-      For j:=0 to height2-1 do
-      begin
-        try reader.read(fitsbuffer,width2*4);except; end; {read file info}
-        for i:=0 to width2-1 do
-        begin
-          col_float:=(swapendian(fitsbuffer4[i])*bscale+bzero)/(65535);{scale to 0..64535 or 0..1 float}
-                         {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
-          img_loaded2[k,i,j]:=col_float;{store in memory array}
-          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-        end;
-      end;
-    end {colors naxis3 times}
-    else
-    if nrbits=-64 then
-    for k:=0 to naxis3-1 do {do all colors}
-    begin
-      For j:=0 to height2-1 do
-      begin
-        try reader.read(fitsbuffer,width2*8);except; end; {read file info}
-        for i:=0 to width2-1 do
-        begin
-          x_int64:=swapendian(fitsbuffer8[i]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
-          col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
-          img_loaded2[k,i,j]:=col_float;{store in memory array}
-          if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
-        end;
-      end;
-    end; {colors naxis3 times}
+      setlength(img_loaded2,naxis3,width2,height2);
 
-    {rescale if required}
-    if ((nrbits<=-32){-32 or -64} or (nrbits=+32)) then
-    begin
-      scalefactor:=1;
-      if ((measured_max<=1.01) or (measured_max>65535)) then scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
-                                                                                              {or if values are above 65535}
-      if scalefactor<>1 then {not a 0..65535 range, rescale}
+      if nrbits=16 then
+      for k:=0 to naxis3-1 do {do all colors}
       begin
-        for k:=0 to naxis3-1 do {do all colors}
-          for j:=0 to height2-1 do
-            for i:=0 to width2-1 do
-              img_loaded2[k,i,j]:= img_loaded2[k,i,j]*scalefactor;
-        datamax_org:=65535;
+        For j:=0 to height2-1 do
+        begin
+          try reader.read(fitsbuffer,width2*2);except; end; {read file info}
+          for i:=0 to width2-1 do
+          begin
+            wo:=swap(fitsbuffer2[i]);{move data to wo and therefore sign_int}
+            col_float:=sign_int*bscale + bzero; {save in col_float for measuring measured_max}
+            img_loaded2[k,i,j]:=col_float;
+            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+          end;
+        end;
+      end {colors naxis3 times}
+      else
+      if nrbits=-32 then
+      for k:=0 to naxis3-1 do {do all colors}
+      begin
+        For j:=0 to height2-1 do
+        begin
+          try reader.read(fitsbuffer,width2*4);except; end; {read file info}
+          for i:=0 to width2-1 do
+          begin
+            x_longword:=swapendian(fitsbuffer4[i]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
+            col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
+            if isNan(col_float) then col_float:=measured_max;{not a number prevent errors, can happen in PS1 images with very high floating point values}
+            img_loaded2[k,i,j]:=col_float;{store in memory array}
+            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+          end;
+        end;
+      end {colors naxis3 times}
+      else
+      if nrbits=8 then
+      for k:=0 to naxis3-1 do {do all colors}
+      begin
+        For j:=0 to height2-1 do
+        begin
+          try reader.read(fitsbuffer,width2);except; end; {read file info}
+          for i:=0 to width2-1 do
+          begin
+            img_loaded2[k,i,j]:=(fitsbuffer[i]*bscale + bzero);
+          end;
+        end;
+      end {colors naxis3 times}
+      else
+      if nrbits=24 then
+      For j:=0 to height2-1 do
+      begin
+        try reader.read(fitsbuffer,width2*3);except; end; {read file info}
+        for i:=0 to width2-1 do
+        begin
+          rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
+          img_loaded2[0,i,j]:=rgbdummy[0];{store in memory array}
+          img_loaded2[1,i,j]:=rgbdummy[1];{store in memory array}
+          img_loaded2[2,i,j]:=rgbdummy[2];{store in memory array}
+        end;
       end
-      else  datamax_org:=measured_max;
+      else
+      if nrbits=+32 then
+      for k:=0 to naxis3-1 do {do all colors}
+      begin
+        For j:=0 to height2-1 do
+        begin
+          try reader.read(fitsbuffer,width2*4);except; end; {read file info}
+          for i:=0 to width2-1 do
+          begin
+            col_float:=(swapendian(fitsbuffer4[i])*bscale+bzero)/(65535);{scale to 0..64535 or 0..1 float}
+                           {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
+            img_loaded2[k,i,j]:=col_float;{store in memory array}
+            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+          end;
+        end;
+      end {colors naxis3 times}
+      else
+      if nrbits=-64 then
+      for k:=0 to naxis3-1 do {do all colors}
+      begin
+        For j:=0 to height2-1 do
+        begin
+          try reader.read(fitsbuffer,width2*8);except; end; {read file info}
+          for i:=0 to width2-1 do
+          begin
+            x_int64:=swapendian(fitsbuffer8[i]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
+            col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
+            img_loaded2[k,i,j]:=col_float;{store in memory array}
+            if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
+          end;
+        end;
+      end; {colors naxis3 times}
 
-    end
-    else
-    if nrbits=8 then datamax_org:=255 {not measured}
-    else
-    if nrbits=24 then
-    begin
-      datamax_org:=255;
-      nrbits:=8; {already converted to array with seperate colour sections}
-    end
-    else {16 bit}
-    datamax_org:=measured_max;{most common. It set for nrbits=24 in beginning at 255}
+      {rescale if required}
+      if ((nrbits<=-32){-32 or -64} or (nrbits=+32)) then
+      begin
+        scalefactor:=1;
+        if ((measured_max<=1.01) or (measured_max>65535)) then scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
+                                                                                                {or if values are above 65535}
+        if scalefactor<>1 then {not a 0..65535 range, rescale}
+        begin
+          for k:=0 to naxis3-1 do {do all colors}
+            for j:=0 to height2-1 do
+              for i:=0 to width2-1 do
+                img_loaded2[k,i,j]:= img_loaded2[k,i,j]*scalefactor;
+          datamax_org:=65535;
+        end
+        else  datamax_org:=measured_max;
 
-    cblack:=datamin_org;{for case histogram is not called}
-    cwhite:=datamax_org;
+      end
+      else
+      if nrbits=8 then datamax_org:=255 {not measured}
+      else
+      if nrbits=24 then
+      begin
+        datamax_org:=255;
+        nrbits:=8; {already converted to array with seperate colour sections}
+      end
+      else {16 bit}
+      datamax_org:=measured_max;{most common. It set for nrbits=24 in beginning at 255}
 
-    result:=true;
-    fits_file:=true;{succes}
-    reader_position:=reader_position+width2*height2*(abs(nrbits) div 8)
+      cblack:=datamin_org;{for case histogram is not called}
+      cwhite:=datamax_org;
+
+      result:=true;
+      fits_file:=true;{succes}
+
+      if ((get_ext=0) and (extension>0) then {test if extension is possible}
+      begin
+        if file_size-width2*height2*(abs(nrbits) div 8)>2880 then {file size confirms extension}
+        begin
+          mainwindow.Memo3.lines.text:='File contains an extension image or table. Can be extracted but other images will not be processed or preserved!';
+          mainwindow.pagecontrol1.showtabs:=true;{show tabs}
+          if naxis<2 then
+          begin
+            mainwindow.error_label1.caption:=('Contains extension(s)');
+            mainwindow.error_label1.visible:=true;
+            mainwindow.pagecontrol1.Tabindex:=1;{show Table tab}
+            mainwindow.memo1.visible:=true;{show memo1 since no plotting is comming}
+          end;
+        end
+        else
+        extension:=0; {no extension possible due to file size}
+      end;
+    end;{read image}
   end{image block}
 
-
-
-
+//  if ((extend>0) and (light)) then {table behind? Do not try to read a table as dark/flat. This will reset global extend variable}
+//  begin {read ASCII or binary table}
+//    if naxis>=2 then {image was read}
+//      reader_position:=reader_position + width2*height2*(abs(nrbits) div 8);
+//    fract:=frac(reader_position/2880);
+//    if fract<>0 then
+//    begin
+//      i:=round((1-fract)*2880);{left part of next 2880 bytes block}
+//      try reader.read(header[0],i);
+//      except;
+//        close_fits_file;
+//        exit;
+//      end; {skip empty part and go to image data}
+//      inc(reader_position,i);
+//    end;
+//    extend:=4;{assume no more extensions}
   else
-  if  ((naxis=2) and ((bintable) or (asciitable)) ) then
-  begin {read table ############################################}
-    if bintable then extend:=2;
-    if asciitable then extend:=1;
+  begin {read table}
+    if bintable then extension=2
+    if table then extension=1;
+    repeat {read extension}
+      i:=0;
+      try
+        reader.read(header[I],2880);{read file header, 2880 bytes}
+      except;
+        close_fits_file;
+        exit;
+      end;
+      inc(reader_position,2880);
+      repeat
+        if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {naxisT}
+           begin
+             if (header[i+5]='1') then begin naxisT1:=round(validate_double); end else {naxisT1 pixels}
+             if (header[i+5]='2') then naxisT2:=round(validate_double) else   {naxisT2 pixels}
+           end;
+        if ((header[i]='T') and (header[i+1]='F')  and (header[i+2]='I') and (header[i+3]='E') and (header[i+4]='L') and (header[i+5]='D') and (header[i+6]='S')) then {tfields}
+        begin
+           tfields:=round(validate_double);
+           setlength(ttype,tfields);
+           setlength(tform,tfields);
+           setlength(tbcol,tfields);
+           setlength(tunit,tfields);
+        end;
+        if ((header[i]='T') and (header[i+1]='F')  and (header[i+2]='O') and (header[i+3]='R') and (header[i+4]='M')) then
+        begin
+          number:=trim(header[i+5]+header[i+6]+header[i+7]);
+          tform_counter:=strtoint(number)-1;
+          tform[tform_counter]:=get_string;
+          if pos('E',tform[tform_counter])>0 then tform[tform_counter]:='E';{remove spaces}
+          if pos('D',tform[tform_counter])>0 then tform[tform_counter]:='D';
+          if pos('L',tform[tform_counter])>0 then tform[tform_counter]:='L';{logical}
+          if pos('B',tform[tform_counter])>0 then tform[tform_counter]:='B';{byte}
+          if pos('I',tform[tform_counter])>0 then tform[tform_counter]:='I';{16 bit integer}
+          if pos('J',tform[tform_counter])>0 then tform[tform_counter]:='J';{32 bit integer}
+          if pos('K',tform[tform_counter])>0 then tform[tform_counter]:='K';{64 bit integer}
+          p:=pos('A',tform[tform_counter]);
+          if p>0 then
+          begin
+             aline:=copy(tform[tform_counter],1,p-1);
+             tform[tform_counter]:='A';{Charactor} nrchars:=strtoint(aline); if nrchars=0 then nrchars:=1; end;  {e.g. 12A for astrometry.net first index table}
+        end;
+        if ((header[i]='T') and (header[i+1]='B')  and (header[i+2]='C') and (header[i+3]='O') and (header[i+4]='L')) then
+        begin
+          number:=trim(header[i+5]+header[i+6]+header[i+7]);
+          tform_counter:=strtoint(number)-1;
+          tbcol[tform_counter]:=round(validate_double);
+        end;
+
+        if ((header[i]='T') and (header[i+1]='T')  and (header[i+2]='Y') and (header[i+3]='P') and (header[i+4]='E')) then {field describtion like X, Y}
+        begin
+           number:=trim(header[i+5]+header[i+6]+header[i+7]);
+           ttype[strtoint(number)-1]:=trim(get_string);
+        end;
+        if ((header[i]='T') and (header[i+1]='U')  and (header[i+2]='N') and (header[i+3]='I') and (header[i+4]='T')) then {unit describtion}
+        begin
+           number:=trim(header[i+5]+header[i+6]+header[i+7]);
+           tunit[strtoint(number)-1]:=get_string;
+        end;
+
+        end_record:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D') and (header[i+3]=' '));{end of header}
+
+       inc(i,80);
+
+      until ((i>=2880) or (end_record)); {loop for 80 bytes in 2880 block}
+    until end_record; {header, 2880 bytes loop}
 
     {try to read data table}
     aline:='';
@@ -1593,11 +1640,10 @@ begin
        aline:=aline+tunit[k]+#9;
     aline:=aline+sLineBreak;
 
-    for j:=0 to height2-1 do {rows}
+    for j:=0 to naxisT2-1 do {rows}
     begin
-      reader.read(fitsbuffer[0],width2);{copy complete ascii row}
-
-      if extend=1 {ascii_table} then SetString(field, Pansichar(@fitsbuffer[0]),width2);{convert to string}
+      reader.read(fitsbuffer[0],naxisT1);{copy complete ascii row}
+      if extend=1 {ascii_table} then SetString(field, Pansichar(@fitsbuffer[0]),naxisT1);{convert to string}
 
       for k:=0 to tfields-1 do {columns}
       {read}
@@ -1608,85 +1654,45 @@ begin
           if k=tfields-1 then aline:=aline+field;{field is ready}
         end
         else
+
+        if tform[k]='E' then {4 byte float}
         begin
-          if tform[k]='E' then {4 byte float}
-          begin
-            x_longword:=swapendian(fitsbuffer4[k]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
-            aline:=aline+floattostrF(x_single,FFexponent,7,0)+ #9; {int_IEEE, swap four bytes and the read as floating point}
-          end
-          else
-          if tform[k]='D' then {8 byte float}
-          begin
-            x_int64:=swapendian(fitsbuffer8[k]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
-            aline:=aline+floattostrF(x_double,FFexponent,7,0)+ #9; {int_IEEE, swap four bytes and the read as floating point}
-          end
-          else
-          if tform[k]='I' then {16 bit}
-          begin
-            wo:=swap(fitsbuffer2[k]);{move data to wo and therefore sign_int}
-            aline:=aline+inttostr(sign_int)+ #9; {int_IEEE, swap four bytes and the read as floating point}
-          end
-          else
-          if tform[k]='J' then {32 bit}
-          begin
-            aline:=aline+inttostr(swapendian(fitsbuffer4[k]))+ #9; {int_IEEE, swap four bytes and the read as floating point}
-          end
-          else
-          if tform[k]='K' then {64 bit}
-          begin
-            aline:=aline+inttostr(swapendian(fitsbuffer8[k]))+ #9; {int_IEEE, swap four bytes and the read as floating point}
-          end
-          else
-          if ((tform[k]='L') or (Tform[k]='B')) then {logical, byte }
-          begin
-            aline:=aline+inttostr(fitsbuffer[k])+ #9;
-          end
-          else
-          if ((Tform[k]='0A')) then {chars}
-          begin
-            reader.read(fitsbuffer[0],1);
-            field:=hexstr(fitsbuffer[n],2)+' ';
-            aline:=aline+field+ #9;
-          end
-          else
-          if ((Tform[k]='1A')) then {chars}
-          begin
-            reader.read(fitsbuffer[0],1);
-            field:=hexstr(fitsbuffer[n],2)+' ';
-            aline:=aline+field+ #9;
-          end
-          else
-          if ((Tform[k]='2A')) then {chars}
-          begin
-            reader.read(fitsbuffer[0],2);
-            field:='';
-            for n:=0 to 2-1 do field:=field+hexstr(fitsbuffer[n],2)+' ';
-            aline:=aline+field+ #9;
-          end
-          else
-          if ((Tform[k]='4A')) then {chars}
-          begin
-            reader.read(fitsbuffer[0],4);
-            field:='';
-            for n:=0 to 4-1 do field:=field+hexstr(fitsbuffer[n],2)+' ';
-            aline:=aline+field+ #9;
-          end
-          else
-          if ((Tform[k]='8A')) then {chars}
-          begin
-            reader.read(fitsbuffer[0],8);
-            field:='';
-            for n:=0 to 8-1 do field:=field+hexstr(fitsbuffer[n],2)+' ';
-            aline:=aline+field+ #9;
-          end
-          else
-          if ((Tform[k]='12A')) then {chars}
-          begin
-            reader.read(fitsbuffer[0],12);
-            field:='';
-            for n:=0 to 12-1 do field:=field+hexstr(fitsbuffer[n],2)+' ';
-            aline:=aline+field+ #9;
-          end;
+          x_longword:=swapendian(fitsbuffer4[k]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
+          aline:=aline+floattostrF(x_single,FFexponent,7,0)+ #9; {int_IEEE, swap four bytes and the read as floating point}
+        end
+        else
+        if tform[k]='D' then {8 byte float}
+        begin
+          x_int64:=swapendian(fitsbuffer8[k]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
+          aline:=aline+floattostrF(x_double,FFexponent,7,0)+ #9; {int_IEEE, swap four bytes and the read as floating point}
+        end
+        else
+        if tform[k]='I' then {16 bit}
+        begin
+          wo:=swap(fitsbuffer2[k]);{move data to wo and therefore sign_int}
+          aline:=aline+inttostr(sign_int)+ #9; {int_IEEE, swap four bytes and the read as floating point}
+        end
+        else
+        if tform[k]='J' then {32 bit}
+        begin
+          aline:=aline+inttostr(swapendian(fitsbuffer4[k]))+ #9; {int_IEEE, swap four bytes and the read as floating point}
+        end
+        else
+        if tform[k]='K' then {64 bit}
+        begin
+          aline:=aline+inttostr(swapendian(fitsbuffer8[k]))+ #9; {int_IEEE, swap four bytes and the read as floating point}
+        end
+        else
+        if ((tform[k]='L') or (Tform[k]='B')) then {logical, byte }
+        begin
+          aline:=aline+inttostr(fitsbuffer[k])+ #9;
+        end;
+        if ((Tform[k]='A')) then {chars}
+        begin
+          reader.read(fitsbuffer[0],nrchars);{copy complete ascii row}
+          field:='';
+          for n:=0 to nrchars-1 do field:=field+hexstr(fitsbuffer[n],2)+' ';
+          aline:=aline+field+ #9;
         end;
       end;
       aline:=aline+sLineBreak ;
@@ -1694,36 +1700,8 @@ begin
     mainwindow.Memo3.lines.text:=aline;
     mainwindow.Memo3.readonly:=(extend<=1);
     aline:=''; {release memory}
-    mainwindow.memo1.visible:=true;{show header}
     mainwindow.pagecontrol1.showtabs:=true;{show tabs}
-    reader_position:=reader_position+width2*height2;
   end;{read table}
-
-
-
-  if extend>0 then {test if extension is possible}
-  begin
-    if file_size-reader_position>2880 then {file size confirms extension}
-    begin
-      if get_ext=0 then
-         mainwindow.Memo3.lines.text:='File contains an extension image or table. Can be extracted but other images will not be processed or preserved!';
-      mainwindow.pagecontrol1.showtabs:=true;{show tabs}
-      if naxis<2 then
-      begin
-        mainwindow.error_label1.caption:=('Contains extension(s)');
-        mainwindow.error_label1.visible:=true;
-        mainwindow.pagecontrol1.Tabindex:=1;{show Table tab}
-        mainwindow.memo1.visible:=true;{show memo1 since no plotting is comming}
-      end;
-    end
-    else
-    begin
-      if get_ext=0 then extend:=0
-      else
-        extend:=4; {no more extension possible due to file size}
-    end;
-  end;
-
 
   close_fits_file;
 end;
@@ -2301,7 +2279,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.443, '+about_message4+', dated 2020-10-31';
+  #13+#10+'ASTAP version ß0.9.442, '+about_message4+', dated 2020-10-29';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3526,7 +3504,7 @@ end;
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
 begin
   mainwindow.Saveasfits1.enabled:=((fits) or (extend>=2){table});
-  mainwindow.updown1.visible:=extend>0;
+  mainwindow.updown1.visible:=(extend>0);
 
   if fits<>mainwindow.data_range_groupBox1.Enabled then  {menu requires update}
   begin
@@ -8673,7 +8651,7 @@ end;
 
 procedure Tmainwindow.UpDown1Click(Sender: TObject; Button: TUDBtnType);
 begin
-  if ((extend=4) and (button=btNext)) then
+  if extend>=4 then
   begin
     UpDown1.position:=UpDown1.position-1; {no more extensions}
     exit;
@@ -8683,9 +8661,7 @@ begin
     if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainwindow.image1,false {re_center},true);
-//    tabsheet1.caption:='Header '+inttostr(UpDown1.position+1);
   end;
-  tabsheet1.caption:='Header '+inttostr(UpDown1.position+1);
 end;
 
 

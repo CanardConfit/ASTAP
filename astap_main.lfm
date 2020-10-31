@@ -817,6 +817,18 @@ object mainwindow: Tmainwindow
       end
     end
   end
+  object UpDown1: TUpDown
+    Left = 808
+    Height = 23
+    Top = 0
+    Width = 47
+    Min = 0
+    OnClick = UpDown1Click
+    Orientation = udHorizontal
+    Position = 0
+    TabOrder = 10
+    Visible = False
+  end
   object MainMenu1: TMainMenu
     Images = ImageList1
     Left = 856
