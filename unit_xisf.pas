@@ -140,7 +140,7 @@ begin
 
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
   annotated:=false; {any annotation in the file}
-  extend_type:=0; {image}
+  extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
 
   setlength(header2,16);
   reader_position:=0;

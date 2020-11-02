@@ -754,24 +754,25 @@ var
   col_float,bscale,measured_max,scalefactor  : single;
   s                  : string[3];
   bzero              : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
-  wo                 : word;   {for 16 signed integer}
-  sign_int           : smallint absolute wo;{for 16 signed integer}
   aline,number,field : ansistring;
   rgbdummy           : byteX3;
 
+  word16             : word;   {for 16 signed integer}
+  int_16             : smallint absolute word16;{for 16 signed integer}
+
   x_longword  : longword;
   x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
-  x_int64     : int64;
-  x_double    : double absolute x_int64;{for conversion 64 bit "big-endian" data}
+  int_32      : integer absolute x_longword;{for 32 bit signed integer}
 
-  lw       : int64;
-  fl       : double absolute lw;
+  x_qword     : qword;
+  x_double    : double absolute x_qword;{for conversion 64 bit "big-endian" data}
+  int_64      : int64 absolute x_qword;{for 64 bit signed integer}
 
-  tfields,tform_counter,header_count  : integer;
+  tfields,tform_counter,header_count,pointer  : integer;
   ttype,tform,tunit : array of string;
-  tbcol            : array of integer;
+  tbcol,tform_nr    : array of integer;
   simple,image,bintable,asciitable    : boolean;
-
+  abyte                               : byte;
 const
   end_record : boolean=false;
 
@@ -878,7 +879,6 @@ begin
     a_order:=0; {SIP_polynomial, use for check if there is data}
 
     if get_ext=0 then extend_type:=0; {always an image in main data block}
-//                  extend_tpe:=2; {assume something like table}
 
     xbinning:=1;{normal}
     ybinning:=1;
@@ -908,9 +908,6 @@ begin
 
   measured_max:=0;
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
-
-  mainwindow.pagecontrol1.showtabs:=false;{hide tabs assuming no tabel extension}
-  mainwindow.pagecontrol1.Tabindex:=0;{show first tab}
 
   header_count:=0;
   bintable:=false;
@@ -946,13 +943,13 @@ begin
            bintable:=((header[11]='B') and (header[12]='I')  and (header[13]='N') and (header[14]='T') and (header[15]='A') and (header[16]='B')); {BINTABLE}
            asciitable:=((header[11]='T') and (header[12]='A')  and (header[13]='B') and (header[14]='L') and (header[15]='E') and (header[16]=' ')) ;{ascii_table identifier}
           begin
-            if pos('BINTABLE',get_string)>0 then extend_type:=2 { 'BINTABLE' or 'TABLE'}
+            if pos('BINTABLE',get_string)>0 then extend_type:=3 { 'BINTABLE' or 'TABLE'}
             else
-            if pos('TABLE ',get_string)>0 then extend_type:=1 {ascii_table identifier}
+            if pos('TABLE ',get_string)>0 then extend_type:=2 {ascii_table identifier}
             else
             begin
-              extend_type:=3; {image in extension}
-              mainwindow.Memo3.lines.text:='File contains a second image. Can be extracted but other images will not be processed or preserved!';
+              extend_type:=1; {image in the extension}
+              mainwindow.Memo3.lines.text:='File contains image(s) in the extension. Can be extracted and saved as a single image.';
               mainwindow.pagecontrol1.showtabs:=true;{show tabs}
             end;
           end;
@@ -1339,6 +1336,7 @@ begin
            tfields:=round(validate_double);
            setlength(ttype,tfields);
            setlength(tform,tfields);
+           setlength(tform_nr,tfields);{number of sub field. E.g.12A is 12 time a character}
            setlength(tbcol,tfields);
            setlength(tunit,tfields);
         end;
@@ -1347,16 +1345,15 @@ begin
           number:=trim(header[i+5]+header[i+6]+header[i+7]);
           tform_counter:=strtoint(number)-1;
           tform[tform_counter]:=get_string;
-          if pos('E',tform[tform_counter])>0 then tform[tform_counter]:='E';{remove spaces}
-          if pos('D',tform[tform_counter])>0 then tform[tform_counter]:='D';
-          if pos('L',tform[tform_counter])>0 then tform[tform_counter]:='L';{logical}
-          if pos('B',tform[tform_counter])>0 then tform[tform_counter]:='B';{byte}
-          if pos('I',tform[tform_counter])>0 then tform[tform_counter]:='I';{16 bit integer}
-          if pos('J',tform[tform_counter])>0 then tform[tform_counter]:='J';{32 bit integer}
-          if pos('K',tform[tform_counter])>0 then tform[tform_counter]:='K';{64 bit integer}
-          p:=pos('A',tform[tform_counter]);
-          if p>0 then
-             tform[tform_counter]:=trim(copy(tform[tform_counter],1,12));  {e.g. 12A for astrometry.net first index table}
+          if pos('E',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='E';aline:=copy(aline,1,pos('E',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{{single e.g. E, 1E or 4E}
+          if pos('D',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='D';aline:=copy(aline,1,pos('D',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{double e.g. D, 1D or 5D (sub table 5*D) or D25.17}
+          if pos('L',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='L';aline:=copy(aline,1,pos('L',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{logical}
+          if pos('X',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='X';aline:=copy(aline,1,pos('X',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{bit}
+          if pos('B',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='B';aline:=copy(aline,1,pos('B',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{byte}
+          if pos('I',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='I';aline:=copy(aline,1,pos('I',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{16 bit integer}
+          if pos('J',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='J';aline:=copy(aline,1,pos('J',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{32 bit integer}
+          if pos('K',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='K';aline:=copy(aline,1,pos('K',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{64 bit integer}
+          if pos('A',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='A';aline:=copy(aline,1,pos('A',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{char e.g. 12A for astrometry.net first index table}
         end;
         if ((header[i]='T') and (header[i+1]='B')  and (header[i+2]='C') and (header[i+3]='O') and (header[i+4]='L')) then
         begin
@@ -1368,7 +1365,7 @@ begin
         if ((header[i]='T') and (header[i+1]='T')  and (header[i+2]='Y') and (header[i+3]='P') and (header[i+4]='E')) then {field describtion like X, Y}
         begin
            number:=trim(header[i+5]+header[i+6]+header[i+7]);
-           ttype[strtoint(number)-1]:=trim(get_string);
+           ttype[strtoint(number)-1]:=(get_string);
         end;
         if ((header[i]='T') and (header[i+1]='U')  and (header[i+2]='N') and (header[i+3]='I') and (header[i+4]='T')) then {unit describtion}
         begin
@@ -1455,8 +1452,8 @@ begin
         try reader.read(fitsbuffer,width2*2);except; end; {read file info}
         for i:=0 to width2-1 do
         begin
-          wo:=swap(fitsbuffer2[i]);{move data to wo and therefore sign_int}
-          col_float:=sign_int*bscale + bzero; {save in col_float for measuring measured_max}
+          word16:=swap(fitsbuffer2[i]);{move data to wo and therefore sign_int}
+          col_float:=int_16*bscale + bzero; {save in col_float for measuring measured_max}
           img_loaded2[k,i,j]:=col_float;
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
@@ -1530,7 +1527,7 @@ begin
         try reader.read(fitsbuffer,width2*8);except; end; {read file info}
         for i:=0 to width2-1 do
         begin
-          x_int64:=swapendian(fitsbuffer8[i]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
+          x_qword:=swapendian(fitsbuffer8[i]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
           col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
           img_loaded2[k,i,j]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
@@ -1580,8 +1577,8 @@ begin
   else
   if  ((naxis=2) and ((bintable) or (asciitable)) ) then
   begin {read table ############################################}
-    if bintable then extend_type:=2;
-    if asciitable then extend_type:=1;
+    if bintable then extend_type:=3;
+    if asciitable then extend_type:=2;
 
     {try to read data table}
     aline:='';
@@ -1594,104 +1591,98 @@ begin
 
     for j:=0 to height2-1 do {rows}
     begin
-      reader.read(fitsbuffer[0],width2);{copy complete ascii row}
+      try reader.read(fitsbuffer[0],width2);{read one row} except end;
 
-      if extend_type=1 {ascii_table} then SetString(field, Pansichar(@fitsbuffer[0]),width2);{convert to string}
+      if extend_type=2 {ascii_table} then SetString(field, Pansichar(@fitsbuffer[0]),width2);{convert to string}
 
+      pointer:=0;
       for k:=0 to tfields-1 do {columns}
       {read}
       begin
-        if extend_type=1 then {ascii table}
+        if extend_type=2 then {ascii table}
         begin
           if k>0 then insert(#9,field,tbcol[k]+k-1);{insert tab}
           if k=tfields-1 then aline:=aline+field;{field is ready}
         end
         else
         begin
-          if tform[k]='E' then {4 byte float}
+          if tform[k]='E' then {4 byte single float or 21 times single if 21E specified}
           begin
-            x_longword:=swapendian(fitsbuffer4[k]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
-            aline:=aline+floattostrF(x_single,FFexponent,7,0)+ #9; {int_IEEE, swap four bytes and the read as floating point}
+            for n:=0 to Tform_nr[k]-1 do
+            begin
+              x_longword:=(fitsbuffer[pointer] shl 24) +(fitsbuffer[pointer+1] shl 16)+(fitsbuffer[pointer+2] shl 8)+(fitsbuffer[pointer+3]);
+              aline:=aline+floattostrF(x_single,FFexponent,7,0)+#9; {int_IEEE, swap four bytes and the read as floating point}
+              pointer:=pointer+4;
+            end;
           end
           else
           if tform[k]='D' then {8 byte float}
           begin
-            x_int64:=swapendian(fitsbuffer8[k]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
-            aline:=aline+floattostrF(x_double,FFexponent,7,0)+ #9; {int_IEEE, swap four bytes and the read as floating point}
+            for n:=0 to Tform_nr[k]-1 do
+            begin
+              x_qword:=(qword(fitsbuffer[pointer]) shl 56) +(qword(fitsbuffer[pointer+1]) shl 48)+(qword(fitsbuffer[pointer+2]) shl 40)+(qword(fitsbuffer[pointer+3]) shl 32) + (qword(fitsbuffer[pointer+4]) shl 24) +(qword(fitsbuffer[pointer+5]) shl 16)+(qword(fitsbuffer[pointer+6]) shl 8)+(qword(fitsbuffer[pointer+7]));
+              aline:=aline+floattostrF(x_double,FFexponent,7,0)+#9; {int_IEEE, swap four bytes and the read as floating point}
+              pointer:=pointer+8;
+            end;
           end
           else
-          if tform[k]='I' then {16 bit}
+          if tform[k]='I' then {16 bit int}
           begin
-            wo:=swap(fitsbuffer2[k]);{move data to wo and therefore sign_int}
-            aline:=aline+inttostr(sign_int)+ #9; {int_IEEE, swap four bytes and the read as floating point}
+            for n:=0 to Tform_nr[k]-1 do
+            begin
+              word16:=(fitsbuffer[pointer] shl 8) + (fitsbuffer[pointer+1]);
+              aline:=aline+inttostr(int_16)+#9;
+              pointer:=pointer+2;
+            end;
           end
           else
-          if tform[k]='J' then {32 bit}
+          if tform[k]='J' then {32 bit int}
           begin
-            aline:=aline+inttostr(swapendian(fitsbuffer4[k]))+ #9; {int_IEEE, swap four bytes and the read as floating point}
+            for n:=0 to Tform_nr[k]-1 do
+            begin
+              x_longword:=(fitsbuffer[pointer] shl 24) +(fitsbuffer[pointer+1] shl 16)+(fitsbuffer[pointer+2] shl 8)+(fitsbuffer[pointer+3]);
+              aline:=aline+inttostr(int_32)+#9;
+              pointer:=pointer+4;
+            end;
           end
           else
-          if tform[k]='K' then {64 bit}
+          if tform[k]='K' then {64 bit int}
           begin
-            aline:=aline+inttostr(swapendian(fitsbuffer8[k]))+ #9; {int_IEEE, swap four bytes and the read as floating point}
+            for n:=0 to Tform_nr[k]-1 do
+            begin
+              x_qword:=(qword(fitsbuffer[pointer]) shl 56) +(qword(fitsbuffer[pointer+1]) shl 48)+(qword(fitsbuffer[pointer+2]) shl 40)+(qword(fitsbuffer[pointer+3]) shl 32) + (qword(fitsbuffer[pointer+4]) shl 24) +(qword(fitsbuffer[pointer+5]) shl 16)+(qword(fitsbuffer[pointer+6]) shl 8)+(qword(fitsbuffer[pointer+7]));
+              aline:=aline+inttostr(int_64)+#9; {int_IEEE, swap eight bytes and the read as floating point}
+              pointer:=pointer+8;
+            end;
           end
           else
-          if ((tform[k]='L') or (Tform[k]='B')) then {logical, byte }
+          if ((tform[k]='L') or (Tform[k]='X') or (Tform[k]='B')) then {logical, bit or byte }
           begin
-            aline:=aline+inttostr(fitsbuffer[k])+ #9;
+            for n:=0 to Tform_nr[k]-1 do
+            begin
+              aline:=aline+inttostr(fitsbuffer[pointer])+#9;
+              pointer:=pointer+1;
+            end;
           end
           else
-          if ((Tform[k]='0A')) then {chars}
+          if ((Tform[k]='A')) then {chars}
           begin
-            reader.read(fitsbuffer[0],1);
-            field:=hexstr(fitsbuffer[n],2)+' ';
-            aline:=aline+field+ #9;
-          end
-          else
-          if ((Tform[k]='1A')) then {chars}
-          begin
-            reader.read(fitsbuffer[0],1);
-            field:=hexstr(fitsbuffer[n],2)+' ';
-            aline:=aline+field+ #9;
-          end
-          else
-          if ((Tform[k]='2A')) then {chars}
-          begin
-            reader.read(fitsbuffer[0],2);
             field:='';
-            for n:=0 to 2-1 do field:=field+hexstr(fitsbuffer[n],2)+' ';
+            for n:=0 to Tform_nr[k]-1 do
+            begin
+              abyte:=fitsbuffer[pointer+n];
+              if ((abyte>=32) and  (abyte<=127)) then field:=field+ansichar(abyte)
+                else  field:=field+'?';{exotic char, prevent confusion tmemo}
+            end;
             aline:=aline+field+ #9;
+            pointer:=pointer+Tform_nr[k];{for 12A, plus 12}
           end
-          else
-          if ((Tform[k]='4A')) then {chars}
-          begin
-            reader.read(fitsbuffer[0],4);
-            field:='';
-            for n:=0 to 4-1 do field:=field+hexstr(fitsbuffer[n],2)+' ';
-            aline:=aline+field+ #9;
-          end
-          else
-          if ((Tform[k]='8A')) then {chars}
-          begin
-            reader.read(fitsbuffer[0],8);
-            field:='';
-            for n:=0 to 8-1 do field:=field+hexstr(fitsbuffer[n],2)+' ';
-            aline:=aline+field+ #9;
-          end
-          else
-          if ((Tform[k]='12A')) then {chars}
-          begin
-            reader.read(fitsbuffer[0],12);
-            field:='';
-            for n:=0 to 12-1 do field:=field+hexstr(fitsbuffer[n],2)+' ';
-            aline:=aline+field+ #9;
-          end;
         end;
       end;
       aline:=aline+sLineBreak ;
     end;
     mainwindow.Memo3.lines.text:=aline;
-    mainwindow.Memo3.readonly:=(extend_type<=1);
+//    mainwindow.Memo3.readonly:=(extend_type<=1);{do not allow editing tables}
     aline:=''; {release memory}
     mainwindow.memo1.visible:=true;{show header}
     mainwindow.pagecontrol1.showtabs:=true;{show tabs}
@@ -1705,15 +1696,14 @@ begin
     if file_size-reader_position>2880 then {file size confirms extension}
     begin
       if get_ext=0 then
-         mainwindow.Memo3.lines.text:='File contains an extension image or table. Can be extracted but other images will not be processed or preserved!';
+         mainwindow.Memo3.lines.text:='File contains extension image(s) or table(s).';
       mainwindow.pagecontrol1.showtabs:=true;{show tabs}
 
       last_extension:=false;
       if naxis<2 then
       begin
-        mainwindow.error_label1.caption:=('Contains extension(s)');
+        mainwindow.error_label1.caption:=('Contains extension(s). Click on the arrows to scroll.');
         mainwindow.error_label1.visible:=true;
-        mainwindow.pagecontrol1.Tabindex:=1;{show Table tab}
         mainwindow.memo1.visible:=true;{show memo1 since no plotting is comming}
       end;
     end
@@ -1723,7 +1713,7 @@ begin
     end;
   end;
   if ((last_extension=false) or (extend_type>0)) then
-     mainwindow.tabsheet1.caption:='Header '+inttostr(get_ext+1);
+     mainwindow.tabsheet1.caption:='Header '+inttostr(get_ext);
 
   close_fits_file;
 end;
@@ -2301,7 +2291,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.444, '+about_message4+', dated 2020-10-31';
+  #13+#10+'ASTAP version ß0.9.446, '+about_message4+', dated 2020-11-02';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3525,8 +3515,16 @@ end;
 
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
 begin
-  mainwindow.Saveasfits1.enabled:=((fits) or (extend_type>=2){table or image});
+//  mainwindow.Saveasfits1.enabled:=((fits) or (extend_type<=1){ only allow saving images});
+  mainwindow.Saveasfits1.enabled:=fits; {only allow saving images}
   mainwindow.updown1.visible:=((last_extension=false) or (extend_type>0));
+
+  if ((last_extension=true) and (extend_type=0) and  (mainwindow.pagecontrol1.showtabs {do it only when necessary to avoid blink})) then
+  begin
+    mainwindow.pagecontrol1.showtabs:=false;{hide tabs assuming no tabel extension}
+    mainwindow.pagecontrol1.Tabindex:=0;{show first tab}
+  end;
+
 
   if fits<>mainwindow.data_range_groupBox1.Enabled then  {menu requires update}
   begin
@@ -3565,7 +3563,6 @@ begin
 
     stackmenu1.tab_Pixelmath1.enabled:=fits;
     stackmenu1.tab_Pixelmath2.enabled:=fits;
-
   end;{menu change}
 
   fits_file:=fits;{update}
@@ -5289,7 +5286,7 @@ begin
 
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
   annotated:=false; {any annotation in the file}
-  extend_type:=0;  {no extensions in the file, 1 is ascii_table, 2 bintable}
+  extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
   gain:=999;{assume no data available}
 
 
@@ -5713,7 +5710,7 @@ begin
 
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
   annotated:=false; {any annotation in the file}
-  extend_type:=0; {no extensions in the file, 1 is ascii_table, 2 bintable}
+  extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
 
 
   {set data}
@@ -12257,11 +12254,15 @@ begin
 
   {get dimensions directly from array}
   naxis3_local:=length(img);{nr colours}
+  if naxis=0 then
+  begin
+    application.messagebox(pchar('Abort, no image!!'),pchar('Error'),MB_OK);
+    exit;
+  end;
+
   width5:=length(img[0]);{width}
   height5:=length(img[0,0]);{length}
   if naxis3_local=1 then dimensions:=2 else dimensions:=3; {number of dimensions or colours}
-  if naxis=0 then
-                type1:=0;{only table}
 
   if ((type1=24) and (naxis3_local<3)) then
   begin
@@ -12274,21 +12275,12 @@ begin
 
   if  override1=false then
   begin
-    if extend_type=3 then {image extensions in the file}
+    if extend_type=1 then {image extensions in the file}
     begin
-      if MessageDlg('Only the current image of the multi-extension FITS will be saved. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then  exit;
-    end
-    else
-    if extend_type=2 then {bintable extensions in the file}
-    begin
-      if MessageDlg('File bintable extension will be reformatted as single floats only. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then  exit;
-    end
-    else
-    if extend_type=1 then {ASCII table extensions in the file}
-    begin
-      if MessageDlg('ASCII table extension will be lost. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then  exit;
+      if MessageDlg('Only the current image of the multi-extension FITS will be saved. Displayed table will not be preserved. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then
+        exit;
+      mainwindow.Memo1.Lines[0]:= head1[0]; {replace XTENSION= with SIMPLE = }
     end;
-    mainwindow.Memo1.Lines[0]:= head1[0]; {replace XTENSION= with SIMPLE = }
   end;
   filename2:=filen2;
   {$IFDEF fpc}
@@ -12313,48 +12305,46 @@ begin
   progressC:=0;
 
  {update FITs header}
-  if type1<>0 then {not a table}
+  if type1<>24 then {standard FITS}
   begin
-    if type1<>24 then {standard FITS}
-    begin
-      update_integer('BITPIX  =',' / Bits per entry                                 ' ,type1); {16 or -32}
-      update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number of dimensions, 2 for mono, 3 for colour}
-      update_integer('NAXIS1  =',' / length of x axis                               ' ,width5);
-      update_integer('NAXIS2  =',' / length of y axis                               ' ,height5);
-      if naxis3_local<>1 then {color image}
-        update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3_local)
-        else
-        remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
-
-      if type1=16 then bzero2:=32768 else bzero2:=0;
-      update_integer('BZERO   =',' / Scaling applied to data                        ' ,bzero2);
-      if type1<>8 then
-      begin
-        update_integer('DATAMIN =',' / Minimum data value                             ' ,round(datamin_org));
-        update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
-        update_integer('CBLACK  =',' / Indicates the black point used when displaying the image.' ,round(cblack) ); {2019-4-9}
-        update_integer('CWHITE  =',' / indicates the white point used when displaying the image.' ,round(cwhite) );
-      end
+    update_integer('BITPIX  =',' / Bits per entry                                 ' ,type1); {16 or -32}
+    update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number of dimensions, 2 for mono, 3 for colour}
+    update_integer('NAXIS1  =',' / length of x axis                               ' ,width5);
+    update_integer('NAXIS2  =',' / length of y axis                               ' ,height5);
+    if naxis3_local<>1 then {color image}
+      update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3_local)
       else
-      begin {in most case reducing from 16 or flat to 8 bit}
-        update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-        update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
-      end;
-    end {update existing header}
+      remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+
+    if type1=16 then bzero2:=32768 else bzero2:=0;
+    update_integer('BZERO   =',' / Scaling applied to data                        ' ,bzero2);
+    if type1<>8 then
+    begin
+      update_integer('DATAMIN =',' / Minimum data value                             ' ,round(datamin_org));
+      update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
+      update_integer('CBLACK  =',' / Indicates the black point used when displaying the image.' ,round(cblack) ); {2019-4-9}
+      update_integer('CWHITE  =',' / indicates the white point used when displaying the image.' ,round(cwhite) );
+    end
     else
-    begin {special 8 bit with three colors combined in 24 bit}
-      {update FITs header}
-      update_integer('BITPIX  =',' / Bits per entry                                 ' ,8);
-      update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number dimensions, 2 for mono, 3 for color}
-      update_integer('NAXIS1  =',' / length of x axis                               ' ,3);
-      update_integer('NAXIS2  =',' / length of y axis                               ' ,width5);
-      update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,height5);
+    begin {in most case reducing from 16 or flat to 8 bit}
       update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
       update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
-      update_integer('BZERO   =',' / Scaling applied to data                        ' ,0);
-      {update existing header}
     end;
+  end {update existing header}
+  else
+  begin {special 8 bit with three colors combined in 24 bit}
+    {update FITs header}
+    update_integer('BITPIX  =',' / Bits per entry                                 ' ,8);
+    update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number dimensions, 2 for mono, 3 for color}
+    update_integer('NAXIS1  =',' / length of x axis                               ' ,3);
+    update_integer('NAXIS2  =',' / length of y axis                               ' ,width5);
+    update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,height5);
+    update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
+    update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
+    update_integer('BZERO   =',' / Scaling applied to data                        ' ,0);
+    {update existing header}
   end;
+
   {write memo1 header to file}
   for i:=0 to 79 do empthy_line[i]:=#32;{space}
   i:=0;
@@ -12484,90 +12474,84 @@ begin
     thefile4.writebuffer(fitsbuffer,remain);{write some bytes}
   end;
 
-  if extend_type>=2 then {write bintable extension}
-  begin
-    rows:=number_of_fields(#9,mainwindow.memo3.lines[3]); {first lines could be blank or incomplete}
+//  if extend_type>=3 then {write bintable extension}
+//  begin
+//    rows:=number_of_fields(#9,mainwindow.memo3.lines[3]); {first lines could be blank or incomplete}
+//    tal:=mainwindow.memo3.lines[0];
+//    i:=0;
+//    strplcopy(aline,'XTENSION= '+#39+'BINTABLE'+#39+' / FITS Binary Table Extension                              ',80);{copy 80 and not more or less in position aline[80] should be #0 from string}
+//    thefile4.writebuffer(aline,80); inc(i);
+//    strplcopy(aline,  'BITPIX  =                    8 / 8-bits character format                                  ',80);
+//    thefile4.writebuffer(aline,80);inc(i);
+//    strplcopy(aline,  'NAXIS   =                    2 / Tables are 2-D char. array                               ',80);
+//    thefile4.writebuffer(aline,80);inc(i);
+//    str(rows*4:13,tal); {write only 4 byte floats}
+//    strplcopy(        aline,'NAXIS1  =        '+tal+' / Bytes in row                                             ',80);
+//    thefile4.writebuffer(aline,80);inc(i);
 
-    tal:=mainwindow.memo3.lines[0];
-    i:=0;
+//    str(mainwindow.memo3.lines.count-1-1 :13,tal);
+//    strplcopy(aline,      'NAXIS2  =        '+tal  +' /                                                          ',80);
+//    thefile4.writebuffer(aline,80);inc(i);
 
-    strplcopy(aline,'XTENSION= '+#39+'BINTABLE'+#39+' / FITS Binary Table Extension                              ',80);{copy 80 and not more or less in position aline[80] should be #0 from string}
-    thefile4.writebuffer(aline,80); inc(i);
+//    strplcopy(  aline,'PCOUNT  =                    0 / Parameter count always 0                                 ',80);
+//    thefile4.writebuffer(aline,80);inc(i);
 
-    strplcopy(aline,  'BITPIX  =                    8 / 8-bits character format                                  ',80);
-    thefile4.writebuffer(aline,80);inc(i);
+//    strplcopy(aline,  'GCOUNT  =                    1 / Group count always 1                                     ',80);
+//    thefile4.writebuffer(aline,80);inc(i);
 
-    strplcopy(aline,  'NAXIS   =                    2 / Tables are 2-D char. array                               ',80);
-    thefile4.writebuffer(aline,80);inc(i);
+//    str(rows  :3,tal);
+//    strplcopy(aline,'TFIELDS =                  '+tal+            ' / No. of col in table                                      ',80);
+//    thefile4.writebuffer(aline,80);inc(i);
 
-    str(rows*4:13,tal); {write only 4 byte floats}
-    strplcopy(        aline,'NAXIS1  =        '+tal+' / Bytes in row                                             ',80);
-    thefile4.writebuffer(aline,80);inc(i);
+//    for k:=1 to rows do
+//    begin
+//      str(k:0,tal); tal:=copy(tal+'  ',1,3);
+//      strplcopy(aline,'TFORM'+tal+'= '+#39+'E       '+#39+'           / Format of field                                          ',80);
+//      thefile4.writebuffer(aline,80);inc(i);
 
-    str(mainwindow.memo3.lines.count-1-1 :13,tal);
-    strplcopy(aline,      'NAXIS2  =        '+tal  +' /                                                          ',80);
-    thefile4.writebuffer(aline,80);inc(i);
+//      lab:=retrieve_memo3_string(k-1,0,'col'+inttostr(k)); {retrieve type from memo3}
+//      strplcopy(aline,'TTYPE'+tal+'= '+#39+lab+#39+' / Field label                                                                                                        ',80);
+//      thefile4.writebuffer(aline,80);inc(i);
 
-    strplcopy(  aline,'PCOUNT  =                    0 / Parameter count always 0                                 ',80);
-    thefile4.writebuffer(aline,80);inc(i);
+//      lab:=retrieve_memo3_string(k-1,1,'unit'+inttostr(k)); {retrieve unit from memo3}
+//      strplcopy(aline,'TUNIT'+tal+'= '+#39+lab+#39+' / Physical unit of field                                                                                             ',80);
+//      thefile4.writebuffer(aline,80);inc(i);
+//    end;
 
-    strplcopy(aline,  'GCOUNT  =                    1 / Group count always 1                                     ',80);
-    thefile4.writebuffer(aline,80);inc(i);
+//    strplcopy(  aline,'ORIGIN  = '    +#39+'ASTAP   '+#39+'           / Written by ASTAP                                         ',80);
+//    thefile4.writebuffer(aline,80);inc(i);
+//    strpcopy(aline,'END                                                                             ');
+//    thefile4.writebuffer(aline,80);inc(i);
 
-    str(rows  :3,tal);
-    strplcopy(aline,'TFIELDS =                  '+tal+            ' / No. of col in table                                      ',80);
-    thefile4.writebuffer(aline,80);inc(i);
+//    while  frac(i*80/2880)>0 do
+//    begin
+//      thefile4.writebuffer(empthy_line,80);{write empthy line}
+//      inc(i);
+//    end;
 
+//    {write datablock}
+//    i:=0;
+//    for r:=2 to mainwindow.memo3.lines.count-1 do {rows}
+//    begin
+//       for j:=0 to rows-1 do {columns}
+//      begin
+//         tal:=retrieve_memo3_string(j {x},r {y},'0'); {retrieve string value from memo3 at position k,m}
+//         fitsbuffer4[j]:=INT_IEEE4_reverse(strtofloat2(tal));{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
+//       end;
+//       thefile4.writebuffer(fitsbuffer[0],rows*4);{write one row}
+//       i:=i+rows*4; {byte counter}
+//    end;
 
-    for k:=1 to rows do
-    begin
-      str(k:0,tal); tal:=copy(tal+'  ',1,3);
-      strplcopy(aline,'TFORM'+tal+'= '+#39+'E       '+#39+'           / Format of field                                          ',80);
-      thefile4.writebuffer(aline,80);inc(i);
+//    j:=80-round(80*frac(i/80));{remainder in bytes till written muliple of 80 char}
+//    thefile4.writebuffer(empthy_line,j);{write till multiply of 80}
+//    i:=(i + j*80) div 80 ;{how many 80 bytes record left till multiple of 2880}
 
-      lab:=retrieve_memo3_string(k-1,0,'col'+inttostr(k)); {retrieve type from memo3}
-      strplcopy(aline,'TTYPE'+tal+'= '+#39+lab+#39+' / Field label                                                                                                        ',80);
-      thefile4.writebuffer(aline,80);inc(i);
-
-      lab:=retrieve_memo3_string(k-1,1,'unit'+inttostr(k)); {retrieve unit from memo3}
-      strplcopy(aline,'TUNIT'+tal+'= '+#39+lab+#39+' / Physical unit of field                                                                                             ',80);
-      thefile4.writebuffer(aline,80);inc(i);
-    end;
-
-    strplcopy(  aline,'ORIGIN  = '    +#39+'ASTAP   '+#39+'           / Written by ASTAP                                         ',80);
-    thefile4.writebuffer(aline,80);inc(i);
-    strpcopy(aline,'END                                                                             ');
-    thefile4.writebuffer(aline,80);inc(i);
-
-    while  frac(i*80/2880)>0 do
-    begin
-      thefile4.writebuffer(empthy_line,80);{write empthy line}
-      inc(i);
-    end;
-
-    {write datablock}
-    i:=0;
-    for r:=2 to mainwindow.memo3.lines.count-1 do {rows}
-    begin
-       for j:=0 to rows-1 do {columns}
-       begin
-         tal:=retrieve_memo3_string(j {x},r {y},'0'); {retrieve string value from memo3 at position k,m}
-         fitsbuffer4[j]:=INT_IEEE4_reverse(strtofloat2(tal));{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
-       end;
-       thefile4.writebuffer(fitsbuffer[0],rows*4);{write one row}
-       i:=i+rows*4; {byte counter}
-    end;
-
-    j:=80-round(80*frac(i/80));{remainder in bytes till written muliple of 80 char}
-    thefile4.writebuffer(empthy_line,j);{write till multiply of 80}
-    i:=(i + j*80) div 80 ;{how many 80 bytes record left till multiple of 2880}
-
-    while  frac(i*80/2880)>0 do {write till 2880 block is written}
-    begin
-      thefile4.writebuffer(empthy_line,80);{write empthy line}
-      inc(i);
-    end;
-  end;
+//    while  frac(i*80/2880)>0 do {write till 2880 block is written}
+//    begin
+//      thefile4.writebuffer(empthy_line,80);{write empthy line}
+//      inc(i);
+//    end;
+//  end;
 
   TheFile4.free;
 
@@ -12618,7 +12602,7 @@ end;
 procedure Tmainwindow.Saveasfits1Click(Sender: TObject);
 begin
   if extend_type>0 then {multi extension file}
-   savedialog1.filename:=ChangeFileExt(FileName2,'.fits')+'_extract.fits' {give it a new name}
+   savedialog1.filename:=ChangeFileExt(FileName2,'.fits')+'_extract'+inttostr(mainwindow.updown1.position)+'.fits' {give it a new name}
   else
   if pos('.fit',filename2)=0 then savedialog1.filename:=ChangeFileExt(FileName2,'.fits')
                              else savedialog1.filename:=FileName2;

@@ -820,12 +820,15 @@ object mainwindow: Tmainwindow
   object UpDown1: TUpDown
     Left = 808
     Height = 23
+    Hint = 'Scroll through the images and tables in the FITS extension.'
     Top = 0
     Width = 47
     Min = 0
     OnClick = UpDown1Click
     Orientation = udHorizontal
+    ParentShowHint = False
     Position = 0
+    ShowHint = True
     TabOrder = 10
     Visible = False
   end
