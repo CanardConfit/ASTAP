@@ -1187,6 +1187,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Sigma factor to identify outlier pixels. A factor of around 3.0 will remove satellite tracks and hot pixels. Sigma stands for standard deviation.'
         Top = 88
         Width = 60
+        DropDownCount = 20
         ItemHeight = 15
         ItemIndex = 2
         Items.Strings = (
@@ -2160,6 +2161,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Sigma factor to dectect hot pixels.'
         Top = 123
         Width = 78
+        DropDownCount = 20
         ItemHeight = 15
         ItemIndex = 5
         Items.Strings = (
@@ -2353,6 +2355,7 @@ object stackmenu1: Tstackmenu1
             Top = 64
             Width = 72
             BorderSpacing.Around = 5
+            DropDownCount = 20
             ItemHeight = 15
             ItemIndex = 7
             Items.Strings = (
@@ -2437,6 +2440,7 @@ object stackmenu1: Tstackmenu1
             Top = 8
             Width = 72
             BorderSpacing.Around = 5
+            DropDownCount = 20
             ItemHeight = 15
             ItemIndex = 3
             Items.Strings = (
@@ -2453,7 +2457,6 @@ object stackmenu1: Tstackmenu1
               '5'
               '6'
               '8'
-              '10'
               '10'
               '13'
               'auto'
@@ -2504,6 +2507,7 @@ object stackmenu1: Tstackmenu1
                 Top = 37
                 Width = 88
                 BorderSpacing.Around = 5
+                DropDownCount = 20
                 ItemHeight = 15
                 ItemIndex = 3
                 Items.Strings = (
@@ -2514,9 +2518,6 @@ object stackmenu1: Tstackmenu1
                   '600'
                   '800'
                   '1000'
-                  ''
-                  ''
-                  ''
                 )
                 ParentFont = False
                 TabOrder = 1
@@ -2557,6 +2558,7 @@ object stackmenu1: Tstackmenu1
                 Top = 64
                 Width = 88
                 BorderSpacing.Around = 5
+                DropDownCount = 20
                 ItemHeight = 15
                 ItemIndex = 2
                 Items.Strings = (
@@ -2633,7 +2635,6 @@ object stackmenu1: Tstackmenu1
                   '1.5'
                   '2'
                   '3'
-                  ''
                 )
                 ParentFont = False
                 TabOrder = 4

@@ -7260,7 +7260,7 @@ begin
       for fitsY:=-2 to 3 do {do even times, 6x6}
          for fitsX:=-2 to 3 do
            flat_norm_value:=flat_norm_value+img_flat[0,fitsX+(width2 div 2),fitsY +(height2 div 2)];
-      flat_norm_value:=round(flat_norm_value/36);
+      flat_norm_value:=round(flat_norm_value/36);{scale factor to apply flat. The norm value will result in a factor one for the center.}
 
       for fitsY:=1 to height2 do  {apply the flat}
         for fitsX:=1 to width2 do

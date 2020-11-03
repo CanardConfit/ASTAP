@@ -2291,7 +2291,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.446, '+about_message4+', dated 2020-11-02';
+  #13+#10+'ASTAP version ß0.9.447, '+about_message4+', dated 2020-11-02';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -12254,12 +12254,6 @@ begin
 
   {get dimensions directly from array}
   naxis3_local:=length(img);{nr colours}
-  if naxis=0 then
-  begin
-    application.messagebox(pchar('Abort, no image!!'),pchar('Error'),MB_OK);
-    exit;
-  end;
-
   width5:=length(img[0]);{width}
   height5:=length(img[0,0]);{length}
   if naxis3_local=1 then dimensions:=2 else dimensions:=3; {number of dimensions or colours}
@@ -12275,7 +12269,7 @@ begin
 
   if  override1=false then
   begin
-    if extend_type=1 then {image extensions in the file}
+    if extend_type=1 then {image extensions in the file. 1=image extension, 2=ascii table extension, 3=bintable extension}
     begin
       if MessageDlg('Only the current image of the multi-extension FITS will be saved. Displayed table will not be preserved. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then
         exit;
@@ -12644,6 +12638,8 @@ end;
 
 
 procedure Tmainwindow.LoadFITSPNGBMPJPEG1Click(Sender: TObject);
+var
+  Save_Cursor:TCursor;
 begin
   OpenDialog1.Title := 'Open in viewer';
 
@@ -12657,13 +12653,15 @@ begin
   opendialog1.filterindex:=LoadFITSPNGBMPJPEG1filterindex;
   if opendialog1.execute then
   begin
-     filename2:=opendialog1.filename;
-     if opendialog1.FilterIndex<>4 then {<> preview FITS files, not yet loaded}
-     {loadimage}
-     //if
-     load_image(true,true {plot});{load and center}
-     //=false then beep;{image not found}
-     LoadFITSPNGBMPJPEG1filterindex:=opendialog1.filterindex;{remember filterindex}
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+    filename2:=opendialog1.filename;
+    if opendialog1.FilterIndex<>4 then {<> preview FITS files, not yet loaded}
+    {loadimage}
+    load_image(true,true {plot});{load and center}
+    LoadFITSPNGBMPJPEG1filterindex:=opendialog1.filterindex;{remember filterindex}
+    Screen.Cursor:=Save_Cursor;
   end;
 end;
 
