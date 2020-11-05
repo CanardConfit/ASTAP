@@ -768,7 +768,7 @@ var
   x_double    : double absolute x_qword;{for conversion 64 bit "big-endian" data}
   int_64      : int64 absolute x_qword;{for 64 bit signed integer}
 
-  tfields,tform_counter,header_count,pointer  : integer;
+  tfields,tform_counter,header_count,pointer,let  : integer;
   ttype,tform,tunit : array of string;
   tbcol,tform_nr    : array of integer;
   simple,image,bintable,asciitable    : boolean;
@@ -1345,15 +1345,15 @@ begin
           number:=trim(header[i+5]+header[i+6]+header[i+7]);
           tform_counter:=strtoint(number)-1;
           tform[tform_counter]:=get_string;
-          if pos('E',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='E';aline:=copy(aline,1,pos('E',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{{single e.g. E, 1E or 4E}
-          if pos('D',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='D';aline:=copy(aline,1,pos('D',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{double e.g. D, 1D or 5D (sub table 5*D) or D25.17}
-          if pos('L',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='L';aline:=copy(aline,1,pos('L',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{logical}
-          if pos('X',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='X';aline:=copy(aline,1,pos('X',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{bit}
-          if pos('B',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='B';aline:=copy(aline,1,pos('B',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{byte}
-          if pos('I',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='I';aline:=copy(aline,1,pos('I',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{16 bit integer}
-          if pos('J',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='J';aline:=copy(aline,1,pos('J',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{32 bit integer}
-          if pos('K',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='K';aline:=copy(aline,1,pos('K',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{64 bit integer}
-          if pos('A',tform[tform_counter])>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='A';aline:=copy(aline,1,pos('A',aline)-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{char e.g. 12A for astrometry.net first index table}
+          let:=pos('E',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='E';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{{single e.g. E, 1E or 4E}
+          let:=pos('D',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='D';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{double e.g. D, 1D or 5D (sub table 5*D) or D25.17}
+          let:=pos('L',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='L';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{logical}
+          let:=pos('X',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='X';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{bit}
+          let:=pos('B',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='B';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{byte}
+          let:=pos('I',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='I';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{16 bit integer}
+          let:=pos('J',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='J';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{32 bit integer}
+          let:=pos('K',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='K';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{64 bit integer}
+          let:=pos('A',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='A';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{char e.g. 12A for astrometry.net first index table}
         end;
         if ((header[i]='T') and (header[i+1]='B')  and (header[i+2]='C') and (header[i+3]='O') and (header[i+4]='L')) then
         begin
@@ -2291,7 +2291,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.447, '+about_message4+', dated 2020-11-02';
+  #13+#10+'ASTAP version ß0.9.447a, '+about_message4+', dated 2020-11-02';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -11056,7 +11056,7 @@ begin
 
       if ((xc-rs<0) or (xc+rs>width2-1) or (yc-rs<0) or (yc+rs>height2-1) ) then exit;{prevent runtime errors near sides of images}
 
-      boxed:=(signal_counter>=(2/9)*sqr(rs+rs+1));{are inside the box 2 of the 9 of the pixels illuminated?}
+      boxed:=(signal_counter>=(2/9)*sqr(rs+rs+1));{are inside the box 2 of the 9 of the pixels illuminated? Works in general better for solving then ovality measurement as used in the past}
 
       if boxed=false then
       begin
