@@ -1782,7 +1782,9 @@ begin
 
                 ListView1.Items.item[c].subitems.Strings[I_sharpness]:=floattostrF2(image_sharpness(img),1,3); {sharpness test}
 
-                ListView1.Items.item[c].subitems.Strings[I_exposure]:=inttostr(round(exposure));
+                if exposure>=10 then  ListView1.Items.item[c].subitems.Strings[I_exposure]:=inttostr(round(exposure)) {round values above 10 seconds}
+                                else  ListView1.Items.item[c].subitems.Strings[I_exposure]:=floattostrf(exposure,ffgeneral, 6, 6);
+
                 if set_temperature<>999 then ListView1.Items.item[c].subitems.Strings[I_temperature]:=inttostr(set_temperature);
                 ListView1.Items.item[c].subitems.Strings[I_width]:=inttostr(width2); {width}
                 ListView1.Items.item[c].subitems.Strings[I_height]:=inttostr(height2);{height}
@@ -3180,10 +3182,10 @@ begin
       begin {success loading header only}
         try
           begin
-            if exposure>5 then lv.Items.item[c].subitems.Strings[D_exposure]:=inttostr(round(exposure))
-              else lv.Items.item[c].subitems.Strings[D_exposure]:=floattostrF2(exposure,0,2);
-            lv.Items.item[c].subitems.Strings[D_temperature]:=inttostr(set_temperature);
+            if exposure>=10 then lv.Items.item[c].subitems.Strings[D_exposure]:=inttostr(round(exposure))
+              else lv.Items.item[c].subitems.Strings[D_exposure]:=floattostrf(exposure,ffgeneral, 6, 6);
 
+            lv.Items.item[c].subitems.Strings[D_temperature]:=inttostr(set_temperature);
             lv.Items.item[c].subitems.Strings[D_binning]:=inttostr(Xbinning)+' x '+inttostr(Ybinning); {Binning CCD}
             lv.Items.item[c].subitems.Strings[D_width]:=inttostr(width2); {image width}
             lv.Items.item[c].subitems.Strings[D_height]:=inttostr(height2);{image height}
@@ -3699,14 +3701,14 @@ begin
   update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
 
-  if crpix1<>0 then begin crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
-  if crpix2<>0 then begin crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
 
   if cdelt1<>0 then begin cdelt1:=cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
   if cdelt2<>0 then begin cdelt2:=cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
 
   if cd1_1<>0 then
   begin
+    crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
+    crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
     cd1_1:=cd1_1/ratio;
     cd1_2:=cd1_2/ratio;
     cd2_1:=cd2_1/ratio;
@@ -7447,7 +7449,7 @@ begin
   esc_pressed:=false;
 
   memo2_message('Stack method '+stack_method1.text);
-  memo2_message('Oversize '+oversize1.text);
+  memo2_message('Oversize '+oversize1.text+ ' pixels');
   if make_osc_color1.checked then
               memo2_message('OSC, demosaic method '+demosaic_method1.text);
 
@@ -7848,10 +7850,15 @@ begin
             over_sizeL:=0; {do oversize only once. Not again in 'L' mode !!}
             if esc_pressed then  begin restore_img; Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
 
-            if over_size<>0 then {adapt astrometric solution for intermediate file}
-            begin
-              if crpix1<>0 then begin crpix1:=crpix1+over_size; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;{adapt reference pixel of plate solution due to oversize}
-              if crpix2<>0 then begin crpix2:=crpix2+over_size; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
+            if ((over_size<>0) and ( cd1_1<>0){solution}) then {adapt astrometric solution for intermediate file}
+            begin {adapt reference pixels of plate solution due to oversize}
+              crpix1:=crpix1+over_size;
+              if over_size>0 then
+                crpix2:=crpix2+over_size
+              else
+                crpix2:=crpix2+round(over_size*height2/width2); {if oversize is negative then shrinking is done in ratio. Y shrinkage is done with factor round(oversize*height/width. Adapt crpix2 accordingly.}
+              update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
+              update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
             end;
 
             update_text('COMMENT 1','  Written by ASTAP. www.hnsky.org');
@@ -8032,11 +8039,18 @@ begin
 
       if lrgb=false then {monochrome}
       begin
-        if over_size<>0 then {adapt astrometric solution. For colour this is already done during luminance stacking}
-        begin
-          if crpix1<>0 then begin crpix1:=crpix1+over_size; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;{adapt reference pixel of plate solution due to oversize}
-          if crpix2<>0 then begin crpix2:=crpix2+over_size; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
+        {adapt astrometric solution. For colour this is already done during luminance stacking}
+        if ((over_size<>0) and ( cd1_1<>0){solution}) then {adapt astrometric solution for intermediate file}
+        begin {adapt reference pixels of plate solution due to oversize}
+          crpix1:=crpix1+over_size;
+          if over_size>0 then
+            crpix2:=crpix2+over_size
+          else
+          crpix2:=crpix2+round(over_size*height2/width2); {if oversize is negative then shrinking is done in ratio. Y shrinkage is done with factor round(oversize*height/width. Adapt crpix2 accordingly.}
+          update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
+          update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
         end;
+
         exposure:=sum_exp;{for annotation asteroid}
         update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(exposure));
         add_integer('LUM_EXP =',' / Average luminance exposure time.               ' ,exposureL);

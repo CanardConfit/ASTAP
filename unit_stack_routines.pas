@@ -169,7 +169,7 @@ end;
 
 procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
 var
-  fitsX,fitsY,c,width_max, height_max, x_new,y_new, binning  : integer;
+  fitsX,fitsY,c,width_max, height_max, x_new,y_new, binning,oversizeV  : integer;
   background_r, background_g, background_b, background_l ,
   rgbsum,red_f,green_f,blue_f, value ,colr, colg,colb, red_add,green_add,blue_add,
   rr_factor, rg_factor, rb_factor,
@@ -356,9 +356,18 @@ begin
             if init=false then {init}
             begin
               memo2_message('Largest reference image with best HFD is: '+filename2);
-//              image_path:=ExtractFilePath(filename2); {for saving later}
+              if oversize<0 then {shrink a lot, adapt in ratio}
+              begin
+                oversize:=max(oversize,-round((width2-100)/2) );{minimum image width is 100}
+                oversizeV:=round(oversize*height2/width2);{vertical shrinkage in pixels}
+                height_max:=height2+oversizeV*2;
+              end
+              else
+              begin
+                oversizeV:=oversize;
+                height_max:=height2+oversize*2;
+              end;
               width_max:=width2+oversize*2;
-              height_max:=height2+oversize*2;
 
               setlength(img_average,3,width_max,height_max);{will be color}
               setlength(img_temp,3,width_max,height_max);{mono}
@@ -428,7 +437,7 @@ begin
               for fitsX:=1 to width2 do
               begin
                 calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-                x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
+                x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
                 if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
                 begin
                   if c=1 {red} then
@@ -595,7 +604,7 @@ end;
 
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
-  fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning              : integer;
+  fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,oversizeV    : integer;
   background_correction, weightF,hfd_min                                                         : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
   tempval   : single;
@@ -690,8 +699,18 @@ begin
           if init=false then {init}
           begin
             memo2_message('Largest reference image with best HFD is: '+filename2);
+            if oversize<0 then {shrink a lot, adapt in ratio}
+            begin
+              oversize:=max(oversize,-round((width2-100)/2) );{minimum image width is 100}
+              oversizeV:=round(oversize*height2/width2);
+              height_max:=height2+oversizeV*2;
+            end
+            else
+            begin
+              oversizeV:=oversize;
+              height_max:=height2+oversize*2;
+            end;
             width_max:=width2+oversize*2;
-            height_max:=height2+oversize*2;
 
             setlength(img_average,naxis3,width_max,height_max);
             setlength(img_temp,1,width_max,height_max);
@@ -773,7 +792,7 @@ begin
             for fitsX:=1 to width2  do
             begin
               calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-              x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversize;
+              x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversizeV;
               x_new:=round(x_new_float);y_new:=round(y_new_float);
               if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
@@ -1071,7 +1090,7 @@ end;
 
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 var
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning     : integer;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,oversizeV         : integer;
     background_correction, variance_factor, value,weightF,hfd_min                                         : double;
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
 begin
@@ -1121,7 +1140,7 @@ begin
         end;
 
 
-        if init=false then
+        if init=false then {phase (1) average}
         begin
           binning:=report_binning;{select binning based on the height of the light}
           backup_header;{backup header and solution}
@@ -1169,8 +1188,18 @@ begin
 
         if init=false then {init}
         begin
+          if oversize<0 then {shrink, adapt in ratio}
+          begin
+            oversize:=max(oversize,-round((width2-100)/2) );{minimum image width is 100}
+            oversizeV:=round(oversize*height2/width2);{vertical}
+            height_max:=height2+oversizeV*2;
+          end
+          else
+          begin
+            oversizeV:=oversize;
+            height_max:=height2+oversize*2;
+          end;
           width_max:=width2+oversize*2;
-          height_max:=height2+oversize*2;
 
           setlength(img_average,naxis3,width_max,height_max);
           setlength(img_temp,naxis3,width_max,height_max);
@@ -1251,7 +1280,7 @@ begin
           for fitsX:=1 to width2  do
           begin
             calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
+            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
 
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
@@ -1320,11 +1349,8 @@ begin
            {naxis3 is now 3}
           end;
 
-          if init=false then {init}
+          if init=false then {init (2) for standard deviation step}
           begin
-            width_max:=width2+oversize*2;
-            height_max:=height2+oversize*2;
-
             setlength(img_variance,naxis3,width_max,height_max);{mono}
             for fitsY:=0 to height_max-1 do
             for fitsX:=0 to width_max-1 do
@@ -1377,7 +1403,7 @@ begin
           for fitsX:=1 to width2  do
           begin
             calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
+            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
               for col:=0 to naxis3-1 do img_variance[col,x_new,y_new]:=img_variance[col,x_new,y_new] +  sqr( img_loaded[col,fitsX-1,fitsY-1]+ background_correction - img_average[col,x_new,y_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
@@ -1428,11 +1454,8 @@ begin
            {naxis3 is now 3}
           end;
 
-          if init=false then {init}
+          if init=false then {init, (3) step throw outliers out}
           begin
-            width_max:=width2+oversize*2;
-            height_max:=height2+oversize*2;
-
             setlength(img_temp,naxis3,width_max,height_max);
             setlength(img_final,naxis3,width_max,height_max);
             for fitsY:=0 to height_max-1 do
@@ -1490,7 +1513,7 @@ begin
           for fitsX:=1 to width2  do
           begin
             calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
+            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
               for col:=0 to naxis3-1 do {do all colors}
@@ -1546,7 +1569,7 @@ end;   {stack using sigma clip average}
 
 procedure calibration_and_alignment(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 var
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col,  binning     : integer;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, binning, oversizeV   : integer;
     background_correction, hfd_min      : double;
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
 begin
@@ -1638,8 +1661,20 @@ begin
         if init=false then {init}
         begin
           memo2_message('Largest reference image with best HFD is: '+filename2);
+
+          if oversize<0 then {shrink a lot, adapt in ratio}
+          begin
+            oversize:=max(oversize,-round((width2-100)/2) );{minimum image width is 100}
+            oversizeV:=round(oversize*height2/width2);{vertical shrinkage in pixels}
+            height_max:=height2+oversizeV*2;
+          end
+          else
+          begin
+            oversizeV:=oversize;
+            height_max:=height2+oversize*2;
+          end;
           width_max:=width2+oversize*2;
-          height_max:=height2+oversize*2;
+
 
           setlength(img_average,naxis3,width_max,height_max);
           setlength(img_temp,naxis3,width_max,height_max);
@@ -1716,7 +1751,7 @@ begin
           for fitsX:=1 to width2  do
           begin
             calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
-            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
+            x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
 
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin

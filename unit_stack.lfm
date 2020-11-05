@@ -1205,7 +1205,7 @@ object stackmenu1: Tstackmenu1
       object oversize1: TComboBox
         Left = 862
         Height = 23
-        Hint = 'Will increase the stack space around the reference image. Negative values will crop the images.'
+        Hint = 'Will increase the stack space around the reference image. Negative values will crop the resulting image in ratio.'
         Top = 88
         Width = 67
         ItemHeight = 15

@@ -996,11 +996,12 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP native font fo
 
 procedure annotation_to_array(thestring : ansistring; x,y : integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 var
- w,h,i,j,k,value,error2,flipV, flipH : integer;
+ w,h,i,j,k,value,error2,flipV, flipH,len: integer;
  ch : pansichar;
 begin
   w:=Length(img[0]); {width}
   h:=Length(img[0,0]); {height}
+
   if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
   begin
     x:=(w-1)-x;
@@ -1015,12 +1016,14 @@ begin
   end
   else flipV:=1;
 
-  for k:=1 to length(thestring) do
+
+  len:=length(thestring);
+  for k:=1 to len do
   begin
     ch:=Pansichar(copy(thestring,k,1));
     value:=ord(ch[0]);
 
-    if ((value>=33) and (value<=126)) then
+    if ((value>=33) and (value<=126) and (k*8<w){within image}) then
     for j:=9 downto 1 do
       for i:=1 to 5 do
         img[0,x+(i+(k-1)*8)*flipH,y-(j*flipV)]:=font_5x9[value,j,i]*65535;{write the font to the array}
