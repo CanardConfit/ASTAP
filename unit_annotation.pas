@@ -1687,34 +1687,35 @@ begin
     {read 1th area}
     if area1<>0 then {read 1th area}
     begin
-       nrstars_required2:=trunc(max_nr_stars * frac1);
-      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,area1,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
-      close_star_database;{close reader, so next time same file is read from beginning}
+      if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
+      nrstars_required2:=trunc(max_nr_stars * frac1);
+      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
     end;
 
     {read 2th area}
     if area2<>0 then {read 2th area}
     begin
+      if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
       nrstars_required2:=trunc(max_nr_stars * (frac1+frac2));
-      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,area2,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
-      close_star_database;{close reader, so next time same file is read from beginning}
+      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
     end;
 
     {read 3th area}
     if area3<>0 then {read 3th area}
     begin
-       nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
-      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,area3,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
-      close_star_database;{close reader, so next time same file is read from beginning}
+      if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
+      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
+      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
     end;
     {read 4th area}
     if area4<>0 then {read 4th area}
     begin
+      if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
       nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
-      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,area4,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
-      close_star_database;{close reader, so next time same file is read from beginning}
+      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
     end;
 
+    close_star_database;
 
     if counter_flux_measured>0 then {use all stars}
     begin
@@ -1806,33 +1807,35 @@ begin
     {read 1th area}
     if area1<>0 then {read 1th area}
     begin
+      if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
       nrstars_required2:=trunc(max_nr_stars * frac1);
-      while readdatabase290(telescope_ra,telescope_dec, fov,area1,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
-      close_star_database;{close reader, so next time same file is read from beginning}
+      while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
     end;
 
     {read 2th area}
     if area2<>0 then {read 2th area}
     begin
+      if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
       nrstars_required2:=trunc(max_nr_stars * (frac1+frac2));
-      while readdatabase290(telescope_ra,telescope_dec, fov,area2,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
-      close_star_database;{close reader, so next time same file is read from beginning}
+      while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
     end;
 
     {read 3th area}
     if area3<>0 then {read 3th area}
     begin
+      if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
       nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
-      while readdatabase290(telescope_ra,telescope_dec, fov,area3,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
-      close_star_database;{close reader, so next time same file is read from beginning}
+      while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
     end;
     {read 4th area}
     if area4<>0 then {read 4th area}
     begin
+      if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
       nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
-      while readdatabase290(telescope_ra,telescope_dec, fov,area4,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
-      close_star_database;{close reader, so next time same file is read from beginning}
+      while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
     end;
+
+    close_star_database;
 
     Screen.Cursor:= Save_Cursor;
 

@@ -2291,7 +2291,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.448, '+about_message4+', dated 2020-11-05';
+  #13+#10+'ASTAP version ß0.9.449, '+about_message4+', dated 2020-11-09';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);

@@ -1,6 +1,6 @@
 unit unit_290;
 {HNSKY reads star databases type .290}
-{Copyright (C) 2017,2018 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017,2020 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 {This program is free software: you can redistribute it and/or modify
@@ -42,8 +42,9 @@ var
 
 function select_star_database(database:string): boolean; {select a star database, report false if none is found}
 procedure find_areas(ra1,dec1,fov :double; var area1,area2,area3,area4 :integer; var frac1,frac2,frac3,frac4:double);{find up to four star database areas for the square image. Maximum size image about 20x20 degrees or 4 fields}
-function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; area290: integer; var ra2,dec2, mag2,Bp_Rp : double): boolean;{star 290 file database search}
-procedure close_star_database;{Close the reader.}
+function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; var ra2,dec2, mag2,Bp_Rp : double): boolean;{star 290 file database search}
+procedure close_star_database;{Close the tfilestream}
+function open_database(telescope_dec: double; area290: integer): boolean; {open database file}
 
 // The format of the 290 star databases is described in the HNSKY help file
 //
@@ -111,13 +112,14 @@ type
 
 
 var
-  nr_records             : integer;
-  files_available        : boolean;
   name_star              : string;{name star database}
+  cache_valid_pos       : integer;
 
 const
-  file_open: integer=0;
+  file_open: boolean=false;{file is not open}
   area2    : double=1*pi/180; {search area}
+  old_area  : integer=999;
+  cache_position : integer=0;
 
 implementation
 
@@ -462,14 +464,14 @@ filenames290 : array[1..290] of string= {}
 const
    record_size:integer=11;{default}
 var
-  p6        : ^hnskyhdr290_6;       { pointer to hns0kyrecord }
-  p5        : ^hnskyhdr290_5;       { pointer to hns0kyrecord }
+  p6        : ^hnskyhdr290_6;       { pointer to hnsky record }
+  p5        : ^hnskyhdr290_5;       { pointer to hnsky record }
   dec9_storage: shortint;
 
   buf2: array[1..11] of byte;  {read buffer stars}
   thefile_stars      : tfilestream;
-  Reader_stars       : TReader;
-
+  cache_array       : array of byte;{Maximum 53 mbyte for largest G18 file}
+  cache_size        : integer;
 
 
 procedure area_and_boundaries(ra1,dec1 :double; var area_nr: integer; var spaceE,spaceW,spaceN,spaceS: double); {For a ra, dec position find the star database area number and the corresponding boundary distances N, E, W, S}
@@ -727,15 +729,62 @@ begin
   result:=false;
 end;
 
-procedure close_star_database;{Close the reader.}
+
+procedure close_star_database;{Close the tfilestream}
 begin
-  if file_open=2 then
+  if file_open then
   begin
-    Reader_stars.free;
     thefile_stars.free;
-    end;
-  file_open:=0;
+    file_open:=false;
+  end;
 end;
+
+
+function open_database(telescope_dec: double; area290: integer): boolean; {open database file}
+begin
+  result:=true;{assume succes}
+  cos_telescope_dec:=cos(telescope_dec);{here to save CPU time}
+
+  if ((area290<>old_area) or (file_open=false)) then
+  begin
+    close_star_database;{close the reader if open}
+
+    name_star:=copy(name_star,1,3)+'_'+filenames290[area290];{tyc0101.290}
+    try
+      thefile_stars:=tfilestream.Create( database_path+name_star, fmOpenRead or fmShareDenyWrite); {read but do not lock file}
+    except
+       result:=false;
+       exit;
+    end;
+    file_open:=true; {file is open in tfilestream}
+
+    cache_valid_pos:=0;{new file name}
+    thefile_stars.read(database2,110); {read header info, 10x11 is 110 bytes}
+    if database2[109]=' ' then record_size:=11 {default}
+    else
+    record_size:=ord(database2[109]);{5,6,7,9,10 or 11 bytes record}
+
+    cache_size:=thefile_stars.size-110;
+
+    if cache_size>length(cache_array) then  {Only resize when required. Resizing takes time}
+    begin
+      cache_array:=nil;{prevent it is copied to the new resized array}
+      setlength(cache_array,cache_size);{ increase cache to star database file size}
+    end;
+
+    old_area:=area290;
+  end;
+  {else  use old data in cache}
+
+  {This cache works  about 35 % faster then Treader for files with FOV of 0.5 degrees. This due to re-use cache. No difference for FOV 1.3 degrees. At FOV=0.25 the improvement is 40%}
+  //reading database take time:
+  //fov=0.23 degrees, 73% of total time
+  //fov=0.5  degrees, 60% of total time
+  //fov=4.6  degrees,  8% of total time
+
+  cache_position:=0;
+end;
+
 
 // This readdatabase is a stripped version for record sizes 5 and 6 only. See HNSKY source files for reading other record size files.
 //
@@ -751,54 +800,40 @@ end;
 //   area290 should be set at 290+1 before any read series
 //   cos_telescope_dec, double variable should contains the cos(telescope_dec) to detect if star read is within the FOV diameter}
 //
-function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; area290: integer; var ra2,dec2, mag2,Bp_Rp : double): boolean;{star 290 file database search}
+function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; var ra2,dec2, mag2,Bp_Rp : double): boolean;{star 290 file database search}
             {searchmode=S screen update }
             {searchmode=M mouse click  search}
             {searchmode=T text search}
   var
     ra_raw,i                       : integer;
-    delta_ra, sep, required_range  : double;
-    nearbyarea,header_record: boolean;
+    delta_ra                       : double;
+    header_record                  : boolean;
+const
+   cacheblocksize=5*6*4*1024; {a multiply of record sizes 5, 6}
 begin
    {$I-}
   readdatabase290:=true;
   repeat
-    if  ( (file_open=0) or
-          (nr_records<=0)
-          )  then    {file_open otherwise sometimes the file routine gets stucked}
-      begin
-         if file_open<>0 then
-         begin
-            close_star_database;{close the reader}
-            if nr_records<=0 then
-            begin
-             readdatabase290:=false; {no more data in this file}
-             exit;
-            end;
-         end;
+    if cache_position>=cache_size then {should be end of file}
+    begin
+      readdatabase290:=false; {no more data in this file}
+      exit;
+    end;
 
-         cos_telescope_dec:=cos(telescope_dec);{here to save CPU time}
+    if cache_position>=cache_valid_pos then {add more data to cache. This cache works  about 35 % faster then Treader for files with FOV of 0.5 degrees. This due to re-use cache. No difference for FOV 1.3 degrees. At FOV=0.25 the improvement is 40%}
+    begin
+  //    not used. cache size it set in open file
+  //    if cache_position+cacheblocksize>length(cache_array) then
+  //    begin
+  //      setlength(cache_array,cache_position+cacheblocksize*10);{ increase cache}
+  //    end;
 
-         name_star:=copy(name_star,1,3)+'_'+filenames290[area290];{tyc0101.290}
-         try
-           thefile_stars:=tfilestream.Create( database_path+name_star, fmOpenRead or fmShareDenyWrite); {read but do not lock file}
-           Reader_stars := TReader.Create (thefile_stars, 128*1024);{number of hnsky records, multiply off all posible record sizes}
-           {thefile_stars.size-reader.position>sizeof(hkyhdr) could also be used but slow down a factor of 2 !!!}
-           files_available:=true;
-         except
-            readdatabase290:=false;
-            files_available:=false;
-            exit;
-         end;
-         file_open:=2; {buffer size is .. x 1024}
-         reader_stars.read(database2,110); {read header info, 10x11 is 110 bytes}
-         if database2[109]=' ' then record_size:=11 {default}
-         else
-         record_size:=ord(database2[109]);{5,6,7,9,10 or 11 bytes record}
-         nr_records:= trunc((thefile_stars.size-110)/record_size);{110 header size, correct for above read}
-         ra2:=0; {define ra2 value. Prevent ra2 = -nan(0xffffffffffde9) run time failure when first header record is read}
-      end;{einde}
-    reader_stars.read(buf2,record_size);
+      thefile_stars.read(cache_array[cache_valid_pos],cacheblocksize); {fill cache more. In most cases it can be reused. Especially for small field of view}
+      cache_valid_pos:=cache_valid_pos+cacheblocksize;{increase postion where cache buffer is valid.}
+    end;
+    move(cache_array[cache_position],buf2,record_size);{move one record for reading}
+    cache_position:=cache_position + record_size;{update cache position}
+
     header_record:=false;
 
     case record_size of
@@ -843,7 +878,6 @@ begin
     end;{case}
 
     delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;
-    dec(nr_records); {faster then  (thefile_stars.size-thefile_stars.position<sizeofhnskyhdr) !!!)}
   until
     (header_record=false) and
     (  (abs(delta_ra*cos_telescope_dec)<field_diameter/2) and (abs(dec2-telescope_dec)<field_diameter/2)  );
@@ -853,5 +887,7 @@ end;
 begin
   p6:= @buf2[1];	{ set pointer }
   p5:= @buf2[1];	{ set pointer }
+
+ // setlength(cache,30000000);{set cache size to file size minus header}
 end.
 

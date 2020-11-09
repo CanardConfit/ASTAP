@@ -193,7 +193,10 @@ var
    frac1,frac2,frac3,frac4  : double;
    area1,area2,area3,area4,nrstars_required2  : integer;
 begin
+  result:=false;{assume failure}
   nrstars:=0;{set counters at zero}
+  ra2:=0; {define ra2 value. Prevent ra2 = -nan(0xffffffffffde9) run time failure when first header record is read}
+
   SetLength(starlist1,2,nrstars_required);{set array length}
 
   find_areas( telescope_ra,telescope_dec, search_field,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
@@ -201,52 +204,54 @@ begin
   {read 1th area}
   if area1<>0 then {read 1th area}
   begin
-  nrstars_required2:=min(nrstars_required,trunc(nrstars_required * frac1));
-  while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field,area1, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
-  begin {add star}
-    equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
-    inc(nrstars);
-  end;
-  close_star_database;{close reader, so next time same file is read from beginning}
+    if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
+    nrstars_required2:=min(nrstars_required,trunc(nrstars_required * frac1));
+    while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
+    begin {add star}
+      equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+      inc(nrstars);
+    end;
   end;
 
   if area2<>0 then {read 2th area}
   begin
+    if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
     nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2)));{prevent round up errors resulting in error starlist1}
-    while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field,area2, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
+    while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
     begin {add star}
       equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
       inc(nrstars);
     end;
-    close_star_database;{close reader, so next time same file is read from beginning}
   end;
 
   if area3<>0 then {read 3th area}
   begin
+    if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
     nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2+frac3)));
-    while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field,area3, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
+    while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
     begin {add star}
       equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
       inc(nrstars);
     end;
-    close_star_database;{close reader, so next time same file is read from beginning}
   end;
 
   if area4<>0 then {read 4th area}
   begin
+    if open_database(telescope_dec,area4)=false then begin result:=false; exit; end; {open database file}
     nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2+frac3+frac4)));
-    while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field,area4, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
+    while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
     begin {add star}
       equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
       inc(nrstars);
     end;
-    close_star_database;{close reader, so next time same file is read from beginning}
   end;
+
+  //memo2_message(inttostr(area1)+' '+inttostr(area2)+' '+inttostr(area3)+' '+inttostr(area4));
 
   if nrstars<nrstars_required then
        SetLength(starlist1,2,nrstars); {fix array length on data for case less stars are found}
 
-  result:=files_available;
+  result:=true;{no errors}
 end;
 
 //procedure set_trayicon(i:integer);
@@ -552,7 +557,7 @@ begin
                     #10+mainwindow.ra1.text+'h,'+mainwindow.dec1.text+'°'+{for tray icon}
                     #10+filename2;
 
-     nrstars_required:=round(nrstars*(height2/width2)*1.125);{square search field based on height. The 1.125 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
+      nrstars_required:=round(nrstars*(height2/width2)*1.125);{square search field based on height. The 1.125 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
   //  nrstars_required:=round(nrstars*(height2/width2)*factorX);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
 
     solution:=false; {assume no match is found}
