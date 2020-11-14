@@ -27,8 +27,8 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
           </big></big><big><big><span style="color: red; font-weight: bold;"></span></big></big>
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
-            &nbsp;<big>version 0.9.447 dated 2020-11-3. </big>&nbsp;Alternative
-            link, very latest development version 0.9.448 <a href="astap_setup.exe">ASTAP installer</a>
+            &nbsp;<big>version 0.9.449 dated 2020-11-09. </big>&nbsp;Alternative
+            link, very latest development version 0.9.449 <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.exe/download">G17
@@ -68,7 +68,7 @@ alignment.</li><li><a href="https://sourceforge.net/projects/astap-program/files
 zipped
                   package</big></big></a><big>
               version
-              0.9.447 dated 2020-11-03. Extract in directory c:\ program
+              0.9.449 dated 2020-11-09. Extract in directory c:\ program
               files\astap
               or c:\astap. Note that the execution speed of the 32 bit
               version is
@@ -103,7 +103,7 @@ database debian Package</a>. or <a href="https://sourceforge.net/projects/hnsky/
           <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.deb/download">ASTAP
 debian
                   package</a></big></big><big> </big><big>&nbsp;or&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.rpm/download">astap_amd64.rpm</a>&nbsp;</big><big> or&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.tar.gz/download">astap_amd64.tar.gz,</a> </big><big>version
-              0.9.447 dated 2020-11-02. Alternative link, development version 0.9.447</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big> ,&nbsp;</big><a href="astap_amd64.rpm">ASTAP rpm package</a>,&nbsp;<a href="astap_amd64.tar.gz">ASTAP tar.gz</a><big>&nbsp;</big></li>
+              0.9.449 dated 2020-11-09. Alternative link, development version 0.9.449</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big> ,&nbsp;</big><a href="astap_amd64.rpm">ASTAP rpm package</a>,&nbsp;<a href="astap_amd64.tar.gz">ASTAP tar.gz</a><big>&nbsp;</big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.deb/download">G17
 star
               database debian package</a></big>&nbsp; or&nbsp;<a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.rpm/download">rpm</a>&nbsp; (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;for
@@ -230,7 +230,7 @@ the G17 files or force use of the G18 in ASTAP. tab alignment.</li><li><a href="
                   pkg&nbsp;installer</a></big></big><big>
               &nbsp;(</big>at&nbsp;<a href="https://sourceforge.net/projects/astap-program/">link</a>)
             <big>version
-              0.9.447 dated 2020-11-3.</big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.pkg/download">G17
+              0.9.449 dated 2020-11-09.</big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.pkg/download">G17
 star
               database installer</a><span style="text-decoration: underline;"></span></big>&nbsp;
             (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;
@@ -1809,7 +1809,10 @@ solving
 second menu option is to annotate the stars and auto calibrate the
 program for photometry. This can be done best with either&nbsp;the V16
 or V17 cotaining the calculated Johnson-V magnitudes.<br>
-        <br>
+        <br>For a G-database the indicated magnitude
+is Gaia blue. For a V-database the indicated magnitude is Johnson-V&nbsp; and
+the following the difference between Gaia&nbsp;blue and red,&nbsp; positive for
+reddish objects. All in 1/10 of a magnitude.<br><br>
         Below,
         the image is 1) solved, 2) auto calibrated (using the V16)
         &nbsp;
@@ -1818,7 +1821,7 @@ or V17 cotaining the calculated Johnson-V magnitudes.<br>
         star
         Johnson-V magnitude is estimated to be 16.1. The stars are
         marked with
-        the Johnson-V magnitude and &nbsp;Bp-Rp color indication,<br>
+        the Johnson-V magnitude and &nbsp;Bp-Rp color indication.&nbsp;<br>
         <br>
         <img style="width: 761px; height: 967px;" alt="" src="astap_star_annotations.jpg"><br>
         <br>
@@ -2645,7 +2648,7 @@ data, just the header. Any warning is added to the .wcs file using the
 keyword WARNING. This warning could be presented to the user for
 information.</p><p style="text-align: left;"></p><p style="text-align: left; text-decoration: underline; font-weight: bold;"><big>Command-line, error codes</big></p><p style="text-align: left;"><big>In
 the command-line mode errors are reported&nbsp;by
-an error code / errorlevel&nbsp;{%errorlevel%}. This is the same error as reported in the .ini file in case of failure.</big></p><table style="background-color: rgb(204, 204, 255); height: 257px; margin-left: 0px; width: 380px;" border="1" cellpadding="2" cellspacing="2"><tbody><tr><td style="width: 129px;"><big><span style="font-weight: bold;">Error code</span></big></td><td style="width: 233px;"><big><span style="font-weight: bold;">Describtion</span></big></td></tr><tr><td style="width: 129px;">0</td><td style="width: 233px;">No errors</td></tr><tr><td style="width: 129px;">1</td><td style="width: 233px;">No solution</td></tr><tr><td style="width: 129px;">2</td><td style="width: 233px;">Not enough stars detected</td></tr><tr><td style="width: 129px;"></td><td style="width: 233px;"></td></tr><tr><td style="width: 129px;">16</td><td style="width: 233px;">Error reading image file</td></tr><tr><td style="width: 129px;"></td><td style="width: 233px;"></td></tr><tr><td style="width: 129px;">32</td><td style="width: 233px;">No star database found</td></tr><tr><td style="width: 129px;">33</td><td style="width: 233px;">Error reading star database</td></tr></tbody></table><br><br><p align="left"><a name="popup_notifier"></a><big style="text-decoration: underline; font-weight: bold;">Command-line pop-up notifier</big></p><p align="left"><big>If
+an error code / errorlevel&nbsp;{%errorlevel%}. This is the same error as reported in the .ini file in case of failure.</big></p><table style="background-color: rgb(204, 204, 255); height: 257px; margin-left: 0px; width: 380px;" border="1" cellpadding="2" cellspacing="2"><tbody><tr><td style="width: 129px;"><big><span style="font-weight: bold;">Error code</span></big></td><td style="width: 233px;"><big><span style="font-weight: bold;">Describtion</span></big></td></tr><tr><td style="width: 129px;">0</td><td style="width: 233px;">No errors</td></tr><tr><td style="width: 129px;">1</td><td style="width: 233px;">No solution</td></tr><tr><td style="width: 129px;">2</td><td style="width: 233px;">Not enough stars detected</td></tr><tr><td style="width: 129px;"></td><td style="width: 233px;"></td></tr><tr><td style="width: 129px;">16</td><td style="width: 233px;">Error reading image file</td></tr><tr><td style="width: 129px;"></td><td style="width: 233px;"></td></tr><tr><td style="width: 129px;">32</td><td style="width: 233px;">No star database found</td></tr><tr><td style="width: 129px;">33</td><td style="width: 233px;">Error reading star database</td></tr></tbody></table><br><div style="text-align: left;">To analyse a FITS file you could do the following in a Windows batch file:<br><br>c:\astap.fpc\astap.exe -f&nbsp; c:\astap.fpc\test_files\command_line_test\m16.fit -analyse 30<br>echo Exit Code is %errorlevel%<br>pause<br><br>You will get<br>Exit Code is 326000666<br><br>where the HFD is 3.26 using 666 stars<br><br><br></div><p align="left"><a name="popup_notifier"></a><big style="text-decoration: underline; font-weight: bold;">Command-line pop-up notifier</big></p><p align="left"><big>If
           the ASTAP is command-line
           executed&nbsp;in MS-Windows, it will be shown by a small ASTAP
           tray

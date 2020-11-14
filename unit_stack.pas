@@ -6801,7 +6801,7 @@ end;
 
 procedure load_master_dark(exposure2,temperature2,width1: integer; var Daverage,Dsigma:double); {average the darks selection}
 var
-  c : integer;
+  c,roundexposure : integer;
 begin
   analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{find dimensions, exposure and temperature}
   dark_count:=0;{assume none is found. Do this after analyse since it willl change dark_count}
@@ -6826,7 +6826,8 @@ begin
   dark_exposure:=exposure2;{remember the requested exposure time}
   dark_temperature:=temperature2;
 
-  if ((exposure<>0 {global}) and (exposure2{request}<>exposure)) then memo2_message('█ █ █ █ █ █ Warning dark exposure time ('+floattostrF2(exposure,0,0)+') different then light exposure time ('+floattostrF2(exposure2,0,0) +')! █ █ █ █ █ █ ');
+  roundexposure:=round(exposure);
+  if ((roundexposure<>0 {global}) and (exposure2{request}<>roundexposure)) then memo2_message('█ █ █ █ █ █ Warning dark exposure time ('+floattostrF2(exposure,0,0)+') different then light exposure time ('+floattostrF2(exposure2,0,0) +')! █ █ █ █ █ █ ');
   if ((set_temperature<>999 {global}) and (temperature2{request}<>set_temperature)) then memo2_message('█ █ █ █ █ █ Warning dark sensor temperature ('+floattostrF2(set_temperature,0,0)+') different then light sensor temperature ('+floattostrF2(temperature2,0,0) +')! █ █ █ █ █ █ ');
 
   if c<9999999  then

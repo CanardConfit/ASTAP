@@ -3137,7 +3137,6 @@ begin
 end;
 
 
-
 procedure Tmainwindow.savesettings1Click(Sender: TObject);
 begin
   savedialog1.filename:=user_path+'astap.cfg';

@@ -1246,7 +1246,7 @@ object mainwindow: Tmainwindow
       object star_annotation1: TMenuItem
         Caption = 'Star (database) annotation'
         Enabled = False
-        Hint = 'Annotate all stars in the image. Plate solve the image first'
+        Hint = 'Annotate all stars in the image. Plate solve the image first. For a G-database the indicated magnitude is Gaia blue. For a V-database the indicated magnitude is Johnson-V  and the following the difference between Gaia blue and red, positive for reddish objects. All in 1/10 of a magnitude.'
         ImageIndex = 18
         ShortCut = 16462
         OnClick = star_annotation1Click
