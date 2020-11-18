@@ -540,6 +540,7 @@ const
 
   shape_fitsX: double=0;
   shape_fitsY: double=0;
+
   shape_marker1_fitsX: double=10;
   shape_marker1_fitsY: double=10;
   shape_marker2_fitsX: double=20;
@@ -578,6 +579,7 @@ function save_fits(img: image_array;filen2:ansistring;type1:integer;override1:bo
 
 procedure update_text(inpt,comment1:string);{update or insert text in header}
 procedure add_text(inpt,comment1:string);{add text to header memo}
+procedure update_longstr(inpt,thestr:string);{update or insert long str including single quotes}
 procedure add_long_comment(descrip:string);{add long text to header memo. Split description over several lines if required}
 procedure update_generic(message_key,message_value,message_comment:string);{update header using text only}
 procedure update_integer(inpt,comment1:string;x:integer);{update or insert variable in header}
@@ -1836,6 +1838,47 @@ begin
   mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+comment1);
 end;
 
+
+procedure update_longstr(inpt,thestr:string);{update or insert long str including single quotes}
+var
+   count1,m,k: integer;
+   ampersand,s : string;
+begin
+
+  count1:=mainwindow.Memo1.Lines.Count-1;
+  while count1>=0 do {delete keyword}
+  begin
+    if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found, delete old keyword}
+    begin
+      mainwindow.Memo1.Lines.delete(count1);
+      while pos('CONTINUE=',mainwindow.Memo1.Lines[count1])>0 do
+      begin
+         s:=mainwindow.Memo1.Lines[count1];
+           mainwindow.Memo1.Lines.delete(count1);
+      end;
+    end;
+    count1:=count1-1;
+  end;
+
+  {keyword removed, add new to the end}
+  m:=length(thestr);
+
+  if m>68 then
+  begin {write as multi record}
+    mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+#39+copy(thestr,1,67)+'&'+#39);{text starting with char(39) should start at position 11 according FITS standard 4.0}
+    k:=68;
+    repeat {write in blocks of 67 char}
+      if (m-k)>67 then ampersand:='&' else ampersand:='';
+      mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,'CONTINUE= '+#39+copy(thestr,k,67)+ampersand+#39);{text starting with char(39) should start at position 11 according FITS standard 4.0}
+      inc(k,67);
+    until k>=m;
+  end
+  else {write as single record}
+  mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+#39+thestr+#39);
+
+end;
+
+
 procedure add_text(inpt,comment1:string);{add text to header memo}
 begin
   mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+copy(comment1,1,79-length(inpt)));  {add to the end. Limit to 80 char max as specified by FITS standard}
@@ -2291,7 +2334,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.449, '+about_message4+', dated 2020-11-09';
+  #13+#10+'ASTAP version ß0.9.450, '+about_message4+', dated 2020-11-18';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3407,7 +3450,6 @@ begin
 end;
 
 
-
 function place_marker_radec(str1: string): boolean;{place ra,dec marker in image}
 var
   dec_new,SIN_dec_new,COS_dec_new,ra_new,
@@ -3425,7 +3467,6 @@ begin
   if ((error1=false) and (error2=false)) then
   begin
     result:=true;
-
    {5. Conversion (RA,DEC) -> (x,y) of reference image}
     sincos(dec_new,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
     sincos(dec0,SIN_dec_ref,COS_dec_ref);{}
@@ -10848,6 +10889,63 @@ begin
  {center of gravity found}
 end;
 
+procedure calculate_equatorial_mouse_position(fitsx,fitsy : double; var   ram,decm  : double {mouse position});
+var
+   fits_unsampledX, fits_unsampledY :double;
+   u,v,u2,v2             : double;
+   dRa,dDec,delta,gamma  : double;
+
+begin
+ RAM:=0;DECM:=0;{for case wrong index or CD1_1=0}
+ {DSS polynom solution}
+ if mainwindow.polynomial1.itemindex=2 then {DSS survey}
+ begin
+ { Convert from image subsampled pixels position to unsampled pixel position }
+   fits_unsampledX:=subsamp*(fitsX-0.5)+0.5;
+   fits_unsampledY:=subsamp*(fitsY-0.5)+0.5;
+                 //{fits (1,1)+subsamp of 2x =>(eqv unsampled 1,5,1,5)
+                 // fits (2,2)+subsamp of 2x =>(eqv unsampled 3,5,3,5)
+                 //(fits 1,1)+subsamp of 4x=>(eqv unsampled 2.5,2.5)
+                 //(fits 2,2)+subsamp of 4=>(eqv unsampled 6.5,6.5)
+   dsspos(fits_unsampledX , fits_unsampledY, ram, decm );
+ end
+ else
+ begin {WCS and SIP solutions}
+   if ((mainwindow.Polynomial1.itemindex=1) and (a_order>=2)) then {SIP, Simple Imaging Polynomial use by astrometry.net or spitzer}
+   begin
+     u:=fitsx-crpix1;
+     v:=fitsy-crpix2;
+     u2:=u + a_2_0*u*u + a_0_2*v*v + a_1_1*u*v + a_2_1*u*u*v+ a_1_2*u*v*v + a_3_0*u*u*u + a_0_3*v*v*v; {SIP correction for second or third order}
+     v2:=v + b_2_0*u*u + b_0_2*v*v + b_1_1*u*v + b_2_1*u*u*v+ b_1_2*u*v*v + b_3_0*u*u*u + b_0_3*v*v*v; {SIP correction for second or third order}
+     dRa :=(cd1_1*(u2)+cd1_2*(v2))*pi/180;
+     dDec:=(cd2_1*(u2)+cd2_2*(v2))*pi/180;
+     delta:=cos(dec0)-dDec*sin(dec0);
+     gamma:=sqrt(dRa*dRa+delta*delta);
+
+     ram:=ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
+     if ram<0 then ram:=ram+2*pi;
+     if ram>pi*2 then ram:=ram-pi*2;
+     decm:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
+   end
+   else
+   if (mainwindow.Polynomial1.itemindex=0) then
+   begin  {improved new WCS}
+     if cd1_1<>0 then
+     begin
+       dRa :=(cd1_1*(fitsx-crpix1)+cd1_2*(fitsy-crpix2))*pi/180;
+       dDec:=(cd2_1*(fitsx-crpix1)+cd2_2*(fitsy-crpix2))*pi/180;
+       delta:=cos(dec0)-dDec*sin(dec0);
+       gamma:=sqrt(dRa*dRa+delta*delta);
+
+       ram:=ra0+arctan2(Dra,delta); {arctan2 is required for images containing celestial pole}
+       if ram<0 then ram:=ram+2*pi;
+       if ram>pi*2 then ram:=ram-pi*2;
+       decm:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
+     end;
+   end;
+ end;{WCS solution}
+end;
+
 
 procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
@@ -11271,64 +11369,6 @@ begin
   end
   else
   result:='';
-end;
-
-
-procedure calculate_equatorial_mouse_position(fitsx,fitsy : double; var   ram,decm  : double {mouse position});
-var
-   fits_unsampledX, fits_unsampledY :double;
-   u,v,u2,v2             : double;
-   dRa,dDec,delta,gamma  : double;
-
-begin
- RAM:=0;DECM:=0;{for case wrong index or CD1_1=0}
- {DSS polynom solution}
- if mainwindow.polynomial1.itemindex=2 then {DSS survey}
- begin
- { Convert from image subsampled pixels position to unsampled pixel position }
-   fits_unsampledX:=subsamp*(fitsX-0.5)+0.5;
-   fits_unsampledY:=subsamp*(fitsY-0.5)+0.5;
-                 //{fits (1,1)+subsamp of 2x =>(eqv unsampled 1,5,1,5)
-                 // fits (2,2)+subsamp of 2x =>(eqv unsampled 3,5,3,5)
-                 //(fits 1,1)+subsamp of 4x=>(eqv unsampled 2.5,2.5)
-                 //(fits 2,2)+subsamp of 4=>(eqv unsampled 6.5,6.5)
-   dsspos(fits_unsampledX , fits_unsampledY, ram, decm );
- end
- else
- begin {WCS and SIP solutions}
-   if ((mainwindow.Polynomial1.itemindex=1) and (a_order>=2)) then {SIP, Simple Imaging Polynomial use by astrometry.net or spitzer}
-   begin
-     u:=fitsx-crpix1;
-     v:=fitsy-crpix2;
-     u2:=u + a_2_0*u*u + a_0_2*v*v + a_1_1*u*v + a_2_1*u*u*v+ a_1_2*u*v*v + a_3_0*u*u*u + a_0_3*v*v*v; {SIP correction for second or third order}
-     v2:=v + b_2_0*u*u + b_0_2*v*v + b_1_1*u*v + b_2_1*u*u*v+ b_1_2*u*v*v + b_3_0*u*u*u + b_0_3*v*v*v; {SIP correction for second or third order}
-     dRa :=(cd1_1*(u2)+cd1_2*(v2))*pi/180;
-     dDec:=(cd2_1*(u2)+cd2_2*(v2))*pi/180;
-     delta:=cos(dec0)-dDec*sin(dec0);
-     gamma:=sqrt(dRa*dRa+delta*delta);
-
-     ram:=ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
-     if ram<0 then ram:=ram+2*pi;
-     if ram>pi*2 then ram:=ram-pi*2;
-     decm:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
-   end
-   else
-   if (mainwindow.Polynomial1.itemindex=0) then
-   begin  {improved new WCS}
-     if cd1_1<>0 then
-     begin
-       dRa :=(cd1_1*(fitsx-crpix1)+cd1_2*(fitsy-crpix2))*pi/180;
-       dDec:=(cd2_1*(fitsx-crpix1)+cd2_2*(fitsy-crpix2))*pi/180;
-       delta:=cos(dec0)-dDec*sin(dec0);
-       gamma:=sqrt(dRa*dRa+delta*delta);
-
-       ram:=ra0+arctan2(Dra,delta); {arctan2 is required for images containing celestial pole}
-       if ram<0 then ram:=ram+2*pi;
-       if ram>pi*2 then ram:=ram-pi*2;
-       decm:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
-     end;
-   end;
- end;{WCS solution}
 end;
 
 

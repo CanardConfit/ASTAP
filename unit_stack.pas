@@ -60,7 +60,7 @@ type
     analysedarksButton2: TButton;
     analyseflatdarksButton4: TButton;
     analyseflatsButton3: TButton;
-    analysephotmetrymore1: TButton;
+    analysephotometrymore1: TButton;
     analysephotometry1: TButton;
     analyse_inspector1: TButton;
     add_bias1: TCheckBox;
@@ -3075,7 +3075,7 @@ begin
 
   esc_pressed:=false;
 
-   if full=false then  lv.Items.BeginUpdate;{stop updating to prevent flickering till finished}
+  if full=false then  lv.Items.BeginUpdate;{stop updating to prevent flickering till finished}
 
   counts:=lv.items.count-1;
 
@@ -3227,7 +3227,11 @@ begin
 
               {magn is column 9 will be added seperately}
               {solution is column 12 will be added seperately}
-              lv.Items.item[c].subitems.Strings[P_calibration]:=calstat; {calibration calstat info DFB}
+              if calstat<>'' then lv.Items.item[c].subitems.Strings[P_calibration]:=calstat
+                 else lv.Items.item[c].subitems.Strings[P_calibration]:='None'; {calibration calstat info DFB}
+
+              if cd1_1=0 then lv.Items.item[c].subitems.Strings[P_astrometric]:=''
+                 else lv.Items.item[c].subitems.Strings[P_astrometric]:='✓';
 
               if full {amode=3} then {listview7 photometry plus mode}
               begin
@@ -5620,10 +5624,10 @@ end;
 
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
-  c,i: integer;
   Save_Cursor          : TCursor;
   magn,hfd1,star_fwhm,snr,flux,xc,yc         : double;
-  x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr: integer;
+  saturation_level                           : single;
+  c,i,x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr: integer;
   flipvertical,fliphorizontal,init,refresh_solutions  :boolean;
   starlistx :star_list;
   outliers : array of array of double;
@@ -5636,10 +5640,12 @@ begin
 
  if listview7.Items.item[listview7.items.count-1].subitems.Strings[B_exposure]='' {exposure} then
     stackmenu1.analysephotometry1Click(nil);
+  application.processmessages;{show result}
 
   flipvertical:=mainwindow.flip_vertical1.Checked;
   fliphorizontal:=mainwindow.flip_horizontal1.Checked;
   esc_pressed:=false;
+
 
   memo2_message('Checking for astrometric solutions in FITS header required for star flux calibration against star database.');
 
@@ -5648,10 +5654,8 @@ begin
   {solve images first to allow flux to magnitude calibration}
   for c:=0 to listview7.items.count-1 do {check for astrometric solutions}
   begin
-    if listview7.Items.item[c].subitems.Strings[P_photometric]='' then {not check marked as done}
-    if ((esc_pressed=false) and (listview7.Items.item[c].checked) )  then
+    if ((esc_pressed=false) and (listview7.Items.item[c].checked) and (listview7.Items.item[c].subitems.Strings[P_astrometric]=''))  then
     begin
-
       filename2:=listview7.items[c].caption;
       mainwindow.caption:=filename2;
 
@@ -5681,7 +5685,10 @@ begin
         end;
       end
       else
+      begin
       listview7.Items.item[c].subitems.Strings[P_astrometric]:='✓';
+      //listview7.Items.item[c].subitems.Strings[P_stars]:='6666';
+      end;
 
     end;{check for astrometric solutions}
   end;{for loop for astrometric solving }
@@ -5721,7 +5728,7 @@ begin
           if pos('F',calstat)=0 then
           begin
             extra_message:=' Image not calibrated with a flat field. Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu.';
-            listview7.Items.item[c].subitems.Strings[P_photometric]:='no calibration';
+            listview7.Items.item[c].subitems.Strings[P_photometric]:='Poor';
           end
           else
           begin
@@ -5735,7 +5742,7 @@ begin
         else
         begin
           read_stars_from_disk(filename2,starlistx)  ;{read from disk}
-          if pos('F',calstat)=0 then  listview7.Items.item[c].subitems.Strings[P_photometric]:='no calibration' else listview7.Items.item[c].subitems.Strings[P_photometric]:='✓';
+          if pos('F',calstat)=0 then  listview7.Items.item[c].subitems.Strings[P_photometric]:='Poor' else listview7.Items.item[c].subitems.Strings[P_photometric]:='✓';
         end;
 
         setlength(img_temp,naxis3,width2,height2);{new size}
@@ -5782,20 +5789,22 @@ begin
           HFD(img_loaded,round(shape_fitsX-1),round(shape_fitsY-1),14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>0) and (snr>10)) then {star detected in img_loaded}
           begin
-            if ((img_loaded[0,round(xc),round(yc)]<60000) and
-                (img_loaded[0,round(xc-1),round(yc)]<60000) and
-                (img_loaded[0,round(xc+1),round(yc)]<60000) and
-                (img_loaded[0,round(xc),round(yc-1)]<60000) and
-                (img_loaded[0,round(xc),round(yc+1)]<60000) and
+            if calstat='' then saturation_level:=64000 else saturation_level:=60000; {could be dark subtracted changing the saturation level}
+            if ((img_loaded[0,round(xc),round(yc)]<saturation_level) and
+                (img_loaded[0,round(xc-1),round(yc)]<saturation_level) and
+                (img_loaded[0,round(xc+1),round(yc)]<saturation_level) and
+                (img_loaded[0,round(xc),round(yc-1)]<saturation_level) and
+                (img_loaded[0,round(xc),round(yc+1)]<saturation_level) and
 
-                (img_loaded[0,round(xc-1),round(yc-1)]<60000) and
-                (img_loaded[0,round(xc-1),round(yc+1)]<60000) and
-                (img_loaded[0,round(xc+1),round(yc-1)]<60000) and
-                (img_loaded[0,round(xc+1),round(yc+1)]<60000)  ) then {not saturated}
+                (img_loaded[0,round(xc-1),round(yc-1)]<saturation_level) and
+                (img_loaded[0,round(xc-1),round(yc+1)]<saturation_level) and
+                (img_loaded[0,round(xc+1),round(yc-1)]<saturation_level) and
+                (img_loaded[0,round(xc+1),round(yc+1)]<saturation_level)  ) then {not saturated star}
             begin
               magn:=flux_magn_offset-ln(flux)*2.511886432/ln(10);
               listview7.Items.item[c].subitems.Strings[P_magn]:=floattostrf(magn, ffgeneral, 5,0); {write measured magnitude to list}
-            end;
+            end
+            else listview7.Items.item[c].subitems.Strings[P_magn]:='Saturated';
             for i:=0 to  length(starlistx[0])-2 do
             begin
               size:=round(5*starlistx[2,i]);{5*hfd}
@@ -6372,19 +6381,24 @@ procedure Tstackmenu1.analysephotometry1Click(Sender: TObject);
 var
    c: integer;
 begin
-  if sender=analysephotmetrymore1 then
+  if sender=analysephotometrymore1 then
     analyse_listview(listview7,true {light},true {full fits},true{refresh})
   else
     analyse_listview(listview7,true {light},false {full fits},false{refresh});
 
+
+  listview7.items.beginupdate;
+
   for c:=0 to listview7.items.count-1 do {this is not required but nice}
   begin
     if fileexists(ChangeFileExt(listview7.items[c].caption,'.astap_image_stars')) then {photometric solution}
-       listview7.Items.item[c].subitems.Strings[P_photometric]:='✓'
+      listview7.Items.item[c].subitems.Strings[P_photometric]:='✓'
     else
-    listview7.Items.item[c].subitems.Strings[P_photometric]:='';
+      listview7.Items.item[c].subitems.Strings[P_photometric]:='';
   end;
   listview7.alphasort;{sort on time}
+
+  listview7.items.endupdate;
 end;
 
 

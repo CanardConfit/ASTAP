@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 203
+  Left = 321
   Height = 644
-  Top = 255
+  Top = 168
   Width = 1619
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -3207,7 +3207,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         TabOrder = 1
       end
-      object analysephotmetrymore1: TButton
+      object analysephotometrymore1: TButton
         Left = 192
         Height = 26
         Hint = 'Analyse image files'

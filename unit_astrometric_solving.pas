@@ -834,13 +834,14 @@ begin
   if nrstars_required>database_stars+4 then
   begin
     memo2_message('Warning, reached maximum magnitude of star database!');
-    warning_str:=warning_str+'Star database limit was reached! ';
+    warning_str:=warning_str+' Star database limit was reached!';
   end;
 
   if warning_str<>'' then
   begin
-     update_text('WARNING =',#39+warning_str+#39);
+    update_longstr('WARNING =',warning_str);{update or insert long str including single quotes}
   end;
+
   Screen.Cursor :=Save_Cursor;    { back to normal }
 end;
 

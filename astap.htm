@@ -131,7 +131,7 @@ the G17 files or force use of the G18 in ASTAP. tab alignment.</li><li><a href="
           <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_i386.deb/download">ASTAP
 debian
                   package</a></big></big><big>&nbsp;</big><big>version
-              0.9.438 dated 2020-10-24. &nbsp;</big></li>
+              0.9.449 dated 2020-11-09. &nbsp;</big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.deb/download">G17
 star
               database debian package</a></big>&nbsp; (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;
@@ -163,7 +163,7 @@ debian
                   package</a></big></big><big>&nbsp;</big>
             (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/">link</a>)
             &nbsp;<big>version
-              0.9.438 dated&nbsp;</big><big>2020-10-24</big><big>. This version can be used as an
+              0.9.449 dated&nbsp;</big><big>2020-11-09</big><big>. This version can be used as an
               astrometric
               solver. E.g. for CCDCIEL.</big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.deb/download">G17
@@ -197,7 +197,7 @@ debian
                   package</a></big></big><big>&nbsp;</big>
             (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/">link</a>)
             &nbsp;<big>version
-              0.9.438 dated&nbsp;</big><big>2020-10-24</big><big>. This version can be used as an
+              0.9.449 dated&nbsp;</big><big>2020-11-09</big><big>. This version can be used as an
               astrometric
               solver. E.g. for CCDCIEL.</big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.deb/download">G17
@@ -2514,8 +2514,8 @@ the viewer. Only the solve command has to be given manually:</big><br></p><p sty
           mode the program
           produces&nbsp;two output files at the same location as the
           input
-          image. Im case a solution is found it will write a .wcs file containing the solved FITS header
-          only.&nbsp;In any case it will write&nbsp;an INI file using the standard FITS keywords.</big></p>
+          image. In case a solution is found it will write a .wcs file 1) containing the solved FITS header
+          only.&nbsp; In any case it will write&nbsp;an INI file using the standard FITS keywords.</big></p>
       <div style="text-align: left;"> Example&nbsp;of the INI output
         file after an successful solve:</div>
       <p style="text-align: left;"><font face="Courier New, Courier,
@@ -2621,9 +2621,9 @@ the viewer. Only the solve command has to be given manually:</big><br></p><p sty
           Courier, monospace">WARNING=......</font><font face="Courier New,
           Courier, monospace"> &nbsp;
           &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
-          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; // Text message containing warning(s)</font></p><div style="text-align: left;"><big><br></big></div><div style="text-align: left;"><big><br>The reference
-          pixel is always specified for the centre of the image.&nbsp;The decimal separator is always a dot as for FITS headers.</big><br></div><br><div style="text-align: left;"> Example&nbsp;of the INI output
-        file in case of solve failure:</div>
+          &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; // Text message containing warning(s)</font></p><div style="text-align: left;"><big><br></big></div><div style="text-align: left;"><big>The reference
+          pixel is always specified for the centre of the image.&nbsp;The decimal separator is always a dot as for FITS headers.<br></big></div><big><br></big><div style="text-align: left;"><big> Example&nbsp;of the INI output
+        file in case of solve failure:</big></div>
       <p style="text-align: left;"><font face="Courier New, Courier,
           monospace">PLTSOLVD=F
           &nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
@@ -2642,11 +2642,15 @@ the viewer. Only the solve command has to be given manually:</big><br></p><p sty
           &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
           &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; //&nbsp;</font><font face="Courier New,
           Courier, monospace">Text message containing any warnings(s)</font></p>
-      <p style="text-align: left;">The
+      <p style="text-align: left;"><big>The
 .wcs file contains the original FITS header with the solution added. No
 data, just the header. Any warning is added to the .wcs file using the
 keyword WARNING. This warning could be presented to the user for
-information.</p><p style="text-align: left;"></p><p style="text-align: left; text-decoration: underline; font-weight: bold;"><big>Command-line, error codes</big></p><p style="text-align: left;"><big>In
+information.</big></p><p style="text-align: left;"><big>1) Note
+the wcs file is default written as text file using&nbsp;carriage return
+and line feed for each line and is not conform the FITS standard.
+To have .wcs file conform the&nbsp;FITS standard add the command-line
+option -wcs.</big></p><p style="text-align: left;"><big><br></big></p><p style="text-align: left; text-decoration: underline; font-weight: bold;"><big>Command-line, error codes</big></p><p style="text-align: left;"><big>In
 the command-line mode errors are reported&nbsp;by
 an error code / errorlevel&nbsp;{%errorlevel%}. This is the same error as reported in the .ini file in case of failure.</big></p><table style="background-color: rgb(204, 204, 255); height: 257px; margin-left: 0px; width: 380px;" border="1" cellpadding="2" cellspacing="2"><tbody><tr><td style="width: 129px;"><big><span style="font-weight: bold;">Error code</span></big></td><td style="width: 233px;"><big><span style="font-weight: bold;">Describtion</span></big></td></tr><tr><td style="width: 129px;">0</td><td style="width: 233px;">No errors</td></tr><tr><td style="width: 129px;">1</td><td style="width: 233px;">No solution</td></tr><tr><td style="width: 129px;">2</td><td style="width: 233px;">Not enough stars detected</td></tr><tr><td style="width: 129px;"></td><td style="width: 233px;"></td></tr><tr><td style="width: 129px;">16</td><td style="width: 233px;">Error reading image file</td></tr><tr><td style="width: 129px;"></td><td style="width: 233px;"></td></tr><tr><td style="width: 129px;">32</td><td style="width: 233px;">No star database found</td></tr><tr><td style="width: 129px;">33</td><td style="width: 233px;">Error reading star database</td></tr></tbody></table><br><div style="text-align: left;">To analyse a FITS file you could do the following in a Windows batch file:<br><br>c:\astap.fpc\astap.exe -f&nbsp; c:\astap.fpc\test_files\command_line_test\m16.fit -analyse 30<br>echo Exit Code is %errorlevel%<br>pause<br><br>You will get<br>Exit Code is 326000666<br><br>where the HFD is 3.26 using 666 stars<br><br><br></div><p align="left"><a name="popup_notifier"></a><big style="text-decoration: underline; font-weight: bold;">Command-line pop-up notifier</big></p><p align="left"><big>If
           the ASTAP is command-line
