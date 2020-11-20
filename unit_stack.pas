@@ -869,6 +869,7 @@ const
   P_calibration=16;
 
   outlier=8; {image index for outlier}
+  thumbs_up=16;{image index for thumbs up}
 
   insp_focus_pos=8;
   insp_nr_stars=7;
@@ -3015,7 +3016,7 @@ begin
 end;
 
 
-procedure listview_view(tl : tlistview);
+procedure listview_view(tl : tlistview); {show image double clicked on}
 var index      : integer;
     fitsX,fitsY: double;
 begin
@@ -3032,7 +3033,6 @@ begin
           calstat:=''; {allow manual stack for stacked images in listview1}
           fitsX:=strtofloat2(tl.Items.item[index].subitems.Strings[I_X]);
           fitsY:=strtofloat2(tl.Items.item[index].subitems.Strings[I_Y]);
-          //show_shape(true {assume good lock},fitsX,fitsY);
           show_marker_shape(mainwindow.shape_alignment_marker1,1 {circle, assume a good lock},20,20,10 {minimum size},fitsX,fitsY);
         end
         else mainwindow.shape_alignment_marker1.visible:=false;
@@ -3902,7 +3902,13 @@ begin
        else
        Sender.Canvas.Font.Color := clred;
   end
-  else Sender.Canvas.Font.Color := clmenutext;{required for high contrast settings. Otherwise it is always black}
+  else
+  begin
+//    if ((files_to_process<>nil) and (sender.Items.item[Item.Index].caption=files_to_process[0].name)) then
+  //     Sender.Canvas.Font.Color :=clHighlight {mark the reference image. Note bold or underline doesn't work with listview}
+//    else
+      Sender.Canvas.Font.Color := clmenutext;{required for high contrast settings. Otherwise it is always black}
+  end;
  {$ifdef mswindows}
  {$else} {unix}
  {temporary fix for CustomDraw not called}
@@ -7374,15 +7380,15 @@ end;
 
 procedure put_lowest_hfd_on_top(var files_to_process : array of TfileToDo);{find the files with the lowest hfd unless an image is larger}
 var
-   lowest, x  : double;
-   first, best,i, width1, largest_width  : integer;
-   dummy1: string;
+   best_quality,hfd,stars,quality  : double;
+   first, best_nr,i, width1, largest_width  : integer;
+   hfd_str,stars_str: string;
    file_to_do : Tfiletodo;
 begin
   first:=-1;
   largest_width:=-1;
-  best:=999999;
-  lowest:=999999;
+  best_nr:=999999;
+  best_quality:=0;
   for i:=0 to length(files_to_process)-1 do
   begin
     if length(files_to_process[i].name)>1 then {has a filename}
@@ -7390,32 +7396,38 @@ begin
       width1:=strtoint(stackmenu1.ListView1.Items.item[i].subitems.Strings[I_width]);
       if first=-1 then begin first:=i; largest_width:=width1  end;
 
-      dummy1:=stackmenu1.ListView1.Items.item[i].subitems.Strings[I_hfd];{hfd}
-      if length(dummy1)>1 then x:=strtofloat2(dummy1);{hfd available}
+      hfd_str:=stackmenu1.ListView1.Items.item[i].subitems.Strings[I_hfd];{hfd}
+      stars_str:=stackmenu1.ListView1.Items.item[i].subitems.Strings[I_stardetections];{number of stars detected}
+      if length(hfd_str)>1 then hfd:=strtofloat2(hfd_str) else hfd:=999;{hfd available}
+      if length(stars_str)>1 then stars:=strtofloat2(stars_str) else stars:=0;{number of stars available}
+      quality:=stars/hfd;{lost of tracking can give low HFD but also low number of star detections}
 
       if width1>largest_width then {larger image found, give this one preference}
       begin
         width1:=largest_width;
-        lowest:=x;
-        best:=i;
+        best_quality:=quality;
+        best_nr:=i;
       end
       else
       if width1=largest_width then {equal size}
       begin {equal size}
-        if x<lowest then
+        if quality>best_quality then
         begin
-           lowest:=x;
-           best:=i;
+           best_quality:=quality;
+           best_nr:=i;
         end;
       end;
     end; {has a file name}
   end;{for loop}
 
-  if ((best<999999) and (best<>first)) then {swap records, put lowest HFD first}
+  if ((best_nr<999999) and (best_nr<>first)) then {swap records, put lowest HFD first}
   begin
     file_to_do:=files_to_process[first];
-    files_to_process[first]:=files_to_process[best];
-    files_to_process[best]:=file_to_do;
+    files_to_process[first]:=files_to_process[best_nr];
+    files_to_process[best_nr]:=file_to_do;
+    stackmenu1.ListView1.Items.item[best_nr].SubitemImages[5]:=thumbs_up; {mark as best quality image}
+    memo2_message('Reference image selected based on quality (star_detections/hfd) is: '+files_to_process[best_nr].name);
+
   end;
 end;
 
@@ -7765,8 +7777,7 @@ begin
       end;
       if nrfiles>1 then {need at least two files to sort}
       begin
-        if mosaic_mode=false then
-             put_lowest_hfd_on_top(files_to_process);
+        if mosaic_mode=false then put_lowest_hfd_on_top(files_to_process);
          {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
 
         if sigma_mode then
@@ -7854,8 +7865,7 @@ begin
         begin
           if nrfiles>1 then {more then one file}
           begin
-            if mosaic_mode=false then
-               put_lowest_hfd_on_top(files_to_process);
+            if mosaic_mode=false then put_lowest_hfd_on_top(files_to_process);
             {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
 
             if sigma_mode then stack_sigmaclip(over_size,{var}files_to_process, counterL) {sigma clip combining}

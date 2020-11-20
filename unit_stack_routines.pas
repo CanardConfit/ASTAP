@@ -355,7 +355,6 @@ begin
 
             if init=false then {init}
             begin
-              memo2_message('Largest reference image with best HFD is: '+filename2);
               if oversize<0 then {shrink a lot, adapt in ratio}
               begin
                 oversize:=max(oversize,-round((width2-100)/2) );{minimum image width is 100}
@@ -698,7 +697,6 @@ begin
 
           if init=false then {init}
           begin
-            memo2_message('Largest reference image with best HFD is: '+filename2);
             if oversize<0 then {shrink a lot, adapt in ratio}
             begin
               oversize:=max(oversize,-round((width2-100)/2) );{minimum image width is 100}
@@ -906,8 +904,6 @@ begin
 
           if init=false then {init}
           begin
-            memo2_message('Largest reference image with best HFD is: '+filename2);
-
             oversize:=width2*mosaic_width1.position div 2;{increase the oversize to have space for the tiles}
             width_max:=width2+oversize*2;
             height_max:=height2+oversize*2;
@@ -1660,8 +1656,6 @@ begin
 
         if init=false then {init}
         begin
-          memo2_message('Largest reference image with best HFD is: '+filename2);
-
           if oversize<0 then {shrink a lot, adapt in ratio}
           begin
             oversize:=max(oversize,-round((width2-100)/2) );{minimum image width is 100}
