@@ -2334,7 +2334,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.451, '+about_message4+', dated 2020-11-20';
+  #13+#10+'ASTAP version ß0.9.452, '+about_message4+', dated 2020-11-21';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3935,29 +3935,33 @@ begin
   end {fits file}
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
-
 end;
+
 
 function floattostr6(x:double):string;{float to string with 6 decimals}
 begin
   str(x:0:6,result);
 end;
 
+
 function floattostr4(x:double):string;
 begin
   str(x:0:4,result);
 end;
+
 
 function floattostrE(x:double):string;
 begin
   str(x,result);
 end;
 
+
 function floattostrF2(const x:double; width1,decimals1 :word): string;
 begin
   str(x:width1:decimals1,result);
   if formatSettings.decimalseparator<>'.' then result:=StringReplace(result,'.',formatSettings.decimalseparator,[]); {replaces dot by komma}
 end;
+
 
 function inttostr5(x:integer):string;{always 5 digit}
 begin

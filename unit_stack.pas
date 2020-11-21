@@ -807,7 +807,7 @@ const
   I_result=2;
   I_bin=3;
   I_hfd=4;
-  I_stardetections=5;
+  I_quality=5;
   I_starlevel=6;
   I_background=7;
   I_sharpness=8;
@@ -868,8 +868,8 @@ const
   P_photometric=15;
   P_calibration=16;
 
-  outlier=8; {image index for outlier}
-  thumbs_up=16;{image index for thumbs up}
+  icon_thumb_down=8; {image index for outlier}
+  icon_king=16;{image index for best image}
 
   insp_focus_pos=8;
   insp_nr_stars=7;
@@ -944,7 +944,10 @@ function inverse_erf(x :double):double; {Inverse of erf function. Inverse of app
 const                                   {input part of population [0..1] within, result is the standard deviation required for the input}
    a =0.147;
 begin
-  result:=sqrt(sqrt(sqr( (2/(pi*a)) + ln(1-x*x)/2)-(ln(1-x*x)/a) ) - (2/(pi*a) + ln(1-x*x)/2) );
+ if x<0.99999 then
+    result:=sqrt(sqrt(sqr( (2/(pi*a)) + ln(1-x*x)/2)-(ln(1-x*x)/a) ) - (2/(pi*a) + ln(1-x*x)/2) )
+ else
+    result:=99.99;
 end;
 
 procedure backup_header;{backup solution and header}
@@ -1222,10 +1225,11 @@ end;
 
 procedure list_remove_outliers(key:string); {do statistics}
 var
-  hfd_mean,hfd_sd,stars_mean,stars_sd,sd_factor : double;
-  c, counts,nr_good_images : integer;
+  quality_mean,quality_sd,sd_factor : double;
+  c, counts,nr_good_images,quality, best, best_index : integer;
   sd : string;
 begin
+  best:=0;
   with stackmenu1 do
   begin
     counts:=ListView1.items.count-1;
@@ -1234,44 +1238,42 @@ begin
     try
     {calculate means}
       c:=0;
-      hfd_mean:=0;
-      stars_mean:=0;
-
+      quality_mean:=0;
       nr_good_images:=0;
       repeat
         if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[I_result])) then
         begin {checked}
-          if strtofloat(ListView1.Items.item[c].subitems.Strings[I_hfd])>90 {hfd} then ListView1.Items.item[c].checked:=false {no stars, can't process this image}
+          if strtofloat(ListView1.Items.item[c].subitems.Strings[I_hfd])>90 {hfd} then ListView1.Items.item[c].checked:=false {no quality, can't process this image}
           else
           begin {normal HFD value}
-            hfd_mean:=hfd_mean+ strtofloat(ListView1.Items.item[c].subitems.Strings[I_hfd]);
-            stars_mean:=stars_mean+ strtoint(ListView1.Items.item[c].subitems.Strings[I_stardetections]);
+            quality:=strtoint(ListView1.Items.item[c].subitems.Strings[I_quality]);
+            quality_mean:=quality_mean+quality;
             inc(nr_good_images);
+
+            if quality>best then
+            begin
+              best:=quality;
+              best_index:=c;
+            end;
           end;
         end;
         inc(c); {go to next file}
       until c>counts;
-      hfd_mean:=hfd_mean/nr_good_images;
-      stars_mean:=stars_mean/nr_good_images;
-      if hfd_mean>7 then memo2_message('■■■■■■■■■■■■■ Hint, average HFD is large !! Alignment could not work. In case of alignment problems bin2x2 all exposures, dark, flats using the bin2x2 tool in pulldown menu tools ! ■■■■■■■■■■■■■');
+      quality_mean:=quality_mean/nr_good_images;
 
       {calculate standard deviations}
       begin
         c:=0;
-        hfd_sd:=0;
-        stars_sd:=0;
+        quality_sd:=0;
         repeat {check all files, remove darks, bias}
           if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[I_result]))then
           begin {checked}
-            hfd_sd:=hfd_sd+sqr(hfd_mean- strtofloat(ListView1.Items.item[c].subitems.Strings[I_hfd]) );
-            stars_sd:=stars_sd+sqr(stars_mean - strtoint(ListView1.Items.item[c].subitems.Strings[I_stardetections]) );
-
+            quality_sd:=quality_sd+sqr(quality_mean - strtoint(ListView1.Items.item[c].subitems.Strings[I_quality]) );
           end;
           inc(c); {go to next file}
         until c>counts;
-        hfd_sd:=sqrt(hfd_sd/nr_good_images);
-        stars_sd:=sqrt(stars_sd/nr_good_images);
-        memo2_message('Analysing group '+key+ ' for outliers.'+#9+#9+'Average HFD='+floattostrF2(hfd_mean,3,1)+', σ='+floattostrF2(hfd_sd,3,1)+#9+' Average star detections='+floattostrF2(stars_mean,3,0)+ ', σ='+floattostrF2(stars_sd,3,1));
+        quality_sd:=sqrt(quality_sd/nr_good_images);
+        memo2_message('Analysing group '+key+ ' for outliers.'+#9+#9+' Average image quality (nr stars/hfd)='+floattostrF2(quality_mean,3,0)+ ', σ='+floattostrF2(quality_sd,3,1));
 
         {remove outliers}
         sd:=stackmenu1.sd_factor_list1.Text;
@@ -1286,25 +1288,18 @@ begin
           if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[I_result])) then
           begin {checked}
             ListView1.Items.item[c].subitems.Strings[I_result]:='';{remove key, job done}
-            if (strtofloat(ListView1.Items.item[c].subitems.Strings[I_hfd]) -hfd_mean)>sd_factor*hfd_sd  then
-            begin {remove high HFD outliers}
+            if (quality_mean- strtoint(ListView1.Items.item[c].subitems.Strings[I_quality]))>sd_factor*quality_sd  then
+            begin {remove low quality outliers}
               ListView1.Items.item[c].checked:=false;
-              ListView1.Items.item[c].subitems.Strings[I_result]:='↑ hfd';{mark as outlier}
-              ListView1.Items.item[c].SubitemImages[0]:=outlier; {mark as outlier using imageindex}
-              memo2_message(ListView1.Items.item[c].caption+ ' unchecked due to high outlier HFD value.' );
-            end
-            else
-            if (stars_mean- strtoint(ListView1.Items.item[c].subitems.Strings[I_stardetections]))>sd_factor*stars_sd  then
-            begin {remove low star count outliers}
-              ListView1.Items.item[c].checked:=false;
-              ListView1.Items.item[c].subitems.Strings[I_result]:='↓ stars';{mark as outlier}
-              ListView1.Items.item[c].SubitemImages[0]:=outlier; {mark as outlier using imageindex}
-              memo2_message(ListView1.Items.item[c].caption+ ' unchecked due to low number of stars detected.' );
+              ListView1.Items.item[c].SubitemImages[5]:=icon_thumb_down; {mark as outlier using imageindex}
+              memo2_message(ListView1.Items.item[c].caption+ ' unchecked due to low quality = nr stars detected / hfd.' );
           end;
         end;
         inc(c); {go to next file}
       until c>counts;
     end;{throw outliers out}
+
+    if best<>0 then    ListView1.Items.item[best_index].SubitemImages[5]:=icon_king; {markbest index. Not nessesary but just nice}
 
     finally
       ListView1.Items.EndUpdate;
@@ -1776,7 +1771,7 @@ begin
                 ListView1.Items.item[c].subitems.Strings[I_bin]:=inttostr(Xbinning)+' x '+inttostr(Ybinning); {Binning CCD}
 
                 ListView1.Items.item[c].subitems.Strings[I_hfd]:=floattostrF2(hfd_median,0,1);
-                ListView1.Items.item[c].subitems.Strings[I_stardetections]:=inttostr5(hfd_counter); {number of stars}
+                ListView1.Items.item[c].subitems.Strings[I_quality]:=inttostr5(round(hfd_counter/hfd_median)); {quality number of stars divided by hfd}
 
                 ListView1.Items.item[c].subitems.Strings[I_starlevel]:=inttostr5(round(star_level));
                 ListView1.Items.item[c].subitems.Strings[I_background]:=inttostr5(round(backgr));
@@ -1824,10 +1819,10 @@ begin
       {give list an indentification key label based on object, filter and exposure time}
       for c:=0 to ListView1.items.count-1 do
       begin
-        if ListView1.Items.item[c].SubitemImages[0]=outlier then {marked at outlier}
+        if ListView1.Items.item[c].SubitemImages[5]=icon_thumb_down then {marked at outlier}
         begin
            ListView1.Items.item[c].checked:=true;{recheck outliers from previous session}
-           ListView1.Items.item[c].SubitemImages[0]:=-1;{remove mark}
+           ListView1.Items.item[c].SubitemImages[5]:=-1;{remove mark}
         end;
 
          if ListView1.items[c].Checked=true then
@@ -4793,7 +4788,6 @@ begin
 end;
 
 
-
 procedure Tstackmenu1.most_common_mono1Click(Sender: TObject);
 begin
   mainwindow.convertmono1Click(nil); {back is made in mono procedure}
@@ -7378,16 +7372,16 @@ begin
 end;
 
 
-procedure put_lowest_hfd_on_top(var files_to_process : array of TfileToDo);{find the files with the lowest hfd unless an image is larger}
+procedure put_best_quality_on_top(var files_to_process : array of TfileToDo);{find the files with the lowest hfd unless an image is larger}
 var
-   best_quality,hfd,stars,quality  : double;
-   first, best_nr,i, width1, largest_width  : integer;
-   hfd_str,stars_str: string;
+   best_quality,quality  : double;
+   first, best_index,i, width1, largest_width  : integer;
+   quality_str: string;
    file_to_do : Tfiletodo;
 begin
   first:=-1;
   largest_width:=-1;
-  best_nr:=999999;
+  best_index:=999999;
   best_quality:=0;
   for i:=0 to length(files_to_process)-1 do
   begin
@@ -7396,17 +7390,14 @@ begin
       width1:=strtoint(stackmenu1.ListView1.Items.item[i].subitems.Strings[I_width]);
       if first=-1 then begin first:=i; largest_width:=width1  end;
 
-      hfd_str:=stackmenu1.ListView1.Items.item[i].subitems.Strings[I_hfd];{hfd}
-      stars_str:=stackmenu1.ListView1.Items.item[i].subitems.Strings[I_stardetections];{number of stars detected}
-      if length(hfd_str)>1 then hfd:=strtofloat2(hfd_str) else hfd:=999;{hfd available}
-      if length(stars_str)>1 then stars:=strtofloat2(stars_str) else stars:=0;{number of stars available}
-      quality:=stars/hfd;{lost of tracking can give low HFD but also low number of star detections}
+      quality_str:=stackmenu1.ListView1.Items.item[i].subitems.Strings[I_quality];{number of stars detected}
+      if length(quality_str)>1 then quality:=strtofloat2(quality_str) else quality:=0;{quality equals nr stars /hfd}
 
       if width1>largest_width then {larger image found, give this one preference}
       begin
         width1:=largest_width;
         best_quality:=quality;
-        best_nr:=i;
+        best_index:=i;
       end
       else
       if width1=largest_width then {equal size}
@@ -7414,20 +7405,22 @@ begin
         if quality>best_quality then
         begin
            best_quality:=quality;
-           best_nr:=i;
+           best_index:=i;
         end;
       end;
     end; {has a file name}
   end;{for loop}
 
-  if ((best_nr<999999) and (best_nr<>first)) then {swap records, put lowest HFD first}
+  if best_index<999999 then {selection worked}
   begin
-    file_to_do:=files_to_process[first];
-    files_to_process[first]:=files_to_process[best_nr];
-    files_to_process[best_nr]:=file_to_do;
-    stackmenu1.ListView1.Items.item[best_nr].SubitemImages[5]:=thumbs_up; {mark as best quality image}
-    memo2_message('Reference image selected based on quality (star_detections/hfd) is: '+files_to_process[best_nr].name);
-
+    if best_index<>first then {swap records, put best quality first}
+    begin
+      file_to_do:=files_to_process[first];
+      files_to_process[first]:=files_to_process[best_index];
+      files_to_process[best_index]:=file_to_do;
+    end;
+    stackmenu1.ListView1.Items.item[best_index].SubitemImages[5]:=icon_king; {mark as best quality image}
+    memo2_message('Reference image selected based on quality (star_detections/hfd) is: '+files_to_process[best_index].name);
   end;
 end;
 
@@ -7777,7 +7770,7 @@ begin
       end;
       if nrfiles>1 then {need at least two files to sort}
       begin
-        if mosaic_mode=false then put_lowest_hfd_on_top(files_to_process);
+        if mosaic_mode=false then put_best_quality_on_top(files_to_process);
          {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
 
         if sigma_mode then
@@ -7865,7 +7858,7 @@ begin
         begin
           if nrfiles>1 then {more then one file}
           begin
-            if mosaic_mode=false then put_lowest_hfd_on_top(files_to_process);
+            if mosaic_mode=false then put_best_quality_on_top(files_to_process);
             {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
 
             if sigma_mode then stack_sigmaclip(over_size,{var}files_to_process, counterL) {sigma clip combining}
