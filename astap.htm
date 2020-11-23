@@ -27,8 +27,8 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
           </big></big><big><big><span style="color: red; font-weight: bold;"></span></big></big>
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
-            &nbsp;<big>version 0.9.450 dated 2020-11-18. </big>&nbsp;Alternative
-            link, very latest development version 0.9.451 <a href="astap_setup.exe">ASTAP installer</a>
+            &nbsp;<big>version 0.9.452 dated 2020-11-21. </big>&nbsp;Alternative
+            link, very latest development version 0.9.452 <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.exe/download">G17
@@ -103,7 +103,7 @@ database debian Package</a>. or <a href="https://sourceforge.net/projects/hnsky/
           <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.deb/download">ASTAP
 debian
                   package</a></big></big><big> </big><big>&nbsp;or&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.rpm/download">astap_amd64.rpm</a>&nbsp;</big><big> or&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.tar.gz/download">astap_amd64.tar.gz,</a> </big><big>version
-              0.9.450 dated 2020-11-18. Alternative link, development version 0.9.451</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big> ,&nbsp;</big><a href="astap_amd64.rpm">ASTAP rpm package</a>,&nbsp;<a href="astap_amd64.tar.gz">ASTAP tar.gz</a><big>&nbsp;</big></li>
+              0.9.452 dated 2020-11-21. Alternative link, development version 0.9.452</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big> ,&nbsp;</big><a href="astap_amd64.rpm">ASTAP rpm package</a>,&nbsp;<a href="astap_amd64.tar.gz">ASTAP tar.gz</a><big>&nbsp;</big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.deb/download">G17
 star
               database debian package</a></big>&nbsp; or&nbsp;<a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.rpm/download">rpm</a>&nbsp; (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;for
@@ -230,7 +230,7 @@ the G17 files or force use of the G18 in ASTAP. tab alignment.</li><li><a href="
                   pkg&nbsp;installer</a></big></big><big>
               &nbsp;(</big>at&nbsp;<a href="https://sourceforge.net/projects/astap-program/">link</a>)
             <big>version
-              0.9.449 dated 2020-11-09.</big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.pkg/download">G17
+              0.9.452 dated 2020-11-21.</big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.pkg/download">G17
 star
               database installer</a><span style="text-decoration: underline;"></span></big>&nbsp;
             (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;
@@ -245,7 +245,7 @@ for
             stars up to Johnson-V magnitude 17.&nbsp;The
               Deepsky,&nbsp;HyperLeda and variable star database are included with the V17.&nbsp;</li><li>For a telescope with a small field of view &lt;30 arcmin you could download the <a href="https://drive.google.com/file/d/1ReUsfX8aDgF-93OCFCdNaKmmkP9SAJ32/view?usp=sharing">g18 star database installer up to mag 18</a>&nbsp;or &nbsp;zipped <a href="https://sourceforge.net/projects/astap-program/files/star_databases/g18_star_database_mag18.zip/download">G18 star database up to mag 18</a> for manual install at&nbsp; /usr/local/opt/astap.. Remove the G17 files or force use of the G18 in ASTAP. tab alignment.</li></ul>
         </ul>
-        <big style="font-weight: bold;"><big><br>
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Any Mac user&nbsp;who could assist in compiling ASTAP for&nbsp;<a href="https://forum.lazarus.freepascal.org/index.php?topic=50297.0">Mac on ARM</a> please contact me.<big style="font-weight: bold;"><big><br>
           </big></big></div>
       <div style="text-align: left;">
         <ul>
@@ -281,7 +281,7 @@ for
                   menu</big>&nbsp;</a></big></li>
           <ul>
             <li><big><a href="#images">Images, darks,
-                  flats, flat darks tab</a></big></li>
+                  flats, flat darks tab</a><br></big></li><ul><li><big><a href="#uncheck_outliers">How to exclude poor images</a></big></li><li><big><a href="#satellite_tracks">Satellite tracks</a></big></li></ul>
           </ul>
           <ul>
             <li><big><a href="#alignment_menu">Alignment
@@ -498,9 +498,8 @@ development
           also
           view 16 bit PGM /PPM files, XISF files
           or &nbsp;in 8 bit&nbsp; PNG, TIFF or BMP
-          files. For importing DSLR raw images &nbsp;the program</span><big><a href="https://www.cybercom.net/%7Edcoffin/dcraw/"> DCRAW</a>
-          from David Coffin</big><span style="font-family: Arial;">
-          is used.</span><br style="font-family: Arial;">
+          files. For importing DSLR raw images &nbsp;the program</span><big><a href="https://www.cybercom.net/%7Edcoffin/dcraw/"> DCRAW</a>&nbsp;from David Coffin</big><span style="font-family: Arial;">
+          or <a href="https://www.libraw.org/">LibRaw</a> is used.</span><br style="font-family: Arial;">
         <ul>
           <li><span style="font-family: Arial;">Stacking
               methods: average and sigma-clipping-average.. Internal
@@ -522,86 +521,7 @@ development
         </ul>
         <span style="font-family: Arial;">For stacking </span><span style="font-family: Arial;">the internal routine compares
           the image star positions to align. <br>
-          <br>
-          </span><span style="font-family: Arial;"><a name="uncheck_outliers"></a>To uncheck/untick
-          poor images there is an option to do that
-          automatically. First check mark the option "After analyse
-          untick worst
-          images". Then press button&nbsp;</span><span style="background-color: rgb(153, 153, 153);"> Analyse and organise images &nbsp;</span><span style="font-family: Arial;">. The images will
-          be
-          analysed and the images with abnormal&nbsp;(outliers) HFD
-          values or
-          &nbsp;"Number of star detected" will be unchecked. The
-          adjustable
-          factor used is&nbsp;the<a href="https://en.wikipedia.org/wiki/Standard_deviation">
-            standard deviation</a>
-          represented by the Greek lower case sigma &#963; letter. To undo
-          you
-          have to check the images manually again, e.q. with the popup
-          menu of
-          the right
-          mouse button.</span><br><span style="font-family: Arial;"></span><span style="font-family: Arial;">
-          <br>
-          For a normal distribution you could expect the following:<br>
-          <br>
-        </span>
-        <table style="width: 368px; height: 172px; text-align: left; margin-left: auto; margin-right: auto;" border="1" cellpadding="2" cellspacing="2">
-          <tbody>
-            <tr>
-              <td style="background-color: silver;"><span style="font-weight: bold;">Confidence interval</span></td>
-              <td style="font-weight: bold; background-color: silver;">Proportion
-                within</td>
-            </tr>
-            <tr>
-              <td>1<i>&#963;</i></td>
-              <td>68%</td>
-            </tr>
-            <tr>
-              <td><span class="nowrap">1.5<span style="font-style: italic;"></span></span><i>&#963;</i></td>
-              <td>87%</td>
-            </tr>
-            <tr>
-              <td>2<i>&#963;</i></td>
-              <td>95 %</td>
-            </tr>
-            <tr>
-              <td>2.5<i>&#963;</i></td>
-              <td>98.8%</td>
-            </tr>
-            <tr>
-              <td>3<i>&#963;</i></td>
-              <td>99.7%</td>
-            </tr>
-          </tbody>
-        </table>
-        <span style="font-family: Arial;"><br>
-          There
-is no need to exclude outliers. A better method is&nbsp;to sort the images
-in the list by clicking on the column title. So you sort on HFD (half
-flux diameter) , Star detections, Star level , Background, sharpness<br><br></span><ul><li><span style="font-family: Arial;">HFD is the image median HFD. The lower the better. Depending on focus and guiding.&nbsp;</span></li><li><span style="font-family: Arial;">Star detections. </span><span style="font-family: Arial;">The higher the better. </span><span style="font-family: Arial;">Number of star detections. Depending on sky transparancy of the sky and focus.&nbsp;</span></li><li><span style="font-family: Arial;">Star level. </span><span style="font-family: Arial;">The higher the better. </span><span style="font-family: Arial;">Depending on</span><span style="font-family: Arial;"> transparancy of the sky and focus.&nbsp;</span></li><li><span style="font-family: Arial;">Background.
-Depending on sky darkness and transparancy. The lower the better. A
-higher value means in most cases a cloud was blocking the sky.</span></li><li><span style="font-family: Arial;">Sharpness.
-The lower the better.Measures the&nbsp;change between dark and bright
-pixels. The measurement is very sensitive to satellite tracks. Could be
-used to detect satellite track when compared with HFD value. Could also
-be used to sort images of the Moon and Sun on sharpness.(but they
-ccan't be stacked) For correct sharpness measurement of OSC images
-either the FITS header should contain the keyword BAYERPAT or
-check-mark "Convert OSC to colour" in&nbsp;tab "Stack method". </span></li></ul><span style="font-family: Arial;"><span style="font-weight: bold;">Best approach is to remove poor images as follows:</span><br><br>Sort on HFD and visually inspect&nbsp;images with a too high HFD for inspection by </span><span style="font-family: Arial;">double click on the row</span><span style="font-family: Arial;">.
-If poor, rename images with right mouse button popup menu "rename to
-*.bak" for deletion later. Check also the lowest HFD values for
-possible guiding problems.<br>Sort on number of star detections. Check
-images with the lowest values by double click and&nbsp; inspect on
-possible guiding problems.<br>Sort on background and &nbsp;</span><span style="font-family: Arial;">by double click and&nbsp;inspect too high values on possible cloud coverage or twilight conditions.<br><br>If&nbsp;after
-stacking with "sigma clip average" there are still satellite tracks
-visible, you could lower the sigma factor from 2.5 to maybe 2.2 in tab
-"Stack method". An other way is the blink/scroll&nbsp; through the
-images with the &nbsp;</span><span style="background-color: rgb(153, 153, 153);"> &gt;&gt; &nbsp;</span><span style="font-family: Arial;">
-button. As soon you see an abnormal bright track on the image stop the
-blinking by esc and inspect visually the image(s)&nbsp; involved by
-double click on the row. Remove any poor image&nbsp;by using right
-mouse button popup menu "rename to *.bak"<br></span><span style="font-family: Arial;"><br>
-          <br>
+          </span><br><span style="font-family: Arial;"><span style="font-weight: bold;"></span><br><br>
           <span style="text-decoration: underline;">Astrometric
             Solving:</span></span><br>
         <span style="font-family: Arial;"><br>
@@ -846,7 +766,7 @@ export to 32 bit float TIFF or 32 bit float PFM&nbsp;format.<br><br>ASTAP export
             astronomical images</a><br>
           <br>
           Poor images can be filtered by either 1) HFD value, &nbsp;2)
-          Star detections, &nbsp;3) Star-level or &nbsp;4) Background
+          Quality, &nbsp;3) Star-level or &nbsp;4) Background
           value.<br>
         </big>
         <br>
@@ -878,7 +798,7 @@ export to 32 bit float TIFF or 32 bit float PFM&nbsp;format.<br><br>ASTAP export
           <span style="font-weight: bold;">Sorting:</span>
           Images can be sorted on any of the columns. For example if you
           click on
-          HFD, the images will be sorted&nbsp;on HDF. You could
+          HFD, the images will be sorted&nbsp;on HFD. You could
           then&nbsp;remove
           the images with the highest value or inspect them by double
           click on
@@ -1005,9 +925,74 @@ Green,
           starts a continuous un-aligned blinking cycle. This is
           intended to find
           visually outlier images where guiding has briefly failed.</p>
-        <br>
-        <p align="left"><big><br>
-            <a name="results"></a><span style="text-decoration: underline;">Results tab.</span></big></p>
+        <br><span style="font-family: Arial;"><br>
+          </span><span style="font-family: Arial;"><a name="uncheck_outliers"></a> </span><span style="font-family: Arial;"><span style="font-weight: bold;">How to exclude poor images</span><br><br>Sort the images on quality by double clicking on the column quality </span><span style="font-family: Arial;">and inspect</span><span style="font-family: Arial;"> visually the&nbsp;images with the lowest quality factor by </span><span style="font-family: Arial;">double click on the row</span><span style="font-family: Arial;">.
+If poor, rename images with right mouse button popup menu "rename to
+*.bak" for deletion later.&nbsp;</span><span style="font-family: Arial;"></span><span style="font-family: Arial;"> Sort also on background and&nbsp;</span><span style="font-family: Arial;">inspect </span><span style="font-family: Arial;"></span><span style="font-family: Arial;"></span><span style="font-family: Arial;"> </span><span style="font-family: Arial;">visually the images with too high values&nbsp;</span><span style="font-family: Arial;"></span><span style="font-family: Arial;">on possible&nbsp;cloud coverage or twilight conditions by&nbsp;</span><span style="font-family: Arial;">double click on the row to open</span><span style="font-family: Arial;"></span><span style="font-family: Arial;">. <br></span><span style="font-family: Arial;"><br></span><ul><li><span style="font-family: Arial;">HFD
+is the image median HFD. The lower the better. Depending on focus and
+guiding. &nbsp;Note that low values could be result of loss of
+tracking.&nbsp;</span></li><li><span style="font-family: Arial;">Quality of the image. </span><span style="font-family: Arial;">The higher the better. Based on the n</span><span style="font-family: Arial;">umber
+of star detections divided by HFD. Depending on sky transparency of the
+sky and focus. Note that loss of tracking result both in a low HFD and
+low star count so a low quality factor..</span></li><li><span style="font-family: Arial;">Star level. </span><span style="font-family: Arial;">The higher the better. </span><span style="font-family: Arial;">Depending on</span><span style="font-family: Arial;"> transparency of the sky and focus. Note that a high values indicate&nbsp;satellite tracks.</span></li><li><span style="font-family: Arial;">Background.
+Depending on sky darkness and transparency. The lower the better. A
+higher value means in most cases a cloud was blocking the sky.</span></li><li><span style="font-family: Arial;">Sharpness.
+The lower the better.Measures the&nbsp;change between dark and bright
+pixels. The measurement is very sensitive to satellite tracks. Could be
+used to detect satellite track when compared with HFD value. Could also
+be used to sort images of the Moon and Sun on sharpness.(but they&nbsp;can't
+be stacked) For correct sharpness measurement of OSC images
+either the FITS header should contain the keyword BAYERPAT or
+check-mark "Convert OSC to colour" in&nbsp;tab "Stack method". </span></li></ul><span style="font-family: Arial;"><span style="font-weight: bold;"></span></span><span style="font-family: Arial;"> To uncheck/untick
+          poor images can als be done automatically. First check mark the option "After analyse
+          untick worst
+          images". Then press button&nbsp;</span><span style="background-color: rgb(153, 153, 153);"> Analyse and organise images &nbsp;</span><span style="font-family: Arial;">. The column quality of the images will
+          be
+          analysed </span><span style="font-family: Arial;">statistacally and </span><span style="font-family: Arial;">outliers can be removed using either a&nbsp;</span><span style="font-family: Arial;"><a href="https://en.wikipedia.org/wiki/Standard_deviation">
+            standard deviation</a></span><span style="font-family: Arial;"> &nbsp;represented by the Greek lower case sigma &#963; letter or a percentage.&nbsp;</span><br><span style="font-family: Arial;"></span><span style="font-family: Arial;">
+          <br>
+          For a normal distribution you could expect the following:<br>
+          <br>
+        </span>
+        <table style="width: 368px; height: 172px; text-align: left; margin-left: auto; margin-right: auto;" border="1" cellpadding="2" cellspacing="2">
+          <tbody>
+            <tr>
+              <td style="background-color: silver;"><span style="font-weight: bold;">Confidence interval</span></td>
+              <td style="font-weight: bold; background-color: silver;">Proportion
+                within</td>
+            </tr>
+            <tr>
+              <td>1<i>&#963;</i></td>
+              <td>68%</td>
+            </tr>
+            <tr>
+              <td><span class="nowrap">1.5<span style="font-style: italic;"></span></span><i>&#963;</i></td>
+              <td>87%</td>
+            </tr>
+            <tr>
+              <td>2<i>&#963;</i></td>
+              <td>95 %</td>
+            </tr>
+            <tr>
+              <td>2.5<i>&#963;</i></td>
+              <td>98.8%</td>
+            </tr>
+            <tr>
+              <td>3<i>&#963;</i></td>
+              <td>99.7%</td>
+            </tr>
+          </tbody>
+        </table>
+        <span style="font-family: Arial;"><br></span><span style="font-family: Arial;"><span style="font-weight: bold;"></span></span><span style="font-family: Arial;"><br>
+          <br><span style="font-weight: bold;"><span style="text-decoration: underline;"><a name="satellite_tracks"></a></span>Satellite tracks<br></span></span><span style="font-family: Arial;"><br>The stack method </span><span style="font-family: Arial;">"sigma clip average" </span><span style="font-family: Arial;">should normally remove any satellite tracks. If&nbsp;after
+stacking with "sigma clip average" there are still satellite tracks
+visible, you could lower </span><span style="font-family: Arial;">in&nbsp;</span><big>tab <a href="stack_menu2">"Stack Method</a>".</big><span style="font-family: Arial;"> </span><span style="font-family: Arial;">the sigma factor from 2.5 to a lower value maybe 2.2&nbsp;. An other way is the blink/scroll&nbsp; through the
+images with the &nbsp;</span><span style="background-color: rgb(153, 153, 153);"> &gt;&gt; &nbsp;</span><span style="font-family: Arial;">
+button. As soon you see an abnormal bright track on the image stop the
+blinking by esc and inspect visually the image(s)&nbsp; involved by
+double click on the row. Remove any poor image&nbsp;by using right
+mouse button popup menu "rename to *.bak"</span><span style="font-family: Arial;"><br></span><span style="font-family: Arial;"></span><br><br><p align="left"><big><br>
+            <a name="results"></a><span style="text-decoration: underline;"><span style="font-weight: bold;">Results tab</span>.</span></big></p>
         <p align="left"><big>The
             stack results are reported in the results tab. By a double
             click

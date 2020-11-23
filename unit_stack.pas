@@ -1796,8 +1796,8 @@ begin
                 ListView1.Items.item[c].subitems.Strings[I_calibration]:=calstat; {status calibration}
                 if focus_pos<>0 then ListView1.Items.item[c].subitems.Strings[I_focpos]:=inttostr(focus_pos);
                 if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[I_foctemp]:=floattostrF2(focus_temp,0,1);
-                if centalt<>999 then ListView1.Items.item[c].subitems.Strings[I_centalt]:=floattostrF2(centalt,0,1);
-                if centaz<>999 then ListView1.Items.item[c].subitems.Strings[I_centaz]:=floattostrF2(centaz,0,1);
+                ListView1.Items.item[c].subitems.Strings[I_centalt]:=centalt;
+                ListView1.Items.item[c].subitems.Strings[I_centaz]:=centaz;
                 if gain<>999 then ListView1.Items.item[c].subitems.Strings[I_gain]:=inttostr(round(gain));
 
                 if use_ephemeris_alignment1.Checked then {ephemeride based stacking}

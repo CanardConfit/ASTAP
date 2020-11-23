@@ -484,8 +484,8 @@ var
    stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
    set_temperature : integer;
    star_level  : double;
-   object_name, filter_name,calstat,imagetype ,sitelat, sitelong: string;
-   exposure,focus_temp,centalt,centaz,cblack,cwhite,gain   :double; {from FITS}
+   object_name, filter_name,calstat,imagetype ,sitelat, sitelong,centalt,centaz: string;
+   exposure,focus_temp,cblack,cwhite,gain   :double; {from FITS}
    subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
    date_obs,date_avg,ut,pltlabel,plateid,telescop,instrum,origin:string;
 
@@ -874,8 +874,8 @@ begin
     bp_0_1:=0; bp_0_2:=0; bp_0_3:=0; bp_1_0:=0; bp_1_1:=0; bp_1_2:=0; bp_2_0:=0; bp_2_1:=0; bp_3_0:=0;
 
     calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
-    centalt:=999;{assume no data available}
-    centaz:=999;{assume no data available}
+    centalt:='';{assume no data available}
+    centaz:='';{assume no data available}
     x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
     y_coeff[0]:=0;
     a_order:=0; {SIP_polynomial, use for check if there is data}
@@ -1108,18 +1108,18 @@ begin
             if ((header[i+5]='D') and (header[i+6]='E')) then
             begin
               mainwindow.dec1.text:=get_string;
-            end
-            else
-            if ((header[i+5]='A') and (header[i+6]='Z')) then centaz:=strtofloat2(get_string) {for MaximDL5}
-            else
-            if ((header[i+5]='A') and (header[i+6]='L')) then centalt:=strtofloat2(get_string); {for MaximDL5}
+            end;
+//            else {for older MaximDL5}
+//            if ((header[i+5]='A') and (header[i+6]='Z') and (centaz=999)) then begin if header[i+10]=#39 then centalt:=get_string else centalt:=validate_double; end{temporary accept floats}
+//            else {for older MaximDL5}
+//            if ((header[i+5]='A') and (header[i+6]='L')and (centalt=999)) then  begin if header[i+10]=#39 then centaz:=get_string else centaz:=validate_double; end;{temporary accept floats}
           end;
 
-          if ((header[i]='C') and (header[i+1]='E')  and (header[i+2]='N') and (header[i+3]='T') and (header[i+4]='A')) then
+          if ((header[i]='C') and (header[i+1]='E')  and (header[i+2]='N') and (header[i+3]='T') and (header[i+4]='A')) then  {SBIG 1.0 standard}
           begin
-            if ((header[i+5]='L') and (header[i+6]='T')) then centalt:=validate_double {read double value}
+            if ((header[i+5]='L') and (header[i+6]='T')) then begin if header[i+10]=#39 then centalt:=get_string else centalt:=floattostrf(validate_double,ffgeneral, 4, 1); end {accept strings (standard) and floats}
             else
-            if (header[i+5]='Z') then centaz:=validate_double {read double value}
+            if ((header[i+5]='Z')) then begin if header[i+10]=#39 then centaz:=get_string else centaz:=floattostrf(validate_double,ffgeneral, 4, 1); end;{accept strings (standard) and floats (SGP, older CCDCIEL)}
           end;
 
           if ((header[i]='C') and (header[i+1]='D')) then
@@ -2334,7 +2334,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.452, '+about_message4+', dated 2020-11-21';
+  #13+#10+'ASTAP version ß0.9.453, '+about_message4+', dated 2020-11-23';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
