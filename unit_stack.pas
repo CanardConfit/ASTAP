@@ -772,7 +772,7 @@ const
   quads_displayed:boolean=false;{no quads visible, so no refresh required}
   equalise_background_step: integer=1;
 
-procedure listview_add(tl: tlistview; s0:string; count:integer);
+procedure listview_add(tl: tlistview; s0:string; is_checked:boolean; count:integer);
 procedure update_equalise_background_step(pos1: integer);{update equalise background menu}
 procedure memo2_message(s: string);{message to memo2}
 
@@ -1089,7 +1089,7 @@ begin
   end;
 end;
 
-procedure listview_add(tl: tlistview; s0:string; count:integer);
+procedure listview_add(tl: tlistview; s0:string; is_checked: boolean; count:integer);
 var
   ListItem: TListItem;
   i : integer;
@@ -1099,9 +1099,10 @@ begin
     {Items.BeginUpdate; is set before calling this procedure}
     ListItem := Items.Add;
     ListItem.Caption := s0;{with checkbox}
+    ListItem.checked:=is_checked;
     for i:=1 to count do
         ListItem.SubItems.Add('');
-    Items[items.Count-1].Checked:=true;
+//    Items[items.Count-1].Checked:=true;
     {Items.EndUpdate; is set after calling this procedure}
   end;
 end;
@@ -1713,7 +1714,7 @@ begin
           begin
             memo2_message('Move file '+filename2+' to tab DARKS');
             listview2.Items.beginupdate;
-            listview_add(listview2,filename2,9);{move to darks}
+            listview_add(listview2,filename2,true,9);{move to darks}
             listview2.Items.endupdate;
             listview1.Items.Delete(c);
             dec(c);{compensate for delete}
@@ -1724,7 +1725,7 @@ begin
           begin
             memo2_message('Move file '+filename2+' to tab FLATS');
             listview3.Items.beginupdate;
-            listview_add(listview3,filename2,10);
+            listview_add(listview3,filename2,true,10);
             listview3.Items.endupdate;
             listview1.Items.Delete(c);
             dec(c);{compensate for delete}
@@ -1735,7 +1736,7 @@ begin
           begin
             memo2_message('Move file '+filename2+' to tab FLAT-DARKS / BIAS');
             listview4.Items.beginupdate;
-            listview_add(listview4,filename2,9);
+            listview_add(listview4,filename2,true,9);
             listview4.Items.endupdate;
             listview1.Items.Delete(c);
             dec(c);{compensate for delete}
@@ -1886,11 +1887,7 @@ begin
     listview1.Items.beginUpdate;
     for i:=0 to OpenDialog1.Files.count-1 do
     begin
-        listview_add(listview1,OpenDialog1.Files[i],26);
-        if  pos('_stacked',OpenDialog1.Files[i])<>0 then {do not check mark images already stacked}
-        begin
-          listview1.items[ListView1.items.count-1].checked:=false;
-        end;
+        listview_add(listview1,OpenDialog1.Files[i],   pos('_stacked',OpenDialog1.Files[i])=0 {do not check mark images already stacked}   ,26);
     end;
     listview1.Items.EndUpdate;
   end;
@@ -2199,7 +2196,7 @@ begin
     listview4.Items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview_add(listview4,OpenDialog1.Files[i],9);
+      listview_add(listview4,OpenDialog1.Files[i],true,9);
     end;
     listview4.Items.endupdate;
   end;
@@ -2223,7 +2220,7 @@ begin
     listview6.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview_add(listview6,OpenDialog1.Files[i],10);
+      listview_add(listview6,OpenDialog1.Files[i],true,10);
       DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
     end;
     listview6.items.endupdate;
@@ -2249,7 +2246,7 @@ begin
     listview3.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-       listview_add(listview3,OpenDialog1.Files[i],10);
+       listview_add(listview3,OpenDialog1.Files[i],true,10);
     end;
     listview3.items.endupdate;
 
@@ -4269,7 +4266,7 @@ begin
     listview2.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview_add(listview2,OpenDialog1.Files[i],9);
+      listview_add(listview2,OpenDialog1.Files[i],true,9);
     end;
     listview2.items.endupdate;
   end;
@@ -4291,7 +4288,7 @@ begin
     listview8.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview_add(listview8,OpenDialog1.Files[i],16);
+      listview_add(listview8,OpenDialog1.Files[i],true,16);
       DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
     end;
     listview8.items.endupdate;
@@ -4371,7 +4368,7 @@ begin
     listview7.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview_add(listview7,OpenDialog1.Files[i],17);
+      listview_add(listview7,OpenDialog1.Files[i],true,17);
       DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
     end;
     listview7.items.endupdate;
@@ -5298,39 +5295,50 @@ end;
 procedure Tstackmenu1.FormDropFiles(Sender: TObject;
   const FileNames: array of String);
 var
-   i : integer;
+   i,pageindex : integer;
 begin
-  listview1.Items.beginUpdate;
-  listview2.Items.beginUpdate;
-  listview3.Items.beginUpdate;
-  listview4.Items.beginUpdate;
-  listview6.Items.beginUpdate;
-  listview7.Items.beginUpdate;
+  pageindex:=pagecontrol1.pageindex;
+
+  case pageindex of  1: listview2.Items.beginUpdate;{darks}
+                     2: listview3.Items.beginUpdate;{flats}
+                     3: listview4.Items.beginUpdate;{flat darks}
+                     7: listview6.Items.beginUpdate;{blink}
+                     8: listview7.Items.beginUpdate;{photometry}
+                     else listview1.Items.beginUpdate; {lights}
+
+  end;
+
   for i := Low(FileNames) to High(FileNames) do
   begin
     if image_file_name(FileNames[i])=true then {readable image file}
     begin
-      case pagecontrol1.pageindex of    1:   listview_add(listview2,FileNames[i],9);{darks}
-                                        2:   listview_add(listview3,FileNames[i],10);{flats}
-                                        3:   listview_add(listview4,FileNames[i],9);{flat darks}
-                                        7:   listview_add(listview6,FileNames[i],10);{blink}
-                                        8:   listview_add(listview7,FileNames[i],17);{photometry}
+      case pagecontrol1.pageindex of   1:   listview_add(listview2,FileNames[i],true,9);{darks}
+                                       2:   listview_add(listview3,FileNames[i],true,10);{flats}
+                                       3:   listview_add(listview4,FileNames[i],true,9);{flat darks}
+                                       7:   listview_add(listview6,FileNames[i],true,10);{blink}
+                                       8:   listview_add(listview7,FileNames[i],true,17);{photometry}
                                        else
-                                       begin {images}
-                                         listview_add(listview1,FileNames[i],26);
+                                       begin {lights}
+                                         listview_add(listview1,FileNames[i],true,26);
                                          if  pos('_stacked',FileNames[i])<>0 then {do not check mark images already stacked}
                                                listview1.items[ListView1.items.count-1].checked:=false;
-                                         count_selected; {report the number of images selected in images_selected and update menu indication}
                                        end;
       end;
     end;
   end;
-  listview1.Items.EndUpdate;
-  listview2.Items.EndUpdate;
-  listview3.Items.EndUpdate;
-  listview4.Items.EndUpdate;
-  listview6.Items.EndUpdate;
-  listview7.Items.EndUpdate;
+
+  case pageindex of    1: listview2.Items.EndUpdate;{darks}
+                       2: listview3.Items.EndUpdate;{flats}
+                       3: listview4.Items.EndUpdate;{flat darks}
+                       7: listview6.Items.EndUpdate;{blink}
+                       8: listview7.Items.EndUpdate;{photometry}
+                       else
+                       begin {lights}
+                         listview1.Items.EndUpdate;
+                         count_selected; {report the number of images selected in images_selected and update menu indication}
+                       end;
+  end;
+
 end;
 
 
@@ -5431,7 +5439,7 @@ begin
           (binX2X3_file(2)=false)) {converts filename2 to binx2 version}
           then exit;
       listview7.Items[c].Checked:=false;
-      listview_add(listview7,filename2,17);{add binx2 file}
+      listview_add(listview7,filename2,true,17);{add binx2 file}
     end;
   end;{for loop for astrometric solving }
   {astrometric calibration}
@@ -6781,7 +6789,7 @@ begin
   begin
     if  listview5.Items[index].Selected then
     begin
-      listview_add(listview1,listview5.items[index].caption,26);
+      listview_add(listview1,listview5.items[index].caption,true,26);
     end;
     inc(index); {go to next file}
   end;
@@ -7012,7 +7020,7 @@ begin
             inc(c);
           end;
         end;
-        listview_add(listview2,path1,9);{add master}
+        listview_add(listview2,path1,true,9);{add master}
         listview2.Items.EndUpdate;
 
         analyse_listview(listview2,false {light},true {full fits},false{refresh});{update the tab information}
@@ -7157,7 +7165,7 @@ begin
               inc(c);
             end;
           end;
-          listview_add(listview3,path1,10);{add master}
+          listview_add(listview3,path1,true,10);{add master}
           listview3.Items.EndUpdate;
           analyse_listview(listview3,false {light},true {full fits (for standard deviation)},false{refresh});{update the tab information}
         end;

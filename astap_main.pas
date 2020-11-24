@@ -2334,7 +2334,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.453, '+about_message4+', dated 2020-11-23';
+  #13+#10+'ASTAP version ß0.9.454, '+about_message4+', dated 2020-11-24';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6480,10 +6480,7 @@ begin
     repeat {add images}
        dum:=initstring.Values['image'+inttostr(c)];
        if ((dum<>'') and (fileexists(dum))) then
-       begin
-         listview_add(stackmenu1.listview1,dum,26);
-         stackmenu1.ListView1.items[c].Checked:=get_boolean('image'+inttostr(c)+'_check',true);
-       end;
+         listview_add(stackmenu1.listview1,dum,get_boolean('image'+inttostr(c)+'_check',true),26);
        inc(c);
     until (dum='');
     stackmenu1.listview1.Items.endUpdate;
@@ -6491,13 +6488,10 @@ begin
     stackmenu1.listview2.Items.BeginUpdate;
     c:=0;
     repeat {add  darks}
-       dum:=initstring.Values['dark'+inttostr(c)];
-       if ((dum<>'') and (fileexists(dum))) then
-       begin
-         listview_add(stackmenu1.listview2,dum,9);
-         stackmenu1.ListView2.items[c].Checked:=get_boolean('dark'+inttostr(c)+'_check',true);
-       end;
-       inc(c);
+      dum:=initstring.Values['dark'+inttostr(c)];
+      if ((dum<>'') and (fileexists(dum))) then
+         listview_add(stackmenu1.listview2,dum,get_boolean('dark'+inttostr(c)+'_check',true),9);
+      inc(c);
     until (dum='');
     stackmenu1.listview2.Items.endUpdate;
 
@@ -6507,10 +6501,7 @@ begin
     repeat {add  flats}
       dum:=initstring.Values['flat'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
-      begin
-        listview_add(stackmenu1.listview3,dum,10);
-        stackmenu1.ListView3.items[c].Checked:=get_boolean('flat'+inttostr(c)+'_check',true);
-      end;
+        listview_add(stackmenu1.listview3,dum,get_boolean('flat'+inttostr(c)+'_check',true),10);
       inc(c);
     until (dum='');
     stackmenu1.listview3.Items.endUpdate;
@@ -6521,10 +6512,7 @@ begin
     repeat {add flat darks}
       dum:=initstring.Values['flat_dark'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
-      begin
-        listview_add(stackmenu1.listview4,dum,9);
-        stackmenu1.ListView4.items[c].Checked:=get_boolean('flat_dark'+inttostr(c)+'_check',true);
-      end;
+        listview_add(stackmenu1.listview4,dum,get_boolean('flat_dark'+inttostr(c)+'_check',true),9);
       inc(c);
     until (dum='');
     stackmenu1.listview4.Items.endUpdate;
@@ -6535,10 +6523,7 @@ begin
     repeat {add blink files}
       dum:=initstring.Values['blink'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
-      begin
-        listview_add(stackmenu1.listview6,dum,10);
-        stackmenu1.ListView6.items[c].Checked:=get_boolean('blink'+inttostr(c)+'_check',true);
-      end;
+        listview_add(stackmenu1.listview6,dum,get_boolean('blink'+inttostr(c)+'_check',true),10);
       inc(c);
     until (dum='');
     stackmenu1.listview6.Items.endUpdate;
@@ -6549,10 +6534,7 @@ begin
     repeat {add photometry files}
       dum:=initstring.Values['photometry'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
-      begin
-        listview_add(stackmenu1.listview7,dum,17);
-        stackmenu1.ListView7.items[c].Checked:=get_boolean('photometry'+inttostr(c)+'_check',true);
-      end;
+        listview_add(stackmenu1.listview7,dum,get_boolean('photometry'+inttostr(c)+'_check',true),17);
       inc(c);
     until (dum='');
     stackmenu1.listview7.Items.endUpdate;
@@ -6563,10 +6545,7 @@ begin
     repeat {add inspector files}
       dum:=initstring.Values['inspector'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
-      begin
-        listview_add(stackmenu1.listview8,dum,16);
-        stackmenu1.ListView8.items[c].Checked:=get_boolean('inspector'+inttostr(c)+'_check',true);
-      end;
+        listview_add(stackmenu1.listview8,dum,get_boolean('inspector'+inttostr(c)+'_check',true),16);
       inc(c);
     until (dum='');
     stackmenu1.listview8.Items.endUpdate;
