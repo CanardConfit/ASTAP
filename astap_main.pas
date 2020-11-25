@@ -7033,19 +7033,30 @@ begin
 
     {$endif}
     {$ifdef Linux}
-    if conv_index=0 then
+    if conv_index=0 then {standard dcraw}
     begin
-    if fileexists('/usr/bin/dcraw')=false then
-       result:=false {failure, try libraw}
-    else
+      if fileexists('/usr/bin/dcraw')=false then
+      begin
+        if fileexists('/usr/local/bin/dcraw')=false then
+          result:=false {failure}
+        else
+          execute_unix2('/usr/local/bin/dcraw '+commando+' "'+filename3+'"');
+      end
+      else
       execute_unix2('/usr/bin/dcraw '+commando+' "'+filename3+'"');
+
     end
     else
-    begin  {conv_index=2}
-      if fileexists('/usr/local/bin/dcraw-astap')=false then
-        result:=false {failure, try libraw}
+    begin  {conv_index=2  dcraw-astap}
+      if fileexists('/usr/bin/dcraw-astap')=false then
+      begin
+        if fileexists('/usr/local/bin/dcraw-astap')=false then
+          result:=false {failure}
+        else
+          execute_unix2('/usr/local/bin/dcraw-astap '+commando+' "'+filename3+'"');
+      end
       else
-        execute_unix2('/usr/local/bin/dcraw-astap '+commando+' "'+filename3+'"');
+      execute_unix2('/usr/bin/dcraw-astap '+commando+' "'+filename3+'"');
     end;
 
     {$endif}
@@ -7142,6 +7153,7 @@ begin
     result:=false;
 
 end;
+
 
 
 function convert_raw_to_fits(filename7 : string) :boolean;{convert raw file to FITS format}

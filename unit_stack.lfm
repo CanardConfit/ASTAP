@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 79
+  Left = 393
   Height = 644
-  Top = 205
+  Top = 220
   Width = 1619
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -667,8 +667,8 @@ object stackmenu1: Tstackmenu1
           item
             Alignment = taRightJustify
             Caption = 'Background'
-            MinWidth = 90
-            Width = 90
+            MinWidth = 110
+            Width = 110
           end        
           item
             Caption = 'σ centre'
@@ -677,8 +677,8 @@ object stackmenu1: Tstackmenu1
           end        
           item
             Caption = 'Gain'
-            MinWidth = 50
-            Width = 704
+            MinWidth = 60
+            Width = 60
           end>
         GridLines = True
         HideSelection = False
@@ -829,8 +829,8 @@ object stackmenu1: Tstackmenu1
           item
             Alignment = taRightJustify
             Caption = 'Background'
-            MinWidth = 90
-            Width = 90
+            MinWidth = 110
+            Width = 110
           end        
           item
             Alignment = taRightJustify
@@ -1134,12 +1134,12 @@ object stackmenu1: Tstackmenu1
       ImageIndex = 5
       ParentFont = False
       object Label3: TLabel
-        Left = 45
+        Left = 39
         Height = 15
         Top = 48
-        Width = 70
+        Width = 76
         Alignment = taRightJustify
-        Caption = 'Master flat:= '
+        Caption = '  Master flat:= '
         Color = clBtnFace
         ParentColor = False
         ParentFont = False
@@ -1703,7 +1703,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 5
       end
       object Label18: TLabel
-        Left = 792
+        Left = 810
         Height = 48
         Top = 216
         Width = 568
@@ -1716,7 +1716,7 @@ object stackmenu1: Tstackmenu1
         WordWrap = True
       end
       object Label39: TLabel
-        Left = 792
+        Left = 810
         Height = 15
         Top = 264
         Width = 252
@@ -1824,7 +1824,7 @@ object stackmenu1: Tstackmenu1
         end
       end
       object Label60: TLabel
-        Left = 792
+        Left = 810
         Height = 91
         Top = 293
         Width = 568
@@ -3134,7 +3134,7 @@ object stackmenu1: Tstackmenu1
         OnClick = help_blink1Click
       end
       object export_aligned_files1: TButton
-        Left = 1488
+        Left = 1496
         Height = 25
         Hint = 'Export the images with solution to new aligned image files (_aligned.fit). Prior to this run the blink routine once to get alignment solutions.'
         Top = 5
@@ -3151,7 +3151,7 @@ object stackmenu1: Tstackmenu1
         Left = 816
         Height = 19
         Hint = 'Update existing FITS header annotations.'
-        Top = 16
+        Top = 20
         Width = 124
         Caption = 'Update annotations'
         Enabled = False
@@ -3163,7 +3163,8 @@ object stackmenu1: Tstackmenu1
         Height = 25
         Hint = 'Write image list as YUV4MPEG2 video with extension y4m.'
         Top = 5
-        Width = 75
+        Width = 86
+        AutoSize = True
         Caption = 'Write video'
         OnClick = write_video1Click
         TabOrder = 12
@@ -3172,7 +3173,7 @@ object stackmenu1: Tstackmenu1
         Left = 624
         Height = 19
         Hint = 'Write data and time to screen and image array. If the file is saved this annotation in written in the image itself.'
-        Top = 16
+        Top = 20
         Width = 82
         Caption = 'Time stamp'
         Checked = True

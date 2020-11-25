@@ -186,8 +186,8 @@ object mainwindow: Tmainwindow
     Height = 19
     Hint = 'Inverse zoom action of the mouse wheel.'
     Top = 89
-    Width = 130
-    Caption = 'Inverse mouse wheel'
+    Width = 103
+    Caption = 'Inverse 🖱️ wheel'
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
     Font.Height = -12
