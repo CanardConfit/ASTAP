@@ -2033,16 +2033,16 @@ object stackmenu1: Tstackmenu1
           Top = 178
           Width = 254
           ItemHeight = 15
-          ItemIndex = 0
+          ItemIndex = 2
           Items.Strings = (
-            'DCRaw'
+            'dcraw'
             'LibRaw'
-            ''
+            'dcraw-astap (reads meta data)'
           )
           ParentFont = False
           Style = csDropDownList
           TabOrder = 6
-          Text = 'DCRaw'
+          Text = 'dcraw-astap (reads meta data)'
         end
         object osc_colour_smooth1: TCheckBox
           Left = 8

@@ -2334,7 +2334,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.454, '+about_message4+', dated 2020-11-24';
+  #13+#10+'ASTAP version ß0.9.455, '+about_message4+', dated 2020-11-25';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7013,48 +7013,60 @@ function convert_load_raw(filename3: string;var img: image_array): boolean; {con
 var
   filename4 :string;
   JD2                               : double;
-  dcraw                             : boolean;
-  libraw                            : boolean;
+  conv_index                        : integer;
 var
   commando  :string;
 
 begin
-  result:=false; {assume failure}
+  result:=true; {assume success}
 
-  dcraw:=stackmenu1.raw_conversion_program1.itemindex=0; {DCRaw specified}
-  libraw:=false;
+  conv_index:=stackmenu1.raw_conversion_program1.itemindex; {DCRaw, libraw or dcraw-astap specified}
 
-  if dcraw then {dcraw specified}
+  if ((conv_index=0) or ((conv_index=2)))  then {dcraw or dcraw-astap specified}
   begin
     commando:='-D -4 -t 0';   {-t 0 disables the rotation}
     {$ifdef mswindows}
     if fileexists(application_path+'dcraw.exe')=false then
-      dcraw:=false
+      result:=false {failure, try libraw}
     else
       ExecuteAndWait(application_path+'dcraw.exe '+commando+ ' "'+filename3+'"',false);{execute command and wait}
 
     {$endif}
     {$ifdef Linux}
+    if conv_index=0 then
+    begin
     if fileexists('/usr/bin/dcraw')=false then
-      dcraw:=false
+       result:=false {failure, try libraw}
     else
       execute_unix2('/usr/bin/dcraw '+commando+' "'+filename3+'"');
+    end
+    else
+    begin  {conv_index=2}
+      if fileexists('/usr/local/bin/dcraw-astap')=false then
+        result:=false {failure, try libraw}
+      else
+        execute_unix2('/usr/local/bin/dcraw-astap '+commando+' "'+filename3+'"');
+    end;
+
     {$endif}
     {$ifdef Darwin} {MacOS}
     if fileexists(application_path+'/dcraw')=false then
-      dcraw:=false
+      result:=false {failure, try libraw}
     else
       execute_unix2(application_path+'/dcraw '+commando+' "'+filename3+'"');
     {$endif}
-     if dcraw=false then memo2_message('DCRAW executable not found! Will try unprocessed_raw as alternative.');
+     if result=false then memo2_message('DCRAW executable not found! Will try unprocessed_raw as alternative.')
+     else
+     filename4:=ChangeFileExt(FileName3,'.pgm');{for DCRaw}
   end;
 
-  if dcraw=false then {dcraw not specified of failed, try with Libraw}
+
+  if ((conv_index=1) or (result=false)) then {dcraw-raw not specified of failed, try with Libraw}
   begin
-    libraw:=true; {assume success}
+    result:=true; {assume success again}
     {$ifdef mswindows}
     if fileexists(application_path+'unprocessed_raw.exe')=false then
-      libraw:=false
+      result:=false {failure}
     else
        ExecuteAndWait(application_path+'unprocessed_raw.exe "'+filename3+'"',false);{execute command and wait}
     {$endif}
@@ -7062,7 +7074,7 @@ begin
      if fileexists('/usr/lib/libraw/unprocessed_raw')=false then
      begin
        if fileexists('/usr/bin/unprocessed_raw')=false then
-         libraw:=false
+         result:=false {failure}
        else
          execute_unix2('/usr/bin/unprocessed_raw "'+filename3+'"');
      end
@@ -7071,30 +7083,32 @@ begin
    {$endif}
     {$ifdef Darwin}{MacOS}
     if fileexists(application_path+'/unprocessed_raw')=false then
-      libraw:=false
+       result:=false {failure}
     else
       execute_unix2(application_path+'/unprocessed_raw "'+filename3+'"');
      {$endif}
-    filename4:=FileName3+'.pgm';
-  end
-  else filename4:=ChangeFileExt(FileName3,'.pgm');{for DCRaw}
+    filename4:=FileName3+'.pgm';{ filename.NEF.pgm}
+  end;
 
-  if ((dcraw=false) and (libraw=false)) then {no conversion program}
+  if result=false then {no conversion program}
   begin
-    if dcraw=false then
+    if ((conv_index=0) or (conv_index=2)) then
     begin
     {$ifdef mswindows}
      application.messagebox(pchar('Could not find: '+application_path+'dcraw.exe !!' ),pchar('Error'),MB_ICONWARNING+MB_OK);
     {$endif}
     {$ifdef Linux}
-    application.messagebox(pchar('Could not find program dcdraw !!, Install this program. Eg: sudo apt-get install dcraw' ),pchar('Error'),MB_ICONWARNING+MB_OK);
+    if conv_index=0 then
+      application.messagebox(pchar('Could not find program /usr/bin/dcdraw !!, Install this program. Eg: sudo apt-get install dcraw' ),pchar('Error'),MB_ICONWARNING+MB_OK);
+    if conv_index=2 then
+      application.messagebox(pchar('Could not find program /usr/local/bin/dcdraw-astap !!, Download and install this program from www.hnsky.org'),pchar('Error'),MB_ICONWARNING+MB_OK);
     {$endif}
     {$ifdef Darwin} {MacOS}
     application.messagebox(pchar('Could not find: '+application_path+'dcraw' ),pchar('Error'),MB_ICONWARNING+MB_OK);
     {$endif}
     end;
 
-    if libraw=false then
+    if conv_index=1 then
     begin {libraw}
       {$ifdef mswindows}
       application.messagebox(pchar('Could not find: '+application_path+'unprocessed_raw.exe !!, Download, libraw and place in program directory' ),pchar('Error'),MB_ICONWARNING+MB_OK);
@@ -7110,6 +7124,7 @@ begin
     exit;
   end;
 
+
   if load_PPM_PGM_PFM(fileName4,img) then {succesfull PGM load}
   begin
     deletefile(filename4);{delete temporary pgm file}
@@ -7122,7 +7137,10 @@ begin
     end;
     add_text   ('HISTORY  ','Converted from '+filename3);
     result:=true;
-  end;
+  end
+  else
+    result:=false;
+
 end;
 
 
