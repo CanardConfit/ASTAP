@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CONFIG>
-  <Compiler Value="/usr/bin/fpc" Date="1594078105"/>
-  <Params Value=" -Px86_64 -MDelphi -Scghi -Cg -O3 -l -vewnhibq -Fi/home/h/astap.fpc -Fu/home/h/.lazarus/lib/units/x86_64-linux/qt5 -Fu/usr/share/lazarus/2.0.10/lcl/units/x86_64-linux -Fu/usr/share/lazarus/2.0.10/components/lazutils/lib/x86_64-linux -Fu/usr/share/lazarus/2.0.10/packager/units/x86_64-linux -Fu/home/h/astap.fpc/ -FE/home/h/astap.fpc/ -o/home/h/astap.fpc/astap -dLCL -dLCLqt5 -dBorland -dVer150 -dDelphi7 astap.lpr"/>
-</CONFIG>
