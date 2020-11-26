@@ -27,8 +27,15 @@
       <Attributes pvaPreRelease="True"/>
       <StringTable CompanyName="www.hnsky.org" FileDescription="Astrometric STAcking Program" LegalCopyright="Han Kleijn" OriginalFilename="astap.exe" ProductName="ASTAP" ProductVersion="File version refers to the interface standard"/>
     </VersionInfo>
+    <MacroValues Count="1">
+      <Macro2 Name="LCLWidgetType" Value="gtk2"/>
+    </MacroValues>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
+      <SharedMatrixOptions Count="2">
+        <Item1 ID="948569675102" Type="IDEMacro" MacroName="LCLWidgetType" Value="qt5"/>
+        <Item2 ID="298447837407" Modes="Default" Type="IDEMacro" MacroName="LCLWidgetType" Value="gtk2"/>
+      </SharedMatrixOptions>
     </BuildModes>
     <PublishOptions>
       <Version Value="2"/>

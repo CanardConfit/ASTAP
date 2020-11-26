@@ -43,7 +43,6 @@ uses
   FPImage,
   fpreadTIFF, {all part of fcl-image}
   fpreadPNG,fpreadBMP,fpreadJPEG,
-//  fpwritePNM,  {images}
   fpwriteTIFF,fpwritePNG,fpwriteBMP,fpwriteJPEG, fptiffcmn,  {images}
   GraphType, {fastbitmap}
   LCLVersion, SysUtils, Graphics, Forms, strutils, math,
@@ -2334,7 +2333,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.455, '+about_message4+', dated 2020-11-25';
+  #13+#10+'ASTAP version ß0.9.456a, '+about_message4+', dated 2020-11-25';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7153,7 +7152,6 @@ begin
     result:=false;
 
 end;
-
 
 
 function convert_raw_to_fits(filename7 : string) :boolean;{convert raw file to FITS format}

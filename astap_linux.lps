@@ -20,8 +20,7 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="24"/>
-        <CursorPos X="7" Y="30"/>
+        <CursorPos X="77" Y="8"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -35,7 +34,7 @@
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="1"/>
         <TopLine Value="4116"/>
-        <CursorPos X="101" Y="4123"/>
+        <CursorPos X="96" Y="4116"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -109,19 +108,19 @@
       <Unit10>
         <Filename Value="unit_stack_routines.pas"/>
         <IsPartOfProject Value="True"/>
-        <UsageCount Value="195"/>
+        <UsageCount Value="198"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit10>
       <Unit11>
         <Filename Value="unit_inspector_plot.pas"/>
         <IsPartOfProject Value="True"/>
-        <UsageCount Value="195"/>
+        <UsageCount Value="198"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit11>
       <Unit12>
         <Filename Value="unit_hjd.pas"/>
         <IsPartOfProject Value="True"/>
-        <UsageCount Value="195"/>
+        <UsageCount Value="198"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit12>
       <Unit13>
@@ -235,11 +234,10 @@
       </Unit24>
       <Unit25>
         <Filename Value="unit_yuv4mpeg2.pas"/>
-        <EditorIndex Value="2"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="116"/>
         <CursorPos X="9" Y="130"/>
         <UsageCount Value="14"/>
-        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit25>
       <Unit26>
@@ -257,119 +255,127 @@
       <Define3 Value="Compiler6_Up"/>
       <Define4 Value="PUREPASCAL"/>
     </OtherDefines>
-    <JumpHistory Count="28" HistoryIndex="27">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="5168" Column="11" TopLine="5159"/>
+        <Caret Line="6856" Column="121" TopLine="6800"/>
       </Position1>
       <Position2>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6782" Column="8" TopLine="6758"/>
+        <Caret Line="6804" TopLine="6799"/>
       </Position2>
       <Position3>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6790" Column="64" TopLine="6766"/>
+        <Caret Line="5176" TopLine="5162"/>
       </Position3>
       <Position4>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6793" Column="23" TopLine="6785"/>
+        <Caret Line="6804" TopLine="6790"/>
       </Position4>
       <Position5>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="6797" Column="42" TopLine="6785"/>
+        <Filename Value="unit_stack.pas"/>
+        <Caret Line="2800" Column="7" TopLine="2798"/>
       </Position5>
       <Position6>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="6798" Column="12" TopLine="6785"/>
+        <Filename Value="unit_stack.pas"/>
+        <Caret Line="4122" Column="22" TopLine="4116"/>
       </Position6>
       <Position7>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6800" Column="45" TopLine="6785"/>
+        <Caret Line="6821" Column="58" TopLine="6799"/>
       </Position7>
       <Position8>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6804" Column="34" TopLine="6785"/>
+        <Caret Line="36" Column="4" TopLine="22"/>
       </Position8>
       <Position9>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6805" Column="12" TopLine="6785"/>
+        <Caret Line="38" Column="23" TopLine="24"/>
       </Position9>
       <Position10>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6807" Column="36" TopLine="6785"/>
+        <Caret Line="46" TopLine="24"/>
       </Position10>
       <Position11>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6810" Column="43" TopLine="6787"/>
+        <Caret Line="2319" Column="15" TopLine="2313"/>
       </Position11>
       <Position12>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6811" Column="12" TopLine="6788"/>
+        <Caret Line="7027" Column="10" TopLine="7023"/>
       </Position12>
       <Position13>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6813" Column="45" TopLine="6790"/>
+        <Caret Line="2350" Column="31" TopLine="2331"/>
       </Position13>
       <Position14>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6815" Column="46" TopLine="6792"/>
+        <Caret Line="7035" TopLine="7021"/>
       </Position14>
       <Position15>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6818" Column="29" TopLine="6795"/>
+        <Caret Line="7049" TopLine="7035"/>
       </Position15>
       <Position16>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6846" Column="61" TopLine="6823"/>
+        <Caret Line="7051" TopLine="7035"/>
       </Position16>
       <Position17>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6848" Column="13" TopLine="6825"/>
+        <Caret Line="7052" TopLine="7035"/>
       </Position17>
       <Position18>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6850" Column="13" TopLine="6827"/>
+        <Caret Line="7035" TopLine="7021"/>
       </Position18>
       <Position19>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6853" Column="77" TopLine="6830"/>
+        <Caret Line="7049" TopLine="7035"/>
       </Position19>
       <Position20>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6856" Column="121" TopLine="6800"/>
+        <Caret Line="7051" TopLine="7035"/>
       </Position20>
       <Position21>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6804" TopLine="6799"/>
+        <Caret Line="7049" TopLine="7035"/>
       </Position21>
       <Position22>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="5176" TopLine="5162"/>
+        <Caret Line="7051" TopLine="7035"/>
       </Position22>
       <Position23>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6804" TopLine="6790"/>
+        <Caret Line="7054" TopLine="7035"/>
       </Position23>
       <Position24>
-        <Filename Value="unit_stack.pas"/>
-        <Caret Line="2800" Column="7" TopLine="2798"/>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="7067" TopLine="7053"/>
       </Position24>
       <Position25>
-        <Filename Value="unit_stack.pas"/>
-        <Caret Line="4122" Column="22" TopLine="4116"/>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="7069" TopLine="7053"/>
       </Position25>
       <Position26>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6821" Column="58" TopLine="6799"/>
+        <Caret Line="7073" TopLine="7062"/>
       </Position26>
       <Position27>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="36" Column="4" TopLine="22"/>
+        <Caret Line="7102" TopLine="7091"/>
       </Position27>
       <Position28>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="38" Column="23" TopLine="24"/>
+        <Caret Line="7111" Column="27" TopLine="7090"/>
       </Position28>
+      <Position29>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="7053" TopLine="7032"/>
+      </Position29>
+      <Position30>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="7129" Column="53" TopLine="13"/>
+      </Position30>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>

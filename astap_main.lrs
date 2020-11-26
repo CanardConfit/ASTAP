@@ -1,0 +1,2143 @@
+{ This is an automatically generated lazarus resource file }
+
+LazarusResources.Add('Tmainwindow','FORMDATA',[
+  'TPF0'#11'Tmainwindow'#10'mainwindow'#4'Left'#3#234#1#6'Height'#3'h'#2#4'Hint'
+  +#6#1' '#3'Top'#3#176#0#5'Width'#3'?'#5#14'AllowDropFiles'#9#7'Caption'#6'4As'
+  +'trometric Stacking Program and fits viewer (ASTAP)'#12'ClientHeight'#3'M'#2
+  +#11'ClientWidth'#3'?'#5#5'Color'#7#6'clForm'#9'Icon.Data'#10#130#3#0#0'~'#3#0
+  +#0#0#0#1#0#1#0#16#16#0#0#1#0#24#0'h'#3#0#0#22#0#0#0'('#0#0#0#16#0#0#0' '#0#0
+  +#0#1#0#24#0#0#0#0#0#0#3#0#0'd'#0#0#0'd'#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0
+  +#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0
+  +#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0
+  +#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#255
+  +#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#255#255#255#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#255#255#255#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255
+  +#255#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#10'KeyPre'
+  +'view'#9#4'Menu'#7#9'MainMenu1'#7'OnClose'#7#9'FormClose'#8'OnCreate'#7#10'F'
+  +'ormCreate'#9'OnDestroy'#7#11'FormDestroy'#11'OnDropFiles'#7#13'FormDropFile'
+  +'s'#10'OnKeyPress'#7#12'FormKeyPress'#7'OnPaint'#7#9'FormPaint'#8'OnResize'#7
+  +#10'FormResize'#6'OnShow'#7#8'FormShow'#10'ParentFont'#9#10'LCLVersion'#6#8
+  +'2.0.10.0'#0#6'TLabel'#6'Label1'#4'Left'#2'6'#6'Height'#2#23#4'Hint'#6#15'Ri'
+  +'ght ascension'#3'Top'#2#252#5'Width'#2#13#9'Alignment'#7#14'taRightJustify'
+  +#7'Caption'#6#2#206#177#11'Font.Height'#2#237#11'ParentColor'#8#10'ParentFon'
+  +'t'#8#14'ParentShowHint'#8#8'ShowHint'#9#0#0#6'TLabel'#6'Label2'#4'Left'#2'6'
+  +#6'Height'#2#23#4'Hint'#6#11'Declination'#3'Top'#2#24#5'Width'#2#12#9'Alignm'
+  +'ent'#7#14'taRightJustify'#7'Caption'#6#2#206#180#11'Font.Height'#2#237#11'P'
+  +'arentColor'#8#10'ParentFont'#8#14'ParentShowHint'#8#8'ShowHint'#9#0#0#6'TLa'
+  +'bel'#12'error_get_it'#4'Left'#3#217#0#6'Height'#2#15#3'Top'#3#159#0#5'Width'
+  +#2#24#7'Caption'#6#6'      '#12'Font.CharSet'#7#12'ANSI_CHARSET'#10'Font.Col'
+  +'or'#7#7'clBlack'#11'Font.Height'#2#244#9'Font.Name'#6#8'Segoe UI'#10'Font.P'
+  +'itch'#7#10'fpVariable'#12'Font.Quality'#7#7'fqDraft'#11'ParentColor'#8#10'P'
+  +'arentFont'#8#0#0#6'TLabel'#8'ra_label'#4'Left'#3#176#0#6'Height'#2#15#3'Top'
+  +#2#6#5'Width'#2#16#7'Caption'#6#2'00'#12'Font.CharSet'#7#12'ANSI_CHARSET'#10
+  +'Font.Color'#7#7'clBlack'#11'Font.Height'#2#244#9'Font.Name'#6#8'Segoe UI'#10
+  +'Font.Pitch'#7#10'fpVariable'#12'Font.Quality'#7#7'fqDraft'#11'ParentColor'#8
+  +#10'ParentFont'#8#0#0#6'TLabel'#9'dec_label'#4'Left'#3#176#0#6'Height'#2#15#3
+  +'Top'#2#30#5'Width'#2#16#7'Caption'#6#2'00'#12'Font.CharSet'#7#12'ANSI_CHARS'
+  +'ET'#10'Font.Color'#7#7'clBlack'#11'Font.Height'#2#244#9'Font.Name'#6#8'Sego'
+  +'e UI'#10'Font.Pitch'#7#10'fpVariable'#12'Font.Quality'#7#7'fqDraft'#11'Pare'
+  +'ntColor'#8#10'ParentFont'#8#0#0#6'TLabel'#9'rotation1'#4'Left'#3#19#2#6'Hei'
+  +'ght'#2#15#4'Hint'#6'COrientation of the image north axis, independent of  f'
+  +'lip settings.'#3'Top'#3#130#0#5'Width'#2#8#7'Caption'#6#1'0'#12'Font.CharSe'
+  +'t'#7#12'ANSI_CHARSET'#10'Font.Color'#7#7'clBlack'#11'Font.Height'#2#244#9'F'
+  +'ont.Name'#6#8'Segoe UI'#10'Font.Pitch'#7#10'fpVariable'#12'Font.Quality'#7#7
+  +'fqDraft'#11'ParentColor'#8#10'ParentFont'#8#14'ParentShowHint'#8#8'ShowHint'
+  +#9#0#0#6'TImage'#18'image_north_arrow1'#4'Left'#3#219#1#6'Height'#2'1'#4'Hin'
+  +'t'#6'''Long axis is north, small axis is east.'#3'Top'#2't'#5'Width'#2'1'#14
+  ,'ParentShowHint'#8#8'ShowHint'#9#11'Transparent'#9#0#0#5'TEdit'#3'ra1'#4'Lef'
+  +'t'#2'K'#6'Height'#2#25#4'Hint'#6#149'Right ascension of reference pixel. No'
+  +'rmally in the middle of the image. Format 23 30 00.0 or 23.500. Double clic'
+  +'k to retrieve position from database'#3'Top'#2#0#5'Width'#2'_'#8'OnChange'#7
+  +#9'ra1Change'#10'OnDblClick'#7#11'ra1DblClick'#14'ParentShowHint'#8#9'PopupM'
+  +'enu'#7#17'PopupMenu_ra_dec1'#8'ShowHint'#9#8'TabOrder'#2#0#4'Text'#6#10'00 '
+  +'00 00.0'#0#0#5'TEdit'#4'dec1'#4'Left'#2'K'#6'Height'#2#25#4'Hint'#6#144'Dec'
+  +'lination of reference pixel. Normally in the middle of the image. Format +8'
+  +'9 30 00 or 89.500. Double click to retrieve position from database'#3'Top'#2
+  +#26#5'Width'#2'_'#8'OnChange'#7#10'dec1Change'#10'OnDblClick'#7#11'ra1DblCli'
+  +'ck'#14'ParentShowHint'#8#9'PopupMenu'#7#17'PopupMenu_ra_dec1'#8'ShowHint'#9
+  +#8'TabOrder'#2#1#4'Text'#6#12'+00 00 00.00'#0#0#9'TCheckBox'#18'inversemouse'
+  +'wheel1'#4'Left'#3#200#1#6'Height'#2#21#4'Hint'#6'''Inverse zoom action of t'
+  +'he mouse wheel.'#3'Top'#2'Y'#5'Width'#3#150#0#7'Caption'#6#19'Inverse mouse'
+  +' wheel'#12'Font.CharSet'#7#12'ANSI_CHARSET'#10'Font.Color'#7#7'clBlack'#11
+  +'Font.Height'#2#244#9'Font.Name'#6#8'Segoe UI'#10'Font.Pitch'#7#10'fpVariabl'
+  +'e'#12'Font.Quality'#7#7'fqDraft'#10'ParentFont'#8#14'ParentShowHint'#8#8'Sh'
+  +'owHint'#9#8'TabOrder'#2#2#0#0#6'TPanel'#6'Panel1'#4'Left'#2#0#6'Height'#3
+  +#182#1#4'Hint'#6#4'hint'#3'Top'#3#168#0#5'Width'#3'X'#5#5'Align'#7#8'alCusto'
+  +'m'#7'Anchors'#11#5'akTop'#6'akLeft'#7'akRight'#8'akBottom'#0#12'ClientHeigh'
+  +'t'#3#182#1#11'ClientWidth'#3'X'#5#5'Color'#4'   '#0#12'Font.CharSet'#7#12'A'
+  +'NSI_CHARSET'#10'Font.Color'#7#7'clBlack'#11'Font.Height'#2#244#9'Font.Name'
+  +#6#8'Segoe UI'#10'Font.Pitch'#7#10'fpVariable'#12'Font.Quality'#7#7'fqDraft'
+  +#11'ParentColor'#8#10'ParentFont'#8#14'ParentShowHint'#8#8'TabOrder'#2#3#11
+  +'OnMouseMove'#7#15'Panel1MouseMove'#16'OnMouseWheelDown'#7#20'Panel1MouseWhe'
+  +'elDown'#14'OnMouseWheelUp'#7#18'Panel1MouseWheelUp'#0#6'TImage'#6'Image1'#4
+  +'Left'#3#192#0#6'Height'#3#8#1#3'Top'#2'A'#5'Width'#3'`'#2#7'Anchors'#11#6'a'
+  +'kLeft'#7'akRight'#8'akBottom'#0#11'OnMouseDown'#7#15'Image1MouseDown'#12'On'
+  +'MouseEnter'#7#16'Image1MouseEnter'#11'OnMouseMove'#7#15'Image1MouseMove'#9
+  +'OnMouseUp'#7#13'Image1MouseUp'#14'ParentShowHint'#8#9'PopupMenu'#7#10'Popup'
+  +'Menu1'#7'Stretch'#9#7'Visible'#8#0#0#6'TShape'#23'Shape_alignment_marker1'#4
+  +'Left'#2#8#6'Height'#2#11#4'Hint'#6#31'Lock unreliable, check position'#3'To'
+  +'p'#2#8#5'Width'#2#11#7'Enabled'#8#14'ParentShowHint'#8#9'Pen.Color'#7#6'clL'
+  +'ime'#8'Pen.Mode'#7#8'pmNotXor'#9'Pen.Width'#2#3#5'Shape'#7#8'stCircle'#8'Sh'
+  +'owHint'#9#7'Visible'#8#0#0#6'TShape'#13'shape_marker1'#4'Left'#2'('#6'Heigh'
+  +'t'#2#31#4'Hint'#6#11'reference 1'#3'Top'#2#8#5'Width'#2#31#7'Enabled'#8#14
+  +'ParentShowHint'#8#9'Pen.Color'#7#9'clFuchsia'#8'Pen.Mode'#7#8'pmNotXor'#9'P'
+  +'en.Width'#2#2#8'ShowHint'#9#7'Visible'#8#0#0#6'TLabel'#12'error_label1'#4'L'
+  +'eft'#2#19#6'Height'#2#24#3'Top'#2'('#5'Width'#3#183#0#7'Caption'#6#20'Error'
+  +' loading file!!'#10'Font.Color'#7#5'clRed'#11'Font.Height'#2#236#11'ParentC'
+  +'olor'#8#10'ParentFont'#8#7'Visible'#8#0#0#6'TShape'#13'shape_marker2'#4'Lef'
+  +'t'#2'h'#6'Height'#2#31#4'Hint'#6#11'reference 2'#3'Top'#2#8#5'Width'#2#31#7
+  +'Enabled'#8#14'ParentShowHint'#8#9'Pen.Color'#7#6'clLime'#8'Pen.Mode'#7#8'pm'
+  +'NotXor'#9'Pen.Width'#2#2#8'ShowHint'#9#7'Visible'#8#0#0#6'TShape'#13'shape_'
+  +'marker3'#4'Left'#3#160#0#6'Height'#2#31#3'Top'#2#8#5'Width'#2#31#7'Enabled'
+  +#8#14'ParentShowHint'#8#9'Pen.Color'#7#6'clBlue'#8'Pen.Mode'#7#8'pmNotXor'#9
+  +'Pen.Width'#2#2#8'ShowHint'#9#7'Visible'#8#0#0#6'TShape'#12'shape_paste1'#4
+  +'Left'#3#216#0#6'Height'#2#31#3'Top'#2#8#5'Width'#2#31#7'Enabled'#8#14'Paren'
+  +'tShowHint'#8#9'Pen.Color'#7#6'clBlue'#8'Pen.Mode'#7#8'pmNotXor'#9'Pen.Width'
+  +#2#2#8'ShowHint'#9#7'Visible'#8#0#0#0#9'TGroupBox'#9'GroupBox1'#4'Left'#3'0'
+  +#1#6'Height'#2'3'#4'Hint'#6#1' '#3'Top'#2#0#5'Width'#3' '#1#7'Caption'#6#20
+  +'Astrometric solution'#12'ClientHeight'#2'"'#11'ClientWidth'#3#28#1#12'Font.'
+  +'CharSet'#7#12'ANSI_CHARSET'#10'Font.Color'#7#7'clBlack'#11'Font.Height'#2
+  +#244#9'Font.Name'#6#8'Segoe UI'#10'Font.Pitch'#7#10'fpVariable'#12'Font.Qual'
+  +'ity'#7#7'fqDraft'#10'ParentFont'#8#8'TabOrder'#2#4#0#7'TButton'#5'save1'#4
+  +'Left'#3#150#0#6'Height'#2#30#4'Hint'#6'"Save FITS file with plate solution'
+  +#3'Top'#2#0#5'Width'#3#128#0#7'Caption'#6#15'Save new header'#7'Enabled'#8#12
+  +'Font.CharSet'#7#12'ANSI_CHARSET'#10'Font.Color'#7#7'clBlack'#11'Font.Height'
+  +#2#244#9'Font.Name'#6#8'Segoe UI'#10'Font.Pitch'#7#10'fpVariable'#12'Font.Qu'
+  +'ality'#7#7'fqDraft'#7'OnClick'#7#31'SaveFITSwithupdatedheader1Click'#10'Par'
+  +'entFont'#8#14'ParentShowHint'#8#8'ShowHint'#9#8'TabOrder'#2#0#0#0#7'TButton'
+  +#13'solve_button1'#4'Left'#2#8#6'Height'#2#30#4'Hint'#12#135#1#0#0'Find an a'
+  +'strometric solution for the image in the viewer.'#13#10#13#10'Checklist for'
+  +' successful solving:'#13#10#13#10'- At least 30 stars are visible.'#13#10'-'
+  ,' Reasonable round stars.'#13#10'- Image dimensions at least 1280x960 pixels'
+  +'.'#13#10'- An approximate position is available for a spiral search'#13#10
+  +'- Correct image height in degrees specified. See stack menu tab alignment.'
+  +#13#10'- Image is not stretched or heavily photo-shopped.'#3'Top'#2#0#5'Widt'
+  +'h'#2'y'#7'Caption'#6#5'Solve'#7'Enabled'#8#12'Font.CharSet'#7#12'ANSI_CHARS'
+  +'ET'#10'Font.Color'#7#7'clBlack'#11'Font.Height'#2#244#9'Font.Name'#6#8'Sego'
+  +'e UI'#10'Font.Pitch'#7#10'fpVariable'#12'Font.Quality'#7#7'fqDraft'#7'OnCli'
+  +'ck'#7#18'solve_button1Click'#10'ParentFont'#8#14'ParentShowHint'#8#8'ShowHi'
+  +'nt'#9#8'TabOrder'#2#1#0#0#0#9'TGroupBox'#20'data_range_groupBox1'#4'Left'#2
+  +#8#6'Height'#2'u'#4'Hint'#6#1' '#3'Top'#2'4'#5'Width'#3#161#1#8'AutoSize'#9#7
+  +'Caption'#6#10'Data range'#12'ClientHeight'#2'd'#11'ClientWidth'#3#157#1#7'E'
+  +'nabled'#8#12'Font.CharSet'#7#12'ANSI_CHARSET'#10'Font.Color'#7#7'clBlack'#11
+  +'Font.Height'#2#244#9'Font.Name'#6#8'Segoe UI'#10'Font.Pitch'#7#10'fpVariabl'
+  +'e'#12'Font.Quality'#7#7'fqDraft'#10'ParentFont'#8#8'TabOrder'#2#5#0#6'TLabe'
+  +'l'#7'Label12'#4'Left'#2#0#6'Height'#2#15#3'Top'#2'9'#5'Width'#2'8'#7'Captio'
+  +'n'#6#7'Minimum'#5'Color'#7#9'clBtnFace'#12'Font.CharSet'#7#12'ANSI_CHARSET'
+  +#10'Font.Color'#7#7'clBlack'#11'Font.Height'#2#244#9'Font.Name'#6#8'Segoe UI'
+  +#10'Font.Pitch'#7#10'fpVariable'#12'Font.Quality'#7#7'fqDraft'#11'ParentColo'
+  +'r'#8#10'ParentFont'#8#11'Transparent'#8#0#0#6'TLabel'#7'Label13'#4'Left'#2#0
+  +#6'Height'#2#15#3'Top'#2'M'#5'Width'#2';'#7'Caption'#6#7'Maximum'#5'Color'#7
+  +#9'clBtnFace'#12'Font.CharSet'#7#12'ANSI_CHARSET'#10'Font.Color'#7#7'clBlack'
+  +#11'Font.Height'#2#244#9'Font.Name'#6#8'Segoe UI'#10'Font.Pitch'#7#10'fpVari'
+  +'able'#12'Font.Quality'#7#7'fqDraft'#11'ParentColor'#8#10'ParentFont'#8#11'T'
+  +'ransparent'#8#0#0#6'TImage'#10'histogram1'#6'Cursor'#7#7'crCross'#4'Left'#2
+  +']'#6'Height'#2'6'#3'Top'#2#0#5'Width'#3#210#0#11'OnMouseMove'#7#19'histogra'
+  +'m1MouseMove'#14'ParentShowHint'#8#9'PopupMenu'#7#20'PopupMenu_histogram1'#8
+  +'ShowHint'#9#17'StretchOutEnabled'#8#16'StretchInEnabled'#8#0#0#6'TLabel'#6
+  +'Label5'#4'Left'#2#4#6'Height'#2#15#3'Top'#2#8#5'Width'#2'B'#7'Caption'#6#10
+  +'Histogram:'#12'Font.CharSet'#7#12'ANSI_CHARSET'#10'Font.Color'#7#7'clBlack'
+  +#11'Font.Height'#2#244#9'Font.Name'#6#8'Segoe UI'#10'Font.Pitch'#7#10'fpVari'
+  +'able'#12'Font.Quality'#7#7'fqDraft'#11'ParentColor'#8#10'ParentFont'#8#0#0
+  +#10'TScrollBar'#8'minimum1'#4'Left'#2'D'#6'Height'#2#16#4'Hint'#6#22'Adjust '
+  +'the black level'#3'Top'#2'9'#5'Width'#3#4#1#7'Enabled'#8#3'Max'#4#255#255#0
+  +#0#8'PageSize'#2#0#14'ParentShowHint'#8#8'ShowHint'#9#8'TabOrder'#2#0#8'OnCh'
+  +'ange'#7#14'minimum1Change'#8'OnScroll'#7#14'maximum1Scroll'#0#0#10'TScrollB'
+  +'ar'#8'maximum1'#4'Left'#2'D'#6'Height'#2#16#4'Hint'#6#23'Adjust the white l'
+  +'evel.'#3'Top'#2'P'#5'Width'#3#4#1#7'Enabled'#8#11'LargeChange'#3#136#19#3'M'
+  +'ax'#4#255#255#0#0#3'Min'#2#1#8'PageSize'#2#0#14'ParentShowHint'#8#8'Positio'
+  +'n'#4#255#255#0#0#8'ShowHint'#9#11'SmallChange'#3#232#3#8'TabOrder'#2#1#8'On'
+  +'Change'#7#14'maximum1Change'#8'OnScroll'#7#14'maximum1Scroll'#0#0#5'TEdit'#4
+  +'min2'#4'Left'#3'T'#1#6'Height'#2#23#4'Hint'#6'0At this level the pixels are'
+  +' displayed as black.'#3'Top'#2'8'#5'Width'#2'1'#7'Enabled'#8#13'OnEditingDo'
+  +'ne'#7#15'min2EditingDone'#14'ParentShowHint'#8#8'ShowHint'#9#8'TabOrder'#2#2
+  +#4'Text'#6#1'0'#0#0#5'TEdit'#4'max2'#4'Left'#3'T'#1#6'Height'#2#23#4'Hint'#6
+  +'6At this level the pixels are displayed as fully white.'#3'Top'#2'M'#5'Widt'
+  +'h'#2'1'#7'Enabled'#8#13'OnEditingDone'#7#15'max2EditingDone'#14'ParentShowH'
+  +'int'#8#8'ShowHint'#9#8'TabOrder'#2#3#4'Text'#6#5'65535'#0#0#9'TComboBox'#6
+  +'range1'#4'Left'#3'9'#1#6'Height'#2#23#4'Hint'#6'/Preset of the automatic da'
+  +'ta range adjustments.'#3'Top'#2#27#5'Width'#2'd'#13'DropDownCount'#2#20#7'E'
+  +'nabled'#8#10'ItemHeight'#2#0#9'ItemIndex'#2#2#13'Items.Strings'#1#6#3'Low'#6
+  +#5'Low +'#6#6'Medium'#6#8'Medium +'#6#4'High'#6#6'High +'#6#5'Range'#6#6'Man'
+  +'ual'#6#15'Show saturation'#6#9'Max range'#0#8'OnChange'#7#12'range1Change'
+  +#14'ParentBidiMode'#8#11'ParentColor'#9#14'ParentShowHint'#8#8'ShowHint'#9#5
+  +'Style'#7#14'csDropDownList'#8'TabOrder'#2#4#4'Text'#6#6'Medium'#0#0#9'TComb'
+  +'oBox'#8'stretch1'#4'Left'#3'9'#1#6'Height'#2#25#4'Hint'#6'kStretch factor a'
+  +'pplied on displayed image. This is a  colour preserving stretch based on an'
+  +' asinh function.'#3'Top'#2#0#5'Width'#2'd'#13'DropDownCount'#2#15#7'Enabled'
+  +#8#10'ItemHeight'#2#0#9'ItemIndex'#2#0#13'Items.Strings'#1#6#3'off'#6#1'2'#6
+  +#1'4'#6#1'8'#6#2'10'#6#2'15'#6#2'20'#6#2'30'#6#2'40'#6#3'100'#6#3'200'#6#3'4'
+  +'00'#6#4'1000'#6#4'2000'#6#4'4000'#6#5'10000'#0#8'OnChange'#7#14'stretch1Cha'
+  +'nge'#11'ParentColor'#9#14'ParentShowHint'#8#8'ShowHint'#9#8'TabOrder'#2#5#4
+  +'Text'#6#3'off'#0#0#9'TTrackBar'#23'saturation_factor_plot1'#4'Left'#3#136#1
+  +#6'Height'#2'0'#4'Hint'#6'_Saturation adjust factor. The midde position is n'
+  +'eutral.  Above is increase, below is decrease.'#3'Top'#2'4'#5'Width'#2#20#9
+  ,'Frequency'#2#5#3'Min'#2#246#11'Orientation'#7#10'trVertical'#8'Position'#2#0
+  +#7'Enabled'#8#12'Font.CharSet'#7#12'ANSI_CHARSET'#10'Font.Color'#7#7'clBlack'
+  +#11'Font.Height'#2#245#9'Font.Name'#6#8'Segoe UI'#10'Font.Pitch'#7#10'fpVari'
+  +'able'#12'Font.Quality'#7#7'fqDraft'#9'OnMouseUp'#7#30'saturation_factor_plo'
+  +'t1MouseUp'#7'OnKeyUp'#7#28'saturation_factor_plot1KeyUp'#10'ParentFont'#8#14
+  +'ParentShowHint'#8#8'ShowHint'#9#8'TabOrder'#2#6#0#0#6'TShape'#16'shape_hist'
+  +'ogram1'#4'Left'#2'H'#6'Height'#2'6'#3'Top'#2#1#5'Width'#2#1#11'Brush.Color'
+  +#7#6'clNone'#11'Brush.Style'#7#7'bsClear'#9'Pen.Color'#7#7'clWhite'#9'Pen.St'
+  +'yle'#7#5'psDot'#7'Visible'#8#0#0#0#9'TComboBox'#11'Polynomial1'#4'Left'#3
+  +#200#1#6'Height'#2#25#4'Hint'#6#224'Use WCS, SIP or DSS polynomial for indic'
+  +'ating the position. SIP is available for Astrometry.net solutions and DSS p'
+  +'olynomial for images from the DSS survey. A red background is indicating "n'
+  +'o valid" solution for this option.'#3'Top'#2'='#5'Width'#2'}'#12'Font.CharS'
+  +'et'#7#12'ANSI_CHARSET'#10'Font.Color'#7#7'clBlack'#11'Font.Height'#2#244#9
+  +'Font.Name'#6#8'Segoe UI'#10'Font.Pitch'#7#10'fpVariable'#12'Font.Quality'#7
+  +#7'fqDraft'#10'ItemHeight'#2#0#9'ItemIndex'#2#0#13'Items.Strings'#1#6#3'WCS'
+  +#6#14'SIP Polynomial'#6#14'DSS Polynomial'#0#8'OnChange'#7#17'Polynomial1Cha'
+  +'nge'#11'ParentColor'#9#10'ParentFont'#8#14'ParentShowHint'#8#8'ShowHint'#9#8
+  +'TabOrder'#2#6#4'Text'#6#3'WCS'#0#0#10'TStatusBar'#10'StatusBar1'#4'Left'#2#0
+  +#6'Height'#2#21#3'Top'#3'8'#2#5'Width'#3'?'#5#6'Panels'#14#1#5'Width'#3#200#0
+  +#0#1#5'Width'#3#200#0#0#1#5'Width'#3'^'#1#0#1#5'Width'#3#249#0#0#1#5'Width'#3
+  +#150#0#0#1#5'Width'#3#200#0#0#1#5'Width'#3#150#0#0#1#5'Width'#3','#1#0#0#14
+  +'ParentShowHint'#8#9'PopupMenu'#7#16'popupmenu_frame1'#11'SimplePanel'#8#8'S'
+  +'izeGrip'#8#12'OnMouseEnter'#7#20'StatusBar1MouseEnter'#0#0#7'TBitBtn'#7'Bit'
+  +'Btn1'#4'Left'#3#248#0#6'Height'#2''''#4'Hint'#6#23'Show stack menu. CTRL-A'
+  +#3'Top'#2#5#5'Width'#2'"'#8'AutoSize'#9#7'Caption'#6#4#226#136#145' '#11'Fon'
+  +'t.Height'#2#232#7'OnClick'#7#17'Stackimages1Click'#10'ParentFont'#8#14'Pare'
+  +'ntShowHint'#8#8'ShowHint'#9#8'TabOrder'#2#8#0#0#12'TSpeedButton'#12'SpeedBu'
+  +'tton1'#4'Left'#2#8#6'Height'#2#22#4'Hint'#6#27'Browse & preview fits files'
+  +#3'Top'#2#8#5'Width'#2#23#12'Font.CharSet'#7#12'ANSI_CHARSET'#10'Font.Color'
+  +#7#7'clBlack'#11'Font.Height'#2#244#9'Font.Name'#6#8'Segoe UI'#10'Font.Pitch'
+  +#7#10'fpVariable'#12'Font.Quality'#7#7'fqDraft'#10'Glyph.Data'#10':'#5#0#0'6'
+  +#5#0#0'BM6'#5#0#0#0#0#0#0'6'#4#0#0'('#0#0#0#16#0#0#0#16#0#0#0#1#0#8#0#0#0#0#0
+  +#0#1#0#0#196#14#0#0#196#14#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#0#0#128#0#0#0
+  +#128#128#0#128#0#0#0#128#0#128#0#128#128#0#0#192#192#192#0#192#220#192#0#240
+  +#202#166#0#0' @'#0#0' `'#0#0' '#128#0#0' '#160#0#0' '#192#0#0' '#224#0#0'@'#0
+  +#0#0'@ '#0#0'@@'#0#0'@`'#0#0'@'#128#0#0'@'#160#0#0'@'#192#0#0'@'#224#0#0'`'#0
+  +#0#0'` '#0#0'`@'#0#0'``'#0#0'`'#128#0#0'`'#160#0#0'`'#192#0#0'`'#224#0#0#128
+  +#0#0#0#128' '#0#0#128'@'#0#0#128'`'#0#0#128#128#0#0#128#160#0#0#128#192#0#0
+  +#128#224#0#0#160#0#0#0#160' '#0#0#160'@'#0#0#160'`'#0#0#160#128#0#0#160#160#0
+  +#0#160#192#0#0#160#224#0#0#192#0#0#0#192' '#0#0#192'@'#0#0#192'`'#0#0#192#128
+  +#0#0#192#160#0#0#192#192#0#0#192#224#0#0#224#0#0#0#224' '#0#0#224'@'#0#0#224
+  +'`'#0#0#224#128#0#0#224#160#0#0#224#192#0#0#224#224#0'@'#0#0#0'@'#0' '#0'@'#0
+  +'@'#0'@'#0'`'#0'@'#0#128#0'@'#0#160#0'@'#0#192#0'@'#0#224#0'@ '#0#0'@  '#0'@'
+  +' @'#0'@ `'#0'@ '#128#0'@ '#160#0'@ '#192#0'@ '#224#0'@@'#0#0'@@ '#0'@@@'#0
+  +'@@`'#0'@@'#128#0'@@'#160#0'@@'#192#0'@@'#224#0'@`'#0#0'@` '#0'@`@'#0'@``'#0
+  +'@`'#128#0'@`'#160#0'@`'#192#0'@`'#224#0'@'#128#0#0'@'#128' '#0'@'#128'@'#0
+  +'@'#128'`'#0'@'#128#128#0'@'#128#160#0'@'#128#192#0'@'#128#224#0'@'#160#0#0
+  +'@'#160' '#0'@'#160'@'#0'@'#160'`'#0'@'#160#128#0'@'#160#160#0'@'#160#192#0
+  +'@'#160#224#0'@'#192#0#0'@'#192' '#0'@'#192'@'#0'@'#192'`'#0'@'#192#128#0'@'
+  +#192#160#0'@'#192#192#0'@'#192#224#0'@'#224#0#0'@'#224' '#0'@'#224'@'#0'@'
+  +#224'`'#0'@'#224#128#0'@'#224#160#0'@'#224#192#0'@'#224#224#0#128#0#0#0#128#0
+  +' '#0#128#0'@'#0#128#0'`'#0#128#0#128#0#128#0#160#0#128#0#192#0#128#0#224#0
+  +#128' '#0#0#128'  '#0#128' @'#0#128' `'#0#128' '#128#0#128' '#160#0#128' '
+  +#192#0#128' '#224#0#128'@'#0#0#128'@ '#0#128'@@'#0#128'@`'#0#128'@'#128#0#128
+  +'@'#160#0#128'@'#192#0#128'@'#224#0#128'`'#0#0#128'` '#0#128'`@'#0#128'``'#0
+  +#128'`'#128#0#128'`'#160#0#128'`'#192#0#128'`'#224#0#128#128#0#0#128#128' '#0
+  +#128#128'@'#0#128#128'`'#0#128#128#128#0#128#128#160#0#128#128#192#0#128#128
+  +#224#0#128#160#0#0#128#160' '#0#128#160'@'#0#128#160'`'#0#128#160#128#0#128
+  +#160#160#0#128#160#192#0#128#160#224#0#128#192#0#0#128#192' '#0#128#192'@'#0
+  +#128#192'`'#0#128#192#128#0#128#192#160#0#128#192#192#0#128#192#224#0#128#224
+  +#0#0#128#224' '#0#128#224'@'#0#128#224'`'#0#128#224#128#0#128#224#160#0#128
+  +#224#192#0#128#224#224#0#192#0#0#0#192#0' '#0#192#0'@'#0#192#0'`'#0#192#0#128
+  +#0#192#0#160#0#192#0#192#0#192#0#224#0#192' '#0#0#192'  '#0#192' @'#0#192' `'
+  ,#0#192' '#128#0#192' '#160#0#192' '#192#0#192' '#224#0#192'@'#0#0#192'@ '#0
+  +#192'@@'#0#192'@`'#0#192'@'#128#0#192'@'#160#0#192'@'#192#0#192'@'#224#0#192
+  +'`'#0#0#192'` '#0#192'`@'#0#192'``'#0#192'`'#128#0#192'`'#160#0#192'`'#192#0
+  +#192'`'#224#0#192#128#0#0#192#128' '#0#192#128'@'#0#192#128'`'#0#192#128#128
+  +#0#192#128#160#0#192#128#192#0#192#128#224#0#192#160#0#0#192#160' '#0#192#160
+  +'@'#0#192#160'`'#0#192#160#128#0#192#160#160#0#192#160#192#0#192#160#224#0
+  +#192#192#0#0#192#192' '#0#192#192'@'#0#192#192'`'#0#192#192#128#0#192#192#160
+  +#0#240#251#255#0#164#160#160#0#128#128#128#0#0#0#255#0#0#255#0#0#0#255#255#0
+  +#255#0#0#0#255#0#255#0#255#255#0#0#255#255#255#0#255#255#255#255#255#255#164
+  +#255#164#255#255#255#255#255#255#255#255#255#255#255#255#164#255#255#255#164
+  +#255#255#255#255#255#255#255#255#255#255#164#255#255#255#255#255#164#255#255
+  +#255#255#255#255#255#255#164#255#255#255#255#255#255#255#164#255#255#255#255
+  +#255#255#164#255#255#255#255#255#255#255#255#255#164#255#255#255#255#164#255
+  +#255#255#255#255#255#255#255#255#255#255#164#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#164#255#255#255#255#255#255#255#255#255#255#255#164#255
+  +#255#255#255#164#255#255#255#255#255#255#255#255#255#164#255#255#255#255#255
+  +#255#164#255#255#255#255#255#255#255#164#255#255#255#255#255#255#255#255#164
+  +#255#255#255#255#255#164#255#255#255#255#255#255#255#255#255#255#164#255#255
+  +#255#164#255#255#255#255#255#255#255#255#255#255#255#255#164#255#164#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#164#255#255#255#255#255#255
+  +#255#255#7'OnClick'#7#17'SpeedButton1Click'#8'ShowHint'#9#10'ParentFont'#8#14
+  +'ParentShowHint'#8#0#0#12'TPageControl'#12'PageControl1'#4'Left'#3'S'#2#6'He'
+  +'ight'#3#177#0#3'Top'#2#0#5'Width'#3#239#2#10'ActivePage'#7#9'TabSheet1'#7'A'
+  +'nchors'#11#5'akTop'#6'akLeft'#7'akRight'#0#8'TabIndex'#2#0#8'TabOrder'#2#9#0
+  +#9'TTabSheet'#9'TabSheet1'#7'Caption'#6#6'Header'#12'ClientHeight'#3#146#0#11
+  +'ClientWidth'#3#235#2#0#5'TMemo'#5'Memo1'#4'Left'#2#0#6'Height'#3#146#0#3'To'
+  +'p'#2#0#5'Width'#3#235#2#5'Align'#7#8'alClient'#7'Anchors'#11#5'akTop'#6'akL'
+  +'eft'#7'akRight'#0#11'Font.Height'#2#247#9'Font.Name'#6#7'Courier'#13'Lines.'
+  +'Strings'#1#6#0#0#8'OnChange'#7#11'Memo1Change'#7'OnKeyUp'#7#10'Memo1KeyUp'
+  +#10'ParentFont'#8#9'PopupMenu'#7#15'PopupMenu_memo1'#10'ScrollBars'#7#10'ssV'
+  +'ertical'#8'TabOrder'#2#0#8'WordWrap'#8#0#0#0#9'TTabSheet'#9'TabSheet2'#7'Ca'
+  +'ption'#6#5'Table'#12'ClientHeight'#3#146#0#11'ClientWidth'#3#235#2#0#5'TMem'
+  +'o'#5'Memo3'#4'Left'#2#0#6'Height'#3#149#0#3'Top'#2#0#5'Width'#3#231#2#5'Ali'
+  +'gn'#7#8'alClient'#7'Anchors'#11#5'akTop'#6'akLeft'#7'akRight'#0#11'Font.Hei'
+  +'ght'#2#247#9'Font.Name'#6#7'Courier'#13'Lines.Strings'#1#6#0#0#7'OnKeyUp'#7
+  +#10'Memo1KeyUp'#10'ParentFont'#8#10'ScrollBars'#7#14'ssAutoVertical'#8'TabOr'
+  +'der'#2#0#8'WordWrap'#8#0#0#0#0#7'TButton'#7'Button1'#4'Left'#3'.'#2#6'Heigh'
+  +'t'#2#25#3'Top'#3#156#0#5'Width'#2'K'#7'Caption'#6#7'Button1'#8'TabOrder'#2
+  +#10#0#0#9'TMainMenu'#9'MainMenu1'#6'Images'#7#10'ImageList1'#4'Left'#3'X'#3#3
+  +'Top'#3#208#0#0#9'TMenuItem'#5'File1'#7'Caption'#6#5'&File'#4'Hint'#6'"Load '
+  +'a FITS, PNG, JPG or BPM file.'#0#9'TMenuItem'#19'LoadFITSPNGBMPJPEG1'#7'Cap'
+  +'tion'#6#25'Load FITS or other format'#4'Hint'#6'!Load an image file in the '
+  +'viewer '#10'ImageIndex'#2#1#8'ShortCut'#3'O@'#7'OnClick'#7#24'LoadFITSPNGBM'
+  +'PJPEG1Click'#0#0#9'TMenuItem'#23'select_directory_thumb1'#7'Caption'#6#16'T'
+  +'humbnail viewer'#4'Hint'#6#28'Show FITS files as thumnails'#8'ShortCut'#3'T'
+  +'@'#7'OnClick'#7#28'select_directory_thumb1Click'#0#0#9'TMenuItem'#9'MenuIte'
+  +'m6'#7'Caption'#6#11'Open recent'#4'Hint'#6#17'Open recent files'#0#9'TMenuI'
+  +'tem'#7'recent1'#7'Caption'#6#1'1'#8'ShortCut'#3'1@'#7'Visible'#8#7'OnClick'
+  +#7#12'recent1Click'#0#0#9'TMenuItem'#7'recent2'#7'Caption'#6#1'2'#8'ShortCut'
+  +#3'2@'#7'Visible'#8#7'OnClick'#7#12'recent1Click'#0#0#9'TMenuItem'#7'recent3'
+  +#7'Caption'#6#1'3'#8'ShortCut'#3'3@'#7'Visible'#8#7'OnClick'#7#12'recent1Cli'
+  +'ck'#0#0#9'TMenuItem'#7'recent4'#7'Caption'#6#1'4'#8'ShortCut'#3'4@'#7'Visib'
+  +'le'#8#7'OnClick'#7#12'recent1Click'#0#0#9'TMenuItem'#7'recent5'#7'Caption'#6
+  +#1'5'#8'ShortCut'#3'5@'#7'Visible'#8#7'OnClick'#7#12'recent1Click'#0#0#9'TMe'
+  +'nuItem'#7'recent6'#7'Caption'#6#1'6'#8'ShortCut'#3'6@'#7'Visible'#8#7'OnCli'
+  +'ck'#7#12'recent1Click'#0#0#9'TMenuItem'#7'recent7'#7'Caption'#6#1'7'#8'Shor'
+  +'tCut'#3'7@'#7'Visible'#8#7'OnClick'#7#12'recent1Click'#0#0#9'TMenuItem'#7'r'
+  +'ecent8'#7'Caption'#6#1'8'#8'ShortCut'#3'8@'#7'Visible'#8#7'OnClick'#7#12're'
+  +'cent1Click'#0#0#0#9'TMenuItem'#2'N5'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#11
+  +'Saveasfits1'#7'Caption'#6#17'Save as FITS file'#7'Enabled'#8#4'Hint'#6'3Sav'
+  +'e image as  32 bit, 16 bit or 8 bits FITS file. '#10'ImageIndex'#2#26#8'Sho'
+  +'rtCut'#3'S@'#7'OnClick'#7#16'Saveasfits1Click'#0#0#9'TMenuItem'#13'Export_i'
+  ,'mage1'#7'Caption'#6#28'Export to PNG, TIFF, PPM/PGM'#7'Enabled'#8#4'Hint'#6
+  +'qSave current image as 16 bit PNG, 16 or 32 bit TIFF or 16 bit PPM/PGM. Not'
+  +'e that 32 bit files can be re-imported.'#8'ShortCut'#3'T@'#7'OnClick'#7#18
+  +'Export_image1Click'#0#0#9'TMenuItem'#16'SaveasJPGPNGBMP1'#7'Caption'#6#24'S'
+  +'ave as JPEG, PNG or BMP'#7'Enabled'#8#4'Hint'#6'NSave image as JPEG, PNG or'
+  +' BMP. These files are 8 bit and include annotations.'#8'ShortCut'#3'J@'#7'O'
+  +'nClick'#7#21'SaveasJPGPNGBMP1Click'#0#0#9'TMenuItem'#26'SaveFITSwithupdated'
+  +'header1'#7'Caption'#6#18'Update FITS header'#7'Enabled'#8#4'Hint'#6'#Update'
+  +' FITS header as in the memo. '#7'OnClick'#7#31'SaveFITSwithupdatedheader1Cl'
+  +'ick'#0#0#9'TMenuItem'#10'MenuItem12'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#14
+  +'settings_menu1'#7'Caption'#6#8'Settings'#0#9'TMenuItem'#14'save_settings1'#7
+  +'Caption'#6#13'Save settings'#4'Hint'#6#21'Save current settings'#10'ImageIn'
+  +'dex'#2#26#7'OnClick'#7#19'save_settings1Click'#0#0#9'TMenuItem'#17'save_set'
+  +'tings_as1'#7'Caption'#6#16'Save settings as'#4'Hint'#6'\Settings will be sa'
+  +'ved as. Note that after restart the default.cfg is loaded automatically. '#7
+  +'OnClick'#7#18'savesettings1Click'#0#0#9'TMenuItem'#10'MenuItem16'#7'Caption'
+  +#6#1'-'#0#0#9'TMenuItem'#24'Returntodefaultsettings1'#7'Caption'#6'#Return t'
+  +'o default settings and exit'#4'Hint'#6'&Prgram will return to default setti'
+  +'ngs'#7'OnClick'#7#29'Returntodefaultsettings1Click'#0#0#9'TMenuItem'#10'Men'
+  +'uItem17'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#13'loadsettings1'#7'Caption'#6
+  +#13'Load settings'#4'Hint'#6#25'Load a configuration file'#10'ImageIndex'#2#0
+  +#7'OnClick'#7#18'loadsettings1Click'#0#0#0#9'TMenuItem'#2'N1'#7'Caption'#6#1
+  +'-'#0#0#9'TMenuItem'#5'Exit1'#7'Caption'#6'!&Exit        ( and save settings'
+  +')'#4'Hint'#6'#Save settings and leave the program'#8'ShortCut'#3'#@'#7'OnCl'
+  +'ick'#7#10'Exit1Click'#0#0#0#9'TMenuItem'#12'Stackimages1'#7'Caption'#6#5'St'
+  +'ack'#4'Hint'#6#30'Stack images. Short cut CTRL+A'#10'ImageIndex'#2#4#8'Shor'
+  +'tCut'#3'A@'#7'OnClick'#7#17'Stackimages1Click'#0#0#9'TMenuItem'#6'tools1'#7
+  +'Caption'#6#5'Tools'#0#9'TMenuItem'#24'astrometric_solve_image1'#7'Caption'#6
+  +'%Solve image astrometric (plate solve)'#7'Enabled'#8#4'Hint'#6#172'Find ast'
+  +'rometric solution using either the internal solver or astrometry.net if sel'
+  +'ected. PNG of JPEG files will be first converted to a 8 bit FITS file with '
+  +'the same name.'#8'ShortCut'#3'P@'#7'OnClick'#7#29'astrometric_solve_image1C'
+  +'lick'#0#0#9'TMenuItem'#9'MenuItem9'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#9'Me'
+  +'nuItem7'#7'Caption'#6#16'Batch processing'#4'Hint'#6#15'Batch processes'#0#9
+  +'TMenuItem)AddplatesolvesolutiontoselectedFITSfiles1'#7'Caption'#6#18'Batch '
+  +'solve images'#4'Hint'#6'IFind a plate solution for selected files and add t'
+  +'o the FITS file header.'#8'ShortCut'#4'P'#128#0#0#7'OnClick'#7'.Addplatesol'
+  +'vesolutiontoselectedFITSfiles1Click'#0#0#9'TMenuItem'#26'batch_solve_astrom'
+  +'etry_net'#7'Caption'#6'-Batch solve images using local astrometry.net'#4'Hi'
+  +'nt'#6'6Solve the image using a local vesion of astrometry.net'#7'OnClick'#7
+  +#31'batch_solve_astrometry_netClick'#0#0#9'TMenuItem'#16'convert_to_fits1'#7
+  +'Caption'#6#21'Batch convert to FITS'#4'Hint'#6'/Convert the selected images'
+  +' to the FITS format.'#8'ShortCut'#3'D@'#7'OnClick'#7#21'convert_to_fits1cli'
+  +'ck'#0#0#9'TMenuItem'#13'save_to_tiff1'#7'Caption'#6#21'Batch convert to TIF'
+  +'F'#4'Hint'#6'/Convert the selected images to the TIFF format.'#7'OnClick'#7
+  +#18'save_to_tiff1Click'#0#0#9'TMenuItem'#6'bin2x2'#7'Caption'#6#20'Batch con'
+  +'vert bin2x2'#4'Hint'#6#27'Bin 2x2 all selected images'#7'OnClick'#7#11'bin2'
+  +'x2Click'#0#0#9'TMenuItem'#6'bin3x3'#7'Caption'#6#20'Batch convert bin3x3'#4
+  +'Hint'#6#27'Bin 3x3 all selected images'#7'OnClick'#7#11'bin2x2Click'#0#0#9
+  +'TMenuItem'#10'MenuItem22'#7'Caption'#6#6'Rotate'#0#9'TMenuItem'#18'batch_ro'
+  +'tate_left1'#7'Caption'#6#22'Rotate 90 degrees left'#4'Hint'#6'%Rotate the F'
+  +'ITS image 90 degrees left'#7'OnClick'#7#23'batch_rotate_left1Click'#0#0#9'T'
+  +'MenuItem'#19'batch_rotate_right1'#7'Caption'#6#23'Rotate 90 degrees right'#4
+  +'Hint'#6'&Rotate the FITS image 90 degrees right'#0#0#0#9'TMenuItem'#10'spli'
+  +'t_osc1'#7'Caption'#6';Extract one Bayer matrix pixel position from raw OSC '
+  +'images'#4'Hint'#6#202'This will extract one of the the Bayer 2x2 matrix pix'
+  +'els representing red, green, green and blue and write to seperate files. If'
+  +' your image Ha with your OSC, one position will contain the red data only.'
+  +#0#9'TMenuItem'#16'extract_pixel_11'#7'Caption'#6#21'Bayer matrix pixel 11'#4
+  +'Hint'#6'RPixels with position 11 in the Bayer matrix are extracted from the'
+  +' selected files.'#7'OnClick'#7#21'extract_pixel_11Click'#0#0#9'TMenuItem'#16
+  +'extract_pixel_12'#7'Caption'#6#21'Bayer matrix pixel 12'#4'Hint'#6'RPixels '
+  +'with position 12 in the Bayer matrix are extracted from the selected files.'
+  +#7'OnClick'#7#21'extract_pixel_12Click'#0#0#9'TMenuItem'#10'MenuItem21'#7'Ca'
+  ,'ption'#6#21'Bayer matrix pixel 21'#4'Hint'#6'RPixels with position 21 in th'
+  +'e Bayer matrix are extracted from the selected files.'#7'OnClick'#7#15'Menu'
+  +'Item21Click'#0#0#9'TMenuItem'#16'extract_pixel_22'#7'Caption'#6#21'Bayer ma'
+  +'trix pixel 22'#4'Hint'#6'RPixels with position 22 in the Bayer matrix are e'
+  +'xtracted from the selected files.'#7'OnClick'#7#21'extract_pixel_22Click'#0
+  +#0#0#9'TMenuItem'#26'remove_longitude_latitude1'#7'Caption'#6',Remove longit'
+  +'ude && latitude info from files'#4'Hint'#6#200'Remove location data from th'
+  +'e selected FITS files to protect your privacy. It will remove  SITELAT (lat'
+  +'itude) and SITELONG (longitude) keywords from the header. Original files wi'
+  +'ll be renamed to *.bak'#7'OnClick'#7#31'remove_longitude_latitude1Click'#0#0
+  +#9'TMenuItem'#15'compress_fpack1'#7'Caption'#6#19'Batch compress FITS'#4'Hin'
+  +'t'#6#137'Compress all files using the CFITSIO utility program fpack. Works '
+  +'best for 32 bit floating point fits files. Original files will be kept.'#7
+  +'OnClick'#7#20'compress_fpack1Click'#0#0#9'TMenuItem'#15'batch_annotate1'#7
+  +'Caption'#6'"Batch annotate asteroids && comets'#4'Hint'#6#147'This will add'
+  +' asteroid or comet annotations to the fits header. Intended for the blinkin'
+  +'g routine or manual stacking. Batch solve the images first.'#7'OnClick'#7#20
+  +'batch_annotate1Click'#0#0#0#9'TMenuItem'#2'N6'#7'Caption'#6#1'-'#0#0#9'TMen'
+  +'uItem'#13'ccdinspector1'#7'Caption'#6#21'Image (CCD) inspector'#7'Enabled'#8
+  +#4'Hint'#6'hCalculate average HFD value , curvature and tilt. The absolute f'
+  +'ont size will be smaller if you zoom in.'#10'ImageIndex'#2#17#8'ShortCut'#2
+  +'t'#7'OnClick'#7#18'CCDinspector1Click'#0#0#9'TMenuItem'#19'ccd_inspector_pl'
+  +'ot1'#7'Caption'#6#30'Image (CCD) inspector HFD plot'#7'Enabled'#8#4'Hint'#6
+  +' Plot HFD values as grey values. '#7'OnClick'#7#24'ccd_inspector_plot1Click'
+  +#0#0#9'TMenuItem'#16'show_distortion1'#7'Caption'#6#15'Show distortion'#7'En'
+  +'abled'#8#4'Hint'#6'`Show image distortion using the star positions and solu'
+  +'tion. Lines a 50x larger then distortion.'#8'ShortCut'#2'u'#7'OnClick'#7#21
+  +'show_distortion1Click'#0#0#9'TMenuItem'#9'MenuItem2'#7'Caption'#6#1'-'#0#0#9
+  +'TMenuItem'#17'preview_demosaic1'#9'AutoCheck'#9#7'Caption'#6'"Activate/deac'
+  +'tivate auto de-mosaic'#4'Hint'#6'TIf checked, any new image in viewer will '
+  +'be demosaiced using bilinear interpolation.'#0#0#9'TMenuItem'#21'demosaic_b'
+  +'ayermatrix1'#7'Caption'#6#23'De-mosaic Bayer matrix '#7'Enabled'#8#4'Hint'#6
+  +'^Convert RAW to colour using interpolation.  Set first correct Bayer patter'
+  +'n in the stack menu.'#10'ImageIndex'#2#14#8'ShortCut'#2'w'#7'OnClick'#7#26
+  +'demosaic_bayermatrix1Click'#0#0#9'TMenuItem'#19'autocorrectcolours1'#7'Capt'
+  +'ion'#6#21'Auto correct colours.'#7'Enabled'#8#4'Hint'#6'yWill adjust color '
+  +'settings to get gray background and average white stars. This is the same f'
+  +'unction as in tab pixel math'#10'ImageIndex'#2#15#8'ShortCut'#2'x'#7'OnClic'
+  +'k'#7#24'autocorrectcolours1Click'#0#0#9'TMenuItem'#12'inversimage1'#7'Capti'
+  +'on'#6#13'Inverse image'#7'Enabled'#8#4'Hint'#6'@Inverse image. Saving will '
+  +'apply the changes the original image.'#8'ShortCut'#3'I@'#7'OnClick'#7#17'in'
+  +'versimage1Click'#0#0#9'TMenuItem'#12'convertmono1'#7'Caption'#6#15'Convert '
+  +'to mono'#7'Enabled'#8#4'Hint'#6'(Convert colour image to gray scale image'
+  +#10'ImageIndex'#2#16#8'ShortCut'#3'M@'#7'OnClick'#7#17'convertmono1Click'#0#0
+  +#9'TMenuItem'#2'N3'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#16'Stretchdrawmenu1'#7
+  +'Caption'#6#12'Stretch draw'#4'Hint'#6#13'Stretch image'#0#9'TMenuItem'#13's'
+  +'tretch_draw1'#7'Caption'#6#12'Stretch draw'#7'Enabled'#8#4'Hint'#6#173'Like'
+  +' binning reduce the displayed resolution temporary using current zoom facto'
+  +'r. To be used to create images of reduced resolution and to save to file or'
+  +' copy to clipboard.'#7'OnClick'#7#18'stretch_draw1Click'#0#0#9'TMenuItem'#18
+  +'stretch_draw_fits1'#7'Caption'#6#20'Stretch draw to FITS'#7'Enabled'#8#4'Hi'
+  +'nt'#6'hConvert current view to a FITS image. This will use the current cont'
+  +'rast setting and reduce resolution. '#7'OnClick'#7#23'stretch_draw_fits1Cli'
+  +'ck'#0#0#0#9'TMenuItem'#5'Undo1'#7'Caption'#6#4'Undo'#7'Enabled'#8#4'Hint'#6
+  +'!Undo last Bayer or binning action'#10'ImageIndex'#2#2#8'ShortCut'#3'Z@'#7
+  +'OnClick'#7#10'Undo1Click'#0#0#9'TMenuItem'#10'MenuItem19'#7'Caption'#6#1'-'
+  +#0#0#9'TMenuItem'#14'submenurotate1'#7'Caption'#6#6'Rotate'#4'Hint'#6#21'Rot'
+  +'ate the FITS image'#0#9'TMenuItem'#11'rotateleft1'#7'Caption'#6#22'Rotate i'
+  +'mage 90'#194#176' left'#7'Enabled'#8#4'Hint'#6'?Rotate left.  Saving will a'
+  +'pply the changes the original image.'#10'ImageIndex'#2#27#8'ShortCut'#4'L'
+  +#192#0#0#7'OnClick'#7#16'rotateleft1Click'#0#0#9'TMenuItem'#12'rotateright1'
+  +#7'Caption'#6#23'Rotate image 90'#194#176' right'#7'Enabled'#8#4'Hint'#6'FRo'
+  +'tate image. right. Saving will apply the changes the original image.'#10'Im'
+  +'ageIndex'#2#28#8'ShortCut'#4'R'#192#0#0#7'OnClick'#7#16'rotateleft1Click'#0
+  ,#0#9'TMenuItem'#11'imageflipv1'#7'Caption'#6#13'Flip vertical'#7'Enabled'#8#4
+  +'Hint'#6'FFlip image vertical. Saving will apply the changes the original im'
+  +'age.'#10'ImageIndex'#2#29#8'ShortCut'#4'V'#192#0#0#7'OnClick'#7#16'imagefli'
+  +'pv1Click'#0#0#9'TMenuItem'#11'imagefliph1'#7'Caption'#6#15'Flip horizontal'
+  +#7'Enabled'#8#4'Hint'#6'HFlip image horizontal. Saving will apply the change'
+  +'s the original image.'#10'ImageIndex'#2#30#8'ShortCut'#4'H'#192#0#0#7'OnCli'
+  +'ck'#7#16'imageflipv1Click'#0#0#9'TMenuItem'#17'rotate_arbitrary1'#7'Caption'
+  +#6#16'Rotate arbitrary'#7'Enabled'#8#4'Hint'#6'fRotate the image with the an'
+  +'gle specified. Image quality will be reduced. Slow but accurate algorithm.'
+  +#10'ImageIndex'#2#31#7'OnClick'#7#22'rotate_arbitrary1Click'#0#0#0#9'TMenuIt'
+  +'em'#10'MenuItem10'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#9'clean_up1'#7'Captio'
+  +'n'#6#8'Clean-up'#4'Hint'#6'{Redraw image. Remove any markers except annotat'
+  +'ions. For removal annotations reload or remove annotations from FITS header'
+  +'.'#10'ImageIndex'#2#25#7'OnClick'#7#14'clean_up1Click'#0#0#9'TMenuItem'#21
+  +'calibrate_photometry1'#7'Caption'#6#20'Calibrate photometry'#7'Enabled'#8#4
+  +'Hint'#6#133'Calibrate photometry using available star database (Gaia BP or '
+  +'V magnitude) Stars should not be saturated. For mono/red channel only.'#8'S'
+  +'hortCut'#3'P@'#7'OnClick'#7#21'star_annotation1Click'#0#0#9'TMenuItem"annot'
+  +'ate_with_measured_magnitudes1'#7'Caption'#6#31'Magnitude (measured) annotat'
+  +'ion'#7'Enabled'#8#4'Hint'#6'+Annotate stars with measured star magnitude'#7
+  +'OnClick'#7'''annotate_with_measured_magnitudes1Click'#0#0#9'TMenuItem'#16's'
+  +'tar_annotation1'#7'Caption'#6#26'Star (database) annotation'#7'Enabled'#8#4
+  +'Hint'#6'<Annotate all stars in the image. Plate solve the image first'#10'I'
+  +'mageIndex'#2#18#8'ShortCut'#3'N@'#7'OnClick'#7#21'star_annotation1Click'#0#0
+  +#9'TMenuItem'#25'variable_star_annotation1'#7'Caption'#6#24'Variable star an'
+  +'notation'#7'Enabled'#8#4'Hint'#6#27'Annotate all variable stars'#7'OnClick'
+  +#7#30'variable_star_annotation1Click'#0#0#9'TMenuItem'#23'annotate_minor_pla'
+  +'nets1'#7'Caption'#6#28'Asteroid && comet annotation'#7'Enabled'#8#4'Hint'#6
+  +#18'Annotate asteroids'#8'ShortCut'#3'Q@'#7'OnClick'#7#28'annotate_minor_pla'
+  +'nets1Click'#0#0#9'TMenuItem'#21'hyperleda_annotation1'#7'Caption'#6#30'Deep'
+  +'sky (HyperLeda) annotation'#7'Enabled'#8#4'Hint'#6#131'Use the huge HyperLe'
+  +'da database for annotation.  Prior to this the image needs to be astrometri'
+  +'c solved. Zoom in to get small font.'#8'ShortCut'#3'Y@'#7'OnClick'#7#26'hyp'
+  +'erleda_annotation1Click'#0#0#9'TMenuItem'#19'deepsky_annotation1'#7'Caption'
+  +#6#18'Deepsky annotation'#7'Enabled'#8#4'Hint'#6#134'This will place deep sk'
+  +'y annotations on the image. Prior to this the image needs to be astrometric'
+  +' solved. Zoom in to get smaller font'#10'ImageIndex'#2#19#8'ShortCut'#3'L@'
+  +#7'OnClick'#7#24'deepsky_annotation1Click'#0#0#0#9'TMenuItem'#5'View1'#7'Cap'
+  +'tion'#6#4'View'#0#9'TMenuItem'#14'image_cleanup1'#7'Caption'#6#13'Image cle'
+  +'anup'#4'Hint'#6#30'Clear the image of annotations'#8'ShortCut'#3' @'#7'OnCl'
+  +'ick'#7#19'image_cleanup1Click'#0#0#9'TMenuItem'#19'center_lost_windows'#7'C'
+  +'aption'#6#19'Center lost windows'#8'ShortCut'#3'{@'#7'OnClick'#7#24'center_'
+  +'lost_windowsClick'#0#0#9'TMenuItem'#10'MenuItem11'#7'Caption'#6#1'-'#0#0#9
+  +'TMenuItem'#16'flip_horizontal1'#9'AutoCheck'#9#7'Caption'#6#15'Flip horizon'
+  +'tal'#4'Hint'#6#26'Flip the image horizontal.'#10'ImageIndex'#2#22#8'ShortCu'
+  +'t'#3'H@'#7'OnClick'#7#21'flip_horizontal1Click'#0#0#9'TMenuItem'#14'flip_ve'
+  +'rtical1'#9'AutoCheck'#9#7'Caption'#6#13'Flip vertical'#4'Hint'#6#20'Flip im'
+  +'age vertical.'#10'ImageIndex'#2#23#8'ShortCut'#3'V@'#7'OnClick'#7#19'flip_v'
+  +'ertical1Click'#0#0#9'TMenuItem'#10'MenuItem20'#7'Caption'#6#1'-'#0#0#9'TMen'
+  +'uItem'#20'annotations_visible1'#9'AutoCheck'#9#7'Caption'#6#19'Annotations '
+  +'visible'#7'Checked'#9#4'Hint'#6#31'Switches the annotations on/off'#7'OnCli'
+  +'ck'#7#25'annotations_visible1Click'#0#0#9'TMenuItem'#10'MenuItem15'#7'Capti'
+  +'on'#6#1'-'#0#0#9'TMenuItem'#8'zoomout1'#7'Caption'#6#8'Zoom out'#4'Hint'#6#8
+  +'Zoom out'#10'ImageIndex'#2#21#8'ShortCut'#2'!'#7'OnClick'#7#13'zoomout1Clic'
+  +'k'#0#0#9'TMenuItem'#7'zoomin1'#7'Caption'#6#7'Zoom in'#4'Hint'#6#7'Zoom in'
+  +#10'ImageIndex'#2#20#8'ShortCut'#2'"'#7'OnClick'#7#12'zoomin1Click'#0#0#0#9
+  +'TMenuItem'#4'Help'#7'Caption'#6#5'&Help'#0#9'TMenuItem'#15'ShowFITSheader1'
+  +#7'Caption'#6#16'Show FITS header'#7'Enabled'#8#7'OnClick'#7#20'ShowFITShead'
+  +'er1Click'#0#0#9'TMenuItem'#2'N2'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#11'help'
+  +'online1'#7'Caption'#6#23'Online help and webpage'#4'Hint'#6#22'Open the AST'
+  +'AP webpage'#8'ShortCut'#2'p'#7'OnClick'#7#16'helponline1Click'#0#0#9'TMenuI'
+  +'tem'#9'MenuItem3'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#6'About1'#7'Caption'#6
+  +#12'&About ASTAP'#4'Hint'#6#18'About this program'#10'ImageIndex'#2#5#7'OnCl'
+  +'ick'#7#11'About1Click'#0#0#0#0#11'TOpenDialog'#11'OpenDialog1'#6'Filter'#6
+  ,',Flexible image transport system files|*.fit*'#7'Options'#11#14'ofEnableSiz'
+  +'ing'#17'ofForceShowHidden'#12'ofViewDetail'#0#17'OnSelectionChange'#7#26'Op'
+  +'enDialog1SelectionChange'#4'Left'#3#168#3#3'Top'#3#208#0#0#0#11'TSaveDialog'
+  +#11'SaveDialog1'#4'Left'#3#184#3#3'Top'#3' '#1#0#0#10'TPopupMenu'#10'PopupMe'
+  +'nu1'#6'Images'#7#10'ImageList1'#9'AutoPopup'#8#4'Left'#3'X'#3#3'Top'#3'('#1
+  +#0#9'TMenuItem'#11'Enterlabel1'#7'Caption'#6#14'Add annotation'#4'Hint'#6'{A'
+  +'dd label to current mouse position. Hold left mouse button down and pull a '
+  +'rectangle with mouse to extend connecting line.'#7'OnClick'#7#16'Enterlabel'
+  +'1Click'#0#0#9'TMenuItem'#27'Enter_rectangle_with_label1'#7'Caption'#6#29'Ad'
+  +'d rectangle with annotation'#4'Hint'#6'KAdd rectangle. Hold left mouse butt'
+  +'on down and pull a rectangle with mouse.'#7'OnClick'#7#16'Enterlabel1Click'
+  +#0#0#9'TMenuItem'#11'add_marker1'#9'AutoCheck'#9#7'Caption'#6#10'Add marker'
+  +#4'Hint'#6#19'Add marker on image'#7'OnClick'#7#16'add_marker1Click'#0#0#9'T'
+  +'MenuItem'#10'MenuItem13'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#14'writepositio'
+  +'n1'#7'Caption'#6#19'Add object position'#7'Enabled'#8#4'Hint'#6'[Add astron'
+  +'omical position of the object near the mouse position. Position is auto cen'
+  +'tered.'#7'OnClick'#7#19'writeposition1Click'#0#0#9'TMenuItem'#20'add_marker'
+  +'_position1'#9'AutoCheck'#9#7'Caption'#6#29'Add marker at '#206#177', '#206
+  +#180' position'#7'Enabled'#8#4'Hint'#6'+Place marker at specified '#206#177
+  +', '#206#180' position. '#7'OnClick'#7#25'add_marker_position1Click'#0#0#9'T'
+  +'MenuItem'#22'measuretotalmagnitude1'#7'Caption'#6'(Measure total magnitude '
+  +'within rectangle'#7'Enabled'#8#4'Hint'#6'tThis will report the total magnit'
+  +'ude within the pulled rectangle. Best results are achieved using monochrome'
+  +' images.'#7'OnClick'#7#27'measuretotalmagnitude1Click'#0#0#9'TMenuItem'#17
+  +'angular_distance1'#7'Caption'#6#16'Angular distance'#10'ImageIndex'#2'#'#7
+  +'OnClick'#7#22'angular_distance1Click'#0#0#9'TMenuItem'#16'show_statistics1'
+  +#7'Caption'#6' Show statistics within rectangle'#4'Hint'#6'[Calculate mean, '
+  +'median standard deviation, minimum and maximum values within the rectangle.'
+  +#10'ImageIndex'#2'"'#7'OnClick'#7#21'show_statistics1Click'#0#0#9'TMenuItem'
+  +#15'remove_markers1'#7'Caption'#6#9'Clean-up '#4'Hint'#6'{Redraw image. Remo'
+  +'ve any markers except annotations. For removal annotations reload or remove'
+  +' annotations from FITS header.'#10'ImageIndex'#2#25#7'OnClick'#7#20'remove_'
+  +'markers1Click'#0#0#9'TMenuItem'#10'MenuItem14'#7'Caption'#6#1'-'#0#0#9'TMen'
+  +'uItem'#20'solvebytwopositions1'#7'Caption'#6' Solve by providing two positi'
+  +'ons'#4'Hint'#6'3Add a solution to image by providing two positions '#0#9'TM'
+  +'enuItem'#14'enterposition1'#7'Caption'#6#16'Enter position 1'#7'OnClick'#7
+  +#19'enterposition1Click'#0#0#9'TMenuItem'#14'enterposition2'#7'Caption'#6#16
+  +'Enter position 2'#7'OnClick'#7#19'enterposition1Click'#0#0#9'TMenuItem'#8'f'
+  +'lipped1'#9'AutoCheck'#9#7'Caption'#6#7'Flipped'#4'Hint'#6'>Specifiy if the '
+  +'image is flipped, east<->west or north<->south'#7'OnClick'#7#19'enterpositi'
+  +'on1Click'#0#0#0#9'TMenuItem'#2'N7'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#18'co'
+  +'py_to_clipboard1'#7'Caption'#6'#Copy image (selection) to clipboard'#4'Hint'
+  +#6'{Copies the image or a image selection to the clipboard. Selection orient'
+  +'ation is dependent on the selection direction used.'#7'OnClick'#7#23'copy_t'
+  +'o_clipboard1Click'#0#0#9'TMenuItem'#13'Copyposition1'#7'Caption'#6#26'Copy '
+  +'position to clipboard'#7'Enabled'#8#4'Hint'#6';The astronomical mouse posit'
+  +'ion is copied to the clipboard.'#7'OnClick'#7#18'Copyposition1Click'#0#0#9
+  +'TMenuItem'#18'Copypositioninhrs1'#7'Caption'#6' Copy position to clipboard '
+  +'in '#194#176#7'Enabled'#8#4'Hint'#6'FThe astronomical mouse position in deg'
+  +'rees is copied to the clipboard.'#7'OnClick'#7#23'Copypositioninhrs1Click'#0
+  +#0#9'TMenuItem'#22'Copypositioninradians1'#7'Caption'#6'%Copy position to cl'
+  +'ipboard in radians'#7'Enabled'#8#4'Hint'#6'FThe astronomical mouse position'
+  +' in radians is copied to the clipboard.'#7'OnClick'#7#27'Copypositioninradi'
+  +'ans1Click'#0#0#9'TMenuItem'#2'N9'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#18'loc'
+  +'al_adjustments1'#7'Caption'#6#17'Local adjustments'#4'Hint'#6#17'Local adju'
+  +'stments'#0#9'TMenuItem'#18'localcoloursmooth1'#7'Caption'#6#19'Local colour'
+  +' smooth'#4'Hint'#6'FSmooth the colour of the selected rectangle. Luminance '
+  +'is not changed.'#7'OnClick'#7#23'localcoloursmooth1Click'#0#0#9'TMenuItem'
+  +#14'remove_colour1'#7'Caption'#6#19'Local remove colour'#4'Hint'#6'3Intended'
+  +' for some ugly coloured stars in OSC images'#7'OnClick'#7#19'remove_colour1'
+  +'Click'#0#0#9'TMenuItem'#14'localgaussian1'#7'Caption'#6#19'Local Gaussian b'
+  +'lur'#4'Hint'#6'4Local Gaussian blur with factor as set in pixel math'#7'OnC'
+  +'lick'#7#19'localgaussian1Click'#0#0#9'TMenuItem'#24'localbackgroundequalise'
+  +'1'#7'Caption'#6#24'Equalise background tool'#4'Hint'#6'AEqualises bright or'
+  ,' dark background within the pulled rectangle. '#7'OnClick'#7#29'localbackgr'
+  +'oundequalise1Click'#0#0#9'TMenuItem'#14'brighten_area1'#7'Caption'#6#23'Bri'
+  +'ghten dark area tool'#4'Hint'#6'|Place the rectangle around the (small) dar'
+  +'ker area.  Area will be brightened based on the corner values.  Apply a few'
+  +' times.'#7'OnClick'#7#19'brighten_area1Click'#0#0#0#9'TMenuItem'#17'gradien'
+  +'t_removal1'#7'Caption'#6#21'Gradient removal tool'#4'Hint'#6'xRemove the li'
+  +'ght pollution gradient in whole image based on two positions. The greater t'
+  +'he distance the better it works.'#10'ImageIndex'#2'!'#7'OnClick'#7#22'gradi'
+  +'ent_removal1Click'#0#0#9'TMenuItem'#16'copy_paste_tool1'#7'Caption'#6#15'Co'
+  +'py paste tool'#4'Hint'#6'aCopy the selected area to the next mouse click. U'
+  +'se this for small corrections in the background.'#10'ImageIndex'#2' '#7'OnC'
+  +'lick'#7#21'copy_paste_tool1Click'#0#0#9'TMenuItem'#10'MenuItem18'#7'Caption'
+  +#6#1'-'#0#0#9'TMenuItem'#9'set_area1'#7'Caption'#6#8'Set area'#4'Hint'#6'0Se'
+  +'t area for colour replace in tab pixel math 1.'#7'OnClick'#7#14'set_area1Cl'
+  +'ick'#0#0#9'TMenuItem'#9'MenuItem4'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#23'Re'
+  +'move_deep_sky_object1'#7'Caption'#6'&Remove deep sky object (Ellipse shape)'
+  +#4'Hint'#6'6Remove the deep sky object within the pulled rectangle'#10'Image'
+  +'Index'#2#24#7'OnClick'#7#28'Remove_deep_sky_object1Click'#0#0#9'TMenuItem'#9
+  +'MenuItem5'#7'Caption'#6#1'-'#0#0#9'TMenuItem'#9'MenuItem8'#7'Caption'#6#14
+  +'Remove borders'#10'ImageIndex'#2#8#0#9'TMenuItem'#15'remove_atmouse1'#7'Cap'
+  +'tion'#6#15'At mouse cursor'#4'Hint'#6'''Remove border where mouse is positi'
+  +'oned'#7'OnClick'#7#20'remove_atmouse1Click'#0#0#9'TMenuItem'#12'remove_left'
+  +'1'#7'Caption'#6#20'LEFT of mouse cursor'#10'ImageIndex'#2#10#7'OnClick'#7#17
+  +'remove_left1Click'#0#0#9'TMenuItem'#13'remove_right1'#7'Caption'#6#21'RIGHT'
+  +' of mouse cursor'#10'ImageIndex'#2#11#7'OnClick'#7#18'remove_right1Click'#0
+  +#0#9'TMenuItem'#13'remove_above1'#7'Caption'#6#18'ABOVE mouse cursor'#10'Ima'
+  +'geIndex'#2#12#7'OnClick'#7#18'remove_above1Click'#0#0#9'TMenuItem'#13'remov'
+  +'e_below1'#7'Caption'#6#18'BELOW mouse cursor'#10'ImageIndex'#2#13#7'OnClick'
+  +#7#18'remove_below1Click'#0#0#0#9'TMenuItem'#14'CropFITSimage1'#7'Caption'#6
+  +#15'Crop FITS image'#4'Hint'#6'FPull first rectangle with mouse while holdin'
+  +'g right mouse button down.'#10'ImageIndex'#2#9#7'OnClick'#7#19'CropFITSimag'
+  +'e1Click'#0#0#9'TMenuItem'#9'MenuItem1'#7'Caption'#6#1'-'#0#0#0#10'TImageLis'
+  +'t'#10'ImageList1'#11'ShareImages'#9#4'Left'#3#0#4#3'Top'#3#207#0#6'Bitmap'
+  +#10#14#144#0#0'Li$'#0#0#0#16#0#0#0#16#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160
+  +#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#160#160#160#255#160#160#160#255#0#0#0#0#160#160#160
+  +#255#160#160#160#255#0#0#0#0#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#160#160#160#255#0#0#0#0#0#0
+  +#0#0#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#160#160#160#255#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#160
+  +#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#160#160#160
+  +#255#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#160#160#160#255#160
+  +#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#160#160#160#255#160#160#160
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#160#160#160#255
+  +#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#160#160#160#255#160
+  +#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#160#160#160#255#160#160
+  +#160#255#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160
+  +#255#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160#160
+  ,#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160
+  +#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255
+  +#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160
+  +#255#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160#160
+  +#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160
+  +#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#128#128#128#255#128#128#128#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128
+  +#128#255#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#0#0#0#128#128#128#255#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128#255#0#0#0#0#0#0
+  +#0#0#128#128#128#255#128#128#128#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128#255#128
+  +#128#128#255#0#0#0#0#128#128#128#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128
+  +#128#128#255#128#128#128#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#128#128#128#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128
+  +#128#128#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#128#128#128
+  +#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128
+  +#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128
+  +#128#128#255#128#128#128#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#128#128#128#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#128#128#128#255#0#0#0#0#128#128#128#255#192#192#192#255#192#192#192
+  +#255#128#128#128#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#128#128#128#255#0#0#0#0#0#0#0#0#128#128#128#255#192#192#192#255
+  +#128#128#128#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#128
+  +#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128#255
+  +#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128
+  +#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0
+  +#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192
+  +#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192
+  +#255#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192
+  +#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0
+  ,#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#128#255#0#0#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#128#255#0#0#128#255#0#0#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#128#255#0#0#128#255#128#128#128#255#128#128#128#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#0#128#255#0#0#128#255#0#0#128#255
+  +#0#0#128#255#0#0#0#0#0#0#128#255#0#0#128#255#128#128#128#255#128#128#128#255
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128
+  +#128#128#255#0#0#128#255#0#0#128#255#0#0#128#255#0#0#128#255#128#128#128#255
+  +#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#0#128#255#0#0#128#255#0#0#128#255#128
+  +#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#255#0#0#128#255#0#0#128#255#0#0#128#255#0#0
+  +#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#128#255#0#0#128#255#0#0#128#255#128#128#128#255#128#128#128
+  +#255#0#0#128#255#0#0#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#128#255#0#0#128#255#0#0#128#255#128#128#128#255#128#128
+  +#128#255#0#0#0#0#0#0#128#255#0#0#128#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#255#0#0#128#255#0#0#128#255#0#0#128#255
+  +#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#255#0#0#128#255#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#255#0#0#128#255#0#0#128#255#0#0#128#255
+  +#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#255#128#128
+  +#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#255#0#0#128#255#128
+  +#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255
+  +#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192
+  +#192#255#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#128#128#128#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#0#0
+  +#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#0#0
+  +#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#128#128#128
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0#0
+  +#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255
+  +#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192
+  +#192#255#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#192#192#192#255#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255
+  +#192#192#192#255#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#192#192#192
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192
+  ,#192#255#192#192#192#255#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#192
+  +#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0
+  +#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#128
+  +#128#128#255#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#192
+  +#192#192#255#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#192
+  +#192#192#255#192#192#192#255#192#192#192#255#128#128#128#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255
+  +#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192
+  +#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192
+  +#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192
+  +#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192
+  +#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#192
+  +#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0
+  +#0#0#192#192#192#255#192#192#192#255#0#0#0#0#192#192#192#255#192#192#192#255
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192
+  +#255#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#192#192
+  +#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0
+  ,#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192
+  +#192#192#255#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192
+  +#255#192#192#192#255#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192
+  +#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192
+  +#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192
+  +#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255
+  +#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0
+  +#255#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#255#0#0#0
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0#255#0#0#0#0#0#0#0
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0#255#0#0#0#255#0#0
+  +#0#255#0#0#0#0#0#0#0#255#198#198#198#255#0#0#0#255#192#192#192#255#0#0#0#255
+  +#0#0#0#255#192#192#192#255#0#0#0#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#0#0#0#255#0#0#255#255#0#0#0#255#0#0#0#0#0#0#0#255
+  +#198#198#198#255#0#0#0#255#192#192#192#255#192#192#192#255#192#192#192#255#0
+  +#0#0#255#0#0#0#255#192#192#192#255#0#0#0#255#0#0#0#255#192#192#192#255#0#0#0
+  +#255#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#255#198#198#198#255#0#0#0#255#192#192
+  +#192#255#0#0#0#255#0#0#0#255#192#192#192#255#0#0#0#255#0#0#0#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#0#0#0#255#255#255#255#255#0#0#0#255#0#0
+  +#0#0#0#0#0#255#198#198#198#255#0#0#0#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#0#0#0#255#0#0#0#255#192#192#192#255#0#0#0#255#0#0#0#255#192#192
+  +#192#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#255#198#198#198#255#0#0
+  +#0#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0
+  +#255#0#0#0#255#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0#255#0
+  +#255#255#255#0#0#0#255#0#0#0#0#0#0#0#255#198#198#198#255#0#0#0#255#192#192
+  +#192#255#0#0#0#255#0#0#0#255#192#192#192#255#0#0#0#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#0#0#0#255#0#0#0#255#0#0#0#255#0
+  +#0#0#0#0#0#0#255#198#198#198#255#0#0#0#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#0#0#0#255#0#0#0#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#0#0#0#255#255#255#0#255#0#0#0#255#0#0#0#0#0#0#0#255
+  +#198#198#198#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#192#192#192#255#0#0
+  +#0#255#192#192#192#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0
+  +#0#255#0#0#0#0#0#0#0#255#198#198#198#255#132#132#132#255#132#132#132#255#132
+  +#132#132#255#132#132#132#255#0#0#0#255#0#0#0#255#0#0#0#255#132#132#132#255
+  +#132#132#132#255#132#132#132#255#132#132#132#255#198#198#198#255#0#0#0#255#0
+  +#0#0#0#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255
+  +#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#255#0#0#0#255#0#0#0#0#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0
+  +#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#255#0#0#0#255#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  ,#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#128#0#0#255#0#0#0#255#128#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#0#0
+  +#255#0#0#0#0#128#0#0#255#128#0#0#255#128#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#0#0#255#128#0#0#255#128#0#0
+  +#255#0#0#0#0#128#0#0#255#0#0#0#0#0#0#0#0#128#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#0#0#255#0#0#0#0#0#0#0#0#128#0#0#255#0#0
+  +#0#0#128#0#0#255#0#0#0#0#0#0#0#0#128#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#128#0#0#255#0#0#0#0#0#0#0#0#128#0#0#255#0#0#0#0#128
+  +#0#0#255#0#0#0#0#0#0#0#0#128#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#128#0#0#255#0#0#0#0#0#0#0#0#128#0#0#255#0#0#0#0#0#0#0#0#128
+  +#0#0#255#128#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#128#0#0#255#128#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#128#128#128#255#255#0#255#0#128#128#128#255#255#0#255#0
+  +#128#128#128#255#255#0#255#0#128#128#128#255#255#0#255#0#128#128#128#255#255
+  +#0#255#0#128#128#128#255#255#0#255#0#128#128#128#255#255#0#255#0#128#128#128
+  +#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128#255#128#128#128#255
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#255#0#255#0#255#0
+  +#255#0#255#0#255#0#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128#255#128#128#128
+  +#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#0#0#0#255#255
+  +#0#255#0#0#0#0#255#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#0#0#0#255#255#0#255#0#0#0#0#255#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128#255#128#128#128
+  +#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#0
+  +#0#0#255#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128#255#128
+  +#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128
+  +#0#0#255#0#0#0#255#128#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#128#0#0#255#255#0#255#0#128#0#0#255#128
+  +#0#0#255#128#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128
+  +#128#255#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#128#0#0#255#128
+  +#0#0#255#128#0#0#255#255#0#255#0#128#0#0#255#255#0#255#0#255#0#255#0#128#0#0
+  +#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#128#0#0#255#255#0#255#0#255#0#255#0#128#0#0#255#255#0#255#0#128
+  +#0#0#255#255#0#255#0#255#0#255#0#128#0#0#255#255#0#255#0#255#0#255#0#255#0
+  +#255#0#128#128#128#255#128#128#128#255#255#0#255#0#255#0#255#0#128#0#0#255
+  +#255#0#255#0#255#0#255#0#128#0#0#255#255#0#255#0#128#0#0#255#255#0#255#0#255
+  +#0#255#0#128#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#128#0#0#255#255#0#255#0#255#0#255#0#128#0#0
+  +#255#255#0#255#0#255#0#255#0#128#0#0#255#128#0#0#255#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#128#128#128#255#128#128#128#255#128#128#128#255#255
+  +#0#255#0#255#0#255#0#128#0#0#255#128#0#0#255#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#128#128#128#255#128#128#128#255#255#0#255#0#128#128#128#255
+  +#255#0#255#0#128#128#128#255#255#0#255#0#128#128#128#255#255#0#255#0#128#128
+  +#128#255#255#0#255#0#128#128#128#255#255#0#255#0#128#128#128#255#255#0#255#0
+  +#128#128#128#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127
+  +#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127
+  +#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127
+  +#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#255#255#255#255
+  +#255#255#255#255#127#127#127#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  ,#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127#127#127#255#127
+  +#127#127#255#255#255#255#255#255#255#255#255#127#127#127#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#127#127#127#255#127#127#127#255#255#255#255#255#255#255#255#255#127
+  +#127#127#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#127#127#127#255#127#127#127#255#255#255
+  +#255#255#255#255#255#255#127#127#127#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127#127#127
+  +#255#127#127#127#255#255#255#255#255#255#255#255#255#127#127#127#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#127#127#127#255#127#127#127#255#255#255#255#255#255#255#255
+  +#255#127#127#127#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#127#127#127#255#127#127#127#255
+  +#255#255#255#255#255#255#255#255#127#127#127#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127
+  +#127#127#255#127#127#127#255#255#255#255#255#255#255#255#255#127#127#127#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#127#127#127#255#127#127#127#255#255#255#255#255#255
+  +#255#255#255#127#127#127#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#127#127#127#255#127#127
+  +#127#255#255#255#255#255#255#255#255#255#127#127#127#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#127#127#127#255#127#127#127#255#255#255#255#255#255#255#255#255#127#127
+  +#127#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#127#127#127#255#127#127#127#255#255#255#255
+  +#255#255#255#255#255#127#127#127#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127#127#127#255
+  +#127#127#127#255#255#255#255#255#255#255#255#255#127#127#127#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#127#127#127#255#127#127#127#255#255#255#255#255#255#255#255#255
+  +#127#127#127#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#127#127#127#255#127#127#127#255#127
+  +#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255
+  +#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127
+  +#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127
+  +#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127
+  +#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255
+  +#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127
+  +#255#127#127#127#255#127#127#127#255#127#127#127#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#127#127#127#255#255#255#255#255#255#255#255#255#127#127#127#255#127#127#127
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#127#127#127#255#255#255#255#255#255#255#255#255
+  +#127#127#127#255#127#127#127#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127#127#127#255#255
+  +#255#255#255#255#255#255#255#127#127#127#255#127#127#127#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  ,#255#255#127#127#127#255#255#255#255#255#255#255#255#255#127#127#127#255#127
+  +#127#127#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#127#127#127#255#255#255#255#255#255#255
+  +#255#255#127#127#127#255#127#127#127#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127#127#127
+  +#255#255#255#255#255#255#255#255#255#127#127#127#255#127#127#127#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#127#127#127#255#255#255#255#255#255#255#255#255#127#127#127
+  +#255#127#127#127#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#127#127#127#255#255#255#255#255
+  +#255#255#255#255#127#127#127#255#127#127#127#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127
+  +#127#127#255#255#255#255#255#255#255#255#255#127#127#127#255#127#127#127#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#127#127#127#255#255#255#255#255#255#255#255#255#127
+  +#127#127#255#127#127#127#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#127#127#127#255#255#255
+  +#255#255#255#255#255#255#127#127#127#255#127#127#127#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#127#127#127#255#255#255#255#255#255#255#255#255#127#127#127#255#127#127
+  +#127#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#127#127#127#255#255#255#255#255#255#255#255
+  +#255#127#127#127#255#127#127#127#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127#127#127#255
+  +#255#255#255#255#255#255#255#255#127#127#127#255#127#127#127#255#127#127#127
+  +#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127
+  +#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127
+  +#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255
+  +#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127
+  +#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127
+  +#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127
+  +#127#127#255#127#127#127#255#127#127#127#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#127#127#127#255#127#127#127#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127#127
+  +#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127
+  +#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255
+  +#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127
+  +#255#127#127#127#255#127#127#127#255#127#127#127#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#127#127#127#255#127#127#127
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#127#127#127#255#127#127#127#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#127#127#127#255#127#127#127#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  ,#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127#127#127#255#127
+  +#127#127#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#127#127#127#255#127#127#127#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#127#127#127#255#127#127#127#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127#127#127
+  +#255#127#127#127#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#127#127#127#255#127#127#127#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#127#127#127#255#127#127#127#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127
+  +#127#127#255#127#127#127#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#127#127#127#255#127#127#127#255#127#127#127#255#127
+  +#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255
+  +#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127
+  +#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127
+  +#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127
+  +#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255
+  +#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127
+  +#255#127#127#127#255#127#127#127#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#127#127#127#255#127#127#127#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127#127#127#255
+  +#127#127#127#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#127#127#127#255#127#127#127#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#127#127#127#255#127#127#127#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127#127
+  +#127#255#127#127#127#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#127#127#127#255#127#127#127#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#127#127#127#255#127#127#127
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#127#127#127#255#127#127#127#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#127#127#127#255#127#127#127#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  ,#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127#127#127#255#127
+  +#127#127#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127
+  +#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255
+  +#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127
+  +#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#127#127#127
+  +#255#127#127#127#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127
+  +#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127
+  +#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127
+  +#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#0#0#255#255#0#0
+  +#255#255#0#0#255#255#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#0#255#255#0#0#255#255#0#0#255#255#0#0#255#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#0#255#255#0#0#255#255#0#0#255#255#0#0#255#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#255#255#0#0#255#255#0#0
+  +#255#255#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#255
+  +#255#0#0#255#255#0#0#255#255#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#0#255#255#0#0#255#255#0#0#255#255#0#0#255#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#0#255#255#0#0#255#255#0#0#255#255#0#0
+  +#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#255#255#0#0#255
+  +#255#0#0#255#255#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#255#0#0#255#255#0#0#255#255
+  +#0#0#255#255#0#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#255#0#0
+  +#255#255#0#0#255#255#0#0#255#255#0#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#255#0#0#255#255#0#0#255#255#0#0#255#255#0#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#255#0#0#255#255#0#0#255#255#0#0#255#255#0
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#255#0#0#255#255#0#0
+  +#255#255#0#0#255#255#0#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#255#0#0#255#255#0#0#255#255#0#0#255#255#0#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#255#0#0#255#255#0#0#255#255#0#0#255#255#0#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#255#0#0#255#255#0#0#255#255#0#0
+  +#255#255#0#0#255#0#0#255#255#0#0#255#255#0#0#255#255#0#0#255#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#0#255#255#0#0#255#255#0#0#255#255#0#0
+  +#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#255#255#0#0#255
+  +#255#0#0#255#255#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#0#255#255#0#0#255#255#0#0#255#255#0#0#255#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#0#255#255#0#0#255#255#0#0#255#255#0#0#255#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#255#255#0#0#255#255#0#0#255
+  +#255#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#255#255
+  +#0#0#255#255#0#0#255#255#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#0#255#255#0#0#255#255#0#0#255#255#0#0#255#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#255#0#0#255#255#0#0#255#255#0#0#255#255#0#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#255#0#0#255#255#0#0#255#255#0#0#255#255#0#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#255#0#0#255#255#0#0#255#255#0
+  +#0#255#255#0#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#255#0#0
+  +#255#255#0#0#255#255#0#0#255#255#0#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#255#0#0#255#255#0#0#255#255#0#0#255#255#0#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#255#0#0#255#255#0#0#255#255#0#0#255#255#0
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#255#0#0#255#255#0#0
+  +#255#255#0#0#255#255#0#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#255#0#0#255#255#0#0#255#255#0#0#255#255#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128
+  +#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#0#0#0#0#0#0#0
+  ,#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128
+  +#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#0#0#0#0#0
+  +#0#0#0#0#0#0#128#128#128#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#0#0#0#0#0#0#0#128
+  +#128#128#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#0#0#0#128#128#128#255#128
+  +#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128#255#128#128#128#255#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128
+  +#128#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128#255
+  +#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128#255#0#0#0#0#128#128
+  +#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128
+  +#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  ,#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128
+  +#128#128#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128
+  +#255#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128#255#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#255#255#0#255#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#0#255#128#128#128#255#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#255#255#0#255#255#255#0
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#0#255#255#255#0#255#128#128#128
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128
+  +#128#255#255#255#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#0#255#128#128
+  +#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128
+  +#255#128#128#128#255#255#255#0#255#255#255#0#255#0#0#0#0#0#0#0#0#255#255#0
+  +#255#255#255#0#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128#255#128#128#128#255#255
+  +#255#0#255#255#255#0#255#128#128#128#255#128#128#128#255#128#128#128#255#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128
+  +#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128
+  +#128#128#255#0#255#255#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128
+  +#255#0#0#0#0#0#0#0#0#128#128#128#255#0#255#255#255#128#128#128#255#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#255#255#255#128#128#128#255#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#255#255#255#128#128#128
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#255#255#255#128
+  +#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#255#0#0#0#255
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0
+  +#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  ,#0#0#0#0#0#0#0#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0
+  +#0#0#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0
+  +#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0
+  +#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#255#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0
+  +#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0
+  +#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#255#0#0#0#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#255#255#255#255#255#255#255#255#255#255#255#255#255#0#0#0#255#0#0
+  +#0#255#255#255#255#255#255#255#255#255#255#255#255#255#0#0#0#255#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#0#0#0#255#0#0#0#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#0#0#0#255#0#0#0
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#0#0#0
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#255#255#0#0#0#255#0#0
+  +#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#255#255
+  +#255#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#255#255
+  +#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0
+  +#255#255#255#255#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#0#0#0#255#0#0#0
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#0#0#0
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#0#0#0#255#0#0#0#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#255#255#255#255#255#255#255#255#255#255#255#255#255#0#0#0#255#0#0#0
+  ,#255#255#255#255#255#255#255#255#255#255#255#255#255#0#0#0#255#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#255#255#0#0#0#255#0#0#0#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#0#0#0#255#0#0#0
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#255#255#0#0#0
+  +#255#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#255#255#0#0#0#255#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#255#255#255#255#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#255#255#255#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#0
+  +#0#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#0#0#0
+  +#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#0#0#0#255#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255
+  +#255#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0
+  +#255#0#0#0#255#255#255#255#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#255#255#255#255#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0
+  +#0#255#0#0#0#255#0#0#0#255#255#255#255#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#0#0#0#255#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#255#255#255#255#255#0#0#0#255#0#0#0#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#255#255#0#0#0#255#0#0#0#0#0#0#0#0
+  +#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#255#255#255#255#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#255#255#255#255#255#0#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#255#0
+  +#0#0#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0#0
+  +#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255
+  +#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255#192
+  +#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0
+  +#0#0#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  ,#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255
+  +#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0
+  +#0#0#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192
+  +#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192
+  +#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#0#0
+  +#0#0#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192
+  +#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192
+  +#255#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255#192#192
+  +#192#255#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192
+  +#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192
+  +#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192
+  +#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192
+  +#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192
+  +#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192
+  +#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192
+  +#255#192#192#192#255#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192
+  +#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255#192#192#192#255
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255#192#192#192#255#192#192#192#255
+  +#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192
+  +#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192#192#192#255
+  +#192#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192
+  +#192#192#255#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#192#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#192
+  +#192#192#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0'$'#28#237#255#192#192
+  +#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0
+  +#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192
+  +#192#192#0#192#192#192#0#192#192#192#0'$'#28#237#255#192#192#192#0'$'#28#237
+  +#255#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0
+  +#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192
+  +#192#192#0#192#192#192#0'$'#28#237#255#192#192#192#0#192#192#192#0#192#192
+  +#192#0'$'#28#237#255#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0
+  +#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192
+  +#192#192#0'$'#28#237#255#192#192#192#0#192#192#192#0#192#192#192#0#192#192
+  +#192#0#192#192#192#0'$'#28#237#255#192#192#192#0'$'#28#237#255'$'#28#237#255
+  +'$'#28#237#255'$'#28#237#255'$'#28#237#255'$'#28#237#255#192#192#192#0'$'#28
+  +#237#255#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192
+  +#0'$'#28#237#255'$'#28#237#255'$'#28#237#255#192#192#192#0#192#192#192#0#192
+  ,#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0'$'#28#237#255'$'#28#237
+  +#255'$'#28#237#255#192#192#192#0#192#192#192#0#192#192#192#0'$'#28#237#255
+  +#192#192#192#0#192#192#192#0#192#192#192#0'$'#28#237#255#192#192#192#0#192
+  +#192#192#0#192#192#192#0#192#192#192#0'$'#28#237#255#192#192#192#0#192#192
+  +#192#0#192#192#192#0'$'#28#237#255#192#192#192#0'$'#28#237#255#192#192#192#0
+  +#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0'$'#28#237#255#192
+  +#192#192#0#192#192#192#0'$'#28#237#255#192#192#192#0#192#192#192#0#192#192
+  +#192#0#192#192#192#0'$'#28#237#255#192#192#192#0'$'#28#237#255#192#192#192#0
+  +#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0'$'#28
+  +#237#255'$'#28#237#255#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192
+  +#0#192#192#192#0#192#192#192#0'$'#28#237#255'$'#28#237#255#192#192#192#0#192
+  +#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0'$'#28#237
+  +#255'$'#28#237#255#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0
+  +#192#192#192#0#192#192#192#0'$'#28#237#255'$'#28#237#255#192#192#192#0#192
+  +#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0'$'#28#237#255#192#192
+  +#192#0#192#192#192#0'$'#28#237#255#192#192#192#0#192#192#192#0#192#192#192#0
+  +#192#192#192#0'$'#28#237#255#192#192#192#0#192#192#192#0'$'#28#237#255'$'#28
+  +#237#255#192#192#192#0#192#192#192#0'$'#28#237#255#192#192#192#0#192#192#192
+  +#0#192#192#192#0#192#192#192#0'$'#28#237#255#192#192#192#0#192#192#192#0'$'
+  +#28#237#255'$'#28#237#255#192#192#192#0#192#192#192#0#192#192#192#0#192#192
+  +#192#0'$'#28#237#255'$'#28#237#255#192#192#192#0#192#192#192#0#192#192#192#0
+  +#192#192#192#0#192#192#192#0#192#192#192#0'$'#28#237#255'$'#28#237#255#192
+  +#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192
+  +#192#0'$'#28#237#255#192#192#192#0'$'#28#237#255'$'#28#237#255'$'#28#237#255
+  +'$'#28#237#255'$'#28#237#255'$'#28#237#255#192#192#192#0'$'#28#237#255#192
+  +#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0'$'#28#237
+  +#255#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0
+  +#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0'$'#28
+  +#237#255#192#192#192#0#192#192#192#0#192#192#192#0'$'#28#237#255#192#192#192
+  +#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192
+  +#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192
+  +#192#0'$'#28#237#255#192#192#192#0'$'#28#237#255#192#192#192#0#192#192#192#0
+  +#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192
+  +#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192#192#0#192#192
+  +#192#0#192#192#192#0'$'#28#237#255#201#174#255#0#201#174#255#0#201#174#255#0
+  +#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#201
+  +#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#201#174
+  +#255#0#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0
+  +#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#0#0#0#255'!!!'#255
+  +'!!!'#255'!!!'#255'!!!'#255'!!!'#255'!!!'#255'444'#255#0#0#0#255#201#174#255
+  +#0#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#0#0
+  +#0#255#149#149#149#255#207#207#207#255#207#207#207#255#207#207#207#255#207
+  +#207#207#255#207#207#207#255#207#207#207#255#0#0#0#255#0#0#0#255#201#174#255
+  +#0#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#0#0#0#255#149#149
+  +#149#255#186#186#186#255#186#186#186#255#186#186#186#255#186#186#186#255#186
+  +#186#186#255#186#186#186#255#0#0#0#255'ddd'#255#0#0#0#255#201#174#255#0#201
+  +#174#255#0#201#174#255#0#201#174#255#0#0#0#0#255#149#149#149#255#186#186#186
+  +#255#186#186#186#255#186#186#186#255#186#186#186#255#186#186#186#255#186#186
+  +#186#255#0#0#0#255'ddd'#255#147#147#147#255#0#0#0#255#201#174#255#0#201#174
+  +#255#0#201#174#255#0#0#0#0#255#148#148#148#255#186#186#186#255#186#186#186
+  +#255#186#186#186#255#186#186#186#255#186#186#186#255#186#186#186#255#0#0#0
+  +#255'ccc'#255#145#145#145#255#145#145#145#255#0#0#0#255#201#174#255#0#201#174
+  +#255#0#0#0#0#255#146#146#146#255#182#182#182#255#182#182#182#255#182#182#182
+  +#255#182#182#182#255#182#182#182#255#182#182#182#255#0#0#0#255'bbb'#255#142
+  +#142#142#255#142#142#142#255#139#139#139#255#0#0#0#255#201#174#255#0#0#0#0
+  +#255#149#149#149#255#179#179#179#255#179#179#179#255#179#179#179#255#179#179
+  +#179#255#179#179#179#255#179#179#179#255#0#0#0#255'```'#255#140#140#140#255
+  +#140#140#140#255#143#143#143#255#154#154#154#255#0#0#0#255#0#0#0#255'---'#255
+  +'444'#255'444'#255'444'#255'444'#255'444'#255'444'#255#0#0#0#255'XXX'#255#136
+  +#136#136#255#136#136#136#255#139#139#139#255#153#153#153#255#0#0#0#255#201
+  +#174#255#0#0#0#0#255#171#171#171#255#171#171#171#255#171#171#171#255#171#171
+  +#171#255#171#171#171#255#171#171#171#255#171#171#171#255#0#0#0#255#127#127
+  +#127#255#134#134#134#255#137#137#137#255#151#151#151#255#0#0#0#255#201#174
+  +#255#0#201#174#255#0#0#0#0#255#168#168#168#255#168#168#168#255#168#168#168
+  ,#255#168#168#168#255#168#168#168#255#168#168#168#255#168#168#168#255#0#0#0
+  +#255#131#131#131#255#134#134#134#255#149#149#149#255#0#0#0#255#201#174#255#0
+  +#201#174#255#0#201#174#255#0#0#0#0#255#165#165#165#255#165#165#165#255#165
+  +#165#165#255#165#165#165#255#165#165#165#255#165#165#165#255#133#133#133#255
+  +#0#0#0#255#130#130#130#255#145#145#145#255#0#0#0#255#201#174#255#0#201#174
+  +#255#0#201#174#255#0#201#174#255#0#0#0#0#255#161#161#161#255#161#161#161#255
+  +#161#161#161#255#161#161#161#255#161#161#161#255#161#161#161#255'ddd'#255#0#0
+  +#0#255#142#142#142#255#0#0#0#255#201#174#255#0#201#174#255#0#201#174#255#0
+  +#201#174#255#0#201#174#255#0#0#0#0#255#158#158#158#255#158#158#158#255#158
+  +#158#158#255#158#158#158#255#158#158#158#255#158#158#158#255'\\\'#255#0#0#0
+  +#255#0#0#0#255#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#201
+  +#174#255#0#201#174#255#0#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0
+  +#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#201#174#255#0#201#174#255#0#201#174
+  +#255#0#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0
+  +#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#201
+  +#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#201#174
+  +#255#0#201#174#255#0#201#174#255#0#201#174#255#0#201#174#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#160#160#160#255#160#160#160#255#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#160#160#160#255#160#160#160#255#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#160#160#160#255#0#0#0#0#0#0#0
+  +#0#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#160#160#160#255#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#160#160#160#255#160
+  +#160#160#255#0#0#0#0#160#160#160#255#160#160#160#255#0#0#0#0#160#160#160#255
+  +#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255
+  +#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#160#160#160#255#160#160#160#255
+  +#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#160
+  +#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#160#160#160#255#160#160#160#255#160#160#160#255#160#160
+  +#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160
+  +#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255
+  +#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160
+  +#255#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160#160
+  +#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160
+  +#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255#160#160#160#255
+  +#160#160#160#255#160#160#160#255#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#128#128#128
+  +#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128
+  +#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128
+  +#128#128#255#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128
+  +#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255
+  ,#128#128#128#255#128#128#128#255#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#255#255#255#0#128#128#128#255#128#128#128#255#255#255#255#0
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#128#128#128#255#128#128#128#255#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#128#128#128#255#128#128#128#255#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#255#255#255#0#255#255#255#0#128#128#128#255#128#128#128#255
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#128#128#128#255#128#128#128
+  +#255#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#128#128#128#255#128#128
+  +#128#255#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255
+  +#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#128#128#128#255#255#255#255#0#128#128#128#255#128
+  +#128#128#255#255#255#255#0#128#128#128#255#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#128#128#128#255#128#128#128#255#128#128
+  +#128#255#128#128#128#255#128#128#128#255#128#128#128#255#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#128#128#128#255#128#128#128
+  +#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#128
+  +#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#255#255#255#0
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#255#255#255#0#128#128#128#255#128#128#128#255#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128
+  +#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128
+  +#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128#255#128#128
+  +#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128
+  +#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#128#128#128#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#128#128#128#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128
+  +#128#128#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128
+  +#255#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128
+  +#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#0#0#0#0#128#128#128#255#128
+  +#128#128#255#0#0#0#0#128#128#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128#255#128
+  +#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128
+  ,#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128
+  +#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128#255#128#128#128#255#128#128
+  +#128#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#128#128#255#128#128#128#255#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128
+  +#128#255#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#128#128#128#255#128#128#128#255#128#128#128
+  +#255#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128
+  +#128#255#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128
+  +#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128
+  +#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128#255#255
+  +#0#255#0#128#128#128#255#128#128#128#255#255#0#255#0#128#128#128#255#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128
+  +#255#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128#255#128#128#128#255#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#128#128#128#255#128#128#128#255#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128
+  +#255#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128#255#128#128#128#255#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#128#128#128#255#128#128#128#255#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128#255#255#0#255#0#128#128
+  +#128#255#128#128#128#255#255#0#255#0#128#128#128#255#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#128#128#128#255#128#128#128#255#128#128#128#255#128#128
+  +#128#255#128#128#128#255#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128
+  +#128#128#255#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#128#128#128#255#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128#255#128#128
+  ,#128#255#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#128#128#128#255#128#128#128#255#128#128#128#255#255#0
+  +#255#0#255#0#255#0#255#0#255#0#128#128#128#255#128#128#128#255#128#128#128
+  +#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#128#128#128#255#128#128#128#255#128#128#128#255#255
+  +#0#255#0#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128
+  +#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255
+  +#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128
+  +#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128
+  +#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128
+  +#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255
+  +#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#255#0#255#0
+  +#128#128#128#255#128#128#128#255#128#128#128#255#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128
+  +#128#255#128#128#128#255#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0
+  +#128#128#128#255#128#128#128#255#128#128#128#255#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128#255#128#128#128#255
+  +#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#127#127#127#255#127#127#127#255#127#127#127#255#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#127#127#127#255#127#127
+  +#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127
+  +#127#127#255#255#0#255#0#255#0#255#0#255#0#255#0#127#127#127#255#127#127#127
+  +#255#255#0#255#0#255#0#255#0#127#127#127#255#127#127#127#255#127#127#127#255
+  +#127#127#127#255#255#0#255#0#255#0#255#0#255#0#255#0#127#127#127#255#127#127
+  +#127#255#127#127#127#255#127#127#127#255#255#0#255#0#127#127#127#255#127#127
+  +#127#255#255#0#255#0#255#0#255#0#127#127#127#255#127#127#127#255#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#127
+  +#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255
+  +#255#0#255#0#127#127#127#255#127#127#127#255#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#255#0#255
+  +#0#127#127#127#255#127#127#127#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#127#127#127#255#127#127#127#255
+  +#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127
+  +#255#127#127#127#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#127#127#127#255#127#127#127#255
+  +#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127
+  +#255#127#127#127#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#127#127#127#255#127#127#127#255#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#127#127#127#255#127#127#127#255#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#127#127#127#255#127#127#127#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#127#127#127#255#127#127#127#255#255#0#255#0#255#0#255#0#127#127#127#255
+  +#127#127#127#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#127#127#127#255
+  ,#127#127#127#255#255#0#255#0#255#0#255#0#255#0#255#0#127#127#127#255#127#127
+  +#127#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#127#127#127#255#127#127#127#255#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#127#127#127#255#127#127#127#255#127#127
+  +#127#255#127#127#127#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#127
+  +#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#127#127#127#255#127
+  +#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255
+  +#127#127#127#255#127#127#127#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#127#127#127#255#127#127#127#255#127#127#127#255#127#127#127#255#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#0#0
+  +#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255
+  +#0#0#0#255#0#0#0#255#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#0#0#0#255#0#0#0#255
+  +#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0
+  +#255#0#0#0#255#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#0#0#0#255#255#0#255#0
+  +#255#0#255#0#0#0#0#255#0#0#0#255#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#0
+  +#0#255#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#0#0#0#255#0#0
+  +#0#255#0#0#0#255#255#0#255#0#255#0#255#0#0#0#0#255#0#0#0#255#255#0#255#0#255
+  +#0#255#0#255#0#255#0#0#0#0#255#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0
+  +#0#255#0#0#0#255#255#0#255#0#255#0#255#0#0#0#0#255#0#0#0#255#255#0#255#0#255
+  +#0#255#0#255#0#255#0#0#0#0#255#255#0#255#0#0#0#0#255#0#0#0#255#0#0#0#255#0#0
+  +#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#255#0#255#0#0#0#0#255#0#0#0
+  +#255#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#255#0#255#0#255#0#255#0
+  +#255#0#255#0#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#255#0#255#0
+  +#255#0#255#0#0#0#0#255#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0
+  +#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#0
+  +#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#0#0#0#255#0#0#0#255#0
+  +#0#0#255#0#0#0#255#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0
+  +#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0
+  +#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#0#0#255#0#0#0#255#0#0
+  +#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255#0#0#0#255
+  +#0#0#0#255#0#0#0#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#178
+  +#178#178#255#178#178#178#255#178#178#178#255#178#178#178#255#178#178#178#255
+  +#178#178#178#255#178#178#178#255#178#178#178#255#178#178#178#255#178#178#178
+  +#255#178#178#178#255#178#178#178#255#178#178#178#255#178#178#178#255#178#178
+  +#178#255#178#178#178#255#177#177#177#255':::'#255'CCC'#255'KKK'#255'UUU'#255
+  +'```'#255'jjj'#255'ttt'#255#128#128#128#255#138#138#138#255#150#150#150#255
+  +#163#163#163#255#175#175#175#255#184#184#184#255#196#196#196#255#177#177#177
+  +#255#177#177#177#255':::'#255'CCC'#255'KKK'#255'UUU'#255'```'#255'jjj'#255't'
+  +'tt'#255#127#127#127#255#138#138#138#255#150#150#150#255#163#163#163#255#174
+  +#174#174#255#184#184#184#255#196#196#196#255#177#177#177#255#176#176#176#255
+  ,':::'#255'CCC'#255'KKK'#255'UUU'#255'```'#255'jjj'#255'ttt'#255#127#127#127
+  +#255#138#138#138#255#150#150#150#255#163#163#163#255#174#174#174#255#184#184
+  +#184#255#196#196#196#255#176#176#176#255#172#172#172#255'999'#255'CCC'#255'K'
+  +'KK'#255'UUU'#255'___'#255'iii'#255'ttt'#255#127#127#127#255#138#138#138#255
+  +#149#149#149#255#162#162#162#255#174#174#174#255#184#184#184#255#196#196#196
+  +#255#172#172#172#255#167#167#167#255'999'#255'BBB'#255'KKK'#255'UUU'#255'^^^'
+  +#255'iii'#255'ttt'#255#127#127#127#255#138#138#138#255#149#149#149#255#162
+  +#162#162#255#174#174#174#255#184#184#184#255#196#196#196#255#167#167#167#255
+  +#163#163#163#255'999'#255'BBB'#255'KKK'#255'UUU'#255'^^^'#255'iii'#255'ttt'
+  +#255#127#127#127#255#138#138#138#255#149#149#149#255#162#162#162#255#174#174
+  +#174#255#184#184#184#255#196#196#196#255#163#163#163#255#159#159#159#255'999'
+  +#255'AAA'#255'KKK'#255'UUU'#255'^^^'#255'hhh'#255'ttt'#255#127#127#127#255
+  +#138#138#138#255#149#149#149#255#162#162#162#255#174#174#174#255#184#184#184
+  +#255#196#196#196#255#159#159#159#255#154#154#154#255'999'#255'AAA'#255'JJJ'
+  +#255'TTT'#255'^^^'#255'hhh'#255'sss'#255'~~~'#255#138#138#138#255#149#149#149
+  +#255#161#161#161#255#174#174#174#255#184#184#184#255#196#196#196#255#154#154
+  +#154#255#150#150#150#255'999'#255'AAA'#255'JJJ'#255'TTT'#255'^^^'#255'hhh'
+  +#255'sss'#255'~~~'#255#138#138#138#255#149#149#149#255#161#161#161#255#174
+  +#174#174#255#184#184#184#255#196#196#196#255#150#150#150#255#145#145#145#255
+  +'999'#255'AAA'#255'JJJ'#255'TTT'#255'^^^'#255'hhh'#255'sss'#255'~~~'#255#138
+  +#138#138#255#149#149#149#255#161#161#161#255#174#174#174#255#184#184#184#255
+  +#196#196#196#255#145#145#145#255#166#166#166#255#180#180#180#255#180#180#180
+  +#255#180#180#180#255#180#180#180#255#180#180#180#255#180#180#180#255#180#180
+  +#180#255#180#180#180#255#180#180#180#255#180#180#180#255#180#180#180#255#180
+  +#180#180#255#180#180#180#255#180#180#180#255#166#166#166#255#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#128#128#128#255#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#128#128#128
+  +#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128
+  +#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#128#128
+  +#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128
+  +#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255
+  +#128#128#128#255#255#255#255#0#255#255#255#0#255#255#255#0#128#128#128#255
+  +#128#128#128#255#128#128#128#255#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#255#255#255#0#128#128#128#255#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#128#128
+  +#128#255#128#128#128#255#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#128#128#128#255#128#128#128#255#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#128#128#128
+  +#255#128#128#128#255#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#128#128#128#255#128
+  +#128#128#255#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#128#128
+  +#128#255#128#128#128#255#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#128#128#128
+  +#255#128#128#128#255#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0
+  +#128#128#128#255#128#128#128#255#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#128
+  +#128#128#255#128#128#128#255#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#128#128#128#255#128#128#128#255#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#128#128#128#255#128#128#128#255#255#255#255#0#255#255#255#0#255#255
+  +#255#0#255#255#255#0#128#128#128#255#128#128#128#255#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#128#128#128#255#128#128#128#255#255#255#255#0#255#255#255#0
+  ,#255#255#255#0#255#255#255#0#255#255#255#0#128#128#128#255#128#128#128#255
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#128#128#128#255#128#128#128#255#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#128#128#128#255#128#128
+  +#128#255#128#128#128#255#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#128#128#128#255#128#128#128#255#128#128#128#255#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128
+  +#255#128#128#128#255#128#128#128#255#255#255#255#0#255#255#255#0#255#255#255
+  +#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#128#128#128#255#128#128#128#255#128
+  +#128#128#255#128#128#128#255#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255
+  +#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0
+  +#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255
+  +#255#255#0#255#255#255#0#255#255#255#0#255#255#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#128#128#128#255#128#128#128#255#128#128#128#255#128#128#128#255#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128
+  +#128#255#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128#255#255#0#255#0#128
+  +#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#128#128#128#255#255#0#255#0#255#0#255#0#128#128#128#255
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128#255#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128
+  +#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#128#128#128#255#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#128#128#128#255#255#0#255#0#255#0#255#0#128#128
+  +#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#128#128#128#255#255#0#255#0#128#128#128#255#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#128#128#128#255#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#128#128#128#255#128#128#128#255#128#128#128#255
+  +#128#128#128#255#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0
+  +#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255
+  +#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#255#0#0#0#9'T'
+  +'TrayIcon'#9'TrayIcon1'#9'Icon.Data'#10#130#3#0#0'~'#3#0#0#0#0#1#0#1#0#16#16
+  +#0#0#1#0#24#0'h'#3#0#0#22#0#0#0'('#0#0#0#16#0#0#0' '#0#0#0#1#0#24#0#0#0#0#0#0
+  +#3#0#0'd'#0#0#0'd'#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  ,#255#255#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#255#255#255#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255
+  +#255#255#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#255#255#255#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255
+  +#255#255#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#255#255#255#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255
+  +#255#255#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0
+  +#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#255#255#255#0#0#0#0#0#0#255
+  +#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#255#255#255#0#0#0#0#0#0#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255#255
+  +#255#255#255#255#255#255#255#255#255#255#255#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#4'Hint'#6#5'ASTAP'#4'Left'#3
+  +#24#4#3'Top'#3' '#1#0#0#14'TPopupNotifier'#14'PopupNotifier1'#5'Color'#7#8'c'
+  +'lInfoBk'#9'Icon.Data'#10#8#3#0#0#5'TIcon'#254#2#0#0#0#0#1#0#1#0'  '#16#0#0#0
+  +#0#0#232#2#0#0#22#0#0#0'('#0#0#0' '#0#0#0'@'#0#0#0#1#0#4#0#0#0#0#0#128#2#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#128#0#0#128#0#0#0#128#128#0#128
+  +#0#0#0#128#0#128#0#128#128#0#0#128#128#128#0#192#192#192#0#0#0#255#0#0#255#0
+  +#0#0#255#255#0#255#0#0#0#255#0#255#0#255#255#0#0#255#255#255#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#15#255#255#255#255#255#255#255#255#255#255#255#255#240#0#0#15#255
+  +#255#255#255#255#255#255#255#255#255#255#255#240#0#0#15#240#0#0#0#0#15#240#0
+  +#0#0#0#15#240#0#0#15#240#0#0#0#0#15#240#0#0#0#0#15#240#0#0#15#240#0#0#0#0#15
+  +#240#0#0#0#0#15#240#0#0#15#240#0#0#0#0#15#240#0#0#0#0#15#240#0#0#15#240#0#0#0
+  +#0#15#240#0#0#0#0#15#240#0#0#15#240#0#0#0#0#15#240#0#0#0#0#15#240#0#0#15#240
+  +#0#0#0#0#15#240#0#0#0#0#15#240#0#0#15#240#0#0#0#0#15#240#0#0#0#0#15#240#0#0
+  +#15#240#0#0#0#0#15#240#0#0#0#0#15#240#0#0#15#240#0#0#0#0#15#240#0#0#0#0#15
+  +#240#0#0#15#240#0#0#0#0#15#255#255#255#255#255#255#240#0#0#15#240#0#0#0#0#15
+  +#255#255#255#255#255#255#240#0#0#15#240#0#0#0#0#0#0#0#0#0#0#15#240#0#0#15#240
+  +#0#0#0#0#0#0#0#0#0#0#15#240#0#0#15#240#0#0#0#0#0#0#0#0#0#0#15#240#0#0#15#240
+  +#0#0#0#0#0#0#0#0#0#0#15#240#0#0#15#240#0#0#0#0#0#0#0#0#0#0#15#240#0#0#15#240
+  +#0#0#0#0#0#0#0#0#0#0#15#240#0#0#15#240#0#0#0#0#0#0#0#0#0#0#15#240#0#0#15#240
+  +#0#0#0#0#0#0#0#0#0#0#15#240#0#0#15#240#0#0#0#0#0#0#0#0#0#0#15#240#0#0#15#240
+  +#0#0#0#0#0#0#0#0#0#0#15#240#0#0#15#255#255#255#255#255#255#255#255#255#255
+  +#255#255#240#0#0#15#255#255#255#255#255#255#255#255#255#255#255#255#240#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0
+  +#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#0#4'Text'#6#4'Text'#5'Title'#6#24
+  +'ASTAP astrometric solver'#7'Visible'#8#4'Left'#3'h'#4#3'Top'#3' '#1#0#0#16
+  +'TSimpleIPCServer'#16'SimpleIPCServer1'#6'Active'#8#8'ServerID'#6#5'astap'#6
+  +'Global'#9#15'OnMessageQueued'#7#29'SimpleIPCServer1MessageQueued'#8'Threade'
+  +'d'#8#4'Left'#3#192#4#3'Top'#3' '#1#0#0#10'TPopupMenu'#17'PopupMenu_ra_dec1'
+  +#4'Left'#3'h'#4#3'Top'#3#208#0#0#9'TMenuItem'#13'radec_search1'#7'Caption'#6
+  +#15'Search database'#4'Hint'#6'%Search for a deepsky object position.'#7'OnC'
+  +'lick'#7#18'radec_search1Click'#0#0#9'TMenuItem'#11'radec_copy1'#7'Caption'#6
+  +#4'Copy'#7'OnClick'#7#16'radec_copy1Click'#0#0#9'TMenuItem'#12'radec_paste1'
+  +#7'Caption'#6#5'Paste'#7'OnClick'#7#17'radec_paste1Click'#0#0#0#10'TPopupMen'
+  +'u'#15'PopupMenu_memo1'#4'Left'#3#8#3#3'Top'#2'Y'#0#9'TMenuItem'#9'Menufind1'
+  +#7'Caption'#6#4'Find'#8'ShortCut'#3'F@'#7'OnClick'#7#14'Menufind1Click'#0#0#9
+  +'TMenuItem'#13'menufindnext1'#7'Caption'#6#9'Find next'#8'ShortCut'#2'r'#7'O'
+  +'nClick'#7#18'menufindnext1Click'#0#0#9'TMenuItem'#9'menucopy1'#7'Caption'#6
+  ,#4'Copy'#7'OnClick'#7#14'menucopy1Click'#0#0#9'TMenuItem'#9'menupaste'#7'Cap'
+  +'tion'#6#5'Paste'#7'OnClick'#7#14'menupasteClick'#0#0#9'TMenuItem'#11'select'
+  +'_all1'#7'Caption'#6#10'Select all'#8'ShortCut'#3'A@'#7'OnClick'#7#16'select'
+  +'_all1Click'#0#0#9'TMenuItem'#10'MenuItem23'#7'Caption'#6#1'-'#0#0#9'TMenuIt'
+  +'em'#11'selectfont1'#7'Caption'#6#11'Select font'#4'Hint'#6#30'Select an oth'
+  +'er monospace font'#7'OnClick'#7#16'selectfont1Click'#0#0#0#10'TPopupMenu'#15
+  +'PopupMenu_memo2'#4'Left'#3#208#3#3'Top'#3'x'#1#0#9'TMenuItem'#9'Menufind2'#7
+  +'Caption'#6#4'Find'#8'ShortCut'#3'F@'#7'OnClick'#7#14'Menufind1Click'#0#0#9
+  +'TMenuItem'#13'menufindnext2'#7'Caption'#6#9'Find next'#8'ShortCut'#2'r'#7'O'
+  +'nClick'#7#18'menufindnext1Click'#0#0#9'TMenuItem'#9'menucopy2'#7'Caption'#6
+  +#4'Copy'#7'OnClick'#7#14'menucopy1Click'#0#0#9'TMenuItem'#10'menupaste1'#7'C'
+  +'aption'#6#5'Paste'#7'OnClick'#7#14'menupasteClick'#0#0#9'TMenuItem'#11'sele'
+  +'ct_all2'#7'Caption'#6#10'Select all'#8'ShortCut'#3'A@'#7'OnClick'#7#16'sele'
+  +'ct_all1Click'#0#0#0#10'TPopupMenu'#20'PopupMenu_histogram1'#4'Left'#3'8'#4#3
+  +'Top'#3'x'#1#0#9'TMenuItem'#30'histogram_values_to_clipboard1'#7'Caption'#6
+  +#24'Copy values to clipboard'#4'Hint'#6'MCopies histogram to the clipboard. '
+  +'The value and red, green, blue pixel count'#7'OnClick'#7'#histogram_values_'
+  +'to_clipboard1Click'#0#0#0#10'TPopupMenu'#16'popupmenu_frame1'#4'Left'#3'X'#4
+  +#3'Top'#3#216#1#0#9'TMenuItem'#7'j2000_1'#9'AutoCheck'#9#7'Caption'#6#5'J200'
+  +'0'#7'Checked'#9#7'OnClick'#7#12'j2000_1Click'#0#0#9'TMenuItem'#9'galactic1'
+  +#9'AutoCheck'#9#7'Caption'#6#8'Galactic'#7'OnClick'#7#14'galactic1Click'#0#0
+  +#0#11'TFontDialog'#11'FontDialog1'#12'Font.CharSet'#7#12'ANSI_CHARSET'#10'Fo'
+  +'nt.Color'#7#7'clBlack'#11'Font.Height'#2#244#9'Font.Name'#6#8'Consolas'#10
+  +'Font.Pitch'#7#7'fpFixed'#12'Font.Quality'#7#7'fqDraft'#10'Font.Style'#11#6
+  +'fsBold'#8'fsItalic'#0#11'MinFontSize'#2#0#11'MaxFontSize'#2#0#7'Options'#11
+  +#9'fdEffects'#16'fdFixedPitchOnly'#16'fdForceFontExist'#10'fdShowHelp'#9'fdW'
+  +'ysiwyg'#0#4'Left'#3'P'#3#3'Top'#2'Y'#0#0#0
+]);

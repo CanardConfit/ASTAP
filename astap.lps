@@ -4,14 +4,13 @@
     <PathDelim Value="\"/>
     <Version Value="11"/>
     <BuildModes Active="Default"/>
-    <Units Count="136">
+    <Units Count="138">
       <Unit0>
         <Filename Value="astap.lpr"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="4"/>
+        <EditorIndex Value="-1"/>
         <CursorPos X="2" Y="24"/>
         <UsageCount Value="200"/>
-        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit0>
       <Unit1>
@@ -20,8 +19,9 @@
         <ComponentName Value="mainwindow"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <TopLine Value="8194"/>
-        <CursorPos Y="8210"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="2305"/>
+        <CursorPos X="13" Y="2318"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -62,11 +62,10 @@
       <Unit5>
         <Filename Value="unit_star_align.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="1"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="125"/>
         <CursorPos Y="133"/>
         <UsageCount Value="201"/>
-        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit5>
       <Unit6>
@@ -216,12 +215,10 @@
       </Unit21>
       <Unit22>
         <Filename Value="unit_astrometric_solving.pas"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="537"/>
         <CursorPos X="23" Y="541"/>
         <UsageCount Value="100"/>
-        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit22>
       <Unit23>
@@ -1148,6 +1145,22 @@
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="LFM"/>
       </Unit135>
+      <Unit136>
+        <Filename Value="C:\Downloads\fpcupdeluxe-1.8.2e\deluxebin\fpcupdeluxe\lazarus\lcl\interfaces\gtk3\gtk3defines.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="19"/>
+        <CursorPos X="3" Y="42"/>
+        <UsageCount Value="10"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
+      </Unit136>
+      <Unit137>
+        <Filename Value="C:\lazarus\lcl\interfaces\gtk3\gtk3widgets.pas"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="2437"/>
+        <CursorPos X="22" Y="2456"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit137>
     </Units>
     <OtherDefines Count="5">
       <Define0 Value="Borland"/>
@@ -1156,166 +1169,123 @@
       <Define3 Value="Compiler6_Up"/>
       <Define4 Value="PUREPASCAL"/>
     </OtherDefines>
-    <JumpHistory Count="30" HistoryIndex="29">
+    <JumpHistory Count="28" HistoryIndex="27">
       <Position1>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="553" Column="19" TopLine="532"/>
+        <Caret Line="11444" TopLine="11417"/>
       </Position1>
       <Position2>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="1515" Column="50" TopLine="1493"/>
+        <Caret Line="763" TopLine="742"/>
       </Position2>
       <Position3>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="11444" TopLine="11417"/>
+        <Caret Line="11444" Column="76" TopLine="11424"/>
       </Position3>
       <Position4>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="763" TopLine="742"/>
+        <Caret Line="11505" TopLine="11484"/>
       </Position4>
       <Position5>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="11444" Column="76" TopLine="11424"/>
+        <Caret Line="1474" TopLine="1453"/>
       </Position5>
       <Position6>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="11505" TopLine="11484"/>
+        <Caret Line="1540" Column="33" TopLine="1534"/>
       </Position6>
       <Position7>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="1474" TopLine="1453"/>
+        <Caret Line="11430" Column="11" TopLine="11405"/>
       </Position7>
       <Position8>
-        <Filename Value="unit_star_align.pas"/>
-        <Caret Line="544" TopLine="542"/>
+        <Filename Value="unit_stack.pas"/>
+        <Caret Line="8177" Column="70" TopLine="8163"/>
       </Position8>
       <Position9>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="1540" Column="33" TopLine="1534"/>
+        <Filename Value="unit_stack.pas"/>
+        <Caret Line="163" Column="12" TopLine="143"/>
       </Position9>
       <Position10>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="11430" Column="11" TopLine="11405"/>
+        <Filename Value="unit_stack.pas"/>
+        <Caret Line="1537" Column="16" TopLine="1502"/>
       </Position10>
       <Position11>
         <Filename Value="unit_stack.pas"/>
-        <Caret Line="8177" Column="70" TopLine="8163"/>
+        <Caret Line="1594" Column="31" TopLine="1560"/>
       </Position11>
       <Position12>
         <Filename Value="unit_stack.pas"/>
-        <Caret Line="163" Column="12" TopLine="143"/>
+        <Caret Line="1635" Column="81" TopLine="1612"/>
       </Position12>
       <Position13>
         <Filename Value="unit_stack.pas"/>
-        <Caret Line="1537" Column="16" TopLine="1502"/>
+        <Caret Line="3020" Column="29" TopLine="2986"/>
       </Position13>
       <Position14>
-        <Filename Value="unit_stack.pas"/>
-        <Caret Line="1594" Column="31" TopLine="1560"/>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="2134" Column="26" TopLine="2131"/>
       </Position14>
       <Position15>
-        <Filename Value="unit_stack.pas"/>
-        <Caret Line="1635" Column="81" TopLine="1612"/>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="9928" Column="8" TopLine="9893"/>
       </Position15>
       <Position16>
-        <Filename Value="unit_stack.pas"/>
-        <Caret Line="3020" Column="29" TopLine="2986"/>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="10034" Column="32" TopLine="10000"/>
       </Position16>
       <Position17>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="2134" Column="26" TopLine="2131"/>
+        <Caret Line="10177" Column="44" TopLine="10155"/>
       </Position17>
       <Position18>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="9928" Column="8" TopLine="9893"/>
+        <Caret Line="6876" Column="103" TopLine="6856"/>
       </Position18>
       <Position19>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="10034" Column="32" TopLine="10000"/>
+        <Filename Value="unit_stack.pas"/>
+        <Caret Line="3031" Column="21" TopLine="3027"/>
       </Position19>
       <Position20>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="10177" Column="44" TopLine="10155"/>
+        <Filename Value="unit_stack.pas"/>
+        <Caret Line="6103" Column="48" TopLine="6100"/>
       </Position20>
       <Position21>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="6876" Column="103" TopLine="6856"/>
+        <Caret Line="8553" Column="2" TopLine="555"/>
       </Position21>
       <Position22>
-        <Filename Value="unit_stack.pas"/>
-        <Caret Line="3031" Column="21" TopLine="3027"/>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="8206" Column="11" TopLine="8181"/>
       </Position22>
       <Position23>
-        <Filename Value="unit_stack.pas"/>
-        <Caret Line="6103" Column="48" TopLine="6100"/>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="31" Column="20" TopLine="10"/>
       </Position23>
       <Position24>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="8553" Column="2" TopLine="555"/>
+        <Caret Line="1019" Column="3" TopLine="999"/>
       </Position24>
       <Position25>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="8206" Column="11" TopLine="8181"/>
+        <Caret Line="8210"/>
       </Position25>
       <Position26>
-        <Filename Value="astap_main.pas"/>
-        <Caret Line="31" Column="20" TopLine="10"/>
+        <Filename Value="C:\lazarus\lcl\interfaces\gtk3\gtk3widgets.pas"/>
+        <Caret Line="2456" Column="22" TopLine="2437"/>
       </Position26>
       <Position27>
         <Filename Value="astap_main.pas"/>
-        <Caret Line="1019" Column="3" TopLine="999"/>
+        <Caret Line="4" Column="170"/>
       </Position27>
       <Position28>
-        <Filename Value="unit_astrometric_solving.pas"/>
-        <Caret Line="565" Column="13" TopLine="462"/>
+        <Filename Value="astap_main.pas"/>
+        <Caret Line="701" Column="152" TopLine="669"/>
       </Position28>
-      <Position29>
-        <Filename Value="unit_astrometric_solving.pas"/>
-        <Caret Line="482" Column="17" TopLine="462"/>
-      </Position29>
-      <Position30>
-        <Filename Value="unit_astrometric_solving.pas"/>
-        <Caret Line="557" Column="55" TopLine="537"/>
-      </Position30>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
       <Modes Count="0" ActiveMode="default"/>
     </RunParams>
   </ProjectSession>
-  <Debugging>
-    <BreakPoints Count="2">
-      <Item1>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-        <Source Value="astap_main.pas"/>
-        <Line Value="6775"/>
-      </Item1>
-      <Item2>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-        <Source Value="astap_main.pas"/>
-        <Line Value="11450"/>
-      </Item2>
-    </BreakPoints>
-    <Watches Count="5">
-      <Item1>
-        <Expression Value="filename2"/>
-      </Item1>
-      <Item2>
-        <Expression Value="reader_position"/>
-      </Item2>
-      <Item3>
-        <Expression Value="field"/>
-      </Item3>
-      <Item4>
-        <Expression Value="tbcol[k]"/>
-      </Item4>
-      <Item5>
-        <Expression Value="starlist2[0]"/>
-      </Item5>
-    </Watches>
-  </Debugging>
 </CONFIG>
