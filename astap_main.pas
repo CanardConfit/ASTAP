@@ -2333,7 +2333,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.456a, '+about_message4+', dated 2020-11-25';
+  #13+#10+'ASTAP version ß0.9.458, '+about_message4+', dated 2020-11-27';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -10124,38 +10124,53 @@ begin
 
             if ((hfd1<=30) and (snr>30) and (hfd1>hfd_min) ) then
             begin
-              if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);
-              if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
-
-  //            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-  //            mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
-
-
               diam:=round(3*hfd1);{for marking area}
               for j:=fitsY to fitsY+diam do {mark the whole star area as surveyed}
                 for i:=fitsX-diam to fitsX+diam do
                   if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
                     img_temp[0,i,j]:=1;
 
-              {store values}
-              hfdlist[nhfd]:=hfd1;
-              starlistXY[0,nhfd]:=starX; {store star position in image coordinates, not FITS coordinates}
-              starlistXY[1,nhfd]:=starY;
-              inc(nhfd); if nhfd>=length(hfdlist) then
-              begin
-                SetLength(hfdlist,nhfd+100); {adapt length if required and store hfd value}
-                SetLength(starlistXY,2,nhfd+100);{adapt array size if required}
-              end;
+              if ((img_loaded[0,round(xc),round(yc)]<65000) and
+                  (img_loaded[0,round(xc-1),round(yc)]<65000) and
+                  (img_loaded[0,round(xc+1),round(yc)]<65000) and
+                  (img_loaded[0,round(xc),round(yc-1)]<65000) and
+                  (img_loaded[0,round(xc),round(yc+1)]<65000) and
 
-              if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))<sqr(0.25)*(sqr(width2 div 2)+sqr(height2 div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
-              else
+                  (img_loaded[0,round(xc-1),round(yc-1)]<65000) and
+                  (img_loaded[0,round(xc-1),round(yc+1)]<65000) and
+                  (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
+                  (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
               begin
-                if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))>sqr(0.75)*(sqr(width2 div 2)+sqr(height2 div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
 
-                if ( (starX<(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
-                if ( (starX>(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
-                if ( (starX<(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+100);        end;
-                if ( (starX>(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
+                if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);
+                if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
+
+    //            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+    //            mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+
+
+
+                {store values}
+                hfdlist[nhfd]:=hfd1;
+                starlistXY[0,nhfd]:=starX; {store star position in image coordinates, not FITS coordinates}
+                starlistXY[1,nhfd]:=starY;
+                inc(nhfd); if nhfd>=length(hfdlist) then
+                begin
+                  SetLength(hfdlist,nhfd+100); {adapt length if required and store hfd value}
+                  SetLength(starlistXY,2,nhfd+100);{adapt array size if required}
+                end;
+
+                if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))<sqr(0.25)*(sqr(width2 div 2)+sqr(height2 div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
+                else
+                begin
+                  if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))>sqr(0.75)*(sqr(width2 div 2)+sqr(height2 div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
+
+                  if ( (starX<(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
+                  if ( (starX>(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
+                  if ( (starX<(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+100);        end;
+                  if ( (starX>(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
+                end;
+
               end;
             end;
           end;

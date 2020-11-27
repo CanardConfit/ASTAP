@@ -17,7 +17,7 @@ implementation
 
 procedure plot(nr:integer;hfd_values: hfd_array);
 var
-    i,size,fitsx,fitsY,x,y,x2,y2,nr2,w,h,scaledown,max_value,col : integer;
+    i,size,fitsx,fitsY,x,y,x2,y2,nr2,w,h,scaledown,min_value,max_value,col : integer;
     img_hfd: image_array;
     zeros_left : boolean;
     variance,mean,diff   : single;
@@ -62,6 +62,7 @@ begin
 
   size:=0;
   max_value:=0;
+  min_value:=65535;
   repeat
     zeros_left:=false;
     for i:=0 to nr2-1 do
@@ -70,6 +71,7 @@ begin
       if col>130 then {hfd>1.3}
       begin
         if max_value<col then max_value:=col;
+        if min_value>col then min_value:=col;
         for x:=-size to size do
         for y:=-size to size do
         if round(sqrt(sqr(x)+sqr(y)))=size then
@@ -96,9 +98,12 @@ begin
     for fitsX:=0 to width2-1 do
       img_loaded[0,fitsX,fitsY]:={img_loaded[0,fitsX,fitsY]}+img_hfd[0,fitsX div scaledown,fitsY div scaledown];
 
-  cblack:=0;
+
+  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+
+  cblack:=min_value;
   cwhite:=max_value;
-  mainwindow.minimum1.position:=0;
+  mainwindow.minimum1.position:=min_value;
   mainwindow.maximum1.position:=max_value;
 
   plot_fits(mainwindow.image1,false,true);
@@ -147,13 +152,24 @@ var
                   img_temp[0,i,j]:=1;
 
             {store values}
+            if ((img_loaded[0,round(xc),round(yc)]<65000) and
+                  (img_loaded[0,round(xc-1),round(yc)]<65000) and
+                  (img_loaded[0,round(xc+1),round(yc)]<65000) and
+                  (img_loaded[0,round(xc),round(yc-1)]<65000) and
+                  (img_loaded[0,round(xc),round(yc+1)]<65000) and
 
-            if nhfd>=length(hfd_values)-1 then
-                SetLength(hfd_values,3,nhfd+100);{adapt length if required}
-            hfd_values[0,nhfd]:=round(xc);
-            hfd_values[1,nhfd]:=round(yc);
-            hfd_values[2,nhfd]:=round(hfd1*100);
-            inc(nhfd);
+                  (img_loaded[0,round(xc-1),round(yc-1)]<65000) and
+                  (img_loaded[0,round(xc-1),round(yc+1)]<65000) and
+                  (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
+                  (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
+            begin
+              if nhfd>=length(hfd_values)-1 then
+                  SetLength(hfd_values,3,nhfd+100);{adapt length if required}
+              hfd_values[0,nhfd]:=round(xc);
+              hfd_values[1,nhfd]:=round(yc);
+              hfd_values[2,nhfd]:=round(hfd1*100);
+              inc(nhfd);
+            end;
           end;
         end;
       end;

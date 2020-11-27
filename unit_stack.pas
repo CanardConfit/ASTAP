@@ -1146,7 +1146,9 @@ begin
   counter:=1; {never divide by zero}
 
   fitsX:=15;
-  stepsize:=round(height2/102);{get about 10000 samples. Use 102 rather then 100 to prevent problems with artifical generated stars which is using repeat of 100}
+  stepsize:=round(height2/100);{get about 10000 samples. Use 102 rather then 100 to prevent problems with artifical generated stars which is using repeat of 100}
+  if odd(stepsize)=false then
+           stepsize:=stepsize+1;{prevent problems with even raw OSC images}
 
   width5:=Length(img2[0]);    {width}
   height5:=Length(img2[0][0]); {height}
