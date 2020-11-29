@@ -2871,6 +2871,7 @@ begin
   listview5.top:=newtop;
   listview6.top:=newtop;
   listview7.top:=newtop;
+  listview8.top:=newtop;
 
   memo2.top:=classify_groupbox1.top+ classify_groupbox1.height+4;{make it High-DPI robust}
   memo2.height:=stackmenu1.Height-memo2.top;{make it High-DPI robust}

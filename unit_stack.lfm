@@ -3186,8 +3186,8 @@ object stackmenu1: Tstackmenu1
     end
     object tab_photometry1: TTabSheet
       Caption = 'Photometry'
-      ClientHeight = 417
-      ClientWidth = 1614
+      ClientHeight = 420
+      ClientWidth = 1610
       ImageIndex = 18
       ParentFont = False
       object browse_photometry1: TButton
@@ -3514,8 +3514,8 @@ object stackmenu1: Tstackmenu1
     end
     object TabSheet1: TTabSheet
       Caption = 'Inspector'
-      ClientHeight = 417
-      ClientWidth = 1614
+      ClientHeight = 420
+      ClientWidth = 1610
       ImageIndex = 17
       object browse_inspector1: TButton
         Left = 32
@@ -3547,7 +3547,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Double click to view image'
         Top = 40
         Width = 1610
-        Align = alBottom
+        Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
         Columns = <        
@@ -3658,7 +3658,7 @@ object stackmenu1: Tstackmenu1
             Caption = 'hfd tr'
             ImageIndex = 14
             MinWidth = 80
-            Width = 256
+            Width = 80
           end>
         GridLines = True
         HideSelection = False

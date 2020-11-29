@@ -2333,7 +2333,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.458, '+about_message4+', dated 2020-11-27';
+  #13+#10+'ASTAP version ß0.9.459, '+about_message4+', dated 2020-11-29';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -11372,7 +11372,7 @@ begin
   if ((blue>=18) {and (blue<=250)} and (red>=18) {and (red<=250)}) then {shall not be saturated or near zero}
   begin
     ratio:=blue/red;
-    if ((ratio>0.04) and (ratio<1.55)) then {between 2000 and 20000 kelvin}
+    if ((ratio>0.04) and (ratio<1.55)) then {valid between 2000 and 20000 kelvin}
     begin
       // y = 4817,4x5 - 4194,2x4 - 7126,7x3 + 12922x2 - 2082,2x + 2189,8
       {blackbody temperature, excel polynom fit based on table, http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html}
@@ -12526,7 +12526,7 @@ begin
       thefile4.writebuffer(fitsbuffer4,width5*4); {write as bytes}
     end;
   end;
-  remain:=round(2880*(1-frac(thefile4.position/2880)));{some program like have a multi of 2880 like astrometry.net}
+  remain:=round(2880*(1-frac(thefile4.position/2880)));{follow standard and only write in a multi of 2880 bytes}
   if ((remain<>0) and (remain<>2880)) then
   begin
     FillChar(fitsbuffer, remain, 0);
