@@ -1445,7 +1445,7 @@ begin
           if (( img_temp2[0,fitsX,fitsY]=0){area not surveyed} and (img[0,fitsX,fitsY]-backgr>detection_level){star}) then {new star. For analyse used sigma is 5, so not too low.}
           begin
             HFD(img,fitsX,fitsY,25 {LARGE box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-            if ((hfd1<=35) and (snr>10) and (hfd1>0.8) {two pixels minimum} ) then
+            if ((hfd1<=35) and (snr>30) and (hfd1>0.8) {two pixels minimum} ) then
             begin
               {store values}
               hfdlist[nhfd]:=hfd1; inc(nhfd); if nhfd>=length(hfdlist) then SetLength(hfdlist,nhfd+500); {adapt length if required and store hfd value}
@@ -1752,7 +1752,6 @@ begin
             ListView1.Items.BeginUpdate;
             try
               begin
-                if hfd_median>=99 then ListView1.Items.item[c].checked:=false; {no stars, can't process this image}
                 ListView1.Items.item[c].subitems.Strings[I_object]:=object_name; {object name, without spaces}
 
 
@@ -1776,10 +1775,13 @@ begin
                 ListView1.Items.item[c].subitems.Strings[I_hfd]:=floattostrF2(hfd_median,0,1);
                 ListView1.Items.item[c].subitems.Strings[I_quality]:=inttostr5(round(hfd_counter/hfd_median)); {quality number of stars divided by hfd}
 
-                ListView1.Items.item[c].subitems.Strings[I_starlevel]:=inttostr5(round(star_level));
-                ListView1.Items.item[c].subitems.Strings[I_background]:=inttostr5(round(backgr));
-
-                ListView1.Items.item[c].subitems.Strings[I_sharpness]:=floattostrF2(image_sharpness(img),1,3); {sharpness test}
+                if hfd_median>=99 then ListView1.Items.item[c].checked:=false {no stars, can't process this image}
+                else
+                begin {image can be futher analysed}
+                  ListView1.Items.item[c].subitems.Strings[I_starlevel]:=inttostr5(round(star_level));
+                  ListView1.Items.item[c].subitems.Strings[I_background]:=inttostr5(round(backgr));
+                  ListView1.Items.item[c].subitems.Strings[I_sharpness]:=floattostrF2(image_sharpness(img),1,3); {sharpness test}
+                end;
 
                 if exposure>=10 then  ListView1.Items.item[c].subitems.Strings[I_exposure]:=inttostr(round(exposure)) {round values above 10 seconds}
                                 else  ListView1.Items.item[c].subitems.Strings[I_exposure]:=floattostrf(exposure,ffgeneral, 6, 6);

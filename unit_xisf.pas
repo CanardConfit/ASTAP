@@ -62,9 +62,13 @@ var
        begin
          inc(b,length(keyword)+length('" value="'));
          c:=posex('"',aline,b); {find end, ignore comment};
+         while aline[b]=#39 do inc(b);{remove any apostrophe}
+         while aline[c-1]=#39 do dec(c);{remove any apostrophe}
          result:=copy(aline,b,c-b); {keyword value}
-       end;
+       end
+       else result:='';
      end;
+
      procedure extract_double_keyword(keyword:string; var value: double);{extract float from XML header}
      var
        keyvalue: string;
@@ -249,8 +253,14 @@ begin
 
   filter_name:=extract_string_keyword('FILTER');
   bayerpat:=extract_string_keyword('BAYERPAT');
-  sitelong:=extract_string_keyword('LONG-OBS');
-  sitelat:=extract_string_keyword('LAT-OBS');
+
+  sitelong:=extract_string_keyword('SITELONG');
+  if sitelong='' then
+    sitelong:=extract_string_keyword('LONG-OBS');
+
+  sitelat:=extract_string_keyword('SITELAT');
+  if sitelat='' then
+    sitelat:=extract_string_keyword('LAT-OBS');
 
 
 
@@ -421,13 +431,9 @@ begin
       end;
     end; {colors naxis3 times}
   end;
-
-///  update_menu(true);{file loaded, update menu for fits and set fits_file:=true}
   close_fits_file;
   unsaved_import:=true;{file is not available for astrometry.net}
   result:=true;
-
-  //mainwindow.memo1.text:=aline;
 end;
 
 

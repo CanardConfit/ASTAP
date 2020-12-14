@@ -2333,7 +2333,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.459, '+about_message4+', dated 2020-11-29';
+  #13+#10+'ASTAP version ß0.9.460, '+about_message4+', dated 2020-12-14';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6265,7 +6265,7 @@ var
 
 begin
   result:=false;{assume failure}
- initstring := Tstringlist.Create;
+  initstring := Tstringlist.Create;
   with initstring do
   begin
     try
