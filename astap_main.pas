@@ -107,6 +107,8 @@ type
     galactic1: TMenuItem;
     MenuItem23: TMenuItem;
     annotate_unknown_stars1: TMenuItem;
+    gaia_star_position1: TMenuItem;
+    j2000d1: TMenuItem;
     northeast1: TMenuItem;
     selectfont1: TMenuItem;
     popupmenu_frame1: TPopupMenu;
@@ -255,8 +257,7 @@ type
     range1: TComboBox;
     PopupMenu1: TPopupMenu;
     Copyposition1: TMenuItem;
-    Copypositioninhrs1: TMenuItem;
-    Copypositioninradians1: TMenuItem;
+    Copypositionindeg1: TMenuItem;
     writeposition1: TMenuItem;
     N7: TMenuItem;
     Enterlabel1: TMenuItem;
@@ -291,6 +292,7 @@ type
     procedure histogram_values_to_clipboard1Click(Sender: TObject);
     procedure imageflipv1Click(Sender: TObject);
     procedure annotate_unknown_stars1Click(Sender: TObject);
+    procedure j2000d1Click(Sender: TObject);
     procedure measuretotalmagnitude1Click(Sender: TObject);
     procedure loadsettings1Click(Sender: TObject);
     procedure localbackgroundequalise1Click(Sender: TObject);
@@ -303,6 +305,7 @@ type
     procedure angular_distance1Click(Sender: TObject);
     procedure j2000_1Click(Sender: TObject);
     procedure galactic1Click(Sender: TObject);
+    procedure gaia_star_position1Click(Sender: TObject);
     procedure northeast1Click(Sender: TObject);
     procedure range1Change(Sender: TObject);
     procedure remove_atmouse1Click(Sender: TObject);
@@ -406,8 +409,7 @@ type
     procedure Undo1Click(Sender: TObject);
     procedure stretch_draw1Click(Sender: TObject);
     procedure Copyposition1Click(Sender: TObject);
-    procedure Copypositioninhrs1Click(Sender: TObject);
-    procedure Copypositioninradians1Click(Sender: TObject);
+    procedure Copypositionindeg1Click(Sender: TObject);
     procedure writeposition1Click(Sender: TObject);
     procedure Enterlabel1Click(Sender: TObject);
     procedure Stackimages1Click(Sender: TObject);
@@ -2333,7 +2335,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.460, '+about_message4+', dated 2020-12-14';
+  #13+#10+'ASTAP version ß0.9.462, '+about_message4+', dated 2020-12-16';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3453,15 +3455,29 @@ function place_marker_radec(str1: string): boolean;{place ra,dec marker in image
 var
   dec_new,SIN_dec_new,COS_dec_new,ra_new,
   SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec,fitsx,fitsy : double;
-  kommapos:integer;
+  kommapos,errorD  :integer;
   error1,error2  : boolean;
 
 begin
   if cd1_1=0 then exit;{no solution to place marker}
 
   kommapos:=pos(',',str1);
-  ra_text_to_radians (copy(str1,1  ,kommapos-1) ,ra_new,error1); {convert ra text to ra0 in radians}
-  dec_text_to_radians(copy(str1,kommapos+1,99) ,dec_new,error2); {convert dec text to dec0 in radians}
+  if kommapos=0 then
+  begin {position in degrees?}
+    kommapos:=pos('d',str1);
+    if kommapos=0 then kommapos:=pos(' ',str1);
+    val(copy(str1,1  ,kommapos-1),ra_new,errorD);
+    ra_new:=ra_new*pi/180;
+    error1:=(errorD<>0);
+    val(copy(str1,kommapos+1,99),dec_new,errorD);
+    dec_new:=dec_new*pi/180;
+    error2:=(errorD<>0);
+  end
+  else
+  begin
+    ra_text_to_radians (copy(str1,1  ,kommapos-1) ,ra_new,error1); {convert ra text to ra0 in radians}
+    dec_text_to_radians(copy(str1,kommapos+1,99) ,dec_new,error2); {convert dec text to dec0 in radians}
+  end;
 
   if ((error1=false) and (error2=false)) then
   begin
@@ -3546,8 +3562,8 @@ begin
   mainwindow.measuretotalmagnitude1.enabled:=yes;{enable popup menu}
   mainwindow.writeposition1.enabled:=yes;{enable popup menu}
   mainwindow.Copyposition1.enabled:=yes;{enable popup menu}
-  mainwindow.Copypositioninhrs1.enabled:=yes;{enable popup menu}
-  mainwindow.Copypositioninradians1.enabled:=yes;{enable popup menu}
+  mainwindow.Copypositionindeg1.enabled:=yes;{enable popup menu}
+  mainwindow.gaia_star_position1.enabled:=yes;{enable popup menu}
 
   stackmenu1.focallength1Exit(nil); {update output calculator}
 end;
@@ -7978,18 +7994,30 @@ begin
    begin
      coord_frame:=0;
      galactic1.checked:=false;
+     j2000d1.checked:=false;
    end;
 end;
 
+procedure Tmainwindow.j2000d1Click(Sender: TObject);
+begin
+  if j2000d1.checked then
+  begin
+    coord_frame:=1;
+    galactic1.checked:=false;
+    j2000_1.checked:=false;
+  end;
+end;
 
 procedure Tmainwindow.galactic1Click(Sender: TObject);
 begin
   if galactic1.checked then
   begin
-    coord_frame:=1;
+    coord_frame:=2;
     j2000_1.checked:=false;
+    j2000d1.checked:=false;
    end;
 end;
+
 
 procedure Tmainwindow.northeast1Click(Sender: TObject);
 begin
@@ -8464,6 +8492,8 @@ const
   Screen.Cursor:= Save_Cursor;
 end;
 
+
+
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
  size, i, starX, starY         : integer;
@@ -8598,7 +8628,7 @@ procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
 begin
   if add_marker_position1.checked then
   begin
-    marker_position:=InputBox('Enter α, δ position seperated by a comma.','23 00 00.0,  89 00 00.0 ',marker_position );
+    marker_position:=InputBox('Enter α, δ position seperated by a comma.','23 00 00.0,  89 00 00.0    or   359.999d 89.999',marker_position );
     if marker_position='' then begin add_marker_position1.checked:=false; exit; end;
 
     add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
@@ -9099,6 +9129,9 @@ var
 begin
   if coord_frame=0 then
     result:=prepare_ra2(ra,': ')+sep+prepare_dec2(dec,'° ')
+  else
+  if coord_frame=1 then
+    result:=floattostrF(ra*180/pi, FFfixed, 0, 8)+'°, '+floattostrF(dec*180/pi, FFfixed, 0, 8)+'°'
   else
   begin
     EQU_GAL(ra,dec,l,b);{equatorial to galactic coordinates}
@@ -10348,7 +10381,7 @@ begin
 end;
 
 
-procedure Tmainwindow.Copypositioninhrs1Click(Sender: TObject);
+procedure Tmainwindow.Copypositionindeg1Click(Sender: TObject);
 var
    Centroid : string;
 begin
@@ -10357,18 +10390,68 @@ begin
 end;
 
 
-procedure Tmainwindow.Copypositioninradians1Click(Sender: TObject);
+procedure calculate_equatorial_mouse_position(fitsx,fitsy : double; var   ram,decm  : double {mouse position});
 var
-   Centroid : string;
+   fits_unsampledX, fits_unsampledY :double;
+   u,v,u2,v2             : double;
+   dRa,dDec,delta,gamma  : double;
+
 begin
-  if object_xc>0 then Centroid:=#9+'(Centroid)' else Centroid:='';
-  Clipboard.AsText:=floattostr(object_raM)+#9+floattostr(object_decM)+Centroid;
+ RAM:=0;DECM:=0;{for case wrong index or CD1_1=0}
+ {DSS polynom solution}
+ if mainwindow.polynomial1.itemindex=2 then {DSS survey}
+ begin
+ { Convert from image subsampled pixels position to unsampled pixel position }
+   fits_unsampledX:=subsamp*(fitsX-0.5)+0.5;
+   fits_unsampledY:=subsamp*(fitsY-0.5)+0.5;
+                 //{fits (1,1)+subsamp of 2x =>(eqv unsampled 1,5,1,5)
+                 //(fits (2,2)+subsamp of 2x =>(eqv unsampled 3,5,3,5)
+                 //(fits 1,1)+subsamp of 4x=>(eqv unsampled 2.5,2.5)
+                 //(fits 2,2)+subsamp of 4=>(eqv unsampled 6.5,6.5)
+   dsspos(fits_unsampledX , fits_unsampledY, ram, decm );
+ end
+ else
+ begin {WCS and SIP solutions}
+   if ((mainwindow.Polynomial1.itemindex=1) and (a_order>=2)) then {SIP, Simple Imaging Polynomial use by astrometry.net or spitzer}
+   begin
+     u:=fitsx-crpix1;
+     v:=fitsy-crpix2;
+     u2:=u + a_2_0*u*u + a_0_2*v*v + a_1_1*u*v + a_2_1*u*u*v+ a_1_2*u*v*v + a_3_0*u*u*u + a_0_3*v*v*v; {SIP correction for second or third order}
+     v2:=v + b_2_0*u*u + b_0_2*v*v + b_1_1*u*v + b_2_1*u*u*v+ b_1_2*u*v*v + b_3_0*u*u*u + b_0_3*v*v*v; {SIP correction for second or third order}
+     dRa :=(cd1_1*(u2)+cd1_2*(v2))*pi/180;
+     dDec:=(cd2_1*(u2)+cd2_2*(v2))*pi/180;
+     delta:=cos(dec0)-dDec*sin(dec0);
+     gamma:=sqrt(dRa*dRa+delta*delta);
+
+     ram:=ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
+     if ram<0 then ram:=ram+2*pi;
+     if ram>pi*2 then ram:=ram-pi*2;
+     decm:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
+   end
+   else
+   if (mainwindow.Polynomial1.itemindex=0) then
+   begin  {improved new WCS}
+     if cd1_1<>0 then
+     begin
+       dRa :=(cd1_1*(fitsx-crpix1)+cd1_2*(fitsy-crpix2))*pi/180;
+       dDec:=(cd2_1*(fitsx-crpix1)+cd2_2*(fitsy-crpix2))*pi/180;
+       delta:=cos(dec0)-dDec*sin(dec0);
+       gamma:=sqrt(dRa*dRa+delta*delta);
+
+       ram:=ra0+arctan2(Dra,delta); {arctan2 is required for images containing celestial pole}
+       if ram<0 then ram:=ram+2*pi;
+       if ram>pi*2 then ram:=ram-pi*2;
+       decm:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
+     end;
+   end;
+ end;{WCS solution}
 end;
 
 
 procedure Tmainwindow.CropFITSimage1Click(Sender: TObject);
-var fitsX,fitsY,dum : integer;
-   Save_Cursor:TCursor;
+var fitsX,fitsY,dum       : integer;
+    ra_c,dec_c, ra_n,dec_n,ra_m, dec_m, delta_ra   : double;
+    Save_Cursor:TCursor;
 begin
   if ((fits_file=true) and (abs(stopX-startX)>10)and (abs(stopY-starty)>10)) then
   begin
@@ -10407,8 +10490,56 @@ begin
    update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
    update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
 
-   if crpix1<>0 then begin crpix1:=crpix1-startX; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;{adapt reference pixel of plate solution. Is no longer in the middle}
-   if crpix2<>0 then begin crpix2:=crpix2-startY; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
+   {new reference pixel}
+
+
+
+   if cd1_1<>0 then
+   begin
+     {do the rigid method.}
+     calculate_equatorial_mouse_position((startX+stopX)/2,(startY+stopY)/2 , ra_c,dec_c {new center RA, DEC position});
+     //make 1 step in direction crpix1. Do first the two steps because cd1_1, cd2_1..... are required so they have to be updated after the two steps.
+     calculate_equatorial_mouse_position(1+(startX+stopX)/2,(startY+stopY)/2 , ra_n,dec_n {RA, DEC position, one pixel moved in crpix1});
+     //make 1 step in direction crpix2
+     calculate_equatorial_mouse_position((startX+stopX)/2,1+(startY+stopY)/2 , ra_m,dec_m {RA, DEC position, one pixel moved in crpix2});
+
+     delta_ra:=ra_n-ra_c;
+     if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
+     if delta_ra<-pi then delta_ra:=delta_ra-2*pi; {1  -> 359,  -2:=(1-359) -360  }
+     cd1_1:=(delta_ra)*cos(dec_c)*(180/pi);
+     cd2_1:=(dec_n-dec_c)*(180/pi);
+
+     delta_ra:=ra_m-ra_c;
+     if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
+     if delta_ra<-pi then delta_ra:=delta_ra-2*pi; {1  -> 359,  -2:=(1-359) -360  }
+     cd1_2:=(delta_ra)*cos(dec_c)*(180/pi);
+     cd2_2:=(dec_m-dec_c)*(180/pi);
+
+     ra0:=ra_c;
+     dec0:=dec_c;
+     crpix1:=(width2+1)/2;
+     crpix2:=(height2+1)/2;
+
+      new_to_old_WCS;
+
+      update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,ra0*180/pi);
+      update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,dec0*180/pi);
+
+      update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);{adapt reference pixel of plate solution. Is no longer in the middle}
+      update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
+
+      update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
+      update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
+
+      update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
+      update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
+      update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
+      update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+
+      //   Alternative method keeping the old center poistion. Images center outside the image causes problems for image selection in planetarium program
+      //   if crpix1<>0 then begin crpix1:=crpix1-startX; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;{adapt reference pixel of plate solution. Is no longer in the middle}
+      //   if crpix2<>0 then begin crpix2:=crpix2-startY; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
+   end;
 
    Screen.Cursor:=Save_Cursor;
   end;
@@ -10915,61 +11046,54 @@ begin
  {center of gravity found}
 end;
 
-procedure calculate_equatorial_mouse_position(fitsx,fitsy : double; var   ram,decm  : double {mouse position});
+
+procedure Tmainwindow.gaia_star_position1Click(Sender: TObject);
 var
-   fits_unsampledX, fits_unsampledY :double;
-   u,v,u2,v2             : double;
-   dRa,dDec,delta,gamma  : double;
-
+   url,ra8,dec8,sgn,window_size : string;
+   ang_h,ang_w,ra1,ra2,dec1,dec2      : double;
 begin
- RAM:=0;DECM:=0;{for case wrong index or CD1_1=0}
- {DSS polynom solution}
- if mainwindow.polynomial1.itemindex=2 then {DSS survey}
- begin
- { Convert from image subsampled pixels position to unsampled pixel position }
-   fits_unsampledX:=subsamp*(fitsX-0.5)+0.5;
-   fits_unsampledY:=subsamp*(fitsY-0.5)+0.5;
-                 //{fits (1,1)+subsamp of 2x =>(eqv unsampled 1,5,1,5)
-                 // fits (2,2)+subsamp of 2x =>(eqv unsampled 3,5,3,5)
-                 //(fits 1,1)+subsamp of 4x=>(eqv unsampled 2.5,2.5)
-                 //(fits 2,2)+subsamp of 4=>(eqv unsampled 6.5,6.5)
-   dsspos(fits_unsampledX , fits_unsampledY, ram, decm );
- end
- else
- begin {WCS and SIP solutions}
-   if ((mainwindow.Polynomial1.itemindex=1) and (a_order>=2)) then {SIP, Simple Imaging Polynomial use by astrometry.net or spitzer}
-   begin
-     u:=fitsx-crpix1;
-     v:=fitsy-crpix2;
-     u2:=u + a_2_0*u*u + a_0_2*v*v + a_1_1*u*v + a_2_1*u*u*v+ a_1_2*u*v*v + a_3_0*u*u*u + a_0_3*v*v*v; {SIP correction for second or third order}
-     v2:=v + b_2_0*u*u + b_0_2*v*v + b_1_1*u*v + b_2_1*u*u*v+ b_1_2*u*v*v + b_3_0*u*u*u + b_0_3*v*v*v; {SIP correction for second or third order}
-     dRa :=(cd1_1*(u2)+cd1_2*(v2))*pi/180;
-     dDec:=(cd2_1*(u2)+cd2_2*(v2))*pi/180;
-     delta:=cos(dec0)-dDec*sin(dec0);
-     gamma:=sqrt(dRa*dRa+delta*delta);
+ //http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,pmRA,pmDE,Gmag,BPmag,RPmag&-c=86.5812345-10.3456,bm=1x1&-out.max=1000000&BPmag=%3C21.5
 
-     ram:=ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
-     if ram<0 then ram:=ram+2*pi;
-     if ram>pi*2 then ram:=ram-pi*2;
-     decm:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
-   end
-   else
-   if (mainwindow.Polynomial1.itemindex=0) then
-   begin  {improved new WCS}
-     if cd1_1<>0 then
-     begin
-       dRa :=(cd1_1*(fitsx-crpix1)+cd1_2*(fitsy-crpix2))*pi/180;
-       dDec:=(cd2_1*(fitsx-crpix1)+cd2_2*(fitsy-crpix2))*pi/180;
-       delta:=cos(dec0)-dDec*sin(dec0);
-       gamma:=sqrt(dRa*dRa+delta*delta);
+  if ((abs(stopX-startX)<2) and (abs(stopY-startY)<2))then
+  begin
+    if object_xc>0 then {object sync}
+    begin
+      window_size:='&-c.rs=5&-out.max=100&Gmag=<23'; {circle search 5 arcsec}
+    end
+    else
+    begin
+      application.messagebox(pchar('No star lock or No area selected! Place mouse on a star or hold the right mouse button down while selecting an area.'),'',MB_OK);
+      exit;
+    end;
+  end
+  else
+  begin
+    ang_w:=abs(stopX-startX)*cdelt2*3600;{arc sec}
+    ang_h:=abs(stopY-startY)*cdelt2*3600;{arc sec}
 
-       ram:=ra0+arctan2(Dra,delta); {arctan2 is required for images containing celestial pole}
-       if ram<0 then ram:=ram+2*pi;
-       if ram>pi*2 then ram:=ram-pi*2;
-       decm:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
-     end;
-   end;
- end;{WCS solution}
+    calculate_equatorial_mouse_position(startX+1,startY+1,ra1,dec1);{first position}
+    calculate_equatorial_mouse_position(stopX+1,stopY+1,ra2,dec2);{first position}
+    object_raM:=(ra1+ra2)/2; {center position}
+    object_decM:=(dec1+dec2)/2;
+
+    window_size:='&-c.bs='+ floattostr(ang_w)+'/'+floattostr(ang_h)+'&-out.max=300&Gmag=<23';{square box}
+
+    image1.Canvas.Pen.Mode := pmMerge;
+    image1.Canvas.Pen.width :=1;
+    mainwindow.image1.Canvas.Pen.Color:= annotation_color;{clyellow}
+    mainwindow.image1.Canvas.brush.Style:=bsClear;
+    plot_the_annotation(stopX,stopY,startX,startY,0,'','');
+  end;
+
+  str(abs(object_decM*180/pi) :3:10,dec8);
+  if object_decM>=0 then sgn:='+'  else sgn:='-';
+  str(abs(object_raM*180/pi) :3:10,ra8);
+
+
+  //place_marker_radec(ra8+'d '+sgn+dec8);
+
+  url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size;
+  openurl(url);
 end;
 
 
@@ -11574,11 +11698,14 @@ begin
 
    end;
 
+
+   calculate_equatorial_mouse_position(mouse_fitsx,mouse_fitsy,raM,decM);
+   mainwindow.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
+
+
    hfd2:=999;
    HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),14{box size},hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
-
    //mainwindow.caption:=floattostr(mouse_fitsX)+',   '+floattostr(mouse_fitsy)+',         '+floattostr(object_xc)+',   '+floattostr(object_yc);
-
    if ((hfd2<99) and (hfd2>0)) then
    begin
      if hfd2>1 then str(hfd2:0:1,hfd_str) else str(hfd2:0:2,hfd_str);
@@ -11597,15 +11724,14 @@ begin
    end
    else
    begin
-     object_xc:=-999999;
+     object_xc:=-999999;{indicate object_raM is unlocked}
+     object_raM:=raM; {use mouse position instead}
+     object_decM:=decM; {use mouse position instead}
      mainwindow.statusbar1.panels[1].text:='';
 
      local_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean});{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
      mainwindow.statusbar1.panels[2].text:='σ = '+ floattostrf( sd,ffFixed{ ffgeneral}, 4, 1);
    end;
-  calculate_equatorial_mouse_position(mouse_fitsx,mouse_fitsy,raM,decM);
-
-   mainwindow.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
 end;
 
 
