@@ -1,5 +1,5 @@
 object mainwindow: Tmainwindow
-  Left = 189
+  Left = 684
   Height = 616
   Hint = ' '
   Top = 224
@@ -279,7 +279,7 @@ object mainwindow: Tmainwindow
       Visible = False
     end
     object shape_marker2: TShape
-      Left = 104
+      Left = 103
       Height = 31
       Hint = 'reference 2'
       Top = 8
@@ -315,6 +315,21 @@ object mainwindow: Tmainwindow
       Pen.Color = clBlue
       Pen.Mode = pmNotXor
       Pen.Width = 2
+      ShowHint = True
+      Visible = False
+    end
+    object shape_marker4: TShape
+      Left = 272
+      Height = 31
+      Hint = 'Mount'
+      Top = 8
+      Width = 31
+      Enabled = False
+      ParentShowHint = False
+      Pen.Color = clGreen
+      Pen.Mode = pmNotXor
+      Pen.Width = 2
+      Shape = stStar
       ShowHint = True
       Visible = False
     end
@@ -1333,6 +1348,12 @@ object mainwindow: Tmainwindow
         Caption = 'North-East indicator image'
         Hint = 'Show a north-east indicator on the image.'
         OnClick = northeast1Click
+      end
+      object mountposition1: TMenuItem
+        AutoCheck = True
+        Caption = 'Mount position'
+        Hint = 'Shows the mount position in a solved image'
+        OnClick = mountposition1Click
       end
       object MenuItem15: TMenuItem
         Caption = '-'

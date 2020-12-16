@@ -108,6 +108,8 @@ begin
   crota1:=99999;
   ra0:=0;
   dec0:=0;
+  ra_mount:=0;
+  dec_mount:=0;
   cdelt1:=0;
   cdelt2:=0;
   xpixsz:=0;
@@ -300,8 +302,10 @@ begin
 
   extract_double_keyword('CRVAL1',ra0);
   extract_double_keyword('CRVAL2',dec0);
-  if ra0=0 then extract_double_keyword('RA',ra0);
-  if dec0=0 then extract_double_keyword('DEC',dec0);
+  extract_double_keyword('RA',ra_mount);
+  extract_double_keyword('DEC',dec_mount);
+  if ra0=0 then ra0:=ra_mount;
+  if dec0=0 then dec0:=dec_mount;
 
   ra0:=ra0*pi/180; {degrees -> radians}
   dec0:=dec0*pi/180;

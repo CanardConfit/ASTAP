@@ -109,9 +109,11 @@ type
     annotate_unknown_stars1: TMenuItem;
     gaia_star_position1: TMenuItem;
     j2000d1: TMenuItem;
+    mountposition1: TMenuItem;
     northeast1: TMenuItem;
     selectfont1: TMenuItem;
     popupmenu_frame1: TPopupMenu;
+    shape_marker4: TShape;
     Stretchdrawmenu1: TMenuItem;
     stretch_draw_fits1: TMenuItem;
     show_statistics1: TMenuItem;
@@ -306,6 +308,7 @@ type
     procedure j2000_1Click(Sender: TObject);
     procedure galactic1Click(Sender: TObject);
     procedure gaia_star_position1Click(Sender: TObject);
+    procedure mountposition1Click(Sender: TObject);
     procedure northeast1Click(Sender: TObject);
     procedure range1Change(Sender: TObject);
     procedure remove_atmouse1Click(Sender: TObject);
@@ -468,6 +471,7 @@ var
   crota2,crota1                      : double; {image rotation at center in degrees}
   cd1_1,cd1_2,cd2_1,cd2_2 :double;
   ra_radians,dec_radians, pixel_size : double;
+  ra_mount,dec_mount                     : double; {telescope ra,dec}
 
 var
   a_order: integer;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
@@ -548,6 +552,9 @@ const
   shape_marker2_fitsY: double=20;
   shape_marker3_fitsX: double=0;
   shape_marker3_fitsY: double=0;
+  shape_marker4_fitsX: double=0;
+  shape_marker4_fitsY: double=0;
+
 
   commandline_execution : boolean=false;{program executed in command line}
   commandline_log       : boolean=false;{file log request in command line}
@@ -852,6 +859,8 @@ begin
     crota1:=99999;
     ra0:=0;
     dec0:=0;
+    ra_mount:=0;
+    dec_mount:=0;
     cdelt1:=0;
     cdelt2:=0;
     scale:=0; {SGP files}
@@ -1095,9 +1104,15 @@ begin
             if (header[i+5]='2') then  dec0:=validate_double*pi/180; {dec center, read double value}
           end;
           if ((header[i]='R') and (header[i+1]='A')  and (header[i+2]=' ')) then  {ra}
-              if ra0=0 then ra0:=validate_double*pi/180; {ra telescope, read double value only if crval is not available}
+          begin
+            ra_mount:=validate_double*pi/180;
+            if ra0=0 then ra0:=ra_mount; {ra telescope, read double value only if crval is not available}
+          end;
           if ((header[i]='D') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]=' ')) then {dec}
-              if dec0=0 then dec0:=validate_double*pi/180; {ra telescope, read double value only if crval is not available}
+          begin
+            dec_mount:=validate_double*pi/180;
+            if dec0=0 then dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
+          end;
 
           if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='J') and (header[i+3]='C') and (header[i+4]='T')) then  {objctra}
           begin
@@ -1930,6 +1945,8 @@ begin
   crota2:=99999;{just for the case it is not available, make it later zero}
   crota1:=99999;
   ra0:=0;
+  ra_mount:=0;
+  dec_mount:=0;
   dec0:=0;
   cdelt1:=0;
   cdelt2:=0;
@@ -2335,7 +2352,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.462, '+about_message4+', dated 2020-12-16';
+  #13+#10+'ASTAP version ß0.9.463, '+about_message4+', dated 2020-12-16';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3008,14 +3025,95 @@ begin
   end;
 end;
 
-procedure plot_north;{draw arrow north. If cd1_1=0 then clear north arrow}
-const xpos=25;{position arrow}
-      ypos=25;
-      leng=24;{half of length}
+procedure celestial_to_pixel(ra_t,dec_t: double;var fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
+var
+  SIN_dec_t,COS_dec_t,
+  SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec : double;
 
+begin
+  {5. Conversion (RA,DEC) -> (x,y) of reference image}
+  sincos(dec_t,SIN_dec_t,COS_dec_t);{sincos is faster then seperate sin and cos functions}
+  sincos(dec0,SIN_dec_ref,COS_dec_ref);{}
+
+  delta_ra:=ra_t-ra0;
+  sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
+
+  H := SIN_dec_t*sin_dec_ref + COS_dec_t*COS_dec_ref*COS_delta_ra;
+  dRA := (COS_dec_t*SIN_delta_ra / H)*180/pi;
+  dDEC:= ((SIN_dec_t*COS_dec_ref - COS_dec_t*SIN_dec_ref*COS_delta_ra ) / H)*180/pi;
+
+  det:=CD2_2*CD1_1 - CD1_2*CD2_1;
+
+  fitsX:=+CRPIX1  - (CD1_2*dDEC - CD2_2*dRA) / det;
+  fitsY:=+CRPIX2  + (CD1_1*dDEC - CD2_1*dRA) / det;
+end;
+
+
+function place_marker_radec(str1: string): boolean;{place ra,dec marker in image}
+var
+  ra_new,dec_new, fitsx,fitsy : double;
+  kommapos,errorD  :integer;
+  error1,error2  : boolean;
+
+begin
+  if cd1_1=0 then exit;{no solution to place marker}
+
+  kommapos:=pos(',',str1);
+  if kommapos<>0 then
+  begin
+    ra_text_to_radians (copy(str1,1  ,kommapos-1) ,ra_new,error1); {convert ra text to ra0 in radians}
+    dec_text_to_radians(copy(str1,kommapos+1,99) ,dec_new,error2); {convert dec text to dec0 in radians}
+  end
+  else
+  begin {position in hours?}
+    kommapos:=pos('h',str1);
+    if kommapos<>0 then
+    begin
+      val(trim(copy(str1,1  ,kommapos-1)),ra_new,errorD);
+      ra_new:=ra_new*pi/12;
+      error1:=(errorD<>0);
+      val(trim(copy(str1,kommapos+1,99)),dec_new,errorD);
+      dec_new:=dec_new*pi/180;
+      error2:=(errorD<>0);
+    end
+    else
+    begin {position in degrees?}
+      kommapos:=pos('d',str1);
+      if kommapos=0 then kommapos:=pos(' ',str1);
+      val(trim(copy(str1,1  ,kommapos-1)),ra_new,errorD);
+      ra_new:=ra_new*pi/180;
+      error1:=(errorD<>0);
+      val(trim(copy(str1,kommapos+1,99)),dec_new,errorD);
+      dec_new:=dec_new*pi/180;
+      error2:=(errorD<>0);
+    end;
+  end;
+
+  if ((error1=false) and (error2=false)) then
+  begin
+    result:=true;
+    celestial_to_pixel(ra_new,dec_new, fitsX,fitsY); {ra,dec to fitsX,fitsY}
+    shape_marker3_fitsX:=fitsX;
+    shape_marker3_fitsY:=fitsY;
+    show_marker_shape(mainwindow.shape_marker3,0 {rectangle},20,20,10,shape_marker3_fitsX, shape_marker3_fitsY);
+  end
+  else
+  begin
+    mainwindow.shape_marker3.visible:=false;
+    result:=false;
+    beep;
+    exit;
+  end;
+end;
+
+
+procedure plot_north;{draw arrow north. If cd1_1=0 then clear north arrow}
 var
       dra,ddec,
       cdelt1_a, det,x,y :double;
+      xpos, ypos, {position arrow}
+      leng, {half of length}
+      wd,
       flipV, flipH : integer;
       on_image     : boolean;
 begin
@@ -3023,19 +3121,29 @@ begin
   mainwindow.image_north_arrow1.Canvas.brush.color:=clmenu;
   mainwindow.image_north_arrow1.Canvas.rectangle(-1,-1, mainwindow.image_north_arrow1.width+1, mainwindow.image_north_arrow1.height+1);
 
-  if cd1_1=0 then {remove rotation indication and exit}
+  if ((fits_file=false) or (cd1_1=0)) then {remove rotation indication and exit}
   begin
      mainwindow.rotation1.caption:='';
      exit;
   end;
 
+
   on_image:=mainwindow.northeast1.checked;
   mainwindow.rotation1.caption:=floattostrf(crota2, FFfixed, 0, 2)+'°';{show rotation}
 
-  if ((fits_file=false) or (cd1_1=0)) then exit;
-
   mainwindow.image_north_arrow1.Canvas.Pen.Color := clred;
-  if on_image then  mainwindow.image1.canvas.Pen.Color := clred;
+
+  if on_image then
+  begin
+    mainwindow.image1.canvas.Pen.Color := clred;
+  end;
+
+  xpos:=height2 div 50;
+  ypos:=height2 div 50;
+  leng:=height2 div 50;
+  wd:=max(1,height2 div 1000);
+  mainwindow.image1.canvas.Pen.width := wd;
+
 
   if mainwindow.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
   if mainwindow.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
@@ -3054,15 +3162,15 @@ begin
   if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
 
 
-  dRa:=cdelt1_a*-3;
-  dDec:=cdelt1_a*(leng-5);
+  dRa:=cdelt1_a*-3*wd;
+  dDec:=cdelt1_a*(leng-5*wd);
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
   lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
   if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
-  dRa:=cdelt1_a*+3;
-  dDec:=cdelt1_a*(leng-5);
+  dRa:=cdelt1_a*+3*wd;
+  dDec:=cdelt1_a*(leng-5*wd);
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
   lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
@@ -3084,6 +3192,108 @@ begin
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
   lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
   if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
+end;
+
+procedure plot_mount; {plot star where mount is}
+var
+   fitsX,fitsY: double;
+begin
+  //  celestial_to_pixel(ra0,dec0, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+  celestial_to_pixel(ra_mount,dec_mount, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+
+  shape_marker4_fitsX:=FITSX;
+  shape_marker4_fitsY:=FITSY;
+  show_marker_shape(mainwindow.shape_marker4,2 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
+
+end;
+
+procedure plot_large_north_indicator;{draw arrow north. If cd1_1=0 then clear north arrow}
+
+var
+      dra,ddec,
+      cdelt1_a, det,x,y :double;
+      xpos, ypos, {position arrow}
+      leng, {half of length}
+      wd,
+      flipV, flipH : integer;
+      on_image     : boolean;
+begin
+  {clear}
+
+  if ((fits_file=false) or (cd1_1=0)) then exit;
+
+  on_image:=mainwindow.mountposition1.checked;
+
+  if on_image then
+  begin
+    mainwindow.image1.canvas.Pen.Color := clred;
+    mainwindow.shape_marker4.visible:=true;
+  end
+  else
+  begin
+    mainwindow.shape_marker4.visible:=false;
+//    mainwindow.image1.canvas.Pen.Color := clblack;
+    exit;
+  end;
+
+
+  xpos:=round((width2+1)/2);
+  ypos:=round((height2+1)/2);
+  leng:=height2 div 3;
+  wd:=max(2,height2 div 700);
+  mainwindow.image1.canvas.Pen.width := wd;
+
+
+  if mainwindow.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
+  if mainwindow.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
+
+  cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{length of one pixel step to the north}
+
+  moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);
+  if on_image then  moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);
+
+  det:=CD2_2*CD1_1-CD1_2*CD2_1;{this result can be negative !!}
+  dRa:=0;
+  dDec:=cdelt1_a*leng;
+  x := (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
+  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
+
+
+  dRa:=cdelt1_a*-3*wd;
+  dDec:=cdelt1_a*(leng-5*wd);
+  x := (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+
+  dRa:=cdelt1_a*+3*wd;
+  dDec:=cdelt1_a*(leng-5*wd);
+  x := (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  if on_image then  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+
+  dRa:=0;
+  dDec:=cdelt1_a*leng;
+  x := (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+
+
+  moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
+  if on_image then moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
+  dRa:= cdelt1_a*leng/3;
+  dDec:=0;
+  x := (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
+  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
+
+
+  plot_mount;
 end;
 
 
@@ -3292,6 +3502,8 @@ begin
       show_marker_shape(mainwindow.shape_marker2,2 {no change in shape and hint},20,20,10{minimum},shape_marker2_fitsX, shape_marker2_fitsY);
     if mainwindow.shape_marker3.visible then {do this only when visible}
       show_marker_shape(mainwindow.shape_marker3,2 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
+    if mainwindow.shape_marker4.visible then {do this only when visible}
+    show_marker_shape(mainwindow.shape_marker4,2 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
 
      if copy_paste then show_marker_shape(mainwindow.shape_paste1,0 {rectangle},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
 
@@ -3451,67 +3663,6 @@ begin
 end;
 
 
-function place_marker_radec(str1: string): boolean;{place ra,dec marker in image}
-var
-  dec_new,SIN_dec_new,COS_dec_new,ra_new,
-  SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec,fitsx,fitsy : double;
-  kommapos,errorD  :integer;
-  error1,error2  : boolean;
-
-begin
-  if cd1_1=0 then exit;{no solution to place marker}
-
-  kommapos:=pos(',',str1);
-  if kommapos=0 then
-  begin {position in degrees?}
-    kommapos:=pos('d',str1);
-    if kommapos=0 then kommapos:=pos(' ',str1);
-    val(copy(str1,1  ,kommapos-1),ra_new,errorD);
-    ra_new:=ra_new*pi/180;
-    error1:=(errorD<>0);
-    val(copy(str1,kommapos+1,99),dec_new,errorD);
-    dec_new:=dec_new*pi/180;
-    error2:=(errorD<>0);
-  end
-  else
-  begin
-    ra_text_to_radians (copy(str1,1  ,kommapos-1) ,ra_new,error1); {convert ra text to ra0 in radians}
-    dec_text_to_radians(copy(str1,kommapos+1,99) ,dec_new,error2); {convert dec text to dec0 in radians}
-  end;
-
-  if ((error1=false) and (error2=false)) then
-  begin
-    result:=true;
-   {5. Conversion (RA,DEC) -> (x,y) of reference image}
-    sincos(dec_new,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
-    sincos(dec0,SIN_dec_ref,COS_dec_ref);{}
-
-    delta_ra:=ra_new-ra0;
-    sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
-
-    H := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
-    dRA := (COS_dec_new*SIN_delta_ra / H)*180/pi;
-    dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / H)*180/pi;
-
-    det:=CD2_2*CD1_1 - CD1_2*CD2_1;
-
-    fitsX:=+CRPIX1  - (CD1_2*dDEC - CD2_2*dRA) / det;
-    fitsY:=+CRPIX2  + (CD1_1*dDEC - CD2_1*dRA) / det;
-
-    shape_marker3_fitsX:=fitsX;
-    shape_marker3_fitsY:=fitsY;
-    show_marker_shape(mainwindow.shape_marker3,0 {rectangle},20,20,10,shape_marker3_fitsX, shape_marker3_fitsY);
-
-  end
-  else
-  begin
-    mainwindow.shape_marker3.visible:=false;
-    result:=false;
-    beep;
-    exit;
-  end;
-end;
-
 
 procedure update_statusbar_section5;{update section 5 with image dimensions in degrees}
 begin
@@ -3664,6 +3815,7 @@ begin
       //mainwindow.dec1change(nil);
     {$ENDIF}
     plot_north;
+    plot_large_north_indicator;
     image1.Repaint;{show borth-east indicator}
 
     update_menu_related_to_solver(true);{update menus section}
@@ -5236,15 +5388,15 @@ begin
 
   if img=mainwindow.image1 then {plotting to mainwindow?}
   begin
-
     {next two could be written more efficient using previous bitmap}
     if mainwindow.Flip_horizontal1.Checked then mainwindow.Flip_horizontal1Click(nil);
     if mainwindow.flip_vertical1.Checked then mainwindow.flip_vertical1Click(nil);
 
     plot_north; {draw arrow or clear indication position north depending on value cd1_1}
-
+    plot_large_north_indicator;
     if mainwindow.add_marker_position1.checked then
       mainwindow.add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
+
 
     mainwindow.statusbar1.panels[5].text:=inttostr(width2)+' x '+inttostr(height2)+' x '+inttostr(naxis3)+'   '+inttostr(nrbits)+' BPP';{give image dimensions and bit per pixel info}
     update_statusbar_section5;{update section 5 with image dimensions in degrees}
@@ -5308,6 +5460,8 @@ begin
   crota1:=99999;
   ra0:=0;
   dec0:=0;
+  ra_mount:=0;
+  dec_mount:=0;
   cdelt1:=0;
   cdelt2:=0;
   xpixsz:=0;
@@ -5601,6 +5755,8 @@ begin
   crota1:=99999;
   ra0:=0;
   dec0:=0;
+  ra_mount:=0;
+  dec_mount:=0;
   cdelt1:=0;
   cdelt2:=0;
   xpixsz:=0;
@@ -5747,6 +5903,8 @@ begin
   crota1:=99999;
   ra0:=0;
   dec0:=0;
+  ra_mount:=0;
+  dec_mount:=0;
   cdelt1:=0;
   cdelt2:=0;
   xpixsz:=0;
@@ -6338,6 +6496,7 @@ begin
     flip_horizontal1.checked:=get_boolean('fliphorizontal',false);
     flip_vertical1.checked:=get_boolean('flipvertical',false);
     northeast1.checked:=get_boolean('north_east',false);
+    mountposition1.checked:=get_boolean('mount_position',false);
     add_marker_position1.checked:=get_boolean('add_marker',false);{popup marker selected?}
 
     stackmenu1.make_osc_color1.checked:=get_boolean('osc_color_convert',false);
@@ -6640,6 +6799,7 @@ begin
     initstring.Values['fliphorizontal']:=BoolStr[flip_horizontal1.checked];
     initstring.Values['flipvertical']:=BoolStr[flip_vertical1.checked];
     initstring.Values['north_east']:=BoolStr[northeast1.checked];
+    initstring.Values['mount_position']:=BoolStr[mountposition1.checked];
 
     initstring.Values['add_marker']:=BoolStr[add_marker_position1.checked];
 
@@ -6879,6 +7039,7 @@ begin
   image1.Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to source
   bmp.Free;
   plot_north; {draw arrow or clear indication position north depending on value cd1_1}
+  plot_large_north_indicator;
 end;
 
 
@@ -7340,7 +7501,7 @@ begin
     update_equalise_background_step(1);{update equalise background menu}
 
     add_recent_file(filename_org);{As last action, add to recent file list.}
-  end;
+   end;
 
   if commandline_execution=false then
   begin
@@ -7402,6 +7563,7 @@ begin
   image1.Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to source
   bmp.Free;
   plot_north; {draw arrow or clear indication position north depending on value cd1_1}
+  plot_large_north_indicator;
 end;
 
 
@@ -7567,6 +7729,8 @@ begin
   end;
   Clipboard.AsText:=info;
 end;
+
+
 
 procedure Tmainwindow.imageflipv1Click(Sender: TObject);
 var
@@ -8021,7 +8185,11 @@ end;
 
 procedure Tmainwindow.northeast1Click(Sender: TObject);
 begin
-  if northeast1.checked then plot_north;
+  if northeast1.checked then
+    plot_north
+  else
+    plot_fits(mainwindow.image1,false,true); {clear indiicator}
+
 end;
 
 
@@ -8628,7 +8796,7 @@ procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
 begin
   if add_marker_position1.checked then
   begin
-    marker_position:=InputBox('Enter α, δ position seperated by a comma.','23 00 00.0,  89 00 00.0    or   359.999d 89.999',marker_position );
+    marker_position:=InputBox('Enter α, δ position in one of the following formats: ','23 00 00.0,  89 00 00.0    or   23.99999h 89.9999999    or    359.999d 89.999',marker_position );
     if marker_position='' then begin add_marker_position1.checked:=false; exit; end;
 
     add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
@@ -8861,6 +9029,7 @@ begin
 
   deepstring := Tstringlist.Create;{for deepsky overlay}
   recent_files:= Tstringlist.Create;
+
 end;
 
 
@@ -9180,6 +9349,12 @@ begin
    begin
      mainwindow.image1.top:=0;
      mainwindow.image1.left:=(mainwindow.panel1.Width - mainwindow.image1.width) div 2;
+
+     {update shapes to new position}
+     if mainwindow.shape_marker3.visible then {do this only when visible}
+       show_marker_shape(mainwindow.shape_marker3,2 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
+     if mainwindow.shape_marker4.visible then {do this only when visible}
+        show_marker_shape(mainwindow.shape_marker4,2 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
    end;
 end;
 
@@ -9213,6 +9388,15 @@ begin
 
   mainwindow.image1.top:=0;
   mainwindow.image1.left:=(mw-w) div 2;
+
+  if fits_file then
+  begin {update positions shapes}
+    if mainwindow.shape_marker3.visible then {do this only when visible}
+      show_marker_shape(mainwindow.shape_marker3,2 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
+    if mainwindow.shape_marker4.visible then {do this only when visible}
+       show_marker_shape(mainwindow.shape_marker4,2 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
+
+  end;
 end;
 
 //procedure stretch_image(w,h: integer);
@@ -11089,11 +11273,17 @@ begin
   if object_decM>=0 then sgn:='+'  else sgn:='-';
   str(abs(object_raM*180/pi) :3:10,ra8);
 
-
-  //place_marker_radec(ra8+'d '+sgn+dec8);
-
   url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size;
   openurl(url);
+end;
+
+procedure Tmainwindow.mountposition1Click(Sender: TObject);
+begin
+  if mountposition1.checked then
+    plot_large_north_indicator
+  else
+    plot_fits(mainwindow.image1,false,true); {clear indiicator}
+
 end;
 
 
@@ -11572,6 +11762,7 @@ begin
        mainwindow.shape_marker1.Top:= mainwindow.shape_marker1.Top+(y-down_y);{normal marker}
        mainwindow.shape_marker2.Top:= mainwindow.shape_marker2.Top+(y-down_y);{normal marker}
        mainwindow.shape_marker3.Top:= mainwindow.shape_marker3.Top+(y-down_y);{normal marker}
+       mainwindow.shape_marker4.Top:= mainwindow.shape_marker4.Top+(y-down_y);{normal marker}
      end;
      if ((down_xy_valid) and (abs(x-down_x)>2)) then
      begin
@@ -11581,6 +11772,7 @@ begin
        mainwindow.shape_marker1.left:= mainwindow.shape_marker1.left+(x-down_x);{normal marker}
        mainwindow.shape_marker2.left:= mainwindow.shape_marker2.left+(x-down_x);{normal marker}
        mainwindow.shape_marker3.left:= mainwindow.shape_marker3.left+(x-down_x);{normal marker}
+       mainwindow.shape_marker4.left:= mainwindow.shape_marker4.left+(x-down_x);{normal marker}
      end;
 
      exit;{no more to do}
