@@ -621,7 +621,7 @@ function floattostrF2(const x:double; width1,decimals1 :word): string;
 procedure DeleteFiles(lpath,FileSpec: string);{delete files such  *.wcs}
 procedure new_to_old_WCS;{convert new style FITsS to old style}
 procedure old_to_new_WCS;{ convert old WCS to new}
-procedure show_marker_shape(shape: TShape;shape_type,w,h,minimum:integer; fitsX,fitsY: double);{show manual alignment shape}
+procedure show_marker_shape(shape: TShape; shape_type,w,h,minimum:integer; fitsX,fitsY: double);{show manual alignment shape}
 procedure create_test_image(type_test : integer);{create an artificial test image}
 function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
 function convert_raw_to_fits(filename7 : string) :boolean;{convert raw file to FITS format}
@@ -2352,7 +2352,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.463, '+about_message4+', dated 2020-12-16';
+  #13+#10+'ASTAP version ß0.9.464, '+about_message4+', dated 2020-12-16';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3056,7 +3056,7 @@ var
   error1,error2  : boolean;
 
 begin
-  if cd1_1=0 then exit;{no solution to place marker}
+  if ((fits_file=false) or (cd1_1=0) or (mainwindow.shape_marker3.visible=false)) then exit;{no solution to place marker}
 
   kommapos:=pos(',',str1);
   if kommapos<>0 then
@@ -3108,6 +3108,68 @@ end;
 
 
 procedure plot_north;{draw arrow north. If cd1_1=0 then clear north arrow}
+const xpos=25;{position arrow}
+      ypos=25;
+      leng=24;{half of length}
+
+var
+      dra,ddec,
+      cdelt1_a, det,x,y :double;
+      flipV, flipH : integer;
+begin
+  {clear}
+  mainwindow.image_north_arrow1.canvas.brush.color:=clmenu;
+  mainwindow.image_north_arrow1.canvas.rectangle(-1,-1, mainwindow.image_north_arrow1.width+1, mainwindow.image_north_arrow1.height+1);
+
+  if ((fits_file=false) or (cd1_1=0)) then {remove rotation indication and exit}
+  begin
+     mainwindow.rotation1.caption:='';
+     exit;
+  end;
+
+  mainwindow.rotation1.caption:=floattostrf(crota2, FFfixed, 0, 2)+'°';{show rotation}
+
+
+  mainwindow.image_north_arrow1.Canvas.Pen.Color := clred;
+
+  if mainwindow.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
+  if mainwindow.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
+
+  cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{length of one pixel step to the north}
+
+  moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);
+  det:=CD2_2*CD1_1-CD1_2*CD2_1;{this result can be negative !!}
+  dRa:=0;
+  dDec:=cdelt1_a*leng;
+  x := (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
+  dRa:=cdelt1_a*-3;
+  dDec:=cdelt1_a*(leng-5);
+  x := (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  dRa:=cdelt1_a*+3;
+  dDec:=cdelt1_a*(leng-5);
+  x := (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  dRa:=0;
+  dDec:=cdelt1_a*leng;
+  x := (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+
+
+  moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
+  dRa:= cdelt1_a*leng/3;
+  dDec:=0;
+  x := (CD1_2*dDEC - CD2_2*dRA) / det;
+  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
+end;
+
+procedure plot_north_on_image;{draw arrow north. If cd1_1=0 then clear north arrow}
 var
       dra,ddec,
       cdelt1_a, det,x,y :double;
@@ -3117,31 +3179,13 @@ var
       flipV, flipH : integer;
       on_image     : boolean;
 begin
-  {clear}
-  mainwindow.image_north_arrow1.Canvas.brush.color:=clmenu;
-  mainwindow.image_north_arrow1.Canvas.rectangle(-1,-1, mainwindow.image_north_arrow1.width+1, mainwindow.image_north_arrow1.height+1);
-
-  if ((fits_file=false) or (cd1_1=0)) then {remove rotation indication and exit}
-  begin
-     mainwindow.rotation1.caption:='';
-     exit;
-  end;
-
-
-  on_image:=mainwindow.northeast1.checked;
-  mainwindow.rotation1.caption:=floattostrf(crota2, FFfixed, 0, 2)+'°';{show rotation}
-
-  mainwindow.image_north_arrow1.Canvas.Pen.Color := clred;
-
-  if on_image then
-  begin
-    mainwindow.image1.canvas.Pen.Color := clred;
-  end;
+  if ((fits_file=false) or (cd1_1=0) or (mainwindow.northeast1.checked=false)) then exit;
 
   xpos:=height2 div 50;
   ypos:=height2 div 50;
   leng:=height2 div 50;
   wd:=max(1,height2 div 1000);
+  mainwindow.image1.canvas.Pen.Color := clred;
   mainwindow.image1.canvas.Pen.width := wd;
 
 
@@ -3150,49 +3194,41 @@ begin
 
   cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{length of one pixel step to the north}
 
-  moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);
-  if on_image then  moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);
-
+  moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);
   det:=CD2_2*CD1_1-CD1_2*CD2_1;{this result can be negative !!}
   dRa:=0;
   dDec:=cdelt1_a*leng;
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
-  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
+  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
 
 
   dRa:=cdelt1_a*-3*wd;
   dDec:=cdelt1_a*(leng-5*wd);
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
-  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
   dRa:=cdelt1_a*+3*wd;
   dDec:=cdelt1_a*(leng-5*wd);
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
-  if on_image then  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
   dRa:=0;
   dDec:=cdelt1_a*leng;
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
-  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
-
-  moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
-  if on_image then moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
+  moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
   dRa:= cdelt1_a*leng/3;
   dDec:=0;
   x := (CD1_2*dDEC - CD2_2*dRA) / det;
   y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
-  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
+  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
 end;
+
 
 procedure plot_mount; {plot star where mount is}
 var
@@ -3203,44 +3239,39 @@ begin
 
   shape_marker4_fitsX:=FITSX;
   shape_marker4_fitsY:=FITSY;
-  show_marker_shape(mainwindow.shape_marker4,2 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
+
+  show_marker_shape(mainwindow.shape_marker4,2 {activate},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
 
 end;
 
 procedure plot_large_north_indicator;{draw arrow north. If cd1_1=0 then clear north arrow}
 
 var
-      dra,ddec,
-      cdelt1_a, det,x,y :double;
-      xpos, ypos, {position arrow}
-      leng, {half of length}
-      wd,
-      flipV, flipH : integer;
-      on_image     : boolean;
+  dra,ddec,cdelt1_a, det,x,y,
+  xpos, ypos   :double;
+
+  leng, {half of length}
+  wd,i,j,
+  flipV, flipH : integer;
+    on_image     : boolean;
+const
+      size=7;
 begin
   {clear}
 
-  if ((fits_file=false) or (cd1_1=0)) then exit;
-
-  on_image:=mainwindow.mountposition1.checked;
-
-  if on_image then
+  if ((fits_file=false) or (cd1_1=0) or (mainwindow.mountposition1.checked=false)) then
   begin
-    mainwindow.image1.canvas.Pen.Color := clred;
-    mainwindow.shape_marker4.visible:=true;
-  end
-  else
-  begin
-    mainwindow.shape_marker4.visible:=false;
-//    mainwindow.image1.canvas.Pen.Color := clblack;
+    mainwindow.shape_marker4.visible:=false;{could be visible from previous image}
     exit;
   end;
 
+  mainwindow.image1.canvas.Pen.Color := clred;
 
-  xpos:=round((width2+1)/2);
-  ypos:=round((height2+1)/2);
+  xpos:=-1+(width2+1)/2;{fits coordinates -1}
+  ypos:=-1+(height2+1)/2;
   leng:=height2 div 3;
   wd:=max(2,height2 div 700);
+
   mainwindow.image1.canvas.Pen.width := wd;
 
 
@@ -3249,48 +3280,51 @@ begin
 
   cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{length of one pixel step to the north}
 
-  moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);
-  if on_image then  moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);
+  moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);
 
   det:=CD2_2*CD1_1-CD1_2*CD2_1;{this result can be negative !!}
   dRa:=0;
   dDec:=cdelt1_a*leng;
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
-  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
+  x :=-1+(CD1_2*dDEC - CD2_2*dRA) / det;
+  y :=-1+ (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
 
 
-  dRa:=cdelt1_a*-3*wd;
-  dDec:=cdelt1_a*(leng-5*wd);
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
-  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  dRa:=cdelt1_a*-6*wd;
+  dDec:=cdelt1_a*(leng-10*wd);
+  x :=-1+ (CD1_2*dDEC - CD2_2*dRA) / det;
+  y :=-1+ (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
-  dRa:=cdelt1_a*+3*wd;
-  dDec:=cdelt1_a*(leng-5*wd);
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
-  if on_image then  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  dRa:=cdelt1_a*+6*wd;
+  dDec:=cdelt1_a*(leng-10*wd);
+  x :=-1+ (CD1_2*dDEC - CD2_2*dRA) / det;
+  y :=-1+ (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
   dRa:=0;
   dDec:=cdelt1_a*leng;
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
-  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+  x :=-1+ (CD1_2*dDEC - CD2_2*dRA) / det;
+  y :=-1+ (CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
 
-  moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
-  if on_image then moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
+  moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
+
+  mainwindow.histogram1.canvas.rectangle(-1,-1, mainwindow.histogram1.width+1, mainwindow.histogram1.height+1);
+
+//  mainwindow.image1.Canvas.arc(round(xpos)-size,round(ypos)-size,round(xpos)+size,round(ypos)+size,
+//       round(xpos)-size,round(ypos)-size,round(xpos)-size,round(ypos)-size);{draw empty circel without changing background . That means do not cover moon with hyades}
+
   dRa:= cdelt1_a*leng/3;
   dDec:=0;
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
-  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
-  if on_image then lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
+  x := -1+(CD1_2*dDEC - CD2_2*dRA) / det;
+  y := -1+(CD1_1*dDEC - CD2_1*dRA) / det;
+  lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
+
+  for i:= trunc(xpos-1) to  round(xpos+1.00001) do
+  for j:= trunc(ypos-1) to  round(ypos+1.00001) do
+    mainwindow.image1.Canvas.pixels[i,j]:=cllime; {perfect center indication}
 
 
   plot_mount;
@@ -3423,10 +3457,17 @@ begin
   if ((annotated) and (annotations_visible1.checked)) then plot_annotations(0,0,false);
 end;
 
-procedure show_marker_shape(shape: TShape;shape_type,w,h,minimum:integer; fitsX,fitsY: double);{show manual alignment shape}
+procedure show_marker_shape(shape: TShape; shape_type,w,h,minimum:integer; fitsX,fitsY: double);{show manual alignment shape}
 var
    xf,yf,x,y : double;
 begin
+
+  if fits_file=false then exit;
+  if ((shape_type=9{no change})
+     and
+     (shape.visible=false)) then
+     exit;
+
   xF:=(fitsX-0.5)*(mainwindow.image1.width/width2)-0.5; //inverse of  fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
   yF:=-(fitsY-height2-0.5)*(mainwindow.image1.height/height2)-0.5; //inverse of fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
 
@@ -3448,16 +3489,22 @@ begin
      begin
        shape:=stRectangle;
        hint:='no lock';
+       visible:=true;
      end
      else
      if shape_type=1 then {circle}
      begin {good lock on object}
        shape:=stcircle;
        hint:='locked';
+       visible:=true;
+     end
+     else
+     if shape_type=2 then {star}
+     begin {good lock on object}
+       visible:=true;
      end;
-     {else keep as it is}
 
-     visible:=true;
+     {else keep as it is}
   end;
 end;
 
@@ -3496,20 +3543,19 @@ begin
     //mainwindow.caption:=inttostr(mainwindow.image1.width)+' x '+inttostr(mainwindow.image1.height);
 
     {marker}
-    if mainwindow.shape_marker1.visible then {do this only when visible}
-      show_marker_shape(mainwindow.shape_marker1,2 {no change in shape and hint},20,20,10{minimum},shape_marker1_fitsX, shape_marker1_fitsY);
-    if mainwindow.shape_marker2.visible then {do this only when visible}
-      show_marker_shape(mainwindow.shape_marker2,2 {no change in shape and hint},20,20,10{minimum},shape_marker2_fitsX, shape_marker2_fitsY);
-    if mainwindow.shape_marker3.visible then {do this only when visible}
-      show_marker_shape(mainwindow.shape_marker3,2 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
-    if mainwindow.shape_marker4.visible then {do this only when visible}
-    show_marker_shape(mainwindow.shape_marker4,2 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
+      show_marker_shape(mainwindow.shape_marker1,9 {no change in shape and hint},20,20,10{minimum},shape_marker1_fitsX, shape_marker1_fitsY);
+      show_marker_shape(mainwindow.shape_marker2,9 {no change in shape and hint},20,20,10{minimum},shape_marker2_fitsX, shape_marker2_fitsY);
+      show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
+      show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
 
-     if copy_paste then show_marker_shape(mainwindow.shape_paste1,0 {rectangle},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
+     if copy_paste then
+     begin
+       show_marker_shape(mainwindow.shape_paste1,0 {rectangle},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
+     end;
 
     {reference point manual alignment}
     if mainwindow.shape_alignment_marker1.visible then {For manual alignment. Do this only when visible}
-    show_marker_shape(mainwindow.shape_alignment_marker1,2 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
+    show_marker_shape(mainwindow.shape_alignment_marker1,9 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
   end;
 end;
 
@@ -3815,6 +3861,7 @@ begin
       //mainwindow.dec1change(nil);
     {$ENDIF}
     plot_north;
+    plot_north_on_image;
     plot_large_north_indicator;
     image1.Repaint;{show borth-east indicator}
 
@@ -5393,6 +5440,7 @@ begin
     if mainwindow.flip_vertical1.Checked then mainwindow.flip_vertical1Click(nil);
 
     plot_north; {draw arrow or clear indication position north depending on value cd1_1}
+    plot_north_on_image;
     plot_large_north_indicator;
     if mainwindow.add_marker_position1.checked then
       mainwindow.add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
@@ -5406,7 +5454,8 @@ begin
   end;
 
   {do refresh at the end for smooth display, especially for blinking }
-  img.refresh;{important, show update}
+//  img.refresh;{important, show update}
+  img.invalidate;{important, show update. NoTe refresh aligns image to the left!!}
 
   quads_displayed:=false; {displaying quads doesn't require a screen refresh}
 
@@ -7038,8 +7087,13 @@ begin
   end;
   image1.Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to source
   bmp.Free;
-  plot_north; {draw arrow or clear indication position north depending on value cd1_1}
-  plot_large_north_indicator;
+
+  if sender<>nil then {not from plot_fits, redraw required}
+  begin
+    plot_north; {draw arrow or clear indication position north depending on value cd1_1}
+    plot_north_on_image;
+    plot_large_north_indicator;
+  end;
 end;
 
 
@@ -7562,8 +7616,14 @@ begin
   end;
   image1.Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to source
   bmp.Free;
-  plot_north; {draw arrow or clear indication position north depending on value cd1_1}
-  plot_large_north_indicator;
+
+  if sender<>nil then {not from plot_fits, redraw required}
+  begin
+    plot_north; {draw arrow or clear indication position north depending on value cd1_1}
+    plot_north_on_image;
+    plot_large_north_indicator;
+
+  end;
 end;
 
 
@@ -8186,10 +8246,12 @@ end;
 procedure Tmainwindow.northeast1Click(Sender: TObject);
 begin
   if northeast1.checked then
-    plot_north
+  begin
+    plot_north_on_image;
+    image1.refresh;{important, show update}
+  end
   else
     plot_fits(mainwindow.image1,false,true); {clear indiicator}
-
 end;
 
 
@@ -9351,10 +9413,9 @@ begin
      mainwindow.image1.left:=(mainwindow.panel1.Width - mainwindow.image1.width) div 2;
 
      {update shapes to new position}
-     if mainwindow.shape_marker3.visible then {do this only when visible}
-       show_marker_shape(mainwindow.shape_marker3,2 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
-     if mainwindow.shape_marker4.visible then {do this only when visible}
-        show_marker_shape(mainwindow.shape_marker4,2 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
+
+      show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
+      show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
    end;
 end;
 
@@ -9389,14 +9450,11 @@ begin
   mainwindow.image1.top:=0;
   mainwindow.image1.left:=(mw-w) div 2;
 
-  if fits_file then
-  begin {update positions shapes}
-    if mainwindow.shape_marker3.visible then {do this only when visible}
-      show_marker_shape(mainwindow.shape_marker3,2 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
-    if mainwindow.shape_marker4.visible then {do this only when visible}
-       show_marker_shape(mainwindow.shape_marker4,2 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
-
-  end;
+  {update shape positions}
+  show_marker_shape(mainwindow.shape_marker1,9 {no change in shape and hint},20,20,10{minimum},shape_marker1_fitsX, shape_marker1_fitsY);
+  show_marker_shape(mainwindow.shape_marker2,9 {no change in shape and hint},20,20,10{minimum},shape_marker2_fitsX, shape_marker2_fitsY);
+  show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
+  show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
 end;
 
 //procedure stretch_image(w,h: integer);
@@ -10574,7 +10632,7 @@ begin
 end;
 
 
-procedure calculate_equatorial_mouse_position(fitsx,fitsy : double; var   ram,decm  : double {mouse position});
+procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; var   ram,decm  : double {mouse position});
 var
    fits_unsampledX, fits_unsampledY :double;
    u,v,u2,v2             : double;
@@ -10667,10 +10725,6 @@ begin
 
    img_temp:=nil; {free memory}
 
-   plot_fits(mainwindow.image1,true,true);
-
-   image_move_to_center:=true;
-
    update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
    update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
 
@@ -10681,11 +10735,11 @@ begin
    if cd1_1<>0 then
    begin
      {do the rigid method.}
-     calculate_equatorial_mouse_position((startX+stopX)/2,(startY+stopY)/2 , ra_c,dec_c {new center RA, DEC position});
+     sensor_coordinates_to_celestial((startX+stopX)/2,(startY+stopY)/2 , ra_c,dec_c {new center RA, DEC position});
      //make 1 step in direction crpix1. Do first the two steps because cd1_1, cd2_1..... are required so they have to be updated after the two steps.
-     calculate_equatorial_mouse_position(1+(startX+stopX)/2,(startY+stopY)/2 , ra_n,dec_n {RA, DEC position, one pixel moved in crpix1});
+     sensor_coordinates_to_celestial(1+(startX+stopX)/2,(startY+stopY)/2 , ra_n,dec_n {RA, DEC position, one pixel moved in crpix1});
      //make 1 step in direction crpix2
-     calculate_equatorial_mouse_position((startX+stopX)/2,1+(startY+stopY)/2 , ra_m,dec_m {RA, DEC position, one pixel moved in crpix2});
+     sensor_coordinates_to_celestial((startX+stopX)/2,1+(startY+stopY)/2 , ra_m,dec_m {RA, DEC position, one pixel moved in crpix2});
 
      delta_ra:=ra_n-ra_c;
      if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
@@ -10724,6 +10778,10 @@ begin
       //   if crpix1<>0 then begin crpix1:=crpix1-startX; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;{adapt reference pixel of plate solution. Is no longer in the middle}
       //   if crpix2<>0 then begin crpix2:=crpix2-startY; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
    end;
+
+   plot_fits(mainwindow.image1,true,true);
+   image_move_to_center:=true;
+
 
    Screen.Cursor:=Save_Cursor;
   end;
@@ -10932,6 +10990,7 @@ begin
     update_menu_related_to_solver(true); {update menu section related to solver succesfull}
 
     plot_north;
+    plot_north_on_image;
   end;
 end;
 
@@ -11255,8 +11314,8 @@ begin
     ang_w:=abs(stopX-startX)*cdelt2*3600;{arc sec}
     ang_h:=abs(stopY-startY)*cdelt2*3600;{arc sec}
 
-    calculate_equatorial_mouse_position(startX+1,startY+1,ra1,dec1);{first position}
-    calculate_equatorial_mouse_position(stopX+1,stopY+1,ra2,dec2);{first position}
+    sensor_coordinates_to_celestial(startX+1,startY+1,ra1,dec1);{first position}
+    sensor_coordinates_to_celestial(stopX+1,stopY+1,ra2,dec2);{first position}
     object_raM:=(ra1+ra2)/2; {center position}
     object_decM:=(dec1+dec2)/2;
 
@@ -11280,10 +11339,12 @@ end;
 procedure Tmainwindow.mountposition1Click(Sender: TObject);
 begin
   if mountposition1.checked then
-    plot_large_north_indicator
+  begin
+    plot_large_north_indicator;
+    image1.refresh;{important, show update}
+  end
   else
     plot_fits(mainwindow.image1,false,true); {clear indiicator}
-
 end;
 
 
@@ -11303,7 +11364,7 @@ begin
   stopY:=startY;
 
   {default good values}
-  snr:=2;
+  snr:=10;
   hfd2:=2;{just a good value}
 
   {for manual alignment}
@@ -11340,7 +11401,7 @@ begin
       shape_fitsX:=xc+1;{calculate fits positions}
       shape_fitsY:=yc+1;
       listview_add_xy(shape_fitsX,shape_fitsY);{add to list}
-      if snr>1 then shapetype:=1 {circle} else shapetype:=0;{square}
+      if snr>5 then shapetype:=1 {circle} else shapetype:=0;{square}
       show_marker_shape(mainwindow.shape_alignment_marker1,shapetype,20,20,10{minimum},shape_fitsX, shape_fitsY);
     end;
   end
@@ -11858,7 +11919,9 @@ begin
    if mouse_fitsX>width2 then mouse_fitsX:=width2;
 
    if copy_paste then
-        show_marker_shape(mainwindow.shape_paste1,0 {rectangle},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
+   begin
+      show_marker_shape(mainwindow.shape_paste1,0 {rectangle},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
+   end;
    try color1:=ColorToRGB(mainwindow.image1.canvas.pixels[trunc(x*width2/image1.width),trunc(y*height2/image1.height)]); ;except;end;  {note  getpixel(image1.canvas.handle,x,y) doesn't work well since X,Y follows zoom  factor !!!}
 
    if naxis3=3 then {for star temperature}
@@ -11891,7 +11954,7 @@ begin
    end;
 
 
-   calculate_equatorial_mouse_position(mouse_fitsx,mouse_fitsy,raM,decM);
+   sensor_coordinates_to_celestial(mouse_fitsx,mouse_fitsy,raM,decM);
    mainwindow.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
 
 
@@ -11910,7 +11973,7 @@ begin
      end
      else mag_str:='';
 
-     calculate_equatorial_mouse_position(object_xc+1,object_yc+1,object_raM,object_decM);{input in FITS coordinates}
+     sensor_coordinates_to_celestial(object_xc+1,object_yc+1,object_raM,object_decM);{input in FITS coordinates}
      mainwindow.statusbar1.panels[1].text:=prepare_ra2(object_raM,': ')+'   '+prepare_dec2(object_decM,'° ');
      mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', SNR='+snr_str+mag_str;
    end

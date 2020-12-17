@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 684
+  Left = 334
   Height = 616
   Hint = ' '
-  Top = 224
+  Top = 164
   Width = 1343
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -227,7 +227,7 @@ object mainwindow: Tmainwindow
       Height = 264
       Top = 72
       Width = 608
-      Anchors = [akLeft, akRight, akBottom]
+      Anchors = []
       OnMouseDown = Image1MouseDown
       OnMouseEnter = Image1MouseEnter
       OnMouseMove = Image1MouseMove
@@ -1352,7 +1352,7 @@ object mainwindow: Tmainwindow
       object mountposition1: TMenuItem
         AutoCheck = True
         Caption = 'Mount position'
-        Hint = 'Shows the mount position in a solved image'
+        Hint = 'Shows the mount position as a star and a large orientation indicator in the solved image. The center of the image is indicated as  tiny lime coloured square. '
         OnClick = mountposition1Click
       end
       object MenuItem15: TMenuItem

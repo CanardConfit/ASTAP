@@ -779,7 +779,7 @@ begin
     new_to_old_WCS;
     solved_in:=' Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}
 
-    offset_found:=' Offset was '+floattostrF2(sep*180/pi,0,3)+' deg.';
+    offset_found:=' Offset was '+floattostrF2(sep*180/pi,0,3)+' °.'+#9+'  Mount offset  Δα='+floattostrF2((ra_mount-ra0)*cos(dec0)*180/pi,0,5)+'°,  Δδ='+floattostrF2((dec_mount-dec0)*180/pi,0,5)+'°.';
 
     memo2_message('Solution found: '+  prepare_ra(ra0,': ')+#9+prepare_dec(dec0,'° ') +#9+ solved_in+offset_found+#9+' Used stars up to magnitude: '+floattostrF2(mag2/10,0,1) );
     mainwindow.caption:=('Solution found:    '+  prepare_ra(ra0,': ')+'     '+prepare_dec(dec0,'° ')  );

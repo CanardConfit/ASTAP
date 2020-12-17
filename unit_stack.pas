@@ -3030,7 +3030,7 @@ begin
           calstat:=''; {allow manual stack for stacked images in listview1}
           fitsX:=strtofloat2(tl.Items.item[index].subitems.Strings[I_X]);
           fitsY:=strtofloat2(tl.Items.item[index].subitems.Strings[I_Y]);
-          show_marker_shape(mainwindow.shape_alignment_marker1,1 {circle, assume a good lock},20,20,10 {minimum size},fitsX,fitsY);
+          show_marker_shape(mainwindow.shape_alignment_marker1, 1 {circle, assume a good lock},20,20,10 {minimum size},fitsX,fitsY);
         end
         else mainwindow.shape_alignment_marker1.visible:=false;
         if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(0,0,false);{plot any annotations}
@@ -6761,7 +6761,7 @@ begin
         {show alignment marker}
         if (stackmenu1.use_manual_alignment1.checked) then {manual alignment}
         begin
-          show_marker_shape(mainwindow.shape_alignment_marker1,1 {circle, assume a good lock},20,20,10{minimum},strtofloat2(listview1.Items.item[c].subitems.Strings[I_X]),strtofloat2(listview1.Items.item[c].subitems.Strings[I_Y]));
+          show_marker_shape(mainwindow.shape_alignment_marker1, 1 {circle, assume a good lock},20,20,10{minimum},strtofloat2(listview1.Items.item[c].subitems.Strings[I_X]),strtofloat2(listview1.Items.item[c].subitems.Strings[I_Y]));
         end
         else mainwindow.shape_alignment_marker1.visible:=false;
       end;
