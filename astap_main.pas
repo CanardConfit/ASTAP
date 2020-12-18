@@ -2352,7 +2352,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.464, '+about_message4+', dated 2020-12-16';
+  #13+#10+'ASTAP version ß0.9.465, '+about_message4+', dated 2020-12-18';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3829,7 +3829,7 @@ begin
   stackmenu1.test_pattern1.Enabled:=naxis3=1;{mono}
 
   stackmenu1.focallength1.Text:=floattostrf(focallen,ffgeneral, 4, 4);
-  stackmenu1.pixelsize1.text:=floattostrf(xpixsz*XBINNING,ffgeneral, 4, 4);
+  stackmenu1.pixelsize1.text:=floattostrf(xpixsz{*XBINNING},ffgeneral, 4, 4);
   stackmenu1.focallength1Exit(nil); {update calculator}
 end;
 
@@ -9945,9 +9945,9 @@ end;
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
     s      : string;
-    histogram_done,file_loaded,debug,filespecified,analysespecified,extractspecified : boolean;
+    histogram_done,file_loaded,debug,filespecified,analysespecified,extractspecified,focusrequest : boolean;
     backgr, hfd_median,snr_min          : double;
-    hfd_counter,binning                : integer;
+    hfd_counter,binning,focus_count     : integer;
 begin
   user_path:=GetAppConfigDir(false);{get user path for app config}
 
@@ -9988,6 +9988,7 @@ begin
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-analyse snr_min {Analyse only and report in the errorlevel the median HFD * 100M + number of stars used}'+#10+
         '-extract snr_min {As -analyse but additionally write a .csv file with the detected stars info}'+#10+
+        '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting}'+#10+
         '-annotate  {Produce deepsky annotated jpg file}' +#10+
         '-debug  {Show GUI and stop prior to solving}' +#10+
         '-log   {Write the solver log to file}'+#10+
@@ -10003,12 +10004,13 @@ begin
 
       debug:=hasoption('debug'); {The debug option allows to set some solving parameters in the GUI (graphical user interface) and to test the commandline. In debug mode all commandline parameters are set and the specified image is shown in the viewer. Only the solve command has to be given manuallydebug mode }
       filespecified:=hasoption('f');
+      focusrequest:=hasoption('focus1');
 
-      if ((filespecified) or (debug)) then
+      if ((filespecified) or (debug) or (focusrequest)) then
       begin
         commandline_execution:=true;{later required for trayicon and popup notifier and Memo3 scroll in Linux}
 
-        commandline_log:=hasoption('log');{log to file}
+        commandline_log:=((debug) or (hasoption('log')));{log to file. In debug mode enable logging to memo2}
         if commandline_log then memo2_message(cmdline);{write the original commmand line}
 
         if filespecified then
@@ -10050,6 +10052,23 @@ begin
         if hasoption('t') then stackmenu1.quad_tolerance1.text:=GetOptionValue('t');
         if hasoption('m') then stackmenu1.min_star_size1.text:=GetOptionValue('m');
         if hasoption('speed') then stackmenu1.force_oversize1.checked:=pos('slow',GetOptionValue('speed'))<>0;
+
+        if focusrequest then {find best focus using curve fitting}
+        begin
+           stackmenu1.clear_inspector_list1Click(nil);{clear list}
+           listview_add(stackmenu1.listview8,GetOptionValue('focus1'),true,16);
+           focus_count:=2;
+           while hasoption('focus'+inttostr(focus_count)) do
+           begin
+             listview_add(stackmenu1.listview8,GetOptionValue('focus'+inttostr(focus_count)),true,16);
+             inc(focus_count);
+           end;
+           stackmenu1.curve_fitting1Click(nil);
+          // save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
+          // application.messagebox( pchar(inttostr(best_focus)), pchar('Focus'),MB_OK);
+           if debug=false then halt(best_focus);
+        end;
+
 
         if debug=false then {standard solve via command line}
         begin

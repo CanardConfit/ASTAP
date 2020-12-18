@@ -746,7 +746,7 @@ var
   counterRflat,counterGflat, counterBflat,  counterRGBflat,counterLflat,
   counterRbias,counterGbias, counterBbias,  counterRGBbias,counterLbias,
   temperatureL,temperatureR,temperatureG,temperatureB,temperatureRGB,
-  exposureR, exposureG,exposureB,exposureRGB,exposureL            : integer;
+  exposureR, exposureG,exposureB,exposureRGB,exposureL,best_focus  : integer;
   sum_exp                                                         : double;
   referenceX,referenceY    : double;{reference position used stacking}
   ref_X, ref_Y             : double;{reference position from FITS header, used for manual stacking of colour images, second stage}
@@ -4390,7 +4390,7 @@ end;
 procedure Tstackmenu1.curve_fitting1Click(Sender: TObject);
 var
    p,a,b,position, center,hfd : double;
-   c,img_counter,i    : integer;
+   c,img_counter,i,fields     : integer;
    array_hfd : array of tdouble2;
 const
    len: integer= 200;
@@ -4401,7 +4401,8 @@ begin
   analyse_listview(listview8,true{light},true{full fits},false{refresh});
 
   setlength(array_hfd,len);
-  for i:=1 to 7 do {do all hfd areas}
+  if sender<>nil then fields:=7 else fields:=1;
+  for i:=1 to fields do {do all hfd areas}
   begin
     img_counter:=0;
     with listview8 do
@@ -4428,6 +4429,8 @@ begin
     if img_counter>=4 then
     begin
       find_best_hyperbola_fit(array_hfd, img_counter, p,a,b); {input data[n,1]=position,data[n,2]=hfd, output: bestfocusposition=p, a, b of hyperbola}
+
+      best_focus:=round(p);{for command line}
 
       if i=1 then       memo2_message('full image'+#9+#9+ 'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'_____________'            +#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));
       if i=2 then begin memo2_message('center'+#9+#9+     'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'_____________'            +#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));center:=p;end;

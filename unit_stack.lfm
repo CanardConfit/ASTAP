@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 1033
+  Left = 93
   Height = 644
-  Top = 232
+  Top = 209
   Width = 1619
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1618
-    ActivePage = Images
+    ActivePage = TabSheet1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 9
     TabOrder = 5
     object Images: TTabSheet
       Hint = 'Select here the light frames'
@@ -5251,8 +5251,8 @@ object stackmenu1: Tstackmenu1
     end
     object tab_Pixelmath2: TTabSheet
       Caption = 'Pixel math 2'
-      ClientHeight = 417
-      ClientWidth = 1614
+      ClientHeight = 420
+      ClientWidth = 1610
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox
