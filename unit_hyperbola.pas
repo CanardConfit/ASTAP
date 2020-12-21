@@ -35,6 +35,7 @@ function steps_to_focus(hfd,a,b:double) :double; {calculates focuser steps to pe
 var
   iteration_cycles :integer; {how many cycle where used for curve fitting}
   lowest_error : double; {mean HFD error after curve fitting}
+  focus_best   : double; {best focus}
 
 implementation
 
@@ -176,6 +177,8 @@ begin
   until  ( (old_error-lowest_error<1E-5)   {lowest error almost reached. Error is expressed in relative error per point}
         or (lowest_error<=1E-5 {0.00001})  {perfect result}
         or (iteration_cycles>=30) );       {most likely convergence problem}
+
+  focus_best:=p;{use for command line}
 end;
 
 

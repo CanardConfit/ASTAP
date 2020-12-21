@@ -108,8 +108,8 @@ begin
   crota1:=99999;
   ra0:=0;
   dec0:=0;
-  ra_mount:=0;
-  dec_mount:=0;
+  ra_mount:=99999;
+  dec_mount:=99999;
   cdelt1:=0;
   cdelt2:=0;
   xpixsz:=0;

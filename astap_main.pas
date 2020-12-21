@@ -708,7 +708,7 @@ var
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_290, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
- unit_astrometry_net, unit_live_stacking, unit_hjd;
+ unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -859,8 +859,8 @@ begin
     crota1:=99999;
     ra0:=0;
     dec0:=0;
-    ra_mount:=0;
-    dec_mount:=0;
+    ra_mount:=99999;
+    dec_mount:=99999;
     cdelt1:=0;
     cdelt2:=0;
     scale:=0; {SGP files}
@@ -1062,9 +1062,6 @@ begin
 
         if light then {read as light ##############################################################################################################################################################}
         begin
-          if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='J') and (header[i+3]='E') and (header[i+4]='C') and (header[i+5]='T')) then
-              object_name:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
-
           if ((header[i]='E') and (header[i+1]='Q')  and (header[i+2]='U') and (header[i+3]='I') and (header[i+4]='N') and (header[i+5]='O') and (header[i+6]='X')) then
                equinox:=validate_double;
 
@@ -1114,21 +1111,28 @@ begin
             if dec0=0 then dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
           end;
 
-          if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='J') and (header[i+3]='C') and (header[i+4]='T')) then  {objctra}
+
+          if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='J')) then
           begin
-            if ((header[i+5]='R') and (header[i+6]='A')) then
+            if  ((header[i+3]='C') and (header[i+4]='T')) then {objctra, objctdec}
             begin
-              mainwindow.ra1.text:=get_string;
-            end
-            else
-            if ((header[i+5]='D') and (header[i+6]='E')) then
-            begin
-              mainwindow.dec1.text:=get_string;
+              if ((header[i+5]='R') and (header[i+6]='A')) then
+              begin
+                mainwindow.ra1.text:=get_string;
+              end
+              else
+              if ((header[i+5]='D') and (header[i+6]='E')) then
+              begin
+                mainwindow.dec1.text:=get_string;
+              end;
+  //            else {for older MaximDL5}
+  //            if ((header[i+5]='A') and (header[i+6]='Z') and (centaz=999)) then begin if header[i+10]=#39 then centalt:=get_string else centalt:=validate_double; end{temporary accept floats}
+  //            else {for older MaximDL5}
+  //            if ((header[i+5]='A') and (header[i+6]='L')and (centalt=999)) then  begin if header[i+10]=#39 then centaz:=get_string else centaz:=validate_double; end;{temporary accept floats}
             end;
-//            else {for older MaximDL5}
-//            if ((header[i+5]='A') and (header[i+6]='Z') and (centaz=999)) then begin if header[i+10]=#39 then centalt:=get_string else centalt:=validate_double; end{temporary accept floats}
-//            else {for older MaximDL5}
-//            if ((header[i+5]='A') and (header[i+6]='L')and (centalt=999)) then  begin if header[i+10]=#39 then centaz:=get_string else centaz:=validate_double; end;{temporary accept floats}
+
+            if ((header[i+3]='E') and (header[i+4]='C') and (header[i+5]='T')) then {OBJECT}
+                    object_name:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
           end;
 
           if ((header[i]='C') and (header[i+1]='E')  and (header[i+2]='N') and (header[i+3]='T') and (header[i+4]='A')) then  {SBIG 1.0 standard}
@@ -1945,8 +1949,8 @@ begin
   crota2:=99999;{just for the case it is not available, make it later zero}
   crota1:=99999;
   ra0:=0;
-  ra_mount:=0;
-  dec_mount:=0;
+  ra_mount:=99999;
+  dec_mount:=99999;
   dec0:=0;
   cdelt1:=0;
   cdelt2:=0;
@@ -2352,7 +2356,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.465, '+about_message4+', dated 2020-12-18';
+  #13+#10+'ASTAP version ß0.9.467, '+about_message4+', dated 2020-12-20';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3235,13 +3239,15 @@ var
    fitsX,fitsY: double;
 begin
   //  celestial_to_pixel(ra0,dec0, fitsX,fitsY);{ra,dec to fitsX,fitsY}
-  celestial_to_pixel(ra_mount,dec_mount, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+  if ra_mount<99 then {ra mount was specified}
+  begin
+    celestial_to_pixel(ra_mount,dec_mount, fitsX,fitsY);{ra,dec to fitsX,fitsY}
 
-  shape_marker4_fitsX:=FITSX;
-  shape_marker4_fitsY:=FITSY;
+    shape_marker4_fitsX:=FITSX;
+    shape_marker4_fitsY:=FITSY;
 
-  show_marker_shape(mainwindow.shape_marker4,2 {activate},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
-
+    show_marker_shape(mainwindow.shape_marker4,2 {activate},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
+  end;
 end;
 
 procedure plot_large_north_indicator;{draw arrow north. If cd1_1=0 then clear north arrow}
@@ -5509,8 +5515,8 @@ begin
   crota1:=99999;
   ra0:=0;
   dec0:=0;
-  ra_mount:=0;
-  dec_mount:=0;
+  ra_mount:=99999;
+  dec_mount:=99999;
   cdelt1:=0;
   cdelt2:=0;
   xpixsz:=0;
@@ -5804,8 +5810,8 @@ begin
   crota1:=99999;
   ra0:=0;
   dec0:=0;
-  ra_mount:=0;
-  dec_mount:=0;
+  ra_mount:=99999;
+  dec_mount:=99999;
   cdelt1:=0;
   cdelt2:=0;
   xpixsz:=0;
@@ -5952,8 +5958,8 @@ begin
   crota1:=99999;
   ra0:=0;
   dec0:=0;
-  ra_mount:=0;
-  dec_mount:=0;
+  ra_mount:=99999;
+  dec_mount:=99999;
   cdelt1:=0;
   cdelt2:=0;
   xpixsz:=0;
@@ -9986,9 +9992,9 @@ begin
         '-m  minimum_star_size["]'+#10+
         '-speed mode[auto/slow] {Slow is forcing small search steps to improve detection.}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
-        '-analyse snr_min {Analyse only and report in the errorlevel the median HFD * 100M + number of stars used}'+#10+
+        '-analyse snr_min {Analyse only and report in the errorlevel the median HFD*1E8 + number of stars used}'+#10+
         '-extract snr_min {As -analyse but additionally write a .csv file with the detected stars info}'+#10+
-        '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting}'+#10+
+        '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3}'+#10+
         '-annotate  {Produce deepsky annotated jpg file}' +#10+
         '-debug  {Show GUI and stop prior to solving}' +#10+
         '-log   {Write the solver log to file}'+#10+
@@ -10066,7 +10072,7 @@ begin
            stackmenu1.curve_fitting1Click(nil);
           // save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
           // application.messagebox( pchar(inttostr(best_focus)), pchar('Focus'),MB_OK);
-           if debug=false then halt(best_focus);
+           if debug=false then halt(round(focus_best)*10000 +min(9999,round(lowest_error*1000)));
         end;
 
 

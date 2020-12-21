@@ -125,6 +125,16 @@ begin
   fnmodulo:=x;
 end;
 
+function distance_to_string(dist, inp:double):string; {angular distance to string intended for RA and DEC. Unit is based on dist}
+begin
+  if abs(dist)<pi/(180*60) then {unit seconds}
+      result:= floattostrF2(inp*3600*180/pi,0,1)+'"'
+  else
+  if abs(dist)<pi/180 then {unit minutes}
+      result:= floattostrF2(inp*60*180/pi,0,1)+#39
+  else
+  result:= floattostrF2(inp*180/pi,0,1)+'°';
+end;
 
 {transformation of equatorial coordinates into CCD pixel coordinates for optical projection, rigid method}
 {ra0,dec0: right ascension and declination of the optical axis}
@@ -779,7 +789,10 @@ begin
     new_to_old_WCS;
     solved_in:=' Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}
 
-    offset_found:=' Δ was '+floattostrF2(sep*180/pi,0,4)+'°.'+#9+'  Mount offset  Δα='+floattostrF2((ra_mount-ra0)*cos(dec0)*180/pi,0,4)+'°,  Δδ='+floattostrF2((dec_mount-dec0)*180/pi,0,4)+'°.';
+    offset_found:=' Δ was '+distance_to_string(sep {scale selection},sep)+'.';
+    if ra_mount<99 then {mount position known and specified}
+       offset_found:=offset_found+#9+ '  Mount offset  Δα='+distance_to_string(dec_mount-dec0,(ra_mount-ra0)*cos(dec0))+ ',  Δδ='+distance_to_string(dec_mount-dec0,dec_mount-dec0);
+//    offset_found:=' Δ was '+floattostrF2(sep*60*180/pi,0,2)+#39+'.'+#9+ '  Mount offset  Δα='+floattostrF2((ra_mount-ra0)*cos(dec0)*60*180/pi,0,2)+#39 + ',  Δδ='+floattostrF2((ra_mount-ra0)*60*180/pi,0,2)+#39;
 
     memo2_message('Solution found: '+  prepare_ra(ra0,': ')+#9+prepare_dec(dec0,'° ') +#9+ solved_in+#9+offset_found+#9+' Used stars up to magnitude: '+floattostrF2(mag2/10,0,1) );
     mainwindow.caption:=('Solution found:    '+  prepare_ra(ra0,': ')+'     '+prepare_dec(dec0,'° ')  );

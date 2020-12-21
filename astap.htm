@@ -27,8 +27,8 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
           </big></big><big><big><span style="color: red; font-weight: bold;"></span></big></big>
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
-            &nbsp;<big>version 0.9.460 dated 2020-12-14. </big>&nbsp;Alternative
-            link, very latest development version 0.9.464 <a href="astap_setup.exe">ASTAP installer</a>
+            &nbsp;<big>version 0.9.466 dated 2020-12-14. </big>&nbsp;Alternative
+            link, very latest development version 0.9.466a <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.exe/download">G17
@@ -2428,7 +2428,7 @@ astrometric
             <td>Name the output files with this base path &amp; file
               name</td>
           </tr>
-          <tr><td>-analyse</td><td>snr_minimum</td><td></td><td>Analyse only and report in the errorlevel the median HFD * 100M + number of stars used. So the HFD is trunc(errorlevel/1M)/100</td></tr><tr><td>-extract</td><td>snr_minimum</td><td></td><td>As&nbsp;analyse option but additionally write a .csv file with the detected stars info.</td></tr><tr><td>-annotate</td><td></td><td></td><td>Produce a deep sky annotated jpeg file with same name as
+          <tr><td>-analyse</td><td>snr_minimum</td><td></td><td>Analyse only and report in the errorlevel the median HFD * 100M + number of stars used. So the HFD is trunc(errorlevel/1M)/100</td></tr><tr><td>-extract</td><td>snr_minimum</td><td></td><td>As&nbsp;analyse option but additionally write a .csv file with the detected stars info.</td></tr><tr><td>-focus1 </td><td>file1.fits -focus2 file2.fits .......</td><td></td><td>Find best focus point for four or more images using curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3.</td></tr><tr><td>-annotate</td><td></td><td></td><td>Produce a deep sky annotated jpeg file with same name as
               input file extended with _annotated *</td></tr><tr><td>-debug</td><td></td><td></td><td>Show GUI and stop prior to solving</td></tr><tr><td>-log</td><td></td><td></td><td>Write solver log to file with extension .log</td></tr><tr><td>-tofits</td><td>binning</td><td>1,2,3,4</td><td>Produce binned FITS file from input png/jpg *</td></tr><tr>
             <td>-update</td>
             <td><br>
@@ -2648,7 +2648,26 @@ and line feed for each line and is not conform the FITS standard.
 To have .wcs file conform the&nbsp;FITS standard add the command-line
 option -wcs.</big></p><p style="text-align: left;"><big><br></big></p><p style="text-align: left; text-decoration: underline; font-weight: bold;"><big>Command-line, error codes</big></p><p style="text-align: left;"><big>In
 the command-line mode errors are reported&nbsp;by
-an error code / errorlevel&nbsp;{%errorlevel%}. This is the same error as reported in the .ini file in case of failure.</big></p><table style="background-color: rgb(204, 204, 255); height: 257px; margin-left: 0px; width: 380px;" border="1" cellpadding="2" cellspacing="2"><tbody><tr><td style="width: 129px;"><big><span style="font-weight: bold;">Error code</span></big></td><td style="width: 233px;"><big><span style="font-weight: bold;">Describtion</span></big></td></tr><tr><td style="width: 129px;">0</td><td style="width: 233px;">No errors</td></tr><tr><td style="width: 129px;">1</td><td style="width: 233px;">No solution</td></tr><tr><td style="width: 129px;">2</td><td style="width: 233px;">Not enough stars detected</td></tr><tr><td style="width: 129px;"></td><td style="width: 233px;"></td></tr><tr><td style="width: 129px;">16</td><td style="width: 233px;">Error reading image file</td></tr><tr><td style="width: 129px;"></td><td style="width: 233px;"></td></tr><tr><td style="width: 129px;">32</td><td style="width: 233px;">No star database found</td></tr><tr><td style="width: 129px;">33</td><td style="width: 233px;">Error reading star database</td></tr></tbody></table><br><div style="text-align: left;">To analyse a FITS file you could do the following in a Windows batch file:<br><br>c:\astap.fpc\astap.exe -f&nbsp; c:\astap.fpc\test_files\command_line_test\m16.fit -analyse 30<br>echo Exit Code is %errorlevel%<br>pause<br><br>You will get<br>Exit Code is 326000666<br><br>where the HFD is 3.26 using 666 stars<br><br><br></div><p align="left"><a name="popup_notifier"></a><big style="text-decoration: underline; font-weight: bold;">Command-line pop-up notifier</big></p><p align="left"><big>If
+an error code / errorlevel&nbsp;{%errorlevel%}. This is the same error as reported in the .ini file in case of failure.</big></p><table style="background-color: rgb(204, 204, 255); height: 257px; margin-left: 0px; width: 380px;" border="1" cellpadding="2" cellspacing="2"><tbody><tr><td style="width: 129px;"><big><span style="font-weight: bold;">Error code</span></big></td><td style="width: 233px;"><big><span style="font-weight: bold;">Describtion</span></big></td></tr><tr><td style="width: 129px;">0</td><td style="width: 233px;">No errors</td></tr><tr><td style="width: 129px;">1</td><td style="width: 233px;">No solution</td></tr><tr><td style="width: 129px;">2</td><td style="width: 233px;">Not enough stars detected</td></tr><tr><td style="width: 129px;"></td><td style="width: 233px;"></td></tr><tr><td style="width: 129px;">16</td><td style="width: 233px;">Error reading image file</td></tr><tr><td style="width: 129px;"></td><td style="width: 233px;"></td></tr><tr><td style="width: 129px;">32</td><td style="width: 233px;">No star database found</td></tr><tr><td style="width: 129px;">33</td><td style="width: 233px;">Error reading star database</td></tr></tbody></table><br><div style="text-align: left;"><span style="font-weight: bold;">To analyse a FITS file you could do the following in a Windows batch file:</span><br><br>c:\astap.fpc\astap.exe -f&nbsp; c:\astap.fpc\test_files\command_line_test\m16.fit -analyse 30<br>echo Exit Code is %errorlevel%<br>pause<br><br>You will get<br>Exit Code is 326000666<br><br>where the HFD is 3.26 using 666 stars<br><br><br><br><span style="font-weight: bold;">Finding best focus based on four or more input images:</span><br><br>c:\astap.fpc\astap -focus1 D:\temp\FocusSample\FOCUS04689.fit
+    -focus2 D:\temp\FocusSample\FOCUS05039.fit -focus3
+    D:\temp\FocusSample\FOCUS05389.fit -focus4
+    D:\temp\FocusSample\FOCUS05739.fit -focus5
+    D:\temp\FocusSample\FOCUS06089.fit -focus6
+    D:\temp\FocusSample\FOCUS06439.fit -focus7
+    D:\temp\FocusSample\FOCUS06789.fit -focus8
+    D:\temp\FocusSample\FOCUS07139.fit<br>
+    echo Exit Code is %errorlevel%<br>
+    pause
+    <p>or with the -debug option</p>
+    <p>astap.exe&nbsp; -debug -focus1 D:\temp\FocusSample\FOCUS04689.fit
+      -focus2 D:\temp\FocusSample\FOCUS05039.fit -focus3
+      D:\temp\FocusSample\FOCUS05389.fit -focus4
+      D:\temp\FocusSample\FOCUS05739.fit -focus5
+      D:\temp\FocusSample\FOCUS06089.fit -focus6
+      D:\temp\FocusSample\FOCUS06439.fit -focus7
+      D:\temp\FocusSample\FOCUS06789.fit -focus8
+      D:\temp\FocusSample\FOCUS07139.fit</p>
+    Or with the special command line version:<br><img style="width: 979px; height: 344px;" alt="" src="astap_command_line_focus.png"><br><br><br></div><p align="left"><a name="popup_notifier"></a><big style="text-decoration: underline; font-weight: bold;">Command-line pop-up notifier</big></p><p align="left"><big>If
           the ASTAP is command-line
           executed&nbsp;in MS-Windows, it will be shown by a small ASTAP
           tray
