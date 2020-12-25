@@ -281,6 +281,7 @@ type
     procedure annotations_visible1Click(Sender: TObject);
     procedure autocorrectcolours1Click(Sender: TObject);
     procedure batch_annotate1Click(Sender: TObject);
+    procedure batch_rotate_right1Click(Sender: TObject);
     procedure batch_solve_astrometry_netClick(Sender: TObject);
     procedure ccd_inspector_plot1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
@@ -308,6 +309,7 @@ type
     procedure j2000_1Click(Sender: TObject);
     procedure galactic1Click(Sender: TObject);
     procedure gaia_star_position1Click(Sender: TObject);
+    procedure MenuItem22Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
     procedure northeast1Click(Sender: TObject);
     procedure range1Change(Sender: TObject);
@@ -369,6 +371,7 @@ type
       MousePos: TPoint; var Handled: Boolean);
     procedure show_statistics1Click(Sender: TObject);
     procedure SimpleIPCServer1MessageQueued(Sender: TObject);
+    procedure split_osc1Click(Sender: TObject);
     procedure StatusBar1MouseEnter(Sender: TObject);
     procedure stretch_draw_fits1Click(Sender: TObject);
     procedure UpDown1Click(Sender: TObject; Button: TUDBtnType);
@@ -2356,7 +2359,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.467, '+about_message4+', dated 2020-12-20';
+  #13+#10+'ASTAP version ß0.9.468, '+about_message4+', dated 2020-12-25';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -2643,8 +2646,8 @@ begin
     binfactor:=3;
   end;
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.FIT*';
-  //data_range_groupBox1.Enabled:=true;
+  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
+
   esc_pressed:=false;
 
   if OpenDialog1.Execute then
@@ -3971,6 +3974,7 @@ begin
     OpenDialog1.Title := 'Select multiple RAW fits files to extract Bayer matrix position '+filtern+' from them';
     OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
     opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
+
     fits_file:=true;
    // data_range_groupBox1.Enabled:=true;
     esc_pressed:=false;
@@ -7692,7 +7696,6 @@ begin
   OpenDialog1.Title := 'Select multiple  FITS files to compress. Original files will be kept.';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := 'FITS files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
-
   esc_pressed:=false;
 
   if OpenDialog1.Execute then
@@ -8109,22 +8112,26 @@ begin
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
+
 procedure Tmainwindow.MenuItem21Click(Sender: TObject);
 begin
   split_raw(2,1);{extract one of the Bayer matrix pixels}
 end;
 
+
 procedure Tmainwindow.batch_rotate_left1Click(Sender: TObject);
 var
   i         : integer;
-  dobackup : boolean;
+  dobackup  : boolean;
 begin
 
-  OpenDialog1.Title := 'Select multiple  files to rotate 90 degrees';
+  OpenDialog1.Title := 'Select multiple  files to rotate 90 degrees.';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.FIT*';
+  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
+
   //data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
+
 
   if OpenDialog1.Execute then
   begin
@@ -8140,7 +8147,7 @@ begin
          Application.ProcessMessages;
          if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then begin exit;end;
 
-         rotateleft1Click(Sender);
+         rotateleft1Click(Sender);{rotate left or right will be defined by the sender in next procedure}
          save_fits(img_loaded,FileName2,16,true);{overwrite}
       end;
       finally
@@ -8805,7 +8812,7 @@ var
 begin
   OpenDialog1.Title := 'Select multiple  files to add asteroid annotation to the header';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS';
+  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   esc_pressed:=false;
 
   if OpenDialog1.Execute then
@@ -8851,6 +8858,11 @@ begin
   end;
 end;
 
+procedure Tmainwindow.batch_rotate_right1Click(Sender: TObject);
+begin
+
+end;
+
 
 procedure Tmainwindow.batch_solve_astrometry_netClick(Sender: TObject);
 begin
@@ -8881,6 +8893,11 @@ begin
    receivemessage(Sender);
   {$else} {unix}
   {$endif}
+end;
+
+procedure Tmainwindow.split_osc1Click(Sender: TObject);
+begin
+
 end;
 
 
@@ -10220,7 +10237,7 @@ var
 begin
   OpenDialog1.Title := 'Select multiple  files to add plate solution';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS';
+  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   esc_pressed:=false;
 
   if OpenDialog1.Execute then
@@ -11360,6 +11377,12 @@ begin
   url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size;
   openurl(url);
 end;
+
+procedure Tmainwindow.MenuItem22Click(Sender: TObject);
+begin
+
+end;
+
 
 procedure Tmainwindow.mountposition1Click(Sender: TObject);
 begin
