@@ -1,5 +1,5 @@
 unit unit_stack;
-{Copyright (C) 2017, 2020 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This program is free software: you can redistribute it and/or modify
@@ -134,7 +134,6 @@ type
     bb1: TEdit;
     bg1: TEdit;
     Bias: TTabSheet;
-    binning_for_solving_label2: TLabel;
     blink_button1: TButton;
     blink_button2: TButton;
     blink_button4: TButton;
@@ -317,7 +316,6 @@ type
     make_osc_color1: TCheckBox;
     manual_centering1: TComboBox;
     mark_outliers_upto1: TComboBox;
-    max_fov1: TComboBox;
     min_star_size1: TComboBox;
     max_stars1: TComboBox;
     MenuItem23: TMenuItem;
@@ -1063,15 +1061,22 @@ begin
   end;
 end;
 
+
+function ansi_only(s:string): string;
+begin
+  result:=StringReplace(result,'α','RA',[rfReplaceAll]);
+  result:=StringReplace(result,'δ','DEC',[rfReplaceAll]);
+  result:=StringReplace(s,'Δ','offset',[rfReplaceAll]);
+end;
+
+
 procedure memo2_message(s: string);{message to memo2. Is also used for log to file in commandline mode}
 begin
   {$IFDEF unix}  {linux and mac}
-  if commandline_execution then writeln(s); {For windows the log to console when compiler WIN32 gui is off}
+  if commandline_execution then writeln(s); {linux command line can write unicode}
   {$ELSE }
-
       if ((commandline_execution) and (isConsole)){isconsole, is console available, prevent run time error if compiler option -WH is checked}
-      then writeln(s); {log to console for Windows when compiler WIN32 gui is off}
-
+      then writeln(ansi_only(s)); {log to console for Windows when compiler WIN32 gui is off}
   {$ENDIF}
 
   if ((commandline_execution=false) or (commandline_log=true)) then {no commandline or option -log is used}
@@ -6363,7 +6368,7 @@ begin
   with stackmenu1 do
   begin
     star_database1.items.clear;
-    if FindFirst(database_path+'*0101.290', faAnyFile, SearchRec)=0 then
+    if FindFirst(database_path+'*0101.*', faAnyFile, SearchRec)=0 then
     begin
       repeat
         s:=uppercase(copy(searchrec.name,1,3));

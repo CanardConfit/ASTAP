@@ -1,5 +1,5 @@
 unit unit_star_align;
-{Copyright (C) 2018, 2020 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2018, 2021 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 {This program is free software: you can redistribute it and/or modify

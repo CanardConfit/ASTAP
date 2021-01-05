@@ -1,5 +1,5 @@
 unit unit_stack_routines;
-{Copyright (C) 2017, 2020 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2010 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This program is free software: you can redistribute it and/or modify

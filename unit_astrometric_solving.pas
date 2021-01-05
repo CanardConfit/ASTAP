@@ -1,5 +1,5 @@
 unit unit_astrometric_solving;
-{Copyright (C) 2018, 2020 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2018, 2021 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 {This program is free software: you can redistribute it and/or modify
@@ -103,7 +103,7 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 interface
 
 uses   Classes,SysUtils,controls,forms,math,
-       unit_star_align, unit_290, astap_main, unit_stack, unit_annotation;
+       unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation;
 
 function solve_image(img :image_array; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; var starlist3:star_list);{bin, measure background, find stars}
@@ -214,7 +214,8 @@ begin
   {read 1th area}
   if area1<>0 then {read 1th area}
   begin
-    if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
+    if open_database(telescope_dec,area1)=false then
+      exit;{open database file or reset buffer}
     nrstars_required2:=min(nrstars_required,trunc(nrstars_required * frac1));
     while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
     begin {add star}
@@ -225,7 +226,8 @@ begin
 
   if area2<>0 then {read 2th area}
   begin
-    if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
+    if open_database(telescope_dec,area2)=false then
+      exit; {open database file or reset buffer}
     nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2)));{prevent round up errors resulting in error starlist1}
     while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
     begin {add star}
@@ -236,7 +238,8 @@ begin
 
   if area3<>0 then {read 3th area}
   begin
-    if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
+    if open_database(telescope_dec,area3)=false then
+      exit; {open database file or reset buffer}
     nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2+frac3)));
     while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
     begin {add star}
@@ -247,7 +250,8 @@ begin
 
   if area4<>0 then {read 4th area}
   begin
-    if open_database(telescope_dec,area4)=false then begin result:=false; exit; end; {open database file}
+    if open_database(telescope_dec,area4)=false then
+     exit; {open database file}
     nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2+frac3+frac4)));
     while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
     begin {add star}
@@ -454,7 +458,6 @@ begin
     height2:=old_height;
     naxis3:=old_naxis3;
 
-
     for i:=0 to nrstars-1 do {correct star positions for cropping. Simplest method}
     begin
       starlist3[0,i]:=starlist3[0,i]*binning+(width2*(1-cropping)/2);{correct star positions for binning/ cropping}
@@ -492,7 +495,7 @@ var
   solution, go_ahead ,autoFOV      : boolean;
   Save_Cursor                      : TCursor;
   startTick  : qword;{for timing/speed purposes}
-  distancestr,oversize_mess,mess,info_message,warning,suggest_str,memo1_backup  :string;
+  distancestr,oversize_mess,mess,info_message,warning,suggest_str,memo1_backup,database_uppercase  :string;
 const
    popupnotifier_visible : boolean=false;
 
@@ -513,7 +516,7 @@ begin
   end;
 
   binning:=report_binning;
-  if height2<960 then warning_str:='Warning, too small image!! ';  {for FITS header and solution. Dimensions should be equal or better the about 1280x960}
+  if height2<960 then warning_str:='Warning, small image!! ';  {for FITS header and solution. Dimensions should be equal or better the about 1280x960}
   if ((binning>1) and (height2<960*binning))   then warning_str:=warning_str+'Warning, downsample factor too high!! '; {for FITS header and solution}
   if (height2>2500*binning) then warning_str:=warning_str+'Warning, increase downsampling!! '; {for FITS header and solution}
 
@@ -525,8 +528,11 @@ begin
   else warning:='';
 
   quad_tolerance:=strtofloat2(stackmenu1.quad_tolerance1.text);
-  max_fov:=strtofloat2(stackmenu1.max_fov1.caption);{for very large images only}
-  max_fov:=min(max_fov,9.53);{warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+  if file290 then {.290 database}
+    max_fov:=9.53 {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+  else  {.1476 database}
+    max_fov:=5.142857143; {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
+
 
   min_star_size_arcsec:=strtofloat2(stackmenu1.min_star_size1.text); {arc sec};
 
@@ -612,18 +618,22 @@ begin
 
     if go_ahead then
     begin
-      if select_star_database(stackmenu1.star_database1.text)=false then
+      if select_star_database(lowercase(stackmenu1.star_database1.text))=false then
       begin
         result:=false;
-        application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download the g17 (or v16, g16, v17 or g18) and install'), pchar('ASTAP error:'),0);
+        application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download the H17 (or H18, G17, V17) and install'), pchar('ASTAP error:'),0);
         errorlevel:=32;{no star database}
         exit;
       end
-      else stackmenu1.star_database1.text:=name_star;
+      else
+      begin
+        database_uppercase:=uppercase(name_database);
+        stackmenu1.star_database1.text:=database_uppercase;
+        memo2_message('Using star database '+database_uppercase);
+      end;
 
       search_field:=fov2*(pi/180);
       STEP_SIZE:=search_field;{fixed step size search spiral. Prior to version 0.9.211 this was reduced for small star counts}
-      memo2_message('Using star database '+name_star);
       stackmenu1.Memo2.Lines.BeginUpdate;{do not update tmemo, very very slow and slows down program}
       match_nr:=0;
       repeat {Maximum accuracy loop. In case math is found on a corner, do a second solve. Result will be more accurate using all stars of the image}
@@ -695,7 +705,7 @@ begin
                 extrastars:=extrastars*1.1;
                 if read_stars(telescope_ra,telescope_dec,search_field*oversize,round(nrstars_required*oversize*oversize*extrastars) ,{var}database_stars)= false then
                 begin
-                  application.messagebox(pchar('Error, some of the 290 star database files are missing!'+#13+'Download the g17 (or g16 or g18) and extract the files to the program directory.'),0 );
+                  application.messagebox(pchar('Error, some of the 1476/290 star database files are missing!'+#13+'Download the g17 (or g16 or g18) and extract the files to the program directory.'),0 );
                   errorlevel:=33;{read error star database}
                   exit; {no stars}
                 end;
@@ -791,7 +801,7 @@ begin
 
     offset_found:=' Δ was '+distance_to_string(sep {scale selection},sep)+'.';
     if ra_mount<99 then {mount position known and specified}
-       offset_found:=offset_found+#9+ '  Mount offset  Δα='+distance_to_string(dec_mount-dec0,(ra_mount-ra0)*cos(dec0))+ ',  Δδ='+distance_to_string(dec_mount-dec0,dec_mount-dec0);
+       offset_found:=offset_found+#9+ ' Mount offset Δα='+distance_to_string(dec_mount-dec0,(ra_mount-ra0)*cos(dec0))+ ', Δδ='+distance_to_string(dec_mount-dec0,dec_mount-dec0);
 //    offset_found:=' Δ was '+floattostrF2(sep*60*180/pi,0,2)+#39+'.'+#9+ '  Mount offset  Δα='+floattostrF2((ra_mount-ra0)*cos(dec0)*60*180/pi,0,2)+#39 + ',  Δδ='+floattostrF2((ra_mount-ra0)*60*180/pi,0,2)+#39;
 
     memo2_message('Solution found: '+  prepare_ra(ra0,': ')+#9+prepare_dec(dec0,'° ') +#9+ solved_in+#9+offset_found+#9+' Used stars up to magnitude: '+floattostrF2(mag2/10,0,1) );

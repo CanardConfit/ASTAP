@@ -1,5 +1,5 @@
 ﻿unit astap_main;
-{Copyright (C) 2017, 2020 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 {This program is free software: you can redistribute it and/or modify
@@ -96,7 +96,7 @@ type
     extract_pixel_22: TMenuItem;
     batch_solve_astrometry_net: TMenuItem;
     copy_to_clipboard1: TMenuItem;
-    MenuItem22: TMenuItem;
+    Rota_mainmenu1: TMenuItem;
     batch_rotate_left1: TMenuItem;
     batch_rotate_right1: TMenuItem;
     gradient_removal1: TMenuItem;
@@ -309,7 +309,6 @@ type
     procedure j2000_1Click(Sender: TObject);
     procedure galactic1Click(Sender: TObject);
     procedure gaia_star_position1Click(Sender: TObject);
-    procedure MenuItem22Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
     procedure northeast1Click(Sender: TObject);
     procedure range1Change(Sender: TObject);
@@ -710,7 +709,7 @@ var
 
 implementation
 
-uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_290, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
+uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
  unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola;
 
 {$R astap_cursor.res}   {FOR CURSORS}
@@ -912,7 +911,7 @@ begin
   naxis:=-1;
   naxis1:=0;
   naxis3:=1;
-  bzero:=0;{just for the case it is not available}
+  bzero:=0;{just for the case it is not available. 0.0 is the default according https://heasarc.gsfc.nasa.gov/docs/fcg/standard_dict.html}
   bscale:=1;
   datamin_org:=0;
   imagetype:='';
@@ -1048,6 +1047,12 @@ begin
         if ((header[i]='F') and (header[i+1]='I')  and (header[i+2]='L') and (header[i+3]='T') and (header[i+4]='E') and (header[i+5]='R')) then
            filter_name:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
 
+        if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
+                 xbinning:=round(validate_double);{binning}
+        if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
+                 ybinning:=round(validate_double);{binning}
+
+
 
         {following variable are not set at zero Set at zero somewhere in the code}
         if ((header[i]='L') and (header[i+1]='I')  and (header[i+2]='G') and (header[i+3]='H') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
@@ -1061,6 +1066,8 @@ begin
 
         if ((header[i]='G') and (header[i+1]='A')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]=' ')) then
                gain:=validate_double;{gain CCD}
+
+
 
 
         if light then {read as light ##############################################################################################################################################################}
@@ -1244,11 +1251,6 @@ begin
              else
              filter_name:=floattostr(bandpass);
           end;
-
-          if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-                   xbinning:=round(validate_double);{binning}
-          if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-                   ybinning:=round(validate_double);{binning}
 
           if ((header[i]='A') and (header[i+1]='N')  and (header[i+2]='N') and (header[i+3]='O') and (header[i+4]='T') and (header[i+5]='A') and (header[i+6]='T')) then
              annotated:=true; {contains annotations}
@@ -2357,9 +2359,9 @@ begin
   #13+#10+
   #13+#10+'Send an e-mail if you like this free program. Feel free to distribute!'+
   #13+#10+
-  #13+#10+'© 2018, 2020 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
+  #13+#10+'© 2018, 2021 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.468, '+about_message4+', dated 2020-12-25';
+  #13+#10+'ASTAP version ß0.9.470, '+about_message4+', dated 2021-1-5';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6614,7 +6616,6 @@ begin
     dum:=initstring.Values['manual_centering']; if dum<>'' then stackmenu1.manual_centering1.text:=dum;
 
     dum:=initstring.Values['downsample']; if dum<>'' then stackmenu1.downsample_for_solving1.text:=dum;
-    dum:=initstring.Values['max_fov']; if ((dum<>'') and (dum<>'3')) then stackmenu1.max_fov1.text:=dum;{remove 2020-6  dum<>3}
 
     dum:=initstring.Values['oversize'];if dum<>'' then stackmenu1.oversize1.text:=dum;
     dum:=initstring.Values['sd_factor']; if dum<>'' then stackmenu1.sd_factor1.text:=dum;
@@ -6916,7 +6917,6 @@ begin
     initstring.Values['manual_centering']:=stackmenu1.manual_centering1.text;
 
     initstring.Values['downsample']:=stackmenu1.downsample_for_solving1.text;
-    initstring.Values['max_fov']:=stackmenu1.max_fov1.text;
 
     initstring.Values['oversize']:=stackmenu1.oversize1.text;
 
@@ -10228,12 +10228,11 @@ end;
 procedure Tmainwindow.AddplatesolvesolutiontoselectedFITSfiles1Click(
   Sender: TObject);
 var
-  I: integer;
   Save_Cursor:TCursor;
-  nrskipped, nrsolved,nrfailed :integer;
-  dobackup : boolean;
+  i,nrskipped, nrsolved,nrfailed {,j,steps} :integer;
+  dobackup{,performance_test} : boolean;
   failed,skipped   : string;
-
+  startTick  : qword;{for timing/speed purposes}
 begin
   OpenDialog1.Title := 'Select multiple  files to add plate solution';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -10253,42 +10252,57 @@ begin
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
+//    performance_test:=true;
+//    if performance_test then    steps:=20 else steps:=0;
+
+    startTick := GetTickCount64;
     try { Do some lengthy operation }
-        with OpenDialog1.Files do
-        for I := 0 to Count - 1 do
+//      for j:=0 to steps do
         begin
-          filename2:=Strings[I];
-          memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
-          progress_indicator(100*i/(count),' Solving');{show progress}
-
-          Application.ProcessMessages;
-          if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
-
-          {load image and solve image}
-          if load_fits(filename2,true {light},true,0,img_loaded) then {load image success}
+          with OpenDialog1.Files do
+          for I := 0 to Count - 1 do
           begin
-            if ((cd1_1<>0) and (stackmenu1.ignore_header_solution1.checked=false)) then
+            filename2:=Strings[I];
+            memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
+            progress_indicator(100*i/(count),' Solving');{show progress}
+
+            Application.ProcessMessages;
+            if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+
+            {load image and solve image}
+            if load_fits(filename2,true {light},true,0,img_loaded) then {load image success}
             begin
-              nrskipped:=nrskipped+1; {plate solved}
-              memo2_message('Skipped: '+filename2+ '  Already solution in header. Select ignore  in tab alignment to redo.');
-              skipped:=skipped+#13+#10+extractfilename(filename2);
-            end
-            else
-            if solve_image(img_loaded,true {get hist}) then {match between loaded image and star database}
-            begin
-              mainwindow.SaveFITSwithupdatedheader1Click(nil);
-              nrsolved:=nrsolved+1;
-            end
-            else
-            begin
-              memo2_message('Solve failure: '+filename2);
-              failed:=failed+#13+#10+extractfilename(filename2);
+//              if performance_test then dec_radians:=dec_radians+j*2*pi/180;
+              if ((cd1_1<>0) and (stackmenu1.ignore_header_solution1.checked=false)) then
+              begin
+                nrskipped:=nrskipped+1; {plate solved}
+                memo2_message('Skipped: '+filename2+ '  Already solution in header. Select ignore  in tab alignment to redo.');
+                skipped:=skipped+#13+#10+extractfilename(filename2);
+              end
+              else
+              if solve_image(img_loaded,true {get hist}) then {match between loaded image and star database}
+              begin
+                mainwindow.SaveFITSwithupdatedheader1Click(nil);
+                nrsolved:=nrsolved+1;
+
+//                if performance_test then
+//                begin
+//                  log_to_file('c:\temp\test.txt',stackmenu1.star_database1.text+#9+stackmenu1.search_fov1.text+#9+floattostr(j*2)+#9+floattostr(round((GetTickCount64 - startTick)/100)/10) );{for testing}
+//                  startTick := GetTickCount64;
+//                end;
+              end
+              else
+              begin
+                memo2_message('Solve failure: '+filename2);
+                failed:=failed+#13+#10+extractfilename(filename2);
+              end;
             end;
           end;
-        end;
-
+        end;{steps}
 
       finally
+      memo2_message('Processed in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.');
+
       if dobackup then restore_img;{for the viewer}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
     end;
@@ -11376,11 +11390,6 @@ begin
 
   url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size;
   openurl(url);
-end;
-
-procedure Tmainwindow.MenuItem22Click(Sender: TObject);
-begin
-
 end;
 
 
@@ -12839,8 +12848,8 @@ begin
   repeat
      if i<mainwindow.memo1.lines.count then
      begin
-       line0:=mainwindow.memo1.lines[i];
-       while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
+       line0:=mainwindow.memo1.lines[i];{line0 is an ansistring. According the standard the FITS header should only contain ASCII charactors between decimal 32 and 126. However ASTAP can write UTF8 in the comments which is read correctly by DS9 and FV}
+       while length(line0)<80 do line0:=line0+' ';{extend to length 80 if required}
        strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
        thefile4.writebuffer(aline,80);{write updated header from memo1}
      end

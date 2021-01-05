@@ -47,7 +47,7 @@ const
 implementation
 
 uses
-  unit_290, unit_stack, unit_star_align;
+  unit_star_database, unit_stack, unit_star_align;
 
 const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP native font for part of code page 437}
 ((
@@ -1645,7 +1645,11 @@ begin
 
     fov:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view with 0% extra}
 
-    fov:=min(fov,9.53*pi/180);{warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+    if file290 then {.290 files}
+      fov:=min(fov,9.53*pi/180) {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+    else {.1476 files}
+      fov:=min(fov,5.142857143*pi/180); {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
+
 
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
 
@@ -1790,7 +1794,10 @@ begin
 
     fov:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view with 0% extra}
 
-    fov:=min(fov,9.53*pi/180);{warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+    if file290 then {.290 files}
+      fov:=min(fov,9.53*pi/180) {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+    else {.1476 files}
+      fov:=min(fov,5.142857143*pi/180); {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
 
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
 
