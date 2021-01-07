@@ -1148,17 +1148,17 @@ object stackmenu1: Tstackmenu1
       object flat_combine_method1: TComboBox
         Left = 152
         Height = 23
-        Hint = 'Select combination method'
+        Hint = 'Select combination method. Best option is "no filter". Use box blur only for master flats made of a few flats where the noise level is higher then pixel sensitivity differences.'
         Top = 46
         Width = 190
         ItemHeight = 15
         ItemIndex = 0
         Items.Strings = (
           'no filter'
-          '2x2 mean'
-          '3x3 mean'
-          '4x4 mean'
-          '5x5 mean'
+          '2x2 box blur'
+          '3x3 box blur'
+          '4x4 box blur'
+          '5x5 box blur'
         )
         ParentFont = False
         Style = csDropDownList
@@ -1661,8 +1661,8 @@ object stackmenu1: Tstackmenu1
           ItemHeight = 15
           Items.Strings = (
             'no filter'
-            '3x3 mean'
-            '5x5 mean'
+            '3x3 box blur'
+            '5x5 box blur'
             'Gaussian blur (1)'
             'Gaussian blur (2)'
             'Gaussian blur (3)'
@@ -1693,7 +1693,7 @@ object stackmenu1: Tstackmenu1
       object test_flat_mean: TButton
         Left = 608
         Height = 25
-        Hint = 'Test on the current displayed image. Will use mono/red channel only. CTRL-Z to undo.'
+        Hint = 'Test box blur on the current displayed image. Use CTRL-Z to undo. Note the best option is "no filter". Use box blur only for master flats made of a few flats where the noise level is higher then pixel sensitivity differences.'
         Top = 47
         Width = 110
         AutoSize = True

@@ -237,8 +237,8 @@ begin
               memo2_message('Applying '+RGB_filter1.text+' filter on interim RGB image before applying on Luminance channel');
 
                                             {0: no filter}
-              case rgb_filter1.itemindex of 1:    mean_filter(3 {colours},3{dept},img_average);
-                                            2:    mean_filter(3 {colours},5{dept},img_average);
+              case rgb_filter1.itemindex of 1:    box_blur(3 {colours},3{dept},img_average);
+                                            2:    box_blur(3 {colours},5{dept},img_average);
                                             3:    gaussian_blur2(img_average,1);
                                             4:    gaussian_blur2(img_average,2);
                                             5:    gaussian_blur2(img_average,3);

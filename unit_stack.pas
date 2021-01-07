@@ -779,7 +779,7 @@ procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise
 
 procedure update_stackmenu;{update stackmenu1 menus}
 
-procedure mean_filter(colors,range: integer;var img: image_array);{combine values of pixels, ignore zeros}
+procedure box_blur(colors,range: integer;var img: image_array);{combine values of pixels, ignore zeros}
 procedure black_spot_filter(var img: image_array);{remove black spots with value zero}
 
 
@@ -3399,7 +3399,7 @@ begin
 end;
 
 
-procedure mean_filter(colors,range: integer;var img: image_array);{combine values of pixels, ignore zeros}
+procedure box_blur(colors,range: integer;var img: image_array);{combine values of pixels, ignore zeros}
 var fitsX,fitsY,k,x1,y1,col,w,h,i,j,counter,minimum,maximum : integer;
    img_temp2 : image_array;
    value, value2 : single;
@@ -3514,13 +3514,13 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   backup_img;
 
-  if pos('2x2',stackmenu1.flat_combine_method1.text)>0 then  mean_filter(1 {nr of colors},2,img_loaded)
+  if pos('2x2',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},2,img_loaded)
   else
-  if pos('3x3',stackmenu1.flat_combine_method1.text)>0 then  mean_filter(1 {nr of colors},3,img_loaded)
+  if pos('3x3',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},3,img_loaded)
   else
-  if pos('4x4',stackmenu1.flat_combine_method1.text)>0 then  mean_filter(1 {nr of colors},4,img_loaded)
+  if pos('4x4',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},4,img_loaded)
   else
-  if pos('5x5',stackmenu1.flat_combine_method1.text)>0 then  mean_filter(1 {nr of colors},5,img_loaded); {else do nothing}
+  if pos('5x5',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},5,img_loaded); {else do nothing}
 
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);{plot real}
@@ -6874,6 +6874,7 @@ end;
 procedure load_master_flat(filter: string;width1 : integer);
 var
   c : integer;
+  filter_applied : boolean;
 begin
   flat_count:=0;{assume none is found}
   analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{find dimensions, exposure and temperature}
@@ -6889,28 +6890,35 @@ begin
           {load master in memory img_dark}
           if flat_count=0 then flat_count:=1; {is normally updated by load_fits}
 
+          filter_applied:=true;
           if pos('2x2',stackmenu1.flat_combine_method1.text)>0 then
           begin
-            memo2_message('Applying 2x2 flat filter');
-            mean_filter(1 {nr of colors},2{depth},img_flat);
+            memo2_message('Applying 2x2 box blur on the master flat.');
+            box_blur(1 {nr of colors},2{depth},img_flat);
           end
           else
           if pos('3x3',stackmenu1.flat_combine_method1.text)>0 then
           begin
-            mean_filter(1 {nr of colors},3{depth},img_flat);
-            memo2_message('Applying 3x3 flat filter');
+            box_blur(1 {nr of colors},3{depth},img_flat);
+            memo2_message('Applying 3x3 box blur on the master flat.');
           end
           else
           if pos('4x4',stackmenu1.flat_combine_method1.text)>0 then
           begin
-            mean_filter(1 {nr of colors},4{depth},img_flat);
-            memo2_message('Applying 4x4 flat filter');
-          end;
+            box_blur(1 {nr of colors},4{depth},img_flat);
+            memo2_message('Applying 4x4 box blur on the master flat.');
+          end
+          else
           if pos('5x5',stackmenu1.flat_combine_method1.text)>0 then
           begin
-            mean_filter(1 {nr of colors},5{depth},img_flat);
-            memo2_message('Applying 5x5 flat filter');
-          end;
+            box_blur(1 {nr of colors},5{depth},img_flat);
+            memo2_message('Applying 5x5 box blur on the master flat.');
+          end
+          else
+          filter_applied:=false;
+
+          if ((filter_applied) and (flat_count>10)) then memo2_message('Advice: Applying box blur filter is normally not recommended for '+inttostr(flat_count)+' flats. Only if flat master noise if larger the difference in pixel sensitivity.');
+
 
           c:=9999999;{stop searching}
           flat_filter:=filter; {mark as loaded}
