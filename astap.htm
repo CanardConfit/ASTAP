@@ -28,7 +28,7 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
             &nbsp;<big>version 0.9.470 dated 2021-01-05. </big>&nbsp;Alternative
-            link, very latest development version 0.9.470 <a href="astap_setup.exe">ASTAP installer</a>
+            link, very latest development version 0.9.472 <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.exe/download">H17
@@ -99,7 +99,7 @@ tab alignment.&nbsp; Older G17 and G18 files can be deleted.</small></li><li></l
           <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.deb/download">ASTAP
 debian
                   package</a></big></big><big> </big><big>&nbsp;or&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.tar.gz/download">astap_amd64.tar.gz,</a> </big><big><a href="astap_rpm.htm">openSUSE and Fedora support</a> </big><big>version
-              0.9.469 dated 2021-01-04. Alternative link, development version 0.9.469</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big> ,&nbsp;</big>&nbsp;<a href="astap_amd64.tar.gz">ASTAP tar.gz</a><big>. &nbsp;</big></li>
+              0.9.470 dated 2021-01-05. Alternative link, development version 0.9.472</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big> ,&nbsp;</big>&nbsp;<a href="astap_amd64.tar.gz">ASTAP tar.gz</a><big>. &nbsp;</big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.deb/download">H17
 star
               database debian package</a></big> (500mb)&nbsp;or <big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.deb/download">H18
@@ -2359,7 +2359,7 @@ astrometric
             </td>
             <td>File to solve astrometric.</td>
           </tr>
-          <tr>
+          <tr><td>-f</td><td>stdin</td><td></td><td>Will accept raw images via stdin. Raw format according INDI. See 1)</td></tr><tr>
             <td>-r </td>
             <td>radius_search_field</td>
             <td>degrees</td>
@@ -2371,7 +2371,7 @@ astrometric
             <td>field_height_of_image</td>
             <td>degrees</td>
             <td>Optional. Normally calculated from FITS header. Use value 0 for auto.&nbsp;
-             If 0 is specified the fov found by solving will be saved for next time.(learn mode)&nbsp; *</td>
+             If 0 is specified the fov found by solving it will be saved for next time.(learn mode)&nbsp; *</td>
           </tr>
           <tr>
             <td>-ra </td>
@@ -2508,7 +2508,17 @@ all commandline parameters are set and the specified image is shown in
 the viewer. Only the solve command has to be given manually:</big><br></p><p style="text-align: left; font-family: monospace;"><big>&nbsp; &nbsp; <span style="font-weight: bold;">astap.exe
           -f c:\images\image.png &nbsp;-ra 23.000&nbsp; -spd 179.000
           &nbsp;&nbsp;-r
-          30&nbsp;</span></big><big style="font-weight: bold;">-debug</big></p><p style="text-align: left; font-family: monospace;"><big style="font-weight: bold;">or</big></p><p style="text-align: left; font-family: monospace;"><big>&nbsp; &nbsp; <span style="font-weight: bold;">astap.exe&nbsp;</span></big><big style="font-weight: bold;">-debug</big></p>
+          30&nbsp;</span></big><big style="font-weight: bold;">-debug</big></p><p style="text-align: left; font-family: monospace;"><big style="font-weight: bold;">or</big></p><p style="text-align: left; font-family: monospace;"><big>&nbsp; &nbsp; <span style="font-weight: bold;">astap.exe&nbsp;</span></big><big style="font-weight: bold;">-debug</big></p><p style="text-align: left; font-family: monospace;"></p><p style="text-align: left; font-family: monospace;">1) <span style="text-decoration: underline;">The astap -f stdin command line option</span></p><p style="text-align: left; font-family: monospace;">Raw
+format send via stdin should start with three longwords (of 4 bytes).
+The first longword contains a format identification.&nbsp;The second
+longword contains the image width. The third longword contains the
+image height followed by the image raw data.</p><p style="text-align: left; font-family: monospace;">Raw format identification:</p><div style="text-align: left;"><span style="font-family: monospace;">$31574152 or RAW1,&nbsp; 8bit mono image </span><br><span style="font-family: monospace;">$32574152 or RAW2, 16it mono image</span><br><span style="font-family: monospace;">$33574152 or RAW3, 24bit RGB image (R,G,B,R,G,B,R.....)</span><br><span style="font-family: monospace;">$43574152 or RAW4, 32 bit mono image</span><br><span style="font-family: monospace;">$66574152 or RAWf, 32 bit float mono image</span><br><span style="font-family: monospace;"></span></div><div style="text-align: left;"><span style="font-family: monospace;"><br>The
+result is written to stdout. Only for the standard ASTAP
+Windows&nbsp;version the stdout is blocked (unless you use the command
+line version) and the result is written to a stdin.ini file at the
+astap program directory. Use tthe -o command to specify any other file
+and directory. The .wcs file is always written but also here use the -o
+option to specify path and file name.<br><br>The ra,dec and fov should be specified in the command line. Example using a raw file as input: <br><br>e.g. /opt/astap/astap -f stdin -ra 23 -dec 89 -fov 1.2 -r 30 &lt;./m42.raw<br></span><span style="font-family: monospace;"></span></div><span style="font-family: monospace;"><br></span>
       <big> </big><p style="text-align: left;"><big><span style="text-decoration: underline; font-weight: bold;">Command-line, output files</span></big></p><p style="text-align: left;"><big>In command line
           mode the program
           produces&nbsp;two output files at the same location as the

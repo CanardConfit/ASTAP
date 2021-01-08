@@ -1,12 +1,12 @@
 object stackmenu1: Tstackmenu1
-  Left = 364
+  Left = -4
   Height = 644
-  Top = 212
-  Width = 1619
+  Top = 197
+  Width = 1022
   AllowDropFiles = True
   Caption = 'stack menu'
   ClientHeight = 644
-  ClientWidth = 1619
+  ClientWidth = 1022
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -51,7 +51,7 @@ object stackmenu1: Tstackmenu1
     Left = 0
     Height = 134
     Top = 510
-    Width = 1619
+    Width = 1022
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -124,7 +124,7 @@ object stackmenu1: Tstackmenu1
       Height = 19
       Hint = 'Activate this option if you want link the darks based on exposure duration.'
       Top = -2
-      Width = 122
+      Width = 121
       Caption = 'Dark exposure time'
       ParentFont = False
       ParentShowHint = False
@@ -198,11 +198,11 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1601
+    Left = 1001
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
-    Width = 13
+    Width = 16
     Anchors = [akTop, akRight]
     Caption = '🡺'
     Font.Color = clHighlight
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     Height = 448
     Hint = 'Stack menu'
     Top = 0
-    Width = 1618
+    Width = 1021
     ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
@@ -231,7 +231,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the light frames'
       Caption = 'Images'
       ClientHeight = 420
-      ClientWidth = 1610
+      ClientWidth = 1013
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -305,7 +305,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1610
+        Width = 1013
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -970,7 +970,7 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Type'
             MinWidth = 50
-            Width = 40
+            Width = 41
           end        
           item
             Alignment = taRightJustify
@@ -1059,7 +1059,7 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Exposure'
             MinWidth = 75
-            Width = 63
+            Width = 62
           end        
           item
             Alignment = taRightJustify
@@ -2912,14 +2912,14 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Type'
             MinWidth = 50
-            Width = 40
+            Width = 41
           end        
           item
             Alignment = taRightJustify
             AutoSize = True
             Caption = 'Date/Time'
             MinWidth = 90
-            Width = 70
+            Width = 71
           end        
           item
             Alignment = taRightJustify
@@ -3305,7 +3305,7 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Type'
             MinWidth = 50
-            Width = 40
+            Width = 41
           end        
           item
             Alignment = taRightJustify
@@ -3550,14 +3550,14 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Type'
             MinWidth = 50
-            Width = 40
+            Width = 41
           end        
           item
             Alignment = taRightJustify
             AutoSize = True
             Caption = 'Date/Time'
             MinWidth = 90
-            Width = 70
+            Width = 71
           end        
           item
             Alignment = taRightJustify

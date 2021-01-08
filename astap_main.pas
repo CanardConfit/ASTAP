@@ -48,7 +48,8 @@ uses
   LCLVersion, SysUtils, Graphics, Forms, strutils, math,
   clipbrd, {for copy to clipboard}
   Buttons, PopupNotifier, simpleipc,
-  CustApp, Types ;
+  CustApp, Types,
+  iostream {for using stdin for data}  ;
 
 type
   { Tmainwindow }
@@ -560,6 +561,7 @@ const
 
   commandline_execution : boolean=false;{program executed in command line}
   commandline_log       : boolean=false;{file log request in command line}
+  stdin_mode            : boolean=false;{file send via stdin}
   errorlevel        : integer=0;{report errors when shutdown}
 
   mouse_positionRADEC1 : string='';{For manual reference solving}
@@ -2361,7 +2363,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.471, '+about_message4+', dated 2021-1-7';
+  #13+#10+'ASTAP version ß0.9.472, '+about_message4+', dated 2021-1-8';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -9608,7 +9610,19 @@ procedure write_ini(solution:boolean);{write solution to ini file}
 var
    f: text;
 begin
-  assignfile(f,ChangeFileExt(filename2,'.ini'));
+  if stdin_mode then {raw file send via stdin}
+  begin
+    {$IFDEF MSWINDOWS}
+     if isConsole then {console available}
+       AssignFile(f,'')
+     else {no console available, compiler option -WH is checked}
+       assignfile(f,filename2+'.ini'); {filename2 could be long due to -o option}
+    {$ELSE}
+     AssignFile(f,''); {write to console, unix and Darwin}
+    {$ENDIF}
+  end
+  else
+    assignfile(f,ChangeFileExt(filename2,'.ini'));
   rewrite(f);
   if solution then
   begin
@@ -9964,6 +9978,86 @@ end;
 
 //end;
 
+function read_stdin_data: boolean;  {reads via stdin a raw image based on the INDI standard}
+var
+ count,format_type,i,h,bufferlength: Integer;
+  rgbdummy          : byteX3;
+  x_longword  : longword;
+  x_single    : single absolute x_longword;{for conversion 32 bit float}
+  InputStream: TIOStream;
+begin
+  result:=false;{assume failure}
+  cd1_1:=0;{no solution}
+
+  try
+
+    InputStream := TIOStream.Create(iosInput);
+    {read header}
+    Count := InputStream.Read(format_type, 4);
+
+    naxis3:=1; {assume mono}
+    if format_type=$32574152 then nrbits:=16 {RAW2, 16 bit mono identifier}
+    else
+    if format_type=$31574152 then nrbits:=8 {RAW1, 8 bit mono}
+    else
+    if format_type=$33574152 then begin nrbits:=24; {24bit RGB = RAW3 = 0x33574152, rgb,rgb,rgb} naxis3:=3;end
+    else
+    if format_type=$34574152 then nrbits:=32 {RAW4, 32 bit mono}
+    else
+    if format_type=$66574152 then nrbits:=-32 {RAWf, -32 bit float mono}
+    else
+    exit;
+
+    naxis3:=1;
+
+    Count := InputStream.Read(width2, 4);
+    Count := InputStream.Read(height2, 4);
+
+    {read image data}
+    setlength(img_loaded,naxis3,width2,height2);
+    h:=0;
+    bufferlength:=width2*(nrbits div 8);
+    repeat
+      Count := InputStream.Read(fitsBuffer[0],bufferlength );
+      if Count >= bufferlength then
+      begin
+        if nrbits=16 then
+          for i:=0 to width2-1 do {fill array} img_loaded[0,i,h]:=fitsbuffer2[i]
+        else
+        if nrbits=8 then
+           for i:=0 to width2-1 do {fill array} img_loaded[0,i,h]:=fitsbuffer[i]
+        else
+        if nrbits=24 then
+        begin
+           for i:=0 to width2-1 do {fill array}
+           begin
+             rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
+             img_loaded[0,i,h]:=rgbdummy[0];{store in memory array}
+             img_loaded[1,i,h]:=rgbdummy[1];{store in memory array}
+             img_loaded[2,i,h]:=rgbdummy[2];{store in memory array}
+           end;
+           naxis3:=3;
+        end
+        else
+        if nrbits=-32 then {floats}
+           for i:=0 to width2-1 do {fill array}
+           begin
+             x_longword:=fitsbuffer4[i];
+             img_loaded[0,i,h]:= x_single;{for conversion 32 bit float}
+           end
+        else
+        if nrbits=32 then
+           for i:=0 to width2-1 do {fill array} img_loaded[0,i,h]:= fitsbuffer4[i];
+      end
+      else exit;
+      inc(h)
+    until ((h>=height2-1) or (count=0));
+    result:=true;
+    datamin_org:=0;
+    datamax_org:=65535;
+  except
+  end;
+end;
 
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
@@ -9999,6 +10093,7 @@ begin
       begin
         application.messagebox( pchar(
         '-f  filename'+#10+
+        '-f  stdin     {read raw image from stdin}'+#10+
         '-r  radius_area_to_search[degrees]'+#10+      {changed}
         '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto}'+#10+
         '-fov diameter_field[degrees]'+#10+   {changed}
@@ -10039,11 +10134,23 @@ begin
         if filespecified then
         begin
           filename2:=GetOptionValue('f');
+          stdin_mode:=filename2='stdin';
+          if stdin_mode=false then {file mode}
+          begin
           if debug=false then
             file_loaded:=load_image(false,false {plot}) {load file first to give commandline parameters later priority}
           else
             load_image(true,true {plot});{load and show image}
-
+          end
+          else
+          begin
+            file_loaded:=read_stdin_data;
+            if debug then
+            begin
+              use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+              plot_fits(mainwindow.image1,true,true);{plot test image}
+            end;
+          end;
           if file_loaded=false then errorlevel:=16;{error file loading}
           file_loaded:=((file_loaded) or (extend_type>0));{axy}
         end

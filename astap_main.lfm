@@ -1,13 +1,13 @@
 object mainwindow: Tmainwindow
-  Left = 212
+  Left = -7
   Height = 616
   Hint = ' '
-  Top = 189
-  Width = 1343
+  Top = 94
+  Width = 1022
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
   ClientHeight = 596
-  ClientWidth = 1343
+  ClientWidth = 1022
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -204,11 +204,11 @@ object mainwindow: Tmainwindow
     Height = 445
     Hint = 'hint'
     Top = 168
-    Width = 1368
+    Width = 1047
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
     ClientHeight = 445
-    ClientWidth = 1368
+    ClientWidth = 1047
     Color = 2105376
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
@@ -223,7 +223,7 @@ object mainwindow: Tmainwindow
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
     object Image1: TImage
-      Left = 208
+      Left = 88
       Height = 264
       Top = 72
       Width = 608
@@ -666,7 +666,7 @@ object mainwindow: Tmainwindow
     Left = 0
     Height = 23
     Top = 573
-    Width = 1343
+    Width = 1022
     Panels = <    
       item
         Width = 200
@@ -778,7 +778,7 @@ object mainwindow: Tmainwindow
     Left = 595
     Height = 177
     Top = 0
-    Width = 751
+    Width = 430
     ActivePage = TabSheet1
     Anchors = [akTop, akLeft, akRight]
     TabIndex = 0
@@ -786,12 +786,12 @@ object mainwindow: Tmainwindow
     object TabSheet1: TTabSheet
       Caption = 'Header'
       ClientHeight = 149
-      ClientWidth = 743
+      ClientWidth = 422
       object Memo1: TMemo
         Left = 0
         Height = 149
         Top = 0
-        Width = 743
+        Width = 422
         Align = alClient
         Anchors = [akTop, akLeft, akRight]
         Font.Height = -9
