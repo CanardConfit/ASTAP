@@ -2363,7 +2363,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License GPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.472, '+about_message4+', dated 2021-1-8';
+  #13+#10+'ASTAP version ß0.9.473, '+about_message4+', dated 2021-1-9';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -10018,8 +10018,10 @@ begin
     h:=0;
     bufferlength:=width2*(nrbits div 8);
     repeat
-      Count := InputStream.Read(fitsBuffer[0],bufferlength );
-      if Count >= bufferlength then
+      count:=0;
+      repeat {adapt reading to one image line}
+         Count :=count + InputStream.Read(fitsBuffer[count],bufferlength-count );
+      until count>=bufferlength;
       begin
         if nrbits=16 then
           for i:=0 to width2-1 do {fill array} img_loaded[0,i,h]:=fitsbuffer2[i]
@@ -10048,8 +10050,7 @@ begin
         else
         if nrbits=32 then
            for i:=0 to width2-1 do {fill array} img_loaded[0,i,h]:= fitsbuffer4[i];
-      end
-      else exit;
+      end;
       inc(h)
     until ((h>=height2-1) or (count=0));
     result:=true;

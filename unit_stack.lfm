@@ -124,7 +124,7 @@ object stackmenu1: Tstackmenu1
       Height = 19
       Hint = 'Activate this option if you want link the darks based on exposure duration.'
       Top = -2
-      Width = 121
+      Width = 122
       Caption = 'Dark exposure time'
       ParentFont = False
       ParentShowHint = False
@@ -198,11 +198,11 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1001
+    Left = 1004
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
-    Width = 16
+    Width = 13
     Anchors = [akTop, akRight]
     Caption = '🡺'
     Font.Color = clHighlight
@@ -970,7 +970,7 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Type'
             MinWidth = 50
-            Width = 41
+            Width = 40
           end        
           item
             Alignment = taRightJustify
@@ -1059,7 +1059,7 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Exposure'
             MinWidth = 75
-            Width = 62
+            Width = 63
           end        
           item
             Alignment = taRightJustify
@@ -2912,14 +2912,14 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Type'
             MinWidth = 50
-            Width = 41
+            Width = 40
           end        
           item
             Alignment = taRightJustify
             AutoSize = True
             Caption = 'Date/Time'
             MinWidth = 90
-            Width = 71
+            Width = 70
           end        
           item
             Alignment = taRightJustify
@@ -3305,7 +3305,7 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Type'
             MinWidth = 50
-            Width = 41
+            Width = 40
           end        
           item
             Alignment = taRightJustify
@@ -3550,14 +3550,14 @@ object stackmenu1: Tstackmenu1
             AutoSize = True
             Caption = 'Type'
             MinWidth = 50
-            Width = 41
+            Width = 40
           end        
           item
             Alignment = taRightJustify
             AutoSize = True
             Caption = 'Date/Time'
             MinWidth = 90
-            Width = 71
+            Width = 70
           end        
           item
             Alignment = taRightJustify
