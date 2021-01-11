@@ -621,7 +621,7 @@ begin
       if select_star_database(lowercase(stackmenu1.star_database1.text))=false then
       begin
         result:=false;
-        application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download the H17 (or H18, G17, V17) and install'), pchar('ASTAP error:'),0);
+        application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download the h18 (or h17, v17) and install'), pchar('ASTAP error:'),0);
         errorlevel:=32;{no star database}
         exit;
       end
@@ -705,7 +705,7 @@ begin
                 extrastars:=extrastars*1.1;
                 if read_stars(telescope_ra,telescope_dec,search_field*oversize,round(nrstars_required*oversize*oversize*extrastars) ,{var}database_stars)= false then
                 begin
-                  application.messagebox(pchar('Error, some of the 1476/290 star database files are missing!'+#13+'Download the g17 (or g16 or g18) and extract the files to the program directory.'),0 );
+                  application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download the h18 (or h17, v17) and install'), pchar('ASTAP error:'),0);
                   errorlevel:=33;{read error star database}
                   exit; {no stars}
                 end;

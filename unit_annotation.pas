@@ -1680,7 +1680,7 @@ begin
 
     if select_star_database(stackmenu1.star_database1.text)=false then
     begin
-      application.messagebox(pchar('No star database found!'+#13+'Download the g17 (or g16 or g18) and extract the files to the program directory'), pchar('No star database!'),0);
+      application.messagebox(pchar('No star database found!'+#13+'Download the h18 (or h17 or v17) and extract the files to the program directory'), pchar('No star database!'),0);
       exit;
     end;
 
@@ -1803,7 +1803,7 @@ begin
 
     if select_star_database(stackmenu1.star_database1.text)=false then
     begin
-      application.messagebox(pchar('No star database found!'+#13+'Download the g17 (or g16 or g18) and extract the files to the program directory'), pchar('No star database!'),0);
+      application.messagebox(pchar('No star database found!'+#13+'Download the h18 (or h17 or v17) and extract the files to the program directory'), pchar('No star database!'),0);
       exit;
     end;
 

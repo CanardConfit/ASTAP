@@ -773,15 +773,9 @@ const
 procedure listview_add(tl: tlistview; s0:string; is_checked:boolean; count:integer);
 procedure update_equalise_background_step(pos1: integer);{update equalise background menu}
 procedure memo2_message(s: string);{message to memo2}
-
-function get_standard_deviation(backgr: double {value background}; colour : integer; img2: image_array): double;{get the background standard deviation using 10000 pixels. As reference the backgr value is used}
-procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; var background, starlevel: double); {get background and star level from peek histogram}
-
 procedure update_stackmenu;{update stackmenu1 menus}
-
 procedure box_blur(colors,range: integer;var img: image_array);{combine values of pixels, ignore zeros}
 procedure black_spot_filter(var img: image_array);{remove black spots with value zero}
-
 
 function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer) inline; {apply dark, flat if required, renew if different exposure or ccd temp}
@@ -1148,95 +1142,6 @@ begin
   for c:=0 to stackmenu1.ListView1.items.count-1 do
     if stackmenu1.ListView1.Items[c].Checked then inc(images_selected,1);
   stackmenu1.nr_selected1.caption:=inttostr(images_selected);{update menu info}
-end;
-
-
-function get_standard_deviation(backgr: double {value background}; colour : integer; img2: image_array): double;{get the background standard deviation using 10000 pixels. As reference the backgr value is used}
-var
- fitsX, fitsY,counter,stepsize,width5,height5 : integer;
- value : double;
-begin
-  result:=0;
-  counter:=1; {never divide by zero}
-
-  fitsX:=15;
-  stepsize:=round(height2/100);{get about 10000 samples. Use 102 rather then 100 to prevent problems with artifical generated stars which is using repeat of 100}
-  if odd(stepsize)=false then
-           stepsize:=stepsize+1;{prevent problems with even raw OSC images}
-
-  width5:=Length(img2[0]);    {width}
-  height5:=Length(img2[0][0]); {height}
-
-  while fitsX<=width5-1-15 do
-  begin
-    fitsY:=15;
-    while fitsY<=height5-1-15 do
-    begin
-      value:=img2[colour,fitsX,fitsY];
-      if ((value<backgr*2) and (value<>0)) then {not an outlier, noise should be symmetrical so should be less then twice background}
-      begin
-        result:=result+sqr(value-backgr);
-        inc(counter);{keep record of number of pixels processed}
-      end;
-      inc(fitsY,stepsize);;{skip pixels for speed}
-    end;
-    inc(fitsX,stepsize);{skip pixels for speed}
-  end;
-  result:=sqrt(result/counter); {standard deviation using 1/25 of pixels above background}
-end;
-
-
-procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; var background, starlevel: double); {get background and star level from peek histogram}
-var
-  i, pixels,max_range,above,his_total : integer;
-begin
-  if calc_hist then
-             get_hist(colour,img);{get histogram of img_loaded and his_total}
-
-  {find peak in histogram which should be the average background}
-  pixels:=0;
-  max_range:=his_mean[colour]; {mean value from histogram}
-  for i := 1 to max_range do {find peak, ignore value 0 from oversize}
-    if histogram[colour,i]>pixels then {find colour peak}
-    begin
-      pixels:= histogram[colour,i];
-      background:=i;
-    end;
-
-  {check alternative mean value}
-  if his_mean[colour]>2*background {2* most common} then
-  begin
-    memo2_message('Will use mean value '+inttostr(round(his_mean[colour]))+' as background rather then most common value '+inttostr(round(background)));
-    background:=his_mean[colour];{strange peak at low value, ignore histogram and use mean}
-  end;
-
-  if calc_noise_level then  {find star level and background noise level}
-  begin
-    {calculate star level}
-    if ((nrbits=8) or (nrbits=24)) then max_range:= 255 else max_range:=65001 {histogram runs from 65000};{8 or 16 / -32 bit file}
-    i:=max_range;
-    starlevel:=0;
-    above:=0;
-
-    if colour=1 then his_total:=his_total_green
-    else
-    if colour=2 then his_total:=his_total_blue
-    else
-    his_total:=his_total_red;
-
-    while ((starlevel=0) and (i>background+1)) do {find star level 0.003 of values}
-    begin
-       dec(i);
-       above:=above+histogram[colour,i];
-       if above>0.001*his_total then starlevel:=i;
-    end;
-    if starlevel<= background then starlevel:=background+1 {no or very few stars}
-    else
-    starlevel:=starlevel-background-1;{star level above background. Important subtract 1 for saturated images. Otherwise no stars are detected}
-
-    {calculate noise level}
-    noise_level[colour]:= round(get_standard_deviation(background,colour,img));
-  end;
 end;
 
 
@@ -4230,11 +4135,13 @@ begin
   Screen.Cursor :=Save_Cursor;{back to normal }
 end;
 
+
 procedure Tstackmenu1.apply_create_gradient1Click(Sender: TObject);
 begin
   if sender=create_test_image_stars1 then create_test_image(2)
                                      else create_test_image(1);
 end;
+
 
 procedure Tstackmenu1.clear_blink_alignment1Click(Sender: TObject);
 var
@@ -4253,17 +4160,20 @@ begin
   end;
 end;
 
+
 procedure Tstackmenu1.clear_blink_list1Click(Sender: TObject);
 begin
   esc_pressed:=true; {stop any running action}
   listview6.Clear;
 end;
 
+
 procedure Tstackmenu1.clear_blink_list2ContextPopup(Sender: TObject;
   MousePos: TPoint; var Handled: Boolean);
 begin
 
 end;
+
 
 procedure Tstackmenu1.browse_dark1Click(Sender: TObject);
 var
@@ -4277,9 +4187,6 @@ begin
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '|JPEG, TIFF, PNG files (*.)||*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
                         '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
-
-
-//  fits_file:=true;
   if opendialog1.execute then
   begin
     listview2.items.beginupdate;
@@ -4290,6 +4197,7 @@ begin
     listview2.items.endupdate;
   end;
 end;
+
 
 procedure Tstackmenu1.browse_inspector1Click(Sender: TObject);
 var i: integer;
@@ -4314,6 +4222,7 @@ begin
   end;
 end;
 
+
 procedure Tstackmenu1.browse_live_stacking1Click(Sender: TObject);
 var
   live_stack_directory : string;
@@ -4323,6 +4232,7 @@ begin
     live_stacking_path1.caption:=live_stack_directory;{show path}
   end;
 end;
+
 
 procedure Tstackmenu1.analyse_objects_visibles1Click(Sender: TObject);
 var
@@ -4366,8 +4276,8 @@ begin
   memo2_message('No object locations found in image. Modify limiting count and limiting magnitude in annotation menu CTRL+Q');
   memo2_message('Ready. Select the object to align on.');
   Screen.Cursor :=Save_Cursor;    { back to normal }
-
 end;
+
 
 procedure Tstackmenu1.browse_photometry1Click(Sender: TObject);
 var
