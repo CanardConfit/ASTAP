@@ -1105,19 +1105,34 @@ object mainwindow: Tmainwindow
       object N6: TMenuItem
         Caption = '-'
       end
-      object ccdinspector1: TMenuItem
+      object Inspector_top_menu1: TMenuItem
         Caption = 'Image (CCD) inspector'
-        Enabled = False
-        Hint = 'Calculate average HFD value , curvature and tilt. The absolute font size will be smaller if you zoom in.'
-        ImageIndex = 17
-        ShortCut = 116
-        OnClick = CCDinspector1Click
-      end
-      object ccd_inspector_plot1: TMenuItem
-        Caption = 'Image (CCD) inspector HFD plot'
-        Enabled = False
-        Hint = 'Plot HFD values as grey values. '
-        OnClick = ccd_inspector_plot1Click
+        object ccdinspector1: TMenuItem
+          Caption = 'Image (CCD) inspector'
+          Enabled = False
+          Hint = 'Calculate average HFD value , curvature and tilt. The absolute font size will be smaller if you zoom in.'
+          ImageIndex = 17
+          ShortCut = 116
+          OnClick = CCDinspector1Click
+        end
+        object inspector_diagram2: TMenuItem
+          Caption = 'HFD 2D contour diagram'
+          Enabled = False
+          Hint = 'Creates a 2D contour diagram based on the HFD values. The gray values represent the HFD *100. The HFD values are local median filtered for each three stars'
+          OnClick = inspector_diagram1Click
+        end
+        object inspector_diagram1: TMenuItem
+          Caption = 'HFD diagram'
+          Enabled = False
+          Hint = 'Creates a diagram based on the HFD values. The gray values represent the HFD *100. The HFD values are local median filtered for each three stars'
+          OnClick = inspector_diagram1Click
+        end
+        object inspector_hfd_values1: TMenuItem
+          Caption = 'HFD values'
+          Enabled = False
+          Hint = 'Writes HFD values near each star and in the FITS file. No HFD filtering.'
+          OnClick = inspector_diagram1Click
+        end
       end
       object show_distortion1: TMenuItem
         Caption = 'Show distortion'

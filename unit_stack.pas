@@ -4108,9 +4108,9 @@ begin
        if timestamp1.checked then
        begin
          if date_avg='' then
-           annotation_to_array('date_obs: '+date_obs,1,10,img_loaded) {date_obs to image array as font. Flicker free method}
+           annotation_to_array('date_obs: '+date_obs,false,65535,1{size},1,10,img_loaded) {date_obs to image array as font. Flicker free method}
          else
-         annotation_to_array('date_avg: '+date_avg,1,10,img_loaded);{date_obs to image array as font}
+         annotation_to_array('date_avg: '+date_avg,false,65535,1{size},1,10,img_loaded);{date_obs to image array as font}
        end;
 
         plot_fits(mainwindow.image1,false {re_center},true);
@@ -5066,9 +5066,9 @@ begin
       if timestamp1.checked then
       begin
          if date_avg='' then
-           annotation_to_array('date_obs: '+date_obs,1,10,img_loaded) {date_obs to image array as annotation}
+           annotation_to_array('date_obs: '+date_obs,false,65535,1{size},1,10,img_loaded) {date_obs to image array as annotation}
            else
-           annotation_to_array('date_avg: '+date_avg,1,10,img_loaded);{date_obs to image array as annotation}
+           annotation_to_array('date_avg: '+date_avg,false,65535,1{size},1,10,img_loaded);{date_obs to image array as annotation}
       end;
 
       if nrbits=16 then

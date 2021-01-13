@@ -75,7 +75,7 @@ type
     center_lost_windows: TMenuItem;
     deepsky_annotation1: TMenuItem;
     hyperleda_annotation1: TMenuItem;
-    ccd_inspector_plot1: TMenuItem;
+    inspector_diagram1: TMenuItem;
     MenuItem10: TMenuItem;
     annotate_with_measured_magnitudes1: TMenuItem;
     compress_fpack1: TMenuItem;
@@ -97,6 +97,9 @@ type
     extract_pixel_22: TMenuItem;
     batch_solve_astrometry_net: TMenuItem;
     copy_to_clipboard1: TMenuItem;
+    inspector_diagram2: TMenuItem;
+    Inspector_top_menu1: TMenuItem;
+    inspector_hfd_values1: TMenuItem;
     Rota_mainmenu1: TMenuItem;
     batch_rotate_left1: TMenuItem;
     batch_rotate_right1: TMenuItem;
@@ -284,7 +287,7 @@ type
     procedure batch_annotate1Click(Sender: TObject);
     procedure batch_rotate_right1Click(Sender: TObject);
     procedure batch_solve_astrometry_netClick(Sender: TObject);
-    procedure ccd_inspector_plot1Click(Sender: TObject);
+    procedure inspector_diagram1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
     procedure copy_to_clipboard1Click(Sender: TObject);
     procedure extract_pixel_11Click(Sender: TObject);
@@ -3067,7 +3070,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.473, '+about_message4+', dated 2021-1-9';
+  #13+#10+'ASTAP version ß0.9.474, '+about_message4+', dated 2021-1-13';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4506,7 +4509,10 @@ begin
     mainwindow.max2.enabled:=fits;
 
     mainwindow.ccdinspector1.enabled:=fits;
-    mainwindow.ccd_inspector_plot1.enabled:=fits;
+    mainwindow.inspector_diagram1.enabled:=fits; {Voronoi}
+    mainwindow.inspector_diagram2.enabled:=fits; {2D contour}
+    mainwindow.inspector_hfd_values1.enabled:=fits; {add hfd values}
+
     mainwindow.convertmono1.enabled:=fits;
 
     mainwindow.solve_button1.enabled:=fits;
@@ -7752,15 +7758,22 @@ begin
   end;
 end;
 
-procedure Tmainwindow.ccd_inspector_plot1Click(Sender: TObject);
+procedure Tmainwindow.inspector_diagram1Click(Sender: TObject);
 var
   j: integer;
   Save_Cursor:TCursor;
+  demode : char;
 begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   backup_img;
-  CCDinspector_analyse;
+
+  if Sender=inspector_diagram2 then demode:='2'
+  else
+  if Sender=inspector_diagram1 then demode:='V'
+  else
+  demode:='A';
+  CCDinspector_analyse(demode);
 
   {$ifdef mswindows}
   filename2:=ExtractFileDir(filename2)+'\hfd_values.fit';
@@ -7781,7 +7794,7 @@ begin
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(cwhite));
   update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
-  update_text   ('COMMENT G','  Grey values indicate HFD values * 100');
+  if demode='V'  then update_text   ('COMMENT G','  Grey values indicate HFD values * 100');
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
 

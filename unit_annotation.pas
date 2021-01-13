@@ -32,7 +32,7 @@ procedure plot_artificial_stars(img: image_array);{plot stars as single pixel wi
 
 procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 procedure read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; var ra2,dec2,length2,width2,pa : double);{deepsky database search}
-procedure annotation_to_array(thestring : ansistring; x,y : integer; var img: image_array);{string with numbers to image array as annotation}
+procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y : integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 
 
 var
@@ -49,7 +49,7 @@ implementation
 uses
   unit_star_database, unit_stack, unit_star_align;
 
-const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP native font for part of code page 437}
+const font_5x9 : packed array[33..126,0..8,0..4] of byte=  {ASTAP native font for part of code page 437}
 ((
 (0,0,1,0,0),
 (0,0,1,0,0),
@@ -994,9 +994,9 @@ const font_5x9 : packed array[33..126,1..9,1..5] of byte=  {ASTAP native font fo
 (0,0,0,0,0)){~}
 );
 
-procedure annotation_to_array(thestring : ansistring; x,y : integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
+procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y : integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 var
- w,h,i,j,k,value,error2,flipV, flipH,len: integer;
+ w,h,i,j,k,value,flipV, flipH,len,x2,y2: integer;
  ch : pansichar;
 begin
   w:=Length(img[0]); {width}
@@ -1022,11 +1022,15 @@ begin
   begin
     ch:=Pansichar(copy(thestring,k,1));
     value:=ord(ch[0]);
-
-    if ((value>=33) and (value<=126) and (k*8<w){within image}) then
-    for j:=9 downto 1 do
-      for i:=1 to 5 do
-        img[0,x+(i+(k-1)*8)*flipH,y-(j*flipV)]:=font_5x9[value,j,i]*65535;{write the font to the array}
+    if ((value>=33) and (value<=126)) then
+    for j:=(9*size)-1 downto 0 do
+      for i:=0 to (5*size)-1 do
+      begin
+        x2:=x+(i+(k-1)*7*size)*flipH;
+        y2:=y-(j*flipV);
+        if ((x2>=0) and (x2<w) and (y2>=0) and (y2<h)) then {within image}
+        if (((transparant=false)) or (font_5x9[value,j div size ,i div size]<>0)) then img[0,x2,y2]:=font_5x9[value,j div size,i div size]*colour;{write the font to the array}
+      end;
   end;
 end;
 
