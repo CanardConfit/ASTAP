@@ -100,6 +100,7 @@ type
     inspector_diagram2: TMenuItem;
     Inspector_top_menu1: TMenuItem;
     inspector_hfd_values1: TMenuItem;
+    MenuItem22: TMenuItem;
     Rota_mainmenu1: TMenuItem;
     batch_rotate_left1: TMenuItem;
     batch_rotate_right1: TMenuItem;
@@ -315,6 +316,7 @@ type
     procedure gaia_star_position1Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
     procedure northeast1Click(Sender: TObject);
+    procedure Panel1Click(Sender: TObject);
     procedure range1Change(Sender: TObject);
     procedure remove_atmouse1Click(Sender: TObject);
     procedure gradient_removal1Click(Sender: TObject);
@@ -2375,44 +2377,10 @@ begin
 end;
 
 
-function get_standard_deviation(backgr: double {value background}; colour : integer; img2: image_array): double;{get the background standard deviation using 10000 pixels. As reference the backgr value is used}
-var
- fitsX, fitsY,counter,stepsize,width5,height5 : integer;
- value : double;
-begin
-  result:=0;
-  counter:=1; {never divide by zero}
-
-  fitsX:=15;
-  stepsize:=round(height2/100);{get about 10000 samples. Use 102 rather then 100 to prevent problems with artifical generated stars which is using repeat of 100}
-  if odd(stepsize)=false then
-           stepsize:=stepsize+1;{prevent problems with even raw OSC images}
-
-  width5:=Length(img2[0]);    {width}
-  height5:=Length(img2[0][0]); {height}
-
-  while fitsX<=width5-1-15 do
-  begin
-    fitsY:=15;
-    while fitsY<=height5-1-15 do
-    begin
-      value:=img2[colour,fitsX,fitsY];
-      if ((value<backgr*2) and (value<>0)) then {not an outlier, noise should be symmetrical so should be less then twice background}
-      begin
-        result:=result+sqr(value-backgr);
-        inc(counter);{keep record of number of pixels processed}
-      end;
-      inc(fitsY,stepsize);;{skip pixels for speed}
-    end;
-    inc(fitsX,stepsize);{skip pixels for speed}
-  end;
-  result:=sqrt(result/counter); {standard deviation using 1/25 of pixels above background}
-end;
-
-
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; var background, starlevel: double); {get background and star level from peek histogram}
 var
-  i, pixels,max_range,above,his_total : integer;
+  i, pixels,max_range,above,his_total, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
+  value,sd, sd_old : double;
 begin
   if calc_hist then
              get_hist(colour,img);{get histogram of img_loaded and his_total}
@@ -2459,7 +2427,40 @@ begin
     starlevel:=starlevel-background-1;{star level above background. Important subtract 1 for saturated images. Otherwise no stars are detected}
 
     {calculate noise level}
-    noise_level[colour]:= round(get_standard_deviation(background,colour,img));
+    stepsize:=round(height2/71);{get about 71x71=5000 samples. So use only a fraction of the pixels}
+    if odd(stepsize)=false then stepsize:=stepsize+1;{prevent problems with even raw OSC images}
+
+    width5:=Length(img[0]);    {width}
+    height5:=Length(img[0][0]); {height}
+
+    sd:=99999;
+    iterations:=0;
+    repeat  {repeat until sd is stable or 7 iterations}
+      fitsX:=15;
+      counter:=1; {never divide by zero}
+      sd_old:=sd;
+      while fitsX<=width5-1-15 do
+      begin
+        fitsY:=15;
+        while fitsY<=height5-1-15 do
+        begin
+          value:=img[colour,fitsX,fitsY];
+          if ((value<background*2) and (value<>0)) then {not an outlier, noise should be symmetrical so should be less then twice background}
+          begin
+            if ((iterations=0) or (abs(value-background)<=3*sd_old)) then {ignore outliers after first run}
+            begin
+              sd:=sd+sqr(value-background); {sd}
+              inc(counter);{keep record of number of pixels processed}
+            end;
+          end;
+          inc(fitsY,stepsize);;{skip pixels for speed}
+        end;
+        inc(fitsX,stepsize);{skip pixels for speed}
+      end;
+      sd:=sqrt(sd/counter); {standard deviation}
+      inc(iterations);
+    until (((sd_old-sd)<0.05*sd) or (iterations>=7));{repeat until sd is stable or 7 iterations}
+    noise_level[colour]:= round(sd);
   end;
 end;
 
@@ -3070,7 +3071,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.474, '+about_message4+', dated 2021-1-13';
+  #13+#10+'ASTAP version ß0.9.476, '+about_message4+', dated 2021-1-17';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7773,6 +7774,13 @@ begin
   if Sender=inspector_diagram1 then demode:='V'
   else
   demode:='A';
+
+  if nrbits=8 then {convert to 16 bit}
+  begin
+    nrbits:=16;
+    datamax_org:=65535;
+  end;
+
   CCDinspector_analyse(demode);
 
   {$ifdef mswindows}
@@ -8379,6 +8387,11 @@ begin
     plot_fits(mainwindow.image1,false,true); {clear indiicator}
 end;
 
+procedure Tmainwindow.Panel1Click(Sender: TObject);
+begin
+
+end;
+
 
 procedure do_stretching;{prepare strecht table and replot image}
 var
@@ -8851,7 +8864,8 @@ end;
 
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
- size, i, starX, starY         : integer;
+ size, i, starX, starY,fontsize: integer;
+ sqm                           : string;
  Save_Cursor:TCursor;
  Fliphorizontal, Flipvertical  : boolean;
  stars : star_list;
@@ -8895,6 +8909,15 @@ var
     image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
     image1.Canvas.textout(starX+size,starY,inttostr(round((flux_magn_offset-ln(stars[3,i]{flux})*2.511886432/ln(10))*10))   );{add magnitude as text}
   end;
+
+  sqm:='SQM [magn/sqr(")]: '+floattostrF2(round((flux_magn_offset-ln((cblack)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10))),0,1);
+  if ((pos('D',calstat)=0) or (pos('F',calstat)=0)) then sqm:=sqm+'  (inaccurate, dark and flat calibration missing)';
+
+  fontsize:=width2 div 120;
+  image1.Canvas.font.size:=fontsize;
+  image1.Canvas.font.color:=clwhite;
+  image1.Canvas.textout(round(fontsize*2),height2-round(2*fontsize),sqm);{median HFD and tilt indication}
+
   Screen.Cursor:= Save_Cursor;
 end;
 
@@ -10528,7 +10551,7 @@ begin
     nrfailed:=OpenDialog1.Files.count-nrsolved-nrskipped;
     if nrfailed<>0 then memo2_message(failed);
     if nrskipped<>0 then memo2_message(skipped);
-    memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(nrfailed)+' solve failures, '+inttostr(nrskipped)+' images skipped. For re-solve set option "Ignore existing fits header solution".');
+    memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(nrfailed)+' solve failures, '+inttostr(nrskipped)+' images skipped. Duration '+floattostr(round((GetTickCount64 - startTick)/100)/10)+ ' sec. For re-solve set option "Ignore existing fits header solution".');
   end;
 end;
 
@@ -10727,8 +10750,9 @@ begin
       end;
 
       dec(retries);{try again with lower detection level}
-      if retries =1 then begin if 15*noise_level[0]<star_level then detection_level:=15*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
-      if retries =0 then begin if  5*noise_level[0]<star_level then detection_level:= 5*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
+      if retries =1 then begin if 30*noise_level[0]<star_level then detection_level:=30*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
+      if retries =0 then begin if 10*noise_level[0]<star_level then detection_level:=10*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
+
 
     until ((nhfd>=max_stars) or (retries<0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
@@ -10881,9 +10905,9 @@ begin
   plot_stars(sender=calibrate_photometry1 {if true photometry only}, false {show Distortion});
   if flux_magn_offset>0 then
   begin
-      mainwindow.caption:='Photometry calibration successfull';
-      if naxis3>1 then memo2_message('Photometric accuracy for colour images is less. Conversion to mono will help.');
-      application.hint:=mainwindow.caption;
+    mainwindow.caption:='Photometry calibration successfull';
+    if naxis3>1 then memo2_message('Photometric accuracy for colour images is less. Conversion to mono will help.');
+    application.hint:=mainwindow.caption;
   end;
 end;
 
@@ -11290,6 +11314,7 @@ begin
       end;
   end;
 
+  datamax_org:=max_range;
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);
 
@@ -11908,8 +11933,11 @@ begin
     star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
 
     snr:=flux/sqrt(flux +sqr(ri)*pi*sqr(sd)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
+    {See https://en.wikipedia.org/wiki/Signal-to-noise_ratio_(imaging)   and  https://www1.phys.vt.edu/~jhs/phys3154/snr20040108.pdf}
+    {snr := signal/noise                                                  }
+    {snr := star_signal/sqrt(total_signal)                                }
+    {snr := star_signal/sqrt(star_signal + sky_signal)                    }
 
-//    log_to_file('snr_test.csv',inttostr(round(snr*1000))+','+inttostr(round(snr_old*1000)));
 
     {==========Notes on HFD calculation method=================
       Documented the HFD defintion also in https://en.wikipedia.org/wiki/Half_flux_diameter

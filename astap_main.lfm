@@ -219,6 +219,7 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     TabOrder = 3
+    OnClick = Panel1Click
     OnMouseMove = Panel1MouseMove
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
@@ -1119,12 +1120,14 @@ object mainwindow: Tmainwindow
           Caption = 'HFD 2D contour diagram'
           Enabled = False
           Hint = 'Creates a 2D contour diagram based on the HFD values. The gray values represent the HFD *100. The HFD values are local median filtered for each three stars'
+          ShortCut = 115
           OnClick = inspector_diagram1Click
         end
         object inspector_diagram1: TMenuItem
           Caption = 'HFD diagram'
           Enabled = False
           Hint = 'Creates a diagram based on the HFD values. The gray values represent the HFD *100. The HFD values are local median filtered for each three stars'
+          ShortCut = 114
           OnClick = inspector_diagram1Click
         end
         object inspector_hfd_values1: TMenuItem
@@ -1133,13 +1136,16 @@ object mainwindow: Tmainwindow
           Hint = 'Writes HFD values near each star and in the FITS file. No HFD filtering.'
           OnClick = inspector_diagram1Click
         end
-      end
-      object show_distortion1: TMenuItem
-        Caption = 'Show distortion'
-        Enabled = False
-        Hint = 'Show image distortion using the star positions and solution. Lines a 50x larger then distortion.'
-        ShortCut = 117
-        OnClick = show_distortion1Click
+        object MenuItem22: TMenuItem
+          Caption = '-'
+        end
+        object show_distortion1: TMenuItem
+          Caption = 'Show distortion'
+          Enabled = False
+          Hint = 'Show image distortion using the star positions and solution. Lines a 50x larger then distortion.'
+          ShortCut = 117
+          OnClick = show_distortion1Click
+        end
       end
       object MenuItem2: TMenuItem
         Caption = '-'

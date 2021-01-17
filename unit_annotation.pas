@@ -1621,8 +1621,6 @@ var
 
 
 begin
-
-//  mainwindow.image1.canvas.pixels[0,0]:=$FFFFF;
   flux_magn_offset:=0;
 
   if ((fits_file) and (cd1_1<>0)) then

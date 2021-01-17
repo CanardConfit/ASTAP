@@ -128,10 +128,10 @@ begin
 
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
-  cblack:=min_value;
-  cwhite:=max_value;
-  mainwindow.minimum1.position:=round(min_value);
-  mainwindow.maximum1.position:=round(max_value);
+  cblack:=min_value-5;
+  cwhite:=max_value+5;
+  mainwindow.minimum1.position:=round(min_value-5);{+5, -5 for very flat fields}
+  mainwindow.maximum1.position:=round(max_value+5);
  end;
 
 
@@ -196,16 +196,16 @@ begin
 
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
-  cblack:=min_value;
-  cwhite:=max_value;
-  mainwindow.minimum1.position:=round(min_value);
-  mainwindow.maximum1.position:=round(max_value);
+  cblack:=min_value-5;
+  cwhite:=max_value+5;
+  mainwindow.minimum1.position:=round(min_value-5);{+5, -5 for very flat fields}
+  mainwindow.maximum1.position:=round(max_value+5);
 end;
 
 
 procedure CCDinspector_analyse(detype: char);
 var
- fitsX,fitsY,size, i, j,nhfd,retries,max_stars,fontsize,starX,starY  : integer;
+ fitsX,fitsY,size, i, j,nhfd,retries,max_stars,fontsize,starX,starY,font_luminance  : integer;
  hfd1,star_fwhm,snr,flux,xc,yc,detection_level  : double;
  mean, min_value,max_value : single;
  hfd_values  : hfd_array;
@@ -278,8 +278,9 @@ var
     end;
 
     dec(retries);{try again with lower detection level}
-    if retries =1 then begin if 15*noise_level[0]<star_level then detection_level:=15*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
-    if retries =0 then begin if  5*noise_level[0]<star_level then detection_level:= 5*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
+    if retries =1 then begin if 30*noise_level[0]<star_level then detection_level:=30*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
+    if retries =0 then begin if 10*noise_level[0]<star_level then detection_level:=10*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
+
 
   until ((nhfd>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
@@ -293,7 +294,13 @@ var
    end;
 
   if detype<>'A' then
-      filter_hfd(mean, min_value,max_value ,nhfd, hfd_values); {apply the median value for each three grouped stars}
+  begin
+     filter_hfd(mean, min_value,max_value ,nhfd, hfd_values); {apply the median value for each three grouped stars}
+     font_luminance:=100;
+  end
+  else
+  font_luminance:=500;
+
 
 
   if detype='V' then voronoi_plot(min_value,max_value,nhfd,hfd_values)
@@ -304,11 +311,12 @@ var
   Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
   size:=max(1,height2 div 1000);{font size, 1 is 9x5 pixels}
 
+
   for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
    begin
      if Fliphorizontal     then starX:=width2-hfd_values[0,i]   else starX:=hfd_values[0,i];
      if Flipvertical       then starY:=height2-hfd_values[1,i] else starY:=hfd_values[1,i];
-     annotation_to_array(floattostrf(hfd_values[2,i]/100 , ffgeneral, 2,1){text},true,round(img_loaded[0,starX,starY]+550){luminance},size,starX+6,starY,img_loaded);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
+     annotation_to_array(floattostrf(hfd_values[2,i]/100 , ffgeneral, 2,1){text},true,round(img_loaded[0,starX,starY]+font_luminance){luminance},size,starX+6,starY,img_loaded);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
   end;
 
   hfd_values:=nil;

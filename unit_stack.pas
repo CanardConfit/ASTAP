@@ -1294,8 +1294,8 @@ begin
       end;
 
       dec(retries);{try again with lower detection level}
-      if retries =1 then begin if 15*noise_level[0]<star_level then detection_level:=15*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
-      if retries =0 then begin if  5*noise_level[0]<star_level then detection_level:= 5*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
+      if retries =1 then begin if 30*noise_level[0]<star_level then detection_level:=30*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
+      if retries =0 then begin if 10*noise_level[0]<star_level then detection_level:=10*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
 
       if report then closefile(f);
 
@@ -1392,8 +1392,8 @@ begin
     end;
 
      dec(retries);{try again with lower detection level}
-     if retries =1 then begin if 15*noise_level[0]<star_level then detection_level:=15*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
-     if retries =0 then begin if  5*noise_level[0]<star_level then detection_level:= 5*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
+    if retries =1 then begin if 30*noise_level[0]<star_level then detection_level:=30*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
+    if retries =0 then begin if 10*noise_level[0]<star_level then detection_level:=10*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
 
   until ((nhfd>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 

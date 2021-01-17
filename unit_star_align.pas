@@ -422,7 +422,7 @@ end;
 
 function find_fit( minimum_count: integer; quad_tolerance: double) : boolean;
 var
-   nrquads1,nrquads2, i,j,k,kd4   : integer;
+   nrquads1,nrquads2, i,j,k: integer;
    median_ratio : double;
    matchList1, matchlist2  : array of array of integer;
    ratios                  : array of double;
@@ -601,7 +601,7 @@ end;
 
 procedure find_stars(img :image_array;hfd_min:double;var starlist1: star_list);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,size,diam,i,j, max_stars,retries    : integer;
+   fitsX, fitsY,nrstars,diam,i,j, max_stars,retries    : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level      : double;
    img_temp2       : image_array;
    snr_list        : array of double;
@@ -687,8 +687,8 @@ begin
 
     if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(cblack))+ '. Detection level used '+inttostr( round(detection_level))+' above background. Star level is '+inttostr(round(star_level))+' above background. Noise level is '+floattostrF2(noise_level[0],0,0));
     dec(retries);{try again with lower detection level}
-    if retries =1 then begin if 15*noise_level[0]<star_level then detection_level:=15*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
-    if retries =0 then begin if  5*noise_level[0]<star_level then detection_level:= 5*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
+    if retries =1 then begin if 30*noise_level[0]<star_level then detection_level:=30*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
+    if retries =0 then begin if 10*noise_level[0]<star_level then detection_level:=10*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
 
   until ((nrstars>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 

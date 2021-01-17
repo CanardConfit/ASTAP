@@ -20,15 +20,15 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
       </div>
       <big><big><big></big></big></big>
       
-      <div style="text-align: left;"><span style="text-decoration: underline; color: red;">ANNOUNCEMENT:</span><br style="color: red;"><pre style="color: red;" class="moz-quote-pre" wrap="">ASTAP solver is moving from G17, G18 to the H17, H18 databases. The stars are split in 1476 files of about 5x5 degrees instead of the usual 10x10+ degrees for the 290 files. The blind solving speed increases if your  field-of-view is equal or smaller then about 1.5 degree. Blind solving speed doubles at a field-of-view of 0.5 degree compared with using the G18 star database.<br><br>There is no urgency to replace the existing G17, G18 databases. They will keep on working. In the long term I would recommend for field-of-view smaller then 1 degree to move to the H18. There is no penalty for using the H18 instead of H17, same speed only the size is larger and it goes deeper. A write-up to clarify some things in detail will follow later.</pre><big style="font-weight: bold;"><big><br>
+      <div style="text-align: left;"><span style="text-decoration: underline; color: red;">ANNOUNCEMENT:</span><br style="color: red;"><pre style="color: red;" class="moz-quote-pre" wrap="">ASTAP solver is moving from G17, G18 to the H17, H18 star databases. The stars are split in 1476 files of about 5x5 degrees instead of the usual 10x10+ degrees for the 290 files. The blind solving speed increases if your  field-of-view is equal or smaller then about 1.5 degree. Blind solving speed doubles at a field-of-view of 0.5 degree compared with using the G18 star database.<br><br>There is no urgency to replace the existing G17, G18 databases. They will keep on working. In the long term I would recommend for field-of-view smaller then 1 degree to move to the H18. There is no penalty for using the H18 instead of H17, same speed only the size is larger and it goes deeper. If you install the new database, remove/uninstall the old one to activate the new one. A write-up to clarify some things in detail will follow later.</pre><big style="font-weight: bold;"><big><br>
             Download: <br>
             <br>
           </big></big><big><big>For MS Windows 64 bit:<br>
           </big></big><big><big><span style="color: red; font-weight: bold;"></span></big></big>
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
-            &nbsp;<big>version 0.9.473 dated 2021-01-10. </big>&nbsp;Alternative
-            link, very latest development version 0.9.473 <a href="astap_setup.exe">ASTAP installer</a>
+            &nbsp;<big>version 0.9.475 dated 2021-01-13. </big>&nbsp;Alternative
+            link, very latest development version 0.9.475 <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.exe/download">H17
@@ -99,7 +99,7 @@ tab alignment.&nbsp; Older G17 and G18 files can be deleted.</small></li><li></l
           <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.deb/download">ASTAP
 debian
                   package</a></big></big><big> </big><big>&nbsp;or&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.tar.gz/download">astap_amd64.tar.gz,</a> </big><big><a href="astap_rpm.htm">openSUSE and Fedora support</a> </big><big>version
-              0.9.473 dated 2021-01-10. Alternative link, development version 0.9.473</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big> ,&nbsp;</big>&nbsp;<a href="astap_amd64.tar.gz">ASTAP tar.gz</a><big>. &nbsp;</big></li>
+              0.9.475 dated 2021-01-13. Alternative link, development version 0.9.473</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big> ,&nbsp;</big>&nbsp;<a href="astap_amd64.tar.gz">ASTAP tar.gz</a><big>. &nbsp;</big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.deb/download">H17
 star
               database debian package</a></big> (500mb)&nbsp;or <big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.deb/download">H18
@@ -219,7 +219,7 @@ in tab alignment.&nbsp; Older G17 and G18 files can be deleted.</small></li><li>
                   pkg&nbsp;installer</a></big></big><big>
               &nbsp;(</big>at&nbsp;<a href="https://sourceforge.net/projects/astap-program/">link</a>)
             <big>version
-              0.9.470a dated 2021-01-06.</big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.pkg/download">H17
+              0.9.475 dated 2021-01-13.</big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.pkg/download">H17
 star
               database pkg installer</a></big> (0.5 gbyte)&nbsp;or <big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.pkg/download">H18
 star
@@ -1900,13 +1900,26 @@ method&nbsp;is available in <a href="#inspector_tab">tab CCD Inspector</a>.
         <br>
         <img src="astap_ccd_inspector.jpg" alt="" style="width: 1053px; height: 797px;"><br>
         <br>
-        <br>
-        In addition an HFD plot is available. White areas indicate a
-        star with
-        an high HFD value. Darker areas indicate a lower value. <br>
-        <br>
-        <img style="width: 1051px; height: 797px;" alt="" src="astap_ccd_inspector2.png"><br>
-        <br>
+        <br><span style="text-decoration: underline;">HFD 2D contour menu.</span>
+The star half flux diameters (HFD's) are displayed in a 2D contour.
+Dark areas indicate a lower and better HFD value.&nbsp;This will
+quickly visualise&nbsp;sensor tilt or other problems.&nbsp;To avoid
+false indications by outliers the HFD values are filtered by taking the
+median HFD value of the three closest stars and&nbsp; allocate the
+result to all three stars. The HFD values are indicated numerical. They
+grey levels have no direct linea relation with the HFD.<br><img style="width: 1200px; height: 960px;" alt="" src="astap_ccd_inspector3.png"><br><br><br><br><span style="text-decoration: underline;">HFD
+diagram menu</span>. The star HFD values can also be represented by areas of constant HFD.
+It is in principle a Voronoi diagram, but by&nbsp; taking the median
+value of each three closest stars and allocate the median to the three
+stars it looks a little different.White areas indicate a star with an
+high HFD value. Darker areas indicate a lower value. The grey level is
+the HFD * 100.<br>
+        <img style="width: 1200px; height: 960px;" alt="" src="astap_ccd_inspector2.png"><br><br><span style="text-decoration: underline;">HFD values menu</span>
+This will only indicate the median filtered HFD values next to the
+stars. The same values as in the 2D countour and HFD diagram. To avoid
+false indications by outliers the HFD values are filtered by taking the
+median HFD value of the three closest stars and&nbsp; allocate the
+result to all three stars. <br><br><br><br>
         <span style="font-weight: bold;"><a name="viewmenu"></a>View
           menu</span><br>
         <br>
