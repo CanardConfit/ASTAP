@@ -3071,7 +3071,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.476, '+about_message4+', dated 2021-1-17';
+  #13+#10+'ASTAP version ß0.9.476a, '+about_message4+', dated 2021-1-17';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -8910,7 +8910,7 @@ var
     image1.Canvas.textout(starX+size,starY,inttostr(round((flux_magn_offset-ln(stars[3,i]{flux})*2.511886432/ln(10))*10))   );{add magnitude as text}
   end;
 
-  sqm:='SQM [magn/sqr(")]: '+floattostrF2(round((flux_magn_offset-ln((cblack)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10))),0,1);
+  sqm:='SQM [magn/sqr(")]: '+floattostrF2((flux_magn_offset-ln((cblack)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1);
   if ((pos('D',calstat)=0) or (pos('F',calstat)=0)) then sqm:=sqm+'  (inaccurate, dark and flat calibration missing)';
 
   fontsize:=width2 div 120;
