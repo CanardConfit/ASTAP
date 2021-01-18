@@ -101,6 +101,7 @@ type
     Inspector_top_menu1: TMenuItem;
     inspector_hfd_values1: TMenuItem;
     MenuItem22: TMenuItem;
+    sqm1: TMenuItem;
     Rota_mainmenu1: TMenuItem;
     batch_rotate_left1: TMenuItem;
     batch_rotate_right1: TMenuItem;
@@ -314,6 +315,7 @@ type
     procedure j2000_1Click(Sender: TObject);
     procedure galactic1Click(Sender: TObject);
     procedure gaia_star_position1Click(Sender: TObject);
+    procedure sqm1Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
     procedure northeast1Click(Sender: TObject);
     procedure Panel1Click(Sender: TObject);
@@ -2460,7 +2462,7 @@ begin
       sd:=sqrt(sd/counter); {standard deviation}
       inc(iterations);
     until (((sd_old-sd)<0.05*sd) or (iterations>=7));{repeat until sd is stable or 7 iterations}
-    noise_level[colour]:= round(sd);
+    noise_level[colour]:= round(sd);   {this noise level is too high for long exposures and if no flat is applied. So for images where center is brighter then the corners.}
   end;
 end;
 
@@ -3071,7 +3073,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.476a, '+about_message4+', dated 2021-1-17';
+  #13+#10+'ASTAP version ß0.9.477, '+about_message4+', dated 2021-1-18';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4459,6 +4461,7 @@ begin
   mainwindow.hyperleda_annotation1.enabled:=yes;{enable menu}
   mainwindow.deepsky_annotation1.enabled:=yes;{enable menu}
   mainwindow.calibrate_photometry1.enabled:=yes;{enable menu}
+  mainwindow.sqm1.enabled:=yes;{enable menu}
   mainwindow.add_marker_position1.enabled:=yes;{enable popup menu}
   mainwindow.measuretotalmagnitude1.enabled:=yes;{enable popup menu}
   mainwindow.writeposition1.enabled:=yes;{enable popup menu}
@@ -8869,6 +8872,7 @@ var
  Save_Cursor:TCursor;
  Fliphorizontal, Flipvertical  : boolean;
  stars : star_list;
+ sd,mean,sd2,mean2 : double;
 
  begin
   if fits_file=false then exit; {file loaded?}
@@ -8882,7 +8886,7 @@ var
   if flux_magn_offset=0 then
   begin
     beep;
-    img_temp:=nil;
+//    img_temp:=nil;
     Screen.Cursor:= Save_Cursor;
     exit;
   end;
@@ -8909,14 +8913,6 @@ var
     image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
     image1.Canvas.textout(starX+size,starY,inttostr(round((flux_magn_offset-ln(stars[3,i]{flux})*2.511886432/ln(10))*10))   );{add magnitude as text}
   end;
-
-  sqm:='SQM [magn/sqr(")]: '+floattostrF2((flux_magn_offset-ln((cblack)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1);
-  if ((pos('D',calstat)=0) or (pos('F',calstat)=0)) then sqm:=sqm+'  (inaccurate, dark and flat calibration missing)';
-
-  fontsize:=width2 div 120;
-  image1.Canvas.font.size:=fontsize;
-  image1.Canvas.font.color:=clwhite;
-  image1.Canvas.textout(round(fontsize*2),height2-round(2*fontsize),sqm);{median HFD and tilt indication}
 
   Screen.Cursor:= Save_Cursor;
 end;
@@ -11633,6 +11629,53 @@ begin
 
   url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size;
   openurl(url);
+end;
+
+procedure Tmainwindow.sqm1Click(Sender: TObject);
+var
+  info_message : string;
+  adu_to_electron : integer;
+  mean,sd : double;
+  Save_Cursor:TCursor;
+
+begin
+  if fits_file=false then exit; {file loaded?}
+
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  if flux_magn_offset=0 then {calibrate}
+     plot_stars(true {if true photometry only}, false {show Distortion});
+
+  if flux_magn_offset=0 then
+  begin
+    beep;
+    Screen.Cursor:= Save_Cursor;
+    exit;
+  end;
+
+  local_sd(width2 div 4,height2 div 4, width2 div 3,height2 div 3,0{col} ,img_loaded,sd,mean);{calculate local mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+//  local_sd(width2/4,height2/3, width2/3,height2/4,0{col} ,img_loaded,sd,mean);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+
+
+  info_message:=floattostrF2((flux_magn_offset-ln((cblack)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1)+' magn/sqr(")  Background based.'+ #10;
+  adu_to_electron:=sqr(16-12); {12 bit camera}
+  info_message:= info_message+ floattostrF2((flux_magn_offset-ln(adu_to_electron*sqr(xbinning*sd/adu_to_electron)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1)  + ' magn/sqr(")  Noise based. 12 bit camera sensors only.' +#10;
+  adu_to_electron:=1;
+  info_message:= info_message+floattostrF2((flux_magn_offset-ln(adu_to_electron*sqr(xbinning*sd/adu_to_electron)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1)+ ' magn/sqr(")  Noise based. 16 bit camera sensors only.' +#10+
+  #10+
+  #10+
+  'Camera read noise and dark current should be small compared to the sky noise. '+#10+
+  'The background value should be at least five times more then pedestal.'+#10+
+  'For maximum accuracy apply dark and flat in advance.'#10+
+  #10;
+  if (pos('D',calstat)=0) then info_message:= info_message+'Dark correction missing!'+#10;
+  if (pos('F',calstat)=0) then info_message:= info_message+'Flat correction missing!'+#10 ;
+
+  case  QuestionDlg (pchar('SQM measurements'),pchar(info_message),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
+       mrYes: Clipboard.AsText:=info_message;
+  end;{case}
+  Screen.Cursor:= Save_Cursor;
 end;
 
 

@@ -1275,6 +1275,12 @@ object mainwindow: Tmainwindow
         ShortCut = 16464
         OnClick = star_annotation1Click
       end
+      object sqm1: TMenuItem
+        Caption = 'SQM report based on an image'
+        Enabled = False
+        Hint = 'Will report the SQM value of the observation site. Use longer exposures. Avoid deepsky objects in the image'
+        OnClick = sqm1Click
+      end
       object annotate_with_measured_magnitudes1: TMenuItem
         Caption = 'Magnitude (measured) annotation'
         Enabled = False
