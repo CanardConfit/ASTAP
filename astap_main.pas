@@ -10351,7 +10351,7 @@ begin
             {$IFDEF msWindows}
             halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
             {$ELSE}
-            writeln('HFD_MEDIAN='+floattostrF2(hfd_median,0,0));
+            writeln('HFD_MEDIAN='+floattostrF2(hfd_median,0,1));
             writeln('STARS='+inttostr(hfd_counter));
             halt(round(hfd_median*10));{report hfd in errorlevel. In linux only range 0..255 possible}
             {$ENDIF}
