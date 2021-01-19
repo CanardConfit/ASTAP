@@ -101,6 +101,8 @@ type
     Inspector_top_menu1: TMenuItem;
     inspector_hfd_values1: TMenuItem;
     MenuItem22: TMenuItem;
+    image_inspector_bayer1: TMenuItem;
+    MenuItem25: TMenuItem;
     sqm1: TMenuItem;
     Rota_mainmenu1: TMenuItem;
     batch_rotate_left1: TMenuItem;
@@ -315,6 +317,7 @@ type
     procedure j2000_1Click(Sender: TObject);
     procedure galactic1Click(Sender: TObject);
     procedure gaia_star_position1Click(Sender: TObject);
+    procedure image_inspector_bayer1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
     procedure northeast1Click(Sender: TObject);
@@ -3074,7 +3077,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.478a, '+about_message4+', dated 2021-1-19';
+  #13+#10+'ASTAP version ß0.9.479, '+about_message4+', dated 2021-1-19';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4517,6 +4520,7 @@ begin
     mainwindow.inspector_diagram1.enabled:=fits; {Voronoi}
     mainwindow.inspector_diagram2.enabled:=fits; {2D contour}
     mainwindow.inspector_hfd_values1.enabled:=fits; {add hfd values}
+    mainwindow.image_inspector_bayer1.enabled:=fits; {add hfd values}
 
     mainwindow.convertmono1.enabled:=fits;
 
@@ -8868,7 +8872,6 @@ const
 end;
 
 
-
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
  size, i, starX, starY,fontsize: integer;
@@ -10639,6 +10642,14 @@ begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
+  if sender=image_inspector_bayer1 then
+  begin
+    img_average:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+    setlength(img_average,naxis3,width2,height2);{force a duplication}
+    box_blur(1 {nr of colors},2,img_loaded);
+    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
+  end;
+
   max_stars:=500;
 
   with mainwindow do
@@ -10765,6 +10776,13 @@ begin
 
 
     until ((nhfd>=max_stars) or (retries<0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
+
+    if sender=image_inspector_bayer1 then
+    begin
+      img_loaded:=img_average; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+      img_average:=nil;
+      get_hist(0,img_loaded);{get histogram of img_loaded and his_total}
+    end;
 
     if nhfd>0 then
     begin
@@ -11644,6 +11662,12 @@ begin
   url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size;
   openurl(url);
 end;
+
+procedure Tmainwindow.image_inspector_bayer1Click(Sender: TObject);
+begin
+
+end;
+
 
 procedure Tmainwindow.sqm1Click(Sender: TObject);
 var

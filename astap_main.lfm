@@ -1136,6 +1136,16 @@ object mainwindow: Tmainwindow
           Hint = 'Writes HFD values near each star and in the FITS file. No HFD filtering.'
           OnClick = inspector_diagram1Click
         end
+        object MenuItem25: TMenuItem
+          Caption = '-'
+        end
+        object image_inspector_bayer1: TMenuItem
+          Caption = 'Image inspector Bayer image'
+          Enabled = False
+          Hint = 'As the Image (CCD) inspector but a 2x2 box filter is applied in advance'
+          ShortCut = 16500
+          OnClick = CCDinspector1Click
+        end
         object MenuItem22: TMenuItem
           Caption = '-'
         end
