@@ -580,6 +580,7 @@ const
                                         'GBRG');
   annotation_color: tcolor=clyellow;
   annotation_diameter : integer=20;
+  pedestal            : integer=0;
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;var sep: double);
@@ -3073,7 +3074,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.477, '+about_message4+', dated 2021-1-18';
+  #13+#10+'ASTAP version ß0.9.478, '+about_message4+', dated 2021-1-19';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6638,6 +6639,7 @@ begin
     dum:=initstring.Values['font_name2'];if dum<>'' then font_name:= dum;
     dum:=initstring.Values['font_style'];if dum<>'' then font_style:= strtostyle(dum);
     get_int(font_charset,'font_charset');
+    get_int(pedestal,'pedestal');
 
     stackmenu1.mosaic_width1.position:=get_int2(stackmenu1.mosaic_width1.position,'mosaic_width');
     stackmenu1.mosaic_crop1.position:=get_int2(stackmenu1.mosaic_crop1.position,'mosaic_crop');
@@ -6937,6 +6939,8 @@ begin
     initstring.Values['font_name2']:=font_name;
     initstring.Values['font_style']:=StyleToStr(font_style);
     initstring.Values['font_charset']:=inttostr(font_charset);
+    initstring.Values['pedestal']:=inttostr(pedestal);
+
 
     initstring.Values['minimum_position']:=inttostr(MINIMUM1.position);
     initstring.Values['maximum_position']:=inttostr(maximum1.position);
@@ -11633,10 +11637,11 @@ end;
 
 procedure Tmainwindow.sqm1Click(Sender: TObject);
 var
-  info_message : string;
+  info_message,pedestalstring : string;
   adu_to_electron : integer;
   mean,sd : double;
   Save_Cursor:TCursor;
+  inputvalue  : boolean;
 
 begin
   if fits_file=false then exit; {file loaded?}
@@ -11657,24 +11662,38 @@ begin
   local_sd(width2 div 4,height2 div 4, width2 div 3,height2 div 3,0{col} ,img_loaded,sd,mean);{calculate local mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 //  local_sd(width2/4,height2/3, width2/3,height2/4,0{col} ,img_loaded,sd,mean);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
+  repeat
+    if pedestal<>0 then pedestalstring:=' Pedestal correction='+inttostr(pedestal) else pedestalstring:='';
+    info_message:=floattostrF2((flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1)+' magn/sqr(")  Background value based.'+ pedestalstring+#10;
+    adu_to_electron:=sqr(16-12); {12 bit camera}
+    info_message:= info_message+ floattostrF2((flux_magn_offset-ln(adu_to_electron*sqr(xbinning*sd/adu_to_electron)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1)  + ' magn/sqr(")  Noise based. 12 bit camera sensors only.' +#10;
+    adu_to_electron:=1;
+    info_message:= info_message+floattostrF2((flux_magn_offset-ln(adu_to_electron*sqr(xbinning*sd/adu_to_electron)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1)+ ' magn/sqr(")  Noise based. 16 bit camera sensors only.' +#10+
+    #10+
+    #10+
+    'Camera read noise and dark current should be small compared to the sky noise. '+#10+
+    'The background value should be at least five times more then pedestal.'+#10+
+    'For maximum accuracy apply dark and flat in advance or enter a pedestal value to zero the image background.'#10+
+    #10;
+    if pedestal=0 then
+    begin
+      if (pos('D',calstat)=0) then info_message:= info_message+'Dark correction or pedestal correction value missing!'+#10;
+      if (pos('F',calstat)=0) then info_message:= info_message+'Flat correction missing!'+#10 ;
+    end;
 
-  info_message:=floattostrF2((flux_magn_offset-ln((cblack)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1)+' magn/sqr(")  Background based.'+ #10;
-  adu_to_electron:=sqr(16-12); {12 bit camera}
-  info_message:= info_message+ floattostrF2((flux_magn_offset-ln(adu_to_electron*sqr(xbinning*sd/adu_to_electron)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1)  + ' magn/sqr(")  Noise based. 12 bit camera sensors only.' +#10;
-  adu_to_electron:=1;
-  info_message:= info_message+floattostrF2((flux_magn_offset-ln(adu_to_electron*sqr(xbinning*sd/adu_to_electron)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1)+ ' magn/sqr(")  Noise based. 16 bit camera sensors only.' +#10+
-  #10+
-  #10+
-  'Camera read noise and dark current should be small compared to the sky noise. '+#10+
-  'The background value should be at least five times more then pedestal.'+#10+
-  'For maximum accuracy apply dark and flat in advance.'#10+
-  #10;
-  if (pos('D',calstat)=0) then info_message:= info_message+'Dark correction missing!'+#10;
-  if (pos('F',calstat)=0) then info_message:= info_message+'Flat correction missing!'+#10 ;
+    inputvalue:=false;
+    case  QuestionDlg (pchar('SQM measurements'),pchar(info_message),mtCustom,[20,'Copy to clipboard?', 21, 'Enter camera pedestal', 22, 'No', 'IsDefault'],'') of
+         20: Clipboard.AsText:=info_message;
+         21: begin
+               pedestal:=round(strtofloat2(InputBox('Enter camera pedestal correction to zero the background:','','' )));
+               if pedestal<>0 then
+                              inputvalue:=true;
+               mainwindow.save_settings1Click(nil);{save pedestal value}
+              end;
+    end;{case}
 
-  case  QuestionDlg (pchar('SQM measurements'),pchar(info_message),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
-       mrYes: Clipboard.AsText:=info_message;
-  end;{case}
+
+  until inputvalue=false;
   Screen.Cursor:= Save_Cursor;
 end;
 

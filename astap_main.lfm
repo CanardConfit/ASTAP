@@ -1279,6 +1279,7 @@ object mainwindow: Tmainwindow
         Caption = 'SQM report based on an image'
         Enabled = False
         Hint = 'Will report the SQM value of the observation site. Use longer exposures. Avoid deepsky objects in the image'
+        ShortCut = 16465
         OnClick = sqm1Click
       end
       object annotate_with_measured_magnitudes1: TMenuItem
@@ -1311,7 +1312,7 @@ object mainwindow: Tmainwindow
         Caption = 'Asteroid && comet annotation'
         Enabled = False
         Hint = 'Annotate asteroids'
-        ShortCut = 16465
+        ShortCut = 16461
         OnClick = annotate_minor_planets1Click
       end
       object hyperleda_annotation1: TMenuItem
