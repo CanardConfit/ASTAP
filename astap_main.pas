@@ -3074,7 +3074,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.478, '+about_message4+', dated 2021-1-19';
+  #13+#10+'ASTAP version ß0.9.478a, '+about_message4+', dated 2021-1-19';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -10238,7 +10238,11 @@ begin
         '-m  minimum_star_size["]'+#10+
         '-speed mode[auto/slow] {Slow is forcing small search steps to improve detection.}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
+        {$IFDEF msWindows}
         '-analyse snr_min {Analyse only and report in the errorlevel the median HFD*1E8 + number of stars used}'+#10+
+        {$ELSE}
+        '-analyse snr_min {Analyse only and report in the errorlevel the median HFD*10}'+#10+
+        {$ENDIF}
         '-extract snr_min {As -analyse but additionally write a .csv file with the detected stars info}'+#10+
         '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3}'+#10+
         '-annotate  {Produce deepsky annotated jpg file}' +#10+
@@ -10344,7 +10348,13 @@ begin
             if extractspecified then snr_min:=strtofloat2(getoptionvalue('extract'));
             if snr_min=0 then snr_min:=30;
             analyse_fits(img_loaded,snr_min,extractspecified, hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
+            {$IFDEF msWindows}
             halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
+            {$ELSE}
+            writeln('HFD_MEDIAN='+floattostrF2(hfd_median,0,0));
+            writeln('STARS='+inttostr(hfd_counter));
+            halt(round(hfd_median*10));{report hfd in errorlevel. In linux only range 0..255 possible}
+            {$ENDIF}
           end;{analyse fits and report HFD value}
 
           {$ifdef CPUARM}
