@@ -97,11 +97,11 @@ type
     extract_pixel_22: TMenuItem;
     batch_solve_astrometry_net: TMenuItem;
     copy_to_clipboard1: TMenuItem;
-    inspector_diagram2: TMenuItem;
+    hfd_contour1: TMenuItem;
     Inspector_top_menu1: TMenuItem;
     inspector_hfd_values1: TMenuItem;
     MenuItem22: TMenuItem;
-    image_inspector_bayer1: TMenuItem;
+    bayer_image1: TMenuItem;
     MenuItem25: TMenuItem;
     sqm1: TMenuItem;
     Rota_mainmenu1: TMenuItem;
@@ -291,7 +291,7 @@ type
     procedure batch_annotate1Click(Sender: TObject);
     procedure batch_rotate_right1Click(Sender: TObject);
     procedure batch_solve_astrometry_netClick(Sender: TObject);
-    procedure inspector_diagram1Click(Sender: TObject);
+    procedure hfd_contour1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
     procedure copy_to_clipboard1Click(Sender: TObject);
     procedure extract_pixel_11Click(Sender: TObject);
@@ -3077,7 +3077,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.479, '+about_message4+', dated 2021-1-19';
+  #13+#10+'ASTAP version ß0.9.480, '+about_message4+', dated 2021-1-21';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4518,9 +4518,8 @@ begin
 
     mainwindow.ccdinspector1.enabled:=fits;
     mainwindow.inspector_diagram1.enabled:=fits; {Voronoi}
-    mainwindow.inspector_diagram2.enabled:=fits; {2D contour}
+    mainwindow.hfd_contour1.enabled:=fits; {2D contour}
     mainwindow.inspector_hfd_values1.enabled:=fits; {add hfd values}
-    mainwindow.image_inspector_bayer1.enabled:=fits; {add hfd values}
 
     mainwindow.convertmono1.enabled:=fits;
 
@@ -6632,6 +6631,7 @@ begin
     mainwindow.height:=get_int2(mainwindow.height,'window_height');
     mainwindow.width:=get_int2(mainwindow.width,'window_width');;
 
+    mainwindow.bayer_image1.checked:=get_boolean('raw_bayer',false);
 
     stackmenu1.left:=get_int2(stackmenu1.left,'stackmenu_left');
     stackmenu1.top:=get_int2(stackmenu1.top,'stackmenu_top');
@@ -6644,6 +6644,7 @@ begin
     dum:=initstring.Values['font_style'];if dum<>'' then font_style:= strtostyle(dum);
     get_int(font_charset,'font_charset');
     get_int(pedestal,'pedestal');
+
 
     stackmenu1.mosaic_width1.position:=get_int2(stackmenu1.mosaic_width1.position,'mosaic_width');
     stackmenu1.mosaic_crop1.position:=get_int2(stackmenu1.mosaic_crop1.position,'mosaic_crop');
@@ -6930,6 +6931,8 @@ begin
     initstring.Values['window_top']:=inttostr(mainwindow.top);
     initstring.Values['window_height']:=inttostr(mainwindow.height);
     initstring.Values['window_width']:=inttostr(mainwindow.width);
+
+    initstring.Values['raw_bayer']:=BoolStr[mainwindow.bayer_image1.checked];
 
     initstring.Values['stackmenu_visible']:=BoolStr[stackmenu1.visible];
 
@@ -7503,6 +7506,7 @@ begin
       date_obs:=JdToDate(jd2);
       update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
     end;
+    update_text ('BAYERPAT=',#39+'????'+#39);{identify raw OSC image}
     add_text   ('HISTORY  ','Converted from '+filename3);
     result:=true;
   end
@@ -7770,7 +7774,7 @@ begin
   end;
 end;
 
-procedure Tmainwindow.inspector_diagram1Click(Sender: TObject);
+procedure Tmainwindow.hfd_contour1Click(Sender: TObject);
 var
   j: integer;
   Save_Cursor:TCursor;
@@ -7780,7 +7784,7 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   backup_img;
 
-  if Sender=inspector_diagram2 then demode:='2'
+  if Sender=hfd_contour1 then demode:='2'
   else
   if Sender=inspector_diagram1 then demode:='V'
   else
@@ -7791,6 +7795,16 @@ begin
     nrbits:=16;
     datamax_org:=65535;
   end;
+
+  if bayer_image1.checked then
+  begin
+//    img_average:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+//      setlength(img_average,naxis3,width2,height2);{force a duplication}
+     box_blur(1 {nr of colors},2,img_loaded);
+     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
+   end;
+
+
 
   CCDinspector_analyse(demode);
 
@@ -10642,12 +10656,12 @@ begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-  if sender=image_inspector_bayer1 then
-  begin
-    img_average:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_average,naxis3,width2,height2);{force a duplication}
-    box_blur(1 {nr of colors},2,img_loaded);
-    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
+ if bayer_image1.checked then {raw Bayer image}
+ begin
+   img_average:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+   setlength(img_average,naxis3,width2,height2);{force a duplication}
+   box_blur(1 {nr of colors},2,img_loaded);
+   get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
   end;
 
   max_stars:=500;
@@ -10777,7 +10791,7 @@ begin
 
     until ((nhfd>=max_stars) or (retries<0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
-    if sender=image_inspector_bayer1 then
+    if bayer_image1.checked then {raw Bayer image}
     begin
       img_loaded:=img_average; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
       img_average:=nil;
@@ -11671,9 +11685,8 @@ end;
 
 procedure Tmainwindow.sqm1Click(Sender: TObject);
 var
-  info_message,pedestalstring : string;
-  adu_to_electron : integer;
-  mean,sd : double;
+  info_message    : string;
+//  mean,sd : double;
   Save_Cursor:TCursor;
   inputvalue  : boolean;
 
@@ -11693,30 +11706,23 @@ begin
     exit;
   end;
 
-  local_sd(width2 div 4,height2 div 4, width2 div 3,height2 div 3,0{col} ,img_loaded,sd,mean);{calculate local mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-//  local_sd(width2/4,height2/3, width2/3,height2/4,0{col} ,img_loaded,sd,mean);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-
+//  local_sd(width2 div 4,height2 div 4, width2 div 3,height2 div 3,0{col} ,img_loaded,sd,mean);{calculate local mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+  {find the bit resolution sensor}
   repeat
-    if pedestal<>0 then pedestalstring:=' Pedestal correction='+inttostr(pedestal) else pedestalstring:='';
-    info_message:=floattostrF2((flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1)+' magn/sqr(")  Background value based.'+ pedestalstring+#10;
-    adu_to_electron:=sqr(16-12); {12 bit camera}
-    info_message:= info_message+ floattostrF2((flux_magn_offset-ln(adu_to_electron*sqr(xbinning*sd/adu_to_electron)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1)  + ' magn/sqr(")  Noise based. 12 bit camera sensors only.' +#10;
-    adu_to_electron:=1;
-    info_message:= info_message+floattostrF2((flux_magn_offset-ln(adu_to_electron*sqr(xbinning*sd/adu_to_electron)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1)+ ' magn/sqr(")  Noise based. 16 bit camera sensors only.' +#10+
+    info_message:='SQM='+floattostrF2((flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1)+' magn/sqr(")'+#10+
     #10+
+    'Background value='+inttostr(round(cblack))+#10+
+    'Pedestal correction='+inttostr(pedestal)+#10+
     #10+
-    'Camera read noise and dark current should be small compared to the sky noise. '+#10+
-    'The background value should be at least five times more then pedestal.'+#10+
-    'For maximum accuracy apply dark and flat in advance or enter a pedestal value to zero the image background.'#10+
-    #10;
-    if pedestal=0 then
-    begin
-      if (pos('D',calstat)=0) then info_message:= info_message+'Dark correction or pedestal correction value missing!'+#10;
-      if (pos('F',calstat)=0) then info_message:= info_message+'Flat correction missing!'+#10 ;
-    end;
+    'Pre-conditions:'+#10+
+    '1) Image is astrometrical solved for flux-calibration against the star database.'+#10+
+    '2) The background value is larger then pedestal value. If not exposure longer.'+#10+
+    '3) Entering a pedestal value increases the accuracy. (mean value of a dark)'#10+
+    '4) Apply on unprocessed images only.'#10+
+    '5) No bright nebula should be visible.'#10;
 
     inputvalue:=false;
-    case  QuestionDlg (pchar('SQM measurements'),pchar(info_message),mtCustom,[20,'Copy to clipboard?', 21, 'Enter camera pedestal', 22, 'No', 'IsDefault'],'') of
+    case  QuestionDlg (pchar('SQM measurement:'),pchar(info_message),mtCustom,[20,'Copy to clipboard?', 21, 'Enter camera pedestal', 22, 'No', 'IsDefault'],'') of
          20: Clipboard.AsText:=info_message;
          21: begin
                pedestal:=round(strtofloat2(InputBox('Enter camera pedestal correction to zero the background:','','' )));
@@ -13086,14 +13092,13 @@ end;
 function save_fits(img: image_array;filen2:ansistring;type1:integer;override1:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 var
   TheFile4 : tfilestream;
-  I,j,k,r,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, naxis3_local,height5,width5,rows : integer;
+  I,j,k,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, naxis3_local,height5,width5 : integer;
   dd : single;
-  line0,tal,lab         : ansistring;
+  line0                : ansistring;
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
   OldCursor : TCursor;
   wo: word;
   rgb  : byteX3;{array [0..2] containing r,g,b colours}
-  data      : longword;
 begin
   result:=false;
 

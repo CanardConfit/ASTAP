@@ -1,13 +1,13 @@
 object mainwindow: Tmainwindow
-  Left = -7
-  Height = 616
+  Left = 392
+  Height = 728
   Hint = ' '
-  Top = 94
-  Width = 1022
+  Top = 95
+  Width = 1299
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 596
-  ClientWidth = 1022
+  ClientHeight = 708
+  ClientWidth = 1299
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -201,14 +201,14 @@ object mainwindow: Tmainwindow
   end
   object Panel1: TPanel
     Left = 0
-    Height = 445
+    Height = 557
     Hint = 'hint'
     Top = 168
-    Width = 1047
+    Width = 1324
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 445
-    ClientWidth = 1047
+    ClientHeight = 557
+    ClientWidth = 1324
     Color = 2105376
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
@@ -224,9 +224,9 @@ object mainwindow: Tmainwindow
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
     object Image1: TImage
-      Left = 88
+      Left = 192
       Height = 264
-      Top = 72
+      Top = 123
       Width = 608
       Anchors = []
       OnMouseDown = Image1MouseDown
@@ -666,8 +666,8 @@ object mainwindow: Tmainwindow
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
-    Top = 573
-    Width = 1022
+    Top = 685
+    Width = 1299
     Panels = <    
       item
         Width = 200
@@ -779,7 +779,7 @@ object mainwindow: Tmainwindow
     Left = 595
     Height = 177
     Top = 0
-    Width = 430
+    Width = 707
     ActivePage = TabSheet1
     Anchors = [akTop, akLeft, akRight]
     TabIndex = 0
@@ -787,12 +787,12 @@ object mainwindow: Tmainwindow
     object TabSheet1: TTabSheet
       Caption = 'Header'
       ClientHeight = 149
-      ClientWidth = 422
+      ClientWidth = 699
       object Memo1: TMemo
         Left = 0
         Height = 149
         Top = 0
-        Width = 422
+        Width = 699
         Align = alClient
         Anchors = [akTop, akLeft, akRight]
         Font.Height = -9
@@ -1116,35 +1116,33 @@ object mainwindow: Tmainwindow
           ShortCut = 116
           OnClick = CCDinspector1Click
         end
-        object inspector_diagram2: TMenuItem
+        object hfd_contour1: TMenuItem
           Caption = 'HFD 2D contour diagram'
           Enabled = False
           Hint = 'Creates a 2D contour diagram based on the HFD values. The gray values represent the HFD *100. The HFD values are local median filtered for each three stars'
           ShortCut = 115
-          OnClick = inspector_diagram1Click
+          OnClick = hfd_contour1Click
         end
         object inspector_diagram1: TMenuItem
           Caption = 'HFD diagram'
           Enabled = False
           Hint = 'Creates a diagram based on the HFD values. The gray values represent the HFD *100. The HFD values are local median filtered for each three stars'
           ShortCut = 114
-          OnClick = inspector_diagram1Click
+          OnClick = hfd_contour1Click
         end
         object inspector_hfd_values1: TMenuItem
           Caption = 'HFD values'
           Enabled = False
           Hint = 'Writes HFD values near each star and in the FITS file. No HFD filtering.'
-          OnClick = inspector_diagram1Click
+          OnClick = hfd_contour1Click
         end
         object MenuItem25: TMenuItem
           Caption = '-'
         end
-        object image_inspector_bayer1: TMenuItem
-          Caption = 'Image inspector Bayer image'
-          Enabled = False
-          Hint = 'As the Image (CCD) inspector but a 2x2 box filter is applied in advance'
-          ShortCut = 16500
-          OnClick = CCDinspector1Click
+        object bayer_image1: TMenuItem
+          AutoCheck = True
+          Caption = 'Check mark this menu if the image is a raw Bayer image'
+          Hint = 'A 2x2 box filter is applied in advance. This is better option for raw OSC images.'
         end
         object MenuItem22: TMenuItem
           Caption = '-'

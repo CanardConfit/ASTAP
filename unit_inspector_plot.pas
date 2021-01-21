@@ -219,7 +219,7 @@ var
   SetLength(hfd_values,3,4000);{will contain x,y,hfd}
   setlength(img_temp,1,width2,height2);{set length of image array}
 
-  get_background(0,img_loaded,true{ calculate histogram},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
+  get_background(0,img_loaded,false{ calculate histogram},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
   detection_level:=star_level; {level above background. Start with a high value}
 
@@ -240,17 +240,11 @@ var
           HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if (hfd1>=1.3) {not a hotpixel} and (snr>30) and (hfd1<99) then
           begin
-
-  //          if ((hfd1>7) and (hfd1<7.5)) then
-//              beep;
-
             size:=round(5*hfd1);{for marking area. For inspector use factor 5 instead of 3}
             for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
               for i:=fitsX-size to fitsX+size do
                 if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
                   img_temp[0,i,j]:=1;
-
-
 
             {store values}
             if ((img_loaded[0,round(xc),round(yc)]<65000) and

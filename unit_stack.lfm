@@ -2201,7 +2201,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the alignment options'
       Caption = 'Alignment'
       ClientHeight = 420
-      ClientWidth = 1610
+      ClientWidth = 1013
       ImageIndex = 7
       ParentFont = False
       object use_star_alignment1: TRadioButton
