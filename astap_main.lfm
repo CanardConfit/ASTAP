@@ -1023,6 +1023,11 @@ object mainwindow: Tmainwindow
           ShortCut = 32848
           OnClick = AddplatesolvesolutiontoselectedFITSfiles1Click
         end
+        object solve_and_add_sqm1: TMenuItem
+          Caption = 'Batch solve images and add SQM value'
+          Hint = 'Find a astrometric solution for selected files and add to the FITS file header. Add also the measured SQM value.'
+          OnClick = AddplatesolvesolutiontoselectedFITSfiles1Click
+        end
         object batch_solve_astrometry_net: TMenuItem
           Caption = 'Batch solve images using local astrometry.net'
           Hint = 'Solve the image using a local vesion of astrometry.net'

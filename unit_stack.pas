@@ -819,6 +819,7 @@ const
   I_centalt=22;
   I_centaz=23;
   I_gain=24;
+  I_sqm=25;
 
   D_exposure=0;
   D_temperature=1;
@@ -1716,13 +1717,13 @@ begin
                 if cd1_1<>0 then
                     ListView1.Items.item[c].subitems.Strings[I_solution]:='✓' else ListView1.Items.item[c].subitems.Strings[I_solution]:='-';
 
-                {is external solution available?}
                 ListView1.Items.item[c].subitems.Strings[I_calibration]:=calstat; {status calibration}
                 if focus_pos<>0 then ListView1.Items.item[c].subitems.Strings[I_focpos]:=inttostr(focus_pos);
                 if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[I_foctemp]:=floattostrF2(focus_temp,0,1);
                 ListView1.Items.item[c].subitems.Strings[I_centalt]:=centalt;
                 ListView1.Items.item[c].subitems.Strings[I_centaz]:=centaz;
                 if gain<>999 then ListView1.Items.item[c].subitems.Strings[I_gain]:=inttostr(round(gain));
+                if sqm<>0 then ListView1.Items.item[c].subitems.Strings[I_sqm]:=floattostrF2(sqm,0,1);
 
                 if use_ephemeris_alignment1.Checked then {ephemeride based stacking}
                    get_annotation_position;{fill the x,y with annotation position}
@@ -1810,7 +1811,7 @@ begin
     listview1.Items.beginUpdate;
     for i:=0 to OpenDialog1.Files.count-1 do
     begin
-        listview_add(listview1,OpenDialog1.Files[i],   pos('_stacked',OpenDialog1.Files[i])=0 {do not check mark images already stacked}   ,26);
+        listview_add(listview1,OpenDialog1.Files[i],   pos('_stacked',OpenDialog1.Files[i])=0 {do not check mark images already stacked}   ,27);
     end;
     listview1.Items.EndUpdate;
   end;
@@ -5249,7 +5250,7 @@ begin
                                        8:   listview_add(listview7,FileNames[i],true,17);{photometry}
                                        else
                                        begin {lights}
-                                         listview_add(listview1,FileNames[i],true,26);
+                                         listview_add(listview1,FileNames[i],true,27);
                                          if  pos('_stacked',FileNames[i])<>0 then {do not check mark images already stacked}
                                                listview1.items[ListView1.items.count-1].checked:=false;
                                        end;
@@ -6719,7 +6720,7 @@ begin
   begin
     if  listview5.Items[index].Selected then
     begin
-      listview_add(listview1,listview5.items[index].caption,true,26);
+      listview_add(listview1,listview5.items[index].caption,true,27);
     end;
     inc(index); {go to next file}
   end;
@@ -7831,7 +7832,7 @@ begin
             if pos('D',calstat)>0 then
             begin
               update_integer('DATAMAX =',' / Maximum data value                             ',round(datamax_org)); {datamax is updated in stacking process. Use the last one}
-              update_integer('DATAMIN =',' / Minimum data value                             ',round(pedestal));
+              update_integer('DATAMIN =',' / Minimum data value                             ',round(pedestal_s));
             end;
 
             if sigma_mode then

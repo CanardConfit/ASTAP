@@ -1,12 +1,12 @@
 object stackmenu1: Tstackmenu1
-  Left = 390
+  Left = 35
   Height = 644
-  Top = 149
-  Width = 1022
+  Top = 188
+  Width = 1870
   AllowDropFiles = True
   Caption = 'stack menu'
   ClientHeight = 644
-  ClientWidth = 1022
+  ClientWidth = 1870
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -51,7 +51,7 @@ object stackmenu1: Tstackmenu1
     Left = 0
     Height = 134
     Top = 510
-    Width = 1022
+    Width = 1870
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -198,7 +198,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1004
+    Left = 1852
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     Height = 448
     Hint = 'Stack menu'
     Top = 0
-    Width = 1021
+    Width = 1869
     ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
@@ -231,7 +231,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the light frames'
       Caption = 'Images'
       ClientHeight = 420
-      ClientWidth = 1013
+      ClientWidth = 1861
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -305,7 +305,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1013
+        Width = 1861
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -453,6 +453,11 @@ object stackmenu1: Tstackmenu1
           end        
           item
             Caption = 'Gain'
+            MinWidth = 60
+            Width = 60
+          end        
+          item
+            Caption = 'SQM'
             MinWidth = 60
             Width = 60
           end>

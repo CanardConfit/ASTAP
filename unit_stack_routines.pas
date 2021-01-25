@@ -34,7 +34,7 @@ procedure initialise2;{set variables correct}
 function test_bayer_matrix(img: image_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
 
 var
-  pedestal : double;{target background value}
+  pedestal_s : double;{target background value}
 
 var
   SIN_dec0,COS_dec0,x_new_float,y_new_float,ra_ref,dec_ref,SIN_dec_ref,COS_dec_ref,crpix1_ref, crpix2_ref, CD1_1_ref, CD1_2_ref,CD2_1_ref,CD2_2_ref,exposure_ref,
@@ -688,9 +688,9 @@ begin
             begin
               bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
               find_quads(starlist1,0, quad_smallest,quad_star_distances1);{find quads for reference image}
-              pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
-              if pedestal<500 then pedestal:=500;{prevent image noise could go below zero}
-              background_correction:=pedestal-cblack;
+              pedestal_s:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
+              if pedestal_s<500 then pedestal_s:=500;{prevent image noise could go below zero}
+              background_correction:=pedestal_s-cblack;
               datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
             end;
           end;
@@ -745,7 +745,7 @@ begin
               begin{internal alignment}
                 bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
 
-                background_correction:=pedestal-cblack;
+                background_correction:=pedestal_s-cblack;
                 datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
                 find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
@@ -1175,9 +1175,9 @@ begin
             bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
 
             find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
-            pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
-            if pedestal<500 then pedestal:=500;{prevent image noise could go below zero}
-            background_correction:=pedestal-cblack;
+            pedestal_s:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
+            if pedestal_s<500 then pedestal_s:=500;{prevent image noise could go below zero}
+            background_correction:=pedestal_s-cblack;
             datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
           end;
         end;
@@ -1226,7 +1226,7 @@ begin
                 begin{internal alignment}
                   bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
 
-                  background_correction:=pedestal-cblack;{correct later for difference in background}
+                  background_correction:=pedestal_s-cblack;{correct later for difference in background}
                   datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
                   find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
@@ -1382,7 +1382,7 @@ begin
               read(savefile, solution_vectorY);
               read(savefile, solution_cblack);cblack:=round(solution_cblack[0]);{read cblack file previously stored}
               CloseFile(saveFile);
-              background_correction:=pedestal-cblack;{correction for difference in background}
+              background_correction:=pedestal_s-cblack;{correction for difference in background}
               datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
             end;
           end;
@@ -1492,7 +1492,7 @@ begin
               read(savefile, solution_vectorY);
               read(savefile, solution_cblack);cblack:=round(solution_cblack[0]);{read cblack previously stored}
               CloseFile(saveFile);
-              background_correction:=pedestal-cblack;{correct for difference in background}
+              background_correction:=pedestal_s-cblack;{correct for difference in background}
               datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
             end;
           end;
@@ -1646,9 +1646,9 @@ begin
           begin
             bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
             find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
-            pedestal:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal of 1000 is not possible}
-            if pedestal<500 then pedestal:=500;{prevent image noise could go below zero}
-            background_correction:=pedestal-cblack;
+            pedestal_s:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
+            if pedestal_s<500 then pedestal_s:=500;{prevent image noise could go below zero}
+            background_correction:=pedestal_s-cblack;
             datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
           end;
         end;
@@ -1705,7 +1705,7 @@ begin
             begin{internal alignment}
               bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
 
-              background_correction:=pedestal-cblack;
+              background_correction:=pedestal_s-cblack;
               datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
               find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}

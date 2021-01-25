@@ -102,6 +102,7 @@ type
     inspector_hfd_values1: TMenuItem;
     MenuItem22: TMenuItem;
     bayer_image1: TMenuItem;
+    solve_and_add_sqm1: TMenuItem;
     MenuItem25: TMenuItem;
     sqm1: TMenuItem;
     Rota_mainmenu1: TMenuItem;
@@ -317,7 +318,6 @@ type
     procedure j2000_1Click(Sender: TObject);
     procedure galactic1Click(Sender: TObject);
     procedure gaia_star_position1Click(Sender: TObject);
-    procedure image_inspector_bayer1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
     procedure northeast1Click(Sender: TObject);
@@ -554,8 +554,9 @@ const
   xbayroff: double=0;{additional bayer pattern offset to apply}
   Ybayroff: double=0;{additional bayer pattern offset to apply}
   annotated : boolean=false;{any annotation in fits file?}
-  copy_paste :boolean=false;
+  sqm: double=0;{sky quality}
 
+  copy_paste :boolean=false;
   shape_fitsX: double=0;
   shape_fitsY: double=0;
 
@@ -935,6 +936,7 @@ begin
   ccd_temperature:=999;
   set_temperature:=999;
   gain:=999;{assume no data available}
+  sqm:=0;{assume no data available}
 
   measured_max:=0;
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
@@ -1068,6 +1070,8 @@ begin
         if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
                  ybinning:=round(validate_double);{binning}
 
+        if ((header[i]='G') and (header[i+1]='A')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]=' ')) then
+               gain:=validate_double;{gain CCD}
 
 
         {following variable are not set at zero Set at zero somewhere in the code}
@@ -1079,9 +1083,6 @@ begin
              flat_count:=round(validate_double);{read integer as double value}
         if ((header[i]='B') and (header[i+1]='I')  and (header[i+2]='A') and (header[i+3]='S') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
              flatdark_count:=round(validate_double);{read integer as double value}
-
-        if ((header[i]='G') and (header[i+1]='A')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]=' ')) then
-               gain:=validate_double;{gain CCD}
 
 
 
@@ -1270,6 +1271,10 @@ begin
 
           if ((header[i]='A') and (header[i+1]='N')  and (header[i+2]='N') and (header[i+3]='O') and (header[i+4]='T') and (header[i+5]='A') and (header[i+6]='T')) then
              annotated:=true; {contains annotations}
+
+          if ((header[i]='S') and (header[i+1]='Q')  and (header[i+2]='M') and (header[i+3]=' ')) then
+                 sqm:=validate_double;{sqm value}
+
 
           if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='N') and (header[i+5]='D')) then {EXTEND}
             if pos('T',get_as_string)>0 then last_extension:=false;{could be extensions, will be updated later }
@@ -1917,6 +1922,7 @@ begin
   annotated:=false; {any annotation in the file}
   extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
   gain:=999;{assume no data available}
+  sqm:=0;{assume no data available}
 
 
   I:=0;
@@ -2274,6 +2280,8 @@ begin
   ybinning:=1;
   exposure:=0;
   set_temperature:=999;
+  gain:=999;{assume no data available}
+  sqm:=0;{assume no data available}
 
   flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
   annotated:=false; {any annotation in the file}
@@ -3077,7 +3085,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.480, '+about_message4+', dated 2021-1-21';
+  #13+#10+'ASTAP version ß0.9.481, '+about_message4+', dated 2021-1-25';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6561,14 +6569,14 @@ var
   i,c                : integer;
   initstring :tstrings; {settings for save and loading}
 
-    procedure get_float(var float: double;s1 : string);
-    var
-      err: integer;
-      r  : double;
-    begin
-      val(initstring.Values[s1],r,err);
-      if err=0 then float:=r;
-    end;
+//    procedure get_float(var float: double;s1 : string);
+//    var
+//      err: integer;
+//      r  : double;
+//    begin
+//      val(initstring.Values[s1],r,err);
+//      if err=0 then float:=r;
+//    end;
 
     procedure get_int(var i: integer;s1 : string);
     var
@@ -6830,7 +6838,7 @@ begin
     repeat {add images}
        dum:=initstring.Values['image'+inttostr(c)];
        if ((dum<>'') and (fileexists(dum))) then
-         listview_add(stackmenu1.listview1,dum,get_boolean('image'+inttostr(c)+'_check',true),26);
+         listview_add(stackmenu1.listview1,dum,get_boolean('image'+inttostr(c)+'_check',true),27);
        inc(c);
     until (dum='');
     stackmenu1.listview1.Items.endUpdate;
@@ -9594,6 +9602,72 @@ begin
    end;
 end;
 
+function calculate_sqm : boolean; {calculate sqky background value}
+begin
+  if flux_magn_offset=0 then {calibrate}
+     plot_stars(true {if true photometry only}, false {show Distortion});
+
+  if flux_magn_offset>0 then
+  begin
+    sqm:=flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
+    result:=true;
+  end
+  else
+  result:=false;
+end;
+
+procedure Tmainwindow.sqm1Click(Sender: TObject);
+var
+  info_message    : string;
+//  mean,sd : double;
+  Save_Cursor:TCursor;
+  inputvalue  : boolean;
+
+begin
+  if fits_file=false then exit; {file loaded?}
+
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  if calculate_sqm=false then {failure in calculating sqm value}
+  begin
+    beep;
+    Screen.Cursor:= Save_Cursor;
+    exit;
+  end;
+
+//  local_sd(width2 div 4,height2 div 4, width2 div 3,height2 div 3,0{col} ,img_loaded,sd,mean);{calculate local mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+  {find the bit resolution sensor}
+  repeat
+    info_message:='SQM='+floattostrF2(sqm,0,2)+' magn/arcsec² referenced to the visible stars'+#10+
+    #10+
+    'Background value='+inttostr(round(cblack))+#10+
+    'Pedestal correction='+inttostr(pedestal)+#10+
+    #10+
+    'Pre-conditions:'+#10+
+    '1) Image is astrometrical solved for flux-calibration against the star database.'+#10+
+    '2) The background value is larger then pedestal value. If not exposure longer.'+#10+
+    '3) Entering a pedestal value increases the accuracy. (mean value of a dark)'#10+
+    '4) Apply on unprocessed images only.'#10+
+    '5) No bright nebula should be visible.'#10;
+
+
+    inputvalue:=false;
+    case  QuestionDlg (pchar('SQM measurement relative to the stars above the atmosphere:'),pchar(info_message),mtCustom,[20,'Copy to clipboard?', 21, 'Enter camera pedestal', 22, 'No', 'IsDefault'],'') of
+         20: Clipboard.AsText:=info_message;
+         21: begin
+               pedestal:=round(strtofloat2(InputBox('Enter camera pedestal correction to zero the background:','','' )));
+               if pedestal<>0 then
+                              inputvalue:=true;
+               mainwindow.save_settings1Click(nil);{save pedestal value}
+              end;
+    end;{case}
+
+
+  until inputvalue=false;
+  Screen.Cursor:= Save_Cursor;
+end;
+
 
 procedure Tmainwindow.FormResize(Sender: TObject);
 var
@@ -9790,6 +9864,8 @@ begin
     writeln(f,'CD1_2='+floattostrE(cd1_2));       // CD matrix to convert (x,y) to (Ra, Dec)
     writeln(f,'CD2_1='+floattostrE(cd2_1));       // CD matrix to convert (x,y) to (Ra, Dec)
     writeln(f,'CD2_2='+floattostrE(cd2_2));       // CD matrix to convert (x,y) to (Ra, Dec)
+    if sqm>0 then
+       writeln(f,'SQM='+floattostrE(sqm));       // sky background
   end
   else
   begin
@@ -10255,11 +10331,7 @@ begin
         '-m  minimum_star_size["]'+#10+
         '-speed mode[auto/slow] {Slow is forcing small search steps to improve detection.}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
-        {$IFDEF msWindows}
-        '-analyse snr_min {Analyse only and report in the errorlevel the median HFD*1E8 + number of stars used}'+#10+
-        {$ELSE}
-        '-analyse snr_min {Analyse only and report in the errorlevel the median HFD*10}'+#10+
-        {$ENDIF}
+        '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
         '-extract snr_min {As -analyse but additionally write a .csv file with the detected stars info}'+#10+
         '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3}'+#10+
         '-annotate  {Produce deepsky annotated jpg file}' +#10+
@@ -10351,7 +10423,19 @@ begin
            stackmenu1.curve_fitting1Click(nil);
           // save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
           // application.messagebox( pchar(inttostr(best_focus)), pchar('Focus'),MB_OK);
-           if debug=false then halt(round(focus_best)*10000 +min(9999,round(lowest_error*1000)));
+           if debug=false then
+           begin
+             if isConsole then {stdout available, compile targe option -wh used}
+             begin
+               writeln('FOCUS='+floattostrF2(focus_best,0,1));
+               writeln('ERROR_MIN='+floattostrF2(lowest_error,0,5));
+             end;
+            {$IFDEF msWindows}
+             halt(round(focus_best)*10000 +min(9999,round(lowest_error*1000)));
+            {$ELSE}
+             halt(errorlevel);{report hfd in errorlevel. In linux only range 0..255 possible}
+             {$ENDIF}
+           end;
         end;
 
 
@@ -10365,12 +10449,15 @@ begin
             if extractspecified then snr_min:=strtofloat2(getoptionvalue('extract'));
             if snr_min=0 then snr_min:=30;
             analyse_fits(img_loaded,snr_min,extractspecified, hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
+            if isConsole then {stdout available, compile targe option -wh used}
+            begin
+              writeln('HFD_MEDIAN='+floattostrF2(hfd_median,0,1));
+              writeln('STARS='+inttostr(hfd_counter));
+            end;
             {$IFDEF msWindows}
             halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
             {$ELSE}
-            writeln('HFD_MEDIAN='+floattostrF2(hfd_median,0,1));
-            writeln('STARS='+inttostr(hfd_counter));
-            halt(round(hfd_median*10));{report hfd in errorlevel. In linux only range 0..255 possible}
+            halt(errorlevel);{report hfd in errorlevel. In linux only range 0..255 possible}
             {$ENDIF}
           end;{analyse fits and report HFD value}
 
@@ -10382,8 +10469,14 @@ begin
 
           if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
           begin
-            if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
+            if hasoption('sqm') then {sqky quality}
+            begin
+              pedestal:=round(strtofloat2(GetOptionValue('sqm')));
+              if calculate_sqm then {sqm found}
+                update_float('SQM     =',' / Sky background [magn/sqr(")] relative to stars' ,sqm);
+            end;
 
+            if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
             write_ini(true);{write solution to ini file}
 
             add_long_comment('cmdline:'+cmdline);{log command line in wcs file}
@@ -10550,14 +10643,10 @@ begin
               else
               if solve_image(img_loaded,true {get hist}) then {match between loaded image and star database}
               begin
+                if ((sender=solve_and_add_sqm1) and (calculate_sqm)) then
+                    update_float('SQM     =',' / Sky background [magn/sqr(")] relative to stars' ,sqm);
                 mainwindow.SaveFITSwithupdatedheader1Click(nil);
                 nrsolved:=nrsolved+1;
-
-//                if performance_test then
-//                begin
-//                  log_to_file('c:\temp\test.txt',stackmenu1.star_database1.text+#9+stackmenu1.search_fov1.text+#9+floattostr(j*2)+#9+floattostr(round((GetTickCount64 - startTick)/100)/10) );{for testing}
-//                  startTick := GetTickCount64;
-//                end;
               end
               else
               begin
@@ -11675,66 +11764,6 @@ begin
 
   url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size;
   openurl(url);
-end;
-
-procedure Tmainwindow.image_inspector_bayer1Click(Sender: TObject);
-begin
-
-end;
-
-
-procedure Tmainwindow.sqm1Click(Sender: TObject);
-var
-  info_message    : string;
-//  mean,sd : double;
-  Save_Cursor:TCursor;
-  inputvalue  : boolean;
-
-begin
-  if fits_file=false then exit; {file loaded?}
-
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
-  if flux_magn_offset=0 then {calibrate}
-     plot_stars(true {if true photometry only}, false {show Distortion});
-
-  if flux_magn_offset=0 then
-  begin
-    beep;
-    Screen.Cursor:= Save_Cursor;
-    exit;
-  end;
-
-//  local_sd(width2 div 4,height2 div 4, width2 div 3,height2 div 3,0{col} ,img_loaded,sd,mean);{calculate local mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-  {find the bit resolution sensor}
-  repeat
-    info_message:='SQM='+floattostrF2((flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10)),0,1)+' magn/sqr(")'+#10+
-    #10+
-    'Background value='+inttostr(round(cblack))+#10+
-    'Pedestal correction='+inttostr(pedestal)+#10+
-    #10+
-    'Pre-conditions:'+#10+
-    '1) Image is astrometrical solved for flux-calibration against the star database.'+#10+
-    '2) The background value is larger then pedestal value. If not exposure longer.'+#10+
-    '3) Entering a pedestal value increases the accuracy. (mean value of a dark)'#10+
-    '4) Apply on unprocessed images only.'#10+
-    '5) No bright nebula should be visible.'#10;
-
-    inputvalue:=false;
-    case  QuestionDlg (pchar('SQM measurement:'),pchar(info_message),mtCustom,[20,'Copy to clipboard?', 21, 'Enter camera pedestal', 22, 'No', 'IsDefault'],'') of
-         20: Clipboard.AsText:=info_message;
-         21: begin
-               pedestal:=round(strtofloat2(InputBox('Enter camera pedestal correction to zero the background:','','' )));
-               if pedestal<>0 then
-                              inputvalue:=true;
-               mainwindow.save_settings1Click(nil);{save pedestal value}
-              end;
-    end;{case}
-
-
-  until inputvalue=false;
-  Screen.Cursor:= Save_Cursor;
 end;
 
 
