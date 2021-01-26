@@ -3085,7 +3085,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.481, '+about_message4+', dated 2021-1-25';
+  #13+#10+'ASTAP version ß0.9.482, '+about_message4+', dated 2021-1-26';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -9656,7 +9656,7 @@ begin
     case  QuestionDlg (pchar('SQM measurement relative to the stars above the atmosphere:'),pchar(info_message),mtCustom,[20,'Copy to clipboard?', 21, 'Enter camera pedestal', 22, 'No', 'IsDefault'],'') of
          20: Clipboard.AsText:=info_message;
          21: begin
-               pedestal:=round(strtofloat2(InputBox('Enter camera pedestal correction to zero the background:','','' )));
+               pedestal:=round(strtofloat2(InputBox('Enter camera pedestal correction to zero the background:','pedestal value:', inttostr(pedestal))));
                if pedestal<>0 then
                               inputvalue:=true;
                mainwindow.save_settings1Click(nil);{save pedestal value}
@@ -10333,6 +10333,7 @@ begin
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
         '-extract snr_min {As -analyse but additionally write a .csv file with the detected stars info}'+#10+
+        '-sqm pedestal  {add sqm value relative to the stars to the solution}'+#10+
         '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3}'+#10+
         '-annotate  {Produce deepsky annotated jpg file}' +#10+
         '-debug  {Show GUI and stop prior to solving}' +#10+
@@ -10473,7 +10474,7 @@ begin
             begin
               pedestal:=round(strtofloat2(GetOptionValue('sqm')));
               if calculate_sqm then {sqm found}
-                update_float('SQM     =',' / Sky background [magn/sqr(")] relative to stars' ,sqm);
+                update_float('SQM     =',' / Sky background [magn/"^2] relative to stars' ,sqm);
             end;
 
             if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
@@ -10590,8 +10591,8 @@ procedure Tmainwindow.AddplatesolvesolutiontoselectedFITSfiles1Click(
   Sender: TObject);
 var
   Save_Cursor:TCursor;
-  i,nrskipped, nrsolved,nrfailed {,j,steps} :integer;
-  dobackup{,performance_test} : boolean;
+  i,nrskipped, nrsolved,nrfailed : integer;
+  dobackup,add_sqm : boolean;
   failed,skipped   : string;
   startTick  : qword;{for timing/speed purposes}
 begin
@@ -10599,6 +10600,14 @@ begin
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   esc_pressed:=false;
+  add_sqm:=sender=solve_and_add_sqm1;
+
+  if add_sqm then
+  begin
+    pedestal:=round(strtofloat2(InputBox('Enter camera pedestal correction to zero the background:','pedestal value:', inttostr(pedestal))));
+    mainwindow.save_settings1Click(nil);{save pedestal value}
+  end;
+
 
   if OpenDialog1.Execute then
   begin
@@ -10612,50 +10621,42 @@ begin
     skipped:='Skipped files:';
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
-
-//    performance_test:=true;
-//    if performance_test then    steps:=20 else steps:=0;
-
     startTick := GetTickCount64;
     try { Do some lengthy operation }
-//      for j:=0 to steps do
+      with OpenDialog1.Files do
+      for I := 0 to Count - 1 do
+      begin
+        filename2:=Strings[I];
+        memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
+        progress_indicator(100*i/(count),' Solving');{show progress}
+
+        Application.ProcessMessages;
+        if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+
+        {load image and solve image}
+        if load_fits(filename2,true {light},true,0,img_loaded) then {load image success}
         begin
-          with OpenDialog1.Files do
-          for I := 0 to Count - 1 do
+          if ((cd1_1<>0) and (stackmenu1.ignore_header_solution1.checked=false)) then
           begin
-            filename2:=Strings[I];
-            memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
-            progress_indicator(100*i/(count),' Solving');{show progress}
-
-            Application.ProcessMessages;
-            if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
-
-            {load image and solve image}
-            if load_fits(filename2,true {light},true,0,img_loaded) then {load image success}
-            begin
-//              if performance_test then dec_radians:=dec_radians+j*2*pi/180;
-              if ((cd1_1<>0) and (stackmenu1.ignore_header_solution1.checked=false)) then
-              begin
-                nrskipped:=nrskipped+1; {plate solved}
-                memo2_message('Skipped: '+filename2+ '  Already solution in header. Select ignore  in tab alignment to redo.');
-                skipped:=skipped+#13+#10+extractfilename(filename2);
-              end
-              else
-              if solve_image(img_loaded,true {get hist}) then {match between loaded image and star database}
-              begin
-                if ((sender=solve_and_add_sqm1) and (calculate_sqm)) then
-                    update_float('SQM     =',' / Sky background [magn/sqr(")] relative to stars' ,sqm);
-                mainwindow.SaveFITSwithupdatedheader1Click(nil);
-                nrsolved:=nrsolved+1;
-              end
-              else
-              begin
-                memo2_message('Solve failure: '+filename2);
-                failed:=failed+#13+#10+extractfilename(filename2);
-              end;
-            end;
+            nrskipped:=nrskipped+1; {plate solved}
+            memo2_message('Skipped: '+filename2+ '  Already solution in header. Select ignore  in tab alignment to redo.');
+            skipped:=skipped+#13+#10+extractfilename(filename2);
+          end
+          else
+          if solve_image(img_loaded,true {get hist}) then {match between loaded image and star database}
+          begin
+            if ((add_sqm) and (calculate_sqm)) then
+                update_float('SQM     =',' / Sky background [magn/sqr(")] relative to stars' ,sqm);
+            mainwindow.SaveFITSwithupdatedheader1Click(nil);
+            nrsolved:=nrsolved+1;
+          end
+          else
+          begin
+            memo2_message('Solve failure: '+filename2);
+            failed:=failed+#13+#10+extractfilename(filename2);
           end;
-        end;{steps}
+        end;
+      end;{for i:=}
 
       finally
       memo2_message('Processed in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.');

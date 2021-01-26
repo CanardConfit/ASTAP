@@ -28,7 +28,7 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
             &nbsp;<big>version 0.9.480 dated 2021-01-21. &nbsp;Alternative
-            link, the very latest development version 0.9.480 <a href="astap_setup.exe">ASTAP installer</a>
+            link, the very latest development version 0.9.482 <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.exe/download">H17
@@ -2444,7 +2444,7 @@ astrometric
           <tr><td>-analyse</td><td>snr_minimum</td><td></td><td>Analyse
 only and report HFD. Windows: errorlevel is the median HFD * 100M +
 number of stars used. So the HFD is trunc(errorlevel/1M)/100. Linux:
-see stdout</td></tr><tr><td>-extract</td><td>snr_minimum</td><td></td><td>As&nbsp;analyse option but additionally write a .csv file with the detected stars info.</td></tr><tr><td>-focus1 </td><td>file1.fits -focus2 file2.fits .......</td><td></td><td>Find
+see stdout</td></tr><tr><td>-extract</td><td>snr_minimum</td><td></td><td>As&nbsp;analyse option but additionally write a .csv file with the detected stars info.</td></tr><tr><td>-sqm</td><td>pedestal</td><td></td><td>measure the sky background value in magn/arcsec<span class="texhtml"><sup>2&nbsp; &nbsp;</sup></span> relative to the stars. The pedestal is the mean value of a dark.<span class="texhtml"><sup> </sup></span><span class="texhtml"></span></td></tr><tr><td>-focus1 </td><td>file1.fits -focus2 file2.fits .......</td><td></td><td>Find
 best focus point for four or more images using curve fitting. Windows:
 errorlevel is focuspos*1E4 + rem.error*1E3. Linux: see stdout</td></tr><tr><td>-annotate</td><td></td><td></td><td>Produce a deep sky annotated jpeg file with same name as
               input file extended with _annotated *</td></tr><tr><td>-debug</td><td></td><td></td><td>Show GUI and stop prior to solving</td></tr><tr><td>-log</td><td></td><td></td><td>Write solver log to file with extension .log</td></tr><tr><td>-tofits</td><td>binning</td><td>1,2,3,4</td><td>Produce binned FITS file from input png/jpg *</td></tr><tr>
