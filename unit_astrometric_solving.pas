@@ -268,15 +268,6 @@ begin
   result:=true;{no errors}
 end;
 
-//procedure set_trayicon(i:integer);
-//var aBMP: TBitmap; {uses unit graphics}
-//begin
-//  aBMP:=tBitmap.Create;
-//  mainwindow.ImageList1.GetBitmap(i, aBMP);
-//  mainwindow.TrayIcon1.icon.assign(aBMP);
-//  aBMP.Free;
-//end;
-
 
 procedure binX1_crop(crop {0..1}:double; img : image_array; var img2: image_array);{crop image, make mono, no binning}
   var fitsX,fitsY,k, w,h,  shiftX,shiftY: integer;
@@ -573,8 +564,8 @@ begin
                     #10+mainwindow.ra1.text+'h,'+mainwindow.dec1.text+'°'+{for tray icon}
                     #10+filename2;
 
-      nrstars_required:=round(nrstars*(height2/width2)*1.125);{square search field based on height. The 1.125 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
-  //  nrstars_required:=round(nrstars*(height2/width2)*factorX);{square search field based on height. The 1.25 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
+//      nrstars_required:=round(nrstars*(height2/width2)*1.125);{square search field based on height. The 1.125 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
+    nrstars_required:=round(nrstars*(height2/width2));{square search field based on height.}
 
     solution:=false; {assume no match is found}
     go_ahead:=(nrstars>=5); {bare minimum for two quads}
@@ -585,7 +576,7 @@ begin
       nr_quads:=Length(quad_star_distances2[0]);
       go_ahead:=nr_quads>=3; {enough quads?}
 
-      {from version 0.9.212, the step size is fixed. If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
+      {The step size is fixed. If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
       if nr_quads<25  then oversize:=2 {make dimensions of square search window twice then the image height}
       else
       if nr_quads>100 then oversize:=1 {make dimensions of square search window equal to the image height}

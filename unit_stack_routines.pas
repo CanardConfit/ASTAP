@@ -847,7 +847,7 @@ end;
 
 procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo; max_dev_backgr: double; out counter : integer);{mosaic/tile mode}
 var
-    fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH        : integer;
+    fitsX,fitsY,c,width_max, height_max,x_new,y_new,col, cropW,cropH,iterations        : integer;
     value, dummy,median,median2,delta_median,correction,maxlevel,mean,noise : double;
     tempval                                                        : single;
     init, vector_based,merge_overlap,equalise_background           : boolean;
@@ -1032,7 +1032,7 @@ begin
                       else
                       begin {method 1}
                         value:=img_loaded[col,fitsX-1,fitsY-1]+background_correction_center[col];
-                        local_sd(fitsX-1-15 ,fitsY-1-15, fitsX-1+15,fitsY-1+15,col,img_loaded, {var} noise,mean);{local noise recheck every 10 th pixel}
+                        local_sd(fitsX-1-15 ,fitsY-1-15, fitsX-1+15,fitsY-1+15,col,img_loaded, {var} noise,mean, iterations);{local noise recheck every 10 th pixel}
                         maxlevel:=median+noise*5;
                         if ((value<maxlevel) and
                           (img_loaded[col,fitsX-1-1,fitsY-1]<maxlevel) and (img_loaded[col,fitsX-1+1,fitsY-1]<maxlevel) and (img_loaded[col,fitsX-1,fitsY-1-1]<maxlevel) and (img_loaded[col,fitsX-1,fitsY-1+1]<maxlevel) {check nearest pixels}

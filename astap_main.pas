@@ -669,7 +669,7 @@ Function LeadingZero(w : integer) : String;
 procedure log_to_file(logf,mess : string);{for testing}
 procedure demosaic_advanced(var img : image_array);{demosaic img_loaded}
 procedure bin_X2X3X4(binfactor:integer);{bin img_loaded 2x or 3x or 4x}
-procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : image_array; var sd,mean :double);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : image_array; var sd,mean :double; var iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -777,7 +777,7 @@ function load_fits(filen:string;light {load as light of dark/flat},load_data: bo
 {if reset_var=true, reset variables to zero}
 var
   header    : array[0..2880] of ansichar;
-  i,j,k,nr,error3,naxis1, reader_position,n,p,file_size  : integer;
+  i,j,k,nr,error3,naxis1, reader_position,n,file_size  : integer;
   dummy,scale,ccd_temperature                              : double;
   col_float,bscale,measured_max,scalefactor  : single;
   s                  : string[3];
@@ -3085,7 +3085,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.482, '+about_message4+', dated 2021-1-26';
+  #13+#10+'ASTAP version ß0.9.483, '+about_message4+', dated 2021-1-27';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3889,7 +3889,6 @@ var
       leng, {half of length}
       wd,
       flipV, flipH : integer;
-      on_image     : boolean;
 begin
   if ((fits_file=false) or (cd1_1=0) or (mainwindow.northeast1.checked=false)) then exit;
 
@@ -3968,9 +3967,6 @@ var
   leng, {half of length}
   wd,i,j,
   flipV, flipH : integer;
-    on_image     : boolean;
-const
-      size=7;
 begin
   {clear}
 
@@ -4320,9 +4316,9 @@ end;
 
 procedure Tmainwindow.show_statistics1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,counter,col,size,counter_median,required_size, iterations : integer;
+   fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations : integer;
    value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4,
-   sd,sd_old,mean,meanx,median,minimum, maximum,max_counter, saturated : double;
+   sd,mean,median,minimum, maximum,max_counter, saturated                   : double;
    Save_Cursor              : TCursor;
    info_message             : string;
    median_array             : array of double;
@@ -4356,7 +4352,7 @@ begin
 
   for col:=0 to naxis3-1 do  {do all colours}
   begin
-    local_sd(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,img_loaded, {var} sd,mean);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+    local_sd(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,img_loaded, {var} sd,mean,iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
     {median sampling and min , max}
     max_counter:=1;
@@ -6612,7 +6608,6 @@ var
 
    procedure get_str(var inp : string; s1 : string);
    var
-     r, err : integer;
      s2     : string;
    begin
      s2:=initstring.Values[s1];
@@ -7873,9 +7868,9 @@ end;
 
 procedure Tmainwindow.copy_to_clipboard1Click(Sender: TObject);
 var
-  tmpbmp: TBitmap;
-  x1,x2,y1,y2,dum  : integer;
-  SRect,DRect: TRect;
+  tmpbmp            : TBitmap;
+  x1,x2,y1,y2       : integer;
+  SRect,DRect       : TRect;
 
 begin
   if abs(startX-stopX)<4 then
@@ -8311,9 +8306,9 @@ end;
 
 procedure Tmainwindow.angular_distance1Click(Sender: TObject);
 var
-   shapetype                 : integer;
-   hfd1,star_fwhm,snr,flux,xc,yc,
-   hfd2,star_fwhm2,snr2,flux2,xc2,yc2,angle,shape_fitsX,shape_fitsY     : double;
+   shapetype                               : integer;
+   hfd1,star_fwhm,snr,flux,xc,yc, hfd2,
+   star_fwhm2,snr2,flux2,xc2,yc2,angle     : double;
    info_message,info_message2 : string;
    Save_Cursor              : TCursor;
 begin
@@ -8663,8 +8658,8 @@ end;
 
 procedure measure_magnitudes(var stars :star_list);{find stars and return, x,y, hfd, flux}
 var
-  fitsX,fitsY,size,diam, i, j,nrstars    : integer;
-  hfd1,star_fwhm,snr,flux,xc,yc : double;
+  fitsX,fitsY,diam, i, j,nrstars    : integer;
+  hfd1,star_fwhm,snr,flux,xc,yc     : double;
 begin
 
   SetLength(stars,4,5000);{set array length}
@@ -8737,7 +8732,7 @@ end;
 
 procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
-  size,diam, i,j, starX, starY,x,y,fitsX,fitsY     : integer;
+  size,diam, i,j, starX, starY,fitsX,fitsY     : integer;
   Save_Cursor:TCursor;
   Fliphorizontal, Flipvertical,astar                                                     : boolean;
   hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit : double;
@@ -8896,14 +8891,11 @@ end;
 
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
- size, i, starX, starY,fontsize: integer;
- sqm                           : string;
+ size, i, starX, starY         : integer;
  Save_Cursor:TCursor;
  Fliphorizontal, Flipvertical  : boolean;
  stars : star_list;
- sd,mean,sd2,mean2 : double;
-
- begin
+begin
   if fits_file=false then exit; {file loaded?}
 
   Save_Cursor := Screen.Cursor;
@@ -8915,7 +8907,6 @@ var
   if flux_magn_offset=0 then
   begin
     beep;
-//    img_temp:=nil;
     Screen.Cursor:= Save_Cursor;
     exit;
   end;
@@ -9448,9 +9439,8 @@ end;
 procedure Tmainwindow.Enterlabel1Click(Sender: TObject);
 var
   value : string;
-  text_height,text_width,text_x,text_y,
-  startX_screen,startY_screen,text_X_screen,text_Y_screen: integer;
-  boldness                               : double;
+  text_height,text_x,text_y   : integer;
+  boldness                    : double;
 begin
   backup_img;
   value:=InputBox('Label input:','','' );
@@ -9480,12 +9470,6 @@ begin
   setbkmode(image1.canvas.handle,TRANSPARENT); {transparent}
   {$else} {Linux}
   {$endif}
-
-  text_height:=round(image1.canvas.Textheight(value));{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
-  text_width:=round(image1.canvas.Textwidth(value)); {font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
-
-  if stopX>=startX then text_width:=0;
-  if stopY>=startY then text_height:=text_height div 3;
 
   startX:=startX+1; {convert to fits range 1...}
   startY:=startY+1; {convert to fits range 1...}
@@ -12119,8 +12103,8 @@ begin
 end;
 
 
-procedure local_sd(x1,y1, x2,y2,col : integer;{accuracy: double;} img : image_array; var sd,mean :double);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-var i,j,counter,iterations,w,h : integer;
+procedure local_sd(x1,y1, x2,y2,col : integer;{accuracy: double;} img : image_array; var sd,mean :double; var iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+var i,j,counter,w,h : integer;
     value, sd_old,meanx   : double;
 
 begin
@@ -12244,7 +12228,7 @@ procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
 var
   hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance,sd,dummy : double;
   s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str      : string;
-  x_sized,y_sized,factor,flipH,flipV                               :integer;
+  x_sized,y_sized,factor,flipH,flipV,iterations                    :integer;
   color1:tcolor;
   r,b :single;
 begin
@@ -12419,7 +12403,7 @@ begin
      object_decM:=decM; {use mouse position instead}
      mainwindow.statusbar1.panels[1].text:='';
 
-     local_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean});{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+     local_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
      mainwindow.statusbar1.panels[2].text:='σ = '+ floattostrf( sd,ffFixed{ ffgeneral}, 4, 1);
    end;
 end;

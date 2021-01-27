@@ -308,7 +308,6 @@ procedure find_quads_xy(starlist :star_list; var starlistquads :star_list);  {FO
 var
    i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrquads,buffersize               : integer;
    distance,distance1,distance2,distance3{,dummy },x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
-   dist1,dist2,dist3,dist4,dist5,dist6,dummy  :double;
    identical_quad : boolean;
 begin
   nrstars_min_one:=Length(starlist[0])-1;

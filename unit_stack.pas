@@ -2976,8 +2976,7 @@ procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse
 // amode=3 ==> full header. load image  force reanalyse
 // amode=4 ==> full header. load image
 var
-  c,counts,i : integer;
-  hfd_counter : integer;
+  c,counts,i,iterations, hfd_counter : integer;
   backgr, hfd_median, hjd,sd, dummy : double;
   filename1,ext        : string;
   Save_Cursor          : TCursor;
@@ -3112,7 +3111,7 @@ begin
               get_background(0,img,true {update_hist},false {calculate noise level}, {var} backgr,star_level);
 
               {analyse centre only. Suitable for flats and dark with amp glow}
-              local_sd((width2 div 2)-50,(height2 div 2)-50, (width2 div 2)+50,(height2 div 2)+50{regio of interest},0,img, sd,dummy {mean});{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+              local_sd((width2 div 2)-50,(height2 div 2)-50, (width2 div 2)+50,(height2 div 2)+50{regio of interest},0,img, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
                noise_level[0]:=round(sd);
 
               lv.Items.item[c].subitems.Strings[D_background]:=inttostr5(round(backgr));
