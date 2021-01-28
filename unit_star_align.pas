@@ -550,6 +550,7 @@ begin
   matchlist1:=nil;
 end;
 
+
 procedure get_brightest_stars(nr_stars_required: integer;{500} highest_snr: double;snr_list : array of double; var starlist1 : star_list);{ get the brightest star from a star list}
 const
    range=200;

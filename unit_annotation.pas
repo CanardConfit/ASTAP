@@ -1,6 +1,6 @@
 unit unit_annotation; {deep sky and star annotation & photometry calibation of the image}
 {$mode delphi}
-{Copyright (C) 2018, 2020 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2018, 2021 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 {This program is free software: you can redistribute it and/or modify
@@ -26,10 +26,8 @@ procedure plot_deepsky;{plot the deep sky object on the image}
 procedure load_deep;{load the deepsky database once. If loaded no action}
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 procedure load_variable;{load variable stars. If loaded no action}
-procedure plot_stars(photometry_only,show_distortion : boolean);{plot stars on the image}
-
+procedure plot_and_measure_stars(flux_calibration,plot_stars,show_distortion: boolean);{flux calibration,  annotate or show_distortion}
 procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the mangitude. For super nova search}
-
 procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 procedure read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; var ra2,dec2,length2,width2,pa : double);{deepsky database search}
 procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y : integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
@@ -1537,7 +1535,7 @@ begin
 end;
 
 
-procedure plot_stars(photometry_only,show_distortion : boolean);{plot stars on the image}
+procedure plot_and_measure_stars(flux_calibration,plot_stars,show_distortion: boolean);{flux calibration,  annotate or show_distortion}
 var
   fitsX,fitsY, fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
@@ -1564,12 +1562,13 @@ var
 
       if ((x>-50) and (x<=width2+50) and (y>-50) and (y<=height2+50)) then {within image1 with some overlap}
       begin
-        if photometry_only=false then
+        inc(star_total_counter);
+
+        if plot_stars then
         begin {annotate}
           if flip_horizontal then x2:=(width2-1)-x else x2:=x;
           if flip_vertical   then y2:=y            else y2:=(height2-1)-y;
 
-          inc(star_total_counter);
 
           if Bp_Rp<>999 then {colour version}
           begin
@@ -1584,45 +1583,47 @@ var
           mainwindow.image1.canvas.ellipse(x2-len,y2-len,x2+1+len,y2+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
         end;
 
-        {get mag/flux ratio}
-        HFD(img_loaded,x,y,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-        if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
+        if ((flux_calibration) or (show_distortion)) then
         begin
-          if ((img_loaded[0,round(xc),round(yc)]<65000) and
-              (img_loaded[0,round(xc-1),round(yc)]<65000) and
-              (img_loaded[0,round(xc+1),round(yc)]<65000) and
-              (img_loaded[0,round(xc),round(yc-1)]<65000) and
-              (img_loaded[0,round(xc),round(yc+1)]<65000) and
-
-              (img_loaded[0,round(xc-1),round(yc-1)]<65000) and
-              (img_loaded[0,round(xc-1),round(yc+1)]<65000) and
-              (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
-              (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
+          HFD(img_loaded,x,y,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+          if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
           begin
-            magn:=(-ln(flux)*2.511886432/LN(10));
-            if counter_flux_measured>=length(mag_offset_array) then  SetLength(mag_offset_array,counter_flux_measured+1000);{increase length array}
-            mag_offset_array[counter_flux_measured]:=mag2/10-magn;
-            inc(counter_flux_measured); {increase counter of number of stars analysed}
+            if ((flux_calibration){calibrate flux} and
+                (img_loaded[0,round(xc),round(yc)]<65000) and
+                (img_loaded[0,round(xc-1),round(yc)]<65000) and
+                (img_loaded[0,round(xc+1),round(yc)]<65000) and
+                (img_loaded[0,round(xc),round(yc-1)]<65000) and
+                (img_loaded[0,round(xc),round(yc+1)]<65000) and
+
+                (img_loaded[0,round(xc-1),round(yc-1)]<65000) and
+                (img_loaded[0,round(xc-1),round(yc+1)]<65000) and
+                (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
+                (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
+            begin {flux measurement is reliable if snr>10 and not saturated. Increasing minimum snr above 10 doesn't help with accuracy}
+              magn:=(-ln(flux)*2.511886432/LN(10));
+              if counter_flux_measured>=length(mag_offset_array) then  SetLength(mag_offset_array,counter_flux_measured+1000);{increase length array}
+              mag_offset_array[counter_flux_measured]:=mag2/10-magn;
+              //memo2_message(#9+ floattostr6(mag2/10)+#9+floattostr6(magn)+#9+floattostr6(snr));
+              inc(counter_flux_measured); {increase counter of number of stars analysed}
+            end;
+
+            if show_distortion then {show distortion}
+            begin
+              mainwindow.image1.Canvas.Pen.width :=3;
+              mainwindow.image1.Canvas.MoveTo(x2, y2);
+              mainwindow.image1.Canvas.LineTo(round(x2+(x-xc)*50),round(y2-(y-yc)*50 ));
+              mainwindow.image1.Canvas.Pen.width :=1;
+              //  totalX:=totalX+(fitsX-xc);
+              //  totalY:=totalY+(fitsY-yc);
+            end;{show distortion}
           end;
-
-          if show_distortion then
-          begin
-            mainwindow.image1.Canvas.Pen.width :=3;
-            mainwindow.image1.Canvas.MoveTo(x2, y2);
-            mainwindow.image1.Canvas.LineTo(round(x2+(x-xc)*50),round(y2-(y-yc)*50 ));
-            mainwindow.image1.Canvas.Pen.width :=1;
-            //  totalX:=totalX+(fitsX-xc);
-            //  totalY:=totalY+(fitsY-yc);
-          end;{show distortion}
-        end;
+        end;{flux calibration}
       end;
     end;
 
 
 
 begin
-  flux_magn_offset:=0;
-
   if ((fits_file) and (cd1_1<>0)) then
   begin
     Save_Cursor := Screen.Cursor;
@@ -1645,7 +1646,7 @@ begin
     telescope_ra:=ra0+arctan(Dra/delta);
     telescope_dec:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
 
-    fov:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view with 0% extra}
+    fov:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
 
     if file290 then {.290 files}
       fov:=min(fov,9.53*pi/180) {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
@@ -1674,11 +1675,12 @@ begin
 
     mainwindow.image1.Canvas.font.color:=$00B0FF ;{orange}
 
-    setlength(mag_offset_array,1000);
 
-   // star_counter:=999; {for labeling}
     star_total_counter:=0;{total counter}
-    max_nr_stars:=round(width2*height2*(1000/(2328*1760)));{display about 1000 stars for ASI1600 in bin 2x2 where height is 1760 pixels}
+
+    max_nr_stars:=round(width2*height2*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
+
+    if flux_calibration then setlength(mag_offset_array,1000);
 
     if select_star_database(stackmenu1.star_database1.text)=false then
     begin
@@ -1723,14 +1725,16 @@ begin
 
     close_star_database;
 
-    if counter_flux_measured>0 then {use all stars}
+    if flux_calibration then {flux calibration}
     begin
-      SetLength(mag_offset_array,counter_flux_measured);{set length correct}
-      flux_magn_offset:=get_best_mean(mag_offset_array)
-    end
-    else
-    flux_magn_offset:=0;
-    mag_offset_array:=nil;
+      if counter_flux_measured>0 then {use all stars}
+      begin
+        SetLength(mag_offset_array,counter_flux_measured);{set length correct}
+        flux_magn_offset:=get_best_mean(mag_offset_array)
+      end
+      else  flux_magn_offset:=0;
+      mag_offset_array:=nil;
+    end;
 
     Screen.Cursor:= Save_Cursor;
 
@@ -1742,11 +1746,9 @@ end;{plot stars}
 procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
 var
   fitsX,fitsY, fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
-  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
+  mag2,Bp_Rp, delta_ra,det,SIN_dec_ref,COS_dec_ref,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4              : double;
-  x,y,star_total_counter,x2,y2,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2 : integer;
-  flip_horizontal, flip_vertical   : boolean;
-  mag_offset_array                 : array of double;
+  x,y, max_nr_stars, area1,area2,area3,area4   : integer;
   Save_Cursor                      : TCursor;
 
     procedure plot_star;
@@ -1776,9 +1778,6 @@ begin
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
-    flip_vertical:=mainwindow.flip_vertical1.Checked;
-    flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
     counter_flux_measured:=0;
 
@@ -1817,7 +1816,6 @@ begin
     if area1<>0 then {read 1th area}
     begin
       if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
-      nrstars_required2:=trunc(max_nr_stars * frac1);
       while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
     end;
 
@@ -1825,7 +1823,6 @@ begin
     if area2<>0 then {read 2th area}
     begin
       if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
-      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2));
       while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
     end;
 
@@ -1833,14 +1830,12 @@ begin
     if area3<>0 then {read 3th area}
     begin
       if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
-      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
       while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
     end;
     {read 4th area}
     if area4<>0 then {read 4th area}
     begin
       if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
-      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
       while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
     end;
 

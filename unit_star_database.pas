@@ -2743,6 +2743,7 @@ function select_star_database(database:string): boolean; {select a star database
 begin
   result:=true;
   file290:=true;{type .290 database}
+  database:=lowercase(database);
   if copy(database,1,1)<>'h' then
   begin
     if fileexists( database_path+database+'_0101.290') then begin name_database:=database; {try preference}exit; end

@@ -290,8 +290,8 @@ type
     procedure annotations_visible1Click(Sender: TObject);
     procedure autocorrectcolours1Click(Sender: TObject);
     procedure batch_annotate1Click(Sender: TObject);
-    procedure batch_rotate_right1Click(Sender: TObject);
     procedure batch_solve_astrometry_netClick(Sender: TObject);
+    procedure calibrate_photometry1Click(Sender: TObject);
     procedure hfd_contour1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
     procedure copy_to_clipboard1Click(Sender: TObject);
@@ -3085,7 +3085,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.483, '+about_message4+', dated 2021-1-27';
+  #13+#10+'ASTAP version ß0.9.484, '+about_message4+', dated 2021-1-28';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4143,7 +4143,7 @@ end;
 
 procedure Tmainwindow.show_distortion1Click(Sender: TObject);
 begin
-  plot_stars(false,true {show Distortion});
+  plot_and_measure_stars(flux_magn_offset=0 {calibration},false {plot stars},true {plot distortion});
 end;
 
 
@@ -8024,7 +8024,7 @@ begin
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
     if flux_magn_offset=0 then {calibrate}
-       plot_stars(true {if true photometry only}, false {show Distortion});
+      plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});
     if flux_magn_offset=0 then begin beep; exit;end;
 
     Save_Cursor := Screen.Cursor;
@@ -8748,7 +8748,7 @@ const
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
   if flux_magn_offset=0 then {calibrate}
-     plot_stars(true {if true photometry only}, false {show Distortion});
+    plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});
 
  if flux_magn_offset=0 then
   begin
@@ -8902,7 +8902,7 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
   if flux_magn_offset=0 then {calibrate}
-     plot_stars(true {if true photometry only}, false {show Distortion});
+     plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});
 
   if flux_magn_offset=0 then
   begin
@@ -9009,17 +9009,27 @@ begin
   end;
 end;
 
-procedure Tmainwindow.batch_rotate_right1Click(Sender: TObject);
-begin
-
-end;
-
 
 procedure Tmainwindow.batch_solve_astrometry_netClick(Sender: TObject);
 begin
   form_astrometry_net1:=Tform_astrometry_net1.Create(self); {in project option not loaded automatic}
   form_astrometry_net1.ShowModal;
   form_astrometry_net1.release;
+end;
+
+
+procedure Tmainwindow.calibrate_photometry1Click(Sender: TObject);
+begin
+  if flux_magn_offset=0 then
+  begin
+    plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});
+    if flux_magn_offset>0 then
+    begin
+      mainwindow.caption:='Photometry calibration successfull';
+      if naxis3>1 then memo2_message('Photometric accuracy for colour images is less. Conversion to mono will help.');
+      application.hint:=mainwindow.caption;
+    end;
+  end;
 end;
 
 
@@ -9030,6 +9040,7 @@ begin
     marker_position:=InputBox('Enter α, δ position in one of the following formats: ','23 00 00.0,  89 00 00.0    or   23.99999h 89.9999999    or    359.999d 89.999',marker_position );
     if marker_position='' then begin add_marker_position1.checked:=false; exit; end;
 
+    mainwindow.shape_marker3.visible:=true;
     add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
     mainwindow.shape_marker3.hint:=marker_position;
   end
@@ -9588,8 +9599,7 @@ end;
 
 function calculate_sqm : boolean; {calculate sqky background value}
 begin
-  if flux_magn_offset=0 then {calibrate}
-     plot_stars(true {if true photometry only}, false {show Distortion});
+  mainwindow.calibrate_photometry1Click(nil);
 
   if flux_magn_offset>0 then
   begin
@@ -11018,13 +11028,7 @@ end;
 
 procedure Tmainwindow.star_annotation1Click(Sender: TObject);
 begin
-  plot_stars(sender=calibrate_photometry1 {if true photometry only}, false {show Distortion});
-  if flux_magn_offset>0 then
-  begin
-    mainwindow.caption:='Photometry calibration successfull';
-    if naxis3>1 then memo2_message('Photometric accuracy for colour images is less. Conversion to mono will help.');
-    application.hint:=mainwindow.caption;
-  end;
+  plot_and_measure_stars(flux_magn_offset=0 {calibration},true {plot stars},false {plot distortion});
 end;
 
 

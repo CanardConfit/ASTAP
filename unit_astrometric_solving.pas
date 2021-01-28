@@ -609,7 +609,7 @@ begin
 
     if go_ahead then
     begin
-      if select_star_database(lowercase(stackmenu1.star_database1.text))=false then
+      if select_star_database(stackmenu1.star_database1.text)=false then
       begin
         result:=false;
         application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download the h18 (or h17, v17) and install'), pchar('ASTAP error:'),0);
@@ -618,9 +618,8 @@ begin
       end
       else
       begin
-        database_uppercase:=uppercase(name_database);
-        stackmenu1.star_database1.text:=database_uppercase;
-        memo2_message('Using star database '+database_uppercase);
+        stackmenu1.star_database1.text:=name_database;
+        memo2_message('Using star database '+uppercase(name_database));
       end;
 
       search_field:=fov2*(pi/180);

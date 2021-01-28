@@ -5548,10 +5548,10 @@ begin
      end ;{for loop}
 
   if nr_images<6 then memo2_message('Warning, not enough images for reliable outlier detection');
-  if outliers[2,0]<>0 then memo2_message('Found star 1 with HFD standard deviation '+ floattostr6(outliers[2,0])+' at x=' +inttostr(round(outliers[0,0]))+', y='+inttostr(round(outliers[1,0]))+' Marked with yellow circle.');
-  if outliers[2,1]<>0 then memo2_message('Found star 2 with HFD standard deviation '+ floattostr6(outliers[2,1])+' at x=' +inttostr(round(outliers[0,1]))+', y='+inttostr(round(outliers[1,1]))+' Marked with yellow circle.' );
-  if outliers[2,2]<>0 then memo2_message('Found star 3 with HFD standard deviation '+ floattostr6(outliers[2,2])+' at x=' +inttostr(round(outliers[0,2]))+', y='+inttostr(round(outliers[1,2]))+' Marked with yellow circle.' );
-  if outliers[2,3]<>0 then memo2_message('Found star 4 with HFD standard deviation '+ floattostr6(outliers[2,3])+' at x=' +inttostr(round(outliers[0,3]))+', y='+inttostr(round(outliers[1,3]))+' Marked with yellow circle.' );
+  if outliers[2,0]<>0 then memo2_message('Found star 1 with magnitude variation. σ = '+ floattostr6(outliers[2,0])+' at x=' +inttostr(round(outliers[0,0]))+', y='+inttostr(round(outliers[1,0]))+'. Marked with yellow circle.');
+  if outliers[2,1]<>0 then memo2_message('Found star 2 with magnitude variation. σ = '+ floattostr6(outliers[2,1])+' at x=' +inttostr(round(outliers[0,1]))+', y='+inttostr(round(outliers[1,1]))+'. Marked with yellow circle.' );
+  if outliers[2,2]<>0 then memo2_message('Found star 3 with magnitude variation. σ = '+ floattostr6(outliers[2,2])+' at x=' +inttostr(round(outliers[0,2]))+', y='+inttostr(round(outliers[1,2]))+'. Marked with yellow circle.' );
+  if outliers[2,3]<>0 then memo2_message('Found star 4 with magnitude variation. σ = '+ floattostr6(outliers[2,3])+' at x=' +inttostr(round(outliers[0,3]))+', y='+inttostr(round(outliers[1,3]))+'. Marked with yellow circle.' );
 
   stars:=nil;
   stars_sd:=nil;
@@ -5662,7 +5662,9 @@ begin
         {check/prepare photometry}
         if fileexists(ChangeFileExt(Filename2,'.astap_image_stars'))=false then
         begin
-          plot_stars(true {if true photometry only}, false {show Distortion});{measure the flux_magn_offset (flux=> magnitude factor)}
+          if flux_magn_offset=0 then {calibrate}
+             plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});
+
           if pos('F',calstat)=0 then
           begin
             extra_message:=' Image not calibrated with a flat field. Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu.';
@@ -6296,6 +6298,7 @@ begin
     end;
     FindClose(SearchRec);
   end;
+  flux_magn_offset:=0;{reset flux calibration. Required if V17 is selected instead of H17}
 end;
 
 procedure Tstackmenu1.analyseblink1Click(Sender: TObject);

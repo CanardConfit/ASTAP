@@ -1286,7 +1286,7 @@ object mainwindow: Tmainwindow
         Enabled = False
         Hint = 'Calibrate photometry using available star database (Gaia BP or V magnitude) Works best for raw/mono images. For colour images red channel will be used but accuracy will be less.'
         ShortCut = 16464
-        OnClick = star_annotation1Click
+        OnClick = calibrate_photometry1Click
       end
       object sqm1: TMenuItem
         Caption = 'SQM report based on an image'
