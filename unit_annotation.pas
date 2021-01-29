@@ -1509,7 +1509,7 @@ end;
 
 function get_best_mean(list: array of double): double;{Remove outliers from polulation using MAD. }
 var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
-  n,i,count         : integer;
+  n,i,count,k         : integer;
   median, mad       : double;
   list2: array of double;
 begin
@@ -1524,7 +1524,7 @@ begin
  result:=0;
 
  for i:=0 to n-1 do
-   if abs(list[i]-median)<1.0*1.4826*mad then {offset less the 1*sigma}
+   if abs(list[i]-median)<2.5*1.4826*mad then {offset less the 2.5*sigma.}
    begin
      result:=result+list[i];{Calculate snr weighted arithmetic mean. This gives a little less noise then calculating median again}
      inc(count);
@@ -1586,7 +1586,7 @@ var
         if ((flux_calibration) or (show_distortion)) then
         begin
           HFD(img_loaded,x,y,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-          if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
+          if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>30)) then {star detected in img_loaded. 30 is found emperical}
           begin
             if ((flux_calibration){calibrate flux} and
                 (img_loaded[0,round(xc),round(yc)]<65000) and
@@ -1599,7 +1599,7 @@ var
                 (img_loaded[0,round(xc-1),round(yc+1)]<65000) and
                 (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
                 (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
-            begin {flux measurement is reliable if snr>10 and not saturated. Increasing minimum snr above 10 doesn't help with accuracy}
+            begin
               magn:=(-ln(flux)*2.511886432/LN(10));
               if counter_flux_measured>=length(mag_offset_array) then  SetLength(mag_offset_array,counter_flux_measured+1000);{increase length array}
               mag_offset_array[counter_flux_measured]:=mag2/10-magn;
@@ -1679,6 +1679,8 @@ begin
     star_total_counter:=0;{total counter}
 
     max_nr_stars:=round(width2*height2*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
+
+  //   max_nr_stars:=4;
 
     if flux_calibration then setlength(mag_offset_array,1000);
 

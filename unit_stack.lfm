@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 35
+  Left = 640
   Height = 644
-  Top = 188
+  Top = 189
   Width = 1870
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -3151,7 +3151,7 @@ object stackmenu1: Tstackmenu1
     object tab_photometry1: TTabSheet
       Caption = 'Photometry'
       ClientHeight = 420
-      ClientWidth = 1610
+      ClientWidth = 1861
       ImageIndex = 18
       ParentFont = False
       object browse_photometry1: TButton
@@ -3265,7 +3265,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1610
+        Width = 1861
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
