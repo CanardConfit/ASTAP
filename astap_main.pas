@@ -3085,7 +3085,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.485, '+about_message4+', dated 2021-1-29';
+  #13+#10+'ASTAP version ß0.9.486, '+about_message4+', dated 2021-1-30';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -9166,6 +9166,7 @@ begin
   Screen.Cursor:=OldCursor;
 end;
 
+
 procedure Tmainwindow.UpDown1Click(Sender: TObject; Button: TUDBtnType);
 begin
   if ((last_extension) and (button=btNext)) then
@@ -10464,7 +10465,7 @@ begin
 
           if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
           begin
-            if hasoption('sqm') then {sqky quality}
+            if hasoption('sqm') then {sky quality}
             begin
               pedestal:=round(strtofloat2(GetOptionValue('sqm')));
               if calculate_sqm then {sqm found}
@@ -11787,9 +11788,8 @@ begin
   snr:=10;
   hfd2:=2;{just a good value}
 
-  {for manual alignment}
-  if ( ((stackmenu1.use_manual_alignment1.checked) and (pos('S',calstat)=0 {ignore stacked images unless callled from listview1. See doubleclick listview1} )) or
-        (stackmenu1.pagecontrol1.tabindex=8 {photometry})){measure one object in blink routine } then
+  {for manual alignment and photometry}
+  if  ((stackmenu1.pagecontrol1.tabindex=0) and (stackmenu1.use_manual_alignment1.checked) and (pos('S',calstat)=0 {ignore stacked images unless callled from listview1. See doubleclick listview1} )) then
   begin
     if pos('small',stackmenu1.manual_centering1.text)<>0 then {comet}
     begin
@@ -11821,6 +11821,19 @@ begin
       shape_fitsX:=xc+1;{calculate fits positions}
       shape_fitsY:=yc+1;
       listview_add_xy(shape_fitsX,shape_fitsY);{add to list}
+      if snr>5 then shapetype:=1 {circle} else shapetype:=0;{square}
+      show_marker_shape(mainwindow.shape_alignment_marker1,shapetype,20,20,10{minimum},shape_fitsX, shape_fitsY);
+    end;
+  end
+  else
+  if stackmenu1.pagecontrol1.tabindex=8 {photometry} then
+  begin
+    {star alignment}
+    HFD(img_loaded,startX,startY,14{box size},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
+    if hfd2<90 then {detected something}
+    begin
+      shape_fitsX:=xc+1;{calculate fits positions}
+      shape_fitsY:=yc+1;
       if snr>5 then shapetype:=1 {circle} else shapetype:=0;{square}
       show_marker_shape(mainwindow.shape_alignment_marker1,shapetype,20,20,10{minimum},shape_fitsX, shape_fitsY);
     end;

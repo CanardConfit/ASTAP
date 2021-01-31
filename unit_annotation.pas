@@ -1526,7 +1526,7 @@ begin
  for i:=0 to n-1 do
    if abs(list[i]-median)<2.5*1.4826*mad then {offset less the 2.5*sigma.}
    begin
-     result:=result+list[i];{Calculate snr weighted arithmetic mean. This gives a little less noise then calculating median again}
+     result:=result+list[i];{Calculate mean. This gives a little less noise then calculating median again. Note weighted mean gives poorer result and is not applied.}
      inc(count);
    end;
  if count>0 then  result:=result/count;  {mean without using outliers}
