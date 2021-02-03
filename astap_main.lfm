@@ -239,10 +239,10 @@ object mainwindow: Tmainwindow
       Visible = False
     end
     object Shape_alignment_marker1: TShape
-      Left = 8
+      Left = 32
       Height = 11
       Hint = 'Lock unreliable, check position'
-      Top = 8
+      Top = 112
       Width = 11
       Enabled = False
       ParentShowHint = False
@@ -332,6 +332,90 @@ object mainwindow: Tmainwindow
       Pen.Width = 2
       Shape = stStar
       ShowHint = True
+      Visible = False
+    end
+    object Shape_alignment_marker2: TShape
+      Left = 32
+      Height = 11
+      Hint = 'Lock unreliable, check position'
+      Top = 144
+      Width = 11
+      Enabled = False
+      ParentShowHint = False
+      Pen.Color = clLime
+      Pen.Mode = pmNotXor
+      Pen.Width = 3
+      Shape = stDiamond
+      ShowHint = True
+      Visible = False
+    end
+    object StaticText1: TStaticText
+      Left = 62
+      Height = 31
+      Top = 104
+      Width = 11
+      AutoSize = True
+      Caption = '1'
+      Color = clNone
+      Font.CharSet = ANSI_CHARSET
+      Font.Color = clYellow
+      Font.Height = -21
+      Font.Pitch = fpVariable
+      Font.Quality = fqDraft
+      ParentFont = False
+      ParentColor = False
+      TabOrder = 0
+      Visible = False
+    end
+    object StaticText2: TStaticText
+      Left = 62
+      Height = 31
+      Top = 136
+      Width = 11
+      AutoSize = True
+      Caption = '2'
+      Color = clNone
+      Font.CharSet = ANSI_CHARSET
+      Font.Color = clYellow
+      Font.Height = -21
+      Font.Pitch = fpVariable
+      Font.Quality = fqDraft
+      ParentFont = False
+      ParentColor = False
+      TabOrder = 1
+      Visible = False
+    end
+    object Shape_alignment_marker3: TShape
+      Left = 30
+      Height = 11
+      Hint = 'Lock unreliable, check position'
+      Top = 172
+      Width = 11
+      Enabled = False
+      ParentShowHint = False
+      Pen.Color = clLime
+      Pen.Mode = pmNotXor
+      Pen.Width = 3
+      Shape = stDiamond
+      ShowHint = True
+      Visible = False
+    end
+    object StaticText3: TStaticText
+      Left = 60
+      Height = 31
+      Top = 164
+      Width = 11
+      AutoSize = True
+      Caption = '3'
+      Color = clNone
+      Font.CharSet = ANSI_CHARSET
+      Font.Color = clYellow
+      Font.Height = -21
+      Font.Pitch = fpVariable
+      Font.Quality = fqDraft
+      ParentFont = False
+      ParentColor = False
+      TabOrder = 2
       Visible = False
     end
   end

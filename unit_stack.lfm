@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 215
+  Left = 118
   Height = 644
-  Top = 161
+  Top = 199
   Width = 1870
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1869
-    ActivePage = Images
+    ActivePage = tab_photometry1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 8
     TabOrder = 5
     object Images: TTabSheet
       Hint = 'Select here the light frames'
@@ -3341,9 +3341,21 @@ object stackmenu1: Tstackmenu1
           end        
           item
             Alignment = taRightJustify
-            Caption = 'Magn selected obj.'
-            MinWidth = 120
-            Width = 120
+            Caption = 'Magn. obj. 1'
+            MinWidth = 100
+            Width = 100
+          end        
+          item
+            Alignment = taRightJustify
+            Caption = 'Magn. obj. 2'
+            MinWidth = 100
+            Width = 100
+          end        
+          item
+            Alignment = taRightJustify
+            Caption = 'Magn. obj. 3'
+            MinWidth = 100
+            Width = 100
           end        
           item
             Alignment = taRightJustify
@@ -3410,9 +3422,9 @@ object stackmenu1: Tstackmenu1
         OnClick = help_photometry1Click
       end
       object Label_bin_oversampled1: TLabel
-        Left = 1528
+        Left = 1504
         Height = 15
-        Top = 12
+        Top = 0
         Width = 260
         Caption = 'Bin oversampled images first for better  detection'
         ParentColor = False
@@ -3475,11 +3487,20 @@ object stackmenu1: Tstackmenu1
         ShowHint = True
         TabOrder = 11
       end
+      object checkBox_annotate1: TCheckBox
+        Left = 1504
+        Height = 19
+        Hint = 'Annotate from database. This will slow down the process.'
+        Top = 16
+        Width = 215
+        Caption = 'Annotate variable and reference stars'
+        TabOrder = 12
+      end
     end
     object TabSheet1: TTabSheet
       Caption = 'Inspector'
       ClientHeight = 420
-      ClientWidth = 1610
+      ClientWidth = 1861
       ImageIndex = 17
       object browse_inspector1: TButton
         Left = 32
@@ -3510,7 +3531,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1610
+        Width = 1861
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -6972,10 +6993,10 @@ object stackmenu1: Tstackmenu1
     end
     object keyword1: TMenuItem
       Caption = 'Change keyword in selected files'
-      Hint = 'Modify a keyword the selected files'
+      Hint = 'Modify or add a keyword to the header of the selected files'
       object changekeyword1: TMenuItem
         Caption = 'Type keyword and new value'
-        Hint = 'All select files will be updated with new keyword value.'
+        Hint = 'All select files will be updated with new keyword value. Type for value DELETE to remove keyword.'
         OnClick = changekeyword1Click
       end
       object MenuItem19: TMenuItem
@@ -7584,10 +7605,10 @@ object stackmenu1: Tstackmenu1
     end
     object keyword2: TMenuItem
       Caption = 'Change keyword in selected files'
-      Hint = 'Modify a keyword the selected files'
+      Hint = 'Modify or add a keyword to the header of the selected files'
       object changekeyword2: TMenuItem
         Caption = 'Type keyword and new value'
-        Hint = 'All select files will be updated with new keyword value.'
+        Hint = 'All select files will be updated with new keyword value. Type for value DELETE to remove keyword.'
         OnClick = changekeyword1Click
       end
     end
@@ -7637,10 +7658,10 @@ object stackmenu1: Tstackmenu1
     end
     object keyword3: TMenuItem
       Caption = 'Change keyword in selected files'
-      Hint = 'Modify a keyword the selected files'
+      Hint = 'Modify or add a keyword to the header of the selected files'
       object changekeyword3: TMenuItem
         Caption = 'Type keyword and new value'
-        Hint = 'All select files will be updated with new keyword value.'
+        Hint = 'All select files will be updated with new keyword value. Type for value DELETE to remove keyword.'
         OnClick = changekeyword1Click
       end
     end
@@ -7690,10 +7711,10 @@ object stackmenu1: Tstackmenu1
     end
     object keyword4: TMenuItem
       Caption = 'Change keyword in selected files'
-      Hint = 'Modify a keyword the selected files'
+      Hint = 'Modify or add a keyword to the header of the selected files'
       object changekeyword4: TMenuItem
         Caption = 'Type keyword and new value'
-        Hint = 'All select files will be updated with new keyword value.'
+        Hint = 'All select files will be updated with new keyword value. Type for value DELETE to remove keyword.'
         OnClick = changekeyword1Click
       end
     end
@@ -7800,6 +7821,15 @@ object stackmenu1: Tstackmenu1
       ShortCut = 16451
       OnClick = list_to_clipboard1Click
     end
+    object keyword6: TMenuItem
+      Caption = 'Change keyword in selected files'
+      Hint = 'Modify or add a keyword to the header of the selected files'
+      object changekeyword6: TMenuItem
+        Caption = 'Type keyword and new value'
+        Hint = 'All select files will be updated with new keyword value. Type for value DELETE to remove keyword.'
+        OnClick = changekeyword1Click
+      end
+    end
     object MenuItem18: TMenuItem
       Caption = '-'
     end
@@ -7878,6 +7908,15 @@ object stackmenu1: Tstackmenu1
       ShortCut = 16451
       OnClick = list_to_clipboard1Click
     end
+    object keyword7: TMenuItem
+      Caption = 'Change keyword in selected files'
+      Hint = 'Modify or add a keyword to the header of the selected files'
+      object changekeyword7: TMenuItem
+        Caption = 'Type keyword and new value'
+        Hint = 'All select files will be updated with new keyword value. Type for value DELETE to remove keyword.'
+        OnClick = changekeyword1Click
+      end
+    end
     object MenuItem22: TMenuItem
       Caption = '-'
     end
@@ -7929,12 +7968,12 @@ object stackmenu1: Tstackmenu1
       ShortCut = 16451
       OnClick = list_to_clipboard1Click
     end
-    object changekeyword_inspector1: TMenuItem
+    object keyword8: TMenuItem
       Caption = 'Change keyword in selected files'
-      Hint = 'Modify a keyword the selected files'
+      Hint = 'Modify or add a keyword to the header of the selected files'
       object changekeyword8: TMenuItem
         Caption = 'Type keyword and new value'
-        Hint = 'All select files will be updated with new keyword value.'
+        Hint = 'All select files will be updated with new keyword value. Type for value DELETE to remove keyword.'
         OnClick = changekeyword1Click
       end
     end

@@ -1402,6 +1402,7 @@ begin
 
           mainwindow.image1.Canvas.font.size:= round(min(20,max(8,len /2)));
 
+          if copy(naam2,1,1)='0' then  mainwindow.image1.Canvas.font.color:=cllime;{reference star}
 
           {get text dimensions}
           th:=mainwindow.image1.Canvas.textheight(name);

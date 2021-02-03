@@ -111,7 +111,6 @@ function report_binning : integer;{select the binning}
 
 var
   star1   : array[0..2] of array of single;
-  solved_in, offset_found : string;
 
 implementation
 var
@@ -486,7 +485,8 @@ var
   solution, go_ahead ,autoFOV      : boolean;
   Save_Cursor                      : TCursor;
   startTick  : qword;{for timing/speed purposes}
-  distancestr,oversize_mess,mess,info_message,warning,suggest_str,memo1_backup,database_uppercase  :string;
+  distancestr,oversize_mess,mess,info_message,warning,suggest_str,memo1_backup, solved_in, offset_found,ra_offset,dec_offset,mount_info : string;
+
 const
    popupnotifier_visible : boolean=false;
 
@@ -789,12 +789,19 @@ begin
     new_to_old_WCS;
     solved_in:=' Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}
 
-    offset_found:=' Δ was '+distance_to_string(sep {scale selection},sep)+'.';
-    if ra_mount<99 then {mount position known and specified}
-       offset_found:=offset_found+#9+ ' Mount offset Δα='+distance_to_string(dec_mount-dec0,(ra_mount-ra0)*cos(dec0))+ ', Δδ='+distance_to_string(dec_mount-dec0,dec_mount-dec0);
-//    offset_found:=' Δ was '+floattostrF2(sep*60*180/pi,0,2)+#39+'.'+#9+ '  Mount offset  Δα='+floattostrF2((ra_mount-ra0)*cos(dec0)*60*180/pi,0,2)+#39 + ',  Δδ='+floattostrF2((ra_mount-ra0)*60*180/pi,0,2)+#39;
+    offset_found:={' Δ was '}distance_to_string(sep {scale selection},sep)+'.';
 
-    memo2_message('Solution found: '+  prepare_ra(ra0,': ')+#9+prepare_dec(dec0,'° ') +#9+ solved_in+#9+offset_found+#9+' Used stars up to magnitude: '+floattostrF2(mag2/10,0,1) );
+
+    if ra_mount<99 then {mount position known and specified}
+    begin
+      ra_offset:=distance_to_string(dec_mount-dec0,(ra_mount-ra0)*cos(dec0));
+      dec_offset:=distance_to_string(dec_mount-dec0,dec_mount-dec0);
+      mount_info:=' Mount offset Δα='+ra_offset+ ',  Δδ='+dec_offset+'. '+#9;
+    end
+    else
+    mount_info:='';
+
+    memo2_message('Solution found: '+  prepare_ra(ra0,': ')+#9+prepare_dec(dec0,'° ') +#9+ solved_in+#9+' Δ was '+offset_found+#9+ mount_info+' Used stars up to magnitude: '+floattostrF2(mag2/10,0,1) );
     mainwindow.caption:=('Solution found:    '+  prepare_ra(ra0,': ')+'     '+prepare_dec(dec0,'° ')  );
     result:=true;
 
@@ -819,7 +826,7 @@ begin
     update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
     update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
     update_text   ('PLTSOLVD=','                   T / ASTAP internal solver      ');
-    update_text   ('COMMENT 6', solved_in+offset_found);
+    update_text   ('COMMENT 6', solved_in+' Offset was '+offset_found+' Mount offset RA='+ra_offset+', DEC='+dec_offset );
 
     if solve_show_log then {global variable set in find stars}
     begin

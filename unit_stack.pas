@@ -51,8 +51,15 @@ type
     add_valueR1: TEdit;
     alignment1: TTabSheet;
     align_blink1: TCheckBox;
-    changekeyword_inspector1: TMenuItem;
+    changekeyword6: TMenuItem;
+    changekeyword7: TMenuItem;
+    checkBox_annotate1: TCheckBox;
+    keyword8: TMenuItem;
     changekeyword8: TMenuItem;
+    keyword6: TMenuItem;
+    keyword7: TMenuItem;
+    yyyyyy: TMenuItem;
+    xxxxxx: TMenuItem;
     merge_overlap1: TCheckBox;
     timestamp1: TCheckBox;
     Analyse1: TButton;
@@ -843,7 +850,7 @@ const
   B_solution=8;
   B_annotated=9;
 
-  P_exposure=0;
+  P_exposure=0;       {photometry tab}
   P_temperature=1;
   P_binning=2;
   P_width=3;
@@ -854,12 +861,14 @@ const
   P_date=8;
   P_jd_mid=9;
   P_jd_helio=10;
-  P_magn=11;
-  P_hfd=12;
-  P_stars=13;
-  P_astrometric=14;
-  P_photometric=15;
-  P_calibration=16;
+  P_magn1=11;
+  P_magn2=12;
+  P_magn3=13;
+  P_hfd=14;
+  P_stars=15;
+  P_astrometric=16;
+  P_photometric=17;
+  P_calibration=18;
 
   icon_thumb_down=8; {image index for outlier}
   icon_king=16;{image index for best image}
@@ -2718,20 +2727,24 @@ begin
     if  tl.Items[index].Selected then
     begin
       filename2:=tl.items[index].caption;
-      if load_image(true,true {plot}) then {load and center}
+      if load_image(false,false {plot}) then {load and center}
       begin
         while length(keyw)<8 do keyw:=keyw+' ';{increase length to 8}
         keyw:=copy(keyw,1,8);{decrease if longer then 8}
 
-        val(value,waarde,error2); {test for number or text}
-
-        if error2<>0 then {text, not a number}
-        begin
-          while length(value)<18 do value:=value+' ';{increase length to 18, one space will be added  in front later}
-          update_text(keyw+'=',#39+value+#39+'                                                  ');
-        end
+        if value='DELETE' then
+          remove_key(keyw, true {all}){remove key word in header. If all=true then remove multiple of the same keyword}
         else
-        update_float  (keyw+'=',' /                                                ' ,waarde);
+        begin
+          val(value,waarde,error2); {test for number or text}
+          if error2<>0 then {text, not a number}
+          begin
+            while length(value)<18 do value:=value+' ';{increase length to 18, one space will be added  in front later}
+            update_text(keyw+'=',#39+value+#39+'                                                  ');
+          end
+          else
+          update_float  (keyw+'=',' /                                                ' ,waarde);
+        end;
 
         if nrbits=16 then
         save_fits(img_loaded,filename2,16,true)
@@ -3139,7 +3152,7 @@ begin
               lv.Items.item[c].subitems.Strings[P_jd_mid]:=floattostrF2(jd,0,5);{julian day}
 
               hjd:=JD_to_HJD(jd,RA0,DEC0);{conversion JD to HJD}
-              lv.Items.item[c].subitems.Strings[P_jd_helio]:=floattostrF2(frac(Hjd),0,5);{helio julian day}
+              lv.Items.item[c].subitems.Strings[P_jd_helio]:=floattostrF2(Hjd,0,5);{helio julian day}
 
               {magn is column 9 will be added seperately}
               {solution is column 12 will be added seperately}
@@ -3471,6 +3484,8 @@ begin
   if sender=changekeyword2 then lv:=listview2;{from popup menu}
   if sender=changekeyword3 then lv:=listview3;{from popup menu}
   if sender=changekeyword4 then lv:=listview4;{from popup menu}
+  if sender=changekeyword6 then lv:=listview6;{from popup menu}
+  if sender=changekeyword7 then lv:=listview7;{from popup menu}
   if sender=changekeyword8 then lv:=listview8;{from popup menu}
 
   keyw:=InputBox('All selected files will be updated!! Hit cancel to abort. Type keyword:','','' );
@@ -3478,7 +3493,7 @@ begin
 
   value:=InputBox('New value keyword:','','' );
   if length(value)<=0 then exit;
-  listview_update_keyword(lv,uppercase(keyw),value);{update key word}
+    listview_update_keyword(lv,uppercase(keyw),value);{update key word}
 end;
 
 
@@ -4297,7 +4312,7 @@ begin
     listview7.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview_add(listview7,OpenDialog1.Files[i],true,17);
+      listview_add(listview7,OpenDialog1.Files[i],true,19);
       DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
     end;
     listview7.items.endupdate;
@@ -5246,7 +5261,7 @@ begin
                                        2:   listview_add(listview3,FileNames[i],true,10);{flats}
                                        3:   listview_add(listview4,FileNames[i],true,9);{flat darks}
                                        7:   listview_add(listview6,FileNames[i],true,10);{blink}
-                                       8:   listview_add(listview7,FileNames[i],true,17);{photometry}
+                                       8:   listview_add(listview7,FileNames[i],true,19);{photometry}
                                        else
                                        begin {lights}
                                          listview_add(listview1,FileNames[i],true,27);
@@ -5369,7 +5384,7 @@ begin
           (binX2X3_file(2)=false)) {converts filename2 to binx2 version}
           then exit;
       listview7.Items[c].Checked:=false;
-      listview_add(listview7,filename2,true,17);{add binx2 file}
+      listview_add(listview7,filename2,true,19);{add binx2 file}
     end;
   end;{for loop for astrometric solving }
   {astrometric calibration}
@@ -5570,6 +5585,35 @@ var
   starlistx :star_list;
   outliers : array of array of double;
   extra_message  : string;
+
+  function measure_star(deX,deY :double): string;
+  begin
+    HFD(img_loaded,round(deX-1),round(deY-1),14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+    if ((hfd1<15) and (hfd1>0) and (snr>10)) then {star detected in img_loaded}
+    begin
+      if calstat='' then saturation_level:=64000 else saturation_level:=60000; {could be dark subtracted changing the saturation level}
+      if ((img_loaded[0,round(xc),round(yc)]<saturation_level) and
+          (img_loaded[0,round(xc-1),round(yc)]<saturation_level) and
+          (img_loaded[0,round(xc+1),round(yc)]<saturation_level) and
+          (img_loaded[0,round(xc),round(yc-1)]<saturation_level) and
+          (img_loaded[0,round(xc),round(yc+1)]<saturation_level) and
+
+          (img_loaded[0,round(xc-1),round(yc-1)]<saturation_level) and
+          (img_loaded[0,round(xc-1),round(yc+1)]<saturation_level) and
+          (img_loaded[0,round(xc+1),round(yc-1)]<saturation_level) and
+          (img_loaded[0,round(xc+1),round(yc+1)]<saturation_level)  ) then {not saturated star}
+      begin
+        magn:=flux_magn_offset-ln(flux)*2.511886432/ln(10);
+        result:=floattostrf(magn, ffgeneral, 5,0); {write measured magnitude to list}
+      end
+      else result:='Saturated';
+     end
+    else
+    result:='';
+
+
+  end;
+
 begin
   if listview7.items.count<=1 then exit; {no files}
   Save_Cursor := Screen.Cursor;
@@ -5721,36 +5765,14 @@ begin
         mainwindow.image1.Canvas.font.size:=10; //round(max(10,8*height2/image1.height));{adapt font to image dimensions}
         mainwindow.image1.Canvas.Pen.Color := clred;
 
-        listview7.Items.item[c].subitems.Strings[P_magn]:=''; {MAGN, always blank}
+        listview7.Items.item[c].subitems.Strings[P_magn1]:=''; {MAGN, always blank}
+        listview7.Items.item[c].subitems.Strings[P_magn2]:=''; {MAGN, always blank}
+        listview7.Items.item[c].subitems.Strings[P_magn3]:=''; {MAGN, always blank}
 
         {measure the single star clicked on by mouse}
-        if mainwindow.shape_alignment_marker1.visible then
-        begin
-          HFD(img_loaded,round(shape_fitsX-1),round(shape_fitsY-1),14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-          if ((hfd1<15) and (hfd1>0) and (snr>10)) then {star detected in img_loaded}
-          begin
-            if calstat='' then saturation_level:=64000 else saturation_level:=60000; {could be dark subtracted changing the saturation level}
-            if ((img_loaded[0,round(xc),round(yc)]<saturation_level) and
-                (img_loaded[0,round(xc-1),round(yc)]<saturation_level) and
-                (img_loaded[0,round(xc+1),round(yc)]<saturation_level) and
-                (img_loaded[0,round(xc),round(yc-1)]<saturation_level) and
-                (img_loaded[0,round(xc),round(yc+1)]<saturation_level) and
-
-                (img_loaded[0,round(xc-1),round(yc-1)]<saturation_level) and
-                (img_loaded[0,round(xc-1),round(yc+1)]<saturation_level) and
-                (img_loaded[0,round(xc+1),round(yc-1)]<saturation_level) and
-                (img_loaded[0,round(xc+1),round(yc+1)]<saturation_level)  ) then {not saturated star}
-            begin
-              magn:=flux_magn_offset-ln(flux)*2.511886432/ln(10);
-              listview7.Items.item[c].subitems.Strings[P_magn]:=floattostrf(magn, ffgeneral, 5,0); {write measured magnitude to list}
-            end
-            else listview7.Items.item[c].subitems.Strings[P_magn]:='Saturated';
-            for i:=0 to  length(starlistx[0])-2 do
-            begin
-              size:=round(5*starlistx[2,i]);{5*hfd}
-            end;
-          end;
-         end;
+        if mainwindow.shape_alignment_marker1.visible then   listview7.Items.item[c].subitems.Strings[P_magn1]:=measure_star(shape_fitsX,shape_fitsY);
+        if mainwindow.shape_alignment_marker2.visible then   listview7.Items.item[c].subitems.Strings[P_magn2]:=measure_star(shape_fitsX2,shape_fitsY2);
+        if mainwindow.shape_alignment_marker3.visible then   listview7.Items.item[c].subitems.Strings[P_magn3]:=measure_star(shape_fitsX3,shape_fitsY3);
 
          {plot measured stars from procedure measure_magnitudes}
          for i:=0 to  length(starlistx[0])-2 do
@@ -5764,10 +5786,10 @@ begin
 
            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
            magn:=flux_magn_offset-ln(starlistx[3,i]{flux})*2.511886432/ln(10);
-           mainwindow.image1.Canvas.textout(starX+size,starY,floattostrf(magn*10, ffgeneral, 3,0));{add hfd as text}
+           mainwindow.image1.Canvas.textout(starX+size,starY,floattostrf(magn*10, ffgeneral, 3,0));{add magnitude as text}
 
            if ( (abs(shape_fitsX-x_new)<6) and (abs(shape_fitsY-y_new)<6) ) then
-            listview7.Items.item[c].subitems.Strings[P_magn]:=floattostrf(magn, ffgeneral, 5,0); {write measured magnitude to list}
+            listview7.Items.item[c].subitems.Strings[P_magn1]:=floattostrf(magn, ffgeneral, 5,0); {write measured magnitude to list}
 
         end;{measure single star clicked on}
 
@@ -5782,6 +5804,12 @@ begin
             mainwindow.image1.Canvas.ellipse(starX-20,starY-20, starX+20, starY+20);{indicate outlier rectangle}
             mainwindow.image1.Canvas.textout(starX+20,starY+20,'σ '+floattostrf(outliers[2,i], ffgeneral, 3,0));{add hfd as text}
           end;
+        end;
+
+        if checkBox_annotate1.checked then
+        begin
+          load_variable; { Load the database once. If loaded no action}
+          plot_deepsky;  {plot the deep sky object on the image}
         end;
       end;{find star magnitudes}
     end;
@@ -6687,11 +6715,11 @@ begin
         plot_fits(mainwindow.image1,false {re_center},true);
 
         {show alignment marker}
-        if (stackmenu1.use_manual_alignment1.checked) then {manual alignment}
-        begin
-          show_marker_shape(mainwindow.shape_alignment_marker1, 1 {circle, assume a good lock},20,20,10{minimum},strtofloat2(listview1.Items.item[c].subitems.Strings[I_X]),strtofloat2(listview1.Items.item[c].subitems.Strings[I_Y]));
-        end
-        else mainwindow.shape_alignment_marker1.visible:=false;
+//        if (stackmenu1.use_manual_alignment1.checked) then {manual alignment}
+//      begin
+//          show_marker_shape(mainwindow.shape_alignment_marker1, 1 {circle, assume a good lock},20,20,10{minimum},strtofloat2(listview1.Items.item[c].subitems.Strings[I_X]),strtofloat2(listview1.Items.item[c].subitems.Strings[I_Y]));
+//        end
+//        else mainwindow.shape_alignment_marker1.visible:=false;
       end;
       inc(c);
     until c>=listview1.items.count;
@@ -8129,6 +8157,12 @@ begin
   update_menu(true);
 
   mainwindow.shape_alignment_marker1.visible:=false;{remove shape for manual alignment}
+  mainwindow.shape_alignment_marker2.visible:=false;{remove shape for manual alignment}
+  mainwindow.shape_alignment_marker3.visible:=false;{remove shape for manual alignment}
+  mainwindow.statictext1.visible:=false;
+  mainwindow.statictext2.visible:=false;
+  mainwindow.statictext3.visible:=false;
+
 
   img_temp:=nil;{remove used memory}
   img_average:=nil;

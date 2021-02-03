@@ -102,6 +102,8 @@ type
     inspector_hfd_values1: TMenuItem;
     MenuItem22: TMenuItem;
     bayer_image1: TMenuItem;
+    Shape_alignment_marker2: TShape;
+    Shape_alignment_marker3: TShape;
     solve_and_add_sqm1: TMenuItem;
     MenuItem25: TMenuItem;
     sqm1: TMenuItem;
@@ -123,6 +125,9 @@ type
     selectfont1: TMenuItem;
     popupmenu_frame1: TPopupMenu;
     shape_marker4: TShape;
+    StaticText1: TStaticText;
+    StaticText2: TStaticText;
+    StaticText3: TStaticText;
     Stretchdrawmenu1: TMenuItem;
     stretch_draw_fits1: TMenuItem;
     show_statistics1: TMenuItem;
@@ -559,6 +564,11 @@ const
   copy_paste :boolean=false;
   shape_fitsX: double=0;
   shape_fitsY: double=0;
+  shape_fitsX2: double=0;
+  shape_fitsY2: double=0;
+  shape_fitsX3: double=0;
+  shape_fitsY3: double=0;
+  shape_nr: integer=1;
 
   shape_marker1_fitsX: double=10;
   shape_marker1_fitsY: double=10;
@@ -2492,7 +2502,11 @@ begin
     if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
     begin
       aline:=mainwindow.Memo1.Lines[count1];
-      delete(aline,11,20);
+      if copy(aline,32,1)='/' then
+        delete(aline,11,20) {preserve comment}
+      else
+        delete(aline,11,80);  {delete all}
+
       insert(s,aline,11);
       mainwindow.Memo1.Lines[count1]:=aline;
       exit;
@@ -3085,7 +3099,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.486, '+about_message4+', dated 2021-1-30';
+  #13+#10+'ASTAP version ß0.9.487, '+about_message4+', dated 2021-2-3';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4169,6 +4183,7 @@ end;
 procedure show_marker_shape(shape: TShape; shape_type,w,h,minimum:integer; fitsX,fitsY: double);{show manual alignment shape}
 var
    xf,yf,x,y : double;
+   ll,tt,hh,ww     : integer;
 begin
 
   if fits_file=false then exit;
@@ -4189,10 +4204,14 @@ begin
 
   with shape do
   begin
-     height:=max(minimum,round(h*mainwindow.image1.height/height2));
-     width:= max(minimum,round(w*mainwindow.image1.width/width2));
-     left:=round(mainwindow.image1.left + x - width/2);
-     top:=round(mainwindow.image1.top   + y - height/2);
+     hh:=max(minimum,round(h*mainwindow.image1.height/height2));
+     height:=hh;
+     ww:= max(minimum,round(w*mainwindow.image1.width/width2));
+     width:=ww;
+     ll:=round(mainwindow.image1.left + x - width/2);
+     left:=ll;
+     tt:=round(mainwindow.image1.top   + y - height/2);
+     top:=tt;
 
      if shape_type=0 then {rectangle}
      begin
@@ -4212,9 +4231,17 @@ begin
      begin {good lock on object}
        visible:=true;
      end;
-
      {else keep as it is}
   end;
+  if tshape(shape)=tshape(mainwindow.shape_alignment_marker1) then
+    begin mainwindow.statictext1.left:=ll+ww; mainwindow.statictext1.top:=tt+hh;mainwindow.statictext1.visible:=true;end
+  else
+  if tshape(shape)=tshape(mainwindow.shape_alignment_marker2) then
+    begin mainwindow.statictext2.left:=ll+ww; mainwindow.statictext2.top:=tt+hh;mainwindow.statictext2.visible:=true;end
+  else
+  if tshape(shape)=tshape(mainwindow.shape_alignment_marker3) then
+    begin mainwindow.statictext3.left:=ll+ww; mainwindow.statictext3.top:=tt+hh;mainwindow.statictext3.visible:=true;end;
+
 end;
 
 
@@ -4264,8 +4291,12 @@ begin
      end;
 
     {reference point manual alignment}
-    if mainwindow.shape_alignment_marker1.visible then {For manual alignment. Do this only when visible}
-    show_marker_shape(mainwindow.shape_alignment_marker1,9 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
+     if mainwindow.shape_alignment_marker1.visible then {For manual alignment. Do this only when visible}
+       show_marker_shape(mainwindow.shape_alignment_marker1,9 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
+     if mainwindow.shape_alignment_marker2.visible then {For manual alignment. Do this only when visible}
+       show_marker_shape(mainwindow.shape_alignment_marker2,9 {no change in shape and hint},20,20,10,shape_fitsX2, shape_fitsY2);
+     if mainwindow.shape_alignment_marker3.visible then {For manual alignment. Do this only when visible}
+       show_marker_shape(mainwindow.shape_alignment_marker3,9 {no change in shape and hint},20,20,10,shape_fitsX3, shape_fitsY3);
   end;
 end;
 
@@ -6044,7 +6075,14 @@ begin
   sat_factor:=1-mainwindow.saturation_factor_plot1.position/10;
 
   if pos('S',calstat)>0 then
-                    mainwindow.shape_alignment_marker1.visible:=false; {hide shape if stacked image is plotted}
+  begin
+    mainwindow.shape_alignment_marker1.visible:=false; {hide shape if stacked image is plotted}
+    mainwindow.shape_alignment_marker2.visible:=false; {hide shape if stacked image is plotted}
+    mainwindow.shape_alignment_marker3.visible:=false; {hide shape if stacked image is plotted}
+    mainwindow.statictext1.visible:=false;
+    mainwindow.statictext2.visible:=false;
+    mainwindow.statictext3.visible:=false;
+  end;
 
   cblack:=mainwindow.minimum1.position;
   cwhite:=mainwindow.maximum1.position;
@@ -6353,7 +6391,7 @@ begin
 end;
 
 
-procedure savefits_update_header(filen,filen2:string);{save fits file with update header}
+procedure savefits_update_header(filen,filen2:string);{save fits file with updated header}
 var
   reader_position,I,readsize  : integer;
   TheFile4  : tfilestream;
@@ -6794,6 +6832,9 @@ begin
     dum:=initstring.Values['filter_artificial_colouring']; if dum<>'' then stackmenu1.filter_artificial_colouring1.text:=dum;
     dum:=initstring.Values['resize_factor']; if dum<>'' then stackmenu1.resize_factor1.text:=dum;
     dum:=initstring.Values['mark_outliers_upto']; if dum<>'' then stackmenu1.mark_outliers_upto1.text:=dum;
+    stackmenu1.checkBox_annotate1.checked:= get_boolean('ph_annotate',true);
+
+
     dum:=initstring.Values['sigma_decolour']; if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
     dum:=initstring.Values['sd_factor_list']; if dum<>'' then stackmenu1.sd_factor_list1.text:=dum;
 
@@ -6887,7 +6928,7 @@ begin
     repeat {add photometry files}
       dum:=initstring.Values['photometry'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview7,dum,get_boolean('photometry'+inttostr(c)+'_check',true),17);
+        listview_add(stackmenu1.listview7,dum,get_boolean('photometry'+inttostr(c)+'_check',true),19);
       inc(c);
     until (dum='');
     stackmenu1.listview7.Items.endUpdate;
@@ -7099,6 +7140,7 @@ begin
     initstring.Values['resize_factor']:=stackmenu1.resize_factor1.text;
 
     initstring.Values['mark_outliers_upto']:=stackmenu1.mark_outliers_upto1.text;
+    initstring.Values['ph_annotate']:=BoolStr[stackmenu1.checkBox_annotate1.checked];
 
 
     initstring.Values['sigma_decolour']:=stackmenu1.sigma_decolour1.text;
@@ -11773,7 +11815,7 @@ procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
   xf,yf,k, fx,fy, shapetype                 : integer;
-  hfd2,fwhm_star2,snr,flux,xc,yc : double;
+  hfd2,fwhm_star2,snr,flux,xc,yc,xcf,ycf : double;
 begin
   if flip_horizontal1.Checked then xf:=image1.width-1-x else xf:=x;;
   if flip_vertical1.Checked then yf:=image1.height-1-y else yf:=y;
@@ -11820,8 +11862,8 @@ begin
     begin
       shape_fitsX:=xc+1;{calculate fits positions}
       shape_fitsY:=yc+1;
-      listview_add_xy(shape_fitsX,shape_fitsY);{add to list}
       if snr>5 then shapetype:=1 {circle} else shapetype:=0;{square}
+      listview_add_xy(shape_fitsX,shape_fitsY);{add to list of listview1}
       show_marker_shape(mainwindow.shape_alignment_marker1,shapetype,20,20,10{minimum},shape_fitsX, shape_fitsY);
     end;
   end
@@ -11832,14 +11874,50 @@ begin
     HFD(img_loaded,startX,startY,14{box size},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
     if hfd2<90 then {detected something}
     begin
-      shape_fitsX:=xc+1;{calculate fits positions}
-      shape_fitsY:=yc+1;
       if snr>5 then shapetype:=1 {circle} else shapetype:=0;{square}
+      xcf:=xc+1;{make fits coordinates}
+      ycf:=yc+1;
+      if shape_nr=1 then
+      begin
+        if ((abs(shape_fitsX2-xcf)<=3) and (abs(shape_fitsY2-ycf)<=3)) then begin shape_fitsX2:=shape_fitsX;shape_fitsY2:=shape_fitsY;end{swap, prevent overlapping}
+        else
+        if ((abs(shape_fitsX3-xcf)<=3) and (abs(shape_fitsY3-ycf)<=3)) then begin shape_fitsX3:=shape_fitsX;shape_fitsY3:=shape_fitsY;end;
+        shape_fitsX:=xcf; shape_fitsY:=ycf;
+      end
+      else
+      if shape_nr=2 then
+      begin
+        if ((abs(shape_fitsX-xcf)<=3) and (abs(shape_fitsY-ycf)<=3)) then begin shape_fitsX:=shape_fitsX2;shape_fitsY:=shape_fitsY2;end{swap, prevent overlapping}
+        else
+        if ((abs(shape_fitsX3-xcf)<=3) and (abs(shape_fitsY3-ycf)<=3)) then begin shape_fitsX3:=shape_fitsX2;shape_fitsY3:=shape_fitsY2;end;
+        shape_fitsX2:=xcf; shape_fitsY2:=ycf; {calculate fits positions}
+      end
+      else
+      if shape_nr=3 then
+      begin
+        if ((abs(shape_fitsX-xcf)<=3) and (abs(shape_fitsY-ycf)<=3)) then begin shape_fitsX:=shape_fitsX3;shape_fitsY:=shape_fitsY3;end{swap, prevent overlapping}
+        else
+        if ((abs(shape_fitsX2-xcf)<=3) and (abs(shape_fitsY2-ycf)<=3)) then begin shape_fitsX2:=shape_fitsX3;shape_fitsY2:=shape_fitsY3;end;
+        shape_fitsX3:=xcf; shape_fitsY3:=ycf;
+      end;
       show_marker_shape(mainwindow.shape_alignment_marker1,shapetype,20,20,10{minimum},shape_fitsX, shape_fitsY);
+      show_marker_shape(mainwindow.shape_alignment_marker2,shapetype,20,20,10{minimum},shape_fitsX2, shape_fitsY2);
+      show_marker_shape(mainwindow.shape_alignment_marker3,shapetype,20,20,10{minimum},shape_fitsX3, shape_fitsY3);
+
+      inc(shape_nr);
+      if shape_nr>=4 then
+      shape_nr:=1;
     end;
   end
   else
-  mainwindow.shape_alignment_marker1.visible:=false;
+  begin
+    mainwindow.shape_alignment_marker1.visible:=false;
+    mainwindow.shape_alignment_marker2.visible:=false;
+    mainwindow.shape_alignment_marker3.visible:=false;
+    mainwindow.statictext1.visible:=false;
+    mainwindow.statictext2.visible:=false;
+    mainwindow.statictext3.visible:=false;
+  end;
   {end manual alignment}
 
   image_move_to_center:=false;{image in moved to center, why is so difficult???}
