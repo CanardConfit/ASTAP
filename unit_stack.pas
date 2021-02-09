@@ -51,6 +51,7 @@ type
     add_valueR1: TEdit;
     alignment1: TTabSheet;
     align_blink1: TCheckBox;
+    aavso_button1: TButton;
     changekeyword6: TMenuItem;
     changekeyword7: TMenuItem;
     checkBox_annotate1: TCheckBox;
@@ -143,7 +144,7 @@ type
     Bias: TTabSheet;
     blink_button1: TButton;
     blink_button2: TButton;
-    blink_button4: TButton;
+    photometry_repeat1: TButton;
     solve_and_annotate1: TCheckBox;
     blink_stop1: TButton;
     blink_stop2: TButton;
@@ -169,7 +170,6 @@ type
     clear_inspector_list1: TButton;
     clear_dark_list1: TButton;
     clear_image_list1: TButton;
-    clear_photometry_alignment1: TButton;
     clear_photometry_list1: TButton;
     clear_selection2: TButton;
     clear_selection3: TButton;
@@ -562,6 +562,7 @@ type
     procedure browse_live_stacking1Click(Sender: TObject);
     procedure analyse_objects_visibles1Click(Sender: TObject);
     procedure browse_photometry1Click(Sender: TObject);
+    procedure aavso_button1Click(Sender: TObject);
     procedure clear_inspector_list1Click(Sender: TObject);
     procedure curve_fitting1Click(Sender: TObject);
     procedure ephemeris_centering1Change(Sender: TObject);
@@ -742,6 +743,16 @@ type
     name : string;
     listviewindex : integer;
   end;
+type
+   tstarlistpackage  = record {for photometry tab}
+     width: integer;
+     height: integer;
+     flux_magn_offset : double;
+     starlist : star_list;
+   end;
+var
+  starlistpack     : array of tstarlistpackage;{for photometry tab}
+
 
 var
   calc_scale:double;
@@ -752,7 +763,7 @@ var
   counterRbias,counterGbias, counterBbias,  counterRGBbias,counterLbias,
   temperatureL,temperatureR,temperatureG,temperatureB,temperatureRGB,
   exposureR, exposureG,exposureB,exposureRGB,exposureL            : integer;
-  sum_exp                                                         : double;
+  sum_exp,photometry_error                                        : double;
   referenceX,referenceY    : double;{reference position used stacking}
   ref_X, ref_Y             : double;{reference position from FITS header, used for manual stacking of colour images, second stage}
   jd                       : double;{julian day of date-obs}
@@ -827,6 +838,7 @@ const
   I_centaz=23;
   I_gain=24;
   I_sqm=25;
+  I_nr=26;{number of fields}
 
   D_exposure=0;
   D_temperature=1;
@@ -837,9 +849,12 @@ const
   D_background=6;
   D_sigma=7;
   D_gain=8;
-  F_filter=9;
+  D_nr=9;{number of fields}
 
-  B_exposure=0;
+  F_filter=9;
+  F_nr=10;{number of fields}
+
+  B_exposure=0;  {blink}
   B_temperature=1;
   B_binning=2;
   B_width=3;
@@ -849,6 +864,7 @@ const
   B_calibration=7;
   B_solution=8;
   B_annotated=9;
+  B_nr=10;{number of fields}
 
   P_exposure=0;       {photometry tab}
   P_temperature=1;
@@ -862,13 +878,15 @@ const
   P_jd_mid=9;
   P_jd_helio=10;
   P_magn1=11;
-  P_magn2=12;
-  P_magn3=13;
-  P_hfd=14;
-  P_stars=15;
-  P_astrometric=16;
-  P_photometric=17;
-  P_calibration=18;
+  P_snr=12;
+  P_magn2=13;
+  P_magn3=14;
+  P_hfd=15;
+  P_stars=16;
+  P_astrometric=17;
+  P_photometric=18;
+  P_calibration=19;
+  P_nr=20;{number of fields}
 
   icon_thumb_down=8; {image index for outlier}
   icon_king=16;{image index for best image}
@@ -878,7 +896,7 @@ const
 
 implementation
 
-uses  unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd, unit_live_stacking, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2;
+uses  unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd, unit_live_stacking, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_aavso;
 
 
 type
@@ -1645,7 +1663,7 @@ begin
           begin
             memo2_message('Move file '+filename2+' to tab DARKS');
             listview2.Items.beginupdate;
-            listview_add(listview2,filename2,true,9);{move to darks}
+            listview_add(listview2,filename2,true,D_nr);{move to darks}
             listview2.Items.endupdate;
             listview1.Items.Delete(c);
             dec(c);{compensate for delete}
@@ -1656,7 +1674,7 @@ begin
           begin
             memo2_message('Move file '+filename2+' to tab FLATS');
             listview3.Items.beginupdate;
-            listview_add(listview3,filename2,true,10);
+            listview_add(listview3,filename2,true,F_nr);
             listview3.Items.endupdate;
             listview1.Items.Delete(c);
             dec(c);{compensate for delete}
@@ -1667,7 +1685,7 @@ begin
           begin
             memo2_message('Move file '+filename2+' to tab FLAT-DARKS / BIAS');
             listview4.Items.beginupdate;
-            listview_add(listview4,filename2,true,9);
+            listview_add(listview4,filename2,true,D_nr);
             listview4.Items.endupdate;
             listview1.Items.Delete(c);
             dec(c);{compensate for delete}
@@ -1820,7 +1838,7 @@ begin
     listview1.Items.beginUpdate;
     for i:=0 to OpenDialog1.Files.count-1 do
     begin
-        listview_add(listview1,OpenDialog1.Files[i],   pos('_stacked',OpenDialog1.Files[i])=0 {do not check mark images already stacked}   ,27);
+        listview_add(listview1,OpenDialog1.Files[i],   pos('_stacked',OpenDialog1.Files[i])=0 {do not check mark images already stacked}   ,I_nr);
     end;
     listview1.Items.EndUpdate;
   end;
@@ -2121,15 +2139,15 @@ begin
   opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+                        '|JPEG, TIFF, PNG files (*.)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
                         '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
-
   fits_file:=true;
   if opendialog1.execute then
   begin
     listview4.Items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview_add(listview4,OpenDialog1.Files[i],true,9);
+      listview_add(listview4,OpenDialog1.Files[i],true,D_nr);
     end;
     listview4.Items.endupdate;
   end;
@@ -2145,6 +2163,7 @@ begin
   opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+                        '|JPEG, TIFF, PNG files (*.)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
                         '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
 
   fits_file:=true;
@@ -2153,7 +2172,7 @@ begin
     listview6.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview_add(listview6,OpenDialog1.Files[i],true,10);
+      listview_add(listview6,OpenDialog1.Files[i],true,B_nr);
       DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
     end;
     listview6.items.endupdate;
@@ -2171,15 +2190,15 @@ begin
   opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+                        '|JPEG, TIFF, PNG files (*.)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
                         '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
-
   fits_file:=true;
   if opendialog1.execute then
   begin
     listview3.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-       listview_add(listview3,OpenDialog1.Files[i],true,10);
+       listview_add(listview3,OpenDialog1.Files[i],true,F_nr);
     end;
     listview3.items.endupdate;
 
@@ -2979,6 +2998,11 @@ end;
 procedure Tstackmenu1.listview1DblClick(Sender: TObject);
 begin
   listview_view(TListView(Sender));
+  if checkBox_annotate1.checked then
+  begin
+    load_variable; {Load the database once. If loaded no action}
+    plot_deepsky;  {plot the variable annotations image}
+  end;
 end;
 
 
@@ -4207,7 +4231,7 @@ begin
     listview2.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview_add(listview2,OpenDialog1.Files[i],true,9);
+      listview_add(listview2,OpenDialog1.Files[i],true,D_nr);
     end;
     listview2.items.endupdate;
   end;
@@ -4230,7 +4254,7 @@ begin
     listview8.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview_add(listview8,OpenDialog1.Files[i],true,16);
+      listview_add(listview8,OpenDialog1.Files[i],true,I_nr);
       DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
     end;
     listview8.items.endupdate;
@@ -4300,10 +4324,10 @@ var
 begin
   OpenDialog1.Title := 'Select images to add';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-//  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+                        '|JPEG, TIFF, PNG files (*.)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
                         '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
 
   fits_file:=true;
@@ -4312,11 +4336,24 @@ begin
     listview7.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview_add(listview7,OpenDialog1.Files[i],true,19);
+      listview_add(listview7,OpenDialog1.Files[i],true,P_nr);
       DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
     end;
     listview7.items.endupdate;
   end;
+end;
+
+procedure Tstackmenu1.aavso_button1Click(Sender: TObject);
+begin
+  if ((listview7.Items.item[listview7.items.count-1].subitems.Strings[P_magn1]='') or (listview7.Items.item[0].subitems.Strings[P_magn1]='')) then {requires analyse}
+        stackmenu1.photometry_button1Click(nil);
+
+  form_aavso1:=Tform_aavso1.Create(self); {in project option not loaded automatic}
+  form_aavso1.ShowModal;
+  form_aavso1.release;
+  Clipboard.AsText:=aavso_report;
+  memo2_message(aavso_report);
+  save_settings(user_path+'astap.cfg');
 end;
 
 
@@ -5257,14 +5294,14 @@ begin
   begin
     if image_file_name(FileNames[i])=true then {readable image file}
     begin
-      case pagecontrol1.pageindex of   1:   listview_add(listview2,FileNames[i],true,9);{darks}
-                                       2:   listview_add(listview3,FileNames[i],true,10);{flats}
-                                       3:   listview_add(listview4,FileNames[i],true,9);{flat darks}
-                                       7:   listview_add(listview6,FileNames[i],true,10);{blink}
-                                       8:   listview_add(listview7,FileNames[i],true,19);{photometry}
+      case pagecontrol1.pageindex of   1:   listview_add(listview2,FileNames[i],true,D_nr);{darks}
+                                       2:   listview_add(listview3,FileNames[i],true,F_nr);{flats}
+                                       3:   listview_add(listview4,FileNames[i],true,D_nr);{flat darks}
+                                       7:   listview_add(listview6,FileNames[i],true,B_nr);{blink}
+                                       8:   listview_add(listview7,FileNames[i],true,P_nr);{photometry}
                                        else
                                        begin {lights}
-                                         listview_add(listview1,FileNames[i],true,27);
+                                         listview_add(listview1,FileNames[i],true,I_nr);
                                          if  pos('_stacked',FileNames[i])<>0 then {do not check mark images already stacked}
                                                listview1.items[ListView1.items.count-1].checked:=false;
                                        end;
@@ -5384,7 +5421,7 @@ begin
           (binX2X3_file(2)=false)) {converts filename2 to binx2 version}
           then exit;
       listview7.Items[c].Checked:=false;
-      listview_add(listview7,filename2,true,19);{add binx2 file}
+      listview_add(listview7,filename2,true,P_nr);{add binx2 file}
     end;
   end;{for loop for astrometric solving }
   {astrometric calibration}
@@ -5392,73 +5429,13 @@ begin
 end;
 
 
-procedure save_stars_to_disk(filen : string; stars: star_list)  ;{write to disk}
-type
-    star = array[0..3] of double;
-var
-   i,count: integer;
-   onestar: star;
-   Savearray: file of star;{to save solution if required for second and third step stacking}
-begin
-  count:=length(stars[0])-1 ;
-  AssignFile(savearray,ChangeFileExt(Filen,'.astap_image_stars'));
-  ReWrite(savearray);
-
-  {special first record}
-  onestar[0]:=count;
-  onestar[1]:=flux_magn_offset;{store flux_magn_offset}
-  onestar[2]:=width2;
-  onestar[3]:=height2;
-  Write(savearray, onestar); {save}
-
-  for i:=0 to count do
-  begin
-    onestar[0]:=stars[0,i];
-    onestar[1]:=stars[1,i];
-    onestar[2]:=stars[2,i];
-    onestar[3]:=stars[3,i];
-    Write(savearray, onestar);
-  end;
-  CloseFile(savearray);
-end;
-
-
-procedure read_stars_from_disk(filen : string; var stars: star_list)  ;{read star info from disk}
-type
-    star = array[0..3] of double;
-var
-   i,count: integer;
-   onestar: star;
-   Savearray: file of star;{to save solution if required for second and third step stacking}
-begin
-  AssignFile(savearray,ChangeFileExt(Filen,'.astap_image_stars'));
-  Reset(savearray);
-  Read(savearray,onestar);{retrieve first special record}
-  count:=round(onestar[0]);{retrieve count}
-  setlength(stars,4,count+1);{set size}
-  flux_magn_offset:=onestar[1];{retrieve flux_magn_offset}
-  width2:=round(onestar[2]);
-  height2:=round(onestar[3]);
-
-  for i:=0 to count do
-  begin
-    read(savearray, onestar);
-    stars[0,i]:=onestar[0];
-    stars[1,i]:=onestar[1];
-    stars[2,i]:=onestar[2];
-    stars[3,i]:=onestar[3];
-  end;
-  CloseFile(savearray);
-end;
-
-
 procedure find_star_outliers(report_upto_magn: double; var outliers : star_list) {contains the four stars with largest SD }   ;
 var
-  stepnr,x_new,y_new,c,i,j,nr_images : integer;
+  stepnr,x_new,y_new,c,i,j,nr_images,smallest,w,h,w2,h2 : integer;
   stars_mean,stars_sd,stars_count : array of array of single;
   created : boolean;
   sd,xc,yc     : double;
-  stars :star_list;
+//  stars :star_list;
 const
     factor=10; {div factor to get small variations at the same location}
 begin
@@ -5466,6 +5443,8 @@ begin
   created:=false;
   stepnr:=0;
   nr_images:=0;
+  w2:=999999;
+  h2:=999999;
   setlength(outliers,4,4);
   for i:=0 to 3 do
     for j:=0 to 3 do
@@ -5479,21 +5458,24 @@ begin
 
       if stackmenu1.listview7.Items.item[c].checked  then
       begin {read solution}
-
         {load file, and convert astrometric solution to vector solution}
         filename2:=stackmenu1.listview7.items[c].caption;
         if load_fits(filename2,true {light},false {only read header},0,img_loaded)=false then begin esc_pressed:=true; exit;end;
         {calculate vectors from astrometric solution to speed up}
         sincos(dec0,SIN_dec0,COS_dec0); {do this in advance since it is for each pixel the same}
         astrometric_to_vector;{convert astrometric solution to vectors}
-        read_stars_from_disk(filename2,stars)  ;{read from disk}
+
+        w:=(starlistpack[c].width div factor);
+        h:=(starlistpack[c].height div factor);
+        if w2>w then w2:=w;{find smallets dimensions used}
+        if h2>h then h2:=h;
         if created=false then
         begin
-          setlength(stars_mean,(width2 div factor)+1,(height2 div factor)+1);
-          setlength(stars_sd,(width2 div factor)+1,(height2 div factor)+1);
-          setlength(stars_count,(width2 div factor)+1,(height2 div factor)+1);
-          for i:=0 to (width2 div factor) do
-            for j:=0 to (height2 div factor) do
+          setlength(stars_mean,w+1,h+1);
+          setlength(stars_sd,w+1,h+1);
+          setlength(stars_count,w+1,h+1);
+          for i:=0 to w do
+            for j:=0 to h do
             begin
               stars_mean[i,j]:=0;
               stars_sd[i,j]:=0;
@@ -5502,65 +5484,75 @@ begin
           created:=true;
         end;
 
-        if stepnr=1 then inc(nr_images);{keep record of number of images}
-        try
-          for i:=0 to min(length(stars[0])-2,5000) do {calculate mean of the found stars}
-          begin
-            xc:=(solution_vectorX[0]*(stars[0,i])+solution_vectorX[1]*(stars[1,i])+solution_vectorX[2]); {correction x:=aX+bY+c}
-            yc:=(solution_vectorY[0]*(stars[0,i])+solution_vectorY[1]*(stars[1,i])+solution_vectorY[2]); {correction y:=aX+bY+c}
-            if ((xc>=0) and (xc<=width2-1) and (yc>=0) and (yc<=height2-1)) then {image could be shifted. Prevent runtime errors}
+        if  starlistpack[c].height<>0 then {filled with data}
+        begin
+          if stepnr=1 then inc(nr_images);{keep record of number of images}
+          try
+            for i:=0 to min(length(starlistpack[c].starlist[0])-2,5000) do {calculate mean of the found stars}
             begin
-              x_new:=round(xc/factor);
-              y_new:=round(yc/factor);
-              if stepnr=1 then
-              begin {CALCULATE MEAN of stars}
-                stars_mean[x_new,y_new]:=stars_mean[x_new,y_new]+ flux_magn_offset-ln(stars[3,i]{flux})*2.511886432/ln(10); {magnitude}
-                stars_count[x_new,y_new]:=stars_count[x_new,y_new]+1;{counter}
-              end
-              else {CALCULATE SD of stars}
-              if stepnr=2 then
-              stars_sd[x_new,y_new]:= stars_sd[x_new,y_new]+sqr( (stars_mean[x_new,y_new]/stars_count[x_new,y_new])- (flux_magn_offset-ln(stars[3,i]{flux})*2.511886432/ln(10)) ); {sd calculate by sqr magnitude difference from mean}
-            end;
-          end;{for loop}
-        except
-          beep;
-        end;
+              xc:=(solution_vectorX[0]*(starlistpack[c].starlist[0,i])+solution_vectorX[1]*(starlistpack[c].starlist[1,i])+solution_vectorX[2]); {correction x:=aX+bY+c}
+              yc:=(solution_vectorY[0]*(starlistpack[c].starlist[0,i])+solution_vectorY[1]*(starlistpack[c].starlist[1,i])+solution_vectorY[2]); {correction y:=aX+bY+c}
+              if ((xc>=0) and (xc<=starlistpack[c].width-1) and (yc>=0) and (yc<=starlistpack[c].height-1)) then {image could be shifted. Prevent runtime errors}
+              begin
+                x_new:=round(xc/factor);
+                y_new:=round(yc/factor);
+
+                if stepnr=1 then
+                begin {CALCULATE MEAN of stars}
+                  stars_mean[x_new,y_new]:=stars_mean[x_new,y_new]+ starlistpack[c].flux_magn_offset-ln(starlistpack[c].starlist[3,i]{flux})*2.511886432/ln(10); {magnitude}
+                  stars_count[x_new,y_new]:=stars_count[x_new,y_new]+1;{counter}
+                end
+                else {CALCULATE SD of stars}
+                if stepnr=2 then
+                stars_sd[x_new,y_new]:= stars_sd[x_new,y_new]+sqr( (stars_mean[x_new,y_new]/stars_count[x_new,y_new])- (starlistpack[c].flux_magn_offset-ln(starlistpack[c].starlist[3,i]{flux})*2.511886432/ln(10)) ); {sd calculate by sqr magnitude difference from mean}
+              end;
+            end;{for loop}
+          except
+            beep;
+          end;
+        end;{valid image}
+
      end;
    end;{for c:=0 loop}
   until stepnr>2;
 
   {find largest outliers}
-  for i:=0 to (width2 div factor) do
-    for j:=0 to (height2 div factor) do
+  outliers[2,0]:=0;
+  outliers[2,1]:=0;
+  outliers[2,2]:=0;
+  outliers[2,3]:=0;
+  for i:=0 to w2 do
+    for j:=0 to h2 do
+    begin
+     try
+       if stars_count[i,j]>=round(nr_images*0.8) then {at least in 80% of the cases star detection}
+     if (stars_mean[i,j]/stars_count[i,j])<=report_upto_magn then {magnitude lower then}
      begin
-       try
-         if stars_count[i,j]>=round(nr_images*0.8) then {at least in 80% of the cases star detection}
-       if (stars_mean[i,j]/stars_count[i,j])<=report_upto_magn then {magnitude lower then}
+       sd:=sqrt(stars_sd[i,j]/stars_count[i,j]);
+
+
+       if ((sd>outliers[2,0]) or (sd>outliers[2,1]) or (sd>outliers[2,2]) or (sd>outliers[2,3])) then
        begin
-         sd:=sqrt(stars_sd[i,j]/stars_count[i,j]);
-          begin
-           outliers[0,3]:=outliers[0,2];{store old x}
-           outliers[1,3]:=outliers[1,2];{store old y}
-           outliers[2,3]:=outliers[2,2];{store OLD sd}
+         if  ((outliers[2,0]<=outliers[2,1]) and (outliers[2,0]<=outliers[2,2]) and (outliers[2,0]<=outliers[2,3])) then smallest:=0
+         else
+         if  ((outliers[2,1]<=outliers[2,0]) and (outliers[2,1]<=outliers[2,2]) and (outliers[2,1]<=outliers[2,3])) then smallest:=1
+         else
+         if  ((outliers[2,2]<=outliers[2,0]) and (outliers[2,2]<=outliers[2,1]) and (outliers[2,2]<=outliers[2,3])) then smallest:=2
+         else
+         if  ((outliers[2,3]<=outliers[2,0]) and (outliers[2,3]<=outliers[2,1]) and (outliers[2,3]<=outliers[2,2])) then smallest:=3;
 
-           outliers[0,2]:=outliers[0,1];{store old x}
-           outliers[1,2]:=outliers[1,1];{store old y}
-           outliers[2,2]:=outliers[2,1];{store OLD sd}
 
-           outliers[0,1]:=outliers[0,0];{store old x}
-           outliers[1,1]:=outliers[1,0];{store old y}
-           outliers[2,1]:=outliers[2,0];{store OLD sd}
-
-           outliers[0,0]:=i*factor;{store x}
-           outliers[1,0]:=j*factor;{store y}
-           outliers[2,0]:=SD;{store sd}
-         end;
+         {replace the smallest sd}
+         outliers[0,smallest]:=i*factor;{store x}
+         outliers[1,smallest]:=j*factor;{store y}
+         outliers[2,smallest]:=SD;{store sd}
        end;
+     end;
 
-       except
-         beep;
-       end;
-     end ;{for loop}
+     except
+       beep;
+     end;
+   end ;{for loop}
 
   if nr_images<6 then memo2_message('Warning, not enough images for reliable outlier detection');
   if outliers[2,0]<>0 then memo2_message('Found star 1 with magnitude variation. σ = '+ floattostr6(outliers[2,0])+' at x=' +inttostr(round(outliers[0,0]))+', y='+inttostr(round(outliers[1,0]))+'. Marked with yellow circle.');
@@ -5568,23 +5560,25 @@ begin
   if outliers[2,2]<>0 then memo2_message('Found star 3 with magnitude variation. σ = '+ floattostr6(outliers[2,2])+' at x=' +inttostr(round(outliers[0,2]))+', y='+inttostr(round(outliers[1,2]))+'. Marked with yellow circle.' );
   if outliers[2,3]<>0 then memo2_message('Found star 4 with magnitude variation. σ = '+ floattostr6(outliers[2,3])+' at x=' +inttostr(round(outliers[0,3]))+', y='+inttostr(round(outliers[1,3]))+'. Marked with yellow circle.' );
 
-  stars:=nil;
+//  stars:=nil;
   stars_sd:=nil;
   stars_mean:=nil;
   stars_count:=nil;
 end;
 
 
+
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   Save_Cursor          : TCursor;
-  magn,hfd1,star_fwhm,snr,flux,xc,yc         : double;
-  saturation_level                           : single;
-  c,i,x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr: integer;
+  magn,hfd1,star_fwhm,snr,flux,xc,yc,mm,madV,madCK,madC,medianV,medianCK,medianC  : double;
+  saturation_level                                                           : single;
+  c,i,x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr,countV, countCK,countC: integer;
   flipvertical,fliphorizontal,init,refresh_solutions  :boolean;
-  starlistx :star_list;
+  starlistx : star_list;
+  starV, starCK,starC : array of double;
   outliers : array of array of double;
-  extra_message  : string;
+  extra_message,astr  : string;
 
   function measure_star(deX,deY :double): string;
   begin
@@ -5604,7 +5598,7 @@ var
           (img_loaded[0,round(xc+1),round(yc+1)]<saturation_level)  ) then {not saturated star}
       begin
         magn:=flux_magn_offset-ln(flux)*2.511886432/ln(10);
-        result:=floattostrf(magn, ffgeneral, 5,0); {write measured magnitude to list}
+        result:=floattostrf(magn, ffFixed, 5,3); {write measured magnitude to list}
       end
       else result:='Saturated';
      end
@@ -5615,7 +5609,7 @@ var
   end;
 
 begin
-  if listview7.items.count<=1 then exit; {no files}
+  if listview7.items.count<=0 then exit; {no files}
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
@@ -5634,6 +5628,7 @@ begin
   refresh_solutions:=(sender=stackmenu1.clear_astrometric_solutions1); {refresh astrometric solutions}
 
   {solve images first to allow flux to magnitude calibration}
+
   for c:=0 to listview7.items.count-1 do {check for astrometric solutions}
   begin
     if ((esc_pressed=false) and (listview7.Items.item[c].checked) and (listview7.Items.item[c].subitems.Strings[P_astrometric]=''))  then
@@ -5681,8 +5676,16 @@ begin
   stepnr:=0;
   init:=false;
 
-  memo2_message('Click on an object (pink marker) to record magnitudes in the photometry list.');
+  setlength(starlistpack ,listview7.items.count);{to store found stars for each image. Used for finding outliers}
+  for c:=0 to listview7.items.count-1 do starlistpack[c].height:=0;{use as marker for filled}
+
+  memo2_message('Click on variabl, CK and C stars(pink marker) to record magnitudes in the photometry list.');
   repeat
+    setlength(starV,listview7.items.count);
+    setlength(starCK,listview7.items.count);{number of stars could fluctuate so set maximum space each loop}
+    setlength(starC,listview7.items.count);
+    countck:=0;
+    countc:=0;
     stepnr:=stepnr+1; {first step is nr 1}
     for c:=0 to listview7.items.count-1 do
     begin
@@ -5704,12 +5707,14 @@ begin
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
         {check/prepare photometry}
-        if fileexists(ChangeFileExt(Filename2,'.astap_image_stars'))=false then
-        begin
-          if flux_magn_offset=0 then {calibrate}
+  //      if fileexists(ChangeFileExt(Filename2,'.astap_image_stars'))=false then
+//        begin
+//          if flux_magn_offset=0 then {calibrate}
+//          if starlistpack[c].starlist<>nil then
+          if  starlistpack[c].height=0 then {not filled with data}
              plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});
 
-          if pos('F',calstat)=0 then
+          if ((stepnr=1) and (pos('F',calstat)=0)) then
           begin
             extra_message:=' Image not calibrated with a flat field. Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu.';
             listview7.Items.item[c].subitems.Strings[P_photometric]:='Poor';
@@ -5719,15 +5724,24 @@ begin
             extra_message:='';
             listview7.Items.item[c].subitems.Strings[P_photometric]:='✓';
           end;
-          memo2_message(inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.'+extra_message);
-          measure_magnitudes(starlistx); {analyse}
-          save_stars_to_disk(filename2, starlistx)  ;{write to disk including flux_magn_offset}
-        end
-        else
-        begin
-          read_stars_from_disk(filename2,starlistx)  ;{read from disk}
-          if pos('F',calstat)=0 then  listview7.Items.item[c].subitems.Strings[P_photometric]:='Poor' else listview7.Items.item[c].subitems.Strings[P_photometric]:='✓';
-        end;
+          if stepnr=1 then
+          begin
+            memo2_message(inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.'+extra_message);
+            measure_magnitudes(starlistx); {analyse}
+            starlistpack[c].starlist:=starlistX;{store found stars in memory for finding outlier later}
+            starlistpack[c].width:=width2;
+            starlistpack[c].height:=height2;
+            starlistpack[c].flux_magn_offset:=flux_magn_offset;
+          end;
+         // else
+          //starlistx:=starlistpack[c].starlist;
+//          save_stars_to_disk(filename2, starlistx)  ;{write to disk including flux_magn_offset}
+//        end
+//        else
+//        begin
+//          read_stars_from_disk(filename2,starlistx)  ;{read from disk}
+//          if pos('F',calstat)=0 then  listview7.Items.item[c].subitems.Strings[P_photometric]:='Poor' else listview7.Items.item[c].subitems.Strings[P_photometric]:='✓';
+//        end;
 
         setlength(img_temp,naxis3,width2,height2);{new size}
 
@@ -5769,29 +5783,58 @@ begin
         listview7.Items.item[c].subitems.Strings[P_magn2]:=''; {MAGN, always blank}
         listview7.Items.item[c].subitems.Strings[P_magn3]:=''; {MAGN, always blank}
 
-        {measure the single star clicked on by mouse}
-        if mainwindow.shape_alignment_marker1.visible then   listview7.Items.item[c].subitems.Strings[P_magn1]:=measure_star(shape_fitsX,shape_fitsY);
-        if mainwindow.shape_alignment_marker2.visible then   listview7.Items.item[c].subitems.Strings[P_magn2]:=measure_star(shape_fitsX2,shape_fitsY2);
-        if mainwindow.shape_alignment_marker3.visible then   listview7.Items.item[c].subitems.Strings[P_magn3]:=measure_star(shape_fitsX3,shape_fitsY3);
+        {measure the three stars selected by the mouse}
+        if mainwindow.shape_alignment_marker1.visible then
+        begin
+          astr:=measure_star(shape_fitsX,shape_fitsY);
+          listview7.Items.item[c].subitems.Strings[P_magn1]:=astr;
+          listview7.Items.item[c].subitems.Strings[P_snr]:=inttostr(round(snr));
+          if astr<>'' then {star dectected}
+          begin
+            starV[countV]:=strtofloat2(astr);
+            inc(countV);
+          end;
+
+        end;
+        if mainwindow.shape_alignment_marker2.visible then
+        begin
+          astr:=measure_star(shape_fitsX2,shape_fitsY2);
+          listview7.Items.item[c].subitems.Strings[P_magn2]:=astr;
+          if astr<>'' then {star dectected}
+          begin
+            starCK[countCK]:=strtofloat2(astr);
+            inc(countCK);
+          end;
+        end;
+        if mainwindow.shape_alignment_marker3.visible then
+        begin
+          astr:=measure_star(shape_fitsX3,shape_fitsY3);
+          listview7.Items.item[c].subitems.Strings[P_magn3]:=astr;
+          if astr<>'' then {star detected}
+          begin
+            starC[countC]:=strtofloat2(astr);
+            inc(countC);
+          end;
+        end;
 
          {plot measured stars from procedure measure_magnitudes}
-         for i:=0 to  length(starlistx[0])-2 do
+     //    for i:=0 to  length(starlistpack[c].starlist[0])-2 do
+         for i:=0 to   listview7.items.count-1 do
+
+         if starlistpack[c].height<>0 then {contains data}
          begin
-           size:=round(5*starlistx[2,i]);{5*hfd}
-           x_new:=round(solution_vectorX[0]*(starlistx[0,i])+solution_vectorX[1]*(starlistx[1,i])+solution_vectorX[2]); {correction x:=aX+bY+c}
-           y_new:=round(solution_vectorY[0]*(starlistx[0,i])+solution_vectorY[1]*(starlistx[1,i])+solution_vectorY[2]); {correction y:=aX+bY+c}
+           size:=round(5*starlistpack[c].starlist[2,i]);{5*hfd}
+           x_new:=round(solution_vectorX[0]*(starlistpack[c].starlist[0,i])+solution_vectorX[1]*(starlistpack[c].starlist[1,i])+solution_vectorX[2]); {correction x:=aX+bY+c}
+           y_new:=round(solution_vectorY[0]*(starlistpack[c].starlist[0,i])+solution_vectorY[1]*(starlistpack[c].starlist[1,i])+solution_vectorY[2]); {correction y:=aX+bY+c}
 
            if flipvertical=false then  starY:=(height2-y_new) else starY:=(y_new);
            if Fliphorizontal     then starX:=(width2-x_new)  else starX:=(x_new);
 
            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-           magn:=flux_magn_offset-ln(starlistx[3,i]{flux})*2.511886432/ln(10);
+           magn:=flux_magn_offset-ln(starlistpack[c].starlist[3,i]{flux})*2.511886432/ln(10);
            mainwindow.image1.Canvas.textout(starX+size,starY,floattostrf(magn*10, ffgeneral, 3,0));{add magnitude as text}
+        end;{measure marked stars}
 
-           if ( (abs(shape_fitsX-x_new)<6) and (abs(shape_fitsY-y_new)<6) ) then
-            listview7.Items.item[c].subitems.Strings[P_magn1]:=floattostrf(magn, ffgeneral, 5,0); {write measured magnitude to list}
-
-        end;{measure single star clicked on}
 
         {plot outliers (variable stars)}
         if outliers<>nil then
@@ -5814,12 +5857,46 @@ begin
       end;{find star magnitudes}
     end;
     if stepnr=1 then {do it once after one cycle finished}
-       find_star_outliers(strtofloat2(mark_outliers_upto1.text), outliers);
-  until ((esc_pressed) or (sender=photometry_button1 {single run}));
+    begin
+      find_star_outliers(strtofloat2(mark_outliers_upto1.text), outliers);
+    end;
+
+    {do statistics}
+    if countV>=4 then
+    begin
+      setlength(starV,countV);
+      mad_median(starV,madV,medianV);{calculate mad and median without modifying the data}
+      memo2_message('Var star, median:'+floattostrf(medianV, ffgeneral, 4,4)+', σ: '+floattostrf(1.0*1.4826*madCK  {1.0*sigma}, ffgeneral, 4,4));
+    end
+    else
+    madV:=0;
+
+    if countCK>=4 then
+    begin
+      setlength(starCK,countCK);
+      mad_median(starCK,madCK,medianCK);{calculate mad and median without modifying the data}
+      memo2_message('CK star, median:'+floattostrf(medianCK, ffgeneral, 4,4)+', σ: '+floattostrf(1.0*1.4826*madCK  {1.0*sigma}, ffgeneral, 4,4));
+    end
+    else
+    madCK:=0;
+    if countC>4 then
+    begin
+      setlength(starC,countC);
+      mad_median(starC,madC,medianC);{calculate mad and median without modifying the data}
+      memo2_message('C star, median:'+floattostrf(medianC, ffgeneral, 4,4)+', σ: '+floattostrf(1.0*1.4826*madC  {1.0*sigma}, ffgeneral, 4,4));
+    end
+    else madC:=0;
+    photometry_error:=max(madC,madCK)*1.4826;{mad to standard deviation}
+
+  until ((esc_pressed) or (sender<>photometry_repeat1 {single run}));
 
   img_temp:=nil;{free memory}
   starlistx:=nil;{free memory}
+  starlistpack:=nil; {release memory}
   outliers:=nil;
+  starCK:=nil;
+  starC:=nil;
+
 
   Screen.Cursor :=Save_Cursor;{back to normal }
 end;
@@ -6750,7 +6827,7 @@ begin
   begin
     if  listview5.Items[index].Selected then
     begin
-      listview_add(listview1,listview5.items[index].caption,true,27);
+      listview_add(listview1,listview5.items[index].caption,true,I_nr);
     end;
     inc(index); {go to next file}
   end;
@@ -6989,7 +7066,7 @@ begin
             inc(c);
           end;
         end;
-        listview_add(listview2,path1,true,9);{add master}
+        listview_add(listview2,path1,true,D_nr);{add master}
         listview2.Items.EndUpdate;
 
         analyse_listview(listview2,false {light},true {full fits},false{refresh});{update the tab information}
@@ -7134,7 +7211,7 @@ begin
               inc(c);
             end;
           end;
-          listview_add(listview3,path1,true,10);{add master}
+          listview_add(listview3,path1,true,F_nr);{add master}
           listview3.Items.EndUpdate;
           analyse_listview(listview3,false {light},true {full fits (for standard deviation)},false{refresh});{update the tab information}
         end;
@@ -8338,7 +8415,16 @@ begin
   if sender=Viewimage4 then listview_view(listview4);
   if sender=Viewimage5 then listview_view(listview5);
   if sender=Viewimage6 then listview_view(listview6);{popup menu blink}
-  if sender=Viewimage7 then listview_view(listview7);
+  if sender=Viewimage7 then
+  begin
+     listview_view(listview7);
+     if checkBox_annotate1.checked then
+     begin
+       load_variable; { Load the database once. If loaded no action}
+       plot_deepsky;  {plot the variable annotations image}
+     end;
+
+  end;
   if sender=Viewimage8 then listview_view(listview8);{inspector}
 end;
 

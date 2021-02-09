@@ -500,7 +500,7 @@ var
 
 var
    histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
-   his_total_red, his_total_green,his_total_blue,extend_type : integer; {histogram number of values}
+   his_total_red, his_total_green,his_total_blue,extend_type,r_aperture : integer; {histogram number of values}
    histo_peak_position : integer;
    his_mean,noise_level : array[0..2] of integer;
    stretch_c : array[0..32768] of single;{stretch curve}
@@ -643,6 +643,7 @@ function prepare_dec(decx:double; sep:string):string; {radialen to text, format 
 function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24: 00 00.0 }
 function inttostr5(x:integer):string;{always 5 digit}
 function SMedian(list: array of double): double;{get median of an array of double, taken from CCDciel code}
+procedure mad_median(list: array of double;var mad,median :double);{calculate mad and median without modifying the data}
 function floattostrF2(const x:double; width1,decimals1 :word): string;
 procedure DeleteFiles(lpath,FileSpec: string);{delete files such  *.wcs}
 procedure new_to_old_WCS;{convert new style FITsS to old style}
@@ -736,7 +737,7 @@ var
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
- unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola;
+ unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -748,7 +749,7 @@ uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, 
 
 var
   recent_files : tstringlist;
-  stop_RX, stop_RY, start_RX,start_RY                    :integer; {for rubber rectangle. These values are the same startX,.... except if image is flipped}
+  stop_RX, stop_RY, start_RX,start_RY :integer; {for rubber rectangle. These values are the same startX,.... except if image is flipped}
   object_xc,object_yc, object_raM,object_decM  : double; {near mouse auto centered object position}
 
 const
@@ -1169,7 +1170,8 @@ begin
             end;
 
             if ((header[i+3]='E') and (header[i+4]='C') and (header[i+5]='T')) then {OBJECT}
-                    object_name:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
+          //    object_name:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
+              object_name:=trim(get_string);{remove all spaces}
           end;
 
           if ((header[i]='C') and (header[i+1]='E')  and (header[i+2]='N') and (header[i+3]='T') and (header[i+4]='A')) then  {SBIG 1.0 standard}
@@ -3099,7 +3101,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.487, '+about_message4+', dated 2021-2-3';
+  #13+#10+'ASTAP version ß0.9.490, '+about_message4+', dated 2021-2-9';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4234,13 +4236,13 @@ begin
      {else keep as it is}
   end;
   if tshape(shape)=tshape(mainwindow.shape_alignment_marker1) then
-    begin mainwindow.statictext1.left:=ll+ww; mainwindow.statictext1.top:=tt+hh;mainwindow.statictext1.visible:=true;end
+    begin mainwindow.statictext1.left:=ll+ww; mainwindow.statictext1.top:=tt+hh; mainwindow.statictext1.font.size:=max(hh div 4,14);  mainwindow.statictext1.visible:=true;end
   else
   if tshape(shape)=tshape(mainwindow.shape_alignment_marker2) then
-    begin mainwindow.statictext2.left:=ll+ww; mainwindow.statictext2.top:=tt+hh;mainwindow.statictext2.visible:=true;end
+    begin mainwindow.statictext2.left:=ll+ww; mainwindow.statictext2.top:=tt+hh; mainwindow.statictext2.font.size:=max(hh div 4,14); mainwindow.statictext2.visible:=true;end
   else
   if tshape(shape)=tshape(mainwindow.shape_alignment_marker3) then
-    begin mainwindow.statictext3.left:=ll+ww; mainwindow.statictext3.top:=tt+hh;mainwindow.statictext3.visible:=true;end;
+    begin mainwindow.statictext3.left:=ll+ww; mainwindow.statictext3.top:=tt+hh; mainwindow.statictext3.font.size:=max(hh div 4,14); mainwindow.statictext3.visible:=true;end;
 
 end;
 
@@ -6869,12 +6871,16 @@ begin
     stackmenu1.write_jpeg1.Checked:=get_boolean('write_jpeg',false);{live stacking}
     stackmenu1.interim_to_clipboard1.Checked:=get_boolean('to_clipboard',false);{live stacking}
 
+
+    obscode:=initstring.Values['obscode']; {photometry}
+    filter_type:=initstring.Values['filter'];
+
     stackmenu1.listview1.Items.BeginUpdate;
     c:=0;
     repeat {add images}
        dum:=initstring.Values['image'+inttostr(c)];
        if ((dum<>'') and (fileexists(dum))) then
-         listview_add(stackmenu1.listview1,dum,get_boolean('image'+inttostr(c)+'_check',true),27);
+         listview_add(stackmenu1.listview1,dum,get_boolean('image'+inttostr(c)+'_check',true),I_nr);
        inc(c);
     until (dum='');
     stackmenu1.listview1.Items.endUpdate;
@@ -6884,7 +6890,7 @@ begin
     repeat {add  darks}
       dum:=initstring.Values['dark'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
-         listview_add(stackmenu1.listview2,dum,get_boolean('dark'+inttostr(c)+'_check',true),9);
+         listview_add(stackmenu1.listview2,dum,get_boolean('dark'+inttostr(c)+'_check',true),D_nr);
       inc(c);
     until (dum='');
     stackmenu1.listview2.Items.endUpdate;
@@ -6895,7 +6901,7 @@ begin
     repeat {add  flats}
       dum:=initstring.Values['flat'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview3,dum,get_boolean('flat'+inttostr(c)+'_check',true),10);
+        listview_add(stackmenu1.listview3,dum,get_boolean('flat'+inttostr(c)+'_check',true),F_nr);
       inc(c);
     until (dum='');
     stackmenu1.listview3.Items.endUpdate;
@@ -6906,7 +6912,7 @@ begin
     repeat {add flat darks}
       dum:=initstring.Values['flat_dark'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview4,dum,get_boolean('flat_dark'+inttostr(c)+'_check',true),9);
+        listview_add(stackmenu1.listview4,dum,get_boolean('flat_dark'+inttostr(c)+'_check',true),D_nr);
       inc(c);
     until (dum='');
     stackmenu1.listview4.Items.endUpdate;
@@ -6917,7 +6923,7 @@ begin
     repeat {add blink files}
       dum:=initstring.Values['blink'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview6,dum,get_boolean('blink'+inttostr(c)+'_check',true),10);
+        listview_add(stackmenu1.listview6,dum,get_boolean('blink'+inttostr(c)+'_check',true),B_nr);
       inc(c);
     until (dum='');
     stackmenu1.listview6.Items.endUpdate;
@@ -6928,7 +6934,7 @@ begin
     repeat {add photometry files}
       dum:=initstring.Values['photometry'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview7,dum,get_boolean('photometry'+inttostr(c)+'_check',true),19);
+        listview_add(stackmenu1.listview7,dum,get_boolean('photometry'+inttostr(c)+'_check',true),P_nr);
       inc(c);
     until (dum='');
     stackmenu1.listview7.Items.endUpdate;
@@ -6939,7 +6945,7 @@ begin
     repeat {add inspector files}
       dum:=initstring.Values['inspector'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview8,dum,get_boolean('inspector'+inttostr(c)+'_check',true),16);
+        listview_add(stackmenu1.listview8,dum,get_boolean('inspector'+inttostr(c)+'_check',true),I_nr);
       inc(c);
     until (dum='');
     stackmenu1.listview8.Items.endUpdate;
@@ -7178,6 +7184,10 @@ begin
 
     initstring.Values['write_jpeg']:=BoolStr[stackmenu1.write_jpeg1.checked];{live stacking}
     initstring.Values['to_clipboard']:=BoolStr[stackmenu1.interim_to_clipboard1.checked];{live stacking}
+
+    initstring.Values['obscode']:=obscode;
+    initstring.Values['filter']:=filter_type;
+
 
     {### save listview values ###}
     for c:=0 to stackmenu1.ListView1.items.count-1 do {add light images}
@@ -10451,11 +10461,11 @@ begin
         if focusrequest then {find best focus using curve fitting}
         begin
            stackmenu1.clear_inspector_list1Click(nil);{clear list}
-           listview_add(stackmenu1.listview8,GetOptionValue('focus1'),true,16);
+           listview_add(stackmenu1.listview8,GetOptionValue('focus1'),true,I_nr);
            focus_count:=2;
            while hasoption('focus'+inttostr(focus_count)) do
            begin
-             listview_add(stackmenu1.listview8,GetOptionValue('focus'+inttostr(focus_count)),true,16);
+             listview_add(stackmenu1.listview8,GetOptionValue('focus'+inttostr(focus_count)),true,I_nr);
              inc(focus_count);
            end;
            stackmenu1.curve_fitting1Click(nil);
@@ -10761,6 +10771,20 @@ begin
      else
      result:=(list[mid]+list[mid+1])/2;
   end;
+end;
+
+procedure mad_median(list: array of double;var mad,median :double);{calculate mad and median without modifying the data}
+var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
+  n,i        : integer;
+  list2: array of double;
+begin
+  n:=length(list);
+  setlength(list2,n);
+  for i:=0 to n-1 do list2[i]:=list[i];{copy magn offset data}
+  median:=Smedian(list2);
+  for i:=0 to n-1 do list2[i]:=abs(list[i] - median);{fill list2 with offsets}
+  mad:=Smedian(list2); //median absolute deviation (MAD)
+  list2:=nil;
 end;
 
 
@@ -11957,7 +11981,7 @@ procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; var hfd1,star_fwhm,s
 const
   max_ri=50; //should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1;
 var
-  i,j, ri, distance,distance_top_value,illuminated_pixels,signal_counter,iterations,counter :integer;
+  i,j, distance,distance_top_value,illuminated_pixels,signal_counter,iterations,counter :integer;
   SumVal,SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
   val,bg_average,bg,sd,sd_old,pixel_counter,valmax : double;
   HistStart,boxed : boolean;
@@ -12082,7 +12106,9 @@ begin
     until ((boxed) or (rs<=1)) ;{loop and reduce box size until star is boxed}
 
     inc(rs,2);{add some space}
-    // Build signal histogram from center of gravity
+
+
+     // Build signal histogram from center of gravity
     for i:=0 to rs do distance_histogram[i]:=0;{clear signal histogram for the range used}
     for i:=-rs to rs do begin
       for j:=-rs to rs do begin
@@ -12100,19 +12126,19 @@ begin
       end;
     end;
 
-    ri:=-1;
+    r_aperture:=-1;
     distance_top_value:=0;
     HistStart:=false;
     illuminated_pixels:=0;
     repeat
-      inc(ri);
-      illuminated_pixels:=illuminated_pixels+distance_histogram[ri];
-      if distance_histogram[ri]>0 then HistStart:=true;{continue until we found a value>0, center of defocused star image can be black having a central obstruction in the telescope}
-      if distance_top_value<distance_histogram[ri] then distance_top_value:=distance_histogram[ri]; {this should be 2*pi*ri if it is nice defocused star disk}
-    until ( (ri>=rs) or (HistStart and (distance_histogram[ri]<=0.1*distance_top_value {drop-off detection})));{find a distance where there is no pixel illuminated, so the border of the star image of interest}
-    if ri>=rs then exit; {star is equal or larger then box, abort}
+      inc(r_aperture);
+      illuminated_pixels:=illuminated_pixels+distance_histogram[r_aperture];
+      if distance_histogram[r_aperture]>0 then HistStart:=true;{continue until we found a value>0, center of defocused star image can be black having a central obstruction in the telescope}
+      if distance_top_value<distance_histogram[r_aperture] then distance_top_value:=distance_histogram[r_aperture]; {this should be 2*pi*r_aperture if it is nice defocused star disk}
+    until ( (r_aperture>=rs) or (HistStart and (distance_histogram[r_aperture]<=0.1*distance_top_value {drop-off detection})));{find a distance where there is no pixel illuminated, so the border of the star image of interest}
+    if r_aperture>=rs then exit; {star is equal or larger then box, abort}
 
-    if (ri>2)and(illuminated_pixels<0.35*sqr(ri+ri-2)){35% surface} then exit;  {not a star disk but stars, abort with hfd 999}
+    if (r_aperture>2)and(illuminated_pixels<0.35*sqr(r_aperture+r_aperture-2)){35% surface} then exit;  {not a star disk but stars, abort with hfd 999}
 
     except
   end;
@@ -12123,8 +12149,8 @@ begin
   pixel_counter:=0;
 
   begin   // Get HFD using the aproximation routine assuming that HFD line divides the star in equal portions of gravity:
-    for i:=-ri to ri do {Make steps of one pixel}
-    for j:=-ri to ri do
+    for i:=-r_aperture to r_aperture do {Make steps of one pixel}
+    for j:=-r_aperture to r_aperture do
     begin
       Val:=value_subpixel(xc+i,yc+j)-bg; {The calculated center of gravity is a floating point position and can be anyware, so calculate pixel values on sub-pixel level}
       r:=sqrt(i*i+j*j); {Distance from star gravity center}
@@ -12143,7 +12169,7 @@ begin
 
     star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
 
-    snr:=flux/sqrt(flux +sqr(ri)*pi*sqr(sd)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
+    snr:=flux/sqrt(flux +sqr(r_aperture)*pi*sqr(sd)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
     {See https://en.wikipedia.org/wiki/Signal-to-noise_ratio_(imaging)   and  https://www1.phys.vt.edu/~jhs/phys3154/snr20040108.pdf}
     {snr := signal/noise                                                  }
     {snr := star_signal/sqrt(total_signal)                                }
@@ -12329,25 +12355,38 @@ var
 begin
    if ssleft in shift then {swipe effect}
    begin
-     if ((down_xy_valid) and (abs(y-down_y)>2)) then
+     if down_xy_valid then
      begin
-       mainwindow.image1.Top:= mainwindow.image1.Top+(y-down_y);
-     //   timage(sender).Top:= timage(sender).Top+(y-down_y);{could be used for second image}
+       if abs(y-down_y)>2 then
+       begin
+         mainwindow.image1.Top:= mainwindow.image1.Top+(y-down_y);
+       //   timage(sender).Top:= timage(sender).Top+(y-down_y);{could be used for second image}
 
-       mainwindow.shape_marker1.Top:= mainwindow.shape_marker1.Top+(y-down_y);{normal marker}
-       mainwindow.shape_marker2.Top:= mainwindow.shape_marker2.Top+(y-down_y);{normal marker}
-       mainwindow.shape_marker3.Top:= mainwindow.shape_marker3.Top+(y-down_y);{normal marker}
-       mainwindow.shape_marker4.Top:= mainwindow.shape_marker4.Top+(y-down_y);{normal marker}
-     end;
-     if ((down_xy_valid) and (abs(x-down_x)>2)) then
-     begin
-       mainwindow.image1.left:= mainwindow.image1.left+(x-down_x);
-      //  timage(sender).left:= timage(sender).left+(x-down_x);
+         mainwindow.shape_marker1.Top:= mainwindow.shape_marker1.Top+(y-down_y);{normal marker}
+         mainwindow.shape_marker2.Top:= mainwindow.shape_marker2.Top+(y-down_y);{normal marker}
+         mainwindow.shape_marker3.Top:= mainwindow.shape_marker3.Top+(y-down_y);{normal marker}
+         mainwindow.shape_marker4.Top:= mainwindow.shape_marker4.Top+(y-down_y);{normal marker}
+       end;
+       if abs(x-down_x)>2 then
+       begin
+         mainwindow.image1.left:= mainwindow.image1.left+(x-down_x);
+        //  timage(sender).left:= timage(sender).left+(x-down_x);
 
-       mainwindow.shape_marker1.left:= mainwindow.shape_marker1.left+(x-down_x);{normal marker}
-       mainwindow.shape_marker2.left:= mainwindow.shape_marker2.left+(x-down_x);{normal marker}
-       mainwindow.shape_marker3.left:= mainwindow.shape_marker3.left+(x-down_x);{normal marker}
-       mainwindow.shape_marker4.left:= mainwindow.shape_marker4.left+(x-down_x);{normal marker}
+         mainwindow.shape_marker1.left:= mainwindow.shape_marker1.left+(x-down_x);{normal marker}
+         mainwindow.shape_marker2.left:= mainwindow.shape_marker2.left+(x-down_x);{normal marker}
+         mainwindow.shape_marker3.left:= mainwindow.shape_marker3.left+(x-down_x);{normal marker}
+         mainwindow.shape_marker4.left:= mainwindow.shape_marker4.left+(x-down_x);{normal marker}
+       end;
+       if ((abs(y-down_y)>2) or (abs(x-down_x)>2)) then
+       begin
+         {three markers}
+          if mainwindow.shape_alignment_marker1.visible then {For manual alignment. Do this only when visible}
+            show_marker_shape(mainwindow.shape_alignment_marker1,9 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
+          if mainwindow.shape_alignment_marker2.visible then {For manual alignment. Do this only when visible}
+            show_marker_shape(mainwindow.shape_alignment_marker2,9 {no change in shape and hint},20,20,10,shape_fitsX2, shape_fitsY2);
+          if mainwindow.shape_alignment_marker3.visible then {For manual alignment. Do this only when visible}
+            show_marker_shape(mainwindow.shape_alignment_marker3,9 {no change in shape and hint},20,20,10,shape_fitsX3, shape_fitsY3);
+       end;
      end;
 
      exit;{no more to do}

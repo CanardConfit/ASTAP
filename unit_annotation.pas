@@ -41,6 +41,7 @@ var
 const
   flux_magn_offset       : double=0;{offset between star magnitude and flux. Will be calculated in stars are annotated}
   counter_flux_measured  : integer=0;{how many stars used for flux calibration}
+  database_nr            : integer=0; {1 is deepsky, 2 is hyperleda, 3 is variable loaded}
 
 implementation
 
@@ -1035,12 +1036,13 @@ end;
 
 procedure load_deep;{load the deepsky database once. If loaded no action}
 begin
-  if ((deepstring.count<10000) or (deepstring.count>=50000)) {empthy or variable or hyperleda loaded} then {load deepsky database}
+  if database_nr<>1 then {load deepsky database}
   begin
     with deepstring do
     begin
        try
        LoadFromFile(database_path+'deep_sky.csv');{load deep sky data from file }
+       database_nr:=1;{1 is deepsky, 2 is hyperleda, 3 is variable loaded}
        except;
          clear;
          beep;
@@ -1052,12 +1054,13 @@ end;
 
 procedure load_variable;{load the variable star database once. If loaded no action}
 begin
-  if ((deepstring.count<10) or (deepstring.count>=10000)) {empthy or hyperleda or deepsky loaded} then {load variable star database}
+  if database_nr<>3 then {load variable database}
   begin
     with deepstring do
     begin
        try
        LoadFromFile(database_path+'variable_stars.csv');{load deep sky data from file }
+       database_nr:=3;{1 is deepsky, 2 is hyperleda, 3 is variable loaded}
        except;
          clear;
          beep;
@@ -1069,12 +1072,13 @@ end;
 
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 begin
-  if deepstring.count<50000 then {too small for HyperLeda. Empthy or normal database loaded}
+  if database_nr<>2 then {load HyperLeda}
   begin
     with deepstring do
     begin
        try
        LoadFromFile(database_path+'hyperleda.csv');{load deep sky data from file }
+       database_nr:=2;{1 is deepsky, 2 is hyperleda, 3 is variable loaded}
        except;
          clear;
          beep;
@@ -1508,31 +1512,25 @@ begin
   result:=$0000FF; {>1.5 rood}
 end;
 
-function get_best_mean(list: array of double): double;{Remove outliers from polulation using MAD. }
+
+function get_best_mean(list: array of double) :double;{Remove outliers from polulation using MAD. }
 var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
-  n,i,count,k         : integer;
-  median, mad       : double;
-  list2: array of double;
+  i,count         : integer;
+  median, mad     : double;
+
 begin
- n:=length(list);
- setlength(list2,n);
- for i:=0 to n-1 do list2[i]:=list[i];{copy magn offset data}
- median:=Smedian(list2);
- for i:=0 to n-1 do list2[i]:=abs(list[i] - median);{fill list2 with offsets}
- mad:=Smedian(list2); //median absolute deviation (MAD)
+ mad_median(list,mad,median);{{calculate mad and median without modifying the data}
 
  count:=0;
  result:=0;
 
- for i:=0 to n-1 do
-   if abs(list[i]-median)<2.5*1.4826*mad then {offset less the 2.5*sigma.}
+ for i:=0 to length(list)-1 do
+   if abs(list[i]-median)<1.50*1.4826*mad then {offset less the 2.5*sigma.}
    begin
      result:=result+list[i];{Calculate mean. This gives a little less noise then calculating median again. Note weighted mean gives poorer result and is not applied.}
      inc(count);
    end;
  if count>0 then  result:=result/count;  {mean without using outliers}
-
- list2:=nil;
 end;
 
 
@@ -1601,10 +1599,11 @@ var
                 (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
                 (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
             begin
+              flux:=flux/(1-EXP(-0.5*sqr(r_aperture{measuring radius}*2.34548/hfd1))); {Aperture correction for lost flux fainter then detection limit of a Gaussian star}
               magn:=(-ln(flux)*2.511886432/LN(10));
-              if counter_flux_measured>=length(mag_offset_array) then  SetLength(mag_offset_array,counter_flux_measured+1000);{increase length array}
+              if counter_flux_measured>=length(mag_offset_array) then  SetLength(mag_offset_array,counter_flux_measured+500);{increase length array}
               mag_offset_array[counter_flux_measured]:=mag2/10-magn;
-              //memo2_message(#9+ floattostr6(mag2/10)+#9+floattostr6(magn)+#9+floattostr6(snr));
+              //memo2_message(#9+inttostr(round(flux))+#9+ floattostr6(mag2/10)+#9+floattostr6(magn)+#9+floattostr6(snr)+#9+floattostr6(hfd1)+#9+floattostr6(aperture*2));
               inc(counter_flux_measured); {increase counter of number of stars analysed}
             end;
 
@@ -1621,9 +1620,6 @@ var
         end;{flux calibration}
       end;
     end;
-
-
-
 begin
   if ((fits_file) and (cd1_1<>0)) then
   begin
@@ -1681,9 +1677,14 @@ begin
 
     max_nr_stars:=round(width2*height2*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
 
+
   //   max_nr_stars:=4;
 
-    if flux_calibration then setlength(mag_offset_array,1000);
+    if flux_calibration then
+    begin
+       max_nr_stars:=100; {limit to the brightest stars. Fainter stars have more noise}
+       setlength(mag_offset_array,max_nr_stars);
+    end;
 
     if select_star_database(stackmenu1.star_database1.text)=false then
     begin
@@ -1733,7 +1734,7 @@ begin
       if counter_flux_measured>0 then {use all stars}
       begin
         SetLength(mag_offset_array,counter_flux_measured);{set length correct}
-        flux_magn_offset:=get_best_mean(mag_offset_array)
+        flux_magn_offset:=get_best_mean(mag_offset_array);
       end
       else  flux_magn_offset:=0;
       mag_offset_array:=nil;

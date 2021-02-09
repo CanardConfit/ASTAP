@@ -1188,7 +1188,9 @@ begin
 
   mainwindow.image1.canvas.pen.color:=annotation_color;{color circel}
   mainwindow.image1.Canvas.font.color:=annotation_color;
-  mainwindow.image1.Canvas.font.size:=12;
+  //  mainwindow.image1.Canvas.font.size:=12;
+  mainwindow.image1.Canvas.font.size:= round(min(20,max(10,height2*20/4176)));
+
 
   if date_avg<>'' then
   begin
