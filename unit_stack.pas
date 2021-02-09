@@ -5573,7 +5573,7 @@ var
   Save_Cursor          : TCursor;
   magn,hfd1,star_fwhm,snr,flux,xc,yc,mm,madV,madCK,madC,medianV,medianCK,medianC  : double;
   saturation_level                                                           : single;
-  c,i,x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr,countV, countCK,countC: integer;
+  c,i,x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr,countV, countCK,countC, dum: integer;
   flipvertical,fliphorizontal,init,refresh_solutions  :boolean;
   starlistx : star_list;
   starV, starCK,starC : array of double;
@@ -5628,7 +5628,6 @@ begin
   refresh_solutions:=(sender=stackmenu1.clear_astrometric_solutions1); {refresh astrometric solutions}
 
   {solve images first to allow flux to magnitude calibration}
-
   for c:=0 to listview7.items.count-1 do {check for astrometric solutions}
   begin
     if ((esc_pressed=false) and (listview7.Items.item[c].checked) and (listview7.Items.item[c].subitems.Strings[P_astrometric]=''))  then
@@ -5684,6 +5683,7 @@ begin
     setlength(starV,listview7.items.count);
     setlength(starCK,listview7.items.count);{number of stars could fluctuate so set maximum space each loop}
     setlength(starC,listview7.items.count);
+    countV:=0;
     countck:=0;
     countc:=0;
     stepnr:=stepnr+1; {first step is nr 1}
@@ -5706,42 +5706,27 @@ begin
 
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
-        {check/prepare photometry}
-  //      if fileexists(ChangeFileExt(Filename2,'.astap_image_stars'))=false then
-//        begin
-//          if flux_magn_offset=0 then {calibrate}
-//          if starlistpack[c].starlist<>nil then
-          if  starlistpack[c].height=0 then {not filled with data}
-             plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});
+        if ((stepnr=1) and (pos('F',calstat)=0)) then
+        begin
+          extra_message:=' Image not calibrated with a flat field. Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu.';
+          listview7.Items.item[c].subitems.Strings[P_photometric]:='Poor';
+        end
+        else
+        begin
+          extra_message:='';
+          listview7.Items.item[c].subitems.Strings[P_photometric]:='✓';
+        end;
 
-          if ((stepnr=1) and (pos('F',calstat)=0)) then
-          begin
-            extra_message:=' Image not calibrated with a flat field. Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu.';
-            listview7.Items.item[c].subitems.Strings[P_photometric]:='Poor';
-          end
-          else
-          begin
-            extra_message:='';
-            listview7.Items.item[c].subitems.Strings[P_photometric]:='✓';
-          end;
-          if stepnr=1 then
-          begin
-            memo2_message(inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.'+extra_message);
-            measure_magnitudes(starlistx); {analyse}
-            starlistpack[c].starlist:=starlistX;{store found stars in memory for finding outlier later}
-            starlistpack[c].width:=width2;
-            starlistpack[c].height:=height2;
-            starlistpack[c].flux_magn_offset:=flux_magn_offset;
-          end;
-         // else
-          //starlistx:=starlistpack[c].starlist;
-//          save_stars_to_disk(filename2, starlistx)  ;{write to disk including flux_magn_offset}
-//        end
-//        else
-//        begin
-//          read_stars_from_disk(filename2,starlistx)  ;{read from disk}
-//          if pos('F',calstat)=0 then  listview7.Items.item[c].subitems.Strings[P_photometric]:='Poor' else listview7.Items.item[c].subitems.Strings[P_photometric]:='✓';
-//        end;
+        if  starlistpack[c].height=0 then {not filled with data}
+        begin
+          plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});
+          memo2_message(inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.'+extra_message);
+          measure_magnitudes(starlistx); {analyse}
+          starlistpack[c].starlist:=starlistX;{store found stars in memory for finding outlier later}
+          starlistpack[c].width:=width2;
+          starlistpack[c].height:=height2;
+          starlistpack[c].flux_magn_offset:=flux_magn_offset;
+        end;
 
         setlength(img_temp,naxis3,width2,height2);{new size}
 
@@ -5817,22 +5802,18 @@ begin
           end;
         end;
 
-         {plot measured stars from procedure measure_magnitudes}
-     //    for i:=0 to  length(starlistpack[c].starlist[0])-2 do
-         for i:=0 to   listview7.items.count-1 do
+        for i:=0 to  length(starlistpack[c].starlist[0])-2 do
+        begin
+          size:=round(5*starlistpack[c].starlist[2,i]);{5*hfd}
+          x_new:=round(solution_vectorX[0]*(starlistpack[c].starlist[0,i])+solution_vectorX[1]*(starlistpack[c].starlist[1,i])+solution_vectorX[2]); {correction x:=aX+bY+c}
+          y_new:=round(solution_vectorY[0]*(starlistpack[c].starlist[0,i])+solution_vectorY[1]*(starlistpack[c].starlist[1,i])+solution_vectorY[2]); {correction y:=aX+bY+c}
 
-         if starlistpack[c].height<>0 then {contains data}
-         begin
-           size:=round(5*starlistpack[c].starlist[2,i]);{5*hfd}
-           x_new:=round(solution_vectorX[0]*(starlistpack[c].starlist[0,i])+solution_vectorX[1]*(starlistpack[c].starlist[1,i])+solution_vectorX[2]); {correction x:=aX+bY+c}
-           y_new:=round(solution_vectorY[0]*(starlistpack[c].starlist[0,i])+solution_vectorY[1]*(starlistpack[c].starlist[1,i])+solution_vectorY[2]); {correction y:=aX+bY+c}
+          if flipvertical=false then  starY:=(height2-y_new) else starY:=(y_new);
+          if Fliphorizontal     then starX:=(width2-x_new)  else starX:=(x_new);
 
-           if flipvertical=false then  starY:=(height2-y_new) else starY:=(y_new);
-           if Fliphorizontal     then starX:=(width2-x_new)  else starX:=(x_new);
-
-           mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-           magn:=flux_magn_offset-ln(starlistpack[c].starlist[3,i]{flux})*2.511886432/ln(10);
-           mainwindow.image1.Canvas.textout(starX+size,starY,floattostrf(magn*10, ffgeneral, 3,0));{add magnitude as text}
+          mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+          magn:=starlistpack[c].flux_magn_offset-ln(starlistpack[c].starlist[3,i]{flux})*2.511886432/ln(10);
+          mainwindow.image1.Canvas.textout(starX+size,starY,floattostrf(magn*10, ffgeneral, 3,0));{add magnitude as text}
         end;{measure marked stars}
 
 
@@ -5866,7 +5847,7 @@ begin
     begin
       setlength(starV,countV);
       mad_median(starV,madV,medianV);{calculate mad and median without modifying the data}
-      memo2_message('Var star, median:'+floattostrf(medianV, ffgeneral, 4,4)+', σ: '+floattostrf(1.0*1.4826*madCK  {1.0*sigma}, ffgeneral, 4,4));
+      memo2_message('Var star, median:'+floattostrf(medianV, ffgeneral, 4,4)+', σ: '+floattostrf(1.0*1.4826*madV  {1.0*sigma}, ffgeneral, 4,4));
     end
     else
     madV:=0;
@@ -5896,7 +5877,6 @@ begin
   outliers:=nil;
   starCK:=nil;
   starC:=nil;
-
 
   Screen.Cursor :=Save_Cursor;{back to normal }
 end;
