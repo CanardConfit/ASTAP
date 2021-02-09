@@ -349,42 +349,6 @@ object mainwindow: Tmainwindow
       ShowHint = True
       Visible = False
     end
-    object StaticText1: TStaticText
-      Left = 62
-      Height = 31
-      Top = 104
-      Width = 31
-      AutoSize = True
-      Caption = 'Var'
-      Color = clNone
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clYellow
-      Font.Height = -21
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
-      ParentFont = False
-      ParentColor = False
-      TabOrder = 0
-      Visible = False
-    end
-    object StaticText2: TStaticText
-      Left = 62
-      Height = 31
-      Top = 136
-      Width = 25
-      AutoSize = True
-      Caption = 'CK'
-      Color = clNone
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clYellow
-      Font.Height = -21
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
-      ParentFont = False
-      ParentColor = False
-      TabOrder = 1
-      Visible = False
-    end
     object Shape_alignment_marker3: TShape
       Left = 30
       Height = 11
@@ -400,22 +364,49 @@ object mainwindow: Tmainwindow
       ShowHint = True
       Visible = False
     end
-    object StaticText3: TStaticText
+    object LabelVar1: TLabel
       Left = 62
-      Height = 31
-      Top = 164
-      Width = 13
-      AutoSize = True
-      Caption = 'C'
-      Color = clNone
+      Height = 30
+      Top = 104
+      Width = 29
+      Caption = 'Var'
       Font.CharSet = ANSI_CHARSET
       Font.Color = clYellow
       Font.Height = -21
       Font.Pitch = fpVariable
       Font.Quality = fqDraft
-      ParentFont = False
       ParentColor = False
-      TabOrder = 2
+      ParentFont = False
+      Visible = False
+    end
+    object LabelCK1: TLabel
+      Left = 62
+      Height = 30
+      Top = 136
+      Width = 25
+      Caption = 'CK'
+      Font.CharSet = ANSI_CHARSET
+      Font.Color = clYellow
+      Font.Height = -21
+      Font.Pitch = fpVariable
+      Font.Quality = fqDraft
+      ParentColor = False
+      ParentFont = False
+      Visible = False
+    end
+    object LabelC1: TLabel
+      Left = 62
+      Height = 30
+      Top = 168
+      Width = 13
+      Caption = 'C'
+      Font.CharSet = ANSI_CHARSET
+      Font.Color = clYellow
+      Font.Height = -21
+      Font.Pitch = fpVariable
+      Font.Quality = fqDraft
+      ParentColor = False
+      ParentFont = False
       Visible = False
     end
   end
@@ -1154,7 +1145,6 @@ object mainwindow: Tmainwindow
         object split_osc1: TMenuItem
           Caption = 'Extract one Bayer matrix pixel position from raw OSC images'
           Hint = 'This will extract one of the the Bayer 2x2 matrix pixels representing red, green, green and blue and write to seperate files. If your image Ha with your OSC, one position will contain the red data only.'
-          OnClick = split_osc1Click
           object extract_pixel_11: TMenuItem
             Caption = 'Bayer matrix pixel 11'
             Hint = 'Pixels with position 11 in the Bayer matrix are extracted from the selected files.'

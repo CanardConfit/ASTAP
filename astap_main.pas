@@ -61,6 +61,9 @@ type
     error_label1: TLabel;
     FontDialog1: TFontDialog;
     image_north_arrow1: TImage;
+    LabelC1: TLabel;
+    LabelVar1: TLabel;
+    LabelCK1: TLabel;
     Memo1: TMemo;
     Memo3: TMemo;
     menucopy2: TMenuItem;
@@ -125,9 +128,6 @@ type
     selectfont1: TMenuItem;
     popupmenu_frame1: TPopupMenu;
     shape_marker4: TShape;
-    StaticText1: TStaticText;
-    StaticText2: TStaticText;
-    StaticText3: TStaticText;
     Stretchdrawmenu1: TMenuItem;
     stretch_draw_fits1: TMenuItem;
     show_statistics1: TMenuItem;
@@ -386,7 +386,6 @@ type
       MousePos: TPoint; var Handled: Boolean);
     procedure show_statistics1Click(Sender: TObject);
     procedure SimpleIPCServer1MessageQueued(Sender: TObject);
-    procedure split_osc1Click(Sender: TObject);
     procedure StatusBar1MouseEnter(Sender: TObject);
     procedure stretch_draw_fits1Click(Sender: TObject);
     procedure UpDown1Click(Sender: TObject; Button: TUDBtnType);
@@ -4236,13 +4235,13 @@ begin
      {else keep as it is}
   end;
   if tshape(shape)=tshape(mainwindow.shape_alignment_marker1) then
-    begin mainwindow.statictext1.left:=ll+ww; mainwindow.statictext1.top:=tt+hh; mainwindow.statictext1.font.size:=max(hh div 4,14);  mainwindow.statictext1.visible:=true;end
+    begin mainwindow.labelVar1.left:=ll+ww; mainwindow.labelVar1.top:=tt+hh; mainwindow.labelVar1.font.size:=max(hh div 4,14);  mainwindow.labelVar1.visible:=true;end
   else
   if tshape(shape)=tshape(mainwindow.shape_alignment_marker2) then
-    begin mainwindow.statictext2.left:=ll+ww; mainwindow.statictext2.top:=tt+hh; mainwindow.statictext2.font.size:=max(hh div 4,14); mainwindow.statictext2.visible:=true;end
+    begin mainwindow.labelCK1.left:=ll+ww; mainwindow.labelCK1.top:=tt+hh; mainwindow.labelCK1.font.size:=max(hh div 4,14); mainwindow.labelCK1.visible:=true;end
   else
   if tshape(shape)=tshape(mainwindow.shape_alignment_marker3) then
-    begin mainwindow.statictext3.left:=ll+ww; mainwindow.statictext3.top:=tt+hh; mainwindow.statictext3.font.size:=max(hh div 4,14); mainwindow.statictext3.visible:=true;end;
+    begin mainwindow.labelC1.left:=ll+ww; mainwindow.labelC1.top:=tt+hh; mainwindow.labelC1.font.size:=max(hh div 4,14); mainwindow.labelC1.visible:=true;end;
 
 end;
 
@@ -6081,9 +6080,9 @@ begin
     mainwindow.shape_alignment_marker1.visible:=false; {hide shape if stacked image is plotted}
     mainwindow.shape_alignment_marker2.visible:=false; {hide shape if stacked image is plotted}
     mainwindow.shape_alignment_marker3.visible:=false; {hide shape if stacked image is plotted}
-    mainwindow.statictext1.visible:=false;
-    mainwindow.statictext2.visible:=false;
-    mainwindow.statictext3.visible:=false;
+    mainwindow.labelVar1.visible:=false;
+    mainwindow.labelCK1.visible:=false;
+    mainwindow.labelC1.visible:=false;
   end;
 
   cblack:=mainwindow.minimum1.position;
@@ -9109,11 +9108,6 @@ begin
   {$endif}
 end;
 
-procedure Tmainwindow.split_osc1Click(Sender: TObject);
-begin
-
-end;
-
 
 procedure Tmainwindow.StatusBar1MouseEnter(Sender: TObject);
 begin
@@ -9455,7 +9449,6 @@ begin
   list.StrictDelimiter:=true;
 
   mainwindow.image1.Canvas.Pen.Color:= annotation_color;{clyellow}
-
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   mainwindow.image1.Canvas.font.color:=annotation_color;
 
@@ -11938,9 +11931,9 @@ begin
     mainwindow.shape_alignment_marker1.visible:=false;
     mainwindow.shape_alignment_marker2.visible:=false;
     mainwindow.shape_alignment_marker3.visible:=false;
-    mainwindow.statictext1.visible:=false;
-    mainwindow.statictext2.visible:=false;
-    mainwindow.statictext3.visible:=false;
+    mainwindow.labelVar1.visible:=false;
+    mainwindow.labelCK1.visible:=false;
+    mainwindow.labelC1.visible:=false;
   end;
   {end manual alignment}
 

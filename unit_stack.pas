@@ -8216,9 +8216,9 @@ begin
   mainwindow.shape_alignment_marker1.visible:=false;{remove shape for manual alignment}
   mainwindow.shape_alignment_marker2.visible:=false;{remove shape for manual alignment}
   mainwindow.shape_alignment_marker3.visible:=false;{remove shape for manual alignment}
-  mainwindow.statictext1.visible:=false;
-  mainwindow.statictext2.visible:=false;
-  mainwindow.statictext3.visible:=false;
+  mainwindow.labelVar1.visible:=false;
+  mainwindow.labelCK1.visible:=false;
+  mainwindow.labelC1.visible:=false;
 
 
   img_temp:=nil;{remove used memory}
