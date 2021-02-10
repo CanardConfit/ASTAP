@@ -326,7 +326,6 @@ type
     procedure sqm1Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
     procedure northeast1Click(Sender: TObject);
-    procedure Panel1Click(Sender: TObject);
     procedure range1Change(Sender: TObject);
     procedure remove_atmouse1Click(Sender: TObject);
     procedure gradient_removal1Click(Sender: TObject);
@@ -3100,7 +3099,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.491, '+about_message4+', dated 2021-2-9';
+  #13+#10+'ASTAP version ß0.9.492, '+about_message4+', dated 2021-2-10';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6873,6 +6872,8 @@ begin
 
     obscode:=initstring.Values['obscode']; {photometry}
     filter_type:=initstring.Values['filter'];
+    delim_pos:=get_int2(0,'delim_pos');
+
 
     stackmenu1.listview1.Items.BeginUpdate;
     c:=0;
@@ -7186,6 +7187,7 @@ begin
 
     initstring.Values['obscode']:=obscode;
     initstring.Values['filter']:=filter_type;
+    initstring.Values['delim_pos']:=inttostr(delim_pos);
 
 
     {### save listview values ###}
@@ -8464,11 +8466,6 @@ begin
   end
   else
     plot_fits(mainwindow.image1,false,true); {clear indiicator}
-end;
-
-procedure Tmainwindow.Panel1Click(Sender: TObject);
-begin
-
 end;
 
 

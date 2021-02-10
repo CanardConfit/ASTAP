@@ -4344,10 +4344,10 @@ begin
 end;
 
 procedure Tstackmenu1.aavso_button1Click(Sender: TObject);
-begin
-  if ((listview7.Items.item[listview7.items.count-1].subitems.Strings[P_magn1]='') or (listview7.Items.item[0].subitems.Strings[P_magn1]='')) then {requires analyse}
-        stackmenu1.photometry_button1Click(nil);
 
+begin
+ if listview7.Items.item[0].subitems.Strings[P_magn1]='' then {requires analyse}
+        stackmenu1.photometry_button1Click(nil);
   form_aavso1:=Tform_aavso1.Create(self); {in project option not loaded automatic}
   form_aavso1.ShowModal;
   form_aavso1.release;
@@ -5614,7 +5614,7 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
 
- if listview7.Items.item[listview7.items.count-1].subitems.Strings[B_exposure]='' {exposure} then
+  if listview7.Items.item[listview7.items.count-1].subitems.Strings[B_exposure]='' {exposure} then
     stackmenu1.analysephotometry1Click(nil);
   application.processmessages;{show result}
 
@@ -5719,13 +5719,18 @@ begin
 
         if  starlistpack[c].height=0 then {not filled with data}
         begin
-          plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});
+          plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion}); {get flux_magn_offset}
           memo2_message(inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.'+extra_message);
-          measure_magnitudes(starlistx); {analyse}
-          starlistpack[c].starlist:=starlistX;{store found stars in memory for finding outlier later}
-          starlistpack[c].width:=width2;
-          starlistpack[c].height:=height2;
-          starlistpack[c].flux_magn_offset:=flux_magn_offset;
+          if flux_magn_offset<>0 then
+          begin
+            measure_magnitudes(starlistx); {analyse}
+            starlistpack[c].starlist:=starlistX;{store found stars in memory for finding outlier later}
+            starlistpack[c].width:=width2;
+            starlistpack[c].height:=height2;
+            starlistpack[c].flux_magn_offset:=flux_magn_offset;
+          end
+          else
+          starlistpack[c].height:=0; {mark as not valid measurement}
         end;
 
         setlength(img_temp,naxis3,width2,height2);{new size}
@@ -5769,39 +5774,42 @@ begin
         listview7.Items.item[c].subitems.Strings[P_magn3]:=''; {MAGN, always blank}
 
         {measure the three stars selected by the mouse}
-        if mainwindow.shape_alignment_marker1.visible then
+        if flux_magn_offset<>0 then {valid flux calibration}
         begin
-          astr:=measure_star(shape_fitsX,shape_fitsY);
-          listview7.Items.item[c].subitems.Strings[P_magn1]:=astr;
-          listview7.Items.item[c].subitems.Strings[P_snr]:=inttostr(round(snr));
-          if astr<>'' then {star dectected}
+          if mainwindow.shape_alignment_marker1.visible then
           begin
-            starV[countV]:=strtofloat2(astr);
-            inc(countV);
-          end;
+            astr:=measure_star(shape_fitsX,shape_fitsY);
+            listview7.Items.item[c].subitems.Strings[P_magn1]:=astr;
+            listview7.Items.item[c].subitems.Strings[P_snr]:=inttostr(round(snr));
+            if astr<>'' then {star dectected}
+            begin
+              starV[countV]:=strtofloat2(astr);
+              inc(countV);
+            end;
 
-        end;
-        if mainwindow.shape_alignment_marker2.visible then
-        begin
-          astr:=measure_star(shape_fitsX2,shape_fitsY2);
-          listview7.Items.item[c].subitems.Strings[P_magn2]:=astr;
-          if astr<>'' then {star dectected}
+          end;
+          if mainwindow.shape_alignment_marker2.visible then
           begin
-            starCK[countCK]:=strtofloat2(astr);
-            inc(countCK);
+            astr:=measure_star(shape_fitsX2,shape_fitsY2);
+            listview7.Items.item[c].subitems.Strings[P_magn2]:=astr;
+            if astr<>'' then {star dectected}
+            begin
+              starCK[countCK]:=strtofloat2(astr);
+              inc(countCK);
+            end;
+          end;
+          if mainwindow.shape_alignment_marker3.visible then
+          begin
+            astr:=measure_star(shape_fitsX3,shape_fitsY3);
+            listview7.Items.item[c].subitems.Strings[P_magn3]:=astr;
+            if astr<>'' then {star detected}
+            begin
+              starC[countC]:=strtofloat2(astr);
+              inc(countC);
+            end;
           end;
         end;
-        if mainwindow.shape_alignment_marker3.visible then
-        begin
-          astr:=measure_star(shape_fitsX3,shape_fitsY3);
-          listview7.Items.item[c].subitems.Strings[P_magn3]:=astr;
-          if astr<>'' then {star detected}
-          begin
-            starC[countC]:=strtofloat2(astr);
-            inc(countC);
-          end;
-        end;
-
+        if starlistpack[c].height<>0 then {valid measurement}
         for i:=0 to  length(starlistpack[c].starlist[0])-2 do
         begin
           size:=round(5*starlistpack[c].starlist[2,i]);{5*hfd}
@@ -5840,6 +5848,7 @@ begin
     if stepnr=1 then {do it once after one cycle finished}
     begin
       find_star_outliers(strtofloat2(mark_outliers_upto1.text), outliers);
+      fits_file:=true;{Previous instruction will set fits:=false while it only loads header. Set back to tru to allow to set the three measure markers. The displayed image array and header will be compatible}
     end;
 
     {do statistics}
