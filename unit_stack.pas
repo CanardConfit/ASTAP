@@ -5571,12 +5571,12 @@ end;
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   Save_Cursor          : TCursor;
-  magn,hfd1,star_fwhm,snr,flux,xc,yc,mm,madV,madCK,madC,medianV,medianCK,medianC  : double;
-  saturation_level                                                           : single;
-  c,i,x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr,countV, countCK,countC, dum: integer;
+  magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree  : double;
+  saturation_level                                                                           : single;
+  c,i,x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr,countVar, countCheck,countThree : integer;
   flipvertical,fliphorizontal,init,refresh_solutions  :boolean;
   starlistx : star_list;
-  starV, starCK,starC : array of double;
+  starVar, starCheck,starThree : array of double;
   outliers : array of array of double;
   extra_message,astr  : string;
 
@@ -5597,7 +5597,7 @@ var
           (img_loaded[0,round(xc+1),round(yc-1)]<saturation_level) and
           (img_loaded[0,round(xc+1),round(yc+1)]<saturation_level)  ) then {not saturated star}
       begin
-        magn:=flux_magn_offset-ln(flux)*2.511886432/ln(10);
+        magn:=starlistpack[c].flux_magn_offset - ln(flux)*2.511886432/ln(10);
         result:=floattostrf(magn, ffFixed, 5,3); {write measured magnitude to list}
       end
       else result:='Saturated';
@@ -5678,14 +5678,14 @@ begin
   setlength(starlistpack ,listview7.items.count);{to store found stars for each image. Used for finding outliers}
   for c:=0 to listview7.items.count-1 do starlistpack[c].height:=0;{use as marker for filled}
 
-  memo2_message('Click on variabl, CK and C stars(pink marker) to record magnitudes in the photometry list.');
+  memo2_message('Click on variabl, Check and 3 stars(pink marker) to record magnitudes in the photometry list.');
   repeat
-    setlength(starV,listview7.items.count);
-    setlength(starCK,listview7.items.count);{number of stars could fluctuate so set maximum space each loop}
-    setlength(starC,listview7.items.count);
-    countV:=0;
-    countck:=0;
-    countc:=0;
+    setlength(starVar,listview7.items.count);
+    setlength(starCheck,listview7.items.count);{number of stars could fluctuate so set maximum space each loop}
+    setlength(starThree,listview7.items.count);
+    countVar:=0;
+    countCheck:=0;
+    countThree:=0;
     stepnr:=stepnr+1; {first step is nr 1}
     for c:=0 to listview7.items.count-1 do
     begin
@@ -5774,7 +5774,7 @@ begin
         listview7.Items.item[c].subitems.Strings[P_magn3]:=''; {MAGN, always blank}
 
         {measure the three stars selected by the mouse}
-        if flux_magn_offset<>0 then {valid flux calibration}
+        if starlistpack[c].flux_magn_offset<>0 then {valid flux calibration}
         begin
           if mainwindow.shape_alignment_marker1.visible then
           begin
@@ -5783,8 +5783,8 @@ begin
             listview7.Items.item[c].subitems.Strings[P_snr]:=inttostr(round(snr));
             if astr<>'' then {star dectected}
             begin
-              starV[countV]:=strtofloat2(astr);
-              inc(countV);
+              starVar[countVar]:=strtofloat2(astr);
+              inc(countVar);
             end;
 
           end;
@@ -5794,8 +5794,8 @@ begin
             listview7.Items.item[c].subitems.Strings[P_magn2]:=astr;
             if astr<>'' then {star dectected}
             begin
-              starCK[countCK]:=strtofloat2(astr);
-              inc(countCK);
+              starCheck[countCheck]:=strtofloat2(astr);
+              inc(countCheck);
             end;
           end;
           if mainwindow.shape_alignment_marker3.visible then
@@ -5804,8 +5804,8 @@ begin
             listview7.Items.item[c].subitems.Strings[P_magn3]:=astr;
             if astr<>'' then {star detected}
             begin
-              starC[countC]:=strtofloat2(astr);
-              inc(countC);
+              starThree[countThree]:=strtofloat2(astr);
+              inc(countThree);
             end;
           end;
         end;
@@ -5852,31 +5852,31 @@ begin
     end;
 
     {do statistics}
-    if countV>=4 then
+    if countVar>=4 then
     begin
-      setlength(starV,countV);
-      mad_median(starV,madV,medianV);{calculate mad and median without modifying the data}
-      memo2_message('Var star, median:'+floattostrf(medianV, ffgeneral, 4,4)+', σ: '+floattostrf(1.0*1.4826*madV  {1.0*sigma}, ffgeneral, 4,4));
+      setlength(starVar,countVar);
+      mad_median(starVar,madVar,medianVar);{calculate mad and median without modifying the data}
+      memo2_message('Var star, median:'+floattostrf(medianVar, ffgeneral, 4,4)+', σ: '+floattostrf(1.0*1.4826*madVar  {1.0*sigma}, ffgeneral, 4,4));
     end
     else
-    madV:=0;
+    madVar:=0;
 
-    if countCK>=4 then
+    if countCheck>=4 then
     begin
-      setlength(starCK,countCK);
-      mad_median(starCK,madCK,medianCK);{calculate mad and median without modifying the data}
-      memo2_message('CK star, median:'+floattostrf(medianCK, ffgeneral, 4,4)+', σ: '+floattostrf(1.0*1.4826*madCK  {1.0*sigma}, ffgeneral, 4,4));
+      setlength(starCheck,countCheck);
+      mad_median(starCheck,madCheck,medianCheck);{calculate mad and median without modifying the data}
+      memo2_message('Check star, median:'+floattostrf(medianCheck, ffgeneral, 4,4)+', σ: '+floattostrf(1.0*1.4826*madCheck  {1.0*sigma}, ffgeneral, 4,4));
     end
     else
-    madCK:=0;
-    if countC>4 then
+    madCheck:=0;
+    if countThree>4 then
     begin
-      setlength(starC,countC);
-      mad_median(starC,madC,medianC);{calculate mad and median without modifying the data}
-      memo2_message('C star, median:'+floattostrf(medianC, ffgeneral, 4,4)+', σ: '+floattostrf(1.0*1.4826*madC  {1.0*sigma}, ffgeneral, 4,4));
+      setlength(starThree,countThree);
+      mad_median(starThree,madThree,medianThree);{calculate mad and median without modifying the data}
+      memo2_message('3 star, median:'+floattostrf(medianThree, ffgeneral, 4,4)+', σ: '+floattostrf(1.0*1.4826*madThree  {1.0*sigma}, ffgeneral, 4,4));
     end
-    else madC:=0;
-    photometry_error:=max(madC,madCK)*1.4826;{mad to standard deviation}
+    else madThree:=0;
+    photometry_error:=max(madThree,madCheck)*1.4826;{mad to standard deviation}
 
   until ((esc_pressed) or (sender<>photometry_repeat1 {single run}));
 
@@ -5884,8 +5884,8 @@ begin
   starlistx:=nil;{free memory}
   starlistpack:=nil; {release memory}
   outliers:=nil;
-  starCK:=nil;
-  starC:=nil;
+  starCheck:=nil;
+  starThree:=nil;
 
   Screen.Cursor :=Save_Cursor;{back to normal }
 end;
@@ -8226,8 +8226,8 @@ begin
   mainwindow.shape_alignment_marker2.visible:=false;{remove shape for manual alignment}
   mainwindow.shape_alignment_marker3.visible:=false;{remove shape for manual alignment}
   mainwindow.labelVar1.visible:=false;
-  mainwindow.labelCK1.visible:=false;
-  mainwindow.labelC1.visible:=false;
+  mainwindow.labelCheck1.visible:=false;
+  mainwindow.labelThree1.visible:=false;
 
 
   img_temp:=nil;{remove used memory}

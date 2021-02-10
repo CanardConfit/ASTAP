@@ -3333,20 +3333,21 @@ object stackmenu1: Tstackmenu1
           end        
           item
             Alignment = taRightJustify
-            Caption = 'SNR'
-            MinWidth = 50
+            Caption = 'SNR Var'
+            MinWidth = 80
+            Width = 80
           end        
           item
             Alignment = taRightJustify
-            Caption = 'Magn. CK'
+            Caption = 'Magn. Check'
             MinWidth = 100
             Width = 100
           end        
           item
             Alignment = taRightJustify
-            Caption = 'Magn. C'
-            MinWidth = 100
-            Width = 100
+            Caption = 'Magn. 3'
+            MinWidth = 80
+            Width = 80
           end        
           item
             Alignment = taRightJustify

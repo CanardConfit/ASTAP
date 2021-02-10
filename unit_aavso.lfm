@@ -1,10 +1,10 @@
 object form_aavso1: Tform_aavso1
-  Left = 250
-  Height = 318
-  Top = 119
+  Left = 301
+  Height = 397
+  Top = 190
   Width = 404
   Caption = 'AAVSO report'
-  ClientHeight = 318
+  ClientHeight = 397
   ClientWidth = 404
   OnClose = FormClose
   OnCreate = FormCreate
@@ -13,12 +13,15 @@ object form_aavso1: Tform_aavso1
   object obscode1: TEdit
     Left = 16
     Height = 23
+    Hint = 'The official AAVSO Observer Code for the observer which was previously assigned by the AAVSO.'
     Top = 8
     Width = 208
+    ParentShowHint = False
+    ShowHint = True
     TabOrder = 0
   end
   object Label1: TLabel
-    Left = 248
+    Left = 243
     Height = 15
     Top = 8
     Width = 53
@@ -28,23 +31,26 @@ object form_aavso1: Tform_aavso1
   object name_check1: TEdit
     Left = 16
     Height = 23
-    Top = 104
+    Hint = ' Check star name or label such as the AUI (much preferred) '
+    Top = 152
     Width = 208
+    ParentShowHint = False
+    ShowHint = True
     TabOrder = 1
   end
   object Label3: TLabel
-    Left = 248
+    Left = 243
     Height = 15
-    Top = 104
-    Width = 114
-    Caption = 'Name check star (CK)'
+    Top = 152
+    Width = 88
+    Caption = 'Name check star'
     ParentColor = False
   end
   object Button1: TButton
     Left = 16
     Height = 25
-    Hint = 'Copy the report to the clipboard. Paste it to a text editor, save it and upload it to the AAVSO database.'
-    Top = 280
+    Hint = 'Copies the report to the clipboard. Paste it into a text editor, save it and upload it to the AAVSO WebObs.'
+    Top = 328
     Width = 372
     Caption = 'Generate report and copy to clipboard'
     OnClick = Button1Click
@@ -53,7 +59,8 @@ object form_aavso1: Tform_aavso1
   object Filter1: TComboBox
     Left = 16
     Height = 23
-    Top = 152
+    Hint = 'The filter used for the observation.'
+    Top = 200
     Width = 208
     ItemHeight = 15
     ItemIndex = 0
@@ -62,29 +69,23 @@ object form_aavso1: Tform_aavso1
       'TG  (green filter or green of tricolour)'
       'V    (Johnson-V)'
     )
+    OnChange = Filter1Change
     ParentFont = False
     ParentShowHint = False
+    ShowHint = True
     TabOrder = 3
     Text = 'CV  (unfiltered)'
   end
   object Label6: TLabel
-    Left = 247
+    Left = 242
     Height = 15
-    Top = 152
+    Top = 200
     Width = 54
     Caption = 'Filter used'
     ParentColor = False
   end
-  object Label7: TLabel
-    Left = 243
-    Height = 15
-    Top = 168
-    Width = 119
-    Caption = '(Use the V17 database)'
-    ParentColor = False
-  end
   object Label8: TLabel
-    Left = 248
+    Left = 243
     Height = 15
     Top = 56
     Width = 76
@@ -94,14 +95,17 @@ object form_aavso1: Tform_aavso1
   object name_variable1: TEdit
     Left = 16
     Height = 23
+    Hint = ': The star''s identifier. It can be the AAVSO Designation, the AAVSO Name, or the AAVSO Unique Identifier, but NOT more than one of these. Limit: 30 characters.'
     Top = 56
     Width = 208
+    ParentShowHint = False
+    ShowHint = True
     TabOrder = 4
   end
   object Label2: TLabel
     Left = 16
     Height = 15
-    Top = 248
+    Top = 296
     Width = 365
     Caption = 'For 1 to 4 images the MERR will be calculated by 2/SNR else by StDev.'
     ParentColor = False
@@ -109,7 +113,8 @@ object form_aavso1: Tform_aavso1
   object delimiter1: TComboBox
     Left = 16
     Height = 23
-    Top = 200
+    Hint = 'The delimiter used to separate fields in the report. Any will do. '
+    Top = 248
     Width = 88
     ItemHeight = 15
     ItemIndex = 0
@@ -126,11 +131,32 @@ object form_aavso1: Tform_aavso1
     Text = 'tab'
   end
   object Label4: TLabel
-    Left = 248
+    Left = 243
     Height = 15
-    Top = 202
+    Top = 250
     Width = 48
     Caption = 'Delimiter'
+    ParentColor = False
+  end
+  object Comparison1: TEdit
+    Left = 16
+    Height = 23
+    Hint = 'Fixed. Comparison stars. Will use all available Gaia stars. Select V17.  '
+    Top = 104
+    Width = 208
+    Enabled = False
+    ParentShowHint = False
+    ReadOnly = True
+    ShowHint = True
+    TabOrder = 6
+    Text = 'Gaia'
+  end
+  object Label5: TLabel
+    Left = 243
+    Height = 15
+    Top = 104
+    Width = 143
+    Caption = 'Comparison stars (use V17)'
     ParentColor = False
   end
 end

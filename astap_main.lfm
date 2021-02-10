@@ -203,7 +203,7 @@ object mainwindow: Tmainwindow
     Left = 0
     Height = 557
     Hint = 'hint'
-    Top = 168
+    Top = 176
     Width = 1324
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
@@ -378,12 +378,12 @@ object mainwindow: Tmainwindow
       ParentFont = False
       Visible = False
     end
-    object LabelCK1: TLabel
+    object LabelCheck1: TLabel
       Left = 62
       Height = 30
       Top = 136
-      Width = 25
-      Caption = 'CK'
+      Width = 56
+      Caption = 'Check'
       Font.CharSet = ANSI_CHARSET
       Font.Color = clYellow
       Font.Height = -21
@@ -393,12 +393,12 @@ object mainwindow: Tmainwindow
       ParentFont = False
       Visible = False
     end
-    object LabelC1: TLabel
+    object LabelThree1: TLabel
       Left = 62
       Height = 30
       Top = 168
-      Width = 13
-      Caption = 'C'
+      Width = 11
+      Caption = '3'
       Font.CharSet = ANSI_CHARSET
       Font.Color = clYellow
       Font.Height = -21

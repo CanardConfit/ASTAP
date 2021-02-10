@@ -14,11 +14,12 @@ type
   Tform_aavso1 = class(TForm)
     Button1: TButton;
     delimiter1: TComboBox;
+    Comparison1: TEdit;
     Label2: TLabel;
     Label4: TLabel;
+    Label5: TLabel;
     name_variable1: TEdit;
     Label6: TLabel;
-    Label7: TLabel;
     Label8: TLabel;
     Label3: TLabel;
     obscode1: TEdit;
@@ -26,6 +27,7 @@ type
     name_check1: TEdit;
     Filter1: TComboBox;
     procedure Button1Click(Sender: TObject);
+    procedure Filter1Change(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
@@ -134,14 +136,15 @@ begin
                      'Ensemble of Gaia eDR3 stars '+star_database1.text+'. '+err_message+#13+#10;
      end;
    end;
-
-   //  aavso_report:=StringReplace(listview7.Items.item[c].subitems.Strings[P_magn1],',','.',[rfReplaceAll]);{replace all commas to dot}
-   //  aavso_report:=StringReplace(aavso_report,',','.',[rfReplaceAll]);{replace all commas to dot}
-   //  aavso_report:=StringReplace(aavso_report,',','.',[rfReplaceAll]);{replace all commas to dot}
-   //  aavso_report:=StringReplace(aavso_report,',','.',[rfReplaceAll]);{replace all commas to dot}
   form_aavso1.close;   {transfer variables. Normally this form is not loaded}
   mainwindow.setfocus;
 end;
+
+procedure Tform_aavso1.Filter1Change(Sender: TObject);
+begin
+
+end;
+
 
 procedure Tform_aavso1.FormClose(Sender: TObject; var CloseAction: TCloseAction );
 begin
@@ -162,6 +165,7 @@ begin
   name_check1.text:=name_check;
   filter1.text:=filter_type;
   delimiter1.itemindex:=delim_pos;
+  Comparison1.Text:=stackmenu1.star_database1.text;
 end;
 
 end.

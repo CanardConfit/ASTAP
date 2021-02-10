@@ -61,9 +61,9 @@ type
     error_label1: TLabel;
     FontDialog1: TFontDialog;
     image_north_arrow1: TImage;
-    LabelC1: TLabel;
+    LabelThree1: TLabel;
     LabelVar1: TLabel;
-    LabelCK1: TLabel;
+    LabelCheck1: TLabel;
     Memo1: TMemo;
     Memo3: TMemo;
     menucopy2: TMenuItem;
@@ -3099,7 +3099,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.492, '+about_message4+', dated 2021-2-10';
+  #13+#10+'ASTAP version ß0.9.493, '+about_message4+', dated 2021-2-10';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4237,10 +4237,10 @@ begin
     begin mainwindow.labelVar1.left:=ll+ww; mainwindow.labelVar1.top:=tt+hh; mainwindow.labelVar1.font.size:=max(hh div 4,14);  mainwindow.labelVar1.visible:=true;end
   else
   if tshape(shape)=tshape(mainwindow.shape_alignment_marker2) then
-    begin mainwindow.labelCK1.left:=ll+ww; mainwindow.labelCK1.top:=tt+hh; mainwindow.labelCK1.font.size:=max(hh div 4,14); mainwindow.labelCK1.visible:=true;end
+    begin mainwindow.labelCheck1.left:=ll+ww; mainwindow.labelCheck1.top:=tt+hh; mainwindow.labelCheck1.font.size:=max(hh div 4,14); mainwindow.labelCheck1.visible:=true;end
   else
   if tshape(shape)=tshape(mainwindow.shape_alignment_marker3) then
-    begin mainwindow.labelC1.left:=ll+ww; mainwindow.labelC1.top:=tt+hh; mainwindow.labelC1.font.size:=max(hh div 4,14); mainwindow.labelC1.visible:=true;end;
+    begin mainwindow.labelThree1.left:=ll+ww; mainwindow.labelThree1.top:=tt+hh; mainwindow.labelThree1.font.size:=max(hh div 4,14); mainwindow.labelThree1.visible:=true;end;
 
 end;
 
@@ -6080,8 +6080,8 @@ begin
     mainwindow.shape_alignment_marker2.visible:=false; {hide shape if stacked image is plotted}
     mainwindow.shape_alignment_marker3.visible:=false; {hide shape if stacked image is plotted}
     mainwindow.labelVar1.visible:=false;
-    mainwindow.labelCK1.visible:=false;
-    mainwindow.labelC1.visible:=false;
+    mainwindow.labelCheck1.visible:=false;
+    mainwindow.labelThree1.visible:=false;
   end;
 
   cblack:=mainwindow.minimum1.position;
@@ -11929,8 +11929,8 @@ begin
     mainwindow.shape_alignment_marker2.visible:=false;
     mainwindow.shape_alignment_marker3.visible:=false;
     mainwindow.labelVar1.visible:=false;
-    mainwindow.labelCK1.visible:=false;
-    mainwindow.labelC1.visible:=false;
+    mainwindow.labelCheck1.visible:=false;
+    mainwindow.labelThree1.visible:=false;
   end;
   {end manual alignment}
 
