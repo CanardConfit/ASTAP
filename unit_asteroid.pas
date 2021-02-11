@@ -100,6 +100,7 @@ type
     OpenDialog1: TOpenDialog;
     showfullnames1: TCheckBox;
     add_subtitle1: TCheckBox;
+    font_follows_diameter1: TCheckBox;
     showmagnitude1: TCheckBox;
     max_magn_asteroids2: TUpDown;
     annotation_size2: TUpDown;
@@ -133,6 +134,7 @@ const
    maxmag_asteroid : string='17';
    mpcorb_path : string='MPCORB.DAT';
    cometels_path : string='CometEls.txt';
+   font_follows_diameter:boolean=false;
    showfullnames: boolean=true;
    showmagnitude: boolean=false;
    add_annotations: boolean=false;{annotation to the fits header}
@@ -1188,9 +1190,13 @@ begin
 
   mainwindow.image1.canvas.pen.color:=annotation_color;{color circel}
   mainwindow.image1.Canvas.font.color:=annotation_color;
-  //  mainwindow.image1.Canvas.font.size:=12;
-  mainwindow.image1.Canvas.font.size:= round(min(20,max(10,height2*20/4176)));
-
+  fontsize:=round(min(20,max(10,height2*20/4176)));
+  if form_asteroids1.font_follows_diameter1.checked then
+  begin
+    fontsize:=max(annotation_diameter,fontsize);
+    mainwindow.image1.Canvas.Pen.width := 1+annotation_diameter div 10;{thickness lines}
+  end;
+  mainwindow.image1.Canvas.font.size:=fontsize;
 
   if date_avg<>'' then
   begin
@@ -1262,9 +1268,8 @@ begin
     begin
       if add_date then
       begin
-       fontsize:=20;
-       image1.Canvas.font.size:=20;
-       image1.Canvas.textout(round(fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd)+'    Position[α,δ]:   '+ra1.text+'      '+dec1.text);{}
+        image1.Canvas.font.size:=fontsize;
+        image1.Canvas.textout(round(fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd)+'    Position[α,δ]:   '+ra1.text+'      '+dec1.text);{}
       end;
     end;
     if add_annot then plot_annotations(0,0,false);{plot annotation from the header}
@@ -1334,6 +1339,9 @@ begin
 
   annotation_color:=ColorBox1.selected;
   annotation_diameter:=form_asteroids1.annotation_size2.Position div 2;
+
+  font_follows_diameter:=font_follows_diameter1.checked;
+
 
   showfullnames:=form_asteroids1.showfullnames1.checked;
   showmagnitude:=form_asteroids1.showmagnitude1.checked;
@@ -1459,6 +1467,7 @@ begin
 
   ColorBox1.selected:=annotation_color;
   annotation_size2.position:=annotation_diameter*2;
+  font_follows_diameter1.checked:=font_follows_diameter;
 
 end;
 

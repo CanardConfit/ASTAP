@@ -1356,8 +1356,17 @@ begin
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
     if cdelt1*cdelt2>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;
 
-    mainwindow.image1.canvas.pen.color:=clyellow;
+    {$ifdef mswindows}
+    mainwindow.image1.Canvas.Font.Name :='Small Fonts';
+    {$endif}
+    {$ifdef linux}
+    mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
+    {$endif}
+    {$ifdef darwin} {MacOS}
+    mainwindow.image1.Canvas.Font.Name :='Helvetica';
+    {$endif}
 
+    mainwindow.image1.canvas.pen.color:=clyellow;
     mainwindow.image1.Canvas.brush.Style:=bsClear;
     mainwindow.image1.Canvas.font.color:=clyellow;
 
@@ -1406,7 +1415,7 @@ begin
 
           mainwindow.image1.Canvas.font.size:= round(min(20,max(8,len /2)));
 
-          if copy(naam2,1,1)='0' then  mainwindow.image1.Canvas.font.color:=cllime;{reference star}
+          if copy(naam2,1,1)='0' then  mainwindow.image1.Canvas.font.color:=cllime;{AAVSO reference star}
 
           {get text dimensions}
           th:=mainwindow.image1.Canvas.textheight(name);
@@ -1490,6 +1499,7 @@ begin
 
     Screen.Cursor:=Save_Cursor;
   end;
+
 end;{plot deep_sky}
 
 

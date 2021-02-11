@@ -1,10 +1,10 @@
 object form_asteroids1: Tform_asteroids1
   Left = 515
-  Height = 387
+  Height = 415
   Top = 236
   Width = 596
   Caption = 'Annotation of asteroids and comets'
-  ClientHeight = 387
+  ClientHeight = 415
   ClientWidth = 596
   KeyPreview = True
   OnKeyPress = FormKeyPress
@@ -15,7 +15,7 @@ object form_asteroids1: Tform_asteroids1
     Left = 192
     Height = 25
     Hint = 'Annotate asteroids'
-    Top = 352
+    Top = 384
     Width = 224
     Caption = 'Annotate asteroids && comets'
     OnClick = annotate_asteroids1Click
@@ -25,7 +25,7 @@ object form_asteroids1: Tform_asteroids1
     Left = 440
     Height = 25
     Hint = 'Cancel'
-    Top = 352
+    Top = 384
     Width = 75
     Caption = 'Cancel'
     OnClick = cancel_button1Click
@@ -36,7 +36,7 @@ object form_asteroids1: Tform_asteroids1
     Left = 541
     Height = 30
     Hint = 'Help asteroid annotation'
-    Top = 344
+    Top = 376
     Width = 9
     Caption = '?'
     Font.Color = clBlue
@@ -49,11 +49,11 @@ object form_asteroids1: Tform_asteroids1
   end
   object GroupBox1: TGroupBox
     Left = 8
-    Height = 224
+    Height = 256
     Top = 0
     Width = 582
     Caption = 'Database'
-    ClientHeight = 204
+    ClientHeight = 236
     ClientWidth = 578
     TabOrder = 2
     OnClick = GroupBox1Click
@@ -120,7 +120,7 @@ object form_asteroids1: Tform_asteroids1
     object up_to_magn1: TLabel
       Left = 16
       Height = 15
-      Top = 149
+      Top = 112
       Width = 160
       Alignment = taRightJustify
       Anchors = [akTop, akRight]
@@ -133,7 +133,7 @@ object form_asteroids1: Tform_asteroids1
       Left = 184
       Height = 23
       Hint = 'Specify here the limiting magnitude for extracting asteroids.'
-      Top = 149
+      Top = 112
       Width = 64
       MaxLength = 4
       ParentColor = True
@@ -145,7 +145,7 @@ object form_asteroids1: Tform_asteroids1
     object max_magn_asteroids2: TUpDown
       Left = 248
       Height = 23
-      Top = 149
+      Top = 112
       Width = 14
       Associate = max_magn_asteroids1
       Max = 25
@@ -156,12 +156,12 @@ object form_asteroids1: Tform_asteroids1
     object showfullnames1: TCheckBox
       Left = 312
       Height = 19
-      Top = 112
+      Top = 140
       Width = 107
       Caption = 'Show full names'
       Checked = True
       State = cbChecked
-      TabOrder = 8
+      TabOrder = 10
     end
     object ColorBox1: TColorBox
       Left = 312
@@ -176,21 +176,25 @@ object form_asteroids1: Tform_asteroids1
       Left = 312
       Height = 19
       Hint = 'Add to the bottom of the image date and position.'
-      Top = 160
+      Top = 188
       Width = 120
       Caption = 'Add image subtitle'
       Checked = True
+      ParentShowHint = False
+      ShowHint = True
       State = cbChecked
-      TabOrder = 10
+      TabOrder = 12
     end
     object add_annotations1: TCheckBox
       Left = 312
       Height = 19
       Hint = 'The asteroids will be marked by annotions in the header and preserved if saved. The annotations can be used later to manual stack the images later to visualise very faint asteroids.'
-      Top = 184
+      Top = 212
       Width = 219
       Caption = 'Add as annotations to the FITS header'
-      TabOrder = 11
+      ParentShowHint = False
+      ShowHint = True
+      TabOrder = 13
     end
     object file_to_add2: TButton
       Left = 100
@@ -226,10 +230,10 @@ object form_asteroids1: Tform_asteroids1
     object showmagnitude1: TCheckBox
       Left = 312
       Height = 19
-      Top = 136
+      Top = 164
       Width = 110
       Caption = 'Show magnitude'
-      TabOrder = 9
+      TabOrder = 11
     end
     object mpcorb_path1: TLabel
       Left = 312
@@ -269,14 +273,14 @@ object form_asteroids1: Tform_asteroids1
     object annotation_size1: TEdit
       Left = 424
       Height = 23
-      Hint = 'Annotation diameter. For diameter 20 or smaller, two lines will be used for annotation.  Comets annotations are five times larger'
+      Hint = 'Annotation diameter. For diameter 20 or smaller, two lines will be used for annotation.  Comets annotations are five times larger.  For negative values the font and line thickness will follow.'
       Top = 80
       Width = 48
       MaxLength = 4
       ParentColor = True
       ParentShowHint = False
       ShowHint = True
-      TabOrder = 12
+      TabOrder = 14
       Text = '40'
     end
     object annotation_size2: TUpDown
@@ -285,16 +289,28 @@ object form_asteroids1: Tform_asteroids1
       Top = 80
       Width = 14
       Associate = annotation_size1
+      Increment = 2
       Max = 500
-      Min = 2
+      Min = 0
       Position = 40
-      TabOrder = 13
+      TabOrder = 8
+    end
+    object font_follows_diameter1: TCheckBox
+      Left = 312
+      Height = 19
+      Hint = 'Font and line thickness follow annotation diameter.'
+      Top = 116
+      Width = 196
+      Caption = 'Font follows annotation diameter'
+      ParentShowHint = False
+      ShowHint = True
+      TabOrder = 9
     end
   end
   object GroupBox2: TGroupBox
     Left = 8
     Height = 122
-    Top = 224
+    Top = 256
     Width = 584
     Caption = 'Image data'
     ClientHeight = 102

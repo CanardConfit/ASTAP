@@ -3099,7 +3099,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.493, '+about_message4+', dated 2021-2-10';
+  #13+#10+'ASTAP version ß0.9.493b, '+about_message4+', dated 2021-2-11';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6853,6 +6853,8 @@ begin
 
     dum:=initstring.Values['maxcount'];if dum<>'' then maxcount_asteroid:=dum;{asteroids}
     dum:=initstring.Values['maxmag'];if dum<>'' then maxmag_asteroid:=dum;{asteroids}
+
+    font_follows_diameter:=get_boolean('font_follows',false);{asteroids}
     showfullnames:=get_boolean('showfullnames',true);{asteroids}
     showmagnitude:=get_boolean('showmagnitude',false);{asteroids}
     add_date:=get_boolean('add_date',true);{asteroids}
@@ -7169,6 +7171,8 @@ begin
 
     initstring.Values['maxcount']:=maxcount_asteroid;{asteroids}
     initstring.Values['maxmag']:=maxmag_asteroid;{asteroids}
+
+    initstring.Values['font_follows']:=BoolStr[font_follows_diameter];{asteroids}
     initstring.Values['showfullnames']:=BoolStr[showfullnames];{asteroids}
     initstring.Values['showmagnitude']:=BoolStr[showmagnitude];{asteroids}
     initstring.Values['add_date']:=BoolStr[add_date];{asteroids}
@@ -8445,6 +8449,7 @@ begin
     j2000_1.checked:=false;
   end;
 end;
+
 
 procedure Tmainwindow.galactic1Click(Sender: TObject);
 begin
@@ -11422,7 +11427,7 @@ begin
     if flipped then cdelt1:=-cdelt2 else cdelt1:=cdelt2;
 
     {find crota2}
-   {see meeus new formula 46.5, angel of moon limb}
+   {see meeus new formula 46.5, angle of moon limb}
     angle2:=arctan2(cos(dec2)*sin(ra2-ra0),sin(dec2)*cos(dec0) - cos(dec2)*sin(dec0)*cos(ra2-ra0)); {angle between line between the two stars and north}
     angle3:=arctan2(shape_marker2_fitsX- shape_marker1_fitsX,shape_marker2_fitsY- shape_marker1_fitsY); {angle between top and line between two reference pixels}
 

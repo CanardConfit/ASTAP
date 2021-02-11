@@ -212,7 +212,7 @@ object mainwindow: Tmainwindow
     Color = 2105376
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
-    Font.Height = -16
+    Font.Height = -12
     Font.Pitch = fpVariable
     Font.Quality = fqDraft
     ParentColor = False
@@ -1352,6 +1352,7 @@ object mainwindow: Tmainwindow
         Caption = 'Clean-up'
         Hint = 'Redraw image. Remove any markers except annotations. For removal annotations reload or remove annotations from FITS header.'
         ImageIndex = 25
+        ShortCut = 16471
         OnClick = clean_up1Click
       end
       object calibrate_photometry1: TMenuItem
