@@ -1135,7 +1135,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 420
-      ClientWidth = 1013
+      ClientWidth = 1861
       ImageIndex = 5
       ParentFont = False
       object Label3: TLabel

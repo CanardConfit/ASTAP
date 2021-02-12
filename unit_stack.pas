@@ -2998,7 +2998,7 @@ end;
 procedure Tstackmenu1.listview1DblClick(Sender: TObject);
 begin
   listview_view(TListView(Sender));
-  if checkBox_annotate1.checked then
+  if ((checkBox_annotate1.checked) and (pagecontrol1.tabindex=8 {photometry} )) then
   begin
     load_variable; {Load the database once. If loaded no action}
     plot_deepsky;  {plot the variable annotations image}
@@ -8407,7 +8407,7 @@ begin
   if sender=Viewimage7 then
   begin
      listview_view(listview7);
-     if checkBox_annotate1.checked then
+    if ((checkBox_annotate1.checked) and (pagecontrol1.tabindex=8 {photometry} )) then
      begin
        load_variable; { Load the database once. If loaded no action}
        plot_deepsky;  {plot the variable annotations image}
