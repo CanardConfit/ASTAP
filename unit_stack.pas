@@ -763,7 +763,7 @@ var
   counterRbias,counterGbias, counterBbias,  counterRGBbias,counterLbias,
   temperatureL,temperatureR,temperatureG,temperatureB,temperatureRGB,
   exposureR, exposureG,exposureB,exposureRGB,exposureL            : integer;
-  sum_exp,photometry_error                                        : double;
+  sum_exp,photometry_stdev                                        : double;
   referenceX,referenceY    : double;{reference position used stacking}
   ref_X, ref_Y             : double;{reference position from FITS header, used for manual stacking of colour images, second stage}
   jd                       : double;{julian day of date-obs}
@@ -4344,6 +4344,8 @@ begin
 end;
 
 procedure Tstackmenu1.aavso_button1Click(Sender: TObject);
+var
+  fn: string;
 
 begin
  if listview7.Items.item[0].subitems.Strings[P_magn1]='' then {requires analyse}
@@ -4351,9 +4353,17 @@ begin
   form_aavso1:=Tform_aavso1.Create(self); {in project option not loaded automatic}
   form_aavso1.ShowModal;
   form_aavso1.release;
-  Clipboard.AsText:=aavso_report;
+
   memo2_message(aavso_report);
-  save_settings(user_path+'astap.cfg');
+  if to_clipboard then
+    Clipboard.AsText:=aavso_report
+  else
+  begin
+    fn:=ChangeFileExt(filename2,'.txt');
+    log_to_file2(fn, aavso_report);
+    memo2_message('AAVSO report written to: '+fn);
+  end;
+  save_settings(user_path+'astap.cfg'); {for aavso settings}
 end;
 
 
@@ -5876,7 +5886,8 @@ begin
       memo2_message('3 star, median:'+floattostrf(medianThree, ffgeneral, 4,4)+', σ: '+floattostrf(1.0*1.4826*madThree  {1.0*sigma}, ffgeneral, 4,4));
     end
     else madThree:=0;
-    photometry_error:=max(madThree,madCheck)*1.4826;{mad to standard deviation}
+
+    photometry_stdev:=madCheck*1.4826;{mad to standard deviation}
 
   until ((esc_pressed) or (sender<>photometry_repeat1 {single run}));
 

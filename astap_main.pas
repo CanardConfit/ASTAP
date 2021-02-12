@@ -676,6 +676,7 @@ function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
 procedure listview_add_xy(fitsX,fitsY: double);{add x,y position to listview}
 Function LeadingZero(w : integer) : String;
 procedure log_to_file(logf,mess : string);{for testing}
+procedure log_to_file2(logf,mess : string);{used for platesolve2 and photometry}
 procedure demosaic_advanced(var img : image_array);{demosaic img_loaded}
 procedure bin_X2X3X4(binfactor:integer);{bin img_loaded 2x or 3x or 4x}
 procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : image_array; var sd,mean :double; var iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
@@ -3099,7 +3100,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.494, '+about_message4+', dated 2021-2-11';
+  #13+#10+'ASTAP version ß0.9.495a, '+about_message4+', dated 2021-2-12';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -9498,8 +9499,8 @@ end;
 procedure Tmainwindow.Enterlabel1Click(Sender: TObject);
 var
   value : string;
-  text_height,text_x,text_y   : integer;
-  boldness                    : double;
+  text_x,text_y   : integer;
+  boldness        : double;
 begin
   backup_img;
   value:=InputBox('Label input:','','' );
@@ -9784,20 +9785,27 @@ var
   f   :  textfile;
 begin
   assignfile(f,logf);
-  if fileexists(logf)=false then rewrite(f) else append(f);
-  writeln(f,mess);
-  closefile(f);
+  try
+   if fileexists(logf)=false then rewrite(f) else append(f);
+   writeln(f,mess);
+
+  finally
+    closefile(f);
+  end;
 end;
 
 
-procedure log_to_file2(logf,mess : string);{used for platesolve2}
+procedure log_to_file2(logf,mess : string);{used for platesolve2 and photometry}
 var
   f   :  textfile;
 begin
   assignfile(f,logf);
-  rewrite(f);
-  writeln(f,mess);
-  closefile(f);
+  try
+    rewrite(f);
+    writeln(f,mess);
+  finally
+    closefile(f);
+  end;
 end;
 
 

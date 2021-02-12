@@ -5,14 +5,15 @@ unit unit_aavso;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, math;
 
 type
 
   { Tform_aavso1 }
 
   Tform_aavso1 = class(TForm)
-    Button1: TButton;
+    report_to_clipboard1: TButton;
+    report_to_file1: TButton;
     delimiter1: TComboBox;
     Comparison1: TEdit;
     Label2: TLabel;
@@ -26,10 +27,8 @@ type
     Label1: TLabel;
     name_check1: TEdit;
     Filter1: TComboBox;
-    procedure Button1Click(Sender: TObject);
-    procedure Filter1Change(Sender: TObject);
+    procedure report_to_clipboard1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
-    procedure FormCreate(Sender: TObject);
     procedure FormShow(Sender: TObject);
   private
 
@@ -46,6 +45,7 @@ const
   name_check : string='';
   name_var   : string='';
   delim_pos  : integer=0;
+  to_clipboard  : boolean=true;
 
 var
   aavso_report : string;
@@ -75,30 +75,27 @@ begin
   end;
 end;
 
-procedure Tform_aavso1.Button1Click(Sender: TObject);
+procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
     c  : integer;
     err,err_message,snr_str,delim: string;
-    use_stdev_error: boolean;
+    stdev_valid : boolean;
+    snr_value,err_by_snr   : double;
 begin
   get_info;
 
-  use_stdev_error:=(photometry_error>0.0001);
-  if use_stdev_error then
-  begin
-    str(photometry_error:1:4,err);{standard deviation of CK or C star, highest value}
-    err_message:='StDev used for MERR.';
-  end
+  stdev_valid:=(photometry_stdev>0.0001);
+  if stdev_valid then
+    err_message:='max(StDev,2/SNR) used for MERR.'
   else
-  err_message:='2/SNR used for MERR.';
+    err_message:='2/SNR used for MERR.';
 
   delim:=delimiter1.text;
   if delim='tab' then delim:=#9;
 
-  aavso_report:=  #13+#10+
-                 '#TYPE=Extended'+#13+#10+
+  aavso_report:= '#TYPE=Extended'+#13+#10+
                  '#OBSCODE='+obscode+#13+#10+
-                 '#SOFTWARE=ASTAP, photometry version ß0.0'+#13+#10+
+                 '#SOFTWARE=ASTAP, photometry version ß0.1'+#13+#10+
                  '#DELIM='+delimiter1.text+#13+#10+
                  '#DATE=JD'+#13+#10+
                  '#OBSTYPE=CCD'+#13+#10+
@@ -111,13 +108,23 @@ begin
      if listview7.Items.item[c].checked then
      begin
        snr_str:=listview7.Items.item[c].subitems.Strings[P_snr];
-       if  use_stdev_error=false then
+       if snr_str<>'' then  snr_value:=strtoint(snr_str) else snr_value:=0;
+       if snr_value<>0 then
+         err_by_snr:=2 {1.087}/strtoint(snr_str)
+       else
+         err_by_snr:=0;
+
+       if  stdev_valid=false then
        begin
-         if snr_str<>'' then
-         str(2 {1.087}/strtoint(snr_str):1:4,err){SNR method.Note SNR is in ADU but for snr above 20 error is small. For e-/adu<1 error becomes larger. Factor 2 is a practical factor}
+         if snr_value>0 then
+         str(err_by_snr:1:4,err){SNR method.Note SNR is in ADU but for snr above 20 error is small. For e-/adu<1 error becomes larger. Factor 2 is a practical factor}
          else
          err:='na';
-       end;
+       end
+       else
+       str(max(err_by_snr, photometry_stdev):1:4,err);{standard deviation of CK  star}
+
+
        if snr_str<>'' then
        aavso_report:= aavso_report+ name_var+delim+
                       StringReplace(listview7.Items.item[c].subitems.Strings[P_jd_mid],',','.',[])+delim+
@@ -136,13 +143,11 @@ begin
                      'Ensemble of Gaia eDR3 stars '+star_database1.text+'. '+err_message+#13+#10;
      end;
    end;
+
+  to_clipboard:=(sender=report_to_clipboard1); {report to clipboard of file}
+
   form_aavso1.close;   {transfer variables. Normally this form is not loaded}
   mainwindow.setfocus;
-end;
-
-procedure Tform_aavso1.Filter1Change(Sender: TObject);
-begin
-
 end;
 
 
@@ -151,10 +156,6 @@ begin
   get_info;
 end;
 
-procedure Tform_aavso1.FormCreate(Sender: TObject);
-begin
-
-end;
 
 procedure Tform_aavso1.FormShow(Sender: TObject);
 begin
@@ -166,6 +167,8 @@ begin
   filter1.text:=filter_type;
   delimiter1.itemindex:=delim_pos;
   Comparison1.Text:=stackmenu1.star_database1.text;
+
+  aavso_report:='';
 end;
 
 end.

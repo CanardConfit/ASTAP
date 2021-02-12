@@ -7,7 +7,6 @@ object form_aavso1: Tform_aavso1
   ClientHeight = 397
   ClientWidth = 404
   OnClose = FormClose
-  OnCreate = FormCreate
   OnShow = FormShow
   LCLVersion = '2.0.10.0'
   object obscode1: TEdit
@@ -46,14 +45,14 @@ object form_aavso1: Tform_aavso1
     Caption = 'Name check star'
     ParentColor = False
   end
-  object Button1: TButton
+  object report_to_clipboard1: TButton
     Left = 16
     Height = 25
     Hint = 'Copies the report to the clipboard. Paste it into a text editor, save it and upload it to the AAVSO WebObs.'
-    Top = 328
-    Width = 372
-    Caption = 'Generate report and copy to clipboard'
-    OnClick = Button1Click
+    Top = 344
+    Width = 168
+    Caption = 'Report to clipboard'
+    OnClick = report_to_clipboard1Click
     TabOrder = 2
   end
   object Filter1: TComboBox
@@ -69,7 +68,6 @@ object form_aavso1: Tform_aavso1
       'TG  (green filter or green of tricolour)'
       'V    (Johnson-V)'
     )
-    OnChange = Filter1Change
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
@@ -158,5 +156,15 @@ object form_aavso1: Tform_aavso1
     Width = 143
     Caption = 'Comparison stars (use V17)'
     ParentColor = False
+  end
+  object report_to_file1: TButton
+    Left = 213
+    Height = 25
+    Hint = 'Writes report to file.'
+    Top = 344
+    Width = 168
+    Caption = 'Report to file'
+    OnClick = report_to_clipboard1Click
+    TabOrder = 7
   end
 end
