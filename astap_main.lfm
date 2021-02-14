@@ -1078,6 +1078,7 @@ object mainwindow: Tmainwindow
     end
     object tools1: TMenuItem
       Caption = 'Tools'
+      OnClick = tools1Click
       object astrometric_solve_image1: TMenuItem
         Caption = 'Solve image astrometric (plate solve)'
         Enabled = False

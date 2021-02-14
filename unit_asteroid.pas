@@ -1191,7 +1191,8 @@ begin
   mainwindow.image1.canvas.pen.color:=annotation_color;{color circel}
   mainwindow.image1.Canvas.font.color:=annotation_color;
   fontsize:=round(min(20,max(10,height2*20/4176)));
-  if form_asteroids1.font_follows_diameter1.checked then
+
+  if font_follows_diameter then
   begin
     fontsize:=max(annotation_diameter,fontsize);
     mainwindow.image1.Canvas.Pen.width := 1+annotation_diameter div 10;{thickness lines}
@@ -1429,8 +1430,6 @@ end;
 
 
 procedure Tform_asteroids1.FormShow(Sender: TObject);{han.k}
-var
-  errordecode: boolean;
 begin
   esc_pressed:=false;{reset from cancel}
 

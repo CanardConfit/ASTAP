@@ -387,6 +387,7 @@ type
     procedure SimpleIPCServer1MessageQueued(Sender: TObject);
     procedure StatusBar1MouseEnter(Sender: TObject);
     procedure stretch_draw_fits1Click(Sender: TObject);
+    procedure tools1Click(Sender: TObject);
     procedure UpDown1Click(Sender: TObject; Button: TUDBtnType);
     procedure variable_star_annotation1Click(Sender: TObject);
     procedure zoomin1Click(Sender: TObject);
@@ -3100,7 +3101,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.495a, '+about_message4+', dated 2021-2-12';
+  #13+#10+'ASTAP version ß0.9.497, '+about_message4+', dated 2021-2-14';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -9215,6 +9216,11 @@ begin
   Screen.Cursor:=OldCursor;
 end;
 
+procedure Tmainwindow.tools1Click(Sender: TObject);
+begin
+
+end;
+
 
 procedure Tmainwindow.UpDown1Click(Sender: TObject; Button: TUDBtnType);
 begin
@@ -9646,13 +9652,46 @@ begin
    end;
 end;
 
+
+function AirMass(h: double): double;
+begin
+  // Pickering, 2002
+  result := 1 / sin((pi/180) * (h + (244 / (165 + 47 * h ** 1.1))));
+end;
+
+
+function atmospheric_absorption(airmass: double):double;{magnitudes}
+{The Extinction, Scattering, Absorption due to the atmosphere expressed in magnitudes.
+ Reference http://www.icq.eps.harvard.edu/ICQExtinct.html
+ see also https://www.skyandtelescope.com/astronomy-resources/transparency-and-atmospheric-extinction/}
+ var
+  a_ozon,a_ray,a_aer : double;
+begin
+  a_ozon:=airmass*0.016; {Schaefer's (1992) value Aoz =0.016 magnitudes per air mass for the small ozone component contributing to atmospheric extinction.}
+  a_ray:=airmass*0.1451; {Rayleigh scattering by air molecules. Expressed in magnitudes}
+  a_aer:=airmass*0.120; {Extinction due to aerosol scattering is due to particulates including dust, water droplets and manmade pollutants. Expressed in magnitudes}
+  result:=a_ozon+a_ray+a_aer;{Total extinction, scattering, absorption due to the atmosphere expressed in magnitudes}
+end;
+
+
 function calculate_sqm : boolean; {calculate sqky background value}
+var
+  airm, correction : double;
 begin
   mainwindow.calibrate_photometry1Click(nil);
 
+
   if flux_magn_offset>0 then
   begin
+    if pedestal>=cblack then begin beep; pedestal:=0; {prevent errors} end;
     sqm:=flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
+
+    if centalt<>'' then
+    begin
+      airm:=AirMass(strtofloat2(centalt));
+      correction:= atmospheric_absorption(airm)- 0.28 {absorption at zenith};
+      sqm:=sqm+correction;
+    end;
     result:=true;
   end
   else
@@ -9662,7 +9701,6 @@ end;
 procedure Tmainwindow.sqm1Click(Sender: TObject);
 var
   info_message    : string;
-//  mean,sd : double;
   Save_Cursor:TCursor;
   inputvalue  : boolean;
 
@@ -9682,9 +9720,10 @@ begin
 //  local_sd(width2 div 4,height2 div 4, width2 div 3,height2 div 3,0{col} ,img_loaded,sd,mean);{calculate local mean and standard deviation in a rectangle between point x1,y1, x2,y2}
   {find the bit resolution sensor}
   repeat
-    info_message:='SQM='+floattostrF2(sqm,0,2)+' magn/arcsec² referenced to the visible stars'+#10+
+    info_message:='SQM='+floattostrF2(sqm,0,2)+' magn/arcsec^2'+#10+
     #10+
     'Background value='+inttostr(round(cblack))+#10+
+    'Altitude='+centalt+#10+
     'Pedestal correction='+inttostr(pedestal)+#10+
     #10+
     'Pre-conditions:'+#10+
@@ -9692,11 +9731,12 @@ begin
     '2) The background value is larger then pedestal value. If not exposure longer.'+#10+
     '3) Entering a pedestal value increases the accuracy. (mean value of a dark)'#10+
     '4) Apply on unprocessed images only.'#10+
-    '5) No bright nebula should be visible.'#10;
+    '5) No bright nebula should be visible.'#10+
+    '6) Extinction plays a role. An atmospheric extinction correction for star light will applied if CENTALT is specified in the FITS header.'+#10;
 
 
     inputvalue:=false;
-    case  QuestionDlg (pchar('SQM measurement relative to the stars above the atmosphere:'),pchar(info_message),mtCustom,[20,'Copy to clipboard?', 21, 'Enter camera pedestal', 22, 'No', 'IsDefault'],'') of
+    case  QuestionDlg (pchar('SQM measurement:'),pchar(info_message),mtCustom,[20,'Copy to clipboard?', 21, 'Enter camera pedestal', 22, 'No', 'IsDefault'],'') of
          20: Clipboard.AsText:=info_message;
          21: begin
                pedestal:=round(strtofloat2(InputBox('Enter camera pedestal correction to zero the background:','pedestal value:', inttostr(pedestal))));
@@ -10383,7 +10423,7 @@ begin
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
         '-extract snr_min {As -analyse but additionally write a .csv file with the detected stars info}'+#10+
-        '-sqm pedestal  {add sqm value relative to the stars to the solution}'+#10+
+        '-sqm pedestal  {add measured sqm value to the solution}'+#10+
         '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3}'+#10+
         '-annotate  {Produce deepsky annotated jpg file}' +#10+
         '-debug  {Show GUI and stop prior to solving}' +#10+
@@ -10524,7 +10564,7 @@ begin
             begin
               pedestal:=round(strtofloat2(GetOptionValue('sqm')));
               if calculate_sqm then {sqm found}
-                update_float('SQM     =',' / Sky background [magn/"^2] relative to stars' ,sqm);
+                update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqm);
             end;
 
             if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
@@ -10696,7 +10736,7 @@ begin
           if solve_image(img_loaded,true {get hist}) then {match between loaded image and star database}
           begin
             if ((add_sqm) and (calculate_sqm)) then
-                update_float('SQM     =',' / Sky background [magn/sqr(")] relative to stars' ,sqm);
+                update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqm);
             mainwindow.SaveFITSwithupdatedheader1Click(nil);
             nrsolved:=nrsolved+1;
           end

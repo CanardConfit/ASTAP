@@ -27,8 +27,8 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
           </big></big><big><big><span style="color: red; font-weight: bold;"></span></big></big>
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
-            &nbsp;<big>version 0.9.494 dated 2021-02-12. &nbsp;Alternative
-            link, the very latest development version 0.9.495 <a href="astap_setup.exe">ASTAP installer</a>
+            &nbsp;<big>version 0.9.495 dated 2021-02-12. &nbsp;Alternative
+            link, the very latest development version 0.9.496 <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.exe/download">H17
@@ -1422,9 +1422,8 @@ the video.<br><br><span style="font-weight: bold; background-color: rgb(153, 153
         the blink tab.</p>
       <p align="left">Select the images to
         analyse.&nbsp;Click
-        on one of the arrow buttons to cycle trough the images.
-        Initially it
-        will&nbsp; go a little slow till all data is analysed.&nbsp; The
+        on one of the <span style="font-weight: bold; background-color: rgb(153, 153, 153);">&nbsp; &nbsp; &nbsp;&gt; &nbsp;
+          &nbsp;&nbsp;&nbsp;</span> buttons to cycle trough the images&nbsp; The
         program
         will
         do the following:</p>
@@ -1437,23 +1436,27 @@ the video.<br><br><span style="font-weight: bold; background-color: rgb(153, 153
           2. In a second cycle, the program will identify stars in the
           image and
           measure the&nbsp;star flux against
-          the star database. The median flux/magnitude factor will be
+          the V17 star database. The mean flux/magnitude factor exlcuding outliers will be
           used later
           to measure the magnitude of any object in the image series. So
           prior to
-          this install and use the V16,&nbsp; Johnson-V
+          this install and use the V17,&nbsp; Johnson-V
           version of the star Gaia database provided.</li>
         <li>At the end of cycle 2, it will mark the&nbsp;four most
           variable stars with a yellow circle.</li>
-        <li>Click&nbsp;on any of the stars. A purple circle will mark
-          the object. The measured
-          magnitude of each image in the series will be
+        <li>Click&nbsp;on up to three stars. Violet circles labeled <span style="font-weight: bold;">Var, Check </span>and<span style="font-weight: bold;"> 3</span> will mark
+          the stars. If you click twice on a stars the labels will rotate between the stars. The measured
+          magnitudes of each image&nbsp;will be
           written to the file list. This complete list can be exported
           to a
           spreadsheet using the pop-up menu allowing the creation a
           magnitude curve
-          over time.</li>
-      </ol>
+          over time.</li><li>With&nbsp;<span style="font-weight: bold; background-color: rgb(153, 153, 153);">&nbsp;&nbsp;AAVSO&nbsp;&nbsp;</span>
+button an extended report can be generated. &nbsp;As comparison star
+always the Gaia stars are used, so select in ASTAP only the V17
+database. You have to enter the designation of the Variable and Check
+star.&nbsp;The report format is according the <a href="https://www.aavso.org/aavso-extended-file-format">AAVSO Extended file format.</a></li>
+      </ol><br>
       <div style="text-align: left;">
         For maximum accuracy it is better to first to calibrate the
         images with
@@ -1467,18 +1470,16 @@ the video.<br><br><span style="font-weight: bold; background-color: rgb(153, 153
         that the measured star flux is compared and calibrated with the
         star database.
         For most cases
-        you should either install the V16 or V17 star database&nbsp;containing the Johnson-V
+        you should&nbsp;install the&nbsp;V17 star database&nbsp;containing the Johnson-V
         magnitudes.&nbsp;After stopping the cycle it is possible to measure
         any
         object using the mouse pointer.<br>
         <br>
         Alignment
-        of the images is done using the astrometric (plate) solution.
-        &nbsp;The
-        photometric solution is stored in seperate files. The
+        of the images is done using the astrometric (plate) solution.&nbsp;The
         astrometric
         solution is written to the orginal file header. You
-        can refresh the&nbsp;photometric and astrometricc calibration
+        can refresh the&nbsp;photometric and astrometric calibration
         using the dedicated buttons for this<span style="background-color: rgb(153, 153, 153);"></span><span style="background-color: rgb(153, 153, 153);"></span>.<br>
         <br>
         The list contains three dates:<br>
@@ -1510,19 +1511,19 @@ the video.<br><br><span style="font-weight: bold; background-color: rgb(153, 153
         spreadsheet, subtract&nbsp;the Julian Day by -2415018.5
         and format as date or time.<br>
         <br>
-        For
-        a series of images, the standard deviation of the measured star
-        magnitudes&nbsp;is typical better then 0.02 magnitudes. The star
-        flux
-        values should be below saturation (65500) &nbsp;but reasonable
-        high.<br>
+For a series of images, the standard deviation of the measured star
+magnitudes&nbsp;is typical better then 0.02 magnitudes. The standard
+deviation of the Check star is used for error estimate if more then 4
+images are selected. else an estimate based on the Variable SNR values
+is used. The star flux values should be below saturation (65500)
+&nbsp;but reasonable high.<br>
         <br>
         Note that it is beneficial to de-focus an image a little to
         prevent
         pixel saturation and spread the flux measurement over more
         pixels. It also allows&nbsp;longer exposure times. However
         the image should reasonable focused to allow solving. </div>
-      <p align="left"><img style="width: 1805px; height: 933px;" alt="" src="astap_photometry.png"><br>
+      <p align="left"><img style="width: 1891px; height: 845px;" alt="" src="astap_photometry.png"><br>
       </p>
       <p align="left"></p>
       <p align="left">

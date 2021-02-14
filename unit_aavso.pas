@@ -153,7 +153,7 @@ end;
 
 procedure Tform_aavso1.FormClose(Sender: TObject; var CloseAction: TCloseAction );
 begin
-  get_info;
+  get_info; {form_aavso1.release will be done in the routine calling the form}
 end;
 
 
