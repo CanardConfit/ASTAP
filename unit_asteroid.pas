@@ -1188,6 +1188,16 @@ begin
 
   form_existing:=assigned(form_asteroids1);{form existing}
 
+  {$ifdef mswindows}
+  mainwindow.image1.Canvas.Font.Name :='default';
+  {$endif}
+  {$ifdef linux}
+  mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
+  {$endif}
+  {$ifdef darwin} {MacOS}
+  mainwindow.image1.Canvas.Font.Name :='Helvetica';
+  {$endif}
+
   mainwindow.image1.canvas.pen.color:=annotation_color;{color circel}
   mainwindow.image1.Canvas.font.color:=annotation_color;
   fontsize:=round(min(20,max(10,height2*20/4176)));

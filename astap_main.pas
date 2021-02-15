@@ -3101,7 +3101,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.497, '+about_message4+', dated 2021-2-14';
+  #13+#10+'ASTAP version ß0.9.497a, '+about_message4+', dated 2021-2-15';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -8151,7 +8151,8 @@ begin
     font_height:=round(canvas.Textheight('0')*1.0);{font size times ... to get underscore at the correct place. Fonts coordinates are all top/left coordinates }
     {$endif}
 
-    image1.Canvas.font.name:='cldefault';
+    image1.Canvas.font.name:='default';
+
     image1.Canvas.textout(3+tx,round(-font_height + ty), mag_str);
 
     bg_array:=nil;{free mem}
@@ -8974,6 +8975,7 @@ begin
   image1.Canvas.brush.Style:=bsClear;
   image1.Canvas.font.color:=clyellow;
   image1.Canvas.font.name:='default';
+
   image1.Canvas.font.size:=10; //round(max(10,8*height2/image1.height));{adapt font to image dimensions}
   mainwindow.image1.Canvas.Pen.Color := clred;
 

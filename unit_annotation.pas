@@ -1330,7 +1330,7 @@ var
   name: string;
   flip_horizontal, flip_vertical: boolean;
   text_dimensions  : array of textarea;
-  i,text_counter,th,tw,x1,y1,x2,y2,hf,x,y : integer;
+  i,text_counter,th,tw,x1,y1,x2,y2,hf,x,y,fontsi : integer;
   overlap  :boolean;
   Save_Cursor:TCursor;
 
@@ -1357,7 +1357,7 @@ begin
     if cdelt1*cdelt2>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;
 
     {$ifdef mswindows}
-    mainwindow.image1.Canvas.Font.Name :='Small Fonts';
+     mainwindow.image1.Canvas.Font.Name :='default';
     {$endif}
     {$ifdef linux}
     mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
@@ -1413,7 +1413,7 @@ begin
           else
           name:=naam2+'/'+naam3+'/'+naam4;
 
-          mainwindow.image1.Canvas.font.size:= round(min(20,max(8,len /2)));
+          mainwindow.image1.Canvas.font.size:=round(min(20,max(8,len /2)));
 
           if copy(naam2,1,1)='0' then  mainwindow.image1.Canvas.font.color:=cllime;{AAVSO reference star}
 
@@ -1668,7 +1668,7 @@ begin
 
 
     {$ifdef mswindows}
-    mainwindow.image1.Canvas.Font.Name :='Small Fonts';
+    mainwindow.image1.Canvas.Font.Name :='default';
     {$endif}
     {$ifdef linux}
     mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
