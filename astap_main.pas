@@ -2867,7 +2867,7 @@ begin
 end;
 
 
-procedure progress_indicator(i:double; info:string);{0 to 100% indication of progress}
+procedure progress_indicator(i:double; info:string);{0..100 is 0 to 100% indication of progress}
 begin
 //  mainwindow.caption:=inttostr(round(i))+'%'+info;
   if i<-99 then
@@ -3101,7 +3101,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.497a, '+about_message4+', dated 2021-2-15';
+  #13+#10+'ASTAP version ß0.9.498a, '+about_message4+', dated 2021-2-16';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4159,7 +4159,8 @@ end;
 
 procedure Tmainwindow.show_distortion1Click(Sender: TObject);
 begin
-  plot_and_measure_stars(flux_magn_offset=0 {calibration},false {plot stars},true {plot distortion});
+  if flux_magn_offset=0 then plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});{calibrate using the 100 brightest stars}
+  plot_and_measure_stars(false {calibration},false {plot stars},true {plot distortion});
 end;
 
 
@@ -11140,7 +11141,8 @@ end;
 
 procedure Tmainwindow.star_annotation1Click(Sender: TObject);
 begin
-  plot_and_measure_stars(flux_magn_offset=0 {calibration},true {plot stars},false {plot distortion});
+  if flux_magn_offset=0 then plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});{calibrate using the 100 brightest stars}
+  plot_and_measure_stars(false {calibration},true {plot stars},false {plot distortion});{calibrate using the 100 brightest stars}
 end;
 
 

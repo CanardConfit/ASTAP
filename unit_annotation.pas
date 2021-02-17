@@ -1573,12 +1573,11 @@ var
       begin
         inc(star_total_counter);
 
+        if flip_horizontal then x2:=(width2-1)-x else x2:=x;
+        if flip_vertical   then y2:=y            else y2:=(height2-1)-y;
+
         if plot_stars then
         begin {annotate}
-          if flip_horizontal then x2:=(width2-1)-x else x2:=x;
-          if flip_vertical   then y2:=y            else y2:=(height2-1)-y;
-
-
           if Bp_Rp<>999 then {colour version}
           begin
             mainwindow.image1.Canvas.textout(x2,y2,inttostr(round(mag2))+':'+inttostr(round(Bp_Rp)) {   +'<-'+inttostr(area290) });

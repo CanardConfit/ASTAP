@@ -26,7 +26,7 @@ type
 
 
 var
-   starlist1, starlist2          :star_list;
+   starlist1, starlist2                   :star_list;
    quad_star_distances1, quad_star_distances2: star_list;
    A_XYpositions                          : star_list;
    b_Xrefpositions,b_Yrefpositions        :  array of double;
@@ -563,7 +563,7 @@ begin
   for i:=0 to length(snr_histogram)-1 do snr_histogram[i]:=0; {clear snr histogram}
   for i:=0 to length(snr_list)-1 do
   begin
-  //  memo2_message(inttostr(i)+ ' , '+floattostr6(snr_list[i])) ;
+  //  memo2_message(#9+inttostr(i)+#9+floattostr6(snr_list[i])) ;
     snr_scaled:=trunc(snr_list[i]*range/highest_snr);
     snr_histogram[snr_scaled]:=snr_histogram[snr_scaled]+1;{count how often this snr value is measured}
   end;
@@ -572,21 +572,20 @@ begin
   repeat
     dec(i);
     count:=count+snr_histogram[i];
-  //  memo2_message(inttostr(snr_histogram[i])+ ' , ' +inttostr(i));
+  //  memo2_message(#9+inttostr(snr_histogram[i])+ #9 +inttostr(i));
   until ((i<=0) or (count>=nr_stars_required));
 
   snr_required:=highest_snr*i/range;
 
   count:=0;
   nrstars:=length(starlist1[0]);
-  SetLength(starlist2,2,nrstars);{set array to maximum possible length}
   for i:=0 to nrstars-1 do
     if snr_list[i]>=snr_required then {preserve brightest stars}
     begin
-      starlist2[0,count]:=starlist1[0,i];
-      starlist2[1,count]:=starlist1[1,i];
+      starlist1[0,count]:=starlist1[0,i];{overwrite in the same array}
+      starlist1[1,count]:=starlist1[1,i];
+   //   memo2_message(#9+floattostr(snr_list[i])+#9+floattostr(starlist2[0,count])+ #9 +floattostr(starlist2[1,count]));
       inc(count);
-
      //  For testing:
      //  mainwindow.image1.Canvas.Pen.Mode := pmMerge;
      //  mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
@@ -594,8 +593,7 @@ begin
      //  mainwindow.image1.Canvas.Pen.Color := clred;
      //  mainwindow.image1.Canvas.Rectangle(round(starlist1[0,i])-15,height2-round(starlist1[1,i])-15, round(starlist1[0,i])+15, height2-round(starlist1[1,i])+15);{indicate hfd with rectangle}
      end;
-  setlength(starlist2,2,count);{reduce length to used length}
-  starlist1:=starlist2;{move pointer}
+  setlength(starlist1,2,count);{reduce length to used length}
 end;
 
 

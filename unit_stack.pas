@@ -2740,13 +2740,14 @@ var index,counter,error2: integer;
     waarde              : double;
 begin
   index:=0;
+  esc_pressed:=false;
   counter:=tl.Items.Count;
   while index<counter do
   begin
     if  tl.Items[index].Selected then
     begin
       filename2:=tl.items[index].caption;
-      if load_image(false,false {plot}) then {load and center}
+      if load_image(false,false {plot}) then {load}
       begin
         while length(keyw)<8 do keyw:=keyw+' ';{increase length to 8}
         keyw:=copy(keyw,1,8);{decrease if longer then 8}
@@ -2769,6 +2770,11 @@ begin
         save_fits(img_loaded,filename2,16,true)
          else
         save_fits(img_loaded,filename2,-32,true);
+
+        tl.ItemIndex := index;{mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+        tl.Items[index].MakeVisible(False);{scroll to selected item}
+        application.processmessages;
+        if esc_pressed then exit;
       end
       else
       beep;{image not found}
