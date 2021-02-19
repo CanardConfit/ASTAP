@@ -662,7 +662,6 @@ function extract_temperature_from_filename(filename8: string): integer; {try to 
 function extract_objectname_from_filename(filename8: string): string; {try to extract exposure from filename}
 
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
-function fnmodulo (x,range: double):double;
 procedure measure_magnitudes( var stars :star_list);{find stars and return, x,y, hfd, flux}
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2,binx3, binx4 version}
 procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean); {convert ra in text to double in radians}
@@ -3101,7 +3100,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.498a, '+about_message4+', dated 2021-2-16';
+  #13+#10+'ASTAP version ß0.9.498b, '+about_message4+', dated 2021-2-19';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5030,7 +5029,7 @@ function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24
   m:=trunc((rax-h)*60);
   s:=trunc((rax-h-m/60)*3600);
   ds:=trunc((rax-h-m/60-s/3600)*36000);
-  prepare_ra:=leadingzero(h)+sep+leadingzero(m)+'  '+leadingzero(s)+'.'+ansichar(ds+48);
+  prepare_ra:=leadingzero(h)+sep+leadingzero(m)+' '+leadingzero(s)+'.'+ansichar(ds+48);
 end;
 
 
@@ -5045,7 +5044,7 @@ begin {make from rax [0..pi*2] a text in array bericht. Length is 10 long}
   g:=trunc(decx);
   m:=trunc((decx-g)*60);
   s:=trunc((decx-g-m/60)*3600);
-  prepare_dec:=sign+leadingzero(g)+sep+leadingzero(m)+'  '+leadingzero(s);
+  prepare_dec:=sign+leadingzero(g)+sep+leadingzero(m)+' '+leadingzero(s);
 end;
 
 
@@ -5110,15 +5109,6 @@ begin
 
   crota1:= +arctan2(sign*cd1_2,cd2_2)*180/pi;
   crota2:= -arctan2(cd2_1,sign*cd1_1)*180/pi;  //  crota2old := (atn_2(sign*cd1_1,cd2_1)-pi/2)*180/pi;
-end;
-
-
-function fnmodulo (x,range: double):double;
-begin
-  {range should be 2*pi or 24 hours or 0 .. 360}
-  x:=range *frac(X /range); {quick method for big numbers}
-  if x<0 then x:=x+range;   {do not like negative numbers}
-  fnmodulo:=x;
 end;
 
 
@@ -9306,7 +9296,7 @@ begin
   if ((paramcount=1) and  (ord(param1[length(param1)])>57  {letter, not a platesolve command} )) then {2019-5-4, modification only unique instance if called with file as parameter(1)}
     check_second_instance;{check for and other instance of the application. If so send paramstr(1) and quit}
 
-  application_path:= extractfilepath(application.location);{for u290, set path}
+  application_path:= extractfilepath(application.location);{}
 
 
   {$IfDef Darwin}// for OS X,
@@ -10434,7 +10424,9 @@ begin
         '-tofits  binning[1,2,3,4]  {Make new fits file from PNG/JPG file input}'+#10+
         '-update  {update the FITS header with the found solution}' +#10+
         '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
-        'Preference will be given to the command line values.'
+        'Preference will be given to the command line values.' +#10+
+        'Result will be written to an filename.ini and filename.wcs file.'
+
         ), pchar('ASTAP astrometric solver usage:'),MB_OK);
 
         esc_pressed:=true;{kill any running activity. This for APT}
@@ -10584,7 +10576,13 @@ begin
             else
               try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
 
-            if hasoption('update') then mainwindow.SaveFITSwithupdatedheader1Click(nil); {update the fits file header}
+
+            if hasoption('update') then
+            begin
+              if fits_file_name(filename2) then mainwindow.SaveFITSwithupdatedheader1Click(nil) {update the fits file header}
+              else
+              save_fits(img_loaded,ChangeFileExt(filename2,'.fits'),16, true {override});{save orginal png,tiff jpg to 16 fits file}
+            end;
 
             histogram_done:=false;
             if hasoption('annotate') then

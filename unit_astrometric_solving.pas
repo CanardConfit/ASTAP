@@ -2,7 +2,7 @@ unit unit_astrometric_solving;
 {Copyright (C) 2018, 2021 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
-{This program is free software: you can redistribute it and/or modify
+This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
@@ -60,13 +60,14 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 //4) 	For each quad sort the six quad distances on size.                   	 | For each quad sort the six quad distances on size.
 //      d1 is the longest and d6 the shortest.                                   | d1 is the longest and d6 the shortest.
 //                                                                               |
-//5) 	Scale the quad star distance as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1)      | Scale the quad star distance as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1)
+//5) 	Scale the six quad star distance as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1)  | Scale the six quad star distance as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1)
 //      These are the image hash codes.                                          | These are the database hash codes.
 //
 //                           => matching process <=
-//6)                         Find quad hash code matches where the distances d2/d1 to d6/d1 match within a small tolerance.
+//6)                         Find quad hash code matches where the five ratios d2/d1 to d6/d1 match within a small tolerance.
 //
-//7) 		             For matching quad hash codes, calculate the size ratios d1_found/d1_reference. Calculate the median ratio. Compare the quads ratios with the median value and remove quads outside a small tolerance.
+//7) 		             For matching quad hash codes, calculate the longest side ratios d1_found/d1_reference. Calculate the median ratio.
+//                           Compare the quads longest side ratios with the median value and remove quads outside a small tolerance.
 //
 //8)                         From the remaining matching quads, prepare the "A"matrix/array containing the x,y center positions of the test image quads in standard coordinates
 //                           and  the array X_ref, Y_ref containing the x, y center positions of the reference imagete trahedrons in standard coordinates.
@@ -108,6 +109,7 @@ uses   Classes,SysUtils,controls,forms,math,
 function solve_image(img :image_array; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; var starlist3:star_list);{bin, measure background, find stars}
 function report_binning : integer;{select the binning}
+function fnmodulo (x,range: double):double;
 
 var
   star1   : array[0..2] of array of single;
