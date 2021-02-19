@@ -10402,11 +10402,12 @@ begin
       if hasOption('h','help') then
       begin
         application.messagebox( pchar(
+        'Command-line usage:'+#10+
         '-f  filename'+#10+
         '-f  stdin     {read raw image from stdin}'+#10+
         '-r  radius_area_to_search[degrees]'+#10+      {changed}
         '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto}'+#10+
-        '-fov diameter_field[degrees]'+#10+   {changed}
+        '-fov height_field[degrees]'+#10+
         '-ra  center_right ascension[hours]'+#10+
         '-spd center_south_pole_distance[degrees]'+#10+
         '-s  max_number_of_stars'+#10+
@@ -10424,9 +10425,11 @@ begin
         '-tofits  binning[1,2,3,4]  {Make new fits file from PNG/JPG file input}'+#10+
         '-update  {update the FITS header with the found solution}' +#10+
         '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
+        #10+
         'Preference will be given to the command line values.' +#10+
-        'Result will be written to an filename.ini and filename.wcs file.'
-
+        'Result will be written to an filename.ini and filename.wcs file.'+#10+
+        'Solver result will be written to filename.ini and filename.wcs.'+#10+
+        'Star database expected at: '+database_path
         ), pchar('ASTAP astrometric solver usage:'),MB_OK);
 
         esc_pressed:=true;{kill any running activity. This for APT}
