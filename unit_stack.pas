@@ -3177,6 +3177,7 @@ begin
             if lv.name=stackmenu1.listview7.name then {photometry tab}
             begin
               lv.Items.item[c].subitems.Strings[P_date]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
+              lv.Items.item[c].subitems.Strings[P_filter]:=filter_name;
               date_to_jd(date_obs);{convert date-obs to jd}
               jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
               lv.Items.item[c].subitems.Strings[P_jd_mid]:=floattostrF2(jd,0,5);{julian day}
@@ -3197,7 +3198,6 @@ begin
 
                 analyse_fits(img,10 {snr_min},false,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
                 lv.Items.item[c].subitems.Strings[P_background]:=inttostr5(round(backgr));
-                lv.Items.item[c].subitems.Strings[P_filter]:=filter_name;
                 lv.Items.item[c].subitems.Strings[P_hfd]:=floattostrF2(hfd_median,0,1);
                 lv.Items.item[c].subitems.Strings[P_stars]:=inttostr5(hfd_counter); {number of stars}
               end;
@@ -5620,8 +5620,19 @@ var
      end
     else
     result:='';
+  end;
 
-
+  procedure plot_outliers;{plot up to 4 yellow circles around the outliers}
+  var k: integer;
+  begin
+    mainwindow.image1.Canvas.Pen.Color := clyellow;
+    for k:=0 to length(outliers[0])-1 do
+    begin
+      if flipvertical=false then  starY:=round(height2-(outliers[1,k])) else starY:=round(outliers[1,k]);
+      if Fliphorizontal     then starX:=round(width2-outliers[0,k])  else starX:=round(outliers[0,k]);
+      mainwindow.image1.Canvas.ellipse(starX-20,starY-20, starX+20, starY+20);{indicate outlier rectangle}
+      mainwindow.image1.Canvas.textout(starX+20,starY+20,'σ '+floattostrf(outliers[2,i], ffgeneral, 3,0));{add hfd as text}
+    end;
   end;
 
 begin
@@ -5842,17 +5853,7 @@ begin
 
 
         {plot outliers (variable stars)}
-        if outliers<>nil then
-        begin
-          mainwindow.image1.Canvas.Pen.Color := clyellow;
-          for i:=0 to length(outliers[0])-1 do
-          begin
-            if flipvertical=false then  starY:=round(height2-(outliers[1,i])) else starY:=round(outliers[1,i]);
-            if Fliphorizontal     then starX:=round(width2-outliers[0,i])  else starX:=round(outliers[0,i]);
-            mainwindow.image1.Canvas.ellipse(starX-20,starY-20, starX+20, starY+20);{indicate outlier rectangle}
-            mainwindow.image1.Canvas.textout(starX+20,starY+20,'σ '+floattostrf(outliers[2,i], ffgeneral, 3,0));{add hfd as text}
-          end;
-        end;
+        if outliers<>nil then plot_outliers;
 
         if checkBox_annotate1.checked then
         begin
@@ -5865,6 +5866,7 @@ begin
     begin
       find_star_outliers(strtofloat2(mark_outliers_upto1.text), outliers);
       fits_file:=true;{Previous instruction will set fits:=false while it only loads header. Set back to tru to allow to set the three measure markers. The displayed image array and header will be compatible}
+      if outliers<>nil then plot_outliers;
     end;
 
     {do statistics}

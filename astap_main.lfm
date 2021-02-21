@@ -1143,8 +1143,23 @@ object mainwindow: Tmainwindow
           end
         end
         object split_osc1: TMenuItem
-          Caption = 'Extract one Bayer matrix pixel position from raw OSC images'
-          Hint = 'This will extract one of the the Bayer 2x2 matrix pixels representing red, green, green and blue and write to seperate files. If your image Ha with your OSC, one position will contain the red data only.'
+          Caption = 'Raw colour seperation'
+          Hint = 'This will extract the colours from a raw DSLR/OCS image write them to seperate files.'
+          object extractgreen1: TMenuItem
+            Caption = 'Extract green pixels and combine'
+            Hint = 'Will combine for each bayer pattern the two green pixels. Check in advance the de-mosaic pattern in stack menu, tab stack method'
+            OnClick = extractgreen1Click
+          end
+          object extractred1: TMenuItem
+            Caption = 'Extract red pixels'
+            Hint = 'Check in advance the de-mosaic pattern in stack menu, tab stack method'
+            OnClick = extractred1Click
+          end
+          object extractblue1: TMenuItem
+            Caption = 'Extract blue pixels'
+            Hint = 'Check in advance the de-mosaic pattern in stack menu, tab stack method'
+            OnClick = extractblue1Click
+          end
           object extract_pixel_11: TMenuItem
             Caption = 'Bayer matrix pixel 11'
             Hint = 'Pixels with position 11 in the Bayer matrix are extracted from the selected files.'

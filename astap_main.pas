@@ -105,6 +105,9 @@ type
     inspector_hfd_values1: TMenuItem;
     MenuItem22: TMenuItem;
     bayer_image1: TMenuItem;
+    extractred1: TMenuItem;
+    extractblue1: TMenuItem;
+    extractgreen1: TMenuItem;
     Shape_alignment_marker2: TShape;
     Shape_alignment_marker3: TShape;
     solve_and_add_sqm1: TMenuItem;
@@ -323,6 +326,9 @@ type
     procedure j2000_1Click(Sender: TObject);
     procedure galactic1Click(Sender: TObject);
     procedure gaia_star_position1Click(Sender: TObject);
+    procedure extractred1Click(Sender: TObject);
+    procedure extractblue1Click(Sender: TObject);
+    procedure extractgreen1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
     procedure northeast1Click(Sender: TObject);
@@ -456,7 +462,6 @@ var
 type
   image_array = array of array of array of Single;
   star_list   = array of array of double;
-
 type
    timgbackup  = record
      crpix1 : double;{could be modified by crop}
@@ -554,7 +559,8 @@ const
   application_path:string='';{to be set in main}
   database_path:string='';{to be set in main}
   bayerpat: string='';{bayer pattern}
-  bayerpattern_final:integer=0;
+  bayerpattern_final :integer=2; {ASI294, ASI071, most common pattern}
+
   xbayroff: double=0;{additional bayer pattern offset to apply}
   Ybayroff: double=0;{additional bayer pattern offset to apply}
   annotated : boolean=false;{any annotation in fits file?}
@@ -588,9 +594,9 @@ const
   mouse_positionRADEC2 : string='';{For manual reference solving}
   flipped_img          : string='';
   bayer_pattern : array[0..3] of string=('GRBG',
-                                        'BGGR',
-                                        'RGGB',
-                                        'GBRG');
+                                         'BGGR',
+                                         'RGGB',
+                                         'GBRG');
   annotation_color: tcolor=clyellow;
   annotation_diameter : integer=20;
   pedestal            : integer=0;
@@ -3100,7 +3106,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.498b, '+about_message4+', dated 2021-2-19';
+  #13+#10+'ASTAP version ß0.9.499, '+about_message4+', dated 2021-2-21';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4699,19 +4705,17 @@ begin
   LoadFITSPNGBMPJPEG1filterindex:=oldvalue; {restore filterindex position}
 end;
 
-procedure split_raw(xp,yp : integer);{extract one of the Bayer matrix pixels}
+procedure split_raw(xp,yp : integer; filtern: string);{extract one of the Bayer matrix pixels}
 var
   Save_Cursor:TCursor;
   img_temp11 : image_array;
-  I, FitsX, fitsY,w,h   : integer;
-  ratio                 : double;
-  filtern               : string;
-  dobackup : boolean;
+  I, FitsX, fitsY,w,h,xp2,yp2   : integer;
+  ratio                         : double;
+  dobackup,get_green            : boolean;
+  val                           : single;
 begin
   with mainwindow do
   begin
-    filtern:='P'+inttostr(xp)+inttostr(yp);
-
     OpenDialog1.Title := 'Select multiple RAW fits files to extract Bayer matrix position '+filtern+' from them';
     OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
     opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
@@ -4742,10 +4746,44 @@ begin
 
             setlength(img_temp11,1,w,h);
 
+            get_green:=false;
+            if filtern='TR' then {red}
+            begin
+              case get_demosaic_pattern {analyse pattern} of
+                 0: begin xp:=2; yp:=1; end;{'GRBG'}
+                 1: begin xp:=2; yp:=2; end;{'BGGR'}
+                 2: begin xp:=1; yp:=1; end;{'RGGB'}
+                 3: begin xp:=2; yp:=1; end;{'GBRG'}
+              end;
+            end
+            else
+            if filtern='TB' then {blue}
+            begin
+              case get_demosaic_pattern {analyse pattern} of
+                 0: begin xp:=1; yp:=2; end;{'GRBG'}
+                 1: begin xp:=1; yp:=1; end;{'BGGR'}
+                 2: begin xp:=2; yp:=2; end;{'RGGB'}
+                 3: begin xp:=1; yp:=2; end;{'GBRG'}
+              end;
+            end
+            else
+            if filtern='TG' then {green}
+            begin
+              get_green:=true;
+              case get_demosaic_pattern {analyse pattern} of
+                 0: begin xp:=1; yp:=1; xp2:=2; yp2:=2; end;{'GRBG'}
+                 1: begin xp:=2; yp:=1; xp2:=1; yp2:=2; end;{'BGGR'}
+                 2: begin xp:=2; yp:=1; xp2:=1; yp2:=2; end;{'RGGB'}
+                 3: begin xp:=1; yp:=1; xp2:=2; yp2:=2; end;{'GBRG'}
+              end;
+            end;
+
             for fitsY:=0 to h-1 do
               for fitsX:=0 to w-1  do
               begin
-                img_temp11[0,fitsX,fitsY]:=img_loaded[0,fitsx*2+xp-1,fitsY*2+yp-1];
+                val:=img_loaded[0,fitsx*2+xp-1,fitsY*2+yp-1];
+                if get_green then val:=(val+img_loaded[0,fitsx*2+xp2-1,fitsY*2+yp2-1])/2; {add second green pixel}
+                img_temp11[0,fitsX,fitsY]:=val;
               end;
 
             width2:=w;
@@ -4757,6 +4795,8 @@ begin
 
             update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
             update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+
+
 
             if crpix1<>0 then begin crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
             if crpix2<>0 then begin crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
@@ -4778,8 +4818,7 @@ begin
 
             update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING/ratio));
             update_integer('YBINNING=',' / Binning factor in height                        ' ,round(yBINNING/ratio));
-            update_text   ('FILTER  =',#39+'P11'+#39+'           / Filter name                                    ');
-            add_text   ('HISTORY   ','contains one pixel of 2x2 bayer matrix');
+            add_text   ('HISTORY   ','contains extracted pixels of 2x2 bayer matrix');
 
             update_text   ('FILTER  =',#39+filtern+#39+'           / Filter name                                    ');
             img_loaded:=img_temp11;
@@ -5127,10 +5166,10 @@ var
     img_temp2 : image_array;
 begin
   case pattern  of
-     0: begin offsetx:=0; offsety:=0; end;
-     1: begin offsetx:=0; offsety:=1; end;
-     2: begin offsetx:=1; offsety:=0; end;
-     3: begin offsetx:=1; offsety:=1; end;
+     0: begin offsetx:=0; offsety:=0; end;{'GRBG'}
+     1: begin offsetx:=0; offsety:=1; end;{'BGGR'}
+     2: begin offsetx:=1; offsety:=0; end;{'RGGB'}
+     3: begin offsetx:=1; offsety:=1; end;{'GBRG'}
      else exit;
   end;
 
@@ -5276,10 +5315,10 @@ var
     value     : single;
 begin
   case pattern  of
-     0: begin offsetx:=0; offsety:=0; end;
-     1: begin offsetx:=0; offsety:=1; end;
-     2: begin offsetx:=1; offsety:=0; end;
-     3: begin offsetx:=1; offsety:=1; end;
+     0: begin offsetx:=0; offsety:=0; end;{'GRBG'}
+     1: begin offsetx:=0; offsety:=1; end;{'BGGR'}
+     2: begin offsetx:=1; offsety:=0; end;{'RGGB'}
+     3: begin offsetx:=1; offsety:=1; end;{'GBRG'}
   end;
 
   setlength(img_temp2,3,width2,height2);{set length of image array color}
@@ -5325,6 +5364,86 @@ begin
         img_temp2[2,x+1,y]:=value;
         img_temp2[2,x,y+1]:=value;
         img_temp2[2,x+1,y+1]:=value;
+      end;
+      except
+      end;
+
+    end;{x loop}
+  end;{y loop}
+  img:=img_temp2;
+  img_temp2:=nil;{free temp memory}
+  naxis3:=3;{now three colors}
+  naxis:=3; {from 2 to 3 dimensions}
+end;
+
+{not used}
+procedure demosaic_astrosimplebayercombined(var img:image_array;pattern: integer);{Spread each colour pixel to 2x2. Works well for astro oversampled images. Idea by Han.k}
+var
+    X,Y,offsetx, offsety: integer;
+    red,green_odd,green_even,blue : boolean;
+    img_temp2 : image_array;
+    value     : single;
+begin
+  case pattern  of
+     0: begin offsetx:=0; offsety:=0; end;
+     1: begin offsetx:=0; offsety:=1; end;
+     2: begin offsetx:=1; offsety:=0; end;
+     3: begin offsetx:=1; offsety:=1; end;
+  end;
+
+  setlength(img_temp2,3,width2,height2);{set length of image array color}
+
+  for y := 0 to height2-2 do   {-2 = -1 -1}
+    for x:=0 to width2-2 do
+  begin {clear green}
+      img_temp2[1,x,y]:=0;
+  end;
+
+  for y := 0 to height2-2 do   {-2 = -1 -1}
+  begin
+    for x:=0 to width2-2 do
+    begin
+      try
+      green_even:= ( (odd(x+1+offsetX)) and (odd(y+1+offsetY)) );{even(i) function is odd(i+1), even is here for array position not fits position}
+      green_odd := ( (odd(x+offsetX)) and  (odd(y+offsetY)) );
+      red :=( (odd(x+offsetX)) and (odd(y+1+offsetY)) );
+      blue:=( (odd(x+1+offsetX)) and (odd(y+offsetY)) );
+
+      value:=img[0,x,  y  ];
+
+      if green_even then
+      begin
+        value:=value/2;
+        img_temp2[1,x,y]:=img_temp2[1,x,y]+value;
+        img_temp2[1,x-1,y]:=img_temp2[1,x-1,y]+value;
+        img_temp2[1,x,y-1]:=img_temp2[1,x,y-1]+value;
+        img_temp2[1,x-1,y-1]:=img_temp2[1,x-1,y-1]+value;
+      end
+      else
+      if green_odd then
+      begin
+        value:=value/2;
+        img_temp2[1,x,y]:=img_temp2[1,x,y]+value;
+        img_temp2[1,x+1,y]:=img_temp2[1,x+1,y]+value;
+        img_temp2[1,x,y+1]:=img_temp2[1,x,y+1]+value;
+        img_temp2[1,x+1,y+1]:=img_temp2[1,x+1,y+1]+value;
+      end
+      else
+
+      if red then
+      begin
+        img_temp2[0,x,y]:=value;
+        img_temp2[0,x+1,y]:=value;
+        img_temp2[0,x,y-1]:=value;
+        img_temp2[0,x+1,y-1]:=value;
+      end
+      else
+      if blue then
+      begin
+        img_temp2[2,x,y]:=value;
+        img_temp2[2,x-1,y]:=value;
+        img_temp2[2,x,y+1]:=value;
+        img_temp2[2,x-1,y+1]:=value;
       end;
       except
       end;
@@ -5914,6 +6033,7 @@ begin
 
   bayerpattern_final:=result; {store for global use}
 end;
+
 
 procedure demosaic_bayer(var img: image_array); {convert OSC image to colour}
 begin
@@ -7950,19 +8070,47 @@ begin
   end;
 end;
 
+
+
+procedure Tmainwindow.extractred1Click(Sender: TObject);
+begin
+//  green_even:= ( (odd(x+1+offsetX)) and (odd(y+1+offsetY)) );{even(i) function is odd(i+1), even is here for array position not fits position}
+//  green_odd := ( (odd(x+offsetX)) and  (odd(y+offsetY)) );
+//  red :=( (odd(x+offsetX)) and (odd(y+1+offsetY)) );
+//  blue:=( (odd(x+1+offsetX)) and (odd(y+offsetY)) );
+
+
+  split_raw(1,1,'TR');{extract one of the Bayer matrix pixels}
+end;
+
+procedure Tmainwindow.extractblue1Click(Sender: TObject);
+begin
+  split_raw(1,1,'TB');{extract one of the Bayer matrix pixels}
+end;
+
+procedure Tmainwindow.extractgreen1Click(Sender: TObject);
+begin
+  split_raw(1,1,'TG');{extract one of the Bayer matrix pixels}
+end;
+
 procedure Tmainwindow.extract_pixel_11Click(Sender: TObject);
 begin
-  split_raw(1,1);{extract one of the Bayer matrix pixels}
+  split_raw(1,1,'P11');{extract one of the Bayer matrix pixels}
 end;
 
 procedure Tmainwindow.extract_pixel_12Click(Sender: TObject);
 begin
-  split_raw(1,2);{extract one of the Bayer matrix pixels}
+  split_raw(1,2,'P12');{extract one of the Bayer matrix pixels}
+end;
+
+procedure Tmainwindow.MenuItem21Click(Sender: TObject);
+begin
+  split_raw(2,1,'P21');{extract one of the Bayer matrix pixels}
 end;
 
 procedure Tmainwindow.extract_pixel_22Click(Sender: TObject);
 begin
-  split_raw(2,2);{extract one of the Bayer matrix pixels}
+  split_raw(2,2,'P22');{extract one of the Bayer matrix pixels}
 end;
 
 procedure Tmainwindow.FormDropFiles(Sender: TObject;
@@ -8309,12 +8457,6 @@ begin
   end {fits file}
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
-end;
-
-
-procedure Tmainwindow.MenuItem21Click(Sender: TObject);
-begin
-  split_raw(2,1);{extract one of the Bayer matrix pixels}
 end;
 
 
@@ -10427,7 +10569,6 @@ begin
         '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
         #10+
         'Preference will be given to the command line values.' +#10+
-        'Result will be written to an filename.ini and filename.wcs file.'+#10+
         'Solver result will be written to filename.ini and filename.wcs.'+#10+
         'Star database expected at: '+database_path
         ), pchar('ASTAP astrometric solver usage:'),MB_OK);
