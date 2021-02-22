@@ -2859,7 +2859,7 @@ function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; var 
     delta_ra                       : double;
     header_record                  : boolean;
 const
-   cacheblocksize=5*6*4*1024; {a multiply of record sizes 5, 6}
+   blocksize=5*6*4*1024; {a multiply of record sizes 5, 6}
 begin
    {$I-}
   readdatabase290:=true;
@@ -2872,8 +2872,9 @@ begin
 
     if cache_position>=cache_valid_pos then {add more data to cache. This cache works  about 35 % faster then Treader for files with FOV of 0.5 degrees. This due to re-use cache. No difference for FOV 1.3 degrees. At FOV=0.25 the improvement is 40%}
     begin
-      block_to_read:=min(cache_size, cacheblocksize);{don't read more then cache size!}
-      thefile_stars.read(cache_array[cache_valid_pos],block_to_read); {fill cache more. In most cases it can be reused. Especially for small field of view}
+      block_to_read:=min(cache_size, blocksize);{for small files, don't read more then cache size=file size!}
+      block_to_read:=min(block_to_read,cache_size - cache_valid_pos);{don't read more then file size!}
+      thefile_stars.read(cache_array[cache_valid_pos],block_to_read); {fill cache more. In most cases it can be re-used. Especially for small field of view}
       cache_valid_pos:=cache_valid_pos+block_to_read;{increase postion where cache buffer is valid.}
     end;
     move(cache_array[cache_position],buf2,record_size);{move one record for reading}
