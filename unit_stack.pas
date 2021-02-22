@@ -592,7 +592,7 @@ type
     procedure rename_result1Click(Sender: TObject);
     procedure restore_file_ext1Click(Sender: TObject);
     procedure colournebula1Click(Sender: TObject);
-    procedure clear_photometric_solutions1Click(Sender: TObject);
+    procedure refresh_astrometric_solutions1(Sender: TObject);
     procedure clear_photometry_list1Click(Sender: TObject);
     procedure export_aligned_files1Click(Sender: TObject);
     procedure extend_object_name_with_time_observation1Click(Sender: TObject);
@@ -5046,7 +5046,7 @@ begin
   Screen.Cursor:=Save_Cursor;
 end;
 
-procedure Tstackmenu1.clear_photometric_solutions1Click(Sender: TObject);
+procedure Tstackmenu1.refresh_astrometric_solutions1(Sender: TObject);
 var
   image_path: string;
   c         : integer;
@@ -5056,7 +5056,7 @@ begin
   begin
     image_path:=ExtractFilePath(ListView7.items[0].caption); {get path from first image}
 
-    DeleteFiles(image_path,'*.astap_image_stars');{delete photometry files}
+//    DeleteFiles(image_path,'*.astap_image_stars');{delete photometry files}
 
     for c:=0 to listview7.items.count-1 do
     begin
@@ -6443,13 +6443,14 @@ begin
 
   listview7.items.beginupdate;
 
-  for c:=0 to listview7.items.count-1 do {this is not required but nice}
-  begin
-    if fileexists(ChangeFileExt(listview7.items[c].caption,'.astap_image_stars')) then {photometric solution}
-      listview7.Items.item[c].subitems.Strings[P_photometric]:='✓'
-    else
-      listview7.Items.item[c].subitems.Strings[P_photometric]:='';
-  end;
+//  for c:=0 to listview7.items.count-1 do {this is not required but nice}
+//  begin
+//    if fileexists(ChangeFileExt(listview7.items[c].caption,'.astap_image_stars')) then {photometric solution}
+//      listview7.Items.item[c].subitems.Strings[P_photometric]:='✓'
+//    else
+//      listview7.Items.item[c].subitems.Strings[P_photometric]:='';
+//  end;
+
   listview7.alphasort;{sort on time}
 
   listview7.items.endupdate;
@@ -7366,7 +7367,7 @@ end;
 procedure calibration_only; {calibrate images only}
 var
   Save_Cursor:TCursor;
-   c  : integer;
+   c,x,y,col  : integer;
    object_to_process, stack_info : string;
 begin
   Save_Cursor := Screen.Cursor;
@@ -7393,9 +7394,20 @@ begin
         backup_header;{backup header and solution}
 
         apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
+
+
         {these global variables are passed-on in procedure to protect against overwriting}
         memo2_message('Calibrating file: '+inttostr(c+1)+'-'+inttostr( ListView1.items.count-1)+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
         Application.ProcessMessages;
+
+        for Y:=0 to height2-1 do
+         for X:=0 to width2-1 do
+           for col:=0 to naxis3-1 do
+           begin
+             img_loaded[col,X,Y]:= img_loaded[col,X,Y]+500; {add pedestal}
+           end;
+
+
         if esc_pressed then exit;
 
         if make_osc_color1.checked then {do demosaic bayer}

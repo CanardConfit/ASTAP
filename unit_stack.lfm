@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 36
+  Left = 229
   Height = 644
-  Top = 123
+  Top = 148
   Width = 1870
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1869
-    ActivePage = Images
+    ActivePage = tab_photometry1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 8
     TabOrder = 5
     object Images: TTabSheet
       Hint = 'Select here the light frames'
@@ -3473,7 +3473,7 @@ object stackmenu1: Tstackmenu1
         Width = 179
         AutoSize = True
         Caption = 'Refresh astrometric solutions'
-        OnClick = clear_photometric_solutions1Click
+        OnClick = refresh_astrometric_solutions1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
