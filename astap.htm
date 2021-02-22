@@ -28,7 +28,7 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
             &nbsp;<big>version 0.9.498 dated 2021-02-16. &nbsp;Alternative
-            link, the very latest development version 0.9.498 <a href="astap_setup.exe">ASTAP installer</a>
+            link, the very latest development version 0.9.499 <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.exe/download">H17
@@ -54,11 +54,14 @@ FOV of more then ten degrees</li><li><a href="https://sourceforge.net/projects/a
             fits image compression &amp; decompression programs from
             Nasa HEASARC.
             &nbsp;Only required if you have files with the .fz
-            &nbsp;extension.</li><li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_win64_command-line_version.zip/download">ASTAP command-line version.</a>&nbsp;Writes log to stdout.&nbsp;Not always updated to the latest version.</li></ul>
+            &nbsp;extension.</li><li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_win64_command-line_version.zip/download">astap_cli,&nbsp;</a>
+barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
+renamed. No pop-up notifier. Will not accept raw files and&nbsp;will not
+work with SharpCap since FOV is not stored.</li></ul>
           
           
         </ul>
-        <big><big><a href="https://sourceforge.net/projects/astap-program/files/"><br>
+        <big><big><small><small><a href="#database_usability">Database usability</a>:</small></small><br><img style="width: 1110px; height: 195px;" alt="" src="astap_database_range3.png"><br><br><a href="https://sourceforge.net/projects/astap-program/files/">
             </a>For MS Windows 32 bit:</big></big><big style="font-weight: bold;"><big><br>
           </big></big><span style="font-family: Arial;"></span>
         <ul>
@@ -89,7 +92,7 @@ tab alignment.&nbsp; Older G17 and G18 files can be deleted.</small></li><li></l
             Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
             placed in
             the program
-            directory.</li><li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_win32_command-line_version.zip/download">ASTAP command-line version.</a> Writes log to stdout.</li></ul>
+            directory.</li></ul>
           
         </ul>
         <big><big>For Linux 64 bit:</big></big>
@@ -119,8 +122,11 @@ the G17 files or force use of the G18 in ASTAP. tab alignment.</li><li><a href="
             Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
             placed in
             the program
-            directory.<big><big><a href="https://sourceforge.net/projects/astap-program/files/">
-                </a></big></big></li></ul>
+            directory.</li><li><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64_command-line_version.tar.gz/download">astap_cli,&nbsp;</a>
+barebone&nbsp;command-line solver&nbsp;compatible with the GUI version
+if renamed. No pop-up notifier. Will not accept raw files.</li></ul></ul>
+        <big><big><a href="https://sourceforge.net/projects/astap-program/files/"><br>
+            </a></big></big><ul>
           
         </ul>
         &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
@@ -181,7 +187,9 @@ in tab alignment.&nbsp; Older G17 and G18 files can be deleted.</small></li><li>
             Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
             placed in
             the program
-            directory.</li></ul>
+            directory.</li><li><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_armhf_command-line_version.zip/download">astap_cli,&nbsp;</a>
+barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
+renamed. No pop-up notifier. Will not accept raw files.</li></ul>
           
         </ul>
         <big><big><br>
@@ -209,7 +217,10 @@ in tab alignment.&nbsp; Older G17 and G18 files can be deleted.</small></li><li>
             Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
             placed in
             the program
-            directory.</li></ul>
+            directory.</li><li><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_arm64_command-line_version.tar.gz/download">astap_cli,&nbsp;</a>
+barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
+renamed. No pop-up notifier. Will not accept raw files.</li></ul></ul>
+        <big><big></big></big><ul>
           
         </ul>
         <br>
@@ -232,9 +243,12 @@ star
 containing&nbsp;105 million stars up to Johnson-V magnitude
 17.&nbsp;The Deepsky,&nbsp;HyperLeda and variable star database are
 included with the V17. &nbsp;This one also works best for solving an
-image with a FOV of more then ten degrees</li><li>For a telescope with a small field of view &lt;30 arcmin you could download the <a href="https://drive.google.com/file/d/1ReUsfX8aDgF-93OCFCdNaKmmkP9SAJ32/view?usp=sharing">g18 star database installer up to mag 18</a>&nbsp;or &nbsp;zipped <a href="https://sourceforge.net/projects/astap-program/files/star_databases/g18_star_database_mag18.zip/download">G18 star database up to mag 18</a> for manual install at&nbsp; /usr/local/opt/astap. Remove the G17 files or force use of the G18 in ASTAP. tab alignment.</li></ul>
+image with a FOV of more then ten degrees</li><li>For a telescope with a small field of view &lt;30 arcmin you could download the <a href="https://drive.google.com/file/d/1ReUsfX8aDgF-93OCFCdNaKmmkP9SAJ32/view?usp=sharing">g18 star database installer up to mag 18</a>&nbsp;or &nbsp;zipped <a href="https://sourceforge.net/projects/astap-program/files/star_databases/g18_star_database_mag18.zip/download">G18 star database up to mag 18</a> for manual install at&nbsp; /usr/local/opt/astap. Remove the G17 files or force use of the G18 in ASTAP. tab alignment.</li><li><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/astap_command-line_version.zip/download">astap_cli,&nbsp;</a>
+barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
+renamed. No pop-up notifier. Will not accept raw files.</li></ul></ul>
+        <big><big></big></big><ul>
         </ul>
-        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Any Mac user&nbsp;who could assist in compiling ASTAP for&nbsp;<a href="https://forum.lazarus.freepascal.org/index.php?topic=50297.0">Mac on ARM</a> using Lazarus&nbsp;please contact me.<big style="font-weight: bold;"><big><br>
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Any Mac user&nbsp;who could assist in compiling ASTAP for&nbsp;<a href="https://forum.lazarus.freepascal.org/index.php?topic=50297.0">Mac on ARM</a> using Lazarus&nbsp;please contact me.<br><br><br><big style="font-weight: bold;"><big>
           </big></big></div>
       <div style="text-align: left;">
         <ul>
@@ -1236,7 +1250,7 @@ images have poor borders, set option crop images larger then 0%.</big></li><li><
         </ul>
         <big><br>
           The following image shows the selected quads where the six distances form an irregular tetrahedrons&nbsp;:<br>
-          <img style="width: 791px; height: 798px;" alt="" src="astap_quads.jpg"><br>
+          <img style="width: 1392px; height: 1040px;" alt="" src="astap_quads.jpg"><br>
           </big><big><br>
           The matching process is described here </big><span style="font-family: Arial;"><span style="text-decoration: underline;"></span></span><a href="astap_astrometric_solving.htm">Background
           info,&nbsp;how
@@ -2294,7 +2308,7 @@ of view where objects like M13 fill the whole image ASTAP could
 struggle to solve. This is caused by the fact that the database has a
 better resolution then the image. Forcing option "slow" could
 &nbsp;help.</li>
-        </ol><br><br><big>Warnings:</big><br><ul><li>In case you get regular a warning "Star database limit reached" replace
+        </ol><br><a name="database_usability"></a><br><big>Warnings:</big><br><ul><li>In case you get regular a warning "Star database limit reached" replace
 the G17 database by the H18.&nbsp; This could happen if your field of view
 is small (&lt;30 arcmin).&nbsp;Remove the G17 files to force the use of the H18.</li></ul>In the plane of the Milky-way plane it is easy to image enough stars for solving as shown in this <a href="https://sci.esa.int/web/gaia/-/60170-gaia-s-new-map-of-star-density" class="bbc_url" title="External link" rel="nofollow external">ESA image</a>
 showing the sky star density. If you look outside the Milky-Way plane
@@ -2311,7 +2325,7 @@ minimum or&nbsp;till the solver gives a warning
 18. <br><br><div style="text-align: center;"><div style="text-align: left;"><img style="width: 834px; height: 244px;" alt="" src="astap_database_range.png"><br></div><br><br><div style="text-align: left;">For
 very long exposures and a FOV below one degree it could be required to
 reduce the maximum number of stars detected. &nbsp;This is default set
-at 500.If not stars with a magnitude fainter then the database will be detected.. </div><br><div style="text-align: left;"><img style="width: 384px; height: 247px;" alt="" src="astap_database_range2.png"><br></div></div><br>Support is available via the&nbsp;<a href="http://www.hnsky.org/forum/index.php"><big style="font-family: Arial;"></big></a><big style="font-family: Arial;"><a href="https://sourceforge.net/p/astap-program/discussion/">ASTAP
+at 500.If not stars with a magnitude fainter then the database will be detected.. </div><br><div style="text-align: left;"><img style="width: 384px; height: 247px;" alt="" src="astap_database_range2.png"><br><br><br>Database usability:<br><img style="width: 1110px; height: 195px;" alt="" src="astap_database_range3.png"><br><br></div></div><br>Support is available via the&nbsp;<a href="http://www.hnsky.org/forum/index.php"><big style="font-family: Arial;"></big></a><big style="font-family: Arial;"><a href="https://sourceforge.net/p/astap-program/discussion/">ASTAP
                     Forum</a></big><big>
         </big></div>
       <p align="left"></p>

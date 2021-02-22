@@ -60,7 +60,7 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 //4) 	For each quad sort the six quad distances on size.                   	 | For each quad sort the six quad distances on size.
 //      d1 is the longest and d6 the shortest.                                   | d1 is the longest and d6 the shortest.
 //                                                                               |
-//5) 	Scale the six quad star distance as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1)  | Scale the six quad star distance as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1)
+//5) 	Scale the six quad star distances as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1) | Scale the six quad star distances as (d1, d2/d1,d3/d1,d4/d1,d5/d1,d6/d1)
 //      These are the image hash codes.                                          | These are the database hash codes.
 //
 //                           => matching process <=
@@ -69,7 +69,7 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 //7) 		             For matching quad hash codes, calculate the longest side ratios d1_found/d1_reference. Calculate the median ratio.
 //                           Compare the quads longest side ratios with the median value and remove quads outside a small tolerance.
 //
-//8)                         From the remaining matching quads, prepare the "A"matrix/array containing the x,y center positions of the test image quads in standard coordinates
+//8)                         From the remaining matching quads, prepare the "A" matrix/array containing the x,y center positions of the test image quads in standard coordinates
 //                           and  the array X_ref, Y_ref containing the x, y center positions of the reference imagete trahedrons in standard coordinates.
 //
 //                           A:                  Sx:         X_ref:
