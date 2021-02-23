@@ -686,6 +686,7 @@ procedure log_to_file2(logf,mess : string);{used for platesolve2 and photometry}
 procedure demosaic_advanced(var img : image_array);{demosaic img_loaded}
 procedure bin_X2X3X4(binfactor:integer);{bin img_loaded 2x or 3x or 4x}
 procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : image_array; var sd,mean :double; var iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+function extract_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -3106,7 +3107,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.501, '+about_message4+', dated 2021-2-22';
+  #13+#10+'ASTAP version ß0.9.502, '+about_message4+', dated 2021-2-23';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4705,14 +4706,124 @@ begin
   LoadFITSPNGBMPJPEG1filterindex:=oldvalue; {restore filterindex position}
 end;
 
+function extract_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
+var
+  img_temp11 : image_array;
+  FitsX, fitsY,w,h,xp2,yp2      : integer;
+  ratio                         : double;
+  get_green                     : boolean;
+  val                           : single;
+
+begin
+  if load_fits(filename7,true {light},true,0,img_loaded)=false then
+  begin
+    beep; result:='';exit;
+  end;
+
+  if ((pos('TR',filter_name)=0) and (pos('TG',filter_name)=0) and (pos('TB',filter_name)=0)) then
+  begin
+
+    ratio:=0.5;
+    w:=trunc(width2/2);  {half size}
+    h:=trunc(height2/2);
+
+    setlength(img_temp11,1,w,h);
+
+    get_green:=false;
+    if filtern='TR' then {red}
+    begin
+      case get_demosaic_pattern {analyse pattern} of
+         0: begin xp:=2; yp:=1; end;{'GRBG'}
+         1: begin xp:=2; yp:=2; end;{'BGGR'}
+         2: begin xp:=1; yp:=1; end;{'RGGB'}
+         3: begin xp:=2; yp:=1; end;{'GBRG'}
+      end;
+    end
+    else
+    if filtern='TB' then {blue}
+    begin
+      case get_demosaic_pattern {analyse pattern} of
+         0: begin xp:=1; yp:=2; end;{'GRBG'}
+         1: begin xp:=1; yp:=1; end;{'BGGR'}
+         2: begin xp:=2; yp:=2; end;{'RGGB'}
+         3: begin xp:=1; yp:=2; end;{'GBRG'}
+      end;
+    end
+    else
+    if filtern='TG' then {green}
+    begin
+      get_green:=true;
+      case get_demosaic_pattern {analyse pattern} of
+         0: begin xp:=1; yp:=1; xp2:=2; yp2:=2; end;{'GRBG'}
+         1: begin xp:=2; yp:=1; xp2:=1; yp2:=2; end;{'BGGR'}
+         2: begin xp:=2; yp:=1; xp2:=1; yp2:=2; end;{'RGGB'}
+         3: begin xp:=1; yp:=1; xp2:=2; yp2:=2; end;{'GBRG'}
+      end;
+    end;
+
+    for fitsY:=0 to h-1 do
+      for fitsX:=0 to w-1  do
+      begin
+        val:=img_loaded[0,fitsx*2+xp-1,fitsY*2+yp-1];
+        if get_green then val:=(val+img_loaded[0,fitsx*2+xp2-1,fitsY*2+yp2-1])/2; {add second green pixel}
+        img_temp11[0,fitsX,fitsY]:=val;
+      end;
+
+    width2:=w;
+    height2:=h;
+
+    update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
+    update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+
+
+    update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
+    update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+
+
+
+    if crpix1<>0 then begin crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
+    if crpix2<>0 then begin crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
+
+    if cdelt1<>0 then begin cdelt1:=cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
+    if cdelt2<>0 then begin cdelt2:=cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
+
+    if cd1_1<>0 then
+    begin
+      cd1_1:=cd1_1/ratio;
+      cd1_2:=cd1_2/ratio;
+      cd2_1:=cd2_1/ratio;
+      cd2_2:=cd2_2/ratio;
+      update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
+      update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
+      update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
+      update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+    end;
+
+    update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING/ratio));
+    update_integer('YBINNING=',' / Binning factor in height                        ' ,round(yBINNING/ratio));
+    add_text   ('HISTORY   ','contains extracted pixels of 2x2 bayer matrix');
+
+    update_text   ('FILTER  =',#39+filtern+#39+'           / Filter name                                    ');
+    img_loaded:=img_temp11;
+    result:=ChangeFileExt(FileName7,'_'+filtern+'.fit');
+    if save_fits(img_loaded,result,16,true{overwrite}) =false then result:='';
+    img_temp11:=nil;
+  end
+  else
+  begin
+    beep;
+    memo2_message('Warning image '+ filename7+' skipped. OBJECT indicates earlier extraction!');
+  end;
+end;
+
+
+
 procedure split_raw(xp,yp : integer; filtern: string);{extract one of the Bayer matrix pixels}
 var
-  Save_Cursor:TCursor;
-  img_temp11 : image_array;
-  I, FitsX, fitsY,w,h,xp2,yp2   : integer;
-  ratio                         : double;
-  dobackup,get_green            : boolean;
-  val                           : single;
+  Save_Cursor : TCursor;
+  dobackup    : boolean;
+  i           : integer;
+
 begin
   with mainwindow do
   begin
@@ -4721,7 +4832,6 @@ begin
     opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
 
     fits_file:=true;
-   // data_range_groupBox1.Enabled:=true;
     esc_pressed:=false;
 
     if OpenDialog1.Execute then
@@ -4732,106 +4842,19 @@ begin
       if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
       try { Do some lengthy operation }
-          with OpenDialog1.Files do
-          for I := 0 to Count - 1 do
-          begin
-            filename2:=Strings[I];
-            {load image}
-            Application.ProcessMessages;
-            if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then begin beep; Screen.Cursor := Save_Cursor; exit;end;
+        with OpenDialog1.Files do
+        for I := 0 to Count - 1 do
+        begin
+          Application.ProcessMessages;
+          if esc_pressed then begin Screen.Cursor := Save_Cursor;  { Always restore to normal } exit; end;
 
-            ratio:=0.5;
-            w:=trunc(width2/2);  {half size}
-            h:=trunc(height2/2);
-
-            setlength(img_temp11,1,w,h);
-
-            get_green:=false;
-            if filtern='TR' then {red}
-            begin
-              case get_demosaic_pattern {analyse pattern} of
-                 0: begin xp:=2; yp:=1; end;{'GRBG'}
-                 1: begin xp:=2; yp:=2; end;{'BGGR'}
-                 2: begin xp:=1; yp:=1; end;{'RGGB'}
-                 3: begin xp:=2; yp:=1; end;{'GBRG'}
-              end;
-            end
-            else
-            if filtern='TB' then {blue}
-            begin
-              case get_demosaic_pattern {analyse pattern} of
-                 0: begin xp:=1; yp:=2; end;{'GRBG'}
-                 1: begin xp:=1; yp:=1; end;{'BGGR'}
-                 2: begin xp:=2; yp:=2; end;{'RGGB'}
-                 3: begin xp:=1; yp:=2; end;{'GBRG'}
-              end;
-            end
-            else
-            if filtern='TG' then {green}
-            begin
-              get_green:=true;
-              case get_demosaic_pattern {analyse pattern} of
-                 0: begin xp:=1; yp:=1; xp2:=2; yp2:=2; end;{'GRBG'}
-                 1: begin xp:=2; yp:=1; xp2:=1; yp2:=2; end;{'BGGR'}
-                 2: begin xp:=2; yp:=1; xp2:=1; yp2:=2; end;{'RGGB'}
-                 3: begin xp:=1; yp:=1; xp2:=2; yp2:=2; end;{'GBRG'}
-              end;
-            end;
-
-            for fitsY:=0 to h-1 do
-              for fitsX:=0 to w-1  do
-              begin
-                val:=img_loaded[0,fitsx*2+xp-1,fitsY*2+yp-1];
-                if get_green then val:=(val+img_loaded[0,fitsx*2+xp2-1,fitsY*2+yp2-1])/2; {add second green pixel}
-                img_temp11[0,fitsX,fitsY]:=val;
-              end;
-
-            width2:=w;
-            height2:=h;
-
-            update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-            update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-
-
-            update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-            update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-
-
-
-            if crpix1<>0 then begin crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
-            if crpix2<>0 then begin crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
-
-            if cdelt1<>0 then begin cdelt1:=cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
-            if cdelt2<>0 then begin cdelt2:=cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
-
-            if cd1_1<>0 then
-            begin
-              cd1_1:=cd1_1/ratio;
-              cd1_2:=cd1_2/ratio;
-              cd2_1:=cd2_1/ratio;
-              cd2_2:=cd2_2/ratio;
-              update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
-              update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
-              update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
-              update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
-            end;
-
-            update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING/ratio));
-            update_integer('YBINNING=',' / Binning factor in height                        ' ,round(yBINNING/ratio));
-            add_text   ('HISTORY   ','contains extracted pixels of 2x2 bayer matrix');
-
-            update_text   ('FILTER  =',#39+filtern+#39+'           / Filter name                                    ');
-            img_loaded:=img_temp11;
-            save_fits(img_loaded,ChangeFileExt(FileName2,'_'+filtern+'.fit'),16,true);{overwrite}
-            img_temp11:=nil;
-
-         end;
-        finally
+          if extract_colour_to_file(Strings[I] {filename}, filtern,xp,yp )=''{new file name} then beep;
+        end;
+      finally
         if dobackup then restore_img;{for the viewer}
         Screen.Cursor := Save_Cursor;  { Always restore to normal }
       end;
     end;
-
   end;
 end;
 

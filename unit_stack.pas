@@ -52,6 +52,7 @@ type
     alignment1: TTabSheet;
     align_blink1: TCheckBox;
     aavso_button1: TButton;
+    extract_green1: TButton;
     changekeyword6: TMenuItem;
     changekeyword7: TMenuItem;
     checkBox_annotate1: TCheckBox;
@@ -59,6 +60,8 @@ type
     changekeyword8: TMenuItem;
     keyword6: TMenuItem;
     keyword7: TMenuItem;
+    copy_to_photometry1: TMenuItem;
+    copy_to_blink1: TMenuItem;
     yyyyyy: TMenuItem;
     xxxxxx: TMenuItem;
     merge_overlap1: TCheckBox;
@@ -164,7 +167,7 @@ type
     browse_photometry1: TButton;
     Button_free_resize_fits1: TButton;
     calibrate_prior_solving1: TCheckBox;
-    clear_astrometric_solutions1: TButton;
+    refresh_astrometric_solutions1: TButton;
     clear_blink_alignment1: TButton;
     clear_blink_list1: TButton;
     clear_inspector_list1: TButton;
@@ -303,7 +306,6 @@ type
     Label7: TLabel;
     Label8: TLabel;
     Label9: TLabel;
-    Label_bin_oversampled1: TLabel;
     Label_results1: TLabel;
     listview1: TListView;
     listview2: TListView;
@@ -491,7 +493,7 @@ type
     keyword2: TMenuItem;
     keyword3: TMenuItem;
     keyword4: TMenuItem;
-    MenuItem14: TMenuItem;
+    copy_to_images1: TMenuItem;
     help_stack_menu2: TLabel;
     MenuItem13: TMenuItem;
     copypath1: TMenuItem;
@@ -563,7 +565,10 @@ type
     procedure analyse_objects_visibles1Click(Sender: TObject);
     procedure browse_photometry1Click(Sender: TObject);
     procedure aavso_button1Click(Sender: TObject);
+    procedure extract_green1Click(Sender: TObject);
     procedure clear_inspector_list1Click(Sender: TObject);
+    procedure copy_to_blink1Click(Sender: TObject);
+    procedure copy_to_photometry1Click(Sender: TObject);
     procedure curve_fitting1Click(Sender: TObject);
     procedure ephemeris_centering1Change(Sender: TObject);
     procedure focallength1Exit(Sender: TObject);
@@ -592,7 +597,7 @@ type
     procedure rename_result1Click(Sender: TObject);
     procedure restore_file_ext1Click(Sender: TObject);
     procedure colournebula1Click(Sender: TObject);
-    procedure refresh_astrometric_solutions1(Sender: TObject);
+    procedure refresh_astrometric_solutions1click(Sender: TObject);
     procedure clear_photometry_list1Click(Sender: TObject);
     procedure export_aligned_files1Click(Sender: TObject);
     procedure extend_object_name_with_time_observation1Click(Sender: TObject);
@@ -658,7 +663,7 @@ type
     procedure listview6CustomDraw(Sender: TCustomListView; const ARect: TRect;
       var DefaultDraw: Boolean);
     procedure make_osc_color1Change(Sender: TObject);
-    procedure MenuItem14Click(Sender: TObject);
+    procedure copy_to_images1Click(Sender: TObject);
     procedure resize_factor1Change(Sender: TObject);
     procedure analysedarksButton2Click(Sender: TObject);
     procedure analyseflatsButton3Click(Sender: TObject);
@@ -4372,11 +4377,81 @@ begin
   save_settings(user_path+'astap.cfg'); {for aavso settings}
 end;
 
+procedure Tstackmenu1.extract_green1Click(Sender: TObject);
+var
+  c           : integer;
+  Save_Cursor : TCursor;
+  fn          : STRING;
+begin
+  if (IDYES= Application.MessageBox('This will extract the combined green channel from the (calibrated) raw files and write to result to new files. Continue?', 'Raw colour seperation', MB_ICONQUESTION + MB_YESNO) )=false then exit;
+
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  if listview7.items.count>0 then
+  begin
+    for c:=0 to listview7.items.count-1 do
+     if  listview7.Items.item[c].checked then
+     begin
+       fn:=extract_colour_to_file(ListView7.items[c].caption,'TG',1,1); {extract green channel}
+       if fn<>'' then
+       begin
+           ListView7.items[c].caption:=fn;
+           listview7.Items.item[c].subitems.Strings[B_exposure]:='';{clear exposure, indicate a new analyse is required}
+       end
+       else
+       listview7.Items.item[c].checked:=false;
+
+       application.processmessages;
+       if esc_pressed then begin Screen.Cursor:=Save_Cursor; exit; end;
+     end;
+  end;
+  analyse_listview(listview7,true {light},false {full fits},false{refresh}); {refresh list}
+  Screen.Cursor := Save_Cursor;  { Always restore to normal }
+
+end;
+
 
 procedure Tstackmenu1.clear_inspector_list1Click(Sender: TObject);
 begin
   esc_pressed:=true; {stop any running action}
   listview8.Clear;
+end;
+
+procedure Tstackmenu1.copy_to_blink1Click(Sender: TObject);
+var
+  index,counter: integer;
+begin
+  index:=0;
+  listview6.Items.beginUpdate;
+  counter:=listview5.Items.Count;
+  while index<counter do
+  begin
+    if  listview5.Items[index].Selected then
+    begin
+      listview_add(listview6,listview5.items[index].caption,true,I_nr);
+    end;
+    inc(index); {go to next file}
+  end;
+  listview6.Items.endUpdate;
+end;
+
+procedure Tstackmenu1.copy_to_photometry1Click(Sender: TObject);
+var
+  index,counter: integer;
+begin
+  index:=0;
+  listview7.Items.beginUpdate;
+  counter:=listview5.Items.Count;
+  while index<counter do
+  begin
+    if  listview5.Items[index].Selected then
+    begin
+      listview_add(listview7,listview5.items[index].caption,true,I_nr);
+    end;
+    inc(index); {go to next file}
+  end;
+  listview7.Items.endUpdate;
 end;
 
 procedure Tstackmenu1.curve_fitting1Click(Sender: TObject);
@@ -5046,26 +5121,21 @@ begin
   Screen.Cursor:=Save_Cursor;
 end;
 
-procedure Tstackmenu1.refresh_astrometric_solutions1(Sender: TObject);
+procedure Tstackmenu1.refresh_astrometric_solutions1click(Sender: TObject);
 var
-  image_path: string;
   c         : integer;
 begin
   if (IDYES= Application.MessageBox('This will renew the astrometric solutions of all files and could take some time. Are you sure?', 'Renew astrometric solutions of  all files?', MB_ICONQUESTION + MB_YESNO) )=false then exit;
   if listview7.items.count>0 then
   begin
-    image_path:=ExtractFilePath(ListView7.items[0].caption); {get path from first image}
-
-//    DeleteFiles(image_path,'*.astap_image_stars');{delete photometry files}
-
     for c:=0 to listview7.items.count-1 do
     begin
       listview7.Items.item[c].subitems.Strings[P_astrometric]:='';{clear astrometry marks}
       listview7.Items.item[c].subitems.Strings[P_photometric]:='';{clear photometry marks}
     end;
   end;
-  if sender=clear_astrometric_solutions1 then
-            stackmenu1.photometry_button1Click(Sender);{refresh astrometric solutions}
+//  if sender=clear_astrometric_solutions1 then
+  stackmenu1.photometry_button1Click(Sender);{refresh astrometric solutions}
 end;
 
 procedure Tstackmenu1.clear_photometry_list1Click(Sender: TObject);
@@ -5343,7 +5413,7 @@ end;
 procedure Tstackmenu1.FormPaint(Sender: TObject);
 begin
   case pagecontrol1.tabindex of 7:more_indication1.visible:=stackmenu1.width<=export_aligned_files1.left+20;
-                                8:more_indication1.visible:=stackmenu1.width<=Label_bin_oversampled1.left+20;
+                                8:more_indication1.visible:=stackmenu1.width<=mark_outliers_upto1.left+20;
                                 9:more_indication1.visible:=stackmenu1.width<=GroupBox_test_images1.left+20;
                                 else more_indication1.visible:=false;
 
@@ -5403,7 +5473,7 @@ end;
 procedure Tstackmenu1.more_indication1Click(Sender: TObject);
 begin
   case pagecontrol1.tabindex of 7:stackmenu1.Width:=export_aligned_files1.left+export_aligned_files1.width+10;{set width if clicked on arrow}
-                                8:stackmenu1.Width:=Label_bin_oversampled1.left+Label_bin_oversampled1.width+10;
+                                8:stackmenu1.Width:=mark_outliers_upto1.left+mark_outliers_upto1.width+10;
                                 9:stackmenu1.Width:=GroupBox_test_images1.left+GroupBox_test_images1.width+10;
   end;
 end;
@@ -5652,7 +5722,7 @@ begin
 
   memo2_message('Checking for astrometric solutions in FITS header required for star flux calibration against star database.');
 
-  refresh_solutions:=(sender=stackmenu1.clear_astrometric_solutions1); {refresh astrometric solutions}
+  refresh_solutions:=(sender=stackmenu1.refresh_astrometric_solutions1); {refresh astrometric solutions}
 
   {solve images first to allow flux to magnitude calibration}
   for c:=0 to listview7.items.count-1 do {check for astrometric solutions}
@@ -5705,7 +5775,7 @@ begin
   setlength(starlistpack ,listview7.items.count);{to store found stars for each image. Used for finding outliers}
   for c:=0 to listview7.items.count-1 do starlistpack[c].height:=0;{use as marker for filled}
 
-  memo2_message('Click on variabl, Check and 3 stars(pink marker) to record magnitudes in the photometry list.');
+  memo2_message('Click on variable, Check and 3 stars(pink marker) to record magnitudes in the photometry list.');
   repeat
     setlength(starVar,listview7.items.count);
     setlength(starCheck,listview7.items.count);{number of stars could fluctuate so set maximum space each loop}
@@ -6825,7 +6895,7 @@ begin
 end;
 
 
-procedure Tstackmenu1.MenuItem14Click(Sender: TObject);
+procedure Tstackmenu1.copy_to_images1Click(Sender: TObject);
 var
   index,counter: integer;
 begin
