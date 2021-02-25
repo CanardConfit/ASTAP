@@ -4387,6 +4387,7 @@ begin
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  esc_pressed:=false;
 
   if listview7.items.count>0 then
   begin
@@ -4398,9 +4399,12 @@ begin
        begin
            ListView7.items[c].caption:=fn;
            listview7.Items.item[c].subitems.Strings[B_exposure]:='';{clear exposure, indicate a new analyse is required}
-       end
-       else
-       listview7.Items.item[c].checked:=false;
+       end;
+
+       {scroll}
+       listview7.Selected :=nil; {remove any selection}
+       listview7.ItemIndex := c;{mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+       listview7.Items[c].MakeVisible(False);{scroll to selected item}
 
        application.processmessages;
        if esc_pressed then begin Screen.Cursor:=Save_Cursor; exit; end;

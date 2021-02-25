@@ -3109,7 +3109,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.503, '+about_message4+', dated 2021-2-25';
+  #13+#10+'ASTAP version ß0.9.504, '+about_message4+', dated 2021-2-25';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4763,6 +4763,13 @@ begin
       end;
     end;
 
+    case get_demosaic_pattern {analyse pattern} of
+       0: begin memo2_message('GRBG => G'); end;{'GRBG'}
+       1: begin memo2_message('BGGR => G'); end;{'BGGR'}
+       2: begin memo2_message('RGGB => G'); end;{'RGGB'}
+       3: begin memo2_message('GBRG => G'); end;{'GBRG'}
+    end;
+
     for fitsY:=0 to h-1 do
       for fitsX:=0 to w-1  do
       begin
@@ -4813,8 +4820,7 @@ begin
   end
   else
   begin
-    beep;
-    memo2_message('Warning image '+ filename7+' skipped. OBJECT indicates earlier extraction!');
+    memo2_message('Warning image '+ filename7+' skipped. FILTER indicates earlier extraction!');
   end;
 end;
 
