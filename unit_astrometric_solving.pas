@@ -566,7 +566,6 @@ begin
                     #10+mainwindow.ra1.text+'h,'+mainwindow.dec1.text+'°'+{for tray icon}
                     #10+filename2;
 
-//      nrstars_required:=round(nrstars*(height2/width2)*1.125);{square search field based on height. The 1.125 is an emperical value to compensate for missing stars in the image due to double stars, distortions and so on. The star database should have therefore a little higher density to show the same reference stars}
     nrstars_required:=round(nrstars*(height2/width2));{square search field based on height.}
 
     solution:=false; {assume no match is found}

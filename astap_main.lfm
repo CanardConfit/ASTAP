@@ -1131,6 +1131,7 @@ object mainwindow: Tmainwindow
         end
         object Rota_mainmenu1: TMenuItem
           Caption = 'Rotate'
+          ImageIndex = 22
           object batch_rotate_left1: TMenuItem
             Caption = 'Rotate 90 degrees left'
             Hint = 'Rotate the FITS image 90 degrees left'
@@ -1145,18 +1146,19 @@ object mainwindow: Tmainwindow
         object split_osc1: TMenuItem
           Caption = 'Raw colour seperation'
           Hint = 'This will extract the colours from a raw DSLR/OCS image write them to seperate files.'
+          ImageIndex = 14
           object extractgreen1: TMenuItem
-            Caption = 'Extract green pixels and combine'
-            Hint = 'Will combine for each bayer pattern the two green pixels. Check in advance the de-mosaic pattern in stack menu, tab stack method'
+            Caption = 'Extract raw GREEN pixels and combine'
+            Hint = 'Will combine for each bayer submosaic the two green pixels. Check in advance the de-mosaic pattern in stack menu, tab stack method'
             OnClick = extractgreen1Click
           end
           object extractred1: TMenuItem
-            Caption = 'Extract red pixels'
+            Caption = 'Extract raw RED pixels'
             Hint = 'Check in advance the de-mosaic pattern in stack menu, tab stack method'
             OnClick = extractred1Click
           end
           object extractblue1: TMenuItem
-            Caption = 'Extract blue pixels'
+            Caption = 'Extract raw BLUE pixels'
             Hint = 'Check in advance the de-mosaic pattern in stack menu, tab stack method'
             OnClick = extractblue1Click
           end

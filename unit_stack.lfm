@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 42
+  Left = 398
   Height = 644
-  Top = 157
+  Top = 159
   Width = 1870
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -3489,7 +3489,7 @@ object stackmenu1: Tstackmenu1
       object extract_green1: TButton
         Left = 688
         Height = 26
-        Hint = 'For raw images only. Will combine for each bayer pattern the two green pixels. Check in advance the de-mosaic pattern in stack menu, tab stack method'
+        Hint = 'For raw images only. Will combine for each bayer submosaic the two green pixels. Check in advance the de-mosaic pattern in stack menu, tab stack method'
         Top = 6
         Width = 123
         Caption = 'Extract raw GREEN'

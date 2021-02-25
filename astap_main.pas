@@ -564,7 +564,9 @@ const
   xbayroff: double=0;{additional bayer pattern offset to apply}
   Ybayroff: double=0;{additional bayer pattern offset to apply}
   annotated : boolean=false;{any annotation in fits file?}
-  sqm: double=0;{sky quality}
+  sqm: double=0;{sky quality, use in reporting in write_ini}
+  hfd_median : double=0;{median hfd, use in reporting in write_ini}
+  hfd_counter: integer=0;{star counter (for hfd_median), use in reporting in write_ini}
 
   copy_paste :boolean=false;
   shape_fitsX: double=0;
@@ -3107,7 +3109,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.502, '+about_message4+', dated 2021-2-23';
+  #13+#10+'ASTAP version ß0.9.503, '+about_message4+', dated 2021-2-25';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -9838,7 +9840,6 @@ var
 begin
   mainwindow.calibrate_photometry1Click(nil);
 
-
   if flux_magn_offset>0 then
   begin
     if pedestal>=cblack then begin beep; pedestal:=0; {prevent errors} end;
@@ -10112,8 +10113,10 @@ begin
     writeln(f,'CD1_2='+floattostrE(cd1_2));       // CD matrix to convert (x,y) to (Ra, Dec)
     writeln(f,'CD2_1='+floattostrE(cd2_1));       // CD matrix to convert (x,y) to (Ra, Dec)
     writeln(f,'CD2_2='+floattostrE(cd2_2));       // CD matrix to convert (x,y) to (Ra, Dec)
-    if sqm>0 then
-       writeln(f,'SQM='+floattostrE(sqm));       // sky background
+
+    if sqm>0 then writeln(f,'SQM='+floattostrE(sqm));  // sky background
+    if hfd_median>0 then writeln(f,'HFD='+floattostrE(hfd_median));
+    if hfd_counter>0 then  writeln(f,'STARS='+floattostrE(hfd_counter));//number of stars
   end
   else
   begin
@@ -10538,8 +10541,8 @@ procedure Tmainwindow.FormShow(Sender: TObject);
 var
     s      : string;
     histogram_done,file_loaded,debug,filespecified,analysespecified,extractspecified,focusrequest : boolean;
-    backgr, hfd_median,snr_min          : double;
-    hfd_counter,binning,focus_count     : integer;
+    backgr,snr_min           : double;
+    binning,focus_count      : integer;
 begin
   user_path:=GetAppConfigDir(false);{get user path for app config}
 
@@ -10707,21 +10710,24 @@ begin
               writeln('HFD_MEDIAN='+floattostrF2(hfd_median,0,1));
               writeln('STARS='+inttostr(hfd_counter));
             end;
+            update_float('HFD     =',' / Median Half Flux Diameter' ,hfd_median);
+            update_float('STARS   =',' / Number of stars detected' ,hfd_counter);
+
             {$IFDEF msWindows}
-            halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
+            errorlevel:=round(hfd_median*100)*1000000+hfd_counter;{report in errorlevel the hfd and the number of stars used}
             {$ELSE}
-            halt(errorlevel);{report hfd in errorlevel. In linux only range 0..255 possible}
+            //nothing. In linux only range 0..255 possible}
             {$ENDIF}
           end;{analyse fits and report HFD value}
 
-          {$ifdef CPUARM}
-          {set tray icon visible gives a fatal error in old compiler for armhf}
-          {$else}
-            trayicon1.visible:=true;{show progress in hint of trayicon}
-          {$endif}
-
           if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
           begin
+            {$ifdef CPUARM}
+            {set tray icon visible gives a fatal error in old compiler for armhf}
+            {$else}
+              trayicon1.visible:=true;{show progress in hint of trayicon}
+            {$endif}
+
             if hasoption('sqm') then {sky quality}
             begin
               pedestal:=round(strtofloat2(GetOptionValue('sqm')));

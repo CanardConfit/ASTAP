@@ -3526,7 +3526,7 @@ begin
   keyw:=InputBox('All selected files will be updated!! Hit cancel to abort. Type keyword:','','' );
   if length(keyw)<=2 then exit;
 
-  value:=InputBox('New value keyword:','','' );
+  value:=InputBox('New value keyword (Type DELETE to remove keyword):','','' );
   if length(value)<=0 then exit;
     listview_update_keyword(lv,uppercase(keyw),value);{update key word}
 end;
@@ -5134,7 +5134,6 @@ begin
       listview7.Items.item[c].subitems.Strings[P_photometric]:='';{clear photometry marks}
     end;
   end;
-//  if sender=clear_astrometric_solutions1 then
   stackmenu1.photometry_button1Click(Sender);{refresh astrometric solutions}
 end;
 
@@ -5578,7 +5577,7 @@ begin
             begin
               xc:=(solution_vectorX[0]*(starlistpack[c].starlist[0,i])+solution_vectorX[1]*(starlistpack[c].starlist[1,i])+solution_vectorX[2]); {correction x:=aX+bY+c}
               yc:=(solution_vectorY[0]*(starlistpack[c].starlist[0,i])+solution_vectorY[1]*(starlistpack[c].starlist[1,i])+solution_vectorY[2]); {correction y:=aX+bY+c}
-              if ((xc>=0) and (xc<=starlistpack[c].width-1) and (yc>=0) and (yc<=starlistpack[c].height-1)) then {image could be shifted. Prevent runtime errors}
+              if ((xc>=factor) and (xc<=starlistpack[c].width-1-factor) and (yc>=factor) and (yc<=starlistpack[c].height-1-factor)) then {image could be shifted and very close to the boundaries. Prevent runtime errors}
               begin
                 x_new:=round(xc/factor);
                 y_new:=round(yc/factor);
@@ -5669,7 +5668,7 @@ var
   function measure_star(deX,deY :double): string;
   begin
     HFD(img_loaded,round(deX-1),round(deY-1),14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-    if ((hfd1<15) and (hfd1>0) and (snr>10)) then {star detected in img_loaded}
+    if ((hfd1<50) and (hfd1>0) and (snr>6)) then {star detected in img_loaded}
     begin
       if calstat='' then saturation_level:=64000 else saturation_level:=60000; {could be dark subtracted changing the saturation level}
       if ((img_loaded[0,round(xc),round(yc)]<saturation_level) and
@@ -5683,8 +5682,11 @@ var
           (img_loaded[0,round(xc+1),round(yc-1)]<saturation_level) and
           (img_loaded[0,round(xc+1),round(yc+1)]<saturation_level)  ) then {not saturated star}
       begin
+       // flux:=flux/(1-EXP(-0.5*sqr(r_aperture{measuring radius}*2.34548/hfd1))); {Aperture correction for lost flux fainter then detection limit of a Gaussian star}
         magn:=starlistpack[c].flux_magn_offset - ln(flux)*2.511886432/ln(10);
         result:=floattostrf(magn, ffFixed, 5,3); {write measured magnitude to list}
+//        mainwindow.image1.Canvas.textout(round(dex)+20,round(dey)+20,'decX,Y '+floattostrf(deX, ffgeneral, 3,3)+','+floattostrf(deY, ffgeneral, 3,3)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 3,3)+','+floattostrf(yc, ffgeneral, 3,3));
+//        memo2_message(filename2+'decX,Y '+floattostrf(deX, ffgeneral, 4,4)+', '+floattostrf(deY, ffgeneral, 4,4)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 4,4)+', '+floattostrf(yc, ffgeneral, 4,4)+'    '+result+  '  deltas:'  + floattostrf(deX-xc, ffgeneral, 4,4)+',' + floattostrf(deY-yc, ffgeneral, 4,4)+'offset '+floattostrf(starlistpack[c].flux_magn_offset, ffgeneral, 6,6)+'fluxlog '+floattostrf(ln(flux)*2.511886432/ln(10), ffgeneral, 6,6) );
       end
       else result:='Saturated';
      end
@@ -5759,13 +5761,20 @@ begin
       end
       else
       begin
-      listview7.Items.item[c].subitems.Strings[P_astrometric]:='✓';
-      //listview7.Items.item[c].subitems.Strings[P_stars]:='6666';
+        listview7.Items.item[c].subitems.Strings[P_astrometric]:='✓';
       end;
-
     end;{check for astrometric solutions}
   end;{for loop for astrometric solving }
   {astrometric calibration}
+
+  if ((refresh_solutions) or (esc_pressed{stop} )) then
+  begin
+    Screen.Cursor :=Save_Cursor;{back to normal }
+    if refresh_solutions then memo2_message('Ready') else
+      memo2_message('Stopped, ESC pressed.');
+    exit;
+  end;
+
 
   first_image:=-1;
   outliers:=nil;

@@ -1608,7 +1608,7 @@ var
                 (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
                 (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
             begin
-              flux:=flux/(1-EXP(-0.5*sqr(r_aperture{measuring radius}*2.34548/hfd1))); {Aperture correction for lost flux fainter then detection limit of a Gaussian star}
+           //   flux:=flux/(1-EXP(-0.5*sqr(r_aperture{measuring radius}*2.34548/hfd1))); {Aperture correction for lost flux fainter then detection limit of a Gaussian star}
               magn:=(-ln(flux)*2.511886432/LN(10));
               if counter_flux_measured>=length(mag_offset_array) then  SetLength(mag_offset_array,counter_flux_measured+500);{increase length array}
               mag_offset_array[counter_flux_measured]:=mag2/10-magn;
