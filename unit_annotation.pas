@@ -1593,7 +1593,7 @@ var
 
         if ((flux_calibration) or (show_distortion)) then
         begin
-          HFD(img_loaded,x,y,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+          HFD(img_loaded,x,y,14{box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>30)) then {star detected in img_loaded. 30 is found emperical}
           begin
             if ((flux_calibration){calibrate flux} and
@@ -1608,7 +1608,7 @@ var
                 (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
                 (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
             begin
-           //   flux:=flux/(1-EXP(-0.5*sqr(r_aperture{measuring radius}*2.34548/hfd1))); {Aperture correction for lost flux fainter then detection limit of a Gaussian star}
+             // flux:=flux/(1-EXP(-0.5*sqr(r_aperture{measuring radius}*2.34548/hfd1))); {Aperture correction for lost flux fainter then detection limit of a Gaussian star}
               magn:=(-ln(flux)*2.511886432/LN(10));
               if counter_flux_measured>=length(mag_offset_array) then  SetLength(mag_offset_array,counter_flux_measured+500);{increase length array}
               mag_offset_array[counter_flux_measured]:=mag2/10-magn;
@@ -1687,11 +1687,9 @@ begin
     max_nr_stars:=round(width2*height2*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
 
 
-  //   max_nr_stars:=4;
-
     if flux_calibration then
     begin
-       max_nr_stars:=100; {limit to the brightest stars. Fainter stars have more noise}
+      // max_nr_stars:=round(width2*height2*(1216/(2328*1760))); {limit to the brightest stars. Fainter stars have more noise}
        setlength(mag_offset_array,max_nr_stars);
     end;
 

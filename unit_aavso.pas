@@ -41,7 +41,7 @@ var
 
 const
   obscode       : string='';
-  filter_type   : string='';
+//  filter_type   : string='';
   name_check : string='';
   name_var   : string='';
   delim_pos  : integer=0;
@@ -70,7 +70,7 @@ begin
     obscode:=obscode1.text;
     name_var:=name_variable1.text;
     name_check:=name_check1.text;
-    filter_type:=filter1.text;
+//    filter_type:=filter1.text;
     delim_pos:=delimiter1.itemindex;
   end;
 end;
@@ -95,7 +95,7 @@ begin
 
   aavso_report:= '#TYPE=Extended'+#13+#10+
                  '#OBSCODE='+obscode+#13+#10+
-                 '#SOFTWARE=ASTAP, photometry version ß0.1'+#13+#10+
+                 '#SOFTWARE=ASTAP, photometry version ß0.2'+#13+#10+
                  '#DELIM='+delimiter1.text+#13+#10+
                  '#DATE=JD'+#13+#10+
                  '#OBSTYPE=CCD'+#13+#10+
@@ -130,7 +130,7 @@ begin
                       StringReplace(listview7.Items.item[c].subitems.Strings[P_jd_mid],',','.',[])+delim+
                       StringReplace(listview7.Items.item[c].subitems.Strings[P_magn1],',','.',[])+delim+
                       err+
-                      delim+copy(filter_type,1,2)+delim+
+                      delim+copy(filter1.text,1,2)+delim+
                      'NO'+delim+
                      'STD'+delim+
                      'ENSEMBLE'+delim+
@@ -164,7 +164,8 @@ begin
     else
     name_variable1.text:=name_var;
   name_check1.text:=name_check;
-  filter1.text:=filter_type;
+  if filter_name<>'' then filter1.text:=filter_name else  filter1.itemindex:=0 {TC};
+
   delimiter1.itemindex:=delim_pos;
   Comparison1.Text:=stackmenu1.star_database1.text;
 

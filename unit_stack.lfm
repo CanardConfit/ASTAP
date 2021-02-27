@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 671
+  Left = 39
   Height = 644
-  Top = 547
+  Top = 180
   Width = 1870
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -228,10 +228,11 @@ object stackmenu1: Tstackmenu1
     TabIndex = 0
     TabOrder = 5
     object Images: TTabSheet
-      Hint = 'Select here the light frames'
-      Caption = 'Images'
+      Hint = 'Select here the raw light frames'
+      Caption = 'Lights'
       ClientHeight = 420
       ClientWidth = 1861
+      OnContextPopup = ImagesContextPopup
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -3152,7 +3153,7 @@ object stackmenu1: Tstackmenu1
       Caption = 'Photometry'
       ClientHeight = 420
       ClientWidth = 1861
-      ImageIndex = 18
+      ImageIndex = 19
       ParentFont = False
       object browse_photometry1: TButton
         Left = 32
@@ -3178,17 +3179,6 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         TabOrder = 1
       end
-      object analysephotometrymore1: TButton
-        Left = 192
-        Height = 26
-        Hint = 'Analyse image files'
-        Top = 6
-        Width = 56
-        Caption = '+'
-        OnClick = analysephotometry1Click
-        ParentFont = False
-        TabOrder = 2
-      end
       object nr_total_photometry1: TLabel
         Left = 272
         Height = 15
@@ -3208,7 +3198,7 @@ object stackmenu1: Tstackmenu1
         Caption = '||'
         OnClick = blink_stop1Click
         ParentFont = False
-        TabOrder = 3
+        TabOrder = 2
       end
       object photometry_button1: TButton
         Left = 440
@@ -3219,21 +3209,21 @@ object stackmenu1: Tstackmenu1
         Caption = '>'
         OnClick = photometry_button1Click
         ParentFont = False
-        TabOrder = 4
+        TabOrder = 3
       end
       object photometry_repeat1: TButton
-        Left = 536
+        Left = 528
         Height = 26
         Hint = 'Continous scrolling through the check-marked images'
         Top = 6
-        Width = 75
+        Width = 40
         Caption = '>>'
         OnClick = photometry_button1Click
         ParentFont = False
-        TabOrder = 5
+        TabOrder = 4
       end
       object clear_photometry_list1: TButton
-        Left = 1328
+        Left = 1400
         Height = 26
         Hint = 'Clear image list'
         Top = 5
@@ -3243,7 +3233,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabOrder = 6
+        TabOrder = 5
       end
       object listview7: TListView
         Left = 0
@@ -3387,7 +3377,7 @@ object stackmenu1: Tstackmenu1
         SmallImages = ImageList_colors
         SortColumn = 9
         SortType = stText
-        TabOrder = 7
+        TabOrder = 6
         ViewStyle = vsReport
         OnColumnClick = listview1ColumnClick
         OnCompare = listview1Compare
@@ -3398,10 +3388,10 @@ object stackmenu1: Tstackmenu1
       end
       object help_photometry1: TLabel
         Cursor = crHandPoint
-        Left = 632
+        Left = 1272
         Height = 30
         Hint = 'Online help about blink and photometry'
-        Top = 3
+        Top = -1
         Width = 9
         Caption = '?'
         Font.Color = clBlue
@@ -3413,22 +3403,22 @@ object stackmenu1: Tstackmenu1
         OnClick = help_photometry1Click
       end
       object photometry_binx2: TButton
-        Left = 1224
+        Left = 1320
         Height = 26
         Hint = 'Bin the images for better photometric detection.  Orginal files will not be affected.'
-        Top = 6
+        Top = 5
         Width = 61
         Caption = 'Bin x 2'
         OnClick = photometry_binx2Click
         ParentFont = False
-        TabOrder = 8
+        TabOrder = 7
       end
       object mark_outliers_upto1: TComboBox
-        Left = 1656
+        Left = 1712
         Height = 23
         Hint = 'Limiting magnitude value'
         Top = 9
-        Width = 79
+        Width = 48
         ItemHeight = 15
         ItemIndex = 3
         Items.Strings = (
@@ -3442,11 +3432,11 @@ object stackmenu1: Tstackmenu1
         )
         OnChange = extra_star_supression_diameter1Change
         ParentFont = False
-        TabOrder = 9
+        TabOrder = 8
         Text = '14'
       end
       object Label19: TLabel
-        Left = 1544
+        Left = 1600
         Height = 15
         Top = 16
         Width = 103
@@ -3455,46 +3445,89 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
       end
       object refresh_astrometric_solutions1: TButton
-        Left = 848
+        Left = 952
         Height = 26
         Hint = 'This will renew the astrometric solutions and photometric calibration . Use this only for the rare case  the solutions are wrong and alignment is poor.'
-        Top = 6
+        Top = 5
         Width = 179
         Caption = 'Refresh astrometric solutions'
         OnClick = refresh_astrometric_solutions1click
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabOrder = 10
+        TabOrder = 9
       end
       object checkBox_annotate1: TCheckBox
-        Left = 1392
+        Left = 1472
         Height = 19
         Hint = 'Annotate from variable database. This will slow down the process.'
         Top = 12
         Width = 118
         Caption = 'Annotate variables'
-        TabOrder = 11
+        TabOrder = 10
       end
       object aavso_button1: TButton
-        Left = 1072
+        Left = 1144
         Height = 26
         Hint = 'Generate AAVSO report'
-        Top = 6
+        Top = 5
         Width = 112
         Caption = 'AAVSO report'
         OnClick = aavso_button1Click
-        TabOrder = 12
+        TabOrder = 11
       end
       object extract_green1: TButton
-        Left = 688
+        Left = 816
         Height = 26
         Hint = 'For raw images only. Will combine for each bayer submosaic the two green pixels. Check in advance the de-mosaic pattern in stack menu, tab stack method'
-        Top = 6
+        Top = 5
         Width = 123
         Caption = 'Extract raw GREEN'
         OnClick = extract_green1Click
+        TabOrder = 12
+      end
+      object flux_aperture1: TComboBox
+        Left = 688
+        Height = 23
+        Hint = 'Flux aperture. Will be mulitiplied with median HFD of the image. Can be adjusted to find the lowest standard deviation of the check star. Typical values 2.6 * hfd'
+        Top = 6
+        Width = 80
+        ItemHeight = 15
+        ItemIndex = 5
+        Items.Strings = (
+          '1.0'
+          '1.5'
+          '2.0'
+          '2.2'
+          '2.4'
+          '2.6'
+          '2.8'
+          '3.0'
+          '99'
+        )
+        OnChange = extra_star_supression_diameter1Change
+        ParentFont = False
         TabOrder = 13
+        Text = '2.6'
+      end
+      object Label26: TLabel
+        Left = 589
+        Height = 15
+        Top = 6
+        Width = 90
+        Caption = 'Aperture [ x hfd]:'
+        ParentColor = False
+      end
+      object analysephotometrymore1: TButton
+        Left = 192
+        Height = 26
+        Hint = 'Analyse image files'
+        Top = 6
+        Width = 56
+        Caption = '+'
+        OnClick = analysephotometry1Click
+        ParentFont = False
+        TabOrder = 14
       end
     end
     object TabSheet1: TTabSheet
@@ -3730,8 +3763,8 @@ object stackmenu1: Tstackmenu1
     end
     object tab_live_stacking1: TTabSheet
       Caption = 'Live stacking'
-      ClientHeight = 417
-      ClientWidth = 1614
+      ClientHeight = 420
+      ClientWidth = 1861
       ParentFont = False
       object browse_live_stacking1: TButton
         Left = 16
@@ -5237,7 +5270,7 @@ object stackmenu1: Tstackmenu1
     object tab_Pixelmath2: TTabSheet
       Caption = 'Pixel math 2'
       ClientHeight = 420
-      ClientWidth = 1610
+      ClientWidth = 1861
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox
@@ -6339,7 +6372,7 @@ object stackmenu1: Tstackmenu1
     Left = 480
     Top = 592
     Bitmap = {
-      4C69130000001000000010000000000000000000000000000000000000000000
+      4C69140000001000000010000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -6947,7 +6980,39 @@ object stackmenu1: Tstackmenu1
       7FFF7F7F7FFF7F7F7FFF7F7F7FFF7F7F7FFF7F7F7FFF7F7F7FFF7F7F7FFF7F7F
       7FFF7F7F7FFF7F7F7FFF7F7F7FFFFF00FF00FF00FF00FF00FF00FF00FF00FF00
       FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-      FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF007F7F7FFF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000000000007F7F7FFF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000000000007F7F7FFF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000000000007F7F7FFF0000000000000000000000007F7F
+      7FFF7F7F7FFF0000000000000000000000000000000000000000000000000000
+      00000000000000000000000000007F7F7FFF00000000000000007F7F7FFF0000
+      0000000000007F7F7FFF00000000000000000000000000000000000000000000
+      00000000000000000000000000007F7F7FFF000000007F7F7FFF000000000000
+      000000000000000000007F7F7FFF000000000000000000000000000000000000
+      00000000000000000000000000007F7F7FFF7F7F7FFF00000000000000000000
+      00000000000000000000000000007F7F7FFF0000000000000000000000000000
+      00000000000000000000000000007F7F7FFF0000000000000000000000000000
+      00000000000000000000000000007F7F7FFF0000000000000000000000000000
+      00000000000000000000000000007F7F7FFF0000000000000000000000000000
+      0000000000000000000000000000000000007F7F7FFF00000000000000000000
+      000000000000000000007F7F7FFF7F7F7FFF0000000000000000000000000000
+      0000000000000000000000000000000000007F7F7FFF00000000000000000000
+      0000000000007F7F7FFF000000007F7F7FFF0000000000000000000000000000
+      000000000000000000000000000000000000000000007F7F7FFF000000000000
+      00007F7F7FFF00000000000000007F7F7FFF0000000000000000000000000000
+      000000000000000000000000000000000000000000007F7F7FFF000000007F7F
+      7FFF0000000000000000000000007F7F7FFF0000000000000000000000000000
+      00000000000000000000000000000000000000000000000000007F7F7FFF0000
+      00000000000000000000000000007F7F7FFF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000000000007F7F7FFF0000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000000000007F7F7FFF7F7F7FFF7F7F7FFF7F7F7FFF7F7F
+      7FFF7F7F7FFF7F7F7FFF7F7F7FFF7F7F7FFF7F7F7FFF7F7F7FFF7F7F7FFF7F7F
+      7FFF7F7F7FFF7F7F7FFF7F7F7FFF
     }
   end
   object PopupMenu1: TPopupMenu
@@ -7752,14 +7817,16 @@ object stackmenu1: Tstackmenu1
     end
     object copy_to_blink1: TMenuItem
       Caption = 'Copy selected images to tab Blink'
+      ImageIndex = 14
       OnClick = copy_to_blink1Click
     end
     object copy_to_photometry1: TMenuItem
       Caption = 'Copy selected images to tab Photometry'
+      ImageIndex = 19
       OnClick = copy_to_photometry1Click
     end
     object copy_to_images1: TMenuItem
-      Caption = 'Copy selected images to tab Images'
+      Caption = 'Copy selected images to tab lights'
       OnClick = copy_to_images1Click
     end
     object MenuItem24: TMenuItem

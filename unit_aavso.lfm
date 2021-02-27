@@ -1,10 +1,10 @@
 object form_aavso1: Tform_aavso1
   Left = 301
-  Height = 397
+  Height = 379
   Top = 190
   Width = 404
   Caption = 'AAVSO report'
-  ClientHeight = 397
+  ClientHeight = 379
   ClientWidth = 404
   OnClose = FormClose
   OnShow = FormShow

@@ -52,6 +52,7 @@ type
     alignment1: TTabSheet;
     align_blink1: TCheckBox;
     aavso_button1: TButton;
+    analysephotometrymore1: TButton;
     extract_green1: TButton;
     changekeyword6: TMenuItem;
     changekeyword7: TMenuItem;
@@ -62,6 +63,8 @@ type
     keyword7: TMenuItem;
     copy_to_photometry1: TMenuItem;
     copy_to_blink1: TMenuItem;
+    Label26: TLabel;
+    flux_aperture1: TComboBox;
     yyyyyy: TMenuItem;
     xxxxxx: TMenuItem;
     merge_overlap1: TCheckBox;
@@ -71,7 +74,6 @@ type
     analysedarksButton2: TButton;
     analyseflatdarksButton4: TButton;
     analyseflatsButton3: TButton;
-    analysephotometrymore1: TButton;
     analysephotometry1: TButton;
     analyse_inspector1: TButton;
     add_bias1: TCheckBox;
@@ -573,6 +575,8 @@ type
     procedure ephemeris_centering1Change(Sender: TObject);
     procedure focallength1Exit(Sender: TObject);
     procedure go_step_two1Click(Sender: TObject);
+    procedure ImagesContextPopup(Sender: TObject; MousePos: TPoint;
+      var Handled: Boolean);
     procedure luminance_filter1exit(Sender: TObject);
     procedure gridlines1Click(Sender: TObject);
     procedure help_inspector_tab1Click(Sender: TObject);
@@ -1304,7 +1308,7 @@ begin
         begin
           if (( img_temp2[0,fitsX,fitsY]=0){area not surveyed} and (img[0,fitsX,fitsY]-backgr>detection_level)) then {new star. For analyse used sigma is 5, so not too low.}
           begin
-            HFD(img,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            HFD(img,fitsX,fitsY,14{box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
             if ((hfd1<=30) and (snr>snr_min) and (hfd1>0.8) {two pixels minimum} ) then
             begin
               hfd_list[star_counter]:=hfd1;{store}
@@ -1396,7 +1400,7 @@ begin
         begin
           if (( img_temp2[0,fitsX,fitsY]=0){area not surveyed} and (img[0,fitsX,fitsY]-backgr>detection_level){star}) then {new star. For analyse used sigma is 5, so not too low.}
           begin
-            HFD(img,fitsX,fitsY,25 {LARGE box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            HFD(img,fitsX,fitsY,25 {LARGE box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
             if ((hfd1<=35) and (snr>30) and (hfd1>0.8) {two pixels minimum} ) then
             begin
               {store values}
@@ -3524,7 +3528,7 @@ begin
   if sender=changekeyword8 then lv:=listview8;{from popup menu}
 
   keyw:=InputBox('All selected files will be updated!! Hit cancel to abort. Type keyword:','','' );
-  if length(keyw)<=2 then exit;
+  if length(keyw)<2 then exit;
 
   value:=InputBox('New value keyword (Type DELETE to remove keyword):','','' );
   if length(value)<=0 then exit;
@@ -3998,7 +4002,7 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
 
-  if listview6.Items.item[listview6.items.count-1].subitems.Strings[B_exposure]='' {exposure} then
+  if listview6.Items.item[listview6.items.count-1].subitems.Strings[B_width]='' {width} then
     stackmenu1.analyseblink1Click(nil);
 
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
@@ -4359,8 +4363,6 @@ var
   fn: string;
 
 begin
- if listview7.Items.item[0].subitems.Strings[P_magn1]='' then {requires analyse}
-        stackmenu1.photometry_button1Click(nil);
   form_aavso1:=Tform_aavso1.Create(self); {in project option not loaded automatic}
   form_aavso1.ShowModal;
   form_aavso1.release;
@@ -4381,9 +4383,10 @@ procedure Tstackmenu1.extract_green1Click(Sender: TObject);
 var
   c           : integer;
   Save_Cursor : TCursor;
-  fn          : STRING;
+  fn,fname    : STRING;
 begin
   if (IDYES= Application.MessageBox('This will extract the combined green channel from the (calibrated) raw files and write to result to new files. Continue?', 'Raw colour seperation', MB_ICONQUESTION + MB_YESNO) )=false then exit;
+
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -4394,7 +4397,13 @@ begin
     for c:=0 to listview7.items.count-1 do
      if  listview7.Items.item[c].checked then
      begin
-       fn:=extract_colour_to_file(ListView7.items[c].caption,'TG',1,1); {extract green channel}
+       if fits_file_name(filename2)=false then
+       begin
+         memo2_message('█ █ █ █ █ █ Can'+#39+'t extract. First analyse file list !! █ █ █ █ █ █');
+         beep;
+         exit;
+       end;
+       fn:=extract_raw_colour_to_file(ListView7.items[c].caption,'TG',1,1); {extract green channel}
        if fn<>'' then
        begin
            ListView7.items[c].caption:=fn;
@@ -4561,6 +4570,12 @@ procedure Tstackmenu1.go_step_two1Click(Sender: TObject);
 begin
   load_image(mainwindow.image1.visible=false,true {plot});
   update_equalise_background_step(2); {go to step 3}
+end;
+
+procedure Tstackmenu1.ImagesContextPopup(Sender: TObject; MousePos: TPoint;
+  var Handled: Boolean);
+begin
+
 end;
 
 procedure Tstackmenu1.luminance_filter1exit(Sender: TObject);
@@ -5485,7 +5500,6 @@ end;
 procedure Tstackmenu1.photometry_binx2Click(Sender: TObject);
 var
    c: integer;
-   ext: string;
 begin
   esc_pressed:=false;
   memo2_message('Binning images for better detection. Original files will not be affected.');
@@ -5497,8 +5511,7 @@ begin
 
       filename2:=listview7.items[c].caption;
 
-      ext:=uppercase(ExtractFileExt(filename2));
-      if ((ext='.FIT') or (ext='.FITS') or (ext='.FTS'))=false then
+      if fits_file_name(filename2)=false then
       begin
         memo2_message('█ █ █ █ █ █ Can'+#39+'t binx2. First analyse file list !! █ █ █ █ █ █');
         beep;
@@ -5660,10 +5673,10 @@ end;
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   Save_Cursor          : TCursor;
-  magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree  : double;
+  magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,backgr,hfd_med,aper : double;
   saturation_level                                                                           : single;
   c,i,x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr,countVar, countCheck,countThree : integer;
-  flipvertical,fliphorizontal,init,refresh_solutions  :boolean;
+  flipvertical,fliphorizontal,init,refresh_solutions,analysedP  :boolean;
   starlistx : star_list;
   starVar, starCheck,starThree : array of double;
   outliers : array of array of double;
@@ -5671,7 +5684,7 @@ var
 
   function measure_star(deX,deY :double): string;
   begin
-    HFD(img_loaded,round(deX-1),round(deY-1),14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+    HFD(img_loaded,round(deX-1),round(deY-1),14{box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
     if ((hfd1<50) and (hfd1>0) and (snr>6)) then {star detected in img_loaded}
     begin
       if calstat='' then saturation_level:=64000 else saturation_level:=60000; {could be dark subtracted changing the saturation level}
@@ -5717,12 +5730,19 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
 
-  if listview7.Items.item[listview7.items.count-1].subitems.Strings[B_exposure]='' {exposure} then
-    stackmenu1.analysephotometry1Click(nil);
+  {check is analyse is done}
+  analysedP:=true;
+  for c:=0 to listview7.items.count-1 do
+  begin
+   if ((listview7.Items.item[c].checked) and (listview7.Items.item[c].subitems.Strings[B_width]='' {width})) then analysedP:=false;
+  end;
+  if analysedP=false then stackmenu1.analysephotometry1Click(nil);
   application.processmessages;{show result}
 
   flipvertical:=mainwindow.flip_vertical1.Checked;
   fliphorizontal:=mainwindow.flip_horizontal1.Checked;
+  aper:=strtofloat2(flux_aperture1.text);
+
   esc_pressed:=false;
 
 
@@ -5829,6 +5849,14 @@ begin
 
         if  starlistpack[c].height=0 then {not filled with data}
         begin
+          if aper<99 then {aperture}
+          begin
+            analyse_fits(img_loaded,30,false {report}, hfd_counter,backgr,hfd_med); {find background, number of stars, median HFD}
+            if hfd_med<>0 then flux_aperture:=hfd_med*aper/2 else flux_aperture:=99;{radius for measuring aperture}
+          end
+          else
+          flux_aperture:=99;{radius for measuring aperture}
+
           plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion}); {get flux_magn_offset}
           memo2_message(inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.'+extra_message);
           if flux_magn_offset<>0 then
@@ -6523,19 +6551,8 @@ begin
   else
     analyse_listview(listview7,true {light},false {full fits},false{refresh});
 
-
   listview7.items.beginupdate;
-
-//  for c:=0 to listview7.items.count-1 do {this is not required but nice}
-//  begin
-//    if fileexists(ChangeFileExt(listview7.items[c].caption,'.astap_image_stars')) then {photometric solution}
-//      listview7.Items.item[c].subitems.Strings[P_photometric]:='✓'
-//    else
-//      listview7.Items.item[c].subitems.Strings[P_photometric]:='';
-//  end;
-
   listview7.alphasort;{sort on time}
-
   listview7.items.endupdate;
 end;
 

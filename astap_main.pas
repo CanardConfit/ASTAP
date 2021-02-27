@@ -567,6 +567,7 @@ const
   sqm: double=0;{sky quality, use in reporting in write_ini}
   hfd_median : double=0;{median hfd, use in reporting in write_ini}
   hfd_counter: integer=0;{star counter (for hfd_median), use in reporting in write_ini}
+  flux_aperture : double=99;{circle where flux is measured}
 
   copy_paste :boolean=false;
   shape_fitsX: double=0;
@@ -608,7 +609,7 @@ procedure ang_sep(ra1,dec1,ra2,dec2 : double;var sep: double);
 function load_fits(filen:string;light {load as light of dark/flat},load_data: boolean;get_ext: integer;var img_loaded2: image_array): boolean;{load fits file}
 procedure plot_fits(img: timage;center_image,show_header:boolean);
 procedure use_histogram(img: image_array; update_hist: boolean);{get histogram}
-procedure HFD(img: image_array; x1,y1,rs{box size}: integer; var hfd1,star_fwhm,snr{peak/sigma noise},flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity. All x,y coordinates in array[0..] positions}
+procedure HFD(img: image_array; x1,y1,rs{box size}: integer;aperture:double; var hfd1,star_fwhm,snr{peak/sigma noise},flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
 procedure backup_img;
 procedure restore_img;
 function load_image(re_center, plot:boolean) : boolean; {load fits or PNG, BMP, TIF}
@@ -688,7 +689,8 @@ procedure log_to_file2(logf,mess : string);{used for platesolve2 and photometry}
 procedure demosaic_advanced(var img : image_array);{demosaic img_loaded}
 procedure bin_X2X3X4(binfactor:integer);{bin img_loaded 2x or 3x or 4x}
 procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : image_array; var sd,mean :double; var iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-function extract_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
+function extract_raw_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
+function fits_file_name(inp : string): boolean; {fits file name?}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -3101,7 +3103,7 @@ begin
   #13+#10+
   #13+#10+'This program can view, measure, "astrometric solve" and stack deep sky images.'+
   #13+#10+
-  #13+#10+'It uses an internal star matching routine, internal astrometric solving routine or a local version of astrometry.net for alignment.'+' For RAW file conversion it uses the external program LibRaw.'+
+  #13+#10+'It uses an internal star matching routine, internal astrometric solving routine or a local version of astrometry.net for alignment.'+' For RAW file conversion it uses the external programs Dcraw or LibRaw.'+
   #13+#10+
   #13+#10+about_message5+
   #13+#10+
@@ -3109,7 +3111,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.504, '+about_message4+', dated 2021-2-25';
+  #13+#10+'ASTAP version ß0.9.506, '+about_message4+', dated 2021-2-27';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4708,7 +4710,7 @@ begin
   LoadFITSPNGBMPJPEG1filterindex:=oldvalue; {restore filterindex position}
 end;
 
-function extract_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
+function extract_raw_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
 var
   img_temp11 : image_array;
   FitsX, fitsY,w,h,xp2,yp2      : integer;
@@ -4719,10 +4721,11 @@ var
 begin
   if load_fits(filename7,true {light},true,0,img_loaded)=false then
   begin
-    beep; result:='';exit;
+    beep; result:='';
+    exit;
   end;
 
-  if ((pos('TR',filter_name)=0) and (pos('TG',filter_name)=0) and (pos('TB',filter_name)=0)) then
+  if ((pos('TR',filter_name)=0) and (pos('TG',filter_name)=0) and (pos('TB',filter_name)=0) and (naxis3=1)) then
   begin
 
     ratio:=0.5;
@@ -4810,7 +4813,14 @@ begin
 
     update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING/ratio));
     update_integer('YBINNING=',' / Binning factor in height                        ' ,round(yBINNING/ratio));
-    add_text   ('HISTORY   ','contains extracted pixels of 2x2 bayer matrix');
+
+    if XPIXSZ<>0 then
+    begin
+      update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ' ,XPIXSZ/ratio);{note: comment will be never used since it is an existing keyword}
+      update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ' ,YPIXSZ/ratio);
+    end;
+
+    add_text   ('HISTORY   ','One raw colour extracted.');
 
     update_text   ('FILTER  =',#39+filtern+#39+'           / Filter name                                    ');
     img_loaded:=img_temp11;
@@ -4820,7 +4830,9 @@ begin
   end
   else
   begin
-    memo2_message('Warning image '+ filename7+' skipped. FILTER indicates earlier extraction!');
+    if naxis<>1 then memo2_message('Skipped COLOUR image '+ filename7+', Raw colour extraction is only possible for raw images.')
+    else
+    memo2_message('Skipped image '+ filename7+', FILTER indicates earlier extraction!');
   end;
 end;
 
@@ -4856,7 +4868,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then begin Screen.Cursor := Save_Cursor;  { Always restore to normal } exit; end;
 
-          if extract_colour_to_file(Strings[I] {filename}, filtern,xp,yp )=''{new file name} then beep;
+          if extract_raw_colour_to_file(Strings[I] {filename}, filtern,xp,yp )=''{new file name} then beep;
         end;
       finally
         if dobackup then restore_img;{for the viewer}
@@ -6962,6 +6974,7 @@ begin
     dum:=initstring.Values['green_filter_add']; if dum<>'' then stackmenu1.green_filter_add1.text:=dum;
     dum:=initstring.Values['blue_filter_add']; if dum<>'' then stackmenu1.blue_filter_add1.text:=dum;
 
+
    {Six colour correction factors}
     dum:=initstring.Values['add_value_R']; if dum<>'' then stackmenu1.add_valueR1.text:=dum;
     dum:=initstring.Values['add_value_G']; if dum<>'' then stackmenu1.add_valueG1.text:=dum;
@@ -6976,6 +6989,7 @@ begin
     dum:=initstring.Values['filter_artificial_colouring']; if dum<>'' then stackmenu1.filter_artificial_colouring1.text:=dum;
     dum:=initstring.Values['resize_factor']; if dum<>'' then stackmenu1.resize_factor1.text:=dum;
     dum:=initstring.Values['mark_outliers_upto']; if dum<>'' then stackmenu1.mark_outliers_upto1.text:=dum;
+    dum:=initstring.Values['flux_aperture']; if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
     stackmenu1.checkBox_annotate1.checked:= get_boolean('ph_annotate',true);
 
 
@@ -7017,7 +7031,7 @@ begin
 
 
     obscode:=initstring.Values['obscode']; {photometry}
-    filter_type:=initstring.Values['filter'];
+//    filter_type:=initstring.Values['filter'];
     delim_pos:=get_int2(0,'delim_pos');
 
 
@@ -7292,6 +7306,8 @@ begin
     initstring.Values['resize_factor']:=stackmenu1.resize_factor1.text;
 
     initstring.Values['mark_outliers_upto']:=stackmenu1.mark_outliers_upto1.text;
+    initstring.Values['flux_aperture']:=stackmenu1.flux_aperture1.text;
+
     initstring.Values['ph_annotate']:=BoolStr[stackmenu1.checkBox_annotate1.checked];
 
 
@@ -7334,7 +7350,7 @@ begin
     initstring.Values['to_clipboard']:=BoolStr[stackmenu1.interim_to_clipboard1.checked];{live stacking}
 
     initstring.Values['obscode']:=obscode;
-    initstring.Values['filter']:=filter_type;
+//    initstring.Values['filter']:=filter_type;
     initstring.Values['delim_pos']:=inttostr(delim_pos);
 
 
@@ -8545,7 +8561,7 @@ begin
 
     backup_img;
 
-    HFD(img_loaded,startX,startY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+    HFD(img_loaded,startX,startY,14{box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
     if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
     begin
@@ -8562,7 +8578,7 @@ begin
     end;
     show_marker_shape(mainwindow.shape_marker1,shapetype,20,20,10{minimum}, shape_marker1_fitsX,shape_marker1_fitsY);
 
-    HFD(img_loaded,stopX,stopY,14{box size}, hfd2,star_fwhm2,snr2,flux2,xc2,yc2);{star HFD and FWHM}
+    HFD(img_loaded,stopX,stopY,14{box size},flux_aperture, hfd2,star_fwhm2,snr2,flux2,xc2,yc2);{star HFD and FWHM}
     if ((hfd2<15) and (hfd2>=0.8) {two pixels minimum} and (snr2>10) and (flux2>1){rare but happens}) then {star detected in img_loaded}
     begin
       shapetype:=1;{circle}
@@ -8900,7 +8916,7 @@ begin
     begin
       if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack> star_level){star}) then {new star}
       begin
-        HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        HFD(img_loaded,fitsX,fitsY,14{box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
         begin
           {for testing}
@@ -9017,7 +9033,7 @@ const
     begin
       if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>5*noise_level[0] {star_level} ){star}) then {new star}
       begin
-        HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        HFD(img_loaded,fitsX,fitsY,14{box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<10) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
         begin
           {for testing}
@@ -9368,6 +9384,7 @@ begin
         update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ' ,XPIXSZ/ratio);{note: comment will be never used since it is an existing keyword}
         update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ' ,YPIXSZ/ratio);
       end;
+
       add_text   ('HISTORY   ','Image stretched with factor '+ floattostr6(ratio));
 
       {plot result}
@@ -10546,7 +10563,7 @@ end;
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
     s      : string;
-    histogram_done,file_loaded,debug,filespecified,analysespecified,extractspecified,focusrequest : boolean;
+    histogram_done,file_loaded,debug,filespecified,analysespecified,analysespecified2,extractspecified,focusrequest : boolean;
     backgr,snr_min           : double;
     binning,focus_count      : integer;
 begin
@@ -10590,6 +10607,7 @@ begin
         '-speed mode[auto/slow] {Slow is forcing small search steps to improve detection.}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
+        '-analyse2 snr_min {both analyse and solve}'+#10+
         '-extract snr_min {As -analyse but additionally write a .csv file with the detected stars info}'+#10+
         '-sqm pedestal  {add measured sqm value to the solution}'+#10+
         '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3}'+#10+
@@ -10705,9 +10723,10 @@ begin
         begin
           extractspecified:=hasoption('extract');
           analysespecified:=hasoption('analyse');
-          if ((file_loaded) and ((analysespecified) or (extractspecified)) ) then {analyse fits and report HFD value in errorlevel }
+          analysespecified2:=hasoption('analyse2');
+          if ((file_loaded) and ((analysespecified) or (analysespecified2) or (extractspecified)) ) then {analyse fits and report HFD value in errorlevel }
           begin
-            if analysespecified then snr_min:=strtofloat2(getoptionvalue('analyse'));
+            if ((analysespecified) or (analysespecified2)) then snr_min:=strtofloat2(getoptionvalue('analyse'));
             if extractspecified then snr_min:=strtofloat2(getoptionvalue('extract'));
             if snr_min=0 then snr_min:=30;
             analyse_fits(img_loaded,snr_min,extractspecified, hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
@@ -10719,11 +10738,23 @@ begin
             update_float('HFD     =',' / Median Half Flux Diameter' ,hfd_median);
             update_float('STARS   =',' / Number of stars detected' ,hfd_counter);
 
-            {$IFDEF msWindows}
-            errorlevel:=round(hfd_median*100)*1000000+hfd_counter;{report in errorlevel the hfd and the number of stars used}
-            {$ELSE}
-            //nothing. In linux only range 0..255 possible}
-            {$ENDIF}
+
+            if analysespecified2=false then {-analyse -extract}
+            begin
+              {$IFDEF msWindows}
+               halt(round(hfd_median*100)*1000000+hfd_counter);{report in errorlevel the hfd and the number of stars used}
+              {$ELSE}
+              halt(errorlevel);{report hfd in errorlevel. In linux only range 0..255 possible}
+              {$ENDIF}
+             end
+            else
+            begin  {-analyse2}
+              {$IFDEF msWindows}
+              errorlevel:=round(hfd_median*100)*1000000+hfd_counter;{report in errorlevel the hfd and the number of stars used}
+              {$ELSE}
+              //nothing.
+              {$ENDIF}
+            end;
           end;{analyse fits and report HFD value}
 
           if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
@@ -10792,7 +10823,7 @@ begin
           begin {no solution}
             if hasoption('o') then filename2:=GetOptionValue('o'); {change file name for .ini file}
             write_ini(false);{write solution to ini file}
-            errorlevel:=1;{no solution}
+            if errorlevel=0 then errorlevel:=1;{no solution}
           end;
           esc_pressed:=true;{kill any running activity. This for APT}
 
@@ -11101,9 +11132,10 @@ begin
         begin
           if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed}  and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
           begin
-            HFD(img_loaded,fitsX,fitsY,14{box size}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            HFD(img_loaded,fitsX,fitsY,14{box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
-            if ((hfd1<=30) and (snr>30) and (hfd1>hfd_min) ) then
+            if ((hfd1<=30) and (snr>8) and (hfd1>hfd_min) ) then
+//              if ((hfd1<=30) and (snr>30) and (hfd1>hfd_min) ) then
             begin
               diam:=round(3*hfd1);{for marking area}
               for j:=fitsY to fitsY+diam do {mark the whole star area as surveyed}
@@ -12103,7 +12135,7 @@ begin
       yc:=startY;
     end
     else {star alignment}
-    HFD(img_loaded,startX,startY,14{box size},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
+    HFD(img_loaded,startX,startY,14{box size},flux_aperture,hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
 
 
     if hfd2<90 then {detected something}
@@ -12119,7 +12151,7 @@ begin
   if stackmenu1.pagecontrol1.tabindex=8 {photometry} then
   begin
     {star alignment}
-    HFD(img_loaded,startX,startY,14{box size},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
+    HFD(img_loaded,startX,startY,14{box size},flux_aperture,hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
     if hfd2<90 then {detected something}
     begin
       if snr>5 then shapetype:=1 {circle} else shapetype:=0;{square}
@@ -12201,7 +12233,7 @@ begin
 end;
 
 
-procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity. All x,y coordinates in array[0..] positions}
+procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture:double; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
 const
   max_ri=50; //should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1;
 var
@@ -12372,79 +12404,78 @@ begin
   SumValR:=0;
   pixel_counter:=0;
 
-  begin   // Get HFD using the aproximation routine assuming that HFD line divides the star in equal portions of gravity:
-    for i:=-r_aperture to r_aperture do {Make steps of one pixel}
-    for j:=-r_aperture to r_aperture do
-    begin
-      Val:=value_subpixel(xc+i,yc+j)-bg; {The calculated center of gravity is a floating point position and can be anyware, so calculate pixel values on sub-pixel level}
-      r:=sqrt(i*i+j*j); {Distance from star gravity center}
-      SumVal:=SumVal+Val; {Sumval will be star total flux value}
-      SumValR:=SumValR+Val*r; {Method Kazuhisa Miyashita, see notes of HFD calculation method}
-      if val>=valmax*0.5 then pixel_counter:=pixel_counter+1;{How many pixels are above half maximum}
-    end;
-    if Sumval<0.00001 then flux:=0.00001 else flux:=Sumval;{prevent dividing by zero or negative values}
 
-    hfd1:=2*SumValR/flux;
-
-    hfd1:=max(0.7,hfd1);
+  // Get HFD using the aproximation routine assuming that HFD line divides the star in equal portions of gravity:
+  for i:=-r_aperture to r_aperture do {Make steps of one pixel}
+  for j:=-r_aperture to r_aperture do
+  begin
+    Val:=value_subpixel(xc+i,yc+j)-bg; {The calculated center of gravity is a floating point position and can be anyware, so calculate pixel values on sub-pixel level}
+    r:=sqrt(i*i+j*j); {Distance from star gravity center}
+    if r<=aperture then SumVal:=SumVal+Val; {Sumval will be star total flux value within the aperture. Works more accurate for differential photometry}
+    SumValR:=SumValR+Val*r; {Method Kazuhisa Miyashita, see notes of HFD calculation method, notealculate HFD over square area. Works more accurate then for round area}
+    if val>=valmax*0.5 then pixel_counter:=pixel_counter+1;{How many pixels are above half maximum}
+  end;
+  flux:=max(sumval,0.00001);{prevent dividing by zero or negative values}
+  hfd1:=2*SumValR/flux;
+  hfd1:=max(0.7,hfd1);
 
 //    if hfd1>1 then mainwindow.image1.Canvas.textout(x1,y1,floattostrF2(hfd1,3,1)+'|'+floattostrF2(distance_histogram[0],0,0)+'.'+floattostrF2(distance_histogram[1],0,0)+'.'+floattostrF2(distance_histogram[2],0,0)+'.'+floattostrF2(distance_histogram[3],0,0)  );
 //    if hfd1>1 then  mainwindow.image1.Canvas.textout(round(xc),round(yc),{floattostrF2(faintest/brightest,3,2)+'|'+ }floattostrF2(flux,5,0)+'|'+ floattostrF2(rs,2,0));
 
-    star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
-
-    snr:=flux/sqrt(flux +sqr(r_aperture)*pi*sqr(sd)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
-    {See https://en.wikipedia.org/wiki/Signal-to-noise_ratio_(imaging)   and  https://www1.phys.vt.edu/~jhs/phys3154/snr20040108.pdf}
-    {snr := signal/noise                                                  }
-    {snr := star_signal/sqrt(total_signal)                                }
-    {snr := star_signal/sqrt(star_signal + sky_signal)                    }
+  star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
+  snr:=flux/sqrt(flux +sqr(r_aperture)*pi*sqr(sd)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
 
 
-    {==========Notes on HFD calculation method=================
-      Documented the HFD defintion also in https://en.wikipedia.org/wiki/Half_flux_diameter
-      References:
-      http://www005.upp.so-net.ne.jp/k_miyash/occ02/halffluxdiameter/halffluxdiameter_en.html       by Kazuhisa Miyashita. No sub-pixel calculation
-      https://www.lost-infinity.com/night-sky-image-processing-part-6-measuring-the-half-flux-diameter-hfd-of-a-star-a-simple-c-implementation/
-      http://www.ccdware.com/Files/ITS%20Paper.pdf     See page 10, HFD Measurement Algorithm
-
-      HFD, Half Flux Diameter is defined as: The diameter of circle where total flux value of pixels inside is equal to the outside pixel's.
-      HFR, half flux radius:=0.5*HFD
-      The pixel_flux:=pixel_value - background.
-
-      The approximation routine assumes that the HFD line divides the star in equal portions of gravity:
-          sum(pixel_flux * (distance_from_the_centroid - HFR))=0
-      This can be rewritten as
-         sum(pixel_flux * distance_from_the_centroid) - sum(pixel_values * (HFR))=0
-         or
-         HFR:=sum(pixel_flux * distance_from_the_centroid))/sum(pixel_flux)
-         HFD:=2*HFR
-
-      This is not an exact method but a very efficient routine. Numerical checking with an a highly oversampled artificial Gaussian shaped star indicates the following:
-
-      Perfect two dimensional Gaussian shape with σ=1:   Numerical HFD=2.3548*σ                     Approximation 2.5066, an offset of +6.4%
-      Homogeneous disk of a single value  :              Numerical HFD:=disk_diameter/sqrt(2)       Approximation disk_diameter/1.5, an offset of -6.1%
-
-      The approximation routine is robust and efficient.
-
-      Since the number of pixels illuminated is small and the calculated center of star gravity is not at the center of an pixel, above summation should be calculated on sub-pixel level (as used here)
-      or the image should be re-sampled to a higher resolution.
-
-      A sufficient signal to noise is required to have valid HFD value due to background noise.
-
-      Note that for perfect Gaussian shape both the HFD and FWHM are at the same 2.3548 σ.
-      }
+  {See https://en.wikipedia.org/wiki/Signal-to-noise_ratio_(imaging)   and  https://www1.phys.vt.edu/~jhs/phys3154/snr20040108.pdf}
+  {snr := signal/noise                                                  }
+  {snr := star_signal/sqrt(total_signal)                                }
+  {snr := star_signal/sqrt(star_signal + sky_signal)                    }
 
 
-     {=============Notes on FWHM:=====================
-        1)	Determine the background level by the averaging the boarder pixels.
-        2)	Calculate the standard deviation of the background.
+  {==========Notes on HFD calculation method=================
+    Documented the HFD definition also in https://en.wikipedia.org/wiki/Half_flux_diameter
+    References:
+    http://www005.upp.so-net.ne.jp/k_miyash/occ02/halffluxdiameter/halffluxdiameter_en.html       by Kazuhisa Miyashita. No sub-pixel calculation
+    https://www.lost-infinity.com/night-sky-image-processing-part-6-measuring-the-half-flux-diameter-hfd-of-a-star-a-simple-c-implementation/
+    http://www.ccdware.com/Files/ITS%20Paper.pdf     See page 10, HFD Measurement Algorithm
 
-            Signal is anything 3 * standard deviation above background
+    HFD, Half Flux Diameter is defined as: The diameter of circle where total flux value of pixels inside is equal to the outside pixel's.
+    HFR, half flux radius:=0.5*HFD
+    The pixel_flux:=pixel_value - background.
 
-        3)	Determine the maximum signal level of region of interest.
-        4)	Count pixels which are equal or above half maximum level.
-        5)	Use the pixel count as area and calculate the diameter of that area  as diameter:=2 *sqrt(count/pi).}
-  end;
+    The approximation routine assumes that the HFD line divides the star in equal portions of gravity:
+        sum(pixel_flux * (distance_from_the_centroid - HFR))=0
+    This can be rewritten as
+       sum(pixel_flux * distance_from_the_centroid) - sum(pixel_values * (HFR))=0
+       or
+       HFR:=sum(pixel_flux * distance_from_the_centroid))/sum(pixel_flux)
+       HFD:=2*HFR
+
+    This is not an exact method but a very efficient routine. Numerical checking with an a highly oversampled artificial Gaussian shaped star indicates the following:
+
+    Perfect two dimensional Gaussian shape with σ=1:   Numerical HFD=2.3548*σ                     Approximation 2.5066, an offset of +6.4%
+    Homogeneous disk of a single value  :              Numerical HFD:=disk_diameter/sqrt(2)       Approximation disk_diameter/1.5, an offset of -6.1%
+
+    The approximation routine is robust and efficient.
+
+    Since the number of pixels illuminated is small and the calculated center of star gravity is not at the center of an pixel, above summation should be calculated on sub-pixel level (as used here)
+    or the image should be re-sampled to a higher resolution.
+
+    A sufficient signal to noise is required to have valid HFD value due to background noise.
+
+    Note that for perfect Gaussian shape both the HFD and FWHM are at the same 2.3548 σ.
+    }
+
+
+   {=============Notes on FWHM:=====================
+      1)	Determine the background level by the averaging the boarder pixels.
+      2)	Calculate the standard deviation of the background.
+
+          Signal is anything 3 * standard deviation above background
+
+      3)	Determine the maximum signal level of region of interest.
+      4)	Count pixels which are equal or above half maximum level.
+      5)	Use the pixel count as area and calculate the diameter of that area  as diameter:=2 *sqrt(count/pi).}
 end;
 
 
@@ -12736,7 +12767,7 @@ begin
 
 
    hfd2:=999;
-   HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),14{box size},hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
+   HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),14{box size},flux_aperture,hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
    //mainwindow.caption:=floattostr(mouse_fitsX)+',   '+floattostr(mouse_fitsy)+',         '+floattostr(object_xc)+',   '+floattostr(object_yc);
    if ((hfd2<99) and (hfd2>0)) then
    begin
