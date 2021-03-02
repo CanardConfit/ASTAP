@@ -5918,23 +5918,21 @@ begin
           x_new:=round(solution_vectorX[0]*(fitsx-1)+solution_vectorX[1]*(fitsY-1)+solution_vectorX[2]); {correction x:=aX+bY+c}
           y_new:=round(solution_vectorY[0]*(fitsx-1)+solution_vectorY[1]*(fitsY-1)+solution_vectorY[2]); {correction y:=aX+bY+c}
 
-          x_new:=round(fitsx-1); {correction x:=aX+bY+c}
-          y_new:=round(fitsY-1); {correction y:=aX+bY+c}
-
           if ((x_new>=0) and (x_new<=width2-1) and (y_new>=0) and (y_new<=height2-1)) then
              for col:=0 to naxis3-1 do {all colors} img_temp[col,x_new,y_new]:=img_loaded[col,fitsX-1,fitsY-1] ;
         end;
 
         img_loaded:=img_temp;
 
-        {quick and dirty method to correct annotations for aligned images}
-        CRPIX1:=round(solution_vectorX[0]*(CRPIX1-1)+solution_vectorX[1]*(CRPIX2-1)+solution_vectorX[2]);{correct for marker_position at ra_dec position}
-        CRPIX2:=round(solution_vectorY[0]*(CRPIX1-1)+solution_vectorY[1]*(CRPIX2-1)+solution_vectorY[2]);
-        cd1_1:=cd1_1*sign( solution_vectorX[0]);
-        cd1_2:=cd1_2*sign( solution_vectorX[1]);
-        cd2_1:=cd2_1*sign( solution_vectorY[0]);
-        cd2_2:=cd2_2*sign( solution_vectorY[1]);
 
+        {quick and dirty method to correct annotations for aligned images}
+        CRPIX1:=solution_vectorX[0]*(CRPIX1-1)+solution_vectorX[1]*(CRPIX2-1)+solution_vectorX[2];{correct for marker_position at ra_dec position}
+        CRPIX2:=solution_vectorY[0]*(CRPIX1-1)+solution_vectorY[1]*(CRPIX2-1)+solution_vectorY[2];
+
+        cd1_1:=abs(cd1_1)*sign(cd1_1_ref);
+        cd1_2:=abs(cd1_2)*sign(cd1_2_ref);
+        cd2_1:=abs(cd2_1)*sign(cd2_1_ref);
+        cd2_2:=abs(cd2_2)*sign(cd2_2_ref);
 
         plot_fits(mainwindow.image1,false {re_center},true);
 
