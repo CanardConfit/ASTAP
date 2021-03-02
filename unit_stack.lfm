@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 39
+  Left = 450
   Height = 644
-  Top = 180
+  Top = 314
   Width = 1870
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -7802,6 +7802,15 @@ object stackmenu1: Tstackmenu1
       OnClick = Viewimage1Click
     end
     object MenuItem13: TMenuItem
+      Caption = '-'
+    end
+    object selectall5: TMenuItem
+      Caption = 'Select all'
+      Hint = 'Select all files'
+      ShortCut = 16449
+      OnClick = selectall1Click
+    end
+    object MenuItem28: TMenuItem
       Caption = '-'
     end
     object copy_files_to_clipboard1: TMenuItem

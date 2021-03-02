@@ -12,6 +12,7 @@ type
   { Tform_aavso1 }
 
   Tform_aavso1 = class(TForm)
+    name_check1: TComboBox;
     report_to_clipboard1: TButton;
     report_to_file1: TButton;
     delimiter1: TComboBox;
@@ -25,7 +26,6 @@ type
     Label3: TLabel;
     obscode1: TEdit;
     Label1: TLabel;
-    name_check1: TEdit;
     Filter1: TComboBox;
     procedure report_to_clipboard1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -43,6 +43,7 @@ const
   obscode       : string='';
 //  filter_type   : string='';
   name_check : string='';
+  name_check_IAU : string='';
   name_var   : string='';
   delim_pos  : integer=0;
   to_clipboard  : boolean=true;
@@ -75,6 +76,7 @@ begin
   end;
 end;
 
+
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
     c  : integer;
@@ -86,7 +88,7 @@ begin
 
   stdev_valid:=(photometry_stdev>0.0001);
   if stdev_valid then
-    err_message:='max(StDev,2/SNR) used for MERR.'
+    err_message:='max(StDev:2/SNR) used for MERR.'
   else
     err_message:='2/SNR used for MERR.';
 
@@ -95,7 +97,7 @@ begin
 
   aavso_report:= '#TYPE=Extended'+#13+#10+
                  '#OBSCODE='+obscode+#13+#10+
-                 '#SOFTWARE=ASTAP, photometry version ß0.2'+#13+#10+
+                 '#SOFTWARE=ASTAP, photometry version ß0.3'+#13+#10+
                  '#DELIM='+delimiter1.text+#13+#10+
                  '#DATE=JD'+#13+#10+
                  '#OBSTYPE=CCD'+#13+#10+
@@ -151,6 +153,7 @@ begin
 end;
 
 
+
 procedure Tform_aavso1.FormClose(Sender: TObject; var CloseAction: TCloseAction );
 begin
   get_info; {form_aavso1.release will be done in the routine calling the form}
@@ -163,7 +166,11 @@ begin
   if object_name<>'' then name_variable1.text:=object_name
     else
     name_variable1.text:=name_var;
+
+  name_check1.items.add(name_check);
+  name_check1.items.add(name_check_IAU);
   name_check1.text:=name_check;
+
   if filter_name<>'' then filter1.text:=filter_name else  filter1.itemindex:=0 {TC};
 
   delimiter1.itemindex:=delim_pos;

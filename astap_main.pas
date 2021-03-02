@@ -691,6 +691,9 @@ procedure bin_X2X3X4(binfactor:integer);{bin img_loaded 2x or 3x or 4x}
 procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : image_array; var sd,mean :double; var iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 function extract_raw_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
 function fits_file_name(inp : string): boolean; {fits file name?}
+function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
+procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; var   ram,decm  : double {fitsX, Y to ra,dec});
+
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -2413,6 +2416,32 @@ begin
 end;
 
 
+function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
+ var
+   hh,mm,ss,ds  :integer;
+   g,m,s  :integer;
+   sign   : char;
+begin
+  {RA}
+  rax:=rax+pi*2*0.05/(24*60*60); {add 1/10 of half second to get correct rounding and not 7:60 results as with round}
+  rax:=rax*12/pi; {make hours}
+  hh:=trunc(rax);
+  mm:=trunc((rax-hh)*60);
+  ss:=trunc((rax-hh-mm/60)*3600);
+  ds:=trunc((rax-hh-mm/60-ss/3600)*36000);
+
+  {DEC}
+  if decx<0 then sign:='-' else sign:='+';
+  decx:=abs(decx)+pi*2*0.5/(360*60*60); {add half second to get correct rounding and not 7:60 results as with round}
+  decx:=decx*180/pi; {make degrees}
+  g:=trunc(decx);
+  m:=trunc((decx-g)*60);
+  s:=trunc((decx-g-m/60)*3600);
+  result:=leadingzero(hh)+leadingzero(mm)+leadingzero(ss)+'.'+char(ds+48)+sign+leadingzero(g)+leadingzero(m)+leadingzero(s);
+end;
+
+
+
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; var background, starlevel: double); {get background and star level from peek histogram}
 var
   i, pixels,max_range,above,his_total, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
@@ -3111,7 +3140,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.506, '+about_message4+', dated 2021-2-27';
+  #13+#10+'ASTAP version ß0.9.507a, '+about_message4+', dated 2021-3-2';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3787,45 +3816,69 @@ begin
 end;
 
 
-function place_marker_radec(str1: string): boolean;{place ra,dec marker in image}
+function place_marker_radec(data0: string): boolean;{place ra,dec marker in image}
 var
   ra_new,dec_new, fitsx,fitsy : double;
-  kommapos,errorD  :integer;
   error1,error2  : boolean;
+  data1,ra_text,dec_text  :string;
+  pos1,pos2,pos3,pos4,pos5,pos6,fout,i :integer;
 
 begin
   if ((fits_file=false) or (cd1_1=0) or (mainwindow.shape_marker3.visible=false)) then exit;{no solution to place marker}
 
-  kommapos:=pos(',',str1);
-  if kommapos<>0 then
+
+
+  {Simbad sirius    06 45 08.917 -16 42 58.02      }
+  {Orion   5h 35.4m; Declination_symbol1: 5o 27′ south    }
+  {http://www.rochesterastronomy.org/supernova.html#2020ue
+  R.A. = 00h52m33s.814, Decl. = +80°39'37".93 }
+
+  data0:=StringReplace(data0,'s.','.',[]); {for 00h52m33s.814}
+  data0:=StringReplace(data0,'".','.',[]); {for +80°39'37".93}
+  data0:=StringReplace(data0,'R.A.','',[]); {remove dots from ra}
+  data0:=StringReplace(data0,'Decl.','',[]);{remove dots from decl}
+  data1:='';
+
+  for I := 1 to length(data0) do
   begin
-    ra_text_to_radians (copy(str1,1  ,kommapos-1) ,ra_new,error1); {convert ra text to ra0 in radians}
-    dec_text_to_radians(copy(str1,kommapos+1,99) ,dec_new,error2); {convert dec text to dec0 in radians}
+    if (((ord(data0[i])>=48) and (ord(data0[i])<=57)) or (data0[i]='.') or   (data0[i]='-')) then   data1:=data1+data0[i] else data1:=data1+' ';{replace all char by space except for numbers and dot}
+  end;
+  repeat  {remove all double spaces}
+    i:=pos('  ',data1);
+    if i>0 then delete(data1,i,1);
+  until i=0;;
+
+  while ((length(data1)>=1) and (data1[1]=' ')) do {remove spaces in the front for pos1 detectie}
+                                     delete(data1,1,1);
+  while ((length(data1)>=1) and (data1[length(data1)]=' ')) do {remove spaces in the end since VAL( can't cope with them}
+                                     delete(data1,length(data1),1);
+  pos1:=pos(' ',data1);  if pos1=0 then exit;
+  pos2:=posEX(' ',data1,pos1+1); if pos2=0 then pos2:=length(data1)+1;
+  pos3:=posEX(' ',data1,pos2+1); if pos3=0 then pos3:=length(data1)+1;
+  pos4:=posEX(' ',data1,pos3+1); if pos4=0 then pos4:=length(data1)+1;
+  pos5:=posEX(' ',data1,pos4+1); if pos5=0 then pos5:=length(data1)+1;
+  pos6:=posEX(' ',data1,pos5+1); if pos6=0 then pos6:=length(data1)+1;
+
+  if pos5<>pos6  then {6 string position}
+  begin
+    ra_text:=copy(data1,1, pos3);
+    dec_text:=copy(data1,pos3+1,99);
   end
   else
-  begin {position in hours?}
-    kommapos:=pos('h',str1);
-    if kommapos<>0 then
-    begin
-      val(trim(copy(str1,1  ,kommapos-1)),ra_new,errorD);
-      ra_new:=ra_new*pi/12;
-      error1:=(errorD<>0);
-      val(trim(copy(str1,kommapos+1,99)),dec_new,errorD);
-      dec_new:=dec_new*pi/180;
-      error2:=(errorD<>0);
-    end
-    else
-    begin {position in degrees?}
-      kommapos:=pos('d',str1);
-      if kommapos=0 then kommapos:=pos(' ',str1);
-      val(trim(copy(str1,1  ,kommapos-1)),ra_new,errorD);
-      ra_new:=ra_new*pi/180;
-      error1:=(errorD<>0);
-      val(trim(copy(str1,kommapos+1,99)),dec_new,errorD);
-      dec_new:=dec_new*pi/180;
-      error2:=(errorD<>0);
-    end;
+  if pos3<>pos4  then {4 string position}
+  begin {4 string position}
+    ra_text:=copy(data1,1, pos2);
+    dec_text:=copy(data1,pos2+1,99);
+  end
+  else
+  begin {2 string position}
+    ra_text:=copy(data1,1, pos1);
+    dec_text:=copy(data1,pos1+1,99);
   end;
+
+  ra_text_to_radians ( ra_text ,ra_new,error1); {convert ra text to ra0 in radians}
+  dec_text_to_radians( dec_text ,dec_new,error2); {convert dec text to dec0 in radians}
+
 
   if ((error1=false) and (error2=false)) then
   begin
@@ -8140,6 +8193,7 @@ begin
   split_raw(1,1,'TG');{extract one of the Bayer matrix pixels}
 end;
 
+
 procedure Tmainwindow.extract_pixel_11Click(Sender: TObject);
 begin
   split_raw(1,1,'P11');{extract one of the Bayer matrix pixels}
@@ -9274,7 +9328,7 @@ procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
 begin
   if add_marker_position1.checked then
   begin
-    marker_position:=InputBox('Enter α, δ position in one of the following formats: ','23 00 00.0,  89 00 00.0    or   23.99999h 89.9999999    or    359.999d 89.999',marker_position );
+    marker_position:=InputBox('Enter α, δ position in one of the following formats: ','23 00 00.0 +89 00 00.0    or  23 00 +89 00  or  23.0000 +89.000',marker_position );
     if marker_position='' then begin add_marker_position1.checked:=false; exit; end;
 
     mainwindow.shape_marker3.visible:=true;
@@ -11134,8 +11188,8 @@ begin
           begin
             HFD(img_loaded,fitsX,fitsY,14{box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
-            if ((hfd1<=30) and (snr>8) and (hfd1>hfd_min) ) then
-//              if ((hfd1<=30) and (snr>30) and (hfd1>hfd_min) ) then
+//            if ((hfd1<=30) and (snr>8) and (hfd1>hfd_min) ) then
+            if ((hfd1<=30) and (snr>30) and (hfd1>hfd_min) ) then
             begin
               diam:=round(3*hfd1);{for marking area}
               for j:=fitsY to fitsY+diam do {mark the whole star area as surveyed}
@@ -11373,7 +11427,7 @@ begin
 end;
 
 
-procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; var   ram,decm  : double {mouse position});
+procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; var   ram,decm  : double {fitsX, Y to ra,dec});
 var
    fits_unsampledX, fits_unsampledY :double;
    u,v,u2,v2             : double;

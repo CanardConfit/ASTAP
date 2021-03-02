@@ -65,6 +65,8 @@ type
     copy_to_blink1: TMenuItem;
     Label26: TLabel;
     flux_aperture1: TComboBox;
+    MenuItem28: TMenuItem;
+    selectall5: TMenuItem;
     yyyyyy: TMenuItem;
     xxxxxx: TMenuItem;
     merge_overlap1: TCheckBox;
@@ -5669,11 +5671,10 @@ begin
 end;
 
 
-
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   Save_Cursor          : TCursor;
-  magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,backgr,hfd_med,aper : double;
+  magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,backgr,hfd_med,aper,rax,decx : double;
   saturation_level                                                                           : single;
   c,i,x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr,countVar, countCheck,countThree : integer;
   flipvertical,fliphorizontal,init,refresh_solutions,analysedP  :boolean;
@@ -5682,7 +5683,7 @@ var
   outliers : array of array of double;
   extra_message,astr  : string;
 
-  function measure_star(deX,deY :double): string;
+  function measure_star(deX,deY :double): string;{measure position and flux}
   begin
     HFD(img_loaded,round(deX-1),round(deY-1),14{box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
     if ((hfd1<50) and (hfd1>0) and (snr>6)) then {star detected in img_loaded}
@@ -5723,6 +5724,17 @@ var
       mainwindow.image1.Canvas.textout(starX+20,starY+20,'σ '+floattostrf(outliers[2,i], ffgeneral, 3,0));{add hfd as text}
     end;
   end;
+  procedure nil_all;
+  begin
+    img_temp:=nil;{free memory}
+    starlistx:=nil;{free memory}
+    starlistpack:=nil; {release memory}
+    outliers:=nil;
+    starCheck:=nil;
+    starThree:=nil;
+
+    Screen.Cursor :=Save_Cursor;{back to normal }
+  end;
 
 begin
   if listview7.items.count<=0 then exit; {no files}
@@ -5759,10 +5771,13 @@ begin
       mainwindow.caption:=filename2;
 
       Application.ProcessMessages;
-      if esc_pressed then break;
-      {load image}
-      if load_fits(filename2,true {light},true,0,img_loaded)=false then begin esc_pressed:=true; break;end;
 
+      {load image}
+      if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then
+      begin
+        nil_all;{nil all arrays and restore cursor}
+        exit;
+      end;
       if ((cd1_1=0) or (refresh_solutions)) then
       begin
         listview7.Selected :=nil; {remove any selection}
@@ -5799,7 +5814,6 @@ begin
     exit;
   end;
 
-
   first_image:=-1;
   outliers:=nil;
   stepnr:=0;
@@ -5830,9 +5844,14 @@ begin
         mainwindow.caption:=filename2;
 
         Application.ProcessMessages;
-        if esc_pressed then break;
+
         {load image}
-        if load_fits(filename2,true {light},true,0,img_loaded)=false then begin esc_pressed:=true; break;end;
+        if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then
+        begin
+           esc_pressed:=true;
+           nil_all;
+           exit;
+        end;
 
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
@@ -5880,6 +5899,14 @@ begin
           init:=true;
         end;
 
+        if first_image=c then
+        begin
+           astr:=measure_star(shape_fitsX2,shape_fitsY2);
+           sensor_coordinates_to_celestial(xc,yc,{var}   rax,decx {position});
+           name_check_iau:=prepare_IAU_designation(rax,decx);
+        end;
+
+
         {calculate vectors from astrometric solution to speed up}
         sincos(dec0,SIN_dec0,COS_dec0); {do this in advance since it is for each pixel the same}
         astrometric_to_vector;{convert astrometric solution to vectors}
@@ -5890,13 +5917,24 @@ begin
         begin
           x_new:=round(solution_vectorX[0]*(fitsx-1)+solution_vectorX[1]*(fitsY-1)+solution_vectorX[2]); {correction x:=aX+bY+c}
           y_new:=round(solution_vectorY[0]*(fitsx-1)+solution_vectorY[1]*(fitsY-1)+solution_vectorY[2]); {correction y:=aX+bY+c}
+
+          x_new:=round(fitsx-1); {correction x:=aX+bY+c}
+          y_new:=round(fitsY-1); {correction y:=aX+bY+c}
+
           if ((x_new>=0) and (x_new<=width2-1) and (y_new>=0) and (y_new<=height2-1)) then
              for col:=0 to naxis3-1 do {all colors} img_temp[col,x_new,y_new]:=img_loaded[col,fitsX-1,fitsY-1] ;
         end;
 
         img_loaded:=img_temp;
+
+        {quick and dirty method to correct annotations for aligned images}
         CRPIX1:=round(solution_vectorX[0]*(CRPIX1-1)+solution_vectorX[1]*(CRPIX2-1)+solution_vectorX[2]);{correct for marker_position at ra_dec position}
         CRPIX2:=round(solution_vectorY[0]*(CRPIX1-1)+solution_vectorY[1]*(CRPIX2-1)+solution_vectorY[2]);
+        cd1_1:=cd1_1*sign( solution_vectorX[0]);
+        cd1_2:=cd1_2*sign( solution_vectorX[1]);
+        cd2_1:=cd2_1*sign( solution_vectorY[0]);
+        cd2_2:=cd2_2*sign( solution_vectorY[1]);
+
 
         plot_fits(mainwindow.image1,false {re_center},true);
 
@@ -5929,8 +5967,14 @@ begin
           if mainwindow.shape_alignment_marker2.visible then
           begin
             astr:=measure_star(shape_fitsX2,shape_fitsY2);
+
+            if first_image=c then
+            begin
+               sensor_coordinates_to_celestial(xc,yc,{var}   rax,decx {position});
+               name_check_iau:=prepare_IAU_designation(rax,decx);
+            end;
             listview7.Items.item[c].subitems.Strings[P_magn2]:=astr;
-            if astr<>'' then {star dectected}
+            if astr<>'' then {star detected}
             begin
               starCheck[countCheck]:=strtofloat2(astr);
               inc(countCheck);
@@ -6010,14 +6054,7 @@ begin
 
   until ((esc_pressed) or (sender<>photometry_repeat1 {single run}));
 
-  img_temp:=nil;{free memory}
-  starlistx:=nil;{free memory}
-  starlistpack:=nil; {release memory}
-  outliers:=nil;
-  starCheck:=nil;
-  starThree:=nil;
-
-  Screen.Cursor :=Save_Cursor;{back to normal }
+  nil_all;{nil all arrays and restore cursor}
 end;
 
 
@@ -6401,6 +6438,7 @@ begin
   if sender=selectall2 then begin listview2.selectall; listview2.setfocus; end;
   if sender=selectall3 then begin listview3.selectall; listview3.setfocus; end;
   if sender=selectall4 then begin listview4.selectall; listview4.setfocus; end;
+  if sender=selectall5 then begin listview5.selectall; listview5.setfocus; end;
 
   if sender=selectall6 then begin listview6.selectall; listview6.setfocus; end;
   if sender=selectall7 then begin listview7.selectall; listview7.setfocus; end;

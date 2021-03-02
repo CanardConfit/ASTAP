@@ -1556,6 +1556,8 @@ var
 
     procedure plot_star;
     begin
+      if ((flux_calibration) and ( bp_rp>12))then exit;{too red star for flux calibration. Bp-Rp>1.2 for about 30% of the stars}
+
      {5. Conversion (RA,DEC) -> (x,y)}
       sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
       delta_ra:=ra2-ra0;
@@ -1689,7 +1691,7 @@ begin
 
     if flux_calibration then
     begin
-      // max_nr_stars:=round(width2*height2*(1216/(2328*1760))); {limit to the brightest stars. Fainter stars have more noise}
+       max_nr_stars:=round(width2*height2*(800/(2328*1760))); {limit to the brightest stars. Fainter stars have more noise}
        setlength(mag_offset_array,max_nr_stars);
     end;
 
@@ -1731,7 +1733,8 @@ begin
     begin
       if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
       nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
-      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp))
+      and (bp_rp>12) ) do plot_star;{add star}
     end;
 
     close_star_database;
