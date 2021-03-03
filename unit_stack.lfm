@@ -3204,7 +3204,7 @@ object stackmenu1: Tstackmenu1
         Left = 440
         Height = 26
         Hint = 'Scroll through the check-marked images once'
-        Top = 5
+        Top = 6
         Width = 75
         Caption = '>'
         OnClick = photometry_button1Click

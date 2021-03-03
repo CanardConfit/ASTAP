@@ -1,11 +1,11 @@
 object form_aavso1: Tform_aavso1
-  Left = 301
+  Left = 302
   Height = 379
   Top = 190
-  Width = 404
+  Width = 403
   Caption = 'AAVSO report'
   ClientHeight = 379
-  ClientWidth = 404
+  ClientWidth = 403
   OnClose = FormClose
   OnShow = FormShow
   LCLVersion = '2.0.10.0'

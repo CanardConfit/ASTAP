@@ -1556,7 +1556,7 @@ var
 
     procedure plot_star;
     begin
-      if ((flux_calibration) and ( bp_rp>12))then exit;{too red star for flux calibration. Bp-Rp>1.2 for about 30% of the stars}
+      if ((flux_calibration) and ( bp_rp>12) and (bp_rp<>999))then exit;{too red star for flux calibration. Bp-Rp>1.2 for about 30% of the stars}
 
      {5. Conversion (RA,DEC) -> (x,y)}
       sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}

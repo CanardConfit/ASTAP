@@ -4009,7 +4009,6 @@ begin
 
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
-//  mainwindow.image1.canvas.pen.color:=clyellow;
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   mainwindow.image1.canvas.font.color:=$00B0FF ;{orange}
 
@@ -5709,7 +5708,7 @@ var
       else result:='Saturated';
      end
     else
-    result:='';
+    result:='?';
   end;
 
   procedure plot_outliers;{plot up to 4 yellow circles around the outliers}
@@ -5895,7 +5894,7 @@ begin
         {standard alligned blink}
         if init=false then {init}
         begin
-          initialise1;{set variables correct for astrometric solution calculation. Use first files as reference}
+          initialise_var1;{set variables correct for astrometric solution calculation. Use first files as reference}
           init:=true;
         end;
 
@@ -5955,7 +5954,7 @@ begin
             astr:=measure_star(shape_fitsX,shape_fitsY);
             listview7.Items.item[c].subitems.Strings[P_magn1]:=astr;
             listview7.Items.item[c].subitems.Strings[P_snr]:=inttostr(round(snr));
-            if astr<>'' then {star dectected}
+            if ((astr<>'?') and (copy(astr,1,1)<>'S')) then {Good star detected}
             begin
               starVar[countVar]:=strtofloat2(astr);
               inc(countVar);
@@ -5972,7 +5971,7 @@ begin
                name_check_iau:=prepare_IAU_designation(rax,decx);
             end;
             listview7.Items.item[c].subitems.Strings[P_magn2]:=astr;
-            if astr<>'' then {star detected}
+            if ((astr<>'?') and (copy(astr,1,1)<>'S')) then {Good star detected}
             begin
               starCheck[countCheck]:=strtofloat2(astr);
               inc(countCheck);
@@ -5982,7 +5981,7 @@ begin
           begin
             astr:=measure_star(shape_fitsX3,shape_fitsY3);
             listview7.Items.item[c].subitems.Strings[P_magn3]:=astr;
-            if astr<>'' then {star detected}
+            if ((astr<>'?') and (copy(astr,1,1)<>'S')) then {Good star detected}
             begin
               starThree[countThree]:=strtofloat2(astr);
               inc(countThree);
@@ -6387,9 +6386,15 @@ begin
   else
   if sender=list_to_clipboard6 then lv:=listview6
   else
-  lv:=listview1;
+  if sender=list_to_clipboard1 then lv:=listview1
+  else
+  begin
+    beep;
+    exit;
+  end;
 
   {get column names}
+  try
   for c := 0 to lv.Items[0].SubItems.Count-1 do
        info:=info+lv.columns[c].caption+#9;
   info:=info+slinebreak;
@@ -6406,6 +6411,10 @@ begin
       info:=info+slinebreak;
     end;
   end;
+  except
+    info:='Error';
+  end;
+
   Clipboard.AsText:=info;
 end;
 

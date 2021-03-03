@@ -29,8 +29,8 @@ procedure calibration_and_alignment(oversize:integer; var files_to_process : arr
 {$inline on}  {!!! Set this off for debugging}
 procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
 procedure astrometric_to_vector; {convert astrometric solution to vector solution}
-procedure initialise1;{set variables correct}
-procedure initialise2;{set variables correct}
+procedure initialise_var1;{set variables correct}
+procedure initialise_var2;{set variables correct}
 function test_bayer_matrix(img: image_array) :boolean;  {test statistical if image has a bayer matrix. Execution time about 1ms for 3040x2016 image}
 
 var
@@ -137,7 +137,7 @@ begin
   end;
 end;
 
-procedure initialise1;{set variables correct}
+procedure initialise_var1;{set variables correct}
 begin
   ra_ref:=ra0;
   dec_ref:=dec0;
@@ -152,7 +152,7 @@ begin
   exposure_ref:=exposure;
 end;
 
-procedure initialise2;{set variables correct}
+procedure initialise_var2;{set variables correct}
 begin
   ap_0_1_ref:=ap_0_1;{store polynomial first fits }
   ap_0_2_ref:=ap_0_2;
@@ -287,8 +287,8 @@ begin
             begin
               backup_header;{backup header and solution}
 
-              initialise1;{set variables correct, do this before apply dark}
-              initialise2;{set variables correct}
+              initialise_var1;{set variables correct, do this before apply dark}
+              initialise_var2;{set variables correct}
             end;
 
             saturated_level:=datamax_org*0.97;{130}
@@ -654,8 +654,8 @@ begin
 
             backup_header;{backup header and solution}
 
-            initialise1;{set variables correct. Do this before apply dark}
-            initialise2;{set variables correct}
+            initialise_var1;{set variables correct. Do this before apply dark}
+            initialise_var2;{set variables correct}
             if ((bayerpat='') and (make_osc_color1.checked)) then
                if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
                else
@@ -894,8 +894,8 @@ begin
           if init=false then
           begin
             backup_header;{backup header and solution}
-            initialise1;{set variables correct}
-            initialise2;{set variables correct}
+            initialise_var1;{set variables correct}
+            initialise_var2;{set variables correct}
           end;
 
           memo2_message('Adding file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to mosaic.');             // Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
@@ -1140,8 +1140,8 @@ begin
         begin
           binning:=report_binning;{select binning based on the height of the light}
           backup_header;{backup header and solution}
-          initialise1;{set variables correct}
-          initialise2;{set variables correct}
+          initialise_var1;{set variables correct}
+          initialise_var2;{set variables correct}
           if ((bayerpat='') and (make_osc_color1.checked)) then
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
              else
@@ -1612,8 +1612,8 @@ begin
         begin
           binning:=report_binning;{select binning based on the height of the light}
           backup_header;{backup header and solution}
-          initialise1;{set variables correct}
-          initialise2;{set variables correct}
+          initialise_var1;{set variables correct}
+          initialise_var2;{set variables correct}
           if ((bayerpat='') and (make_osc_color1.checked)) then
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
              else

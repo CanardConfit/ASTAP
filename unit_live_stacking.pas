@@ -231,8 +231,8 @@ begin
             begin
               binning:=report_binning;{select binning based on the height of the first light}
 
-              initialise1;{set variables correct. Do this before apply dark}
-              initialise2;{set variables correct}
+              initialise_var1;{set variables correct. Do this before apply dark}
+              initialise_var2;{set variables correct}
 
               memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
               if ((bayerpat='') and (make_osc_color1.checked)) then

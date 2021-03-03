@@ -796,7 +796,7 @@ begin
       mount_info:=' Mount offset Δα='+ra_offset+ ',  Δδ='+dec_offset+'. '+#9;
     end
     else
-    mount_info:='';
+    mount_info:='No mount info.'+#9;
 
     memo2_message('Solution found: '+  prepare_ra(ra0,': ')+#9+prepare_dec(dec0,'° ') +#9+ solved_in+#9+' Δ was '+offset_found+#9+ mount_info+' Used stars up to magnitude: '+floattostrF2(mag2/10,0,1) );
     mainwindow.caption:=('Solution found:    '+  prepare_ra(ra0,': ')+'     '+prepare_dec(dec0,'° ')  );

@@ -3140,7 +3140,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.508, '+about_message4+', dated 2021-3-2';
+  #13+#10+'ASTAP version ß0.9.508b, '+about_message4+', dated 2021-3-3';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -11346,10 +11346,7 @@ begin
       image1.Canvas.textout(round(fontsize*2),height2-round(2*fontsize),mess2);{median HFD and tilt indication}
     end
     else
-    begin
-      image1.Canvas.font.size:=round(image1.Canvas.font.size*20/12);
       image1.Canvas.textout(round(fontsize*2),height2-round(2*fontsize),'No stars detected');
-    end;
   end;{with mainwindow}
 
   hfdlist:=nil;{release memory}
