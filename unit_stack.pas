@@ -57,6 +57,7 @@ type
     changekeyword6: TMenuItem;
     changekeyword7: TMenuItem;
     checkBox_annotate1: TCheckBox;
+    flux_annulus1: TComboBox;
     keyword8: TMenuItem;
     changekeyword8: TMenuItem;
     keyword6: TMenuItem;
@@ -65,6 +66,7 @@ type
     copy_to_blink1: TMenuItem;
     Label26: TLabel;
     flux_aperture1: TComboBox;
+    Label27: TLabel;
     MenuItem28: TMenuItem;
     selectall5: TMenuItem;
     yyyyyy: TMenuItem;
@@ -1839,11 +1841,11 @@ begin
   OpenDialog1.Title := 'Select images to stack';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.filename:='';
-  opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+  opendialog1.Filter := 'FITS files and DSLR RAW files |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
-                        '|JPEG, TIFF, PNG files (*.)||*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
-                        '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
+                        '|JPEG, TIFF, PNG files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
+                        '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
   if opendialog1.execute then
   begin
     listview1.Items.beginUpdate;
@@ -2147,11 +2149,11 @@ begin
   OpenDialog1.Title := 'Select flat dark images';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.filename:='';
-  opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+  opendialog1.Filter := 'FITS files and DSLR RAW files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
-                        '|JPEG, TIFF, PNG files (*.)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
-                        '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
+                        '|JPEG, TIFF, PNG files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
+                        '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
   fits_file:=true;
   if opendialog1.execute then
   begin
@@ -2171,11 +2173,11 @@ var
 begin
   OpenDialog1.Title := 'Select images to add';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+  opendialog1.Filter := 'FITS files and DSLR RAW files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
-                        '|JPEG, TIFF, PNG files (*.)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
-                        '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
+                        '|JPEG, TIFF, PNG files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
+                        '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
 
   fits_file:=true;
   if opendialog1.execute then
@@ -2198,11 +2200,11 @@ begin
   OpenDialog1.Title := 'Select flat images';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.filename:='';
-  opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+  opendialog1.Filter := 'FITS files and DSLR RAW files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
-                        '|JPEG, TIFF, PNG files (*.)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
-                        '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
+                        '|JPEG, TIFF, PNG files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
+                        '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
   fits_file:=true;
   if opendialog1.execute then
   begin
@@ -4237,11 +4239,11 @@ begin
   OpenDialog1.Title := 'Select dark images';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.filename:='';
-  opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+  opendialog1.Filter := 'FITS files and DSLR RAW files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
-                        '|JPEG, TIFF, PNG files (*.)||*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
-                        '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
+                        '|JPEG, TIFF, PNG files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
+                        '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
   if opendialog1.execute then
   begin
     listview2.items.beginupdate;
@@ -4259,10 +4261,10 @@ var i: integer;
 begin
   OpenDialog1.Title := 'Select images to add';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+  opendialog1.Filter := 'FITS files and DSLR RAW files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
-                        '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
+                        '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
 
   fits_file:=true;
   if opendialog1.execute then
@@ -4340,11 +4342,11 @@ var
 begin
   OpenDialog1.Title := 'Select images to add';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := 'FITS files and DSLR RAW files (*.)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+  opendialog1.Filter := 'FITS files and DSLR RAW files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
-                        '|JPEG, TIFF, PNG files (*.)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
-                        '|RAW files (*.)|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
+                        '|JPEG, TIFF, PNG files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
+                        '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
 
   fits_file:=true;
   if opendialog1.execute then
@@ -5548,16 +5550,14 @@ begin
   nr_images:=0;
   w2:=999999;
   h2:=999999;
-  setlength(outliers,4,4);
-  for i:=0 to 3 do
-    for j:=0 to 3 do
-      outliers[i,j]:=0;
+  outliers:=nil;{wil be used for detection later}
+
   repeat
     inc(stepnr);
     for c:=0 to stackmenu1.listview7.items.count-1 do {do all files}
     begin
       Application.ProcessMessages;
-      if esc_pressed then begin outliers:=nil; exit; end;
+      if esc_pressed then begin exit; end;
 
       if stackmenu1.listview7.Items.item[c].checked  then
       begin {read solution}
@@ -5619,49 +5619,59 @@ begin
    end;{for c:=0 loop}
   until stepnr>2;
 
-  {find largest outliers}
-  outliers[2,0]:=0;
-  outliers[2,1]:=0;
-  outliers[2,2]:=0;
-  outliers[2,3]:=0;
-  for i:=0 to w2 do
-    for j:=0 to h2 do
-    begin
-     try
-       if stars_count[i,j]>=round(nr_images*0.8) then {at least in 80% of the cases star detection}
-     if (stars_mean[i,j]/stars_count[i,j])<=report_upto_magn then {magnitude lower then}
-     begin
-       sd:=sqrt(stars_sd[i,j]/stars_count[i,j]);
+  if created then
+  begin
 
+    setlength(outliers,4,4);
+    for i:=0 to 3 do
+      for j:=0 to 3 do
+        outliers[i,j]:=0;
 
-       if ((sd>outliers[2,0]) or (sd>outliers[2,1]) or (sd>outliers[2,2]) or (sd>outliers[2,3])) then
+    {find largest outliers}
+//    outliers[2,0]:=0;
+//    outliers[2,1]:=0;
+//    outliers[2,2]:=0;
+//    outliers[2,3]:=0;
+
+    for i:=0 to w2 do
+      for j:=0 to h2 do
+      begin
+       try
+         if stars_count[i,j]>=round(nr_images*0.8) then {at least in 80% of the cases star detection}
+       if (stars_mean[i,j]/stars_count[i,j])<=report_upto_magn then {magnitude lower then}
        begin
-         if  ((outliers[2,0]<=outliers[2,1]) and (outliers[2,0]<=outliers[2,2]) and (outliers[2,0]<=outliers[2,3])) then smallest:=0
-         else
-         if  ((outliers[2,1]<=outliers[2,0]) and (outliers[2,1]<=outliers[2,2]) and (outliers[2,1]<=outliers[2,3])) then smallest:=1
-         else
-         if  ((outliers[2,2]<=outliers[2,0]) and (outliers[2,2]<=outliers[2,1]) and (outliers[2,2]<=outliers[2,3])) then smallest:=2
-         else
-         if  ((outliers[2,3]<=outliers[2,0]) and (outliers[2,3]<=outliers[2,1]) and (outliers[2,3]<=outliers[2,2])) then smallest:=3;
+         sd:=sqrt(stars_sd[i,j]/stars_count[i,j]);
 
 
-         {replace the smallest sd}
-         outliers[0,smallest]:=i*factor;{store x}
-         outliers[1,smallest]:=j*factor;{store y}
-         outliers[2,smallest]:=SD;{store sd}
+         if ((sd>outliers[2,0]) or (sd>outliers[2,1]) or (sd>outliers[2,2]) or (sd>outliers[2,3])) then
+         begin
+           if  ((outliers[2,0]<=outliers[2,1]) and (outliers[2,0]<=outliers[2,2]) and (outliers[2,0]<=outliers[2,3])) then smallest:=0
+           else
+           if  ((outliers[2,1]<=outliers[2,0]) and (outliers[2,1]<=outliers[2,2]) and (outliers[2,1]<=outliers[2,3])) then smallest:=1
+           else
+           if  ((outliers[2,2]<=outliers[2,0]) and (outliers[2,2]<=outliers[2,1]) and (outliers[2,2]<=outliers[2,3])) then smallest:=2
+           else
+           if  ((outliers[2,3]<=outliers[2,0]) and (outliers[2,3]<=outliers[2,1]) and (outliers[2,3]<=outliers[2,2])) then smallest:=3;
+
+
+           {replace the smallest sd}
+           outliers[0,smallest]:=i*factor;{store x}
+           outliers[1,smallest]:=j*factor;{store y}
+           outliers[2,smallest]:=SD;{store sd}
+         end;
        end;
-     end;
 
-     except
-       beep;
-     end;
-   end ;{for loop}
+       except
+         beep;
+       end;
+     end ;{for loop}
 
-  if nr_images<6 then memo2_message('Warning, not enough images for reliable outlier detection');
-  if outliers[2,0]<>0 then memo2_message('Found star 1 with magnitude variation. σ = '+ floattostr6(outliers[2,0])+' at x=' +inttostr(round(outliers[0,0]))+', y='+inttostr(round(outliers[1,0]))+'. Marked with yellow circle.');
-  if outliers[2,1]<>0 then memo2_message('Found star 2 with magnitude variation. σ = '+ floattostr6(outliers[2,1])+' at x=' +inttostr(round(outliers[0,1]))+', y='+inttostr(round(outliers[1,1]))+'. Marked with yellow circle.' );
-  if outliers[2,2]<>0 then memo2_message('Found star 3 with magnitude variation. σ = '+ floattostr6(outliers[2,2])+' at x=' +inttostr(round(outliers[0,2]))+', y='+inttostr(round(outliers[1,2]))+'. Marked with yellow circle.' );
-  if outliers[2,3]<>0 then memo2_message('Found star 4 with magnitude variation. σ = '+ floattostr6(outliers[2,3])+' at x=' +inttostr(round(outliers[0,3]))+', y='+inttostr(round(outliers[1,3]))+'. Marked with yellow circle.' );
+    if nr_images<6 then memo2_message('Warning, not enough images for reliable outlier detection');
+    if outliers[2,0]<>0 then memo2_message('Found star 1 with magnitude variation. σ = '+ floattostr6(outliers[2,0])+' at x=' +inttostr(round(outliers[0,0]))+', y='+inttostr(round(outliers[1,0]))+'. Marked with yellow circle.');
+    if outliers[2,1]<>0 then memo2_message('Found star 2 with magnitude variation. σ = '+ floattostr6(outliers[2,1])+' at x=' +inttostr(round(outliers[0,1]))+', y='+inttostr(round(outliers[1,1]))+'. Marked with yellow circle.' );
+    if outliers[2,2]<>0 then memo2_message('Found star 3 with magnitude variation. σ = '+ floattostr6(outliers[2,2])+' at x=' +inttostr(round(outliers[0,2]))+', y='+inttostr(round(outliers[1,2]))+'. Marked with yellow circle.' );
+    if outliers[2,3]<>0 then memo2_message('Found star 4 with magnitude variation. σ = '+ floattostr6(outliers[2,3])+' at x=' +inttostr(round(outliers[0,3]))+', y='+inttostr(round(outliers[1,3]))+'. Marked with yellow circle.' );
+  end;
 
 //  stars:=nil;
   stars_sd:=nil;
@@ -5673,18 +5683,20 @@ end;
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   Save_Cursor          : TCursor;
-  magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,backgr,hfd_med,aper,rax,decx : double;
+  magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,backgr,hfd_med,apert,annul,rax,decx : double;
   saturation_level                                                                           : single;
   c,i,x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr,countVar, countCheck,countThree : integer;
   flipvertical,fliphorizontal,init,refresh_solutions,analysedP  :boolean;
   starlistx : star_list;
   starVar, starCheck,starThree : array of double;
   outliers : array of array of double;
-  extra_message,astr  : string;
+  {extra_message,}astr  : string;
 
   function measure_star(deX,deY :double): string;{measure position and flux}
+  var
+    starX,starY,len :double;
   begin
-    HFD(img_loaded,round(deX-1),round(deY-1),14{box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+    HFD(img_loaded,round(deX-1),round(deY-1),flux_annulus {14}{box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
     if ((hfd1<50) and (hfd1>0) and (snr>6)) then {star detected in img_loaded}
     begin
       if calstat='' then saturation_level:=64000 else saturation_level:=60000; {could be dark subtracted changing the saturation level}
@@ -5704,6 +5716,13 @@ var
         result:=floattostrf(magn, ffFixed, 5,3); {write measured magnitude to list}
 //        mainwindow.image1.Canvas.textout(round(dex)+20,round(dey)+20,'decX,Y '+floattostrf(deX, ffgeneral, 3,3)+','+floattostrf(deY, ffgeneral, 3,3)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 3,3)+','+floattostrf(yc, ffgeneral, 3,3));
 //        memo2_message(filename2+'decX,Y '+floattostrf(deX, ffgeneral, 4,4)+', '+floattostrf(deY, ffgeneral, 4,4)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 4,4)+', '+floattostrf(yc, ffgeneral, 4,4)+'    '+result+  '  deltas:'  + floattostrf(deX-xc, ffgeneral, 4,4)+',' + floattostrf(deY-yc, ffgeneral, 4,4)+'offset '+floattostrf(starlistpack[c].flux_magn_offset, ffgeneral, 6,6)+'fluxlog '+floattostrf(ln(flux)*2.511886432/ln(10), ffgeneral, 6,6) );
+        if Flipvertical=false then  starY:=(height2-yc) else starY:=(yc);
+        if Fliphorizontal     then starX:=(width2-xc)  else starX:=(xc);
+        mainwindow.image1.Canvas.Pen.style:=psSolid;
+        mainwindow.image1.canvas.ellipse(round(starX-flux_aperture),round(starY-flux_aperture),round(starX+flux_aperture),round(starY+flux_aperture));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+        mainwindow.image1.Canvas.Pen.style:=psDot;
+        mainwindow.image1.canvas.rectangle(round(starX-flux_annulus),round(starY-flux_annulus),round(starX+flux_annulus),round(starY+flux_annulus));
+        mainwindow.image1.canvas.rectangle(round(starX-flux_annulus-4),round(starY-flux_annulus-4),round(starX+flux_annulus+4),round(starY+flux_annulus+4));
       end
       else result:='Saturated';
      end
@@ -5723,6 +5742,8 @@ var
       mainwindow.image1.Canvas.textout(starX+20,starY+20,'σ '+floattostrf(outliers[2,i], ffgeneral, 3,0));{add hfd as text}
     end;
   end;
+
+
   procedure nil_all;
   begin
     img_temp:=nil;{free memory}
@@ -5731,7 +5752,7 @@ var
     outliers:=nil;
     starCheck:=nil;
     starThree:=nil;
-
+    flux_annulus:=14;{return default for plot_and_measure_stars}
     Screen.Cursor :=Save_Cursor;{back to normal }
   end;
 
@@ -5752,7 +5773,9 @@ begin
 
   flipvertical:=mainwindow.flip_vertical1.Checked;
   fliphorizontal:=mainwindow.flip_horizontal1.Checked;
-  aper:=strtofloat2(flux_aperture1.text);
+  apert:=strtofloat2(flux_aperture1.text);
+  annul:=strtofloat2(flux_annulus1.text);
+
 
   esc_pressed:=false;
 
@@ -5844,6 +5867,12 @@ begin
 
         Application.ProcessMessages;
 
+        if starlistpack=nil then
+        begin
+          nil_all;
+          exit;
+        end;
+
         {load image}
         if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then
         begin
@@ -5856,27 +5885,39 @@ begin
 
         if ((stepnr=1) and (pos('F',calstat)=0)) then
         begin
-          extra_message:=' Image not calibrated with a flat field. Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu.';
+//          extra_message:=' Image not calibrated with a flat field. Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu.';
+//          memo2_message('Image not calibrated with a flat field. Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu.');
           listview7.Items.item[c].subitems.Strings[P_photometric]:='Poor';
         end
         else
         begin
-          extra_message:='';
+          //extra_message:='';
           listview7.Items.item[c].subitems.Strings[P_photometric]:='✓';
         end;
 
+        if starlistpack=nil then  {should not happen but it happens?}
+        begin
+          nil_all;
+          exit;
+        end;
         if  starlistpack[c].height=0 then {not filled with data}
         begin
-          if aper<99 then {aperture}
+          if apert<99 then {aperture}
           begin
             analyse_fits(img_loaded,30,false {report}, hfd_counter,backgr,hfd_med); {find background, number of stars, median HFD}
-            if hfd_med<>0 then flux_aperture:=hfd_med*aper/2 else flux_aperture:=99;{radius for measuring aperture}
+            if hfd_med<>0 then
+            begin
+              flux_aperture:=hfd_med*apert/2;
+              flux_annulus:=round(hfd_med*annul/2);
+            end
+            else flux_aperture:=99;{radius for measuring aperture}
           end
           else
           flux_aperture:=99;{radius for measuring aperture}
 
           plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion}); {get flux_magn_offset}
-          memo2_message(inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.'+extra_message);
+ //         memo2_message(inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.'+extra_message);
+
           if flux_magn_offset<>0 then
           begin
             measure_magnitudes(starlistx); {analyse}
@@ -5888,6 +5929,7 @@ begin
           else
           starlistpack[c].height:=0; {mark as not valid measurement}
         end;
+
 
         setlength(img_temp,naxis3,width2,height2);{new size}
 
@@ -5936,11 +5978,14 @@ begin
         plot_fits(mainwindow.image1,false {re_center},true);
 
         mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-        mainwindow.image1.Canvas.Pen.width :=round(1+height2/mainwindow.image1.height);{thickness lines}
+        mainwindow.image1.Canvas.Pen.width :=1;{thickness lines}
+        mainwindow.image1.Canvas.Pen.Color := clGreen;
+      //  mainwindow.image1.Canvas.Pen.style:=psDot;
+        mainwindow.image1.Canvas.Pen.Cosmetic:= false; {gives better dotted lines}
+
         mainwindow.image1.Canvas.brush.Style:=bsClear;
         mainwindow.image1.Canvas.font.color:=clyellow;
         mainwindow.image1.Canvas.font.size:=10; //round(max(10,8*height2/image1.height));{adapt font to image dimensions}
-        mainwindow.image1.Canvas.Pen.Color := clred;
 
         listview7.Items.item[c].subitems.Strings[P_magn1]:=''; {MAGN, always blank}
         listview7.Items.item[c].subitems.Strings[P_magn2]:=''; {MAGN, always blank}
@@ -5959,12 +6004,12 @@ begin
               starVar[countVar]:=strtofloat2(astr);
               inc(countVar);
             end;
-
           end;
+
           if mainwindow.shape_alignment_marker2.visible then
           begin
+            mainwindow.image1.Canvas.Pen.Color := clAqua;
             astr:=measure_star(shape_fitsX2,shape_fitsY2);
-
             if first_image=c then
             begin
                sensor_coordinates_to_celestial(xc,yc,{var}   rax,decx {position});
@@ -5976,9 +6021,11 @@ begin
               starCheck[countCheck]:=strtofloat2(astr);
               inc(countCheck);
             end;
+
           end;
           if mainwindow.shape_alignment_marker3.visible then
           begin
+            mainwindow.image1.Canvas.Pen.Color := clGray;
             astr:=measure_star(shape_fitsX3,shape_fitsY3);
             listview7.Items.item[c].subitems.Strings[P_magn3]:=astr;
             if ((astr<>'?') and (copy(astr,1,1)<>'S')) then {Good star detected}
@@ -5988,6 +6035,10 @@ begin
             end;
           end;
         end;
+
+        mainwindow.image1.Canvas.Pen.width :=round(1+height2/mainwindow.image1.height);{thickness lines}
+        mainwindow.image1.Canvas.Pen.style:=psSolid;
+        mainwindow.image1.Canvas.Pen.Color := clred;
         if starlistpack[c].height<>0 then {valid measurement}
         for i:=0 to  length(starlistpack[c].starlist[0])-2 do
         begin
@@ -6014,7 +6065,7 @@ begin
         end;
       end;{find star magnitudes}
     end;
-    if stepnr=1 then {do it once after one cycle finished}
+    if ((stepnr=1) and (countvar>4)) then {do it once after one cycle finished}
     begin
       find_star_outliers(strtofloat2(mark_outliers_upto1.text), outliers);
       fits_file:=true;{Previous instruction will set fits:=false while it only loads header. Set back to tru to allow to set the three measure markers. The displayed image array and header will be compatible}
@@ -7333,9 +7384,7 @@ begin
       naxis3:=1; {any color is made mono in the routine}
       if file_count<>0 then
       begin
-        path1:=extractfilepath(file_list[0]);
-        path1:=extractfilepath(file_list[0])+'master_flat_corrected_with_flat_darks_'+filter_name+'_'+inttostr(flat_count)+'xF_'+inttostr(flatdark_count)+'xFD.fit';
-
+        path1:=extractfilepath(file_list[0])+'master_flat_corrected_with_flat_darks_'+extract_letters_only(filter_name)+'_'+inttostr(flat_count)+'xF_'+inttostr(flatdark_count)+'xFD.fit'; {extract_letter is added for filter='N/A' for SIPS software}
         update_integer('FLAT_CNT=',' / Number of flat images combined.                ' ,flat_count);
         update_integer('BIAS_CNT=',' / Number of flat-dark or bias images combined.   ' ,flatdark_count);
 

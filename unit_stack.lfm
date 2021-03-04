@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 450
+  Left = 354
   Height = 644
-  Top = 314
+  Top = 144
   Width = 1870
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -3018,7 +3018,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stop blinking'
         Top = 6
         Width = 75
-        Caption = '||'
+        Caption = '⏹'
         OnClick = blink_stop1Click
         ParentFont = False
         TabOrder = 4
@@ -3192,10 +3192,10 @@ object stackmenu1: Tstackmenu1
       object photometry_stop1: TButton
         Left = 352
         Height = 26
-        Hint = 'Stop blinking'
+        Hint = 'Stop photometry blinking'
         Top = 6
         Width = 75
-        Caption = '||'
+        Caption = '⏹'
         OnClick = blink_stop1Click
         ParentFont = False
         TabOrder = 2
@@ -3223,10 +3223,10 @@ object stackmenu1: Tstackmenu1
         TabOrder = 4
       end
       object clear_photometry_list1: TButton
-        Left = 1400
+        Left = 1472
         Height = 26
         Hint = 'Clear image list'
-        Top = 5
+        Top = 6
         Width = 53
         Caption = 'Clear'
         OnClick = clear_photometry_list1Click
@@ -3388,7 +3388,7 @@ object stackmenu1: Tstackmenu1
       end
       object help_photometry1: TLabel
         Cursor = crHandPoint
-        Left = 1272
+        Left = 1368
         Height = 30
         Hint = 'Online help about blink and photometry'
         Top = -1
@@ -3403,10 +3403,10 @@ object stackmenu1: Tstackmenu1
         OnClick = help_photometry1Click
       end
       object photometry_binx2: TButton
-        Left = 1320
+        Left = 1392
         Height = 26
         Hint = 'Bin the images for better photometric detection.  Orginal files will not be affected.'
-        Top = 5
+        Top = 6
         Width = 61
         Caption = 'Bin x 2'
         OnClick = photometry_binx2Click
@@ -3414,7 +3414,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 7
       end
       object mark_outliers_upto1: TComboBox
-        Left = 1712
+        Left = 1792
         Height = 23
         Hint = 'Limiting magnitude value'
         Top = 9
@@ -3436,19 +3436,19 @@ object stackmenu1: Tstackmenu1
         Text = '14'
       end
       object Label19: TLabel
-        Left = 1600
+        Left = 1680
         Height = 15
-        Top = 16
+        Top = 10
         Width = 103
         Caption = 'Mark outliers up to:'
         ParentColor = False
         ParentFont = False
       end
       object refresh_astrometric_solutions1: TButton
-        Left = 952
+        Left = 1024
         Height = 26
         Hint = 'This will renew the astrometric solutions and photometric calibration . Use this only for the rare case  the solutions are wrong and alignment is poor.'
-        Top = 5
+        Top = 6
         Width = 179
         Caption = 'Refresh astrometric solutions'
         OnClick = refresh_astrometric_solutions1click
@@ -3458,40 +3458,41 @@ object stackmenu1: Tstackmenu1
         TabOrder = 9
       end
       object checkBox_annotate1: TCheckBox
-        Left = 1472
+        Left = 1536
         Height = 19
         Hint = 'Annotate from variable database. This will slow down the process.'
-        Top = 12
+        Top = 8
         Width = 118
         Caption = 'Annotate variables'
         TabOrder = 10
       end
       object aavso_button1: TButton
-        Left = 1144
+        Left = 1216
         Height = 26
         Hint = 'Generate AAVSO report'
-        Top = 5
+        Top = 6
         Width = 112
         Caption = 'AAVSO report'
         OnClick = aavso_button1Click
         TabOrder = 11
       end
       object extract_green1: TButton
-        Left = 816
+        Left = 880
         Height = 26
         Hint = 'For raw images only. Will combine for each bayer submosaic the two green pixels. Check in advance the de-mosaic pattern in stack menu, tab stack method'
-        Top = 5
+        Top = 6
         Width = 123
         Caption = 'Extract raw GREEN'
         OnClick = extract_green1Click
         TabOrder = 12
       end
       object flux_aperture1: TComboBox
-        Left = 688
+        Left = 648
         Height = 23
-        Hint = 'Flux aperture. Will be mulitiplied with median HFD of the image. Can be adjusted to find the lowest standard deviation of the check star. Typical values 2.6 * hfd'
+        Hint = 'Flux aperture x HFD ].  Can be adjusted to find the lowest standard deviation of the check star. '
         Top = 6
-        Width = 80
+        Width = 48
+        DropDownCount = 10
         ItemHeight = 15
         ItemIndex = 5
         Items.Strings = (
@@ -3514,8 +3515,8 @@ object stackmenu1: Tstackmenu1
         Left = 589
         Height = 15
         Top = 6
-        Width = 90
-        Caption = 'Aperture [ x hfd]:'
+        Width = 49
+        Caption = 'Aperture:'
         ParentColor = False
       end
       object analysephotometrymore1: TButton
@@ -3528,6 +3529,55 @@ object stackmenu1: Tstackmenu1
         OnClick = analysephotometry1Click
         ParentFont = False
         TabOrder = 14
+      end
+      object flux_annulus1: TComboBox
+        Left = 776
+        Height = 23
+        Hint = 'Annulus inner aperture [ x HFD] '
+        Top = 6
+        Width = 48
+        DropDownCount = 27
+        ItemHeight = 15
+        ItemIndex = 16
+        Items.Strings = (
+          '1.5'
+          '1.6'
+          '1.7'
+          '1.8'
+          '1.9'
+          '2'
+          '2.1'
+          '2.2'
+          '2.3'
+          '2.4'
+          '2.5'
+          '2.6'
+          '2.7'
+          '2.8'
+          '2.9'
+          '3'
+          '4'
+          '5'
+          '6'
+          '7'
+          '8'
+          '9'
+          ''
+          ''
+          ''
+        )
+        OnChange = extra_star_supression_diameter1Change
+        ParentFont = False
+        TabOrder = 15
+        Text = '4'
+      end
+      object Label27: TLabel
+        Left = 720
+        Height = 15
+        Top = 8
+        Width = 47
+        Caption = 'Annulus:'
+        ParentColor = False
       end
     end
     object TabSheet1: TTabSheet
@@ -3805,7 +3855,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Stop live stacking.'
         Top = 208
         Width = 75
-        Caption = 'Stop'
+        Caption = '⏹'
         OnClick = live_stacking_restart1Click
         ParentFont = False
         TabOrder = 3

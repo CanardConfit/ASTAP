@@ -1556,7 +1556,7 @@ var
 
     procedure plot_star;
     begin
-      if ((flux_calibration) and ( bp_rp>12) and (bp_rp<>999))then exit;{too red star for flux calibration. Bp-Rp>1.2 for about 30% of the stars}
+      if ((flux_calibration) and ( bp_rp>12) and (bp_rp<>999){mono colour database})then exit;{too red star for flux calibration. Bp-Rp>1.2 for about 30% of the stars}
 
      {5. Conversion (RA,DEC) -> (x,y)}
       sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
@@ -1595,7 +1595,7 @@ var
 
         if ((flux_calibration) or (show_distortion)) then
         begin
-          HFD(img_loaded,x,y,14{box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+          HFD(img_loaded,x,y, flux_annulus{14}{box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>30)) then {star detected in img_loaded. 30 is found emperical}
           begin
             if ((flux_calibration){calibrate flux} and
@@ -1745,6 +1745,11 @@ begin
       begin
         SetLength(mag_offset_array,counter_flux_measured);{set length correct}
         flux_magn_offset:=get_best_mean(mag_offset_array);
+
+        memo2_message('Photometry calibration successfull. '+inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(flux_aperture,ffgeneral, 2, 2)+'. Annulus inner diameter: '+inttostr(flux_annulus));
+//        mainwindow.caption:='Photometry calibration successfull';
+//        flux_annulus{14}{box size},flux_aperture
+//        if naxis3>1 then memo2_message('Photometric accuracy for colour images is less. Conversion to mono will help.');
       end
       else  flux_magn_offset:=0;
       mag_offset_array:=nil;

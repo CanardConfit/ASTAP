@@ -568,7 +568,7 @@ const
   hfd_median : double=0;{median hfd, use in reporting in write_ini}
   hfd_counter: integer=0;{star counter (for hfd_median), use in reporting in write_ini}
   flux_aperture : double=99;{circle where flux is measured}
-
+  flux_annulus  : integer=14;{inner of square where background is measured}
   copy_paste :boolean=false;
   shape_fitsX: double=0;
   shape_fitsY: double=0;
@@ -693,6 +693,7 @@ function extract_raw_colour_to_file(filename7,filtern: string; xp,yp : integer) 
 function fits_file_name(inp : string): boolean; {fits file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
 procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; var   ram,decm  : double {fitsX, Y to ra,dec});
+function extract_letters_only(inp : string): string;
 
 
 
@@ -2705,6 +2706,7 @@ begin
   mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+copy(comment1,1,79-length(inpt)));  {add to the end. Limit to 80 char max as specified by FITS standard}
 end;
 
+
 procedure add_long_comment(descrip:string);{add long text to header memo. Split description over several lines if required}
 var
    i,j :integer;
@@ -3140,7 +3142,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.508b, '+about_message4+', dated 2021-3-3';
+  #13+#10+'ASTAP version ß0.9.509, '+about_message4+', dated 2021-3-4';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3512,6 +3514,7 @@ begin
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
+
 
 procedure Tmainwindow.localcoloursmooth1Click(Sender: TObject);
 var
@@ -5037,6 +5040,21 @@ begin
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
+
+function extract_letters_only(inp : string): string;
+var
+  i : integer;
+  ch: char;
+begin
+  result:='';
+  for i:=1 to length(inp) do
+  begin
+    ch:=inp[i];
+    case ch of // valid char
+     'A'..'Z','a'..'z' : result := result + ch;
+    end;{case}
+  end;
+end;
 
 function floattostr6(x:double):string;{float to string with 6 decimals}
 begin
@@ -7043,6 +7061,7 @@ begin
     dum:=initstring.Values['resize_factor']; if dum<>'' then stackmenu1.resize_factor1.text:=dum;
     dum:=initstring.Values['mark_outliers_upto']; if dum<>'' then stackmenu1.mark_outliers_upto1.text:=dum;
     dum:=initstring.Values['flux_aperture']; if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
+    dum:=initstring.Values['flux_annulus']; if dum<>'' then stackmenu1.flux_annulus1.text:=dum;
     stackmenu1.checkBox_annotate1.checked:= get_boolean('ph_annotate',true);
 
 
@@ -7360,6 +7379,7 @@ begin
 
     initstring.Values['mark_outliers_upto']:=stackmenu1.mark_outliers_upto1.text;
     initstring.Values['flux_aperture']:=stackmenu1.flux_aperture1.text;
+    initstring.Values['flux_annulus']:=stackmenu1.flux_annulus1.text;
 
     initstring.Values['ph_annotate']:=BoolStr[stackmenu1.checkBox_annotate1.checked];
 
@@ -9317,8 +9337,8 @@ begin
     if flux_magn_offset>0 then
     begin
       mainwindow.caption:='Photometry calibration successfull';
-      if naxis3>1 then memo2_message('Photometric accuracy for colour images is less. Conversion to mono will help.');
-      application.hint:=mainwindow.caption;
+//      if naxis3>1 then memo2_message('Photometric accuracy for colour images is less. Conversion to mono will help.');
+//      application.hint:=mainwindow.caption;
     end;
   end;
 end;
@@ -12363,6 +12383,7 @@ begin
       end;
       sd:=sqrt(sd/(counter+0.0001)); {standard deviation in background}
 
+    //  memo2_message(inttostr(iterations)+'  ' +floattostr4(sd));
       inc(iterations);
     until (((sd_old-sd)<0.1*sd) or (iterations>=3));{repeat until sd is stable or enough iterations}
     sd:=max(sd,1); {add some value for images with zero noise background. This will prevent that background is seen as a star. E.g. some jpg processed by nova.astrometry.net}
@@ -12413,6 +12434,9 @@ begin
     until ((boxed) or (rs<=1)) ;{loop and reduce box size until star is boxed}
 
     inc(rs,2);{add some space}
+
+ //   if ((abs(xc-1242)<7) and (abs(yc-1140)<7)) then
+ //   beep;
 
 
      // Build signal histogram from center of gravity
