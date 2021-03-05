@@ -57,7 +57,7 @@ type
     changekeyword6: TMenuItem;
     changekeyword7: TMenuItem;
     checkBox_annotate1: TCheckBox;
-    flux_annulus1: TComboBox;
+    annulus_radius1: TComboBox;
     keyword8: TMenuItem;
     changekeyword8: TMenuItem;
     keyword6: TMenuItem;
@@ -1312,7 +1312,7 @@ begin
         begin
           if (( img_temp2[0,fitsX,fitsY]=0){area not surveyed} and (img[0,fitsX,fitsY]-backgr>detection_level)) then {new star. For analyse used sigma is 5, so not too low.}
           begin
-            HFD(img,fitsX,fitsY,14{box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            HFD(img,fitsX,fitsY,14{box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
             if ((hfd1<=30) and (snr>snr_min) and (hfd1>0.8) {two pixels minimum} ) then
             begin
               hfd_list[star_counter]:=hfd1;{store}
@@ -1404,7 +1404,7 @@ begin
         begin
           if (( img_temp2[0,fitsX,fitsY]=0){area not surveyed} and (img[0,fitsX,fitsY]-backgr>detection_level){star}) then {new star. For analyse used sigma is 5, so not too low.}
           begin
-            HFD(img,fitsX,fitsY,25 {LARGE box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            HFD(img,fitsX,fitsY,25 {LARGE box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
             if ((hfd1<=35) and (snr>30) and (hfd1>0.8) {two pixels minimum} ) then
             begin
               {store values}
@@ -3851,6 +3851,7 @@ end;
 procedure Tstackmenu1.extra_star_supression_diameter1Change(Sender: TObject);
 begin
   esc_pressed:=true; {need to remake img_backup contents for star supression}
+  annulus_radius1.enabled:=flux_aperture1.itemindex<>0;{disable annulus_radius1 if mode max flux}
 end;
 
 procedure Tstackmenu1.help_astrometric_solving1Click(Sender: TObject);
@@ -5696,7 +5697,7 @@ var
   var
     starX,starY,len :double;
   begin
-    HFD(img_loaded,round(deX-1),round(deY-1),flux_annulus {14}{box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+    HFD(img_loaded,round(deX-1),round(deY-1),annulus_radius {14, box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
     if ((hfd1<50) and (hfd1>0) and (snr>6)) then {star detected in img_loaded}
     begin
       if calstat='' then saturation_level:=64000 else saturation_level:=60000; {could be dark subtracted changing the saturation level}
@@ -5711,18 +5712,18 @@ var
           (img_loaded[0,round(xc+1),round(yc-1)]<saturation_level) and
           (img_loaded[0,round(xc+1),round(yc+1)]<saturation_level)  ) then {not saturated star}
       begin
-       // flux:=flux/(1-EXP(-0.5*sqr(r_aperture{measuring radius}*2.34548/hfd1))); {Aperture correction for lost flux fainter then detection limit of a Gaussian star}
         magn:=starlistpack[c].flux_magn_offset - ln(flux)*2.511886432/ln(10);
         result:=floattostrf(magn, ffFixed, 5,3); {write measured magnitude to list}
+//        mainwindow.image1.Canvas.textout(round(dex)+40,round(dey)+20,'hhhhhhhhhhhhhhh'+floattostrf(magn, ffgeneral, 3,3) );
 //        mainwindow.image1.Canvas.textout(round(dex)+20,round(dey)+20,'decX,Y '+floattostrf(deX, ffgeneral, 3,3)+','+floattostrf(deY, ffgeneral, 3,3)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 3,3)+','+floattostrf(yc, ffgeneral, 3,3));
 //        memo2_message(filename2+'decX,Y '+floattostrf(deX, ffgeneral, 4,4)+', '+floattostrf(deY, ffgeneral, 4,4)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 4,4)+', '+floattostrf(yc, ffgeneral, 4,4)+'    '+result+  '  deltas:'  + floattostrf(deX-xc, ffgeneral, 4,4)+',' + floattostrf(deY-yc, ffgeneral, 4,4)+'offset '+floattostrf(starlistpack[c].flux_magn_offset, ffgeneral, 6,6)+'fluxlog '+floattostrf(ln(flux)*2.511886432/ln(10), ffgeneral, 6,6) );
         if Flipvertical=false then  starY:=(height2-yc) else starY:=(yc);
         if Fliphorizontal     then starX:=(width2-xc)  else starX:=(xc);
         mainwindow.image1.Canvas.Pen.style:=psSolid;
-        mainwindow.image1.canvas.ellipse(round(starX-flux_aperture),round(starY-flux_aperture),round(starX+flux_aperture),round(starY+flux_aperture));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+        mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
         mainwindow.image1.Canvas.Pen.style:=psDot;
-        mainwindow.image1.canvas.rectangle(round(starX-flux_annulus),round(starY-flux_annulus),round(starX+flux_annulus),round(starY+flux_annulus));
-        mainwindow.image1.canvas.rectangle(round(starX-flux_annulus-4),round(starY-flux_annulus-4),round(starX+flux_annulus+4),round(starY+flux_annulus+4));
+        mainwindow.image1.canvas.rectangle(round(starX-annulus_radius-1),round(starY-annulus_radius-1),round(starX+annulus_radius+1),round(starY+annulus_radius+1));
+        mainwindow.image1.canvas.rectangle(round(starX-annulus_radius-5),round(starY-annulus_radius-5),round(starX+annulus_radius+5),round(starY+annulus_radius+5));
       end
       else result:='Saturated';
      end
@@ -5752,7 +5753,6 @@ var
     outliers:=nil;
     starCheck:=nil;
     starThree:=nil;
-    flux_annulus:=14;{return default for plot_and_measure_stars}
     Screen.Cursor :=Save_Cursor;{back to normal }
   end;
 
@@ -5774,7 +5774,8 @@ begin
   flipvertical:=mainwindow.flip_vertical1.Checked;
   fliphorizontal:=mainwindow.flip_horizontal1.Checked;
   apert:=strtofloat2(flux_aperture1.text);
-  annul:=strtofloat2(flux_annulus1.text);
+  aperture_ratio:=apert;{remember apert setting}
+  annul:=strtofloat2(annulus_radius1.text);
 
 
   esc_pressed:=false;
@@ -5902,25 +5903,25 @@ begin
         end;
         if  starlistpack[c].height=0 then {not filled with data}
         begin
-          if apert<99 then {aperture}
+          if apert<>0 then {aperture}
           begin
             analyse_fits(img_loaded,30,false {report}, hfd_counter,backgr,hfd_med); {find background, number of stars, median HFD}
             if hfd_med<>0 then
             begin
-              flux_aperture:=hfd_med*apert/2;
-              flux_annulus:=round(hfd_med*annul/2);
+              flux_aperture:=hfd_med*apert/2;{radius}
+              annulus_radius:=round(hfd_med*annul/2);{radius}
             end
             else flux_aperture:=99;{radius for measuring aperture}
           end
           else
-          flux_aperture:=99;{radius for measuring aperture}
+          flux_aperture:=99;{radius for measuring using a small aperture}
 
+          {calibrate using POINT SOURCE calibration using hfd_med found earlier!!!}
           plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion}); {get flux_magn_offset}
- //         memo2_message(inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.'+extra_message);
 
           if flux_magn_offset<>0 then
           begin
-            measure_magnitudes(starlistx); {analyse}
+            measure_magnitudes(annulus_radius,starlistx); {analyse}
             starlistpack[c].starlist:=starlistX;{store found stars in memory for finding outlier later}
             starlistpack[c].width:=width2;
             starlistpack[c].height:=height2;

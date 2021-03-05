@@ -49,8 +49,8 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.10.0'
   object Memo2: TMemo
     Left = 0
-    Height = 134
-    Top = 510
+    Height = 76
+    Top = 568
     Width = 1870
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
@@ -3489,13 +3489,14 @@ object stackmenu1: Tstackmenu1
       object flux_aperture1: TComboBox
         Left = 648
         Height = 23
-        Hint = 'Flux aperture x HFD ].  Can be adjusted to find the lowest standard deviation of the check star. '
+        Hint = 'Flux aperture x HFD ].  Can be adjusted to find the lowest standard deviation of the check star. Default is max where all star flux is measured.'
         Top = 6
-        Width = 48
+        Width = 72
         DropDownCount = 10
         ItemHeight = 15
-        ItemIndex = 5
+        ItemIndex = 0
         Items.Strings = (
+          'max'
           '1.0'
           '1.5'
           '2.0'
@@ -3504,12 +3505,12 @@ object stackmenu1: Tstackmenu1
           '2.6'
           '2.8'
           '3.0'
-          '99'
+          ''
         )
         OnChange = extra_star_supression_diameter1Change
         ParentFont = False
         TabOrder = 13
-        Text = '2.6'
+        Text = 'max'
       end
       object Label26: TLabel
         Left = 589
@@ -3530,41 +3531,24 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         TabOrder = 14
       end
-      object flux_annulus1: TComboBox
-        Left = 776
+      object annulus_radius1: TComboBox
+        Left = 800
         Height = 23
-        Hint = 'Annulus inner aperture [ x HFD] '
+        Hint = 'Annulus inner radius [ x HFD] '
         Top = 6
         Width = 48
-        DropDownCount = 27
+        DropDownCount = 17
         ItemHeight = 15
-        ItemIndex = 16
+        ItemIndex = 6
         Items.Strings = (
-          '1.5'
-          '1.6'
-          '1.7'
-          '1.8'
-          '1.9'
           '2'
-          '2.1'
           '2.2'
-          '2.3'
           '2.4'
-          '2.5'
           '2.6'
-          '2.7'
           '2.8'
-          '2.9'
           '3'
           '4'
           '5'
-          '6'
-          '7'
-          '8'
-          '9'
-          ''
-          ''
-          ''
         )
         OnChange = extra_star_supression_diameter1Change
         ParentFont = False
@@ -3572,7 +3556,7 @@ object stackmenu1: Tstackmenu1
         Text = '4'
       end
       object Label27: TLabel
-        Left = 720
+        Left = 744
         Height = 15
         Top = 8
         Width = 47
