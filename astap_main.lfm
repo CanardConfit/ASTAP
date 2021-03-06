@@ -408,6 +408,21 @@ object mainwindow: Tmainwindow
       ParentFont = False
       Visible = False
     end
+    object shape_manual_alignment1: TShape
+      Left = 344
+      Height = 11
+      Hint = 'Lock unreliable, check position'
+      Top = 16
+      Width = 11
+      Enabled = False
+      ParentShowHint = False
+      Pen.Color = clLime
+      Pen.Mode = pmNotXor
+      Pen.Width = 3
+      Shape = stCircle
+      ShowHint = True
+      Visible = False
+    end
   end
   object GroupBox1: TGroupBox
     Left = 304

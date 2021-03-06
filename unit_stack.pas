@@ -53,6 +53,7 @@ type
     align_blink1: TCheckBox;
     aavso_button1: TButton;
     analysephotometrymore1: TButton;
+    blink_unaligned_multi_step_backwards1: TButton;
     extract_green1: TButton;
     changekeyword6: TMenuItem;
     changekeyword7: TMenuItem;
@@ -156,7 +157,7 @@ type
     photometry_repeat1: TButton;
     solve_and_annotate1: TCheckBox;
     blink_stop1: TButton;
-    blink_stop2: TButton;
+    lights_blink_pause1: TButton;
     blink_unaligned_multi_step1: TButton;
     blue_filter1: TEdit;
     blue_filter2: TEdit;
@@ -596,6 +597,7 @@ type
     procedure copy_files_to_clipboard1Click(Sender: TObject);
     procedure most_common_mono1Click(Sender: TObject);
     procedure new_saturation1Change(Sender: TObject);
+    procedure pagecontrol1Change(Sender: TObject);
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure rainbow_Panel1Paint(Sender: TObject);
@@ -2997,13 +2999,20 @@ begin
       if load_image(mainwindow.image1.visible=false,true {plot}) {for the first image set the width and length of image1 correct} then
       begin
         if ((tl=stackmenu1.listview1) and (stackmenu1.use_manual_alignment1.checked)) then {manual alignment}
-        begin
-          calstat:=''; {allow manual stack for stacked images in listview1}
-          fitsX:=strtofloat2(tl.Items.item[index].subitems.Strings[I_X]);
-          fitsY:=strtofloat2(tl.Items.item[index].subitems.Strings[I_Y]);
-          show_marker_shape(mainwindow.shape_alignment_marker1, 1 {circle, assume a good lock},20,20,10 {minimum size},fitsX,fitsY);
-        end
-        else mainwindow.shape_alignment_marker1.visible:=false;
+          show_shape_manual_alignment(index){show the marker on the reference star}
+        else
+        mainwindow.shape_manual_alignment1.visible:=false;
+
+//        if ((tl=stackmenu1.listview1) and (stackmenu1.use_manual_alignment1.checked)) then {manual alignment}
+//        begin
+//          show_shape_manual_alignment(index);
+//          calstat:=''; {allow manual stack for stacked images in listview1}
+//          fitsX:=strtofloat2(tl.Items.item[index].subitems.Strings[I_X]);
+//          fitsY:=strtofloat2(tl.Items.item[index].subitems.Strings[I_Y]);
+//          show_marker_shape(mainwindow.shape_manual_alignment1, 1 {circle, assume a good lock},20,20,10 {minimum size},fitsX,fitsY);
+//        end
+//        else mainwindow.shape_manual_alignment1.visible:=false;
+
         if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(0,0,false);{plot any annotations}
 
       end
@@ -4892,6 +4901,19 @@ begin
   update_replacement_colour;
 end;
 
+procedure Tstackmenu1.pagecontrol1Change(Sender: TObject);
+var
+  tab8: boolean;
+begin
+  tab8:=stackmenu1.pagecontrol1.tabindex=8; {photometry}
+  mainwindow.shape_alignment_marker1.visible:=tab8; {hide shape if stacked image is plotted}
+  mainwindow.shape_alignment_marker2.visible:=tab8; {hide shape if stacked image is plotted}
+  mainwindow.shape_alignment_marker3.visible:=tab8; {hide shape if stacked image is plotted}
+  mainwindow.labelVar1.visible:=tab8;
+  mainwindow.labelCheck1.visible:=tab8;
+  mainwindow.labelThree1.visible:=tab8;
+end;
+
 
 procedure Tstackmenu1.rainbow_Panel1MouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -5719,8 +5741,11 @@ var
 //        memo2_message(filename2+'decX,Y '+floattostrf(deX, ffgeneral, 4,4)+', '+floattostrf(deY, ffgeneral, 4,4)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 4,4)+', '+floattostrf(yc, ffgeneral, 4,4)+'    '+result+  '  deltas:'  + floattostrf(deX-xc, ffgeneral, 4,4)+',' + floattostrf(deY-yc, ffgeneral, 4,4)+'offset '+floattostrf(starlistpack[c].flux_magn_offset, ffgeneral, 6,6)+'fluxlog '+floattostrf(ln(flux)*2.511886432/ln(10), ffgeneral, 6,6) );
         if Flipvertical=false then  starY:=(height2-yc) else starY:=(yc);
         if Fliphorizontal     then starX:=(width2-xc)  else starX:=(xc);
-        mainwindow.image1.Canvas.Pen.style:=psSolid;
-        mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+        if flux_aperture<99 {<>max setting}then
+        begin
+          mainwindow.image1.Canvas.Pen.style:=psSolid;
+          mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+        end;
         mainwindow.image1.Canvas.Pen.style:=psDot;
         mainwindow.image1.canvas.rectangle(round(starX-annulus_radius-1),round(starY-annulus_radius-1),round(starX+annulus_radius+1),round(starY+annulus_radius+1));
         mainwindow.image1.canvas.rectangle(round(starX-annulus_radius-5),round(starY-annulus_radius-5),round(starX+annulus_radius+5),round(starY+annulus_radius+5));
@@ -6962,7 +6987,7 @@ end;
 
 procedure Tstackmenu1.blink_unaligned_multi_step1Click(Sender: TObject);
 var
-  c                 : integer;
+  c,step            : integer;
   Save_Cursor       : TCursor;
   init              : boolean;
 begin
@@ -6972,10 +6997,16 @@ begin
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
   esc_pressed:=false;
   init:=false;
+  if sender=blink_unaligned_multi_step_backwards1 then step:=-1 else step:=1;{forward/ backwards}
 
   repeat
     if init=false then c:= listview_find_selection(listview1) {find the row selected}
-                  else c:=0;
+                  else
+                  begin
+                    if step>0 then c:=0 {forward}
+                    else
+                    c:=listview1.items.count-1;{backwards}
+                  end;
     init:=true;
     repeat
       if ((esc_pressed=false) and (listview1.Items.item[c].checked) )  then
@@ -6998,14 +7029,14 @@ begin
         plot_fits(mainwindow.image1,false {re_center},true);
 
         {show alignment marker}
-//        if (stackmenu1.use_manual_alignment1.checked) then {manual alignment}
-//      begin
-//          show_marker_shape(mainwindow.shape_alignment_marker1, 1 {circle, assume a good lock},20,20,10{minimum},strtofloat2(listview1.Items.item[c].subitems.Strings[I_X]),strtofloat2(listview1.Items.item[c].subitems.Strings[I_Y]));
-//        end
-//        else mainwindow.shape_alignment_marker1.visible:=false;
+        if (stackmenu1.use_manual_alignment1.checked) then
+          show_shape_manual_alignment(c) {show the marker on the reference star}
+        else
+        mainwindow.shape_manual_alignment1.visible:=false;
+
       end;
-      inc(c);
-    until c>=listview1.items.count;
+      inc(c,step);
+    until ((c>=listview1.items.count) or (c<0));
   until esc_pressed ;
   Screen.Cursor :=Save_Cursor;{back to normal }
 end;
@@ -8447,14 +8478,6 @@ begin
   {$endif}
 
   update_menu(true);
-
-  mainwindow.shape_alignment_marker1.visible:=false;{remove shape for manual alignment}
-  mainwindow.shape_alignment_marker2.visible:=false;{remove shape for manual alignment}
-  mainwindow.shape_alignment_marker3.visible:=false;{remove shape for manual alignment}
-  mainwindow.labelVar1.visible:=false;
-  mainwindow.labelCheck1.visible:=false;
-  mainwindow.labelThree1.visible:=false;
-
 
   img_temp:=nil;{remove used memory}
   img_average:=nil;

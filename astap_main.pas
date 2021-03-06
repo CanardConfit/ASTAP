@@ -110,6 +110,7 @@ type
     extractgreen1: TMenuItem;
     Shape_alignment_marker2: TShape;
     Shape_alignment_marker3: TShape;
+    shape_manual_alignment1: TShape;
     solve_and_add_sqm1: TMenuItem;
     MenuItem25: TMenuItem;
     sqm1: TMenuItem;
@@ -695,6 +696,7 @@ function fits_file_name(inp : string): boolean; {fits file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
 procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; var   ram,decm  : double {fitsX, Y to ra,dec});
 function extract_letters_only(inp : string): string;
+procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 
 
 
@@ -3143,7 +3145,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.510, '+about_message4+', dated 2021-3-5';
+  #13+#10+'ASTAP version ß0.9.511, '+about_message4+', dated 2021-3-6';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4361,6 +4363,10 @@ begin
      end;
 
     {reference point manual alignment}
+     if mainwindow.shape_manual_alignment1.visible then {For manual alignment. Do this only when visible}
+       show_marker_shape(mainwindow.shape_manual_alignment1,9 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
+
+     {photometry}
      if mainwindow.shape_alignment_marker1.visible then {For manual alignment. Do this only when visible}
        show_marker_shape(mainwindow.shape_alignment_marker1,9 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
      if mainwindow.shape_alignment_marker2.visible then {For manual alignment. Do this only when visible}
@@ -6262,6 +6268,15 @@ begin
   v:=rgbmax;
 end;
 
+procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
+var
+  X,Y :double;
+begin
+  X:=strtofloat2(stackmenu1.listview1.Items.item[index].subitems.Strings[I_X]);
+  Y:=strtofloat2(stackmenu1.listview1.Items.item[index].subitems.Strings[I_Y]);
+  show_marker_shape(mainwindow.shape_manual_alignment1, 1 {circle, assume a good lock},20,20,10 {minimum size},X,Y);
+end;
+
 procedure plot_fits(img:timage; center_image,show_header:boolean);
 type
 
@@ -6302,15 +6317,6 @@ begin
 
   sat_factor:=1-mainwindow.saturation_factor_plot1.position/10;
 
-  if pos('S',calstat)>0 then
-  begin
-    mainwindow.shape_alignment_marker1.visible:=false; {hide shape if stacked image is plotted}
-    mainwindow.shape_alignment_marker2.visible:=false; {hide shape if stacked image is plotted}
-    mainwindow.shape_alignment_marker3.visible:=false; {hide shape if stacked image is plotted}
-    mainwindow.labelVar1.visible:=false;
-    mainwindow.labelCheck1.visible:=false;
-    mainwindow.labelThree1.visible:=false;
-  end;
 
   cblack:=mainwindow.minimum1.position;
   cwhite:=mainwindow.maximum1.position;
@@ -6428,7 +6434,6 @@ begin
     plot_large_north_indicator;
     if mainwindow.add_marker_position1.checked then
       mainwindow.add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
-
 
     mainwindow.statusbar1.panels[5].text:=inttostr(width2)+' x '+inttostr(height2)+' x '+inttostr(naxis3)+'   '+inttostr(nrbits)+' BPP';{give image dimensions and bit per pixel info}
     update_statusbar_section5;{update section 5 with image dimensions in degrees}
@@ -9351,6 +9356,7 @@ begin
       analyse_fits(img_loaded,30,false {report}, hfd_counter,backgr,hfd_med); {find background, number of stars, median HFD}
       if hfd_med<>0 then
       begin
+        memo2_message('Median HFD is '+floattostrf(hfd_med, ffgeneral, 2,2)+'. Aperture and annulus will be adapted accordingly.');;
         flux_aperture:=hfd_med*apert/2;{radius}
         annul:=strtofloat2(stackmenu1.annulus_radius1.text);
         annulus_radius:=round(hfd_med*annul/2);{radius}
@@ -10916,7 +10922,7 @@ begin
               end;
             end;
 
-            if  ((fov_specified) and (stackmenu1.search_fov1.text='0' ) {auto}) then {preserve new found fov}
+            if ((fov_specified) and (stackmenu1.search_fov1.text='0' ) {auto}) then {preserve new found fov}
             begin
               stackmenu1.search_fov1.text:=floattostrF2(height2*abs(cdelt2),0,2);
               save_settings(user_path+'astap.cfg');{save settings with correct fov}
@@ -12245,7 +12251,7 @@ begin
       shape_fitsY:=yc+1;
       if snr>5 then shapetype:=1 {circle} else shapetype:=0;{square}
       listview_add_xy(shape_fitsX,shape_fitsY);{add to list of listview1}
-      show_marker_shape(mainwindow.shape_alignment_marker1,shapetype,20,20,10{minimum},shape_fitsX, shape_fitsY);
+      show_marker_shape(mainwindow.shape_manual_alignment1,shapetype,20,20,10{minimum},shape_fitsX, shape_fitsY);
     end;
   end
   else
@@ -12289,17 +12295,8 @@ begin
       if shape_nr>=4 then
       shape_nr:=1;
     end;
-  end
-  else
-  begin
-    mainwindow.shape_alignment_marker1.visible:=false;
-    mainwindow.shape_alignment_marker2.visible:=false;
-    mainwindow.shape_alignment_marker3.visible:=false;
-    mainwindow.labelVar1.visible:=false;
-    mainwindow.labelCheck1.visible:=false;
-    mainwindow.labelThree1.visible:=false;
   end;
-  {end manual alignment}
+ {end photometry}
 
   image_move_to_center:=false;{image in moved to center, why is so difficult???}
 
@@ -12751,8 +12748,11 @@ begin
        if ((abs(y-down_y)>2) or (abs(x-down_x)>2)) then
        begin
          {three markers}
-          if mainwindow.shape_alignment_marker1.visible then {For manual alignment. Do this only when visible}
-            show_marker_shape(mainwindow.shape_alignment_marker1,9 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
+         if mainwindow.shape_manual_alignment1.visible then {For manual alignment. Do this only when visible}
+           show_marker_shape(mainwindow.shape_manual_alignment1,9 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
+
+         if mainwindow.shape_alignment_marker1.visible then {For manual alignment. Do this only when visible}
+           show_marker_shape(mainwindow.shape_alignment_marker1,9 {no change in shape and hint},20,20,10,shape_fitsX, shape_fitsY);
           if mainwindow.shape_alignment_marker2.visible then {For manual alignment. Do this only when visible}
             show_marker_shape(mainwindow.shape_alignment_marker2,9 {no change in shape and hint},20,20,10,shape_fitsX2, shape_fitsY2);
           if mainwindow.shape_alignment_marker3.visible then {For manual alignment. Do this only when visible}
