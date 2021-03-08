@@ -53,6 +53,7 @@ type
     align_blink1: TCheckBox;
     aavso_button1: TButton;
     analysephotometrymore1: TButton;
+    blink_button_contB1: TButton;
     blink_unaligned_multi_step_backwards1: TButton;
     extract_green1: TButton;
     changekeyword6: TMenuItem;
@@ -153,7 +154,7 @@ type
     bg1: TEdit;
     Bias: TTabSheet;
     blink_button1: TButton;
-    blink_button2: TButton;
+    blink_button_contF1: TButton;
     photometry_repeat1: TButton;
     solve_and_annotate1: TCheckBox;
     blink_stop1: TButton;
@@ -4007,7 +4008,7 @@ var
   c,i,j: integer;
   Save_Cursor          : TCursor;
   hfd_min              : double;
-  x_new,y_new,fitsX,fitsY,col,first_image,stepnr,nrrows, cycle: integer;
+  x_new,y_new,fitsX,fitsY,col,first_image,stepnr,nrrows, cycle,step: integer;
   reference_done, init,solut,astro_solved       : boolean;
 
 begin
@@ -4026,20 +4027,28 @@ begin
 
   esc_pressed:=false;
   first_image:=-1;
-
   cycle:=0;
+  if sender=blink_button_contB1 then step:=-1 else step:=1;{forward/ backwards}
+
+
 
   nrrows:=listview6.items.count;
 
   stepnr:=0;
-  if ((sender=blink_button1) or (solve_and_annotate1.checked) or (sender=write_video1)) then init:=true {start at beginning}
+  if ((sender=blink_button1) or (solve_and_annotate1.checked) or (sender=write_video1)) then init:=true {start at beginning for video}
     else init:=false;{start at selection}
   reference_done:=false;{ check if reference image is loaded. Could be after first image if abort was given}
   repeat
     stepnr:=stepnr+1; {first step is nr 1}
 
     if init=false then c:=listview_find_selection(listview6) {find the row selected}
-    else c:=0;
+    else
+    begin
+      if step>0 then c:=0 {forward}
+      else
+      c:=nrrows-1;{backwards}
+
+    end;
     init:=true;
     repeat
       if ((esc_pressed=false) and (listview6.Items.item[c].checked) )  then
@@ -4192,9 +4201,8 @@ begin
           end;
         end;
       end;
-      inc(c);
-    until c>=nrrows;
-
+      inc(c,step);
+    until ((c>=nrrows) or (c<0));
 
   until ((esc_pressed) or (sender=blink_button1 {single run}) or (sender=write_video1));
 
@@ -4212,18 +4220,13 @@ end;
 
 procedure Tstackmenu1.clear_blink_alignment1Click(Sender: TObject);
 var
-  image_path: string;
   c         : integer;
 begin
-  if listview6.items.count>0 then
+
+  for c:=0 to listview6.items.count-1 do
   begin
-    image_path:=ExtractFilePath(ListView6.items[0].caption); {get path from first image}
-    DeleteFiles(image_path,'*.astap_solution');{delete solution files}
-
-    if (sender=listview6)=false then
-      DeleteFiles(image_path,'*.astap_image_stars');{delete solution files}
-
-    for c:=0 to listview6.items.count-1 do listview6.Items.item[c].subitems.Strings[B_solution]:='';{clear alignment marks}
+    deletefile(changefileext(ListView6.items[c].caption,'.astap_solution')); { This is done for the case multiple directories are used}
+    listview6.Items.item[c].subitems.Strings[B_solution]:='';{clear alignment marks}
   end;
 end;
 

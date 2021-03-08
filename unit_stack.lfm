@@ -1,12 +1,12 @@
 object stackmenu1: Tstackmenu1
-  Left = 156
+  Left = 291
   Height = 644
-  Top = 165
-  Width = 1870
+  Top = 131
+  Width = 1273
   AllowDropFiles = True
   Caption = 'stack menu'
   ClientHeight = 644
-  ClientWidth = 1870
+  ClientWidth = 1273
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -51,7 +51,7 @@ object stackmenu1: Tstackmenu1
     Left = 0
     Height = 76
     Top = 568
-    Width = 1870
+    Width = 1273
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -198,7 +198,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1852
+    Left = 1255
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -216,7 +216,7 @@ object stackmenu1: Tstackmenu1
     Height = 448
     Hint = 'Stack menu'
     Top = 0
-    Width = 1869
+    Width = 1272
     ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
@@ -232,7 +232,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 420
-      ClientWidth = 1861
+      ClientWidth = 1264
       OnContextPopup = ImagesContextPopup
       ParentFont = False
       object nr_selected1: TLabel
@@ -307,7 +307,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1861
+        Width = 1264
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -543,7 +543,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Un-aligned blink'
         Top = 6
         Width = 75
-        Caption = '>>'
+        Caption = '▶'
         OnClick = blink_unaligned_multi_step1Click
         ParentFont = False
         ParentShowHint = False
@@ -580,7 +580,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Un-aligned blink'
         Top = 6
         Width = 75
-        Caption = '<<'
+        Caption = '◀'
         OnClick = blink_unaligned_multi_step1Click
         ParentFont = False
         ParentShowHint = False
@@ -3019,9 +3019,9 @@ object stackmenu1: Tstackmenu1
         Left = 440
         Height = 26
         Hint = 'Blink check-marked images once'
-        Top = 5
+        Top = 6
         Width = 75
-        Caption = '>'
+        Caption = '▶|'
         OnClick = blink_button1Click
         ParentFont = False
         TabOrder = 3
@@ -3037,19 +3037,19 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         TabOrder = 4
       end
-      object blink_button2: TButton
-        Left = 528
+      object blink_button_contF1: TButton
+        Left = 536
         Height = 26
         Hint = 'Continous blink check-marked images'
         Top = 6
-        Width = 75
-        Caption = '>>'
+        Width = 43
+        Caption = ' ▶'
         OnClick = blink_button1Click
         ParentFont = False
         TabOrder = 5
       end
       object align_blink1: TCheckBox
-        Left = 624
+        Left = 696
         Height = 19
         Hint = 'Use star alignment to align images. For the first round additional time will be required for calculating solution. Clear alignment if you reuse images.'
         Top = 0
@@ -3062,10 +3062,10 @@ object stackmenu1: Tstackmenu1
         TabOrder = 6
       end
       object solve_and_annotate1: TCheckBox
-        Left = 816
+        Left = 960
         Height = 19
         Hint = 'Solve images and annotate with MPCORB database.  For setting see viewer, tools, annotate asteroids.'
-        Top = 0
+        Top = 1
         Width = 212
         Caption = 'Solve images and annotate asteroids'
         OnChange = solve_and_annotate1Change
@@ -3073,10 +3073,10 @@ object stackmenu1: Tstackmenu1
         TabOrder = 7
       end
       object clear_blink_alignment1: TButton
-        Left = 1096
+        Left = 840
         Height = 25
         Hint = 'Clear alignment and photometric calibration. Apply this if alignment is poor.'
-        Top = 5
+        Top = 6
         Width = 110
         AutoSize = True
         Caption = 'Clear alignment'
@@ -3128,10 +3128,10 @@ object stackmenu1: Tstackmenu1
         TabOrder = 10
       end
       object update_annotation1: TCheckBox
-        Left = 816
+        Left = 960
         Height = 19
         Hint = 'Update existing FITS header annotations.'
-        Top = 18
+        Top = 19
         Width = 124
         Caption = 'Update annotations'
         Enabled = False
@@ -3150,7 +3150,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 12
       end
       object timestamp1: TCheckBox
-        Left = 624
+        Left = 696
         Height = 19
         Hint = 'Write data and time to screen and image array. If the file is saved this annotation in written in the image itself.'
         Top = 18
@@ -3161,6 +3161,17 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         State = cbChecked
         TabOrder = 13
+      end
+      object blink_button_contB1: TButton
+        Left = 584
+        Height = 26
+        Hint = 'Continous blink check-marked images'
+        Top = 6
+        Width = 43
+        Caption = '◀'
+        OnClick = blink_button1Click
+        ParentFont = False
+        TabOrder = 14
       end
     end
     object tab_photometry1: TTabSheet
@@ -3220,7 +3231,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Scroll through the check-marked images once'
         Top = 6
         Width = 75
-        Caption = '>'
+        Caption = '▶|'
         OnClick = photometry_button1Click
         ParentFont = False
         TabOrder = 3
@@ -3231,7 +3242,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Continous scrolling through the check-marked images'
         Top = 6
         Width = 40
-        Caption = '>>'
+        Caption = '▶'
         OnClick = photometry_button1Click
         ParentFont = False
         TabOrder = 4

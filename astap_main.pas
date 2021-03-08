@@ -3145,7 +3145,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.511, '+about_message4+', dated 2021-3-6';
+  #13+#10+'ASTAP version ß0.9.512, '+about_message4+', dated 2021-3-8';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -11154,7 +11154,7 @@ end;
 procedure Tmainwindow.CCDinspector1Click(Sender: TObject);
 var
  fitsX,fitsY,size,diam, i, j,starX,starY, retries,max_stars,
- nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,x1,x2,x3,x4,y1,y2,y3,y4,fontsize : integer;
+ nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,x1,x2,x3,x4,y1,y2,y3,y4,fontsize,text_height,text_width: integer;
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
  hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right, median_top_left, median_top_right,hfd_min : double;
@@ -11378,7 +11378,8 @@ begin
         mess2:='  Tilt[HFD]='+floattostrF2(median_worst-median_best,0,2);{estimate tilt value}
 
 
-        image1.Canvas.font.size:=fontsize*4;
+        fontsize:=fontsize*4;
+        image1.Canvas.font.size:=fontsize;
         image1.Canvas.textout(x4,y4,floattostrF2(median_top_left,0,2));
         image1.Canvas.textout(x3,y3,floattostrF2(median_top_right,0,2));
         image1.Canvas.textout(x1,y1,floattostrF2(median_bottom_left,0,2));
@@ -11394,14 +11395,18 @@ begin
       if cdelt2<>0 then begin str(hfd_median*cdelt2*3600:0:1,hfd_arcsec); hfd_arcsec:=' ('+hfd_arcsec+'")'; end else hfd_arcsec:='';
       mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
 
-      fontsize:=width2 div 60;
+
+      text_width:=mainwindow.image1.Canvas.textwidth(mess2);{the correct text height, also for 4k with "make everything bigger"}
+
+      fontsize:=trunc(fontsize*(width2-2*fontsize)/text_width);{use full width}
       image1.Canvas.font.size:=fontsize;
       image1.Canvas.font.color:=clwhite;
+      text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
 
-      image1.Canvas.textout(round(fontsize*2),height2-round(2*fontsize),mess2);{median HFD and tilt indication}
+      image1.Canvas.textout(round(fontsize*2),height2-text_height,mess2);{median HFD and tilt indication}
     end
     else
-      image1.Canvas.textout(round(fontsize*2),height2-round(2*fontsize),'No stars detected');
+      image1.Canvas.textout(round(fontsize*2),height2- round(fontsize*4),'No stars detected');
   end;{with mainwindow}
 
   hfdlist:=nil;{release memory}

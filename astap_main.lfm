@@ -1,13 +1,13 @@
 object mainwindow: Tmainwindow
-  Left = 264
-  Height = 728
+  Left = 485
+  Height = 644
   Hint = ' '
-  Top = 96
-  Width = 1299
+  Top = 221
+  Width = 1272
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 708
-  ClientWidth = 1299
+  ClientHeight = 624
+  ClientWidth = 1272
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -201,14 +201,14 @@ object mainwindow: Tmainwindow
   end
   object Panel1: TPanel
     Left = 0
-    Height = 557
+    Height = 473
     Hint = 'hint'
     Top = 176
-    Width = 1324
+    Width = 1297
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 557
-    ClientWidth = 1324
+    ClientHeight = 473
+    ClientWidth = 1297
     Color = 2105376
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
@@ -223,9 +223,9 @@ object mainwindow: Tmainwindow
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
     object Image1: TImage
-      Left = 192
+      Left = 182
       Height = 264
-      Top = 123
+      Top = 85
       Width = 608
       Anchors = []
       OnMouseDown = Image1MouseDown
@@ -243,6 +243,7 @@ object mainwindow: Tmainwindow
       Hint = 'Lock unreliable, check position'
       Top = 112
       Width = 11
+      Brush.Style = bsClear
       Enabled = False
       ParentShowHint = False
       Pen.Color = clLime
@@ -258,6 +259,7 @@ object mainwindow: Tmainwindow
       Hint = 'reference 1'
       Top = 8
       Width = 31
+      Brush.Style = bsClear
       Enabled = False
       ParentShowHint = False
       Pen.Color = clFuchsia
@@ -284,6 +286,7 @@ object mainwindow: Tmainwindow
       Hint = 'reference 2'
       Top = 8
       Width = 31
+      Brush.Style = bsClear
       Enabled = False
       ParentShowHint = False
       Pen.Color = clLime
@@ -297,6 +300,7 @@ object mainwindow: Tmainwindow
       Height = 31
       Top = 8
       Width = 31
+      Brush.Style = bsClear
       Enabled = False
       ParentShowHint = False
       Pen.Color = clBlue
@@ -310,6 +314,7 @@ object mainwindow: Tmainwindow
       Height = 31
       Top = 8
       Width = 31
+      Brush.Style = bsClear
       Enabled = False
       ParentShowHint = False
       Pen.Color = clBlue
@@ -324,6 +329,7 @@ object mainwindow: Tmainwindow
       Hint = 'Mount'
       Top = 8
       Width = 31
+      Brush.Style = bsClear
       Enabled = False
       ParentShowHint = False
       Pen.Color = clGreen
@@ -339,6 +345,7 @@ object mainwindow: Tmainwindow
       Hint = 'Lock unreliable, check position'
       Top = 144
       Width = 11
+      Brush.Style = bsClear
       Enabled = False
       ParentShowHint = False
       Pen.Color = clLime
@@ -349,11 +356,12 @@ object mainwindow: Tmainwindow
       Visible = False
     end
     object Shape_alignment_marker3: TShape
-      Left = 30
+      Left = 32
       Height = 11
       Hint = 'Lock unreliable, check position'
-      Top = 172
+      Top = 176
       Width = 11
+      Brush.Style = bsClear
       Enabled = False
       ParentShowHint = False
       Pen.Color = clLime
@@ -414,6 +422,7 @@ object mainwindow: Tmainwindow
       Hint = 'Lock unreliable, check position'
       Top = 16
       Width = 11
+      Brush.Style = bsClear
       Enabled = False
       ParentShowHint = False
       Pen.Color = clLime
@@ -754,9 +763,9 @@ object mainwindow: Tmainwindow
   end
   object StatusBar1: TStatusBar
     Left = 0
-    Height = 23
-    Top = 685
-    Width = 1299
+    Height = 28
+    Top = 596
+    Width = 1272
     Panels = <    
       item
         Width = 200
@@ -868,7 +877,7 @@ object mainwindow: Tmainwindow
     Left = 595
     Height = 177
     Top = 0
-    Width = 707
+    Width = 680
     ActivePage = TabSheet1
     Anchors = [akTop, akLeft, akRight]
     TabIndex = 0
@@ -876,12 +885,12 @@ object mainwindow: Tmainwindow
     object TabSheet1: TTabSheet
       Caption = 'Header'
       ClientHeight = 149
-      ClientWidth = 699
+      ClientWidth = 672
       object Memo1: TMemo
         Left = 0
         Height = 149
         Top = 0
-        Width = 699
+        Width = 672
         Align = alClient
         Anchors = [akTop, akLeft, akRight]
         Font.Height = -9

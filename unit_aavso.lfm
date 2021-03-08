@@ -1,7 +1,7 @@
 object form_aavso1: Tform_aavso1
-  Left = 302
+  Left = 201
   Height = 379
-  Top = 190
+  Top = 127
   Width = 403
   Caption = 'AAVSO report'
   ClientHeight = 379
