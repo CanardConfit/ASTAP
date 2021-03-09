@@ -46,6 +46,7 @@ procedure save_solution_to_disk;{write to disk}
 
 implementation
 
+uses  unit_annotation;
 
 {   lsq_fit:                                                                                                                                     }
 {   Find the solution vector of an overdetermined system of linear equations according to the method of least squares using GIVENS rotations     }
@@ -169,8 +170,9 @@ var
    dist1,dist2,dist3,dist4,dist5,dist6,dummy  :double;
    identical_quad : boolean;
 begin
-  nrstars_min_one:=Length(starlist[0])-1;
-  buffersize:=nrstars_min_one;{number of quads will be lower}
+
+  buffersize:=Length(starlist[0]);{number of quads will be equal (super rare) or lower}
+  nrstars_min_one:=buffersize-1;
   quad_smallest:=9999999;
 
   if nrstars_min_one<3 then
@@ -267,7 +269,6 @@ begin
           dist4:=sqrt(sqr(x2-x3)+ sqr(y2-y3));{distance star2-star3}
           dist5:=sqrt(sqr(x2-x4)+ sqr(y2-y4));{distance star2-star4}
           dist6:=sqrt(sqr(x3-x4)+ sqr(y3-y4));{distance star3-star4}
-
           {sort 6 distance on size}
           for j:=1 to 6 do {sort on distance}
           begin
@@ -288,7 +289,11 @@ begin
         end;
 
      except
-       memo2_message('Exception in procedure calc_quad_distances');{bug in fpc 3.20? Sets in once case the last elements of array to zero for file 4254816 new_image.fit'}
+       On E :Exception do
+       begin
+         memo2_message(E.Message+ ' exception in procedure calc_quad_distances');{bug in fpc 3.20? Sets in once case the last elements of array to zero for file 4254816 new_image.fit'}
+         stackmenu1.Memo2.Lines.EndUpdate; {update memo2}
+       end;
      end;
 
       if dist1>min_leng then {large enough for earth based telescope}
