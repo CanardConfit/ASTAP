@@ -96,6 +96,7 @@ begin
 
 end;
 
+
 function  load_thefile(filen:string) : boolean;
 var
    ext1 : string;
@@ -106,10 +107,13 @@ begin
     result:= load_fits(filen,true {light},true,0,img_loaded)
   else
   if check_raw_file_extension(ext1) then {check if extension is from raw file}
-    result:=convert_load_raw(filen,img_loaded) {raw}
+//    result:=convert_load_raw(filen,img_loaded) {raw}
+    result:=convert_raw(true{load},false{save},filen,img_loaded)
   else
-    result:=load_tiffpngJPEG(filename2,img_loaded);
+    result:=load_tiffpngJPEG(filen,img_loaded);
 end;
+
+
 function date_string: string;
 Var YY,MO,DD : Word;
     HH,MM,SS,MS: Word;

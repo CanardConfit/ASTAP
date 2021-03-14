@@ -219,6 +219,7 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     TabOrder = 3
+    OnClick = Panel1Click
     OnMouseMove = Panel1MouseMove
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
@@ -910,7 +911,7 @@ object mainwindow: Tmainwindow
     object TabSheet2: TTabSheet
       Caption = 'Table'
       ClientHeight = 146
-      ClientWidth = 747
+      ClientWidth = 676
       object Memo3: TMemo
         Left = 0
         Height = 149

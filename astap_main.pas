@@ -330,6 +330,7 @@ type
     procedure extractred1Click(Sender: TObject);
     procedure extractblue1Click(Sender: TObject);
     procedure extractgreen1Click(Sender: TObject);
+    procedure Panel1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
     procedure northeast1Click(Sender: TObject);
@@ -661,7 +662,9 @@ procedure old_to_new_WCS;{ convert old WCS to new}
 procedure show_marker_shape(shape: TShape; shape_type,w,h,minimum:integer; fitsX,fitsY: double);{show manual alignment shape}
 procedure create_test_image(type_test : integer);{create an artificial test image}
 function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
-function convert_raw_to_fits(filename7 : string) :boolean;{convert raw file to FITS format}
+//function convert_raw_to_fits(filename7 : string) :boolean;{convert raw file to FITS format}
+function convert_raw(loadfile,savefile :boolean;var filename3: string; var img: image_array): boolean; {convert raw to fits file using DCRAW or LibRaw}
+
 function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
@@ -679,7 +682,7 @@ procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean)
 procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
 function image_file_name(inp : string): boolean; {readable image name?}
 procedure plot_annotations(xoffset,yoffset:integer;fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
-function convert_load_raw(filename3: string;var img: image_array): boolean; {convert raw to pgm file using LibRaw}
+//function convert_load_raw(filename3: string;var img: image_array): boolean; {convert raw to pgm file using LibRaw}
 
 procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
@@ -806,7 +809,7 @@ function load_fits(filen:string;light {load as light of dark/flat},load_data: bo
 var
   header    : array[0..2880] of ansichar;
   i,j,k,nr,error3,naxis1, reader_position,n,file_size  : integer;
-  dummy,scale,ccd_temperature                              : double;
+  dummy,scale,ccd_temperature, jd2                     : double;
   col_float,bscale,measured_max,scalefactor  : single;
   s                  : string[3];
   bzero              : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
@@ -944,6 +947,7 @@ begin
 
     date_obs:=''; date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
     sitelat:=''; sitelong:='';
+    jd2    :=0;{assume no data available}
 
     focus_temp:=999;{assume no data available}
     focus_pos:=0;{assume no data available}
@@ -1082,7 +1086,7 @@ begin
               exposure:=validate_double;{read double value}
 
         if ((header[i]='C') and (header[i+1]='C')  and (header[i+2]='D') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
-               ccd_temperature:=validate_double;{read double value}
+             ccd_temperature:=validate_double;{read double value}
         if ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
                try set_temperature:=round(validate_double);{read double value} except; end; {some programs give huge values}
 
@@ -1281,6 +1285,13 @@ begin
 
           if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
                   if date_obs='' then date_obs:=get_string;
+
+          if ((header[i]='J') and (header[i+1]='D')  and (header[i+2]=' ') and (header[i+3]=' ') and (header[i+4]=' ')) then
+          if date_obs='' then
+          begin
+            jd2:=validate_double;
+            date_obs:=JdToDate(jd2);
+          end;
 
           if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
                   date_obs:=get_string;
@@ -1873,7 +1884,7 @@ var
    rgb16dummy        : byteXX3;
    rgbdummy          : byteX3;
    err,err2,err3,package  : integer;
-   comment,color7,pfm,expdet,timedet,isodet,instdet  : boolean;
+   comment,color7,pfm,expdet,timedet,isodet,instdet,ccdtempdet  : boolean;
    range, jd2        : double;
 
 var
@@ -1986,6 +1997,7 @@ begin
       comment:=false;
       expdet:=false;
       timedet:=false;
+      ccdtempdet:=false;
       aline:='';
       comm:='';
       repeat
@@ -1999,6 +2011,7 @@ begin
             if expdet then begin exposure:=strtofloat2(comm);expdet:=false; end;{get exposure time from comments,special dcraw 0.9.28dev1}
             if isodet then begin gain:=strtofloat2(comm);isodet:=false; end;{get iso speed as gain}
             if instdet then begin instrum:=comm;instdet:=false;end;{camera}
+            if ccdtempdet then begin set_temperature:=round(strtofloat2(comm));ccdtempdet:=false;end;{sensor temperature}
             if timedet then
             begin
               JD2:=2440587.5+ strtoint(comm)/(24*60*60);{convert to Julian Day by adding factor. Unix time is seconds since 1.1.1970}
@@ -2011,6 +2024,7 @@ begin
           if comm='TIMESTAMP=' then begin timedet:=true; comm:=''; end else
           if comm='ISOSPEED=' then begin isodet:=true; comm:=''; end else
           if comm='MODEL=' then begin instdet:=true; comm:=''; end; {camera make}
+          if comm='CCD-TEMP=' then begin ccdtempdet:=true; comm:=''; end; {camera make}
         end
         else
         if ord(ch)>32 then aline:=aline+ch;; {DCRAW write space #20 between width&length, Photoshop $0a}
@@ -3145,7 +3159,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.512a, '+about_message4+', dated 2021-3-9';
+  #13+#10+'ASTAP version ß0.9.513, '+about_message4+', dated 2021-3-14';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7668,7 +7682,7 @@ begin
 end;
 
 
-function convert_load_raw(filename3: string;var img: image_array): boolean; {convert raw to pgm file using LibRaw}
+function convert_raw(loadfile,savefile :boolean;var filename3: string;var img: image_array): boolean; {convert raw to fits file using DCRAW or LibRaw}
 var
   filename4 :string;
   JD2                               : double;
@@ -7680,6 +7694,39 @@ begin
   result:=true; {assume success}
 
   conv_index:=stackmenu1.raw_conversion_program1.itemindex; {DCRaw, libraw or dcraw-astap specified}
+
+
+  {conversion direct to FITS}
+  if ((conv_index=3)) then {dcraw-raw not specified of failed, try with Libraw unprocessed_raw-astap}
+  begin
+    result:=true; {assume success again}
+    {$ifdef mswindows}
+    if fileexists(application_path+'unprocessed_raw.exe')=false then
+      result:=false {failure}
+    else
+       ExecuteAndWait(application_path+'unprocessed_raw.exe "'+filename3+'"',false);{execute command and wait}
+    {$endif}
+    {$ifdef linux}
+
+    if fileexists('/usr/local/bin/unprocessed_raw-astap')=false then
+      result:=false {failure}
+    else
+    execute_unix2('/usr/local/bin/unprocessed_raw-astap -F "'+filename3+'"');
+   {$endif}
+    {$ifdef Darwin}{MacOS}
+    if fileexists(application_path+'/unprocessed_raw')=false then
+       result:=false {failure}
+    else
+      execute_unix2(application_path+'/unprocessed_raw "'+filename3+'"');
+     {$endif}
+    filename3:=FileName3+'.fits';{ filename.NEF.pgm}
+     if loadfile then
+        result:=load_fits(filename3,true {light},true {load data},0,img) {load new fits file}
+     else result:=true;
+    exit;
+  end;
+
+
 
   if ((conv_index=0) or ((conv_index=2)))  then {dcraw or dcraw-astap specified}
   begin
@@ -7729,7 +7776,6 @@ begin
      else
      filename4:=ChangeFileExt(FileName3,'.pgm');{for DCRaw}
   end;
-
 
   if ((conv_index=1) or (result=false)) then {dcraw-raw not specified of failed, try with Libraw}
   begin
@@ -7797,6 +7843,7 @@ begin
 
   if load_PPM_PGM_PFM(fileName4,img) then {succesfull PGM load}
   begin
+
     deletefile(filename4);{delete temporary pgm file}
 
     if date_obs='' then {no date detected in comments}
@@ -7812,24 +7859,19 @@ begin
   else
     result:=false;
 
-end;
-
-
-function convert_raw_to_fits(filename7 : string) :boolean;{convert raw file to FITS format}
-begin
-  if convert_load_raw(filename7,img_buffer) then
+  if ((savefile) and (conv_index<=2) and (result)) then {PPM interstage file, save to fits, Not required for the new unprocessed_raw-astap}
   begin
-    exposure:=extract_exposure_from_filename(filename7);{including update header}
-    set_temperature:=extract_temperature_from_filename(filename7);{including update header}
-    update_text('OBJECT  =',#39+extract_objectname_from_filename(filename7)+#39); {spaces will be added/corrected later}
-    save_fits(img_buffer,ChangeFileExt(FileName7,'.fit'),16,true);{overwrite. Filename2 will be set to fits file}
+    exposure:=extract_exposure_from_filename(filename4);{including update header}
+    set_temperature:=extract_temperature_from_filename(filename4);{including update header}
+    update_text('OBJECT  =',#39+extract_objectname_from_filename(filename4)+#39); {spaces will be added/corrected later}
+    filename3:=ChangeFileExt(FileName4,'.fit');
+    save_fits(img_buffer,filename3,16,true);{overwrite. Filename2 will be set to fits file}
     result:=true;
   end
   else
   result:=false;
   img_buffer:=nil;
 end;
-
 
 procedure Tmainwindow.convert_to_fits1click(Sender: TObject);
 var
@@ -7870,7 +7912,9 @@ begin
 
         if check_raw_file_extension(ext) then {raw format}
         begin
-          if convert_raw_to_fits(filename2)=false then begin beep; err:=true; mainwindow.caption:='Error converting '+filename2;end;
+//          if convert_raw_to_fits(filename2)=false then
+          if convert_raw(false{load},true{save},filename2,img_buffer)=false then
+          begin beep; err:=true; mainwindow.caption:='Error converting '+filename2;end;
         end
         else
         if (ext='.FZ') then {CFITSIO format}
@@ -7944,7 +7988,9 @@ begin
   else
   if check_raw_file_extension(ext1) then {raw format}
   begin
-    if convert_load_raw(filename2,img_loaded)=false then begin update_menu(false);beep; exit; end
+//    if convert_load_raw(filename2,img_loaded)=false
+    if convert_raw(true{load},false{save},filename2,img_loaded)=false then
+      begin update_menu(false);beep; exit; end
     else
     result:=true;
     {successfull conversion using LibRaw}
@@ -8217,6 +8263,11 @@ end;
 procedure Tmainwindow.extractgreen1Click(Sender: TObject);
 begin
   split_raw(1,1,'TG');{extract one of the Bayer matrix pixels}
+end;
+
+procedure Tmainwindow.Panel1Click(Sender: TObject);
+begin
+
 end;
 
 
@@ -11582,8 +11633,6 @@ begin
    update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
 
    {new reference pixel}
-
-
 
    if cd1_1<>0 then
    begin

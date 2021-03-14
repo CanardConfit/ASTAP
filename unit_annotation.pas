@@ -1366,6 +1366,7 @@ begin
     mainwindow.image1.Canvas.Font.Name :='Helvetica';
     {$endif}
 
+
     mainwindow.image1.canvas.pen.color:=clyellow;
     mainwindow.image1.Canvas.brush.Style:=bsClear;
     mainwindow.image1.Canvas.font.color:=clyellow;

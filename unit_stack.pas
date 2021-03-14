@@ -581,8 +581,6 @@ type
     procedure ephemeris_centering1Change(Sender: TObject);
     procedure focallength1Exit(Sender: TObject);
     procedure go_step_two1Click(Sender: TObject);
-    procedure ImagesContextPopup(Sender: TObject; MousePos: TPoint;
-      var Handled: Boolean);
     procedure luminance_filter1exit(Sender: TObject);
     procedure gridlines1Click(Sender: TObject);
     procedure help_inspector_tab1Click(Sender: TObject);
@@ -1595,14 +1593,14 @@ begin
           end;
         end {cfitsio}
         else
-        if (check_raw_file_extension(ext)) then {raw file, convert to PGM}
+        if (check_raw_file_extension(ext)) then {raw file, convert to FITS}
         begin
           memo2_message('Converting '+filename1+' to FITS file format');
           Application.ProcessMessages;
           if esc_pressed then begin Screen.Cursor :=Save_Cursor;{ back to normal }  exit;  end;
 
-          if convert_raw_to_fits(filename1) then  {success converting raw to pgm file}
-             ListView1.items[c].caption:=filename2 {change listview name to FITS. The filename2 is renamed in prcedure save_16_m32..}
+          if convert_raw(false{load},true{save},filename1,img_buffer) then  {success converting raw to pgm file}
+             ListView1.items[c].caption:=filename1 {change listview name to FITS. The filename2 is renamed in prcedure save_16_m32..}
           else
           begin {conversion failure}
             ListView1.Items.item[c].checked:=false;
@@ -2780,6 +2778,16 @@ begin
           end
           else
           update_float  (keyw+'=',' /                                                ' ,waarde);
+
+          {update listview}
+          if keyw='OBJECT  ' then
+            if tl=stackmenu1.listview1 then tl.Items.item[index].subitems.Strings[I_object]:=value;
+          if keyw='FILTER  ' then
+          begin
+            if tl=stackmenu1.listview1 then tl.Items.item[index].subitems.Strings[I_filter]:=value;{light}
+            if tl=stackmenu1.listview3 then tl.Items.item[index].subitems.Strings[F_filter]:=value;{flat}
+          end;
+
         end;
 
         if nrbits=16 then
@@ -3093,8 +3101,9 @@ begin
         Application.ProcessMessages;
         if esc_pressed then begin Screen.Cursor :=Save_Cursor;{ back to normal }  exit;  end;
 
-        if convert_raw_to_fits(filename1) then  {success converting raw to pgm file}
-           lv.items[c].caption:=filename2 {change listview name to FITS. The filename2 is renamed in procedure save_16_m32..}
+//        if convert_rawto_fits(filename1) then  {success converting raw to pgm file}
+          if convert_raw(false{load},true{save},filename1,img_buffer) then  {success converting raw to fits file}
+          lv.items[c].caption:=filename1 {change listview name to FITS. The filename2 is renamed in procedure save_16_m32..}
         else
         begin {conversion failure}
           lv.Items.item[c].checked:=false;
@@ -4588,11 +4597,6 @@ begin
   update_equalise_background_step(2); {go to step 3}
 end;
 
-procedure Tstackmenu1.ImagesContextPopup(Sender: TObject; MousePos: TPoint;
-  var Handled: Boolean);
-begin
-
-end;
 
 procedure Tstackmenu1.luminance_filter1exit(Sender: TObject);
 var
