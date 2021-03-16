@@ -7736,8 +7736,8 @@ begin
     if fileexists(application_path+'/unprocessed_raw')=false then
        result:=false {failure}
     else
-    begin
-      execute_unix2(application_path+'/unprocessed_raw -f "'+filename3+'"'); {direct to fits using modified version of unprocessed_raw}
+    begin                                                {F instead of f temporay  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!}
+      execute_unix2(application_path+'/unprocessed_raw -F "'+filename3+'"'); {direct to fits using modified version of unprocessed_raw}
       filename4:=FileName3+'.fits';{ filename.NEF.pgm}
     end;
    {$endif}

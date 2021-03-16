@@ -49,8 +49,8 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.10.0'
   object Memo2: TMemo
     Left = 0
-    Height = 76
-    Top = 568
+    Height = 132
+    Top = 512
     Width = 1712
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
@@ -173,10 +173,10 @@ object stackmenu1: Tstackmenu1
     TabOrder = 3
   end
   object write_log1: TCheckBox
-    Left = 1240
+    Left = 1080
     Height = 19
     Hint = 'Write the stack log to a file with extension .txt'
-    Top = 480
+    Top = 482
     Width = 87
     Caption = 'Write log file'
     ParentFont = False
@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1711
-    ActivePage = tab_stackmethod1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 5
+    TabIndex = 0
     TabOrder = 5
     OnChange = pagecontrol1Change
     object Images: TTabSheet

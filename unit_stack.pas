@@ -2038,6 +2038,7 @@ begin
   begin
     if tl.Items[index].Selected then
     begin
+      tl.Items[index].Selected:=false;{this is only required for Mac}
       tl.Items.Delete(Index);
       dec(counter);{one file less}
     end
@@ -2740,6 +2741,7 @@ begin
       deletefile(changeFileExt(filename2,'.bak'));{delete *.bak left over from astrometric solution}
       if RenameFile(filename2,ChangeFileExt(filename2,'.bak')) then
       begin
+         tl.Items[index].Selected:=false;{this is only required for Mac}
          tl.Items.Delete(Index);
          dec(index);{next file goes down in index, compensate}
          dec(counter);{one file less}
@@ -7200,25 +7202,6 @@ begin
   begin
      memo2_message('█ █ █ █ █ █ Warning, could not find a suitable flat for "'+filter+'"! De-classify flat filter or add correct flat. █ █ █ █ █ █ ');
      flat_count:=0;{set back to zero}
-  end;
-end;
-
-
-procedure removechecked2(tl :tlistview);{remove lisview items checked}
-var index,counter: integer;
-begin
-  index:=0;
-  counter:=tl.Items.Count;
-  while index<counter do
-  begin
-    if tl.Items[index].checked then
-    begin
-      tl.Items.Delete(Index);
-      //dec(index);{next file goes down in index, compensate}
-      dec(counter);{one file less}
-    end
-    else
-    inc(index); {go to next file}
   end;
 end;
 
