@@ -662,7 +662,6 @@ procedure old_to_new_WCS;{ convert old WCS to new}
 procedure show_marker_shape(shape: TShape; shape_type,w,h,minimum:integer; fitsX,fitsY: double);{show manual alignment shape}
 procedure create_test_image(type_test : integer);{create an artificial test image}
 function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
-//function convert_raw_to_fits(filename7 : string) :boolean;{convert raw file to FITS format}
 function convert_raw(loadfile,savefile :boolean;var filename3: string; var img: image_array): boolean; {convert raw to fits file using DCRAW or LibRaw}
 
 function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
@@ -682,7 +681,6 @@ procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean)
 procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
 function image_file_name(inp : string): boolean; {readable image name?}
 procedure plot_annotations(xoffset,yoffset:integer;fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
-//function convert_load_raw(filename3: string;var img: image_array): boolean; {convert raw to pgm file using LibRaw}
 
 procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
@@ -1094,7 +1092,7 @@ begin
         if ((header[i]='I') and (header[i+1]='M')  and (header[i+2]='A') and (header[i+3]='G') and (header[i+4]='E') and (header[i+5]='T') and (header[i+6]='Y')) then
            imagetype:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
 
-        if ((header[i]='F') and (header[i+1]='I')  and (header[i+2]='L') and (header[i+3]='T') and (header[i+4]='E') and (header[i+5]='R')) then
+        if ((header[i]='F') and (header[i+1]='I')  and (header[i+2]='L') and (header[i+3]='T') and (header[i+4]='E') and (header[i+5]='R') and (header[i+6]=' ')) then
            filter_name:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
 
         if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
@@ -3159,7 +3157,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.513, '+about_message4+', dated 2021-3-14';
+  #13+#10+'ASTAP version ß0.9.514, '+about_message4+', dated 2021-3-16';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6948,7 +6946,7 @@ begin
     stackmenu1.pagecontrol1.tabindex:=get_int2(stackmenu1.pagecontrol1.tabindex,'stack_tab');
 
     stackmenu1.demosaic_method1.itemindex:=get_int2(stackmenu1.demosaic_method1.itemindex,'demosaic_method2');
-    stackmenu1.raw_conversion_program1.itemindex:=get_int2(stackmenu1.raw_conversion_program1.itemindex,'conversion_program');
+    stackmenu1.raw_conversion_program1.itemindex:=get_int2(stackmenu1.raw_conversion_program1.itemindex,'conv_program');
 
     Polynomial1.itemindex:=get_int2(Polynomial1.itemindex,'polynomial');
 
@@ -7268,7 +7266,7 @@ begin
     initstring.Values['bayer_pat']:=stackmenu1.bayer_pattern1.text;
 
     initstring.Values['demosaic_method2']:=inttostr(stackmenu1.demosaic_method1.itemindex);
-    initstring.Values['conversion_program']:=inttostr(stackmenu1.raw_conversion_program1.itemindex);
+    initstring.Values['conv_program']:=inttostr(stackmenu1.raw_conversion_program1.itemindex);
 
     initstring.Values['polynomial']:=inttostr(polynomial1.itemindex);
 
@@ -7682,7 +7680,9 @@ begin
 end;
 
 
-function convert_raw(loadfile,savefile :boolean;var filename3: string;var img: image_array): boolean; {convert raw to fits file using DCRAW or LibRaw}
+
+
+function convert_raw(loadfile,savefile :boolean;var filename3: string;var img: image_array): boolean; {convert raw to fits file using DCRAW or LibRaw. filename3 will be update with the new file extension e.g. .CR2.fits}
 var
   filename4 :string;
   JD2                               : double;
@@ -7692,44 +7692,84 @@ var
 
 begin
   result:=true; {assume success}
-
-  conv_index:=stackmenu1.raw_conversion_program1.itemindex; {DCRaw, libraw or dcraw-astap specified}
-
+  conv_index:=stackmenu1.raw_conversion_program1.itemindex; {DCRaw or libraw}
 
   {conversion direct to FITS}
-  if ((conv_index=3)) then {dcraw-raw not specified of failed, try with Libraw unprocessed_raw-astap}
+  if conv_index=0 then {Libraw}
   begin
     result:=true; {assume success again}
     {$ifdef mswindows}
     if fileexists(application_path+'unprocessed_raw.exe')=false then
       result:=false {failure}
     else
-       ExecuteAndWait(application_path+'unprocessed_raw.exe "'+filename3+'"',false);{execute command and wait}
+    begin
+       ExecuteAndWait(application_path+'unprocessed_raw.exe -f "'+filename3+'"',false);{execute command and wait}
+       filename4:=FileName3+'.fits';{direct to fits using modified version of unprocessed_raw}
+     end;
     {$endif}
     {$ifdef linux}
-
-    if fileexists('/usr/local/bin/unprocessed_raw-astap')=false then
-      result:=false {failure}
+    if fileexists(application_path+'unprocessed_raw-astap')=false then
+    begin {try other installed executables}
+      if fileexists('/usr/lib/libraw/unprocessed_raw')=false then
+      begin
+        if fileexists('/usr/bin/unprocessed_raw')=false then
+          result:=false {failure}
+        else
+        begin
+          execute_unix2('/usr/bin/unprocessed_raw "'+filename3+'"');
+          filename4:=FileName3+'.pgm';{ filename.NEF.pgm}
+        end
+      end
+      else
+      begin
+        execute_unix2('/usr/lib/libraw/unprocessed_raw "'+filename3+'"');
+        filename4:=FileName3+'.pgm';{ filename.NEF.pgm}
+      end
+    end
     else
-    execute_unix2('/usr/local/bin/unprocessed_raw-astap -F "'+filename3+'"');
+    begin
+      execute_unix2(application_path+'unprocessed_raw-astap -f "'+filename3+'"');{direct to fits using modified version of unprocessed_raw}
+      filename4:=FileName3+'.fits';{ filename.NEF.pgm}
+    end;
    {$endif}
     {$ifdef Darwin}{MacOS}
     if fileexists(application_path+'/unprocessed_raw')=false then
        result:=false {failure}
     else
-      execute_unix2(application_path+'/unprocessed_raw "'+filename3+'"');
-     {$endif}
-    filename3:=FileName3+'.fits';{ filename.NEF.pgm}
-     if loadfile then
-        result:=load_fits(filename3,true {light},true {load data},0,img) {load new fits file}
-     else result:=true;
-    exit;
+    begin
+      execute_unix2(application_path+'/unprocessed_raw -f "'+filename3+'"'); {direct to fits using modified version of unprocessed_raw}
+      filename4:=FileName3+'.fits';{ filename.NEF.pgm}
+    end;
+   {$endif}
+   {Compile linux version under Linux:
+    git clone https://github.com/LibRaw/LibRaw.git
+    or
+    git clone https://github.com/han-k59/LibRaw-with-16-bit-FITS-support
+    cd LibRaw
+    autoreconf --install
+    ./configure
+     make
+
+
+     1) ./configure --enable-shared=no
+     2) make clean && make # to rebuild
+     This will remove shared (.so) libraries and will build static (.a) instead }
+
+
+   {In Linux using mingw cross-compiler to make Windows executables:
+    git clone https://github.com/LibRaw/LibRaw.git ^C
+    cd LibRaw
+    make -f Makefile.mingw CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc
+
+    To make it work edit the file Makefile.mingw and on third row change:
+    CFLAGS=-O3 -I. -w -static-libgcc -static-libstdc++
+    }
   end;
 
 
-
-  if ((conv_index=0) or ((conv_index=2)))  then {dcraw or dcraw-astap specified}
+  if conv_index=1  then {dcraw specified}
   begin
+    if ExtractFileExt(filename3)='.CR3' then begin result:=false; exit; end; {dcraw can't process .CR3}
     commando:='-D -4 -t 0';   {-t 0 disables the rotation}
     {$ifdef mswindows}
     if fileexists(application_path+'dcraw.exe')=false then
@@ -7739,7 +7779,7 @@ begin
 
     {$endif}
     {$ifdef Linux}
-    if conv_index=0 then {standard dcraw}
+    if fileexists(application_path+'dcraw-astap')=false then
     begin
       if fileexists('/usr/bin/dcraw')=false then
       begin
@@ -7753,18 +7793,7 @@ begin
 
     end
     else
-    begin  {conv_index=2  dcraw-astap}
-      if fileexists('/usr/bin/dcraw-astap')=false then
-      begin
-        if fileexists('/usr/local/bin/dcraw-astap')=false then
-          result:=false {failure}
-        else
-          execute_unix2('/usr/local/bin/dcraw-astap '+commando+' "'+filename3+'"');
-      end
-      else
-      execute_unix2('/usr/bin/dcraw-astap '+commando+' "'+filename3+'"');
-    end;
-
+      execute_unix2(application_path+'dcraw-astap '+commando+' "'+filename3+'"');
     {$endif}
     {$ifdef Darwin} {MacOS}
     if fileexists(application_path+'/dcraw')=false then
@@ -7777,54 +7806,23 @@ begin
      filename4:=ChangeFileExt(FileName3,'.pgm');{for DCRaw}
   end;
 
-  if ((conv_index=1) or (result=false)) then {dcraw-raw not specified of failed, try with Libraw}
-  begin
-    result:=true; {assume success again}
-    {$ifdef mswindows}
-    if fileexists(application_path+'unprocessed_raw.exe')=false then
-      result:=false {failure}
-    else
-       ExecuteAndWait(application_path+'unprocessed_raw.exe "'+filename3+'"',false);{execute command and wait}
-    {$endif}
-    {$ifdef linux}
-     if fileexists('/usr/lib/libraw/unprocessed_raw')=false then
-     begin
-       if fileexists('/usr/bin/unprocessed_raw')=false then
-         result:=false {failure}
-       else
-         execute_unix2('/usr/bin/unprocessed_raw "'+filename3+'"');
-     end
-     else
-     execute_unix2('/usr/lib/libraw/unprocessed_raw "'+filename3+'"');
-   {$endif}
-    {$ifdef Darwin}{MacOS}
-    if fileexists(application_path+'/unprocessed_raw')=false then
-       result:=false {failure}
-    else
-      execute_unix2(application_path+'/unprocessed_raw "'+filename3+'"');
-     {$endif}
-    filename4:=FileName3+'.pgm';{ filename.NEF.pgm}
-  end;
-
   if result=false then {no conversion program}
   begin
-    if ((conv_index=0) or (conv_index=2)) then
+
+    if conv_index=1 then
     begin
     {$ifdef mswindows}
-     application.messagebox(pchar('Could not find: '+application_path+'dcraw.exe !!' ),pchar('Error'),MB_ICONWARNING+MB_OK);
+       application.messagebox(pchar('Could not find: '+application_path+'dcraw.exe !!' ),pchar('Error'),MB_ICONWARNING+MB_OK);
     {$endif}
     {$ifdef Linux}
-    if conv_index=0 then
-      application.messagebox(pchar('Could not find program /usr/bin/dcdraw !!, Install this program. Eg: sudo apt-get install dcraw' ),pchar('Error'),MB_ICONWARNING+MB_OK);
-    if conv_index=2 then
-      application.messagebox(pchar('Could not find program /usr/local/bin/dcdraw-astap !!, Download and install this program from www.hnsky.org'),pchar('Error'),MB_ICONWARNING+MB_OK);
+      application.messagebox(pchar('Could not find program dcdraw !!, Install this program. Eg: sudo apt-get install dcraw' ),pchar('Error'),MB_ICONWARNING+MB_OK);
     {$endif}
     {$ifdef Darwin} {MacOS}
-    application.messagebox(pchar('Could not find: '+application_path+'dcraw' ),pchar('Error'),MB_ICONWARNING+MB_OK);
+      application.messagebox(pchar('Could not find: '+application_path+'dcraw' ),pchar('Error'),MB_ICONWARNING+MB_OK);
     {$endif}
     end;
 
-    if conv_index=1 then
+    if conv_index=0 then
     begin {libraw}
       {$ifdef mswindows}
       application.messagebox(pchar('Could not find: '+application_path+'unprocessed_raw.exe !!, Download, libraw and place in program directory' ),pchar('Error'),MB_ICONWARNING+MB_OK);
@@ -7840,38 +7838,44 @@ begin
     exit;
   end;
 
-
-  if load_PPM_PGM_PFM(fileName4,img) then {succesfull PGM load}
+  if ExtractFileExt(filename4)='.pgm' then {pgm file}
   begin
-
-    deletefile(filename4);{delete temporary pgm file}
-
-    if date_obs='' then {no date detected in comments}
+    if load_PPM_PGM_PFM(fileName4,img) then {succesfull PGM load}
     begin
-      JD2:=2415018.5+(FileDateToDateTime(fileage(filename3))); {fileage raw, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
-      date_obs:=JdToDate(jd2);
-      update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
-    end;
-    update_text ('BAYERPAT=',#39+'????'+#39);{identify raw OSC image}
-    add_text   ('HISTORY  ','Converted from '+filename3);
-    result:=true;
-  end
-  else
-    result:=false;
 
-  if ((savefile) and (conv_index<=2) and (result)) then {PPM interstage file, save to fits, Not required for the new unprocessed_raw-astap}
-  begin
-    exposure:=extract_exposure_from_filename(filename4);{including update header}
-    set_temperature:=extract_temperature_from_filename(filename4);{including update header}
-    update_text('OBJECT  =',#39+extract_objectname_from_filename(filename4)+#39); {spaces will be added/corrected later}
-    filename3:=ChangeFileExt(FileName4,'.fit');
-    save_fits(img_buffer,filename3,16,true);{overwrite. Filename2 will be set to fits file}
-    result:=true;
+      deletefile(filename4);{delete temporary pgm file}
+      filename4:=ChangeFileExt(FileName4,'.fits');
+
+      if date_obs='' then {no date detected in comments}
+      begin
+        JD2:=2415018.5+(FileDateToDateTime(fileage(filename3))); {fileage raw, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
+        date_obs:=JdToDate(jd2);
+        update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
+      end;
+      update_text ('BAYERPAT=',#39+'????'+#39);{identify raw OSC image}
+      add_text   ('HISTORY  ','Converted from '+filename3);
+      result:=true;
+    end
+    else
+      result:=false;
+
+    if ((savefile) and (conv_index=1) and (result)) then {PPM interstage file, save to fits, Not required for the new unprocessed_raw-astap}
+    begin
+      if conv_index=1 {dcraw} then set_temperature:=extract_temperature_from_filename(filename4);{including update header}
+      update_text('OBJECT  =',#39+extract_objectname_from_filename(filename4)+#39); {spaces will be added/corrected later}
+      result:=save_fits(img_buffer,filename4,16,true);{overwrite. Filename2 will be set to fits file}
+    end;
+    if loadfile=false then  img:=nil;{clear memory}
   end
   else
-  result:=false;
-  img_buffer:=nil;
+  begin {fits file created by modified unprocessed_raw}
+    if loadfile then
+      result:=load_fits(filename4,true {light},true {load data},0,img); {load new fits file}
+  end;
+
+  if result then filename3:=filename4; {confirm conversion succes with new fits file name}
 end;
+
 
 procedure Tmainwindow.convert_to_fits1click(Sender: TObject);
 var
@@ -7988,7 +7992,6 @@ begin
   else
   if check_raw_file_extension(ext1) then {raw format}
   begin
-//    if convert_load_raw(filename2,img_loaded)=false
     if convert_raw(true{load},false{save},filename2,img_loaded)=false then
       begin update_menu(false);beep; exit; end
     else

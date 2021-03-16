@@ -1599,8 +1599,8 @@ begin
           Application.ProcessMessages;
           if esc_pressed then begin Screen.Cursor :=Save_Cursor;{ back to normal }  exit;  end;
 
-          if convert_raw(false{load},true{save},filename1,img_buffer) then  {success converting raw to pgm file}
-             ListView1.items[c].caption:=filename1 {change listview name to FITS. The filename2 is renamed in prcedure save_16_m32..}
+          if convert_raw(false{load},true{save},filename1,img_buffer) then  {success converting raw to fits. filename1 will contain the new filename}
+             ListView1.items[c].caption:=filename1 {change listview name to FITS.}
           else
           begin {conversion failure}
             ListView1.Items.item[c].checked:=false;
@@ -1618,6 +1618,7 @@ begin
           if success then
           begin
             exposure:=extract_exposure_from_filename(filename1); {try to extract exposure time from filename}
+            set_temperature:=extract_temperature_from_filename(filename1);{including update header}
             success:=save_fits(img,ChangeFileExt(filename1,'.fit'),16,false);
           end;
           if success then ListView1.items[c].caption:=ChangeFileExt(filename1,'.fit') {change listview name to FITS.}
@@ -3101,9 +3102,8 @@ begin
         Application.ProcessMessages;
         if esc_pressed then begin Screen.Cursor :=Save_Cursor;{ back to normal }  exit;  end;
 
-//        if convert_rawto_fits(filename1) then  {success converting raw to pgm file}
-          if convert_raw(false{load},true{save},filename1,img_buffer) then  {success converting raw to fits file}
-          lv.items[c].caption:=filename1 {change listview name to FITS. The filename2 is renamed in procedure save_16_m32..}
+          if convert_raw(false{load},true{save},filename1,img_buffer) then  {success converting raw to fits. filename1 will contain the new filename}
+          lv.items[c].caption:=filename1 {change listview name to FITS.}
         else
         begin {conversion failure}
           lv.Items.item[c].checked:=false;
