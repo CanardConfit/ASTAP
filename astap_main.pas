@@ -3157,7 +3157,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.514, '+about_message4+', dated 2021-3-16';
+  #13+#10+'ASTAP version ß0.9.515, '+about_message4+', dated 2021-3-17';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7742,17 +7742,12 @@ begin
     end;
    {$endif}
    {Compile linux version under Linux:
-    git clone https://github.com/LibRaw/LibRaw.git
-    or
     git clone https://github.com/han-k59/LibRaw-with-16-bit-FITS-support
-    cd LibRaw
+    cd LibRaw-with-16-bit-FITS-support
     autoreconf --install
-    ./configure
-     make
+     ./configure --enable-shared=no
+     make clean && make # to rebuild
 
-
-     1) ./configure --enable-shared=no
-     2) make clean && make # to rebuild
      This will remove shared (.so) libraries and will build static (.a) instead }
 
 
@@ -9397,8 +9392,9 @@ var
   apert,annul,backgr,hfd_med : double;
   hfd_counter                : integer;
 begin
-  apert:=strtofloat2(stackmenu1.flux_aperture1.text);
+  if ((fits_file=false) or (cd1_1=0)) then exit;
 
+  apert:=strtofloat2(stackmenu1.flux_aperture1.text);
   if ((flux_magn_offset=0) or (aperture_ratio<>apert){new calibration required})  then
   begin
     annulus_radius:=14;{calibrate for extended objects}

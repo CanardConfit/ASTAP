@@ -1402,7 +1402,7 @@ object mainwindow: Tmainwindow
         Caption = 'Calibrate photometry'
         Enabled = False
         Hint = 'Calibrate photometry using available star database (Gaia BP or V magnitude), Aperture setings are in tab photometry. Works best for raw/mono images. For colour images red channel will be used but accuracy will be less.'
-        ShortCut = 16464
+        ShortCut = 16469
         OnClick = calibrate_photometry1Click
       end
       object sqm1: TMenuItem

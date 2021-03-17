@@ -3873,6 +3873,14 @@ procedure Tstackmenu1.extra_star_supression_diameter1Change(Sender: TObject);
 begin
   esc_pressed:=true; {need to remake img_backup contents for star supression}
   annulus_radius1.enabled:=flux_aperture1.itemindex<>0;{disable annulus_radius1 if mode max flux}
+
+  {recalibrate}
+  if flux_magn_offset<>0 then
+  begin
+    memo2_message('Flux calibration cleared. Recalibrate by ctrl-U. See viewer tool menu');
+    flux_magn_offset:=0;
+  end;
+  //mainwindow.calibrate_photometry1Click(nil);
 end;
 
 procedure Tstackmenu1.help_astrometric_solving1Click(Sender: TObject);

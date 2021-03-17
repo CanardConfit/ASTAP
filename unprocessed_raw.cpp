@@ -281,11 +281,7 @@ int main(int ac, char *av[])
       if (out_fits>1) //export full sensor
         { S.top_margin=0; S.left_margin=0;  }
 
-       printf("out_fits %d\n", out_fits);
-       printf("S.top_margin %d\n", S.top_margin);
-
-
-      strcpy(fits_header,"SIMPLE  =                    T / FITS header                                                            ");
+      strcpy(fits_header,"SIMPLE  =                    T / FITS header                            ");
       fits_header[80]='\0'; // length should be exactly 80
 
       strcpy(str,"BITPIX  =                   16 / Bits per entry                                 ");
@@ -331,7 +327,7 @@ int main(int ac, char *av[])
 
       if (P1.filters)
       {
-      sprintf(str,"FILTER_P= '                '   / Filter pattern                                       ");
+      sprintf(str,"FILT-PAT= '                '   / Filter pattern                                       ");
 
       	if (!P1.cdesc[3])
 			P1.cdesc[3] = 'G';
@@ -348,15 +344,15 @@ int main(int ac, char *av[])
         str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
       }
 
-      sprintf(str,"IMG_FLIP= %020d                                                                       ",S.flip);
+      sprintf(str,"IMG_FLIP= %020d                                                                        ",S.flip);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
 
-      sprintf(str,"COMMENT raw conversion by LibRaw-with-16-bit-FITS-support. www.hnsky.org              ");
+      sprintf(str,"COMMENT raw conversion by LibRaw-with-16-bit-FITS-support. www.hnsky.org               ");
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
 
 
-      strcpy(str,"END                                                                                    ");
-      str[80]='\0'; strcat(fits_header,str);//line x. Length of each keyword record should be exactly 80
+      strcpy(str,"END                                                                                     ");
+      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
 
       for (unsigned i = strlen(fits_header)-1; i < 2880; i += 1)  //complete to 2880
         fits_header[i]=' ';//fill with space
