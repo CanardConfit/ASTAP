@@ -5545,7 +5545,8 @@ var
    c: integer;
 begin
   esc_pressed:=false;
-  memo2_message('Binning images for better detection. Original files will not be affected.');
+  if (IDYES= Application.MessageBox('Binning images 2x2 for better detection. Original files will be preserved. Continue?', 'Bin 2x2', MB_ICONQUESTION + MB_YESNO) )=false then exit;
+
   listview7.Items.beginUpdate;
   for c:=0 to listview7.items.count-1 do
   begin
@@ -5556,7 +5557,7 @@ begin
 
       if fits_file_name(filename2)=false then
       begin
-        memo2_message('█ █ █ █ █ █ Can'+#39+'t binx2. First analyse file list !! █ █ █ █ █ █');
+        memo2_message('█ █ █ █ █ █ Can'+#39+'t bin x 2. First analyse file list to convert to FITS !! █ █ █ █ █ █');
         beep;
         exit;
       end;
@@ -5568,8 +5569,7 @@ begin
       listview7.Items[c].Checked:=false;
       listview_add(listview7,filename2,true,P_nr);{add binx2 file}
     end;
-  end;{for loop for astrometric solving }
-  {astrometric calibration}
+  end;{for loop}
   listview7.Items.endUpdate;
 end;
 
@@ -5763,9 +5763,13 @@ var
           mainwindow.image1.Canvas.Pen.style:=psSolid;
           mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
         end;
-        mainwindow.image1.Canvas.Pen.style:=psDot;
-        mainwindow.image1.canvas.rectangle(round(starX-annulus_radius-1),round(starY-annulus_radius-1),round(starX+annulus_radius+1),round(starY+annulus_radius+1));
-        mainwindow.image1.canvas.rectangle(round(starX-annulus_radius-5),round(starY-annulus_radius-5),round(starX+annulus_radius+5),round(starY+annulus_radius+5));
+       // mainwindow.image1.Canvas.Pen.style:=psDot;
+
+//       rs_square1:=(rs+1)*(rs+1);;{square diameter}
+//       rs_square2:=(rs+1+annulus_width)*(rs+1+annulus_width);
+
+        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-1),round(starY-annulus_radius-1),round(starX+annulus_radius+1),round(starY+annulus_radius+1));{three pixels, 2,3,4}
+        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-5),round(starY-annulus_radius-5),round(starX+annulus_radius+5),round(starY+annulus_radius+5));
       end
       else result:='Saturated';
      end
@@ -5803,6 +5807,9 @@ begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
+
+  if pos('V',star_database1.text)=0 then
+  memo2_message(star_database1.text +' used  █ █ █ █ █ █ Warning, select a V database for accurate Johnson-V magnitudes !!! See tab alignment. █ █ █ █ █ █ ');
 
   {check is analyse is done}
   analysedP:=true;
@@ -5951,7 +5958,7 @@ begin
             if hfd_med<>0 then
             begin
               flux_aperture:=hfd_med*apert/2;{radius}
-              annulus_radius:=round(hfd_med*annul/2);{radius}
+              annulus_radius:=round(hfd_med*annul/2)-1;{radius   -rs ..0..+rs}
             end
             else flux_aperture:=99;{radius for measuring aperture}
           end
@@ -6081,7 +6088,7 @@ begin
 
         mainwindow.image1.Canvas.Pen.width :=round(1+height2/mainwindow.image1.height);{thickness lines}
         mainwindow.image1.Canvas.Pen.style:=psSolid;
-        mainwindow.image1.Canvas.Pen.Color := clred;
+        mainwindow.image1.Canvas.Pen.Color := $000050; {dark red}
         if starlistpack[c].height<>0 then {valid measurement}
         for i:=0 to  length(starlistpack[c].starlist[0])-2 do
         begin
@@ -6488,9 +6495,12 @@ begin
   end;
 
   {get column names}
-  try
   for c := 0 to lv.Items[0].SubItems.Count-1 do
-       info:=info+lv.columns[c].caption+#9;
+  try
+    info:=info+lv.columns[c].caption+'X'+#9;
+  except
+    info:=info+'Error'+#9;
+  end;
   info:=info+slinebreak;
 
   {get data}
@@ -6501,14 +6511,17 @@ begin
       info:=info+lv.items[index].caption;
       {get sub items}
       for c := 0 to lv.Items[index].SubItems.Count - 1 do
-         info:=info+#9+lv.Items.item[index].subitems.Strings[c];
+      try
+        info:=info+#9+lv.Items.item[index].subitems.Strings[c];
+      except
+        info:=info+#9+'Error';
+      end;
       info:=info+slinebreak;
     end;
   end;
-  except
-    info:='Error';
-  end;
-
+//  except
+//    info:='Error at index '+inttostr(index)+ ', sub item: '+ inttostr(c)+ slinebreak +info;
+//  end;
   Clipboard.AsText:=info;
 end;
 

@@ -97,7 +97,7 @@ begin
 
   aavso_report:= '#TYPE=Extended'+#13+#10+
                  '#OBSCODE='+obscode+#13+#10+
-                 '#SOFTWARE=ASTAP, photometry version ß0.3'+#13+#10+
+                 '#SOFTWARE=ASTAP, photometry version ß0.4'+#13+#10+
                  '#DELIM='+delimiter1.text+#13+#10+
                  '#DATE=JD'+#13+#10+
                  '#OBSTYPE=CCD'+#13+#10+

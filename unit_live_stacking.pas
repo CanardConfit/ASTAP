@@ -1,5 +1,5 @@
 unit unit_live_stacking;
-{Copyright (C) 2019 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2019, 2021 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This program is free software: you can redistribute it and/or modify
@@ -107,7 +107,6 @@ begin
     result:= load_fits(filen,true {light},true,0,img_loaded)
   else
   if check_raw_file_extension(ext1) then {check if extension is from raw file}
-//    result:=convert_load_raw(filen,img_loaded) {raw}
     result:=convert_raw(true{load},false{save},filen,img_loaded)
   else
     result:=load_tiffpngJPEG(filen,img_loaded);

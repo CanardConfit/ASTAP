@@ -3157,7 +3157,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.515, '+about_message4+', dated 2021-3-17';
+  #13+#10+'ASTAP version ß0.9.517a, '+about_message4+', dated 2021-3-21';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7737,28 +7737,46 @@ begin
        result:=false {failure}
     else
     begin                                                {F instead of f temporay  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!}
-      execute_unix2(application_path+'/unprocessed_raw -F "'+filename3+'"'); {direct to fits using modified version of unprocessed_raw}
+      execute_unix2(application_path+'/unprocessed_raw -f "'+filename3+'"'); {direct to fits using modified version of unprocessed_raw}
       filename4:=FileName3+'.fits';{ filename.NEF.pgm}
     end;
    {$endif}
-   {Compile linux version under Linux:
-    git clone https://github.com/han-k59/LibRaw-with-16-bit-FITS-support
-    cd LibRaw-with-16-bit-FITS-support
-    autoreconf --install
-     ./configure --enable-shared=no
-     make clean && make # to rebuild
+   {############################################################################################
+       Linux, compile unprocessed_raw under Linux:
+       git clone https://github.com/han-k59/LibRaw-with-16-bit-FITS-support
+       cd LibRaw-with-16-bit-FITS-support
+       autoreconf --install
+        ./configure --enable-shared=no
+        make clean && make # to rebuild
 
-     This will remove shared (.so) libraries and will build static (.a) instead }
+        This will remove shared (.so) libraries and will build static (.a) instead
 
+   ############################################################################################
+       Windows, in Linux use mingw cross-compiler to make Windows executables:
+       git clone https://github.com/han-k59/LibRaw-with-16-bit-FITS-support
+       cd LibRaw-with-16-bit-FITS-support
+       make clean -f Makefile.mingw # to clean up
+       make  -f Makefile.mingw CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc
 
-   {In Linux using mingw cross-compiler to make Windows executables:
-    git clone https://github.com/LibRaw/LibRaw.git ^C
-    cd LibRaw
-    make -f Makefile.mingw CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc
+       for 32 bit Windows version
+       make clean -f Makefile.mingw # to clean up
+       make -f Makefile.mingw CXX=i686-w64-mingw32-g++ CC=i686-w64-mingw32-gcc
 
-    To make it work edit the file Makefile.mingw and on third row change:
-    CFLAGS=-O3 -I. -w -static-libgcc -static-libstdc++
-    }
+       To make it work edit the file Makefile.mingw and on third row change:
+       CFLAGS=-O3 -I. -w -static-libgcc -static-libstdc++
+
+       You can check the result with the linux file command:
+       file unprocessed_raw.exe
+       unprocessed_raw.exe: PE32+ executable (console) x86-64, for MS Windows
+       file unprocessed_raw.exe
+       unprocessed_raw.exe: PE32 executable (console) Intel 80386, for MS Win
+       #############################################################################################
+       Mac
+
+       git clone https://github.com/han-k59/LibRaw-with-16-bit-FITS-support
+       cd LibRaw-with-16-bit-FITS-support
+       export LDADD=-mmacosx-version-min=10.10
+       make -f Makefile.dist}
   end;
 
 
@@ -12384,11 +12402,13 @@ begin
 end;
 
 
+
 procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small:double; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
 const                                                                                                                                          {aperture_small is used for photometry of stars. Set at 99 for normal full flux mode}
   max_ri=50; //should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1;
+
 var
-  i,j, distance,distance_top_value,illuminated_pixels,signal_counter,iterations,counter :integer;
+  i,j,rs_square1,rs_square2,rs_diameter, distance,distance_top_value,illuminated_pixels,signal_counter,iterations,counter,annulus_width :integer;
   SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
   val,bg_average,bg,sd,sd_old,pixel_counter,valmax : double;
   HistStart,boxed : boolean;
@@ -12413,8 +12433,19 @@ var
       end;
     end;
 begin
-  if ((x1-rs-4<=0) or (x1+rs+4>=width2-1) or
-      (y1-rs-4<=0) or (y1+rs+4>=height2-1) )
+  if  aperture_small<99 then
+    annulus_width:=3 {high precession}
+  else
+    annulus_width:=1;{normal & fast}
+
+  rs_square1:=(rs+1)*(rs+1);;{square diameter}
+  rs_square2:=(rs+1+annulus_width)*(rs+1+annulus_width);
+  rs_diameter:=round(sqrt(rs_square2));
+
+
+
+  if ((x1-rs_diameter<=0) or (x1+rs_diameter>=width2-1) or
+      (y1-rs_diameter<=0) or (y1+rs_diameter>=height2-1) )
     then begin hfd1:=999; snr:=0; exit;end;
 
   valmax:=0;
@@ -12429,10 +12460,11 @@ begin
     repeat {find background by repeat and exclude values above 3*sd}
       counter:=0;
       bg_average:=0;
-      for i:=-rs-4 to rs+4 do {calculate mean at square boundaries of detection box}
-      for j:=-rs-4 to rs+4 do
+      for i:=-rs_diameter to rs_diameter do {calculate mean at square boundaries of detection box}
+      for j:=-rs_diameter to rs_diameter do
       begin
-        if ( (abs(i)>rs) and (abs(j)>rs) ) then {measure only outside the box}
+        distance:=i*i+j*j;
+        if ((distance>rs_square1) and (distance<=rs_square2)) then
         begin
           val:=img[0,x1+i,y1+j];
           if  ((iterations=0) or (abs(val-bg)<=3*sd)) then  {ignore extreme outliers after first run}
@@ -12446,27 +12478,28 @@ begin
 
       counter:=0;
       sd_old:=sd;
-      sd:=0;
-      for i:=-rs-4 to rs+4 do {calculate standard deviation background at the square boundaries of detection box}
-        for j:=-rs-4 to rs+4 do
+      sd:=0;{calculate standard deviation background at the square boundaries of detection box}
+      for i:=-rs_diameter to rs_diameter do {calculate mean at square boundaries of detection box}
+      for j:=-rs_diameter to rs_diameter do
+      begin
+        distance:=i*i+j*j;
+        if ((distance>rs_square1) and (distance<=rs_square2)) then {circular area of about one pixel}
         begin
-          if ( (abs(i)>rs) and (abs(j)>rs) ) then {measure only outside the box}
+          val:=img[0,x1+i,y1+j];
+          if val<=2*bg then {not an extreme outlier}
+          if ((iterations=0) or (abs(val-bg)<=3*sd_old)) then {ignore extreme outliers after first run}
           begin
-              val:=img[0,x1+i,y1+j];
-              if val<=2*bg then {not an extreme outlier}
-              if ((iterations=0) or (abs(val-bg)<=3*sd_old)) then {ignore extreme outliers after first run}
-              begin
-                sd:=sd+sqr(val-bg);
-                inc(counter);
-              end;
+            sd:=sd+sqr(val-bg);
+            inc(counter);
           end;
+        end;
       end;
       sd:=sqrt(sd/(counter+0.0001)); {standard deviation in background}
 
-    //  memo2_message(inttostr(iterations)+'  ' +floattostr4(sd));
       inc(iterations);
     until (((sd_old-sd)<0.1*sd) or (iterations>=3));{repeat until sd is stable or enough iterations}
     sd:=max(sd,1); {add some value for images with zero noise background. This will prevent that background is seen as a star. E.g. some jpg processed by nova.astrometry.net}
+
 
      repeat {reduce box size till symmetry to remove stars}
     // Get center of gravity whithin star detection box and count signal pixels
