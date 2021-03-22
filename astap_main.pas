@@ -3157,7 +3157,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.517a, '+about_message4+', dated 2021-3-21';
+  #13+#10+'ASTAP version ß0.9.518, '+about_message4+', dated 2021-3-22';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -12460,11 +12460,11 @@ begin
     repeat {find background by repeat and exclude values above 3*sd}
       counter:=0;
       bg_average:=0;
-      for i:=-rs_diameter to rs_diameter do {calculate mean at square boundaries of detection box}
+      for i:=-rs_diameter to rs_diameter do {calculate the mean at 2 pixels outside the the detection box}
       for j:=-rs_diameter to rs_diameter do
       begin
         distance:=i*i+j*j;
-        if ((distance>rs_square1) and (distance<=rs_square2)) then
+        if ((distance>rs_square1) and (distance<=rs_square2)) then {circular area two pixels outside rs, typical one pixel wide}
         begin
           val:=img[0,x1+i,y1+j];
           if  ((iterations=0) or (abs(val-bg)<=3*sd)) then  {ignore extreme outliers after first run}
@@ -12478,12 +12478,12 @@ begin
 
       counter:=0;
       sd_old:=sd;
-      sd:=0;{calculate standard deviation background at the square boundaries of detection box}
-      for i:=-rs_diameter to rs_diameter do {calculate mean at square boundaries of detection box}
+      sd:=0;
+      for i:=-rs_diameter to rs_diameter do {calculate standard deviation background outside the detection box}
       for j:=-rs_diameter to rs_diameter do
       begin
         distance:=i*i+j*j;
-        if ((distance>rs_square1) and (distance<=rs_square2)) then {circular area of about one pixel}
+        if ((distance>rs_square1) and (distance<=rs_square2)) then {circular area two pixels outside rs, typical one pixel wide}
         begin
           val:=img[0,x1+i,y1+j];
           if val<=2*bg then {not an extreme outlier}
@@ -12502,7 +12502,7 @@ begin
 
 
      repeat {reduce box size till symmetry to remove stars}
-    // Get center of gravity whithin star detection box and count signal pixels
+    // Get center of gravity whithin star detection box and count signal pixels, repeat reduce box size till symmetry to remove stars
       SumVal:=0;
       SumValX:=0;
       SumValY:=0;

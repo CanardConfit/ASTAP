@@ -8,7 +8,7 @@ object form_aavso1: Tform_aavso1
   ClientWidth = 403
   OnClose = FormClose
   OnShow = FormShow
-  LCLVersion = '2.1.0.0'
+  LCLVersion = '2.0.10.0'
   object obscode1: TEdit
     Left = 16
     Height = 23
@@ -55,7 +55,7 @@ object form_aavso1: Tform_aavso1
     ItemIndex = 0
     Items.Strings = (
       'CV  (unfiltered)'
-      'TG  (green filter or green of tricolour)'
+      'TG  (green filter or green of OSC)'
       'V    (Johnson-V)'
     )
     ParentFont = False
@@ -148,7 +148,7 @@ object form_aavso1: Tform_aavso1
     ParentColor = False
   end
   object report_to_file1: TButton
-    Left = 213
+    Left = 218
     Height = 25
     Hint = 'Writes report to file.'
     Top = 344

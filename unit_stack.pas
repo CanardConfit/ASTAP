@@ -5763,11 +5763,6 @@ var
           mainwindow.image1.Canvas.Pen.style:=psSolid;
           mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
         end;
-       // mainwindow.image1.Canvas.Pen.style:=psDot;
-
-//       rs_square1:=(rs+1)*(rs+1);;{square diameter}
-//       rs_square2:=(rs+1+annulus_width)*(rs+1+annulus_width);
-
         mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-1),round(starY-annulus_radius-1),round(starX+annulus_radius+1),round(starY+annulus_radius+1));{three pixels, 2,3,4}
         mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-5),round(starY-annulus_radius-5),round(starX+annulus_radius+5),round(starY+annulus_radius+5));
       end
@@ -5958,7 +5953,7 @@ begin
             if hfd_med<>0 then
             begin
               flux_aperture:=hfd_med*apert/2;{radius}
-              annulus_radius:=round(hfd_med*annul/2)-1;{radius   -rs ..0..+rs}
+              annulus_radius:=round(hfd_med*annul/2)-1-2;{radius   -rs ..0..+rs, the annulus diameter is later made 2 pixels wider then rs}
             end
             else flux_aperture:=99;{radius for measuring aperture}
           end
@@ -6030,7 +6025,6 @@ begin
         mainwindow.image1.Canvas.Pen.Mode := pmMerge;
         mainwindow.image1.Canvas.Pen.width :=1;{thickness lines}
         mainwindow.image1.Canvas.Pen.Color := clGreen;
-      //  mainwindow.image1.Canvas.Pen.style:=psDot;
         mainwindow.image1.Canvas.Pen.Cosmetic:= false; {gives better dotted lines}
 
         mainwindow.image1.Canvas.brush.Style:=bsClear;
@@ -6101,7 +6095,7 @@ begin
 
           mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
           magn:=starlistpack[c].flux_magn_offset-ln(starlistpack[c].starlist[3,i]{flux})*2.511886432/ln(10);
-          mainwindow.image1.Canvas.textout(starX+size,starY,floattostrf(magn*10, ffgeneral, 3,0));{add magnitude as text}
+          mainwindow.image1.Canvas.textout(starX+size,starY-size,floattostrf(magn*10, ffgeneral, 3,0));{add magnitude as text}
         end;{measure marked stars}
 
 

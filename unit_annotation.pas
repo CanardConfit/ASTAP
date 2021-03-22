@@ -1611,7 +1611,6 @@ var
                 (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
                 (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
             begin
-             // flux:=flux/(1-EXP(-0.5*sqr(r_aperture{measuring radius}*2.34548/hfd1))); {Aperture correction for lost flux fainter then detection limit of a Gaussian star}
               magn:=(-ln(flux)*2.511886432/LN(10));
               if counter_flux_measured>=length(mag_offset_array) then  SetLength(mag_offset_array,counter_flux_measured+500);{increase length array}
               mag_offset_array[counter_flux_measured]:=mag2/10-magn;
@@ -1750,7 +1749,7 @@ begin
         if flux_aperture=99 then
            memo2_message('Photometry calibration for EXTENDED OBJECTS successfull. '+inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.')
         else
-          memo2_message('Photometry calibration for POINT SOURCES successfull. '+inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(flux_aperture*2, ffgeneral, 2,2)+'. Annulus inner diameter: '+inttostr(annulus_radius*2));
+          memo2_message('Photometry calibration for POINT SOURCES successfull. '+inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(flux_aperture*2, ffgeneral, 2,2)+'. Annulus inner diameter: '+inttostr(1+(annulus_radius+2)*2){background is measured 2 pixels outside rs});
       end
       else  flux_magn_offset:=0;
       mag_offset_array:=nil;
