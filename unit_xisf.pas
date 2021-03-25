@@ -122,6 +122,7 @@ begin
   cd2_2:=0;{just for the case it is not available}
   date_obs:='';date_avg:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
   sitelat:='';{Observatory latitude} sitelong:='';{Observatory longitude}
+
   naxis:=1;
   naxis3:=1;
 

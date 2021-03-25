@@ -27,6 +27,10 @@ uses
 
 function JD_to_HJD(jd,ra_object,dec_object: double): double;{conversion JD to HJD}  {see https://en.wikipedia.org/wiki/Heliocentric_Julian_Day}
 procedure EQU_GAL(ra,dec:double;var l,b: double);{equatorial to galactic coordinates}
+function altitude(ra2000,dec2000,lat,long,julian:double):double;{conversion ra & dec to altitude only. This routine is created for speed, only the altitude is calculated}
+function airmass_calc(h: double): double; // where h is apparent altitude in degrees.
+function atmospheric_absorption(airmass: double):double;{magnitudes}
+
 
 
 implementation
@@ -58,6 +62,7 @@ procedure sun(jd:real; var ra,dec: double); {jd  var ra 0..2*pi, dec [0..pi/2] o
     ra  := 2*arctan(y/(cos_l+rho));
     if (ra<0) then ra:=ra+(2*pi);
   end;
+
 
 procedure precession(jd, ra1,dec1 : double; var ra2,dec2 : double); {precession correction,  simple formula, new Meeus chapter precession}
 var
@@ -112,6 +117,68 @@ begin
   sincos(b,sin_b, cos_b);
   l:=arctan2(  (sin(dec) - sin_b *sin_pole_dec ) , (cos(dec)*cos_pole_dec*sin(ra - pole_ra)) )  + posangle;
 end;
+
+
+function  limit_radialen(z,range:double):double;
+begin
+  {range should be 2*pi or 24 hours}
+  z:=range*frac(z/(range));{quick method for big numbers}
+  while z<0 do z:=z+range;
+  limit_radialen:=z;
+end;
+
+
+function altitude(ra2000,dec2000,lat,long,julian:double):double;{conversion ra & dec to altitude only. This routine is created for speed, only the altitude is calculated}
+{input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-pi/2..pi/2], long[-pi..pi] West positive, East negative !!,time[0..2*pi]}
+var t5,wtime2actual,ra_date,dec_date :double;
+    sin_lat,cos_lat,sin_dec,cos_dec:double;
+const
+  siderealtime2000=(280.46061837)*pi/180;{[radians],  90 degrees shifted sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
+  earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
+
+begin
+  wtime2actual:=limit_radialen((-long)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi); {longitude is positive towards west so has to be subtracted from time.}
+        {change by time & longitude in 0 ..pi*2, simular as siderial time}
+        {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
+
+  precession(julian, ra2000,dec2000, {var} ra_date,dec_date);
+
+  t5:=wtime2actual-ra_date;
+  sincos(lat,sin_lat,cos_lat);
+  sincos(dec_date,sin_dec,cos_dec);
+  try
+  {***** altitude calculation from RA&DEC, meeus new 12.5 *******}
+  result:=arcsin(SIN_LAT*SIN_DEC+COS_LAT*COS_DEC*COS(T5));
+  except
+  {ignore floating point errors outside builder}
+  end;
+end;
+
+
+function airmass_calc(h: double): double; // where h is apparent altitude in degrees.
+begin
+  // Pickering, 2002
+  if h>=0.0000001 then
+    result := 1 / sin((pi/180) * (h + (244 / (165 + 47 * power(h,1.1)))))
+  else
+    result:=999;
+end;
+
+
+function atmospheric_absorption(airmass: double):double;{magnitudes}
+{The Extinction, Scattering, Absorption due to the atmosphere expressed in magnitudes.
+ Reference http://www.icq.eps.harvard.edu/ICQExtinct.html
+ see also https://www.skyandtelescope.com/astronomy-resources/transparency-and-atmospheric-extinction/}
+ var
+  a_ozon,a_ray,a_aer : double;
+begin
+  a_ozon:=airmass*0.016; {Schaefer's (1992) value Aoz =0.016 magnitudes per air mass for the small ozone component contributing to atmospheric extinction.}
+  a_ray:=airmass*0.1451; {Rayleigh scattering by air molecules. Expressed in magnitudes}
+  a_aer:=airmass*0.120; {Extinction due to aerosol scattering is due to particulates including dust, water droplets and manmade pollutants. Expressed in magnitudes}
+  result:=a_ozon+a_ray+a_aer;{Total extinction, scattering, absorption due to the atmosphere expressed in magnitudes}
+end;
+
+
 
 
 end.

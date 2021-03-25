@@ -891,18 +891,17 @@ function strtofloat(st: string) : double; {han.k}
 var
   error2 : integer;
 begin
-
   val(st,result,error2);
 end;
 
-Function  limit_radialen(z,range:double):double; {han.k}
+
+function  limit_radialen(z,range:double):double; {han.k}
 begin
   {range should be 2*pi or 24 hours}
   z:=range*frac(z/(range));{quick method for big numbers}
   while z<0 do z:=z+range;
   limit_radialen:=z;
 end;
-
 
 
 function deltaT_calc(jd: double) : double; {in seconds} {han.k}
@@ -950,6 +949,8 @@ begin
 
   result:=result/(24*3600);{convert results to days}
 end;
+
+
 procedure convert_MPCORB_line(txt : string; var desn,name: string; var yy,mm,dd,ecc,q,inc2,lan,peri,h,g: double);{read asteroid as comet, han.k}
 var
   code2           : integer;
@@ -1013,6 +1014,8 @@ begin
 
   end;
 end;
+
+
 procedure convert_comet_line(txt : string; var desn,name: string; var yy,mm,dd, ecc,q,inc2,lan,aop,H,k: double); {han.k}
 var
   error1          : integer;
@@ -1365,6 +1368,9 @@ begin
   sitelat:=latitude1.Text;
   sitelong:=longitude1.Text;
 
+  lat_default:=sitelat;
+  long_default:=sitelong;
+
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   plot_mpcorb(maxcount,maxmag,add_annotations);
@@ -1464,6 +1470,12 @@ begin
   max_magn_asteroids1.text:=maxmag_asteroid;
 
   {latitude, longitude}
+  if sitelat='' then {use values from previous time}
+  begin
+    sitelat:=lat_default;
+    sitelong:=long_default;
+  end;
+
   latitude1.Text:=trim(sitelat); {copy the string to tedit}
   longitude1.Text:=trim(sitelong);
 

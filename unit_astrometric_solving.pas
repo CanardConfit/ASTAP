@@ -423,7 +423,7 @@ begin
     old_width:=width2;
     old_height:=height2;
     old_naxis3:=naxis3;
-    if binning>1 then memo2_message('Creating monochromatic x '+inttostr(binning)+' binning image for solving/star alignment.');
+    if binning>1 then memo2_message('Creating grayscale x '+inttostr(binning)+' binning image for solving/star alignment.');
     if cropping<>1 then memo2_message('Cropping image x '+floattostrF2(cropping,0,2));
 
     if binning=2 then binX2_crop(cropping,img,img_binned) {combine values of 4 pixels, default option if 3 and 4 are not specified}

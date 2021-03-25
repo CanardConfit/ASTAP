@@ -257,7 +257,7 @@ begin
   cygwin_path:=cygwin1.text;
   astrometry_extra_options:=astrometry_extra_options1.text;
 
-  save_settings(user_path+'astap.cfg');
+  save_settings2;
 
   mainwindow.OpenDialog1.Title := 'Select multiple  files to add astrometric solution';
   mainwindow.OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];

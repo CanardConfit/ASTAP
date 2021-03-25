@@ -96,18 +96,21 @@ type
     MenuItem15: TMenuItem;
     annotations_visible1: TMenuItem;
     MenuItem20: TMenuItem;
-    MenuItem21: TMenuItem;
+    extract_pixel_21: TMenuItem;
     extract_pixel_22: TMenuItem;
     batch_solve_astrometry_net: TMenuItem;
     copy_to_clipboard1: TMenuItem;
     hfd_contour1: TMenuItem;
     Inspector_top_menu1: TMenuItem;
     inspector_hfd_values1: TMenuItem;
+    zoomfactorone1: TMenuItem;
     MenuItem22: TMenuItem;
     bayer_image1: TMenuItem;
     extractred1: TMenuItem;
     extractblue1: TMenuItem;
     extractgreen1: TMenuItem;
+    MenuItem24: TMenuItem;
+    writepositionshort1: TMenuItem;
     Shape_alignment_marker2: TShape;
     Shape_alignment_marker3: TShape;
     shape_manual_alignment1: TShape;
@@ -311,6 +314,7 @@ type
     procedure histogram_range1MouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure histogram_values_to_clipboard1Click(Sender: TObject);
+    procedure Image1Paint(Sender: TObject);
     procedure imageflipv1Click(Sender: TObject);
     procedure annotate_unknown_stars1Click(Sender: TObject);
     procedure j2000d1Click(Sender: TObject);
@@ -321,7 +325,7 @@ type
     procedure Menufind1Click(Sender: TObject);
     procedure menufindnext1Click(Sender: TObject);
     procedure copy_paste_tool1Click(Sender: TObject);
-    procedure MenuItem21Click(Sender: TObject);
+    procedure extract_pixel_21Click(Sender: TObject);
     procedure batch_rotate_left1Click(Sender: TObject);
     procedure angular_distance1Click(Sender: TObject);
     procedure j2000_1Click(Sender: TObject);
@@ -330,7 +334,6 @@ type
     procedure extractred1Click(Sender: TObject);
     procedure extractblue1Click(Sender: TObject);
     procedure extractgreen1Click(Sender: TObject);
-    procedure Panel1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
     procedure northeast1Click(Sender: TObject);
@@ -398,6 +401,7 @@ type
     procedure tools1Click(Sender: TObject);
     procedure UpDown1Click(Sender: TObject; Button: TUDBtnType);
     procedure variable_star_annotation1Click(Sender: TObject);
+    procedure zoomfactorone1Click(Sender: TObject);
     procedure zoomin1Click(Sender: TObject);
     procedure zoomout1Click(Sender: TObject);
     procedure astrometric_solve_image1Click(Sender: TObject);
@@ -548,6 +552,8 @@ const
   xpixsz: double=0;//Pixel Width in microns (after binning)
   ypixsz: double=0;//Pixel height in microns (after binning)
   focallen: double=0;
+  lat_default: string='';
+  long_default: string='';
   down_x: integer=0;
   down_y: integer=0;
   down_xy_valid: boolean=false;{required for Linux GTK.}
@@ -638,7 +644,7 @@ function floattostr6(x:double):string;
 function floattostr4(x:double):string;
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
 procedure get_hist(colour:integer;img :image_array);{get histogram of img_loaded}
-procedure save_settings(lpath:string);
+procedure save_settings2;
 procedure progress_indicator(i:double; info:string);{0 to 100% indication of progress}
 {$ifdef mswindows}
 procedure ExecuteAndWait(const aCommando: string; show_console:boolean);
@@ -698,6 +704,7 @@ function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmm
 procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; var   ram,decm  : double {fitsX, Y to ra,dec});
 function extract_letters_only(inp : string): string;
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
+function calculate_altitude: double;{convert centalt string to double or calculate altitude from observer location}
 
 
 
@@ -1152,6 +1159,9 @@ begin
           if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') and (header[i+5]='L')) then  {focall}
                   focallen:=validate_double;{Focal length of telescope in mm, maxim DL keyword}
 
+//          if ((header[i]='A') and (header[i+1]='I')  and (header[i+2]='R') and (header[i+3]='M') and (header[i+4]='A') and (header[i+5]='S')) then  {airmass}
+//                  airmass:=validate_double;
+
           if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='V') and (header[i+3]='A') and (header[i+4]='L')) then {crval1/2}
           begin
             if (header[i+5]='1') then  ra0:=validate_double*pi/180; {ra center, read double value}
@@ -1183,9 +1193,9 @@ begin
                 mainwindow.dec1.text:=get_string;
               end;
   //            else {for older MaximDL5}
-  //            if ((header[i+5]='A') and (header[i+6]='Z') and (centaz=999)) then begin if header[i+10]=#39 then centalt:=get_string else centalt:=validate_double; end{temporary accept floats}
+  //            if ((header[i+5]='A') and (header[i+6]='L') and (centaz=999)) then begin if header[i+10]=#39 then centalt:=get_string else centalt:=validate_double; end{temporary accept floats}
   //            else {for older MaximDL5}
-  //            if ((header[i+5]='A') and (header[i+6]='L')and (centalt=999)) then  begin if header[i+10]=#39 then centaz:=get_string else centaz:=validate_double; end;{temporary accept floats}
+  //            if ((header[i+5]='A') and (header[i+6]='Z')and (centalt=999)) then  begin if header[i+10]=#39 then centaz:=get_string else centaz:=validate_double; end;{temporary accept floats}
             end;
 
             if ((header[i+3]='E') and (header[i+4]='C') and (header[i+5]='T')) then {OBJECT}
@@ -2433,7 +2443,7 @@ end;
 
 
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
- var
+ var                         {IAU doesn't recommend rounding, however it is implemented here}
    hh,mm,ss,ds  :integer;
    g,m,s  :integer;
    sign   : char;
@@ -3157,7 +3167,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.518, '+about_message4+', dated 2021-3-22';
+  #13+#10+'ASTAP version ß0.9.519, '+about_message4+', dated 2021-3-23';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3765,7 +3775,7 @@ begin
 end;
 
 
-procedure Tmainwindow.remove_colour1Click(Sender: TObject);{make local area monochrome}
+procedure Tmainwindow.remove_colour1Click(Sender: TObject);{make local area grayscale}
 var
    fitsX,fitsY,dum    : integer;
    val  : single;
@@ -4229,15 +4239,6 @@ begin
 end;
 
 
-procedure Tmainwindow.savesettings1Click(Sender: TObject);
-begin
-  savedialog1.filename:=user_path+'astap.cfg';
-  savedialog1.Filter := '(configuration file|*.cfg';
-  if savedialog1.execute then
-    save_settings(savedialog1.filename);
-end;
-
-
 procedure Tmainwindow.show_distortion1Click(Sender: TObject);
 begin
   if flux_magn_offset=0 then plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});{calibrate using the 100 brightest stars}
@@ -4327,6 +4328,7 @@ begin
     begin mainwindow.labelThree1.left:=ll+ww; mainwindow.labelThree1.top:=tt+hh; mainwindow.labelThree1.font.size:=max(hh div 4,14); mainwindow.labelThree1.visible:=true;end;
 
 end;
+
 
 
 procedure zoom(mousewheelfactor:double;MousePos: TPoint);
@@ -4680,7 +4682,7 @@ begin
     exit;
   end;
 
-  save_settings(user_path+'astap.cfg');
+  save_settings2;
 
   OldCursor := Screen.Cursor;
   Screen.Cursor:= crHourGlass;
@@ -6842,6 +6844,27 @@ begin
 end;
 
 
+function encrypt(inp: string): string;
+var
+   i: integer;
+begin
+  result:='1';{version}
+  for i:=1 to length(inp) do
+     result:=result+char(ord(inp[i])+i-11);
+end;
+
+
+function decrypt(inp: string): string;
+var
+   i: integer;
+begin
+  result:='';
+  if ((length(inp)>=2) and (inp[1]='1')) then {correct format}
+  for i:=2 to length(inp) do
+     result:=result+char(ord(inp[i])-i+11+1);
+end;
+
+
 function load_settings(lpath: string)  : boolean;
 var
   dum : string;
@@ -7106,6 +7129,8 @@ begin
     showfullnames:=get_boolean('showfullnames',true);{asteroids}
     showmagnitude:=get_boolean('showmagnitude',false);{asteroids}
     add_date:=get_boolean('add_date',true);{asteroids}
+    lat_default:=decrypt(initstring.Values['p1']);{lat default}
+    long_default:=decrypt(initstring.Values['p2']);{longitude default}
 
     get_int(annotation_color,'annotation_color');
     get_int(annotation_diameter,'annotation_diameter');
@@ -7427,6 +7452,9 @@ begin
     initstring.Values['showfullnames']:=BoolStr[showfullnames];{asteroids}
     initstring.Values['showmagnitude']:=BoolStr[showmagnitude];{asteroids}
     initstring.Values['add_date']:=BoolStr[add_date];{asteroids}
+    initstring.Values['p1']:=encrypt(lat_default);{default latitude}
+    initstring.Values['p2']:=encrypt(long_default);{default longitude}
+
 
     initstring.Values['annotation_color']:=inttostr(annotation_color);
     initstring.Values['annotation_diameter']:=inttostr(annotation_diameter);
@@ -7497,6 +7525,21 @@ begin
     end;
     initstring.free;
   end;
+end;
+
+
+procedure save_settings2;
+begin
+  save_settings(user_path+'astap.cfg');
+end;
+
+
+procedure Tmainwindow.savesettings1Click(Sender: TObject);
+begin
+  savedialog1.filename:=user_path+'astap.cfg';
+  savedialog1.Filter := 'configuration file|*.cfg';
+  if savedialog1.execute then
+    save_settings(savedialog1.filename);
 end;
 
 
@@ -8122,7 +8165,7 @@ end;
 procedure Tmainwindow.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   esc_pressed:=true;{stop processing. Required for reliable stopping by APT}
-  save_settings(user_path+'astap.cfg');
+  save_settings2;
 end;
 
 procedure Tmainwindow.receivemessage(Sender: TObject);{For OneInstance, called from timer (linux) or SimpleIPCServer1MessageQueued (Windows)}
@@ -8281,11 +8324,6 @@ begin
   split_raw(1,1,'TG');{extract one of the Bayer matrix pixels}
 end;
 
-procedure Tmainwindow.Panel1Click(Sender: TObject);
-begin
-
-end;
-
 
 procedure Tmainwindow.extract_pixel_11Click(Sender: TObject);
 begin
@@ -8297,7 +8335,7 @@ begin
   split_raw(1,2,'P12');{extract one of the Bayer matrix pixels}
 end;
 
-procedure Tmainwindow.MenuItem21Click(Sender: TObject);
+procedure Tmainwindow.extract_pixel_21Click(Sender: TObject);
 begin
   split_raw(2,1,'P21');{extract one of the Bayer matrix pixels}
 end;
@@ -8339,6 +8377,11 @@ begin
   Clipboard.AsText:=info;
 end;
 
+
+procedure Tmainwindow.Image1Paint(Sender: TObject);
+begin
+   mainwindow.statusbar1.panels[8].text:=inttostr(round(100*mainwindow.image1.width/ (mainwindow.image1.picture.width)))+'%'; {zoom factor}
+end;
 
 
 procedure Tmainwindow.imageflipv1Click(Sender: TObject);
@@ -9013,7 +9056,7 @@ begin
   form_asteroids1:=Tform_asteroids1.Create(self); {in project option not loaded automatic}
   form_asteroids1.ShowModal;
   form_asteroids1.release;
-  save_settings(user_path+'astap.cfg');
+  save_settings2;
 end;
 
 
@@ -9040,7 +9083,7 @@ end;
 
 procedure Tmainwindow.save_settings1Click(Sender: TObject);
 begin
-  save_settings(user_path+'astap.cfg');
+  save_settings2;
 end;
 
 
@@ -9475,6 +9518,7 @@ begin
     Statusbar1.Panels[3].text:='X, Y = [pixel value(s)]';
     Statusbar1.Panels[4].text:='RGB values screen';
     Statusbar1.Panels[7].text:='w x h   distance[arcsec]  angle';
+    Statusbar1.Panels[8].text:='zoom factor';
   end;
 end;
 
@@ -9601,6 +9645,12 @@ begin
   load_variable;  { Load the database once. If loaded no action}
   plot_deepsky;{plot the deep sky object on the image}
   Screen.Cursor:=Save_Cursor;
+end;
+
+procedure Tmainwindow.zoomfactorone1Click(Sender: TObject);
+begin
+  {zoom to 100%}
+  zoom(mainwindow.image1.picture.width/mainwindow.image1.width , TPoint.Create(Panel1.Width div 2, Panel1.Height div 2){zoom center panel1} );
 end;
 
 
@@ -9963,7 +10013,6 @@ var  font_height:integer;
 begin
   backup_img;
   image1.Canvas.brush.Style:=bsClear;
-  image1.Canvas.font.color:=clred;
   image1.Canvas.font.size:=12;
 
   {$ifdef mswindows}
@@ -9981,12 +10030,17 @@ begin
     if mainwindow.Flip_horizontal1.Checked=true then x7:=round(width2-object_xc) else x7:=round(object_xc);
     if mainwindow.flip_vertical1.Checked=false then y7:=round(height2-object_yc) else y7:=round(object_yc);
 
-    image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+position_to_string(',',object_raM,object_decM));
+    if sender<>writepositionshort1 then
+      image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+position_to_string(',',object_raM,object_decM))
+    else
+      image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+prepare_IAU_designation(object_raM,object_decM));
   end
   else
   begin {no object sync, give mouse position}
     image1.Canvas.font.color:=clred;
-    image1.Canvas.textout(round(3+down_x   /(image1.width/width2)),round(-font_height +(down_y)/(image1.height/height2)),'_'+position_to_string(',',object_raM,object_decM));
+
+    if sender<>writepositionshort1 then
+       image1.Canvas.textout(round(3+down_x   /(image1.width/width2)),round(-font_height +(down_y)/(image1.height/height2)),'_'+position_to_string(',',object_raM,object_decM));
   end;
 end;
 
@@ -10005,31 +10059,41 @@ begin
    end;
 end;
 
-
-function AirMass(h: double): double;
+function calculate_altitude: double;{convert centalt string to double or calculate altitude from observer. Unit degrees}
+var
+  site_lat_radians,site_long_radians : double;
+  errordecode  : boolean;
 begin
-  // Pickering, 2002
-  result := 1 / sin((pi/180) * (h + (244 / (165 + 47 * h ** 1.1))));
+  result:=strtofloat2(centalt);
+
+  if ((result=0) and (cd1_1<>0)) then {calculate from observation location, image center and time the altitude}
+  begin
+    if sitelat='' then
+    begin
+      sitelat:=lat_default;
+      sitelong:=long_default;
+    end;
+    dec_text_to_radians(sitelat,site_lat_radians,errordecode);
+    if errordecode=false then
+    begin
+      dec_text_to_radians(sitelong,site_long_radians,errordecode);
+      if errordecode=false then
+      begin
+        if jd=0 then
+        begin
+           date_to_jd(date_obs);{convert date-obs to jd}
+           jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+        end;
+        if jd>2400000 then {valid JD}
+        result:=(180/pi)*altitude(ra0,dec0,site_lat_radians,-site_long_radians,jd);{conversion ra & dec to altitude only. In formulas the longitude is positive to west!!!. Only altitude is calculated}
+      end;
+    end;
+  end;
 end;
-
-
-function atmospheric_absorption(airmass: double):double;{magnitudes}
-{The Extinction, Scattering, Absorption due to the atmosphere expressed in magnitudes.
- Reference http://www.icq.eps.harvard.edu/ICQExtinct.html
- see also https://www.skyandtelescope.com/astronomy-resources/transparency-and-atmospheric-extinction/}
- var
-  a_ozon,a_ray,a_aer : double;
-begin
-  a_ozon:=airmass*0.016; {Schaefer's (1992) value Aoz =0.016 magnitudes per air mass for the small ozone component contributing to atmospheric extinction.}
-  a_ray:=airmass*0.1451; {Rayleigh scattering by air molecules. Expressed in magnitudes}
-  a_aer:=airmass*0.120; {Extinction due to aerosol scattering is due to particulates including dust, water droplets and manmade pollutants. Expressed in magnitudes}
-  result:=a_ozon+a_ray+a_aer;{Total extinction, scattering, absorption due to the atmosphere expressed in magnitudes}
-end;
-
 
 function calculate_sqm : boolean; {calculate sqky background value}
 var
-  airm, correction : double;
+  airm, correction,alt : double;
 begin
   if ((flux_magn_offset=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
   begin
@@ -10039,22 +10103,21 @@ begin
     plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});
   end;
 
-
+  result:=false;
   if flux_magn_offset>0 then
   begin
     if pedestal>=cblack then begin beep; pedestal:=0; {prevent errors} end;
     sqm:=flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
 
-    if centalt<>'' then
+    alt:=calculate_altitude;
+    if alt<>0 then
     begin
-      airm:=AirMass(strtofloat2(centalt));
+      airm:=airmass_calc(alt);
       correction:= atmospheric_absorption(airm)- 0.28 {absorption at zenith};
       sqm:=sqm+correction;
+      result:=true;
     end;
-    result:=true;
-  end
-  else
-  result:=false;
+  end;
 end;
 
 procedure Tmainwindow.sqm1Click(Sender: TObject);
@@ -10878,7 +10941,7 @@ begin
              inc(focus_count);
            end;
            stackmenu1.curve_fitting1Click(nil);
-          // save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
+          // save_settings2;{too many lost selected files . so first save settings}
           // application.messagebox( pchar(inttostr(best_focus)), pchar('Focus'),MB_OK);
            if debug=false then
            begin
@@ -10993,7 +11056,7 @@ begin
             if ((fov_specified) and (stackmenu1.search_fov1.text='0' ) {auto}) then {preserve new found fov}
             begin
               stackmenu1.search_fov1.text:=floattostrF2(height2*abs(cdelt2),0,2);
-              save_settings(user_path+'astap.cfg');{save settings with correct fov}
+              save_settings2;{save settings with correct fov}
             end;
           end {solution}
           else
@@ -12402,11 +12465,9 @@ begin
 end;
 
 
-
 procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small:double; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
 const                                                                                                                                          {aperture_small is used for photometry of stars. Set at 99 for normal full flux mode}
   max_ri=50; //should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1;
-
 var
   i,j,rs_square1,rs_square2,rs_diameter, distance,distance_top_value,illuminated_pixels,signal_counter,iterations,counter,annulus_width :integer;
   SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
@@ -12438,11 +12499,9 @@ begin
   else
     annulus_width:=1;{normal & fast}
 
-  rs_square1:=(rs+1)*(rs+1);;{square diameter}
-  rs_square2:=(rs+1+annulus_width)*(rs+1+annulus_width);
+  rs_square1:=(rs)*(rs);;{square diameter}
+  rs_square2:=(rs+annulus_width)*(rs+annulus_width);
   rs_diameter:=round(sqrt(rs_square2));
-
-
 
   if ((x1-rs_diameter<=0) or (x1+rs_diameter>=width2-1) or
       (y1-rs_diameter<=0) or (y1+rs_diameter>=height2-1) )
@@ -12512,7 +12571,7 @@ begin
       for j:=-rs to rs do
       begin
         val:=(img[0,x1+i,y1+j])- bg;
-        if val>3*sd then
+        if val>3.0*sd then
         begin
           SumVal:=SumVal+val;
           SumValX:=SumValX+val*(i);
@@ -12529,7 +12588,6 @@ begin
      {center of gravity found}
 
       if ((xc-rs<0) or (xc+rs>width2-1) or (yc-rs<0) or (yc+rs>height2-1) ) then exit;{prevent runtime errors near sides of images}
-
       boxed:=(signal_counter>=(2/9)*sqr(rs+rs+1));{are inside the box 2 of the 9 of the pixels illuminated? Works in general better for solving then ovality measurement as used in the past}
 
       if boxed=false then
@@ -12539,20 +12597,12 @@ begin
 
       {check on hot pixels}
       if signal_counter<=1  then
-      exit {one hot pixel}
-      else
-      if ((signal_counter=2) and (img[0,round(xc)+i,round(yc)+j]-bg<3*sd)) then exit; {two hot pixels}
-
-
+      exit; {one hot pixel}
     until ((boxed) or (rs<=1)) ;{loop and reduce box size until star is boxed}
 
     inc(rs,2);{add some space}
 
- //   if ((abs(xc-1242)<7) and (abs(yc-1140)<7)) then
- //   beep;
-
-
-     // Build signal histogram from center of gravity
+    // Build signal histogram from center of gravity
     for i:=0 to rs do distance_histogram[i]:=0;{clear signal histogram for the range used}
     for i:=-rs to rs do begin
       for j:=-rs to rs do begin
@@ -12561,7 +12611,7 @@ begin
         if distance<=rs then {build histogram for circel with radius rs}
         begin
           val:=value_subpixel(xc+i,yc+j)-bg;
-          if val>3*sd then {3 * sd should be signal }
+          if val>3.0*sd then {3 * sd should be signal }
           begin
             distance_histogram[distance]:=distance_histogram[distance]+1;{build distance histogram up to circel with diameter rs}
             if val>valmax then valmax:=val;{record the peak value of the star}
@@ -12602,15 +12652,12 @@ begin
     r:=sqrt(i*i+j*j); {Distance from star gravity center}
     if r<=aperture_small then SumVal_small:=SumVal_small+Val; {For photometry only. Flux within aperture_small. Works more accurate for differential photometry}
     SumVal:=SumVal+Val;{Sumval will be star total star flux}
-    SumValR:=SumValR+Val*r; {Method Kazuhisa Miyashita, see notes of HFD calculation method, notealculate HFD over square area. Works more accurate then for round area}
+    SumValR:=SumValR+Val*r; {Method Kazuhisa Miyashita, see notes of HFD calculation method, note calculate HFD over square area. Works more accurate then for round area}
     if val>=valmax*0.5 then pixel_counter:=pixel_counter+1;{How many pixels are above half maximum}
   end;
   flux:=max(sumval,0.00001);{prevent dividing by zero or negative values}
   hfd1:=2*SumValR/flux;
   hfd1:=max(0.7,hfd1);
-
-//    if hfd1>1 then mainwindow.image1.Canvas.textout(x1,y1,floattostrF2(hfd1,3,1)+'|'+floattostrF2(distance_histogram[0],0,0)+'.'+floattostrF2(distance_histogram[1],0,0)+'.'+floattostrF2(distance_histogram[2],0,0)+'.'+floattostrF2(distance_histogram[3],0,0)  );
-//    if hfd1>1 then  mainwindow.image1.Canvas.textout(round(xc),round(yc),{floattostrF2(faintest/brightest,3,2)+'|'+ }floattostrF2(flux,5,0)+'|'+ floattostrF2(rs,2,0));
 
   star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
 
@@ -13715,7 +13762,7 @@ begin
 
   if ((type1=24) and (naxis3_local<3)) then
   begin
-    application.messagebox(pchar('Abort, can not save monochrome image as colour image!!'),pchar('Error'),MB_OK);
+    application.messagebox(pchar('Abort, can not save grayscale image as colour image!!'),pchar('Error'),MB_OK);
     exit;
   end;
 

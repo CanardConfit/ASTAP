@@ -71,6 +71,7 @@ type
     Label27: TLabel;
     MenuItem28: TMenuItem;
     selectall5: TMenuItem;
+    SpeedButton2: TSpeedButton;
     yyyyyy: TMenuItem;
     xxxxxx: TMenuItem;
     merge_overlap1: TCheckBox;
@@ -639,6 +640,7 @@ type
     procedure reset_factors1Click(Sender: TObject);
     procedure search_fov1Change(Sender: TObject);
     procedure solve_and_annotate1Change(Sender: TObject);
+    procedure SpeedButton2Click(Sender: TObject);
     procedure star_database1DropDown(Sender: TObject);
 
     procedure test_pattern1Click(Sender: TObject);
@@ -900,7 +902,9 @@ const
   P_astrometric=17;
   P_photometric=18;
   P_calibration=19;
-  P_nr=20;{number of fields}
+  P_centalt=20;
+  P_airmass=21;
+  P_nr=22;{number of fields}
 
   icon_thumb_down=8; {image index for outlier}
   icon_king=16;{image index for best image}
@@ -1544,7 +1548,7 @@ end;
 procedure analyse_tab_images;
 var
   c,hfd_counter  ,i,counts : integer;
-  backgr, hfd_median       : double;
+  backgr, hfd_median,alt   : double;
   Save_Cursor              : TCursor;
   green,blue,success       : boolean;
   key,ext,filename1        : string;
@@ -1762,7 +1766,11 @@ begin
                 ListView1.Items.item[c].subitems.Strings[I_calibration]:=calstat; {status calibration}
                 if focus_pos<>0 then ListView1.Items.item[c].subitems.Strings[I_focpos]:=inttostr(focus_pos);
                 if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[I_foctemp]:=floattostrF2(focus_temp,0,1);
-                ListView1.Items.item[c].subitems.Strings[I_centalt]:=centalt;
+
+                alt:=calculate_altitude;{convert centalt string to double or calculate altitude from observer location}
+                if alt<>0 then
+                           ListView1.Items.item[c].subitems.Strings[I_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
+
                 ListView1.Items.item[c].subitems.Strings[I_centaz]:=centaz;
                 if gain<>999 then ListView1.Items.item[c].subitems.Strings[I_gain]:=inttostr(round(gain));
                 if sqm<>0 then ListView1.Items.item[c].subitems.Strings[I_sqm]:=floattostrF2(sqm,0,1);
@@ -3054,11 +3062,11 @@ procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse
 // amode=4 ==> full header. load image
 var
   c,counts,i,iterations, hfd_counter : integer;
-  backgr, hfd_median, hjd,sd, dummy : double;
-  filename1,ext        : string;
-  Save_Cursor          : TCursor;
-  loaded,  success     : boolean;
-  img                  : image_array;
+  backgr, hfd_median, hjd,sd, dummy,alt : double;
+  filename1,ext                    : string;
+  Save_Cursor                      : TCursor;
+  loaded,  success                 : boolean;
+  img                              : image_array;
 
   nr_stars, hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right : double;
 
@@ -3218,6 +3226,13 @@ begin
 
               hjd:=JD_to_HJD(jd,RA0,DEC0);{conversion JD to HJD}
               lv.Items.item[c].subitems.Strings[P_jd_helio]:=floattostrF2(Hjd,0,5);{helio julian day}
+
+              alt:=calculate_altitude;{convert centalt string to double or calculate altitude from observer location}
+              if alt<>0 then
+              begin
+                lv.Items.item[c].subitems.Strings[P_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
+                lv.Items.item[c].subitems.Strings[P_airmass]:=floattostrf(AirMass_calc(alt),ffgeneral, 5,3); {airmass}
+              end;
 
               {magn is column 9 will be added seperately}
               {solution is column 12 will be added seperately}
@@ -4034,7 +4049,7 @@ begin
   if listview6.items.count<=1 then exit; {no files}
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
-  save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
+  save_settings2;{too many lost selected files . so first save settings}
 
   if listview6.Items.item[listview6.items.count-1].subitems.Strings[B_width]='' {width} then
     stackmenu1.analyseblink1Click(nil);
@@ -4411,7 +4426,7 @@ begin
     log_to_file2(fn, aavso_report);
     memo2_message('AAVSO report written to: '+fn);
   end;
-  save_settings(user_path+'astap.cfg'); {for aavso settings}
+  save_settings2; {for aavso settings}
 end;
 
 procedure Tstackmenu1.extract_green1Click(Sender: TObject);
@@ -4846,7 +4861,7 @@ end;
 
 procedure Tstackmenu1.live_stacking1Click(Sender: TObject);
 begin
-  save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
+  save_settings2;{too many lost selected files . so first save settings}
   esc_pressed:=false;
   live_stacking_pause1.font.style:=[];
   live_stacking1.font.style:=[fsbold,fsunderline];
@@ -5763,8 +5778,8 @@ var
           mainwindow.image1.Canvas.Pen.style:=psSolid;
           mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
         end;
-        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-1),round(starY-annulus_radius-1),round(starX+annulus_radius+1),round(starY+annulus_radius+1));{three pixels, 2,3,4}
-        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-5),round(starY-annulus_radius-5),round(starX+annulus_radius+5),round(starY+annulus_radius+5));
+        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius),round(starY-annulus_radius),round(starX+annulus_radius),round(starY+annulus_radius));{three pixels, 1,2,3}
+        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-4),round(starY-annulus_radius-4),round(starX+annulus_radius+4),round(starY+annulus_radius+4));
       end
       else result:='Saturated';
      end
@@ -5801,7 +5816,7 @@ begin
   if listview7.items.count<=0 then exit; {no files}
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
-  save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
+  save_settings2;{too many lost selected files . so first save settings}
 
   if pos('V',star_database1.text)=0 then
   memo2_message(star_database1.text +' used  █ █ █ █ █ █ Warning, select a V database for accurate Johnson-V magnitudes !!! See tab alignment. █ █ █ █ █ █ ');
@@ -5953,7 +5968,7 @@ begin
             if hfd_med<>0 then
             begin
               flux_aperture:=hfd_med*apert/2;{radius}
-              annulus_radius:=round(hfd_med*annul/2)-1-2;{radius   -rs ..0..+rs, the annulus diameter is later made 2 pixels wider then rs}
+              annulus_radius:=round(hfd_med*annul/2)-1;{radius   -rs ..0..+rs}
             end
             else flux_aperture:=99;{radius for measuring aperture}
           end
@@ -6158,7 +6173,7 @@ end;
 
 procedure Tstackmenu1.save_settings_extra_button1Click(Sender: TObject);
 begin
-  save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
+  save_settings2;{too many lost selected files . so first save settings}
 end;
 
 
@@ -6650,6 +6665,13 @@ begin
  update_annotation1.enabled:=solve_and_annotate1.checked;{update menu}
 end;
 
+procedure Tstackmenu1.SpeedButton2Click(Sender: TObject);
+begin
+  lat_default:=InputBox('Default observer location:','Enter the default observer latitude in degrees [DD.DDD or DD MM]',lat_default );
+  long_default:=InputBox('Default observer location:','Enter the default observer longitude in degrees. East is positive, West is negative [DDD.DDD or DD MM]',long_default );
+  if length(long_default)>0 then save_settings2;
+end;
+
 
 procedure Tstackmenu1.star_database1DropDown(Sender: TObject);
 var
@@ -7018,7 +7040,7 @@ begin
   if listview1.items.count<=1 then exit; {no files}
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
-  save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
+  save_settings2;{too many lost selected files . so first save settings}
   esc_pressed:=false;
   init:=false;
   if sender=blink_unaligned_multi_step_backwards1 then step:=-1 else step:=1;{forward/ backwards}
@@ -7229,7 +7251,7 @@ var
    exposure,temperature,width1: integer;
    file_list : array of string;
 begin
-  save_settings(user_path+'astap.cfg');
+  save_settings2;
   with stackmenu1 do
   begin
     analyse_listview(listview2,false {light},false {full fits},false{refresh});{update the tab information}
@@ -7320,7 +7342,7 @@ begin
     if esc_pressed then exit;
 
     until file_count=0;{make more then one master}
-    save_Settings(user_path+'astap.cfg');{store settings}
+    save_settings2;{store settings}
     file_list:=nil;
 
     memo2_message('Finished.');
@@ -7348,7 +7370,7 @@ var
 begin
   with stackmenu1 do
   begin
-    save_settings(user_path+'astap.cfg');
+    save_settings2;
 
     analyse_listview(listview3,false {light},false {full fits},false{refresh});{update the tab information. Convert to FITS if required}
     if esc_pressed then exit;{esc could be pressed in analyse}
@@ -7465,7 +7487,7 @@ begin
     until file_count=0;{make more then one master}
 
     if flatdark_used then listview4.Items.Clear;{remove bias if used}
-    save_Settings(user_path+'astap.cfg');{store settings}
+    save_settings2;{store settings}
     file_list:=nil;
 
     memo2_message('Finished.');
@@ -7770,7 +7792,7 @@ var
    startTick      : qword;{for timing/speed purposes}
    min_background,max_background,backgr   : double;
 begin
-  save_settings(user_path+'astap.cfg');{too many lost selected files . so first save settings}
+  save_settings2;{too many lost selected files . so first save settings}
   esc_pressed:=false;
 
   memo2_message('Stack method '+stack_method1.text);
@@ -8360,7 +8382,7 @@ begin
       else
          update_text('HISTORY 2','  Processed as gray scale images.');
 
-      if lrgb=false then {monochrome}
+      if lrgb=false then {grayscale}
       begin
         {adapt astrometric solution. For colour this is already done during luminance stacking}
         if ((over_size<>0) and ( cd1_1<>0){solution}) then {adapt astrometric solution for intermediate file}

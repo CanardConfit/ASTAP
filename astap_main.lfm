@@ -219,7 +219,6 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     TabOrder = 3
-    OnClick = Panel1Click
     OnMouseMove = Panel1MouseMove
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
@@ -233,6 +232,7 @@ object mainwindow: Tmainwindow
       OnMouseEnter = Image1MouseEnter
       OnMouseMove = Image1MouseMove
       OnMouseUp = Image1MouseUp
+      OnPaint = Image1Paint
       ParentShowHint = False
       PopupMenu = PopupMenu1
       Stretch = True
@@ -790,7 +790,10 @@ object mainwindow: Tmainwindow
         Width = 150
       end    
       item
-        Width = 300
+        Width = 225
+      end    
+      item
+        Width = 50
       end>
     ParentShowHint = False
     PopupMenu = popupmenu_frame1
@@ -1197,10 +1200,10 @@ object mainwindow: Tmainwindow
             Hint = 'Pixels with position 12 in the Bayer matrix are extracted from the selected files.'
             OnClick = extract_pixel_12Click
           end
-          object MenuItem21: TMenuItem
+          object extract_pixel_21: TMenuItem
             Caption = 'Bayer matrix pixel 21'
             Hint = 'Pixels with position 21 in the Bayer matrix are extracted from the selected files.'
-            OnClick = MenuItem21Click
+            OnClick = extract_pixel_21Click
           end
           object extract_pixel_22: TMenuItem
             Caption = 'Bayer matrix pixel 22'
@@ -1494,6 +1497,11 @@ object mainwindow: Tmainwindow
         ShortCut = 16470
         OnClick = flip_vertical1Click
       end
+      object zoomfactorone1: TMenuItem
+        Caption = 'Zoom 100%'
+        Hint = 'Zoom to 100%'
+        OnClick = zoomfactorone1Click
+      end
       object MenuItem20: TMenuItem
         Caption = '-'
       end
@@ -1601,6 +1609,14 @@ object mainwindow: Tmainwindow
       Enabled = False
       Hint = 'Add astronomical position of the object near the mouse position. Position is auto centered.'
       OnClick = writeposition1Click
+    end
+    object writepositionshort1: TMenuItem
+      Caption = 'Add object position short'
+      Hint = 'Add object position in short IAU designation style. If there is no lock, no position wll be given. Use then the previouse menu option.'
+      OnClick = writeposition1Click
+    end
+    object MenuItem24: TMenuItem
+      Caption = '-'
     end
     object add_marker_position1: TMenuItem
       AutoCheck = True

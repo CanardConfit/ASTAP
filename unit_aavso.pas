@@ -80,7 +80,7 @@ end;
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
     c  : integer;
-    err,err_message,snr_str,delim: string;
+    err,err_message,snr_str,airmass_str, delim: string;
     stdev_valid : boolean;
     snr_value,err_by_snr   : double;
 begin
@@ -97,7 +97,7 @@ begin
 
   aavso_report:= '#TYPE=Extended'+#13+#10+
                  '#OBSCODE='+obscode+#13+#10+
-                 '#SOFTWARE=ASTAP, photometry version ß0.4'+#13+#10+
+                 '#SOFTWARE=ASTAP, photometry version ß0.5'+#13+#10+
                  '#DELIM='+delimiter1.text+#13+#10+
                  '#DATE=JD'+#13+#10+
                  '#OBSTYPE=CCD'+#13+#10+
@@ -126,6 +126,10 @@ begin
        else
        str(max(err_by_snr, photometry_stdev):1:4,err);{standard deviation of CK  star}
 
+       airmass_str:=listview7.Items.item[c].subitems.Strings[P_airmass];
+       if airmass_str='' then  airmass_str:='na' else airmass_str:=stringreplace(airmass_str,',','.',[]);
+
+
 
        if snr_str<>'' then
        aavso_report:= aavso_report+ name_var+delim+
@@ -139,7 +143,7 @@ begin
                      'na'+delim+
                      name_check+delim+
                      stringreplace(listview7.Items.item[c].subitems.Strings[P_magn2],',','.',[])+delim+
-                     'na'+delim+
+                     airmass_str+delim+
                      'na'+delim+
                      'na'+delim+
                      'Ensemble of Gaia eDR3 stars '+star_database1.text+'. '+err_message+#13+#10;
