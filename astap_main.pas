@@ -12469,7 +12469,7 @@ procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small:double
 const                                                                                                                                          {aperture_small is used for photometry of stars. Set at 99 for normal full flux mode}
   max_ri=50; //should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1;
 var
-  i,j,rs_square1,rs_square2,rs_diameter, distance,distance_top_value,illuminated_pixels,signal_counter,iterations,counter,annulus_width :integer;
+  i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,iterations,counter,annulus_width :integer;
   SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
   val,bg_average,bg,sd,sd_old,pixel_counter,valmax : double;
   HistStart,boxed : boolean;
@@ -12499,12 +12499,12 @@ begin
   else
     annulus_width:=1;{normal & fast}
 
-  rs_square1:=(rs)*(rs);;{square diameter}
-  rs_square2:=(rs+annulus_width)*(rs+annulus_width);
-  rs_diameter:=round(sqrt(rs_square2));
+  r1_square:=rs*rs;;{square diameter}
+  r2:=rs+annulus_width;
+  r2_square:=r2*r2;
 
-  if ((x1-rs_diameter<=0) or (x1+rs_diameter>=width2-1) or
-      (y1-rs_diameter<=0) or (y1+rs_diameter>=height2-1) )
+  if ((x1-r2<=0) or (x1+r2>=width2-1) or
+      (y1-r2<=0) or (y1+r2>=height2-1) )
     then begin hfd1:=999; snr:=0; exit;end;
 
   valmax:=0;
@@ -12516,14 +12516,15 @@ begin
     bg:=0;
     iterations:=0;
 
-    repeat {find background by repeat and exclude values above 3*sd}
+    {calculate background and standard deviation for an annulus at position x1,y1 with innner radius rs+1 and outer radius rs+1+wd. wd should be 1 or larger}
+    repeat {find background by repeat (sigma clip) and exclude values above 3*sd}
       counter:=0;
       bg_average:=0;
-      for i:=-rs_diameter to rs_diameter do {calculate the mean at 2 pixels outside the the detection box}
-      for j:=-rs_diameter to rs_diameter do
+      for i:=-r2 to r2 do {calculate the mean outside the the detection area}
+      for j:=-r2 to r2 do
       begin
-        distance:=i*i+j*j;
-        if ((distance>rs_square1) and (distance<=rs_square2)) then {circular area two pixels outside rs, typical one pixel wide}
+        distance:=i*i+j*j; {working with sqr(distance) is faster then applying sqrt}
+        if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
         begin
           val:=img[0,x1+i,y1+j];
           if  ((iterations=0) or (abs(val-bg)<=3*sd)) then  {ignore extreme outliers after first run}
@@ -12538,11 +12539,11 @@ begin
       counter:=0;
       sd_old:=sd;
       sd:=0;
-      for i:=-rs_diameter to rs_diameter do {calculate standard deviation background outside the detection box}
-      for j:=-rs_diameter to rs_diameter do
+      for i:=-r2 to r2 do {calculate standard deviation background outside the detection area}
+      for j:=-r2 to r2 do
       begin
-        distance:=i*i+j*j;
-        if ((distance>rs_square1) and (distance<=rs_square2)) then {circular area two pixels outside rs, typical one pixel wide}
+        distance:=i*i+j*j; {working with sqr(distance) is faster then applying sqrt}
+        if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
         begin
           val:=img[0,x1+i,y1+j];
           if val<=2*bg then {not an extreme outlier}
@@ -12560,7 +12561,7 @@ begin
     sd:=max(sd,1); {add some value for images with zero noise background. This will prevent that background is seen as a star. E.g. some jpg processed by nova.astrometry.net}
 
 
-     repeat {reduce box size till symmetry to remove stars}
+     repeat {reduce square box size till symmetry to remove stars}
     // Get center of gravity whithin star detection box and count signal pixels, repeat reduce box size till symmetry to remove stars
       SumVal:=0;
       SumValX:=0;
