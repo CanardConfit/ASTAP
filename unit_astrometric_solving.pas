@@ -118,6 +118,7 @@ implementation
 var
   mag2  : double; {magnitude of star found}
 
+
 function fnmodulo (x,range: double):double;
 begin
   {range should be 2*pi or 24 hours or 0 .. 360}
@@ -125,6 +126,7 @@ begin
   if x<0 then x:=x+range;   {do not like negative numbers}
   fnmodulo:=x;
 end;
+
 
 function distance_to_string(dist, inp:double):string; {angular distance to string intended for RA and DEC. Unit is based on dist}
 begin

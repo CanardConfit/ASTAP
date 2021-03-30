@@ -46,15 +46,29 @@ type
     actual_search_distance1: TLabel;
     add_noise1: TButton;
     add_substract1: TComboBox;
+    equinox1: TComboBox;
     add_valueB1: TEdit;
     add_valueG1: TEdit;
     add_valueR1: TEdit;
     alignment1: TTabSheet;
     align_blink1: TCheckBox;
     aavso_button1: TButton;
+    equinox2: TComboBox;
+    Label40: TLabel;
+    Label63: TLabel;
+    mount_analyse1: TButton;
     analysephotometrymore1: TButton;
     blink_button_contB1: TButton;
     blink_unaligned_multi_step_backwards1: TButton;
+    browse_mount1: TButton;
+    changekeyword9: TMenuItem;
+    clear_mount_list1: TButton;
+    keyword9: TMenuItem;
+    list_to_clipboard9: TMenuItem;
+    MenuItem29: TMenuItem;
+    MenuItem30: TMenuItem;
+    MenuItem31: TMenuItem;
+    mount_ignore_solutions1: TCheckBox;
     extract_green1: TButton;
     changekeyword6: TMenuItem;
     changekeyword7: TMenuItem;
@@ -69,9 +83,20 @@ type
     Label26: TLabel;
     flux_aperture1: TComboBox;
     Label27: TLabel;
+    listview9: TListView;
     MenuItem28: TMenuItem;
+    mount_add_solutions1: TButton;
+    mount_write_wcs1: TCheckBox;
+    PopupMenu9: TPopupMenu;
+    removeselected9: TMenuItem;
+    renametobak9: TMenuItem;
+    select9: TMenuItem;
     selectall5: TMenuItem;
+    selectall9: TMenuItem;
     SpeedButton2: TSpeedButton;
+    mount1: TTabSheet;
+    unselect9: TMenuItem;
+    Viewimage9: TMenuItem;
     yyyyyy: TMenuItem;
     xxxxxx: TMenuItem;
     merge_overlap1: TCheckBox;
@@ -559,6 +584,7 @@ type
     procedure add_noise1Click(Sender: TObject);
     procedure align_blink1Change(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
+    procedure mount_analyse1Click(Sender: TObject);
     procedure analysephotometry1Click(Sender: TObject);
     procedure analyse_inspector1Click(Sender: TObject);
     procedure apply_hue1Click(Sender: TObject);
@@ -568,12 +594,14 @@ type
     procedure bin_image1Click(Sender: TObject);
     procedure blink_stop1Click(Sender: TObject);
     procedure blink_unaligned_multi_step1Click(Sender: TObject);
+    procedure browse_mount1Click(Sender: TObject);
     procedure browse_dark1Click(Sender: TObject);
     procedure browse_inspector1Click(Sender: TObject);
     procedure browse_live_stacking1Click(Sender: TObject);
     procedure analyse_objects_visibles1Click(Sender: TObject);
     procedure browse_photometry1Click(Sender: TObject);
     procedure aavso_button1Click(Sender: TObject);
+    procedure clear_mount_list1Click(Sender: TObject);
     procedure extract_green1Click(Sender: TObject);
     procedure clear_inspector_list1Click(Sender: TObject);
     procedure copy_to_blink1Click(Sender: TObject);
@@ -596,6 +624,7 @@ type
     procedure live_stacking1Click(Sender: TObject);
     procedure copy_files_to_clipboard1Click(Sender: TObject);
     procedure most_common_mono1Click(Sender: TObject);
+    procedure mount_add_solutions1Click(Sender: TObject);
     procedure new_saturation1Change(Sender: TObject);
     procedure pagecontrol1Change(Sender: TObject);
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -905,6 +934,25 @@ const
   P_centalt=20;
   P_airmass=21;
   P_nr=22;{number of fields}
+
+  M_exposure=0;  {blink}
+  M_temperature=1;
+  M_binning=2;
+  M_width=3;
+  M_height=4;
+  M_type=5;
+  M_date=6;
+  M_jd_mid=7;
+  M_ra=8;
+  M_dec=9;
+  M_ra_m=10;
+  M_dec_m=11;
+  M_ra_e=12;
+  M_dec_e=13;
+  M_centalt=14;
+  M_foctemp=15;
+  M_nr=16;{number of fields}
+
 
   icon_thumb_down=8; {image index for outlier}
   icon_king=16;{image index for best image}
@@ -1767,7 +1815,7 @@ begin
                 if focus_pos<>0 then ListView1.Items.item[c].subitems.Strings[I_focpos]:=inttostr(focus_pos);
                 if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[I_foctemp]:=floattostrF2(focus_temp,0,1);
 
-                alt:=calculate_altitude;{convert centalt string to double or calculate altitude from observer location}
+                alt:=calculate_altitude(false);{convert centalt string to double or calculate altitude from observer location}
                 if alt<>0 then
                            ListView1.Items.item[c].subitems.Strings[I_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
 
@@ -2065,6 +2113,7 @@ begin
   if sender=removeselected6 then listview_removeselect(listview6);{from popup menu blink}
   if sender=removeselected7 then listview_removeselect(listview7);{from popup menu photometry}
   if sender=removeselected8 then listview_removeselect(listview8);{inspector}
+  if sender=removeselected9 then listview_removeselect(listview9);{inspector}
 end;
 
 
@@ -2150,6 +2199,7 @@ begin
    if sender=select6 then listview_select(listview6);{from popupmenu blink}
    if sender=select7 then listview_select(listview7);{from popupmenu blink}
    if sender=select8 then listview_select(listview8);
+   if sender=select9 then listview_select(listview9);
 end;
 
 
@@ -2932,6 +2982,7 @@ begin
   if sender=unselect6 then listview_unselect(listview6);{popupmenu blink}
   if sender=unselect7 then listview_unselect(listview7);
   if sender=unselect8 then listview_unselect(listview8);{inspector}
+  if sender=unselect9 then listview_unselect(listview9);{inspector}
 end;
 
 
@@ -3009,30 +3060,24 @@ end;
 procedure listview_view(tl : tlistview); {show image double clicked on}
 var index      : integer;
     fitsX,fitsY: double;
+    theext     : string;
 begin
   for index:=0 to TL.Items.Count-1 do
   begin
     if TL.Items[index].Selected then
     begin
       filename2:=TL.items[index].caption;
-      if ExtractFileExt(filename2)='.y4m' then begin memo2_message('Can not run videos'); exit; end;{video}
+      theext:=ExtractFileExt(filename2);
+      if theext='.y4m' then begin memo2_message('Can not run videos'); exit; end;{video}
+      if theext='.wcs' then filename2:=changefileext(filename2,'.fit');{for tab mount}
+      if theext='.wcss' then filename2:=changefileext(filename2,'.fits');{for tab mount}
+
       if load_image(mainwindow.image1.visible=false,true {plot}) {for the first image set the width and length of image1 correct} then
       begin
         if ((tl=stackmenu1.listview1) and (stackmenu1.use_manual_alignment1.checked)) then {manual alignment}
           show_shape_manual_alignment(index){show the marker on the reference star}
         else
         mainwindow.shape_manual_alignment1.visible:=false;
-
-//        if ((tl=stackmenu1.listview1) and (stackmenu1.use_manual_alignment1.checked)) then {manual alignment}
-//        begin
-//          show_shape_manual_alignment(index);
-//          calstat:=''; {allow manual stack for stacked images in listview1}
-//          fitsX:=strtofloat2(tl.Items.item[index].subitems.Strings[I_X]);
-//          fitsY:=strtofloat2(tl.Items.item[index].subitems.Strings[I_Y]);
-//          show_marker_shape(mainwindow.shape_manual_alignment1, 1 {circle, assume a good lock},20,20,10 {minimum size},fitsX,fitsY);
-//        end
-//        else mainwindow.shape_manual_alignment1.visible:=false;
-
         if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(0,0,false);{plot any annotations}
 
       end
@@ -3061,7 +3106,7 @@ procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse
 // amode=3 ==> full header. load image  force reanalyse
 // amode=4 ==> full header. load image
 var
-  c,counts,i,iterations, hfd_counter : integer;
+  c,counts,i,iterations, hfd_counter,theindex : integer;
   backgr, hfd_median, hjd,sd, dummy,alt : double;
   filename1,ext                    : string;
   Save_Cursor                      : TCursor;
@@ -3203,18 +3248,22 @@ begin
               if ((lv.name=stackmenu1.listview2.name) or (lv.name=stackmenu1.listview3.name) or (lv.name=stackmenu1.listview4.name)) then
                      lv.Items.item[c].subitems.Strings[D_sigma]:=inttostr(noise_level[0]); {noise level}
               lv.Items.item[c].subitems.Strings[D_gain]:=inttostr(round(gain)); {camera gain}
-            end;
+            end
+            else
+
             if lv.name=stackmenu1.listview3.name then
             begin
              lv.Items.item[c].subitems.Strings[F_filter]:=filter_name; {filter name, without spaces}
-            end;
+            end
+            else
 
             if lv.name=stackmenu1.listview6.name then {blink tab}
             begin
               lv.Items.item[c].subitems.Strings[B_date]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
               lv.Items.item[c].subitems.Strings[B_calibration]:=calstat; {calibration calstat info DFB}
               if annotated then lv.Items.item[c].subitems.Strings[B_annotated ]:='✓' else  lv.Items.item[c].subitems.Strings[B_annotated ]:='';
-            end;
+            end
+            else
 
             if lv.name=stackmenu1.listview7.name then {photometry tab}
             begin
@@ -3227,7 +3276,7 @@ begin
               hjd:=JD_to_HJD(jd,RA0,DEC0);{conversion JD to HJD}
               lv.Items.item[c].subitems.Strings[P_jd_helio]:=floattostrF2(Hjd,0,5);{helio julian day}
 
-              alt:=calculate_altitude;{convert centalt string to double or calculate altitude from observer location}
+              alt:=calculate_altitude(false{correct ra, dec});{convert centalt string to double or calculate altitude from observer location}
               if alt<>0 then
               begin
                 lv.Items.item[c].subitems.Strings[P_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
@@ -3250,7 +3299,8 @@ begin
                 lv.Items.item[c].subitems.Strings[P_hfd]:=floattostrF2(hfd_median,0,1);
                 lv.Items.item[c].subitems.Strings[P_stars]:=inttostr5(hfd_counter); {number of stars}
               end;
-            end;
+            end
+            else
 
             if lv.name=stackmenu1.listview8.name  then {listview8 inspector tab}
             begin
@@ -3274,8 +3324,59 @@ begin
               lv.Items.item[c].subitems.Strings[insp_nr_stars+6]:=floattostrF2(hfd_bottom_right,0,3);
               lv.Items.item[c].subitems.Strings[insp_nr_stars+7]:=floattostrF2(hfd_top_left,0,3);
               lv.Items.item[c].subitems.Strings[insp_nr_stars+8]:=floattostrF2(hfd_top_right,0,3);
-            end;
+            end
+            else
 
+            if lv.name=stackmenu1.listview9.name then {mount tab}
+            begin
+              lv.Items.item[c].subitems.Strings[M_date]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
+              date_to_jd(date_obs);{convert date-obs to jd}
+              jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+              lv.Items.item[c].subitems.Strings[M_jd_mid]:=floattostrF2(jd,0,5);{julian day}
+
+              if ra_mount<99 then {mount position known and specified}
+              begin
+                theindex:=stackmenu1.equinox2.itemindex;
+                if ((theindex=1) or (theindex=2)) then  precession2(jd,ra_mount,dec_mount,ra_mount,dec_mount);
+                if ((theindex=2) or (theindex=3)) then  nutation_aberration_correction_equatorial_classic(jd,ra_mount,dec_mount);{nutation, abberation}
+
+                lv.Items.item[c].subitems.Strings[M_ra_m]:=floattostrf(ra_mount*180/pi,ffgeneral, 9, 9);
+                lv.Items.item[c].subitems.Strings[M_dec_m]:=floattostrf(dec_mount*180/pi,ffgeneral, 9, 9);
+              end;
+
+              if cd1_1<>0 then
+              begin
+                theindex:=stackmenu1.equinox1.itemindex;
+
+                if theindex>=1 then  precession2(jd,ra0,dec0,ra0,dec0);
+                if theindex>=2  then  nutation_aberration_correction_equatorial_classic(jd,ra0,dec0);{nutation, abberation}
+
+                alt:=calculate_altitude(theindex>=3 {correct ra0, dec0});{convert centalt string to double or calculate altitude from observer location}
+                if alt<>0 then
+                begin
+                  lv.Items.item[c].subitems.Strings[M_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
+                end;
+
+
+                lv.Items.item[c].subitems.Strings[M_ra]:=floattostrf(ra0*180/pi,ffgeneral, 9, 9);
+                lv.Items.item[c].subitems.Strings[M_dec]:=floattostrf(dec0*180/pi,ffgeneral, 9, 9);
+
+                if ra_mount<99 then {mount position known and specified}
+                begin
+                  lv.Items.item[c].subitems.Strings[M_ra_e]:=floattostrf((ra_mount-ra0)*cos(dec0)*3600*180/pi,ffgeneral, 6,1);
+                  lv.Items.item[c].subitems.Strings[M_dec_e]:=floattostrf((dec_mount-dec0)*3600*180/pi,ffgeneral, 6,1);
+                end
+                else
+                begin
+                 lv.Items.item[c].subitems.Strings[M_ra_e]:='?';
+                 lv.Items.item[c].subitems.Strings[M_dec_e]:='?';
+                end;
+
+                if focus_temp<>999 then Lv.Items.item[c].subitems.Strings[M_foctemp]:=floattostrF2(focus_temp,0,1);
+
+              end;
+
+            end;
           end;
         finally
         end;
@@ -3566,6 +3667,7 @@ begin
   if sender=changekeyword6 then lv:=listview6;{from popup menu}
   if sender=changekeyword7 then lv:=listview7;{from popup menu}
   if sender=changekeyword8 then lv:=listview8;{from popup menu}
+  if sender=changekeyword9 then lv:=listview9;{from popup menu}
 
   keyw:=InputBox('All selected files will be updated!! Hit cancel to abort. Type keyword:','','' );
   if length(keyw)<2 then exit;
@@ -4402,7 +4504,7 @@ begin
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
       listview_add(listview7,OpenDialog1.Files[i],true,P_nr);
-      DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
+      //DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
     end;
     listview7.items.endupdate;
   end;
@@ -4427,6 +4529,12 @@ begin
     memo2_message('AAVSO report written to: '+fn);
   end;
   save_settings2; {for aavso settings}
+end;
+
+procedure Tstackmenu1.clear_mount_list1Click(Sender: TObject);
+begin
+  esc_pressed:=true; {stop any running action}
+  listview9.Clear;
 end;
 
 procedure Tstackmenu1.extract_green1Click(Sender: TObject);
@@ -4621,6 +4729,7 @@ begin
   load_image(mainwindow.image1.visible=false,true {plot});
   update_equalise_background_step(2); {go to step 3}
 end;
+
 
 
 procedure Tstackmenu1.luminance_filter1exit(Sender: TObject);
@@ -4926,6 +5035,74 @@ procedure Tstackmenu1.most_common_mono1Click(Sender: TObject);
 begin
   mainwindow.convertmono1Click(nil); {back is made in mono procedure}
 end;
+
+
+procedure Tstackmenu1.mount_add_solutions1Click(Sender: TObject);
+var
+   c: integer;
+   Save_Cursor          : TCursor;
+   refresh_solutions    : boolean;
+   thefile              : string;
+begin
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  esc_pressed:=false;
+  refresh_solutions:=mount_ignore_solutions1.checked; {refresh astrometric solutions}
+
+  {solve images first to allow flux to magnitude calibration}
+  with stackmenu1 do
+  for c:=0 to listview9.items.count-1 do {check for astrometric solutions}
+  begin
+    if ((esc_pressed=false) and (listview9.Items.item[c].checked) and (listview9.Items.item[c].subitems.Strings[M_ra]=''))  then
+    begin
+      filename2:=listview9.items[c].caption;
+      mainwindow.caption:=filename2;
+
+      Application.ProcessMessages;
+
+      {load image}
+      if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then
+      begin
+        Screen.Cursor :=Save_Cursor;{back to normal }
+        exit;
+      end;
+      if ((cd1_1=0) or (refresh_solutions)) then
+
+      begin
+        listview9.Selected :=nil; {remove any selection}
+        listview9.ItemIndex := c;{mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+        listview9.Items[c].MakeVisible(False);{scroll to selected item}
+        memo2_message(filename2+ ' Adding astrometric solution to file.');
+        Application.ProcessMessages;
+
+        if solve_image(img_loaded,true  {get hist}) then
+        begin{match between loaded image and star database}
+          if mount_write_wcs1.checked then
+          begin
+            thefile:=StringReplace(filename2,'.fit','.wcs',[]);{.fit to .wcs, .fits to .wcss}
+            write_astronomy_wcs(thefile);
+            listview9.items[c].caption:=thefile;
+          end
+          else
+          mainwindow.SaveFITSwithupdatedheader1Click(nil);
+
+        end
+        else
+        begin
+          listview9.Items[c].Checked:=false;
+          listview9.Items.item[c].subitems.Strings[M_ra]:='?';
+          listview9.Items.item[c].subitems.Strings[M_dec]:='?';
+          memo2_message(filename2+ 'No astrometric solution found for this file!!');
+        end;
+      end
+    end;
+  end;
+  Screen.Cursor :=Save_Cursor;{back to normal }
+
+  stackmenu1.mount_analyse1Click(nil);{update}
+end;
+
 
 
 procedure Tstackmenu1.new_saturation1Change(Sender: TObject);
@@ -5448,6 +5625,8 @@ begin
                      3: listview4.Items.beginUpdate;{flat darks}
                      7: listview6.Items.beginUpdate;{blink}
                      8: listview7.Items.beginUpdate;{photometry}
+                     9: listview8.Items.beginUpdate;{inspector}
+                    10: listview9.Items.beginUpdate;{mount}
                      else listview1.Items.beginUpdate; {lights}
 
   end;
@@ -5461,6 +5640,8 @@ begin
                                        3:   listview_add(listview4,FileNames[i],true,D_nr);{flat darks}
                                        7:   listview_add(listview6,FileNames[i],true,B_nr);{blink}
                                        8:   listview_add(listview7,FileNames[i],true,P_nr);{photometry}
+                                       9:   listview_add(listview8,FileNames[i],true,P_nr);{inspector}
+                                      10:   listview_add(listview9,FileNames[i],true,P_nr);{mount}
                                        else
                                        begin {lights}
                                          listview_add(listview1,FileNames[i],true,I_nr);
@@ -5476,6 +5657,8 @@ begin
                        3: listview4.Items.EndUpdate;{flat darks}
                        7: listview6.Items.EndUpdate;{blink}
                        8: listview7.Items.EndUpdate;{photometry}
+                       9: listview8.Items.EndUpdate;{inspector}
+                      10: listview9.Items.EndUpdate;{mount}
                        else
                        begin {lights}
                          listview1.Items.EndUpdate;
@@ -5818,7 +6001,7 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   save_settings2;{too many lost selected files . so first save settings}
 
-  if pos('V',star_database1.text)=0 then
+  if ((pos('V',star_database1.text)=0) and (pos('v',star_database1.text)=0)) then
   memo2_message(star_database1.text +' used  █ █ █ █ █ █ Warning, select a V database for accurate Johnson-V magnitudes !!! See tab alignment. █ █ █ █ █ █ ');
 
   {check is analyse is done}
@@ -6490,6 +6673,8 @@ var
   lv  : tlistview;
 begin
   info:='';
+  if sender=list_to_clipboard9 then lv:=listview9
+  else
   if sender=list_to_clipboard8 then lv:=listview8
   else
   if sender=list_to_clipboard7 then lv:=listview7
@@ -6506,7 +6691,7 @@ begin
   {get column names}
   for c := 0 to lv.Items[0].SubItems.Count-1 do
   try
-    info:=info+lv.columns[c].caption+'X'+#9;
+    info:=info+lv.columns[c].caption+#9;
   except
     info:=info+'Error'+#9;
   end;
@@ -6566,6 +6751,7 @@ begin
   if sender=selectall6 then begin listview6.selectall; listview6.setfocus; end;
   if sender=selectall7 then begin listview7.selectall; listview7.setfocus; end;
   if sender=selectall8 then begin listview8.selectall; listview8.setfocus; end;
+  if sender=selectall9 then begin listview9.selectall; listview9.setfocus; end;
 end;
 
 procedure remove_background( var img: image_array);
@@ -6693,6 +6879,7 @@ begin
   flux_magn_offset:=0;{reset flux calibration. Required if V17 is selected instead of H17}
 end;
 
+
 procedure Tstackmenu1.analyseblink1Click(Sender: TObject);
 var
    c: integer;
@@ -6707,6 +6894,20 @@ begin
     listview6.Items.item[c].subitems.Strings[B_solution]:='';{clear alignment marks}
   end;
   listview6.alphasort; {sort on time}
+end;
+
+
+
+
+procedure Tstackmenu1.mount_analyse1Click(Sender: TObject);
+begin
+  save_settings2;{too many lost selected files . so first save settings}
+
+  analyse_listview(listview9,true {light},false {full fits},true{refresh});
+
+//  listview9.items.beginupdate;
+//  listview9.alphasort;{sort on time}
+//  listview9.items.endupdate;
 end;
 
 
@@ -7085,6 +7286,31 @@ begin
     until ((c>=listview1.items.count) or (c<0));
   until esc_pressed ;
   Screen.Cursor :=Save_Cursor;{back to normal }
+end;
+
+procedure Tstackmenu1.browse_mount1Click(Sender: TObject);
+var
+  i: integer;
+begin
+  OpenDialog1.Title := 'Select images to analyse';    {including WCS files !!!}
+  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter := 'FITS files and DSLR RAW files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;*.wcs;*.wcss;'+
+                        '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
+                        '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+                        '|WCS files (*.wcs*)|*.wcs;*.wcss;'+
+                        '|JPEG, TIFF, PNG files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
+                        '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
+
+  fits_file:=true;
+  if opendialog1.execute then
+  begin
+    listview9.items.beginupdate;
+    for i:=0 to OpenDialog1.Files.count-1 do {add}
+    begin
+      listview_add(listview9,OpenDialog1.Files[i],true,M_nr);
+    end;
+    listview9.items.endupdate;
+  end;
 end;
 
 
@@ -8691,6 +8917,7 @@ begin
 
   end;
   if sender=Viewimage8 then listview_view(listview8);{inspector}
+  if sender=Viewimage9 then listview_view(listview9);{mount}
 end;
 
 

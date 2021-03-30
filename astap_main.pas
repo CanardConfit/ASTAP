@@ -704,7 +704,8 @@ function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmm
 procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; var   ram,decm  : double {fitsX, Y to ra,dec});
 function extract_letters_only(inp : string): string;
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
-function calculate_altitude: double;{convert centalt string to double or calculate altitude from observer location}
+function calculate_altitude(correct_radec_refraction : boolean): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
+procedure write_astronomy_wcs(filen:string);
 
 
 
@@ -865,7 +866,6 @@ const
      begin
        result:='';
        r:=I+11;{pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
-   //    while ((header[r-1]<>#39) and (r<=I+20)) do inc(r);
        repeat
          result:=result+header[r];
          inc(r);
@@ -1185,12 +1185,14 @@ begin
             begin
               if ((header[i+5]='R') and (header[i+6]='A')) then
               begin
-                mainwindow.ra1.text:=get_string;
+                mainwindow.ra1.text:=get_string;{triggers an onchange event which will convert the string to ra_radians}
+                ra_mount:=ra_radians;
               end
               else
               if ((header[i+5]='D') and (header[i+6]='E')) then
               begin
-                mainwindow.dec1.text:=get_string;
+                mainwindow.dec1.text:=get_string;{triggers an onchange event which will convert the string to dec_radians}
+                dec_mount:=dec_radians;
               end;
   //            else {for older MaximDL5}
   //            if ((header[i+5]='A') and (header[i+6]='L') and (centaz=999)) then begin if header[i+10]=#39 then centalt:=get_string else centalt:=validate_double; end{temporary accept floats}
@@ -1478,7 +1480,8 @@ begin
 
   if naxis<2 then
   begin
-    result:=false; {no image}
+    if naxis=0 then result:=true {wcs file}
+               else result:=false; {no image}
     mainwindow.image1.visible:=false;
     fits_file:=false;
     image:=false;
@@ -3167,7 +3170,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.519, '+about_message4+', dated 2021-3-23';
+  #13+#10+'ASTAP version ß0.9.521, '+about_message4+', dated 2021-3-30';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5775,7 +5778,7 @@ end;
 
 procedure demosaic_astroC_bilinear_interpolation(var img:image_array;saturation {saturation point}, pattern: integer);{make from sensor bayer pattern the three colors}
 var
-    X,Y,offsetx, offsety, counter,fitsX,fitsY,x2,y2: integer;
+    X,Y,offsetx, offsety, counter,fitsX,fitsY,x2,y2,sat_counter: integer;
     red,green_odd,green_even,blue : boolean;
     img_temp2 : image_array;
     a1,a2,a3,a4,a5,a6,a7,a8, average1,average2,average3,luminance, r,g,b,colred,colgreen,colblue,rgb,lowest: single;
@@ -5933,9 +5936,10 @@ begin
 
   if counter>0 then {not fully saturated image}
   begin
-  {correct colour satuated pixels }
+  {correct colour saturated pixels }
 
     bg:=bg/counter; {background}
+    sat_counter:=0;
     for fitsY:=0 to height2-1 do
     for fitsX:=0 to width2-1 do
     if img_temp2[1,fitsX,fitsY]=$FFFFFF {marker saturated} then
@@ -5944,6 +5948,7 @@ begin
       colgreen:=0;
       colblue:=0;
       counter:=0;
+      inc(sat_counter);
       luminance:=img_temp2[0,fitsX,fitsY];
       luminance:=luminance-bg;{luminance above background}
       begin
@@ -6005,8 +6010,7 @@ begin
       img[2,fitsX  ,  fitsY  ]:=saturation;
     end;
   end;
-
-
+  if sat_counter/(width2*height2)>0.1 then memo2_message('█ █ █ █ █ █  More then 10% of the image is saturated and will give poor results!! Try demosaic method AstroSimple and exposure shorter next time. █ █ █ █ █ █ ');
   img_temp2:=nil;{free temp memory}
   naxis3:=3;{now three colors}
   naxis:=3; {from 2 to 3 dimensions}
@@ -7146,9 +7150,11 @@ begin
 
 
     obscode:=initstring.Values['obscode']; {photometry}
-//    filter_type:=initstring.Values['filter'];
     delim_pos:=get_int2(0,'delim_pos');
 
+    stackmenu1.equinox1.itemindex:=get_int2(range1.itemindex,'equinox');
+    stackmenu1.equinox2.itemindex:=get_int2(range1.itemindex,'equinox2');
+    stackmenu1.mount_write_wcs1.Checked:=get_boolean('wcs',true);{use wcs files for mount}
 
     stackmenu1.listview1.Items.BeginUpdate;
     c:=0;
@@ -7469,8 +7475,12 @@ begin
     initstring.Values['to_clipboard']:=BoolStr[stackmenu1.interim_to_clipboard1.checked];{live stacking}
 
     initstring.Values['obscode']:=obscode;
-//    initstring.Values['filter']:=filter_type;
     initstring.Values['delim_pos']:=inttostr(delim_pos);
+
+    initstring.Values['equinox']:=inttostr(stackmenu1.equinox1.itemindex);
+    initstring.Values['equinox2']:=inttostr(stackmenu1.equinox2.itemindex);
+    initstring.Values['wcs']:=boolstr[stackmenu1.mount_write_wcs1.Checked];{uses wcs file for menu mount}
+
 
 
     {### save listview values ###}
@@ -10059,9 +10069,9 @@ begin
    end;
 end;
 
-function calculate_altitude: double;{convert centalt string to double or calculate altitude from observer. Unit degrees}
+function calculate_altitude(correct_radec_refraction : boolean): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
 var
-  site_lat_radians,site_long_radians : double;
+  site_lat_radians,site_long_radians,ra1,dec1,t  : double;
   errordecode  : boolean;
 begin
   result:=strtofloat2(centalt);
@@ -10085,7 +10095,9 @@ begin
            jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
         end;
         if jd>2400000 then {valid JD}
-        result:=(180/pi)*altitude(ra0,dec0,site_lat_radians,-site_long_radians,jd);{conversion ra & dec to altitude only. In formulas the longitude is positive to west!!!. Only altitude is calculated}
+        begin
+          result:=(180/pi)*altitude_and_refraction(site_lat_radians,-site_long_radians,jd,focus_temp, correct_radec_refraction, {var} ra0,dec0);{In formulas the longitude is positive to west!!!. }
+        end;
       end;
     end;
   end;
@@ -10109,7 +10121,7 @@ begin
     if pedestal>=cblack then begin beep; pedestal:=0; {prevent errors} end;
     sqm:=flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
 
-    alt:=calculate_altitude;
+    alt:=calculate_altitude(false);
     if alt<>0 then
     begin
       airm:=airmass_calc(alt);
@@ -10556,7 +10568,7 @@ begin
 end;
 
 
-procedure write_astronomy_wcs;
+procedure write_astronomy_wcs(filen: string);
 var
   TheFile4 : tfilestream;
   I : integer;
@@ -10565,8 +10577,9 @@ var
 
 begin
   try
-   TheFile4:=tfilestream.Create(ChangeFileExt(filename2,'.wcs'), fmcreate );
+   TheFile4:=tfilestream.Create(filen, fmcreate );
 
+   update_integer('NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
   {write memo1 header to file}
    for i:=0 to 79 do empthy_line[i]:=#32;{space}
    i:=0;
@@ -11022,7 +11035,7 @@ begin
             update_integer('BITPIX  =',' /                                                ' ,8);
 
             if hasoption('wcs') then
-              write_astronomy_wcs  {write WCS astronomy.net style}
+              write_astronomy_wcs(ChangeFileExt(filename2,'.wcs'))  {write WCS astronomy.net style}
             else
               try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
 

@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 interface
 
 uses
-  Classes, SysUtils, math;
+  Classes, SysUtils, math, unit_asteroid;
 
 function JD_to_HJD(jd,ra_object,dec_object: double): double;{conversion JD to HJD}  {see https://en.wikipedia.org/wiki/Heliocentric_Julian_Day}
 procedure EQU_GAL(ra,dec:double;var l,b: double);{equatorial to galactic coordinates}
@@ -64,21 +64,21 @@ procedure sun(jd:real; var ra,dec: double); {jd  var ra 0..2*pi, dec [0..pi/2] o
   end;
 
 
-procedure precession(jd, ra1,dec1 : double; var ra2,dec2 : double); {precession correction,  simple formula, new Meeus chapter precession}
-var
-  t,dra,ddec,sin_ra1,cos_ra1,m,n,n2  : double;
+//procedure precession(jd, ra1,dec1 : double; var ra2,dec2 : double); {precession correction,  simple formula, new Meeus chapter precession}
+//var
+//  t,dra,ddec,sin_ra1,cos_ra1,m,n,n2  : double;
 
-begin
-  t:=(jd-2451545)/36525; {time in julian centuries since j2000 }
-  m:=3.075+0.00186*t;{seconds}
-  n:=1.33621-0.00057*t; {seconds}
-  n2:=20.043-0.0085*t;{arcsec}
-  sincos(ra1,sin_ra1,cos_ra1);
-  dra:=(m + n *sin_ra1*tan(dec1))*pi/(3600*12);{yearly ra drift in radians}
-  ddec:=n2*cos_ra1*pi/(3600*180); {yearly dec drift in radians}
-  ra2:=ra1+(dra*t*100);{multiply with number of years is t*100}
-  dec2:=dec1+(ddec*t*100);
-end;
+//begin
+//  t:=(jd-2451545)/36525; {time in julian centuries since j2000 }
+//  m:=3.075+0.00186*t;{seconds}
+//  n:=1.33621-0.00057*t; {seconds}
+//  n2:=20.043-0.0085*t;{arcsec}
+//  sincos(ra1,sin_ra1,cos_ra1);
+//  dra:=(m + n *sin_ra1*tan(dec1))*pi/(3600*12);{yearly ra drift in radians}
+//  ddec:=n2*cos_ra1*pi/(3600*180); {yearly dec drift in radians}
+//  ra2:=ra1+(dra*t*100);{multiply with number of years is t*100}
+//  dec2:=dec1+(ddec*t*100);
+//end;
 
 function JD_to_HJD(jd,ra_object,dec_object: double): double;{conversion Julian Day to Heliocentric Julian Day}
 var                                                         {see https://en.wikipedia.org/wiki/Heliocentric_Julian_Day}
@@ -87,7 +87,7 @@ var                                                         {see https://en.wiki
 begin
   sun(jd,ra_sun,dec_sun);{get sun position in equinox of date coordinates}
 
-  precession(2451545 -(jd-2451545){go back to J2000},ra_sun,dec_sun,ra_sun,dec_sun );{convert sun position from mean to J2000}
+  precession2(2451545 -(jd-2451545){go back to J2000},ra_sun,dec_sun,ra_sun,dec_sun );{convert sun position from mean to J2000}
 
   sincos(dec_object,sin_dec_object,cos_dec_object);
   sincos(dec_sun,sin_dec_sun,cos_dec_sun);
@@ -141,7 +141,7 @@ begin
         {change by time & longitude in 0 ..pi*2, simular as siderial time}
         {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
 
-  precession(julian, ra2000,dec2000, {var} ra_date,dec_date);
+  precession2(julian, ra2000,dec2000, {var} ra_date,dec_date);
 
   t5:=wtime2actual-ra_date;
   sincos(lat,sin_lat,cos_lat);
@@ -177,7 +177,6 @@ begin
   a_aer:=airmass*0.120; {Extinction due to aerosol scattering is due to particulates including dust, water droplets and manmade pollutants. Expressed in magnitudes}
   result:=a_ozon+a_ray+a_aer;{Total extinction, scattering, absorption due to the atmosphere expressed in magnitudes}
 end;
-
 
 
 

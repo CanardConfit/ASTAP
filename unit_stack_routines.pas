@@ -795,7 +795,7 @@ begin
               if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
                 for col:=0 to naxis3-1 do {all colors}
-                  img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1] +background_correction;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1] +background_correction;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
                 img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples.}
               end;
             end;

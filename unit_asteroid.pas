@@ -141,6 +141,9 @@ const
    add_date: boolean=true;
 
 procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot :boolean) ;{read MPCORB.dat}{han.k}
+procedure precession2(julian_et,raold,decold:double;var ranew,decnew:double);{correct precession for equatorial coordinates}
+procedure nutation_aberration_correction_equatorial_classic(julian_et: double;var ra,dec:double);
+function altitude_and_refraction(lat,long,julian,temperature:double;correct_radec_refraction: boolean; var ra_date,dec_date :double):double;{altitude calculation and correction ra, dec for refraction}
 
 implementation
 
@@ -1054,6 +1057,188 @@ begin
     { LAN:= 283.36720000000003; {  ! Longitude of the ascending node}
     { AOP:= 130.62989999999999;{  ! Argument of perihelion}
   end;
+end;
+
+(*-----------------------------------------------------------------------*)
+(* NUTEQU: transformation of mean to true coordinates                    *)
+(*         (including terms >0.1" according to IAU 1980)                 *)
+(*         T = (JD-2451545.0)/36525.0                                    *)
+(*-----------------------------------------------------------------------*)
+PROCEDURE NUTEQU(T:double; VAR X,Y,Z:double);
+CONST ARC=206264.8062;          (* arcseconds per radian = 3600*180/pi *)
+      P2 =6.283185307;          (* 2*pi                                *)
+VAR   LS,D,F,N,EPS : double;
+      DPSI,DEPS,C,S: double;
+      DX,DY,DZ     : double;
+  FUNCTION FRAC(X:double):double;
+    (* with several compilers it may be necessary to replace TRUNC *)
+    (* by LONG_TRUNC or INT if T<-24!                              *)
+    BEGIN  FRAC:=X-TRUNC(X) END;
+BEGIN
+  LS  := P2*FRAC(0.993133+  99.997306*T); (* mean anomaly Sun          *)
+  D   := P2*FRAC(0.827362+1236.853087*T); (* diff. longitude Moon-Sun  *)
+  F   := P2*FRAC(0.259089+1342.227826*T); (* mean argument of latitude *)
+  N   := P2*FRAC(0.347346-   5.372447*T); (* longit. ascending node    *)
+  EPS := 0.4090928-2.2696E-4*T;           (* obliquity of the ecliptic *)
+  DPSI := ( -17.200*SIN(N)   - 1.319*SIN(2*(F-D+N)) - 0.227*SIN(2*(F+N))
+            + 0.206*SIN(2*N) + 0.143*SIN(LS) ) / ARC;
+  DEPS := ( + 9.203*COS(N)   + 0.574*COS(2*(F-D+N)) + 0.098*COS(2*(F+N))
+            - 0.090*COS(2*N)                 ) / ARC;
+  C := DPSI*COS(EPS);  S := DPSI*SIN(EPS);
+  DX := -(C*Y+S*Z); DY := (C*X-DEPS*Z); DZ := (S*X+DEPS*Y);
+  X:=X + DX;
+  Y:=Y + DY;
+  Z:=Z + DZ;
+END;
+
+
+(*-----------------------------------------------------------------------*)
+(* CART2: conversion of polar coordinates (r,theta,phi)                   *)
+(*       into cartesian coordinates (x,y,z)                              *)
+(*       (theta in [-pi/2.. pi/2 rad]; phi in [-pi*2,+pi*2 rad])         *)
+(*-----------------------------------------------------------------------*)
+procedure cart2(R,THETA,PHI: double; VAR X,Y,Z: double);
+  VAR RCST : double;
+      cos_theta,sin_theta :double;
+      cos_phi,sin_phi     :double;
+begin
+  sincos(theta,sin_theta,cos_theta);
+  sincos(phi  ,sin_phi  ,cos_phi);
+  RCST := R*COS_THETA;
+  X    := RCST*COS_PHI; Y := RCST*SIN_PHI; Z := R*SIN_THETA;
+end;
+
+
+(*-----------------------------------------------------------------------*)
+(* ABERRAT: velocity vector of the Earth in equatorial coordinates       *)
+(*          (in units of the velocity of light)                          *)
+(*-----------------------------------------------------------------------*)
+PROCEDURE ABERRAT(T: double; VAR VX,VY,VZ: double);{velocity vector of the Earth in equatorial coordinates, and units of the velocity of light}
+  CONST P2=6.283185307;
+  VAR L,CL: double;
+  FUNCTION FRAC(X:double):double;
+    BEGIN  X:=X-TRUNC(X); IF (X<0) THEN X:=X+1; FRAC:=X  END;
+  BEGIN
+    L := P2*FRAC(0.27908+100.00214*T);  CL:=COS(L);
+    VX := -0.994E-4*SIN(L); VY := +0.912E-4*CL; VZ := +0.395E-4*CL;
+  END;
+
+
+(*----------------------------------------------------------------*)
+(* EQUHOR: conversion of equatorial into horizontal coordinates   *)
+(*   DEC  : declination (-pi/2 .. +pi/2)                          *)
+(*   TAU  : hour angle (0 .. 2*pi)                                *)
+(*   PHI  : geographical latitude (in rad)                        *)
+(*   H    : altitude (in rad)                                     *)
+(*   AZ   : azimuth (0 deg .. 2*pi rad, counted S->W->N->E->S)    *)
+(*----------------------------------------------------------------*)
+PROCEDURE EQUHOR2 (DEC,TAU,PHI: double; VAR H,AZ: double);
+  VAR COS_PHI,SIN_PHI, COS_DEC,SIN_DEC,COS_TAU, SIN_TAU, X,Y,Z, DUMMY: double;
+  BEGIN {updated with sincos function for fastest execution}
+    SINCOS(PHI,SIN_PHI,COS_PHI);
+    SINCOS(DEC,SIN_DEC,COS_DEC);
+    SINCOS(TAU,SIN_TAU,COS_TAU);
+    X:=COS_DEC*SIN_PHI*COS_TAU - SIN_DEC*COS_PHI;
+    Y:=COS_DEC*SIN_TAU;
+    Z:=COS_DEC*COS_PHI*COS_TAU + SIN_DEC*SIN_PHI;
+    POLAR2(X,Y,Z, DUMMY,H,AZ)
+  END;
+
+
+procedure nutation_aberration_correction_equatorial_classic(julian_et: double;var ra,dec:double);{M&P page 208}
+var r,x0,y0,z0,vx,vy,vz:double;
+begin
+  //http://www.bbastrodesigns.com/coordErrors.html  Gives same value within a fraction of arcsec.
+  //2020-1-1, JD=2458850.50000, RA,DEC position 12:00:00, 40:00:00, precession +00:01:01.45, -00:06:40.8, Nutation -00:00:01.1,  +00:00:06.6, Annual aberration +00:00:00.29, -00:00:14.3
+  //2020-1-1, JD=2458850.50000  RA,DEC position 06:00:00, 40:00:00, precession +00:01:23.92, -00:00:01.2, Nutation -00:00:01.38, -00:00:01.7, Annual aberration +00:00:01.79, +00:00:01.0
+  //2030-6-1, JD=2462654.50000  RA,DEC position 06:00:00, 40:00:00, precession +00:02:07.63, -00°00'02.8",Nutation +00:00:01.32, -0°00'02.5", Annual aberration -00:00:01.65, +00°00'01.10"
+
+  cart2(1,dec,ra,x0,y0,z0); {make cartesian coordinates}
+
+  NUTEQU((julian_et-2451545.0)/36525.0 ,x0,y0,z0);{add nutation}
+
+  ABERRAT((julian_et-2451545.0)/36525.0,vx,vy,vz);{ABERRAT: velocity vector of the Earth in equatorial coordinates and units of the velocity of light}
+  x0:=x0+VX;{apply aberration,(v_earth/speed_light)*180/pi=20.5"}
+  y0:=y0+VY;
+  z0:=z0+VZ;
+
+  polar2(x0,y0,z0,r,dec,ra);
+end;
+
+
+procedure precession2(julian_et,raold,decold:double;var ranew,decnew:double);{correct precession for equatorial coordinates}
+var teqxn,R : double;
+    A       : double33;
+    x,y,z : double;
+begin
+  //http://www.bbastrodesigns.com/coordErrors.html  Gives same values within a fraction of arcsec.
+  //2020-1-1, JD=2458850.50000, RA,DEC position 12:00:00, 40:00:00, precession +00:01:01.45, -00:06:40.8, Nutation -00:00:01.1,  +00:00:06.6, Annual aberration +00:00:00.29, -00:00:14.3
+  //2020-1-1, JD=2458850.50000  RA,DEC position 06:00:00, 40:00:00, precession +00:01:23.92, -00:00:01.2, Nutation -00:00:01.38, -00:00:01.7, Annual aberration +00:00:01.79, +00:00:01.0
+  //2030-6-1, JD=2462654.50000  RA,DEC position 06:00:00, 40:00:00, precession +00:02:07.63, -00°00'02.8",Nutation +00:00:01.32, -0°00'02.5", Annual aberration -00:00:01.65, +00°00'01.10"
+  CART2(1,decold,raold,X,Y,Z);
+  TEQX :=0 /100.0; {J2000}
+  TEQXn := (julian_ET-2451545.0)/(365.25*100.0);
+
+  PMATEQU(TEQX,TEQXN,a);
+  PRECART(A,X,Y,Z);
+  TEQX := TEQXN;
+  POLAR2(X,Y,Z ,R,DECnew,RAnew);
+end;
+
+
+PROCEDURE RA_AZ(RA,dec,LAT,LONG,t:double;var azimuth2,altitude2: double);{conversion ra & dec to altitude,azimuth}
+{input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-90..90],long[0..360],time[0..2*pi]}
+begin
+  EQUHOR2(dec,ra-(long)-t,lat, {var:} altitude2,azimuth2);
+  azimuth2:=pi-azimuth2;
+  IF AZIMUTH2<0 THEN AZIMUTH2:=AZIMUTH2+2*Pi;
+end;
+
+
+PROCEDURE AZ_RA(AZ,ALT,LAT,LONG,t:double;var ra,dcr: double);{conversion az,alt to ra,dec}
+{input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
+begin
+  EQUHOR2(alt,az,lat,{var:} dcr,ra);
+  ra:=pi-ra+long +t;
+  while ra<0 do ra:=ra+2*pi;
+  while ra>=2*pi do ra:=ra-2*pi;
+end;
+
+
+function altitude_apparent(altitude_real,p {mbar},t {celsius} :double):double;  {atmospheric refraction}
+var  hn  :real;
+begin
+  hn:=(altitude_real*(180/pi)+10.3/(altitude_real*(180/pi)+5.11))*pi/180;
+                 {watch out with radians and degrees!!!!!!  carefully with factors}
+  result:=altitude_real + ((p/1010)*283/(273+t))*(pi/180)* (1.02/60)/(sin(hn)/cos(hn) ); {note: tan(x) = sin(x)/cos(x)}
+ {bases on meeus 1991 page 102, formula 15.4}
+end;
+
+
+function altitude_and_refraction(lat,long,julian,temperature:double;correct_radec_refraction: boolean; var ra_date,dec_date :double):double;{altitude calculation and correction ra, dec for refraction}
+{input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-pi/2..pi/2], long[-pi..pi] West positive, East negative !!,time[0..2*pi]}
+var wtime2actual,azimuth2,altitude2: double;
+const
+  siderealtime2000=(280.46061837)*pi/180;{[radians],  90 degrees shifted sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
+  earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
+
+begin
+  wtime2actual:=limit_radialen((-long)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi); {longitude is positive towards west so has to be subtracted from time.}
+        {change by time & longitude in 0 ..pi*2, simular as siderial time}
+        {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
+
+  RA_AZ(RA_date,dec_date,LAT,0,wtime2actual,{var} azimuth2,altitude2);{conversion ra & dec to altitude,azimuth}
+
+
+
+  if correct_radec_refraction then {correct for temperature and correct ra0, dec0 for refraction}
+  begin
+    if temperature>=100 {999} then temperature:=10 {default temperature celsius};
+    result:=altitude_apparent(altitude2,1010 {mbar},temperature {celsius});{apparant altitude}
+    AZ_RA(azimuth2,result,LAT,0,wtime2actual, {var} ra_date,dec_date);{conversion az,alt to ra,dec corrected for refraction}
+  end
+  else
+    result:=altitude2;
 end;
 
 
