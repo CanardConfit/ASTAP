@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1763
-    ActivePage = Images
+    ActivePage = tab_stackmethod1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 5
     TabOrder = 5
     OnChange = pagecontrol1Change
     object Images: TTabSheet
@@ -2047,7 +2047,7 @@ object stackmenu1: Tstackmenu1
         object raw_conversion_program1: TComboBox
           Left = 144
           Height = 23
-          Hint = 'Conversion program for raw files. DCRaw is recommended since it doesn''t show unused sensor areas.'
+          Hint = 'Conversion program for raw files.'
           Top = 178
           Width = 254
           ItemHeight = 15
