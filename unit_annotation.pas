@@ -1654,14 +1654,6 @@ begin
     telescope_ra:=ra0+arctan(Dra/delta);
     telescope_dec:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
 
-    fov:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
-
-    if file290 then {.290 files}
-      fov:=min(fov,9.53*pi/180) {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
-    else {.1476 files}
-      fov:=min(fov,5.142857143*pi/180); {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
-
-
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
 
     mainwindow.image1.Canvas.Pen.width :=1; // round(1+height2/mainwindow.image1.height);{thickness lines}
@@ -1700,6 +1692,14 @@ begin
       application.messagebox(pchar('No star database found!'+#13+'Download the h18 (or h17 or v17) and extract the files to the program directory'), pchar('No star database!'),0);
       exit;
     end;
+
+    fov:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
+
+    if file290 then {.290 files}
+      fov:=min(fov,9.53*pi/180) {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+    else {.1476 files}
+      fov:=min(fov,5.142857143*pi/180); {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
+
 
     find_areas( telescope_ra,telescope_dec, fov,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
 

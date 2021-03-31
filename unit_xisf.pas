@@ -305,8 +305,11 @@ begin
   extract_double_keyword('CRVAL2',dec0);
   extract_double_keyword('RA',ra_mount);
   extract_double_keyword('DEC',dec_mount);
-  if ra0=0 then ra0:=ra_mount;
-  if dec0=0 then dec0:=dec_mount;
+  if ra_mount<999 then
+  begin
+    if ra0=0 then ra0:=ra_mount;
+    if dec0=0 then dec0:=dec_mount;
+  end;
 
   ra0:=ra0*pi/180; {degrees -> radians}
   dec0:=dec0*pi/180;

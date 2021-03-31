@@ -3170,7 +3170,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.521a, '+about_message4+', dated 2021-3-30';
+  #13+#10+'ASTAP version ß0.9.521b, '+about_message4+', dated 2021-3-30';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7850,7 +7850,21 @@ begin
       if fileexists('/usr/bin/dcraw-astap')=false then
       begin
         if fileexists('/usr/local/bin/dcraw-astap')=false then
-          result:=false {failure}
+
+
+        begin  {try standard dcraw}
+          if fileexists('/usr/bin/dcraw')=false then
+          begin
+            if fileexists('/usr/local/bin/dcraw')=false then
+              result:=false {failure}
+            else
+              execute_unix2('/usr/local/bin/dcraw '+commando+' "'+filename3+'"');
+          end
+          else
+          execute_unix2('/usr/bin/dcraw '+commando+' "'+filename3+'"');
+        end {try standard dcraw}
+
+
         else
           execute_unix2('/usr/local/bin/dcraw-astap '+commando+' "'+filename3+'"');
       end
