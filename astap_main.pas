@@ -12516,7 +12516,7 @@ const                                                                           
 var
   i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,iterations,counter,annulus_width :integer;
   SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
-  val,bg_average,bg,sd,sd_old,pixel_counter,valmax,mad_bg : double;
+  val,bg,sd,pixel_counter,valmax,mad_bg : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
   background : array [0..1000] of double;
