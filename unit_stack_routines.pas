@@ -232,45 +232,6 @@ begin
         if length(files_to_process[c].name)>0 then
         begin
           try { Do some lengthy operation }
-            if c=5 then {Luminance chanel, RGB should be ready, apply most common filter and gaussian blur}
-            begin {prepare RGB for applying on luminance channel}
-              memo2_message('Applying '+RGB_filter1.text+' filter on interim RGB image before applying on Luminance channel');
-
-                                            {0: no filter}
-              case rgb_filter1.itemindex of 1:    box_blur(3 {colours},3{dept},img_average);
-                                            2:    box_blur(3 {colours},5{dept},img_average);
-                                            3:    gaussian_blur2(img_average,1);
-                                            4:    gaussian_blur2(img_average,2);
-                                            5:    gaussian_blur2(img_average,3);
-                                            6:    gaussian_blur2(img_average,5);
-                                            7:    gaussian_blur2(img_average,7);
-                                            8:    gaussian_blur2(img_average,10);
-                                            9:    gaussian_blur2(img_average,15);
-                                           10:    gaussian_blur2(img_average,23);
-                                           11:    gaussian_blur2(img_average,35);
-                                           12:    gaussian_blur2(img_average,50);
-                                           13:    smart_colour_smooth(img_average,4,3,true {get histogram});{smoothen colours}
-                                           14:    smart_colour_smooth(img_average,6,3,true {get histogram});{smoothen colours}
-                                           15:    smart_colour_smooth(img_average,8,3,true {get histogram});{smoothen colours}
-                                           16:    smart_colour_smooth(img_average,10,3,true {get histogram});{smoothen colours}
-                                           17:    smart_colour_smooth(img_average,15,3,true {get histogram});{smoothen colours}
-                                           18:    smart_colour_smooth(img_average,23,3,true {get histogram});{smoothen colours}
-                                           19:    smart_colour_smooth(img_average,35,3,true {get histogram});{smoothen colours}
-                                           20:    smart_colour_smooth(img_average,50,3,true {get histogram});{smoothen colours}
-                                        end;{case}
-
-              //for testing
-              //img_loaded:=img_average;
-              //naxis3:=3;
-              //height2:=length(img_loaded[0,0]);{height}
-              //width2:=length(img_loaded[0]);{width}
-              //plot_fits(mainwindow.image1,true,true);{plot real}
-              //exit;
-            end;
-
-
-
-
             filename2:=files_to_process[c].name;
             if c=0 then memo2_message('Loading reference image: "'+filename2+'".');
             if c=1 then memo2_message('Adding red file: "'+filename2+'"  to final image.');
@@ -585,10 +546,10 @@ begin
     p22[fitsX]:=img[0,step_size*fitsX+1,middleY+1];
   end;
 
-  m11:=Smedian(p11);
-  m12:=Smedian(p12);
-  m21:=Smedian(p21);
-  m22:=Smedian(p22);
+  m11:=Smedian(p11,steps);
+  m12:=Smedian(p12,steps);
+  m21:=Smedian(p21,steps);
+  m22:=Smedian(p22,steps);
   lowest:=min(min(m11,m12),min(m21,m22));
   highest:=max(max(m11,m12),max(m21,m22));
 

@@ -659,7 +659,7 @@ function prepare_dec5(decx:double;sep:string):string; {radialen to text  format 
 function prepare_dec(decx:double; sep:string):string; {radialen to text, format 90d 00 00}
 function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24: 00 00.0 }
 function inttostr5(x:integer):string;{always 5 digit}
-function SMedian(list: array of double): double;{get median of an array of double, taken from CCDciel code}
+function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
 procedure mad_median(list: array of double;var mad,median :double);{calculate mad and median without modifying the data}
 function floattostrF2(const x:double; width1,decimals1 :word): string;
 procedure DeleteFiles(lpath,FileSpec: string);{delete files such  *.wcs}
@@ -706,6 +706,7 @@ function extract_letters_only(inp : string): string;
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 function calculate_altitude(correct_radec_refraction : boolean): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
 procedure write_astronomy_wcs(filen:string);
+procedure CCDinspector(snr_min: double);
 
 
 
@@ -2808,11 +2809,8 @@ begin
   nrbits:=16;
   extend_type:=0; {no extensions in the file, 1 is ascii_table, 2 bintable}
 
-  if width2<=100 then
-  begin
-    width2:=3200;{9:16}
-    height2:=1800;
-  end;{else use width and height of last fits file loaded}
+  width2:=3200;{9:16}
+  height2:=1800;
 
   Randomize; {initialise}
 
@@ -3170,7 +3168,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.521b, '+about_message4+', dated 2021-3-30';
+  #13+#10+'ASTAP version ß0.9.523, '+about_message4+', dated 2021-4-5';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4502,7 +4500,7 @@ begin
       if value<minimum then minimum:=value; {min}
       if value>=64000 then saturated:=saturated+1;{saturation counter}
     end;{filter outliers}
-    median:=smedian(median_array);
+    median:=smedian(median_array,counter_median);
 
 
     most_common:=mode(img_loaded,col,startx,stopX,starty,stopY,32000);
@@ -6216,7 +6214,7 @@ begin
   if stackmenu1.osc_colour_smooth1.checked then
   begin
     memo2_message('Applying colour-smoothing filter image as set in tab "stack method". Factors are set in tab "pixel math 1"');
-    smart_colour_smooth(img,strtofloat2(stackmenu1.osc_smart_smooth_width1.text),strtofloat2(stackmenu1.osc_smart_colour_sd1.text),false {get  hist});{histogram doesn't needs an update}
+    smart_colour_smooth(img,strtofloat2(stackmenu1.osc_smart_smooth_width1.text),strtofloat2(stackmenu1.osc_smart_colour_sd1.text),stackmenu1.osc_preserve_r_nebula1.checked,false {get  hist});{histogram doesn't needs an update}
   end;
   end
   else
@@ -6977,8 +6975,6 @@ begin
 
     Polynomial1.itemindex:=get_int2(Polynomial1.itemindex,'polynomial');
 
-    stackmenu1.rgb_filter1.itemindex:=get_int2(stackmenu1.rgb_filter1.itemindex,'rgb_filter');
-
     get_int(thumbnails1_width,'thumbnails_width');
     get_int(thumbnails1_height,'thumbnails_height');
 
@@ -6990,8 +6986,19 @@ begin
     add_marker_position1.checked:=get_boolean('add_marker',false);{popup marker selected?}
 
     stackmenu1.make_osc_color1.checked:=get_boolean('osc_color_convert',false);
-    stackmenu1.osc_auto_level1.checked:=get_boolean('osc_auto_level',true);
-    stackmenu1.osc_colour_smooth1.checked:=get_boolean('osc_colour_smooth',true);
+    stackmenu1.osc_auto_level1.checked:=get_boolean('osc_al',true);
+    stackmenu1.osc_colour_smooth1.checked:=get_boolean('osc_cs',true);
+    stackmenu1.osc_preserve_r_nebula1.checked:=get_boolean('osc_pr',true);
+    dum:=initstring.Values['osc_cw'];if dum<>'' then stackmenu1.osc_smart_smooth_width1.text:= dum;
+    dum:=initstring.Values['osc_sd'];if dum<>'' then stackmenu1.osc_smart_colour_sd1.text:= dum;
+
+
+    stackmenu1.lrgb_auto_level1.checked:=get_boolean('lrgb_al',true);
+    stackmenu1.lrgb_colour_smooth1.checked:=get_boolean('lrgb_cs',true);
+    stackmenu1.lrgb_preserve_r_nebula1.checked:=get_boolean('lrgb_pr',true);
+    dum:=initstring.Values['lrgb_cw'];if dum<>'' then stackmenu1.lrgb_smart_smooth_width1.text:= dum;
+    dum:=initstring.Values['lrgb_sd'];if dum<>'' then stackmenu1.lrgb_smart_colour_sd1.text:= dum;
+
 
     stackmenu1.ignore_header_solution1.Checked:= get_boolean('ignore_header_solution',true);
     stackmenu1.Equalise_background1.checked:= get_boolean('equalise_background',true);{for mosaic mode}
@@ -7304,8 +7311,6 @@ begin
     initstring.Values['thumbnails_width']:=inttostr(thumbnails1_width);
     initstring.Values['thumbnails_height']:=inttostr(thumbnails1_height);
 
-    initstring.Values['rgb_filter']:=inttostr(stackmenu1.rgb_filter1.itemindex);
-
     initstring.Values['inversemousewheel']:=BoolStr[inversemousewheel1.checked];
     initstring.Values['fliphorizontal']:=BoolStr[flip_horizontal1.checked];
     initstring.Values['flipvertical']:=BoolStr[flip_vertical1.checked];
@@ -7315,8 +7320,17 @@ begin
     initstring.Values['add_marker']:=BoolStr[add_marker_position1.checked];
 
     initstring.Values['osc_color_convert']:=BoolStr[stackmenu1.make_osc_color1.checked];
-    initstring.Values['osc_auto_level']:=BoolStr[stackmenu1.osc_auto_level1.checked];
-    initstring.Values['osc_colour_smooth']:=BoolStr[stackmenu1.osc_colour_smooth1.checked];
+    initstring.Values['osc_al']:=BoolStr[stackmenu1.osc_auto_level1.checked];
+    initstring.Values['osc_cs']:=BoolStr[stackmenu1.osc_colour_smooth1.checked];
+    initstring.Values['osc_pr']:=BoolStr[stackmenu1.osc_preserve_r_nebula1.checked];
+    initstring.Values['osc_sw']:=stackmenu1.osc_smart_smooth_width1.text;
+    initstring.Values['osc_sd']:=stackmenu1.osc_smart_colour_sd1.text;
+
+    initstring.Values['lrgb_al']:=BoolStr[stackmenu1.lrgb_auto_level1.checked];
+    initstring.Values['lrgb_cs']:=BoolStr[stackmenu1.lrgb_colour_smooth1.checked];
+    initstring.Values['lrgb_pr']:=BoolStr[stackmenu1.lrgb_preserve_r_nebula1.checked];
+    initstring.Values['lrgb_sw']:=stackmenu1.lrgb_smart_smooth_width1.text;
+    initstring.Values['lrgb_sd']:=stackmenu1.lrgb_smart_colour_sd1.text;
 
     initstring.Values['ignore_header_solution']:=BoolStr[stackmenu1.ignore_header_solution1.Checked];
     initstring.Values['equalise_background']:=BoolStr[stackmenu1.Equalise_background1.Checked];
@@ -8523,12 +8537,9 @@ begin
       end;
     end;
     if counter>0 then
-    begin
-      SetLength(bg_array,counter);{set length correct}
-      bg_median:=Smedian(bg_array)
-    end
+      bg_median:=Smedian(bg_array,counter)
     else
-    bg_median:=9999999;{something went wrong}
+      bg_median:=9999999;{something went wrong}
 
     saturation_counter:=0;
     flux:=0;
@@ -11247,43 +11258,46 @@ begin
 end;
 
 
-procedure Sort(var list: array of double);{taken from CCDciel code}
-var sorted: boolean;
-    tmp: double;
-    j,n: integer;
-begin
-repeat
-  sorted := True;
-  n := length(list);
-  for j := 1 to n-1 do
+procedure quicksort(var list: array of double; lo,hi: integer);{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
+  procedure sort ( left, right : integer); {processing takes place in the sort procedure which executes itself recursively.}
+  var
+    i, j       : integer;
+    tmp, pivot : double;    { tmp & pivot are the same type as the elements of array }
   begin
-    if list[j - 1] > list[j] then
-    begin
-      tmp := list[j - 1];
-      list[j - 1] := list[j];
-      list[j] := tmp;
-      sorted := False;
-    end;
+    i:=left;
+    j:=right;
+    pivot := list[(left + right) div 2];
+    repeat
+      while pivot > list[i] do inc(i);
+      while pivot < list[j] do dec(j);
+      if i<=j Then Begin
+        tmp:=list[i]; list[i]:=list[j]; list[j]:=tmp; {swap}
+        dec(j); inc(i);
+      end;
+    until i>j;
+    if left<j then sort(left,j);
+    if i<right then sort(i,right);
   end;
-until sorted;
+begin {quicksort};
+  sort(lo,hi);
 end;
 
 
-function SMedian(list: array of double): double;{get median of an array of double, taken from CCDciel code}
+
+function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
 var
-  n,mid: integer;
+  mid : integer;
 begin
- n:=length(list);
- if n=0 then result:=nan
+ if leng=0 then result:=nan
  else
-   if n=1 then result:=list[0]
+   if leng=1 then result:=list[0]
    else
    begin
-     Sort(list);
-     mid := (high(list) - low(list)) div 2;
-     if Odd(Length(list)) then
+     quickSort(list,0,leng-1);
+     mid := (leng-1) div 2; //(high(list) - low(list)) div 2;
+     if Odd(leng) then
      begin
-       if n<=3 then  result:=list[mid]
+       if leng<=3 then  result:=list[mid]
        else
        begin
          result:=(list[mid-1]+list[mid]+list[mid+1])/3;
@@ -11294,6 +11308,7 @@ begin
   end;
 end;
 
+
 procedure mad_median(list: array of double;var mad,median :double);{calculate mad and median without modifying the data}
 var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
   n,i        : integer;
@@ -11302,17 +11317,17 @@ begin
   n:=length(list);
   setlength(list2,n);
   for i:=0 to n-1 do list2[i]:=list[i];{copy magn offset data}
-  median:=Smedian(list2);
+  median:=Smedian(list2,n);
   for i:=0 to n-1 do list2[i]:=abs(list[i] - median);{fill list2 with offsets}
-  mad:=Smedian(list2); //median absolute deviation (MAD)
+  mad:=Smedian(list2,n); //median absolute deviation (MAD)
   list2:=nil;
 end;
 
 
-procedure Tmainwindow.CCDinspector1Click(Sender: TObject);
+procedure CCDinspector(snr_min: double);
 var
  fitsX,fitsY,size,diam, i, j,starX,starY, retries,max_stars,
- nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,x1,x2,x3,x4,y1,y2,y3,y4,fontsize,text_height,text_width: integer;
+ nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,x1,x2,x3,x4,y1,y2,y3,y4,fontsize,text_height,text_width,tt: integer;
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
  hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right, median_top_left, median_top_right,hfd_min : double;
@@ -11328,7 +11343,7 @@ begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
- if bayer_image1.checked then {raw Bayer image}
+ if mainwindow.bayer_image1.checked then {raw Bayer image}
  begin
    img_average:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
    setlength(img_average,naxis3,width2,height2);{force a duplication}
@@ -11399,10 +11414,15 @@ begin
         begin
           if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed}  and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
           begin
+
+            if ((abs(fitsx-1200)<20) and  (abs(fitsy-800)<20)) then
+            beep;
+
+
             HFD(img_loaded,fitsX,fitsY,14{box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
 //            if ((hfd1<=30) and (snr>8) and (hfd1>hfd_min) ) then
-            if ((hfd1<=30) and (snr>30) and (hfd1>hfd_min) ) then
+            if ((hfd1<=30) and (snr>snr_min {30}) and (hfd1>hfd_min) ) then
             begin
               diam:=round(3*hfd1);{for marking area}
               for j:=fitsY to fitsY+diam do {mark the whole star area as surveyed}
@@ -11487,11 +11507,8 @@ begin
 
       if ((nhfd_center>0) and (nhfd_outer_ring>0)) then  {enough information for curvature calculation}
       begin
-        SetLength(hfdlist_center,nhfd_center); {set length correct}
-        SetLength(hfdlist_outer_ring,nhfd_outer_ring);
-
-        median_center:=SMedian(hfdlist_center);
-        median_outer_ring:=SMedian(hfdlist_outer_ring);
+        median_center:=SMedian(hfdlist_center,nhfd_center);
+        median_outer_ring:=SMedian(hfdlist_outer_ring,nhfd_outer_ring);
         mess1:='  Off-axis aberration[HFD]='+floattostrF2(median_outer_ring-(median_center),0,2);{}
       end
       else
@@ -11499,15 +11516,10 @@ begin
 
       if ((nhfd_top_left>0) and (nhfd_top_right>0) and (nhfd_bottom_left>0) and (nhfd_bottom_right>0)) then  {enough information for tilt calculation}
       begin
-        SetLength(hfdlist_bottom_left,nhfd_bottom_left); {set length correct}
-        SetLength(hfdlist_bottom_right,nhfd_bottom_right);
-        SetLength(hfdlist_top_left,nhfd_top_left);
-        SetLength(hfdlist_top_right,nhfd_top_right);
-
-        median_top_left:=SMedian(hfdList_top_left);
-        median_top_right:=SMedian(hfdList_top_right);
-        median_bottom_left:=SMedian(hfdList_bottom_left);
-        median_bottom_right:=SMedian(hfdList_bottom_right);
+        median_top_left:=SMedian(hfdList_top_left,nhfd_top_left);
+        median_top_right:=SMedian(hfdList_top_right,nhfd_top_right);
+        median_bottom_left:=SMedian(hfdList_bottom_left,nhfd_bottom_left);
+        median_bottom_right:=SMedian(hfdList_bottom_right,nhfd_bottom_right);
         median_best:=min(min(median_top_left, median_top_right),min(median_bottom_left,median_bottom_right));{find best corner}
         median_worst:=max(max(median_top_left, median_top_right),max(median_bottom_left,median_bottom_right));{find worst corner}
 
@@ -11545,16 +11557,17 @@ begin
         image1.Canvas.textout(width2 div 2,height2 div 2,floattostrF2(median_center,0,2));
       end
       else
-      mess2:='';
+      begin
+        mess2:='';
+      end;
 
-      SetLength(hfdlist,nhfd);{set length correct}
-      hfd_median:=SMedian(hfdList);
+      hfd_median:=SMedian(hfdList,nhfd {use length});
       str(hfd_median:0:1,hfd_value);
       if cdelt2<>0 then begin str(hfd_median*cdelt2*3600:0:1,hfd_arcsec); hfd_arcsec:=' ('+hfd_arcsec+'")'; end else hfd_arcsec:='';
       mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
 
+      text_width:=8*mainwindow.image1.Canvas.textwidth('1234567890');{Calculate textwidth for 80 characters. This also works for 4k with "make everything bigger"}
 
-      text_width:=mainwindow.image1.Canvas.textwidth(mess2);{the correct text height, also for 4k with "make everything bigger"}
 
       fontsize:=trunc(fontsize*(width2-2*fontsize)/text_width);{use full width}
       image1.Canvas.font.size:=fontsize;
@@ -11582,6 +11595,11 @@ begin
   img_temp:=nil;{free mem}
 
   Screen.Cursor:= Save_Cursor;
+end;
+
+procedure Tmainwindow.CCDinspector1Click(Sender: TObject);
+begin
+  CCDinspector(30);
 end;
 
 
@@ -12498,9 +12516,10 @@ const                                                                           
 var
   i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,iterations,counter,annulus_width :integer;
   SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
-  val,bg_average,bg,sd,sd_old,pixel_counter,valmax : double;
+  val,bg_average,bg,sd,sd_old,pixel_counter,valmax,mad_bg : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
+  background : array [0..1000] of double;
 
     function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
     var
@@ -12539,52 +12558,22 @@ begin
   snr:=0;
 
   try
-    sd:=99999999999;
-    bg:=0;
-    iterations:=0;
-
-    {calculate background and standard deviation for an annulus at position x1,y1 with innner radius rs+1 and outer radius rs+1+wd. wd should be 1 or larger}
-    repeat {find background by repeat (sigma clip) and exclude values above 3*sd}
-      counter:=0;
-      bg_average:=0;
-      for i:=-r2 to r2 do {calculate the mean outside the the detection area}
-      for j:=-r2 to r2 do
+    counter:=0;
+    for i:=-r2 to r2 do {calculate the mean outside the the detection area}
+    for j:=-r2 to r2 do
+    begin
+      distance:=i*i+j*j; {working with sqr(distance) is faster then applying sqrt}
+      if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
       begin
-        distance:=i*i+j*j; {working with sqr(distance) is faster then applying sqrt}
-        if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
-        begin
-          val:=img[0,x1+i,y1+j];
-          if  ((iterations=0) or (abs(val-bg)<=3*sd)) then  {ignore extreme outliers after first run}
-          begin
-            bg_average:=bg_average+val;
-            inc(counter);
-          end;
-        end;
+        background[counter]:=img[0,x1+i,y1+j];
+        inc(counter);
       end;
-      bg:=bg_average/(counter+0.0001); {mean value background}
+    end;
 
-      counter:=0;
-      sd_old:=sd;
-      sd:=0;
-      for i:=-r2 to r2 do {calculate standard deviation background outside the detection area}
-      for j:=-r2 to r2 do
-      begin
-        distance:=i*i+j*j; {working with sqr(distance) is faster then applying sqrt}
-        if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
-        begin
-          val:=img[0,x1+i,y1+j];
-          if val<=2*bg then {not an extreme outlier}
-          if ((iterations=0) or (abs(val-bg)<=3*sd_old)) then {ignore extreme outliers after first run}
-          begin
-            sd:=sd+sqr(val-bg);
-            inc(counter);
-          end;
-        end;
-      end;
-      sd:=sqrt(sd/(counter+0.0001)); {standard deviation in background}
-
-      inc(iterations);
-    until (((sd_old-sd)<0.1*sd) or (iterations>=3));{repeat until sd is stable or enough iterations}
+    bg:=Smedian(background,counter);
+    for i:=0 to counter-1 do background[i]:=abs(background[i] - bg);{fill background with offsets}
+    mad_bg:=Smedian(background,counter); //median absolute deviation (MAD)
+    sd:=mad_bg*1.4826; {Conversion from mad to sd. See https://en.wikipedia.org/wiki/Median_absolute_deviation}
     sd:=max(sd,1); {add some value for images with zero noise background. This will prevent that background is seen as a star. E.g. some jpg processed by nova.astrometry.net}
 
 

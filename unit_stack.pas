@@ -46,6 +46,14 @@ type
     actual_search_distance1: TLabel;
     add_noise1: TButton;
     add_substract1: TComboBox;
+    Button1: TButton;
+    osc_preserve_r_nebula1: TCheckBox;
+    lrgb_auto_level1: TCheckBox;
+    lrgb_colour_smooth1: TCheckBox;
+    lrgb_smart_colour_sd1: TComboBox;
+    lrgb_smart_smooth_width1: TComboBox;
+    lrgb_preserve_r_nebula1: TCheckBox;
+    preserve_red_nebula1: TCheckBox;
     equinox1: TComboBox;
     add_valueB1: TEdit;
     add_valueG1: TEdit;
@@ -313,7 +321,6 @@ type
     Label4: TLabel;
     Label41: TLabel;
     Label42: TLabel;
-    Label43: TLabel;
     Label44: TLabel;
     Label45: TLabel;
     Label46: TLabel;
@@ -434,7 +441,6 @@ type
     removeselected7: TMenuItem;
     renametobak7: TMenuItem;
     rg1: TEdit;
-    RGB_filter1: TComboBox;
     ring_equalise_factor1: TComboBox;
     rr1: TEdit;
     sample_size1: TComboBox;
@@ -584,6 +590,9 @@ type
     procedure add_noise1Click(Sender: TObject);
     procedure align_blink1Change(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+    procedure equinox1Change(Sender: TObject);
+    procedure lrgb_auto_level1Change(Sender: TObject);
     procedure mount_analyse1Click(Sender: TObject);
     procedure analysephotometry1Click(Sender: TObject);
     procedure analyse_inspector1Click(Sender: TObject);
@@ -630,7 +639,6 @@ type
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure rainbow_Panel1Paint(Sender: TObject);
-    procedure red_filter2Exit(Sender: TObject);
     procedure remove_luminance1Change(Sender: TObject);
     procedure result_compress1Click(Sender: TObject);
     procedure rename_result1Click(Sender: TObject);
@@ -842,7 +850,7 @@ procedure black_spot_filter(var img: image_array);{remove black spots with value
 
 function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer) inline; {apply dark, flat if required, renew if different exposure or ccd temp}
-procedure smart_colour_smooth( var img: image_array; wide, sd:double; measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
+procedure smart_colour_smooth( var img: image_array; wide, sd:double; preserve_r_nebula,measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 procedure date_to_jd(date_time:string);{get julian day for date_obs, so the start of the observation or for date_avg. Set global variable jd}
 function JdToDate(jd:double):string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
@@ -1121,15 +1129,6 @@ begin
       panel_ephemeris1.bevelouter:=bvSpace;
       panel_ephemeris1.color:=CLWindow;
     end;
-
-    osc_color:=make_osc_color1.checked;
-    osc_auto_level1.enabled:=osc_color;
-    bayer_pattern1.enabled:=osc_color;
-    test_pattern1.enabled:=osc_color;
-    demosaic_method1.enabled:=osc_color;
-    osc_colour_smooth1.enabled:=osc_color;
-    osc_smart_colour_sd1.enabled:=osc_color;
-    osc_smart_smooth_width1.enabled:=osc_color;
   end;{stack menu}
 end;
 
@@ -1396,11 +1395,9 @@ begin
     until ((star_counter>=max_stars) or (retries<0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
     if star_counter>0 then
-    begin
-      SetLength(hfd_list,star_counter);{set size correctly}
-      hfd_median:=SMedian(hfd_List);
-    end
-    else hfd_median:=99;
+      hfd_median:=SMedian(hfd_List,star_counter)
+    else
+      hfd_median:=99;
   end {backgr is normal}
   else
   hfd_median:=99;{Most common value image is too low. Ca'+#39+'t process this image. Check camera offset setting.}
@@ -1492,55 +1489,13 @@ begin
   until ((nhfd>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
   nr_stars:=nhfd;
-  if nhfd>0 then
-  begin
-    SetLength(hfdlist,nhfd);{set size correctly}
-    hfd_median:=SMedian(hfdList);
-  end
-  else hfd_median:=99;
-
-  if nhfd_center>0 then
-  begin
-    SetLength(hfdlist_center,nhfd_center); {set length correct}
-    median_center:=SMedian(hfdlist_center);
-  end
-  else median_center:=99;
-
-
-  if nhfd_outer_ring>0 then
-  begin
-    SetLength(hfdlist_outer_ring,nhfd_outer_ring);{set size correctly}
-    median_outer_ring:=SMedian(hfdlist_outer_ring);
-  end
-  else median_outer_ring:=99;
-
-  if nhfd_bottom_left>0 then
-  begin
-    SetLength(hfdlist_bottom_left,nhfd_bottom_left);{set size correctly}
-    median_bottom_left:=SMedian(hfdlist_bottom_left);
-  end
-  else median_bottom_left:=99;
-
-  if nhfd_bottom_right>0 then
-  begin
-    SetLength(hfdList_bottom_right,nhfd_bottom_right);{set size correctly}
-    median_bottom_right:=SMedian(hfdList_bottom_right);
-  end
-  else median_bottom_right:=99;
-
-  if nhfd_top_left>0 then
-  begin
-    SetLength(hfdList_top_left,nhfd_top_left);{set size correctly}
-    median_top_left:=SMedian(hfdList_top_left);
-  end
-  else median_top_left:=99;
-
-  if nhfd_top_right>0 then
-  begin
-    SetLength(hfdList_top_right,nhfd_top_right);{set size correctly}
-    median_top_right:=SMedian(hfdList_top_right);
-  end
-  else median_top_right:=99;
+  if nhfd>0 then  hfd_median:=SMedian(hfdList,nhfd) else  hfd_median:=99;
+  if nhfd_center>0 then median_center:=SMedian(hfdlist_center,nhfd_center) else median_center:=99;
+  if nhfd_outer_ring>0 then  median_outer_ring:=SMedian(hfdlist_outer_ring,nhfd_outer_ring) else median_outer_ring:=99;
+  if nhfd_bottom_left>0 then median_bottom_left:=SMedian(hfdlist_bottom_left,nhfd_bottom_left) else median_bottom_left:=99;
+  if nhfd_bottom_right>0 then   median_bottom_right:=SMedian(hfdList_bottom_right,nhfd_bottom_right) else median_bottom_right:=99;
+  if nhfd_top_left>0 then  median_top_left:=SMedian(hfdList_top_left,nhfd_top_left) else median_top_left:=99;
+  if nhfd_top_right>0 then median_top_right:=SMedian(hfdList_top_right,nhfd_top_right) else median_top_right:=99;
 
   hfdlist:=nil;{release memory}
   hfdlist_center:=nil;
@@ -1702,12 +1657,11 @@ begin
     until c>counts;
 
     counts:=ListView1.items.count-1;
-    if counts<=0 then exit; {if only darks where added none are left. Prefent runtime error in progress calculation}
     c:=0;
     repeat {check all files, remove darks, bias}
       if ((ListView1.Items.item[c].checked) and ((length(ListView1.Items.item[c].subitems.Strings[I_hfd])<=1){hfd} or (new_analyse_required)) ) then {hfd unknown, only update blank rows}
       begin {checked}
-        progress_indicator(100*c/counts,' Analysing');
+        if counts<>0 then progress_indicator(100*c/counts,' Analysing');
         Listview1.Selected :=nil; {remove any selection}
         ListView1.ItemIndex := c;{mark where we are, set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
         Listview1.Items[c].MakeVisible(False);{scroll to selected item}
@@ -1835,7 +1789,7 @@ begin
       inc(c); {go to next file}
     until c>counts;
 
-    if ((green) and (blue) and (classify_filter1.checked=false)) then memo2_message('■■■■■■■■■■■■■ Hint, colour filters detected. For colour stack set the check-mark classify by filter! ■■■■■■■■■■■■■');
+    if ((green) and (blue) and (classify_filter1.checked=false)) then memo2_message('■■■■■■■■■■■■■ Hint, colour filters detected in light. For colour stack set the check-mark classify by Image filter! ■■■■■■■■■■■■■');
 
     if (stackmenu1.uncheck_outliers1.checked) then
     begin
@@ -2440,8 +2394,8 @@ begin
         end;
            if count>0 then
         begin
-          setlength(test,count);{reduce size if not all point are used}
-          median[dist]:=smedian(test);
+//          setlength(test,count);{reduce size if not all point are used}
+          median[dist]:=smedian(test,count);
         end
         else median[dist]:=0;
       end {outside centrum}
@@ -3099,6 +3053,12 @@ begin
 end;
 
 
+function date_obs_regional(thedate : string):string;{fits date but remote T and replace . by comma if that is the regional seperator}
+begin
+  result:=StringReplace(thedate,'T',' ',[]);{date/time}
+  if formatSettings.decimalseparator<>'.' then result:=StringReplace(result,'.',formatSettings.decimalseparator,[]); {replaces dot by komma}
+end;
+
 procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse list of FITS files}
 // amode=0 ==> reduced header only, keep orginal ra0, dec0 (for dark and flats
 // amode=1 ==> full header only
@@ -3110,7 +3070,7 @@ var
   backgr, hfd_median, hjd,sd, dummy,alt : double;
   filename1,ext                    : string;
   Save_Cursor                      : TCursor;
-  loaded,  success                 : boolean;
+  loaded,  success,green,blue      : boolean;
   img                              : image_array;
 
   nr_stars, hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right : double;
@@ -3124,6 +3084,8 @@ begin
   if full=false then  lv.Items.BeginUpdate;{stop updating to prevent flickering till finished}
 
   counts:=lv.items.count-1;
+  green:=false;
+  blue:=false;
 
   loaded:=false;
   c:=0;
@@ -3209,6 +3171,8 @@ begin
      inc(c);
   until c>counts;
 
+
+
   for c:=0 to lv.items.count-1 do
   begin
     if ((lv.Items.item[c].checked) and ((refresh) or (length(lv.Items.item[c].subitems.Strings[4])<=1){height}) ) then {column empthy, only update blank rows}
@@ -3248,18 +3212,28 @@ begin
               if ((lv.name=stackmenu1.listview2.name) or (lv.name=stackmenu1.listview3.name) or (lv.name=stackmenu1.listview4.name)) then
                      lv.Items.item[c].subitems.Strings[D_sigma]:=inttostr(noise_level[0]); {noise level}
               lv.Items.item[c].subitems.Strings[D_gain]:=inttostr(round(gain)); {camera gain}
-            end
-            else
+            end;
 
             if lv.name=stackmenu1.listview3.name then
             begin
-             lv.Items.item[c].subitems.Strings[F_filter]:=filter_name; {filter name, without spaces}
+              lv.Items.item[c].subitems.Strings[F_filter]:=filter_name; {filter name, without spaces}
+              if AnsiCompareText(stackmenu1.red_filter1.text,filter_name)=0 then  Lv.Items.item[c].SubitemImages[9]:=0 else
+              if AnsiCompareText(stackmenu1.red_filter2.text,filter_name)=0 then  Lv.Items.item[c].SubitemImages[9]:=0 else
+              if AnsiCompareText(stackmenu1.green_filter1.text,filter_name)=0 then begin lv.Items.item[c].SubitemImages[9]:=1; green:=true; end else
+              if AnsiCompareText(stackmenu1.green_filter2.text,filter_name)=0 then begin lv.Items.item[c].SubitemImages[9]:=1; green:=true; end else
+              if AnsiCompareText(stackmenu1.blue_filter1.text,filter_name)=0 then begin lv.Items.item[c].SubitemImages[9]:=2; blue:=true; end else
+              if AnsiCompareText(stackmenu1.blue_filter2.text,filter_name)=0 then begin lv.Items.item[c].SubitemImages[9]:=2; blue:=true; end else
+              if AnsiCompareText(stackmenu1.luminance_filter1.text,filter_name)=0 then  lv.Items.item[c].SubitemImages[9]:=4 else
+              if AnsiCompareText(stackmenu1.luminance_filter2.text,filter_name)=0 then  lv.Items.item[c].SubitemImages[9]:=4 else
+              if naxis3=3 then  lv.Items.item[c].SubitemImages[9]:=3 else {RGB color}
+                 if filter_name<>'' then lv.Items.item[c].SubitemImages[9]:=7 {question mark} else
+                    lv.Items.item[c].SubitemImages[9]:=-1;{blank}
             end
             else
 
             if lv.name=stackmenu1.listview6.name then {blink tab}
             begin
-              lv.Items.item[c].subitems.Strings[B_date]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
+              lv.Items.item[c].subitems.Strings[B_date]:=date_obs_regional(date_obs);{date/time for blink}
               lv.Items.item[c].subitems.Strings[B_calibration]:=calstat; {calibration calstat info DFB}
               if annotated then lv.Items.item[c].subitems.Strings[B_annotated ]:='✓' else  lv.Items.item[c].subitems.Strings[B_annotated ]:='';
             end
@@ -3267,7 +3241,7 @@ begin
 
             if lv.name=stackmenu1.listview7.name then {photometry tab}
             begin
-              lv.Items.item[c].subitems.Strings[P_date]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
+              lv.Items.item[c].subitems.Strings[P_date]:=date_obs_regional(date_obs);
               lv.Items.item[c].subitems.Strings[P_filter]:=filter_name;
               date_to_jd(date_obs);{convert date-obs to jd}
               jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
@@ -3304,7 +3278,7 @@ begin
 
             if lv.name=stackmenu1.listview8.name  then {listview8 inspector tab}
             begin
-              lv.Items.item[c].subitems.Strings[B_date]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
+              lv.Items.item[c].subitems.Strings[B_date]:=date_obs_regional(date_obs);
               lv.Items.item[c].subitems.Strings[insp_focus_pos]:=inttostr(focus_pos);
 
               analyse_fits_extended(img, nr_stars, hfd_median,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right); {analyse several areas}
@@ -3327,12 +3301,12 @@ begin
             end
             else
 
-            if lv.name=stackmenu1.listview9.name then {mount tab}
+            if lv.name=stackmenu1.listview9.name then {mount analyse tab}
             begin
-              lv.Items.item[c].subitems.Strings[M_date]:=StringReplace(date_obs,'T',' ',[]);{date/time for blink}
+              lv.Items.item[c].subitems.Strings[M_date]:=date_obs_regional(date_obs);
               date_to_jd(date_obs);{convert date-obs to jd}
               jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
-              lv.Items.item[c].subitems.Strings[M_jd_mid]:=floattostrF2(jd,0,5);{julian day}
+              lv.Items.item[c].subitems.Strings[M_jd_mid]:=floattostrF2(jd,0,7);{julian day}
 
               if ra_mount<99 then {mount position known and specified}
               begin
@@ -3388,6 +3362,9 @@ begin
       end;
     end;{hfd unknown}
   end;
+
+  if ((green) and (blue) and (stackmenu1.classify_flat_filter1.checked=false)) then memo2_message('■■■■■■■■■■■■■ Hint, colour filters detected in the flat. For colour stacking set the check-mark classify by Flat Filter! ■■■■■■■■■■■■■');
+
   if full=false then lv.Items.EndUpdate;{can update now}
   progress_indicator(-100,'');{progresss done}
   img:= nil;
@@ -5212,18 +5189,11 @@ begin
   end;
 end;
 
-procedure Tstackmenu1.red_filter2Exit(Sender: TObject);
-begin
-
-end;
-
-
 
 procedure Tstackmenu1.remove_luminance1Change(Sender: TObject);
 begin
   update_replacement_colour;
 end;
-
 
 
 procedure Tstackmenu1.result_compress1Click(Sender: TObject);
@@ -5554,10 +5524,11 @@ end;
 
 procedure date_to_jd(date_time:string);{get julian day for date_obs, so the start of the observation or for date_avg. Set global variable jd}
 var
-   yy,mm,dd,hh,min,ss,error2 :integer;
+   yy,mm,dd,hh,min,error2 : integer;
+   ss                     : double;
 begin
   jd:=0;
-  val(copy(date_time,18,2),ss,error2); if error2<>0 then exit;
+  val(copy(date_time,18,7),ss,error2); if error2<>0 then exit; {read also milliseconds}
   val(copy(date_time,15,2),min,error2);if error2<>0 then exit;
   val(copy(date_time,12,2),hh,error2);if error2<>0 then exit;
   val(copy(date_time,09,2),dd,error2);if error2<>0 then exit;
@@ -6319,7 +6290,7 @@ begin
     begin
       setlength(starVar,countVar);
       mad_median(starVar,madVar,medianVar);{calculate mad and median without modifying the data}
-      memo2_message('Var star, median:'+floattostrf(medianVar, ffgeneral, 4,4)+', σ: '+floattostrf(1.0*1.4826*madVar  {1.0*sigma}, ffgeneral, 4,4));
+      memo2_message('Var star, median:'+floattostrf(medianVar, ffgeneral, 4,4)+', σ: '+floattostrf(1.4826*madVar  {1.0*sigma}, ffgeneral, 4,4));
     end
     else
     madVar:=0;
@@ -6328,7 +6299,7 @@ begin
     begin
       setlength(starCheck,countCheck);
       mad_median(starCheck,madCheck,medianCheck);{calculate mad and median without modifying the data}
-      memo2_message('Check star, median:'+floattostrf(medianCheck, ffgeneral, 4,4)+', σ: '+floattostrf(1.0*1.4826*madCheck  {1.0*sigma}, ffgeneral, 4,4));
+      memo2_message('Check star, median:'+floattostrf(medianCheck, ffgeneral, 4,4)+', σ: '+floattostrf(1.4826*madCheck  {1.0*sigma}, ffgeneral, 4,4));
     end
     else
     madCheck:=0;
@@ -6336,7 +6307,7 @@ begin
     begin
       setlength(starThree,countThree);
       mad_median(starThree,madThree,medianThree);{calculate mad and median without modifying the data}
-      memo2_message('3 star, median:'+floattostrf(medianThree, ffgeneral, 4,4)+', σ: '+floattostrf(1.0*1.4826*madThree  {1.0*sigma}, ffgeneral, 4,4));
+      memo2_message('3 star, median:'+floattostrf(medianThree, ffgeneral, 4,4)+', σ: '+floattostrf(1.4826*madThree  {1.0*sigma}, ffgeneral, 4,4));
     end
     else madThree:=0;
 
@@ -6482,18 +6453,17 @@ begin
 end;
 
 
-procedure smart_colour_smooth( var img: image_array; wide, sd:double; measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
+procedure smart_colour_smooth( var img: image_array; wide, sd:double; preserve_r_nebula,measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 var fitsX,fitsY,x,y,step,x2,y2,count,width5,height5  : integer;
     img_temp2            : image_array;
-    luminance,red,green,blue,rgb,r,g,b,sqr_dist,highest,top,bg,r2,g2,b2,noise_level1, peak,bgR2,bgB2,bgG2  : single;
+    luminance,red,green,blue,rgb,r,g,b,sqr_dist,strongest_colour_local,top,bg,r2,g2,b2,noise_level1, peak,bgR2,bgB2,bgG2,highest_colour  : single;
     bgR,bgB,bgG  : double;
-    copydata : boolean;
+    copydata,red_nebula,preserve_red_nebula : boolean;
 begin
   if length(img)<3 then exit;{not a three colour image}
 
   width5:=Length(img[0]);    {width}
   height5:=Length(img[0][0]); {height}
-
 
   setlength(img_temp2,3,width5,height5);{set length of image array}
 
@@ -6550,7 +6520,6 @@ begin
 
                if ((r<60000) and (g<60000) and (b<60000)) then  {no saturation, ignore saturated pixels}
                begin
-               //  for d:=0 to round(step/sqrt(sqr_dist+1)) do {reduce influence for increased distance}
                  begin
                    if (r-bgR)>0 then
                               red  :=red+   (r-bgR); {level >0 otherwise centre of M31 get yellow circle}
@@ -6568,30 +6537,39 @@ begin
       rgb:=0;
       if count>=1 then
       begin
-   //     if ((fitsx>=2073) and (fitsY>=1434)) then
-   //     beep;
 
         red:=red/count;{scale using the number of data points=count}
         green:=green/count;
         blue:=blue/count;
 
+    //    if ((fitsx=1181) and (fitsY=940)) then
+    //      beep;
+
         if peak>star_level then {star level very close}
-
-
-        if ((red>3*noise_level1+4*(bgR2-bgR)) or (green>3*noise_level1+4*(bgG2-bgG)) or (blue>3*noise_level1+4*(bgB2-bgB)) ) then {enough flux, so bright flux measured. Factor +4*(bgG2-bgG) for stars in nebula}
+    //       if ((red>3*noise_level1+4*(bgR2-bgR)) or (green>3*noise_level1+4*(bgG2-bgG)) or (blue>3*noise_level1+4*(bgB2-bgB)) ) then {enough flux, so bright flux measured. Factor +4*(bgG2-bgG) for stars in nebula}
         begin
-          if red<blue*1.06 then {>6000k} green:=0.6604*red+0.3215*blue; {prevent purple stars, purple stars are physical not possible. Emperical formula calculated from colour table http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html}
+          highest_colour:=max(r2,max(g2,b2));
+          if preserve_r_nebula then
+             red_nebula:=((highest_colour=r2) and (r2-(bgR2-bgR)<150){not the star} and (bgR2-bgR>3*noise_level1))
+          else
+             red_nebula:=false;
 
-          luminance:=(r2+g2+b2)/3;
-          rgb:=(red+green+blue+0.00001)/3; {0.00001, prevent dividing by zero}
-          highest:=max(red,max(green,blue));
-          top:=bg+luminance*highest/rgb;{calculate the highest colour value}
-          if top>=65534.99 then luminance:=luminance-(top-65534.99)*rgb/highest;{prevent values above 65535}
+          if red_nebula=false then
+          begin
+            if red<blue*1.06 then {>6000k} green:=0.6604*red+0.3215*blue; {prevent purple stars, purple stars are physical not possible. Emperical formula calculated from colour table http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html}
 
-          img_temp2[0,fitsX  ,  fitsY  ]:=bg+ luminance*red/rgb;
-          img_temp2[1,fitsX  ,  fitsY  ]:=bg+ luminance*green/rgb;
-          img_temp2[2,fitsX  ,  fitsY  ]:=bg+ luminance*blue/rgb;
-          copydata:=false;{data is already copied}
+            luminance:=(r2+g2+b2)/3;
+            rgb:=(red+green+blue+0.00001)/3; {0.00001, prevent dividing by zero}
+            strongest_colour_local:=max(red,max(green,blue));
+            top:=bg+luminance*strongest_colour_local/rgb;{calculate the highest colour value}
+            if top>=65534.99 then luminance:=luminance-(top-65534.99)*rgb/strongest_colour_local;{prevent values above 65535}
+
+            img_temp2[0,fitsX  ,  fitsY  ]:=bg+ luminance*red/rgb;
+            img_temp2[1,fitsX  ,  fitsY  ]:=bg+ luminance*green/rgb;
+            img_temp2[2,fitsX  ,  fitsY  ]:=bg+ luminance*blue/rgb;
+            copydata:=false;{data is already copied}
+
+          end;
        end;
      end;
      if copydata then {keep orginal data but adjust zero level}
@@ -6620,7 +6598,7 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   backup_img;
 
-  smart_colour_smooth(img_loaded, strtofloat2(smart_smooth_width1.text),strtofloat2(smart_colour_sd1.text),false);
+  smart_colour_smooth(img_loaded, strtofloat2(smart_smooth_width1.text),strtofloat2(smart_colour_sd1.text),preserve_red_nebula1.checked,false);
 
   plot_fits(mainwindow.image1,false,true);{plot real}
 
@@ -6729,15 +6707,15 @@ begin
     classify_filter1.checked:=false;
   end;
 
-  {enabe/disable related menu options}
-  osc_color:=make_osc_color1.checked;
-  osc_auto_level1.enabled:=osc_color;
-  bayer_pattern1.enabled:=osc_color;
-  test_pattern1.enabled:=osc_color;
-  demosaic_method1.enabled:=osc_color;
-  osc_colour_smooth1.enabled:=osc_color;
-  osc_smart_colour_sd1.enabled:=osc_color;
-  osc_smart_smooth_width1.enabled:=osc_color;
+//  {enabe/disable related menu options}
+//  osc_color:=make_osc_color1.checked;
+//  osc_auto_level1.enabled:=osc_color;
+//  bayer_pattern1.enabled:=osc_color;
+//  test_pattern1.enabled:=osc_color;
+  //demosaic_method1.enabled:=osc_color;
+//  osc_colour_smooth1.enabled:=((osc_color) and (osc_auto_level1.checked));
+//  osc_smart_colour_sd1.enabled:=osc_color;
+//  osc_smart_smooth_width1.enabled:=osc_color;
 end;
 
 procedure Tstackmenu1.selectall1Click(Sender: TObject);
@@ -6896,18 +6874,39 @@ begin
   listview6.alphasort; {sort on time}
 end;
 
+procedure Tstackmenu1.Button1Click(Sender: TObject);
+begin
+  CCDinspector(5 {snr min});
+end;
 
+procedure Tstackmenu1.equinox1Change(Sender: TObject);
+begin
+  case equinox1.itemindex of
+    0 : listview9.column[9].caption:='α [°] J2000';
+    1 : listview9.column[9].caption:='α [°] mean';
+    2 : listview9.column[9].caption:='α [°] true';
+    3 : listview9.column[9].caption:='α [°] tr & rf';
+  end;
+
+end;
+
+procedure Tstackmenu1.lrgb_auto_level1Change(Sender: TObject);
+var
+   au : boolean;
+begin
+  au:=lrgb_auto_level1.checked;
+  lrgb_colour_smooth1.enabled:=au;
+  lrgb_preserve_r_nebula1.enabled:=au;
+  lrgb_smart_smooth_width1.enabled:=au;
+  lrgb_smart_colour_sd1.enabled:=au;
+end;
 
 
 procedure Tstackmenu1.mount_analyse1Click(Sender: TObject);
 begin
   save_settings2;{too many lost selected files . so first save settings}
-
   analyse_listview(listview9,true {light},false {full fits},true{refresh});
-
-//  listview9.items.beginupdate;
-//  listview9.alphasort;{sort on time}
-//  listview9.items.endupdate;
+  stackmenu1.equinox1Change(nil);{update column}
 end;
 
 
@@ -7317,11 +7316,25 @@ end;
 procedure Tstackmenu1.make_osc_color1Change(Sender: TObject);
 var
   bmp : tbitmap;
+  osc_color : boolean;
 begin
+  {enabe/disable related menu options}
+  osc_color:=make_osc_color1.checked;
+  osc_auto_level1.enabled:=osc_color;
+  bayer_pattern1.enabled:=osc_color;
+  test_pattern1.enabled:=osc_color;
+  demosaic_method1.enabled:=osc_color;
+  osc_colour_smooth1.enabled:=((osc_color) and (osc_auto_level1.checked));
+  osc_smart_colour_sd1.enabled:=osc_color;
+  osc_smart_smooth_width1.enabled:=osc_color;
+
+
   bmp := TBitmap.Create;
   if make_osc_color1.checked then ImageList2.GetBitmap(12, bmp){colour stack} else ImageList2.GetBitmap(6, bmp);{gray stack}
   stackmenu1.stack_button1.glyph.assign(bmp);
   freeandnil(bmp);
+
+
 end;
 
 
@@ -8021,11 +8034,13 @@ begin
   save_settings2;{too many lost selected files . so first save settings}
   esc_pressed:=false;
 
+  if make_osc_color1.checked then
+              memo2_message('OSC, demosaic method '+demosaic_method1.text)
+              else
+              if classify_filter1.checked then memo2_message('LRGB colour stack (classify by image filter checked)')
+              else memo2_message('Grayscale stack (classify by image filter unchecked)');
   memo2_message('Stack method '+stack_method1.text);
   memo2_message('Oversize '+oversize1.text+ ' pixels');
-  if make_osc_color1.checked then
-              memo2_message('OSC, demosaic method '+demosaic_method1.text);
-
   mosaic_mode:=pos('stich',stackmenu1.stack_method1.text)>0;
   sigma_mode:=pos('Sigma',stackmenu1.stack_method1.text)>0;
   if  ((stackmenu1.use_manual_alignment1.checked) and (sigma_mode) and (pos('Comet',stackmenu1.manual_centering1.text)<>0)) then memo2_message('█ █ █ █ █ █ Warning, use for comet stacking the stack method "Average"!. █ █ █ █ █ █ ');
@@ -8522,21 +8537,22 @@ begin
     nrbits:=-32; {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
 
     if cal_and_align=false then {do not do this for calibration and alignment only}
+
     if ((monofile){success none lrgb loop} or (counter_colours<>0{length(extra2)>=2} {lrgb loop})) then
     begin
-       if stackmenu1.make_osc_color1.checked then
+      if  counter_colours<>0{length(extra2)>=2} {lrgb loop} then
       begin
-        if  stackmenu1.osc_auto_level1.checked then
+        if  stackmenu1.lrgb_auto_level1.checked then
         begin
           memo2_message('Adjusting colour levels as set in tab "stack method"');
           stackmenu1.auto_background_level1Click(nil);
           apply_factors;{histogram is after this action invalid}
           stackmenu1.reset_factors1Click(nil);{reset factors to default}
           use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-          if stackmenu1.osc_colour_smooth1.checked then
+          if stackmenu1.lrgb_colour_smooth1.checked then
           begin
-            memo2_message('Applying colour-smoothing filter image as set in tab "stack method". Factors are set in tab pixel math 1');
-            smart_colour_smooth(img_loaded,strtofloat2(osc_smart_smooth_width1.text),strtofloat2(osc_smart_colour_sd1.text),false {get  hist});{histogram doesn't needs an update}
+            memo2_message('Applying colour-smoothing filter image as set in tab "stack method"');
+            smart_colour_smooth(img_loaded,strtofloat2(lrgb_smart_smooth_width1.text),strtofloat2(lrgb_smart_colour_sd1.text),lrgb_preserve_r_nebula1.checked,false {get  hist});{histogram doesn't needs an update}
           end
         end
         else
@@ -8545,9 +8561,32 @@ begin
           use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
         end;
       end
-      else {mono or combined RGB files}
-      use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-
+      else
+      begin
+        if stackmenu1.make_osc_color1.checked then
+        begin
+          if  stackmenu1.osc_auto_level1.checked then
+          begin
+            memo2_message('Adjusting colour levels as set in tab "stack method"');
+            stackmenu1.auto_background_level1Click(nil);
+            apply_factors;{histogram is after this action invalid}
+            stackmenu1.reset_factors1Click(nil);{reset factors to default}
+            use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+            if stackmenu1.osc_colour_smooth1.checked then
+            begin
+              memo2_message('Applying colour-smoothing filter image as set in tab "stack method". Factors are set in tab pixel math 1');
+              smart_colour_smooth(img_loaded,strtofloat2(osc_smart_smooth_width1.text),strtofloat2(osc_smart_colour_sd1.text),osc_preserve_r_nebula1.checked,false {get  hist});{histogram doesn't needs an update}
+            end
+          end
+          else
+          begin
+            memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
+            use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+          end;
+        end
+        else {mono files}
+        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+      end;
 
       restore_header;{restore header and solution}{use saved fits header first FITS file as saved in unit_stack_routines}
 
@@ -8608,7 +8647,7 @@ begin
       else
          update_text('HISTORY 2','  Processed as gray scale images.');
 
-      if lrgb=false then {grayscale}
+      if lrgb=false then {monochrome}
       begin
         {adapt astrometric solution. For colour this is already done during luminance stacking}
         if ((over_size<>0) and ( cd1_1<>0){solution}) then {adapt astrometric solution for intermediate file}
@@ -8715,6 +8754,7 @@ begin
     total_counter:=total_counter+counterL; {keep record of images done}
 
   until ((counterL=0){none lrgb loop} and (extra1=''){lrgb loop} );{do all names}
+
 
   if total_counter=0 then {somehow nothing was stacked}
   begin

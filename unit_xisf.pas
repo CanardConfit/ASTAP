@@ -95,7 +95,7 @@ begin
     TheFile3:=tfilestream.Create( filen, fmOpenRead );
   except
     sysutils.beep;
-     mainwindow.statusbar1.panels[5].text:=('Error loading file!');
+    mainwindow.statusbar1.panels[5].text:=('Error loading file!');
     mainwindow.error_label1.visible:=true;
     exit;
   end;

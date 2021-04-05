@@ -470,7 +470,7 @@ begin
   {calculate median of the longest lenght ratio for matching quads}
   for k:=0 to nr_references2-1 do
     ratios[k]:=quad_star_distances1[0,matchlist2[0,k]]/quad_star_distances2[0,matchlist2[1,k]]; {ratio between largest length of found and reference quad}
-  median_ratio:=smedian(ratios);
+  median_ratio:=smedian(ratios,nr_references2);
 
   {calculate median absolute deviation of the longest length ratio for matching quads}
 //  for k:=0 to nr_references2-1 do {find standard deviation orientation quads}

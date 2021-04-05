@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1763
-    ActivePage = tab_stackmethod1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 5
+    TabIndex = 0
     TabOrder = 5
     OnChange = pagecontrol1Change
     object Images: TTabSheet
@@ -1330,14 +1330,14 @@ object stackmenu1: Tstackmenu1
         OnClick = help_stack_menu2Click
       end
       object filter_groupbox1: TGroupBox
-        Left = 488
-        Height = 203
-        Top = 192
-        Width = 268
+        Left = 557
+        Height = 239
+        Top = 168
+        Width = 288
         AutoSize = True
         Caption = 'R+G+B+L stacking, link filters to RGB colours'
-        ClientHeight = 183
-        ClientWidth = 264
+        ClientHeight = 219
+        ClientWidth = 284
         ParentFont = False
         TabOrder = 4
         object red_filter1: TEdit
@@ -1500,18 +1500,6 @@ object stackmenu1: Tstackmenu1
           TabOrder = 1
           Text = 'Ha'
         end
-        object Label43: TLabel
-          Left = 2
-          Height = 15
-          Top = 144
-          Width = 196
-          Caption = 'For LRGB only, the RGB smooth filter:'
-          Color = clBtnFace
-          ParentColor = False
-          ParentFont = False
-          Transparent = False
-          WordWrap = True
-        end
         object green_filter_add1: TEdit
           Left = 154
           Height = 23
@@ -1670,42 +1658,86 @@ object stackmenu1: Tstackmenu1
           ParentColor = False
           ParentFont = False
         end
-        object RGB_filter1: TComboBox
+        object lrgb_auto_level1: TCheckBox
           Left = 0
+          Height = 19
+          Hint = 'Auto adjust the colour levels after stacking.'
+          Top = 144
+          Width = 78
+          Caption = 'Auto levels'
+          Checked = True
+          Color = clDefault
+          OnChange = lrgb_auto_level1Change
+          ParentColor = False
+          ParentFont = False
+          State = cbChecked
+          TabOrder = 20
+        end
+        object lrgb_colour_smooth1: TCheckBox
+          Left = 0
+          Height = 19
+          Hint = 'Apply colour smooth after stacking.'
+          Top = 169
+          Width = 100
+          Caption = 'Colour smooth'
+          Checked = True
+          Color = clDefault
+          OnChange = make_osc_color1Change
+          ParentColor = False
+          ParentFont = False
+          State = cbChecked
+          TabOrder = 21
+        end
+        object lrgb_smart_smooth_width1: TComboBox
+          Left = 136
           Height = 23
-          Hint = 'Filter applied on RGB before applying L'
-          Top = 160
-          Width = 264
+          Hint = 'Colour smoothing range in pixels. This will keep luminance but smooth the colours. Default is 10'
+          Top = 169
+          Width = 60
           ItemHeight = 15
+          ItemIndex = 2
           Items.Strings = (
-            'no filter'
-            '3x3 box blur'
-            '5x5 box blur'
-            'Gaussian blur (1)'
-            'Gaussian blur (2)'
-            'Gaussian blur (3)'
-            'Gaussian blur (5)'
-            'Gaussian blur (7)'
-            'Gaussian blur (10)'
-            'Gaussian blur (15)'
-            'Gaussian blur (23)'
-            'Gaussian blur (35)'
-            'Gaussian blur (50)'
-            'Colour smooth (4)'
-            'Colour smooth (6)'
-            'Colour smooth (8)'
-            'Colour smooth (10)'
-            'Colour smooth (15)'
-            'Colour smooth (23)'
-            'Colour smooth (35)'
-            'Colour smooth (50)'
-            ''
-            ''
-            ''
+            '5'
+            '7'
+            '10'
+            '15'
+            '20'
+            '25'
           )
           ParentFont = False
-          Style = csDropDownList
-          TabOrder = 20
+          TabOrder = 22
+          Text = '10'
+        end
+        object lrgb_smart_colour_sd1: TComboBox
+          Left = 224
+          Height = 23
+          Hint = 'Standard deviation to detect objects to be colour blurred. Default 3'
+          Top = 169
+          Width = 60
+          ItemHeight = 15
+          ItemIndex = 2
+          Items.Strings = (
+            '2.0'
+            '2.5'
+            '3.0'
+            '4.0'
+            '5.0'
+            '6.0'
+          )
+          ParentFont = False
+          TabOrder = 23
+          Text = '3.0'
+        end
+        object lrgb_preserve_r_nebula1: TCheckBox
+          Left = 136
+          Height = 19
+          Hint = 'Preserve red nebula around bright stars'
+          Top = 200
+          Width = 117
+          Caption = 'preserve_R_nebula'
+          Checked = True
+          State = cbChecked
+          TabOrder = 24
         end
       end
       object test_flat_mean: TButton
@@ -1721,7 +1753,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 5
       end
       object Label18: TLabel
-        Left = 810
+        Left = 864
         Height = 48
         Top = 216
         Width = 568
@@ -1734,7 +1766,7 @@ object stackmenu1: Tstackmenu1
         WordWrap = True
       end
       object Label39: TLabel
-        Left = 810
+        Left = 864
         Height = 15
         Top = 264
         Width = 252
@@ -1842,7 +1874,7 @@ object stackmenu1: Tstackmenu1
         end
       end
       object Label60: TLabel
-        Left = 810
+        Left = 864
         Height = 91
         Top = 293
         Width = 568
@@ -1856,13 +1888,13 @@ object stackmenu1: Tstackmenu1
       end
       object raw_box1: TGroupBox
         Left = 24
-        Height = 232
+        Height = 239
         Hint = 'Use RAW files for best performance. Use viewer menu TOOLS, conversion DSLR images for import.'
         Top = 168
-        Width = 456
+        Width = 496
         Caption = 'RAW one shot colour images'
-        ClientHeight = 212
-        ClientWidth = 452
+        ClientHeight = 219
+        ClientWidth = 492
         ParentFont = False
         TabOrder = 7
         object make_osc_color1: TCheckBox
@@ -1950,10 +1982,10 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
         end
         object undo_button7: TBitBtn
-          Left = 416
+          Left = 456
           Height = 30
           Hint = 'Undo last action'
-          Top = 40
+          Top = 14
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -2000,7 +2032,7 @@ object stackmenu1: Tstackmenu1
           Left = 424
           Height = 30
           Hint = 'Help'
-          Top = 88
+          Top = 96
           Width = 9
           Caption = '?'
           Font.Color = clBlue
@@ -2065,7 +2097,7 @@ object stackmenu1: Tstackmenu1
           Left = 8
           Height = 19
           Hint = 'Apply colour smooth after stacking.'
-          Top = 64
+          Top = 68
           Width = 100
           Caption = 'Colour smooth'
           Checked = True
@@ -2079,10 +2111,10 @@ object stackmenu1: Tstackmenu1
           TabOrder = 7
         end
         object osc_smart_colour_sd1: TComboBox
-          Left = 232
+          Left = 227
           Height = 23
           Hint = 'Standard deviation to detect objects to be colour blurred. Default 3'
-          Top = 60
+          Top = 68
           Width = 60
           Enabled = False
           ItemHeight = 15
@@ -2100,10 +2132,10 @@ object stackmenu1: Tstackmenu1
           Text = '3.0'
         end
         object osc_smart_smooth_width1: TComboBox
-          Left = 144
+          Left = 136
           Height = 23
           Hint = 'Colour smoothing range in pixels. This will keep luminance but smooth the colours. Default is 10'
-          Top = 60
+          Top = 68
           Width = 60
           Enabled = False
           ItemHeight = 15
@@ -2119,6 +2151,17 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
           TabOrder = 9
           Text = '10'
+        end
+        object osc_preserve_r_nebula1: TCheckBox
+          Left = 304
+          Height = 19
+          Hint = 'Preserve red nebula around bright stars'
+          Top = 68
+          Width = 117
+          Caption = 'preserve_R_nebula'
+          Checked = True
+          State = cbChecked
+          TabOrder = 10
         end
       end
       object undo_button6: TBitBtn
@@ -3984,7 +4027,7 @@ object stackmenu1: Tstackmenu1
         Left = 120
         Height = 26
         Hint = 'Analyse image files'
-        Top = 6
+        Top = 5
         Width = 80
         Caption = 'Analyse'
         OnClick = mount_analyse1Click
@@ -4042,6 +4085,7 @@ object stackmenu1: Tstackmenu1
           'true equinox of date & refraction'
           ''
         )
+        OnChange = equinox1Change
         ParentFont = False
         TabOrder = 6
         Text = 'J2000'
@@ -4932,11 +4976,11 @@ object stackmenu1: Tstackmenu1
       end
       object GroupBox1: TGroupBox
         Left = 355
-        Height = 80
-        Top = 176
+        Height = 56
+        Top = 200
         Width = 430
         Caption = 'Background colour removal'
-        ClientHeight = 60
+        ClientHeight = 36
         ClientWidth = 426
         ParentFont = False
         TabOrder = 3
@@ -4944,18 +4988,18 @@ object stackmenu1: Tstackmenu1
           Left = 272
           Height = 30
           Hint = 'This command removes the background colour.'
-          Top = 24
-          Width = 100
+          Top = 0
+          Width = 97
           Caption = 'Apply'
           OnClick = apply_remove_background_colour1Click
           ParentFont = False
           TabOrder = 1
         end
         object sigma_decolour1: TComboBox
-          Left = 152
+          Left = 160
           Height = 23
           Hint = 'Standard deviation of background noise. Normal value 2.5 to 3.0. Could influence faint nebula.'
-          Top = 12
+          Top = 0
           Width = 60
           ItemHeight = 15
           ItemIndex = 5
@@ -4978,7 +5022,7 @@ object stackmenu1: Tstackmenu1
           Left = 387
           Height = 30
           Hint = 'Undo last action'
-          Top = 24
+          Top = -1
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -5021,9 +5065,9 @@ object stackmenu1: Tstackmenu1
           TabOrder = 2
         end
         object Label36: TLabel
-          Left = 64
+          Left = 72
           Height = 15
-          Top = 15
+          Top = 3
           Width = 80
           Caption = 'Signal below σ:'
           ParentColor = False
@@ -5032,17 +5076,17 @@ object stackmenu1: Tstackmenu1
       end
       object GroupBox2: TGroupBox
         Left = 355
-        Height = 60
+        Height = 84
         Hint = 'Improves colour of saturated stars'
         Top = 112
         Width = 430
         Caption = 'Smart colour smoothing'
-        ClientHeight = 40
+        ClientHeight = 64
         ClientWidth = 426
         ParentFont = False
         TabOrder = 4
         object smart_colour_smooth_button1: TButton
-          Left = 212
+          Left = 213
           Height = 30
           Hint = 'This routine smoothes the colour of and try to preserve nebula.'
           Top = 0
@@ -5137,6 +5181,17 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
           TabOrder = 3
           Text = '3.0'
+        end
+        object preserve_red_nebula1: TCheckBox
+          Left = 23
+          Height = 19
+          Hint = 'Keep this cheched if a red nebula is visible'
+          Top = 39
+          Width = 123
+          Caption = 'Preserve red nebula'
+          Checked = True
+          State = cbChecked
+          TabOrder = 4
         end
       end
       object GroupBox16: TGroupBox
@@ -5821,7 +5876,7 @@ object stackmenu1: Tstackmenu1
       object GroupBox3: TGroupBox
         Left = 775
         Height = 96
-        Top = 152
+        Top = 160
         Width = 256
         Caption = 'Add noise'
         ClientHeight = 76
@@ -5985,12 +6040,12 @@ object stackmenu1: Tstackmenu1
       end
       object GroupBox_test_images1: TGroupBox
         Left = 776
-        Height = 136
+        Height = 152
         Hint = 'Create artificial test image for testing star detection. This tool is intendent for developpers only.'
         Top = 8
         Width = 255
         Caption = 'Create test images'
-        ClientHeight = 116
+        ClientHeight = 132
         ClientWidth = 251
         ParentFont = False
         TabOrder = 3
@@ -5998,7 +6053,7 @@ object stackmenu1: Tstackmenu1
           Left = 128
           Height = 30
           Hint = 'Create a FITS test image with levels of gray and colour.'
-          Top = 80
+          Top = 48
           Width = 118
           Caption = 'Gradient'
           OnClick = apply_create_gradient1Click
@@ -6051,6 +6106,16 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
           TabOrder = 1
           Text = '2.5'
+        end
+        object Button1: TButton
+          Left = 128
+          Height = 30
+          Hint = 'Inspect the image with the sensitive setting SNR>10.'
+          Top = 99
+          Width = 115
+          Caption = 'Inspector (SNR>10)'
+          OnClick = Button1Click
+          TabOrder = 4
         end
       end
       object GroupBox12: TGroupBox

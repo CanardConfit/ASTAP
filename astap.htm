@@ -28,7 +28,7 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
             &nbsp;<big>version 0.9.519 dated 2021-03-25. &nbsp;Alternative
-            link, the very latest development version 0.9.521 <a href="astap_setup.exe">ASTAP installer</a>
+            link, the very latest development version 0.9.522 <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.exe/download">H17
@@ -1811,17 +1811,14 @@ solving
             also
             depending on the astronomical seeing and the quality of the
             optics. If the image is solved it will also be indicated in arc seconds. </li><li><strong>Sensor tilt</strong> as the
-            percentage&nbsp;ratio between the best and worst corner
+            HFD difference between the best and worst corner
             median
             values. In addition as an graphical indication it draws an
             trapezium in
             the image based on the four median values.<br>
-            There can be some variation in images of the same series, so
-            a tilt of
-            maybe 20% looks normal but anything more indicates a camera
-            mounting
-            problem. The lower the value the better. The unit if expressed in delta HFD.&nbsp;
-          </li><li><strong>Off-axis abberation</strong>
+There can be some variation in images of the same series. Any tilt
+equal or less then 10% of the range is a good value. Any tilt equal or
+more then 20% of the range indicates a tilt problem.&nbsp;&nbsp; </li><li><strong>Off-axis abberation</strong>
 as the delta between the HFD value in the center and in the outer areas
 of the image. The stars in the outer area are normally a little larger,
 oval or comet shaped due to the optics or curvature giving an higher
