@@ -853,6 +853,8 @@ const
          r,err : integer;
      begin
        t:='';
+     //  memo2_message(char(header[r])+char(header[r+1])+char(header[r+2])+char(header[r+3])+char(header[r+4])+char(header[r+5]));
+
        r:=I+10;{position 11 equals 10}
        while ((header[r]<>'/') and (r<=I+29) {pos 30}) do {'/' check is strictly not necessary but safer}
        begin  {read 20 characters max, position 11 to 30 in string, position 10 to 29 in pchar}
@@ -1160,9 +1162,6 @@ begin
           if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') and (header[i+5]='L')) then  {focall}
                   focallen:=validate_double;{Focal length of telescope in mm, maxim DL keyword}
 
-//          if ((header[i]='A') and (header[i+1]='I')  and (header[i+2]='R') and (header[i+3]='M') and (header[i+4]='A') and (header[i+5]='S')) then  {airmass}
-//                  airmass:=validate_double;
-
           if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='V') and (header[i+3]='A') and (header[i+4]='L')) then {crval1/2}
           begin
             if (header[i+5]='1') then  ra0:=validate_double*pi/180; {ra center, read double value}
@@ -1184,17 +1183,18 @@ begin
           begin
             if  ((header[i+3]='C') and (header[i+4]='T')) then {objctra, objctdec}
             begin
-              if ((header[i+5]='R') and (header[i+6]='A')) then
+              if ((header[i+5]='R') and (header[i+6]='A') and (ra_mount>=999) {ra_mount value is unfilled, preference for keyword RA}) then
               begin
                 mainwindow.ra1.text:=get_string;{triggers an onchange event which will convert the string to ra_radians}
-                ra_mount:=ra_radians;
+                ra_mount:=ra_radians;{preference for keyword RA}
               end
               else
-              if ((header[i+5]='D') and (header[i+6]='E')) then
+              if ((header[i+5]='D') and (header[i+6]='E') and (dec_mount>=999){dec_mount value is unfilled, preference for keyword DEC}) then
               begin
                 mainwindow.dec1.text:=get_string;{triggers an onchange event which will convert the string to dec_radians}
                 dec_mount:=dec_radians;
               end;
+
   //            else {for older MaximDL5}
   //            if ((header[i+5]='A') and (header[i+6]='L') and (centaz=999)) then begin if header[i+10]=#39 then centalt:=get_string else centalt:=validate_double; end{temporary accept floats}
   //            else {for older MaximDL5}
@@ -3168,7 +3168,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.523, '+about_message4+', dated 2021-4-5';
+  #13+#10+'ASTAP version ß0.9.523b, '+about_message4+', dated 2021-4-6';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);

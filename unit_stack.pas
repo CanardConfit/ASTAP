@@ -2040,20 +2040,14 @@ end;
 
 
 procedure listview_removeselect(tl :tlistview);
-var index,counter: integer;
+var index: integer;
 begin
-  index:=0;
-  counter:=tl.Items.Count;
-  while index<counter do
+  index:=tl.Items.Count-1;
+  while index>=0 do
   begin
     if tl.Items[index].Selected then
-    begin
-      tl.Items[index].Selected:=false;{this is only required for Mac}
       tl.Items.Delete(Index);
-      dec(counter);{one file less}
-    end
-    else
-    inc(index); {go to next file}
+    dec(index); {go to next file}
   end;
 end;
 
@@ -2132,15 +2126,13 @@ end;
 procedure listview_select(tl:tlistview);
 var index: integer;
 begin
- tl.Items.BeginUpdate;
- for index:=0 to tl.Items.Count-1 do
-   begin
-     if tl.Items[index].Selected then
-     begin
-       tl.Items[index].Checked:=true;
-     end;
-   end;
-   tl.Items.EndUpdate;
+  tl.Items.BeginUpdate;
+  for index:=0 to tl.Items.Count-1 do
+  begin
+    if tl.Items[index].Selected then
+      tl.Items[index].Checked:=true;
+  end;
+  tl.Items.EndUpdate;
 end;
 
 
@@ -2740,26 +2732,21 @@ begin
   listview4.Clear;
 end;
 
+
 procedure listview_rename_bak(tl : tlistview);
-var index,counter: integer;
+var index : integer;
 begin
-  index:=0;
-  counter:=tl.Items.Count;
-  while index<counter do
+  index:=tl.Items.Count-1;
+  while index>=0 do
   begin
     if  tl.Items[index].Selected then
     begin
       filename2:=tl.items[index].caption;
       deletefile(changeFileExt(filename2,'.bak'));{delete *.bak left over from astrometric solution}
       if RenameFile(filename2,ChangeFileExt(filename2,'.bak')) then
-      begin
-         tl.Items[index].Selected:=false;{this is only required for Mac}
          tl.Items.Delete(Index);
-         dec(index);{next file goes down in index, compensate}
-         dec(counter);{one file less}
-      end;
     end;
-    inc(index); {go to next file}
+    dec(index); {go to next file}
   end;
 end;
 
@@ -2919,9 +2906,7 @@ begin
   for index:=0 to tl.Items.Count-1 do
   begin
     if tl.Items[index].Selected then
-    begin
       tl.Items[index].Checked:=false;
-    end;
   end;
   tl.Items.EndUpdate;
 end;
@@ -6691,9 +6676,6 @@ begin
       info:=info+slinebreak;
     end;
   end;
-//  except
-//    info:='Error at index '+inttostr(index)+ ', sub item: '+ inttostr(c)+ slinebreak +info;
-//  end;
   Clipboard.AsText:=info;
 end;
 
