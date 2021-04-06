@@ -959,7 +959,13 @@ const
   M_dec_e=13;
   M_centalt=14;
   M_foctemp=15;
-  M_nr=16;{number of fields}
+  M_ra_nut=16;
+  M_dec_nut=17;
+  M_ra_aberr=18;
+  M_dec_aberr=19;
+  M_ra_refr=20;
+  M_dec_refr=21;
+  M_nr=22;{number of fields}
 
 
   icon_thumb_down=8; {image index for outlier}
@@ -3058,7 +3064,7 @@ var
   loaded,  success,green,blue      : boolean;
   img                              : image_array;
 
-  nr_stars, hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right : double;
+  nr_stars, hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right,ra_nut,dec_nut,ra_aberr,dec_aberr,ra3,dec3 : double;
 
 begin
   Save_Cursor := Screen.Cursor;
@@ -3297,23 +3303,47 @@ begin
               begin
                 theindex:=stackmenu1.equinox2.itemindex;
                 if ((theindex=1) or (theindex=2)) then  precession2(jd,ra_mount,dec_mount,ra_mount,dec_mount);
-                if ((theindex=2) or (theindex=3)) then  nutation_aberration_correction_equatorial_classic(jd,ra_mount,dec_mount);{nutation, abberation}
+                if ((theindex=2) or (theindex=3)) then  nutation_aberration_correction_equatorial_classic(jd,ra_mount,dec_mount,ra_nut,dec_nut,ra_aberr,dec_aberr);{nutation, abberation}
 
                 lv.Items.item[c].subitems.Strings[M_ra_m]:=floattostrf(ra_mount*180/pi,ffgeneral, 9, 9);
                 lv.Items.item[c].subitems.Strings[M_dec_m]:=floattostrf(dec_mount*180/pi,ffgeneral, 9, 9);
               end;
+
+
+              //http://www.bbastrodesigns.com/coordErrors.html  Gives same value within a fraction of arcsec.
+              //2020-1-1, JD=2458850.50000, RA,DEC position 12:00:00, 40:00:00, precession +00:01:01.45, -00:06:40.8, Nutation -00:00:01.1,  +00:00:06.6, Annual aberration +00:00:00.29, -00:00:14.3
+              //2020-1-1, JD=2458850.50000  RA,DEC position 06:00:00, 40:00:00, precession +00:01:23.92, -00:00:01.2, Nutation -00:00:01.38, -00:00:01.7, Annual aberration +00:00:01.79, +00:00:01.0
+              //2030-6-1, JD=2462654.50000  RA,DEC position 06:00:00, 40:00:00, precession +00:02:07.63, -00°00'02.8",Nutation +00:00:01.32, -0°00'02.5", Annual aberration -00:00:01.65, +00°00'01.10"
+
+              //jd:=2458850.5000;
+              //ra0:=pi;
+              //dec0:=40*pi/180;
 
               if cd1_1<>0 then
               begin
                 theindex:=stackmenu1.equinox1.itemindex;
 
                 if theindex>=1 then  precession2(jd,ra0,dec0,ra0,dec0);
-                if theindex>=2  then  nutation_aberration_correction_equatorial_classic(jd,ra0,dec0);{nutation, abberation}
+                if theindex>=2  then
+                begin
+                    nutation_aberration_correction_equatorial_classic(jd,ra0,dec0,ra_nut,dec_nut,ra_aberr,dec_aberr);{nutation, abberation}
+                    lv.Items.item[c].subitems.Strings[M_ra_nut]:=floattostrf(ra_nut*3600*180/pi,ffFixed, 6,1);
+                    lv.Items.item[c].subitems.Strings[M_dec_nut]:=floattostrf(dec_nut*3600*180/pi,ffFixed, 6,1);
+                    lv.Items.item[c].subitems.Strings[M_ra_aberr]:=floattostrf(ra_aberr*3600*180/pi,ffFixed, 6,1);
+                    lv.Items.item[c].subitems.Strings[M_dec_aberr]:=floattostrf(dec_aberr*3600*180/pi,ffFixed, 6,1);
 
-                alt:=calculate_altitude(theindex>=3 {correct ra0, dec0});{convert centalt string to double or calculate altitude from observer location}
+                end;
+
+                ra3:=ra0;
+                dec3:=dec0;
+                alt:=calculate_altitude(theindex>=3 {correct ra0, dec0});{convert centalt string to double or calculate altitude from observer location and correct ra0, dec0}
                 if alt<>0 then
                 begin
-                  lv.Items.item[c].subitems.Strings[M_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
+                  lv.Items.item[c].subitems.Strings[M_centalt]:=floattostrf(alt,ffFixed, 3, 1); {altitude}
+
+                  lv.Items.item[c].subitems.Strings[M_ra_refr]:=floattostrf(((ra0-ra3)*cos(dec3))*3600*180/pi,ffFixed, 6,1);
+                  lv.Items.item[c].subitems.Strings[M_dec_refr]:=floattostrf((dec0-dec3)*3600*180/pi,ffFixed, 6,1);
+
                 end;
 
 
@@ -3322,8 +3352,8 @@ begin
 
                 if ra_mount<99 then {mount position known and specified}
                 begin
-                  lv.Items.item[c].subitems.Strings[M_ra_e]:=floattostrf((ra_mount-ra0)*cos(dec0)*3600*180/pi,ffgeneral, 6,1);
-                  lv.Items.item[c].subitems.Strings[M_dec_e]:=floattostrf((dec_mount-dec0)*3600*180/pi,ffgeneral, 6,1);
+                  lv.Items.item[c].subitems.Strings[M_ra_e]:=floattostrf((ra0-ra_mount)*cos(dec0)*3600*180/pi,ffFixed, 6,1);
+                  lv.Items.item[c].subitems.Strings[M_dec_e]:=floattostrf((dec0-dec_mount)*3600*180/pi,ffFixed, 6,1);
                 end
                 else
                 begin

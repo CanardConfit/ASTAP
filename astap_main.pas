@@ -3168,7 +3168,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.523b, '+about_message4+', dated 2021-4-6';
+  #13+#10+'ASTAP version ß0.9.524, '+about_message4+', dated 2021-4-6';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -10101,7 +10101,7 @@ var
 begin
   result:=strtofloat2(centalt);
 
-  if ((result=0) and (cd1_1<>0)) then {calculate from observation location, image center and time the altitude}
+  if (((result=0) or (correct_radec_refraction)) and (cd1_1<>0)) then {calculate from observation location, image center and time the altitude}
   begin
     if sitelat='' then
     begin

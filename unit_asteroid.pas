@@ -142,7 +142,7 @@ const
 
 procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot :boolean) ;{read MPCORB.dat}{han.k}
 procedure precession2(julian_et,raold,decold:double;var ranew,decnew:double);{correct precession for equatorial coordinates}
-procedure nutation_aberration_correction_equatorial_classic(julian_et: double;var ra,dec:double);
+procedure nutation_aberration_correction_equatorial_classic(julian_et: double;var ra,dec,ra_nut,dec_nut,ra_aberr,dec_aberr:double);
 function altitude_and_refraction(lat,long,julian,temperature:double;correct_radec_refraction: boolean; var ra_date,dec_date :double):double;{altitude calculation and correction ra, dec for refraction}
 
 implementation
@@ -1145,8 +1145,8 @@ PROCEDURE EQUHOR2 (DEC,TAU,PHI: double; VAR H,AZ: double);
   END;
 
 
-procedure nutation_aberration_correction_equatorial_classic(julian_et: double;var ra,dec:double);{M&P page 208}
-var r,x0,y0,z0,vx,vy,vz:double;
+procedure nutation_aberration_correction_equatorial_classic(julian_et: double;var ra,dec,ra_nut,dec_nut,ra_aberr,dec_aberr:double);{M&P page 208}
+var r,x0,y0,z0,vx,vy,vz,ra2,dec2,cos_dec:double;
 begin
   //http://www.bbastrodesigns.com/coordErrors.html  Gives same value within a fraction of arcsec.
   //2020-1-1, JD=2458850.50000, RA,DEC position 12:00:00, 40:00:00, precession +00:01:01.45, -00:06:40.8, Nutation -00:00:01.1,  +00:00:06.6, Annual aberration +00:00:00.29, -00:00:14.3
@@ -1157,12 +1157,22 @@ begin
 
   NUTEQU((julian_et-2451545.0)/36525.0 ,x0,y0,z0);{add nutation}
 
+  polar2(x0,y0,z0,r,dec2,ra2);
+
+  dec_nut:=dec2-dec;
+  cos_dec:=cos(dec);
+  ra_nut:=(ra2-ra)*cos_dec;
+
   ABERRAT((julian_et-2451545.0)/36525.0,vx,vy,vz);{ABERRAT: velocity vector of the Earth in equatorial coordinates and units of the velocity of light}
   x0:=x0+VX;{apply aberration,(v_earth/speed_light)*180/pi=20.5"}
   y0:=y0+VY;
   z0:=z0+VZ;
 
   polar2(x0,y0,z0,r,dec,ra);
+
+  dec_aberr:=dec-dec2;
+  ra_aberr:=(ra-ra2)*cos_dec;
+
 end;
 
 
@@ -1187,7 +1197,7 @@ end;
 
 
 PROCEDURE RA_AZ(RA,dec,LAT,LONG,t:double;var azimuth2,altitude2: double);{conversion ra & dec to altitude,azimuth}
-{input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-90..90],long[0..360],time[0..2*pi]}
+{input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2*pi],time[0..2*pi]}
 begin
   EQUHOR2(dec,ra-(long)-t,lat, {var:} altitude2,azimuth2);
   azimuth2:=pi-azimuth2;

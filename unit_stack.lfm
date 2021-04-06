@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 353
+  Left = 89
   Height = 644
-  Top = 209
+  Top = 204
   Width = 1764
   AllowDropFiles = True
   Caption = 'stack menu'
@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1763
-    ActivePage = mount1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 10
+    TabIndex = 0
     TabOrder = 5
     OnChange = pagecontrol1Change
     object Images: TTabSheet
@@ -3908,20 +3908,20 @@ object stackmenu1: Tstackmenu1
           item
             Alignment = taRightJustify
             Caption = 'Exposure'
+            MinWidth = 60
+            Width = 60
+          end        
+          item
+            Alignment = taRightJustify
+            Caption = 'Temperature'
             MinWidth = 80
             Width = 80
           end        
           item
             Alignment = taRightJustify
-            Caption = 'Temperature'
-            MinWidth = 100
-            Width = 100
-          end        
-          item
-            Alignment = taRightJustify
             Caption = 'Binning'
-            MinWidth = 70
-            Width = 70
+            MinWidth = 60
+            Width = 60
           end        
           item
             Alignment = taRightJustify
@@ -3989,6 +3989,36 @@ object stackmenu1: Tstackmenu1
             Caption = 'Foctemp'
             MinWidth = 65
             Width = 65
+          end        
+          item
+            Caption = 'α nut ["]'
+            MinWidth = 60
+            Width = 60
+          end        
+          item
+            Caption = 'δ nut ["]'
+            MinWidth = 60
+            Width = 60
+          end        
+          item
+            Caption = 'α aberr ["]'
+            MinWidth = 70
+            Width = 70
+          end        
+          item
+            Caption = 'δ aberr ["]'
+            MinWidth = 70
+            Width = 70
+          end        
+          item
+            Caption = 'α refr ["]'
+            MinWidth = 60
+            Width = 60
+          end        
+          item
+            Caption = 'α refr ["]'
+            MinWidth = 60
+            Width = 60
           end>
         GridLines = True
         HideSelection = False
@@ -4106,15 +4136,16 @@ object stackmenu1: Tstackmenu1
         Top = 6
         Width = 184
         ItemHeight = 15
+        ItemIndex = 0
         Items.Strings = (
-          'No change'
+          'J2000 (No change)'
           '=> mean equinox of date'
           '=> true equinox of date'
           '=> nutation & aberration'
         )
         ParentFont = False
         TabOrder = 7
-        Text = 'J2000'
+        Text = 'J2000 (No change)'
       end
       object Label63: TLabel
         Left = 1005
