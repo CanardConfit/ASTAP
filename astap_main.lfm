@@ -1172,8 +1172,8 @@ object mainwindow: Tmainwindow
           end
         end
         object split_osc1: TMenuItem
-          Caption = 'Raw colour seperation'
-          Hint = 'This will extract the colours from a raw DSLR/OCS image write them to seperate files.'
+          Caption = 'Raw colour separation'
+          Hint = 'This will extract the colours from a raw DSLR/OCS image write them to separate files.'
           ImageIndex = 14
           object extractgreen1: TMenuItem
             Caption = 'Extract raw GREEN pixels and combine'

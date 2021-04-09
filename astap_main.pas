@@ -707,6 +707,7 @@ procedure show_shape_manual_alignment(index: integer);{show the marker on the re
 function calculate_altitude(correct_radec_refraction : boolean): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
 procedure write_astronomy_wcs(filen:string);
 procedure CCDinspector(snr_min: double);
+function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
 
 
 
@@ -3168,7 +3169,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.524, '+about_message4+', dated 2021-4-6';
+  #13+#10+'ASTAP version ß0.9.525, '+about_message4+', dated 2021-4-9';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6640,7 +6641,7 @@ begin
 end;
 
 
-procedure savefits_update_header(filen,filen2:string);{save fits file with updated header}
+function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
 var
   reader_position,I,readsize  : integer;
   TheFile4  : tfilestream;
@@ -6648,7 +6649,8 @@ var
   line0       : ansistring;
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
   header    : array[0..2880] of ansichar;
-
+  endfound  : boolean;
+  filename_bak: string;
 
      procedure close_fits_files;
      begin
@@ -6669,68 +6671,75 @@ var
        validate_double:=x;
      end;
 begin
+  result:=false;
+  filename_bak:=changeFileExt(filen2,'.bak');
+  if fileexists(filename_bak) then deletefile(filename_bak);
 
-  try
-    TheFile3:=tfilestream.Create(filen, fmOpenRead or fmShareDenyWrite);
-  except
-    close_fits_files;
-    exit;
+  if renamefile(filen2,filename_bak) then
+  begin //save with update header
+
+    try
+      TheFile3:=tfilestream.Create(filename_bak, fmOpenRead or fmShareDenyWrite);
+      TheFile4:=tfilestream.Create(filen2, fmcreate );
+
+      Reader := TReader.Create (theFile3,$4000);{number of hnsky records}
+      {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
+      I:=0;
+      reader_position:=0;
+      repeat
+        reader.read(header[i],80); {read file info, 80 bytes only}
+        inc(reader_position,80);
+        endfound:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D') and (header[i+3]=' '));
+      until ((endfound) or (I>=sizeof(header)-16 ));
+      if endfound=false then begin close_fits_files; exit;end;
+
+      fract:=frac(reader_position/2880);
+
+      if fract<>0 then
+      begin
+        i:=round((1-fract)*2880);{left part of next 2880 bytes block}
+        reader.read(header[0],i); {skip empty part and go to image data}
+        inc(reader_position,i);
+      end;
+      {reader is now at begin of data}
+
+      {write updated header}
+      for i:=0 to 79 do empthy_line[i]:=#32;{space}
+      i:=0;
+      repeat
+         if i<mainwindow.memo1.lines.count then
+         begin
+           line0:=mainwindow.memo1.lines[i];
+           while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
+           strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
+           thefile4.writebuffer(aline,80);{write updated header from memo1.}
+         end
+         else
+         begin
+            thefile4.writebuffer(empthy_line,80);{write empthy line}
+         end;
+         inc(i);
+      until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
+
+      readsize:=2880;
+      repeat
+         reader.read(fitsbuffer,readsize); {read file info IN STEPS OF 2880}
+         inc(reader_position,readsize);
+         thefile4.writebuffer(fitsbuffer,readsize); {write as bytes. Do not use write size last record is forgotten !!!}
+       until (reader_position>=thefile3.size);
+
+      Reader.free;
+      TheFile3.free;
+      TheFile4.free;
+
+      if deletefile(filename_bak) then result:=true;
+    except
+      close_fits_files;
+      beep;
+      exit;
+    end;
+
   end;
-  try
-    TheFile4:=tfilestream.Create(filen2, fmcreate );
-  except
-    close_fits_files;
-    exit;
-  end;
-
-
-  Reader := TReader.Create (theFile3,$4000);{number of hnsky records}
-  {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
-  I:=0;
-  reader_position:=0;
-  repeat
-    try reader.read(header[i],80);except;close_fits_files;end; {read file info, 80 bytes only}
-    inc(reader_position,80);
-  until (((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D')) or (I>=sizeof(header)-16 ));
-
-  fract:=frac(reader_position/2880);
-
-  if fract<>0 then
-  begin
-    i:=round((1-fract)*2880);{left part of next 2880 bytes block}
-    try reader.read(header[0],i);except;close_fits_files; exit;end; {skip empty part and go to image data}
-    inc(reader_position,i);
-  end;
-  {reader is now at begin of data}
-
-  {write updated header}
-  for i:=0 to 79 do empthy_line[i]:=#32;{space}
-  i:=0;
-  repeat
-     if i<mainwindow.memo1.lines.count then
-     begin
-       line0:=mainwindow.memo1.lines[i];
-       while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
-       strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
-       thefile4.writebuffer(aline,80);{write updated header from memo1.}
-     end
-     else
-     begin
-        thefile4.writebuffer(empthy_line,80);{write empthy line}
-     end;
-     inc(i);
-  until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
-
-  readsize:=2880;
-  repeat
-     try reader.read(fitsbuffer,readsize);except;end; {read file info IN STEPS OF 2880}
-     inc(reader_position,readsize);
-     thefile4.writebuffer(fitsbuffer,readsize); {write as bytes. Do not use write size last record is forgotten !!!}
-   until (reader_position>=thefile3.size);
-
-  Reader.free;
-  TheFile3.free;
-  TheFile4.free;
 end;
 
 {$ifdef mswindows}
@@ -7160,7 +7169,6 @@ begin
     delim_pos:=get_int2(0,'delim_pos');
 
     stackmenu1.equinox1.itemindex:=get_int2(range1.itemindex,'equinox');
-    stackmenu1.equinox2.itemindex:=get_int2(range1.itemindex,'equinox2');
     stackmenu1.mount_write_wcs1.Checked:=get_boolean('wcs',true);{use wcs files for mount}
 
     stackmenu1.listview1.Items.BeginUpdate;
@@ -7492,7 +7500,6 @@ begin
     initstring.Values['delim_pos']:=inttostr(delim_pos);
 
     initstring.Values['equinox']:=inttostr(stackmenu1.equinox1.itemindex);
-    initstring.Values['equinox2']:=inttostr(stackmenu1.equinox2.itemindex);
     initstring.Values['wcs']:=boolstr[stackmenu1.mount_write_wcs1.Checked];{uses wcs file for menu mount}
 
 
@@ -9021,7 +9028,7 @@ begin
         begin
           remove_key('SITELAT =',true{all});
           remove_key('SITELONG=',true{all});
-          SaveFITSwithupdatedheader1Click(nil);
+          if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2); Screen.Cursor := Save_Cursor; exit;end;
         end
         else err:=true;
       end;
@@ -9461,7 +9468,7 @@ begin
             else
             begin
               plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations});
-              mainwindow.SaveFITSwithupdatedheader1Click(nil);
+              if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2); Screen.Cursor := Save_Cursor; exit;end;
               nrannotated :=nrannotated +1;
             end;
           end;
@@ -11067,7 +11074,7 @@ begin
 
             if hasoption('update') then
             begin
-              if fits_file_name(filename2) then mainwindow.SaveFITSwithupdatedheader1Click(nil) {update the fits file header}
+              if fits_file_name(filename2) then savefits_update_header(filename2) {update the fits file header}
               else
               save_fits(img_loaded,ChangeFileExt(filename2,'.fits'),16, true {override});{save orginal png,tiff jpg to 16 fits file}
             end;
@@ -11226,7 +11233,7 @@ begin
           begin
             if ((add_sqm) and (calculate_sqm)) then
                 update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqm);
-            mainwindow.SaveFITSwithupdatedheader1Click(nil);
+            if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
             nrsolved:=nrsolved+1;
           end
           else
@@ -13141,16 +13148,8 @@ end;
 
 
 procedure Tmainwindow.SaveFITSwithupdatedheader1Click(Sender: TObject);
-var
-  filename_bak: string;
 begin
-  try
-    filename_bak:=changeFileExt(filename2,'.bak');
-    if fileexists(filename_bak) then deletefile(filename_bak);
-    if renamefile(filename2,filename_bak) then savefits_update_header(filename_bak,filename2);
-    //mainwindow.caption:='File saved!';
-  except
-  end;
+  savefits_update_header(filename2);
 end;
 
 

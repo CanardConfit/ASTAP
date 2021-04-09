@@ -3989,36 +3989,6 @@ object stackmenu1: Tstackmenu1
             Caption = 'Foctemp'
             MinWidth = 65
             Width = 65
-          end        
-          item
-            Caption = 'α nut ["]'
-            MinWidth = 60
-            Width = 60
-          end        
-          item
-            Caption = 'δ nut ["]'
-            MinWidth = 60
-            Width = 60
-          end        
-          item
-            Caption = 'α aberr ["]'
-            MinWidth = 70
-            Width = 70
-          end        
-          item
-            Caption = 'δ aberr ["]'
-            MinWidth = 70
-            Width = 70
-          end        
-          item
-            Caption = 'α refr ["]'
-            MinWidth = 60
-            Width = 60
-          end        
-          item
-            Caption = 'α refr ["]'
-            MinWidth = 60
-            Width = 60
           end>
         GridLines = True
         HideSelection = False
@@ -4111,50 +4081,13 @@ object stackmenu1: Tstackmenu1
         Items.Strings = (
           'J2000'
           'mean equinox of date'
-          'true equinox of date'
-          'true equinox of date & refraction'
-          ''
+          'Apparent without refraction'
+          'Apparent'
         )
         OnChange = equinox1Change
         ParentFont = False
         TabOrder = 6
         Text = 'J2000'
-      end
-      object Label40: TLabel
-        Left = 680
-        Height = 15
-        Top = 8
-        Width = 36
-        Alignment = taRightJustify
-        Caption = 'Image:'
-        ParentColor = False
-      end
-      object equinox2: TComboBox
-        Left = 1056
-        Height = 23
-        Hint = 'Select the desired equinox'
-        Top = 6
-        Width = 184
-        ItemHeight = 15
-        ItemIndex = 0
-        Items.Strings = (
-          'J2000 (No change)'
-          '=> mean equinox of date'
-          '=> true equinox of date'
-          '=> nutation & aberration'
-        )
-        ParentFont = False
-        TabOrder = 7
-        Text = 'J2000 (No change)'
-      end
-      object Label63: TLabel
-        Left = 1005
-        Height = 15
-        Top = 8
-        Width = 39
-        Alignment = taRightJustify
-        Caption = 'Mount:'
-        ParentColor = False
       end
       object mount_write_wcs1: TCheckBox
         Left = 448
@@ -4165,7 +4098,7 @@ object stackmenu1: Tstackmenu1
         Caption = 'Do not modify the lights'
         Checked = True
         State = cbChecked
-        TabOrder = 8
+        TabOrder = 7
       end
     end
     object tab_live_stacking1: TTabSheet

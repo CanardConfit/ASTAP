@@ -61,9 +61,6 @@ type
     alignment1: TTabSheet;
     align_blink1: TCheckBox;
     aavso_button1: TButton;
-    equinox2: TComboBox;
-    Label40: TLabel;
-    Label63: TLabel;
     mount_analyse1: TButton;
     analysephotometrymore1: TButton;
     blink_button_contB1: TButton;
@@ -959,13 +956,7 @@ const
   M_dec_e=13;
   M_centalt=14;
   M_foctemp=15;
-  M_ra_nut=16;
-  M_dec_nut=17;
-  M_ra_aberr=18;
-  M_dec_aberr=19;
-  M_ra_refr=20;
-  M_dec_refr=21;
-  M_nr=22;{number of fields}
+  M_nr=16;{number of fields}
 
 
   icon_thumb_down=8; {image index for outlier}
@@ -3299,14 +3290,15 @@ begin
               jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
               lv.Items.item[c].subitems.Strings[M_jd_mid]:=floattostrF2(jd,0,7);{julian day}
 
+              theindex:=stackmenu1.equinox1.itemindex;
+
               if ra_mount<99 then {mount position known and specified}
               begin
-                theindex:=stackmenu1.equinox2.itemindex;
-                if ((theindex=1) or (theindex=2)) then  precession2(jd,ra_mount,dec_mount,ra_mount,dec_mount);
-                if ((theindex=2) or (theindex=3)) then  nutation_aberration_correction_equatorial_classic(jd,ra_mount,dec_mount,ra_nut,dec_nut,ra_aberr,dec_aberr);{nutation, abberation}
+                if theindex>=1 then  precession2(jd,ra_mount,dec_mount,ra_mount,dec_mount);
+                if theindex>=2 then  nutation_aberration_correction_equatorial_classic(jd,ra_mount,dec_mount);{nutation, abberation}
 
-                lv.Items.item[c].subitems.Strings[M_ra_m]:=floattostrf(ra_mount*180/pi,ffgeneral, 9, 9);
-                lv.Items.item[c].subitems.Strings[M_dec_m]:=floattostrf(dec_mount*180/pi,ffgeneral, 9, 9);
+                lv.Items.item[c].subitems.Strings[M_ra_m]:=floattostrf(ra_mount*180/pi,ffFixed, 9, 6);
+                lv.Items.item[c].subitems.Strings[M_dec_m]:=floattostrf(dec_mount*180/pi,ffFixed, 9, 6);
               end;
 
 
@@ -3319,36 +3311,24 @@ begin
               //ra0:=pi;
               //dec0:=40*pi/180;
 
+              //ra0:=41.054063*pi/180;
+              //dec0:=49.22775*pi/180;
+              //jd:=2462088.69;
+
+
               if cd1_1<>0 then
               begin
-                theindex:=stackmenu1.equinox1.itemindex;
-
-                if theindex>=1 then  precession2(jd,ra0,dec0,ra0,dec0);
+                if theindex>=1 then  precession2(jd,ra0,dec0,ra0,dec0); {J2000 to mean equinox}
                 if theindex>=2  then
-                begin
-                    nutation_aberration_correction_equatorial_classic(jd,ra0,dec0,ra_nut,dec_nut,ra_aberr,dec_aberr);{nutation, abberation}
-                    lv.Items.item[c].subitems.Strings[M_ra_nut]:=floattostrf(ra_nut*3600*180/pi,ffFixed, 6,1);
-                    lv.Items.item[c].subitems.Strings[M_dec_nut]:=floattostrf(dec_nut*3600*180/pi,ffFixed, 6,1);
-                    lv.Items.item[c].subitems.Strings[M_ra_aberr]:=floattostrf(ra_aberr*3600*180/pi,ffFixed, 6,1);
-                    lv.Items.item[c].subitems.Strings[M_dec_aberr]:=floattostrf(dec_aberr*3600*180/pi,ffFixed, 6,1);
+                    nutation_aberration_correction_equatorial_classic(jd,ra0,dec0);{Input mean equinox, result apparent.  M&P page 208}
 
-                end;
-
-                ra3:=ra0;
-                dec3:=dec0;
                 alt:=calculate_altitude(theindex>=3 {correct ra0, dec0});{convert centalt string to double or calculate altitude from observer location and correct ra0, dec0}
                 if alt<>0 then
-                begin
                   lv.Items.item[c].subitems.Strings[M_centalt]:=floattostrf(alt,ffFixed, 3, 1); {altitude}
 
-                  lv.Items.item[c].subitems.Strings[M_ra_refr]:=floattostrf(((ra0-ra3)*cos(dec3))*3600*180/pi,ffFixed, 6,1);
-                  lv.Items.item[c].subitems.Strings[M_dec_refr]:=floattostrf((dec0-dec3)*3600*180/pi,ffFixed, 6,1);
 
-                end;
-
-
-                lv.Items.item[c].subitems.Strings[M_ra]:=floattostrf(ra0*180/pi,ffgeneral, 9, 9);
-                lv.Items.item[c].subitems.Strings[M_dec]:=floattostrf(dec0*180/pi,ffgeneral, 9, 9);
+                lv.Items.item[c].subitems.Strings[M_ra]:=floattostrf(ra0*180/pi,ffFixed, 9, 6);
+                lv.Items.item[c].subitems.Strings[M_dec]:=floattostrf(dec0*180/pi,ffFixed, 9, 6);
 
                 if ra_mount<99 then {mount position known and specified}
                 begin
@@ -3361,7 +3341,7 @@ begin
                  lv.Items.item[c].subitems.Strings[M_dec_e]:='?';
                 end;
 
-                if focus_temp<>999 then Lv.Items.item[c].subitems.Strings[M_foctemp]:=floattostrF2(focus_temp,0,1);
+                if focus_temp<>999 then Lv.Items.item[c].subitems.Strings[M_foctemp]:=floattostrF2(focus_temp,4,1);
 
               end;
 
@@ -4226,7 +4206,7 @@ begin
                listview6.Items.item[c].subitems.Strings[B_annotated ]:='✓';
             end;
             if astro_solved then
-               mainwindow.SaveFITSwithupdatedheader1Click(nil);{save solution and annotation}
+               if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;{save solution and annotation}
           end;
         end;{astrometric solve and annotate}
 
@@ -5077,8 +5057,9 @@ begin
             listview9.items[c].caption:=thefile;
           end
           else
-          mainwindow.SaveFITSwithupdatedheader1Click(nil);
-
+          begin
+            if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor;exit;end;
+          end
         end
         else
         begin
@@ -6039,7 +6020,7 @@ begin
 
         if solve_image(img_loaded,true  {get hist}) then
         begin{match between loaded image and star database}
-          mainwindow.SaveFITSwithupdatedheader1Click(nil);
+          if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2); Screen.Cursor := Save_Cursor; exit;end;
           listview7.Items.item[c].subitems.Strings[P_astrometric]:='✓';
         end
         else
@@ -6896,8 +6877,8 @@ begin
   case equinox1.itemindex of
     0 : listview9.column[9].caption:='α [°] J2000';
     1 : listview9.column[9].caption:='α [°] mean';
-    2 : listview9.column[9].caption:='α [°] true';
-    3 : listview9.column[9].caption:='α [°] tr & rf';
+    2 : listview9.column[9].caption:='α [°] app';
+    3 : listview9.column[9].caption:='α [°] app&refr';
   end;
 
 end;
@@ -7758,7 +7739,7 @@ function create_internal_solution(img: image_array) : boolean; {plate solving, i
 begin
   if solve_image(img,true) then {match between loaded image and star database}
   begin
-    mainwindow.SaveFITSwithupdatedheader1Click(nil);
+    if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2); exit;end;
     result:=true;{new solution}
   end
   else result:=false;
@@ -8246,7 +8227,7 @@ begin
         {load file}
         if load_fits(filename2,true {light},true,0,img_loaded){important required to check CD1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
         plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add_annotations});
-        mainwindow.SaveFITSwithupdatedheader1Click(nil); {save again with annotations}
+        if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2); Screen.Cursor := Save_Cursor; exit;end;
         get_annotation_position;{fill the x,y with annotation position}
       finally
       end;
