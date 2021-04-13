@@ -7359,7 +7359,7 @@ var
   filen,datef                : string;
 
 begin
-  analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{find dimensions, exposure and temperature}
+//  analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{find dimensions, exposure and temperature}
   c:=0;
   day_offset:=99999999;
   filen:='';
@@ -7416,7 +7416,7 @@ var
   d,day_offset   : double;
   filen,datef    : string;
 begin
-  analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{find dimensions, exposure and temperature}
+//  analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{find dimensions, exposure and temperature}
   c:=0;
   day_offset:=99999999;
   filen:='';

@@ -2939,7 +2939,8 @@ begin
 //  mainwindow.caption:=inttostr(round(i))+'%'+info;
   if i<=-1 then
   begin
-    if i=-101 then application.title:='🗙';
+    if i=-101 then application.title:='🗙'
+    else
     application.title:='ASTAP';
 
     mainwindow.statusbar1.SimplePanel:=false;
@@ -3169,7 +3170,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.526a, '+about_message4+', dated 2021-4-13';
+  #13+#10+'ASTAP version ß0.9.526b, '+about_message4+', dated 2021-4-13';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
