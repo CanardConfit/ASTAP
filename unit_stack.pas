@@ -7388,7 +7388,7 @@ begin
 
   if (filen<>'') then {new file}
   begin
-    if (filen<>last_dark_loaded) then
+    if ((dark_count=0){restart} or (filen<>last_dark_loaded)) then
     begin
 
       if ((roundexposure<>0 {global}) and (exposure2{request}<>roundexposure)) then memo2_message('█ █ █ █ █ █ Warning dark exposure time ('+floattostrF2(exposure,0,0)+') different then light exposure time ('+floattostrF2(exposure2,0,0) +')! █ █ █ █ █ █ ');
@@ -7441,9 +7441,9 @@ begin
 
   if filen<>'' then
   begin
-    if filen<>last_flat_loaded then {new file}
+    if ((flat_count=0){restart} or (filen<>last_flat_loaded)) then {new file}
     begin
-      memo2_message('Loading master flat file '+filen+'. Dated :'+datef);
+      memo2_message('Loading master flat file '+filen);
       flat_count:=0;{set back to zero}
       if load_fits(filen,false {light},true,0,img_flat)=false then begin memo2_message('Error'); flat_count:=0; exit; end;
       {load master in memory img_flat}
@@ -7770,26 +7770,10 @@ begin
            dark_norm_value:=dark_norm_value+img_dark[0,fitsX+(width2 div 2),fitsY +(height2 div 2)];
       dark_norm_value:=round(dark_norm_value/36);{scale factor to apply flat. The norm value will result in a factor one for the center.}
 
-
-//      dark_outlier_level:=strtofloat2(stackmenu1.hotpixel_sd_factor1.text)* dark_sigma + dark_average;{pixels above this level are hot}
       for fitsY:=0 to height2-1 do  {apply the dark}
         for fitsX:=0 to width2-1  do
         begin
           value:=img_dark[0,fitsX,fitsY]; {Darks are always made mono when making master dark}
-//          if ((ignore_hotpixels) and (value>dark_outlier_level) and (fitsx>0) and (fitsY>0)) then {case dark hot pixel replace image pixels with image neighbour pixels}
-//          begin
-//            for k:=0 to naxis3-1 do {do all colors}
-//            begin
-//               img_loaded[k,fitsX,fitsY]:=min(img_loaded[k,fitsX-1,fitsY],img_loaded[k,fitsX,fitsY-1]);  {take the lowest value of the neighbour pixels}
-//               inc(hotpixelcounter,1);
-//               if hotpixelcounter>=1000 then
-//               begin
-//                  ignore_hotpixels:=false;
-//                  memo2_message('Fix variable hotpixels stopped. Abnormal amount of hotpixels detected.');
-//               end;
-//            end;
-//          end
-//          else  {apply dark normal}
           for k:=0 to naxis3-1 do {do all colors}
                       img_loaded[k,fitsX,fitsY]:=img_loaded[k,fitsX,fitsY] - value;
 
@@ -7797,8 +7781,6 @@ begin
 
       calstat_local:=calstat_local+'D'; {dark applied}
       datamax_light:=datamax_light-dark_norm_value;
-//      datamax_light:=datamax_light - dark_average;  {correct datamax with average dark value subtracted}
-//      if hotpixelcounter>0 then memo2_message('Dark applied. For '+inttostr(hotpixelcounter)+' hot pixels replacement values used.');
     end;
   end;{apply dark}
 
