@@ -303,8 +303,8 @@ begin
             begin
               if ((use_manual_align) or (use_ephemeris_alignment)) then
               begin
-                referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
-                referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
+                referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
+                referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
               end
               else
               begin
@@ -351,8 +351,8 @@ begin
               begin
                 if ((use_manual_align) or (use_ephemeris_alignment)) then
                 begin {manual alignment}
-                  solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {calculate correction}
-                  solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]);
+                  solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {calculate correction}
+                  solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]);
                   memo2_message('Solution x:=x+'+floattostr6(solution_vectorX[2])+',  y:=y+'+floattostr6(solution_vectorY[2]));
                 end
                 else
@@ -371,7 +371,7 @@ begin
                       files_to_process[c].name:=''; {remove file from list}
                      solution:=false;
                       ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[2]:=6;{mark 3th column with exclaimation}
-                      ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_result]:='no solution';{no stack result}
+                      ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_result]:='no solution';{no stack result}
                     end;
                  end;{internal alignment}
               end
@@ -642,8 +642,8 @@ begin
           begin
             if ((use_manual_align) or (use_ephemeris_alignment)) then
             begin
-              referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
-              referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
+              referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
+              referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
             end
             else
             begin
@@ -685,8 +685,8 @@ begin
 
             if ((use_manual_align) or (use_ephemeris_alignment)) then
             begin
-              referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
-              referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
+              referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
+              referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
             end;
           end;{init, c=0}
 
@@ -698,8 +698,8 @@ begin
             begin
               if ((use_manual_align) or (use_ephemeris_alignment)) then
               begin {manual alignment}
-                solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {calculate correction}
-                solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]);
+                solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {calculate correction}
+                solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]);
                 memo2_message('Solution x:=x+'+floattostr6(solution_vectorX[2])+',  y:=y+'+floattostr6(solution_vectorY[2]));
               end
               else
@@ -1128,8 +1128,8 @@ begin
         begin
           if ((use_manual_align) or (use_ephemeris_alignment)) then
           begin
-            referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
-            referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
+            referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
+            referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
           end
           else
           begin
@@ -1179,8 +1179,8 @@ begin
               begin
                 if ((use_manual_align) or (use_ephemeris_alignment)) then
                 begin {manual alignment}
-                  solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {calculate correction}
-                  solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]);
+                  solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {calculate correction}
+                  solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]);
                   memo2_message('Solution x:=x+'+floattostr6(solution_vectorX[2])+',  y:=y+'+floattostr6(solution_vectorY[2]));
                 end
                 else
@@ -1203,7 +1203,7 @@ begin
                       files_to_process[c].name:=''; {remove file from list}
                       solution:=false;
                       ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[2]:=6;{mark 3th column with exclamation}
-                      ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_result]:='no solution';{no stack result}
+                      ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_result]:='no solution';{no stack result}
                     end;
                  end;{internal alignment}
               end
@@ -1331,18 +1331,24 @@ begin
               end
               else
               begin
-                solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {calculate correction}
-                solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]);
+                solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {calculate correction}
+                solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]);
               end;
             end
             else
             begin  {reuse solution from first step average}
-              AssignFile(savefile,ChangeFileExt(Filename2,'.astap_solution'));
-              Reset(saveFile);
-              read(savefile, solution_vectorX);
-              read(savefile, solution_vectorY);
-              read(savefile, solution_cblack);cblack:=round(solution_cblack[0]);{read cblack file previously stored}
-              CloseFile(saveFile);
+              try
+                AssignFile(savefile,ChangeFileExt(Filename2,'.astap_solution'));
+                Reset(saveFile);
+                read(savefile, solution_vectorX);
+                read(savefile, solution_vectorY);
+                read(savefile, solution_cblack);cblack:=round(solution_cblack[0]);{read cblack file previously stored}
+                CloseFile(saveFile);
+
+              except
+                memo2_message('Error reading .astap_solution file! Abort.');
+                esc_pressed:=true;
+              end;
               background_correction:=pedestal_s-cblack;{correction for difference in background}
               datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
             end;
@@ -1441,18 +1447,24 @@ begin
               end
               else
               begin
-                solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {calculate correction}
-                solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]);
+                solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {calculate correction}
+                solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]);
               end;
             end
             else
             begin  {reuse solution from first step average}
-              AssignFile(savefile,ChangeFileExt(Filename2,'.astap_solution'));
-              Reset(saveFile);
-              read(savefile, solution_vectorX);
-              read(savefile, solution_vectorY);
-              read(savefile, solution_cblack);cblack:=round(solution_cblack[0]);{read cblack previously stored}
-              CloseFile(saveFile);
+              try
+                AssignFile(savefile,ChangeFileExt(Filename2,'.astap_solution'));
+                Reset(saveFile);
+                read(savefile, solution_vectorX);
+                read(savefile, solution_vectorY);
+                read(savefile, solution_cblack);cblack:=round(solution_cblack[0]);{read cblack previously stored}
+                CloseFile(saveFile);
+              except
+                memo2_message('Error reading .astap_solution file! Abort.');
+                esc_pressed:=true;
+                exit;
+              end;
               background_correction:=pedestal_s-cblack;{correct for difference in background}
               datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
             end;
@@ -1600,8 +1612,8 @@ begin
         begin
           if ((use_manual_align) or (use_ephemeris_alignment)) then
           begin
-            referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
-            referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
+            referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
+            referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
           end
           else
           begin
@@ -1645,8 +1657,8 @@ begin
 
           if ((use_manual_align) or (use_ephemeris_alignment)) then
           begin
-            referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {reference offset}
-            referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]); {reference offset}
+            referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
+            referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
           end;
         end;{init, c=0}
 
@@ -1658,8 +1670,8 @@ begin
           begin
             if ((use_manual_align) or (use_ephemeris_alignment)) then
             begin {manual alignment}
-              solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_X]); {calculate correction}
-              solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[I_Y]);
+              solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {calculate correction}
+              solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]);
               memo2_message('Solution x:=x+'+floattostr6(solution_vectorX[2])+',  y:=y+'+floattostr6(solution_vectorY[2]));
             end
             else

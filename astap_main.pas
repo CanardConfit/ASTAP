@@ -1125,6 +1125,21 @@ begin
         if ((header[i]='B') and (header[i+1]='I')  and (header[i+2]='A') and (header[i+3]='S') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
              flatdark_count:=round(validate_double);{read integer as double value}
 
+        if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
+                if date_obs='' then date_obs:=get_string;
+
+        if ((header[i]='J') and (header[i+1]='D')  and (header[i+2]=' ') and (header[i+3]=' ') and (header[i+4]=' ')) then
+        if date_obs='' then
+        begin
+          jd2:=validate_double;
+          date_obs:=JdToDate(jd2);
+        end;
+
+        if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
+                date_obs:=get_string;
+
+        if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='A') and (header[i+6]='V')) then
+                date_avg:=get_string;
 
 
 
@@ -1294,22 +1309,6 @@ begin
                    origin:=get_string;
           if ((header[i]='I') and (header[i+1]='N')  and (header[i+2]='S') and (header[i+3]='T') and (header[i+4]='R') and (header[i+5]='U') and (header[i+6]='M')) then
                    INSTRUM:=get_string;
-
-          if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
-                  if date_obs='' then date_obs:=get_string;
-
-          if ((header[i]='J') and (header[i+1]='D')  and (header[i+2]=' ') and (header[i+3]=' ') and (header[i+4]=' ')) then
-          if date_obs='' then
-          begin
-            jd2:=validate_double;
-            date_obs:=JdToDate(jd2);
-          end;
-
-          if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
-                  date_obs:=get_string;
-
-          if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='A') and (header[i+6]='V')) then
-                  date_avg:=get_string;
 
           if ((header[i]='B') and (header[i+1]='A')  and (header[i+2]='N') and (header[i+3]='D') and (header[i+4]='P') and (header[i+5]='A') and (header[i+6]='S')) then
           begin
@@ -2938,8 +2937,9 @@ end;
 procedure progress_indicator(i:double; info:string);{0..100 is 0 to 100% indication of progress}
 begin
 //  mainwindow.caption:=inttostr(round(i))+'%'+info;
-  if i<-99 then
+  if i<=-1 then
   begin
+    if i=-101 then application.title:='🗙';
     application.title:='ASTAP';
 
     mainwindow.statusbar1.SimplePanel:=false;
@@ -3169,7 +3169,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.525, '+about_message4+', dated 2021-4-9';
+  #13+#10+'ASTAP version ß0.9.526, '+about_message4+', dated 2021-4-13';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6289,8 +6289,8 @@ procedure show_shape_manual_alignment(index: integer);{show the marker on the re
 var
   X,Y :double;
 begin
-  X:=strtofloat2(stackmenu1.listview1.Items.item[index].subitems.Strings[I_X]);
-  Y:=strtofloat2(stackmenu1.listview1.Items.item[index].subitems.Strings[I_Y]);
+  X:=strtofloat2(stackmenu1.listview1.Items.item[index].subitems.Strings[L_X]);
+  Y:=strtofloat2(stackmenu1.listview1.Items.item[index].subitems.Strings[L_Y]);
   show_marker_shape(mainwindow.shape_manual_alignment1, 1 {circle, assume a good lock},20,20,10 {minimum size},X,Y);
 end;
 
@@ -7022,10 +7022,10 @@ begin
     stackmenu1.classify_dark_temperature1.checked:= get_boolean('classify_dark_temperature',false);
     stackmenu1.classify_dark_exposure1.checked:= get_boolean('classify_dark_exposure',false);
     stackmenu1.classify_flat_filter1.checked:= get_boolean('classify_flat_filter',false);
+    stackmenu1.classify_dark_date1.checked:= get_boolean('classify_dark_date',false);
+    stackmenu1.classify_flat_date1.checked:= get_boolean('classify_flat_date',false);
 
-    stackmenu1.gridlines1.checked:= get_boolean('grid_lines',false);
     stackmenu1.uncheck_outliers1.checked:= get_boolean('uncheck_outliers',false);
-
 
     marker_position :=initstring.Values['marker_position'];{ra, dec marker}
     mainwindow.shape_marker3.hint:=marker_position;
@@ -7075,8 +7075,8 @@ begin
 
     if paramcount=0 then filename2:=initstring.Values['last_file'];{if used as viewer don't override paramstr1}
 
-    stackmenu1.ignore_hotpixels1.checked:= get_boolean('ignore_hotpixels',false);
-    dum:=initstring.Values['hotpixel_sd_factor']; if dum<>'' then stackmenu1.hotpixel_sd_factor1.text:=dum;
+//    stackmenu1.ignore_hotpixels1.checked:= get_boolean('ignore_hotpixels',false);
+//    dum:=initstring.Values['hotpixel_sd_factor']; if dum<>'' then stackmenu1.hotpixel_sd_factor1.text:=dum;
 
     dum:=initstring.Values['bayer_pat']; if dum<>'' then stackmenu1.bayer_pattern1.text:=dum;
 
@@ -7176,7 +7176,7 @@ begin
     repeat {add images}
        dum:=initstring.Values['image'+inttostr(c)];
        if ((dum<>'') and (fileexists(dum))) then
-         listview_add(stackmenu1.listview1,dum,get_boolean('image'+inttostr(c)+'_check',true),I_nr);
+         listview_add(stackmenu1.listview1,dum,get_boolean('image'+inttostr(c)+'_check',true),L_nr);
        inc(c);
     until (dum='');
     stackmenu1.listview1.Items.endUpdate;
@@ -7241,7 +7241,7 @@ begin
     repeat {add inspector files}
       dum:=initstring.Values['inspector'+inttostr(c)];
       if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview8,dum,get_boolean('inspector'+inttostr(c)+'_check',true),I_nr);
+        listview_add(stackmenu1.listview8,dum,get_boolean('inspector'+inttostr(c)+'_check',true),L_nr);
       inc(c);
     until (dum='');
     stackmenu1.listview8.Items.endUpdate;
@@ -7352,8 +7352,9 @@ begin
     initstring.Values['classify_dark_temperature']:=BoolStr[stackmenu1.classify_dark_temperature1.Checked];
     initstring.Values['classify_dark_exposure']:=BoolStr[stackmenu1.classify_dark_exposure1.Checked];
     initstring.Values['classify_flat_filter']:=BoolStr[stackmenu1.classify_flat_filter1.Checked];
+    initstring.Values['classify_dark_date']:=BoolStr[stackmenu1.classify_dark_date1.Checked];
+    initstring.Values['classify_flat_date']:=BoolStr[stackmenu1.classify_flat_date1.Checked];
 
-    initstring.Values['grid_lines']:=BoolStr[stackmenu1.gridlines1.Checked];
     initstring.Values['uncheck_outliers']:=BoolStr[stackmenu1.uncheck_outliers1.Checked];
 
     initstring.Values['write_log']:=BoolStr[stackmenu1.write_log1.checked];{write log to file}
@@ -7405,8 +7406,8 @@ begin
 
     initstring.Values['last_file']:=filename2;
 
-    initstring.Values['ignore_hotpixels']:=BoolStr[stackmenu1.ignore_hotpixels1.Checked];
-    initstring.Values['hotpixel_sd_factor']:= stackmenu1.hotpixel_sd_factor1.text;
+//    initstring.Values['ignore_hotpixels']:=BoolStr[stackmenu1.ignore_hotpixels1.Checked];
+//    initstring.Values['hotpixel_sd_factor']:= stackmenu1.hotpixel_sd_factor1.text;
 
     initstring.Values['red_filter1']:=stackmenu1.red_filter1.text;
     initstring.Values['red_filter2']:=stackmenu1.red_filter2.text;
@@ -10978,11 +10979,11 @@ begin
         if focusrequest then {find best focus using curve fitting}
         begin
            stackmenu1.clear_inspector_list1Click(nil);{clear list}
-           listview_add(stackmenu1.listview8,GetOptionValue('focus1'),true,I_nr);
+           listview_add(stackmenu1.listview8,GetOptionValue('focus1'),true,L_nr);
            focus_count:=2;
            while hasoption('focus'+inttostr(focus_count)) do
            begin
-             listview_add(stackmenu1.listview8,GetOptionValue('focus'+inttostr(focus_count)),true,I_nr);
+             listview_add(stackmenu1.listview8,GetOptionValue('focus'+inttostr(focus_count)),true,L_nr);
              inc(focus_count);
            end;
            stackmenu1.curve_fitting1Click(nil);
@@ -12218,8 +12219,8 @@ begin
  for i:=0 to listview1.Items.Count-1 do
    if listview1.Items[i].Selected then
   begin
-    ListView1.Items.item[i].subitems.Strings[I_X]:=floattostrF2(fitsX,0,2);
-    ListView1.Items.item[i].subitems.Strings[I_Y]:=floattostrF2(fitsY,0,2);
+    ListView1.Items.item[i].subitems.Strings[L_X]:=floattostrF2(fitsX,0,2);
+    ListView1.Items.item[i].subitems.Strings[L_Y]:=floattostrF2(fitsY,0,2);
   end;
 end;
 

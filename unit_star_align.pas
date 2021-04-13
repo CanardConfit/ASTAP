@@ -727,12 +727,18 @@ begin
   {solution_cblack[1] used in blinck for flux_magn_offset}
   solution_cblack[2]:=0;{spare}
 
+  try
   AssignFile(savefile,ChangeFileExt(Filename2,'.astap_solution'));
   ReWrite(saveFile);
   Write(savefile, solution_vectorX);
   Write(savefile, solution_vectorY);
   Write(savefile, solution_cblack);{save background value}
   CloseFile(saveFile);
+
+  except
+    memo2_message('Error writing .astap_solution file! Abort.');
+    esc_pressed:=true;{stop further processing}
+  end;
 end;
 
 

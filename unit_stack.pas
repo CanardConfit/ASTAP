@@ -47,6 +47,10 @@ type
     add_noise1: TButton;
     add_substract1: TComboBox;
     Button1: TButton;
+    classify_dark_date1: TCheckBox;
+    classify_flat_date1: TCheckBox;
+    flat_combine_method1: TComboBox;
+    GroupBox8: TGroupBox;
     osc_preserve_r_nebula1: TCheckBox;
     lrgb_auto_level1: TCheckBox;
     lrgb_colour_smooth1: TCheckBox;
@@ -100,6 +104,8 @@ type
     selectall9: TMenuItem;
     SpeedButton2: TSpeedButton;
     mount1: TTabSheet;
+    test_flat_mean: TButton;
+    undo_button6: TBitBtn;
     unselect9: TMenuItem;
     Viewimage9: TMenuItem;
     yyyyyy: TMenuItem;
@@ -242,7 +248,6 @@ type
     filter_artificial_colouring1: TComboBox;
     filter_groupbox1: TGroupBox;
     Flats: TTabSheet;
-    flat_combine_method1: TComboBox;
     force_oversize1: TCheckBox;
     gb1: TEdit;
     gg1: TEdit;
@@ -251,7 +256,6 @@ type
     green_filter1: TEdit;
     green_filter2: TEdit;
     green_filter_add1: TEdit;
-    gridlines1: TCheckBox;
     GroupBox1: TGroupBox;
     GroupBox10: TGroupBox;
     GroupBox11: TGroupBox;
@@ -284,11 +288,9 @@ type
     help_stack_menu1: TLabel;
     help_uncheck_outliers1: TLabel;
     hfd_simulation1: TComboBox;
-    hotpixel_sd_factor1: TComboBox;
     HueRadioButton1: TRadioButton;
     HueRadioButton2: TRadioButton;
     hue_fuzziness1: TTrackBar;
-    ignore_hotpixels1: TCheckBox;
     Images: TTabSheet;
     image_to_add1: TLabel;
     Label1: TLabel;
@@ -305,7 +307,6 @@ type
     Label20: TLabel;
     Label21: TLabel;
     Label29: TLabel;
-    Label3: TLabel;
     Label30: TLabel;
     Label31: TLabel;
     Label32: TLabel;
@@ -338,7 +339,6 @@ type
     Label61: TLabel;
     Label64: TLabel;
     Label65: TLabel;
-    Label66: TLabel;
     Label67: TLabel;
     Label68: TLabel;
     Label7: TLabel;
@@ -485,7 +485,6 @@ type
     tab_Pixelmath1: TTabSheet;
     tab_Pixelmath2: TTabSheet;
     tab_stackmethod1: TTabSheet;
-    test_flat_mean: TButton;
     test_pattern1: TButton;
     quad_tolerance1: TComboBox;
     uncheck_outliers1: TCheckBox;
@@ -500,7 +499,6 @@ type
     undo_button3: TBitBtn;
     undo_button4: TBitBtn;
     undo_button5: TBitBtn;
-    undo_button6: TBitBtn;
     undo_button7: TBitBtn;
     undo_button8: TBitBtn;
     undo_button9: TBitBtn;
@@ -617,7 +615,6 @@ type
     procedure focallength1Exit(Sender: TObject);
     procedure go_step_two1Click(Sender: TObject);
     procedure luminance_filter1exit(Sender: TObject);
-    procedure gridlines1Click(Sender: TObject);
     procedure help_inspector_tab1Click(Sender: TObject);
     procedure help_live_stacking1Click(Sender: TObject);
     procedure help_pixel_math2Click(Sender: TObject);
@@ -676,6 +673,7 @@ type
     procedure solve_and_annotate1Change(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
     procedure star_database1DropDown(Sender: TObject);
+    procedure test_flat_meanClick(Sender: TObject);
 
     procedure test_pattern1Click(Sender: TObject);
     procedure blink_button1Click(Sender: TObject);
@@ -725,7 +723,6 @@ type
     procedure sd_factor_blink1Change(Sender: TObject);
     procedure solve1Click(Sender: TObject);
     procedure splitRGB1Click(Sender: TObject);
-    procedure test_flat_meanClick(Sender: TObject);
     procedure clear_dark_list1Click(Sender: TObject);
     procedure clear_image_list1Click(Sender: TObject);
     procedure help_astrometric_alignment1Click(Sender: TObject);
@@ -819,9 +816,8 @@ var
   jd                       : double;{julian day of date-obs}
   jd_sum                   : double;{sum of julian days}
   jd_stop                  : double;{end observation in julian days}
-
   files_to_process, files_to_process_LRGB : array of  TfileToDo;{contains names to process and index to listview1}
-  flat_norm_value,dark_average,dark_sigma  : double;
+  flat_norm_value{,dark_average,dark_sigma } : double;
   areax1,areax2,areay1,areay2 : integer;
   hue1,hue2: single;{for colour disk}
   asteroidlist : array of array of array of double;
@@ -831,6 +827,9 @@ const
   dark_exposure : integer=987654321;{not done indication}
   dark_temperature: integer=987654321;
   flat_filter : string='987654321';{not done indication}
+  last_light_jd: integer=987654321;
+  last_flat_loaded : string='';
+  last_dark_loaded : string='';
 
 //  image_path: string='';
   dropsize: double=0.65; {should be between 1 and 0.5}
@@ -862,33 +861,33 @@ procedure apply_factors;{apply r,g,b factors to image}
 
 
 const
-  I_object=0; {position in listview1}
-  I_filter=1;
-  I_result=2;
-  I_bin=3;
-  I_hfd=4;
-  I_quality=5;
-  I_starlevel=6;
-  I_background=7;
-  I_sharpness=8;
-  I_exposure=9;
-  I_temperature=10;
-  I_width=11;
-  I_height=12;
-  I_type=13;
-  I_datetime=14;
-  I_position=15;
-  I_solution=16;
-  I_x=17;
-  I_y=18;
-  I_calibration=19;
-  I_focpos=20;
-  I_foctemp=21;
-  I_centalt=22;
-  I_centaz=23;
-  I_gain=24;
-  I_sqm=25;
-  I_nr=26;{number of fields}
+  L_object=0; {lights, position in listview1}
+  L_filter=1;
+  L_result=2;
+  L_bin=3;
+  L_hfd=4;
+  L_quality=5;
+  L_starlevel=6;
+  L_background=7;
+  L_sharpness=8;
+  L_exposure=9;
+  L_temperature=10;
+  L_width=11;
+  L_height=12;
+  L_type=13;
+  L_datetime=14;
+  L_position=15;
+  L_solution=16;
+  L_x=17;
+  L_y=18;
+  L_calibration=19;
+  L_focpos=20;
+  L_foctemp=21;
+  L_centalt=22;
+  L_centaz=23;
+  L_gain=24;
+  L_sqm=25;
+  L_nr=26;{number of fields}
 
   D_exposure=0;
   D_temperature=1;
@@ -896,13 +895,18 @@ const
   D_width=3;
   D_height=4;
   D_type=5;
-  D_background=6;
-  D_sigma=7;
-  D_gain=8;
-  D_nr=9;{number of fields}
+  D_date=6;
+  D_background=7;
+  D_sigma=8;
+  D_gain=9;
+  D_jd=10;
+  D_nr=11;{number of fields}
 
-  F_filter=9;
-  F_nr=10;{number of fields}
+  F_filter=10;
+  F_jd=11;
+  F_nr=12;{number of fields}
+
+  FD_nr=10;{flat darks}
 
   B_exposure=0;  {blink}
   B_temperature=1;
@@ -1253,12 +1257,12 @@ begin
       quality_mean:=0;
       nr_good_images:=0;
       repeat
-        if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[I_result])) then
+        if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[L_result])) then
         begin {checked}
-          if strtofloat(ListView1.Items.item[c].subitems.Strings[I_hfd])>90 {hfd} then ListView1.Items.item[c].checked:=false {no quality, can't process this image}
+          if strtofloat(ListView1.Items.item[c].subitems.Strings[L_hfd])>90 {hfd} then ListView1.Items.item[c].checked:=false {no quality, can't process this image}
           else
           begin {normal HFD value}
-            quality:=strtoint(ListView1.Items.item[c].subitems.Strings[I_quality]);
+            quality:=strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]);
             quality_mean:=quality_mean+quality;
             inc(nr_good_images);
 
@@ -1278,9 +1282,9 @@ begin
         c:=0;
         quality_sd:=0;
         repeat {check all files, remove darks, bias}
-          if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[I_result]))then
+          if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[L_result]))then
           begin {checked}
-            quality_sd:=quality_sd+sqr(quality_mean - strtoint(ListView1.Items.item[c].subitems.Strings[I_quality]) );
+            quality_sd:=quality_sd+sqr(quality_mean - strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]) );
           end;
           inc(c); {go to next file}
         until c>counts;
@@ -1297,10 +1301,10 @@ begin
         else sd_factor:=strtofloat2(sd);
         c:=0;
         repeat
-          if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[I_result])) then
+          if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[L_result])) then
           begin {checked}
-            ListView1.Items.item[c].subitems.Strings[I_result]:='';{remove key, job done}
-            if (quality_mean- strtoint(ListView1.Items.item[c].subitems.Strings[I_quality]))>sd_factor*quality_sd  then
+            ListView1.Items.item[c].subitems.Strings[L_result]:='';{remove key, job done}
+            if (quality_mean- strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]))>sd_factor*quality_sd  then
             begin {remove low quality outliers}
               ListView1.Items.item[c].checked:=false;
               ListView1.Items.item[c].SubitemImages[5]:=icon_thumb_down; {mark as outlier using imageindex}
@@ -1593,7 +1597,7 @@ begin
           else
           begin {conversion failure}
             ListView1.Items.item[c].checked:=false;
-            ListView1.Items.item[c].subitems.Strings[I_result]:='Funpack required, install!!';
+            ListView1.Items.item[c].subitems.Strings[L_result]:='Funpack required, install!!';
           end;
         end {cfitsio}
         else
@@ -1608,7 +1612,7 @@ begin
           else
           begin {conversion failure}
             ListView1.Items.item[c].checked:=false;
-            ListView1.Items.item[c].subitems.Strings[I_result]:='Conv failure!';
+            ListView1.Items.item[c].subitems.Strings[L_result]:='Conv failure!';
           end;
         end {raw}
         else
@@ -1629,7 +1633,7 @@ begin
           else
           begin {conversion failure}
             ListView1.Items.item[c].checked:=false;
-            ListView1.Items.item[c].subitems.Strings[I_result]:='Conv failure!';
+            ListView1.Items.item[c].subitems.Strings[L_result]:='Conv failure!';
           end;
         end;
 
@@ -1656,7 +1660,7 @@ begin
     counts:=ListView1.items.count-1;
     c:=0;
     repeat {check all files, remove darks, bias}
-      if ((ListView1.Items.item[c].checked) and ((length(ListView1.Items.item[c].subitems.Strings[I_hfd])<=1){hfd} or (new_analyse_required)) ) then {hfd unknown, only update blank rows}
+      if ((ListView1.Items.item[c].checked) and ((length(ListView1.Items.item[c].subitems.Strings[L_hfd])<=1){hfd} or (new_analyse_required)) ) then {hfd unknown, only update blank rows}
       begin {checked}
         if counts<>0 then progress_indicator(100*c/counts,' Analysing');
         Listview1.Selected :=nil; {remove any selection}
@@ -1673,7 +1677,7 @@ begin
         if fits_file=false then {failed to load}
         begin
           ListView1.Items.item[c].checked:=false;
-          ListView1.Items.item[c].subitems.Strings[I_result]:='No FITS!';
+          ListView1.Items.item[c].subitems.Strings[L_result]:='No FITS!';
         end
         else
         begin
@@ -1703,7 +1707,7 @@ begin
           begin
             memo2_message('Move file '+filename2+' to tab FLAT-DARKS / BIAS');
             listview4.Items.beginupdate;
-            listview_add(listview4,filename2,true,D_nr);
+            listview_add(listview4,filename2,true,FD_nr);
             listview4.Items.endupdate;
             listview1.Items.Delete(c);
             dec(c);{compensate for delete}
@@ -1717,11 +1721,11 @@ begin
             ListView1.Items.BeginUpdate;
             try
               begin
-                ListView1.Items.item[c].subitems.Strings[I_object]:=object_name; {object name, without spaces}
+                ListView1.Items.item[c].subitems.Strings[L_object]:=object_name; {object name, without spaces}
 
 
-                ListView1.Items.item[c].subitems.Strings[I_filter]:=filter_name; {filter name, without spaces}
-                if naxis3=3 then ListView1.Items.item[c].subitems.Strings[I_filter]:='colour'; {give RGB images filter name colour}
+                ListView1.Items.item[c].subitems.Strings[L_filter]:=filter_name; {filter name, without spaces}
+                if naxis3=3 then ListView1.Items.item[c].subitems.Strings[L_filter]:='colour'; {give RGB images filter name colour}
 
                 if AnsiCompareText(red_filter1.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=0 else
                 if AnsiCompareText(red_filter2.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=0 else
@@ -1735,44 +1739,44 @@ begin
                   if filter_name<>'' then ListView1.Items.item[c].SubitemImages[1]:=7 {question mark} else
                      ListView1.Items.item[c].SubitemImages[1]:=-1;{blank}
 
-                ListView1.Items.item[c].subitems.Strings[I_bin]:=inttostr(Xbinning)+' x '+inttostr(Ybinning); {Binning CCD}
+                ListView1.Items.item[c].subitems.Strings[L_bin]:=inttostr(Xbinning)+' x '+inttostr(Ybinning); {Binning CCD}
 
-                ListView1.Items.item[c].subitems.Strings[I_hfd]:=floattostrF2(hfd_median,0,1);
-                ListView1.Items.item[c].subitems.Strings[I_quality]:=inttostr5(round(hfd_counter/hfd_median)); {quality number of stars divided by hfd}
+                ListView1.Items.item[c].subitems.Strings[L_hfd]:=floattostrF2(hfd_median,0,1);
+                ListView1.Items.item[c].subitems.Strings[L_quality]:=inttostr5(round(hfd_counter/hfd_median)); {quality number of stars divided by hfd}
 
                 if hfd_median>=99 then ListView1.Items.item[c].checked:=false {no stars, can't process this image}
                 else
                 begin {image can be futher analysed}
-                  ListView1.Items.item[c].subitems.Strings[I_starlevel]:=inttostr5(round(star_level));
-                  ListView1.Items.item[c].subitems.Strings[I_background]:=inttostr5(round(backgr));
-                  ListView1.Items.item[c].subitems.Strings[I_sharpness]:=floattostrF2(image_sharpness(img),1,3); {sharpness test}
+                  ListView1.Items.item[c].subitems.Strings[L_starlevel]:=inttostr5(round(star_level));
+                  ListView1.Items.item[c].subitems.Strings[L_background]:=inttostr5(round(backgr));
+                  ListView1.Items.item[c].subitems.Strings[L_sharpness]:=floattostrF2(image_sharpness(img),1,3); {sharpness test}
                 end;
 
-                if exposure>=10 then  ListView1.Items.item[c].subitems.Strings[I_exposure]:=inttostr(round(exposure)) {round values above 10 seconds}
-                                else  ListView1.Items.item[c].subitems.Strings[I_exposure]:=floattostrf(exposure,ffgeneral, 6, 6);
+                if exposure>=10 then  ListView1.Items.item[c].subitems.Strings[L_exposure]:=inttostr(round(exposure)) {round values above 10 seconds}
+                                else  ListView1.Items.item[c].subitems.Strings[L_exposure]:=floattostrf(exposure,ffgeneral, 6, 6);
 
-                if set_temperature<>999 then ListView1.Items.item[c].subitems.Strings[I_temperature]:=inttostr(set_temperature);
-                ListView1.Items.item[c].subitems.Strings[I_width]:=inttostr(width2); {width}
-                ListView1.Items.item[c].subitems.Strings[I_height]:=inttostr(height2);{height}
-                ListView1.Items.item[c].subitems.Strings[I_type]:=imagetype;{type}
-                ListView1.Items.item[c].subitems.Strings[I_datetime]:=StringReplace(date_obs,'T',' ',[]);{date/time}
-                ListView1.Items.item[c].subitems.Strings[I_position]:=prepare_ra5(ra0,': ')+', '+ prepare_dec5(dec0,'° ');{give internal position}
+                if set_temperature<>999 then ListView1.Items.item[c].subitems.Strings[L_temperature]:=inttostr(set_temperature);
+                ListView1.Items.item[c].subitems.Strings[L_width]:=inttostr(width2); {width}
+                ListView1.Items.item[c].subitems.Strings[L_height]:=inttostr(height2);{height}
+                ListView1.Items.item[c].subitems.Strings[L_type]:=imagetype;{type}
+                ListView1.Items.item[c].subitems.Strings[L_datetime]:=StringReplace(date_obs,'T',' ',[]);{date/time}
+                ListView1.Items.item[c].subitems.Strings[L_position]:=prepare_ra5(ra0,': ')+', '+ prepare_dec5(dec0,'° ');{give internal position}
 
                 {is internal solution available?}
                 if cd1_1<>0 then
-                    ListView1.Items.item[c].subitems.Strings[I_solution]:='✓' else ListView1.Items.item[c].subitems.Strings[I_solution]:='-';
+                    ListView1.Items.item[c].subitems.Strings[L_solution]:='✓' else ListView1.Items.item[c].subitems.Strings[L_solution]:='-';
 
-                ListView1.Items.item[c].subitems.Strings[I_calibration]:=calstat; {status calibration}
-                if focus_pos<>0 then ListView1.Items.item[c].subitems.Strings[I_focpos]:=inttostr(focus_pos);
-                if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[I_foctemp]:=floattostrF2(focus_temp,0,1);
+                ListView1.Items.item[c].subitems.Strings[L_calibration]:=calstat; {status calibration}
+                if focus_pos<>0 then ListView1.Items.item[c].subitems.Strings[L_focpos]:=inttostr(focus_pos);
+                if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[L_foctemp]:=floattostrF2(focus_temp,0,1);
 
                 alt:=calculate_altitude(false);{convert centalt string to double or calculate altitude from observer location}
                 if alt<>0 then
-                           ListView1.Items.item[c].subitems.Strings[I_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
+                           ListView1.Items.item[c].subitems.Strings[L_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
 
-                ListView1.Items.item[c].subitems.Strings[I_centaz]:=centaz;
-                if gain<>999 then ListView1.Items.item[c].subitems.Strings[I_gain]:=inttostr(round(gain));
-                if sqm<>0 then ListView1.Items.item[c].subitems.Strings[I_sqm]:=floattostrF2(sqm,0,1);
+                ListView1.Items.item[c].subitems.Strings[L_centaz]:=centaz;
+                if gain<>999 then ListView1.Items.item[c].subitems.Strings[L_gain]:=inttostr(round(gain));
+                if sqm<>0 then ListView1.Items.item[c].subitems.Strings[L_sqm]:=floattostrF2(sqm,0,1);
 
                 if use_ephemeris_alignment1.Checked then {ephemeride based stacking}
                    get_annotation_position;{fill the x,y with annotation position}
@@ -1800,10 +1804,10 @@ begin
         end;
 
          if ListView1.items[c].Checked=true then
-             ListView1.Items.item[c].subitems.Strings[I_result]:=
-                     ListView1.Items.item[c].subitems.Strings[I_object]+'_'+{object name}
-                     ListView1.Items.item[c].subitems.Strings[I_filter]+'_'+{filter}
-                     ListView1.Items.item[c].subitems.Strings[I_exposure]; {exposure}
+             ListView1.Items.item[c].subitems.Strings[L_result]:=
+                     ListView1.Items.item[c].subitems.Strings[L_object]+'_'+{object name}
+                     ListView1.Items.item[c].subitems.Strings[L_filter]+'_'+{filter}
+                     ListView1.Items.item[c].subitems.Strings[L_exposure]; {exposure}
       end;
       {do statistics on each constructed key}
       repeat
@@ -1812,7 +1816,7 @@ begin
         repeat {check all files, uncheck outliers}
           if  ListView1.Items.item[c].checked then
           begin
-            key:=ListView1.Items.item[c].subitems.Strings[I_result];
+            key:=ListView1.Items.item[c].subitems.Strings[L_result];
             if key<>'' then
                list_remove_outliers(key);
           end;
@@ -1860,7 +1864,7 @@ begin
     listview1.Items.beginUpdate;
     for i:=0 to OpenDialog1.Files.count-1 do
     begin
-        listview_add(listview1,OpenDialog1.Files[i],   pos('_stacked',OpenDialog1.Files[i])=0 {do not check mark images already stacked}   ,I_nr);
+        listview_add(listview1,OpenDialog1.Files[i],   pos('_stacked',OpenDialog1.Files[i])=0 {do not check mark images already stacked}   ,L_nr);
     end;
     listview1.Items.EndUpdate;
   end;
@@ -2164,7 +2168,7 @@ begin
     listview4.Items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview_add(listview4,OpenDialog1.Files[i],true,D_nr);
+      listview_add(listview4,OpenDialog1.Files[i],true,FD_nr);
     end;
     listview4.Items.endupdate;
   end;
@@ -2780,10 +2784,10 @@ begin
 
           {update listview}
           if keyw='OBJECT  ' then
-            if tl=stackmenu1.listview1 then tl.Items.item[index].subitems.Strings[I_object]:=value;
+            if tl=stackmenu1.listview1 then tl.Items.item[index].subitems.Strings[L_object]:=value;
           if keyw='FILTER  ' then
           begin
-            if tl=stackmenu1.listview1 then tl.Items.item[index].subitems.Strings[I_filter]:=value;{light}
+            if tl=stackmenu1.listview1 then tl.Items.item[index].subitems.Strings[L_filter]:=value;{light}
             if tl=stackmenu1.listview3 then tl.Items.item[index].subitems.Strings[F_filter]:=value;{flat}
           end;
 
@@ -3091,7 +3095,7 @@ begin
         else
         begin {conversion failure}
           lv.Items.item[c].checked:=false;
-          lv.Items.item[c].subitems.Strings[I_result]:='Funpack required, install!!';
+          lv.Items.item[c].subitems.Strings[L_result]:='Funpack required, install!!';
         end;
       end {cfitsio}
       else
@@ -3106,7 +3110,7 @@ begin
         else
         begin {conversion failure}
           lv.Items.item[c].checked:=false;
-          lv.Items.item[c].subitems.Strings[I_result]:='Conv failure!';
+          lv.Items.item[c].subitems.Strings[L_result]:='Conv failure!';
         end;
       end {raw}
       else
@@ -3128,7 +3132,7 @@ begin
         else
         begin {conversion failure}
           lv.Items.item[c].checked:=false;
-          lv.Items.item[c].subitems.Strings[I_result]:='Conv failure!';
+          lv.Items.item[c].subitems.Strings[L_result]:='Conv failure!';
         end;
       end;
     end;{checked}
@@ -3182,6 +3186,9 @@ begin
             lv.Items.item[c].subitems.Strings[D_width]:=inttostr(width2); {image width}
             lv.Items.item[c].subitems.Strings[D_height]:=inttostr(height2);{image height}
             lv.Items.item[c].subitems.Strings[D_type]:=imagetype;{image type}
+            if lv.name<>stackmenu1.listview9.name then
+              lv.Items.item[c].subitems.Strings[D_date]:=copy(date_obs,1,10);
+
             if ((light=false) and (full=true)) {amode=2} then {dark/flats}
             begin {analyse background and noise}
               get_background(0,img,true {update_hist},false {calculate noise level}, {var} backgr,star_level);
@@ -3196,6 +3203,12 @@ begin
               lv.Items.item[c].subitems.Strings[D_gain]:=inttostr(round(gain)); {camera gain}
             end;
 
+            if lv.name=stackmenu1.listview2.name then
+            begin
+              date_to_jd(date_obs);{convert date-obs to jd}
+              lv.Items.item[c].subitems.Strings[D_jd]:=floattostrF(jd,ffFixed,0,1); {julian day, 1/10 day accuracy}
+            end
+            else
             if lv.name=stackmenu1.listview3.name then
             begin
               lv.Items.item[c].subitems.Strings[F_filter]:=filter_name; {filter name, without spaces}
@@ -3210,12 +3223,13 @@ begin
               if naxis3=3 then  lv.Items.item[c].SubitemImages[9]:=3 else {RGB color}
                  if filter_name<>'' then lv.Items.item[c].SubitemImages[9]:=7 {question mark} else
                     lv.Items.item[c].SubitemImages[9]:=-1;{blank}
+
+               date_to_jd(date_obs);{convert date-obs to jd}
+               lv.Items.item[c].subitems.Strings[F_jd]:=floattostrF(jd,ffFixed,0,1); {julian day, 1/10 day accuracy}
             end
             else
-
             if lv.name=stackmenu1.listview6.name then {blink tab}
             begin
-              lv.Items.item[c].subitems.Strings[B_date]:=date_obs_regional(date_obs);{date/time for blink}
               lv.Items.item[c].subitems.Strings[B_calibration]:=calstat; {calibration calstat info DFB}
               if annotated then lv.Items.item[c].subitems.Strings[B_annotated ]:='✓' else  lv.Items.item[c].subitems.Strings[B_annotated ]:='';
             end
@@ -3223,7 +3237,6 @@ begin
 
             if lv.name=stackmenu1.listview7.name then {photometry tab}
             begin
-              lv.Items.item[c].subitems.Strings[P_date]:=date_obs_regional(date_obs);
               lv.Items.item[c].subitems.Strings[P_filter]:=filter_name;
               date_to_jd(date_obs);{convert date-obs to jd}
               jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
@@ -3260,7 +3273,6 @@ begin
 
             if lv.name=stackmenu1.listview8.name  then {listview8 inspector tab}
             begin
-              lv.Items.item[c].subitems.Strings[B_date]:=date_obs_regional(date_obs);
               lv.Items.item[c].subitems.Strings[insp_focus_pos]:=inttostr(focus_pos);
 
               analyse_fits_extended(img, nr_stars, hfd_median,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right); {analyse several areas}
@@ -3287,20 +3299,6 @@ begin
             begin
               lv.Items.item[c].subitems.Strings[M_date]:=date_obs_regional(date_obs);
               date_to_jd(date_obs);{convert date-obs to jd}
-              jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
-              lv.Items.item[c].subitems.Strings[M_jd_mid]:=floattostrF2(jd,0,7);{julian day}
-
-              theindex:=stackmenu1.equinox1.itemindex;
-
-              if ra_mount<99 then {mount position known and specified}
-              begin
-                if theindex>=1 then  precession2(jd,ra_mount,dec_mount,ra_mount,dec_mount);
-                if theindex>=2 then  nutation_aberration_correction_equatorial_classic(jd,ra_mount,dec_mount);{nutation, abberation}
-
-                lv.Items.item[c].subitems.Strings[M_ra_m]:=floattostrf(ra_mount*180/pi,ffFixed, 9, 6);
-                lv.Items.item[c].subitems.Strings[M_dec_m]:=floattostrf(dec_mount*180/pi,ffFixed, 9, 6);
-              end;
-
 
               //http://www.bbastrodesigns.com/coordErrors.html  Gives same value within a fraction of arcsec.
               //2020-1-1, JD=2458850.50000, RA,DEC position 12:00:00, 40:00:00, precession +00:01:01.45, -00:06:40.8, Nutation -00:00:01.1,  +00:00:06.6, Annual aberration +00:00:00.29, -00:00:14.3
@@ -3315,6 +3313,27 @@ begin
               //dec0:=49.22775*pi/180;
               //jd:=2462088.69;
 
+              ra0:=353.22987757000*pi/180;
+              dec0:=+52.27730247000*pi/180;
+              jd:=2452877.026888400;
+
+              ra0:=(14+34/60+16.4960283/3600)*pi/12;  {sofa example}
+              dec0:=-(12+31/60+02.523786/3600)*pi/180;
+              jd:=2456385.46875;
+
+
+              jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+              lv.Items.item[c].subitems.Strings[M_jd_mid]:=floattostrF2(jd,0,7);{julian day}
+
+              theindex:=stackmenu1.equinox1.itemindex;
+              if ra_mount<99 then {mount position known and specified}
+              begin
+                if theindex>=1 then  precession2(jd,ra_mount,dec_mount,ra_mount,dec_mount);
+                if theindex>=2 then  nutation_aberration_correction_equatorial_classic(jd,ra_mount,dec_mount);{nutation, abberation}
+
+                lv.Items.item[c].subitems.Strings[M_ra_m]:=floattostrf(ra_mount*180/pi,ffFixed, 9, 6);
+                lv.Items.item[c].subitems.Strings[M_dec_m]:=floattostrf(dec_mount*180/pi,ffFixed, 9, 6);
+              end;
 
               if cd1_1<>0 then
               begin
@@ -3368,18 +3387,16 @@ begin
 end;
 
 
-procedure average(mess:string; file_list : array of string; var img2: image_array);{combine to average or mean, make also mono from three colors if color}
+procedure average(mess:string; file_list : array of string; file_count:integer; var img2: image_array);{combine to average or mean, make also mono from three colors if color}
 var                                                   {this routine works with mono files but makes coloured files mono, so less suitable for commercial cameras producing coloured raw images}
    Save_Cursor:TCursor;
-   c,fitsX, fitsY,file_count : integer;
+   c,fitsX, fitsY : integer;
    img_tmp1 :image_array;
 begin
   bias_counter:=0;
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
-  file_count:=length(file_list);
 
   {average}
   for c:=0 to file_count-1 do
@@ -3441,41 +3458,13 @@ begin
   if file_count<>0 then
   begin
     memo2_message('Averaging flat dark frames.');
-    setlength(file_list,file_count);
-    average('flat-darks',file_list,img_bias);{only average}
+    average('flat-darks',file_list,file_count,img_bias);{only average}
     result:=width2; {width of the flat-dark}
   end;
   flatdark_count:=file_count;
   file_list:=nil;
 end;
 
-
-procedure average_flats(filter :string; width1: integer);
-var
-  c,file_count : integer;
-  file_list : array of string;
-begin
-  analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});
-  setlength(file_list,stackmenu1.listview3.items.count);
-  file_count:=0;
-
-  for c:=0 to stackmenu1.listview3.items.count-1 do
-     if stackmenu1.listview3.items[c].checked=true then
-       if ((stackmenu1.classify_flat_filter1.checked=false) or (filter='ignore') or (filter=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter])) then {filter correct?}
-         if ((width1=12345) or (width1=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]))) then {width correct}
-         begin
-           file_list[file_count]:=stackmenu1.ListView3.items[c].caption;
-           inc(file_count);
-        end;
-
-  if file_count<>0 then
-  begin
-    memo2_message('Averaging flat frames.');
-    setlength(file_list,file_count);
-    average('flat',file_list,img_flat);{only average, make color also mono}
-  end;
-  file_list:=nil;
-end;
 
 
 procedure box_blur(colors,range: integer;var img: image_array);{combine values of pixels, ignore zeros}
@@ -3578,33 +3567,6 @@ begin
 
   img:=img_temp2;{move pointer array}
   img_temp2:=nil;
-end;
-
-
-procedure Tstackmenu1.test_flat_meanClick(Sender: TObject);
-var    Save_Cursor:TCursor;
-begin
-  if Length(img_loaded)=0 then
-  begin
-    memo2_message('Error, no image in viewer loaded!');
-    exit;
-  end;
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
-  backup_img;
-
-  if pos('2x2',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},2,img_loaded)
-  else
-  if pos('3x3',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},3,img_loaded)
-  else
-  if pos('4x4',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},4,img_loaded)
-  else
-  if pos('5x5',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},5,img_loaded); {else do nothing}
-
-  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1,false,true);{plot real}
-
-  Screen.Cursor:=Save_Cursor;
 end;
 
 
@@ -3990,7 +3952,7 @@ procedure Tstackmenu1.listview1CustomDrawItem(Sender: TCustomListView;
 begin
   if stackmenu1.use_manual_alignment1.checked then
   begin
-    if length(sender.Items.item[Item.Index].subitems.Strings[I_X])>1 then {manual position added, colour it}
+    if length(sender.Items.item[Item.Index].subitems.Strings[L_X])>1 then {manual position added, colour it}
        Sender.Canvas.Font.Color := clGreen
        else
        Sender.Canvas.Font.Color := clred;
@@ -4223,7 +4185,7 @@ begin
               find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
 
               reset_solution_vectors(1);{no influence on the first image since reference}
-              save_solution_to_disk;{write solution_vectorX, solution_vectorY and solution_datamin to disk. Including solution_cblack[1]:=flux_magn_offset;}
+              save_solution_to_disk; {write solution_vectorX, solution_vectorY and solution_datamin to disk. Including solution_cblack[1]:=flux_magn_offset;}
               reference_done:=true;
               solut:=true;
             end
@@ -4393,7 +4355,7 @@ begin
     listview8.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
-      listview_add(listview8,OpenDialog1.Files[i],true,I_nr);
+      listview_add(listview8,OpenDialog1.Files[i],true,L_nr);
       DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
     end;
     listview8.items.endupdate;
@@ -4572,7 +4534,7 @@ begin
   begin
     if  listview5.Items[index].Selected then
     begin
-      listview_add(listview6,listview5.items[index].caption,true,I_nr);
+      listview_add(listview6,listview5.items[index].caption,true,L_nr);
     end;
     inc(index); {go to next file}
   end;
@@ -4590,7 +4552,7 @@ begin
   begin
     if  listview5.Items[index].Selected then
     begin
-      listview_add(listview7,listview5.items[index].caption,true,I_nr);
+      listview_add(listview7,listview5.items[index].caption,true,L_nr);
     end;
     inc(index); {go to next file}
   end;
@@ -4768,17 +4730,6 @@ begin
   end;
 end;
 
-
-procedure Tstackmenu1.gridlines1Click(Sender: TObject);
-begin
-  listview1.gridlines:=gridlines1.checked;
-  listview2.gridlines:=gridlines1.checked;
-  listview3.gridlines:=gridlines1.checked;
-  listview4.gridlines:=gridlines1.checked;
-  listview5.gridlines:=gridlines1.checked;
-  listview6.gridlines:=gridlines1.checked;{blink}
-  listview7.gridlines:=gridlines1.checked;{photometry}
-end;
 
 procedure Tstackmenu1.help_inspector_tab1Click(Sender: TObject);
 begin
@@ -5604,14 +5555,14 @@ begin
     begin
       case pagecontrol1.pageindex of   1:   listview_add(listview2,FileNames[i],true,D_nr);{darks}
                                        2:   listview_add(listview3,FileNames[i],true,F_nr);{flats}
-                                       3:   listview_add(listview4,FileNames[i],true,D_nr);{flat darks}
+                                       3:   listview_add(listview4,FileNames[i],true,FD_nr);{flat darks}
                                        7:   listview_add(listview6,FileNames[i],true,B_nr);{blink}
                                        8:   listview_add(listview7,FileNames[i],true,P_nr);{photometry}
                                        9:   listview_add(listview8,FileNames[i],true,P_nr);{inspector}
                                       10:   listview_add(listview9,FileNames[i],true,P_nr);{mount}
                                        else
                                        begin {lights}
-                                         listview_add(listview1,FileNames[i],true,I_nr);
+                                         listview_add(listview1,FileNames[i],true,L_nr);
                                          if  pos('_stacked',FileNames[i])<>0 then {do not check mark images already stacked}
                                                listview1.items[ListView1.items.count-1].checked:=false;
                                        end;
@@ -6851,6 +6802,33 @@ begin
 end;
 
 
+procedure Tstackmenu1.test_flat_meanClick(Sender: TObject);
+var    Save_Cursor:TCursor;
+begin
+  if Length(img_loaded)=0 then
+  begin
+    memo2_message('Error, no image in viewer loaded!');
+    exit;
+  end;
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  backup_img;
+
+  if pos('2x2',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},2,img_loaded)
+  else
+  if pos('3x3',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},3,img_loaded)
+  else
+  if pos('4x4',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},4,img_loaded)
+  else
+  if pos('5x5',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},5,img_loaded); {else do nothing}
+
+  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+  plot_fits(mainwindow.image1,false,true);{plot real}
+
+  Screen.Cursor:=Save_Cursor;
+end;
+
+
 procedure Tstackmenu1.analyseblink1Click(Sender: TObject);
 var
    c: integer;
@@ -7342,7 +7320,7 @@ begin
   begin
     if  listview5.Items[index].Selected then
     begin
-      listview_add(listview1,listview5.items[index].caption,true,I_nr);
+      listview_add(listview1,listview5.items[index].caption,true,L_nr);
     end;
     inc(index); {go to next file}
   end;
@@ -7374,13 +7352,18 @@ begin
 end;
 
 
-procedure load_master_dark(exposure2,temperature2,width1: integer; var Daverage,Dsigma:double); {average the darks selection}
+procedure load_master_dark(exposure2,temperature2,width1,jd_int: integer {;var Daverage,Dsigma:double});
 var
-  c,roundexposure : integer;
+  c,roundexposure            : integer;
+  d,day_offset               : double;
+  filen,datef                : string;
+
 begin
   analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{find dimensions, exposure and temperature}
-  dark_count:=0;{assume none is found. Do this after analyse since it willl change dark_count}
   c:=0;
+  day_offset:=99999999;
+  filen:='';
+
   while c<stackmenu1.listview2.items.count do
   begin
     if stackmenu1.listview2.items[c].checked=true then
@@ -7388,24 +7371,38 @@ begin
         if ( (stackmenu1.classify_dark_temperature1.checked=false) or (abs(temperature2-strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]))<=1 )) then {temperature correct within one degree}
           if  width1=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
           begin
-            memo2_message('Loading master dark file '+stackmenu1.ListView2.items[c].caption);
-            if load_fits(stackmenu1.ListView2.items[c].caption,false {light},true,0,img_dark)=false then begin memo2_message('Error'); dark_count:=0; exit; end;
-            {load master in memory img_dark}
-            if dark_count=0 then dark_count:=1; {is normally updated by load_fits}
-            Daverage:=strtofloat2(stackmenu1.ListView2.Items.item[c].subitems.Strings[D_background]);{average value dark}
-            Dsigma:=strtofloat2(stackmenu1.ListView2.Items.item[c].subitems.Strings[D_sigma]);{sigma noise}
-            c:=9999999;{stop searching}
+            d:=strtofloat(stackmenu1.listview2.Items.item[c].subitems.Strings[D_jd]);
+            if abs(d-jd_int)<day_offset then {find flat with closest date}
+            begin
+              filen:=stackmenu1.ListView2.items[c].caption;
+              day_offset:=abs(d-jd_int);
+              datef:=stackmenu1.listview2.Items.item[c].subitems.Strings[D_date];
+              roundexposure:=round(exposure);
+            end;
           end;
     inc(c);
   end;
+
   dark_exposure:=exposure2;{remember the requested exposure time}
   dark_temperature:=temperature2;
 
-  roundexposure:=round(exposure);
-  if ((roundexposure<>0 {global}) and (exposure2{request}<>roundexposure)) then memo2_message('█ █ █ █ █ █ Warning dark exposure time ('+floattostrF2(exposure,0,0)+') different then light exposure time ('+floattostrF2(exposure2,0,0) +')! █ █ █ █ █ █ ');
-  if ((set_temperature<>999 {global}) and (temperature2{request}<>set_temperature)) then memo2_message('█ █ █ █ █ █ Warning dark sensor temperature ('+floattostrF2(set_temperature,0,0)+') different then light sensor temperature ('+floattostrF2(temperature2,0,0) +')! █ █ █ █ █ █ ');
+  if (filen<>'') then {new file}
+  begin
+    if (filen<>last_dark_loaded) then
+    begin
 
-  if c<9999999  then
+      if ((roundexposure<>0 {global}) and (exposure2{request}<>roundexposure)) then memo2_message('█ █ █ █ █ █ Warning dark exposure time ('+floattostrF2(exposure,0,0)+') different then light exposure time ('+floattostrF2(exposure2,0,0) +')! █ █ █ █ █ █ ');
+      if ((set_temperature<>999 {global}) and (temperature2{request}<>set_temperature)) then memo2_message('█ █ █ █ █ █ Warning dark sensor temperature ('+floattostrF2(set_temperature,0,0)+') different then light sensor temperature ('+floattostrF2(temperature2,0,0) +')! █ █ █ █ █ █ ');
+
+      memo2_message('Loading master dark file '+filen);
+      dark_count:=0;{set back to zero}
+      if load_fits(filen,false {light},true,0,img_dark)=false then begin memo2_message('Error'); dark_count:=0; exit; end;
+      {load master in memory img_dark}
+      last_dark_loaded:=filen; {required for for change in light_jd}
+      if dark_count=0 then dark_count:=1; {is normally updated by load_fits}
+    end;
+  end
+  else
   begin
     memo2_message('█ █ █ █ █ █ Warning, could not find a suitable dark for temperature "'+inttostr(temperature2)+'"and exposure "'+inttostr(exposure2)+'"! De-classify temperature or exposure time or add correct darks. █ █ █ █ █ █ ');
     dark_count:=0;{set back to zero}
@@ -7413,61 +7410,49 @@ begin
 end;
 
 
-procedure load_master_flat(filter: string;width1 : integer);
+procedure load_master_flat(filter: string;width1,jd_int :integer );
 var
-  c : integer;
-  filter_applied : boolean;
+  c              : integer;
+  d,day_offset   : double;
+  filen,datef    : string;
 begin
-  flat_count:=0;{assume none is found}
   analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{find dimensions, exposure and temperature}
   c:=0;
+  day_offset:=99999999;
+  filen:='';
   while c<stackmenu1.listview3.items.count do
   begin
     if stackmenu1.listview3.items[c].checked=true then
+    begin
       if ((stackmenu1.classify_flat_filter1.checked=false) or (AnsiCompareText(filter,stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter])=0)) then {filter correct?  ignoring case}
         if  width1=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct}
         begin
-          memo2_message('Loading master flat file '+stackmenu1.ListView3.items[c].caption);
-          if load_fits(stackmenu1.ListView3.items[c].caption,false {light},true,0,img_flat)=false then begin memo2_message('Error'); flat_count:=0; exit; end;
-          {load master in memory img_dark}
-          if flat_count=0 then flat_count:=1; {is normally updated by load_fits}
-
-          filter_applied:=true;
-          if pos('2x2',stackmenu1.flat_combine_method1.text)>0 then
+          d:=strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]);
+          if abs(d-jd_int)<day_offset then {find flat with closest date}
           begin
-            memo2_message('Applying 2x2 box blur on the master flat.');
-            box_blur(1 {nr of colors},2{depth},img_flat);
-          end
-          else
-          if pos('3x3',stackmenu1.flat_combine_method1.text)>0 then
-          begin
-            box_blur(1 {nr of colors},3{depth},img_flat);
-            memo2_message('Applying 3x3 box blur on the master flat.');
-          end
-          else
-          if pos('4x4',stackmenu1.flat_combine_method1.text)>0 then
-          begin
-            box_blur(1 {nr of colors},4{depth},img_flat);
-            memo2_message('Applying 4x4 box blur on the master flat.');
-          end
-          else
-          if pos('5x5',stackmenu1.flat_combine_method1.text)>0 then
-          begin
-            box_blur(1 {nr of colors},5{depth},img_flat);
-            memo2_message('Applying 5x5 box blur on the master flat.');
-          end
-          else
-          filter_applied:=false;
-
-          if ((filter_applied) and (flat_count>10)) then memo2_message('Advice: Applying box blur filter is normally not recommended for '+inttostr(flat_count)+' flats. Only if flat master noise if larger the difference in pixel sensitivity.');
-
-
-          c:=9999999;{stop searching}
-          flat_filter:=filter; {mark as loaded}
+            filen:=stackmenu1.ListView3.items[c].caption;
+            day_offset:=abs(d-jd_int);
+            datef:=stackmenu1.listview3.Items.item[c].subitems.Strings[D_date];
+          end;
         end;
+    end;
     inc(c);
   end;
-  if c<9999999  then
+
+  if filen<>'' then
+  begin
+    if filen<>last_flat_loaded then {new file}
+    begin
+      memo2_message('Loading master flat file '+filen+'. Dated :'+datef);
+      flat_count:=0;{set back to zero}
+      if load_fits(filen,false {light},true,0,img_flat)=false then begin memo2_message('Error'); flat_count:=0; exit; end;
+      {load master in memory img_flat}
+      last_flat_loaded:=filen; {required for for change in light_jd}
+      flat_filter:=filter; {mark as loaded}
+      if flat_count=0 then flat_count:=1; {is normally updated by load_fits}
+    end;
+  end
+  else
   begin
      memo2_message('█ █ █ █ █ █ Warning, could not find a suitable flat for "'+filter+'"! De-classify flat filter or add correct flat. █ █ █ █ █ █ ');
      flat_count:=0;{set back to zero}
@@ -7481,6 +7466,7 @@ var
    c,counter,i,file_count : integer;
    specified: boolean;
    exposure,temperature,width1: integer;
+   day                        : double;
    file_list : array of string;
 begin
   save_settings2;
@@ -7505,15 +7491,17 @@ begin
             exposure:=round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure]));
             temperature:=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]);
             width1:=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]);
+            day:=strtofloat(stackmenu1.listview2.Items.item[c].subitems.Strings[D_jd]);
             specified:=true;
           end;
           if ( (stackmenu1.classify_dark_exposure1.checked=false) or (exposure=round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure])))) then {exposure correct}
             if ( (stackmenu1.classify_dark_temperature1.checked=false) or (temperature=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]))) then {temperature correct}
               if  width1=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
-               begin
-                 file_list[file_count]:=filen;
-                 inc(file_count);
-               end;
+                if ((classify_dark_date1.Checked=false) or (abs(day-strtofloat(stackmenu1.listview2.Items.item[c].subitems.Strings[D_jd]))<=0.5)) then {within 12 hours made}
+                begin
+                  file_list[file_count]:=filen;
+                  inc(file_count);
+                end;
         end;
       end;{checked}
 
@@ -7524,8 +7512,7 @@ begin
     if file_count<>0 then
     begin
       memo2_message('Averaging darks.');
-      setlength(file_list,file_count);
-      average('dark',file_list,img_dark);  {the result will be mono so more suitable for raw images without bayer applied. Not so suitable for commercial camera's image and converted to coloured FITS}
+      average('dark',file_list,file_count,img_dark);  {the result will be mono so more suitable for raw images without bayer applied. Not so suitable for commercial camera's image and converted to coloured FITS}
       if esc_pressed then exit;
 
       Application.ProcessMessages;
@@ -7533,7 +7520,7 @@ begin
 
       if ((file_count<>1) or (dark_count=0)) then  dark_count:=file_count; {else use the info from the keyword dark_cnt of the master file}
 
-      path1:=extractfilepath(file_list[0])+'master_dark_'+inttostr(dark_count)+'x'+inttostr(round(exposure))+'s_at_'+inttostr(set_temperature)+'C.fit';
+      path1:=extractfilepath(file_list[0])+'master_dark_'+inttostr(dark_count)+'x'+inttostr(round(exposure))+'s_at_'+inttostr(set_temperature)+'C_'+copy(date_obs,1,10)+'.fit';
       update_integer('DARK_CNT=',' / Number of dark image combined                  ' ,dark_count);
       { ASTAP keyword standard:}
       { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
@@ -7577,7 +7564,7 @@ begin
     save_settings2;{store settings}
     file_list:=nil;
 
-    memo2_message('Finished.');
+    memo2_message('Master darks(s) ready.');
   end;{with stackmenu1}
 end;
 
@@ -7594,6 +7581,7 @@ procedure replace_by_master_flat;
 var
    fitsX,fitsY,file_count    : integer;
    path1,filen,filter        : string;
+   day                       : double;
    c,counter,i : integer;
    specified: boolean;
    width1,flat_dark_width: integer;
@@ -7612,109 +7600,112 @@ begin
 
     setlength(file_list,stackmenu1.listview3.items.count);
     repeat
-    file_count:=0;
-    specified:=false;
+      file_count:=0;
+      specified:=false;
 
-    i:=stackmenu1.listview3.items.count-1;
-    for c:=0 to stackmenu1.listview3.items.count-1 do
-      if stackmenu1.listview3.items[c].checked=true then
-      begin
-        filen:=stackmenu1.ListView3.items[c].caption;
-        if pos('master_flat',filen)=0 then {not a master file}
-        begin {set specification master}
-          if specified=false then
-          begin
-            filter:=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter];
+      i:=stackmenu1.listview3.items.count-1;
+      for c:=0 to stackmenu1.listview3.items.count-1 do
+        if stackmenu1.listview3.items[c].checked=true then
+        begin
+          filen:=stackmenu1.ListView3.items[c].caption;
+          if pos('master_flat',filen)=0 then {not a master file}
+          begin {set specification master}
+            if specified=false then
+            begin
+              filter:=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter];
+              width1:=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]);
+              day:=strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]);
+              if flat_dark_width=0 then memo2_message('Warning no flat-dark/bias found!!')
+              else
+              if width1<>flat_dark_width then begin memo2_message('Abort, the width of the flat and flat-dark do not match!!');exit end;
+              specified:=true;
+            end;
 
-            width1:=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]);
-            if flat_dark_width=0 then memo2_message('Warning no flat-dark/bias found!!')
-            else
-            if width1<>flat_dark_width then begin memo2_message('Abort, the width of the flat and flat-dark do not match!!');exit end;
-            specified:=true;
-          end;
-          if ((stackmenu1.classify_flat_filter1.checked=false) or (filter=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter])) then {filter correct?}
+            if ((stackmenu1.classify_flat_filter1.checked=false) or (filter=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter])) then {filter correct?}
               if  width1=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct}
-               begin
-                 file_list[file_count]:=filen;
-                 inc(file_count);
-               end;
-        end;
-      end;{checked}
-
-    Application.ProcessMessages;
-    if esc_pressed then exit;
-
-    flat_count:=0;
-    if file_count<>0 then
-    begin
-      memo2_message('Combining flats and flat-darks.');
-
-      average_flats(filter,width1);{average of flat frames}
-      flat_count:=file_count;
+                if ((classify_flat_date1.Checked=false) or  (abs(day-strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]))<=0.5)) then {within 12 hours made}
+                begin
+                  file_list[file_count]:=filen;
+                  inc(file_count);
+                end;
+          end;
+        end;{checked}
 
       Application.ProcessMessages;
-      if esc_pressed then
-      exit;
+      if esc_pressed then exit;
 
-      if flat_count<>0 then
+      flat_count:=0;
+      if file_count<>0 then
       begin
-        if flatdark_count<>0 then
+        memo2_message('Combining flats and flat-darks.');
+
+        average('flat',file_list,file_count,img_flat);{only average, make color also mono}
+
+        flat_count:=file_count;
+
+        Application.ProcessMessages;
+        if esc_pressed then
+        exit;
+
+        if flat_count<>0 then
         begin
-          flatdark_used:=true;
-          for fitsY:=0 to height2-1 do
-            for fitsX:=0 to width2-1 do
+          if flatdark_count<>0 then
+          begin
+            flatdark_used:=true;
+            for fitsY:=0 to height2-1 do
+              for fitsX:=0 to width2-1 do
+              begin
+                 img_flat[0,fitsX,fitsY]:=img_flat[0,fitsX,  fitsY  ] - img_bias[0,fitsX,  fitsY  ]; {flats and bias already many mono in procedure average}
+              end;
+          end;
+        end;
+
+        Application.ProcessMessages;
+        if esc_pressed then exit;
+
+        naxis3:=1; {any color is made mono in the routine}
+        if file_count<>0 then
+        begin
+          path1:=extractfilepath(file_list[0])+'master_flat_corrected_with_flat_darks_'+extract_letters_only(filter_name)+'_'+inttostr(flat_count)+'xF_'+inttostr(flatdark_count)+'xFD_'+copy(date_obs,1,10)+'.fit';; {extract_letter is added for filter='N/A' for SIPS software}
+          update_integer('FLAT_CNT=',' / Number of flat images combined.                ' ,flat_count);
+          update_integer('BIAS_CNT=',' / Number of flat-dark or bias images combined.   ' ,flatdark_count);
+
+          { ASTAP keyword standard:}
+          { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
+          { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
+
+          update_text   ('COMMENT 1','  Created by ASTAP www.hnsky.org');
+          update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1); {for the rare case the darks are coloured. Should normally be not the case since it expects raw mono FITS files without bayer matrix applied !!}
+          naxis3:=1; {any color is made mono in the routine}
+
+          if save_fits(img_flat,path1,-32,false) then {saved}
+          begin
+            listview3.Items.BeginUpdate; {remove the flats added to master}
+            for i:=0 to  file_count do
             begin
-               img_flat[0,fitsX,fitsY]:=img_flat[0,fitsX,  fitsY  ] - img_bias[0,fitsX,  fitsY  ]; {flats and bias already many mono in procedure average}
+              c:=0;
+              counter:=listview3.Items.Count;
+              while c<counter do
+              begin
+                if file_list[i]=stackmenu1.ListView3.items[c].caption then {processed}
+                begin
+                  listview3.Items.Delete(c);
+                  dec(counter);{one file less}
+                end
+                else
+                inc(c);
+              end;
             end;
+            listview_add(listview3,path1,true,F_nr);{add master}
+            listview3.Items.EndUpdate;
+            analyse_listview(listview3,false {light},true {full fits (for standard deviation)},false{refresh});{update the tab information}
+          end;
+          img_flat:=nil;
         end;
       end;
 
       Application.ProcessMessages;
       if esc_pressed then exit;
-
-      naxis3:=1; {any color is made mono in the routine}
-      if file_count<>0 then
-      begin
-        path1:=extractfilepath(file_list[0])+'master_flat_corrected_with_flat_darks_'+extract_letters_only(filter_name)+'_'+inttostr(flat_count)+'xF_'+inttostr(flatdark_count)+'xFD.fit'; {extract_letter is added for filter='N/A' for SIPS software}
-        update_integer('FLAT_CNT=',' / Number of flat images combined.                ' ,flat_count);
-        update_integer('BIAS_CNT=',' / Number of flat-dark or bias images combined.   ' ,flatdark_count);
-
-        { ASTAP keyword standard:}
-        { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
-        { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
-
-        update_text   ('COMMENT 1','  Created by ASTAP www.hnsky.org');
-        update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1); {for the rare case the darks are coloured. Should normally be not the case since it expects raw mono FITS files without bayer matrix applied !!}
-        naxis3:=1; {any color is made mono in the routine}
-
-        if save_fits(img_flat,path1,-32,false) then {saved}
-        begin
-          listview3.Items.BeginUpdate; {remove the flats added to master}
-          for i:=0 to  file_count do
-          begin
-            c:=0;
-            counter:=listview3.Items.Count;
-            while c<counter do
-            begin
-              if file_list[i]=stackmenu1.ListView3.items[c].caption then {prcessed}
-              begin
-                listview3.Items.Delete(c);
-                dec(counter);{one file less}
-              end
-              else
-              inc(c);
-            end;
-          end;
-          listview_add(listview3,path1,true,F_nr);{add master}
-          listview3.Items.EndUpdate;
-          analyse_listview(listview3,false {light},true {full fits (for standard deviation)},false{refresh});{update the tab information}
-        end;
-        img_flat:=nil;
-      end;
-    end;
-
-    Application.ProcessMessages;
-    if esc_pressed then exit;
 
     until file_count=0;{make more then one master}
 
@@ -7722,7 +7713,7 @@ begin
     save_settings2;{store settings}
     file_list:=nil;
 
-    memo2_message('Finished.');
+    memo2_message('Master flat(s) ready.');
   end;{with stackmenu1}
 end;
 
@@ -7748,10 +7739,10 @@ end;
 
 procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer) ; inline; {apply dark, flat if required, renew if different exposure or ccd temp}
 var  {variables in the procedure are created to protect global variables as filter_name against overwriting by loading other fits files}
-  fitsX,fitsY,k,light_naxis3,hotpixelcounter, light_width,light_height,light_set_temperature : integer;
+  fitsX,fitsY,k,light_naxis3{,hotpixelcounter}, light_width,light_height,light_set_temperature : integer;
   calstat_local              : string;
-  datamax_light ,light_exposure,value,dark_outlier_level,flat_factor : double;
-  ignore_hotpixels : boolean;
+  datamax_light ,light_exposure,value{,dark_outlier_level},flat_factor,dark_norm_value : double;
+//  ignore_hotpixels : boolean;
 
 begin
   calstat_local:=calstat;{Note load darks or flats will overwrite calstat}
@@ -7762,48 +7753,52 @@ begin
   light_set_temperature:=round(set_temperature);
   light_width:=width2;
   light_height:=height2;
-  ignore_hotpixels:=stackmenu1.ignore_hotpixels1.checked;
-  hotpixelcounter:=0;
+  date_to_jd(date_obs); {convert date-obs to global variable jd. Use this to find the dark with the best match for the light}
+
   if pos('D',calstat_local)<>0 then
              memo2_message('Skipping dark calibration, already applied. See header keyword CALSTAT')
   else
   begin
-    if ((dark_exposure=987654321) {first dark required, any dark will do} or  (stackmenu1.classify_dark_exposure1.checked){get dark with correct exposure} or (stackmenu1.classify_dark_temperature1.checked){{get dark with correct temperature}) then
-    if  ((light_exposure=dark_exposure) and (abs(light_set_temperature-dark_temperature)<=1) )=false then {new dark required}
-    begin
-      load_master_dark(round(light_exposure),light_set_temperature {set_temperature},light_width, {var}dark_average,dark_sigma); {will only be renewed if different exposure or set_temperature. Note load will overwrite calstat}
-      dcount:=dark_count;{protect this global dark_count in dcount for next load_master_flat}
-    end;
+    load_master_dark(round(light_exposure),light_set_temperature {set_temperature},light_width,round(jd)); {will only be renewed if different exposure or set_temperature. Note load will overwrite calstat}
+    dcount:=dark_count;{protect this global dark_count in dcount for next load_master_flat}
 
     if dark_count>0 then
     begin
-      dark_outlier_level:=strtofloat2(stackmenu1.hotpixel_sd_factor1.text)* dark_sigma + dark_average;{pixels above this level are hot}
+      dark_norm_value:=0;
+      for fitsY:=-2 to 3 do {do even times, 6x6}
+         for fitsX:=-2 to 3 do
+           dark_norm_value:=dark_norm_value+img_dark[0,fitsX+(width2 div 2),fitsY +(height2 div 2)];
+      dark_norm_value:=round(dark_norm_value/36);{scale factor to apply flat. The norm value will result in a factor one for the center.}
+
+
+//      dark_outlier_level:=strtofloat2(stackmenu1.hotpixel_sd_factor1.text)* dark_sigma + dark_average;{pixels above this level are hot}
       for fitsY:=0 to height2-1 do  {apply the dark}
         for fitsX:=0 to width2-1  do
         begin
           value:=img_dark[0,fitsX,fitsY]; {Darks are always made mono when making master dark}
-          if ((ignore_hotpixels) and (value>dark_outlier_level) and (fitsx>0) and (fitsY>0)) then {case dark hot pixel replace image pixels with image neighbour pixels}
-          begin
-            for k:=0 to naxis3-1 do {do all colors}
-            begin
-               img_loaded[k,fitsX,fitsY]:=min(img_loaded[k,fitsX-1,fitsY],img_loaded[k,fitsX,fitsY-1]);  {take the lowest value of the neighbour pixels}
-               inc(hotpixelcounter,1);
-               if hotpixelcounter>=1000 then
-               begin
-                  ignore_hotpixels:=false;
-                  memo2_message('Fix variable hotpixels stopped. Abnormal amount of hotpixels detected.');
-               end;
-            end;
-          end
-          else  {apply dark normal}
+//          if ((ignore_hotpixels) and (value>dark_outlier_level) and (fitsx>0) and (fitsY>0)) then {case dark hot pixel replace image pixels with image neighbour pixels}
+//          begin
+//            for k:=0 to naxis3-1 do {do all colors}
+//            begin
+//               img_loaded[k,fitsX,fitsY]:=min(img_loaded[k,fitsX-1,fitsY],img_loaded[k,fitsX,fitsY-1]);  {take the lowest value of the neighbour pixels}
+//               inc(hotpixelcounter,1);
+//               if hotpixelcounter>=1000 then
+//               begin
+//                  ignore_hotpixels:=false;
+//                  memo2_message('Fix variable hotpixels stopped. Abnormal amount of hotpixels detected.');
+//               end;
+//            end;
+//          end
+//          else  {apply dark normal}
           for k:=0 to naxis3-1 do {do all colors}
                       img_loaded[k,fitsX,fitsY]:=img_loaded[k,fitsX,fitsY] - value;
 
         end;
 
       calstat_local:=calstat_local+'D'; {dark applied}
-      datamax_light:=datamax_light - dark_average;  {correct datamax with average dark value subtracted}
-      if hotpixelcounter>0 then memo2_message('Dark applied. For '+inttostr(hotpixelcounter)+' hot pixels replacement values used.');
+      datamax_light:=datamax_light-dark_norm_value;
+//      datamax_light:=datamax_light - dark_average;  {correct datamax with average dark value subtracted}
+//      if hotpixelcounter>0 then memo2_message('Dark applied. For '+inttostr(hotpixelcounter)+' hot pixels replacement values used.');
     end;
   end;{apply dark}
 
@@ -7811,13 +7806,10 @@ begin
            memo2_message('Skipping flat calibration, already applied. See header keyword CALSTAT')
   else
   begin
-    if ((flat_filter='987654321') {first flat required, any flat will do} or  (stackmenu1.classify_flat_filter1.checked){suitable flat reguired}) then
-    if AnsiCompareText(filter1,flat_filter)<>0 then {new flat required}
-    begin
-      load_master_flat(filter1,light_width);{will only be renewed if different filter name.  Note load will overwrite calstat}
-      fcount:=flat_count;{from master flat loaded}
-      fdcount:=flatdark_count;
-    end;
+    load_master_flat(filter1,light_width,round(jd));{will only be renewed if different filter name.  Note load will overwrite calstat}
+    fcount:=flat_count;{from master flat loaded}
+    fdcount:=flatdark_count;
+    last_light_jd:=round(jd);
 
     if flat_count<>0 then
     begin
@@ -7915,7 +7907,7 @@ begin
         memo2_message('█ █ █  Saving calibrated file as '+filename2);
         save_fits(img_loaded,filename2,-32, true);
 
-        object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[I_object]); {get a object name}
+        object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a object name}
         stack_info:=' '+inttostr(flatdark_count)+'x'+'FD  '+
                         inttostr(flat_count)+'x'+'F  '+
                         inttostr(dark_count)+'x'+'D  '+
@@ -7946,10 +7938,10 @@ begin
   begin
     if length(files_to_process[i].name)>1 then {has a filename}
     begin
-      width1:=strtoint(stackmenu1.ListView1.Items.item[i].subitems.Strings[I_width]);
+      width1:=strtoint(stackmenu1.ListView1.Items.item[i].subitems.Strings[L_width]);
       if first=-1 then begin first:=i; largest_width:=width1  end;
 
-      quality_str:=stackmenu1.ListView1.Items.item[i].subitems.Strings[I_quality];{number of stars detected}
+      quality_str:=stackmenu1.ListView1.Items.item[i].subitems.Strings[L_quality];{number of stars detected}
       if length(quality_str)>1 then quality:=strtofloat2(quality_str) else quality:=0;{quality equals nr stars /hfd}
 
       if width1>largest_width then {larger image found, give this one preference}
@@ -8100,7 +8092,7 @@ begin
         ListView1.Selected :=nil; {remove any selection}
         ListView1.ItemIndex := c;{show wich file is processed}
         Listview1.Items[c].MakeVisible(False);{scroll to selected item}
-        if length(ListView1.Items.item[c].subitems.Strings[I_X])<=1 then {no manual position added}
+        if length(ListView1.Items.item[c].subitems.Strings[L_X])<=1 then {no manual position added}
         begin
           memo2_message('█ █ █  Abort! █ █ █  Reference object missing for one or more files. Double click on all file names and mark with the mouse the reference object. The file name will then turn green.');
           Screen.Cursor := Save_Cursor;
@@ -8123,7 +8115,7 @@ begin
     else ignore:=stackmenu1.ignore_header_solution1.Checked; {stacking}
 
     for c:=0 to ListView1.items.count-1 do
-    if ( (ListView1.items[c].Checked=true) and ((ignore) or (ListView1.Items.item[c].subitems.Strings[I_solution]<>'✓') ){no internal solution } ) then
+    if ( (ListView1.items[c].Checked=true) and ((ignore) or (ListView1.Items.item[c].subitems.Strings[L_solution]<>'✓') ){no internal solution } ) then
     begin
       try { Do some lengthy operation }
         ListView1.Selected :=nil; {remove any selection}
@@ -8149,10 +8141,10 @@ begin
         memo2_message('Astrometric solution for: "'+filename2+'"');
         if solution then
         begin
-          stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]:='✓';
-          stackmenu1.ListView1.Items.item[c].subitems.Strings[I_position]:=prepare_ra5(ra0,': ')+', '+ prepare_dec5(dec0,'° ');{give internal position}
+          stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution]:='✓';
+          stackmenu1.ListView1.Items.item[c].subitems.Strings[L_position]:=prepare_ra5(ra0,': ')+', '+ prepare_dec5(dec0,'° ');{give internal position}
         end
-        else stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]:=''; {report internal plate solve result}
+        else stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution]:=''; {report internal plate solve result}
        finally
       end;
     end;
@@ -8160,7 +8152,7 @@ begin
 
     if mosaic_mode then
     begin
-      SortedColumn:= I_position+1;
+      SortedColumn:= L_position+1;
       listview1.sort;
       memo2_message('Sorted list on RA, DEC position to place tiles in the correct sequence.')
     end;
@@ -8170,7 +8162,7 @@ begin
   begin
     memo2_message('Checking orientations');
     for c:=0 to ListView1.items.count-1 do
-    if ( (ListView1.items[c].Checked=true) and (stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]='✓' {solution} ) ) then
+    if ( (ListView1.items[c].Checked=true) and (stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution]='✓' {solution} ) ) then
     begin
       try { Do some lengthy operation }
         ListView1.Selected :=nil; {remove any selection}
@@ -8209,7 +8201,7 @@ begin
   begin
     memo2_message('Checking annotations');
     for c:=0 to ListView1.items.count-1 do                         //   and (stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]:='✓')and ( length(stackmenu1.ListView1.Items.item[c].subitems.Strings[I_X])<=1){no annotation yet}
-    if ( (ListView1.items[c].Checked=true) and (stackmenu1.ListView1.Items.item[c].subitems.Strings[I_solution]='✓' {solution} ) and ((stackmenu1.update_annotations1.checked) or (stackmenu1.auto_rotate1.checked ) or ( length(stackmenu1.ListView1.Items.item[c].subitems.Strings[I_X])<=1)){no annotation yet} ) then
+    if ( (ListView1.items[c].Checked=true) and (stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution]='✓' {solution} ) and ((stackmenu1.update_annotations1.checked) or (stackmenu1.auto_rotate1.checked ) or ( length(stackmenu1.ListView1.Items.item[c].subitems.Strings[L_X])<=1)){no annotation yet} ) then
     begin
       try { Do some lengthy operation }
         ListView1.Selected :=nil; {remove any selection}
@@ -8235,13 +8227,8 @@ begin
     memo2_message('Annotations complete.');
   end;
 
-  Application.ProcessMessages;
-  if esc_pressed then begin restore_img;Screen.Cursor := Save_Cursor;  exit;end;
-
   progress_indicator(10,'');
-
   Application.ProcessMessages;
-
   if esc_pressed then begin restore_img;Screen.Cursor := Save_Cursor;  exit;end;
 
   object_counter:=0;
@@ -8254,7 +8241,7 @@ begin
   for c:=0 to ListView1.items.count-1 do
   begin
     ListView1.Items.item[c].SubitemImages[2]:=-1;{remove any icons. Mark third columns as not done using the image index of first column}
-    ListView1.Items.item[c].subitems.Strings[I_result]:='';{no stack result}
+    ListView1.Items.item[c].subitems.Strings[L_result]:='';{no stack result}
   end;
 
   repeat {do all objects}
@@ -8310,19 +8297,19 @@ begin
         files_to_process[c].listviewindex:=c;{use same index as listview1 except when later put lowest HFD first}
         if ((ListView1.items[c].Checked=true) and (ListView1.Items.item[c].SubitemImages[2]<0)) then {not done yet}
         begin
-          if object_to_process='' then object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[I_object]); {get a object name to stack}
+          if object_to_process='' then object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a object name to stack}
           if ( (classify_object1.checked=false) or  (mosaic_mode){ignore object name in mosaic} or
-               ((object_to_process<>'') and (object_to_process=uppercase(ListView1.Items.item[c].subitems.Strings[I_object]))) ) then {correct object?}
+               ((object_to_process<>'') and (object_to_process=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]))) ) then {correct object?}
           begin {correct object}
             files_to_process[c].name:=ListView1.items[c].caption;
             inc(image_counter);{one image more}
 
-            ListView1.Items.item[c].SubitemImages[I_result]:=5;{mark 3th columns as done using a stacked icon}
-            ListView1.Items.item[c].subitems.Strings[I_result]:=inttostr(object_counter)+'  ';{show image result number}
+            ListView1.Items.item[c].SubitemImages[L_result]:=5;{mark 3th columns as done using a stacked icon}
+            ListView1.Items.item[c].subitems.Strings[L_result]:=inttostr(object_counter)+'  ';{show image result number}
             inc(nrfiles);
             if mosaic_mode then
             begin
-              backgr:=strtofloat2(ListView1.Items.item[c].subitems.Strings[I_background]);
+              backgr:=strtofloat2(ListView1.Items.item[c].subitems.Strings[L_background]);
               min_background:=min(backgr,min_background);
               max_background:=max(backgr,max_background);
             end;
@@ -8357,7 +8344,7 @@ begin
           monofile:=true;{success}
         end;
 
-        if esc_pressed then  begin  restore_img;Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+        if esc_pressed then  begin progress_indicator(-2,'ESC'); restore_img;Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
 
       end
       else
@@ -8387,27 +8374,27 @@ begin
           files_to_process[c].name:='';{mark as empthy}
           files_to_process[c].listviewindex:=c;{use same index as listview except when later put lowest HFD first}
           if ((ListView1.items[c].Checked=true) and (ListView1.Items.item[c].SubitemImages[2]<0){not yet done} and
-              (length(ListView1.Items.item[c].subitems.Strings[I_filter])>0)  {skip any file without a filter name}
+              (length(ListView1.Items.item[c].subitems.Strings[L_filter])>0)  {skip any file without a filter name}
               ) then
           begin  {not done yet}
-            if object_to_process='' then object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[I_object]); {get a next object name to stack}
+            if object_to_process='' then object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a next object name to stack}
 
             if ((classify_object1.checked=false) or  (mosaic_mode) {ignore object name in mosaic} or
-                ((object_to_process<>'') and (object_to_process=uppercase(ListView1.Items.item[c].subitems.Strings[I_object]))) ) {correct object?}
+                ((object_to_process<>'') and (object_to_process=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]))) ) {correct object?}
             then
             begin {correct object}
-              if ( (AnsiCompareText(filter_name1,ListView1.Items.item[c].subitems.Strings[I_filter])=0) or (AnsiCompareText(filter_name2,ListView1.Items.item[c].subitems.Strings[I_filter])=0) ) then
+              if ( (AnsiCompareText(filter_name1,ListView1.Items.item[c].subitems.Strings[L_filter])=0) or (AnsiCompareText(filter_name2,ListView1.Items.item[c].subitems.Strings[L_filter])=0) ) then
               begin {correct filter}
                 files_to_process[c].name:=ListView1.items[c].caption;
                 inc(image_counter);{one image more}
                 ListView1.Items.item[c].SubitemImages[2]:=5;{mark 3th columns as done using a stacked icon}
-                ListView1.Items.item[c].subitems.Strings[I_result]:=inttostr(object_counter)+'  ';{show image result number}
+                ListView1.Items.item[c].subitems.Strings[L_result]:=inttostr(object_counter)+'  ';{show image result number}
                 inc(nrfiles);
                 first_file:=c; {remember first found for case it is the only file}
-                exposure:= strtofloat2(ListView1.Items.item[c].subitems.Strings[I_exposure]);{remember exposure time in case only one file, so no stack so unknown}
+                exposure:= strtofloat2(ListView1.Items.item[c].subitems.Strings[L_exposure]);{remember exposure time in case only one file, so no stack so unknown}
                 if mosaic_mode then
                 begin
-                  backgr:=strtofloat2(ListView1.Items.item[c].subitems.Strings[I_background]);
+                  backgr:=strtofloat2(ListView1.Items.item[c].subitems.Strings[L_background]);
                   min_background:=min(backgr,min_background);
                   max_background:=max(backgr,max_background);
                 end;
@@ -8427,7 +8414,7 @@ begin
             if mosaic_mode then stack_mosaic(over_size,{var}files_to_process,abs(max_background-min_background),counterL) {mosaic combining}
                                                                   else stack_average(over_size,{var}files_to_process,counterL);{average}
             over_sizeL:=0; {do oversize only once. Not again in 'L' mode !!}
-            if esc_pressed then  begin restore_img; Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+            if esc_pressed then  begin progress_indicator(-2,'ESC'); restore_img; Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
 
             if ((over_size<>0) and ( cd1_1<>0){solution}) then {adapt astrometric solution for intermediate file}
             begin {adapt reference pixels of plate solution due to oversize}
@@ -8447,7 +8434,9 @@ begin
             begin
               update_integer('DATAMAX =',' / Maximum data value                             ',round(datamax_org)); {datamax is updated in stacking process. Use the last one}
               update_integer('DATAMIN =',' / Minimum data value                             ',round(pedestal_s));
+              add_text   ('COMMENT ',' D='+ExtractFileName( last_dark_loaded ));
             end;
+            if pos('F',calstat)>0 then add_text   ('COMMENT ',' F='+ExtractFileName( last_flat_loaded ));
 
             if sigma_mode then
               update_text   ('HISTORY 1','  Stacking method SIGMA CLIP AVERAGE')
@@ -8513,7 +8502,7 @@ begin
 
 
         stack_LRGB(over_sizeL {zero if already stacked from several files},files_to_process_LRGB, counter_colours); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,RGB,L]}
-        if esc_pressed then  begin  restore_img;Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+        if esc_pressed then  begin progress_indicator(-2,'ESC'); restore_img;Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
       end
       else
       if length(extra2)=1 then
@@ -8524,7 +8513,7 @@ begin
     end;
 
     Screen.Cursor := Save_Cursor;  { Always restore to normal }
-    if esc_pressed then begin restore_img;exit;end;
+    if esc_pressed then begin progress_indicator(-2,'ESC'); restore_img;exit;end;
 
     fits_file:=true;
     nrbits:=-32; {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
@@ -8603,6 +8592,7 @@ begin
       { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
       update_text   ('COMMENT 1','  Written by ASTAP. www.hnsky.org');
+
       calstat:=calstat+'S'; {status stacked}
       update_text ('CALSTAT =',#39+calstat+#39); {calibration status}
 
@@ -8619,6 +8609,9 @@ begin
         end;
       end
       else;{keep EXPOSURE and date_obs from reference image for accurate asteroid annotation}
+
+      if pos('D',calstat)>0 then add_text   ('COMMENT ',' D='+ExtractFileName( last_dark_loaded ));
+      if pos('F',calstat)>0 then add_text   ('COMMENT ',' F='+ExtractFileName( last_flat_loaded ));
 
       if sigma_mode then
         update_text   ('HISTORY 1','  Stacking method SIGMA CLIP AVERAGE') else
