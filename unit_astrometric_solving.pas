@@ -713,7 +713,7 @@ begin
               // create supplement lines for sky coverage testing
               // stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
 
-               solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance,false);{find an solution}
+               solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance);{find an solution}
 
               Application.ProcessMessages;
               if esc_pressed then  begin  stackmenu1.Memo2.Lines.EndUpdate; Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;

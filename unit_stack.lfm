@@ -217,7 +217,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1763
-    ActivePage = Flats
+    ActivePage = tab_Pixelmath1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -225,7 +225,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 2
+    TabIndex = 12
     TabOrder = 5
     OnChange = pagecontrol1Change
     object Images: TTabSheet

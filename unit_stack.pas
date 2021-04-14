@@ -1915,7 +1915,7 @@ begin
 
     case pos1 of
             1: begin save_as_new_file1.Enabled:=true; save_result1.Enabled:=true; remove_deepsky_label1.enabled:=true;undo_button_equalise_background1.caption:=''; end;{step 1,6}
-            2: begin most_common_filter_tool1.enabled:=true;{step 3}most_common_mono1.enabled:=true;remove_deepsky_label1.enabled:=true; undo_button_equalise_background1.caption:='1'; end;
+            2: begin most_common_filter_tool1.enabled:=true;{step 3}most_common_mono1.enabled:=naxis>2;{colour}remove_deepsky_label1.enabled:=true; undo_button_equalise_background1.caption:='1'; end;
             3: begin apply_gaussian_filter1.enabled:=true;{step 4}correct_gradient_label1.enabled:=true;undo_button_equalise_background1.caption:='3'; end;
             4: begin subtract_background1.enabled:=true;{step 5}undo_button_equalise_background1.caption:='4';end;
             5: begin save_result1.Enabled:=true;{step 5}undo_button_equalise_background1.caption:='1';end;
@@ -1949,7 +1949,7 @@ begin
      report_results(object_name,'',0,-1{no icon});{report result in tab results}
   end
   else saved1.caption:='';
-  if sender<>save_result1 then {save, step 1}
+  if sender<>save_result1 then {<> step 6, save, step 1}
   begin
     update_equalise_background_step(equalise_background_step+1); {update menu}
   end
@@ -4195,8 +4195,9 @@ begin
               get_background(0,img_loaded,false {no histogram already done} ,true {unknown, calculate also noise_level} , {var} cblack,star_level);
               find_stars(img_loaded,hfd_min,starlist2);{find stars and put them in a list}
               find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
-              if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),true{save solution}) then {find difference between ref image and new image}
+              if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
               begin
+                save_solution_to_disk;{write to disk}
                 memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                    +'  Solution x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
                    +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) );
@@ -8709,9 +8710,6 @@ begin
 
       if naxis3>1 then report_results(object_to_process,stack_info,object_counter,3 {color icon}) {report result in tab results}
                   else report_results(object_to_process,stack_info,object_counter,4 {gray icon}); {report result in tab results}
-
-
-      DeleteFiles(ExtractFilePath(filename2){image_path},'*.astap_solution');{delete solution files}
 
       memo2.lines.add('Finished in '+IntToStr( round((gettickcount64 - startTick)/1000)) + ' sec. The FITS header contains a detailed history.');
 

@@ -39,7 +39,7 @@ var
 procedure find_stars(img :image_array;hfd_min:double;var starlist1: star_list);{find stars and put them in a list}
 procedure find_quads(starlist :star_list; min_leng:double; var quad_smallest:double; var quad_star_distances :star_list);  {build quads using closest stars, revised 2020-9-28}
 procedure find_quads_xy(starlist :star_list; var starlistquads :star_list);  {FOR DISPLAY ONLY, build quads using closest stars, revised 2020-9-28}
-function find_offset_and_rotation(minimum_quads: integer;tolerance:double;save_solution:boolean) : boolean; {find difference between ref image and new image}
+function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
 procedure display_quads(starlistquads :star_list);{draw quads}
 procedure save_solution_to_disk;{write to disk}
@@ -742,7 +742,7 @@ begin
 end;
 
 
-function find_offset_and_rotation(minimum_quads: integer;tolerance:double;save_solution:boolean) : boolean; {find difference between ref image and new image}
+function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 var
   xy_sqr_ratio   : double;
 begin
@@ -773,8 +773,6 @@ begin
     reset_solution_vectors(0.001);{nullify}
     exit;
   end;
-
-  if save_solution then save_solution_to_disk;{write to disk}
 end;
 
 end.

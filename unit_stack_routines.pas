@@ -360,7 +360,7 @@ begin
                   bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
 
                   find_quads(starlist2,0, quad_smallest,quad_star_distances2);{find star quads for new image}
-                  if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
+                  if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
                   memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                        +'  Solution x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
                        +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) )
@@ -710,7 +710,7 @@ begin
                 datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
                 find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
-                if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
+                if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
                 memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                      +'  Solution x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
                      +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) )
@@ -1046,10 +1046,22 @@ end;
 
 
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
+type
+   tsolution  = record
+     solution_vectorX : solution_vector {array[0..2] of double};
+     solution_vectorY : solution_vector;
+     cblack : double;
+   end;
+
+var
+    solutions      : array of tsolution;
+
 var
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,oversizeV         : integer;
     background_correction, variance_factor, value,weightF,hfd_min                                         : double;
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
+
+
 begin
   with stackmenu1 do
   begin
@@ -1074,7 +1086,7 @@ begin
     begin
       counter:=0;
       sum_exp:=0;
-
+      setlength(solutions,length(files_to_process));
       init:=false;
       for c:=0 to length(files_to_process)-1 do
       if length(files_to_process[c].name)>0 then
@@ -1191,12 +1203,18 @@ begin
                   datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
                   find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
-                  if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),true{save solution}) then {find difference between ref image and new image}
-
-                  memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
+                  if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
+                  begin
+                    memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                        +'  Solution x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
-                       +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) )
+                       +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) );
 
+                    solutions[c].solution_vectorX:= solution_vectorX;{store solutions}
+                    solutions[c].solution_vectorY:= solution_vectorY;
+                    solutions[c].cblack:=cblack;
+
+
+                  end
                     else
                     begin
                       memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
@@ -1208,10 +1226,12 @@ begin
                  end;{internal alignment}
               end
               else
-              begin
+              begin {first image}
                 reset_solution_vectors(1);{no influence on the first image}
-                save_solution_to_disk;{save including cblack}
-              end;
+                solutions[c].solution_vectorX:= solution_vectorX; {store solutions for later}
+                solutions[c].solution_vectorY:= solution_vectorY;
+                solutions[c].cblack:=cblack;
+               end;
 
         end;
         init:=true;{initialize for first image done}
@@ -1337,18 +1357,9 @@ begin
             end
             else
             begin  {reuse solution from first step average}
-              try
-                AssignFile(savefile,ChangeFileExt(Filename2,'.astap_solution'));
-                Reset(saveFile);
-                read(savefile, solution_vectorX);
-                read(savefile, solution_vectorY);
-                read(savefile, solution_cblack);cblack:=round(solution_cblack[0]);{read cblack file previously stored}
-                CloseFile(saveFile);
-
-              except
-                memo2_message('Error reading .astap_solution file! Abort.');
-                esc_pressed:=true;
-              end;
+              solution_vectorX:=solutions[c].solution_vectorX; {restore solution}
+              solution_vectorY:=solutions[c].solution_vectorY;
+              cblack:=solutions[c].cblack;
               background_correction:=pedestal_s-cblack;{correction for difference in background}
               datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
             end;
@@ -1453,18 +1464,9 @@ begin
             end
             else
             begin  {reuse solution from first step average}
-              try
-                AssignFile(savefile,ChangeFileExt(Filename2,'.astap_solution'));
-                Reset(saveFile);
-                read(savefile, solution_vectorX);
-                read(savefile, solution_vectorY);
-                read(savefile, solution_cblack);cblack:=round(solution_cblack[0]);{read cblack previously stored}
-                CloseFile(saveFile);
-              except
-                memo2_message('Error reading .astap_solution file! Abort.');
-                esc_pressed:=true;
-                exit;
-              end;
+              solution_vectorX:=solutions[c].solution_vectorX; {restore solution}
+              solution_vectorY:=solutions[c].solution_vectorY;
+              cblack:=solutions[c].cblack;
               background_correction:=pedestal_s-cblack;{correct for difference in background}
               datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
             end;
@@ -1532,7 +1534,10 @@ begin
     end;{throw out the outliers of light-dark images}
 
   end;{with stackmenu1}
-  {arrays will be nilled later. This is done for early exits}
+  {image arrays will be nilled later. This is done for early exits}
+
+  solutions:=nil;
+
 
 end;   {stack using sigma clip average}
 
@@ -1682,7 +1687,7 @@ begin
               datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
 
               find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
-              if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text),false{do not save solution}) then {find difference between ref image and new image}
+              if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
               memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                    +'  Solution x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
                    +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) )
