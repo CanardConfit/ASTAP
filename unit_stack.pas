@@ -2433,7 +2433,6 @@ begin
     else
       artificial_flatV2(img_loaded, strtoint(StringReplace(ring_equalise_factor1.text,'%','',[])));
 
-  //   use_histogram(true);{get histogram}
      plot_fits(mainwindow.image1,false,true);{plot real}
      Screen.Cursor:=Save_Cursor;
   end;
@@ -5037,7 +5036,7 @@ end;
 
 procedure Tstackmenu1.pagecontrol1Change(Sender: TObject);
 var
-  tab8: boolean;
+  tab8 : boolean;
 begin
   tab8:=stackmenu1.pagecontrol1.tabindex=8; {photometry}
   mainwindow.shape_alignment_marker1.visible:=tab8; {hide shape if stacked image is plotted}

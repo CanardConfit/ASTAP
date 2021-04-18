@@ -511,7 +511,6 @@ var
 var
    histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
    his_total_red, his_total_green,his_total_blue,extend_type,r_aperture : integer; {histogram number of values}
-   histo_peak_position : integer;
    his_mean,noise_level : array[0..2] of integer;
    stretch_c : array[0..32768] of single;{stretch curve}
    stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
@@ -962,7 +961,6 @@ begin
     focus_pos:=0;{assume no data available}
 
     annotated:=false; {any annotation in the file}
-
   end;{reset variables}
 
   filter_name:='';
@@ -1782,7 +1780,6 @@ begin
       aline:=aline+sLineBreak ;
     end;
     mainwindow.Memo3.lines.text:=aline;
-//    mainwindow.Memo3.readonly:=(extend_type<=1);{do not allow editing tables}
     aline:=''; {release memory}
     mainwindow.memo1.visible:=true;{show header}
     mainwindow.pagecontrol1.showtabs:=true;{show tabs}
@@ -3170,7 +3167,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.527, '+about_message4+', dated 2021-4-14';
+  #13+#10+'ASTAP version ß0.9.528, '+about_message4+', dated 2021-4-18';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6518,9 +6515,11 @@ end;
 
 procedure use_histogram(img: image_array; update_hist: boolean);{calculate histogram}
 var
-  i, minm,maxm,max_range, value1,oldvalue1,count,countR,countG,countB,stopXpos,Xpos,steps,max_color,histo_peakR,number_colors  : integer;
+  i, minm,maxm,max_range, countR,countG,countB,stopXpos,Xpos,max_color,histo_peakR,number_colors, histo_peak_position,h,w,col : integer;
   above, above_R          : double;
   Save_Cursor:TCursor;
+  histogram2 : array of array of integer;
+  histo_peak : array[0..2] of integer;
 
 begin
   Save_Cursor := Screen.Cursor;
@@ -6546,13 +6545,14 @@ begin
        9: begin minm:=round(datamin_org); maxm:=round(datamax_org);   end;{max range, use datamin/max}
   end;
 
+  {calculate peak values }
+
   if mainwindow.range1.itemindex<=5 then {auto detect mode}
   begin
     minm:=0;
     maxm:=0;
     above:=0;
 
-    {calculate peak values }
     histo_peakR:=-99999999;
     for i := 1 to max_range-1{65535} do
       if histogram[0,i]>histo_peakR then begin histo_peakR:=histogram[0,i]; histo_peak_position:=i;{find most common value = background.}end;
@@ -6596,48 +6596,53 @@ begin
   mainwindow.histogram1.canvas.rectangle(-1,-1, mainwindow.histogram1.width+1, mainwindow.histogram1.height+1);
   mainwindow.histogram1.Canvas.Pen.Color := clred;
 
-  stopXpos:=-1;
-  oldvalue1:=0;
-  countR:=0;
-  countG:=0;
-  countB:=0;
-  count:=0;
-  steps:=0;
 
-  for i := 1 to hist_range-1{65535} do {create histogram graph, ignore zero value}
+  h:=mainwindow.histogram1.height;
+  w:=mainwindow.histogram1.width;
+  histo_peakR:=0;
+  setlength(histogram2,number_colors,w);
+
+  for i := 0 to w-1 do  {zero}
+    for col:=0 to number_colors-1 do histogram2[col,i]:=0;
+
+  for col:=0 to 2 do histo_peak[col]:=0;
+
+  for col:=0 to number_colors-1 do {shrink histogram}
   begin
-    countR:=countR+histogram[0,i];{integrate values till new line is drawn}
-    if number_colors>1 then countG:=countG+histogram[1,i];
-    if number_colors>2 then countB:=countB+histogram[2,i];
-    inc(steps,number_colors);
-
-    Xpos:=round(mainwindow.histogram1.width*i/hist_range {65535});
-    if Xpos>stopXpos then {new line to be drawn}
+    stopXpos:=0;
+    for i := 1 to hist_range-1{65535} do
     begin
-      count:=(countR+countG+countB) div steps;{calculate value per step}
-
-      stopXpos:=Xpos;
-      if count<>0 then
-      begin
-        value1:=round(4*ln(count/3));
-        if value1>mainwindow.histogram1.height then value1:=mainwindow.histogram1.height;
-
-        if value1<>oldvalue1 then  {new value, new plot required}
-        begin
-          oldvalue1:=value1;
-          max_color:=countR; if countG>max_color then max_color:=countG; if countB>max_color then max_color:=countB;
-          mainwindow.histogram1.Canvas.Pen.Color := rgb(255*countR div max_color,255*countG div max_color,255*countB div max_color);
-
-          moveToex(mainwindow.histogram1.Canvas.handle,Xpos,mainwindow.histogram1.height,nil);
-          lineTo(mainwindow.histogram1.Canvas.handle,Xpos ,mainwindow.histogram1.height-value1); {line}
-        end;
-      end;
-      countR:=0;
-      countG:=0;
-      countB:=0;
-      steps:=0;
-    end;{new Xpos}
+      if histogram[col,i]>histo_peak[col] then begin histo_peak[col]:=histogram[col,i]; end;
+      Xpos:=round(w*i/hist_range);
+      if Xpos>stopXpos then {new line to be drawn}
+       begin
+         stopXpos:=Xpos;
+         histogram2[col,xpos]:=histo_peak[col];
+         histo_peakR:=max(histo_peakR,histo_peak[col]);
+         histo_peak[col]:=0;
+       end;
+    end;
   end;
+
+  for i := 0 to w-1 do {create histogram graph}
+  begin
+    begin
+      countR:= round(255*histogram2[0,i]/(histo_peakR+1));
+      if number_colors>1 then countG:= round(255*histogram2[1,i]/(histo_peakR+1)) else countG:=0;
+      if number_colors>2 then countB:= round(255*histogram2[2,i]/(histo_peakR+1)) else countB:=0;
+
+      if ((countR>0) or (countG>0) or (countB>0)) then {something to plot}
+      begin
+        max_color:=max(countR,max(countG,countB));
+        mainwindow.histogram1.Canvas.Pen.Color := rgb(255*countR div max_color,255*countG div max_color,255*countB div max_color);{set pen colour}
+
+        moveToex(mainwindow.histogram1.Canvas.handle,i,h,nil);
+        lineTo(mainwindow.histogram1.Canvas.handle,i ,h-round(h*max_color/256) ); {draw vertical line}
+      end;
+    end;
+  end;
+
+  histogram2:=nil;
   Screen.Cursor:=Save_Cursor;
 end;
 
@@ -10137,7 +10142,7 @@ begin
   end;
 end;
 
-function calculate_sqm : boolean; {calculate sqky background value}
+function calculate_sqm(get_bk,get_his : boolean) : boolean; {calculate sqky background value}
 var
   airm, correction,alt : double;
 begin
@@ -10152,6 +10157,7 @@ begin
   result:=false;
   if flux_magn_offset>0 then
   begin
+    if get_bk then get_background(0,img_loaded,get_his {histogram},false {calculate also noise level} ,{var}cblack,star_level);
     if pedestal>=cblack then begin beep; pedestal:=0; {prevent errors} end;
     sqm:=flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
 
@@ -10178,7 +10184,7 @@ begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-  if calculate_sqm=false then {failure in calculating sqm value}
+  if calculate_sqm(true {get backgr},false{get histogr})=false then {failure in calculating sqm value}
   begin
     beep;
     Screen.Cursor:= Save_Cursor;
@@ -11055,7 +11061,7 @@ begin
             if hasoption('sqm') then {sky quality}
             begin
               pedestal:=round(strtofloat2(GetOptionValue('sqm')));
-              if calculate_sqm then {sqm found}
+              if calculate_sqm(false {get backgr},false{get histogr}) then {sqm found}
                 update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqm);
             end;
 
@@ -11233,7 +11239,7 @@ begin
           else
           if solve_image(img_loaded,true {get hist}) then {match between loaded image and star database}
           begin
-            if ((add_sqm) and (calculate_sqm)) then
+            if ((add_sqm) and (calculate_sqm(false {get backgr},false{get histogr}))) then
                 update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqm);
             if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
             nrsolved:=nrsolved+1;
@@ -11423,14 +11429,8 @@ begin
         begin
           if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed}  and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
           begin
-
-            if ((abs(fitsx-1200)<20) and  (abs(fitsy-800)<20)) then
-            beep;
-
-
             HFD(img_loaded,fitsX,fitsY,14{box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
-//            if ((hfd1<=30) and (snr>8) and (hfd1>hfd_min) ) then
             if ((hfd1<=30) and (snr>snr_min {30}) and (hfd1>hfd_min) ) then
             begin
               diam:=round(3*hfd1);{for marking area}

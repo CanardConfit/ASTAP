@@ -1367,9 +1367,9 @@ begin
     {$endif}
 
 
-    mainwindow.image1.canvas.pen.color:=clyellow;
+    mainwindow.image1.canvas.pen.color:=annotation_color;
     mainwindow.image1.Canvas.brush.Style:=bsClear;
-    mainwindow.image1.Canvas.font.color:=clyellow;
+    mainwindow.image1.Canvas.font.color:=annotation_color;
 
     text_counter:=0;
     setlength(text_dimensions,200);
@@ -1481,10 +1481,10 @@ begin
        {len is already calculated earlier for the font size}
        if len<=2 then {too small to plot an elipse or circle, plot just four dots}
        begin
-         mainwindow.image1.canvas.pixels[x-2,y+2]:=clyellow;
-         mainwindow.image1.canvas.pixels[x+2,y+2]:=clyellow;
-         mainwindow.image1.canvas.pixels[x-2,y-2]:=clyellow;
-         mainwindow.image1.canvas.pixels[x+2,y-2]:=clyellow;
+         mainwindow.image1.canvas.pixels[x-2,y+2]:=annotation_color;
+         mainwindow.image1.canvas.pixels[x+2,y+2]:=annotation_color;
+         mainwindow.image1.canvas.pixels[x-2,y-2]:=annotation_color;
+         mainwindow.image1.canvas.pixels[x+2,y-2]:=annotation_color;
        end
        else
        begin
@@ -1893,7 +1893,7 @@ begin
 
   {do database stars}
   nrstars:=length(starlist1[0]);
-  mainwindow.image1.Canvas.Pen.Color := clyellow;
+  mainwindow.image1.Canvas.Pen.Color := annotation_color;
   for i:=0 to nrstars-1 do
   begin
     xx:=(starlist1[0,i]-correctionX)/(cdelt1*3600);{apply correction for database stars center and image center and convert arc seconds to pixels}
