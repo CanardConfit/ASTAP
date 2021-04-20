@@ -3167,7 +3167,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.528, '+about_message4+', dated 2021-4-18';
+  #13+#10+'ASTAP version ß0.9.528a, '+about_message4+', dated 2021-4-20';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -6518,7 +6518,7 @@ var
   i, minm,maxm,max_range, countR,countG,countB,stopXpos,Xpos,max_color,histo_peakR,number_colors, histo_peak_position,h,w,col : integer;
   above, above_R          : double;
   Save_Cursor:TCursor;
-  histogram2 : array of array of integer;
+  histogram2 : array [0..2,0..220 {>=mainwindow.histogram1.width}] of integer;
   histo_peak : array[0..2] of integer;
 
 begin
@@ -6542,7 +6542,7 @@ begin
        4,5: above_R:=0.01;  {high range}
        6,7: begin minm:=round(datamin_org);maxm:=round(datamax_org)end;{6=range and 7=manual}
        8: begin minm:=round(max_range*0.95); maxm:=round(max_range);  end;{Show saturation}
-       9: begin minm:=round(datamin_org); maxm:=round(datamax_org);   end;{max range, use datamin/max}
+       9: begin minm:=0; maxm:=65535;datamax_org:=65535; end;{max range, use datamin/max}
   end;
 
   {calculate peak values }
@@ -6596,18 +6596,22 @@ begin
   mainwindow.histogram1.canvas.rectangle(-1,-1, mainwindow.histogram1.width+1, mainwindow.histogram1.height+1);
   mainwindow.histogram1.Canvas.Pen.Color := clred;
 
-
   h:=mainwindow.histogram1.height;
   w:=mainwindow.histogram1.width;
   histo_peakR:=0;
-  setlength(histogram2,number_colors,w);
 
+  {zero arrays}
+  for col:=0 to 2 do histo_peak[col]:=0;
+  try
   for i := 0 to w-1 do  {zero}
     for col:=0 to number_colors-1 do histogram2[col,i]:=0;
 
-  for col:=0 to 2 do histo_peak[col]:=0;
+  except
+     beep; {histogram array size it too small adapt to mainwindow.histogram1.width;!!}
+     exit;
+  end;
 
-  for col:=0 to number_colors-1 do {shrink histogram}
+  for col:=0 to number_colors-1 do {shrink histogram. Note many values could be zero due to 14,12 or 8 byte nature data. So take peak value}
   begin
     stopXpos:=0;
     for i := 1 to hist_range-1{65535} do
@@ -6642,7 +6646,6 @@ begin
     end;
   end;
 
-  histogram2:=nil;
   Screen.Cursor:=Save_Cursor;
 end;
 
