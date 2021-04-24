@@ -38,7 +38,7 @@ var
 
 var
   SIN_dec0,COS_dec0,x_new_float,y_new_float,ra_ref,dec_ref,SIN_dec_ref,COS_dec_ref,crpix1_ref, crpix2_ref, CD1_1_ref, CD1_2_ref,CD2_1_ref,CD2_2_ref,exposure_ref,
-  ap_0_1_ref,ap_0_2_ref,ap_1_0_ref,ap_1_1_ref,ap_2_0_ref, bp_0_1_ref,bp_0_2_ref,bp_1_0_ref,bp_1_1_ref,bp_2_0_ref                                        : double;
+  ap_0_1_ref,ap_0_2_ref,ap_0_3_ref,ap_1_0_ref,ap_1_1_ref, ap_1_2_ref,ap_2_0_ref,ap_2_1_ref,ap_3_0_ref, bp_0_1_ref,bp_0_2_ref,bp_0_3_ref,bp_1_0_ref,bp_1_1_ref,bp_1_2_ref,bp_2_0_ref,bp_2_1_ref,bp_3_0_ref   : double;
 
 
 implementation
@@ -62,7 +62,7 @@ Begin
     u0:=fitsXfloat-crpix1;
     v0:=fitsYfloat-crpix2;
 
-    if a_order=2 then {apply SIP correction}
+    if a_order>=2 then {apply SIP correction up second order}
     begin
       u:=u0 + a_2_0*u0*u0 + a_0_2*v0*v0 + a_1_1*u0*v0; {SIP correction}
       v:=v0 + b_2_0*u0*u0 + b_0_2*v0*v0 + b_1_1*u0*v0; {SIP correction}
@@ -95,10 +95,10 @@ Begin
     u0:= - (CD1_2_ref*dDEC - CD2_2_ref*dRA) / det;
     v0:= + (CD1_1_ref*dDEC - CD2_1_ref*dRA) / det;
 
-    if a_order=2 then {apply SIP correction}
+    if a_order>=2 then {apply SIP correction up to second order}
     begin
-       x_new_float:=(CRPIX1_ref +  u0+ap_0_1_ref*v0+ ap_0_2_ref*v0*v0+ ap_1_0_ref*u0 + ap_1_1_ref*u0*v0+ ap_2_0_ref*u0*u0)-1; {SIP correction, fits count from 1, image from zero therefore subtract 1}
-       y_new_float:=(CRPIX2_ref +  v0+bp_0_1_ref*v0+ bp_0_2_ref*v0*v0+ bp_1_0_ref*u0 + bp_1_1_ref*u0*v0+ bp_2_0_ref*u0*u0)-1; {SIP correction}
+      x_new_float:=(CRPIX1_ref + u0+ap_0_1*v0+ ap_0_2*v0*v0+ + ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1;{3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+      y_new_float:=(CRPIX2_ref + v0+bp_0_1*v0+ bp_0_2*v0*v0+ + bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1;{3th order SIP correction}
     end
     else
     begin
@@ -156,15 +156,23 @@ procedure initialise_var2;{set variables correct}
 begin
   ap_0_1_ref:=ap_0_1;{store polynomial first fits }
   ap_0_2_ref:=ap_0_2;
+  ap_0_3_ref:=ap_0_3;
   ap_1_0_ref:=ap_1_0;
   ap_1_1_ref:=ap_1_1;
+  ap_1_2_ref:=ap_1_2;
   ap_2_0_ref:=ap_2_0;
+  ap_2_1_ref:=ap_2_1;
+  ap_3_0_ref:=ap_3_0;
 
   bp_0_1_ref:=bp_0_1;
   bp_0_2_ref:=bp_0_2;
+  bp_0_3_ref:=bp_0_3;
   bp_1_0_ref:=bp_1_0;
   bp_1_1_ref:=bp_1_1;
+  bp_2_1_ref:=bp_2_1;
   bp_2_0_ref:=bp_2_0;
+  bp_2_1_ref:=bp_2_1;
+  bp_3_0_ref:=bp_3_0;
 end;
 
 procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}

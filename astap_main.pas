@@ -3167,7 +3167,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.528a, '+about_message4+', dated 2021-4-20';
+  #13+#10+'ASTAP version ß0.9.529, '+about_message4+', dated 2021-4-24';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);

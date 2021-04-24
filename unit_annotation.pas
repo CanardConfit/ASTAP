@@ -1549,9 +1549,9 @@ procedure plot_and_measure_stars(flux_calibration,plot_stars,show_distortion: bo
 var
   fitsX,fitsY, fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4                           : double;
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0                       : double;
   x,y,star_total_counter,x2,y2,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2 : integer;
-  flip_horizontal, flip_vertical   : boolean;
+  flip_horizontal, flip_vertical,sip   : boolean;
   mag_offset_array                 : array of double;
   Save_Cursor                      : TCursor;
 
@@ -1567,10 +1567,26 @@ var
       dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
       dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
       det:=CD2_2*CD1_1 - CD1_2*CD2_1;
-      fitsX:= +crpix1 - (CD1_2*dDEC - CD2_2*dRA) / det; {1..width2}
-      fitsY:= +crpix2 + (CD1_1*dDEC - CD2_1*dRA) / det; {1..height2}
-      x:=round(fitsX-1); {0..width2-1}
-      y:=round(fitsY-1); {0..height2-1}
+//      fitsX:= +crpix1 - (CD1_2*dDEC - CD2_2*dRA) / det; {1..width2}
+//      fitsY:= +crpix2 + (CD1_1*dDEC - CD2_1*dRA) / det; {1..height2}
+
+
+      u0:= - (CD1_2*dDEC - CD2_2*dRA) / det;
+      v0:= + (CD1_1*dDEC - CD2_1*dRA) / det;
+
+      if sip then {apply SIP correction}
+      begin
+         x:=round(crpix1 +  u0+ap_0_1*v0+ ap_0_2*v0*v0+ + ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+         y:=round(crpix2 +  v0+bp_0_1*v0+ bp_0_2*v0*v0+ + bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
+      end
+      else
+      begin
+        x:=round(crpix1 + u0)-1; {in image array range 0..width-1}
+        y:=round(crpix2 + v0)-1;
+      end;
+
+ //     x:=round(fitsX-1); {0..width2-1}
+//      y:=round(fitsY-1); {0..height2-1}
 
       if ((x>-50) and (x<=width2+50) and (y>-50) and (y<=height2+50)) then {within image1 with some overlap}
       begin
@@ -1639,6 +1655,8 @@ begin
 
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+
+    sip:=((show_distortion=false) and (mainwindow.Polynomial1.itemindex=1) and  (a_order>=2));
 
     counter_flux_measured:=0;
 

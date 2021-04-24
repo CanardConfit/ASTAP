@@ -27,8 +27,8 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
           </big></big><big><big><span style="color: red; font-weight: bold;"></span></big></big>
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
-            &nbsp;<big>version 0.9.528 dated 2021-04-18. &nbsp;Alternative
-            link, the very latest development version 0.9.528a <a href="astap_setup.exe">ASTAP installer</a>
+            &nbsp;<big>version 0.9.529 dated 2021-04-24. &nbsp;Alternative
+            link, the very latest development version 0.9.529 <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.exe/download">H17
@@ -69,7 +69,7 @@ work with SharpCap since FOV is not stored.</li></ul>
 zipped
                   package</big></big></a><big>
               version
-              0.9.528 dated 2021-04-18. Extract in directory c:\ program
+              0.9.529 dated 2021-04-24. Extract in directory c:\ program
               files\astap
               or c:\astap. Note that the execution speed of the 32 bit
               version is
@@ -1487,9 +1487,20 @@ star.&nbsp;The report format is according the <a href="https://www.aavso.org/aav
         you should&nbsp;install the&nbsp;V17 star database&nbsp;containing the Johnson-V
         magnitudes.&nbsp;After stopping the cycle it is possible to measure
         any
-        object using the mouse pointer.<br>
-        <br>
-        Alignment
+        object using the mouse pointer.<br><br><div style="margin-left: 40px;"><small>Note:
+ASTAP uses for calibration&nbsp; up to 1000 stars from the Gaia
+database.&nbsp; So all stars it can find and recognise&nbsp; in the
+image with an&nbsp; SNR&gt;30.&nbsp; So the Gaia database should be the
+V17 which contains the calculated Johnson-V magnitudes. The three stars
+are just measured against the Gaia Johnson-V database. Only two are
+required for the report. The you just need to select the variable star
+and a check star. The third star (3) is just a bonus.</small><br><br><small>About
+the statistics, from the up to 1000 stars any outlier star is removed
+if it deviates more then 1.5 sigma from the median factor
+(Gaia_star_magn - log(flux). Then for the remaining stars the factors
+are averaged and used for calibration of the measured flux of the
+variable and check star..</small><br><br><small>So it is a different setup then usual but there is never lack of calibration stars. </small><br></div>
+        <br>Alignment
         of the images is done using the astrometric (plate) solution.&nbsp;The
         astrometric
         solution is written to the orginal file header. You
