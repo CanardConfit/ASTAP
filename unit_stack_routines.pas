@@ -95,7 +95,7 @@ Begin
     u0:= - (CD1_2_ref*dDEC - CD2_2_ref*dRA) / det;
     v0:= + (CD1_1_ref*dDEC - CD2_1_ref*dRA) / det;
 
-    if a_order>=2 then {apply SIP correction up to second order}
+    if ap_order>=2 then {apply SIP correction up to second order}
     begin
       x_new_float:=(CRPIX1_ref + u0+ap_0_1*v0+ ap_0_2*v0*v0+ + ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1;{3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
       y_new_float:=(CRPIX2_ref + v0+bp_0_1*v0+ bp_0_2*v0*v0+ + bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1;{3th order SIP correction}

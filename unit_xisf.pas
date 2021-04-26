@@ -126,7 +126,6 @@ begin
   naxis:=1;
   naxis3:=1;
 
-  a_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
   filter_name:='';
   calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
   imagetype:='';
@@ -139,7 +138,8 @@ begin
   x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
   y_coeff[0]:=0;
 
-  a_order:=0; {reset SIP_polynomial, use for check if there is data}
+  a_order:=0; {reset SIP_polynomial}
+  ap_order:=0; {reset SIP_polynomial}
   bayerpat:='';{reset bayer pattern}
   xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
   ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}

@@ -502,7 +502,7 @@ var
   ra_mount,dec_mount                     : double; {telescope ra,dec}
 
 var
-  a_order: integer;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
+  a_order,ap_order: integer;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
   a_0_2, a_0_3, a_1_1, a_1_2,a_2_0, a_2_1, a_3_0 : double; {SIP, Simple Imaging Polynomial use by astrometry.net, Spitzer}
   b_0_2, b_0_3, b_1_1, b_1_2,b_2_0, b_2_1, b_3_0 : double; {SIP, Simple Imaging Polynomial use by astrometry.net, Spitzer}
   ap_0_1, ap_0_2, ap_0_3, ap_1_0, ap_1_1, ap_1_2, ap_2_0, ap_2_1, ap_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
@@ -936,6 +936,7 @@ begin
     roworder:='';{'BOTTOM-UP'= lower-left corner first in the file.  or 'TOP-DOWN'= top-left corner first in the file.}
 
     a_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
+    ap_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
     a_0_2:=0; a_0_3:=0; a_1_1:=0; a_1_2:=0;a_2_0:=0; a_2_1:=0; a_3_0:=0;
     b_0_2:=0; b_0_3:=0; b_1_1:=0; b_1_2:=0;b_2_0:=0; b_2_1:=0; b_3_0:=0;
     ap_0_1:=0; ap_0_2:=0; ap_0_3:=0; ap_1_0:=0; ap_1_1:=0; ap_1_2:=0; ap_2_0:=0; ap_2_1:=0; ap_3_0:=0;
@@ -947,6 +948,7 @@ begin
     x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
     y_coeff[0]:=0;
     a_order:=0; {SIP_polynomial, use for check if there is data}
+    ap_order:=0; {SIP_polynomial, use for check if there is data}
 
     if get_ext=0 then extend_type:=0; {always an image in main data block}
 
@@ -1349,7 +1351,7 @@ begin
           end;
           if ((header[i]='A') and (header[i+1]='_')) then
           begin
-            if ((header[i+2]='O') and (header[i+3]='R') and (header[i+4]='D')) then a_order:=round(validate_double);{should be 2 if TAN-SIP convention available}
+            if ((header[i+2]='O') and (header[i+3]='R') and (header[i+4]='D')) then a_order:=round(validate_double);{should be >=2 if TAN-SIP convention available}
             if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='2')) then a_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='3')) then a_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then a_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
@@ -1370,6 +1372,7 @@ begin
           end;
           if ((header[i]='A') and (header[i+1]='P') and (header[i+2]='_')) then
           begin
+            if ((header[i+3]='O') and (header[i+4]='R') and (header[i+5]='D')) then ap_order:=round(validate_double);{should be >=2 if TAN-SIP convention available}
             if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='1')) then ap_0_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='2')) then ap_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='3')) then ap_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
@@ -1856,6 +1859,7 @@ begin
   x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
   y_coeff[0]:=0;
   a_order:=0; {reset SIP_polynomial, use for check if there is data}
+  ap_order:=0; {reset SIP_polynomial, use for check if there is data}
 
 
   count1:=mainwindow.Memo1.Lines.Count-1-1;
@@ -1961,6 +1965,7 @@ begin
   y_coeff[0]:=0;
 
   a_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
+  ap_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
 
   bayerpat:='T';{assume image is from Raw DSLR image}
   xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
@@ -3167,7 +3172,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.529, '+about_message4+', dated 2021-4-24';
+  #13+#10+'ASTAP version ß0.9.529a, '+about_message4+', dated 2021-4-26';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4249,7 +4254,7 @@ end;
 procedure Tmainwindow.Polynomial1Change(Sender: TObject);
 begin
  if  (
-     ((mainwindow.polynomial1.itemindex=1) and (A_ORDER=0) ) or {SIP polynomial selected but no data}
+     ((mainwindow.polynomial1.itemindex=1) and (ap_order=0) ) or {SIP polynomial selected but no data}
      ((mainwindow.polynomial1.itemindex=2) and (x_coeff[0]=0) and (y_coeff[0]=0)) {DSS polynomial selected but no data}
      ) then
    mainwindow.Polynomial1.color:=clred
@@ -6518,7 +6523,7 @@ var
   i, minm,maxm,max_range, countR,countG,countB,stopXpos,Xpos,max_color,histo_peakR,number_colors, histo_peak_position,h,w,col : integer;
   above, above_R          : double;
   Save_Cursor:TCursor;
-  histogram2 : array [0..2,0..220 {>=mainwindow.histogram1.width}] of integer;
+  histogram2 : array of array of integer;
   histo_peak : array[0..2] of integer;
 
 begin
@@ -6598,6 +6603,8 @@ begin
 
   h:=mainwindow.histogram1.height;
   w:=mainwindow.histogram1.width;
+
+  setlength(histogram2,number_colors,w); {w variable and dependend of windows desktop settings!}
   histo_peakR:=0;
 
   {zero arrays}
@@ -6646,8 +6653,10 @@ begin
     end;
   end;
 
+  histogram2:=nil;
   Screen.Cursor:=Save_Cursor;
 end;
+
 
 
 function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
@@ -8074,6 +8083,7 @@ begin
   x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
   y_coeff[0]:=0;
   a_order:=0; {SIP_polynomial, use for check if there is data}
+  ap_order:=0; {SIP_polynomial, use for check if there is data}
 
   result:=false;{assume failure}
   afitsfile:=false;
