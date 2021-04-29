@@ -1258,13 +1258,13 @@ const
 var txtf : textfile;
     count,fontsize           : integer;
     yy,mm,dd,h,aop,lan,incl,ecc,q, DELTA,sun_delta,ra2,dec2,mag,phase,delta_t,
-    SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec     : double;
+    SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec,u0,v0     : double;
     desn,name,s, thetext:string;
-    flip_horizontal, flip_vertical,form_existing, errordecode : boolean;
+    flip_horizontal, flip_vertical,form_existing, errordecode,sip : boolean;
 
       procedure plot_asteroid(sizebox :integer);
       var
-        fitsX,fitsY,dra,ddec, delta_ra,det,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh : double;
+        dra,ddec, delta_ra,det,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh : double;
         x,y,x2,y2                                                                               : integer;
       begin
 
@@ -1276,12 +1276,23 @@ var txtf : textfile;
         dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
         dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
         det:=CD2_2*CD1_1 - CD1_2*CD2_1;
-        fitsX:= +crpix1 - (CD1_2*dDEC - CD2_2*dRA) / det; {1..width2}
-        fitsY:= +crpix2 + (CD1_1*dDEC - CD2_1*dRA) / det; {1..height2}
+
+        u0:= - (CD1_2*dDEC - CD2_2*dRA) / det;
+        v0:= + (CD1_1*dDEC - CD2_1*dRA) / det;
+
+        if sip then {apply SIP correction}
+        begin
+           x:=round(crpix1 + u0 + ap_0_1*v0+ ap_0_2*v0*v0+ + ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+           y:=round(crpix2 + v0 + bp_0_1*v0+ bp_0_2*v0*v0+ + bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
+        end
+        else
+        begin
+          x:=round(crpix1 + u0)-1; {in image array range 0..width-1}
+          y:=round(crpix2 + v0)-1;
+        end;
 
 
-        x:=round(fitsX-1); {0..width2-1}
-        y:=round(fitsY-1); {0..height2-1}
+
 
         if ((x>-50) and (x<=width2+50) and (y>-50) and (y<=height2+50)) then {within image1 with some overlap}
         begin
@@ -1295,7 +1306,7 @@ var txtf : textfile;
 
            if add_annot then
            begin                         //floattostrF2(median_bottom_right,0,2)
-              add_text ('ANNOTATE=',#39+floattostrF2(fitsX-sizebox,0,2)+';'+floattostrF2(fitsY-sizebox,0,2)+';'+floattostrF2(fitsX+sizebox,0,2)+';'+floattostrF2(fitsY+sizebox,0,2)+';-1;'{boldness}+thetext+';'+#39);
+              add_text ('ANNOTATE=',#39+inttostr(x+1-sizebox)+';'+inttostr(y+1-sizebox)+';'+inttostr(x+1+sizebox)+';'+inttostr(y+1+sizebox)+';-1;'{boldness}+thetext+';'+#39);
               annotated:=true;{header contains annotations}
            end
            else
@@ -1381,6 +1392,9 @@ begin
 
   flip_vertical:=mainwindow.flip_vertical1.Checked;
   flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+
+  sip:=((ap_order>=2) and (mainwindow.Polynomial1.itemindex=1));{use sip corrections?}
+
   mainwindow.image1.Canvas.brush.Style:=bsClear;
 
   form_existing:=assigned(form_asteroids1);{form existing}

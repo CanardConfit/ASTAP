@@ -7996,10 +7996,11 @@ procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
    i,c,over_size,over_sizeL,nrfiles, image_counter,object_counter, first_file, total_counter,counter_colours: integer;
-   filter_name1, filter_name2,defilter,filters_used, filename3, extra1,extra2,object_to_process,stack_info         : string;
+   filter_name1, filter_name2,defilter, filename3, extra1,extra2,object_to_process,stack_info         : string;
    lrgb,solution,monofile,ignore,cal_and_align, mosaic_mode,sigma_mode  : boolean;
    startTick      : qword;{for timing/speed purposes}
    min_background,max_background,backgr   : double;
+   filters_used : array [0..4] of string;
 begin
   save_settings2;{too many lost selected files . so first save settings}
   esc_pressed:=false;
@@ -8056,7 +8057,6 @@ begin
 
   min_background:=65535;
   max_background:=0;
-  filters_used:='';
 
   if pos('Calibration only',stackmenu1.stack_method1.text)>0=true then {calibrate images only}
   begin
@@ -8266,6 +8266,7 @@ begin
     exposureB:=0;
     exposureRGB:=0;
     exposureL:=0;
+    for i:=0 to 3 do filters_used[i]:='';
     inc(object_counter);
 
     cal_and_align:=pos('alignment',stackmenu1.stack_method1.text)>0; {calibration and alignment only}
@@ -8345,7 +8346,7 @@ begin
 
       for i:=0 to 4 do
       begin
-        case i  of 0: begin filter_name1:=(red_filter1.text);filter_name2:=(red_filter2.text);end;
+        case i  of 0: begin filter_name1:=(red_filter1.text);filter_name2:=(red_filter2.text); end;
                    1: begin filter_name1:=(green_filter1.text);filter_name2:=(green_filter2.text);end;
                    2: begin filter_name1:=(blue_filter1.text);filter_name2:=(blue_filter2.text);end;
                    3: begin filter_name1:='colour';filter_name2:='Colour';end;
@@ -8371,7 +8372,7 @@ begin
               defilter:=ListView1.Items.item[c].subitems.Strings[L_filter];
               if ( (AnsiCompareText(filter_name1,defilter)=0) or (AnsiCompareText(filter_name2,defilter)=0) ) then
               begin {correct filter}
-                filters_used:=filters_used+defilter+' ';
+                filters_used[i]:=defilter;
                 files_to_process[c].name:=ListView1.items[c].caption;
                 inc(image_counter);{one image more}
                 ListView1.Items.item[c].SubitemImages[2]:=5;{mark 3th columns as done using a stacked icon}
@@ -8689,7 +8690,7 @@ begin
         add_text   ('COMMENT 3','  Total red exposure       '+inttostr(round(counterR*exposureR)) );
         add_text   ('COMMENT 4','  Total green exposure     '+inttostr(round(counterG*exposureG)) );
         add_text   ('COMMENT 5','  Total blue exposure      '+inttostr(round(counterB*exposureB)) );
-        add_text   ('COMMENT 6','  Used filters: '+filters_used );
+        add_text   ('COMMENT 6','  Used filters: '+filters_used[0]+' '+filters_used[1]+' '+filters_used[2]+' '+filters_used[3]);
 
 
 
@@ -8705,9 +8706,9 @@ begin
                       inttostr(counterG)+'x'+inttostr(exposureG)+'G  '+
                       inttostr(counterB)+'x'+inttostr(exposureB)+'B  '+
                       inttostr(counterRGB)+'x'+inttostr(exposureRGB)+'RGB  '+
-                      inttostr(counterL)+'x'+inttostr(exposureL)+'L  '+filters_used; {exposure}
+                      inttostr(counterL)+'x'+inttostr(exposureL)+'L  ('+filters_used[0]+','+filters_used[1]+','+filters_used[2]+','+filters_used[3]+')'; {exposure}
 
-      filename2:=extractfilepath(filename2)+propose_file_name(object_to_process,filters_used)+ '  _stacked.fits';{give it a nice file name}
+      filename2:=extractfilepath(filename2)+propose_file_name(object_to_process,'('+filters_used[0]+','+filters_used[1]+','+filters_used[2]+','+filters_used[3]+')')+ '  _stacked.fits';{give it a nice file name}
 
       if cd1_1<>0 then memo2_message('Astrometric solution reference file preserved for stack.');
       memo2_message('█ █ █  Saving result '+inttostr(image_counter)+' as '+filename2);
