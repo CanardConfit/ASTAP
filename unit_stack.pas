@@ -4669,60 +4669,67 @@ end;
 procedure Tstackmenu1.luminance_filter1exit(Sender: TObject);
 var
   err :boolean;
-
+  red1,red2,green1,green2,blue1,blue2,lum1,lum2 : string;
 begin
   new_analyse_required:=true;
   new_analyse_required3:=true;{tab 3 flats}
   err:=false;
+  red1:=trim(red_filter1.text); {remove spaces before and after}
+  red2:=trim(red_filter2.text);
+  green1:=trim(green_filter1.text);
+  green2:=trim(green_filter2.text);
+  blue1:=trim(blue_filter1.text);
+  blue2:=trim(blue_filter2.text);
+  lum1:=trim(luminance_filter1.text);
+  lum2:=trim(luminance_filter2.text);
+
+
   {remove duplication because they will be ignored later. Follow execution of stacking routine (for i:=0 to 4) so red, green, blue luminance}
-  if  AnsiCompareText(green_filter1.text,red_filter1.text)=0 then begin err:=true;green_filter1.text:=''; end;
-  if  AnsiCompareText(green_filter1.text,red_filter2.text)=0 then begin err:=true;green_filter1.text:=''; end;
+  if  AnsiCompareText(green1,red1)=0 then begin err:=true;green1:=''; end;
+  if  AnsiCompareText(green1,red2)=0 then begin err:=true;green1:=''; end;
 
-  if  AnsiCompareText(green_filter2.text,red_filter1.text)=0 then begin err:=true;green_filter2.text:=''; end;
-  if  AnsiCompareText(green_filter2.text,red_filter2.text)=0 then begin err:=true;green_filter2.text:=''; end;
+  if  AnsiCompareText(green2,red1)=0 then begin err:=true;green2:=''; end;
+  if  AnsiCompareText(green2,red2)=0 then begin err:=true;green2:=''; end;
 
-  if  AnsiCompareText(blue_filter1.text,red_filter1.text)=0 then begin err:=true;blue_filter1.text:=''; end;
-  if  AnsiCompareText(blue_filter1.text,red_filter2.text)=0 then begin err:=true;blue_filter1.text:=''; end;
+  if  AnsiCompareText(blue1,red1)=0 then begin err:=true;blue1:=''; end;
+  if  AnsiCompareText(blue1,red2)=0 then begin err:=true;blue1:=''; end;
 
-  if  AnsiCompareText(blue_filter2.text,red_filter1.text)=0 then begin err:=true;blue_filter2.text:=''; end;
-  if  AnsiCompareText(blue_filter2.text,red_filter2.text)=0 then begin err:=true;blue_filter2.text:=''; end;
+  if  AnsiCompareText(blue2,red1)=0 then begin err:=true;blue2:=''; end;
+  if  AnsiCompareText(blue2,red2)=0 then begin err:=true;blue2:=''; end;
 
-  if  AnsiCompareText(blue_filter1.text,green_filter1.text)=0 then begin err:=true;blue_filter1.text:=''; end;
-  if  AnsiCompareText(blue_filter1.text,green_filter2.text)=0 then begin err:=true;blue_filter1.text:=''; end;
+  if  AnsiCompareText(blue1,green1)=0 then begin err:=true;blue1:=''; end;
+  if  AnsiCompareText(blue1,green2)=0 then begin err:=true;blue1:=''; end;
 
-  if  AnsiCompareText(blue_filter2.text,green_filter1.text)=0 then begin err:=true;blue_filter2.text:=''; end;
-  if  AnsiCompareText(blue_filter2.text,green_filter2.text)=0 then begin err:=true;blue_filter2.text:=''; end;
+  if  AnsiCompareText(blue2,green1)=0 then begin err:=true;blue2:=''; end;
+  if  AnsiCompareText(blue2,green2)=0 then begin err:=true;blue2:=''; end;
 
 
-  if  AnsiCompareText(luminance_filter1.text,red_filter1.text)=0 then
-     begin err:=true;luminance_filter1.text:=''; end;
-  if  AnsiCompareText(luminance_filter1.text,red_filter2.text)=0 then
-     begin err:=true;luminance_filter1.text:=''; end;
+  if  AnsiCompareText(lum1,red1)=0 then begin err:=true;lum1:=''; end;
+  if  AnsiCompareText(lum1,red2)=0 then begin err:=true;lum1:=''; end;
 
-  if  AnsiCompareText(luminance_filter2.text,red_filter1.text)=0 then
-     begin err:=true;luminance_filter2.text:=''; end;
-  if  AnsiCompareText(luminance_filter2.text,red_filter2.text)=0 then
-     begin err:=true;luminance_filter2.text:=''; end;
+  if  AnsiCompareText(lum2,red1)=0 then begin err:=true;lum2:=''; end;
+  if  AnsiCompareText(lum2,red2)=0 then begin err:=true;lum2:=''; end;
 
-  if  AnsiCompareText(luminance_filter1.text,green_filter1.text)=0 then
-     begin err:=true;luminance_filter1.text:=''; end;
-  if  AnsiCompareText(luminance_filter1.text,green_filter2.text)=0 then
-     begin err:=true;luminance_filter1.text:=''; end;
+  if  AnsiCompareText(lum1,green1)=0 then begin err:=true;lum1:=''; end;
+  if  AnsiCompareText(lum1,green2)=0 then begin err:=true;lum1:=''; end;
 
-  if  AnsiCompareText(luminance_filter2.text,green_filter1.text)=0 then
-     begin err:=true;luminance_filter2.text:=''; end;
-  if  AnsiCompareText(luminance_filter2.text,green_filter2.text)=0 then
-     begin err:=true;luminance_filter2.text:=''; end;
+  if  AnsiCompareText(lum2,green1)=0 then begin err:=true;lum2:=''; end;
+  if  AnsiCompareText(lum2,green2)=0 then begin err:=true;lum2:=''; end;
 
-  if  AnsiCompareText(luminance_filter1.text,blue_filter1.text)=0 then
-     begin err:=true;luminance_filter1.text:=''; end;
-  if  AnsiCompareText(luminance_filter1.text,blue_filter2.text)=0 then
-     begin err:=true;luminance_filter1.text:=''; end;
+  if  AnsiCompareText(lum1,blue1)=0 then begin err:=true;lum1:=''; end;
+  if  AnsiCompareText(lum1,blue2)=0 then begin err:=true;lum1:=''; end;
 
-  if  AnsiCompareText(luminance_filter2.text,blue_filter1.text)=0 then
-     begin err:=true;luminance_filter2.text:=''; end;
-  if  AnsiCompareText(luminance_filter2.text,blue_filter2.text)=0 then
-     begin err:=true;luminance_filter2.text:=''; end;
+  if  AnsiCompareText(lum2,blue1)=0 then begin err:=true;lum2:=''; end;
+  if  AnsiCompareText(lum2,blue2)=0 then begin err:=true;lum2:=''; end;
+
+  red_filter1.text:=red1;
+  red_filter2.text:=red2;
+  green_filter1.text:=green1;
+  green_filter2.text:=green2;
+  blue_filter1.text:=blue1;
+  blue_filter2.text:=blue2;
+  luminance_filter1.text:=lum1;
+  luminance_filter2.text:=lum2;
 
   if err=true then
   begin
@@ -8686,12 +8693,10 @@ begin
         add_integer('RGB_BIAS=',' / Flat-darks used for OSC.                       ' ,counterRGBbias);
         add_integer('RGB_TEMP=',' / Set temperature used for OSC.                  ' ,temperatureRGB);
 
-        add_text   ('COMMENT 2','  Total luminance exposure '+inttostr(round(counterL*exposureL)) );
-        add_text   ('COMMENT 3','  Total red exposure       '+inttostr(round(counterR*exposureR)) );
-        add_text   ('COMMENT 4','  Total green exposure     '+inttostr(round(counterG*exposureG)) );
-        add_text   ('COMMENT 5','  Total blue exposure      '+inttostr(round(counterB*exposureB)) );
-        add_text   ('COMMENT 6','  Used filters: '+filters_used[0]+' '+filters_used[1]+' '+filters_used[2]+' '+filters_used[3]);
-
+        add_text   ('COMMENT 2','  Total luminance exposure '+inttostr(round(counterL*exposureL))+' '+filters_used[3]);
+        add_text   ('COMMENT 3','  Total red exposure       '+inttostr(round(counterR*exposureR))+' '+filters_used[0] );
+        add_text   ('COMMENT 4','  Total green exposure     '+inttostr(round(counterG*exposureG))+' '+filters_used[1] );
+        add_text   ('COMMENT 5','  Total blue exposure      '+inttostr(round(counterB*exposureB))+' '+filters_used[2] );
 
 
         { ASTAP keyword standard:}
@@ -8706,9 +8711,9 @@ begin
                       inttostr(counterG)+'x'+inttostr(exposureG)+'G  '+
                       inttostr(counterB)+'x'+inttostr(exposureB)+'B  '+
                       inttostr(counterRGB)+'x'+inttostr(exposureRGB)+'RGB  '+
-                      inttostr(counterL)+'x'+inttostr(exposureL)+'L  ('+filters_used[0]+','+filters_used[1]+','+filters_used[2]+','+filters_used[3]+')'; {exposure}
+                      inttostr(counterL)+'x'+inttostr(exposureL)+'L  ('+filters_used[0]+' '+filters_used[1]+' '+filters_used[2]+' '+filters_used[3]+')'; {exposure}
 
-      filename2:=extractfilepath(filename2)+propose_file_name(object_to_process,'('+filters_used[0]+','+filters_used[1]+','+filters_used[2]+','+filters_used[3]+')')+ '  _stacked.fits';{give it a nice file name}
+      filename2:=extractfilepath(filename2)+propose_file_name(object_to_process,'('+filters_used[0]+' '+filters_used[1]+' '+filters_used[2]+' '+filters_used[3]+')')+ '  _stacked.fits';{give it a nice file name}
 
       if cd1_1<>0 then memo2_message('Astrometric solution reference file preserved for stack.');
       memo2_message('█ █ █  Saving result '+inttostr(image_counter)+' as '+filename2);
