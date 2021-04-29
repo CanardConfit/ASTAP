@@ -831,9 +831,8 @@ const
   last_flat_loaded : string='';
   last_dark_loaded : string='';
 
-//  image_path: string='';
-  dropsize: double=0.65; {should be between 1 and 0.5}
-  new_analyse_required: boolean=false;{if changed then reanalyse}
+  new_analyse_required: boolean=false;{if changed then reanalyse tab 1}
+  new_analyse_required3: boolean=false;{if changed then reanalyse tab 3}
   quads_displayed:boolean=false;{no quads visible, so no refresh required}
   equalise_background_step: integer=1;
 
@@ -3572,7 +3571,8 @@ end;
 procedure Tstackmenu1.analyseflatsButton3Click(Sender: TObject);
 begin
   if img_loaded<>nil then {button was used, backup img array and header and restore later}  begin img_backup:=nil;{clear to save memory} backup_img; end;{backup fits for later}
-  analyse_listview(listview3,false {light},true {full fits},false{refresh});
+  analyse_listview(listview3,false {light},true {full fits},new_analyse_required3{refresh});
+  new_analyse_required3:=false;{analyse done}
   if img_loaded<>nil then restore_img; {button was used, restore original image array and header}
 end;
 
@@ -4672,6 +4672,7 @@ var
 
 begin
   new_analyse_required:=true;
+  new_analyse_required3:=true;{tab 3 flats}
   err:=false;
   {remove duplication because they will be ignored later. Follow execution of stacking routine (for i:=0 to 4) so red, green, blue luminance}
   if  AnsiCompareText(green_filter1.text,red_filter1.text)=0 then begin err:=true;green_filter1.text:=''; end;
@@ -6077,7 +6078,7 @@ begin
           flux_aperture:=99;{radius for measuring using a small aperture}
 
           {calibrate using POINT SOURCE calibration using hfd_med found earlier!!!}
-          plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion}); {get flux_magn_offset}
+          plot_and_measure_stars(true {calibration},false {plot stars}); {get flux_magn_offset}
 
           if flux_magn_offset<>0 then
           begin
@@ -7592,8 +7593,9 @@ begin
   begin
     save_settings2;
 
-    analyse_listview(listview3,false {light},false {full fits},false{refresh});{update the tab information. Convert to FITS if required}
+    analyse_listview(listview3,false {light},false {full fits},new_analyse_required3{refresh});{update the tab information. Convert to FITS if required}
     if esc_pressed then exit;{esc could be pressed in analyse}
+    new_analyse_required3:=false;
 
     flat_dark_width:=average_flatdarks;{average of bias frames. Convert to FITS if required}
     flatdark_used:=false;
@@ -7970,7 +7972,7 @@ begin
 end;
 
 
-function propose_file_name(object_to_process:string) : string; {propose a file name}
+function propose_file_name(object_to_process,filters_used:string) : string; {propose a file name}
 begin
   if object_to_process<>'' then result:=object_to_process else result:='no_object';
   if date_obs<>'' then result:=result+', '+copy(date_obs,1,10);
@@ -7982,6 +7984,7 @@ begin
   if counterL<>0 then result:=result+inttostr(counterL)+'x'+inttostr(exposureL)+'L '; {exposure}
   result:=StringReplace(trim(result),' ,',',',[rfReplaceAll]);{remove all spaces in front of comma's}
 
+  result:=result+' '+filters_used;
   if telescop<>'' then result:=result+', '+telescop;
   if ((filter_name<>'') and (counterR=0) and (counterG=0) and (counterB=0) and (counterRGB=0)) then result:=result+', '+filter_name;
   if instrum<>'' then result:=result+', '+instrum;
@@ -7993,7 +7996,7 @@ procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
    i,c,over_size,over_sizeL,nrfiles, image_counter,object_counter, first_file, total_counter,counter_colours: integer;
-   filter_name1, filter_name2, filename3, extra1,extra2,object_to_process,stack_info         : string;
+   filter_name1, filter_name2,defilter,filters_used, filename3, extra1,extra2,object_to_process,stack_info         : string;
    lrgb,solution,monofile,ignore,cal_and_align, mosaic_mode,sigma_mode  : boolean;
    startTick      : qword;{for timing/speed purposes}
    min_background,max_background,backgr   : double;
@@ -8053,7 +8056,7 @@ begin
 
   min_background:=65535;
   max_background:=0;
-
+  filters_used:='';
 
   if pos('Calibration only',stackmenu1.stack_method1.text)>0=true then {calibrate images only}
   begin
@@ -8365,8 +8368,10 @@ begin
                 ((object_to_process<>'') and (object_to_process=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]))) ) {correct object?}
             then
             begin {correct object}
-              if ( (AnsiCompareText(filter_name1,ListView1.Items.item[c].subitems.Strings[L_filter])=0) or (AnsiCompareText(filter_name2,ListView1.Items.item[c].subitems.Strings[L_filter])=0) ) then
+              defilter:=ListView1.Items.item[c].subitems.Strings[L_filter];
+              if ( (AnsiCompareText(filter_name1,defilter)=0) or (AnsiCompareText(filter_name2,defilter)=0) ) then
               begin {correct filter}
+                filters_used:=filters_used+defilter+' ';
                 files_to_process[c].name:=ListView1.items[c].caption;
                 inc(image_counter);{one image more}
                 ListView1.Items.item[c].SubitemImages[2]:=5;{mark 3th columns as done using a stacked icon}
@@ -8684,6 +8689,8 @@ begin
         add_text   ('COMMENT 3','  Total red exposure       '+inttostr(round(counterR*exposureR)) );
         add_text   ('COMMENT 4','  Total green exposure     '+inttostr(round(counterG*exposureG)) );
         add_text   ('COMMENT 5','  Total blue exposure      '+inttostr(round(counterB*exposureB)) );
+        add_text   ('COMMENT 6','  Used filters: '+filters_used );
+
 
 
         { ASTAP keyword standard:}
@@ -8698,9 +8705,9 @@ begin
                       inttostr(counterG)+'x'+inttostr(exposureG)+'G  '+
                       inttostr(counterB)+'x'+inttostr(exposureB)+'B  '+
                       inttostr(counterRGB)+'x'+inttostr(exposureRGB)+'RGB  '+
-                      inttostr(counterL)+'x'+inttostr(exposureL)+'L  '; {exposure}
+                      inttostr(counterL)+'x'+inttostr(exposureL)+'L  '+filters_used; {exposure}
 
-      filename2:=extractfilepath(filename2)+propose_file_name(object_to_process)+ '  _stacked.fits';{give it a nice file name}
+      filename2:=extractfilepath(filename2)+propose_file_name(object_to_process,filters_used)+ '  _stacked.fits';{give it a nice file name}
 
       if cd1_1<>0 then memo2_message('Astrometric solution reference file preserved for stack.');
       memo2_message('█ █ █  Saving result '+inttostr(image_counter)+' as '+filename2);

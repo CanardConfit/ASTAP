@@ -825,7 +825,7 @@ begin
     update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
     update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
     update_text   ('PLTSOLVD=','                   T / ASTAP internal solver      ');
-    update_text   ('COMMENT 6', solved_in+' Offset was '+offset_found+' Mount offset RA='+ra_offset+', DEC='+dec_offset );
+    update_text   ('COMMENT 7', solved_in+' Offset was '+offset_found+' Mount offset RA='+ra_offset+', DEC='+dec_offset );
 
     if solve_show_log then {global variable set in find stars}
     begin
@@ -847,7 +847,7 @@ begin
     memo2_message('No solution found!  :(');
     mainwindow.caption:='No solution found!  :(';
     update_text   ('PLTSOLVD=','                   F / No plate solution found.   ');
-    remove_key('COMMENT 6',false{all});
+    remove_key('COMMENT 7',false{all});
   end;
 
   if nrstars_required>database_stars+4 then

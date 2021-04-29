@@ -3,7 +3,10 @@ object stackmenu1: Tstackmenu1
   Height = 644
   Top = 147
   Width = 1764
+  HorzScrollBar.Page = 1440
+  VertScrollBar.Page = 509
   AllowDropFiles = True
+  AutoScroll = True
   Caption = 'stack menu'
   ClientHeight = 644
   ClientWidth = 1764
@@ -1097,18 +1100,16 @@ object stackmenu1: Tstackmenu1
             Width = 33
           end        
           item
-            AutoSize = True
             Caption = 'Object'
             MinWidth = 100
+            Width = 100
           end        
           item
-            AutoSize = True
             Caption = 'Result'
             MinWidth = 60
-            Width = 47
+            Width = 60
           end        
           item
-            Alignment = taRightJustify
             AutoSize = True
             Caption = 'Exposure'
             MinWidth = 75
@@ -3116,7 +3117,7 @@ object stackmenu1: Tstackmenu1
     object tab_photometry1: TTabSheet
       Caption = 'Photometry'
       ClientHeight = 420
-      ClientWidth = 1755
+      ClientWidth = 1844
       ImageIndex = 19
       ParentFont = False
       object browse_photometry1: TButton
@@ -3204,7 +3205,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1755
+        Width = 1844
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3586,7 +3587,7 @@ object stackmenu1: Tstackmenu1
         Height = 383
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1522
+        Width = 1752
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True

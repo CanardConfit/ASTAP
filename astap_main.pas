@@ -103,6 +103,8 @@ type
     hfd_contour1: TMenuItem;
     Inspector_top_menu1: TMenuItem;
     inspector_hfd_values1: TMenuItem;
+    batch_add_sip1: TMenuItem;
+    sip1: TMenuItem;
     zoomfactorone1: TMenuItem;
     MenuItem22: TMenuItem;
     bayer_image1: TMenuItem;
@@ -255,7 +257,7 @@ type
     GroupBox1: TGroupBox;
     save1: TButton;
     solve_button1: TButton;
-    AddplatesolvesolutiontoselectedFITSfiles1: TMenuItem;
+    batch_add_solution1: TMenuItem;
 
     tools1: TMenuItem;
     TrayIcon1: TTrayIcon;
@@ -334,6 +336,7 @@ type
     procedure extractred1Click(Sender: TObject);
     procedure extractblue1Click(Sender: TObject);
     procedure extractgreen1Click(Sender: TObject);
+    procedure sip1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
     procedure northeast1Click(Sender: TObject);
@@ -433,7 +436,7 @@ type
     procedure Image1MouseUp(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure FormResize(Sender: TObject);
-    procedure AddplatesolvesolutiontoselectedFITSfiles1Click(Sender: TObject);
+    procedure batch_add_solution1Click(Sender: TObject);
     procedure flip_horizontal1Click(Sender: TObject);
     procedure flip_vertical1Click(Sender: TObject);
     procedure demosaic_bayermatrix1Click(Sender: TObject);
@@ -493,6 +496,7 @@ var
 
   user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
   img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_buffer,img_final : image_array;
+  distortion_data : star_list;
   filename2: string;
   nrbits,Xbinning,Ybinning    : integer;
   size_backup,index_backup    : integer;{number of backup images for ctrl-z, numbered 0,1,2,3}
@@ -3172,7 +3176,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.529a, '+about_message4+', dated 2021-4-26';
+  #13+#10+'ASTAP version ß0.9.530, '+about_message4+', dated 2021-4-29';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4245,9 +4249,10 @@ end;
 
 
 procedure Tmainwindow.show_distortion1Click(Sender: TObject);
+var
+  stars_measured :integer;
 begin
-  if flux_magn_offset=0 then plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});{calibrate using the 100 brightest stars}
-  plot_and_measure_stars(false {calibration},false {plot stars},true {plot distortion});
+  measure_distortion(true {plot},stars_measured);{measure or plot distortion}
 end;
 
 
@@ -4602,6 +4607,7 @@ begin
   mainwindow.Copyposition1.enabled:=yes;{enable popup menu}
   mainwindow.Copypositionindeg1.enabled:=yes;{enable popup menu}
   mainwindow.gaia_star_position1.enabled:=yes;{enable popup menu}
+  mainwindow.sip1.enabled:=yes; {allow adding sip coefficients}
 
   stackmenu1.focallength1Exit(nil); {update output calculator}
 end;
@@ -8390,6 +8396,147 @@ begin
 end;
 
 
+procedure Tmainwindow.sip1Click(Sender: TObject); {simple SIP coefficients calculation assuming symmetric radial distortion. Distortion increases with the third power of the off-center distance}
+const                                              //See e.g. https://www.telescope-optics.net/distortion.htm
+     range2=14;{20*sqrt(2)}
+     range1=9;
+var
+  stars_measured,i,j,k,count        : integer;
+  x,y,xc,yc,r,rc,max_radius,factor  : double;
+  Save_Cursor:TCursor;
+  factors  : array of double;
+begin
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  measure_distortion(false {plot},stars_measured);{measure distortion of all stars}
+
+  count:=0;
+  factor:=0;
+  setlength(factors,stars_measured);
+  max_radius:=sqrt(sqr(crpix1)+sqr(crpix2));
+  for i:=0 to stars_measured-1 do
+  begin
+    x:=distortion_data[0,i];
+    y:=distortion_data[1,i];
+    r:=sqrt(sqr(crpix1-x)+sqr(crpix2-y));
+    if r>0.7*max_radius then {take far away stars only}
+    begin
+      xc:=distortion_data[2,i];
+      yc:=distortion_data[3,i];
+      rc:=sqrt(sqr(crpix1-xc)+sqr(crpix2-yc));
+      factors[count]:=(r-rc)/(rc*rc*rc); {Measure the ratio "offset/r^3". Distortion increases with the third power of the off-center distance or field angle}
+      inc(count,1);
+    end;
+  end;
+  if count>0 then
+  begin
+    factor:=smedian(factors,count);{filter out outliers using median}
+
+    distortion_data:=nil;{free memory}
+
+    //               0            1           2           3           4             5            6
+    //     u2:=u + a_2_0*u*u + a_0_2*v*v + a_1_1*u*v + a_2_1*u*u*v+ a_1_2*u*v*v + a_3_0*u*u*u + a_0_3*v*v*v; {SIP correction for second or third order}
+    //     v2:=v + b_2_0*u*u + b_0_2*v*v + b_1_1*u*v + b_2_1*u*u*v+ b_1_2*u*v*v + b_3_0*u*u*u + b_0_3*v*v*v; {SIP correction for second or third order}
+
+
+    A_ORDER:=3;{allow usage in astap}
+    A_0_2:=0;
+    A_0_3:=0;
+    A_1_1:=0;
+    A_1_2:=factor; {important factor}
+    A_2_0:=0;
+    A_2_1:=0;
+    A_3_0:=factor; {important factor}
+
+    B_0_2:=A_2_0; {assume symmetry in distortion}
+    B_0_3:=A_3_0;
+    B_1_1:=A_1_1;
+    B_1_2:=A_2_1;
+    B_2_0:=A_0_2;
+    B_2_1:=A_1_2;
+    B_3_0:=A_0_3;
+
+
+    AP_order:=3; {allow usage in astap}
+    AP_0_2:=-A_0_2; {approximation just negative the factors}
+    AP_0_3:=-A_0_3;
+    AP_1_1:=-A_1_1;
+    AP_1_2:=-A_1_2;
+    AP_2_0:=-A_2_0;
+    AP_2_1:=-A_2_1;
+    AP_3_0:=-A_3_0;
+
+    BP_0_2:=-B_0_2; {approximation just negative the factors}
+    BP_0_3:=-B_0_3;
+    BP_1_1:=-B_1_1;
+    BP_1_2:=-B_1_2;
+    BP_2_0:=-B_2_0;
+    BP_2_1:=-B_2_1;
+    BP_3_0:=-B_3_0;
+
+    update_float  ('A_ORDER =',' / Polynomial order, axis 1                       ' ,3);
+    update_float  ('A_0_0   =',' / SIP coefficient                                ' ,0);
+    update_float  ('A_0_1   =',' / SIP coefficient                                ' ,0);
+    update_float  ('A_0_2   =',' / SIP coefficient                                ' ,A_0_2);
+    update_float  ('A_0_3   =',' / SIP coefficient                                ' ,A_0_3);
+    update_float  ('A_1_0   =',' / SIP coefficient                                ' ,0);
+    update_float  ('A_1_1   =',' / SIP coefficient                                ' ,A_1_1);
+    update_float  ('A_1_2   =',' / SIP coefficient                                ' ,A_1_2);
+    update_float  ('A_2_0   =',' / SIP coefficient                                ' ,A_2_0);
+    update_float  ('A_2_1   =',' / SIP coefficient                                ' ,A_2_1);
+    update_float  ('A_3_0   =',' / SIP coefficient                                ' ,A_3_0);
+
+    update_float  ('B_ORDER =',' / Polynomial order, axis 2                       ' ,3);
+    update_float  ('B_0_0   =',' / SIP coefficient                                ' ,0);
+    update_float  ('B_0_1   =',' / SIP coefficient                                ' ,0);
+    update_float  ('B_0_2   =',' / SIP coefficient                                ' ,B_0_2);
+    update_float  ('B_0_3   =',' / SIP coefficient                                ' ,B_0_3);
+    update_float  ('B_1_0   =',' / SIP coefficient                                ' ,0);
+    update_float  ('B_1_1   =',' / SIP coefficient                                ' ,B_1_1);
+    update_float  ('B_1_2   =',' / SIP coefficient                                ' ,B_1_2);
+    update_float  ('B_2_0   =',' / SIP coefficient                                ' ,B_2_0);
+    update_float  ('B_2_1   =',' / SIP coefficient                                ' ,B_2_1);
+    update_float  ('B_3_0   =',' / SIP coefficient                                ' ,B_3_0);
+
+    update_float  ('AP_ORDER=',' / Inv polynomial order, axis 1                   ' ,3);
+    update_float  ('AP_0_0  =',' / SIP coefficient                                ' ,0);
+    update_float  ('AP_0_1  =',' / SIP coefficient                                ' ,0);
+    update_float  ('AP_0_2  =',' / SIP coefficient                                ' ,AP_0_2);
+    update_float  ('AP_0_3  =',' / SIP coefficient                                ' ,AP_0_3);
+    update_float  ('AP_1_0  =',' / SIP coefficient                                ' ,0);
+    update_float  ('AP_1_1  =',' / SIP coefficient                                ' ,AP_1_1);
+    update_float  ('AP_1_2  =',' / SIP coefficient                                ' ,AP_1_2);
+    update_float  ('AP_2_0  =',' / SIP coefficient                                ' ,AP_2_0);
+    update_float  ('AP_2_1  =',' / SIP coefficient                                ' ,AP_2_1);
+    update_float  ('AP_3_0  =',' / SIP coefficient                                ' ,AP_3_0);
+
+    update_float  ('BP_ORDER=',' / Inv polynomial order, axis 2                   ' ,3);
+    update_float  ('BP_0_0  =',' / SIP coefficient                                ' ,0);
+    update_float  ('BP_0_1  =',' / SIP coefficient                                ' ,0);
+    update_float  ('BP_0_2  =',' / SIP coefficient                                ' ,BP_0_2);
+    update_float  ('BP_0_3  =',' / SIP coefficient                                ' ,BP_0_3);
+    update_float  ('BP_1_0  =',' / SIP coefficient                                ' ,0);
+    update_float  ('BP_1_1  =',' / SIP coefficient                                ' ,BP_1_1);
+    update_float  ('BP_1_2  =',' / SIP coefficient                                ' ,BP_1_2);
+    update_float  ('BP_2_0  =',' / SIP coefficient                                ' ,BP_2_0);
+    update_float  ('BP_2_1  =',' / SIP coefficient                                ' ,BP_2_1);
+    update_float  ('BP_3_0  =',' / SIP coefficient                                ' ,BP_3_0);
+
+    mainwindow.Polynomial1.color:=clform;
+    mainwindow.Polynomial1.ItemIndex:=1;{set at SIP}
+    memo2_message('Added SIP coefficients to header for a 3th order radial correction up to '+floattostrF(abs(factor)*max_radius*max_radius*max_radius,ffFixed,3,2)+' pixels.');{factor*radius^3}
+  end
+  else
+  begin
+    beep;
+    memo2_message('Abort, not enough stars in the outer regions');
+  end;
+
+  Screen.Cursor := Save_cursor;    { Show hourglass cursor }
+end;
+
+
 procedure Tmainwindow.extract_pixel_11Click(Sender: TObject);
 begin
   split_raw(1,1,'P11');{extract one of the Bayer matrix pixels}
@@ -8528,7 +8675,7 @@ begin
       annulus_radius:=14;{calibrate for extended objects using full star flux}
       flux_aperture:=99;{calibrate for extended objects}
 
-      plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});
+      plot_and_measure_stars(true {calibration},false {plot stars});
     end;
     if flux_magn_offset=0 then begin beep; exit;end;
 
@@ -9536,7 +9683,7 @@ begin
       end;
     end;
 
-    plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});
+    plot_and_measure_stars(true {calibration},false {plot stars});
     if flux_magn_offset>0 then
     begin
       mainwindow.caption:='Photometry calibration successfull';
@@ -10164,7 +10311,7 @@ begin
     annulus_radius:=14;{calibrate for extended objects using full star flux}
     flux_aperture:=99;{calibrate for extended objects}
 
-    plot_and_measure_stars(true {calibration},false {plot stars},false {plot distortion});
+    plot_and_measure_stars(true {calibration},false {plot stars});
   end;
 
   result:=false;
@@ -11194,20 +11341,21 @@ begin
 end;
 
 
-procedure Tmainwindow.AddplatesolvesolutiontoselectedFITSfiles1Click(
+procedure Tmainwindow.batch_add_solution1Click(
   Sender: TObject);
 var
   Save_Cursor:TCursor;
   i,nrskipped, nrsolved,nrfailed : integer;
-  dobackup,add_sqm : boolean;
-  failed,skipped   : string;
+  dobackup,add_sqm,add_sip : boolean;
+  failed,skipped           : string;
   startTick  : qword;{for timing/speed purposes}
 begin
   OpenDialog1.Title := 'Select multiple  files to add plate solution';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   esc_pressed:=false;
-  add_sqm:=sender=solve_and_add_sqm1;
+  add_sqm:=(sender=solve_and_add_sqm1);
+  add_sip:=(sender=batch_add_sip1);
 
   if add_sqm then
   begin
@@ -11254,6 +11402,9 @@ begin
           begin
             if ((add_sqm) and (calculate_sqm(false {get backgr},false{get histogr}))) then
                 update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqm);
+            if add_sip then
+               mainwindow.sip1Click(nil);{add sip coefficients}
+
             if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
             nrsolved:=nrsolved+1;
           end
@@ -11275,7 +11426,7 @@ begin
     nrfailed:=OpenDialog1.Files.count-nrsolved-nrskipped;
     if nrfailed<>0 then memo2_message(failed);
     if nrskipped<>0 then memo2_message(skipped);
-    memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(nrfailed)+' solve failures, '+inttostr(nrskipped)+' images skipped. Duration '+floattostr(round((GetTickCount64 - startTick)/100)/10)+ ' sec. For re-solve set option "Ignore existing fits header solution".');
+    memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(nrfailed)+' solve failures, '+inttostr(nrskipped)+' images skipped. Duration '+floattostr(round((GetTickCount64 - startTick)/100)/10)+ ' sec. For re-solve set in TAB alignment option "Ignore existing fits header solution".');
   end;
 end;
 
@@ -11661,7 +11812,7 @@ procedure Tmainwindow.star_annotation1Click(Sender: TObject);
 begin
   mainwindow.calibrate_photometry1Click(nil);{measure hfd and calibrate for point or extended sources depending on the setting}
 
-  plot_and_measure_stars(false {calibration},true {plot stars},false {plot distortion});{plot stars}
+  plot_and_measure_stars(false {calibration},true {plot stars});{plot stars}
 end;
 
 

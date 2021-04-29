@@ -1114,22 +1114,34 @@ object mainwindow: Tmainwindow
         ShortCut = 16464
         OnClick = astrometric_solve_image1Click
       end
+      object sip1: TMenuItem
+        Caption = 'Add SIP coefficients to header'
+        Enabled = False
+        Hint = 'SIP polynomial factors will be calculated and added to the header allowing more accurate position measurement outside the image center.  This basic implementation will only compensate for radial distortion.'
+        OnClick = sip1Click
+      end
       object MenuItem9: TMenuItem
         Caption = '-'
       end
       object MenuItem7: TMenuItem
         Caption = 'Batch processing'
         Hint = 'Batch processes'
-        object AddplatesolvesolutiontoselectedFITSfiles1: TMenuItem
+        object batch_add_solution1: TMenuItem
           Caption = 'Batch solve images'
-          Hint = 'Find a plate solution for selected files and add to the FITS file header.'
+          Hint = 'Find an astrometric (plate) solution for selected files and add to the FITS file header.'
           ShortCut = 32848
-          OnClick = AddplatesolvesolutiontoselectedFITSfiles1Click
+          OnClick = batch_add_solution1Click
+        end
+        object batch_add_sip1: TMenuItem
+          Caption = 'Batch solve images and add SIP'
+          Hint = 'Find an astrometric (plate) solution for selected files and add to the FITS file header. Additional add SIP coefficients for maximum accuracy.'
+          ShortCut = 49232
+          OnClick = batch_add_solution1Click
         end
         object solve_and_add_sqm1: TMenuItem
           Caption = 'Batch solve images and add SQM value'
           Hint = 'Find a astrometric solution for selected files and add to the FITS file header. Add also the measured SQM value.'
-          OnClick = AddplatesolvesolutiontoselectedFITSfiles1Click
+          OnClick = batch_add_solution1Click
         end
         object batch_solve_astrometry_net: TMenuItem
           Caption = 'Batch solve images using local astrometry.net'

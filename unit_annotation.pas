@@ -26,7 +26,8 @@ procedure plot_deepsky;{plot the deep sky object on the image}
 procedure load_deep;{load the deepsky database once. If loaded no action}
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 procedure load_variable;{load variable stars. If loaded no action}
-procedure plot_and_measure_stars(flux_calibration,plot_stars,show_distortion: boolean);{flux calibration,  annotate or show_distortion}
+procedure plot_and_measure_stars(flux_calibration,plot_stars: boolean);{flux calibration,  annotate}
+procedure measure_distortion(plot: boolean; var stars_measured: integer);{measure or plot distortion}
 procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the mangitude. For super nova search}
 procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 procedure read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; var ra2,dec2,length2,width2,pa : double);{deepsky database search}
@@ -1325,13 +1326,13 @@ type
      x1,y1,x2,y2 : integer;
   end;
 var
-  fitsX,fitsY,dra,ddec,delta,gamma, telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,length1,width1,pa,len,flipped,
-  gx_orientation, delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh : double;
+  {fitsX,fitsY,}dra,ddec,delta,gamma, telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,length1,width1,pa,len,flipped,
+  gx_orientation, delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,u0,v0 : double;
   name: string;
   flip_horizontal, flip_vertical: boolean;
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,hf,x,y,fontsi : integer;
-  overlap  :boolean;
+  overlap,sip  :boolean;
   Save_Cursor:TCursor;
 
 begin
@@ -1342,6 +1343,9 @@ begin
 
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+
+    sip:=((ap_order>=2) and (mainwindow.Polynomial1.itemindex=1));{use sip corrections?}
+
 
     {6. Passage (x,y) -> (RA,DEC) to find RA0,DEC0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
     dRa :=(cd1_1*((width2/2)-crpix1)+cd1_2*((height2/2)-crpix2))*pi/180; {also valid for case crpix1,crpix2 is not in the middle}
@@ -1387,11 +1391,20 @@ begin
       dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
       dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
       det:=CD2_2*CD1_1 - CD1_2*CD2_1;
-      fitsX:= +crpix1 - (CD1_2*dDEC - CD2_2*dRA) / det;{1..width2}
-      fitsY:= +crpix2 + (CD1_1*dDEC - CD2_1*dRA) / det;{1..height2}
-      x:=round(fitsX-1);{0..width2-1}
-      y:=round(fitsY-1);{0..height2-1}
 
+      u0:= - (CD1_2*dDEC - CD2_2*dRA) / det;
+      v0:= + (CD1_1*dDEC - CD2_1*dRA) / det;
+
+      if sip then {apply SIP correction}
+      begin
+         x:=round(crpix1 + u0 + ap_0_1*v0+ ap_0_2*v0*v0+ + ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+         y:=round(crpix2 + v0 + bp_0_1*v0+ bp_0_2*v0*v0+ + bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
+      end
+      else
+      begin
+        x:=round(crpix1 + u0)-1; {in image array range 0..width-1}
+        y:=round(crpix2 + v0)-1;
+      end;
 
       if ((x>-0.25*width2) and (x<=1.25*width2) and (y>-0.25*height2) and (y<=1.25*height2)) then {within image1 with some overlap}
       begin
@@ -1545,12 +1558,12 @@ begin
 end;
 
 
-procedure plot_and_measure_stars(flux_calibration,plot_stars,show_distortion: boolean);{flux calibration,  annotate or show_distortion}
+procedure plot_and_measure_stars(flux_calibration,plot_stars: boolean);{flux calibration,  annotate}
 var
   fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,snr_min                 : double;
-  x,y,star_total_counter,x2,y2,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2 : integer;
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2              : double;
+  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2 : integer;
   flip_horizontal, flip_vertical,sip   : boolean;
   mag_offset_array                 : array of double;
   Save_Cursor                      : TCursor;
@@ -1573,13 +1586,13 @@ var
 
       if sip then {apply SIP correction}
       begin
-         x:=round(crpix1 + u0 + ap_0_1*v0+ ap_0_2*v0*v0+ + ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-         y:=round(crpix2 + v0 + bp_0_1*v0+ bp_0_2*v0*v0+ + bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
+         x:=(crpix1 + u0 + ap_0_1*v0+ ap_0_2*v0*v0+ + ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+         y:=(crpix2 + v0 + bp_0_1*v0+ bp_0_2*v0*v0+ + bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
       end
       else
       begin
-        x:=round(crpix1 + u0)-1; {in image array range 0..width-1}
-        y:=round(crpix2 + v0)-1;
+        x:=(crpix1 + u0)-1; {in image array range 0..width-1}
+        y:=(crpix2 + v0)-1;
       end;
 
       if ((x>-50) and (x<=width2+50) and (y>-50) and (y<=height2+50)) then {within image1 with some overlap}
@@ -1593,21 +1606,21 @@ var
         begin {annotate}
           if Bp_Rp<>999 then {colour version}
           begin
-            mainwindow.image1.Canvas.textout(x2,y2,inttostr(round(mag2))+':'+inttostr(round(Bp_Rp)) {   +'<-'+inttostr(area290) });
+            mainwindow.image1.Canvas.textout(round(x2),round(y2),inttostr(round(mag2))+':'+inttostr(round(Bp_Rp)) {   +'<-'+inttostr(area290) });
 
             mainwindow.image1.canvas.pen.color:=Gaia_star_color(round(Bp_Rp));{color circel}
           end
           else
-            mainwindow.image1.Canvas.textout(x2,y2,inttostr(round(mag2)) );
+            mainwindow.image1.Canvas.textout(round(x2),round(y2),inttostr(round(mag2)) );
 
           len:=round((200-mag2)/5.02);
-          mainwindow.image1.canvas.ellipse(x2-len,y2-len,x2+1+len,y2+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+          mainwindow.image1.canvas.ellipse(round(x2-len),round(y2-len),round(x2+1+len),round(y2+1+len));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
         end;
 
-        if ((flux_calibration) or (show_distortion)) then
+        if flux_calibration then
         begin
-          HFD(img_loaded,x,y, annulus_radius{14,box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-          if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>snr_min)) then {star detected in img_loaded. 30 is found emperical}
+          HFD(img_loaded,round(x),round(y), annulus_radius{14,box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+          if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>30)) then {star detected in img_loaded. 30 is found emperical}
           begin
             if ((flux_calibration){calibrate flux} and
                 (img_loaded[0,round(xc),round(yc)]<65000) and
@@ -1628,15 +1641,6 @@ var
               inc(counter_flux_measured); {increase counter of number of stars analysed}
             end;
 
-            if show_distortion then {show distortion}
-            begin
-              mainwindow.image1.Canvas.Pen.width :=3;
-              mainwindow.image1.Canvas.MoveTo(x2, y2);
-              mainwindow.image1.Canvas.LineTo(round(x2+(x-xc)*50),round(y2-(y-yc)*50 ));
-              mainwindow.image1.Canvas.Pen.width :=1;
-              //  totalX:=totalX+(fitsX-xc);
-              //  totalY:=totalY+(fitsY-yc);
-            end;{show distortion}
           end;
         end;{flux calibration}
       end;
@@ -1650,8 +1654,7 @@ begin
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
-    sip:=((show_distortion=false) and (mainwindow.Polynomial1.itemindex=1) and  (ap_order>=2));{use sip corrections?}
-    if show_distortion then snr_min:=10 else snr_min:=30;
+    sip:=((ap_order>=2) and (mainwindow.Polynomial1.itemindex=1));{use sip corrections?}
 
     counter_flux_measured:=0;
 
@@ -1667,7 +1670,7 @@ begin
     telescope_ra:=ra0+arctan(Dra/delta);
     telescope_dec:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
 
-    linepos:=2;{Set pointer to the beginning. First two lines are comments}
+    //linepos:=2;{Set pointer to the beginning. First two lines are comments}
 
     mainwindow.image1.Canvas.Pen.width :=1; // round(1+height2/mainwindow.image1.height);{thickness lines}
     mainwindow.image1.canvas.pen.color:=$00B0FF ;{orange}
@@ -1772,6 +1775,196 @@ begin
 
   end;{fits file}
 end;{plot stars}
+
+
+procedure measure_distortion(plot: boolean; var stars_measured : integer);{measure or plot distortion}
+var
+  fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
+  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,snr_min,x,y,x2,y2    : double;
+  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i    : integer;
+  flip_horizontal, flip_vertical,sip   : boolean;
+  mag_offset_array                 : array of double;
+  Save_Cursor                      : TCursor;
+
+    procedure plot_star;
+    begin
+
+     {5. Conversion (RA,DEC) -> (x,y)}
+      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
+      delta_ra:=ra2-ra0;
+      sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
+      HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
+      dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
+      dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
+      det:=CD2_2*CD1_1 - CD1_2*CD2_1;
+
+      u0:= - (CD1_2*dDEC - CD2_2*dRA) / det;
+      v0:= + (CD1_1*dDEC - CD2_1*dRA) / det;
+
+//      if sip then {apply SIP correction}
+//      begin
+//         x:=(crpix1 + u0 + ap_0_1*v0+ ap_0_2*v0*v0+ + ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+//         y:=(crpix2 + v0 + bp_0_1*v0+ bp_0_2*v0*v0+ + bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
+//      end
+//      else
+      begin
+        x:=(crpix1 + u0)-1; {in image array range 0..width-1}
+        y:=(crpix2 + v0)-1;
+      end;
+
+      if ((x>-50) and (x<=width2+50) and (y>-50) and (y<=height2+50)) then {within image1 with some overlap}
+      begin
+        inc(star_total_counter);
+
+        if flip_horizontal then x2:=(width2-1)-x else x2:=x;
+        if flip_vertical   then y2:=y            else y2:=(height2-1)-y;
+
+        HFD(img_loaded,round(x),round(y), 14 {annulus_radius box size},99 {flux_aperture}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
+        begin
+          if plot then {show distortion}
+          begin
+            mainwindow.image1.Canvas.Pen.width :=3;
+            mainwindow.image1.Canvas.MoveTo(round(x2), round(y2));
+            mainwindow.image1.Canvas.LineTo(round(x2+(x-xc)*50),round(y2-(y-yc)*50 ));
+            mainwindow.image1.Canvas.Pen.width :=1;
+            //  totalX:=totalX+(fitsX-xc);
+            //  totalY:=totalY+(fitsY-yc);
+          end {show distortion}
+          else
+          if stars_measured<max_nr_stars then {store distortion data}
+          begin
+            distortion_data[0,stars_measured]:=x;{database}
+            distortion_data[1,stars_measured]:=y;
+            distortion_data[2,stars_measured]:=xc;{measured}
+            distortion_data[3,stars_measured]:=yc;
+            inc(stars_measured);
+          end;
+        end;
+      end;
+    end;{sub procedure}
+begin
+  if ((fits_file) and (cd1_1<>0)) then
+  begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+    flip_vertical:=mainwindow.flip_vertical1.Checked;
+    flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+
+    bp_rp:=999;{not defined in mono versions of the database}
+
+    fitsX_middle:=(width2+1)/2;{range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
+    fitsY_middle:=(height2+1)/2;
+
+    dRa :=(cd1_1*(fitsx_middle-crpix1)+cd1_2*(fitsy_middle-crpix2))*pi/180;
+    dDec:=(cd2_1*(fitsx_middle-crpix1)+cd2_2*(fitsy_middle-crpix2))*pi/180;
+    delta:=cos(dec0)-dDec*sin(dec0);
+    gamma:=sqrt(dRa*dRa+delta*delta);
+    telescope_ra:=ra0+arctan(Dra/delta);
+    telescope_dec:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
+
+    //linepos:=2;{Set pointer to the beginning. First two lines are comments}
+
+
+    mainwindow.image1.Canvas.Pen.width :=1; // round(1+height2/mainwindow.image1.height);{thickness lines}
+    mainwindow.image1.canvas.pen.color:=$00B0FF ;{orange}
+
+
+    star_total_counter:=0;{total counter}
+
+    max_nr_stars:=round(width2*height2*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
+
+    if select_star_database(stackmenu1.star_database1.text)=false then
+    begin
+      application.messagebox(pchar('No star database found!'+#13+'Download the h18 (or h17 or v17) and extract the files to the program directory'), pchar('No star database!'),0);
+      exit;
+    end;
+
+    if plot=false then setlength(distortion_data,4,max_nr_stars);
+    stars_measured:=0;{star number}
+
+    fov:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
+
+    if file290 then {.290 files}
+      fov:=min(fov,9.53*pi/180) {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+    else {.1476 files}
+      fov:=min(fov,5.142857143*pi/180); {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
+
+
+    find_areas( telescope_ra,telescope_dec, fov,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
+
+    sincos(dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
+
+    {read 1th area}
+    if area1<>0 then {read 1th area}
+    begin
+      if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
+      nrstars_required2:=trunc(max_nr_stars * frac1);
+      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+    end;
+
+    {read 2th area}
+    if area2<>0 then {read 2th area}
+    begin
+      if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
+      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2));
+      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+    end;
+
+    {read 3th area}
+    if area3<>0 then {read 3th area}
+    begin
+      if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
+      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
+      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+    end;
+    {read 4th area}
+    if area4<>0 then {read 4th area}
+    begin
+      if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
+      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
+      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp))
+      and (bp_rp>12) ) do plot_star;{add star}
+    end;
+
+    close_star_database;
+
+    {$ifdef mswindows}
+     mainwindow.image1.Canvas.Font.Name :='default';
+    {$endif}
+    {$ifdef linux}
+    mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
+    {$endif}
+    {$ifdef darwin} {MacOS}
+    mainwindow.image1.Canvas.Font.Name :='Helvetica';
+    {$endif}
+
+    if plot then
+    begin
+      mainwindow.image1.canvas.pen.color:=annotation_color;
+      mainwindow.image1.Canvas.brush.Style:=bsClear;
+      mainwindow.image1.Canvas.font.color:=annotation_color;
+
+      mainwindow.image1.Canvas.Pen.width :=3;
+      mainwindow.image1.Canvas.MoveTo(20, height2-20);
+      mainwindow.image1.Canvas.LineTo(20+50*3,height2-20);
+
+      for i:=0 to 3 do
+      begin
+        mainwindow.image1.Canvas.MoveTo(20+50*i,height2-15);
+        mainwindow.image1.Canvas.LineTo(20+50*i,height2-25);
+        mainwindow.image1.Canvas.textout(17+50*i,height2-15,inttostr(i));
+      end;
+      mainwindow.image1.Canvas.textout(20,height2-50,'Scale in pixels');
+
+    end;
+
+    Screen.Cursor:= Save_Cursor;
+  end;{fits file}
+end;{measure distortion}
+
 
 
 
