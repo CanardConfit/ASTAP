@@ -3016,7 +3016,7 @@ begin
           show_shape_manual_alignment(index){show the marker on the reference star}
         else
         mainwindow.shape_manual_alignment1.visible:=false;
-        if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(0,0,false);{plot any annotations}
+        if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(0,0,false);{plot any annotations. This is not done in plot_image for alignment reasons in blink routine }
 
       end
       else beep;{image not found}

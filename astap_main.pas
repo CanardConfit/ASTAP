@@ -104,6 +104,7 @@ type
     Inspector_top_menu1: TMenuItem;
     inspector_hfd_values1: TMenuItem;
     batch_add_sip1: TMenuItem;
+    grid1: TMenuItem;
     sip1: TMenuItem;
     zoomfactorone1: TMenuItem;
     MenuItem22: TMenuItem;
@@ -336,6 +337,8 @@ type
     procedure extractred1Click(Sender: TObject);
     procedure extractblue1Click(Sender: TObject);
     procedure extractgreen1Click(Sender: TObject);
+    procedure grid1Click(Sender: TObject);
+    procedure Panel1Click(Sender: TObject);
     procedure sip1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
@@ -3176,7 +3179,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.530b, '+about_message4+', dated 2021-4-29';
+  #13+#10+'ASTAP version ß0.9.531, '+about_message4+', dated 2021-5-2';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4156,6 +4159,112 @@ begin
 end;
 
 
+procedure plot_grid;
+var
+  fitsX,fitsY,step,stepRA,i,j,centra,centdec,range : double;
+  x,y                                              : integer;
+  flip_horizontal, flip_vertical: boolean;
+  Save_Cursor:TCursor;
+
+begin
+  if ((cd1_1=0) or (mainwindow.grid1.checked=false)) then exit;
+
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  {$ifdef mswindows}
+   mainwindow.image1.Canvas.Font.Name :='default';
+  {$endif}
+  {$ifdef linux}
+  mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
+  {$endif}
+  {$ifdef darwin} {MacOS}
+  mainwindow.image1.Canvas.Font.Name :='Helvetica';
+  {$endif}
+
+
+  flip_vertical:=mainwindow.flip_vertical1.Checked;
+  flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+
+  mainwindow.image1.Canvas.Pen.Mode:= pmXor;
+  mainwindow.image1.Canvas.Pen.width :=1;
+  mainwindow.image1.Canvas.Pen.color:= $909000;
+
+  mainwindow.image1.Canvas.brush.Style:=bsClear;
+  mainwindow.image1.Canvas.font.color:= clgray;
+  mainwindow.image1.Canvas.font.size:=8;
+
+   range:=cdelt2*sqrt(sqr(width2/2)+sqr(height2/2));{range in degrees}
+  if range>2 then
+  begin
+    step:=1; {step DEC 01:00}
+    stepRA:=1; {step RA 00:04}
+  end
+  else
+  if range>0.5 then
+  begin
+    step:=0.25;{step DEC 00:15}
+    stepRA:=0.25; {step RA 00:01}
+  end
+  else
+  begin
+    step:=0.05;{step DEC 00:03  }
+    stepRA:=0.25/6; {step RA 00:00:10}
+  end;
+
+  if abs(dec0*180/pi)>88 then stepRA:=45 else {degrees, RA 3 hours}
+  if abs(dec0*180/pi)>85 then stepRA:=7.5 {RA 30 min} else
+  if abs(dec0*180/pi)>80 then stepRA:=step*5;
+
+
+  centra:=stepRA*round(ra0*180/(pi*stepRA)); {rounded image centers}
+  centdec:=step*round(dec0*180/(pi*step));
+
+  i:=centRA-6*stepRA;
+  repeat{dec lines}
+    j:=max(centDEC-5*step,-90);
+    repeat
+      celestial_to_pixel(i*pi/180,j*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      if flip_horizontal then x:=round((width2-1)-(fitsX-1)) else x:=round(fitsX-1);
+      if flip_vertical=false then y:=round((height2-1)-(fitsY-1)) else y:=round(fitsY-1);
+
+      if ((abs(i-centRA)<0.00001) or (abs(j-centDEC)<0.00001)) then
+        mainwindow.image1.Canvas.textout(x,y,prepare_ra(fnmodulo(i,360)*pi/180,' ')+','+prepare_dec(j*pi/180,' '));
+
+      mainwindow.image1.Canvas.moveto(x,y);
+      celestial_to_pixel(i*pi/180,(j+step)*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      if flip_horizontal then x:=round((width2-1)-(fitsX-1)) else x:=round(fitsX-1);
+      if flip_vertical=false then y:=round((height2-1)-(fitsY-1)) else y:=round(fitsY-1);
+      mainwindow.image1.Canvas.lineto(x,y);
+
+      j:=j+step;
+    until j>=min(centDEC+6*step,90);
+    i:=i+stepRA;
+  until ((i>=centRa+6*stepRA) or (i>=(centRA-6*stepRA)+360));
+
+
+  j:=max(centDEC-step*6,-90);
+  repeat{ra lines}
+    i:=centRA-stepRA*6;
+    repeat
+      celestial_to_pixel(i*pi/180,j*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      if flip_horizontal then x:=round((width2-1)-(fitsX-1)) else x:=round(fitsX-1);
+      if flip_vertical=false then y:=round((height2-1)-(fitsY-1)) else y:=round(fitsY-1);
+      mainwindow.image1.Canvas.moveto(x,y);
+      celestial_to_pixel((i+step)*pi/180,j*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      if flip_horizontal then x:=round((width2-1)-(fitsX-1)) else x:=round(fitsX-1);
+      if flip_vertical=false then y:=round((height2-1)-(fitsY-1)) else y:=round(fitsY-1);
+      mainwindow.image1.Canvas.lineto(x,y);
+      i:=i+step;
+    until ((i>=centRa+stepRA*6) or (i>=(centRA-6*stepRA)+360));
+    j:=j+step;
+  until j>=min(centDEC+step*6,90);
+
+  Screen.Cursor := Save_cursor;    { Show hourglass cursor }
+
+end;
+
+
 procedure Tmainwindow.rotateleft1Click(Sender: TObject); {rotate left or right 90 degrees}
 var
   dum, col,fitsX,fitsY : integer;
@@ -4447,9 +4556,9 @@ end;
 
 procedure Tmainwindow.show_statistics1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations : integer;
+   fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations,i : integer;
    value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4,
-   sd,mean,median,minimum, maximum,max_counter, saturated                   : double;
+   sd,mean,median,minimum, maximum,max_counter,saturated,mad                  : double;
    Save_Cursor              : TCursor;
    info_message             : string;
    median_array             : array of double;
@@ -4511,6 +4620,8 @@ begin
     end;{filter outliers}
     median:=smedian(median_array,counter_median);
 
+    for i:=0 to counter_median do median_array[i]:=abs(median_array[i] - median);{fill median_array with offsets}
+    mad:=smedian(median_array,counter_median); //median absolute deviation (MAD)
 
     most_common:=mode(img_loaded,col,startx,stopX,starty,stopY,32000);
 
@@ -4518,11 +4629,12 @@ begin
     if col=1 then info_message:=info_message+#10+#10+'Green:'+#10;
     if col=2 then info_message:=info_message+#10+#10+'Blue:'+#10;
 
-    info_message:=info_message+  'x̄ :    '+floattostrf(mean,ffgeneral, 5, 5)+#10+             {mean}
+    info_message:=info_message+  'x̄ :    '+floattostrf(mean,ffgeneral, 5, 5)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+             {mean}
                                  'x̃  :   '+floattostrf(median,ffgeneral, 5, 5)+#10+ {median}
                                  'Mo :  '+floattostrf(most_common,ffgeneral, 5, 5)+#10+
                                  'σ :   '+floattostrf(sd,ffgeneral, 4, 4)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+               {standard deviation}
                                  'σ_2:   '+floattostrf(get_negative_noise_level(img_loaded,col,startx,stopX,starty,stopY,most_common),ffgeneral, 4, 4)+#10+
+                                 'mad:   '+floattostrf(mad,ffgeneral, 4, 4)+#10+
                                  'm :   '+floattostrf(minimum,ffgeneral, 5, 5)+#10+
                                  'M :   '+floattostrf(maximum,ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter))+' x)'+#10+
                                  '≥64E3 :  '+inttostr(round(saturated));
@@ -4542,6 +4654,7 @@ begin
                                             'Mo = mode or most common pixel value or peak histogram, so the best estimate for the background mean value | '+
                                             'σ =  standard deviation background using mean and sigma clipping| ' +
                                             'σ_2 = standard deviation background using values below Mo only | '+
+                                            'mad = median absolute deviation | '+
                                             'm = minimum value image | M = maximum value image | ≥64E3 = number of values equal or above 64000';
 
   case  QuestionDlg (pchar('Statistics within rectangle '+inttostr(stopX-1-startX)+' x '+inttostr(stopY-1-startY) ),pchar(info_message),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
@@ -4712,7 +4825,9 @@ begin
     plot_north;
     plot_north_on_image;
     plot_large_north_indicator;
-    image1.Repaint;{show borth-east indicator}
+    plot_grid;
+
+    image1.Repaint;{show north-east indicator}
 
     update_menu_related_to_solver(true);{update menus section}
     update_statusbar_section5;{update section 5 with image dimensions in degrees}
@@ -6460,6 +6575,8 @@ begin
     plot_large_north_indicator;
     if mainwindow.add_marker_position1.checked then
       mainwindow.add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
+     plot_grid;
+     {plot_annotation is dono in plot_grid due to alignment}
 
     mainwindow.statusbar1.panels[5].text:=inttostr(width2)+' x '+inttostr(height2)+' x '+inttostr(naxis3)+'   '+inttostr(nrbits)+' BPP';{give image dimensions and bit per pixel info}
     update_statusbar_section5;{update section 5 with image dimensions in degrees}
@@ -6471,6 +6588,7 @@ begin
   {do refresh at the end for smooth display, especially for blinking }
 //  img.refresh;{important, show update}
   img.invalidate;{important, show update. NoTe refresh aligns image to the left!!}
+
 
   quads_displayed:=false; {displaying quads doesn't require a screen refresh}
 
@@ -7016,6 +7134,7 @@ begin
     flip_vertical1.checked:=get_boolean('flipvertical',false);
     northeast1.checked:=get_boolean('north_east',false);
     mountposition1.checked:=get_boolean('mount_position',false);
+    grid1.checked:=get_boolean('grid',false);
     add_marker_position1.checked:=get_boolean('add_marker',false);{popup marker selected?}
 
     stackmenu1.make_osc_color1.checked:=get_boolean('osc_color_convert',false);
@@ -7348,6 +7467,7 @@ begin
     initstring.Values['flipvertical']:=BoolStr[flip_vertical1.checked];
     initstring.Values['north_east']:=BoolStr[northeast1.checked];
     initstring.Values['mount_position']:=BoolStr[mountposition1.checked];
+    initstring.Values['grid']:=BoolStr[grid1.checked];
 
     initstring.Values['add_marker']:=BoolStr[add_marker_position1.checked];
 
@@ -7631,8 +7751,6 @@ begin
   if sender<>nil then {not from plot_fits, redraw required}
   begin
     plot_north; {draw arrow or clear indication position north depending on value cd1_1}
-    plot_north_on_image;
-    plot_large_north_indicator;
   end;
 end;
 
@@ -8226,9 +8344,6 @@ begin
   if sender<>nil then {not from plot_fits, redraw required}
   begin
     plot_north; {draw arrow or clear indication position north depending on value cd1_1}
-    plot_north_on_image;
-    plot_large_north_indicator;
-
   end;
 end;
 
@@ -8373,7 +8488,6 @@ begin
 end;
 
 
-
 procedure Tmainwindow.extractred1Click(Sender: TObject);
 begin
 //  green_even:= ( (odd(x+1+offsetX)) and (odd(y+1+offsetY)) );{even(i) function is odd(i+1), even is here for array position not fits position}
@@ -8385,14 +8499,32 @@ begin
   split_raw(1,1,'TR');{extract one of the Bayer matrix pixels}
 end;
 
+
 procedure Tmainwindow.extractblue1Click(Sender: TObject);
 begin
   split_raw(1,1,'TB');{extract one of the Bayer matrix pixels}
 end;
 
+
 procedure Tmainwindow.extractgreen1Click(Sender: TObject);
 begin
   split_raw(1,1,'TG');{extract one of the Bayer matrix pixels}
+end;
+
+
+procedure Tmainwindow.grid1Click(Sender: TObject);
+begin
+  if grid1.checked=false then  {clear screen}
+  begin
+    plot_fits(mainwindow.image1,false,true);
+  end
+  else
+  plot_grid;
+end;
+
+procedure Tmainwindow.Panel1Click(Sender: TObject);
+begin
+
 end;
 
 
@@ -8420,11 +8552,13 @@ begin
     x:=distortion_data[0,i];
     y:=distortion_data[1,i];
     r:=sqrt(sqr(crpix1-x)+sqr(crpix2-y));
-    if r>0.7*max_radius then {take far away stars only}
+    xc:=distortion_data[2,i];
+    yc:=distortion_data[3,i];
+    rc:=sqrt(sqr(crpix1-xc)+sqr(crpix2-yc));
+
+    //memo2_message(#9+floattostr(r)+#9+floattostr(rc));
+    if ( (abs(r-rc)>1){severe distortion} or  (r>0.7*max_radius) {far away stars}) then
     begin
-      xc:=distortion_data[2,i];
-      yc:=distortion_data[3,i];
-      rc:=sqrt(sqr(crpix1-xc)+sqr(crpix2-yc));
       factors[count]:=(r-rc)/(rc*rc*rc); {Measure the ratio "offset/r^3". Distortion increases with the third power of the off-center distance or field angle}
       inc(count,1);
     end;
@@ -12746,7 +12880,7 @@ begin
     bg:=Smedian(background,counter);
     for i:=0 to counter-1 do background[i]:=abs(background[i] - bg);{fill background with offsets}
     mad_bg:=Smedian(background,counter); //median absolute deviation (MAD)
-    sd:=mad_bg*1.4826; {Conversion from mad to sd. See https://en.wikipedia.org/wiki/Median_absolute_deviation}
+    sd:=mad_bg*1.4826; {Conversion from mad to sd for a normal distribution. See https://en.wikipedia.org/wiki/Median_absolute_deviation}
     sd:=max(sd,1); {add some value for images with zero noise background. This will prevent that background is seen as a star. E.g. some jpg processed by nova.astrometry.net}
 
 

@@ -219,6 +219,7 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     TabOrder = 3
+    OnClick = Panel1Click
     OnMouseMove = Panel1MouseMove
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
@@ -1535,6 +1536,13 @@ object mainwindow: Tmainwindow
         Caption = 'Mount position'
         Hint = 'Shows the mount position as a star and a large orientation indicator in the solved image. The center of the image is indicated as  tiny lime coloured square. '
         OnClick = mountposition1Click
+      end
+      object grid1: TMenuItem
+        AutoCheck = True
+        Caption = 'α, δ grid'
+        Hint = 'Adds a right ascension, & declination grid to image'
+        ShortCut = 16455
+        OnClick = grid1Click
       end
       object MenuItem15: TMenuItem
         Caption = '-'

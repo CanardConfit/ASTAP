@@ -1306,7 +1306,7 @@ var txtf : textfile;
 
            if add_annot then
            begin                         //floattostrF2(median_bottom_right,0,2)
-              add_text ('ANNOTATE=',#39+inttostr(x+1-sizebox)+';'+inttostr(y+1-sizebox)+';'+inttostr(x+1+sizebox)+';'+inttostr(y+1+sizebox)+';-1;'{boldness}+thetext+';'+#39);
+              add_text ('ANNOTATE=',#39+inttostr(x+1-sizebox)+';'+inttostr(y+1-sizebox)+';'+inttostr(x+1+sizebox)+';'+inttostr(y+1+sizebox)+';-1;'{boldness}+thetext+';'+#39); {store in FITS coordinates 1..}
               annotated:=true;{header contains annotations}
            end
            else
