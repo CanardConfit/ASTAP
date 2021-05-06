@@ -1,20 +1,14 @@
 unit unit_astrometric_solving;
-{Copyright (C) 2018, 2021 by Han Kleijn, www.hnsky.org
- email: han.k.. at...hnsky.org
+{Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
+email: han.k.. at...hnsky.org
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License (LGPL) as published
+by the Free Software Foundation, either version 3 of the License, or(at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-}
+You should have received a copy of the GNU Lesser General Public License (LGPL) along with this program. If not, see <http://www.gnu.org/licenses/>.}
 
 {ASTAP is using a linear astrometric solution for both stacking and solving.  The method is based on what traditionally is called "reducing the plate measurements.
 First step is to find star matches between a test image and a reference image. The reference image is either created from a star database or a reference image.
@@ -107,7 +101,7 @@ uses   Classes,SysUtils,controls,forms,math,
        unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation;
 
 function solve_image(img :image_array; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
-procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; var starlist3:star_list);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list);{bin, measure background, find stars}
 function report_binning : integer;{select the binning}
 function fnmodulo (x,range: double):double;
 
@@ -144,7 +138,7 @@ end;
 {ra,dec:   right ascension and declination}
 {xx,yy :   CCD coordinates}
 {cdelt:    CCD scale in arcsec per pixel}
-procedure equatorial_standard(ra0,dec0,ra,dec, cdelt : double; var xx,yy: double);
+procedure equatorial_standard(ra0,dec0,ra,dec, cdelt : double; out xx,yy: double);
 var dv,sin_dec0,cos_dec0,sin_dec ,cos_dec,sin_deltaRA,cos_deltaRA: double;
 begin
   sincos(dec0  ,sin_dec0 ,cos_dec0);
@@ -414,7 +408,7 @@ begin
 end;
 
 
-procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; var starlist3:star_list);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list);{bin, measure background, find stars}
 var
   old_width,old_height,old_naxis3,nrstars,i : integer;
   img_binned : image_array;
@@ -481,7 +475,7 @@ end;
 
 function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
-  nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,i,database_stars,distance,binning,match_nr,
+  nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,distance,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t                                                                  : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,oversize,sep,
   ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,

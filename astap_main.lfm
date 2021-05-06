@@ -219,7 +219,6 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     TabOrder = 3
-    OnClick = Panel1Click
     OnMouseMove = Panel1MouseMove
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
@@ -1107,7 +1106,6 @@ object mainwindow: Tmainwindow
     end
     object tools1: TMenuItem
       Caption = 'Tools'
-      OnClick = tools1Click
       object astrometric_solve_image1: TMenuItem
         Caption = 'Solve image astrometric (plate solve)'
         Enabled = False
@@ -3144,7 +3142,7 @@ object mainwindow: Tmainwindow
     end
   end
   object PopupMenu_memo2: TPopupMenu
-    Left = 976
+    Left = 904
     Top = 376
     object Menufind2: TMenuItem
       Caption = 'Find'

@@ -41,7 +41,6 @@ var
 
 const
   obscode       : string='';
-//  filter_type   : string='';
   name_check : string='';
   name_check_IAU : string='';
   name_var   : string='';

@@ -1,22 +1,16 @@
 unit unit_hjd;
 { Converts Julian day to Heliocentric Julian Day. Difference is maximum +- 500 sec / 8.3 minutes }
 
-{Copyright (C) 2019 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
-{This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License (LGPL) as published
+by the Free Software Foundation, either version 3 of the License, or(at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-}
+You should have received a copy of the GNU Lesser General Public License (LGPL) along with this program. If not, see <http://www.gnu.org/licenses/>.}
 
 {$mode delphi}
 
@@ -26,7 +20,7 @@ uses
   Classes, SysUtils, math, unit_asteroid;
 
 function JD_to_HJD(jd,ra_object,dec_object: double): double;{conversion JD to HJD}  {see https://en.wikipedia.org/wiki/Heliocentric_Julian_Day}
-procedure EQU_GAL(ra,dec:double;var l,b: double);{equatorial to galactic coordinates}
+procedure EQU_GAL(ra,dec:double;out l,b: double);{equatorial to galactic coordinates}
 function altitude(ra2000,dec2000,lat,long,julian:double):double;{conversion ra & dec to altitude only. This routine is created for speed, only the altitude is calculated}
 function airmass_calc(h: double): double; // where h is apparent altitude in degrees.
 function atmospheric_absorption(airmass: double):double;{magnitudes}
@@ -96,7 +90,7 @@ begin
 end;
 
 
-procedure EQU_GAL(ra,dec:double;var l,b: double);{equatorial to galactic coordinates}
+procedure EQU_GAL(ra,dec:double;out l,b: double);{equatorial to galactic coordinates}
 const
   {North_galactic pole (J2000)}
   pole_ra : double = (12+51/60+26.27549/3600)*pi/12; {12h51m26.27549    https://www.aanda.org/articles/aa/pdf/2011/02/aa14961-10.pdf }

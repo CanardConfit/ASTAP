@@ -1,21 +1,16 @@
 unit unit_star_database;
 {HNSKY reads star databases type .290 and 1476}
-{Copyright (C) 2017,2021 by Han Kleijn, www.hnsky.org
+
+{Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
-{This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License (LGPL) as published
+by the Free Software Foundation, either version 3 of the License, or(at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-}
+You should have received a copy of the GNU Lesser General Public License (LGPL) along with this program. If not, see <http://www.gnu.org/licenses/>.}
 
 {$mode delphi}
 
@@ -40,8 +35,8 @@ var
 //   cos_telescope_dec, double variable should contains the cos(telescope_dec) to detect if star read is within the FOV diameter}
 
 function select_star_database(database:string): boolean; {select a star database, report false if none is found}
-procedure find_areas(ra1,dec1,fov :double; var area1,area2,area3,area4 :integer; var frac1,frac2,frac3,frac4:double);{find up to four star database areas for the square image.  Maximum size is a little lesse the one database field 9.5x9.5 degrees for .290 files and 5.14 x 5.14 degrees for .1476 files}
-function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; var ra2,dec2, mag2,Bp_Rp : double): boolean;{star 290 file database search}
+procedure find_areas(ra1,dec1,fov :double; out area1,area2,area3,area4 :integer; out frac1,frac2,frac3,frac4:double);{find up to four star database areas for the square image.  Maximum size is a little lesse the one database field 9.5x9.5 degrees for .290 files and 5.14 x 5.14 degrees for .1476 files}
+function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,Bp_Rp : double): boolean;{star 290 file database search}
 procedure close_star_database;{Close the tfilestream}
 function open_database(telescope_dec: double; area290: integer): boolean; {open database file}
 
@@ -168,7 +163,7 @@ var
   cache_valid_pos       : integer;
   file290               : boolean;
 
-const
+var {################# initialised variables #########################}
   file_open: boolean=false;{file is not open}
   area2    : double=1*pi/180; {search area}
   old_area  : integer=9999999;
@@ -178,9 +173,7 @@ implementation
 
 uses astap_main;
 
-
-
-Const
+var {################# initialised variables #########################}
 
 filenames290 : array[1..290] of string= {}
 (('0101.290'),
@@ -492,7 +485,7 @@ filenames290 : array[1..290] of string= {}
 
  ('1801.290'));
 
- const dec_boundaries : array[0..18] of double=
+ dec_boundaries : array[0..18] of double=
     ((-90         * pi/180),
      (-85.23224404* pi/180), {arcsin(1-1/289)}
      (-75.66348756* pi/180), {arcsin(1-(1+8)/289)}
@@ -2056,9 +2049,10 @@ filenames290 : array[1..290] of string= {}
 
 
 
-const {1476 boundaries}
+const
+   {1476 boundaries}
     Stepsize=90/17.5;{5.142857143 degrees}
-
+var {################# initialised variables #########################}
     dec_boundaries1476 : array[0..36] of double=
     (-90*pi/180,
      -87.42857143*pi/180,
@@ -2101,7 +2095,7 @@ const {1476 boundaries}
      90*pi/180);
 
 
-const
+var {################# initialised variables #########################}
    record_size:integer=11;{default}
 var
   p6        : ^hnskyhdr290_6;       { pointer to hnsky record }
@@ -2668,7 +2662,7 @@ begin
 end;
 
 
-procedure find_areas(ra1,dec1,fov :double; var area1,area2,area3,area4 :integer; var frac1,frac2,frac3,frac4:double);{find up to four star database areas for the square image. Maximum size is a little lesse the one database field 9.5x9.5 degrees for .290 files and 5.14 x 5.14 degrees for .1476 files}
+procedure find_areas(ra1,dec1,fov :double; out area1,area2,area3,area4 :integer; out frac1,frac2,frac3,frac4:double);{find up to four star database areas for the square image. Maximum size is a little lesse the one database field 9.5x9.5 degrees for .290 files and 5.14 x 5.14 degrees for .1476 files}
 var
   ra_cornerWN,ra_cornerEN,ra_cornerWS,ra_cornerES,
   dec_cornerN,dec_cornerS,fov_half,
@@ -2850,7 +2844,7 @@ end;
 //   area290 should be set at 290+1 before any read series
 //   cos_telescope_dec, double variable should contains the cos(telescope_dec) to detect if star read is within the FOV diameter}
 //
-function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; var ra2,dec2, mag2,Bp_Rp : double): boolean;{star 290 file database search}
+function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,Bp_Rp : double): boolean;{star 290 file database search}
             {searchmode=S screen update }
             {searchmode=M mouse click  search}
             {searchmode=T text search}

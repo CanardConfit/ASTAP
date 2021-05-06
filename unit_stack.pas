@@ -2,19 +2,13 @@ unit unit_stack;
 {Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License (LGPL) as published
+by the Free Software Foundation, either version 3 of the License, or(at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-}
+You should have received a copy of the GNU Lesser General Public License (LGPL) along with this program. If not, see <http://www.gnu.org/licenses/>.}
 
 interface
 uses
@@ -823,7 +817,7 @@ var
   asteroidlist : array of array of array of double;
   solve_show_log  : boolean;
 
-const
+var  {################# initialised variables #########################}
   dark_exposure : integer=987654321;{not done indication}
   dark_temperature: integer=987654321;
   flat_filter : string='987654321';{not done indication}
@@ -850,7 +844,7 @@ procedure date_to_jd(date_time:string);{get julian day for date_obs, so the star
 function JdToDate(jd:double):string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
 function median_background(var img :image_array;color,size,x,y:integer): double;{find median value in sizeXsize matrix of img}
-procedure analyse_fits(img : image_array;snr_min:double;report:boolean;var star_counter : integer; var backgr, hfd_median : double); {find background, number of stars, median HFD}
+procedure analyse_fits(img : image_array;snr_min:double;report:boolean;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
 procedure sample(sx,sy : integer);{sampe local colour and fill shape with colour}
 procedure apply_most_common(sourc,dest: image_array; radius: integer);  {apply most common filter on first array and place result in second array}
 procedure backup_header;{backup solution and header}
@@ -1322,7 +1316,8 @@ begin
   end;{with stackmenu1}
 end;
 
-procedure analyse_fits(img : image_array;snr_min:double;report:boolean;var star_counter : integer; var backgr, hfd_median : double); {find background, number of stars, median HFD}
+
+procedure analyse_fits(img : image_array;snr_min:double;report:boolean;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
 var
    fitsX,fitsY,size,diam,i,j,retries,max_stars         : integer;
    hfd1,star_fwhm,snr,flux,xc,yc,detection_level  : double;
@@ -1330,8 +1325,8 @@ var
    img_temp2  : image_array;
 var
   f   :  textfile;
-const
-   len: integer=1000;
+var   {################# initialised variables #########################}
+  len: integer=1000;
 begin
   max_stars:=500;
   SetLength(hfd_list,len);{set array length to len}
@@ -1412,7 +1407,7 @@ var
    hfd1,star_fwhm,snr,flux,xc,yc,backgr,detection_level  :double;
    img_temp2  : image_array;
    hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
-const
+var  {################# initialised variables #########################}
    len: integer=1000;
 
 begin
@@ -1759,7 +1754,7 @@ begin
                 ListView1.Items.item[c].subitems.Strings[L_height]:=inttostr(height2);{height}
                 ListView1.Items.item[c].subitems.Strings[L_type]:=imagetype;{type}
                 ListView1.Items.item[c].subitems.Strings[L_datetime]:=StringReplace(date_obs,'T',' ',[]);{date/time}
-                ListView1.Items.item[c].subitems.Strings[L_position]:=prepare_ra5(ra0,': ')+', '+ prepare_dec5(dec0,'° ');{give internal position}
+                ListView1.Items.item[c].subitems.Strings[L_position]:=prepare_ra5(ra0,': ')+', '+ prepare_dec4(dec0,'° ');{give internal position}
 
                 {is internal solution available?}
                 if cd1_1<>0 then
@@ -3939,8 +3934,7 @@ begin
 end;
 
 
-procedure Tstackmenu1.listview1CustomDraw(Sender: TCustomListView;
-  const ARect: TRect; var DefaultDraw: Boolean);
+procedure Tstackmenu1.listview1CustomDraw(Sender: TCustomListView; const ARect: TRect; var DefaultDraw: Boolean);
 begin
   stackmenu1.nr_total1.caption:=inttostr(ListView1.items.count);{update counting info}
 end;
@@ -3979,8 +3973,7 @@ end;
 
 
 
-procedure Tstackmenu1.listview2CustomDraw(Sender: TCustomListView;
-  const ARect: TRect; var DefaultDraw: Boolean);
+procedure Tstackmenu1.listview2CustomDraw(Sender: TCustomListView; const ARect: TRect; var DefaultDraw: Boolean);
 begin
   stackmenu1.nr_total_darks1.caption:=inttostr(ListView2.items.count);{update counting info}
 end;
@@ -3996,8 +3989,7 @@ begin
   Sender.Canvas.Font.Color := clmenutext;{required for high contrast settings. Otherwise it is always black}
 end;
 
-procedure Tstackmenu1.listview3CustomDraw(Sender: TCustomListView;
-  const ARect: TRect; var DefaultDraw: Boolean);
+procedure Tstackmenu1.listview3CustomDraw(Sender: TCustomListView; const ARect: TRect; var DefaultDraw: Boolean);
 begin
   stackmenu1.nr_total_flats1.caption:=inttostr(sender.items.count);{update counting info}
 end;
@@ -4013,8 +4005,7 @@ begin
   Sender.Canvas.Font.Color := clmenutext;{required for high contrast settings. Otherwise it is always black}
 end;
 
-procedure Tstackmenu1.listview4CustomDraw(Sender: TCustomListView;
-  const ARect: TRect; var DefaultDraw: Boolean);
+procedure Tstackmenu1.listview4CustomDraw(Sender: TCustomListView; const ARect: TRect; var DefaultDraw: Boolean);
 begin
   stackmenu1.nr_total_bias1.caption:=inttostr(sender.items.count);{update counting info}
 end;
@@ -4031,8 +4022,7 @@ begin
   Sender.Canvas.Font.Color := clmenutext;{required for high contrast settings. Otherwise it is always black}
 end;
 
-procedure Tstackmenu1.listview6CustomDraw(Sender: TCustomListView;
-  const ARect: TRect; var DefaultDraw: Boolean);
+procedure Tstackmenu1.listview6CustomDraw(Sender: TCustomListView; const ARect: TRect; var DefaultDraw: Boolean);
 begin
   stackmenu1.nr_total_blink1.caption:=inttostr(sender.items.count);{update counting info}
 end;
@@ -4561,11 +4551,11 @@ end;
 
 procedure Tstackmenu1.curve_fitting1Click(Sender: TObject);
 var
-   p,a,b,position, center,hfd : double;
-   c,img_counter,i,fields     : integer;
-   array_hfd : array of tdouble2;
-const
-   len: integer= 200;
+  p,a,b,position, center,hfd : double;
+  c,img_counter,i,fields     : integer;
+  array_hfd : array of tdouble2;
+var {################# initialised variables #########################}
+  len: integer= 200;
 begin
   memo2_message('Finding the best focus position for each area using hyperbola curve fitting');
   memo2_message('Positions are for an image with pixel position 1,1 at left bottom. So bl=bottom left is at corner of pixel position 1,1.');
@@ -5539,8 +5529,7 @@ begin
   end;
 end;
 
-procedure Tstackmenu1.FormDropFiles(Sender: TObject;
-  const FileNames: array of String);
+procedure Tstackmenu1.FormDropFiles(Sender: TObject; const FileNames: array of String);
 var
    i,pageindex : integer;
 begin
@@ -5618,8 +5607,7 @@ begin
 end;
 
 
-procedure Tstackmenu1.listview7CustomDraw(Sender: TCustomListView;
-  const ARect: TRect; var DefaultDraw: Boolean);
+procedure Tstackmenu1.listview7CustomDraw(Sender: TCustomListView; const ARect: TRect; var DefaultDraw: Boolean);
 begin
   stackmenu1.nr_total_photometry1.caption:=inttostr(sender.items.count);{update counting info}
 end;
@@ -5704,7 +5692,6 @@ var
   stars_mean,stars_sd,stars_count : array of array of single;
   created : boolean;
   sd,xc,yc     : double;
-//  stars :star_list;
 const
     factor=10; {div factor to get small variations at the same location}
 begin
@@ -7968,7 +7955,7 @@ end;
 
 
 function RemoveSpecialChars(const STR : string) : string;
-const
+var {################# initialised variables #########################}
   InvalidChars : set of char = ['.','\','/','*','"',':','|','<','>'];
 var
   I : integer;
@@ -8134,7 +8121,7 @@ begin
         if solution then
         begin
           stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution]:='✓';
-          stackmenu1.ListView1.Items.item[c].subitems.Strings[L_position]:=prepare_ra5(ra0,': ')+', '+ prepare_dec5(dec0,'° ');{give internal position}
+          stackmenu1.ListView1.Items.item[c].subitems.Strings[L_position]:=prepare_ra5(ra0,': ')+', '+ prepare_dec4(dec0,'° ');{give internal position}
         end
         else stackmenu1.ListView1.Items.item[c].subitems.Strings[L_solution]:=''; {report internal plate solve result}
        finally

@@ -2,19 +2,14 @@
 {Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
-{This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU Lesser General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License (LGPL) as published
+by the Free Software Foundation, either version 3 of the License, or(at your option) any later version.
 
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
 
-You should have received a copy of the GNU Lesser General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-}
+You should have received a copy of the GNU Lesser General Public License (LGPL) along with this program. If not, see <http://www.gnu.org/licenses/>.}
+
 
 {Notes on MacOS pkg making:
    1) Modify app in applications via "show contents", add updated files.
@@ -105,6 +100,7 @@ type
     inspector_hfd_values1: TMenuItem;
     batch_add_sip1: TMenuItem;
     grid1: TMenuItem;
+    MenuItem26: TMenuItem;
     sip1: TMenuItem;
     zoomfactorone1: TMenuItem;
     MenuItem22: TMenuItem;
@@ -338,7 +334,6 @@ type
     procedure extractblue1Click(Sender: TObject);
     procedure extractgreen1Click(Sender: TObject);
     procedure grid1Click(Sender: TObject);
-    procedure Panel1Click(Sender: TObject);
     procedure sip1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
@@ -404,7 +399,6 @@ type
     procedure SimpleIPCServer1MessageQueued(Sender: TObject);
     procedure StatusBar1MouseEnter(Sender: TObject);
     procedure stretch_draw_fits1Click(Sender: TObject);
-    procedure tools1Click(Sender: TObject);
     procedure UpDown1Click(Sender: TObject; Button: TUDBtnType);
     procedure variable_star_annotation1Click(Sender: TObject);
     procedure zoomfactorone1Click(Sender: TObject);
@@ -515,32 +509,31 @@ var
   ap_0_1, ap_0_2, ap_0_3, ap_1_0, ap_1_1, ap_1_2, ap_2_0, ap_2_1, ap_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
   bp_0_1, bp_0_2, bp_0_3, bp_1_0, bp_1_1, bp_1_2, bp_2_0, bp_2_1, bp_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
 
-var
-   histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
-   his_total_red, his_total_green,his_total_blue,extend_type,r_aperture : integer; {histogram number of values}
-   his_mean,noise_level : array[0..2] of integer;
-   stretch_c : array[0..32768] of single;{stretch curve}
-   stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
-   set_temperature : integer;
-   star_level  : double;
-   object_name, filter_name,calstat,imagetype ,sitelat, sitelong,centalt,centaz: string;
-   exposure,focus_temp,cblack,cwhite,gain   :double; {from FITS}
-   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
-   date_obs,date_avg,ut,pltlabel,plateid,telescop,instrum,origin:string;
+  histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
+  his_total_red, his_total_green,his_total_blue,extend_type,r_aperture : integer; {histogram number of values}
+  his_mean,noise_level : array[0..2] of integer;
+  stretch_c : array[0..32768] of single;{stretch curve}
+  stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
+  set_temperature : integer;
+  star_level  : double;
+  object_name, filter_name,calstat,imagetype ,sitelat, sitelong,centalt,centaz: string;
+  exposure,focus_temp,cblack,cwhite,gain   :double; {from FITS}
+  subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
+  date_obs,date_avg,ut,pltlabel,plateid,telescop,instrum,origin:string;
 
-   datamin_org, datamax_org,
-   old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
+  datamin_org, datamax_org,
+  old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
 
-   warning_str,{for solver}
-   roworder                  :string;
-   copy_paste_x,
-   copy_paste_y,
-   copy_paste_w,
-   copy_paste_h : integer;
+  warning_str,{for solver}
+  roworder                  :string;
+  copy_paste_x,
+  copy_paste_y,
+  copy_paste_w,
+  copy_paste_h : integer;
 
-var
   position_find: Integer; {for fits header memo1 popup menu}
-const
+
+  var {################# initialised variables #########################}
   PatternToFind : string=''; {for fits header memo1 popup menu }
   hist_range  {range histogram 255 or 65535 or streched} : integer=255;
   width2  : integer=100;
@@ -620,11 +613,11 @@ const
   pedestal            : integer=0;
 
 
-procedure ang_sep(ra1,dec1,ra2,dec2 : double;var sep: double);
+procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
 function load_fits(filen:string;light {load as light of dark/flat},load_data: boolean;get_ext: integer;var img_loaded2: image_array): boolean;{load fits file}
 procedure plot_fits(img: timage;center_image,show_header:boolean);
 procedure use_histogram(img: image_array; update_hist: boolean);{get histogram}
-procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small:double; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
+procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
 procedure backup_img;
 procedure restore_img;
 function load_image(re_center, plot:boolean) : boolean; {load fits or PNG, BMP, TIF}
@@ -661,12 +654,13 @@ procedure execute_unix2(s:string);
 function mode(img :image_array;colorm,xmin,xmax,ymin,ymax,max1:integer):integer;{find the most common value of a local area and assume this is the best average background value}
 function get_negative_noise_level(img :image_array;colorm,xmin,xmax,ymin,ymax: integer;common_level:double): double;{find the negative noise level below most_common_level  of a local area}
 function prepare_ra5(rax:double; sep:string):string; {radialen to text  format 24h 00.0}
-function prepare_dec5(decx:double;sep:string):string; {radialen to text  format 90d 00 }
+function prepare_ra6(rax:double; sep:string):string; {radialen to text  format 24h 00 00}
+function prepare_dec4(decx:double;sep:string):string; {radialen to text  format 90d 00 }
 function prepare_dec(decx:double; sep:string):string; {radialen to text, format 90d 00 00}
 function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24: 00 00.0 }
 function inttostr5(x:integer):string;{always 5 digit}
 function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
-procedure mad_median(list: array of double;var mad,median :double);{calculate mad and median without modifying the data}
+procedure mad_median(list: array of double;out mad,median :double);{calculate mad and median without modifying the data}
 function floattostrF2(const x:double; width1,decimals1 :word): string;
 procedure DeleteFiles(lpath,FileSpec: string);{delete files such  *.wcs}
 procedure new_to_old_WCS;{convert new style FITsS to old style}
@@ -680,7 +674,7 @@ function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
 function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
-procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; var background, starlevel: double); {get background and star level from peek histogram}
+procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, starlevel: double); {get background and star level from peek histogram}
 
 function extract_exposure_from_filename(filename8: string):integer; {try to extract exposure from filename}
 function extract_temperature_from_filename(filename8: string): integer; {try to extract temperature from filename}
@@ -689,8 +683,8 @@ function extract_objectname_from_filename(filename8: string): string; {try to ex
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
 procedure measure_magnitudes(annulus_rad:integer; var stars :star_list);{find stars and return, x,y, hfd, flux}
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2,binx3, binx4 version}
-procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean); {convert ra in text to double in radians}
-procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert ra in text to double in radians}
+procedure ra_text_to_radians(inp :string; out ra : double; out errorRA :boolean); {convert ra in text to double in radians}
+procedure dec_text_to_radians(inp :string; out dec : double; out errorDEC :boolean); {convert ra in text to double in radians}
 function image_file_name(inp : string): boolean; {readable image name?}
 procedure plot_annotations(xoffset,yoffset:integer;fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
 
@@ -703,11 +697,11 @@ procedure log_to_file(logf,mess : string);{for testing}
 procedure log_to_file2(logf,mess : string);{used for platesolve2 and photometry}
 procedure demosaic_advanced(var img : image_array);{demosaic img_loaded}
 procedure bin_X2X3X4(binfactor:integer);{bin img_loaded 2x or 3x or 4x}
-procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : image_array; var sd,mean :double; var iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : image_array; out sd,mean :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 function extract_raw_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
 function fits_file_name(inp : string): boolean; {fits file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
-procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; var   ram,decm  : double {fitsX, Y to ra,dec});
+procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; out  ram,decm  : double {fitsX, Y to ra,dec});
 function extract_letters_only(inp : string): string;
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 function calculate_altitude(correct_radec_refraction : boolean): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
@@ -786,9 +780,7 @@ var
   stop_RX, stop_RY, start_RX,start_RY :integer; {for rubber rectangle. These values are the same startX,.... except if image is flipped}
   object_xc,object_yc, object_raM,object_decM  : double; {near mouse auto centered object position}
 
-const
-  crMyCursor = 5;
-
+var {################# initialised variables #########################}
   bandpass: double=0;{from fits file}
   equinox:double=0;{from fits file}
   SaveasTIFF1filterindex : integer=1;
@@ -814,6 +806,9 @@ const
   font_charset : integer=0; {Ansi_char}
   font_style :   tFontStyles=[];
   font_color : tcolor= cldefault;
+
+const
+  crMyCursor = 5;
 
 
 function load_fits(filen:string;light {load as light of dark/flat},load_data: boolean;get_ext: integer;var img_loaded2: image_array): boolean;{load fits file}
@@ -846,7 +841,8 @@ var
   tbcol,tform_nr    : array of integer;
   simple,image,bintable,asciitable    : boolean;
   abyte                               : byte;
-const
+
+var {################# initialised variables #########################}
   end_record : boolean=false;
 
      procedure close_fits_file; inline;
@@ -2481,7 +2477,7 @@ end;
 
 
 
-procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; var background, starlevel: double); {get background and star level from peek histogram}
+procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, starlevel: double); {get background and star level from peek histogram}
 var
   i, pixels,max_range,above,his_total, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
   value,sd, sd_old : double;
@@ -2702,7 +2698,7 @@ end;
 procedure update_longstr(inpt,thestr:string);{update or insert long str including single quotes}
 var
    count1,m,k: integer;
-   ampersand,s : string;
+   ampersand : string;
 begin
 
   count1:=mainwindow.Memo1.Lines.Count-1;
@@ -2712,10 +2708,7 @@ begin
     begin
       mainwindow.Memo1.Lines.delete(count1);
       while pos('CONTINUE=',mainwindow.Memo1.Lines[count1])>0 do
-      begin
-         s:=mainwindow.Memo1.Lines[count1];
-           mainwindow.Memo1.Lines.delete(count1);
-      end;
+        mainwindow.Memo1.Lines.delete(count1);
     end;
     count1:=count1-1;
   end;
@@ -2969,7 +2962,7 @@ begin
 end;
 
 
-procedure ang_sep(ra1,dec1,ra2,dec2 : double;var sep: double);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
+procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
 var sin_dec1,cos_dec1,sin_dec2,cos_dec2,cos_sep:double;
 begin
   sincos(dec1,sin_dec1,cos_dec1);{use sincos function for speed}
@@ -3144,7 +3137,7 @@ end;
 procedure Tmainwindow.About1Click(Sender: TObject);
 var
     about_message, about_message4, about_message5 : string;
-const
+var {################# initialised variables #########################}
   {$IfDef Darwin}// {MacOS}
     about_title  : string= 'About ASTAP for OSX:';
   {$ELSE}
@@ -3179,7 +3172,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.531, '+about_message4+', dated 2021-5-2';
+  #13+#10+'ASTAP version ß0.9.532, '+about_message4+', dated 2021-5-6';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -3832,7 +3825,7 @@ begin
 end;
 
 
-procedure celestial_to_pixel(ra_t,dec_t: double;var fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
+procedure celestial_to_pixel(ra_t,dec_t: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 var
   SIN_dec_t,COS_dec_t,
   SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec : double;
@@ -3861,7 +3854,7 @@ var
   ra_new,dec_new, fitsx,fitsy : double;
   error1,error2  : boolean;
   data1,ra_text,dec_text  :string;
-  pos1,pos2,pos3,pos4,pos5,pos6,fout,i :integer;
+  pos1,pos2,pos3,pos4,pos5,pos6,i :integer;
 
 begin
   if ((fits_file=false) or (cd1_1=0) or (mainwindow.shape_marker3.visible=false)) then exit;{no solution to place marker}
@@ -4161,10 +4154,33 @@ end;
 
 procedure plot_grid;
 var
-  fitsX,fitsY,step,stepRA,i,j,centra,centdec,range : double;
-  x,y                                              : integer;
+  fitsX,fitsY,step,step2,stepRA,i,j,centra,centdec,range : double;
+  x1,y1,x2,y2,k                                          : integer;
   flip_horizontal, flip_vertical: boolean;
   Save_Cursor:TCursor;
+  ra_text:             string;
+var ra_values  : array[0..20] of double =  {nice rounded RA steps in 24 hr system}
+   ((45),{step RA 03:00}
+    (30),{step RA 02:00}
+    (15),{step RA 01:00}
+    (10),{step RA 00:40}
+     (7.5),{step RA 00:30}
+     (5),{step RA 00:20}
+     (3.75),{step RA 00:15}
+     (2.5),{step RA 00:10}
+     (1.5),{step RA 00:06}
+     (1.25),{step RA 00:05}
+     (1),{step RA 00:04}
+     (3/4),{step RA 00:03}
+     (1/2),{step RA 00:02}
+     (1/4),{step RA 00:01}
+     (1/6),{step RA 00:00:40}
+     (1/8),{step RA 00:00:30}
+     (1/12),{step RA 00:00:20}
+     (1/16),{step RA 00:00:15}
+     (1/24),{step RA 00:00:10}
+     (1/40),{step RA 00:00:06}
+     (1/48));{step RA 00:00:05}
 
 begin
   if ((cd1_1=0) or (mainwindow.grid1.checked=false)) then exit;
@@ -4182,7 +4198,6 @@ begin
   mainwindow.image1.Canvas.Font.Name :='Helvetica';
   {$endif}
 
-
   flip_vertical:=mainwindow.flip_vertical1.Checked;
   flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
@@ -4194,74 +4209,116 @@ begin
   mainwindow.image1.Canvas.font.color:= clgray;
   mainwindow.image1.Canvas.font.size:=8;
 
-   range:=cdelt2*sqrt(sqr(width2/2)+sqr(height2/2));{range in degrees}
+  range:=cdelt2*sqrt(sqr(width2/2)+sqr(height2/2));{range in degrees, FROM CENTER}
+
+  {calculate DEC step size}
+  if range>16 then
+  begin
+    step:=8;{step DEC 08:00}
+  end
+  else
+  if range>8 then
+  begin
+    step:=4;{step DEC 04:00}
+  end
+  else
+  if range>4 then {image FOV about >2*4/sqrt(2) so >5 degrees}
+  begin
+    step:=2;{step DEC 02:00}
+  end
+  else
   if range>2 then
   begin
-    step:=1; {step DEC 01:00}
-    stepRA:=1; {step RA 00:04}
+    step:=1;{step DEC 01:00}
+  end
+  else
+  if range>1 then
+  begin
+    step:=0.5;{step DEC 00:30}
   end
   else
   if range>0.5 then
   begin
     step:=0.25;{step DEC 00:15}
-    stepRA:=0.25; {step RA 00:01}
+  end
+  else
+  if range>0.3 then
+  begin
+    step:=1/6;{ 0.166666, step DEC 00:10}
   end
   else
   begin
-    step:=0.05;{step DEC 00:03  }
-    stepRA:=0.25/6; {step RA 00:00:10}
+    step:=1/12;{step DEC 00:05  }
   end;
 
-  if abs(dec0*180/pi)>88 then stepRA:=45 else {degrees, RA 3 hours}
-  if abs(dec0*180/pi)>85 then stepRA:=7.5 {RA 30 min} else
-  if abs(dec0*180/pi)>80 then stepRA:=step*5;
+  {calculate RA step size}
+  step2:=min(45,step/(cos(dec0)+0.000001)); {exact value for stepRA, but not well rounded}
+  k:=0;
+  repeat {select nice rounded values for ra_step}
+    stepRA:=ra_values[k];
+    inc(k);
+  until ((stepRA<=step2) or (k>=length(ra_values)));{repeat until comparible value is found in ra_values}
 
-
+  {round image centers}
   centra:=stepRA*round(ra0*180/(pi*stepRA)); {rounded image centers}
   centdec:=step*round(dec0*180/(pi*step));
 
-  i:=centRA-6*stepRA;
+  {plot DEC grid}
+  i:=centRA-5*stepRA;
   repeat{dec lines}
     j:=max(centDEC-5*step,-90);
     repeat
       celestial_to_pixel(i*pi/180,j*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
-      if flip_horizontal then x:=round((width2-1)-(fitsX-1)) else x:=round(fitsX-1);
-      if flip_vertical=false then y:=round((height2-1)-(fitsY-1)) else y:=round(fitsY-1);
+      if flip_horizontal then x1:=round((width2-1)-(fitsX-1)) else x1:=round(fitsX-1);
+      if flip_vertical=false then y1:=round((height2-1)-(fitsY-1)) else y1:=round(fitsY-1);
 
-      if ((abs(i-centRA)<0.00001) or (abs(j-centDEC)<0.00001)) then
-        mainwindow.image1.Canvas.textout(x,y,prepare_ra(fnmodulo(i,360)*pi/180,' ')+','+prepare_dec(j*pi/180,' '));
 
-      mainwindow.image1.Canvas.moveto(x,y);
       celestial_to_pixel(i*pi/180,(j+step)*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
-      if flip_horizontal then x:=round((width2-1)-(fitsX-1)) else x:=round(fitsX-1);
-      if flip_vertical=false then y:=round((height2-1)-(fitsY-1)) else y:=round(fitsY-1);
-      mainwindow.image1.Canvas.lineto(x,y);
+      if flip_horizontal then x2:=round((width2-1)-(fitsX-1)) else x2:=round(fitsX-1);
+      if flip_vertical=false then y2:=round((height2-1)-(fitsY-1)) else y2:=round(fitsY-1);
 
+      if (  ((x1>=0) and (y1>=0) and (x1<width2)and (y1<height2)) or
+            ((x2>=0) and (y2>=0) and (x2<width2)and (y2<height2)) ) then
+      begin {line is partly within image1. Strictly not necessary but more secure}
+        if ((abs(i-centRA)<0.00001) or (abs(j-centDEC)<0.00001)) then
+        begin
+          ra_text:=prepare_ra6(fnmodulo(i,360)*pi/180,' '); {24 00 00}
+          if copy(ra_text,7,2)='00' then delete(ra_text,6,3);{remove 00}
+          mainwindow.image1.Canvas.textout(x1,y1,ra_text+','+prepare_dec4(j*pi/180,' '));
+        end;
+        mainwindow.image1.Canvas.moveto(x1,y1);
+        mainwindow.image1.Canvas.lineto(x2,y2);
+      end;
       j:=j+step;
-    until j>=min(centDEC+6*step,90);
+    until j>=min(centDEC+5*step,90);
     i:=i+stepRA;
-  until ((i>=centRa+6*stepRA) or (i>=(centRA-6*stepRA)+360));
+  until ((i>=centRa+5*stepRA) or (i>=(centRA-5*stepRA)+360));
 
 
-  j:=max(centDEC-step*6,-90);
+  {plot RA grid}
+  j:=max(centDEC-step*5,-90);
   repeat{ra lines}
-    i:=centRA-stepRA*6;
+    i:=centRA-stepRA*5;
     repeat
       celestial_to_pixel(i*pi/180,j*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
-      if flip_horizontal then x:=round((width2-1)-(fitsX-1)) else x:=round(fitsX-1);
-      if flip_vertical=false then y:=round((height2-1)-(fitsY-1)) else y:=round(fitsY-1);
-      mainwindow.image1.Canvas.moveto(x,y);
+      if flip_horizontal then x1:=round((width2-1)-(fitsX-1)) else x1:=round(fitsX-1);
+      if flip_vertical=false then y1:=round((height2-1)-(fitsY-1)) else y1:=round(fitsY-1);
       celestial_to_pixel((i+step)*pi/180,j*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
-      if flip_horizontal then x:=round((width2-1)-(fitsX-1)) else x:=round(fitsX-1);
-      if flip_vertical=false then y:=round((height2-1)-(fitsY-1)) else y:=round(fitsY-1);
-      mainwindow.image1.Canvas.lineto(x,y);
+      if flip_horizontal then x2:=round((width2-1)-(fitsX-1)) else x2:=round(fitsX-1);
+      if flip_vertical=false then y2:=round((height2-1)-(fitsY-1)) else y2:=round(fitsY-1);
+
+      if (  ((x1>=0) and (y1>=0) and (x1<width2)and (y1<height2)) or
+            ((x2>=0) and (y2>=0) and (x2<width2)and (y2<height2)) ) then
+      begin {line is partly within image1. Strictly not necessary but more secure}
+        mainwindow.image1.Canvas.moveto(x1,y1);
+        mainwindow.image1.Canvas.lineto(x2,y2);
+      end;
       i:=i+step;
-    until ((i>=centRa+stepRA*6) or (i>=(centRA-6*stepRA)+360));
+    until ((i>=centRa+stepRA*5) or (i>=(centRA-5*stepRA)+360));
     j:=j+step;
-  until j>=min(centDEC+step*6,90);
+  until j>=min(centDEC+step*5,90);
 
   Screen.Cursor := Save_cursor;    { Show hourglass cursor }
-
 end;
 
 
@@ -5303,7 +5360,23 @@ begin {make from rax [0..pi*2] a text in array bericht. Length is 8 long}
 end;
 
 
-function prepare_dec5(decx:double;sep:string):string; {radialen to text  format 90d 00 }
+function prepare_ra4(rax:double; sep:string):string; {radialen to text  format 24h 00}
+  var
+    B : String[2];
+    h,m,dm  :integer;
+begin {make from rax [0..pi*2] a text in array bericht. Length is 8 long}
+  rax:=rax+pi/(24*60); {add of half minute to get correct rounding and not 7:60 results as with round}
+  rax:=rax*12/pi; {make hours}
+  h:=trunc(rax);
+  m:=trunc((rax-h)*60);
+  dm:=trunc((rax-h-m/60)*600);
+  Str(trunc(h):2,b);
+  result:=b+sep+leadingzero(m);
+end;
+
+
+
+function prepare_dec4(decx:double;sep:string):string; {radialen to text  format 90d 00 }
  var
    B : String[7];
    g,m :integer;
@@ -5315,7 +5388,21 @@ begin {make from rax [0..pi*2] a text in array bericht. Length is 10 long}
   g:=trunc(decx);
   m:=trunc((decx-g)*60);
   Str(trunc(g):0,b);
-  prepare_dec5:=sign+b+sep+leadingzero(m);
+  result:=sign+b+sep+leadingzero(m);
+end;
+
+
+function prepare_ra6(rax:double; sep:string):string; {radialen to text, format 24: 00 00}
+ var
+   h,m,s,ds  :integer;
+ begin   {make from rax [0..pi*2] a text in array bericht. Length is 8 long}
+  rax:=rax+pi/(24*60*60); {add half second to get correct rounding and not 7:60 results as with round}
+  rax:=rax*12/pi; {make hours}
+  h:=trunc(rax);
+  m:=trunc((rax-h)*60);
+  s:=trunc((rax-h-m/60)*3600);
+  ds:=trunc((rax-h-m/60-s/3600)*36000);
+  result:=leadingzero(h)+sep+leadingzero(m)+' '+leadingzero(s);
 end;
 
 
@@ -5348,7 +5435,7 @@ begin {make from rax [0..pi*2] a text in array bericht. Length is 10 long}
 end;
 
 
-function prepare_ra2(rax:double; sep:string):string; {radialen to text, format 24: 00 00.00 }
+function prepare_ra8(rax:double; sep:string):string; {radialen to text, format 24: 00 00.00 }
  var
    B       : String[2];
    h,m,s,ds  :integer;
@@ -5360,7 +5447,7 @@ function prepare_ra2(rax:double; sep:string):string; {radialen to text, format 2
   s:=trunc((rax-h-m/60)*3600);
   ds:=trunc((rax-h-m/60-s/3600)*360000);
   Str(trunc(h):2,b);
-  prepare_ra2:=b+sep+leadingzero(m)+'  '+leadingzero(s)+'.'+leadingzero(ds);
+  result:=b+sep+leadingzero(m)+'  '+leadingzero(s)+'.'+leadingzero(ds);
 end;
 
 
@@ -6771,6 +6858,8 @@ begin
         max_color:=max(countR,max(countG,countB));
         mainwindow.histogram1.Canvas.Pen.Color := rgb(255*countR div max_color,255*countG div max_color,255*countB div max_color);{set pen colour}
 
+        max_color:=round(256*ln(max_color)/ln(256));{make scale logarithmic}
+
         moveToex(mainwindow.histogram1.Canvas.handle,i,h,nil);
         lineTo(mainwindow.histogram1.Canvas.handle,i ,h-round(h*max_color/256) ); {draw vertical line}
       end;
@@ -6972,7 +7061,7 @@ end;
 
 
 function StyleToStr(Style: TFontStyles): string;
-const
+var
   Chars: array [Boolean] of Char = ('F', 'T');
 begin
   SetLength(Result, 4);
@@ -7406,7 +7495,7 @@ end;
 
 
 procedure save_settings(lpath:string);
-const
+var {################# initialised variables #########################}
   BoolStr: array [boolean] of String = ('0', '1');
 var
   initstring :tstrings; {settings for save and loading}
@@ -8522,18 +8611,13 @@ begin
   plot_grid;
 end;
 
-procedure Tmainwindow.Panel1Click(Sender: TObject);
-begin
-
-end;
-
 
 procedure Tmainwindow.sip1Click(Sender: TObject); {simple SIP coefficients calculation assuming symmetric radial distortion. Distortion increases with the third power of the off-center distance}
 const                                              //See e.g. https://www.telescope-optics.net/distortion.htm
      range2=14;{20*sqrt(2)}
      range1=9;
 var
-  stars_measured,i,j,k,count        : integer;
+  stars_measured,i,count        : integer;
   x,y,xc,yc,r,rc,max_radius,factor  : double;
   Save_Cursor:TCursor;
   factors  : array of double;
@@ -8796,7 +8880,7 @@ end;
 procedure Tmainwindow.measuretotalmagnitude1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,font_height,counter,tx,ty,saturation_counter : integer;
-   flux,bg_median,value,sd : double;
+   flux,bg_median,value  : double;
    Save_Cursor           : TCursor;
    mag_str               : string;
    bg_array              : array of double;
@@ -8833,7 +8917,6 @@ begin
 
     {measure the median of the suroundings}
     counter:=0;
-    sd:=0;
     for fitsY:=startY+1-5 to stopY-1+5 do {calculate mean at square boundaries of detection box}
     for fitsX:=startX+1-5 to stopX-1+5 do
     begin
@@ -8887,6 +8970,7 @@ begin
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
+
 procedure Tmainwindow.loadsettings1Click(Sender: TObject);
 begin
   OpenDialog1.Title := 'Open settings';
@@ -8907,6 +8991,7 @@ begin
     load_settings(opendialog1.filename);
   end;
 end;
+
 
 procedure Tmainwindow.localbackgroundequalise1Click(Sender: TObject);
 var
@@ -9956,11 +10041,6 @@ begin
   Screen.Cursor:=OldCursor;
 end;
 
-procedure Tmainwindow.tools1Click(Sender: TObject);
-begin
-
-end;
-
 
 procedure Tmainwindow.UpDown1Click(Sender: TObject; Button: TUDBtnType);
 begin
@@ -10044,7 +10124,7 @@ procedure Tmainwindow.FormCreate(Sender: TObject);
 var
    param1: string;
 begin
-  {OneInstance, if one parameter specified, so if user cicks on an associated image}
+  {OneInstance, if one parameter specified, so if user clicks on an associated image}
   if paramcount=1 then param1:=paramstr(1) else param1:='T';
   if ((paramcount=1) and  (ord(param1[length(param1)])>57  {letter, not a platesolve command} )) then {2019-5-4, modification only unique instance if called with file as parameter(1)}
     check_second_instance;{check for and other instance of the application. If so send paramstr(1) and quit}
@@ -10080,6 +10160,7 @@ begin
   recent_files:= Tstringlist.Create;
 
 end;
+
 
 
 procedure Tmainwindow.deepsky_annotation1Click(Sender: TObject);
@@ -10338,7 +10419,7 @@ var
   l, b : double;
 begin
   if coord_frame=0 then
-    result:=prepare_ra2(ra,': ')+sep+prepare_dec2(dec,'° ')
+    result:=prepare_ra8(ra,': ')+sep+prepare_dec2(dec,'° ')
   else
   if coord_frame=1 then
     result:=floattostrF(ra*180/pi, FFfixed, 0, 8)+'°, '+floattostrF(dec*180/pi, FFfixed, 0, 8)+'°'
@@ -10404,7 +10485,7 @@ end;
 
 function calculate_altitude(correct_radec_refraction : boolean): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
 var
-  site_lat_radians,site_long_radians,ra1,dec1,t  : double;
+  site_lat_radians,site_long_radians : double;
   errordecode  : boolean;
 begin
   result:=strtofloat2(centalt);
@@ -10654,37 +10735,6 @@ begin
   finally
   JPG.Free;
   end;
-end;
-
-
-function read_astap_solution(filen {fits file name} : string; var ra1,dec1,crota :double): boolean; {read ASTAP solution from INI file}
-var
-  initstring :tstrings;
-  Procedure get_float(var float: double;s1 : string);
-      var s2:string; err:integer; r:double;
-      begin
-        s2:=initstring.Values[s1];
-        val(s2,r,err);
-        if err=0 then float:=r;
-      end;
-begin
-  result:=false;
-  initstring := Tstringlist.Create;
-  with initstring do
-  begin
-    try
-    loadfromFile(Changefileext(filen,'.ini'));{change extension of fits file to ini}
-    except
-      initstring.Free;
-      exit;{no ini file}
-    end;
-  end;
-  if pos('T',initstring.Values['PLTSOLVD'])=0 then exit;{astap reports no solution found or no ini file}
-  result:=true;
-  get_float(ra1,'CRVAL1');{in degrees}
-  get_float(dec1,'CRVAL2');{in degrees}
-  get_float(crota,'CROTA2');{in degrees}
-  initstring.free;
 end;
 
 
@@ -11622,7 +11672,7 @@ begin
 end;
 
 
-procedure mad_median(list: array of double;var mad,median :double);{calculate mad and median without modifying the data}
+procedure mad_median(list: array of double;out mad,median :double);{calculate mad and median without modifying the data}
 var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
   n,i        : integer;
   list2: array of double;
@@ -11640,7 +11690,7 @@ end;
 procedure CCDinspector(snr_min: double);
 var
  fitsX,fitsY,size,diam, i, j,starX,starY, retries,max_stars,
- nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,x1,x2,x3,x4,y1,y2,y3,y4,fontsize,text_height,text_width,tt: integer;
+ nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,x1,x2,x3,x4,y1,y2,y3,y4,fontsize,text_height,text_width : integer;
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
  hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right, median_top_left, median_top_right,hfd_min : double;
@@ -11649,8 +11699,9 @@ var
  mess1,mess2,hfd_value,hfd_arcsec      : string;
  Save_Cursor:TCursor;
  Fliphorizontal, Flipvertical: boolean;
-const
-   len : integer=1000;
+
+var {################# initialised variables #########################}
+ len : integer=1000;
 begin
   if fits_file=false then exit; {file loaded?}
   Save_Cursor := Screen.Cursor;
@@ -11955,7 +12006,7 @@ var
    Centroid : string;
 begin
   if object_xc>0 then Centroid:=#9+'(Centroid)' else Centroid:='';
-  Clipboard.AsText:=prepare_ra2(object_raM,': ')+#9+prepare_dec2(object_decM,'° ')+Centroid;
+  Clipboard.AsText:=prepare_ra8(object_raM,': ')+#9+prepare_dec2(object_decM,'° ')+Centroid;
 end;
 
 
@@ -11968,7 +12019,7 @@ begin
 end;
 
 
-procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; var   ram,decm  : double {fitsX, Y to ra,dec});
+procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; out ram,decm  : double {fitsX, Y to ra,dec});
 var
    fits_unsampledX, fits_unsampledY :double;
    u,v,u2,v2             : double;
@@ -12122,7 +12173,7 @@ begin
 end;
 
 
-procedure ra_text_to_radians(inp :string; var ra : double; var errorRA :boolean); {convert ra in text to double in radians}
+procedure ra_text_to_radians(inp :string; out ra : double; out errorRA :boolean); {convert ra in text to double in radians}
 var
   rah,ram,ras,plusmin :double;
   position1,position2,position3,error1,error2,error3:integer;
@@ -12174,7 +12225,7 @@ begin
 end;
 
 
-procedure dec_text_to_radians(inp :string; var dec : double; var errorDEC :boolean); {convert dec in text to double in radians}
+procedure dec_text_to_radians(inp :string; out dec : double; out errorDEC :boolean); {convert dec in text to double in radians}
 var
   decd,decm,decs :double;
   position1,position2,position3,error1,error2,error3,plusmin:integer ;
@@ -12553,7 +12604,7 @@ begin
 end;
 
 
-procedure find_highest_pixel_value(img: image_array;box, x1,y1: integer; var xc,yc:double);{}
+procedure find_highest_pixel_value(img: image_array;box, x1,y1: integer; out xc,yc:double);{}
 var
   i,j,k,w,h  : integer;
   value, val, SumVal,SumValX,SumValY, Xg,Yg : double;
@@ -12817,11 +12868,11 @@ begin
 end;
 
 
-procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small:double; var hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
+procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
 const                                                                                                                                          {aperture_small is used for photometry of stars. Set at 99 for normal full flux mode}
   max_ri=50; //should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1;
 var
-  i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,iterations,counter,annulus_width :integer;
+  i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter,annulus_width :integer;
   SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
   val,bg,sd,pixel_counter,valmax,mad_bg : double;
   HistStart,boxed : boolean;
@@ -13049,7 +13100,7 @@ begin
 end;
 
 
-procedure local_sd(x1,y1, x2,y2,col : integer;{accuracy: double;} img : image_array; var sd,mean :double; var iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+procedure local_sd(x1,y1, x2,y2,col : integer;{accuracy: double;} img : image_array; out sd,mean :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 var i,j,counter,w,h : integer;
     value, sd_old,meanx   : double;
 
@@ -13355,7 +13406,7 @@ begin
      else mag_str:='';
 
      sensor_coordinates_to_celestial(object_xc+1,object_yc+1,object_raM,object_decM);{input in FITS coordinates}
-     mainwindow.statusbar1.panels[1].text:=prepare_ra2(object_raM,': ')+'   '+prepare_dec2(object_decM,'° ');
+     mainwindow.statusbar1.panels[1].text:=prepare_ra8(object_raM,': ')+'   '+prepare_dec2(object_decM,'° ');
      mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', SNR='+snr_str+mag_str;
    end
    else
