@@ -1616,16 +1616,16 @@ var
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>30)) then {star detected in img_loaded. 30 is found emperical}
           begin
             if ((flux_calibration){calibrate flux} and
-                (img_loaded[0,round(xc),round(yc)]<65000) and
-                (img_loaded[0,round(xc-1),round(yc)]<65000) and
-                (img_loaded[0,round(xc+1),round(yc)]<65000) and
-                (img_loaded[0,round(xc),round(yc-1)]<65000) and
-                (img_loaded[0,round(xc),round(yc+1)]<65000) and
+                (img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
+                (img_loaded[0,round(xc-1),round(yc)]<datamax_org-1) and
+                (img_loaded[0,round(xc+1),round(yc)]<datamax_org-1) and
+                (img_loaded[0,round(xc),round(yc-1)]<datamax_org-1) and
+                (img_loaded[0,round(xc),round(yc+1)]<datamax_org-1) and
 
-                (img_loaded[0,round(xc-1),round(yc-1)]<65000) and
-                (img_loaded[0,round(xc-1),round(yc+1)]<65000) and
-                (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
-                (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
+                (img_loaded[0,round(xc-1),round(yc-1)]<datamax_org-1) and
+                (img_loaded[0,round(xc-1),round(yc+1)]<datamax_org-1) and
+                (img_loaded[0,round(xc+1),round(yc-1)]<datamax_org-1) and
+                (img_loaded[0,round(xc+1),round(yc+1)]<datamax_org-1)  ) then {not saturated}
             begin
               magn:=(-ln(flux)*2.511886432/LN(10));
               if counter_flux_measured>=length(mag_offset_array) then  SetLength(mag_offset_array,counter_flux_measured+500);{increase length array}
@@ -1756,9 +1756,9 @@ begin
         flux_magn_offset:=get_best_mean(mag_offset_array);
 
         if flux_aperture=99 then
-           memo2_message('Photometry calibration for EXTENDED OBJECTS successfull. '+inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.')
+           memo2_message('Photometry calibration for EXTENDED OBJECTS successful. '+inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration. Stars with a pixel value '+inttostr(round(datamax_org))+' or higher are ignored.')
         else
-          memo2_message('Photometry calibration for POINT SOURCES successfull. '+inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(flux_aperture*2, ffgeneral, 2,2)+'. Annulus inner diameter: '+inttostr(1+(annulus_radius+2)*2){background is measured 2 pixels outside rs});
+          memo2_message('Photometry calibration for POINT SOURCES successful. '+inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(flux_aperture*2, ffgeneral, 2,2)+'. Annulus inner diameter: '+inttostr(1+(annulus_radius+2)*2){background is measured 2 pixels outside rs}+'. Stars with a pixel value '+inttostr(round(datamax_org))+' or higher are ignored.');
       end
       else  flux_magn_offset:=0;
       mag_offset_array:=nil;

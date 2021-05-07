@@ -247,16 +247,16 @@ var
                   img_temp[0,i,j]:=1;
 
             {store values}
-            if ((img_loaded[0,round(xc),round(yc)]<65000) and
-                  (img_loaded[0,round(xc-1),round(yc)]<65000) and
-                  (img_loaded[0,round(xc+1),round(yc)]<65000) and
-                  (img_loaded[0,round(xc),round(yc-1)]<65000) and
-                  (img_loaded[0,round(xc),round(yc+1)]<65000) and
+            if ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
+                  (img_loaded[0,round(xc-1),round(yc)]<datamax_org-1) and
+                  (img_loaded[0,round(xc+1),round(yc)]<datamax_org-1) and
+                  (img_loaded[0,round(xc),round(yc-1)]<datamax_org-1) and
+                  (img_loaded[0,round(xc),round(yc+1)]<datamax_org-1) and
 
-                  (img_loaded[0,round(xc-1),round(yc-1)]<65000) and
-                  (img_loaded[0,round(xc-1),round(yc+1)]<65000) and
-                  (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
-                  (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
+                  (img_loaded[0,round(xc-1),round(yc-1)]<datamax_org-1) and
+                  (img_loaded[0,round(xc-1),round(yc+1)]<datamax_org-1) and
+                  (img_loaded[0,round(xc+1),round(yc-1)]<datamax_org-1) and
+                  (img_loaded[0,round(xc+1),round(yc+1)]<datamax_org-1)  ) then {not saturated}
             begin
               if nhfd>=length(hfd_values)-1 then
                   SetLength(hfd_values,3,nhfd+100);{adapt length if required}

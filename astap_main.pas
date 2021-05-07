@@ -3172,7 +3172,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.532, '+about_message4+', dated 2021-5-6';
+  #13+#10+'ASTAP version ß0.9.533, '+about_message4+', dated 2021-5-7';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4264,9 +4264,9 @@ begin
   centdec:=step*round(dec0*180/(pi*step));
 
   {plot DEC grid}
-  i:=centRA-5*stepRA;
+  i:=centRA-6*stepRA;
   repeat{dec lines}
-    j:=max(centDEC-5*step,-90);
+    j:=max(centDEC-6*step,-90);
     repeat
       celestial_to_pixel(i*pi/180,j*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
       if flip_horizontal then x1:=round((width2-1)-(fitsX-1)) else x1:=round(fitsX-1);
@@ -4290,15 +4290,15 @@ begin
         mainwindow.image1.Canvas.lineto(x2,y2);
       end;
       j:=j+step;
-    until j>=min(centDEC+5*step,90);
+    until j>=min(centDEC+6*step,90);
     i:=i+stepRA;
-  until ((i>=centRa+5*stepRA) or (i>=(centRA-5*stepRA)+360));
+  until ((i>=centRa+6*stepRA) or (i>=(centRA-6*stepRA)+360));
 
 
   {plot RA grid}
-  j:=max(centDEC-step*5,-90);
+  j:=max(centDEC-step*6,-90);
   repeat{ra lines}
-    i:=centRA-stepRA*5;
+    i:=centRA-stepRA*6;
     repeat
       celestial_to_pixel(i*pi/180,j*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
       if flip_horizontal then x1:=round((width2-1)-(fitsX-1)) else x1:=round(fitsX-1);
@@ -4314,9 +4314,9 @@ begin
         mainwindow.image1.Canvas.lineto(x2,y2);
       end;
       i:=i+step;
-    until ((i>=centRa+stepRA*5) or (i>=(centRA-5*stepRA)+360));
+    until ((i>=centRa+stepRA*6) or (i>=(centRA-6*stepRA)+360));
     j:=j+step;
-  until j>=min(centDEC+step*5,90);
+  until j>=min(centDEC+step*6,90);
 
   Screen.Cursor := Save_cursor;    { Show hourglass cursor }
 end;
@@ -8316,7 +8316,7 @@ begin
   if (ext1='.FZ') then {CFITSIO format}
   begin
     if unpack_cfitsio(filename2)=false then begin beep; exit; end
-    else{successfull conversion using funpack}
+    else{successful conversion using funpack}
     result:=load_fits(filename2,true {light},true {load data},0,img_loaded); {load new fits file}
 
     if result=false then begin update_menu(false);exit; end
@@ -8330,7 +8330,7 @@ begin
       begin update_menu(false);beep; exit; end
     else
     result:=true;
-    {successfull conversion using LibRaw}
+    {successful conversion using LibRaw}
     filename2:=ChangeFileExt(FileName2,'.fit');{for the case you want to save it}
   end{raw}
 
@@ -9556,16 +9556,16 @@ begin
                img_temp[0,i,j]:=1;
 
 
-          if ((img_loaded[0,round(xc),round(yc)]<65000) and
-              (img_loaded[0,round(xc-1),round(yc)]<65000) and
-              (img_loaded[0,round(xc+1),round(yc)]<65000) and
-              (img_loaded[0,round(xc),round(yc-1)]<65000) and
-              (img_loaded[0,round(xc),round(yc+1)]<65000) and
+          if ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
+              (img_loaded[0,round(xc-1),round(yc)]<datamax_org-1) and
+              (img_loaded[0,round(xc+1),round(yc)]<datamax_org-1) and
+              (img_loaded[0,round(xc),round(yc-1)]<datamax_org-1) and
+              (img_loaded[0,round(xc),round(yc+1)]<datamax_org-1) and
 
-              (img_loaded[0,round(xc-1),round(yc-1)]<65000) and
-              (img_loaded[0,round(xc-1),round(yc+1)]<65000) and
-              (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
-              (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
+              (img_loaded[0,round(xc-1),round(yc-1)]<datamax_org-1) and
+              (img_loaded[0,round(xc-1),round(yc+1)]<datamax_org-1) and
+              (img_loaded[0,round(xc+1),round(yc-1)]<datamax_org-1) and
+              (img_loaded[0,round(xc+1),round(yc+1)]<datamax_org-1)  ) then {not saturated}
           begin
             {store values}
             inc(nrstars);
@@ -9672,16 +9672,16 @@ const
                img_temp[0,i,j]:=1;
 
 
-          if ((img_loaded[0,round(xc),round(yc)]<65000) and
-              (img_loaded[0,round(xc-1),round(yc)]<65000) and
-              (img_loaded[0,round(xc+1),round(yc)]<65000) and
-              (img_loaded[0,round(xc),round(yc-1)]<65000) and
-              (img_loaded[0,round(xc),round(yc+1)]<65000) and
+          if ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
+              (img_loaded[0,round(xc-1),round(yc)]<datamax_org-1) and
+              (img_loaded[0,round(xc+1),round(yc)]<datamax_org-1) and
+              (img_loaded[0,round(xc),round(yc-1)]<datamax_org-1) and
+              (img_loaded[0,round(xc),round(yc+1)]<datamax_org-1) and
 
-              (img_loaded[0,round(xc-1),round(yc-1)]<65000) and
-              (img_loaded[0,round(xc-1),round(yc+1)]<65000) and
-              (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
-              (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
+              (img_loaded[0,round(xc-1),round(yc-1)]<datamax_org-1) and
+              (img_loaded[0,round(xc-1),round(yc+1)]<datamax_org-1) and
+              (img_loaded[0,round(xc+1),round(yc-1)]<datamax_org-1) and
+              (img_loaded[0,round(xc+1),round(yc+1)]<datamax_org-1)  ) then {not saturated}
            begin
              measured_magn:=(flux_magn_offset-ln(flux)*2.511886432/ln(10))*10; {magnitude x 10}
 
@@ -9905,7 +9905,7 @@ begin
     plot_and_measure_stars(true {calibration},false {plot stars});
     if flux_magn_offset>0 then
     begin
-      mainwindow.caption:='Photometry calibration successfull';
+      mainwindow.caption:='Photometry calibration successful';
     end;
   end;
 end;
@@ -11788,16 +11788,16 @@ begin
                   if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
                     img_temp[0,i,j]:=1;
 
-              if ((img_loaded[0,round(xc),round(yc)]<65000) and
-                  (img_loaded[0,round(xc-1),round(yc)]<65000) and
-                  (img_loaded[0,round(xc+1),round(yc)]<65000) and
-                  (img_loaded[0,round(xc),round(yc-1)]<65000) and
-                  (img_loaded[0,round(xc),round(yc+1)]<65000) and
+              if ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
+                  (img_loaded[0,round(xc-1),round(yc)]<datamax_org-1) and
+                  (img_loaded[0,round(xc+1),round(yc)]<datamax_org-1) and
+                  (img_loaded[0,round(xc),round(yc-1)]<datamax_org-1) and
+                  (img_loaded[0,round(xc),round(yc+1)]<datamax_org-1) and
 
-                  (img_loaded[0,round(xc-1),round(yc-1)]<65000) and
-                  (img_loaded[0,round(xc-1),round(yc+1)]<65000) and
-                  (img_loaded[0,round(xc+1),round(yc-1)]<65000) and
-                  (img_loaded[0,round(xc+1),round(yc+1)]<65000)  ) then {not saturated}
+                  (img_loaded[0,round(xc-1),round(yc-1)]<datamax_org-1) and
+                  (img_loaded[0,round(xc-1),round(yc+1)]<datamax_org-1) and
+                  (img_loaded[0,round(xc+1),round(yc-1)]<datamax_org-1) and
+                  (img_loaded[0,round(xc+1),round(yc+1)]<datamax_org-1)  ) then {not saturated}
               begin
 
                 if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);

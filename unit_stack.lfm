@@ -2,14 +2,14 @@ object stackmenu1: Tstackmenu1
   Left = 12
   Height = 644
   Top = 147
-  Width = 1764
-  HorzScrollBar.Page = 1440
+  Width = 1871
+  HorzScrollBar.Page = 1853
   VertScrollBar.Page = 509
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
   ClientHeight = 644
-  ClientWidth = 1764
+  ClientWidth = 1871
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -54,7 +54,7 @@ object stackmenu1: Tstackmenu1
     Left = 0
     Height = 132
     Top = 512
-    Width = 1764
+    Width = 1871
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -201,7 +201,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1746
+    Left = 1853
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -219,8 +219,8 @@ object stackmenu1: Tstackmenu1
     Height = 448
     Hint = 'Stack menu'
     Top = 0
-    Width = 1763
-    ActivePage = Images
+    Width = 1870
+    ActivePage = tab_photometry1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -228,7 +228,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 8
     TabOrder = 5
     OnChange = pagecontrol1Change
     object Images: TTabSheet
@@ -3117,7 +3117,7 @@ object stackmenu1: Tstackmenu1
     object tab_photometry1: TTabSheet
       Caption = 'Photometry'
       ClientHeight = 420
-      ClientWidth = 1844
+      ClientWidth = 1862
       ImageIndex = 19
       ParentFont = False
       object browse_photometry1: TButton
@@ -3205,7 +3205,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1844
+        Width = 1862
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
