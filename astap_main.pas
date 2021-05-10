@@ -3172,7 +3172,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.533, '+about_message4+', dated 2021-5-7';
+  #13+#10+'ASTAP version ß0.9.533a, '+about_message4+', dated 2021-5-7';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4615,7 +4615,7 @@ procedure Tmainwindow.show_statistics1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations,i : integer;
    value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4,
-   sd,mean,median,minimum, maximum,max_counter,saturated,mad                  : double;
+   sd,mean,median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range     : double;
    Save_Cursor              : TCursor;
    info_message             : string;
    median_array             : array of double;
@@ -4645,11 +4645,15 @@ begin
                 else required_size:=size;
   setlength(median_array,required_size);
 
+  minstep:=99999;
   {measure the median of the suroundings}
 
   for col:=0 to naxis3-1 do  {do all colours}
   begin
     local_sd(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,img_loaded, {var} sd,mean,iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+
+
+    most_common:=mode(img_loaded,col,startx,stopX,starty,stopY,32000);
 
     {median sampling and min , max}
     max_counter:=1;
@@ -4674,13 +4678,18 @@ begin
       if value>maximum then maximum:=value; {max}
       if value<minimum then minimum:=value; {min}
       if value>=64000 then saturated:=saturated+1;{saturation counter}
+      if col=0 then
+      begin
+        delta:=abs(value-most_common);
+        if ((delta>0.00000001){not the same} and (delta<minstep)) then minstep:=delta;
+      end;
     end;{filter outliers}
     median:=smedian(median_array,counter_median);
 
     for i:=0 to counter_median do median_array[i]:=abs(median_array[i] - median);{fill median_array with offsets}
     mad:=smedian(median_array,counter_median); //median absolute deviation (MAD)
 
-    most_common:=mode(img_loaded,col,startx,stopX,starty,stopY,32000);
+    if col=0 then range:=maximum-minimum;
 
     if naxis3>1 then if col=0 then info_message:=info_message+'Red:'+#10;
     if col=1 then info_message:=info_message+#10+#10+'Green:'+#10;
@@ -4705,6 +4714,9 @@ begin
 
     info_message:=info_message+#10+#10+'Vignetting [Mo corners/Mo]: '+inttostr(round(100*(1-(mc_1+mc_2+mc_3+mc_4)/(most_common*4))))+'%';
   end;
+
+  info_message:=info_message+#10+#10+'Bit depth data: '+inttostr(round(ln(range/minstep)/ln(2)));{bit range}
+
 
   info_message:=info_message+#10+#10+#10+'Legend: '+#10+
                                             'x̄ = mean background | x̃  = median background | '+
