@@ -3,7 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 644
   Top = 147
   Width = 1871
-  HorzScrollBar.Page = 1853
+  HorzScrollBar.Page = 1440
   VertScrollBar.Page = 509
   AllowDropFiles = True
   AutoScroll = True
@@ -220,7 +220,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1870
-    ActivePage = tab_photometry1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -228,14 +228,14 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 8
+    TabIndex = 0
     TabOrder = 5
     OnChange = pagecontrol1Change
     object Images: TTabSheet
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 420
-      ClientWidth = 1755
+      ClientWidth = 1862
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -309,7 +309,7 @@ object stackmenu1: Tstackmenu1
         Height = 383
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1751
+        Width = 1858
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -5521,7 +5521,7 @@ object stackmenu1: Tstackmenu1
     object tab_Pixelmath2: TTabSheet
       Caption = 'Pixel math 2'
       ClientHeight = 420
-      ClientWidth = 1755
+      ClientWidth = 1862
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox
@@ -5738,9 +5738,9 @@ object stackmenu1: Tstackmenu1
         end
       end
       object GroupBox3: TGroupBox
-        Left = 775
+        Left = 776
         Height = 96
-        Top = 160
+        Top = 96
         Width = 256
         Caption = 'Add noise'
         ClientHeight = 76
@@ -5904,26 +5904,15 @@ object stackmenu1: Tstackmenu1
       end
       object GroupBox_test_images1: TGroupBox
         Left = 776
-        Height = 152
+        Height = 80
         Hint = 'Create artificial test image for testing star detection. This tool is intendent for developpers only.'
         Top = 8
         Width = 255
-        Caption = 'Create test images'
-        ClientHeight = 132
+        Caption = 'Create test image for star detection'
+        ClientHeight = 60
         ClientWidth = 251
         ParentFont = False
         TabOrder = 3
-        object apply_create_gradient1: TButton
-          Left = 128
-          Height = 30
-          Hint = 'Create a FITS test image with levels of gray and colour.'
-          Top = 48
-          Width = 118
-          Caption = 'Gradient'
-          OnClick = apply_create_gradient1Click
-          ParentFont = False
-          TabOrder = 3
-        end
         object create_test_image_stars1: TButton
           Left = 128
           Height = 30
@@ -5970,16 +5959,6 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
           TabOrder = 1
           Text = '2.5'
-        end
-        object Button1: TButton
-          Left = 128
-          Height = 30
-          Hint = 'Inspect the image with the sensitive setting SNR>10.'
-          Top = 99
-          Width = 115
-          Caption = 'Inspector (SNR>10)'
-          OnClick = Button1Click
-          TabOrder = 4
         end
       end
       object GroupBox12: TGroupBox

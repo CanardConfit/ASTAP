@@ -52,7 +52,7 @@ type
     add_marker_position1: TMenuItem;
     bin3x3: TMenuItem;
     BitBtn1: TBitBtn;
-    ccdinspector1: TMenuItem;
+    ccdinspector30_1: TMenuItem;
     error_label1: TLabel;
     FontDialog1: TFontDialog;
     image_north_arrow1: TImage;
@@ -100,6 +100,7 @@ type
     inspector_hfd_values1: TMenuItem;
     batch_add_sip1: TMenuItem;
     grid1: TMenuItem;
+    ccdinspector10_1: TMenuItem;
     MenuItem26: TMenuItem;
     sip1: TMenuItem;
     zoomfactorone1: TMenuItem;
@@ -334,6 +335,7 @@ type
     procedure extractblue1Click(Sender: TObject);
     procedure extractgreen1Click(Sender: TObject);
     procedure grid1Click(Sender: TObject);
+    procedure ccdinspector10_1Click(Sender: TObject);
     procedure sip1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
@@ -666,7 +668,7 @@ procedure DeleteFiles(lpath,FileSpec: string);{delete files such  *.wcs}
 procedure new_to_old_WCS;{convert new style FITsS to old style}
 procedure old_to_new_WCS;{ convert old WCS to new}
 procedure show_marker_shape(shape: TShape; shape_type,w,h,minimum:integer; fitsX,fitsY: double);{show manual alignment shape}
-procedure create_test_image(type_test : integer);{create an artificial test image}
+procedure create_test_image;{create an artificial test image}
 function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
 function convert_raw(loadfile,savefile :boolean;var filename3: string; var img: image_array): boolean; {convert raw to fits file using DCRAW or LibRaw}
 
@@ -2770,7 +2772,7 @@ begin
 end;
 
 
-procedure create_test_image(type_test : integer);{create an artificial test image}
+procedure create_test_image;{create an artificial test image}
 var
    i,j,m,n, factor,stepsize,stepsize2, starcounter,subsampling          : integer;
    sigma,hole_radius,donut_radius,hfd_diameter,shiftX,shiftY            : double;
@@ -2828,84 +2830,57 @@ begin
 
   starcounter:=0;
 
-  if type_test=1 then {no stars just gradients}
+  {star test image}
+  naxis3:=1; {NAXIS3 number of colors}
+  setlength(img_loaded,naxis3,width2,height2);{set length of image array}
+
+  For i:=0 to height2-1 do
+  for j:=0 to width2-1 do
   begin
-    naxis3:=3; {NAXIS3 number of colors}
-    setlength(img_loaded,naxis3,width2,height2);{set length of image array}
-    factor:=round(width2/15);
-    For i:=0 to height2-1 do
-    for j:=0 to width2-1 do
+    if gradient=false then img_loaded[0,j,i]:=randg(1000,100 {noise}){default background is 1000}
+    else
+    img_loaded[0,j,i]:=-500*sqrt( sqr((i-height2/2)/height2) +sqr((j-width2/2)/height2) ){circular gradient}
+                       + randg(1000,100 {noise}){default background is 100}
+  end;
+
+  stepsize:=round(sigma*3);
+  if stepsize<8 then stepsize:=8;{minimum value}
+  subsampling:=5;
+  For i:=stepsize to height2-1-stepsize do
+  for j:=stepsize to width2-1-stepsize do
+  begin
+    if ( (frac(i/100)=0) and (frac(j/100)=0)  )  then
     begin
+      if i>height2-300 then {hot pixels} img_loaded[0,j,i]:=65535 {hot pixel}
+      else {create real stars}
       begin
-        if i<400 then
+        shiftX:=-0.5+random(1000)/1000; {result between -0.5 and +0.5}
+        shiftY:=-0.5+random(1000)/1000; {result between -0.5 and +0.5}
+        inc(starcounter);
+         if sigma*2.5<=5 then {gaussian stars}
         begin
-          img_loaded[0,j,i]:=1000+factor*trunc(j/factor); {15 large steps}
-          img_loaded[1,j,i]:=1000+factor*trunc(j/factor);
-          img_loaded[2,j,i]:=1000+factor*trunc(j/factor);
+          stepsize2:=stepsize*subsampling;
+          for m:=-stepsize2 to stepsize2 do for n:=-stepsize2 to stepsize2 do
+          begin
+            img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]:= img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]+(65000/power(starcounter,0.8)){Intensity}*(1/sqr(subsampling)* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))) ); {gaussian shaped stars}
+            if frac(starcounter/20)=0 then img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]:=img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]+(65000/power(starcounter,0.7)){Intensity} *(1/(subsampling*subsampling))* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))); {diagonal gaussian shaped stars}
+          end;
         end
         else
-        begin
-          if i<1400 then img_loaded[0,j,i]:=1000+1+j {pixel value is x position + 1000} else img_loaded[0,j,i]:=1000;
-          if ((i<1200) or ((i>=1400) and (i<1600)) ) then img_loaded[1,j,i]:=1000+1+j   else img_loaded[1,j,i]:=1000;
-          if ((i<1200) or (i>=1600)) then img_loaded[2,j,i]:=1000+1+j                   else img_loaded[2,j,i]:=1000;
-        end;
-      end;
-    end;
-    filename2:='gradient_test_image.fit';
-  end
-  else
-  begin {star test image}
-    naxis3:=1; {NAXIS3 number of colors}
-    setlength(img_loaded,naxis3,width2,height2);{set length of image array}
-
-    For i:=0 to height2-1 do
-    for j:=0 to width2-1 do
-    begin
-      if gradient=false then img_loaded[0,j,i]:=randg(1000,100 {noise}){default background is 1000}
-      else
-      img_loaded[0,j,i]:=-500*sqrt( sqr((i-height2/2)/height2) +sqr((j-width2/2)/height2) ){circular gradient}
-                         + randg(1000,100 {noise}){default background is 100}
-    end;
-
-    stepsize:=round(sigma*3);
-    if stepsize<8 then stepsize:=8;{minimum value}
-    subsampling:=5;
-    For i:=stepsize to height2-1-stepsize do
-    for j:=stepsize to width2-1-stepsize do
-    begin
-      if ( (frac(i/100)=0) and (frac(j/100)=0)  )  then
-      begin
-        if i>height2-300 then {hot pixels} img_loaded[0,j,i]:=65535 {hot pixel}
-        else {create real stars}
-        begin
-          shiftX:=-0.5+random(1000)/1000; {result between -0.5 and +0.5}
-          shiftY:=-0.5+random(1000)/1000; {result between -0.5 and +0.5}
-          inc(starcounter);
-           if sigma*2.5<=5 then {gaussian stars}
+        begin  {donut stars}
+          for m:=-stepsize to stepsize do for n:=-stepsize to stepsize do
           begin
-            stepsize2:=stepsize*subsampling;
-            for m:=-stepsize2 to stepsize2 do for n:=-stepsize2 to stepsize2 do
-            begin
-              img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]:= img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]+(65000/power(starcounter,0.8)){Intensity}*(1/sqr(subsampling)* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))) ); {gaussian shaped stars}
-              if frac(starcounter/20)=0 then img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]:=img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]+(65000/power(starcounter,0.7)){Intensity} *(1/(subsampling*subsampling))* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))); {diagonal gaussian shaped stars}
-            end;
-          end
-          else
-          begin  {donut stars}
-            for m:=-stepsize to stepsize do for n:=-stepsize to stepsize do
-            begin
-              hfd_diameter:=sigma*2.5;
-              hole_radius:=trunc(hfd_diameter/3);
-              donut_radius:=sqrt(2*sqr(hfd_diameter/2)-sqr(hole_radius));
-              if ( (sqrt(n*n+m*m)<=donut_radius) and (sqrt(n*n+m*m)>=hole_radius){hole}) then img_loaded[0,j+n,i+m]:=img_loaded[0,j+n,i+m]+4000*sqr(j/width2) {DONUT SHAPED stars}
-            end;
+            hfd_diameter:=sigma*2.5;
+            hole_radius:=trunc(hfd_diameter/3);
+            donut_radius:=sqrt(2*sqr(hfd_diameter/2)-sqr(hole_radius));
+            if ( (sqrt(n*n+m*m)<=donut_radius) and (sqrt(n*n+m*m)>=hole_radius){hole}) then img_loaded[0,j+n,i+m]:=img_loaded[0,j+n,i+m]+4000*sqr(j/width2) {DONUT SHAPED stars}
           end;
         end;
       end;
-
     end;
-    filename2:='star_test_image.fit';
+
   end;
+  filename2:='star_test_image.fit';
 
   for j:=0 to 10 do {create an header with fixed sequence}
     if (j<>5)  then {skip naxis3 for mono images}
@@ -2920,15 +2895,12 @@ begin
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
   update_text   ('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
 
-  if type_test=2 then
-  begin
-    update_text   ('COMMENT A','  Artificial image, background has value 1000 with sigma 100 Gaussian noise');
-    update_text   ('COMMENT B','  Top rows contain hotpixels with value 65535');
-    update_text   ('COMMENT C','  Rows below have Gaussian stars with a sigma of '+floattostr6(sigma));
-    update_text   ('COMMENT D','  Which will be measured as HFD '+stackmenu1.hfd_simulation1.text);
-    update_text   ('COMMENT E','  Note that theoretical Gaussian stars with a sigma of 1 are');
-    update_text   ('COMMENT F','  equivalent to a HFD of 2.354 if subsampled enough.');
-  end;
+  update_text   ('COMMENT A','  Artificial image, background has value 1000 with sigma 100 Gaussian noise');
+  update_text   ('COMMENT B','  Top rows contain hotpixels with value 65535');
+  update_text   ('COMMENT C','  Rows below have Gaussian stars with a sigma of '+floattostr6(sigma));
+  update_text   ('COMMENT D','  Which will be measured as HFD '+stackmenu1.hfd_simulation1.text);
+  update_text   ('COMMENT E','  Note that theoretical Gaussian stars with a sigma of 1 are');
+  update_text   ('COMMENT F','  equivalent to a HFD of 2.354 if subsampled enough.');
 
   update_menu(true);{file loaded, update menu for fits. Set fits_file:=true}
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
@@ -3172,7 +3144,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.533a, '+about_message4+', dated 2021-5-7';
+  #13+#10+'ASTAP version ß0.9.534, '+about_message4+', dated 2021-5-11';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4834,7 +4806,8 @@ begin
     mainwindow.min2.enabled:=fits;
     mainwindow.max2.enabled:=fits;
 
-    mainwindow.ccdinspector1.enabled:=fits;
+    mainwindow.ccdinspector30_1.enabled:=fits;
+    mainwindow.ccdinspector10_1.enabled:=fits;
     mainwindow.inspector_diagram1.enabled:=fits; {Voronoi}
     mainwindow.hfd_contour1.enabled:=fits; {2D contour}
     mainwindow.inspector_hfd_values1.enabled:=fits; {add hfd values}
@@ -8621,6 +8594,11 @@ begin
   end
   else
   plot_grid;
+end;
+
+procedure Tmainwindow.ccdinspector10_1Click(Sender: TObject);
+begin
+   CCDinspector(10);
 end;
 
 
@@ -12915,7 +12893,7 @@ begin
   else
     annulus_width:=1;{normal & fast}
 
-  r1_square:=rs*rs;;{square diameter}
+  r1_square:=rs*rs;{square diameter}
   r2:=rs+annulus_width;
   r2_square:=r2*r2;
 
@@ -12947,7 +12925,7 @@ begin
     sd:=max(sd,1); {add some value for images with zero noise background. This will prevent that background is seen as a star. E.g. some jpg processed by nova.astrometry.net}
 
 
-     repeat {reduce square box size till symmetry to remove stars}
+    repeat {reduce square box size till symmetry to remove stars}
     // Get center of gravity whithin star detection box and count signal pixels, repeat reduce box size till symmetry to remove stars
       SumVal:=0;
       SumValX:=0;
@@ -12966,7 +12944,8 @@ begin
           inc(signal_counter); {how many pixels are illuminated}
         end;
       end;
-      if sumval<= 12*sd then exit; {no star found, too noisy, exit with hfd=999}
+      if sumval<= 12*sd then
+         exit; {no star found, too noisy, exit with hfd=999}
 
       Xg:=SumValX/SumVal;
       Yg:=SumValY/SumVal;
@@ -12974,7 +12953,8 @@ begin
       yc:=(y1+Yg);
      {center of gravity found}
 
-      if ((xc-rs<0) or (xc+rs>width2-1) or (yc-rs<0) or (yc+rs>height2-1) ) then exit;{prevent runtime errors near sides of images}
+      if ((xc-rs<0) or (xc+rs>width2-1) or (yc-rs<0) or (yc+rs>height2-1) ) then
+                                 exit;{prevent runtime errors near sides of images}
       boxed:=(signal_counter>=(2/9)*sqr(rs+rs+1));{are inside the box 2 of the 9 of the pixels illuminated? Works in general better for solving then ovality measurement as used in the past}
 
       if boxed=false then

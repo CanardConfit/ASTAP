@@ -1243,13 +1243,20 @@ object mainwindow: Tmainwindow
       end
       object Inspector_top_menu1: TMenuItem
         Caption = 'Image (CCD) inspector'
-        object ccdinspector1: TMenuItem
-          Caption = 'Image (CCD) inspector'
+        object ccdinspector30_1: TMenuItem
+          Caption = 'Image (CCD) inspector (accurate)'
           Enabled = False
-          Hint = 'Calculate average HFD value , curvature and tilt. The absolute font size will be smaller if you zoom in.'
+          Hint = 'Calculate average HFD value , curvature and tilt. Uses all stars with SNR >30. The absolute font size will be smaller if you zoom in.'
           ImageIndex = 17
           ShortCut = 116
           OnClick = CCDinspector1Click
+        end
+        object ccdinspector10_1: TMenuItem
+          Caption = 'Image (CCD) inspector (max stars)'
+          Enabled = False
+          Hint = 'Calculate average HFD value , curvature and tilt. Uses all stars with SNR >10. The absolute font size will be smaller if you zoom in.'
+          ShortCut = 16500
+          OnClick = ccdinspector10_1Click
         end
         object hfd_contour1: TMenuItem
           Caption = 'HFD 2D contour diagram'

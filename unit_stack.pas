@@ -40,7 +40,6 @@ type
     actual_search_distance1: TLabel;
     add_noise1: TButton;
     add_substract1: TComboBox;
-    Button1: TButton;
     classify_dark_date1: TCheckBox;
     classify_flat_date1: TCheckBox;
     flat_combine_method1: TComboBox;
@@ -164,7 +163,6 @@ type
     apply_artificial_flat_correction1: TButton;
     apply_artificial_flat_correctionV2: TButton;
     apply_background_noise_filter1: TButton;
-    apply_create_gradient1: TButton;
     apply_dpp_button1: TButton;
     apply_factor1: TButton;
     apply_file1: TButton;
@@ -579,7 +577,6 @@ type
     procedure add_noise1Click(Sender: TObject);
     procedure align_blink1Change(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
     procedure equinox1Change(Sender: TObject);
     procedure lrgb_auto_level1Change(Sender: TObject);
     procedure mount_analyse1Click(Sender: TObject);
@@ -4273,8 +4270,7 @@ end;
 
 procedure Tstackmenu1.apply_create_gradient1Click(Sender: TObject);
 begin
-  if sender=create_test_image_stars1 then create_test_image(2)
-                                     else create_test_image(1);
+   create_test_image;
 end;
 
 
@@ -6840,10 +6836,6 @@ begin
   listview6.alphasort; {sort on time}
 end;
 
-procedure Tstackmenu1.Button1Click(Sender: TObject);
-begin
-  CCDinspector(5 {snr min});
-end;
 
 procedure Tstackmenu1.equinox1Change(Sender: TObject);
 begin
