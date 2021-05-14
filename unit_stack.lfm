@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 12
+  Left = 188
   Height = 644
-  Top = 147
+  Top = 348
   Width = 1871
   HorzScrollBar.Page = 1440
   VertScrollBar.Page = 509
@@ -401,9 +401,10 @@ object stackmenu1: Tstackmenu1
           end        
           item
             Alignment = taRightJustify
+            AutoSize = True
             Caption = 'Date/time'
             MinWidth = 120
-            Width = 120
+            Width = 68
           end        
           item
             Alignment = taRightJustify
@@ -580,7 +581,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 420
-      ClientWidth = 1755
+      ClientWidth = 1862
       ImageIndex = 1
       ParentFont = False
       object browse_darks1: TButton
@@ -627,7 +628,7 @@ object stackmenu1: Tstackmenu1
         Height = 383
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1755
+        Width = 1862
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -673,9 +674,10 @@ object stackmenu1: Tstackmenu1
             MinWidth = 50
           end        
           item
+            AutoSize = True
             Caption = 'Date'
             MinWidth = 70
-            Width = 70
+            Width = 39
           end        
           item
             Alignment = taRightJustify
@@ -758,7 +760,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 420
-      ClientWidth = 1755
+      ClientWidth = 1862
       ImageIndex = 2
       ParentFont = False
       object browse_flats1: TButton
@@ -811,7 +813,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1755
+        Width = 1862
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -858,9 +860,10 @@ object stackmenu1: Tstackmenu1
             MinWidth = 50
           end        
           item
+            AutoSize = True
             Caption = 'Date'
             MinWidth = 70
-            Width = 70
+            Width = 39
           end        
           item
             Alignment = taRightJustify
@@ -936,7 +939,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
       ClientHeight = 420
-      ClientWidth = 1755
+      ClientWidth = 1862
       ImageIndex = 3
       ParentFont = False
       object browse_bias1: TButton
@@ -977,7 +980,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1755
+        Width = 1862
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -1025,9 +1028,10 @@ object stackmenu1: Tstackmenu1
             Width = 40
           end        
           item
+            AutoSize = True
             Caption = 'Date'
             MinWidth = 70
-            Width = 70
+            Width = 39
           end        
           item
             Alignment = taRightJustify
@@ -2835,7 +2839,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 420
-      ClientWidth = 1755
+      ClientWidth = 1862
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
@@ -2843,7 +2847,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1755
+        Width = 1862
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3087,7 +3091,7 @@ object stackmenu1: Tstackmenu1
         Left = 960
         Height = 19
         Hint = 'Update existing FITS header annotations.'
-        Top = 19
+        Top = 18
         Width = 124
         Caption = 'Update annotations'
         Enabled = False
@@ -3279,9 +3283,10 @@ object stackmenu1: Tstackmenu1
           end        
           item
             Alignment = taRightJustify
+            AutoSize = True
             Caption = 'Date/time (start)'
             MinWidth = 120
-            Width = 120
+            Width = 102
           end        
           item
             Alignment = taRightJustify

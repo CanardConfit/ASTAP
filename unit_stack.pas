@@ -3178,8 +3178,6 @@ begin
             lv.Items.item[c].subitems.Strings[D_width]:=inttostr(width2); {image width}
             lv.Items.item[c].subitems.Strings[D_height]:=inttostr(height2);{image height}
             lv.Items.item[c].subitems.Strings[D_type]:=imagetype;{image type}
-            if lv.name<>stackmenu1.listview9.name then
-              lv.Items.item[c].subitems.Strings[D_date]:=copy(date_obs,1,10);
 
             if ((light=false) and (full=true)) {amode=2} then {dark/flats}
             begin {analyse background and noise}
@@ -3195,13 +3193,14 @@ begin
               lv.Items.item[c].subitems.Strings[D_gain]:=inttostr(round(gain)); {camera gain}
             end;
 
-            if lv.name=stackmenu1.listview2.name then
+            if lv.name=stackmenu1.listview2.name then {dark tab}
             begin
+              lv.Items.item[c].subitems.Strings[D_date]:=copy(date_obs,1,10);
               date_to_jd(date_obs);{convert date-obs to jd}
               lv.Items.item[c].subitems.Strings[D_jd]:=floattostrF(jd,ffFixed,0,1); {julian day, 1/10 day accuracy}
             end
             else
-            if lv.name=stackmenu1.listview3.name then
+            if lv.name=stackmenu1.listview3.name then {flat tab}
             begin
               lv.Items.item[c].subitems.Strings[F_filter]:=filter_name; {filter name, without spaces}
               if AnsiCompareText(stackmenu1.red_filter1.text,filter_name)=0 then  Lv.Items.item[c].SubitemImages[9]:=0 else
@@ -3216,12 +3215,19 @@ begin
                  if filter_name<>'' then lv.Items.item[c].SubitemImages[9]:=7 {question mark} else
                     lv.Items.item[c].SubitemImages[9]:=-1;{blank}
 
-               date_to_jd(date_obs);{convert date-obs to jd}
-               lv.Items.item[c].subitems.Strings[F_jd]:=floattostrF(jd,ffFixed,0,1); {julian day, 1/10 day accuracy}
+              lv.Items.item[c].subitems.Strings[D_date]:=copy(date_obs,1,10);
+              date_to_jd(date_obs);{convert date-obs to jd}
+              lv.Items.item[c].subitems.Strings[F_jd]:=floattostrF(jd,ffFixed,0,1); {julian day, 1/10 day accuracy}
+            end
+            else
+            if lv.name=stackmenu1.listview4.name then {flat darks tab}
+            begin
+              lv.Items.item[c].subitems.Strings[D_date]:=copy(date_obs,1,10);
             end
             else
             if lv.name=stackmenu1.listview6.name then {blink tab}
             begin
+              lv.Items.item[c].subitems.Strings[B_date]:=StringReplace(copy(date_obs,1,19),'T',' ',[]);{date/time for blink. Remove fractions of seconds}
               lv.Items.item[c].subitems.Strings[B_calibration]:=calstat; {calibration calstat info DFB}
               if annotated then lv.Items.item[c].subitems.Strings[B_annotated ]:='✓' else  lv.Items.item[c].subitems.Strings[B_annotated ]:='';
             end
@@ -3229,6 +3235,7 @@ begin
 
             if lv.name=stackmenu1.listview7.name then {photometry tab}
             begin
+              lv.Items.item[c].subitems.Strings[P_date]:=StringReplace(copy(date_obs,1,19),'T',' ',[]);{date/time for blink. Remove fractions of seconds}
               lv.Items.item[c].subitems.Strings[P_filter]:=filter_name;
               date_to_jd(date_obs);{convert date-obs to jd}
               jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
@@ -8054,7 +8061,7 @@ var
    min_background,max_background,backgr   : double;
    filters_used : array [0..4] of string;
 begin
-  save_settings2;{too many lost selected files . so first save settings}
+  save_settings2;{too many lost selected files, so first save settings}
   esc_pressed:=false;
 
   if make_osc_color1.checked then
