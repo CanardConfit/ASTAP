@@ -1321,6 +1321,12 @@ object mainwindow: Tmainwindow
         ShortCut = 120
         OnClick = autocorrectcolours1Click
       end
+      object removegreenpurple1: TMenuItem
+        Caption = 'Remove green and purple filter'
+        Enabled = False
+        Hint = 'Balances RGB to remove green and purple.'
+        OnClick = removegreenpurple1Click
+      end
       object inversimage1: TMenuItem
         Caption = 'Inverse image'
         Enabled = False

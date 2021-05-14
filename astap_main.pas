@@ -101,6 +101,7 @@ type
     batch_add_sip1: TMenuItem;
     grid1: TMenuItem;
     ccdinspector10_1: TMenuItem;
+    removegreenpurple1: TMenuItem;
     MenuItem26: TMenuItem;
     sip1: TMenuItem;
     zoomfactorone1: TMenuItem;
@@ -336,6 +337,7 @@ type
     procedure extractgreen1Click(Sender: TObject);
     procedure grid1Click(Sender: TObject);
     procedure ccdinspector10_1Click(Sender: TObject);
+    procedure removegreenpurple1Click(Sender: TObject);
     procedure sip1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
@@ -3144,7 +3146,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.534, '+about_message4+', dated 2021-5-11';
+  #13+#10+'ASTAP version ß0.9.536, '+about_message4+', dated 2021-5-14';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4787,6 +4789,7 @@ begin
     mainwindow.ShowFITSheader1.enabled:=fits;
     mainwindow.demosaic_Bayermatrix1.Enabled:=fits;
     mainwindow.autocorrectcolours1.Enabled:=fits;
+    mainwindow.removegreenpurple1.enabled:=fits;
     mainwindow.stretch_draw1.Enabled:=fits;
     mainwindow.stretch_draw_fits1.Enabled:=fits;
 
@@ -7220,9 +7223,10 @@ begin
 
 
     stackmenu1.lrgb_auto_level1.checked:=get_boolean('lrgb_al',true);
+    stackmenu1.green_purple_filter1.checked:=get_boolean('green_fl',false);
     stackmenu1.lrgb_colour_smooth1.checked:=get_boolean('lrgb_cs',true);
     stackmenu1.lrgb_preserve_r_nebula1.checked:=get_boolean('lrgb_pr',true);
-    dum:=initstring.Values['lrgb_cw'];if dum<>'' then stackmenu1.lrgb_smart_smooth_width1.text:= dum;
+    dum:=initstring.Values['lrgb_sw'];if dum<>'' then stackmenu1.lrgb_smart_smooth_width1.text:= dum;
     dum:=initstring.Values['lrgb_sd'];if dum<>'' then stackmenu1.lrgb_smart_colour_sd1.text:= dum;
 
 
@@ -7553,6 +7557,8 @@ begin
     initstring.Values['osc_sd']:=stackmenu1.osc_smart_colour_sd1.text;
 
     initstring.Values['lrgb_al']:=BoolStr[stackmenu1.lrgb_auto_level1.checked];
+    initstring.Values['green_fl']:=BoolStr[stackmenu1.green_purple_filter1.checked];
+
     initstring.Values['lrgb_cs']:=BoolStr[stackmenu1.lrgb_colour_smooth1.checked];
     initstring.Values['lrgb_pr']:=BoolStr[stackmenu1.lrgb_preserve_r_nebula1.checked];
     initstring.Values['lrgb_sw']:=stackmenu1.lrgb_smart_smooth_width1.text;
@@ -8602,10 +8608,13 @@ begin
 end;
 
 
+procedure Tmainwindow.removegreenpurple1Click(Sender: TObject);
+begin
+  green_purple_filter(img_loaded);
+end;
+
+
 procedure Tmainwindow.sip1Click(Sender: TObject); {simple SIP coefficients calculation assuming symmetric radial distortion. Distortion increases with the third power of the off-center distance}
-const                                              //See e.g. https://www.telescope-optics.net/distortion.htm
-     range2=14;{20*sqrt(2)}
-     range1=9;
 var
   stars_measured,i,count        : integer;
   x,y,xc,yc,r,rc,max_radius,factor  : double;

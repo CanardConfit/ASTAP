@@ -44,6 +44,7 @@ type
     classify_flat_date1: TCheckBox;
     flat_combine_method1: TComboBox;
     GroupBox8: TGroupBox;
+    green_purple_filter1: TCheckBox;
     osc_preserve_r_nebula1: TCheckBox;
     lrgb_auto_level1: TCheckBox;
     lrgb_colour_smooth1: TCheckBox;
@@ -837,6 +838,7 @@ procedure black_spot_filter(var img: image_array);{remove black spots with value
 function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer) inline; {apply dark, flat if required, renew if different exposure or ccd temp}
 procedure smart_colour_smooth( var img: image_array; wide, sd:double; preserve_r_nebula,measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
+procedure green_purple_filter( var img: image_array);{Balances RGB to remove green and purple. For e.g. Hubble palette}
 procedure date_to_jd(date_time:string);{get julian day for date_obs, so the start of the observation or for date_avg. Set global variable jd}
 function JdToDate(jd:double):string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
@@ -848,7 +850,6 @@ procedure backup_header;{backup solution and header}
 function  restore_header: boolean;{backup solution and header}
 procedure report_results(object_to_process,stack_info :string;object_counter,colorinfo:integer);{report on tab results}
 procedure apply_factors;{apply r,g,b factors to image}
-
 
 const
   L_object=0; {lights, position in listview1}
@@ -1317,7 +1318,7 @@ end;
 procedure analyse_fits(img : image_array;snr_min:double;report:boolean;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
 var
    fitsX,fitsY,size,diam,i,j,retries,max_stars         : integer;
-   hfd1,star_fwhm,snr,flux,xc,yc,detection_level  : double;
+   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min  : double;
    hfd_list                                       : array of double;
    img_temp2  : image_array;
 var
@@ -1332,6 +1333,7 @@ begin
 
   detection_level:=star_level; {level above background. Start with a high value}
   retries:=2; {try up to three times to get enough stars from the image}
+  hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
   if ((backgr<60000) and (backgr>8)) then {not an abnormal file}
   begin
@@ -1357,7 +1359,7 @@ begin
           if (( img_temp2[0,fitsX,fitsY]=0){area not surveyed} and (img[0,fitsX,fitsY]-backgr>detection_level)) then {new star. For analyse used sigma is 5, so not too low.}
           begin
             HFD(img,fitsX,fitsY,14{box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-            if ((hfd1<=30) and (snr>snr_min) and (hfd1>0.8) {two pixels minimum} ) then
+            if ((hfd1<=30) and (snr>snr_min) and (hfd1>hfd_min) {two pixels minimum} ) then
             begin
               hfd_list[star_counter]:=hfd1;{store}
               inc(star_counter);
@@ -1749,7 +1751,7 @@ begin
                 if set_temperature<>999 then ListView1.Items.item[c].subitems.Strings[L_temperature]:=inttostr(set_temperature);
                 ListView1.Items.item[c].subitems.Strings[L_width]:=inttostr(width2); {width}
                 ListView1.Items.item[c].subitems.Strings[L_height]:=inttostr(height2);{height}
-                ListView1.Items.item[c].subitems.Strings[L_type]:=imagetype;{type}
+                ListView1.Items.item[c].subitems.Strings[L_type]:=imagetype+inttostr(nrbits);{type}
                 ListView1.Items.item[c].subitems.Strings[L_datetime]:=StringReplace(date_obs,'T',' ',[]);{date/time}
                 ListView1.Items.item[c].subitems.Strings[L_position]:=prepare_ra5(ra0,': ')+', '+ prepare_dec4(dec0,'° ');{give internal position}
 
@@ -6430,6 +6432,7 @@ begin
     g2:=img[1,fitsX,fitsY]-bgG;
     b2:=img[2,fitsX,fitsY]-bgB;
 
+
     if ( (r2>sd*noise_level1) or (g2>sd*noise_level1) or (b2>sd*noise_level1) ) then {some relative flux}
     begin
       for y:=-step to step do
@@ -6520,6 +6523,67 @@ begin
   end;
   img:=img_temp2;{copy the array}
   img_temp2:=nil;
+end;
+
+procedure green_purple_filter( var img: image_array);{Balances RGB to remove green and purple. For e.g. Hubble palette}
+var fitsX,fitsY                : integer;
+    r2,g2,b2, lum,ratio        : double;
+begin
+  if length(img)<3 then exit;{not a three colour image}
+
+  for fitsY:=0 to height2-1 do
+  for fitsX:=0 to width2-1 do
+  begin
+    r2:=img[0,fitsX,fitsY];
+    g2:=img[1,fitsX,fitsY];
+    b2:=img[2,fitsX,fitsY];
+
+
+    if ((g2>r2) and (g2>b2)) then
+    begin
+      lum:=r2+g2+b2;
+      if r2>=b2 then {red stronger then blue}
+      begin
+        ratio:=min(r2/max(b2,0.001),30);
+        r2:=lum*ratio/(ratio+ratio+1);
+        g2:=r2;
+        b2:=lum*1/(ratio+ratio+1)
+      end
+      else
+      begin {blue stronger then red}
+        ratio:=min(b2/max(r2,0.001),30);
+        b2:=lum*ratio/(ratio+ratio+1);
+        g2:=b2;
+        r2:=lum*1/(ratio+ratio+1)
+      end;
+      img[0,fitsX,fitsY]:=r2;
+      img[1,fitsX,fitsY]:=g2;
+      img[2,fitsX,fitsY]:=b2;
+    end;
+
+
+    if ((g2<r2) and (g2<b2)) then  {to weak green, purple background}
+    begin
+      lum:=r2+g2+b2;
+      if r2>=b2 then {red stronger then blue}
+      begin
+        ratio:=min(r2/max(b2,0.001),30);
+        r2:=lum/(1+1+ratio);
+        g2:=r2;
+        b2:=lum*ratio/(1+1+ratio);
+      end
+      else
+      begin {blue stronger then red}
+       ratio:=min(b2/max(r2,0.001),30);
+        b2:=lum/(1+1+ratio);
+        g2:=b2;
+        r2:=lum*ratio/(1+1+ratio);
+      end;
+      img[0,fitsX,fitsY]:=r2;
+      img[1,fitsX,fitsY]:=g2;
+      img[2,fitsX,fitsY]:=b2;
+    end;
+  end;
 end;
 
 
@@ -7946,6 +8010,7 @@ begin
 end;
 
 
+
 function RemoveSpecialChars(const STR : string) : string;
 var {################# initialised variables #########################}
   InvalidChars : set of char = ['.','\','/','*','"',':','|','<','>'];
@@ -7969,12 +8034,13 @@ begin
   if counterRGB<>0 then result:=result+inttostr(counterRGB)+'x'+inttostr(exposureRGB)+'RGB ';
   if counterL<>0 then result:=result+inttostr(counterL)+'x'+inttostr(exposureL)+'L '; {exposure}
   result:=StringReplace(trim(result),' ,',',',[rfReplaceAll]);{remove all spaces in front of comma's}
-
-  result:=result+' '+filters_used;
-  if telescop<>'' then result:=result+', '+telescop;
-  if ((filter_name<>'') and (counterR=0) and (counterG=0) and (counterB=0) and (counterRGB=0)) then result:=result+', '+filter_name;
+  telescop:=trim(telescop);
+  if trim(telescop)<>'' then result:=result+', '+telescop;
+  if length(filters_used)>0 then result:=result+', ('+filters_used+')';
+  instrum:=trim(instrum);
   if instrum<>'' then result:=result+', '+instrum;
   result:=RemoveSpecialChars(result);{slash could be in date but also telescope name like eqmod HEQ5/6}
+  result:=result+'  _stacked.fits';
 end;
 
 
@@ -7982,7 +8048,7 @@ procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
    i,c,over_size,over_sizeL,nrfiles, image_counter,object_counter, first_file, total_counter,counter_colours: integer;
-   filter_name1, filter_name2,defilter, filename3, extra1,extra2,object_to_process,stack_info         : string;
+   filter_name1, filter_name2,defilter, filename3, extra1,extra2,object_to_process,stack_info,thefilters    : string;
    lrgb,solution,monofile,ignore,cal_and_align, mosaic_mode,sigma_mode  : boolean;
    startTick      : qword;{for timing/speed purposes}
    min_background,max_background,backgr   : double;
@@ -8504,7 +8570,15 @@ begin
           stackmenu1.auto_background_level1Click(nil);
           apply_factors;{histogram is after this action invalid}
           stackmenu1.reset_factors1Click(nil);{reset factors to default}
+
+          if stackmenu1.green_purple_filter1.checked then
+          begin
+            memo2_message('Applying "remove green and purple" filter');
+            green_purple_filter(img_loaded);
+          end;
+
           use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+
           if stackmenu1.lrgb_colour_smooth1.checked then
           begin
             memo2_message('Applying colour-smoothing filter image as set in tab "stack method"');
@@ -8629,6 +8703,12 @@ begin
         add_integer('LUM_FLAT=',' / Flats used for luminance.                      ' ,flat_count);
         add_integer('LUM_BIAS=',' / Flat-darks used for luminance.                 ' ,flatdark_count);
         add_integer('LUM_TEMP=',' / Set temperature used for luminance.            ' ,set_temperature);
+
+        thefilters:=filter_name; {used later for file name}
+        stack_info:=' '+inttostr(flatdark_count)+'x'+'FD  '+
+                        inttostr(flat_count)+'x'+'F  '+
+                        inttostr(dark_count)+'x'+'D  '+
+                        inttostr(counterL)+'x'+inttostr(exposureL)+'L  ('+thefilters+')'; {exposure}
       end
       else {made LRGB color}
       begin
@@ -8676,23 +8756,23 @@ begin
         add_text   ('COMMENT 3','  Total red exposure       '+inttostr(round(counterR*exposureR))+' '+filters_used[0] );
         add_text   ('COMMENT 4','  Total green exposure     '+inttostr(round(counterG*exposureG))+' '+filters_used[1] );
         add_text   ('COMMENT 5','  Total blue exposure      '+inttostr(round(counterB*exposureB))+' '+filters_used[2] );
-
-
         { ASTAP keyword standard:}
         { interim files can contain keywords: EXPTIME, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
         { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
+
+
+        thefilters:=filters_used[0]+' '+filters_used[1]+' '+filters_used[2]+' '+filters_used[3]; {for filename info}
+        stack_info:=' '+inttostr(flatdark_count)+'x'+'FD  '+
+                        inttostr(flat_count)+'x'+'F  '+
+                        inttostr(dark_count)+'x'+'D  '+
+                        inttostr(counterR)+'x'+inttostr(exposureR)+'R  '+
+                        inttostr(counterG)+'x'+inttostr(exposureG)+'G  '+
+                        inttostr(counterB)+'x'+inttostr(exposureB)+'B  '+
+                        inttostr(counterRGB)+'x'+inttostr(exposureRGB)+'RGB  '+
+                        inttostr(counterL)+'x'+inttostr(exposureL)+'L  ('+thefilters+')'; {exposure}
       end;
 
-      stack_info:=' '+inttostr(flatdark_count)+'x'+'FD  '+
-                      inttostr(flat_count)+'x'+'F  '+
-                      inttostr(dark_count)+'x'+'D  '+
-                      inttostr(counterR)+'x'+inttostr(exposureR)+'R  '+
-                      inttostr(counterG)+'x'+inttostr(exposureG)+'G  '+
-                      inttostr(counterB)+'x'+inttostr(exposureB)+'B  '+
-                      inttostr(counterRGB)+'x'+inttostr(exposureRGB)+'RGB  '+
-                      inttostr(counterL)+'x'+inttostr(exposureL)+'L  ('+filters_used[0]+' '+filters_used[1]+' '+filters_used[2]+' '+filters_used[3]+')'; {exposure}
-
-      filename2:=extractfilepath(filename2)+propose_file_name(object_to_process,'('+filters_used[0]+' '+filters_used[1]+' '+filters_used[2]+' '+filters_used[3]+')')+ '  _stacked.fits';{give it a nice file name}
+      filename2:=extractfilepath(filename2)+propose_file_name(object_to_process,thefilters);{give it a nice file name}
 
       if cd1_1<>0 then memo2_message('Astrometric solution reference file preserved for stack.');
       memo2_message('█ █ █  Saving result '+inttostr(image_counter)+' as '+filename2);

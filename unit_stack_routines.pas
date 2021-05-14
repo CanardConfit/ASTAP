@@ -763,7 +763,6 @@ begin
                 img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples.}
               end;
             end;
-
           end;
           progress_indicator(10+89*counter/(length(files_to_Process){ListView1.items.count}),' Stacking');{show progress}
           finally

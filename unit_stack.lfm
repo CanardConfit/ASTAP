@@ -1184,7 +1184,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 420
-      ClientWidth = 1755
+      ClientWidth = 1862
       ImageIndex = 5
       ParentFont = False
       object stack_method1: TComboBox
@@ -1335,13 +1335,13 @@ object stackmenu1: Tstackmenu1
       end
       object filter_groupbox1: TGroupBox
         Left = 536
-        Height = 239
-        Top = 120
-        Width = 288
+        Height = 270
+        Top = 80
+        Width = 297
         AutoSize = True
         Caption = 'R+G+B+L stacking, link filters to RGB colours'
-        ClientHeight = 219
-        ClientWidth = 284
+        ClientHeight = 250
+        ClientWidth = 293
         ParentFont = False
         TabOrder = 3
         object red_filter1: TEdit
@@ -1681,7 +1681,7 @@ object stackmenu1: Tstackmenu1
           Left = 0
           Height = 19
           Hint = 'Apply colour smooth after stacking.'
-          Top = 169
+          Top = 200
           Width = 100
           Caption = 'Colour smooth'
           Checked = True
@@ -1693,11 +1693,11 @@ object stackmenu1: Tstackmenu1
           TabOrder = 21
         end
         object lrgb_smart_smooth_width1: TComboBox
-          Left = 136
+          Left = 140
           Height = 23
-          Hint = 'Colour smoothing range in pixels. This will keep luminance but smooth the colours. Default is 10'
-          Top = 169
-          Width = 60
+          Hint = 'Colour smoothing range in pixels. This will keep luminance but smooth the colours. Default is 10, Set this as high as eight times the HFD value.'
+          Top = 200
+          Width = 62
           ItemHeight = 15
           ItemIndex = 2
           Items.Strings = (
@@ -1707,17 +1707,19 @@ object stackmenu1: Tstackmenu1
             '15'
             '20'
             '25'
+            '35'
+            '50'
           )
           ParentFont = False
           TabOrder = 22
           Text = '10'
         end
         object lrgb_smart_colour_sd1: TComboBox
-          Left = 224
+          Left = 231
           Height = 23
           Hint = 'Standard deviation to detect objects to be colour blurred. Default 3'
-          Top = 169
-          Width = 60
+          Top = 200
+          Width = 62
           ItemHeight = 15
           ItemIndex = 2
           Items.Strings = (
@@ -1733,15 +1735,29 @@ object stackmenu1: Tstackmenu1
           Text = '3.0'
         end
         object lrgb_preserve_r_nebula1: TCheckBox
-          Left = 136
+          Left = 140
           Height = 19
           Hint = 'Preserve red nebula around bright stars. The red nebula will come closer to the star.'
-          Top = 200
+          Top = 231
           Width = 117
           Caption = 'preserve_R_nebula'
           Checked = True
           State = cbChecked
           TabOrder = 24
+        end
+        object green_purple_filter1: TCheckBox
+          Left = 0
+          Height = 19
+          Hint = 'Balances RGB to remove green and purple.'
+          Top = 172
+          Width = 136
+          Caption = 'Remove green & purple'
+          Checked = True
+          Color = clDefault
+          ParentColor = False
+          ParentFont = False
+          State = cbChecked
+          TabOrder = 25
         end
       end
       object Label18: TLabel
@@ -1882,7 +1898,7 @@ object stackmenu1: Tstackmenu1
         Left = 16
         Height = 239
         Hint = 'Use RAW files for best performance. Use viewer menu TOOLS, conversion DSLR images for import.'
-        Top = 120
+        Top = 80
         Width = 496
         Caption = 'RAW one shot colour images'
         ClientHeight = 219
@@ -2161,7 +2177,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the alignment options'
       Caption = 'Alignment'
       ClientHeight = 420
-      ClientWidth = 1755
+      ClientWidth = 1862
       ImageIndex = 7
       ParentFont = False
       object use_star_alignment1: TRadioButton
@@ -4172,7 +4188,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools'
       Caption = 'Pixel math 1'
       ClientHeight = 420
-      ClientWidth = 1755
+      ClientWidth = 1862
       Enabled = False
       ImageIndex = 4
       ParentFont = False
@@ -4963,7 +4979,7 @@ object stackmenu1: Tstackmenu1
         object smart_smooth_width1: TComboBox
           Left = 24
           Height = 23
-          Hint = 'Colour smoothing range in pixels. This will keep luminance but smooth the colours. Default is 10'
+          Hint = 'Colour smoothing range in pixels. This will keep luminance but smooth the colours. Default is 10. Set this as high as eight times the HFD value.'
           Top = 7
           Width = 60
           ItemHeight = 15
