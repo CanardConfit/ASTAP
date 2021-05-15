@@ -1416,23 +1416,23 @@ begin
 
   if date_avg<>'' then
   begin
-    date_to_jd(date_avg);{convert date-AVG to jd_start}
+    date_to_jd(date_avg,0 {exposure});{convert date-AVG to jd_mid}
     midpoint:=true;
   end
   else
   begin
-    date_to_jd(date_obs);{convert date-OBS to jd_start}
+    date_to_jd(date_obs,exposure);{convert date-OBS to jd_start}
     midpoint:=false;
   end;
 
-  if jd_start<=10 then {no date found}
+  if jd_start<=2400000 then {no date found year <1858}
   begin
     mainwindow.error_label1.caption:=('Error converting date-obs from FITS header');
     mainwindow.error_label1.visible:=true;
   end;
 
-  if midpoint=false then
-     jd_mid:=jd_start+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+//  if midpoint=false then
+//     jd_mid:=jd_start+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
   dec_text_to_radians(sitelat,site_lat_radians,errordecode);
   if errordecode then memo2_message('Warning observatory latitude not found in the fits header');

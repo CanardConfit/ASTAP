@@ -10501,8 +10501,7 @@ begin
       dec_text_to_radians(sitelong,site_long_radians,errordecode);
       if errordecode=false then
       begin
-        if jd_start=0 then date_to_jd(date_obs);{convert date-obs to jd}
-        jd_mid:=jd_start+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+        if jd_start=0 then date_to_jd(date_obs,exposure);{convert date-obs to jd_start, jd_mid}
         if jd_mid>2400000 then {valid JD}
         begin
           result:=(180/pi)*altitude_and_refraction(site_lat_radians,-site_long_radians,jd_mid,focus_temp, correct_radec_refraction, {var} ra0,dec0);{In formulas the longitude is positive to west!!!. }

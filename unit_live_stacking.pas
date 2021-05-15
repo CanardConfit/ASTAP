@@ -328,9 +328,9 @@ begin
               inc(counter);
               inc(total_counter);
               sum_exp:=sum_exp+exposure;
-              date_to_jd(date_obs);{convert date-obs to jd}
-              if jd_start>jd_stop then jd_stop:=jd_start;
-              jd_sum:=jd_sum+jd_start+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+              date_to_jd(date_obs,exposure);{convert date-obs to jd}
+              if jd_mid>jd_stop then jd_stop:=jd_mid;
+              jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure.}
 
               vector_based:=true;
 
