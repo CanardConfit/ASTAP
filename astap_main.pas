@@ -964,7 +964,6 @@ begin
 
     date_obs:=''; date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
     sitelat:=''; sitelong:='';
-    jd2    :=0;{assume no data available}
 
     focus_temp:=999;{assume no data available}
     focus_pos:=0;{assume no data available}
@@ -1136,7 +1135,7 @@ begin
                 if date_obs='' then date_obs:=get_string;
 
         if ((header[i]='J') and (header[i+1]='D')  and (header[i+2]=' ') and (header[i+3]=' ') and (header[i+4]=' ')) then
-        if date_obs='' then
+        if date_obs='' then {DATE-OBS overrules any JD value}
         begin
           jd2:=validate_double;
           date_obs:=JdToDate(jd2);
@@ -3146,7 +3145,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.537, '+about_message4+', dated 2021-5-14';
+  #13+#10+'ASTAP version ß0.9.537b, '+about_message4+', dated 2021-5-15';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -10502,14 +10501,11 @@ begin
       dec_text_to_radians(sitelong,site_long_radians,errordecode);
       if errordecode=false then
       begin
-        if jd=0 then
+        if jd_start=0 then date_to_jd(date_obs);{convert date-obs to jd}
+        jd_mid:=jd_start+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+        if jd_mid>2400000 then {valid JD}
         begin
-           date_to_jd(date_obs);{convert date-obs to jd}
-           jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
-        end;
-        if jd>2400000 then {valid JD}
-        begin
-          result:=(180/pi)*altitude_and_refraction(site_lat_radians,-site_long_radians,jd,focus_temp, correct_radec_refraction, {var} ra0,dec0);{In formulas the longitude is positive to west!!!. }
+          result:=(180/pi)*altitude_and_refraction(site_lat_radians,-site_long_radians,jd_mid,focus_temp, correct_radec_refraction, {var} ra0,dec0);{In formulas the longitude is positive to west!!!. }
         end;
       end;
     end;

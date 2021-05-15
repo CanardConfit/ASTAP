@@ -3,7 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 644
   Top = 348
   Width = 1871
-  HorzScrollBar.Page = 1440
+  HorzScrollBar.Page = 1853
   VertScrollBar.Page = 509
   AllowDropFiles = True
   AutoScroll = True
@@ -220,7 +220,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1870
-    ActivePage = Images
+    ActivePage = tab_photometry1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -228,7 +228,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 8
     TabOrder = 5
     OnChange = pagecontrol1Change
     object Images: TTabSheet

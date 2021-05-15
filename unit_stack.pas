@@ -805,7 +805,8 @@ var
   sum_exp,photometry_stdev                                        : double;
   referenceX,referenceY    : double;{reference position used stacking}
   ref_X, ref_Y             : double;{reference position from FITS header, used for manual stacking of colour images, second stage}
-  jd                       : double;{julian day of date-obs}
+  jd_start                 : double;{julian day of date-obs}
+  jd_mid                   : double;{julian day of mid exposure}
   jd_sum                   : double;{sum of julian days}
   jd_stop                  : double;{end observation in julian days}
   files_to_process, files_to_process_LRGB : array of  TfileToDo;{contains names to process and index to listview1}
@@ -3197,7 +3198,7 @@ begin
             begin
               lv.Items.item[c].subitems.Strings[D_date]:=copy(date_obs,1,10);
               date_to_jd(date_obs);{convert date-obs to jd}
-              lv.Items.item[c].subitems.Strings[D_jd]:=floattostrF(jd,ffFixed,0,1); {julian day, 1/10 day accuracy}
+              lv.Items.item[c].subitems.Strings[D_jd]:=floattostrF(jd_start,ffFixed,0,1); {julian day, 1/10 day accuracy}
             end
             else
             if lv.name=stackmenu1.listview3.name then {flat tab}
@@ -3217,7 +3218,7 @@ begin
 
               lv.Items.item[c].subitems.Strings[D_date]:=copy(date_obs,1,10);
               date_to_jd(date_obs);{convert date-obs to jd}
-              lv.Items.item[c].subitems.Strings[F_jd]:=floattostrF(jd,ffFixed,0,1); {julian day, 1/10 day accuracy}
+              lv.Items.item[c].subitems.Strings[F_jd]:=floattostrF(jd_start,ffFixed,0,1); {julian day, 1/10 day accuracy}
             end
             else
             if lv.name=stackmenu1.listview4.name then {flat darks tab}
@@ -3237,11 +3238,11 @@ begin
             begin
               lv.Items.item[c].subitems.Strings[P_date]:=StringReplace(copy(date_obs,1,19),'T',' ',[]);{date/time for blink. Remove fractions of seconds}
               lv.Items.item[c].subitems.Strings[P_filter]:=filter_name;
-              date_to_jd(date_obs);{convert date-obs to jd}
-              jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
-              lv.Items.item[c].subitems.Strings[P_jd_mid]:=floattostrF2(jd,0,5);{julian day}
+              date_to_jd(date_obs);{convert date-obs to jd_start}
+              jd_mid:=jd_start+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+              lv.Items.item[c].subitems.Strings[P_jd_mid]:=floattostrF2(jd_mid,0,5);{julian day}
 
-              hjd:=JD_to_HJD(jd,RA0,DEC0);{conversion JD to HJD}
+              hjd:=JD_to_HJD(jd_mid,RA0,DEC0);{conversion JD to HJD}
               lv.Items.item[c].subitems.Strings[P_jd_helio]:=floattostrF2(Hjd,0,5);{helio julian day}
 
               alt:=calculate_altitude(false{correct ra, dec});{convert centalt string to double or calculate altitude from observer location}
@@ -3321,14 +3322,14 @@ begin
         //      jd:=2456385.46875;
 
 
-              jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
-              lv.Items.item[c].subitems.Strings[M_jd_mid]:=floattostrF2(jd,0,7);{julian day}
+              jd_mid:=jd_start+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+              lv.Items.item[c].subitems.Strings[M_jd_mid]:=floattostrF2(jd_mid,0,7);{julian day}
 
               theindex:=stackmenu1.equinox1.itemindex;
               if ra_mount<99 then {mount position known and specified}
               begin
-                if theindex>=1 then  precession2(jd,ra_mount,dec_mount,ra_mount,dec_mount);
-                if theindex>=2 then  nutation_aberration_correction_equatorial_classic(jd,ra_mount,dec_mount);{nutation, abberation}
+                if theindex>=1 then  precession2(jd_mid,ra_mount,dec_mount,ra_mount,dec_mount);
+                if theindex>=2 then  nutation_aberration_correction_equatorial_classic(jd_mid,ra_mount,dec_mount);{nutation, abberation}
 
                 lv.Items.item[c].subitems.Strings[M_ra_m]:=floattostrf(ra_mount*180/pi,ffFixed, 9, 6);
                 lv.Items.item[c].subitems.Strings[M_dec_m]:=floattostrf(dec_mount*180/pi,ffFixed, 9, 6);
@@ -3336,9 +3337,9 @@ begin
 
               if cd1_1<>0 then
               begin
-                if theindex>=1 then  precession2(jd,ra0,dec0,ra0,dec0); {J2000 to mean equinox}
+                if theindex>=1 then  precession2(jd_mid,ra0,dec0,ra0,dec0); {J2000 to mean equinox}
                 if theindex>=2  then
-                    nutation_aberration_correction_equatorial_classic(jd,ra0,dec0);{Input mean equinox, result apparent.  M&P page 208}
+                    nutation_aberration_correction_equatorial_classic(jd_mid,ra0,dec0);{Input mean equinox, result apparent.  M&P page 208}
 
                 alt:=calculate_altitude(theindex>=3 {correct ra0, dec0});{convert centalt string to double or calculate altitude from observer location and correct ra0, dec0}
                 if alt<>0 then
@@ -5185,11 +5186,10 @@ begin
       filename2:=listview5.items[index].caption;
       filen:=InputBox('New name:','',filename2) ;
       if ((filen='') or (filen=filename2)) then exit;
-      filen:=extractfilepath(filename2)+filen+'.fits';
       if RenameFile(filename2,filen) then
-      begin
         listview5.items[index].caption:=filen
-      end;
+      else
+        beep;
     end;
     inc(index); {go to next file}
   end;
@@ -5477,14 +5477,14 @@ var
    yy,mm,dd,hh,min,error2 : integer;
    ss                     : double;
 begin
-  jd:=0;
+  jd_start:=0;
   val(copy(date_time,18,7),ss,error2); if error2<>0 then exit; {read also milliseconds}
   val(copy(date_time,15,2),min,error2);if error2<>0 then exit;
   val(copy(date_time,12,2),hh,error2);if error2<>0 then exit;
   val(copy(date_time,09,2),dd,error2);if error2<>0 then exit;
   val(copy(date_time,06,2),mm,error2);if error2<>0 then exit;
   val(copy(date_time,01,4),yy,error2);if error2<>0 then exit;
-  jd:=julian_calc(yy,mm,dd,hh,min,ss);{calculate julian date}
+  jd_start:=julian_calc(yy,mm,dd,hh,min,ss);{calculate julian date}
 end;
 
 
@@ -5492,7 +5492,7 @@ procedure Tstackmenu1.extend_object_name_with_time_observation1Click(
   Sender: TObject);
 var
    index,counter,error2: integer;
-   interval: double;
+   interval,jd: double;
    timestr,inp: string;
 begin
   inp:=InputBox('Extend value keyword OBJECT with rounded Julian day','Hit cancel to abort. Type the rounding interval in seconds:','' );
@@ -5511,7 +5511,7 @@ begin
       if load_image(false,false {plot}) then {load only}
       begin
         date_to_jd(date_obs);{get julian day for date_obs, so the start of the observation}
-        jd:=round(jd*24*3600/interval)*interval/(24*3600); {round to time to interval }
+        jd:=round(jd_start*24*3600/interval)*interval/(24*3600); {round to time to interval }
         str(jd:1:5, timestr);
         if  pos('-JD',object_name)=0 then
           object_name:=object_name+'-JD'+timestr {add date_obs without seconds}
@@ -7818,7 +7818,7 @@ begin
              memo2_message('Skipping dark calibration, already applied. See header keyword CALSTAT')
   else
   begin
-    load_master_dark(round(light_exposure),light_set_temperature {set_temperature},light_width,round(jd)); {will only be renewed if different exposure or set_temperature. Note load will overwrite calstat}
+    load_master_dark(round(light_exposure),light_set_temperature {set_temperature},light_width,round(jd_start)); {will only be renewed if different exposure or set_temperature. Note load will overwrite calstat}
     dcount:=dark_count;{protect this global dark_count in dcount for next load_master_flat}
 
     if dark_count>0 then
@@ -7847,10 +7847,10 @@ begin
            memo2_message('Skipping flat calibration, already applied. See header keyword CALSTAT')
   else
   begin
-    load_master_flat(filter1,light_width,round(jd));{will only be renewed if different filter name.  Note load will overwrite calstat}
+    load_master_flat(filter1,light_width,round(jd_start));{will only be renewed if different filter name.  Note load will overwrite calstat}
     fcount:=flat_count;{from master flat loaded}
     fdcount:=flatdark_count;
-    last_light_jd:=round(jd);
+    last_light_jd:=round(jd_start);
 
     if flat_count<>0 then
     begin
@@ -8043,6 +8043,7 @@ begin
   result:=StringReplace(trim(result),' ,',',',[rfReplaceAll]);{remove all spaces in front of comma's}
   telescop:=trim(telescop);
   if trim(telescop)<>'' then result:=result+', '+telescop;
+
   if length(filters_used)>0 then result:=result+', ('+filters_used+')';
   instrum:=trim(instrum);
   if instrum<>'' then result:=result+', '+instrum;
@@ -8325,7 +8326,7 @@ begin
     exposureB:=0;
     exposureRGB:=0;
     exposureL:=0;
-    for i:=0 to 3 do filters_used[i]:='';
+    for i:=0 to 4 do filters_used[i]:='';
     inc(object_counter);
 
     cal_and_align:=pos('alignment',stackmenu1.stack_method1.text)>0; {calibration and alignment only}
@@ -8724,51 +8725,69 @@ begin
         if length(extra2)>1 then update_text('FILTER  =',#39+'        '+#39);{wipe filter info}
         exposure:=exposureL*counterL;{for annotation asteroid}
         update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(exposure)); {could be used for midpoint. Download time are not included, so it is not perfect}
-        add_integer('LUM_EXP =',' / Luminance exposure time.                       ' ,exposureL);
-        add_integer('LUM_CNT =',' / Luminance images combined.                     ' ,counterL);
-        add_integer('LUM_DARK=',' / Darks used for luminance.                      ' ,counterLdark);
-        add_integer('LUM_FLAT=',' / Flats used for luminance.                      ' ,counterLflat);
-        add_integer('LUM_BIAS=',' / Flat-darks used for luminance.                 ' ,counterLbias);
-        add_integer('LUM_TEMP=',' / Set temperature used for luminance.            ' ,temperatureL);
 
-        add_integer('RED_EXP =',' / Red exposure time.                             ' ,exposureR);
-        add_integer('RED_CNT =',' / Red filter images combined.                    ' ,counterR);
-        add_integer('RED_DARK=',' / Darks used for red.                            ' ,counterRdark);
-        add_integer('RED_FLAT=',' / Flats used for red.                            ' ,counterRflat);
-        add_integer('RED_BIAS=',' / Flat-darks used for red.                       ' ,counterRbias);
-        add_integer('RED_TEMP=',' / Set temperature used for red.                  ' ,temperatureR);
+        if counterL>0 then
+        begin
+          add_integer('LUM_EXP =',' / Luminance exposure time.                       ' ,exposureL);
+          add_integer('LUM_CNT =',' / Luminance images combined.                     ' ,counterL);
+          add_integer('LUM_DARK=',' / Darks used for luminance.                      ' ,counterLdark);
+          add_integer('LUM_FLAT=',' / Flats used for luminance.                      ' ,counterLflat);
+          add_integer('LUM_BIAS=',' / Flat-darks used for luminance.                 ' ,counterLbias);
+          add_integer('LUM_TEMP=',' / Set temperature used for luminance.            ' ,temperatureL);
+        end;
+        if counterR>0 then
+        begin
+          add_integer('RED_EXP =',' / Red exposure time.                             ' ,exposureR);
+          add_integer('RED_CNT =',' / Red filter images combined.                    ' ,counterR);
+          add_integer('RED_DARK=',' / Darks used for red.                            ' ,counterRdark);
+          add_integer('RED_FLAT=',' / Flats used for red.                            ' ,counterRflat);
+          add_integer('RED_BIAS=',' / Flat-darks used for red.                       ' ,counterRbias);
+          add_integer('RED_TEMP=',' / Set temperature used for red.                  ' ,temperatureR);
+        end;
+        if counterG>0 then
+        begin
+          add_integer('GRN_EXP =',' / Green exposure time.                           ' ,exposureG);
+          add_integer('GRN_CNT =',' / Green filter images combined.                  ' ,counterG);
+          add_integer('GRN_DARK=',' / Darks used for green.                          ' ,counterGdark);
+          add_integer('GRN_FLAT=',' / Flats used for green.                          ' ,counterGflat);
+          add_integer('GRN_BIAS=',' / Flat-darks used for green.                     ' ,counterGbias);
+          add_integer('GRN_TEMP=',' / Set temperature used for green.                ' ,temperatureG);
+        end;
+        if counterB>0 then
+        begin
+          add_integer('BLU_EXP =',' / Blue exposure time.                            ' ,exposureB);
+          add_integer('BLU_CNT =',' / Blue filter images combined.                   ' ,counterB);
+          add_integer('BLU_DARK=',' / Darks used for blue.                           ' ,counterBdark);
+          add_integer('BLU_FLAT=',' / Flats used for blue.                           ' ,counterBflat);
+          add_integer('BLU_BIAS=',' / Flat-darks used for blue.                      ' ,counterBbias);
+          add_integer('BLU_TEMP=',' / Set temperature used for blue.                 ' ,temperatureB);
+        end;
+        if counterRGB>0 then
+        begin
+          add_integer('RGB_EXP =',' / OSC exposure time.                             ' ,exposureRGB);
+          add_integer('RGB_CNT =',' / OSC images combined.                           ' ,counterRGB);
+          add_integer('RGB_DARK=',' / Darks used for OSC.                            ' ,counterRGBdark);
+          add_integer('RGB_FLAT=',' / Flats used for OSC.                            ' ,counterRGBflat);
+          add_integer('RGB_BIAS=',' / Flat-darks used for OSC.                       ' ,counterRGBbias);
+          add_integer('RGB_TEMP=',' / Set temperature used for OSC.                  ' ,temperatureRGB);
+        end;
 
-        add_integer('GRN_EXP =',' / Green exposure time.                           ' ,exposureG);
-        add_integer('GRN_CNT =',' / Green filter images combined.                  ' ,counterG);
-        add_integer('GRN_DARK=',' / Darks used for green.                          ' ,counterGdark);
-        add_integer('GRN_FLAT=',' / Flats used for green.                          ' ,counterGflat);
-        add_integer('GRN_BIAS=',' / Flat-darks used for green.                     ' ,counterGbias);
-        add_integer('GRN_TEMP=',' / Set temperature used for green.                ' ,temperatureG);
-
-        add_integer('BLU_EXP =',' / Blue exposure time.                            ' ,exposureB);
-        add_integer('BLU_CNT =',' / Blue filter images combined.                   ' ,counterB);
-        add_integer('BLU_DARK=',' / Darks used for blue.                           ' ,counterBdark);
-        add_integer('BLU_FLAT=',' / Flats used for blue.                           ' ,counterBflat);
-        add_integer('BLU_BIAS=',' / Flat-darks used for blue.                      ' ,counterBbias);
-        add_integer('BLU_TEMP=',' / Set temperature used for blue.                 ' ,temperatureB);
-
-        add_integer('RGB_EXP =',' / OSC exposure time.                             ' ,exposureRGB);
-        add_integer('RGB_CNT =',' / OSC images combined.                           ' ,counterRGB);
-        add_integer('RGB_DARK=',' / Darks used for OSC.                            ' ,counterRGBdark);
-        add_integer('RGB_FLAT=',' / Flats used for OSC.                            ' ,counterRGBflat);
-        add_integer('RGB_BIAS=',' / Flat-darks used for OSC.                       ' ,counterRGBbias);
-        add_integer('RGB_TEMP=',' / Set temperature used for OSC.                  ' ,temperatureRGB);
-
-        add_text   ('COMMENT 2','  Total luminance exposure '+inttostr(round(counterL*exposureL))+' '+filters_used[3]);
-        add_text   ('COMMENT 3','  Total red exposure       '+inttostr(round(counterR*exposureR))+' '+filters_used[0] );
-        add_text   ('COMMENT 4','  Total green exposure     '+inttostr(round(counterG*exposureG))+' '+filters_used[1] );
-        add_text   ('COMMENT 5','  Total blue exposure      '+inttostr(round(counterB*exposureB))+' '+filters_used[2] );
+        if counterL>0 then add_text   ('COMMENT 2','  Total luminance exposure '+inttostr(round(counterL*exposureL))+', filter '+filters_used[4]);
+        if counterR>0 then add_text   ('COMMENT 3','  Total red exposure       '+inttostr(round(counterR*exposureR))+', filter '+filters_used[0] );
+        if counterG>0 then add_text   ('COMMENT 4','  Total green exposure     '+inttostr(round(counterG*exposureG))+', filter '+filters_used[1] );
+        if counterB>0 then add_text   ('COMMENT 5','  Total blue exposure      '+inttostr(round(counterB*exposureB))+', filter '+filters_used[2] );
+        if counterRGB>0 then add_text   ('COMMENT 6','  Total RGB exposure      '+inttostr(round(counterRGB*exposureRGB))+', filter '+filters_used[3] );
         { ASTAP keyword standard:}
         { interim files can contain keywords: EXPTIME, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
         { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
 
-        thefilters:=filters_used[0]+' '+filters_used[1]+' '+filters_used[2]+' '+filters_used[3]; {for filename info}
+
+        thefilters:='';
+        for i:=0 to 4 do if length(filters_used[i])>0 then thefilters:=thefilters+' '+filters_used[i];
+        thefilters:=trim(thefilters);
+
+//        thefilters:=filters_used[0]+' '+filters_used[1]+' '+filters_used[2]+' '+filters_used[3]; {for filename info}
         stack_info:=' '+inttostr(flatdark_count)+'x'+'FD  '+
                         inttostr(flat_count)+'x'+'F  '+
                         inttostr(dark_count)+'x'+'D  '+

@@ -1333,7 +1333,7 @@ var txtf : textfile;
              begin
                try
                  inc(count);
-                 comet(sun200_calculated,2000,jd+delta_t{delta_t in days},round(yy),round(mm),dd,ecc,q,incl,lan,aop,2000,{var} ra2,dec2,delta,sun_delta);
+                 comet(sun200_calculated,2000,jd_mid+delta_t{delta_t in days},round(yy),round(mm),dd,ecc,q,incl,lan,aop,2000,{var} ra2,dec2,delta,sun_delta);
 
                  if sqr( (ra2-ra0)*cos_telescope_dec)  + sqr(dec2-dec0)< sqr(fov) then {within the image FOV}
                  begin
@@ -1416,23 +1416,23 @@ begin
 
   if date_avg<>'' then
   begin
-    date_to_jd(date_avg);{convert date-AVG to jd}
+    date_to_jd(date_avg);{convert date-AVG to jd_start}
     midpoint:=true;
   end
   else
   begin
-    date_to_jd(date_obs);{convert date-OBS to jd}
+    date_to_jd(date_obs);{convert date-OBS to jd_start}
     midpoint:=false;
   end;
 
-  if jd<=10 then {no date found}
+  if jd_start<=10 then {no date found}
   begin
     mainwindow.error_label1.caption:=('Error converting date-obs from FITS header');
     mainwindow.error_label1.visible:=true;
   end;
 
   if midpoint=false then
-     jd:=jd+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
+     jd_mid:=jd_start+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
   dec_text_to_radians(sitelat,site_lat_radians,errordecode);
   if errordecode then memo2_message('Warning observatory latitude not found in the fits header');
@@ -1441,9 +1441,9 @@ begin
                                                                {see https://indico.esa.int/event/124/attachments/711/771/06_ESA-SSA-NEO-RS-0003_1_6_FITS_keyword_requirements_2014-08-01.pdf}
   if errordecode then memo2_message('Warning observatory longitude not found in the fits header');
 
-  delta_t:=deltaT_calc(jd); {calculate delta_T in days}
+  delta_t:=deltaT_calc(jd_mid); {calculate delta_T in days}
 
-  wtime2actual:=limit_radialen(site_long_radians+siderealtime2000 +(jd-2451545 )* earth_angular_velocity,2*pi);  {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
+  wtime2actual:=limit_radialen(site_long_radians+siderealtime2000 +(jd_mid-2451545 )* earth_angular_velocity,2*pi);  {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
         {change by time & longitude in 0 ..pi*2, simular as siderial time}
         {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
 
@@ -1485,7 +1485,7 @@ begin
       if add_date then
       begin
         image1.Canvas.font.size:=fontsize;
-        image1.Canvas.textout(round(fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd)+'    Position[α,δ]:   '+ra1.text+'      '+dec1.text);{}
+        image1.Canvas.textout(round(fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd_mid)+'    Position[α,δ]:   '+ra1.text+'      '+dec1.text);{}
       end;
     end;
     if add_annot then plot_annotations(0,0,false);{plot annotation from the header}
