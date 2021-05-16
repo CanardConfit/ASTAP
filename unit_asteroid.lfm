@@ -10,7 +10,7 @@ object form_asteroids1: Tform_asteroids1
   OnKeyPress = FormKeyPress
   OnShow = FormShow
   Position = poScreenCenter
-  LCLVersion = '2.0.10.0'
+  LCLVersion = '2.0.12.0'
   object annotate_asteroids1: TButton
     Left = 192
     Height = 25
@@ -319,9 +319,9 @@ object form_asteroids1: Tform_asteroids1
     object date_obs1: TEdit
       Left = 127
       Height = 23
-      Hint = 'Midpoint of observation. Format YYYY-MM-DDTHH:MM:SS.SSS'
+      Hint = 'Format YYYY-MM-DDTHH:MM:SS.SSS'
       Top = 8
-      Width = 312
+      Width = 249
       ParentShowHint = False
       ShowHint = True
       TabOrder = 0
@@ -377,6 +377,14 @@ object form_asteroids1: Tform_asteroids1
       ShowHint = True
       TabOrder = 2
       Text = '0'
+    end
+    object label_start_mid1: TLabel
+      Left = 384
+      Height = 15
+      Top = 8
+      Width = 123
+      Caption = 'Start of the observation'
+      ParentColor = False
     end
   end
   object OpenDialog1: TOpenDialog

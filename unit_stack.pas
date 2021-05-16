@@ -840,7 +840,7 @@ function create_internal_solution(img :image_array) : boolean; {plate solving, i
 procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer) inline; {apply dark, flat if required, renew if different exposure or ccd temp}
 procedure smart_colour_smooth( var img: image_array; wide, sd:double; preserve_r_nebula,measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 procedure green_purple_filter( var img: image_array);{Balances RGB to remove green and purple. For e.g. Hubble palette}
-procedure date_to_jd(date_time:string;exp :double);{convert date_obs string and exposure time to global variable jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
+procedure date_to_jd(date_time:string;exp :double);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
 function JdToDate(jd:double):string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
 function median_background(var img :image_array;color,size,x,y:integer): double;{find median value in sizeXsize matrix of img}
@@ -3197,7 +3197,7 @@ begin
             if lv.name=stackmenu1.listview2.name then {dark tab}
             begin
               lv.Items.item[c].subitems.Strings[D_date]:=copy(date_obs,1,10);
-              date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variable jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
+              date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
               lv.Items.item[c].subitems.Strings[D_jd]:=floattostrF(jd_start,ffFixed,0,1); {julian day, 1/10 day accuracy}
             end
             else
@@ -3217,7 +3217,7 @@ begin
                     lv.Items.item[c].SubitemImages[9]:=-1;{blank}
 
               lv.Items.item[c].subitems.Strings[D_date]:=copy(date_obs,1,10);
-              date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variable jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
+              date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
               lv.Items.item[c].subitems.Strings[F_jd]:=floattostrF(jd_start,ffFixed,0,1); {julian day, 1/10 day accuracy}
             end
             else
@@ -3238,7 +3238,7 @@ begin
             begin
               lv.Items.item[c].subitems.Strings[P_date]:=StringReplace(copy(date_obs,1,19),'T',' ',[]);{date/time for blink. Remove fractions of seconds}
               lv.Items.item[c].subitems.Strings[P_filter]:=filter_name;
-              date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variable jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
+              date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
               lv.Items.item[c].subitems.Strings[P_jd_mid]:=floattostrF2(jd_mid,0,5);{julian day}
 
               hjd:=JD_to_HJD(jd_mid,RA0,DEC0);{conversion JD to HJD}
@@ -3297,7 +3297,7 @@ begin
             if lv.name=stackmenu1.listview9.name then {mount analyse tab}
             begin
               lv.Items.item[c].subitems.Strings[M_date]:=date_obs_regional(date_obs);
-              date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variable jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
+              date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
 
               //http://www.bbastrodesigns.com/coordErrors.html  Gives same value within a fraction of arcsec.
               //2020-1-1, JD=2458850.50000, RA,DEC position 12:00:00, 40:00:00, precession +00:01:01.45, -00:06:40.8, Nutation -00:00:01.1,  +00:00:06.6, Annual aberration +00:00:00.29, -00:00:14.3
@@ -5470,7 +5470,7 @@ begin
 
 end;
 
-procedure date_to_jd(date_time:string; exp: double);{convert date_obs string and exposure time to global variable jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
+procedure date_to_jd(date_time:string; exp: double);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
 var
    yy,mm,dd,hh,min,error2 : integer;
    ss                     : double;
@@ -5509,7 +5509,7 @@ begin
       filename2:=listview1.items[index].caption;
       if load_image(false,false {plot}) then {load only}
       begin
-        date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variable jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
+        date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
         jd:=round(jd_start*24*3600/interval)*interval/(24*3600); {round to time to interval }
         str(jd:1:5, timestr);
         if  pos('-JD',object_name)=0 then

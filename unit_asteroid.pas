@@ -80,6 +80,7 @@ type
     GroupBox1: TGroupBox;
     GroupBox2: TGroupBox;
     help_asteroid_annotation1: TLabel;
+    label_start_mid1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
     latitude1: TEdit;
@@ -416,7 +417,7 @@ PROCEDURE CART(R,THETA,PHI: double; VAR X,Y,Z: double);
 (*          INC = inclination                                            *)
 (*          AOP = argument of perihelion                                 *)
 (*-----------------------------------------------------------------------*)
-PROCEDURE GAUSVEC(LAN,INC,AOP:double;VAR PQR:double33);
+PROCEDURE GAUSVEC(LAN,INC,AOP:double;out PQR:double33);
   VAR C1,S1,C2,S2,C3,S3: double;
   BEGIN
     C1:=CS(AOP);  C2:=CS(INC);  C3:=CS(LAN);
@@ -519,7 +520,7 @@ FUNCTION ECCANOM(MAN,ECC:double):double;
 (*           for argument E2=E**2                                        *)
 (*           (E: eccentric anomaly in radian)                            *)
 (*-----------------------------------------------------------------------*)
-PROCEDURE STUMPFF(E2:double;VAR C1,C2,C3:double);
+PROCEDURE STUMPFF(E2:double;out C1,C2,C3:double);
   CONST EPS=1E-12;
   VAR N,ADD: double;
   BEGIN
@@ -551,7 +552,7 @@ FUNCTION CUBR(X:double):double;
 (*        ECC  eccentricity                                              *)
 (*        (T0,T in julian centuries since J2000)                         *)
 (*-----------------------------------------------------------------------*)
-PROCEDURE PARAB(T0,T,Q,ECC:double;VAR X,Y,VX,VY:double);
+PROCEDURE PARAB(T0,T,Q,ECC:double;out X,Y,VX,VY:double);
   CONST EPS    = 1E-9;
         KGAUSS = 0.01720209895;
         MAXIT  = 15;
@@ -630,7 +631,7 @@ PROCEDURE KEPLER(T0,T,Q,ECC:double;PQR:double33;VAR X,Y,Z,VX,VY,VZ:double);
 (*        into polar coordinates (r,theta,phi)                           *)
 (*        (theta in [-pi/2 deg,+pi/2]; phi in [0 ,+ 2*pi radians]        *)
 (*-----------------------------------------------------------------------*)
-PROCEDURE POLAR2(X,Y,Z:double;VAR R,THETA,PHI:double);
+PROCEDURE POLAR2(X,Y,Z:double;out R,THETA,PHI:double);
   VAR RHO: double;
   BEGIN
     RHO:=X*X+Y*Y;  R:=SQRT(RHO+Z*Z);
@@ -655,7 +656,7 @@ PROCEDURE ECLEQU(T:double;VAR X,Y,Z:double);
 (*          transforming ecliptic coordinates from equinox T1 to T2      *)
 (*          ( T=(JD-2451545.0)/36525 )                                   *)
 (*-----------------------------------------------------------------------*)
-PROCEDURE PMATECL(T1,T2:double;VAR A: double33);
+PROCEDURE PMATECL(T1,T2:double;out A: double33);
   CONST SEC=3600.0;
   VAR DT,PPI,PI,PA: double;
       C1,S1,C2,S2,C3,S3: double;
@@ -678,7 +679,7 @@ PROCEDURE PMATECL(T1,T2:double;VAR A: double33);
 (*          aequatoriale Koordinaten vom Aequinoktium T1 nach T2             *)
 (*          ( T=(JD-2451545.0)/36525 )                                       *)
 (*---------------------------------------------------------------------------*)
-PROCEDURE PMATEQU(T1,T2:double; var a:double33);
+PROCEDURE PMATEQU(T1,T2:double; out a:double33);
   CONST SEC=3600.0;
   VAR DT,ZETA,Z,THETA: double;
       C1,S1,C2,S2,C3,S3: double;
@@ -824,7 +825,7 @@ END;
 
 
 
-PROCEDURE ILLUM2( X,Y,Z, XE,YE,ZE: double; VAR R_SP,R_EP,ELONG,PHI,phase: double);
+PROCEDURE ILLUM2( X,Y,Z, XE,YE,ZE: double; out R_SP,R_EP,ELONG,PHI,phase: double);
 
   VAR   XP,YP,ZP, RE, C_PHI : double;
 
@@ -1091,7 +1092,7 @@ END;
 (*       into cartesian coordinates (x,y,z)                              *)
 (*       (theta in [-pi/2.. pi/2 rad]; phi in [-pi*2,+pi*2 rad])         *)
 (*-----------------------------------------------------------------------*)
-procedure cart2(R,THETA,PHI: double; VAR X,Y,Z: double);
+procedure cart2(R,THETA,PHI: double; out X,Y,Z: double);
   VAR RCST : double;
       cos_theta,sin_theta :double;
       cos_phi,sin_phi     :double;
@@ -1107,14 +1108,21 @@ end;
 (* ABERRAT: velocity vector of the Earth in equatorial coordinates       *)
 (*          (in units of the velocity of light)                          *)
 (*-----------------------------------------------------------------------*)
-PROCEDURE ABERRAT(T: double; VAR VX,VY,VZ: double);{velocity vector of the Earth in equatorial coordinates, and units of the velocity of light}
+PROCEDURE ABERRAT(T: double; out VX,VY,VZ: double);{velocity vector of the Earth in equatorial coordinates, and units of the velocity of light}
   CONST P2=6.283185307;
   VAR L,CL: double;
   FUNCTION FRAC(X:double):double;
-    BEGIN  X:=X-TRUNC(X); IF (X<0) THEN X:=X+1; FRAC:=X  END;
+    BEGIN
+      X:=X-TRUNC(X);
+      IF (X<0) THEN X:=X+1;
+      FRAC:=X;
+    END;
   BEGIN
-    L := P2*FRAC(0.27908+100.00214*T);  CL:=COS(L);
-    VX := -0.994E-4*SIN(L); VY := +0.912E-4*CL; VZ := +0.395E-4*CL;
+    L := P2*FRAC(0.27908+100.00214*T);
+    CL:=COS(L);
+    VX := -0.994E-4*SIN(L);
+    VY := +0.912E-4*CL;
+    VZ := +0.395E-4*CL;
   END;
 
 
@@ -1126,7 +1134,7 @@ PROCEDURE ABERRAT(T: double; VAR VX,VY,VZ: double);{velocity vector of the Earth
 (*   H    : altitude (in rad)                                     *)
 (*   AZ   : azimuth (0 deg .. 2*pi rad, counted S->W->N->E->S)    *)
 (*----------------------------------------------------------------*)
-PROCEDURE EQUHOR2 (DEC,TAU,PHI: double; VAR H,AZ: double);
+PROCEDURE EQUHOR2 (DEC,TAU,PHI: double; out H,AZ: double);
   VAR COS_PHI,SIN_PHI, COS_DEC,SIN_DEC,COS_TAU, SIN_TAU, X,Y,Z, DUMMY: double;
   BEGIN {updated with sincos function for fastest execution}
     SINCOS(PHI,SIN_PHI,COS_PHI);
@@ -1140,7 +1148,7 @@ PROCEDURE EQUHOR2 (DEC,TAU,PHI: double; VAR H,AZ: double);
 
 
 procedure nutation_aberration_correction_equatorial_classic(julian_et: double;var ra,dec : double);{Input mean equinox, add nutation, aberration result apparent M&P page 208}
-var r,x0,y0,z0,vx,vy,vz,ra2,dec2,cos_dec:double;
+var r,x0,y0,z0,vx,vy,vz : double;
 begin
   //http://www.bbastrodesigns.com/coordErrors.html  Gives same value within a fraction of arcsec.
   //2020-1-1, JD=2458850.50000, RA,DEC position 12:00:00, 40:00:00, precession +00:01:01.45, -00:06:40.8, Nutation -00:00:01.1,  +00:00:06.6, Annual aberration +00:00:00.29, -00:00:14.3
@@ -1189,7 +1197,7 @@ begin
 end;
 
 
-PROCEDURE RA_AZ(RA,dec,LAT,LONG,t:double;var azimuth2,altitude2: double);{conversion ra & dec to altitude,azimuth}
+PROCEDURE RA_AZ(RA,dec,LAT,LONG,t:double;out azimuth2,altitude2: double);{conversion ra & dec to altitude,azimuth}
 {input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2*pi],time[0..2*pi]}
 begin
   EQUHOR2(dec,ra-(long)-t,lat, {var:} altitude2,azimuth2);
@@ -1198,7 +1206,7 @@ begin
 end;
 
 
-PROCEDURE AZ_RA(AZ,ALT,LAT,LONG,t:double;var ra,dcr: double);{conversion az,alt to ra,dec}
+PROCEDURE AZ_RA(AZ,ALT,LAT,LONG,t:double;out ra,dcr: double);{conversion az,alt to ra,dec}
 {input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
 begin
   EQUHOR2(alt,az,lat,{var:} dcr,ra);
@@ -1415,24 +1423,17 @@ begin
   mainwindow.image1.Canvas.font.size:=fontsize;
 
   if date_avg<>'' then
-  begin
-    date_to_jd(date_avg,0 {exposure});{convert date-AVG to jd_mid}
-    midpoint:=true;
-  end
+    date_to_jd(date_avg,0 {exposure}){convert date-AVG to jd_mid be using exposure=0}
   else
-  begin
-    date_to_jd(date_obs,exposure);{convert date-OBS to jd_start}
-    midpoint:=false;
-  end;
+    date_to_jd(date_obs,exposure);{convert date-OBS to jd_start and jd_mid}
 
-  if jd_start<=2400000 then {no date found year <1858}
+  if jd_start<=2400000 then {no date, found year <1858}
   begin
-    mainwindow.error_label1.caption:=('Error converting date-obs from FITS header');
+    mainwindow.error_label1.caption:=('Error converting date-obs or date-avg from the FITS header');
     mainwindow.error_label1.visible:=true;
+    memo2_message(filename2+ ' Error converting date-obs or date-avg from the FITS header');
+    exit;
   end;
-
-//  if midpoint=false then
-//     jd_mid:=jd_start+exposure/(2*24*3600);{sum julian days of images at midpoint exposure. Add half exposure in days to get midpoint}
 
   dec_text_to_radians(sitelat,site_lat_radians,errordecode);
   if errordecode then memo2_message('Warning observatory latitude not found in the fits header');
@@ -1546,7 +1547,6 @@ begin
   else
     date_avg:=date_obs1.Text;
 
-
   maxcount_asteroid:=max_nr_asteroids1.text;
   maxcount:=strtoint(form_asteroids1.max_nr_asteroids1.text);
 
@@ -1658,12 +1658,14 @@ begin
   if date_avg<>'' then
   begin
      date_label1.caption:='DATE_AVG';
+     label_start_mid1.caption:='Midpoint of the observation';
      date_obs1.Text:=date_avg;
      midpoint:=true;
   end
   else
   begin
     date_label1.caption:='DATE_OBS';
+    label_start_mid1.caption:='Start of the observation';
     date_obs1.Text:=date_obs;
     midpoint:=false;
   end;
