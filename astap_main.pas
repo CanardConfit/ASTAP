@@ -860,8 +860,6 @@ var {################# initialised variables #########################}
          r,err : integer;
      begin
        t:='';
-     //  memo2_message(char(header[r])+char(header[r+1])+char(header[r+2])+char(header[r+3])+char(header[r+4])+char(header[r+5]));
-
        r:=I+10;{position 11 equals 10}
        while ((header[r]<>'/') and (r<=I+29) {pos 30}) do {'/' check is strictly not necessary but safer}
        begin  {read 20 characters max, position 11 to 30 in string, position 10 to 29 in pchar}
@@ -875,9 +873,8 @@ var {################# initialised variables #########################}
      var  r: integer;
      begin
        result:='';
-       r:=I+11;{start readign at position pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
-       while ((header[r-1]<>#39) and (r<I+77)) do {find first quote at pos 11 or later for case it is not at position 11 (free-format)}
-         inc(r);
+       r:=I+11;{start reading at position pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
+       while ((header[r-1]<>#39) and (r<I+77)) do inc(r); {find first quote at pos 11 or later for case it is not at position 11 (free-format strings)}
        repeat
          result:=result+header[r];
          inc(r);
@@ -3147,7 +3144,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.539a, '+about_message4+', dated 2021-5-17';
+  #13+#10+'ASTAP version ß0.9.539b, '+about_message4+', dated 2021-5-17';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -4158,7 +4155,7 @@ var ra_values  : array[0..20] of double =  {nice rounded RA steps in 24 hr syste
      (1/48));{step RA 00:00:05}
 
 begin
-  if ((cd1_1=0) or (mainwindow.grid1.checked=false)) then exit;
+  if ((fits_file=false) or (cd1_1=0) or (mainwindow.grid1.checked=false)) then exit;
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -10290,6 +10287,8 @@ var
   List: TStrings;
   name,magn : string;
 begin
+  if fits_file=false then exit; {file loaded?}
+
   List := TStringList.Create;
   list.StrictDelimiter:=true;
 
