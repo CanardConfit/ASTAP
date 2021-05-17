@@ -4778,7 +4778,7 @@ begin
   radiobutton2:=stackmenu1.HueRadioButton2.checked;
 
   if ((dummy1=false) and (radiobutton2=false)) then exit;
-  halfboxsize:=(stackmenu1.sample_size1.itemindex);
+  halfboxsize:=max(0,(stackmenu1.sample_size1.itemindex));
   counter:=0;
   colrr:=0;
   colgg:=0;
@@ -4796,7 +4796,7 @@ begin
       colbb:=colbb+img_loaded[2,sX,sY];
    end;
   end;
-
+  if counter=0 then exit;
   colrr:=((colrr/counter)-cblack)/(cwhite-cblack);{scale to 0..1}
   colgg:=((colgg/counter)-cblack)/(cwhite-cblack);{scale to 0..1}
   colbb:=((colbb/counter)-cblack)/(cwhite-cblack);{scale to 0..1}

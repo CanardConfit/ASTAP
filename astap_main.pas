@@ -875,7 +875,9 @@ var {################# initialised variables #########################}
      var  r: integer;
      begin
        result:='';
-       r:=I+11;{pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
+       r:=I+11;{start readign at position pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
+       while ((header[r-1]<>#39) and (r<I+77)) do {find first quote at pos 11 or later for case it is not at position 11 (free-format)}
+         inc(r);
        repeat
          result:=result+header[r];
          inc(r);
@@ -3145,7 +3147,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.537c, '+about_message4+', dated 2021-5-16';
+  #13+#10+'ASTAP version ß0.9.539a, '+about_message4+', dated 2021-5-17';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -5654,6 +5656,7 @@ begin
      1: begin offsetx:=0; offsety:=1; end;{'BGGR'}
      2: begin offsetx:=1; offsety:=0; end;{'RGGB'}
      3: begin offsetx:=1; offsety:=1; end;{'GBRG'}
+     else exit;
   end;
 
   setlength(img_temp2,3,width2,height2);{set length of image array color}
@@ -5724,6 +5727,7 @@ begin
      1: begin offsetx:=0; offsety:=1; end;
      2: begin offsetx:=1; offsety:=0; end;
      3: begin offsetx:=1; offsety:=1; end;
+     else exit;
   end;
 
   setlength(img_temp2,3,width2,height2);{set length of image array color}
@@ -5805,6 +5809,7 @@ begin
      1: begin offsetx:=0; offsety:=1; end;
      2: begin offsetx:=1; offsety:=0; end;
      3: begin offsetx:=1; offsety:=1; end;
+     else exit;
   end;
   setlength(img_temp2,3,width2,height2);{set length of image array color}
   {calculate mean background value}
@@ -5988,6 +5993,7 @@ begin
      1: begin offsetx:=0; offsety:=1; end;
      2: begin offsetx:=1; offsety:=0; end;
      3: begin offsetx:=1; offsety:=1; end;
+     else exit;
   end;
 
   setlength(img_temp2,3,width2,height2);{set length of image array color}
@@ -6228,6 +6234,7 @@ begin
      1: begin offsetx:=0; offsety:=1; end;
      2: begin offsetx:=1; offsety:=0; end;
      3: begin offsetx:=1; offsety:=1; end;
+     else exit;
   end;
   setlength(img_temp2,3,width2,height2);{set length of image array color}
 
@@ -6395,7 +6402,7 @@ begin
   if pos('X-',stackmenu1.bayer_pattern1.Text)<>0  then {}
      demosaic_x_trans(img){make from Fuji X-trans three colors}
   else
-    demosaic_Malvar_He_Cutler(img,stackmenu1.bayer_pattern1.itemindex);{make from sensor bayer pattern the three colors}
+    demosaic_Malvar_He_Cutler(img,get_demosaic_pattern);{make from sensor bayer pattern the three colors}
 end;
 
 procedure demosaic_advanced(var img : image_array);{demosaic img}
@@ -6816,13 +6823,17 @@ begin
      exit;
   end;
 
+//  histogram[0,266]:=34000;
+//  histogram[0,1000]:=34000;
+//  histogram[0,18000]:=34000;
+
   for col:=0 to number_colors-1 do {shrink histogram. Note many values could be zero due to 14,12 or 8 byte nature data. So take peak value}
   begin
     stopXpos:=0;
     for i := 1 to hist_range-1{65535} do
     begin
       if histogram[col,i]>histo_peak[col] then begin histo_peak[col]:=histogram[col,i]; end;
-      Xpos:=round(w*i/hist_range);
+      Xpos:=round((w-1)*i/(hist_range-1));
       if Xpos>stopXpos then {new line to be drawn}
        begin
          stopXpos:=Xpos;
@@ -12432,7 +12443,7 @@ begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-  valueI:=InputBox('Rotation angle CW in degrees:','','' );
+  valueI:=InputBox('Rotation angle CCW in degrees:','','' );
   if valueI=''  then exit;
   angle:=strtofloat2(valueI);
 
@@ -12462,7 +12473,7 @@ begin
         img_temp[col,fitsX,fitsY]:=0
   end;
 
-  sincos(-angle*pi/180,sinA,cosA);
+  sincos(angle*pi/180,sinA,cosA);
   factor:=1/sqr(resolution);{1/(number of subpixels), typical 1/(10x10)}
 
   progressC:=0;
@@ -12513,8 +12524,8 @@ begin
        remove_key('CD2_1   ',false);
        remove_key('CD2_2   ',false);
      end;
-     crota2:=fnmodulo(crota2-angle,360);
-     crota1:=fnmodulo(crota1-angle,360);
+     crota2:=fnmodulo(crota2+angle,360);
+     crota1:=fnmodulo(crota1+angle,360);
      crpix1:=centerX;
      crpix2:=centerY;
      old_to_new_WCS;{convert old style FITS to newd style}
@@ -12531,7 +12542,7 @@ begin
      update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
      update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
 
-     add_text   ('HISTORY   ','Rotated by angle '+valueI);
+     add_text   ('HISTORY   ','Rotated CCW by angle '+valueI);
   end;
 
   plot_fits(mainwindow.image1,false,true);
@@ -12839,7 +12850,7 @@ begin
   begin
     screen.Cursor := crhandpoint;
 
-    if naxis3=3 then {for colour replace function}
+    if ((naxis3=3) and (stackmenu1.pagecontrol1.tabindex=12) {pixelmath 1}) then {for colour replace function}
     begin
       sample(startX,startY);
     end;
@@ -14502,19 +14513,17 @@ begin
 end;
 
 
-
-
 procedure Tmainwindow.minimum1Change(Sender: TObject);
 begin
   min2.text:=inttostr(minimum1.position);
-  shape_histogram1.left:=1+(histogram1.left) + round(histogram1.width * minimum1.position/minimum1.max);
+  shape_histogram1.left:=round(histogram1.left+0.5+(histogram1.width-1) * minimum1.position/minimum1.max);
 end;
 
 
 procedure Tmainwindow.maximum1Change(Sender: TObject);
 begin
   max2.text:=inttostr(maximum1.position);
-  shape_histogram1.left:=1+histogram1.left+ round(histogram1.width * maximum1.position/maximum1.max);
+  shape_histogram1.left:=round(histogram1.left+0.5+(histogram1.width-1) * maximum1.position/maximum1.max);
 end;
 
 

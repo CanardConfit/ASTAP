@@ -205,7 +205,7 @@ end;
 
 procedure CCDinspector_analyse(detype: char);
 var
- fitsX,fitsY,size, i, j,nhfd,retries,max_stars,fontsize,starX,starY,font_luminance  : integer;
+ fitsX,fitsY,size, i, j,nhfd,retries,max_stars,starX,starY,font_luminance  : integer;
  hfd1,star_fwhm,snr,flux,xc,yc,detection_level  : double;
  mean, min_value,max_value : single;
  hfd_values  : hfd_array;
@@ -310,12 +310,12 @@ var
    begin
      if Fliphorizontal     then starX:=width2-hfd_values[0,i]   else starX:=hfd_values[0,i];
      if Flipvertical       then starY:=height2-hfd_values[1,i] else starY:=hfd_values[1,i];
-     annotation_to_array(floattostrf(hfd_values[2,i]/100 , ffgeneral, 2,1){text},true,round(img_loaded[0,starX,starY]+font_luminance){luminance},size,starX+6,starY,img_loaded);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
+     annotation_to_array(floattostrf(hfd_values[2,i]/100 , ffgeneral, 2,1){text},true,round(img_loaded[0,starX,starY]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurment.}
   end;
 
   hfd_values:=nil;
 
-  plot_fits(mainwindow.image1,false,true);
+  plot_fits(mainwindow.image1,false,true);{plot image included text in pixel data}
 
 end;
 

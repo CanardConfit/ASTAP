@@ -1,15 +1,15 @@
 object stackmenu1: Tstackmenu1
-  Left = 188
-  Height = 644
-  Top = 348
-  Width = 1871
+  Left = 160
+  Height = 674
+  Top = 133
+  Width = 1497
   HorzScrollBar.Page = 1440
   VertScrollBar.Page = 509
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
-  ClientHeight = 644
-  ClientWidth = 1871
+  ClientHeight = 674
+  ClientWidth = 1497
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -52,9 +52,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.12.0'
   object Memo2: TMemo
     Left = 0
-    Height = 132
+    Height = 162
     Top = 512
-    Width = 1871
+    Width = 1497
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -201,7 +201,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1853
+    Left = 1479
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -219,7 +219,7 @@ object stackmenu1: Tstackmenu1
     Height = 448
     Hint = 'Stack menu'
     Top = 0
-    Width = 1870
+    Width = 1496
     ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 420
-      ClientWidth = 1862
+      ClientWidth = 1488
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -309,7 +309,7 @@ object stackmenu1: Tstackmenu1
         Height = 383
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1858
+        Width = 1484
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True

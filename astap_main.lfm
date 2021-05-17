@@ -1,13 +1,13 @@
 object mainwindow: Tmainwindow
-  Left = 485
-  Height = 644
+  Left = 257
+  Height = 558
   Hint = ' '
-  Top = 221
-  Width = 1272
+  Top = 173
+  Width = 1088
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 624
-  ClientWidth = 1272
+  ClientHeight = 538
+  ClientWidth = 1088
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -201,14 +201,14 @@ object mainwindow: Tmainwindow
   end
   object Panel1: TPanel
     Left = 0
-    Height = 473
+    Height = 387
     Hint = 'hint'
     Top = 176
-    Width = 1297
+    Width = 1113
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 473
-    ClientWidth = 1297
+    ClientHeight = 387
+    ClientWidth = 1113
     Color = 2105376
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
@@ -223,9 +223,9 @@ object mainwindow: Tmainwindow
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
     object Image1: TImage
-      Left = 182
+      Left = 113
       Height = 264
-      Top = 85
+      Top = 46
       Width = 608
       Anchors = []
       OnMouseDown = Image1MouseDown
@@ -574,11 +574,11 @@ object mainwindow: Tmainwindow
       ParentFont = False
     end
     object minimum1: TScrollBar
-      Left = 68
+      Left = 67
       Height = 16
       Hint = 'Adjust the black level'
       Top = 57
-      Width = 260
+      Width = 261
       Enabled = False
       Max = 65535
       PageSize = 0
@@ -589,11 +589,11 @@ object mainwindow: Tmainwindow
       OnScroll = maximum1Scroll
     end
     object maximum1: TScrollBar
-      Left = 68
+      Left = 67
       Height = 16
       Hint = 'Adjust the white level.'
       Top = 80
-      Width = 260
+      Width = 261
       Enabled = False
       LargeChange = 5000
       Max = 65535
@@ -765,8 +765,8 @@ object mainwindow: Tmainwindow
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
-    Top = 601
-    Width = 1272
+    Top = 515
+    Width = 1088
     Panels = <    
       item
         Width = 200
@@ -881,7 +881,7 @@ object mainwindow: Tmainwindow
     Left = 595
     Height = 177
     Top = 0
-    Width = 680
+    Width = 496
     ActivePage = TabSheet1
     Anchors = [akTop, akLeft, akRight]
     TabIndex = 0
@@ -889,12 +889,12 @@ object mainwindow: Tmainwindow
     object TabSheet1: TTabSheet
       Caption = 'Header'
       ClientHeight = 149
-      ClientWidth = 672
+      ClientWidth = 488
       object Memo1: TMemo
         Left = 0
         Height = 149
         Top = 0
-        Width = 672
+        Width = 488
         Align = alClient
         Anchors = [akTop, akLeft, akRight]
         Font.Height = -9
