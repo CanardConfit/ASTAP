@@ -1532,7 +1532,6 @@ object mainwindow: Tmainwindow
       object annotations_visible1: TMenuItem
         AutoCheck = True
         Caption = 'Annotations visible'
-        Checked = True
         Hint = 'Switches the annotations on/off'
         OnClick = annotations_visible1Click
       end

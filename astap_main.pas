@@ -1143,6 +1143,10 @@ begin
         if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
                 date_obs:=get_string;
 
+//        if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and  (header[i+4]='O') and (header[i+5]='B')) then
+//                date_obs:=get_string;
+
+
         if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='A') and (header[i+6]='V')) then
                 date_avg:=get_string;
 
@@ -3144,7 +3148,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.539b, '+about_message4+', dated 2021-5-17';
+  #13+#10+'ASTAP version ß0.9.539c, '+about_message4+', dated 2021-5-18';
 
    application.messagebox(
           pchar(about_message), pchar(about_title),MB_OK);
@@ -7216,6 +7220,8 @@ begin
     inversemousewheel1.checked:=get_boolean('inversemousewheel',false);
     flip_horizontal1.checked:=get_boolean('fliphorizontal',false);
     flip_vertical1.checked:=get_boolean('flipvertical',false);
+
+    annotations_visible1.checked:=get_boolean('annotations',false);
     northeast1.checked:=get_boolean('north_east',false);
     mountposition1.checked:=get_boolean('mount_position',false);
     grid1.checked:=get_boolean('grid',false);
@@ -7550,6 +7556,7 @@ begin
     initstring.Values['inversemousewheel']:=BoolStr[inversemousewheel1.checked];
     initstring.Values['fliphorizontal']:=BoolStr[flip_horizontal1.checked];
     initstring.Values['flipvertical']:=BoolStr[flip_vertical1.checked];
+    initstring.Values['annotations']:=BoolStr[annotations_visible1.checked];
     initstring.Values['north_east']:=BoolStr[northeast1.checked];
     initstring.Values['mount_position']:=BoolStr[mountposition1.checked];
     initstring.Values['grid']:=BoolStr[grid1.checked];
@@ -8601,6 +8608,7 @@ end;
 
 procedure Tmainwindow.grid1Click(Sender: TObject);
 begin
+  if fits_file=false then exit;
   if grid1.checked=false then  {clear screen}
   begin
     plot_fits(mainwindow.image1,false,true);
@@ -9276,6 +9284,7 @@ end;
 
 procedure Tmainwindow.northeast1Click(Sender: TObject);
 begin
+  if fits_file=false then exit;
   if northeast1.checked then
   begin
     plot_north_on_image;
@@ -9804,6 +9813,7 @@ end;
 
 procedure Tmainwindow.annotations_visible1Click(Sender: TObject);
 begin
+  if fits_file=false then exit;
   if annotations_visible1.checked=false then  {clear screen}
     plot_fits(mainwindow.image1,false,true)
   else
@@ -12729,6 +12739,7 @@ end;
 
 procedure Tmainwindow.mountposition1Click(Sender: TObject);
 begin
+  if fits_file=false then exit;
   if mountposition1.checked then
   begin
     plot_large_north_indicator;
