@@ -1,9 +1,9 @@
 object stackmenu1: Tstackmenu1
-  Left = 160
+  Left = 545
   Height = 674
-  Top = 133
+  Top = 131
   Width = 1497
-  HorzScrollBar.Page = 1440
+  HorzScrollBar.Page = 1257
   VertScrollBar.Page = 509
   AllowDropFiles = True
   AutoScroll = True
@@ -220,7 +220,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1496
-    ActivePage = Images
+    ActivePage = Result1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -228,7 +228,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 4
     TabOrder = 5
     OnChange = pagecontrol1Change
     object Images: TTabSheet
@@ -760,7 +760,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 420
-      ClientWidth = 1862
+      ClientWidth = 1488
       ImageIndex = 2
       ParentFont = False
       object browse_flats1: TButton
@@ -813,7 +813,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1862
+        Width = 1488
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -939,7 +939,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
       ClientHeight = 420
-      ClientWidth = 1862
+      ClientWidth = 1488
       ImageIndex = 3
       ParentFont = False
       object browse_bias1: TButton
@@ -980,7 +980,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1862
+        Width = 1488
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -1085,7 +1085,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
       ClientHeight = 420
-      ClientWidth = 1755
+      ClientWidth = 1488
       ImageIndex = 6
       ParentFont = False
       object listview5: TListView
@@ -1093,7 +1093,7 @@ object stackmenu1: Tstackmenu1
         Height = 383
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1909
+        Width = 1642
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Columns = <        
@@ -1169,10 +1169,10 @@ object stackmenu1: Tstackmenu1
       end
       object help_stack_menu3: TLabel
         Cursor = crHandPoint
-        Left = 784
+        Left = 576
         Height = 25
         Hint = 'Help'
-        Top = 8
+        Top = 2
         Width = 9
         Caption = '?'
         Font.Color = clBlue
@@ -1182,6 +1182,15 @@ object stackmenu1: Tstackmenu1
         ParentShowHint = False
         ShowHint = True
         OnClick = help_stack_menu3Click
+      end
+      object add_time1: TCheckBox
+        Left = 824
+        Height = 19
+        Hint = 'Add time to stack file name. This allow comparison of different settings.'
+        Top = 8
+        Width = 165
+        Caption = 'Add time to stack file name'
+        TabOrder = 1
       end
     end
     object tab_stackmethod1: TTabSheet

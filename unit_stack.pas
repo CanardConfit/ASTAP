@@ -40,6 +40,7 @@ type
     actual_search_distance1: TLabel;
     add_noise1: TButton;
     add_substract1: TComboBox;
+    add_time1: TCheckBox;
     classify_dark_date1: TCheckBox;
     classify_flat_date1: TCheckBox;
     flat_combine_method1: TComboBox;
@@ -8030,6 +8031,8 @@ end;
 
 
 function propose_file_name(object_to_process,filters_used:string) : string; {propose a file name}
+var
+  hh,mm,ss,ms : word;
 begin
   if object_to_process<>'' then result:=object_to_process else result:='no_object';
   if date_obs<>'' then result:=result+', '+copy(date_obs,1,10);
@@ -8047,7 +8050,12 @@ begin
   instrum:=trim(instrum);
   if instrum<>'' then result:=result+', '+instrum;
   result:=RemoveSpecialChars(result);{slash could be in date but also telescope name like eqmod HEQ5/6}
-  result:=result+'  _stacked.fits';
+  if stackmenu1.add_time1.checked then
+  begin
+    decodetime(time,hh,mm,ss,ms);
+    result:=result+'_'+leadingzero(hh)+leadingzero(mm)+leadingzero(ss);
+  end;
+  result:=result+'_stacked.fits';
 end;
 
 

@@ -629,7 +629,7 @@ function load_image(re_center, plot:boolean) : boolean; {load fits or PNG, BMP, 
 procedure demosaic_bayer(var img: image_array); {convert OSC image to colour}
 
 Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel float}
-function save_fits(img: image_array;filen2:ansistring;type1:integer;override1:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
+function save_fits(img: image_array;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 
 procedure update_text(inpt,comment1:string);{update or insert text in header}
 procedure add_text(inpt,comment1:string);{add text to header memo}
@@ -3148,10 +3148,9 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.539c, '+about_message4+', dated 2021-5-18';
+  #13+#10+'ASTAP version ß0.9.540, '+about_message4+', dated 2021-5-19';
 
-   application.messagebox(
-          pchar(about_message), pchar(about_title),MB_OK);
+   application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
 
 
@@ -5314,7 +5313,7 @@ Function LeadingZero(w : integer) : String;
  var
    s : String;
  begin
-   Str(w:0,s);
+   str(w:0,s);
    if Length(s) = 1 then
      s := '0' + s;
    LeadingZero := s;
@@ -7258,6 +7257,7 @@ begin
     stackmenu1.classify_flat_filter1.checked:= get_boolean('classify_flat_filter',false);
     stackmenu1.classify_dark_date1.checked:= get_boolean('classify_dark_date',false);
     stackmenu1.classify_flat_date1.checked:= get_boolean('classify_flat_date',false);
+    stackmenu1.add_time1.checked:= get_boolean('add_time',false); {add time to resulting stack file name}
 
     stackmenu1.uncheck_outliers1.checked:= get_boolean('uncheck_outliers',false);
 
@@ -7592,6 +7592,8 @@ begin
     initstring.Values['classify_flat_filter']:=BoolStr[stackmenu1.classify_flat_filter1.Checked];
     initstring.Values['classify_dark_date']:=BoolStr[stackmenu1.classify_dark_date1.Checked];
     initstring.Values['classify_flat_date']:=BoolStr[stackmenu1.classify_flat_date1.Checked];
+
+    initstring.Values['add_time']:=BoolStr[stackmenu1.add_time1.Checked];
 
     initstring.Values['uncheck_outliers']:=BoolStr[stackmenu1.uncheck_outliers1.Checked];
 
@@ -14125,7 +14127,7 @@ begin
 end;
 
 
-function save_fits(img: image_array;filen2:ansistring;type1:integer;override1:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
+function save_fits(img: image_array;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 var
   TheFile4 : tfilestream;
   I,j,k,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, naxis3_local,height5,width5 : integer;
@@ -14150,11 +14152,11 @@ begin
     exit;
   end;
 
-  if ((override1=false) and (fileexists(filen2)) and (pos('ImageToSolve.fit',filen2)=0)) then
-    if MessageDlg('ASTAP: Existing file ' +filen2+ ' Overwrite?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then  Exit;
-
-  if  override1=false then
+  if  override2=false then
   begin
+    if ((fileexists(filen2)) and (pos('ImageToSolve.fit',filen2)=0)) then
+      if MessageDlg('ASTAP: Existing file ' +filen2+ ' Overwrite?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then  Exit;
+
     if extend_type=1 then {image extensions in the file. 1=image extension, 2=ascii table extension, 3=bintable extension}
     begin
       if MessageDlg('Only the current image of the multi-extension FITS will be saved. Displayed table will not be preserved. Continue?', mtConfirmation, [mbYes, mbNo], 0) = mrNo then
