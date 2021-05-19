@@ -46,6 +46,7 @@ type
     flat_combine_method1: TComboBox;
     GroupBox8: TGroupBox;
     green_purple_filter1: TCheckBox;
+    help_mount_tab1: TLabel;
     osc_preserve_r_nebula1: TCheckBox;
     lrgb_auto_level1: TCheckBox;
     lrgb_colour_smooth1: TCheckBox;
@@ -580,6 +581,7 @@ type
     procedure align_blink1Change(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
     procedure equinox1Change(Sender: TObject);
+    procedure help_mount_tab1Click(Sender: TObject);
     procedure lrgb_auto_level1Change(Sender: TObject);
     procedure mount_analyse1Click(Sender: TObject);
     procedure analysephotometry1Click(Sender: TObject);
@@ -6918,6 +6920,13 @@ begin
   end;
 
 end;
+
+
+procedure Tstackmenu1.help_mount_tab1Click(Sender: TObject);
+begin
+   openurl('http://www.hnsky.org/astap.htm#mount_tab');
+end;
+
 
 procedure Tstackmenu1.lrgb_auto_level1Change(Sender: TObject);
 var

@@ -307,7 +307,7 @@ renamed. No pop-up notifier. Will not accept raw files.</li></ul></ul>
                     stiching</a></big></li><li><big><a href="astap.htm#osc_menu">OSC menu</a></big></li>
             </ul>
             <li><big><a href="#blink">Blink tab</a></big></li>
-            <li><big><a href="#photometry">Photometry tab</a></big></li><li><big><a href="#inspector_tab">Inspector tab</a><br></big></li><li><big><a href="#live_stacking">Live stacking</a></big></li>
+            <li><big><a href="#photometry">Photometry tab</a></big></li><li><big><a href="#inspector_tab">Inspector tab</a></big></li><li><big><a href="astap.htm#mount_tab">Mount analyse tab</a></big></li><li><big><a href="#live_stacking">Live stacking</a></big></li>
             <li><big><a href="#pixel_math">Pixel math
                   tab</a></big></li>
             <li><big><a href="astap.htm#background">Background
@@ -1592,7 +1592,16 @@ analysed correctly.
 		Browse with ASTAP inspector tab&nbsp;to the images.
 	</big></li><li><big>
 		Press&nbsp;curve fitting.</big></li><li><big>The difference between the focus point of each image area will be reported in focuser steps.</big></li></ul><big><span style="text-decoration: underline;"></span></big><br><big>The reported hfd values can be selected and copied for further analysis in a spreadsheet.<br></big><br><br><br><big><span style="text-decoration: underline;"></span></big><a href="astap.htm#index">Back
-          to index</a></div><p style="text-align: left;"></p><p align="left"><a href="astap.htm#index"></a></p>
+          to index</a></div><p style="text-align: left;"></p><p align="left"><br><span style="text-decoration: underline;"></span><big><a name="mount_tab"></a><span style="text-decoration: underline;">Mount analyse tab.<br></span></big></p><p align="left"><big>This
+tab is intended to study&nbsp;mount&nbsp;pointing accuracy. &nbsp;The
+table will indicate the mount &#945;, &#948; position and the image &#945;, &#948; position
+in the selected equinox and the offset between them.&nbsp;</big></p><p align="left"><big><span style="font-weight: bold;">Usage:</span>
+take several images at different location in the sky. Load the images
+in the tab. Selected the desired equinox. Click on the button add the
+astrometric solutions. Study the result and if required select all
+rows, copy and paste the whole result to a spreadsheet for further
+analysing.</big><big></big></p><p align="left"><big>The images shall be of FITS format with the mount position in the header. Keywords required RA, DEC or OBJCTRA, OBJCTDEC.</big></p><p align="left"><big>The solution can be written either in the orginal FITS file or in a seperate .wcss file.</big></p><p align="left"><big><img style="width: 1777px; height: 338px;" alt="" src="astap_mount_tab.png"></big></p><p align="left"><a href="astap.htm#index">Back
+          to index</a></p>
       <div style="text-align: left;">
       <big><a name="live_stacking"></a><span style="text-decoration: underline;">Live stacking tab.<br><br></span></big>All file(s) in the specified directory will be stacked live. If it is finished 
 it will wait for new file(s). If a file is detected which is 0.2°
@@ -1845,7 +1854,7 @@ for the center area is perfect. A more advanced measuring
 method&nbsp;is available in <a href="astap.htm#inspector_tab">tab CCD Inspector</a>.
           </li></ul>
         <br>
-        <img src="astap_ccd_inspector.jpg" alt="" style="width: 1053px; height: 797px;"><br>
+        <img src="astap_ccd_inspector.jpg" alt="" style="width: 1053px; height: 797px;"><br><br><img style="width: 806px; height: 502px;" alt="" src="astap_tilt_calculation.png"><br>
         <br>
         <br><span style="text-decoration: underline;">HFD 2D contour menu.</span>
 The star half flux diameters (HFD's) are displayed in a 2D contour.

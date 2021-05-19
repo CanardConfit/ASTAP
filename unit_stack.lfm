@@ -1,9 +1,9 @@
 object stackmenu1: Tstackmenu1
-  Left = 545
+  Left = 228
   Height = 674
-  Top = 131
+  Top = 123
   Width = 1497
-  HorzScrollBar.Page = 1257
+  HorzScrollBar.Page = 1440
   VertScrollBar.Page = 509
   AllowDropFiles = True
   AutoScroll = True
@@ -220,7 +220,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1496
-    ActivePage = Result1
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -228,7 +228,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 4
+    TabIndex = 0
     TabOrder = 5
     OnChange = pagecontrol1Change
     object Images: TTabSheet
@@ -1197,7 +1197,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 420
-      ClientWidth = 1862
+      ClientWidth = 1488
       ImageIndex = 5
       ParentFont = False
       object stack_method1: TComboBox
@@ -2190,7 +2190,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the alignment options'
       Caption = 'Alignment'
       ClientHeight = 420
-      ClientWidth = 1862
+      ClientWidth = 1553
       ImageIndex = 7
       ParentFont = False
       object use_star_alignment1: TRadioButton
@@ -2848,7 +2848,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 420
-      ClientWidth = 1862
+      ClientWidth = 1602
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
@@ -2856,7 +2856,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1862
+        Width = 1602
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3070,7 +3070,7 @@ object stackmenu1: Tstackmenu1
         Cursor = crHandPoint
         Left = 1360
         Height = 30
-        Hint = 'Online help about blink and photometry'
+        Hint = 'Online help'
         Top = 1
         Width = 9
         Caption = '?'
@@ -3146,7 +3146,7 @@ object stackmenu1: Tstackmenu1
     object tab_photometry1: TTabSheet
       Caption = 'Photometry'
       ClientHeight = 420
-      ClientWidth = 1862
+      ClientWidth = 1844
       ImageIndex = 19
       ParentFont = False
       object browse_photometry1: TButton
@@ -3234,7 +3234,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1862
+        Width = 1844
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3395,7 +3395,7 @@ object stackmenu1: Tstackmenu1
         Cursor = crHandPoint
         Left = 1368
         Height = 30
-        Hint = 'Online help about blink and photometry'
+        Hint = 'Online help'
         Top = 2
         Width = 9
         Caption = '?'
@@ -3586,7 +3586,7 @@ object stackmenu1: Tstackmenu1
     object TabSheet1: TTabSheet
       Caption = 'Inspector'
       ClientHeight = 420
-      ClientWidth = 1755
+      ClientWidth = 1488
       ImageIndex = 17
       object browse_inspector1: TButton
         Left = 32
@@ -3617,7 +3617,7 @@ object stackmenu1: Tstackmenu1
         Height = 383
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1752
+        Width = 1485
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3801,7 +3801,7 @@ object stackmenu1: Tstackmenu1
         Cursor = crHandPoint
         Left = 632
         Height = 30
-        Hint = 'Online help about blink and photometry'
+        Hint = 'Online help'
         Top = 3
         Width = 9
         Caption = '?'
@@ -3817,14 +3817,14 @@ object stackmenu1: Tstackmenu1
     object mount1: TTabSheet
       Caption = 'Mount analyse'
       ClientHeight = 420
-      ClientWidth = 1755
+      ClientWidth = 1529
       ImageIndex = 21
       object listview9: TListView
         Left = 0
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1755
+        Width = 1529
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -4030,6 +4030,22 @@ object stackmenu1: Tstackmenu1
         State = cbChecked
         TabOrder = 7
       end
+      object help_mount_tab1: TLabel
+        Cursor = crHandPoint
+        Left = 1048
+        Height = 30
+        Hint = 'Online help'
+        Top = 1
+        Width = 9
+        Caption = '?'
+        Font.Color = clBlue
+        Font.Height = -21
+        ParentColor = False
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        OnClick = help_mount_tab1Click
+      end
     end
     object tab_live_stacking1: TTabSheet
       Caption = 'Live stacking'
@@ -4202,7 +4218,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools'
       Caption = 'Pixel math 1'
       ClientHeight = 420
-      ClientWidth = 1862
+      ClientWidth = 1532
       Enabled = False
       ImageIndex = 4
       ParentFont = False
@@ -4746,7 +4762,7 @@ object stackmenu1: Tstackmenu1
           Cursor = crHandPoint
           Left = 320
           Height = 30
-          Hint = 'Help'
+          Hint = 'Online help'
           Top = -4
           Width = 9
           Caption = '?'
@@ -5551,7 +5567,7 @@ object stackmenu1: Tstackmenu1
     object tab_Pixelmath2: TTabSheet
       Caption = 'Pixel math 2'
       ClientHeight = 420
-      ClientWidth = 1862
+      ClientWidth = 1488
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox
