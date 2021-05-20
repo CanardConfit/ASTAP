@@ -762,8 +762,9 @@ begin
         ra7 ,dec7{center equatorial position});
 
     delta_ra:=ra7-ra0;
-    if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
-    if delta_ra<-pi then delta_ra:=delta_ra-2*pi; {1  -> 359,  -2:=(1-359) -360  }
+    if delta_ra>+pi then delta_ra:=delta_ra-2*pi; {1 -> 359,    -2:=(359-1) -360 }{rev 2021}
+    if delta_ra<-pi then delta_ra:=delta_ra+2*pi; {359 -> 1,    +2:=(1-359) +360 }
+
     cd1_1:=(delta_ra)*cos(dec0)*(180/pi);
     cd2_1:=(dec7-dec0)*(180/pi);
 
@@ -775,8 +776,9 @@ begin
         ra7 ,dec7{center equatorial position});
 
     delta_ra:=ra7-ra0;
-    if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
-    if delta_ra<-pi then delta_ra:=delta_ra-2*pi; {1  -> 359,  -2:=(1-359) -360  }
+    if delta_ra>+pi then delta_ra:=delta_ra-2*pi; {1 -> 359,    -2:=(359-1) -360 } {rev 2021}
+    if delta_ra<-pi then delta_ra:=delta_ra+2*pi; {359 -> 1,    +2:=(1-359) +360 }
+
     cd1_2:=(delta_ra)*cos(dec0)*(180/pi);
     cd2_2:=(dec7-dec0)*(180/pi);
 

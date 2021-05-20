@@ -20,7 +20,7 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
       </div>
       <big><big><big></big></big></big>
       
-      <div style="text-align: left;"><span style="text-decoration: underline; color: red;">ANNOUNCEMENT:</span><br style="color: red;"><pre style="color: red;" class="moz-quote-pre" wrap="">ASTAP solver is moving from G17, G18 to the H17, H18 star databases. The stars are split in 1476 files of about 5x5 degrees instead of the usual 10x10+ degrees for the 290 files. The blind solving speed increases if your  field-of-view is equal or smaller then about 1.5 degree. Blind solving speed doubles at a field-of-view of 0.5 degree compared with using the G18 star database.<br><br>There is no urgency to replace the existing G17, G18 databases. They will keep on working. In the long term I would recommend for field-of-view smaller then 1 degree to move to the H18. There is no penalty for using the H18 instead of H17, same speed only the size is larger and it goes deeper. If you install the new database, remove/uninstall the old one to activate the new one. A write-up to clarify some things in detail will follow later.</pre><big style="font-weight: bold;"><big><br>
+      <div style="text-align: left;"><span style="text-decoration: underline; color: red;">ANNOUNCEMENT:</span><br style="color: red;"><pre style="color: red;" class="moz-quote-pre" wrap="">ASTAP solver is now using new H17, H18 star databases. The stars are split in 1476 files of about 5x5 degrees instead of the usual 10x10+ degrees for the 290 files. The blind solving speed increases if your  field-of-view is equal or smaller then about 1.5 degree. Blind solving speed doubles at a field-of-view of 0.5 degree compared with using the G18 star database.<br><br>There is no urgency to replace the existing G17, G18 databases. They will keep on working. In the long term I would recommend for field-of-view smaller then 1 degree to move to the H18. There is no penalty for using the H18 instead of H17, same speed only the size is larger and it goes deeper. If you install the new database, remove/uninstall the old one to activate the new one. </pre><big style="font-weight: bold;"><big><br>
             Download: <br>
             <br>
           </big></big><big><big>For MS Windows 64 bit:<br>
@@ -307,7 +307,7 @@ renamed. No pop-up notifier. Will not accept raw files.</li></ul></ul>
                     stiching</a></big></li><li><big><a href="astap.htm#osc_menu">OSC menu</a></big></li>
             </ul>
             <li><big><a href="#blink">Blink tab</a></big></li>
-            <li><big><a href="#photometry">Photometry tab</a></big></li><li><big><a href="#inspector_tab">Inspector tab</a></big></li><li><big><a href="astap.htm#mount_tab">Mount analyse tab</a></big></li><li><big><a href="#live_stacking">Live stacking</a></big></li>
+            <li><big><a href="#photometry">Photometry tab</a></big></li><ul><li><big><a href="astap.htm#dslr_photometry">DSLR photometry</a></big></li></ul><li><big><a href="#inspector_tab">Inspector tab</a></big></li><li><big><a href="astap.htm#mount_tab">Mount analyse tab</a></big></li><li><big><a href="#live_stacking">Live stacking</a></big></li>
             <li><big><a href="#pixel_math">Pixel math
                   tab</a></big></li>
             <li><big><a href="astap.htm#background">Background
@@ -1555,7 +1555,52 @@ is used. The star flux values should be below saturation (65500)
         the image should reasonable focused to allow solving. </div>
       <p align="left"><img style="width: 1891px; height: 845px;" alt="" src="astap_photometry.png"><br>
       </p>
-      <p align="left"></p>
+      <p align="left"><a name="dslr_photometry"></a>Preparation and usage of DSLR images for photometric measurements:</p><p align="left">Step 1) and 3) are DSLR camera specific.</p><ol style="text-align: left;"><li><span style="font-weight: bold;">Define Bayer pattern:</span>
+The green pixels of a DSLR camera have a very similar response as a
+Johnson-V filter and can be reported as filter TG. So to use the green
+pixels only, it is required to extract the green pixels from the raw.
+The images should NOT be converted to colour by the de-mosaic routine.
+To allow to extract the green pixel it is required&nbsp;to define the
+correct de-mosaic pattern in ASTAP. Load a raw image in ASTAP and in
+tab "Stack method" check-mark temporary option "convert OSC images to
+colour". Set Bayer pattern to Auto or one of the other patterns and
+test the conversion to colour with button "Test pattern". This is best
+done with a terestial image to be sure. If the correct pattern is
+select and the colour produced are correct then unselect the
+option&nbsp;"convert OSC images to colour".</li><li><span style="font-weight: bold;">Calibrate:</span>
+For maximum accuracy it is better to calibrate the images&nbsp;with
+darks and flats &amp; flat-darks. Select in tab "Stack method" for the
+stack method option&nbsp; "calibrate". &nbsp;Do not use "calibrate
+&amp;alignment"and uncheck option&nbsp; "convert OSC image to colour".
+Load the images in the light tab, darks in the dark tab, flats in the
+flat tab and&nbsp; flat-darks in the flat-darks tab. Press the large
+button "Stack.". New calibrated image will be created ending with
+"_cal.fit". &nbsp;If no darks and flat are available, proceed without
+calibration.</li><li><span style="font-weight: bold;">Extract green pixels.</span>
+&nbsp;Load the new images in the photometry tab. Press the button
+"extract raw green". Images will be converted to new images with
+filename ending "_cal_TG.fit".</li><li><span style="font-weight: bold;">V17. </span>Check if V17 star database is selected in tab "Alignment". if it is not available download the V17 and select it.</li><li><span style="font-weight: bold;">Astrometric solutions&nbsp;</span>.
+If the images are not solved yet, press button "Refresh astrometric
+solutions" This is required to identify the stars for photometric
+calibration against the V17 star database. If no solution are found,
+check the image "Field of view (height)" in degrees in tab "alignment"
+and check initial &#945;,&#948;<table class="toccolours" style="margin: 0em 0em 1em 0.5em; clear: right;" align="right"><tbody><tr><td>&#948;</td>
+<td></td></tr></tbody></table><table class="toccolours" style="margin: 0em 0em 1em 0.5em; clear: right;" align="right"><tbody><tr><td>&#948;</td>
+<td></td></tr></tbody></table><table class="toccolours" style="margin: 0em 0em 1em 0.5em; clear: right;" align="right"><tbody><tr><td>&#948;</td>
+<td></td></tr></tbody></table><table class="toccolours" style="margin: 0em 0em 1em 0.5em; clear: right;" align="right"><tbody><tr><td>&#948;</td>
+<td></td></tr></tbody></table><table class="toccolours" style="margin: 0em 0em 1em 0.5em; clear: right;" align="right"><tbody><tr><td>&#948;</td>
+<td></td></tr></tbody></table><table class="toccolours" style="margin: 0em 0em 1em 0.5em; clear: right;" align="right"><tbody><tr><td>&#948;</td>
+<td><a href="https://nl.wikipedia.org/wiki/Delta_%28letter%29" title="">del</a></td></tr></tbody></table>&nbsp;positon in the viewer. If solving fails, got through the <a href="conditions">check list</a> for solving.</li><li><span style="font-weight: bold;">Mark the Var star and Check star.</span>&nbsp;
+Double click on the first image in the list and&nbsp;select the Var and
+Check Star and star 3. If you click a second time on a star the three
+stars will be swapped. &nbsp;Star 3 is not required for reporting, just
+an extra star.</li><li><span style="font-weight: bold;">Cycle.</span> Press the&nbsp; <span style="font-weight: bold; background-color: rgb(153, 153, 153);">&nbsp; &nbsp; &nbsp;&gt;| &nbsp;
+          &nbsp;&nbsp;&nbsp;</span>
+button and check if the magnitudes are recorded. Check if stars are
+still proper selected. To indentify stars you could select Ännotate
+variables". The database should be complete up to magnitude 12 .</li><li><span style="font-weight: bold;">Aperture</span>,
+adapt aperture and annulus for maximum accuracy. &nbsp;Use for this the
+reported standard deviation of the check star&nbsp;in the log.</li><li><span style="font-weight: bold;">AAVSO.</span>&nbsp; Use AAVSO report&nbsp; if required.</li></ol><p align="left"></p><p align="left"></p>
       <p align="left">
         Here an example of an exoplanet transit measured using the
         blink&amp;photometry tab:</p>
@@ -1600,7 +1645,7 @@ take several images at different location in the sky. Load the images
 in the tab. Selected the desired equinox. Click on the button add the
 astrometric solutions. Study the result and if required select all
 rows, copy and paste the whole result to a spreadsheet for further
-analysing.</big><big></big></p><p align="left"><big>The images shall be of FITS format with the mount position in the header. Keywords required RA, DEC or OBJCTRA, OBJCTDEC.</big></p><p align="left"><big>The solution can be written either in the orginal FITS file or in a seperate .wcss file.</big></p><p align="left"><big><img style="width: 1777px; height: 338px;" alt="" src="astap_mount_tab.png"></big></p><p align="left"><a href="astap.htm#index">Back
+analysis.</big></p><p align="left"><big>The images shall be of FITS format with the mount </big><big>&#945;, &#948;&nbsp;</big><big>position in the header. This is normal the case. Keywords required RA, DEC or OBJCTRA, OBJCTDEC.</big></p><p align="left"><big>The solution can be written either in the orginal FITS file or in a seperate .wcss file.</big></p><p align="left"><big><img style="width: 1777px; height: 338px;" alt="" src="astap_mount_tab.png"></big></p><p align="left"><a href="astap.htm#index">Back
           to index</a></p>
       <div style="text-align: left;">
       <big><a name="live_stacking"></a><span style="text-decoration: underline;">Live stacking tab.<br><br></span></big>All file(s) in the specified directory will be stacked live. If it is finished 
@@ -1854,7 +1899,7 @@ for the center area is perfect. A more advanced measuring
 method&nbsp;is available in <a href="astap.htm#inspector_tab">tab CCD Inspector</a>.
           </li></ul>
         <br>
-        <img src="astap_ccd_inspector.jpg" alt="" style="width: 1053px; height: 797px;"><br><br><img style="width: 806px; height: 502px;" alt="" src="astap_tilt_calculation.png"><br>
+        <img src="astap_ccd_inspector.jpg" alt="" style="width: 1053px; height: 797px;"><br><br><img style="width: 810px; height: 494px;" alt="" src="astap_tilt_calculation.png"><br>
         <br>
         <br><span style="text-decoration: underline;">HFD 2D contour menu.</span>
 The star half flux diameters (HFD's) are displayed in a 2D contour.

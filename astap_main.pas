@@ -3148,7 +3148,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.540, '+about_message4+', dated 2021-5-19';
+  #13+#10+'ASTAP version ß0.9.541, '+about_message4+', dated 2021-5-20';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -5079,7 +5079,7 @@ begin
   end
   else
   begin
-    if naxis<>1 then memo2_message('Skipped COLOUR image '+ filename7+', Raw colour extraction is only possible for raw images.')
+    if naxis3>1 then memo2_message('Skipped COLOUR image '+ filename7+', Raw green pixel extraction is only possible for raw images.')
     else
     memo2_message('Skipped image '+ filename7+', FILTER indicates earlier extraction!');
   end;

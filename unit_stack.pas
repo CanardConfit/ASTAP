@@ -5844,11 +5844,11 @@ var
   magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,backgr,hfd_med,apert,annul,rax,decx : double;
   saturation_level                                                                           : single;
   c,i,x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr,countVar, countCheck,countThree : integer;
-  flipvertical,fliphorizontal,init,refresh_solutions,analysedP  :boolean;
+  flipvertical,fliphorizontal,init,refresh_solutions,analysedP,warned  :boolean;
   starlistx : star_list;
   starVar, starCheck,starThree : array of double;
   outliers : array of array of double;
-  {extra_message,}astr  : string;
+  astr  : string;
 
   function measure_star(deX,deY :double): string;{measure position and flux}
   var
@@ -5941,7 +5941,7 @@ begin
 
 
   esc_pressed:=false;
-
+  warned:=false;
 
   memo2_message('Checking for astrometric solutions in FITS header required for star flux calibration against star database.');
 
@@ -6046,15 +6046,18 @@ begin
 
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
-        if ((stepnr=1) and (pos('F',calstat)=0)) then
+        if ((stepnr=1) and ((pos('F',calstat)=0) or (naxis3>1)) ) then
         begin
-//          extra_message:=' Image not calibrated with a flat field. Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu.';
-//          memo2_message('Image not calibrated with a flat field. Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu.');
+          if warned=false then
+          begin
+            if pos('F',calstat)=0 then memo2_message('█ █ █ █ █ █ Warning: Image not calibrated with a flat field (keyword CALSTAT). Absolute photometric accuracy will be lower. Calibrate images first using "calibrate only" option in stack menu. █ █ █ █ █ █');
+            if naxis3>1 then memo2_message('█ █ █ █ █ █ Warning: Colour image!! Absolute photometric accuracy will be lower. Process only raw images. Set bayer pattern correctly in tab "Stack method" and extract the green pixels in tab photometry. █ █ █ █ █ █')
+          end;
+          warned:=true;{only one message}
           listview7.Items.item[c].subitems.Strings[P_photometric]:='Poor';
         end
         else
         begin
-          //extra_message:='';
           listview7.Items.item[c].subitems.Strings[P_photometric]:='✓';
         end;
 

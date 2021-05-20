@@ -572,7 +572,6 @@ var
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
   tempval   : single;
 begin
-
   with stackmenu1 do
   begin
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
@@ -1613,7 +1612,9 @@ begin
           else
           demosaic_bayer(img_loaded); {convert OSC image to colour}
          {naxis3 is now 3}
-        end;
+        end
+        else
+        if bayerpat<>'' then memo2_message('█ █ █ █ █ █ Warning, alignment (shifting, rotating) will ruin Bayer pattern!! Select calibrate only for photometry or checkmark "Convert OSC image to colour" █ █ █ █ █ █');
 
         if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
         begin
