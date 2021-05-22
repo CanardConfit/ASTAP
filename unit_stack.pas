@@ -8545,6 +8545,7 @@ begin
             if  ( (AnsiCompareText(luminance_filter1.text,filters_used[i])=0) or (AnsiCompareText(luminance_filter2.text,filters_used[i])=0) ) then
             begin
               files_to_process_LRGB[5].name:=filename2; {use this colour also for luminance!!}
+              filters_used[4]:=filters_used[i];{store luminance filter}
               memo2_message('Filter '+filters_used[i]+' will also be used for luminance.');
             end;
 
@@ -8559,6 +8560,7 @@ begin
             if  ( (AnsiCompareText(luminance_filter1.text,filters_used[i])=0) or (AnsiCompareText(luminance_filter2.text,filters_used[i])=0) ) then
             begin
                files_to_process_LRGB[5]:=files_to_process[first_file]; {use this colour also for luminance!!}
+               filters_used[4]:=filters_used[i];{store luminance filter}
                memo2_message('Filter '+filters_used[i]+' will also be used for luminance.');
             end;
             over_sizeL:=over_size;{do oversize in 'L'  routine}
@@ -8589,6 +8591,7 @@ begin
       if length(extra2)=1 then
       begin
          memo2.lines.add('Error! One color only. For LRGB stacking a minimum of two colors is required. Removed the check mark classify on "image filter" or add images made with a different color filter.');
+         filters_used[5]:=filters_used[i];
          lrgb:=false;{prevent runtime errors with naxis3=3}
       end;
     end;
