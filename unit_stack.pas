@@ -4665,12 +4665,14 @@ end;
 
 procedure Tstackmenu1.luminance_filter1exit(Sender: TObject);
 var
-  err :boolean;
+  err,mess,mess2 :boolean;
   red1,red2,green1,green2,blue1,blue2,lum1,lum2 : string;
 begin
   new_analyse_required:=true;
   new_analyse_required3:=true;{tab 3 flats}
   err:=false;
+  mess:=false;
+  mess2:=false;
   red1:=trim(red_filter1.text); {remove spaces before and after}
   red2:=trim(red_filter2.text);
   green1:=trim(green_filter1.text);
@@ -4701,23 +4703,23 @@ begin
   if  AnsiCompareText(blue2,green2)=0 then begin err:=true;blue2:=''; end;
 
 
-  if  AnsiCompareText(lum1,red1)=0 then begin err:=true;lum1:=''; end;
-  if  AnsiCompareText(lum1,red2)=0 then begin err:=true;lum1:=''; end;
+  if  AnsiCompareText(lum1,red1)=0 then begin mess:=true; end;
+  if  AnsiCompareText(lum1,red2)=0 then begin mess:=true; end;
 
-  if  AnsiCompareText(lum2,red1)=0 then begin err:=true;lum2:=''; end;
-  if  AnsiCompareText(lum2,red2)=0 then begin err:=true;lum2:=''; end;
+  if  AnsiCompareText(lum2,red1)=0 then begin mess2:=true; end;
+  if  AnsiCompareText(lum2,red2)=0 then begin mess2:=true; end;
 
-  if  AnsiCompareText(lum1,green1)=0 then begin err:=true;lum1:=''; end;
-  if  AnsiCompareText(lum1,green2)=0 then begin err:=true;lum1:=''; end;
+  if  AnsiCompareText(lum1,green1)=0 then begin mess:=true; end;
+  if  AnsiCompareText(lum1,green2)=0 then begin mess:=true; end;
 
-  if  AnsiCompareText(lum2,green1)=0 then begin err:=true;lum2:=''; end;
-  if  AnsiCompareText(lum2,green2)=0 then begin err:=true;lum2:=''; end;
+  if  AnsiCompareText(lum2,green1)=0 then begin mess2:=true; end;
+  if  AnsiCompareText(lum2,green2)=0 then begin mess2:=true; end;
 
-  if  AnsiCompareText(lum1,blue1)=0 then begin err:=true;lum1:=''; end;
-  if  AnsiCompareText(lum1,blue2)=0 then begin err:=true;lum1:=''; end;
+  if  AnsiCompareText(lum1,blue1)=0 then begin mess:=true; end;
+  if  AnsiCompareText(lum1,blue2)=0 then begin mess:=true; end;
 
-  if  AnsiCompareText(lum2,blue1)=0 then begin err:=true;lum2:=''; end;
-  if  AnsiCompareText(lum2,blue2)=0 then begin err:=true;lum2:=''; end;
+  if  AnsiCompareText(lum2,blue1)=0 then begin mess2:=true; end;
+  if  AnsiCompareText(lum2,blue2)=0 then begin mess2:=true; end;
 
   red_filter1.text:=red1;
   red_filter2.text:=red2;
@@ -4728,11 +4730,12 @@ begin
   luminance_filter1.text:=lum1;
   luminance_filter2.text:=lum2;
 
-  if err=true then
-  begin
-   // beep;
-    memo2_message('Filter name can be used only once! If required duplicate the file and modify filter new name in the header.');
-  end;
+  if err then
+    memo2_message('Filter name can be used only once  for RGB! Use matrix to use filter more then once.');
+
+  if mess then luminance_filter1.font.Style:=[fsbold] else luminance_filter1.font.Style:=[];
+  if mess2 then luminance_filter2.font.Style:=[fsbold] else luminance_filter2.font.Style:=[];
+
 end;
 
 
@@ -5033,11 +5036,11 @@ begin
 end;
 
 
-
 procedure Tstackmenu1.new_saturation1Change(Sender: TObject);
 begin
   update_replacement_colour;
 end;
+
 
 procedure Tstackmenu1.pagecontrol1Change(Sender: TObject);
 var
@@ -8421,6 +8424,8 @@ begin
     else
     begin {lrgb images, classify on filter is true}
       SetLength(files_to_process_LRGB,6);{will contain [reference,r,g,b,colour,l]}
+      for i:=0 to 5 do files_to_process_LRGB[i].name:='';{clear}
+
       SetLength(files_to_process, ListView1.items.count);{set array length to listview}
 
       for i:=0 to 4 do
@@ -8536,6 +8541,13 @@ begin
             memo2_message('█ █ █ Saving as '+filename2);
             save_fits(img_loaded,filename2,-32,true {override});
             files_to_process_LRGB[i+1].name:=filename2;{should contain [nil,r,g,b,l]}
+
+            if  ( (AnsiCompareText(luminance_filter1.text,filters_used[i])=0) or (AnsiCompareText(luminance_filter2.text,filters_used[i])=0) ) then
+            begin
+              files_to_process_LRGB[5].name:=filename2; {use this colour also for luminance!!}
+              memo2_message('Filter '+filters_used[i]+' will also be used for luminance.');
+            end;
+
             stack_info:='Interim result '+filter_name+' x '+inttostr(counterL);
             report_results(object_to_process,stack_info,object_counter,i {color icon});{report result in tab result using modified filename2}
             filename2:=filename3;{restore last filename}
@@ -8543,6 +8555,12 @@ begin
           else
           begin
             files_to_process_LRGB[i+1]:=files_to_process[first_file]; {one file, no need to stack}
+
+            if  ( (AnsiCompareText(luminance_filter1.text,filters_used[i])=0) or (AnsiCompareText(luminance_filter2.text,filters_used[i])=0) ) then
+            begin
+               files_to_process_LRGB[5]:=files_to_process[first_file]; {use this colour also for luminance!!}
+               memo2_message('Filter '+filters_used[i]+' will also be used for luminance.');
+            end;
             over_sizeL:=over_size;{do oversize in 'L'  routine}
             counterL:=1;
           end;
@@ -8555,10 +8573,6 @@ begin
           end;{case}
 
           extra1:=extra1+filter_name;
-        end
-        else
-        begin
-          files_to_process_LRGB[i+1].name:='';
         end;
       end;{for loop for 4 RGBL}
       if length(extra2)>=2 then {at least two colors required}

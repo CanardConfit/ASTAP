@@ -1658,7 +1658,7 @@ object mainwindow: Tmainwindow
     object measuretotalmagnitude1: TMenuItem
       Caption = 'Measure total magnitude within rectangle'
       Enabled = False
-      Hint = 'This will report the total magnitude within the pulled rectangle. Best results are achieved using monochrome images.'
+      Hint = 'This will report the total magnitude within the pulled rectangle. Flux is measured relative to median background up to five pixels outside the rectangle. Best accuracy is  achieved by using monochrome images.'
       OnClick = measuretotalmagnitude1Click
     end
     object angular_distance1: TMenuItem
