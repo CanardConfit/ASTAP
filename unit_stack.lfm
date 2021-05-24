@@ -3,12 +3,12 @@ object stackmenu1: Tstackmenu1
   Height = 674
   Top = 123
   Width = 1497
-  HorzScrollBar.Page = 1475
+  HorzScrollBar.Page = 1497
   VertScrollBar.Page = 509
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
-  ClientHeight = 674
+  ClientHeight = 657
   ClientWidth = 1497
   Color = clForm
   Icon.Data = {
@@ -52,9 +52,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.12.0'
   object Memo2: TMemo
     Left = 0
-    Height = 162
+    Height = 145
     Top = 512
-    Width = 1497
+    Width = 1611
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -201,7 +201,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1835
+    Left = 1949
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -219,8 +219,8 @@ object stackmenu1: Tstackmenu1
     Height = 448
     Hint = 'Stack menu'
     Top = 0
-    Width = 1852
-    ActivePage = tab_stackmethod1
+    Width = 1966
+    ActivePage = tab_blink1
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -228,7 +228,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 5
+    TabIndex = 7
     TabOrder = 5
     OnChange = pagecontrol1Change
     object Images: TTabSheet
@@ -2848,7 +2848,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 420
-      ClientWidth = 1602
+      ClientWidth = 1958
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
@@ -2856,7 +2856,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1602
+        Width = 1958
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True

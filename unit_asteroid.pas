@@ -1261,7 +1261,7 @@ var txtf : textfile;
     count,fontsize           : integer;
     yy,mm,dd,h,aop,lan,incl,ecc,q, DELTA,sun_delta,ra2,dec2,mag,phase,delta_t,
     SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec,u0,v0     : double;
-    desn,name,s, thetext:string;
+    desn,name,s, thetext1,thetext2,fontsize_str:string;
     flip_horizontal, flip_vertical,form_existing, errordecode,sip : boolean;
 
       procedure plot_asteroid(sizebox :integer);
@@ -1293,9 +1293,6 @@ var txtf : textfile;
           y:=round(crpix2 + v0)-1;
         end;
 
-
-
-
         if ((x>-50) and (x<=width2+50) and (y>-50) and (y<=height2+50)) then {within image1 with some overlap}
         begin
           {annotate}
@@ -1303,26 +1300,28 @@ var txtf : textfile;
            if flip_vertical   then y2:=y         else y2:=(height2-1)-y;
 
 
-           if showfullnames then thetext:=trim(name) else thetext:=trim(desn)+'('+floattostrF(mag,ffgeneral,3,1)+')';
-           if showmagnitude then thetext:=thetext+ ';{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext:=thetext+ ';';
+           if showfullnames then thetext1:=trim(name) else thetext1:=trim(desn)+'('+floattostrF(mag,ffgeneral,3,1)+')';
+           if showmagnitude then thetext2:='{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext2:='';
 
            if add_annot then
            begin                         //floattostrF2(median_bottom_right,0,2)
-              add_text ('ANNOTATE=',#39+inttostr(x+1-sizebox)+';'+inttostr(y+1-sizebox)+';'+inttostr(x+1+sizebox)+';'+inttostr(y+1+sizebox)+';-1;'{boldness}+thetext+';'+#39); {store in FITS coordinates 1..}
+              add_text ('ANNOTATE=',#39+inttostr(x+1-sizebox)+';'+inttostr(y+1-sizebox)+';'+inttostr(x+1+sizebox)+';'+inttostr(y+1+sizebox)+';-'+fontsize_str {-1 or larger}+';'{boldness}+thetext1+';'+thetext2+';'+#39); {store in FITS coordinates 1..}
               annotated:=true;{header contains annotations}
-           end
-           else
-           begin
-             mainwindow.image1.Canvas.textout(x2+sizebox,y2,thetext);
-             if sizebox>10 then mainwindow.image1.canvas.ellipse(x2-sizebox,y2-sizebox,x2+1+sizebox,y2+1+sizebox){circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-             else
-             begin
-               mainwindow.image1.canvas.moveto(x2-sizebox,y2);
-               mainwindow.image1.canvas.lineto(x2-sizebox div 2,y2);
-               mainwindow.image1.canvas.moveto(x2+sizebox,y2);
-               mainwindow.image1.canvas.lineto(x2+sizebox div 2,y2);
-             end;
            end;
+//           else
+//           begin
+           plot_the_annotation(x+1-sizebox {x1},y+1-sizebox {y1},x+1+sizebox{x2},y+1+sizebox{y2},-max(1,round(fontsize*10/12)/10){typ},thetext1,thetext2); {plot annotation}
+
+           //             mainwindow.image1.Canvas.textout(x2+sizebox,y2,thetext1+thetext2);
+  //           if sizebox>10 then mainwindow.image1.canvas.ellipse(x2-sizebox,y2-sizebox,x2+1+sizebox,y2+1+sizebox){circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+    //         else
+      //       begin
+        //       mainwindow.image1.canvas.moveto(x2-sizebox,y2);
+          //     mainwindow.image1.canvas.lineto(x2-sizebox div 2,y2);
+            //   mainwindow.image1.canvas.moveto(x2+sizebox,y2);
+//               mainwindow.image1.canvas.lineto(x2+sizebox div 2,y2);
+  //           end;
+//           end;
         end;
       end;
       procedure read_and_plot(asteroid: boolean; path :string);
@@ -1421,6 +1420,8 @@ begin
     mainwindow.image1.Canvas.Pen.width := 1+annotation_diameter div 10;{thickness lines}
   end;
   mainwindow.image1.Canvas.font.size:=fontsize;
+  str(max(1,fontsize/12):0:1,fontsize_str); {store font size for header annotations}
+
 
   if date_avg<>'' then
     date_to_jd(date_avg,0 {exposure}){convert date-AVG to jd_mid be using exposure=0}
@@ -1485,11 +1486,15 @@ begin
     begin
       if add_date then
       begin
-        image1.Canvas.font.size:=fontsize;
-        image1.Canvas.textout(round(fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd_mid)+'    Position[α,δ]:   '+ra1.text+'      '+dec1.text);{}
+//        image1.Canvas.font.size:=fontsize;
+        mainwindow.image1.Canvas.textout(round(0.5*fontsize),height2-round(4*fontsize),'Position[α,δ]:  '+mainwindow.ra1.text+'    '+mainwindow.dec1.text);{}
+        mainwindow.image1.Canvas.textout(round(0.5*fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(exposure))+'s');{}
       end;
     end;
-    if add_annot then plot_annotations(0,0,false);{plot annotation from the header}
+//    if add_annot then
+//    begin
+//      plot_annotations(0,0,false);{plot annotation from the header}
+//    end;
   end;
 
 end;

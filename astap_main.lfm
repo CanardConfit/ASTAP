@@ -1554,6 +1554,18 @@ object mainwindow: Tmainwindow
         ShortCut = 16455
         OnClick = grid1Click
       end
+      object positionanddate1: TMenuItem
+        AutoCheck = True
+        Caption = 'Center position && date'
+        Hint = 'Add the center position and date and time at the left bottom of the image. Font colour and font size can be set in the asteroid annotation menu.'
+        OnClick = positionanddate1Click
+      end
+      object freetext1: TMenuItem
+        AutoCheck = True
+        Caption = 'Free text at bottom'
+        Hint = 'Add free text to bottom of the image. Font colour and font size can be set in the asteroid annotation menu.'
+        OnClick = freetext1Click
+      end
       object MenuItem15: TMenuItem
         Caption = '-'
       end

@@ -101,6 +101,8 @@ type
     batch_add_sip1: TMenuItem;
     grid1: TMenuItem;
     ccdinspector10_1: TMenuItem;
+    freetext1: TMenuItem;
+    positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
     MenuItem26: TMenuItem;
     sip1: TMenuItem;
@@ -305,6 +307,7 @@ type
     procedure batch_annotate1Click(Sender: TObject);
     procedure batch_solve_astrometry_netClick(Sender: TObject);
     procedure calibrate_photometry1Click(Sender: TObject);
+    procedure freetext1Click(Sender: TObject);
     procedure hfd_contour1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
     procedure copy_to_clipboard1Click(Sender: TObject);
@@ -337,6 +340,7 @@ type
     procedure extractgreen1Click(Sender: TObject);
     procedure grid1Click(Sender: TObject);
     procedure ccdinspector10_1Click(Sender: TObject);
+    procedure positionanddate1Click(Sender: TObject);
     procedure removegreenpurple1Click(Sender: TObject);
     procedure sip1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
@@ -712,6 +716,7 @@ function calculate_altitude(correct_radec_refraction : boolean): double;{convert
 procedure write_astronomy_wcs(filen:string);
 procedure CCDinspector(snr_min: double);
 function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
+procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string);{plot annotation from header in ASTAP format}
 
 
 
@@ -810,6 +815,7 @@ var {################# initialised variables #########################}
   font_charset : integer=0; {Ansi_char}
   font_style :   tFontStyles=[];
   font_color : tcolor= cldefault;
+  freetext : string='';
 
 const
   crMyCursor = 5;
@@ -3148,7 +3154,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.542, '+about_message4+', dated 2021-5-22';
+  #13+#10+'ASTAP version ß0.9.543, '+about_message4+', dated 2021-5-24';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4126,6 +4132,39 @@ begin
   plot_mount;
 end;
 
+procedure plot_text;
+var
+  detext : string;
+  fontsize: double;
+  posanddate, freet : boolean;
+begin
+  posanddate:=mainwindow.positionanddate1.checked;
+  freet:=mainwindow.freetext1.checked;
+  if ((fits_file=false) or ((posanddate=false) and (freet=false))) then exit;
+
+  mainwindow.image1.Canvas.brush.Style:=bsClear;
+  mainwindow.image1.Canvas.font.name:='default';
+  fontsize:=max(annotation_diameter,fontsize);
+  mainwindow.image1.Canvas.font.size:=round(fontsize);
+
+  mainwindow.image1.Canvas.font.color:=annotation_color; {default clyellow}
+
+  if posanddate then
+  begin
+    if cd1_1<>0 then  mainwindow.image1.Canvas.textout(round(0.5*fontsize),height2-round(4*fontsize),'Position[α,δ]:  '+mainwindow.ra1.text+'    '+mainwindow.dec1.text);{}
+
+
+    if date_avg<>'' then
+      date_to_jd(date_avg,0 {exposure}){convert date-AVG to jd_mid be using exposure=0}
+    else
+      date_to_jd(date_obs,exposure);{convert date-OBS to jd_start and jd_mid}
+
+    mainwindow.image1.Canvas.textout(round(0.5*fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(exposure))+'s');{}
+  end;
+  if ((freet) and (freetext<>'')) then
+    mainwindow.image1.Canvas.textout(width2 -round(fontsize) -mainwindow.image1.canvas.textwidth(freetext),height2-round(2*fontsize),freetext);{right bottom corner, right aligned}
+end;
+
 
 procedure plot_grid;
 var
@@ -4292,7 +4331,6 @@ begin
     until ((i>=centRa+stepRA*6) or (i>=(centRA-6*stepRA)+360));
     j:=j+step;
   until j>=min(centDEC+step*6,90);
-
   Screen.Cursor := Save_cursor;    { Show hourglass cursor }
 end;
 
@@ -4872,6 +4910,7 @@ begin
     plot_north_on_image;
     plot_large_north_indicator;
     plot_grid;
+    plot_text;
 
     image1.Repaint;{show north-east indicator}
 
@@ -6656,8 +6695,9 @@ begin
     plot_large_north_indicator;
     if mainwindow.add_marker_position1.checked then
       mainwindow.add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
-     plot_grid;
-     {plot_annotation is dono in plot_grid due to alignment}
+    plot_grid;
+    plot_text;
+     {plot_annotation is done in plot_grid due to alignment}
 
     mainwindow.statusbar1.panels[5].text:=inttostr(width2)+' x '+inttostr(height2)+' x '+inttostr(naxis3)+'   '+inttostr(nrbits)+' BPP';{give image dimensions and bit per pixel info}
     update_statusbar_section5;{update section 5 with image dimensions in degrees}
@@ -7224,6 +7264,10 @@ begin
     northeast1.checked:=get_boolean('north_east',false);
     mountposition1.checked:=get_boolean('mount_position',false);
     grid1.checked:=get_boolean('grid',false);
+    positionanddate1.checked:=get_boolean('pos_date',false);
+    freetext1.checked:=get_boolean('freetxt',false);
+    freetext:=initstring.Values['f_text'];
+
     add_marker_position1.checked:=get_boolean('add_marker',false);{popup marker selected?}
 
     stackmenu1.make_osc_color1.checked:=get_boolean('osc_color_convert',false);
@@ -7560,6 +7604,10 @@ begin
     initstring.Values['north_east']:=BoolStr[northeast1.checked];
     initstring.Values['mount_position']:=BoolStr[mountposition1.checked];
     initstring.Values['grid']:=BoolStr[grid1.checked];
+    initstring.Values['pos_date']:=BoolStr[positionanddate1.checked];
+    initstring.Values['freetxt']:=BoolStr[freetext1.checked];
+    initstring.Values['f_text']:=freetext;
+
 
     initstring.Values['add_marker']:=BoolStr[add_marker_position1.checked];
 
@@ -8622,6 +8670,17 @@ end;
 procedure Tmainwindow.ccdinspector10_1Click(Sender: TObject);
 begin
    CCDinspector(10);
+end;
+
+procedure Tmainwindow.positionanddate1Click(Sender: TObject);
+begin
+  if fits_file=false then exit;
+  if positionanddate1.checked=false then  {clear screen}
+  begin
+    plot_fits(mainwindow.image1,false,true);
+  end
+  else
+  plot_text;
 end;
 
 
@@ -9928,6 +9987,19 @@ begin
   end;
 end;
 
+procedure Tmainwindow.freetext1Click(Sender: TObject);
+begin
+  if freetext1.checked=false then  {clear screen}
+  begin
+    plot_fits(mainwindow.image1,false,true);
+  end
+  else
+  begin
+    freetext:=InputBox('Free text:','',freetext );
+    if freetext<>'' then plot_text;
+  end;
+end;
+
 
 procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
 begin
@@ -10246,7 +10318,7 @@ begin
 end;
 
 
-procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string);
+procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string);{plot annotation from header in ASTAP format}
 var
   size,xcenter,ycenter,text_height,text_width  :integer;
 begin
@@ -10307,6 +10379,8 @@ begin
   mainwindow.image1.Canvas.Pen.Color:= annotation_color;{clyellow}
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   mainwindow.image1.Canvas.font.color:=annotation_color;
+  // mainwindow.image1.Canvas.font.size:=round(min(20,max(10,height2*20/4176)));
+
 
   {$ifdef mswindows}
   SetTextAlign(mainwindow.image1.canvas.handle, ta_left or ta_top or TA_NOUPDATECP);{always, since Linux is doing this fixed}
@@ -10318,6 +10392,7 @@ begin
   try
     while count1>=0 do {plot annotations}
     begin
+      name:=mainwindow.Memo1.Lines[count1];
       if copy(mainwindow.Memo1.Lines[count1],1,8)='ANNOTATE' then {found}
       begin
         List.Clear;
