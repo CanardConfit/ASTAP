@@ -1373,8 +1373,9 @@ object mainwindow: Tmainwindow
         Caption = '-'
       end
       object submenurotate1: TMenuItem
-        Caption = 'Rotate'
+        Caption = 'Rotate, extend'
         Hint = 'Rotate the FITS image'
+        ImageIndex = 31
         object rotateleft1: TMenuItem
           Caption = 'Rotate image 90° left'
           Enabled = False
@@ -1412,6 +1413,15 @@ object mainwindow: Tmainwindow
           Enabled = False
           Hint = 'Rotate the image with the angle specified. Image quality will be reduced. Slow but accurate algorithm.'
           ImageIndex = 31
+          OnClick = rotate_arbitrary1Click
+        end
+        object MenuItem26: TMenuItem
+          Caption = '-'
+        end
+        object extend1: TMenuItem
+          Caption = 'Extend canvas'
+          Enabled = False
+          Hint = 'This will extend the image with black space. Use the popup menu option "crop" to trim the black area if required.'
           OnClick = rotate_arbitrary1Click
         end
       end
@@ -1531,8 +1541,8 @@ object mainwindow: Tmainwindow
       end
       object annotations_visible1: TMenuItem
         AutoCheck = True
-        Caption = 'Annotations visible'
-        Hint = 'Switches the annotations on/off'
+        Caption = 'Annotations header visible'
+        Hint = 'Switches the annotations on/off. The annotations are stored in the FITS files header with keyword ANNOTATE'
         OnClick = annotations_visible1Click
       end
       object northeast1: TMenuItem

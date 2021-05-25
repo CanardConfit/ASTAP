@@ -3014,8 +3014,6 @@ begin
           show_shape_manual_alignment(index){show the marker on the reference star}
         else
         mainwindow.shape_manual_alignment1.visible:=false;
-        if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(0,0,false);{plot any annotations. This is not done in plot_image for alignment reasons in blink routine }
-
       end
       else beep;{image not found}
       exit;{done, can display only one image}
@@ -3459,7 +3457,7 @@ begin
   if file_count<>0 then
   begin
     memo2_message('Averaging flat dark frames.');
-    average('flat-darks',file_list,file_count,img_bias);{only average}
+    average('flat-dark',file_list,file_count,img_bias);{only average}
     result:=width2; {width of the flat-dark}
   end;
   flatdark_count:=file_count;
@@ -4076,7 +4074,7 @@ var
   Save_Cursor          : TCursor;
   hfd_min              : double;
   x_new,y_new,fitsX,fitsY,col,first_image,stepnr,nrrows, cycle,step: integer;
-  reference_done, init,solut,astro_solved       : boolean;
+  reference_done, init,solut,astro_solved,store_annotated         : boolean;
 
 begin
   if listview6.items.count<=1 then exit; {no files}
@@ -4249,16 +4247,20 @@ begin
           {nothing to do}
         end;
 
-       if timestamp1.checked then
-       begin
-         if date_avg='' then
-           annotation_to_array('date_obs: '+date_obs,false,65535,1{size},1,10,img_loaded) {date_obs to image array as font. Flicker free method}
-         else
-         annotation_to_array('date_avg: '+date_avg,false,65535,1{size},1,10,img_loaded);{date_obs to image array as font}
-       end;
+        if timestamp1.checked then
+        begin
+          if date_avg='' then
+            annotation_to_array('date_obs: '+date_obs,false,65535,1{size},1,10,img_loaded) {date_obs to image array as font. Flicker free method}
+          else
+          annotation_to_array('date_avg: '+date_avg,false,65535,1{size},1,10,img_loaded);{date_obs to image array as font}
+        end;
 
+        store_annotated:=annotated;{store temporary annotated}
+        annotated:=false;{prevent annotations are plotted in plot_fits}
         plot_fits(mainwindow.image1,false {re_center},true);
-        if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(round(solution_vectorX[2]),round(solution_vectorY[2]),false); {correct annotations in shift only}
+        annotated:=store_annotated;{restore anotated value}
+        if ((annotated) and (mainwindow.annotations_visible1.checked)) then
+        plot_annotations(true {use solution vectors!!!!},false); {corrected annotations in case a part of the images are flipped in the alignment routien}
 
         if sender=write_video1 then {write video frame}
         begin
@@ -4406,7 +4408,7 @@ begin
   if annotated then
   begin
     mainwindow.annotations_visible1.checked:=true;
-    plot_annotations(0,0,true {fill combobox});
+    plot_annotations(false {use solution vectors},true {fill combobox});
     stackmenu1.ephemeris_centering1.itemindex:=stackmenu1.ephemeris_centering1.items.count-1;{show first found in the list}
   end
   else
@@ -5179,7 +5181,7 @@ end;
 
 procedure Tstackmenu1.rename_result1Click(Sender: TObject);
 var index,counter: integer;
-    filen  : string;
+    thepath, newfilen  : string;
 begin
   index:=0;
   counter:=listview5.Items.Count;
@@ -5188,10 +5190,11 @@ begin
     if  listview5.Items[index].Selected then
     begin
       filename2:=listview5.items[index].caption;
-      filen:=InputBox('New name:','',filename2) ;
-      if ((filen='') or (filen=filename2)) then exit;
-      if RenameFile(filename2,filen) then
-        listview5.items[index].caption:=filen
+      thepath:=extractfilepath(filename2);
+      newfilen:=thepath+InputBox('New name:','',extractfilename(filename2)) ;
+      if ((newfilen='') or (newfilen=filename2)) then exit;
+      if RenameFile(filename2,newfilen) then
+        listview5.items[index].caption:=newfilen
       else
         beep;
     end;
@@ -5475,6 +5478,16 @@ begin
          + 1720994.5;
 
 end;
+
+
+function UTdecimal(date : string): string; {UT date in decimal notation}
+var dayfract : string;
+begin
+  {'2021-03-08T17:55:23'}
+  str(strtoint(copy(date,12,2))/24 +strtoint(copy(date,15,2))/(24*60) + strtoint(copy(date,18,2))/(24*60*60):0:4,dayfract);{convert time to fraction of a day}
+  result:=copy(date,1,4)+copy(date,6,2)+copy(date,9,2)+copy(dayfract,2,5);
+end;
+
 
 procedure date_to_jd(date_time:string; exp: double);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
 var
@@ -5847,7 +5860,7 @@ var
   magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,backgr,hfd_med,apert,annul,rax,decx : double;
   saturation_level                                                                           : single;
   c,i,x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr,countVar, countCheck,countThree : integer;
-  flipvertical,fliphorizontal,init,refresh_solutions,analysedP,warned  :boolean;
+  flipvertical,fliphorizontal,init,refresh_solutions,analysedP,store_annotated, warned  :boolean;
   starlistx : star_list;
   starVar, starCheck,starThree : array of double;
   outliers : array of array of double;
@@ -6144,7 +6157,14 @@ begin
         cd2_1:=abs(cd2_1)*sign(cd2_1_ref);
         cd2_2:=abs(cd2_2)*sign(cd2_2_ref);
 
+        store_annotated:=annotated;{store temporary annotated}
+        annotated:=false;{prevent annotations are plotted in plot_fits}
         plot_fits(mainwindow.image1,false {re_center},true);
+        annotated:=store_annotated;{restore anotated value}
+        if ((annotated) and (mainwindow.annotations_visible1.checked)) then
+          plot_annotations(true {use solution vectors!!!!},false); {corrected annotations in case a part of the images are flipped in the alignment routien}
+
+
 
         mainwindow.image1.Canvas.Pen.Mode := pmMerge;
         mainwindow.image1.Canvas.Pen.width :=1;{thickness lines}
@@ -7557,7 +7577,7 @@ begin
       if stackmenu1.listview2.items[c].checked=true then
       begin
         filen:=stackmenu1.ListView2.items[c].caption;
-        if pos('master_dark',filen)=0 then {not a master file}
+        if pos('master_dark',ExtractFileName(filen))=0 then {not a master file}
         begin {set specification master}
           if specified=false then
           begin
@@ -7682,7 +7702,7 @@ begin
         if stackmenu1.listview3.items[c].checked=true then
         begin
           filen:=stackmenu1.ListView3.items[c].caption;
-          if pos('master_flat',filen)=0 then {not a master file}
+          if pos('master_flat',ExtractFileName(filen))=0 then {not a master file}
           begin {set specification master}
             if specified=false then
             begin
@@ -7814,7 +7834,7 @@ end;
 procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer) ; inline; {apply dark, flat if required, renew if different exposure or ccd temp}
 var  {variables in the procedure are created to protect global variables as filter_name against overwriting by loading other fits files}
   fitsX,fitsY,k,light_naxis3{,hotpixelcounter}, light_width,light_height,light_set_temperature : integer;
-  calstat_local              : string;
+  calstat_local,light_date_obs              : string;
   datamax_light ,light_exposure,value{,dark_outlier_level},flat_factor,dark_norm_value : double;
 //  ignore_hotpixels : boolean;
 
@@ -7827,6 +7847,8 @@ begin
   light_set_temperature:=round(set_temperature);
   light_width:=width2;
   light_height:=height2;
+  light_date_obs:=date_obs;{preserve light date_obs}
+
   date_to_jd(date_obs,exposure); {convert date-obs to global variables jd_start, jd_mid. Use this to find the dark with the best match for the light}
 
   if pos('D',calstat_local)<>0 then
@@ -7890,10 +7912,12 @@ begin
 
   datamax_org:=datamax_light;{restore. will be overwitten by previouse reads}
   naxis3:=light_naxis3;{return old value}
-  exposure:=light_exposure;{preserve so it is not overriden by load apply dark_flat which will reset variable to zero}
-  width2:=light_width;
-  height2:=light_height;
-  set_temperature:=light_set_temperature;
+  exposure:=light_exposure;{restore }
+  set_temperature:=light_set_temperature;{restore old value}
+  width2:=light_width;{restore old value}
+  height2:=light_height;{restore old value}
+  date_obs:=light_date_obs;{restore old value}
+
 end;
 
 
@@ -8666,9 +8690,6 @@ begin
 
       plot_fits(mainwindow.image1,true,true);{plot real}
 
-      if ((annotated) and (stackmenu1.use_ephemeris_alignment1.checked)) then
-                     plot_annotations(0,0,false);
-
       remove_key('DATE    ',false{all});{no purpose anymore for the orginal date written}
       remove_key('EXPTIME',false{all}); {remove, will be added later in the header}
       remove_key('EXPOSURE',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
@@ -8698,6 +8719,7 @@ begin
           update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ', jd_sum/counterL);{give midpoint of exposures}
           date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
           update_text ('DATE-AVG=',#39+date_avg+#39);{give midpoint of exposures}
+          add_text   ('COMMENT ',' UT midpoint in decimal notation: '+ UTdecimal(date_avg));
         end;
       end
       else;{keep EXPOSURE and date_obs from reference image for accurate asteroid annotation}

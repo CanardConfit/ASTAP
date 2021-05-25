@@ -102,6 +102,7 @@ type
     grid1: TMenuItem;
     ccdinspector10_1: TMenuItem;
     freetext1: TMenuItem;
+    extend1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
     MenuItem26: TMenuItem;
@@ -694,7 +695,7 @@ function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2
 procedure ra_text_to_radians(inp :string; out ra : double; out errorRA :boolean); {convert ra in text to double in radians}
 procedure dec_text_to_radians(inp :string; out dec : double; out errorDEC :boolean); {convert ra in text to double in radians}
 function image_file_name(inp : string): boolean; {readable image name?}
-procedure plot_annotations(xoffset,yoffset:integer;fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
+procedure plot_annotations(use_solution_vectors,fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
 
 procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
@@ -3154,7 +3155,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.543, '+about_message4+', dated 2021-5-24';
+  #13+#10+'ASTAP version ß0.9.544, '+about_message4+', dated 2021-5-25';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3757,7 +3758,6 @@ end;
 procedure Tmainwindow.clean_up1Click(Sender: TObject);
 begin
   plot_fits(mainwindow.image1,false,true);
-  if ((annotated) and (annotations_visible1.checked)) then plot_annotations(0,0,false);
 end;
 
 
@@ -4450,7 +4450,6 @@ end;
 procedure Tmainwindow.remove_markers1Click(Sender: TObject);
 begin
   plot_fits(mainwindow.image1,false,true);
-  if ((annotated) and (annotations_visible1.checked)) then plot_annotations(0,0,false);
 end;
 
 
@@ -4841,6 +4840,7 @@ begin
     mainwindow.imageflipH1.enabled:=fits;
     mainwindow.imageflipV1.enabled:=fits;
     mainwindow.rotate_arbitrary1.enabled:=fits;
+    mainwindow.extend1.enabled:=fits;
 
     mainwindow.minimum1.enabled:=fits;
     mainwindow.maximum1.enabled:=fits;
@@ -6697,7 +6697,7 @@ begin
       mainwindow.add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
     plot_grid;
     plot_text;
-     {plot_annotation is done in plot_grid due to alignment}
+    if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(false {use solution vectors},false);
 
     mainwindow.statusbar1.panels[5].text:=inttostr(width2)+' x '+inttostr(height2)+' x '+inttostr(naxis3)+'   '+inttostr(nrbits)+' BPP';{give image dimensions and bit per pixel info}
     update_statusbar_section5;{update section 5 with image dimensions in degrees}
@@ -8418,7 +8418,6 @@ begin
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     image_move_to_center:=re_center;
     plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
-    if ((afitsfile) and (annotated) and (mainwindow.annotations_visible1.checked)) then  plot_annotations(0,0,false);
 
     update_equalise_background_step(1);{update equalise background menu}
 
@@ -9718,6 +9717,7 @@ const
 
 
 
+
   get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
   setlength(img_temp,1,width2,height2);{set length of image array}
@@ -9878,7 +9878,7 @@ begin
   if annotations_visible1.checked=false then  {clear screen}
     plot_fits(mainwindow.image1,false,true)
   else
-  if annotated then plot_annotations(0,0,false);
+  if annotated then plot_annotations(false {use solution vectors},false);
 end;
 
 
@@ -10364,7 +10364,7 @@ begin
 end;
 
 
-procedure plot_annotations(xoffset,yoffset:integer;fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
+procedure plot_annotations(use_solution_vectors,fill_combo: boolean); {plot annotations stored in fits header. Offsets are for blink routine}
 var
   count1,x1,y1,x2,y2 : integer;
   typ     : double;
@@ -10400,10 +10400,19 @@ begin
 
         if list.count>=6  then {correct annotation}
         begin
-          x1:=round(strtofloat2(list[0]))-1 +xoffset;{subtract 1 for conversion fits coordinates 1... to screen coordinates 0...}
-          y1:=round(strtofloat2(list[1]))-1 +yoffset;
-          x2:=round(strtofloat2(list[2]))-1 +xoffset;
-          y2:=round(strtofloat2(list[3]))-1 +yoffset;
+          x1:=round(strtofloat2(list[0]))-1;{subtract 1 for conversion fits coordinates 1... to screen coordinates 0...}
+          y1:=round(strtofloat2(list[1]))-1;
+          x2:=round(strtofloat2(list[2]))-1;
+          y2:=round(strtofloat2(list[3]))-1;
+
+          if use_solution_vectors then {for blink routine, images are aligned and possible flipped making the annotation position invalid}
+          begin
+            x1:=round(solution_vectorX[0]*(x1)+solution_vectorX[1]*(y1)+solution_vectorX[2]); {correction x:=aX+bY+c}
+            y1:=round(solution_vectorY[0]*(x1)+solution_vectorY[1]*(y1)+solution_vectorY[2]); {correction y:=aX+bY+c}
+            x2:=round(solution_vectorX[0]*(x2)+solution_vectorX[1]*(y2)+solution_vectorX[2]); {correction x:=aX+bY+c}
+            y2:=round(solution_vectorY[0]*(x2)+solution_vectorY[1]*(y2)+solution_vectorY[2]); {correction y:=aX+bY+c}
+          end;
+
 
           typ:=strtofloat2(list[4]);
           name:=list[5];
@@ -12519,19 +12528,22 @@ end;
 
 procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
 var
-  col,fitsX,fitsY,maxsize,i,j,progress_value,progressC,xx,yy        : integer;
-  cosA,sinA,factor, centerx,centery,centerxs,centerys,angle,value   : double;
+  col,fitsX,fitsY,maxsize,i,j,progress_value,progressC,xx,yy,resolution        : integer;
+  cosA,sinA,factor, centerx,centery,centerxs,centerys,angle,value              : double;
   valueI : string;
   Save_Cursor:TCursor;
-const
-  resolution=10;
 begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-  valueI:=InputBox('Rotation angle CCW in degrees:','','' );
-  if valueI=''  then exit;
-  angle:=strtofloat2(valueI);
+  if sender<>extend1 then
+  begin
+    valueI:=InputBox('Rotation angle CCW in degrees:','','' );
+    if valueI=''  then exit;
+    angle:=strtofloat2(valueI);
+  end
+  else
+  angle:=0;{this will effectively extend the canvas}
 
   memo2_message('Start rotation. This takes some time.');
   backup_img;
@@ -12560,7 +12572,9 @@ begin
   end;
 
   sincos(angle*pi/180,sinA,cosA);
+  if ((sinA=0) or (cosA=0)) then resolution:=1 else resolution:=10;{for angle 0,90,180,270 degrees no need to sub sample}
   factor:=1/sqr(resolution);{1/(number of subpixels), typical 1/(10x10)}
+
 
   progressC:=0;
   For fitsY:=0 to (height2-1) do
@@ -12630,6 +12644,7 @@ begin
 
      add_text   ('HISTORY   ','Rotated CCW by angle '+valueI);
   end;
+  remove_key('ANNOTATE',true{all});{this all will be invalid}
 
   plot_fits(mainwindow.image1,false,true);
 

@@ -3,12 +3,12 @@ object stackmenu1: Tstackmenu1
   Height = 674
   Top = 123
   Width = 1497
-  HorzScrollBar.Page = 1497
+  HorzScrollBar.Page = 1440
   VertScrollBar.Page = 509
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
-  ClientHeight = 657
+  ClientHeight = 674
   ClientWidth = 1497
   Color = clForm
   Icon.Data = {
@@ -52,9 +52,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.12.0'
   object Memo2: TMemo
     Left = 0
-    Height = 145
+    Height = 162
     Top = 512
-    Width = 1611
+    Width = 1497
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -201,7 +201,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 1949
+    Left = 2063
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -219,8 +219,8 @@ object stackmenu1: Tstackmenu1
     Height = 448
     Hint = 'Stack menu'
     Top = 0
-    Width = 1966
-    ActivePage = tab_blink1
+    Width = 2080
+    ActivePage = Images
     Align = alCustom
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Around = 5
@@ -228,14 +228,14 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 7
+    TabIndex = 0
     TabOrder = 5
     OnChange = pagecontrol1Change
     object Images: TTabSheet
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 420
-      ClientWidth = 1844
+      ClientWidth = 2072
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -309,7 +309,7 @@ object stackmenu1: Tstackmenu1
         Height = 383
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1840
+        Width = 2068
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -2190,7 +2190,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the alignment options'
       Caption = 'Alignment'
       ClientHeight = 420
-      ClientWidth = 1909
+      ClientWidth = 2137
       ImageIndex = 7
       ParentFont = False
       object use_star_alignment1: TRadioButton
@@ -2848,7 +2848,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 420
-      ClientWidth = 1958
+      ClientWidth = 2186
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
@@ -2856,7 +2856,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1958
+        Width = 2186
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3146,7 +3146,7 @@ object stackmenu1: Tstackmenu1
     object tab_photometry1: TTabSheet
       Caption = 'Photometry'
       ClientHeight = 420
-      ClientWidth = 2200
+      ClientWidth = 2428
       ImageIndex = 19
       ParentFont = False
       object browse_photometry1: TButton
@@ -3234,7 +3234,7 @@ object stackmenu1: Tstackmenu1
         Height = 380
         Hint = 'Double click to view image'
         Top = 40
-        Width = 2200
+        Width = 2428
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True

@@ -1491,12 +1491,7 @@ begin
         mainwindow.image1.Canvas.textout(round(0.5*fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(exposure))+'s');{}
       end;
     end;
-//    if add_annot then
-//    begin
-//      plot_annotations(0,0,false);{plot annotation from the header}
-//    end;
   end;
-
 end;
 
 { Tform_asteroids1 }
