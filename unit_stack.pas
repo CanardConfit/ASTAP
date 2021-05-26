@@ -286,7 +286,7 @@ type
     HueRadioButton1: TRadioButton;
     HueRadioButton2: TRadioButton;
     hue_fuzziness1: TTrackBar;
-    Images: TTabSheet;
+    lights: TTabSheet;
     image_to_add1: TLabel;
     Label1: TLabel;
     Label10: TLabel;
@@ -807,7 +807,7 @@ var
   exposureR, exposureG,exposureB,exposureRGB,exposureL            : integer;
   sum_exp,photometry_stdev                                        : double;
   referenceX,referenceY    : double;{reference position used stacking}
-  ref_X, ref_Y             : double;{reference position from FITS header, used for manual stacking of colour images, second stage}
+  ref_X, ref_Y             : double;{reference position from FITS header, used for manual stacking of colour lights, second stage}
   jd_start                 : double;{julian day of date-obs}
   jd_mid                   : double;{julian day of mid exposure}
   jd_sum                   : double;{sum of julian days}
@@ -833,6 +833,7 @@ var  {################# initialised variables #########################}
   equalise_background_step: integer=1;
 
 procedure listview_add(tl: tlistview; s0:string; is_checked:boolean; count:integer);
+procedure listview_add_xy(fitsX,fitsY: double);{add x,y position to listview}
 procedure update_equalise_background_step(pos1: integer);{update equalise background menu}
 procedure memo2_message(s: string);{message to memo2}
 procedure update_stackmenu;{update stackmenu1 menus}
@@ -854,6 +855,9 @@ procedure backup_header;{backup solution and header}
 function  restore_header: boolean;{backup solution and header}
 procedure report_results(object_to_process,stack_info :string;object_counter,colorinfo:integer);{report on tab results}
 procedure apply_factors;{apply r,g,b factors to image}
+procedure listviews_begin_update; {speed up making stackmenu visible having a many items}
+procedure listviews_end_update;{speed up making stackmenu visible having a many items}
+
 
 const
   L_object=0; {lights, position in listview1}
@@ -1186,6 +1190,35 @@ begin
   end;
 end;
 
+
+procedure listviews_begin_update;{speed up making stackmenu visible having a many items}
+begin
+  stackmenu1.listview1.Items.beginUpdate;
+  stackmenu1.listview2.Items.beginUpdate;
+  stackmenu1.listview3.Items.beginUpdate;
+  stackmenu1.listview4.Items.beginUpdate;
+  stackmenu1.listview5.Items.beginUpdate;
+  stackmenu1.listview6.Items.beginUpdate;
+  stackmenu1.listview7.Items.beginUpdate;
+  stackmenu1.listview8.Items.beginUpdate;
+//  stackmenu1.listview9.Items.beginUpdate;{not stored}
+end;
+
+
+procedure listviews_end_update; {speed up making stackmenu visible having a many items}
+begin
+  stackmenu1.listview1.Items.EndUpdate;
+  stackmenu1.listview2.Items.EndUpdate;
+  stackmenu1.listview3.Items.EndUpdate;
+  stackmenu1.listview4.Items.EndUpdate;
+  stackmenu1.listview5.Items.EndUpdate;
+  stackmenu1.listview6.Items.EndUpdate;
+  stackmenu1.listview7.Items.EndUpdate;
+  stackmenu1.listview8.Items.EndUpdate;
+//  stackmenu1.listview9.Items.EndUpdate;
+end;
+
+
 procedure listview_add(tl: tlistview; s0:string; is_checked: boolean; count:integer);
 var
   ListItem: TListItem;
@@ -1203,6 +1236,21 @@ begin
     {Items.EndUpdate; is set after calling this procedure}
   end;
 end;
+
+
+procedure listview_add_xy(fitsX,fitsY: double);{add x,y position to listview}
+var
+    i: integer;
+begin
+ with stackmenu1 do
+ for i:=0 to listview1.Items.Count-1 do
+   if listview1.Items[i].Selected then
+  begin
+    ListView1.Items.item[i].subitems.Strings[L_X]:=floattostrF2(fitsX,0,2);
+    ListView1.Items.item[i].subitems.Strings[L_Y]:=floattostrF2(fitsY,0,2);
+  end;
+end;
+
 
 procedure listview5_add(tl: tlistview; s0,s1,s2,s3,s4,s5,s6:string);
 var
@@ -1223,7 +1271,7 @@ begin
   end;
 end;
 
-procedure count_selected; {report the number of images selected in images_selected and update menu indication}
+procedure count_selected; {report the number of lights selected in images_selected and update menu indication}
 var
   c, images_selected         : integer;
 begin
@@ -1722,7 +1770,7 @@ begin
 
 
                 ListView1.Items.item[c].subitems.Strings[L_filter]:=filter_name; {filter name, without spaces}
-                if naxis3=3 then ListView1.Items.item[c].subitems.Strings[L_filter]:='colour'; {give RGB images filter name colour}
+                if naxis3=3 then ListView1.Items.item[c].subitems.Strings[L_filter]:='colour'; {give RGB lights filter name colour}
 
                 if AnsiCompareText(red_filter1.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=0 else
                 if AnsiCompareText(red_filter2.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=0 else
@@ -1823,7 +1871,7 @@ begin
       until key='';{until all keys are used}
     end;
 
-    count_selected; {report the number of images selected in images_selected and update menu indication}
+    count_selected; {report the number of lights selected in images_selected and update menu indication}
     new_analyse_required:=false; {back to normal, filter_name is not changed, so no re-analyse required}
     img:=nil; {free mem}
     Screen.Cursor :=Save_Cursor;    { back to normal }
@@ -1861,11 +1909,11 @@ begin
     listview1.Items.beginUpdate;
     for i:=0 to OpenDialog1.Files.count-1 do
     begin
-        listview_add(listview1,OpenDialog1.Files[i],   pos('_stacked',OpenDialog1.Files[i])=0 {do not check mark images already stacked}   ,L_nr);
+        listview_add(listview1,OpenDialog1.Files[i],   pos('_stacked',OpenDialog1.Files[i])=0 {do not check mark lights already stacked}   ,L_nr);
     end;
     listview1.Items.EndUpdate;
   end;
-  count_selected; {report the number of images selected in images_selected and update menu indication}
+  count_selected; {report the number of lights selected in images_selected and update menu indication}
 end;
 
 
@@ -1975,7 +2023,7 @@ begin
     nrcolours:=length(img_loaded)-1;{nr colours - 1}
     for col:=0 to naxis3-1 do {all colors}
     begin {subtract view from file}
-      col2:=min(nrcolours,col); {allow subtracting mono images from colour}
+      col2:=min(nrcolours,col); {allow subtracting mono lights from colour}
       for fitsY:=0 to height2-1 do
         for fitsX:=0 to width2-1 do
           img_temp[col,fitsX,fitsY]:=img_temp[col,fitsX,fitsY] - img_loaded[col2,fitsX,fitsY]+1000;  {use temp as temporary rather then img_loaded since img_loaded could be mono}
@@ -3387,7 +3435,7 @@ end;
 
 
 procedure average(mess:string; file_list : array of string; file_count:integer; var img2: image_array);{combine to average or mean, make also mono from three colors if color}
-var                                                   {this routine works with mono files but makes coloured files mono, so less suitable for commercial cameras producing coloured raw images}
+var                                                   {this routine works with mono files but makes coloured files mono, so less suitable for commercial cameras producing coloured raw lights}
    Save_Cursor:TCursor;
    c,fitsX, fitsY : integer;
    img_tmp1 :image_array;
@@ -4260,7 +4308,7 @@ begin
         plot_fits(mainwindow.image1,false {re_center},true);
         annotated:=store_annotated;{restore anotated value}
         if ((annotated) and (mainwindow.annotations_visible1.checked)) then
-        plot_annotations(true {use solution vectors!!!!},false); {corrected annotations in case a part of the images are flipped in the alignment routien}
+        plot_annotations(true {use solution vectors!!!!},false); {corrected annotations in case a part of the lights are flipped in the alignment routien}
 
         if sender=write_video1 then {write video frame}
         begin
@@ -4983,7 +5031,7 @@ begin
   esc_pressed:=false;
   refresh_solutions:=mount_ignore_solutions1.checked; {refresh astrometric solutions}
 
-  {solve images first to allow flux to magnitude calibration}
+  {solve lights first to allow flux to magnitude calibration}
   with stackmenu1 do
   for c:=0 to listview9.items.count-1 do {check for astrometric solutions}
   begin
@@ -5583,7 +5631,7 @@ begin
                                        else
                                        begin {lights}
                                          listview_add(listview1,FileNames[i],true,L_nr);
-                                         if  pos('_stacked',FileNames[i])<>0 then {do not check mark images already stacked}
+                                         if  pos('_stacked',FileNames[i])<>0 then {do not check mark lights already stacked}
                                                listview1.items[ListView1.items.count-1].checked:=false;
                                        end;
       end;
@@ -5600,7 +5648,7 @@ begin
                        else
                        begin {lights}
                          listview1.Items.EndUpdate;
-                         count_selected; {report the number of images selected in images_selected and update menu indication}
+                         count_selected; {report the number of lights selected in images_selected and update menu indication}
                        end;
   end;
 
@@ -5763,7 +5811,7 @@ begin
 
         if  starlistpack[c].height<>0 then {filled with data}
         begin
-          if stepnr=1 then inc(nr_images);{keep record of number of images}
+          if stepnr=1 then inc(nr_images);{keep record of number of lights}
           try
             for i:=0 to min(length(starlistpack[c].starlist[0])-2,5000) do {calculate mean of the found stars}
             begin
@@ -5963,7 +6011,7 @@ begin
 
   refresh_solutions:=(sender=stackmenu1.refresh_astrometric_solutions1); {refresh astrometric solutions}
 
-  {solve images first to allow flux to magnitude calibration}
+  {solve lights first to allow flux to magnitude calibration}
   for c:=0 to listview7.items.count-1 do {check for astrometric solutions}
   begin
     if ((esc_pressed=false) and (listview7.Items.item[c].checked) and (listview7.Items.item[c].subitems.Strings[P_astrometric]=''))  then
@@ -6134,7 +6182,7 @@ begin
         sincos(dec0,SIN_dec0,COS_dec0); {do this in advance since it is for each pixel the same}
         astrometric_to_vector;{convert astrometric solution to vectors}
 
-        {shift, rotate to match images}
+        {shift, rotate to match lights}
         for fitsY:=1 to height2 do
         for fitsX:=1 to width2  do
         begin
@@ -6148,7 +6196,7 @@ begin
         img_loaded:=img_temp;
 
 
-        {quick and dirty method to correct annotations for aligned images}
+        {quick and dirty method to correct annotations for aligned lights}
         CRPIX1:=solution_vectorX[0]*(CRPIX1-1)+solution_vectorX[1]*(CRPIX2-1)+solution_vectorX[2];{correct for marker_position at ra_dec position}
         CRPIX2:=solution_vectorY[0]*(CRPIX1-1)+solution_vectorY[1]*(CRPIX2-1)+solution_vectorY[2];
 
@@ -6162,7 +6210,7 @@ begin
         plot_fits(mainwindow.image1,false {re_center},true);
         annotated:=store_annotated;{restore anotated value}
         if ((annotated) and (mainwindow.annotations_visible1.checked)) then
-          plot_annotations(true {use solution vectors!!!!},false); {corrected annotations in case a part of the images are flipped in the alignment routien}
+          plot_annotations(true {use solution vectors!!!!},false); {corrected annotations in case a part of the lights are flipped in the alignment routien}
 
 
 
@@ -6796,7 +6844,7 @@ var
    fitsX,fitsY: integer;
    background_r,background_g,background_b, red,green,blue,signal_R,signal_G,signal_B,sigma,lumn : double;
 begin
-  if naxis3<3 then exit;{prevent run time error mono images}
+  if naxis3<3 then exit;{prevent run time error mono lights}
 //  if fits_file=false then exit;
   Save_Cursor := Screen.Cursor;
   Screen.Cursor:= crHourGlass;
@@ -7605,7 +7653,7 @@ begin
     if file_count<>0 then
     begin
       memo2_message('Averaging darks.');
-      average('dark',file_list,file_count,img_dark);  {the result will be mono so more suitable for raw images without bayer applied. Not so suitable for commercial camera's image and converted to coloured FITS}
+      average('dark',file_list,file_count,img_dark);  {the result will be mono so more suitable for raw lights without bayer applied. Not so suitable for commercial camera's image and converted to coloured FITS}
       if esc_pressed then exit;
 
       Application.ProcessMessages;
@@ -7662,7 +7710,7 @@ begin
 end;
 
 
-procedure Tstackmenu1.replace_by_master_dark1Click(Sender: TObject); {this routine works with mono files but makes coloured files mono, so less suitable for commercial cameras producing coloured raw images}
+procedure Tstackmenu1.replace_by_master_dark1Click(Sender: TObject); {this routine works with mono files but makes coloured files mono, so less suitable for commercial cameras producing coloured raw lights}
 begin
   if img_loaded<>nil then {button was used, backup img array and header and restore later}  begin  img_backup:=nil;{clear to save memory}  backup_img;  end;{backup fits for later}
   replace_by_master_dark;
@@ -7921,7 +7969,7 @@ begin
 end;
 
 
-procedure calibration_only; {calibrate images only}
+procedure calibration_only; {calibrate lights only}
 var
   Save_Cursor:TCursor;
    c,x,y,col  : integer;
@@ -8164,7 +8212,7 @@ begin
   min_background:=65535;
   max_background:=0;
 
-  if pos('Calibration only',stackmenu1.stack_method1.text)>0=true then {calibrate images only}
+  if pos('Calibration only',stackmenu1.stack_method1.text)>0=true then {calibrate lights only}
   begin
      calibration_only;
      exit;
@@ -8446,7 +8494,7 @@ begin
       end;
     end
     else
-    begin {lrgb images, classify on filter is true}
+    begin {lrgb lights, classify on filter is true}
       SetLength(files_to_process_LRGB,6);{will contain [reference,r,g,b,colour,l]}
       for i:=0 to 5 do files_to_process_LRGB[i].name:='';{clear}
 
@@ -8872,7 +8920,7 @@ begin
     end; {not zero count}
 
     Application.ProcessMessages;{look for keyboard instructions}
-    total_counter:=total_counter+counterL; {keep record of images done}
+    total_counter:=total_counter+counterL; {keep record of lights done}
 
   until ((counterL=0){none lrgb loop} and (extra1=''){lrgb loop} );{do all names}
 
@@ -9097,7 +9145,7 @@ begin
     if framerate=''  then exit;
 
     if listview6.Items.item[listview6.items.count-1].subitems.Strings[B_exposure]='' {exposure} then
-      stackmenu1.analyseblink1Click(nil);  {analyse and secure the dimension values width2, height2 from images}
+      stackmenu1.analyseblink1Click(nil);  {analyse and secure the dimension values width2, height2 from lights}
 
     write_YUV4MPEG2_header(mainwindow.savedialog1.filename,framerate,((naxis3>1) or (mainwindow.preview_demosaic1.checked)) );
     stackmenu1.blink_button1Click(Sender);{blink and write video frames}

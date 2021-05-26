@@ -700,7 +700,6 @@ procedure plot_annotations(use_solution_vectors,fill_combo: boolean); {plot anno
 procedure RGB2HSV(r,g,b : single; out h {0..360}, s {0..1}, v {0..1}: single);{RGB to HSVB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 procedure HSV2RGB(h {0..360}, s {0..1}, v {0..1} : single; out r,g,b: single); {HSV to RGB using hexcone model, https://en.wikipedia.org/wiki/HSL_and_HSV}
 function get_demosaic_pattern : integer; {get the required de-bayer range 0..3}
-procedure listview_add_xy(fitsX,fitsY: double);{add x,y position to listview}
 Function LeadingZero(w : integer) : String;
 procedure log_to_file(logf,mess : string);{for testing}
 procedure log_to_file2(logf,mess : string);{used for platesolve2 and photometry}
@@ -3155,7 +3154,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.544, '+about_message4+', dated 2021-5-25';
+  #13+#10+'ASTAP version ß0.9.545, '+about_message4+', dated 2021-5-26';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -7150,7 +7149,7 @@ var
   dum : string;
   i,c                : integer;
   initstring :tstrings; {settings for save and loading}
-
+  t1,t2 : longint;
 //    procedure get_float(var float: double;s1 : string);
 //    var
 //      err: integer;
@@ -7201,6 +7200,7 @@ var
    end;
 
 begin
+
   result:=false;{assume failure}
   initstring := Tstringlist.Create;
   with initstring do
@@ -7212,6 +7212,9 @@ begin
       exit; {no cfg file}
     end;
   end;
+
+ // t1:=GetTickCount;
+
   result:=true;
   with mainwindow do
   begin
@@ -7353,9 +7356,6 @@ begin
 
     if paramcount=0 then filename2:=initstring.Values['last_file'];{if used as viewer don't override paramstr1}
 
-//    stackmenu1.ignore_hotpixels1.checked:= get_boolean('ignore_hotpixels',false);
-//    dum:=initstring.Values['hotpixel_sd_factor']; if dum<>'' then stackmenu1.hotpixel_sd_factor1.text:=dum;
-
     dum:=initstring.Values['bayer_pat']; if dum<>'' then stackmenu1.bayer_pattern1.text:=dum;
 
     dum:=initstring.Values['red_filter1']; if dum<>'' then stackmenu1.red_filter1.text:=dum;
@@ -7449,82 +7449,6 @@ begin
     stackmenu1.equinox1.itemindex:=get_int2(range1.itemindex,'equinox');
     stackmenu1.mount_write_wcs1.Checked:=get_boolean('wcs',true);{use wcs files for mount}
 
-    stackmenu1.listview1.Items.BeginUpdate;
-    c:=0;
-    repeat {add images}
-       dum:=initstring.Values['image'+inttostr(c)];
-       if ((dum<>'') and (fileexists(dum))) then
-         listview_add(stackmenu1.listview1,dum,get_boolean('image'+inttostr(c)+'_check',true),L_nr);
-       inc(c);
-    until (dum='');
-    stackmenu1.listview1.Items.endUpdate;
-
-    stackmenu1.listview2.Items.BeginUpdate;
-    c:=0;
-    repeat {add  darks}
-      dum:=initstring.Values['dark'+inttostr(c)];
-      if ((dum<>'') and (fileexists(dum))) then
-         listview_add(stackmenu1.listview2,dum,get_boolean('dark'+inttostr(c)+'_check',true),D_nr);
-      inc(c);
-    until (dum='');
-    stackmenu1.listview2.Items.endUpdate;
-
-
-    stackmenu1.listview3.Items.BeginUpdate;
-    c:=0;
-    repeat {add  flats}
-      dum:=initstring.Values['flat'+inttostr(c)];
-      if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview3,dum,get_boolean('flat'+inttostr(c)+'_check',true),F_nr);
-      inc(c);
-    until (dum='');
-    stackmenu1.listview3.Items.endUpdate;
-
-
-    stackmenu1.listview4.Items.BeginUpdate;
-    c:=0;
-    repeat {add flat darks}
-      dum:=initstring.Values['flat_dark'+inttostr(c)];
-      if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview4,dum,get_boolean('flat_dark'+inttostr(c)+'_check',true),D_nr);
-      inc(c);
-    until (dum='');
-    stackmenu1.listview4.Items.endUpdate;
-
-
-    stackmenu1.listview6.Items.BeginUpdate;
-    c:=0;
-    repeat {add blink files}
-      dum:=initstring.Values['blink'+inttostr(c)];
-      if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview6,dum,get_boolean('blink'+inttostr(c)+'_check',true),B_nr);
-      inc(c);
-    until (dum='');
-    stackmenu1.listview6.Items.endUpdate;
-
-
-    stackmenu1.listview7.Items.BeginUpdate;
-    c:=0;
-    repeat {add photometry files}
-      dum:=initstring.Values['photometry'+inttostr(c)];
-      if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview7,dum,get_boolean('photometry'+inttostr(c)+'_check',true),P_nr);
-      inc(c);
-    until (dum='');
-    stackmenu1.listview7.Items.endUpdate;
-
-
-    stackmenu1.listview8.Items.BeginUpdate;
-    c:=0;
-    repeat {add inspector files}
-      dum:=initstring.Values['inspector'+inttostr(c)];
-      if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview8,dum,get_boolean('inspector'+inttostr(c)+'_check',true),L_nr);
-      inc(c);
-    until (dum='');
-    stackmenu1.listview8.Items.endUpdate;
-
-
     c:=0;
     repeat {read recent files}
       dum:=initstring.Values['recent'+inttostr(c)];
@@ -7534,7 +7458,71 @@ begin
     until (dum='');
     update_recent_file_menu;
 
-    stackmenu1.visible:=((get_boolean('stackmenu_visible',false) ) and (paramcount=0));{do this last, so stackmenu.onshow updates the setting correctly}
+
+
+    listviews_begin_update; {stop updating listviews}
+
+    c:=0;
+    repeat {add images}
+       dum:=initstring.Values['image'+inttostr(c)];
+       if ((dum<>'') and (fileexists(dum))) then
+         listview_add(stackmenu1.listview1,dum,get_boolean('image'+inttostr(c)+'_check',true),L_nr);
+       inc(c);
+    until (dum='');
+
+    c:=0;
+    repeat {add  darks}
+      dum:=initstring.Values['dark'+inttostr(c)];
+      if ((dum<>'') and (fileexists(dum))) then
+         listview_add(stackmenu1.listview2,dum,get_boolean('dark'+inttostr(c)+'_check',true),D_nr);
+      inc(c);
+    until (dum='');
+
+    c:=0;
+    repeat {add  flats}
+      dum:=initstring.Values['flat'+inttostr(c)];
+      if ((dum<>'') and (fileexists(dum))) then
+        listview_add(stackmenu1.listview3,dum,get_boolean('flat'+inttostr(c)+'_check',true),F_nr);
+      inc(c);
+    until (dum='');
+
+    c:=0;
+    repeat {add flat darks}
+      dum:=initstring.Values['flat_dark'+inttostr(c)];
+      if ((dum<>'') and (fileexists(dum))) then
+        listview_add(stackmenu1.listview4,dum,get_boolean('flat_dark'+inttostr(c)+'_check',true),D_nr);
+      inc(c);
+    until (dum='');
+
+    c:=0;
+    repeat {add blink files}
+      dum:=initstring.Values['blink'+inttostr(c)];
+      if ((dum<>'') and (fileexists(dum))) then
+        listview_add(stackmenu1.listview6,dum,get_boolean('blink'+inttostr(c)+'_check',true),B_nr);
+      inc(c);
+    until (dum='');
+
+    c:=0;
+    repeat {add photometry files}
+      dum:=initstring.Values['photometry'+inttostr(c)];
+      if ((dum<>'') and (fileexists(dum))) then
+        listview_add(stackmenu1.listview7,dum,get_boolean('photometry'+inttostr(c)+'_check',true),P_nr);
+      inc(c);
+    until (dum='');
+
+    c:=0;
+    repeat {add inspector files}
+      dum:=initstring.Values['inspector'+inttostr(c)];
+      if ((dum<>'') and (fileexists(dum))) then
+        listview_add(stackmenu1.listview8,dum,get_boolean('inspector'+inttostr(c)+'_check',true),L_nr);
+      inc(c);
+    until (dum='');
+
+    stackmenu1.visible:=((paramcount=0) and (get_boolean('stackmenu_visible',false) ) );{do this last, so stackmenu.onshow updates the setting correctly}
+    listviews_end_update; {start updating listviews. Do this after setting stack menus visible. This is faster.}
+
+//    mainwindow.Caption := floattostr((GetTickCount-t1)/1000);
+
   end;
   initstring.free;
 end;
@@ -12667,20 +12655,6 @@ begin
 end;
 
 
-procedure listview_add_xy(fitsX,fitsY: double);{add x,y position to listview}
-var
-    i: integer;
-begin
- with stackmenu1 do
- for i:=0 to listview1.Items.Count-1 do
-   if listview1.Items[i].Selected then
-  begin
-    ListView1.Items.item[i].subitems.Strings[L_X]:=floattostrF2(fitsX,0,2);
-    ListView1.Items.item[i].subitems.Strings[L_Y]:=floattostrF2(fitsY,0,2);
-  end;
-end;
-
-
 function RGBToH(r,g,b : single): integer;
 {https://en.wikipedia.org/wiki/Hue}
 {Preucil used a polar plot, which he termed a color circle.[8] Using R, G, and B, one may compute hue angle using the following scheme: determine which of the six possible orderings of R, G, and B prevail, then apply the formula given in the table below. }
@@ -14560,8 +14534,12 @@ end;
 
 procedure Tmainwindow.Stackimages1Click(Sender: TObject);
 begin
+  listviews_begin_update; {speed up making stackmenu visible having a many items}
+
   stackmenu1.visible:=true;
   stackmenu1.setfocus;
+
+  listviews_end_update;{speed up making stackmenu visible having a many items}
 end;
 
 

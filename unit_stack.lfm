@@ -1,15 +1,15 @@
 object stackmenu1: Tstackmenu1
-  Left = 228
-  Height = 674
-  Top = 123
-  Width = 1497
+  Left = 18
+  Height = 717
+  Top = 128
+  Width = 1883
   HorzScrollBar.Page = 1440
-  VertScrollBar.Page = 509
+  VertScrollBar.Page = 556
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
-  ClientHeight = 674
-  ClientWidth = 1497
+  ClientHeight = 717
+  ClientWidth = 1883
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -52,9 +52,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.12.0'
   object Memo2: TMemo
     Left = 0
-    Height = 162
-    Top = 512
-    Width = 1497
+    Height = 157
+    Top = 560
+    Width = 1883
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -67,7 +67,7 @@ object stackmenu1: Tstackmenu1
   object press_esc_to_abort1: TLabel
     Left = 304
     Height = 15
-    Top = 468
+    Top = 515
     Width = 98
     Caption = 'Press ESC to abort.'
     Color = clBtnFace
@@ -78,7 +78,7 @@ object stackmenu1: Tstackmenu1
   object classify_groupbox1: TGroupBox
     Left = 488
     Height = 60
-    Top = 449
+    Top = 496
     Width = 480
     Caption = 'Classify by'
     ClientHeight = 40
@@ -152,7 +152,7 @@ object stackmenu1: Tstackmenu1
     Left = 1000
     Height = 30
     Hint = 'Help'
-    Top = 456
+    Top = 507
     Width = 9
     Caption = '?'
     Font.Color = clBlue
@@ -167,7 +167,7 @@ object stackmenu1: Tstackmenu1
     Left = 1080
     Height = 19
     Hint = 'If selected, shutdown computer after completion.'
-    Top = 456
+    Top = 507
     Width = 177
     Caption = 'Power down after completion'
     ParentFont = False
@@ -179,7 +179,7 @@ object stackmenu1: Tstackmenu1
     Left = 1080
     Height = 19
     Hint = 'Write the stack log to a file with extension .txt'
-    Top = 482
+    Top = 529
     Width = 87
     Caption = 'Write log file'
     ParentFont = False
@@ -191,7 +191,7 @@ object stackmenu1: Tstackmenu1
     Left = 24
     Height = 41
     Hint = 'Stack check marked images using darks, flats and flat dark frames.'
-    Top = 460
+    Top = 507
     Width = 248
     Caption = 'Stack check marked images'
     OnClick = stack_button1Click
@@ -201,7 +201,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 2063
+    Left = 2449
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -216,13 +216,13 @@ object stackmenu1: Tstackmenu1
   end
   object pagecontrol1: TPageControl
     Left = 0
-    Height = 448
+    Height = 493
     Hint = 'Stack menu'
     Top = 0
-    Width = 2080
-    ActivePage = Images
+    Width = 1881
+    ActivePage = lights
     Align = alCustom
-    Anchors = [akTop, akLeft, akRight]
+    Anchors = [akTop, akLeft, akRight, akBottom]
     BorderSpacing.Around = 5
     Images = ImageList2
     ParentFont = False
@@ -231,11 +231,11 @@ object stackmenu1: Tstackmenu1
     TabIndex = 0
     TabOrder = 5
     OnChange = pagecontrol1Change
-    object Images: TTabSheet
+    object lights: TTabSheet
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
-      ClientHeight = 420
-      ClientWidth = 2072
+      ClientHeight = 465
+      ClientWidth = 1873
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -306,10 +306,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview1: TListView
         Left = 0
-        Height = 383
+        Height = 425
         Hint = 'Double click to view image'
         Top = 40
-        Width = 2068
+        Width = 1873
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -580,8 +580,8 @@ object stackmenu1: Tstackmenu1
     object Darks: TTabSheet
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
-      ClientHeight = 420
-      ClientWidth = 1862
+      ClientHeight = 422
+      ClientWidth = 1873
       ImageIndex = 1
       ParentFont = False
       object browse_darks1: TButton
@@ -625,10 +625,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview2: TListView
         Left = 0
-        Height = 383
+        Height = 382
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1862
+        Width = 1873
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -759,8 +759,8 @@ object stackmenu1: Tstackmenu1
     object Flats: TTabSheet
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
-      ClientHeight = 420
-      ClientWidth = 1488
+      ClientHeight = 422
+      ClientWidth = 1543
       ImageIndex = 2
       ParentFont = False
       object browse_flats1: TButton
@@ -810,10 +810,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview3: TListView
         Left = 0
-        Height = 380
+        Height = 382
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1488
+        Width = 1543
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -938,8 +938,8 @@ object stackmenu1: Tstackmenu1
     object Bias: TTabSheet
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
-      ClientHeight = 420
-      ClientWidth = 1488
+      ClientHeight = 465
+      ClientWidth = 1873
       ImageIndex = 3
       ParentFont = False
       object browse_bias1: TButton
@@ -977,11 +977,11 @@ object stackmenu1: Tstackmenu1
       end
       object listview4: TListView
         Left = 0
-        Height = 380
+        Height = 425
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1488
-        Align = alBottom
+        Width = 1873
+        Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
         Columns = <        
@@ -1084,16 +1084,16 @@ object stackmenu1: Tstackmenu1
     object Result1: TTabSheet
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
-      ClientHeight = 420
-      ClientWidth = 1488
+      ClientHeight = 422
+      ClientWidth = 1873
       ImageIndex = 6
       ParentFont = False
       object listview5: TListView
         Left = 0
-        Height = 383
+        Height = 382
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1642
+        Width = 1873
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Columns = <        
@@ -1196,8 +1196,8 @@ object stackmenu1: Tstackmenu1
     object tab_stackmethod1: TTabSheet
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
-      ClientHeight = 420
-      ClientWidth = 1844
+      ClientHeight = 422
+      ClientWidth = 1873
       ImageIndex = 5
       ParentFont = False
       object stack_method1: TComboBox
@@ -2189,8 +2189,8 @@ object stackmenu1: Tstackmenu1
     object alignment1: TTabSheet
       Hint = 'Set here the alignment options'
       Caption = 'Alignment'
-      ClientHeight = 420
-      ClientWidth = 2137
+      ClientHeight = 465
+      ClientWidth = 1873
       ImageIndex = 7
       ParentFont = False
       object use_star_alignment1: TRadioButton
@@ -2847,17 +2847,17 @@ object stackmenu1: Tstackmenu1
     object tab_blink1: TTabSheet
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
-      ClientHeight = 420
-      ClientWidth = 2186
+      ClientHeight = 422
+      ClientWidth = 1873
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
         Left = 0
-        Height = 380
+        Height = 382
         Hint = 'Double click to view image'
         Top = 40
-        Width = 2186
-        Align = alBottom
+        Width = 1873
+        Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
         Columns = <        
@@ -3145,8 +3145,8 @@ object stackmenu1: Tstackmenu1
     end
     object tab_photometry1: TTabSheet
       Caption = 'Photometry'
-      ClientHeight = 420
-      ClientWidth = 2428
+      ClientHeight = 422
+      ClientWidth = 1873
       ImageIndex = 19
       ParentFont = False
       object browse_photometry1: TButton
@@ -3231,11 +3231,11 @@ object stackmenu1: Tstackmenu1
       end
       object listview7: TListView
         Left = 0
-        Height = 380
+        Height = 382
         Hint = 'Double click to view image'
         Top = 40
-        Width = 2428
-        Align = alBottom
+        Width = 1873
+        Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
         Columns = <        
@@ -3585,8 +3585,8 @@ object stackmenu1: Tstackmenu1
     end
     object TabSheet1: TTabSheet
       Caption = 'Inspector'
-      ClientHeight = 420
-      ClientWidth = 1488
+      ClientHeight = 422
+      ClientWidth = 1873
       ImageIndex = 17
       object browse_inspector1: TButton
         Left = 32
@@ -3614,12 +3614,12 @@ object stackmenu1: Tstackmenu1
       end
       object listview8: TListView
         Left = 0
-        Height = 383
+        Height = 382
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1485
+        Width = 1873
         Align = alCustom
-        Anchors = [akTop, akLeft, akRight, akBottom]
+        Anchors = [akTop, akLeft, akRight]
         Checkboxes = True
         Columns = <        
           item
@@ -3816,15 +3816,15 @@ object stackmenu1: Tstackmenu1
     end
     object mount1: TTabSheet
       Caption = 'Mount analyse'
-      ClientHeight = 420
-      ClientWidth = 1529
+      ClientHeight = 422
+      ClientWidth = 1873
       ImageIndex = 21
       object listview9: TListView
         Left = 0
-        Height = 380
+        Height = 382
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1529
+        Width = 1873
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -4049,8 +4049,8 @@ object stackmenu1: Tstackmenu1
     end
     object tab_live_stacking1: TTabSheet
       Caption = 'Live stacking'
-      ClientHeight = 420
-      ClientWidth = 1755
+      ClientHeight = 422
+      ClientWidth = 1873
       ParentFont = False
       object browse_live_stacking1: TButton
         Left = 16
@@ -4217,8 +4217,8 @@ object stackmenu1: Tstackmenu1
     object tab_Pixelmath1: TTabSheet
       Hint = 'Pixel math tools'
       Caption = 'Pixel math 1'
-      ClientHeight = 420
-      ClientWidth = 1532
+      ClientHeight = 422
+      ClientWidth = 1873
       Enabled = False
       ImageIndex = 4
       ParentFont = False
@@ -5566,8 +5566,8 @@ object stackmenu1: Tstackmenu1
     end
     object tab_Pixelmath2: TTabSheet
       Caption = 'Pixel math 2'
-      ClientHeight = 420
-      ClientWidth = 1844
+      ClientHeight = 422
+      ClientWidth = 1873
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox
@@ -6739,11 +6739,11 @@ object stackmenu1: Tstackmenu1
   object OpenDialog1: TOpenDialog
     Title = 'Open an existing file'
     Left = 392
-    Top = 528
+    Top = 592
   end
   object ImageList2: TImageList
-    Left = 480
-    Top = 592
+    Left = 472
+    Top = 648
     Bitmap = {
       4C69160000001000000010000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -7454,8 +7454,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu1: TPopupMenu
     Images = ImageList2
-    Left = 480
-    Top = 528
+    Left = 464
+    Top = 592
     object Viewimage1: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -7522,7 +7522,7 @@ object stackmenu1: Tstackmenu1
   end
   object ImageList_colors: TImageList
     Left = 576
-    Top = 592
+    Top = 648
     Bitmap = {
       4C691100000010000000100000000000FF000000FF000000FF000000FF000000
       FF000000FF000000FF000000FF000000FF000000FF000000FF000000FF000000
@@ -8074,7 +8074,7 @@ object stackmenu1: Tstackmenu1
   object PopupMenu2: TPopupMenu
     Images = ImageList2
     Left = 576
-    Top = 528
+    Top = 592
     object Viewimage2: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -8126,8 +8126,8 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu3: TPopupMenu
     Images = ImageList2
-    Left = 664
-    Top = 528
+    Left = 656
+    Top = 592
     object Viewimage3: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -8180,7 +8180,7 @@ object stackmenu1: Tstackmenu1
   object PopupMenu4: TPopupMenu
     Images = ImageList2
     Left = 768
-    Top = 528
+    Top = 592
     object Viewimage4: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -8233,7 +8233,7 @@ object stackmenu1: Tstackmenu1
   object PopupMenu5: TPopupMenu
     Images = ImageList2
     Left = 856
-    Top = 528
+    Top = 592
     object Viewimage5: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -8304,7 +8304,7 @@ object stackmenu1: Tstackmenu1
   object PopupMenu6: TPopupMenu
     Images = ImageList2
     Left = 936
-    Top = 528
+    Top = 592
     object Viewimage6: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -8386,12 +8386,12 @@ object stackmenu1: Tstackmenu1
       'ColorT=A4A0A0'
     )
     Left = 392
-    Top = 584
+    Top = 648
   end
   object PopupMenu7: TPopupMenu
     Images = ImageList2
     Left = 1016
-    Top = 528
+    Top = 592
     object Viewimage7: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -8451,7 +8451,7 @@ object stackmenu1: Tstackmenu1
   object PopupMenu8: TPopupMenu
     Images = ImageList2
     Left = 1104
-    Top = 528
+    Top = 592
     object Viewimage8: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
@@ -8511,7 +8511,7 @@ object stackmenu1: Tstackmenu1
   object PopupMenu9: TPopupMenu
     Images = ImageList2
     Left = 1176
-    Top = 528
+    Top = 592
     object Viewimage9: TMenuItem
       Caption = 'View image'
       OnClick = Viewimage1Click
