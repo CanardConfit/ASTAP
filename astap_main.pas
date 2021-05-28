@@ -3156,7 +3156,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.546, '+about_message4+', dated 2021-5-26';
+  #13+#10+'ASTAP version ß0.9.547, '+about_message4+', dated 2021-5-28';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -7710,7 +7710,7 @@ begin
 
       dum:=Sett.ReadString('stack','downsample',''); if dum<>'' then stackmenu1.downsample_for_solving1.text:=dum;
 
-      stackmenu1.apply_normalise_filter1.checked:=Sett.ReadBool('stack','normalise_f',false);{apply normalise filter on (OSC) flat prior to stacking}
+      stackmenu1.apply_normalise_filter1.checked:=Sett.ReadBool('stack','normalise_f',true);{apply normalise filter on (OSC) flat prior to stacking}
       dum:=Sett.ReadString('stack','oversize','');if dum<>'' then stackmenu1.oversize1.text:=dum;
       dum:=Sett.ReadString('stack','sd_factor',''); if dum<>'' then stackmenu1.sd_factor1.text:=dum;
 
@@ -12128,7 +12128,8 @@ begin
  begin
    img_average:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
    setlength(img_average,naxis3,width2,height2);{force a duplication}
-   box_blur(1 {nr of colors},2,img_loaded);
+   //box_blur(1 {nr of colors},2,img_loaded);
+   normalize_OSC_flat(img_loaded);
    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
   end;
 

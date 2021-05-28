@@ -41,13 +41,13 @@ type
     add_noise1: TButton;
     add_substract1: TComboBox;
     add_time1: TCheckBox;
+    apply_normalise_filter1: TCheckBox;
     classify_dark_date1: TCheckBox;
     classify_flat_date1: TCheckBox;
     flat_combine_method1: TComboBox;
     GroupBox8: TGroupBox;
     green_purple_filter1: TCheckBox;
     help_mount_tab1: TLabel;
-    apply_normalise_filter1: TCheckBox;
     osc_preserve_r_nebula1: TCheckBox;
     lrgb_auto_level1: TCheckBox;
     lrgb_colour_smooth1: TCheckBox;
@@ -103,7 +103,6 @@ type
     mount1: TTabSheet;
     apply_box_filter2: TButton;
     test_osc_normalise_filter1: TButton;
-    undo_button17: TBitBtn;
     undo_button6: TBitBtn;
     unselect9: TMenuItem;
     Viewimage9: TMenuItem;
@@ -842,6 +841,7 @@ procedure update_equalise_background_step(pos1: integer);{update equalise backgr
 procedure memo2_message(s: string);{message to memo2}
 procedure update_stackmenu;{update stackmenu1 menus}
 procedure box_blur(colors,range: integer;var img: image_array);{combine values of pixels, ignore zeros}
+procedure normalize_OSC_flat(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
 procedure black_spot_filter(var img: image_array);{remove black spots with value zero}
 
 function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
@@ -3574,7 +3574,7 @@ end;
 
 
 procedure normalize_OSC_flat(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
-var fitsX,fitsY,col,h,w,counter : integer;
+var fitsX,fitsY,col,h,w,counter1,counter2, counter3,counter4 : integer;
    img_temp2 : image_array;
    value1,value2,value3,value4,maxval : double;
    oddx, oddy :boolean;
@@ -3585,32 +3585,32 @@ begin
 
   if col>1 then
   begin
-    memo2_message('Skip normalise, this normalize filter only works for raw OSC images!!');
+    memo2_message('Skipping normalise filter. This filter works only for raw OSC images!');
     exit;
   end;
 
 
-  value1:=0;
-  value2:=0;
-  value3:=0;
-  value4:=0;
-  counter:=0;
-  for fitsY:=(h div 4) to (h*3) div 4 do {use one quarter of the image to find factors. Works also a little better if no dark-flat is subtracted}
+  value1:=0; value2:=0; value3:=0; value4:=0;
+  counter1:=0; counter2:=0; counter3:=0; counter4:=0;
+
+//    for fitsY:=0 to h-1 do
+//      for fitsX:=0 to w-1 do
+  for fitsY:=(h div 4) to (h*3) div 4 do {use one quarter of the image to find factors. Works also a little better if no dark-flat is subtracted. It also wokrs better if boarder is black}
     for fitsX:=(w div 4) to (w*3) div 4 do
     begin
       oddX:=odd(fitsX);
       oddY:=odd(fitsY);
-      if ((oddX=false) and (oddY=false)) then value1:=value1+img[0,fitsX,fitsY] else
-      if ((oddX=true)  and (oddY=false)) then value2:=value2+img[0,fitsX,fitsY] else
-      if ((oddX=false) and (oddY=true))  then value3:=value3+img[0,fitsX,fitsY] else
-      if ((oddX=true)  and (oddY=true))  then value4:=value4+img[0,fitsX,fitsY];
-      inc(counter);
+      if ((oddX=false) and (oddY=false)) then begin value1:=value1+img[0,fitsX,fitsY]; inc(counter1) end else {seperate counters for case odd() dimensions are used}
+      if ((oddX=true)  and (oddY=false)) then begin value2:=value2+img[0,fitsX,fitsY]; inc(counter2) end else
+      if ((oddX=false) and (oddY=true))  then begin value3:=value3+img[0,fitsX,fitsY]; inc(counter3) end else
+      if ((oddX=true)  and (oddY=true))  then begin value4:=value4+img[0,fitsX,fitsY]; inc(counter4) end;
     end;
-  {now normalise the bayer patter pixels}
-  value1:=value1/counter;
-  value2:=value2/counter;
-  value3:=value3/counter;
-  value4:=value4/counter;
+
+  {now normalise the bayer pattern pixels}
+  value1:=value1/counter1;
+  value2:=value2/counter2;
+  value3:=value3/counter3;
+  value4:=value4/counter4;
   maxval:=max(max(value1,value2),max(value3,value4));
   value1:=maxval/value1;
   value2:=maxval/value2;
@@ -7514,16 +7514,14 @@ begin
   test_pattern1.enabled:=osc_color;
   demosaic_method1.enabled:=osc_color;
   osc_colour_smooth1.enabled:=((osc_color) and (osc_auto_level1.checked));
+  apply_normalise_filter1.enabled:=osc_color;
   osc_smart_colour_sd1.enabled:=osc_color;
   osc_smart_smooth_width1.enabled:=osc_color;
-
 
   bmp := TBitmap.Create;
   if make_osc_color1.checked then ImageList2.GetBitmap(12, bmp){colour stack} else ImageList2.GetBitmap(6, bmp);{gray stack}
   stackmenu1.stack_button1.glyph.assign(bmp);
   freeandnil(bmp);
-
-
 end;
 
 

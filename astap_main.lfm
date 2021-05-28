@@ -1284,7 +1284,7 @@ object mainwindow: Tmainwindow
         object bayer_image1: TMenuItem
           AutoCheck = True
           Caption = 'Check mark this menu if the image is a raw Bayer image'
-          Hint = 'A 2x2 box filter is applied in advance. This is better option for raw OSC images.'
+          Hint = 'A normalise filter is applied. The raw OSC RGGB pixels are normalised to the same mean value. This is better option for raw OSC images.'
         end
         object MenuItem22: TMenuItem
           Caption = '-'

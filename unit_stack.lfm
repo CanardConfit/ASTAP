@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 9
+  Left = 407
   Height = 717
-  Top = 181
+  Top = 215
   Width = 1883
   HorzScrollBar.Page = 1440
   VertScrollBar.Page = 556
@@ -1246,7 +1246,7 @@ object stackmenu1: Tstackmenu1
         Left = 429
         Height = 23
         Hint = 'Will increase the stack space around the reference image. Negative values will crop the resulting image in ratio.'
-        Top = 88
+        Top = 64
         Width = 67
         ItemHeight = 15
         ItemIndex = 3
@@ -1288,7 +1288,7 @@ object stackmenu1: Tstackmenu1
       object Label6: TLabel
         Left = 365
         Height = 15
-        Top = 88
+        Top = 64
         Width = 47
         Caption = 'Oversize:'
         Color = clBtnFace
@@ -1299,7 +1299,7 @@ object stackmenu1: Tstackmenu1
       object Label7: TLabel
         Left = 504
         Height = 15
-        Top = 88
+        Top = 64
         Width = 30
         Caption = 'pixels'
         Color = clBtnFace
@@ -1908,13 +1908,13 @@ object stackmenu1: Tstackmenu1
         WordWrap = True
       end
       object raw_box1: TGroupBox
-        Left = 16
-        Height = 239
+        Left = 24
+        Height = 269
         Hint = 'Use RAW files for best performance. Use viewer menu TOOLS, conversion DSLR images for import.'
-        Top = 143
+        Top = 112
         Width = 496
         Caption = 'RAW one shot colour images'
-        ClientHeight = 219
+        ClientHeight = 249
         ClientWidth = 492
         ParentFont = False
         TabOrder = 5
@@ -1964,7 +1964,7 @@ object stackmenu1: Tstackmenu1
           Left = 8
           Height = 23
           Hint = 'Demosaic method of color filter array.  Best method are AstroC and Simple.  For pure white stars you could AstroM. '
-          Top = 124
+          Top = 156
           Width = 390
           ItemHeight = 15
           ItemIndex = 0
@@ -1996,17 +1996,17 @@ object stackmenu1: Tstackmenu1
         object Label61: TLabel
           Left = 10
           Height = 15
-          Top = 104
+          Top = 136
           Width = 105
           Caption = 'De-mosaic method:'
           ParentColor = False
           ParentFont = False
         end
         object undo_button7: TBitBtn
-          Left = 456
+          Left = 418
           Height = 30
           Hint = 'Undo last action'
-          Top = 14
+          Top = 57
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -2050,10 +2050,10 @@ object stackmenu1: Tstackmenu1
         end
         object help_osc_menu1: TLabel
           Cursor = crHandPoint
-          Left = 424
+          Left = 439
           Height = 30
           Hint = 'Help'
-          Top = 96
+          Top = 149
           Width = 9
           Caption = '?'
           Font.Color = clBlue
@@ -2084,7 +2084,7 @@ object stackmenu1: Tstackmenu1
         object Label13: TLabel
           Left = 10
           Height = 15
-          Top = 149
+          Top = 181
           Width = 277
           Caption = 'Best demosaic methods are AstroC and AstroSimple.'
           ParentColor = False
@@ -2092,7 +2092,7 @@ object stackmenu1: Tstackmenu1
         object Label25: TLabel
           Left = 8
           Height = 15
-          Top = 178
+          Top = 216
           Width = 86
           Caption = 'Raw conversion:'
           ParentColor = False
@@ -2101,7 +2101,7 @@ object stackmenu1: Tstackmenu1
           Left = 144
           Height = 23
           Hint = 'Conversion program for raw files.'
-          Top = 178
+          Top = 216
           Width = 254
           ItemHeight = 15
           ItemIndex = 0
@@ -2118,7 +2118,7 @@ object stackmenu1: Tstackmenu1
           Left = 8
           Height = 19
           Hint = 'Apply colour smooth after stacking.'
-          Top = 68
+          Top = 96
           Width = 100
           Caption = 'Colour smooth'
           Checked = True
@@ -2135,7 +2135,7 @@ object stackmenu1: Tstackmenu1
           Left = 227
           Height = 23
           Hint = 'Standard deviation to detect objects to be colour blurred. Default 3'
-          Top = 68
+          Top = 96
           Width = 60
           Enabled = False
           ItemHeight = 15
@@ -2156,7 +2156,7 @@ object stackmenu1: Tstackmenu1
           Left = 136
           Height = 23
           Hint = 'Colour smoothing range in pixels. This will keep luminance but smooth the colours. Default is 10'
-          Top = 68
+          Top = 96
           Width = 60
           Enabled = False
           ItemHeight = 15
@@ -2177,83 +2177,40 @@ object stackmenu1: Tstackmenu1
           Left = 304
           Height = 19
           Hint = 'Preserve red nebula around bright stars'
-          Top = 68
+          Top = 96
           Width = 117
           Caption = 'preserve_R_nebula'
           Checked = True
           State = cbChecked
           TabOrder = 10
         end
-      end
-      object apply_normalise_filter1: TCheckBox
-        Left = 365
-        Height = 19
-        Hint = 'Colour shifts by not using a white light source for the flat frames are compensated. The flat shall be raw image.'
-        Top = 56
-        Width = 173
-        Caption = 'Normalise the OSC flat pixels'
-        Color = clDefault
-        ParentColor = False
-        ParentFont = False
-        TabOrder = 6
-      end
-      object test_osc_normalise_filter1: TButton
-        Left = 704
-        Height = 25
-        Hint = 'Test on the current displayed image. Colour shifts by not using a white light source for the flat frames are compensated. The flat should be a raw with preferable a dark-flat is subtracted (master flat), Use CTRL-Z to undo.'
-        Top = 57
-        Width = 110
-        AutoSize = True
-        Caption = '<- Test flat filter'
-        OnClick = test_osc_normalise_filter1Click
-        ParentFont = False
-        TabOrder = 7
-      end
-      object undo_button17: TBitBtn
-        Left = 824
-        Height = 30
-        Hint = 'Undo last action'
-        Top = 56
-        Width = 30
-        Glyph.Data = {
-          36040000424D3604000000000000360000002800000010000000100000000100
-          2000000000000004000000000000000000000000000000000000FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-          FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-          FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
-          FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
-          FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
-          C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
-        }
-        OnClick = undo_button2Click
-        ParentFont = False
-        TabOrder = 8
+        object apply_normalise_filter1: TCheckBox
+          Left = 8
+          Height = 19
+          Hint = 'Colour shifts by not using a white light source for the flat frames are compensated. The flat shall be raw image.'
+          Top = 68
+          Width = 120
+          Caption = 'Normalise OSC flat'
+          Checked = True
+          Color = clDefault
+          Enabled = False
+          ParentColor = False
+          ParentFont = False
+          State = cbChecked
+          TabOrder = 11
+        end
+        object test_osc_normalise_filter1: TButton
+          Left = 232
+          Height = 25
+          Hint = 'Test on the current displayed image. Colour shifts by not using a white light source for the flat frames are compensated. The flat should be a raw with preferable a dark-flat is subtracted (master flat), Use CTRL-Z to undo.'
+          Top = 62
+          Width = 138
+          AutoSize = True
+          Caption = '<- Test flat normalise'
+          OnClick = test_osc_normalise_filter1Click
+          ParentFont = False
+          TabOrder = 12
+        end
       end
     end
     object alignment1: TTabSheet
