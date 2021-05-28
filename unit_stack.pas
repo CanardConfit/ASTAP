@@ -47,6 +47,7 @@ type
     GroupBox8: TGroupBox;
     green_purple_filter1: TCheckBox;
     help_mount_tab1: TLabel;
+    apply_normalise_filter1: TCheckBox;
     osc_preserve_r_nebula1: TCheckBox;
     lrgb_auto_level1: TCheckBox;
     lrgb_colour_smooth1: TCheckBox;
@@ -100,7 +101,9 @@ type
     selectall9: TMenuItem;
     SpeedButton2: TSpeedButton;
     mount1: TTabSheet;
-    test_flat_mean: TButton;
+    apply_box_filter2: TButton;
+    test_osc_normalise_filter1: TButton;
+    undo_button17: TBitBtn;
     undo_button6: TBitBtn;
     unselect9: TMenuItem;
     Viewimage9: TMenuItem;
@@ -668,7 +671,8 @@ type
     procedure solve_and_annotate1Change(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
     procedure star_database1DropDown(Sender: TObject);
-    procedure test_flat_meanClick(Sender: TObject);
+    procedure apply_box_filter2Click(Sender: TObject);
+    procedure test_osc_normalise_filter1Click(Sender: TObject);
 
     procedure test_pattern1Click(Sender: TObject);
     procedure blink_button1Click(Sender: TObject);
@@ -1318,7 +1322,7 @@ begin
         end;
         inc(c); {go to next file}
       until c>counts;
-      quality_mean:=quality_mean/nr_good_images;
+      if nr_good_images>0 then quality_mean:=quality_mean/nr_good_images else quality_mean:=0;
 
       {calculate standard deviations}
       begin
@@ -1960,7 +1964,7 @@ begin
 
     case pos1 of
             1: begin save_as_new_file1.Enabled:=true; save_result1.Enabled:=true; remove_deepsky_label1.enabled:=true;undo_button_equalise_background1.caption:=''; end;{step 1,6}
-            2: begin most_common_filter_tool1.enabled:=true;{step 3}most_common_mono1.enabled:=naxis>2;{colour}remove_deepsky_label1.enabled:=true; undo_button_equalise_background1.caption:='1'; end;
+            2: begin most_common_filter_tool1.enabled:=true;{step 3}most_common_mono1.enabled:=naxis3>1;{colour}remove_deepsky_label1.enabled:=true; undo_button_equalise_background1.caption:='1'; end;
             3: begin apply_gaussian_filter1.enabled:=true;{step 4}correct_gradient_label1.enabled:=true;undo_button_equalise_background1.caption:='3'; end;
             4: begin subtract_background1.enabled:=true;{step 5}undo_button_equalise_background1.caption:='4';end;
             5: begin save_result1.Enabled:=true;{step 5}undo_button_equalise_background1.caption:='1';end;
@@ -3566,6 +3570,63 @@ begin
 
   naxis3:=colors;{the final result}
   img_temp2:=nil;
+end;
+
+
+procedure normalize_OSC_flat(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
+var fitsX,fitsY,col,h,w,counter : integer;
+   img_temp2 : image_array;
+   value1,value2,value3,value4,maxval : double;
+   oddx, oddy :boolean;
+begin
+  col:=length(img);{the real number of colours}
+  h:=length(img[0,0]);{height}
+  w:=length(img[0]);{width}
+
+  if col>1 then
+  begin
+    memo2_message('Skip normalise, this normalize filter only works for raw OSC images!!');
+    exit;
+  end;
+
+
+  value1:=0;
+  value2:=0;
+  value3:=0;
+  value4:=0;
+  counter:=0;
+  for fitsY:=(h div 4) to (h*3) div 4 do {use one quarter of the image to find factors. Works also a little better if no dark-flat is subtracted}
+    for fitsX:=(w div 4) to (w*3) div 4 do
+    begin
+      oddX:=odd(fitsX);
+      oddY:=odd(fitsY);
+      if ((oddX=false) and (oddY=false)) then value1:=value1+img[0,fitsX,fitsY] else
+      if ((oddX=true)  and (oddY=false)) then value2:=value2+img[0,fitsX,fitsY] else
+      if ((oddX=false) and (oddY=true))  then value3:=value3+img[0,fitsX,fitsY] else
+      if ((oddX=true)  and (oddY=true))  then value4:=value4+img[0,fitsX,fitsY];
+      inc(counter);
+    end;
+  {now normalise the bayer patter pixels}
+  value1:=value1/counter;
+  value2:=value2/counter;
+  value3:=value3/counter;
+  value4:=value4/counter;
+  maxval:=max(max(value1,value2),max(value3,value4));
+  value1:=maxval/value1;
+  value2:=maxval/value2;
+  value3:=maxval/value3;
+  value4:=maxval/value4;
+
+  for fitsY:=0 to h-1 do
+    for fitsX:=0 to w-1 do
+    begin
+      oddX:=odd(fitsX);
+      oddY:=odd(fitsY);
+      if ((value1<>1) and (oddX=false) and (oddY=false)) then img[0,fitsX,fitsY]:=round(img[0,fitsX,fitsY]*value1) else
+      if ((value2<>1) and (oddX=true)  and (oddY=false)) then img[0,fitsX,fitsY]:=round(img[0,fitsX,fitsY]*value2) else
+      if ((value3<>1) and (oddX=false) and (oddY=true))  then img[0,fitsX,fitsY]:=round(img[0,fitsX,fitsY]*value3) else
+      if ((value4<>1) and (oddX=true)  and (oddY=true))  then img[0,fitsX,fitsY]:=round(img[0,fitsX,fitsY]*value4);
+    end;
 end;
 
 
@@ -6940,7 +7001,8 @@ begin
 end;
 
 
-procedure Tstackmenu1.test_flat_meanClick(Sender: TObject);
+
+procedure Tstackmenu1.apply_box_filter2Click(Sender: TObject);
 var    Save_Cursor:TCursor;
 begin
   if Length(img_loaded)=0 then
@@ -6952,13 +7014,28 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   backup_img;
 
-  if pos('2x2',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},2,img_loaded)
-  else
-  if pos('3x3',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},3,img_loaded)
-  else
-  if pos('4x4',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},4,img_loaded)
-  else
-  if pos('5x5',stackmenu1.flat_combine_method1.text)>0 then  box_blur(1 {nr of colors},5,img_loaded); {else do nothing}
+  box_blur(1 {nr of colors},2,img_loaded);
+
+  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+  plot_fits(mainwindow.image1,false,true);{plot real}
+
+  Screen.Cursor:=Save_Cursor;
+end;
+
+
+procedure Tstackmenu1.test_osc_normalise_filter1Click(Sender: TObject);
+var    Save_Cursor:TCursor;
+begin
+  if Length(img_loaded)=0 then
+  begin
+    memo2_message('Error, no image in viewer loaded!');
+    exit;
+  end;
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  backup_img;
+
+  normalize_OSC_flat(img_loaded);
 
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);{plot real}
@@ -7591,6 +7668,13 @@ begin
       last_flat_loaded:=filen; {required for for change in light_jd}
       flat_filter:=filter; {mark as loaded}
       if flat_count=0 then flat_count:=1; {is normally updated by load_fits}
+
+      if stackmenu1.apply_normalise_filter1.checked then
+      begin
+        memo2_message('Applying normalise filter on master (OSC) flat.');
+        normalize_OSC_flat(img_loaded);
+      end
+
     end;
   end
   else
@@ -7884,7 +7968,6 @@ var  {variables in the procedure are created to protect global variables as filt
   fitsX,fitsY,k,light_naxis3{,hotpixelcounter}, light_width,light_height,light_set_temperature : integer;
   calstat_local,light_date_obs              : string;
   datamax_light ,light_exposure,value{,dark_outlier_level},flat_factor,dark_norm_value : double;
-//  ignore_hotpixels : boolean;
 
 begin
   calstat_local:=calstat;{Note load darks or flats will overwrite calstat}

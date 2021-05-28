@@ -44,7 +44,8 @@ uses
   clipbrd, {for copy to clipboard}
   Buttons, PopupNotifier, simpleipc,
   CustApp, Types,
-  iostream {for using stdin for data}  ;
+  iostream, {for using stdin for data}
+  IniFiles;{for saving and loading settings}
 
 type
   { Tmainwindow }
@@ -342,6 +343,7 @@ type
     procedure grid1Click(Sender: TObject);
     procedure ccdinspector10_1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
+    procedure preview_demosaic1Click(Sender: TObject);
     procedure removegreenpurple1Click(Sender: TObject);
     procedure sip1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
@@ -3154,7 +3156,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.545, '+about_message4+', dated 2021-5-26';
+  #13+#10+'ASTAP version ß0.9.546, '+about_message4+', dated 2021-5-26';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -7143,21 +7145,12 @@ begin
      result:=result+char(ord(inp[i])-i+11+1);
 end;
 
-
-function load_settings(lpath: string)  : boolean;
+function loadsettingsold(lpath: string)  : boolean; {old !!!!!!!!!!!!!!!!}
 var
   dum : string;
   i,c                : integer;
   initstring :tstrings; {settings for save and loading}
   t1,t2 : longint;
-//    procedure get_float(var float: double;s1 : string);
-//    var
-//      err: integer;
-//      r  : double;
-//    begin
-//      val(initstring.Values[s1],r,err);
-//      if err=0 then float:=r;
-//    end;
 
     procedure get_int(var i: integer;s1 : string);
     var
@@ -7201,637 +7194,966 @@ var
 
 begin
 
+  {old routine}	  result:=false;{assume failure}
+  {old routine}	  initstring := Tstringlist.Create;
+  {old routine}	  with initstring do
+  {old routine}	  begin
+  {old routine}	    try
+  {old routine}	     loadfromFile(lpath); { load from file}
+  {old routine}	    except
+  {old routine}	      initstring.Free;
+  {old routine}	      exit; {no cfg file}
+  {old routine}	    end;
+  {old routine}	  end;
+  {old routine}
+  {old routine}	 // t1:=GetTickCount;
+  {old routine}
+  {old routine}	  result:=true;
+  {old routine}	  with mainwindow do
+  {old routine}	  begin
+  {old routine}	    mainwindow.left:=get_int2(mainwindow.left,'window_left');
+  {old routine}	    mainwindow.top:=get_int2(mainwindow.top,'window_top'); ;
+  {old routine}	    mainwindow.height:=get_int2(mainwindow.height,'window_height');
+  {old routine}	    mainwindow.width:=get_int2(mainwindow.width,'window_width');;
+  {old routine}
+  {old routine}	    mainwindow.bayer_image1.checked:=get_boolean('raw_bayer',false);
+  {old routine}
+  {old routine}	    stackmenu1.left:=get_int2(stackmenu1.left,'stackmenu_left');
+  {old routine}	    stackmenu1.top:=get_int2(stackmenu1.top,'stackmenu_top');
+  {old routine}	    stackmenu1.height:=get_int2(stackmenu1.height,'stackmenu_height');
+  {old routine}	    stackmenu1.width:=get_int2(stackmenu1.width,'stackmenu_width');
+  {old routine}
+  {old routine}	    get_int(font_color,'font_color');
+  {old routine}	    get_int(font_size,'font_size');
+  {old routine}	    dum:=initstring.Values['font_name2'];if dum<>'' then font_name:= dum;
+  {old routine}	    dum:=initstring.Values['font_style'];if dum<>'' then font_style:= strtostyle(dum);
+  {old routine}	    get_int(font_charset,'font_charset');
+  {old routine}	    get_int(pedestal,'pedestal');
+  {old routine}
+  {old routine}
+  {old routine}	    stackmenu1.mosaic_width1.position:=get_int2(stackmenu1.mosaic_width1.position,'mosaic_width');
+  {old routine}	    stackmenu1.mosaic_crop1.position:=get_int2(stackmenu1.mosaic_crop1.position,'mosaic_crop');
+  {old routine}
+  {old routine}	    minimum1.position:=get_int2(minimum1.position,'minimum_position');
+  {old routine}	    maximum1.position:=get_int2(maximum1.position,'maximum_position');
+  {old routine}	    range1.itemindex:=get_int2(range1.itemindex,'range');
+  {old routine}
+  {old routine}	    saturation_factor_plot1.position:=get_int2(saturation_factor_plot1.position,'saturation_factor');
+  {old routine}
+  {old routine}	    stackmenu1.stack_method1.itemindex:=get_int2(stackmenu1.stack_method1.itemindex,'stack_method');
+  {old routine}	    stackmenu1.flat_combine_method1.itemindex:=get_int2(stackmenu1.flat_combine_method1.itemindex,'flat_combine_method');
+  {old routine}	    stackmenu1.pagecontrol1.tabindex:=get_int2(stackmenu1.pagecontrol1.tabindex,'stack_tab');
+  {old routine}
+  {old routine}	    stackmenu1.demosaic_method1.itemindex:=get_int2(stackmenu1.demosaic_method1.itemindex,'demosaic_method2');
+  {old routine}	    stackmenu1.raw_conversion_program1.itemindex:=get_int2(stackmenu1.raw_conversion_program1.itemindex,'conv_program');
+  {old routine}
+  {old routine}	    Polynomial1.itemindex:=get_int2(Polynomial1.itemindex,'polynomial');
+  {old routine}
+  {old routine}	    get_int(thumbnails1_width,'thumbnails_width');
+  {old routine}	    get_int(thumbnails1_height,'thumbnails_height');
+  {old routine}
+  {old routine}	    inversemousewheel1.checked:=get_boolean('inversemousewheel',false);
+  {old routine}	    flip_horizontal1.checked:=get_boolean('fliphorizontal',false);
+  {old routine}	    flip_vertical1.checked:=get_boolean('flipvertical',false);
+  {old routine}
+  {old routine}	    annotations_visible1.checked:=get_boolean('annotations',false);
+  {old routine}	    northeast1.checked:=get_boolean('north_east',false);
+  {old routine}	    mountposition1.checked:=get_boolean('mount_position',false);
+  {old routine}	    grid1.checked:=get_boolean('grid',false);
+  {old routine}	    positionanddate1.checked:=get_boolean('pos_date',false);
+  {old routine}	    freetext1.checked:=get_boolean('freetxt',false);
+  {old routine}	    freetext:=initstring.Values['f_text'];
+  {old routine}
+  {old routine}	    add_marker_position1.checked:=get_boolean('add_marker',false);{popup marker selected?}
+  {old routine}
+  {old routine}	    stackmenu1.make_osc_color1.checked:=get_boolean('osc_color_convert',false);
+  {old routine}	    stackmenu1.osc_auto_level1.checked:=get_boolean('osc_al',true);
+  {old routine}	    stackmenu1.osc_colour_smooth1.checked:=get_boolean('osc_cs',true);
+  {old routine}	    stackmenu1.osc_preserve_r_nebula1.checked:=get_boolean('osc_pr',true);
+  {old routine}	    dum:=initstring.Values['osc_cw'];if dum<>'' then stackmenu1.osc_smart_smooth_width1.text:= dum;
+  {old routine}	    dum:=initstring.Values['osc_sd'];if dum<>'' then stackmenu1.osc_smart_colour_sd1.text:= dum;
+  {old routine}
+  {old routine}
+  {old routine}	    stackmenu1.lrgb_auto_level1.checked:=get_boolean('lrgb_al',true);
+  {old routine}	    stackmenu1.green_purple_filter1.checked:=get_boolean('green_fl',false);
+  {old routine}	    stackmenu1.lrgb_colour_smooth1.checked:=get_boolean('lrgb_cs',true);
+  {old routine}	    stackmenu1.lrgb_preserve_r_nebula1.checked:=get_boolean('lrgb_pr',true);
+  {old routine}	    dum:=initstring.Values['lrgb_sw'];if dum<>'' then stackmenu1.lrgb_smart_smooth_width1.text:= dum;
+  {old routine}	    dum:=initstring.Values['lrgb_sd'];if dum<>'' then stackmenu1.lrgb_smart_colour_sd1.text:= dum;
+  {old routine}
+  {old routine}
+  {old routine}	    stackmenu1.ignore_header_solution1.Checked:= get_boolean('ignore_header_solution',true);
+  {old routine}	    stackmenu1.Equalise_background1.checked:= get_boolean('equalise_background',true);{for mosaic mode}
+  {old routine}	    stackmenu1.merge_overlap1.checked:= get_boolean('merge_overlap',true);{for mosaic mode}
+  {old routine}
+  {old routine}
+  {old routine}	    mainwindow.preview_demosaic1.Checked:=get_boolean('preview_demosaic',false);
+  {old routine}
+  {old routine}	    stackmenu1.classify_object1.checked:= get_boolean('classify_object',false);
+  {old routine}	    stackmenu1.classify_filter1.checked:= get_boolean('classify_filter',false);
+  {old routine}
+  {old routine}	    stackmenu1.classify_dark_temperature1.checked:= get_boolean('classify_dark_temperature',false);
+  {old routine}	    stackmenu1.classify_dark_exposure1.checked:= get_boolean('classify_dark_exposure',false);
+  {old routine}	    stackmenu1.classify_flat_filter1.checked:= get_boolean('classify_flat_filter',false);
+  {old routine}	    stackmenu1.classify_dark_date1.checked:= get_boolean('classify_dark_date',false);
+  {old routine}	    stackmenu1.classify_flat_date1.checked:= get_boolean('classify_flat_date',false);
+  {old routine}	    stackmenu1.add_time1.checked:= get_boolean('add_time',false); {add time to resulting stack file name}
+  {old routine}
+  {old routine}	    stackmenu1.uncheck_outliers1.checked:= get_boolean('uncheck_outliers',false);
+  {old routine}
+  {old routine}	    marker_position :=initstring.Values['marker_position'];{ra, dec marker}
+  {old routine}	    mainwindow.shape_marker3.hint:=marker_position;
+  {old routine}
+  {old routine}	    ra1.text:= initstring.Values['ra'];
+  {old routine}	    dec1.text:= initstring.Values['dec'];
+  {old routine}
+  {old routine}	    stretch1.text:= initstring.Values['gamma'];
+  {old routine}
+  {old routine}	    stackmenu1.blur_factor1.text:= initstring.Values['blur_factor'];
+  {old routine}
+  {old routine}	    stackmenu1.use_manual_alignment1.checked:=initstring.Values['align_method']='4';
+  {old routine}	    stackmenu1.use_astrometry_internal1.checked:=initstring.Values['align_method']='3';
+  {old routine}	    stackmenu1.use_star_alignment1.checked:=initstring.Values['align_method']='2';
+  {old routine}	    stackmenu1.use_ephemeris_alignment1.checked:=initstring.Values['align_method']='1';
+  {old routine}
+  {old routine}	    stackmenu1.write_log1.Checked:=get_boolean('write_log',true);{write to log file}
+  {old routine}	    stackmenu1.align_blink1.Checked:=get_boolean('align_blink',true);{blink}
+  {old routine}	    stackmenu1.timestamp1.Checked:=get_boolean('time_stamp',true);{blink}
+  {old routine}
+  {old routine}	    stackmenu1.force_oversize1.Checked:=get_boolean('force_slow',false);
+  {old routine}	    stackmenu1.calibrate_prior_solving1.Checked:=get_boolean('calibrate_prior_solving',false);
+  {old routine}
+  {old routine}	    dum:=initstring.Values['star_database']; if dum<>'' then stackmenu1.star_database1.text:=dum;
+  {old routine}	    dum:=initstring.Values['solve_search_field']; if dum<>'' then stackmenu1.search_fov1.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['radius_search']; if dum<>'' then stackmenu1.radius_search1.text:=dum;
+  {old routine}	    dum:=initstring.Values['quad_tolerance']; if dum<>'' then stackmenu1.quad_tolerance1.text:=dum;
+  {old routine}	    dum:=initstring.Values['maximum_stars']; if dum<>'' then stackmenu1.max_stars1.text:=dum;
+  {old routine}	    dum:=initstring.Values['min_star_size']; if dum<>'' then stackmenu1.min_star_size1.text:=dum;
+  {old routine}	    dum:=initstring.Values['min_star_size_stacking']; if dum<>'' then stackmenu1.min_star_size_stacking1.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['manual_centering']; if dum<>'' then stackmenu1.manual_centering1.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['downsample']; if dum<>'' then stackmenu1.downsample_for_solving1.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['oversize'];if dum<>'' then stackmenu1.oversize1.text:=dum;
+  {old routine}	    dum:=initstring.Values['sd_factor']; if dum<>'' then stackmenu1.sd_factor1.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['most_common_filter_radius']; if dum<>'' then stackmenu1.most_common_filter_radius1.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['extract_background_box_size']; if dum<>'' then stackmenu1.extract_background_box_size1.text:=dum;
+  {old routine}	    dum:=initstring.Values['dark_areas_box_size']; if dum<>'' then stackmenu1.dark_areas_box_size1.text:=dum;
+  {old routine}	    dum:=initstring.Values['ring_equalise_factor']; if dum<>'' then stackmenu1.ring_equalise_factor1.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['gradient_filter_factor']; if dum<>'' then stackmenu1.gradient_filter_factor1.text:=dum;
+  {old routine}
+  {old routine}	    if paramcount=0 then filename2:=initstring.Values['last_file'];{if used as viewer don't override paramstr1}
+  {old routine}
+  {old routine}	    dum:=initstring.Values['bayer_pat']; if dum<>'' then stackmenu1.bayer_pattern1.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['red_filter1']; if dum<>'' then stackmenu1.red_filter1.text:=dum;
+  {old routine}	    dum:=initstring.Values['red_filter2']; if dum<>'' then stackmenu1.red_filter2.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['green_filter1']; if dum<>'' then stackmenu1.green_filter1.text:=dum;
+  {old routine}	    dum:=initstring.Values['green_filter2']; if dum<>'' then stackmenu1.green_filter2.text:=dum;
+  {old routine}	    dum:=initstring.Values['blue_filter1']; if dum<>'' then stackmenu1.blue_filter1.text:=dum;
+  {old routine}	    dum:=initstring.Values['blue_filter2']; if dum<>'' then stackmenu1.blue_filter2.text:=dum;
+  {old routine}	    dum:=initstring.Values['luminance_filter1']; if dum<>'' then stackmenu1.luminance_filter1.text:=dum;
+  {old routine}	    dum:=initstring.Values['luminance_filter2']; if dum<>'' then stackmenu1.luminance_filter2.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['rr_factor']; if dum<>'' then stackmenu1.rr1.text:=dum;
+  {old routine}	    dum:=initstring.Values['rg_factor']; if dum<>'' then stackmenu1.rg1.text:=dum;
+  {old routine}	    dum:=initstring.Values['rb_factor']; if dum<>'' then stackmenu1.rb1.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['gr_factor']; if dum<>'' then stackmenu1.gr1.text:=dum;
+  {old routine}	    dum:=initstring.Values['gg_factor']; if dum<>'' then stackmenu1.gg1.text:=dum;
+  {old routine}	    dum:=initstring.Values['gb_factor']; if dum<>'' then stackmenu1.gb1.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['br_factor']; if dum<>'' then stackmenu1.br1.text:=dum;
+  {old routine}	    dum:=initstring.Values['bg_factor']; if dum<>'' then stackmenu1.bg1.text:=dum;
+  {old routine}	    dum:=initstring.Values['bb_factor']; if dum<>'' then stackmenu1.bb1.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['red_filter_add']; if dum<>'' then stackmenu1.red_filter_add1.text:=dum;
+  {old routine}	    dum:=initstring.Values['green_filter_add']; if dum<>'' then stackmenu1.green_filter_add1.text:=dum;
+  {old routine}	    dum:=initstring.Values['blue_filter_add']; if dum<>'' then stackmenu1.blue_filter_add1.text:=dum;
+  {old routine}
+  {old routine}
+  {old routine}	   {Six colour correction factors}
+  {old routine}	    dum:=initstring.Values['add_value_R']; if dum<>'' then stackmenu1.add_valueR1.text:=dum;
+  {old routine}	    dum:=initstring.Values['add_value_G']; if dum<>'' then stackmenu1.add_valueG1.text:=dum;
+  {old routine}	    dum:=initstring.Values['add_value_B']; if dum<>'' then stackmenu1.add_valueB1.text:=dum;
+  {old routine}	    dum:=initstring.Values['multiply_R']; if dum<>'' then stackmenu1.multiply_red1.text:=dum;
+  {old routine}	    dum:=initstring.Values['multiply_G']; if dum<>'' then stackmenu1.multiply_green1.text:=dum;
+  {old routine}	    dum:=initstring.Values['multiply_B']; if dum<>'' then stackmenu1.multiply_blue1.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['smart_smooth_width']; if dum<>'' then stackmenu1.smart_smooth_width1.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['star_level_colouring']; if dum<>'' then stackmenu1.star_level_colouring1.text:=dum;
+  {old routine}	    dum:=initstring.Values['filter_artificial_colouring']; if dum<>'' then stackmenu1.filter_artificial_colouring1.text:=dum;
+  {old routine}	    dum:=initstring.Values['resize_factor']; if dum<>'' then stackmenu1.resize_factor1.text:=dum;
+  {old routine}	    dum:=initstring.Values['mark_outliers_upto']; if dum<>'' then stackmenu1.mark_outliers_upto1.text:=dum;
+  {old routine}	    dum:=initstring.Values['flux_aperture']; if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
+  {old routine}	    dum:=initstring.Values['annulus_radius']; if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
+  {old routine}	    stackmenu1.checkBox_annotate1.checked:= get_boolean('ph_annotate',true);
+  {old routine}
+  {old routine}
+  {old routine}	    dum:=initstring.Values['sigma_decolour']; if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
+  {old routine}	    dum:=initstring.Values['sd_factor_list']; if dum<>'' then stackmenu1.sd_factor_list1.text:=dum;
+  {old routine}
+  {old routine}	    dum:=initstring.Values['noisefilter_blur']; if dum<>'' then stackmenu1.noisefilter_blur1.text:=dum;
+  {old routine}	    dum:=initstring.Values['noisefilter_sd']; if dum<>'' then stackmenu1.noisefilter_sd1.text:=dum;
+  {old routine}
+  {old routine}	    stackmenu1.hue_fuzziness1.position:=get_int2(stackmenu1.hue_fuzziness1.position,'hue_fuzziness');
+  {old routine}	    stackmenu1.saturation_tolerance1.position:=get_int2(stackmenu1.saturation_tolerance1.position,'saturation_tolerance');
+  {old routine}	    stackmenu1.remove_luminance1.checked:= get_boolean('remove_luminance',false);
+  {old routine}
+  {old routine}	    stackmenu1.sample_size1.itemindex:=get_int2(stackmenu1.sample_size1.itemindex,'sample_size');
+  {old routine}	    stackmenu1.live_stacking_path1.caption:=initstring.Values['live_stack_dir'];
+  {old routine}
+  {old routine}	    dum:=initstring.Values['mpcorb_path'];if dum<>'' then mpcorb_path:=dum;{asteroids}
+  {old routine}	    dum:=initstring.Values['cometels_path'];if dum<>'' then cometels_path:=dum;{asteroids}
+  {old routine}
+  {old routine}	    dum:=initstring.Values['maxcount'];if dum<>'' then maxcount_asteroid:=dum;{asteroids}
+  {old routine}	    dum:=initstring.Values['maxmag'];if dum<>'' then maxmag_asteroid:=dum;{asteroids}
+  {old routine}
+  {old routine}	    font_follows_diameter:=get_boolean('font_follows',false);{asteroids}
+  {old routine}	    showfullnames:=get_boolean('showfullnames',true);{asteroids}
+  {old routine}	    showmagnitude:=get_boolean('showmagnitude',false);{asteroids}
+  {old routine}	    add_date:=get_boolean('add_date',true);{asteroids}
+  {old routine}	    lat_default:=decrypt(initstring.Values['p1']);{lat default}
+  {old routine}	    long_default:=decrypt(initstring.Values['p2']);{longitude default}
+  {old routine}
+  {old routine}	    get_int(annotation_color,'annotation_color');
+  {old routine}	    get_int(annotation_diameter,'annotation_diameter');
+  {old routine}
+  {old routine}	    add_annotations:=get_boolean('add_annotations',false);{asteroids as annotations}
+  {old routine}
+  {old routine}	    dum:=initstring.Values['astrometry_extra_options']; if dum<>'' then astrometry_extra_options:=dum;
+  {old routine}	    show_console:=get_boolean('show_console',true);
+  {old routine}	    dum:=initstring.Values['cygwin_path']; if dum<>'' then cygwin_path:=dum;
+  {old routine}
+  {old routine}	    stackmenu1.write_jpeg1.Checked:=get_boolean('write_jpeg',false);{live stacking}
+  {old routine}	    stackmenu1.interim_to_clipboard1.Checked:=get_boolean('to_clipboard',false);{live stacking}
+  {old routine}
+  {old routine}
+  {old routine}	    obscode:=initstring.Values['obscode']; {photometry}
+  {old routine}	    delim_pos:=get_int2(0,'delim_pos');
+  {old routine}
+  {old routine}	    stackmenu1.equinox1.itemindex:=get_int2(stackmenu1.equinox1.itemindex,'equinox');
+  {old routine}	    stackmenu1.mount_write_wcs1.Checked:=get_boolean('wcs',true);{use wcs files for mount}
+  {old routine}
+  {old routine}	    c:=0;
+  {old routine}	    recent_files.clear;
+  {old routine}	    repeat {read recent files}
+  {old routine}	      dum:=initstring.Values['recent'+inttostr(c)];
+  {old routine}	      if dum<>'' then
+  {old routine}	       recent_files.add(dum);
+  {old routine}	      inc(c);
+  {old routine}	    until (dum='');
+  {old routine}	    update_recent_file_menu;
+  {old routine}
+  {old routine}
+  {old routine}
+  {old routine}	    listviews_begin_update; {stop updating listviews}
+  {old routine}
+  {old routine}	    c:=0;
+  {old routine}	    repeat {add images}
+  {old routine}	       dum:=initstring.Values['image'+inttostr(c)];
+  {old routine}	       if ((dum<>'') and (fileexists(dum))) then
+  {old routine}	         listview_add(stackmenu1.listview1,dum,get_boolean('image'+inttostr(c)+'_check',true),L_nr);
+  {old routine}	       inc(c);
+  {old routine}	    until (dum='');
+  {old routine}
+  {old routine}	    c:=0;
+  {old routine}	    repeat {add  darks}
+  {old routine}	      dum:=initstring.Values['dark'+inttostr(c)];
+  {old routine}	      if ((dum<>'') and (fileexists(dum))) then
+  {old routine}	         listview_add(stackmenu1.listview2,dum,get_boolean('dark'+inttostr(c)+'_check',true),D_nr);
+  {old routine}	      inc(c);
+  {old routine}	    until (dum='');
+  {old routine}
+  {old routine}	    c:=0;
+  {old routine}	    repeat {add  flats}
+  {old routine}	      dum:=initstring.Values['flat'+inttostr(c)];
+  {old routine}	      if ((dum<>'') and (fileexists(dum))) then
+  {old routine}	        listview_add(stackmenu1.listview3,dum,get_boolean('flat'+inttostr(c)+'_check',true),F_nr);
+  {old routine}	      inc(c);
+  {old routine}	    until (dum='');
+  {old routine}
+  {old routine}	    c:=0;
+  {old routine}	    repeat {add flat darks}
+  {old routine}	      dum:=initstring.Values['flat_dark'+inttostr(c)];
+  {old routine}	      if ((dum<>'') and (fileexists(dum))) then
+  {old routine}	        listview_add(stackmenu1.listview4,dum,get_boolean('flat_dark'+inttostr(c)+'_check',true),D_nr);
+  {old routine}	      inc(c);
+  {old routine}	    until (dum='');
+  {old routine}
+  {old routine}	    c:=0;
+  {old routine}	    repeat {add blink files}
+  {old routine}	      dum:=initstring.Values['blink'+inttostr(c)];
+  {old routine}	      if ((dum<>'') and (fileexists(dum))) then
+  {old routine}	        listview_add(stackmenu1.listview6,dum,get_boolean('blink'+inttostr(c)+'_check',true),B_nr);
+  {old routine}	      inc(c);
+  {old routine}	    until (dum='');
+  {old routine}
+  {old routine}	    c:=0;
+  {old routine}	    repeat {add photometry files}
+  {old routine}	      dum:=initstring.Values['photometry'+inttostr(c)];
+  {old routine}	      if ((dum<>'') and (fileexists(dum))) then
+  {old routine}	        listview_add(stackmenu1.listview7,dum,get_boolean('photometry'+inttostr(c)+'_check',true),P_nr);
+  {old routine}	      inc(c);
+  {old routine}	    until (dum='');
+  {old routine}
+  {old routine}	    c:=0;
+  {old routine}	    repeat {add inspector files}
+  {old routine}	      dum:=initstring.Values['inspector'+inttostr(c)];
+  {old routine}	      if ((dum<>'') and (fileexists(dum))) then
+  {old routine}	        listview_add(stackmenu1.listview8,dum,get_boolean('inspector'+inttostr(c)+'_check',true),L_nr);
+  {old routine}	      inc(c);
+  {old routine}	    until (dum='');
+  {old routine}
+  {old routine}	    stackmenu1.visible:=((paramcount=0) and (get_boolean('stackmenu_visible',false) ) );{do this last, so stackmenu.onshow updates the setting correctly}
+  {old routine}	    listviews_end_update; {start updating listviews. Do this after setting stack menus visible. This is faster.}
+  {old routine}
+  {old routine}	//    mainwindow.Caption := floattostr((GetTickCount-t1)/1000);
+  {old routine}
+  {old routine}	  end;
+  {old routine}	  initstring.free;
+end;
+
+
+function load_settings(lpath: string)  : boolean;
+var
+    Sett : TmemIniFile;
+    dum : string;
+    i,c{,t1 }               : integer;
+begin
   result:=false;{assume failure}
-  initstring := Tstringlist.Create;
-  with initstring do
-  begin
-    try
-     loadfromFile(lpath); { load from file}
-    except
-      initstring.Free;
-      exit; {no cfg file}
+//  t1:=gettickcount;
+  try
+    Sett := TmemIniFile.Create(lpath);
+    result:=false; {assume failure}
+    with mainwindow do
+    begin
+      c:=Sett.ReadInteger('main','window_left',987654321);
+      if c<>987654321 then
+      begin
+        result:=true; {Important read error detection. No other read error method works for Tmeminifile. Important for creating directories for new installations}
+        mainwindow.left:=c;
+      end;
+
+      if c=987654321 then {remove this line after 2022-5-7}
+      begin
+        result:=loadsettingsold(lpath);{old format}  {remove this line after 2022-5-7}
+        exit;  {remove this line after 2022-5-7}
+      end;
+
+
+      c:=Sett.ReadInteger('main','window_top',987654321); if c<>987654321 then mainwindow.top:=c;
+      c:=Sett.ReadInteger('main','window_height',987654321);if c<>987654321 then mainwindow.height:=c;
+      c:=Sett.ReadInteger('main','window_width',987654321);if c<>987654321 then mainwindow.width:=c;
+
+      mainwindow.bayer_image1.checked:=Sett.ReadBool('main','raw_bayer',false);
+
+
+      font_color:=sett.ReadInteger('main','font_color',font_color);
+      font_size:=sett.ReadInteger('main','font_size',font_size);
+      font_name:=Sett.ReadString('main', 'font_name2',font_name);
+      dum:=Sett.ReadString('main','font_style','');if dum<>'' then font_style:= strtostyle(dum);
+      font_charset:=sett.ReadInteger('main','font_charset',font_charset);
+      pedestal:=sett.ReadInteger('main','pedestal',pedestal);
+
+
+
+      c:=Sett.ReadInteger('main','minimum_position',987654321); if c<>987654321 then minimum1.position:=c;
+      c:=Sett.ReadInteger('main','maximum_position',987654321);if c<>987654321 then maximum1.position:=c;
+      c:=Sett.ReadInteger('main','range',987654321);if c<>987654321 then range1.itemindex:=c;
+
+      c:=Sett.ReadInteger('main','saturation_factor',987654321); if c<>987654321 then saturation_factor_plot1.position:=c;
+
+
+      c:=Sett.ReadInteger('main','polynomial',987654321); if c<>987654321 then Polynomial1.itemindex:=c;
+
+      thumbnails1_width:=Sett.ReadInteger('main','thumbnails_width',thumbnails1_width);
+      thumbnails1_height:=Sett.ReadInteger('main','thumbnails_height',thumbnails1_height);
+
+      inversemousewheel1.checked:=Sett.ReadBool('main','inversemousewheel',false);
+      flip_horizontal1.checked:=Sett.ReadBool('main','fliphorizontal',false);
+      flip_vertical1.checked:=Sett.ReadBool('main','flipvertical',false);
+
+      annotations_visible1.checked:=Sett.ReadBool('main','annotations',false);
+      northeast1.checked:=Sett.ReadBool('main','north_east',false);
+      mountposition1.checked:=Sett.ReadBool('main','mount_position',false);
+      grid1.checked:=Sett.ReadBool('main','grid',false);
+      positionanddate1.checked:=Sett.ReadBool('main','pos_date',false);
+      freetext1.checked:=Sett.ReadBool('main','freetxt',false);
+      freetext:=Sett.ReadString('main','f_text','');
+
+      add_marker_position1.checked:=Sett.ReadBool('main','add_marker',false);{popup marker selected?}
+
+
+      mainwindow.preview_demosaic1.Checked:=Sett.ReadBool('main','preview_demosaic',false);
+
+
+      marker_position :=Sett.ReadString('main','marker_position','');{ra, dec marker}
+      mainwindow.shape_marker3.hint:=marker_position;
+
+      ra1.text:= Sett.ReadString('main','ra','0');
+      dec1.text:= Sett.ReadString('main','dec','0');
+
+      stretch1.text:= Sett.ReadString('main','gamma','');
+
+
+      if paramcount=0 then filename2:=Sett.ReadString('main','last_file','');{if used as viewer don't override paramstr1}
+
+
+      dum:=Sett.ReadString('main','mpcorb_path','');if dum<>'' then mpcorb_path:=dum;{asteroids}
+      dum:=Sett.ReadString('main','cometels_path','');if dum<>'' then cometels_path:=dum;{asteroids}
+
+      dum:=Sett.ReadString('main','maxcount','');if dum<>'' then maxcount_asteroid:=dum;{asteroids}
+      dum:=Sett.ReadString('main','maxmag','');if dum<>'' then maxmag_asteroid:=dum;{asteroids}
+
+      font_follows_diameter:=Sett.ReadBool('main','font_follows',false);{asteroids}
+      showfullnames:=Sett.ReadBool('main','showfullnames',true);{asteroids}
+      showmagnitude:=Sett.ReadBool('main','showmagnitude',false);{asteroids}
+      add_date:=Sett.ReadBool('main','add_date',true);{asteroids}
+      lat_default:=decrypt(Sett.ReadString('stack','p1',''));{lat default}
+      long_default:=decrypt(Sett.ReadString('stack','p2',''));{longitude default}
+
+      annotation_color:=Sett.ReadInteger('main','annotation_color',annotation_color);
+      annotation_diameter:=Sett.ReadInteger('main','annotation_diameter',annotation_diameter);
+
+      add_annotations:=Sett.ReadBool('main','add_annotations',false);{asteroids as annotations}
+
+      dum:=Sett.ReadString('main','astrometry_extra_options',''); if dum<>'' then astrometry_extra_options:=dum;
+      show_console:=Sett.ReadBool('main','show_console',true);
+      dum:=Sett.ReadString('main','cygwin_path',''); if dum<>'' then cygwin_path:=dum;
+
+      c:=0;
+      recent_files.clear;
+      repeat {read recent files}
+        dum:=Sett.ReadString('main','recent'+inttostr(c),'');
+        if dum<>'' then  recent_files.add(dum);  inc(c);
+      until (dum='');
+      update_recent_file_menu;
+
+
+      c:=Sett.ReadInteger('stack','stackmenu_left',987654321); if c<>987654321 then stackmenu1.left:=c;
+      c:=Sett.ReadInteger('stack','stackmenu_top',987654321);  if c<>987654321 then stackmenu1.top:=c;
+      c:=Sett.ReadInteger('stack','stackmenu_height',987654321); if c<>987654321 then stackmenu1.height:=c;
+      c:=Sett.ReadInteger('stack','stackmenu_width',987654321); if c<>987654321 then stackmenu1.width:=c;
+
+      c:=Sett.ReadInteger('stack','mosaic_width',987654321); if c<>987654321 then stackmenu1.mosaic_width1.position:=c;
+      c:=Sett.ReadInteger('stack','mosaic_crop',987654321);if c<>987654321 then stackmenu1.mosaic_crop1.position:=c;
+
+      c:=Sett.ReadInteger('stack','stack_method',987654321); if c<>987654321 then stackmenu1.stack_method1.itemindex:=c;
+      c:=Sett.ReadInteger('stack','flat_combine_method',987654321);if c<>987654321 then stackmenu1.flat_combine_method1.itemindex:=c;
+      c:=Sett.ReadInteger('stack','stack_tab',987654321); if c<>987654321 then stackmenu1.pagecontrol1.tabindex:=c;
+
+      c:=Sett.ReadInteger('stack','demosaic_method2',987654321); if c<>987654321 then stackmenu1.demosaic_method1.itemindex:=c;
+      c:=Sett.ReadInteger('stack','conv_program',987654321);if c<>987654321 then stackmenu1.raw_conversion_program1.itemindex:=c;
+
+      stackmenu1.make_osc_color1.checked:=Sett.ReadBool('stack','osc_color_convert',false);
+      stackmenu1.osc_auto_level1.checked:=Sett.ReadBool('stack','osc_al',true);
+      stackmenu1.osc_colour_smooth1.checked:=Sett.ReadBool('stack','osc_cs',true);
+      stackmenu1.osc_preserve_r_nebula1.checked:=Sett.ReadBool('stack','osc_pr',true);
+      dum:=Sett.ReadString('stack','osc_cw','');if dum<>'' then   stackmenu1.osc_smart_smooth_width1.text:=dum;
+      dum:=Sett.ReadString('stack','osc_sd','');  if dum<>'' then stackmenu1.osc_smart_colour_sd1.text:=dum;
+
+      stackmenu1.lrgb_auto_level1.checked:=Sett.ReadBool('stack','lrgb_al',true);
+      stackmenu1.green_purple_filter1.checked:=Sett.ReadBool('stack','green_fl',false);
+      stackmenu1.lrgb_colour_smooth1.checked:=Sett.ReadBool('stack','lrgb_cs',true);
+      stackmenu1.lrgb_preserve_r_nebula1.checked:=Sett.ReadBool('stack','lrgb_pr',true);
+      dum:=Sett.ReadString('stack','lrgb_sw','');if dum<>'' then stackmenu1.lrgb_smart_smooth_width1.text:=dum;
+      dum:=Sett.ReadString('stack','lrgb_sd','');if dum<>'' then  stackmenu1.lrgb_smart_colour_sd1.text:=dum;
+
+      stackmenu1.ignore_header_solution1.Checked:= Sett.ReadBool('stack','ignore_header_solution',true);
+      stackmenu1.Equalise_background1.checked:= Sett.ReadBool('stack','equalise_background',true);{for mosaic mode}
+      stackmenu1.merge_overlap1.checked:= Sett.ReadBool('stack','merge_overlap',true);{for mosaic mode}
+
+      stackmenu1.classify_object1.checked:= Sett.ReadBool('stack','classify_object',false);
+      stackmenu1.classify_filter1.checked:= Sett.ReadBool('stack','classify_filter',false);
+
+      stackmenu1.classify_dark_temperature1.checked:= Sett.ReadBool('stack','classify_dark_temperature',false);
+      stackmenu1.classify_dark_exposure1.checked:= Sett.ReadBool('stack','classify_dark_exposure',false);
+      stackmenu1.classify_flat_filter1.checked:= Sett.ReadBool('stack','classify_flat_filter',false);
+      stackmenu1.classify_dark_date1.checked:= Sett.ReadBool('stack','classify_dark_date',false);
+      stackmenu1.classify_flat_date1.checked:= Sett.ReadBool('stack','classify_flat_date',false);
+      stackmenu1.add_time1.checked:= Sett.ReadBool('stack','add_time',false); {add time to resulting stack file name}
+
+      stackmenu1.uncheck_outliers1.checked:= Sett.ReadBool('stack','uncheck_outliers',false);
+
+      stackmenu1.blur_factor1.text:= Sett.ReadString('stack','blur_factor','');
+
+      stackmenu1.use_manual_alignment1.checked:=Sett.ReadString('stack','align_method','')='4';
+      stackmenu1.use_astrometry_internal1.checked:=Sett.ReadString('stack','align_method','')='3';
+      stackmenu1.use_star_alignment1.checked:=Sett.ReadString('stack','align_method','')='2';
+      stackmenu1.use_ephemeris_alignment1.checked:=Sett.ReadString('stack','align_method','')='1';
+
+      stackmenu1.write_log1.Checked:=Sett.ReadBool('stack','write_log',true);{write to log file}
+      stackmenu1.align_blink1.Checked:=Sett.ReadBool('stack','align_blink',true);{blink}
+      stackmenu1.timestamp1.Checked:=Sett.ReadBool('stack','time_stamp',true);{blink}
+
+      stackmenu1.force_oversize1.Checked:=Sett.ReadBool('stack','force_slow',false);
+      stackmenu1.calibrate_prior_solving1.Checked:=Sett.ReadBool('stack','calibrate_prior_solving',false);
+
+      dum:=Sett.ReadString('stack','star_database',''); if dum<>'' then stackmenu1.star_database1.text:=dum;
+      dum:=Sett.ReadString('stack','solve_search_field',''); if dum<>'' then stackmenu1.search_fov1.text:=dum;
+
+      dum:=Sett.ReadString('stack','radius_search',''); if dum<>'' then stackmenu1.radius_search1.text:=dum;
+      dum:=Sett.ReadString('stack','quad_tolerance',''); if dum<>'' then stackmenu1.quad_tolerance1.text:=dum;
+      dum:=Sett.ReadString('stack','maximum_stars',''); if dum<>'' then stackmenu1.max_stars1.text:=dum;
+      dum:=Sett.ReadString('stack','min_star_size',''); if dum<>'' then stackmenu1.min_star_size1.text:=dum;
+      dum:=Sett.ReadString('stack','min_star_size_stacking',''); if dum<>'' then stackmenu1.min_star_size_stacking1.text:=dum;
+
+      dum:=Sett.ReadString('stack','manual_centering',''); if dum<>'' then stackmenu1.manual_centering1.text:=dum;
+
+      dum:=Sett.ReadString('stack','downsample',''); if dum<>'' then stackmenu1.downsample_for_solving1.text:=dum;
+
+      stackmenu1.apply_normalise_filter1.checked:=Sett.ReadBool('stack','normalise_f',false);{apply normalise filter on (OSC) flat prior to stacking}
+      dum:=Sett.ReadString('stack','oversize','');if dum<>'' then stackmenu1.oversize1.text:=dum;
+      dum:=Sett.ReadString('stack','sd_factor',''); if dum<>'' then stackmenu1.sd_factor1.text:=dum;
+
+      dum:=Sett.ReadString('stack','most_common_filter_radius',''); if dum<>'' then stackmenu1.most_common_filter_radius1.text:=dum;
+
+      dum:=Sett.ReadString('stack','extract_background_box_size',''); if dum<>'' then stackmenu1.extract_background_box_size1.text:=dum;
+      dum:=Sett.ReadString('stack','dark_areas_box_size',''); if dum<>'' then stackmenu1.dark_areas_box_size1.text:=dum;
+      dum:=Sett.ReadString('stack','ring_equalise_factor',''); if dum<>'' then stackmenu1.ring_equalise_factor1.text:=dum;
+
+      dum:=Sett.ReadString('stack','gradient_filter_factor',''); if dum<>'' then stackmenu1.gradient_filter_factor1.text:=dum;
+
+
+      dum:=Sett.ReadString('stack','bayer_pat',''); if dum<>'' then stackmenu1.bayer_pattern1.text:=dum;
+
+      dum:=Sett.ReadString('stack','red_filter1',''); if dum<>'' then stackmenu1.red_filter1.text:=dum;
+      dum:=Sett.ReadString('stack','red_filter2',''); if dum<>'' then stackmenu1.red_filter2.text:=dum;
+
+      dum:=Sett.ReadString('stack','green_filter1',''); if dum<>'' then stackmenu1.green_filter1.text:=dum;
+      dum:=Sett.ReadString('stack','green_filter2',''); if dum<>'' then stackmenu1.green_filter2.text:=dum;
+      dum:=Sett.ReadString('stack','blue_filter1',''); if dum<>'' then stackmenu1.blue_filter1.text:=dum;
+      dum:=Sett.ReadString('stack','blue_filter2',''); if dum<>'' then stackmenu1.blue_filter2.text:=dum;
+      dum:=Sett.ReadString('stack','luminance_filter1',''); if dum<>'' then stackmenu1.luminance_filter1.text:=dum;
+      dum:=Sett.ReadString('stack','luminance_filter2',''); if dum<>'' then stackmenu1.luminance_filter2.text:=dum;
+
+      dum:=Sett.ReadString('stack','rr_factor',''); if dum<>'' then stackmenu1.rr1.text:=dum;
+      dum:=Sett.ReadString('stack','rg_factor',''); if dum<>'' then stackmenu1.rg1.text:=dum;
+      dum:=Sett.ReadString('stack','rb_factor',''); if dum<>'' then stackmenu1.rb1.text:=dum;
+
+      dum:=Sett.ReadString('stack','gr_factor',''); if dum<>'' then stackmenu1.gr1.text:=dum;
+      dum:=Sett.ReadString('stack','gg_factor',''); if dum<>'' then stackmenu1.gg1.text:=dum;
+      dum:=Sett.ReadString('stack','gb_factor',''); if dum<>'' then stackmenu1.gb1.text:=dum;
+
+      dum:=Sett.ReadString('stack','br_factor',''); if dum<>'' then stackmenu1.br1.text:=dum;
+      dum:=Sett.ReadString('stack','bg_factor',''); if dum<>'' then stackmenu1.bg1.text:=dum;
+      dum:=Sett.ReadString('stack','bb_factor',''); if dum<>'' then stackmenu1.bb1.text:=dum;
+
+      dum:=Sett.ReadString('stack','red_filter_add',''); if dum<>'' then stackmenu1.red_filter_add1.text:=dum;
+      dum:=Sett.ReadString('stack','green_filter_add',''); if dum<>'' then stackmenu1.green_filter_add1.text:=dum;
+      dum:=Sett.ReadString('stack','blue_filter_add',''); if dum<>'' then stackmenu1.blue_filter_add1.text:=dum;
+
+
+     {Six colour correction factors}
+      dum:=Sett.ReadString('stack','add_value_R',''); if dum<>'' then stackmenu1.add_valueR1.text:=dum;
+      dum:=Sett.ReadString('stack','add_value_G',''); if dum<>'' then stackmenu1.add_valueG1.text:=dum;
+      dum:=Sett.ReadString('stack','add_value_B',''); if dum<>'' then stackmenu1.add_valueB1.text:=dum;
+      dum:=Sett.ReadString('stack','multiply_R',''); if dum<>'' then stackmenu1.multiply_red1.text:=dum;
+      dum:=Sett.ReadString('stack','multiply_G',''); if dum<>'' then stackmenu1.multiply_green1.text:=dum;
+      dum:=Sett.ReadString('stack','multiply_B',''); if dum<>'' then stackmenu1.multiply_blue1.text:=dum;
+
+      dum:=Sett.ReadString('stack','smart_smooth_width',''); if dum<>'' then stackmenu1.smart_smooth_width1.text:=dum;
+
+      dum:=Sett.ReadString('stack','star_level_colouring',''); if dum<>'' then stackmenu1.star_level_colouring1.text:=dum;
+      dum:=Sett.ReadString('stack','filter_artificial_colouring',''); if dum<>'' then stackmenu1.filter_artificial_colouring1.text:=dum;
+      dum:=Sett.ReadString('stack','resize_factor',''); if dum<>'' then stackmenu1.resize_factor1.text:=dum;
+      dum:=Sett.ReadString('stack','mark_outliers_upto',''); if dum<>'' then stackmenu1.mark_outliers_upto1.text:=dum;
+      dum:=Sett.ReadString('stack','flux_aperture',''); if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
+      dum:=Sett.ReadString('stack','annulus_radius',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
+      stackmenu1.checkBox_annotate1.checked:= Sett.ReadBool('stack','ph_annotate',true);
+
+
+      dum:=Sett.ReadString('stack','sigma_decolour',''); if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
+      dum:=Sett.ReadString('stack','sd_factor_list',''); if dum<>'' then stackmenu1.sd_factor_list1.text:=dum;
+
+      dum:=Sett.ReadString('stack','noisefilter_blur',''); if dum<>'' then stackmenu1.noisefilter_blur1.text:=dum;
+      dum:=Sett.ReadString('stack','noisefilter_sd',''); if dum<>'' then stackmenu1.noisefilter_sd1.text:=dum;
+
+      c:=Sett.ReadInteger('stack','hue_fuzziness',987654321); if c<>987654321 then stackmenu1.hue_fuzziness1.position:=c;
+      c:=Sett.ReadInteger('stack','saturation_tolerance',987654321);  if c<>987654321 then stackmenu1.saturation_tolerance1.position:=c;
+
+      stackmenu1.remove_luminance1.checked:= Sett.ReadBool('stack','remove_luminance',false);
+
+      c:=Sett.ReadInteger('stack','sample_size',987654321);if c<>987654321 then stackmenu1.sample_size1.itemindex:=c;
+
+      stackmenu1.live_stacking_path1.caption:=Sett.ReadString('stack','live_stack_dir','');
+      stackmenu1.write_jpeg1.Checked:=Sett.ReadBool('stack','write_jpeg',false);{live stacking}
+      stackmenu1.interim_to_clipboard1.Checked:=Sett.ReadBool('stack','to_clipboard',false);{live stacking}
+
+      stackmenu1.equinox1.itemindex:=Sett.ReadInteger('stack','equinox',987654321);if c<>987654321 then stackmenu1.equinox1.itemindex:=c;
+      stackmenu1.mount_write_wcs1.Checked:=Sett.ReadBool('stack','wcs',true);{use wcs files for mount}
+
+      obscode:=Sett.ReadString('stack','obscode',''); {photometry}
+      c:=Sett.ReadInteger('stack','delim_pos',987654321);if c<>987654321 then delim_pos:=c;
+
+
+      listviews_begin_update; {stop updating listviews}
+
+      c:=0;
+      repeat {add images}
+         dum:=Sett.ReadString('files','image'+inttostr(c),'');
+         if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview1,dum,Sett.ReadBool('main','image'+inttostr(c)+'_check',true),L_nr);
+         inc(c);
+      until (dum='');
+
+      c:=0;
+      repeat {add  darks}
+        dum:=Sett.ReadString('files','dark'+inttostr(c),'');
+        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview2,dum,Sett.ReadBool('main','dark'+inttostr(c)+'_check',true),D_nr);
+        inc(c);
+      until (dum='');
+
+      c:=0;
+      repeat {add  flats}
+        dum:=Sett.ReadString('files','flat'+inttostr(c),'');
+        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview3,dum,Sett.ReadBool('main','flat'+inttostr(c)+'_check',true),F_nr);
+        inc(c);
+      until (dum='');
+
+      c:=0;
+      repeat {add flat darks}
+        dum:=Sett.ReadString('files','flat_dark'+inttostr(c),'');
+        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview4,dum,Sett.ReadBool('main','flat_dark'+inttostr(c)+'_check',true),D_nr);
+        inc(c);
+      until (dum='');
+
+      c:=0;
+      repeat {add blink files}
+        dum:=Sett.ReadString('files','blink'+inttostr(c),'');
+        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview6,dum,Sett.ReadBool('main','blink'+inttostr(c)+'_check',true),B_nr);
+        inc(c);
+      until (dum='');
+
+      c:=0;
+      repeat {add photometry files}
+        dum:=Sett.ReadString('files','photometry'+inttostr(c),'');
+        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview7,dum,Sett.ReadBool('main','photometry'+inttostr(c)+'_check',true),P_nr);
+        inc(c);
+      until (dum='');
+
+      c:=0;
+      repeat {add inspector files}
+        dum:=Sett.ReadString('files','inspector'+inttostr(c),'');
+        if ((dum<>'') and (fileexists(dum))) then  listview_add(stackmenu1.listview8,dum,Sett.ReadBool('main','inspector'+inttostr(c)+'_check',true),L_nr);
+        inc(c);
+      until (dum='');
+
+     stackmenu1.visible:=((paramcount=0) and (Sett.ReadBool('stack','stackmenu_visible',false) ) );{do this last, so stackmenu.onshow updates the setting correctly}
+     listviews_end_update; {start updating listviews. Do this after setting stack menus visible. This is faster.}
     end;
+
+  finally {also for error it end's here}
+    Sett.Free;
   end;
 
- // t1:=GetTickCount;
-
-  result:=true;
-  with mainwindow do
-  begin
-    mainwindow.left:=get_int2(mainwindow.left,'window_left');
-    mainwindow.top:=get_int2(mainwindow.top,'window_top'); ;
-    mainwindow.height:=get_int2(mainwindow.height,'window_height');
-    mainwindow.width:=get_int2(mainwindow.width,'window_width');;
-
-    mainwindow.bayer_image1.checked:=get_boolean('raw_bayer',false);
-
-    stackmenu1.left:=get_int2(stackmenu1.left,'stackmenu_left');
-    stackmenu1.top:=get_int2(stackmenu1.top,'stackmenu_top');
-    stackmenu1.height:=get_int2(stackmenu1.height,'stackmenu_height');
-    stackmenu1.width:=get_int2(stackmenu1.width,'stackmenu_width');
-
-    get_int(font_color,'font_color');
-    get_int(font_size,'font_size');
-    dum:=initstring.Values['font_name2'];if dum<>'' then font_name:= dum;
-    dum:=initstring.Values['font_style'];if dum<>'' then font_style:= strtostyle(dum);
-    get_int(font_charset,'font_charset');
-    get_int(pedestal,'pedestal');
-
-
-    stackmenu1.mosaic_width1.position:=get_int2(stackmenu1.mosaic_width1.position,'mosaic_width');
-    stackmenu1.mosaic_crop1.position:=get_int2(stackmenu1.mosaic_crop1.position,'mosaic_crop');
-
-    minimum1.position:=get_int2(minimum1.position,'minimum_position');
-    maximum1.position:=get_int2(maximum1.position,'maximum_position');
-    range1.itemindex:=get_int2(range1.itemindex,'range');
-
-    saturation_factor_plot1.position:=get_int2(saturation_factor_plot1.position,'saturation_factor');
-
-    stackmenu1.stack_method1.itemindex:=get_int2(stackmenu1.stack_method1.itemindex,'stack_method');
-    stackmenu1.flat_combine_method1.itemindex:=get_int2(stackmenu1.flat_combine_method1.itemindex,'flat_combine_method');
-    stackmenu1.pagecontrol1.tabindex:=get_int2(stackmenu1.pagecontrol1.tabindex,'stack_tab');
-
-    stackmenu1.demosaic_method1.itemindex:=get_int2(stackmenu1.demosaic_method1.itemindex,'demosaic_method2');
-    stackmenu1.raw_conversion_program1.itemindex:=get_int2(stackmenu1.raw_conversion_program1.itemindex,'conv_program');
-
-    Polynomial1.itemindex:=get_int2(Polynomial1.itemindex,'polynomial');
-
-    get_int(thumbnails1_width,'thumbnails_width');
-    get_int(thumbnails1_height,'thumbnails_height');
-
-    inversemousewheel1.checked:=get_boolean('inversemousewheel',false);
-    flip_horizontal1.checked:=get_boolean('fliphorizontal',false);
-    flip_vertical1.checked:=get_boolean('flipvertical',false);
-
-    annotations_visible1.checked:=get_boolean('annotations',false);
-    northeast1.checked:=get_boolean('north_east',false);
-    mountposition1.checked:=get_boolean('mount_position',false);
-    grid1.checked:=get_boolean('grid',false);
-    positionanddate1.checked:=get_boolean('pos_date',false);
-    freetext1.checked:=get_boolean('freetxt',false);
-    freetext:=initstring.Values['f_text'];
-
-    add_marker_position1.checked:=get_boolean('add_marker',false);{popup marker selected?}
-
-    stackmenu1.make_osc_color1.checked:=get_boolean('osc_color_convert',false);
-    stackmenu1.osc_auto_level1.checked:=get_boolean('osc_al',true);
-    stackmenu1.osc_colour_smooth1.checked:=get_boolean('osc_cs',true);
-    stackmenu1.osc_preserve_r_nebula1.checked:=get_boolean('osc_pr',true);
-    dum:=initstring.Values['osc_cw'];if dum<>'' then stackmenu1.osc_smart_smooth_width1.text:= dum;
-    dum:=initstring.Values['osc_sd'];if dum<>'' then stackmenu1.osc_smart_colour_sd1.text:= dum;
-
-
-    stackmenu1.lrgb_auto_level1.checked:=get_boolean('lrgb_al',true);
-    stackmenu1.green_purple_filter1.checked:=get_boolean('green_fl',false);
-    stackmenu1.lrgb_colour_smooth1.checked:=get_boolean('lrgb_cs',true);
-    stackmenu1.lrgb_preserve_r_nebula1.checked:=get_boolean('lrgb_pr',true);
-    dum:=initstring.Values['lrgb_sw'];if dum<>'' then stackmenu1.lrgb_smart_smooth_width1.text:= dum;
-    dum:=initstring.Values['lrgb_sd'];if dum<>'' then stackmenu1.lrgb_smart_colour_sd1.text:= dum;
-
-
-    stackmenu1.ignore_header_solution1.Checked:= get_boolean('ignore_header_solution',true);
-    stackmenu1.Equalise_background1.checked:= get_boolean('equalise_background',true);{for mosaic mode}
-    stackmenu1.merge_overlap1.checked:= get_boolean('merge_overlap',true);{for mosaic mode}
-
-
-    mainwindow.preview_demosaic1.Checked:=get_boolean('preview_demosaic',false);
-
-    stackmenu1.classify_object1.checked:= get_boolean('classify_object',false);
-    stackmenu1.classify_filter1.checked:= get_boolean('classify_filter',false);
-
-    stackmenu1.classify_dark_temperature1.checked:= get_boolean('classify_dark_temperature',false);
-    stackmenu1.classify_dark_exposure1.checked:= get_boolean('classify_dark_exposure',false);
-    stackmenu1.classify_flat_filter1.checked:= get_boolean('classify_flat_filter',false);
-    stackmenu1.classify_dark_date1.checked:= get_boolean('classify_dark_date',false);
-    stackmenu1.classify_flat_date1.checked:= get_boolean('classify_flat_date',false);
-    stackmenu1.add_time1.checked:= get_boolean('add_time',false); {add time to resulting stack file name}
-
-    stackmenu1.uncheck_outliers1.checked:= get_boolean('uncheck_outliers',false);
-
-    marker_position :=initstring.Values['marker_position'];{ra, dec marker}
-    mainwindow.shape_marker3.hint:=marker_position;
-
-    ra1.text:= initstring.Values['ra'];
-    dec1.text:= initstring.Values['dec'];
-
-    stretch1.text:= initstring.Values['gamma'];
-
-    stackmenu1.blur_factor1.text:= initstring.Values['blur_factor'];
-
-    stackmenu1.use_manual_alignment1.checked:=initstring.Values['align_method']='4';
-    stackmenu1.use_astrometry_internal1.checked:=initstring.Values['align_method']='3';
-    stackmenu1.use_star_alignment1.checked:=initstring.Values['align_method']='2';
-    stackmenu1.use_ephemeris_alignment1.checked:=initstring.Values['align_method']='1';
-
-    stackmenu1.write_log1.Checked:=get_boolean('write_log',true);{write to log file}
-    stackmenu1.align_blink1.Checked:=get_boolean('align_blink',true);{blink}
-    stackmenu1.timestamp1.Checked:=get_boolean('time_stamp',true);{blink}
-
-    stackmenu1.force_oversize1.Checked:=get_boolean('force_slow',false);
-    stackmenu1.calibrate_prior_solving1.Checked:=get_boolean('calibrate_prior_solving',false);
-
-    dum:=initstring.Values['star_database']; if dum<>'' then stackmenu1.star_database1.text:=dum;
-    dum:=initstring.Values['solve_search_field']; if dum<>'' then stackmenu1.search_fov1.text:=dum;
-
-    dum:=initstring.Values['radius_search']; if dum<>'' then stackmenu1.radius_search1.text:=dum;
-    dum:=initstring.Values['quad_tolerance']; if dum<>'' then stackmenu1.quad_tolerance1.text:=dum;
-    dum:=initstring.Values['maximum_stars']; if dum<>'' then stackmenu1.max_stars1.text:=dum;
-    dum:=initstring.Values['min_star_size']; if dum<>'' then stackmenu1.min_star_size1.text:=dum;
-    dum:=initstring.Values['min_star_size_stacking']; if dum<>'' then stackmenu1.min_star_size_stacking1.text:=dum;
-
-    dum:=initstring.Values['manual_centering']; if dum<>'' then stackmenu1.manual_centering1.text:=dum;
-
-    dum:=initstring.Values['downsample']; if dum<>'' then stackmenu1.downsample_for_solving1.text:=dum;
-
-    dum:=initstring.Values['oversize'];if dum<>'' then stackmenu1.oversize1.text:=dum;
-    dum:=initstring.Values['sd_factor']; if dum<>'' then stackmenu1.sd_factor1.text:=dum;
-
-    dum:=initstring.Values['most_common_filter_radius']; if dum<>'' then stackmenu1.most_common_filter_radius1.text:=dum;
-
-    dum:=initstring.Values['extract_background_box_size']; if dum<>'' then stackmenu1.extract_background_box_size1.text:=dum;
-    dum:=initstring.Values['dark_areas_box_size']; if dum<>'' then stackmenu1.dark_areas_box_size1.text:=dum;
-    dum:=initstring.Values['ring_equalise_factor']; if dum<>'' then stackmenu1.ring_equalise_factor1.text:=dum;
-
-    dum:=initstring.Values['gradient_filter_factor']; if dum<>'' then stackmenu1.gradient_filter_factor1.text:=dum;
-
-    if paramcount=0 then filename2:=initstring.Values['last_file'];{if used as viewer don't override paramstr1}
-
-    dum:=initstring.Values['bayer_pat']; if dum<>'' then stackmenu1.bayer_pattern1.text:=dum;
-
-    dum:=initstring.Values['red_filter1']; if dum<>'' then stackmenu1.red_filter1.text:=dum;
-    dum:=initstring.Values['red_filter2']; if dum<>'' then stackmenu1.red_filter2.text:=dum;
-
-    dum:=initstring.Values['green_filter1']; if dum<>'' then stackmenu1.green_filter1.text:=dum;
-    dum:=initstring.Values['green_filter2']; if dum<>'' then stackmenu1.green_filter2.text:=dum;
-    dum:=initstring.Values['blue_filter1']; if dum<>'' then stackmenu1.blue_filter1.text:=dum;
-    dum:=initstring.Values['blue_filter2']; if dum<>'' then stackmenu1.blue_filter2.text:=dum;
-    dum:=initstring.Values['luminance_filter1']; if dum<>'' then stackmenu1.luminance_filter1.text:=dum;
-    dum:=initstring.Values['luminance_filter2']; if dum<>'' then stackmenu1.luminance_filter2.text:=dum;
-
-    dum:=initstring.Values['rr_factor']; if dum<>'' then stackmenu1.rr1.text:=dum;
-    dum:=initstring.Values['rg_factor']; if dum<>'' then stackmenu1.rg1.text:=dum;
-    dum:=initstring.Values['rb_factor']; if dum<>'' then stackmenu1.rb1.text:=dum;
-
-    dum:=initstring.Values['gr_factor']; if dum<>'' then stackmenu1.gr1.text:=dum;
-    dum:=initstring.Values['gg_factor']; if dum<>'' then stackmenu1.gg1.text:=dum;
-    dum:=initstring.Values['gb_factor']; if dum<>'' then stackmenu1.gb1.text:=dum;
-
-    dum:=initstring.Values['br_factor']; if dum<>'' then stackmenu1.br1.text:=dum;
-    dum:=initstring.Values['bg_factor']; if dum<>'' then stackmenu1.bg1.text:=dum;
-    dum:=initstring.Values['bb_factor']; if dum<>'' then stackmenu1.bb1.text:=dum;
-
-    dum:=initstring.Values['red_filter_add']; if dum<>'' then stackmenu1.red_filter_add1.text:=dum;
-    dum:=initstring.Values['green_filter_add']; if dum<>'' then stackmenu1.green_filter_add1.text:=dum;
-    dum:=initstring.Values['blue_filter_add']; if dum<>'' then stackmenu1.blue_filter_add1.text:=dum;
-
-
-   {Six colour correction factors}
-    dum:=initstring.Values['add_value_R']; if dum<>'' then stackmenu1.add_valueR1.text:=dum;
-    dum:=initstring.Values['add_value_G']; if dum<>'' then stackmenu1.add_valueG1.text:=dum;
-    dum:=initstring.Values['add_value_B']; if dum<>'' then stackmenu1.add_valueB1.text:=dum;
-    dum:=initstring.Values['multiply_R']; if dum<>'' then stackmenu1.multiply_red1.text:=dum;
-    dum:=initstring.Values['multiply_G']; if dum<>'' then stackmenu1.multiply_green1.text:=dum;
-    dum:=initstring.Values['multiply_B']; if dum<>'' then stackmenu1.multiply_blue1.text:=dum;
-
-    dum:=initstring.Values['smart_smooth_width']; if dum<>'' then stackmenu1.smart_smooth_width1.text:=dum;
-
-    dum:=initstring.Values['star_level_colouring']; if dum<>'' then stackmenu1.star_level_colouring1.text:=dum;
-    dum:=initstring.Values['filter_artificial_colouring']; if dum<>'' then stackmenu1.filter_artificial_colouring1.text:=dum;
-    dum:=initstring.Values['resize_factor']; if dum<>'' then stackmenu1.resize_factor1.text:=dum;
-    dum:=initstring.Values['mark_outliers_upto']; if dum<>'' then stackmenu1.mark_outliers_upto1.text:=dum;
-    dum:=initstring.Values['flux_aperture']; if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
-    dum:=initstring.Values['annulus_radius']; if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
-    stackmenu1.checkBox_annotate1.checked:= get_boolean('ph_annotate',true);
-
-
-    dum:=initstring.Values['sigma_decolour']; if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
-    dum:=initstring.Values['sd_factor_list']; if dum<>'' then stackmenu1.sd_factor_list1.text:=dum;
-
-    dum:=initstring.Values['noisefilter_blur']; if dum<>'' then stackmenu1.noisefilter_blur1.text:=dum;
-    dum:=initstring.Values['noisefilter_sd']; if dum<>'' then stackmenu1.noisefilter_sd1.text:=dum;
-
-    stackmenu1.hue_fuzziness1.position:=get_int2(stackmenu1.hue_fuzziness1.position,'hue_fuzziness');
-    stackmenu1.saturation_tolerance1.position:=get_int2(stackmenu1.saturation_tolerance1.position,'saturation_tolerance');
-    stackmenu1.remove_luminance1.checked:= get_boolean('remove_luminance',false);
-
-    stackmenu1.sample_size1.itemindex:=get_int2(stackmenu1.sample_size1.itemindex,'sample_size');
-    stackmenu1.live_stacking_path1.caption:=initstring.Values['live_stack_dir'];
-
-    dum:=initstring.Values['mpcorb_path'];if dum<>'' then mpcorb_path:=dum;{asteroids}
-    dum:=initstring.Values['cometels_path'];if dum<>'' then cometels_path:=dum;{asteroids}
-
-    dum:=initstring.Values['maxcount'];if dum<>'' then maxcount_asteroid:=dum;{asteroids}
-    dum:=initstring.Values['maxmag'];if dum<>'' then maxmag_asteroid:=dum;{asteroids}
-
-    font_follows_diameter:=get_boolean('font_follows',false);{asteroids}
-    showfullnames:=get_boolean('showfullnames',true);{asteroids}
-    showmagnitude:=get_boolean('showmagnitude',false);{asteroids}
-    add_date:=get_boolean('add_date',true);{asteroids}
-    lat_default:=decrypt(initstring.Values['p1']);{lat default}
-    long_default:=decrypt(initstring.Values['p2']);{longitude default}
-
-    get_int(annotation_color,'annotation_color');
-    get_int(annotation_diameter,'annotation_diameter');
-
-    add_annotations:=get_boolean('add_annotations',false);{asteroids as annotations}
-
-    dum:=initstring.Values['astrometry_extra_options']; if dum<>'' then astrometry_extra_options:=dum;
-    show_console:=get_boolean('show_console',true);
-    dum:=initstring.Values['cygwin_path']; if dum<>'' then cygwin_path:=dum;
-
-    stackmenu1.write_jpeg1.Checked:=get_boolean('write_jpeg',false);{live stacking}
-    stackmenu1.interim_to_clipboard1.Checked:=get_boolean('to_clipboard',false);{live stacking}
-
-
-    obscode:=initstring.Values['obscode']; {photometry}
-    delim_pos:=get_int2(0,'delim_pos');
-
-    stackmenu1.equinox1.itemindex:=get_int2(range1.itemindex,'equinox');
-    stackmenu1.mount_write_wcs1.Checked:=get_boolean('wcs',true);{use wcs files for mount}
-
-    c:=0;
-    repeat {read recent files}
-      dum:=initstring.Values['recent'+inttostr(c)];
-      if dum<>'' then
-       recent_files.add(dum);
-      inc(c);
-    until (dum='');
-    update_recent_file_menu;
-
-
-
-    listviews_begin_update; {stop updating listviews}
-
-    c:=0;
-    repeat {add images}
-       dum:=initstring.Values['image'+inttostr(c)];
-       if ((dum<>'') and (fileexists(dum))) then
-         listview_add(stackmenu1.listview1,dum,get_boolean('image'+inttostr(c)+'_check',true),L_nr);
-       inc(c);
-    until (dum='');
-
-    c:=0;
-    repeat {add  darks}
-      dum:=initstring.Values['dark'+inttostr(c)];
-      if ((dum<>'') and (fileexists(dum))) then
-         listview_add(stackmenu1.listview2,dum,get_boolean('dark'+inttostr(c)+'_check',true),D_nr);
-      inc(c);
-    until (dum='');
-
-    c:=0;
-    repeat {add  flats}
-      dum:=initstring.Values['flat'+inttostr(c)];
-      if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview3,dum,get_boolean('flat'+inttostr(c)+'_check',true),F_nr);
-      inc(c);
-    until (dum='');
-
-    c:=0;
-    repeat {add flat darks}
-      dum:=initstring.Values['flat_dark'+inttostr(c)];
-      if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview4,dum,get_boolean('flat_dark'+inttostr(c)+'_check',true),D_nr);
-      inc(c);
-    until (dum='');
-
-    c:=0;
-    repeat {add blink files}
-      dum:=initstring.Values['blink'+inttostr(c)];
-      if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview6,dum,get_boolean('blink'+inttostr(c)+'_check',true),B_nr);
-      inc(c);
-    until (dum='');
-
-    c:=0;
-    repeat {add photometry files}
-      dum:=initstring.Values['photometry'+inttostr(c)];
-      if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview7,dum,get_boolean('photometry'+inttostr(c)+'_check',true),P_nr);
-      inc(c);
-    until (dum='');
-
-    c:=0;
-    repeat {add inspector files}
-      dum:=initstring.Values['inspector'+inttostr(c)];
-      if ((dum<>'') and (fileexists(dum))) then
-        listview_add(stackmenu1.listview8,dum,get_boolean('inspector'+inttostr(c)+'_check',true),L_nr);
-      inc(c);
-    until (dum='');
-
-    stackmenu1.visible:=((paramcount=0) and (get_boolean('stackmenu_visible',false) ) );{do this last, so stackmenu.onshow updates the setting correctly}
-    listviews_end_update; {start updating listviews. Do this after setting stack menus visible. This is faster.}
-
-//    mainwindow.Caption := floattostr((GetTickCount-t1)/1000);
-
-  end;
-  initstring.free;
+//  mainwindow.Caption := floattostr((GetTickCount-t1)/1000);
 end;
 
 
 procedure save_settings(lpath:string);
-var {################# initialised variables #########################}
-  BoolStr: array [boolean] of String = ('0', '1');
 var
-  initstring :tstrings; {settings for save and loading}
-  c : integer;
-
+    Sett : TmemIniFile;
+    c    : integer;
 begin
-  with mainwindow do
-  begin
-    initstring := Tstringlist.Create;
-    initstring.Values['window_left']:=inttostr(mainwindow.left);
-    initstring.Values['window_top']:=inttostr(mainwindow.top);
-    initstring.Values['window_height']:=inttostr(mainwindow.height);
-    initstring.Values['window_width']:=inttostr(mainwindow.width);
-
-    initstring.Values['raw_bayer']:=BoolStr[mainwindow.bayer_image1.checked];
-
-    initstring.Values['stackmenu_visible']:=BoolStr[stackmenu1.visible];
-
-    initstring.Values['stackmenu_left']:=inttostr(stackmenu1.left);
-    initstring.Values['stackmenu_top']:=inttostr(stackmenu1.top);
-    initstring.Values['stackmenu_height']:=inttostr(stackmenu1.height);
-    initstring.Values['stackmenu_width']:=inttostr(stackmenu1.width);
-
-    initstring.Values['font_color']:=inttostr(font_color);
-    initstring.Values['font_size']:=inttostr(font_size);
-    initstring.Values['font_name2']:=font_name;
-    initstring.Values['font_style']:=StyleToStr(font_style);
-    initstring.Values['font_charset']:=inttostr(font_charset);
-    initstring.Values['pedestal']:=inttostr(pedestal);
-
-
-    initstring.Values['minimum_position']:=inttostr(MINIMUM1.position);
-    initstring.Values['maximum_position']:=inttostr(maximum1.position);
-    initstring.Values['range']:=inttostr(range1.itemindex);
-
-    initstring.Values['saturation_factor']:=inttostr(saturation_factor_plot1.position);
-
-    initstring.Values['stack_method']:=inttostr(stackmenu1.stack_method1.itemindex);
-
-    initstring.Values['mosaic_width']:=inttostr(stackmenu1.mosaic_width1.position);
-    initstring.Values['mosaic_crop']:=inttostr(stackmenu1.mosaic_crop1.position);
-
-    initstring.Values['flat_combine_method']:=inttostr(stackmenu1.flat_combine_method1.itemindex);
-    initstring.Values['stack_tab']:=inttostr(stackmenu1.pagecontrol1.tabindex);
-
-    initstring.Values['bayer_pat']:=stackmenu1.bayer_pattern1.text;
-
-    initstring.Values['demosaic_method2']:=inttostr(stackmenu1.demosaic_method1.itemindex);
-    initstring.Values['conv_program']:=inttostr(stackmenu1.raw_conversion_program1.itemindex);
-
-    initstring.Values['polynomial']:=inttostr(polynomial1.itemindex);
-
-    initstring.Values['thumbnails_width']:=inttostr(thumbnails1_width);
-    initstring.Values['thumbnails_height']:=inttostr(thumbnails1_height);
-
-    initstring.Values['inversemousewheel']:=BoolStr[inversemousewheel1.checked];
-    initstring.Values['fliphorizontal']:=BoolStr[flip_horizontal1.checked];
-    initstring.Values['flipvertical']:=BoolStr[flip_vertical1.checked];
-    initstring.Values['annotations']:=BoolStr[annotations_visible1.checked];
-    initstring.Values['north_east']:=BoolStr[northeast1.checked];
-    initstring.Values['mount_position']:=BoolStr[mountposition1.checked];
-    initstring.Values['grid']:=BoolStr[grid1.checked];
-    initstring.Values['pos_date']:=BoolStr[positionanddate1.checked];
-    initstring.Values['freetxt']:=BoolStr[freetext1.checked];
-    initstring.Values['f_text']:=freetext;
-
-
-    initstring.Values['add_marker']:=BoolStr[add_marker_position1.checked];
-
-    initstring.Values['osc_color_convert']:=BoolStr[stackmenu1.make_osc_color1.checked];
-    initstring.Values['osc_al']:=BoolStr[stackmenu1.osc_auto_level1.checked];
-    initstring.Values['osc_cs']:=BoolStr[stackmenu1.osc_colour_smooth1.checked];
-    initstring.Values['osc_pr']:=BoolStr[stackmenu1.osc_preserve_r_nebula1.checked];
-    initstring.Values['osc_sw']:=stackmenu1.osc_smart_smooth_width1.text;
-    initstring.Values['osc_sd']:=stackmenu1.osc_smart_colour_sd1.text;
-
-    initstring.Values['lrgb_al']:=BoolStr[stackmenu1.lrgb_auto_level1.checked];
-    initstring.Values['green_fl']:=BoolStr[stackmenu1.green_purple_filter1.checked];
-
-    initstring.Values['lrgb_cs']:=BoolStr[stackmenu1.lrgb_colour_smooth1.checked];
-    initstring.Values['lrgb_pr']:=BoolStr[stackmenu1.lrgb_preserve_r_nebula1.checked];
-    initstring.Values['lrgb_sw']:=stackmenu1.lrgb_smart_smooth_width1.text;
-    initstring.Values['lrgb_sd']:=stackmenu1.lrgb_smart_colour_sd1.text;
-
-    initstring.Values['ignore_header_solution']:=BoolStr[stackmenu1.ignore_header_solution1.Checked];
-    initstring.Values['equalise_background']:=BoolStr[stackmenu1.Equalise_background1.Checked];
-    initstring.Values['merge_overlap']:=BoolStr[stackmenu1.merge_overlap1.Checked];
-
-    initstring.Values['preview_demosaic']:=BoolStr[mainwindow.preview_demosaic1.Checked];
-
-    initstring.Values['classify_object']:=BoolStr[stackmenu1.classify_object1.Checked];
-    initstring.Values['classify_filter']:=BoolStr[stackmenu1.classify_filter1.Checked];
-
-    initstring.Values['classify_dark_temperature']:=BoolStr[stackmenu1.classify_dark_temperature1.Checked];
-    initstring.Values['classify_dark_exposure']:=BoolStr[stackmenu1.classify_dark_exposure1.Checked];
-    initstring.Values['classify_flat_filter']:=BoolStr[stackmenu1.classify_flat_filter1.Checked];
-    initstring.Values['classify_dark_date']:=BoolStr[stackmenu1.classify_dark_date1.Checked];
-    initstring.Values['classify_flat_date']:=BoolStr[stackmenu1.classify_flat_date1.Checked];
-
-    initstring.Values['add_time']:=BoolStr[stackmenu1.add_time1.Checked];
-
-    initstring.Values['uncheck_outliers']:=BoolStr[stackmenu1.uncheck_outliers1.Checked];
-
-    initstring.Values['write_log']:=BoolStr[stackmenu1.write_log1.checked];{write log to file}
-
-    initstring.Values['align_blink']:=BoolStr[stackmenu1.align_blink1.checked];{blink}
-    initstring.Values['time_stamp']:=BoolStr[stackmenu1.timestamp1.checked];{blink}
-
-    initstring.Values['force_slow']:=BoolStr[stackmenu1.force_oversize1.checked];
-    initstring.Values['calibrate_prior_solving']:=BoolStr[stackmenu1.calibrate_prior_solving1.checked];
-
-
-    initstring.Values['ra']:=ra1.text;
-    initstring.Values['dec']:=dec1.text;
-    initstring.Values['gamma']:=stretch1.text;
-    initstring.Values['marker_position']:=marker_position;
-
-    if  stackmenu1.use_manual_alignment1.checked then initstring.Values['align_method']:='4'
-    else
-    if  stackmenu1.use_astrometry_internal1.checked then initstring.Values['align_method']:='3'
-    else
-    if  stackmenu1.use_star_alignment1.checked then initstring.Values['align_method']:='2'
-    else
-    if  stackmenu1.use_ephemeris_alignment1.checked then  initstring.Values['align_method']:='1';
-
-    initstring.Values['star_database']:=stackmenu1.star_database1.text;
-    initstring.Values['solve_search_field']:=stackmenu1.search_fov1.text;
-    initstring.Values['radius_search']:=stackmenu1.radius_search1.text;
-    initstring.Values['quad_tolerance']:=stackmenu1.quad_tolerance1.text;
-    initstring.Values['maximum_stars']:=stackmenu1.max_stars1.text;
-    initstring.Values['min_star_size']:=stackmenu1.min_star_size1.text;
-    initstring.Values['min_star_size_stacking']:=stackmenu1.min_star_size_stacking1.text;
-
-
-    initstring.Values['manual_centering']:=stackmenu1.manual_centering1.text;
-
-    initstring.Values['downsample']:=stackmenu1.downsample_for_solving1.text;
-
-    initstring.Values['oversize']:=stackmenu1.oversize1.text;
-
-    initstring.Values['sd_factor']:=stackmenu1.sd_factor1.text;
-    initstring.Values['blur_factor']:=stackmenu1.blur_factor1.text;
-    initstring.Values['most_common_filter_radius']:=stackmenu1.most_common_filter_radius1.text;
-
-    initstring.Values['extract_background_box_size']:=stackmenu1.extract_background_box_size1.text;
-    initstring.Values['dark_areas_box_size']:=stackmenu1.dark_areas_box_size1.text;
-    initstring.Values['ring_equalise_factor']:=stackmenu1.ring_equalise_factor1.text;
-
-    initstring.Values['gradient_filter_factor']:=stackmenu1.gradient_filter_factor1.text;
-
-    initstring.Values['last_file']:=filename2;
-
-//    initstring.Values['ignore_hotpixels']:=BoolStr[stackmenu1.ignore_hotpixels1.Checked];
-//    initstring.Values['hotpixel_sd_factor']:= stackmenu1.hotpixel_sd_factor1.text;
-
-    initstring.Values['red_filter1']:=stackmenu1.red_filter1.text;
-    initstring.Values['red_filter2']:=stackmenu1.red_filter2.text;
-    initstring.Values['green_filter1']:=stackmenu1.green_filter1.text;
-    initstring.Values['green_filter2']:=stackmenu1.green_filter2.text;
-    initstring.Values['blue_filter1']:=stackmenu1.blue_filter1.text;
-    initstring.Values['blue_filter2']:=stackmenu1.blue_filter2.text;
-    initstring.Values['luminance_filter1']:=stackmenu1.luminance_filter1.text;
-    initstring.Values['luminance_filter2']:=stackmenu1.luminance_filter2.text;
-
-    initstring.Values['rr_factor']:=stackmenu1.rr1.text;
-    initstring.Values['rg_factor']:=stackmenu1.rg1.text;
-    initstring.Values['rb_factor']:=stackmenu1.rb1.text;
-
-    initstring.Values['gr_factor']:=stackmenu1.gr1.text;
-    initstring.Values['gg_factor']:=stackmenu1.gg1.text;
-    initstring.Values['gb_factor']:=stackmenu1.gb1.text;
-
-    initstring.Values['br_factor']:=stackmenu1.br1.text;
-    initstring.Values['bg_factor']:=stackmenu1.bg1.text;
-    initstring.Values['bb_factor']:=stackmenu1.bb1.text;
-
-    initstring.Values['red_filter_add']:=stackmenu1.red_filter_add1.text;
-    initstring.Values['green_filter_add']:=stackmenu1.green_filter_add1.text;
-    initstring.Values['blue_filter_add']:=stackmenu1.blue_filter_add1.text;
-
-    {Colour correction factors}
-    initstring.Values['add_value_R']:=stackmenu1.add_valueR1.text;
-    initstring.Values['add_value_G']:=stackmenu1.add_valueG1.text;
-    initstring.Values['add_value_B']:=stackmenu1.add_valueB1.text;
-    initstring.Values['multiply_R']:=stackmenu1.multiply_red1.text;
-    initstring.Values['multiply_G']:=stackmenu1.multiply_green1.text;
-    initstring.Values['multiply_B']:=stackmenu1.multiply_blue1.text;
-
-    initstring.Values['smart_smooth_width']:=stackmenu1.smart_smooth_width1.text;
-
-    initstring.Values['star_level_colouring']:=stackmenu1.star_level_colouring1.text;
-    initstring.Values['filter_artificial_colouring']:=stackmenu1.filter_artificial_colouring1.text;
-
-    initstring.Values['resize_factor']:=stackmenu1.resize_factor1.text;
-
-    initstring.Values['mark_outliers_upto']:=stackmenu1.mark_outliers_upto1.text;
-    initstring.Values['flux_aperture']:=stackmenu1.flux_aperture1.text;
-    initstring.Values['annulus_radius']:=stackmenu1.annulus_radius1.text;
-
-    initstring.Values['ph_annotate']:=BoolStr[stackmenu1.checkBox_annotate1.checked];
-
-
-    initstring.Values['sigma_decolour']:=stackmenu1.sigma_decolour1.text;
-
-    initstring.Values['sd_factor_list']:=stackmenu1.sd_factor_list1.text;
-    initstring.Values['noisefilter_blur']:=stackmenu1.noisefilter_blur1.text;
-    initstring.Values['noisefilter_sd']:=stackmenu1.noisefilter_sd1.text;
-
-    initstring.Values['hue_fuzziness']:=inttostr(stackmenu1.hue_fuzziness1.position);
-    initstring.Values['saturation_tolerance']:=inttostr(stackmenu1.saturation_tolerance1.position);
-    initstring.Values['remove_luminance']:=BoolStr[stackmenu1.remove_luminance1.checked];{asteroids}
-
-    initstring.Values['sample_size']:=inttostr(stackmenu1.sample_size1.itemindex);
-
-    initstring.Values['live_stack_dir']:=stackmenu1.live_stacking_path1.caption;
-
-
-    initstring.Values['mpcorb_path']:=mpcorb_path;{asteroids}
-    initstring.Values['cometels_path']:=cometels_path;{comets}
-
-    initstring.Values['maxcount']:=maxcount_asteroid;{asteroids}
-    initstring.Values['maxmag']:=maxmag_asteroid;{asteroids}
-
-    initstring.Values['font_follows']:=BoolStr[font_follows_diameter];{asteroids}
-    initstring.Values['showfullnames']:=BoolStr[showfullnames];{asteroids}
-    initstring.Values['showmagnitude']:=BoolStr[showmagnitude];{asteroids}
-    initstring.Values['add_date']:=BoolStr[add_date];{asteroids}
-    initstring.Values['p1']:=encrypt(lat_default);{default latitude}
-    initstring.Values['p2']:=encrypt(long_default);{default longitude}
-
-
-    initstring.Values['annotation_color']:=inttostr(annotation_color);
-    initstring.Values['annotation_diameter']:=inttostr(annotation_diameter);
-
-    initstring.Values['add_annotations']:=BoolStr[add_annotations];{for asteroids}
-
-    initstring.Values['cygwin_path']:=cygwin_path;
-    initstring.Values['show_console']:=BoolStr[show_console];
-    initstring.Values['astrometry_extra_options']:=astrometry_extra_options;
-
-    initstring.Values['write_jpeg']:=BoolStr[stackmenu1.write_jpeg1.checked];{live stacking}
-    initstring.Values['to_clipboard']:=BoolStr[stackmenu1.interim_to_clipboard1.checked];{live stacking}
-
-    initstring.Values['obscode']:=obscode;
-    initstring.Values['delim_pos']:=inttostr(delim_pos);
-
-    initstring.Values['equinox']:=inttostr(stackmenu1.equinox1.itemindex);
-    initstring.Values['wcs']:=boolstr[stackmenu1.mount_write_wcs1.Checked];{uses wcs file for menu mount}
-
-
-
-    {### save listview values ###}
-    for c:=0 to stackmenu1.ListView1.items.count-1 do {add light images}
+  try
+    Sett := TmemIniFile.Create(lpath);
+    sett.clear; {clear any section in the old ini file}
+    with mainwindow do
     begin
-      initstring.Values['image'+inttostr(c)]:=stackmenu1.ListView1.items[c].caption;
-      initstring.Values['image'+inttostr(c)+'_check']:=boolstr[stackmenu1.ListView1.items[c].Checked];
-    end;
+      sett.writeInteger('main','window_left',mainwindow.left);
+      sett.writeInteger('main','window_top',mainwindow.top);
+      sett.writeInteger('main','window_height',mainwindow.height);
+      sett.writeInteger('main','window_width',mainwindow.width);
 
-    for c:=0 to stackmenu1.ListView2.items.count-1  do {add dark files}
-    begin
-      initstring.Values['dark'+inttostr(c)]:=stackmenu1.ListView2.items[c].caption;
-      initstring.Values['dark'+inttostr(c)+'_check']:=boolstr[stackmenu1.ListView2.items[c].Checked];
-    end;
-    for c:=0 to stackmenu1.ListView3.items.count-1  do {add flat files}
-    begin
-      initstring.Values['flat'+inttostr(c)]:=stackmenu1.ListView3.items[c].caption;
-      initstring.Values['flat'+inttostr(c)+'_check']:=boolstr[stackmenu1.ListView3.items[c].Checked];
-    end;
-    for c:=0 to stackmenu1.ListView4.items.count-1  do {add flat_dark files}
-    begin
-      initstring.Values['flat_dark'+inttostr(c)]:=stackmenu1.ListView4.items[c].caption;
-      initstring.Values['flat_dark'+inttostr(c)+'_check']:=boolstr[stackmenu1.ListView4.items[c].Checked];
-    end;
-    for c:=0 to stackmenu1.ListView6.items.count-1  do {add blink files}
-    begin
-      initstring.Values['blink'+inttostr(c)]:=stackmenu1.ListView6.items[c].caption;
-      initstring.Values['blink'+inttostr(c)+'_check']:=boolstr[stackmenu1.ListView6.items[c].Checked];
-    end;
-    for c:=0 to stackmenu1.ListView7.items.count-1  do {add photometry files}
-    begin
-      initstring.Values['photometry'+inttostr(c)]:=stackmenu1.ListView7.items[c].caption;
-      initstring.Values['photometry'+inttostr(c)+'_check']:=boolstr[stackmenu1.ListView7.items[c].Checked];
-    end;
-    for c:=0 to stackmenu1.ListView8.items.count-1  do {add photometry files}
-    begin
-      initstring.Values['inspector'+inttostr(c)]:=stackmenu1.ListView8.items[c].caption;
-      initstring.Values['inspector'+inttostr(c)+'_check']:=boolstr[stackmenu1.ListView8.items[c].Checked];
-    end;
+      sett.writebool('main','raw_bayer',mainwindow.bayer_image1.checked);
 
-    for c:=0 to recent_files.count-1  do {add recent files}
-      initstring.Values['recent'+inttostr(c)]:=recent_files[c];
 
-    with initstring do
-    begin
-      try
-      savetoFile(lpath);{ save to file.}
-      except
-        application.messagebox(pchar('Error writing: '+lpath),pchar('Error'),MB_ICONWARNING+MB_OK);
-        exit;
+      sett.writeInteger('main','font_color',font_color);
+      sett.writeInteger('main','font_size',font_size);
+      sett.writestring('main','font_name2',font_name);
+      sett.writestring('main','font_style',StyleToStr(font_style));
+      sett.writeInteger('main','font_charset',font_charset);
+      sett.writeInteger('main','pedestal',pedestal);
+
+
+      sett.writeInteger('main','minimum_position',MINIMUM1.position);
+      sett.writeInteger('main','maximum_position',maximum1.position);
+      sett.writeInteger('main','range',range1.itemindex);
+
+      sett.writeInteger('main','saturation_factor',saturation_factor_plot1.position);
+
+
+      sett.writeInteger('main','polynomial',polynomial1.itemindex);
+
+      sett.writeInteger('main','thumbnails_width',thumbnails1_width);
+      sett.writeInteger('main','thumbnails_height',thumbnails1_height);
+
+      sett.writeBool('main','inversemousewheel',inversemousewheel1.checked);
+      sett.writeBool('main','fliphorizontal',flip_horizontal1.checked);
+      sett.writeBool('main','flipvertical',flip_vertical1.checked);
+      sett.writeBool('main','annotations',annotations_visible1.checked);
+      sett.writeBool('main','north_east',northeast1.checked);
+      sett.writeBool('main','mount_position',mountposition1.checked);
+      sett.writeBool('main','grid',grid1.checked);
+      sett.writeBool('main','pos_date',positionanddate1.checked);
+      sett.writeBool('main','freetxt',freetext1.checked);
+      sett.writestring('main','f_text',freetext);
+
+
+      sett.writeBool('main','add_marker',add_marker_position1.checked);
+
+
+      sett.writeBool('main','preview_demosaic',mainwindow.preview_demosaic1.Checked);
+
+      sett.writestring('main','ra',ra1.text);
+      sett.writestring('main','dec',dec1.text);
+      sett.writestring('main','gamma',stretch1.text);
+      sett.writestring('main','marker_position',marker_position);
+
+
+      sett.writestring('main','last_file',filename2);
+
+
+      sett.writestring('main','mpcorb_path',mpcorb_path);{asteroids}
+      sett.writestring('main','cometels_path',cometels_path);{comets}
+
+      sett.writeString('main','maxcount',maxcount_asteroid);{asteroids}
+      sett.writeString('main','maxmag',maxmag_asteroid);{asteroids}
+
+      sett.writeBool('main','font_follows',font_follows_diameter);{asteroids}
+      sett.writeBool('main','showfullnames',showfullnames);{asteroids}
+      sett.writeBool('main','showmagnitude',showmagnitude);{asteroids}
+      sett.writeBool('main','add_date',add_date);{asteroids}
+      sett.writeString('main','p1',encrypt(lat_default));{default latitude}
+      sett.writeString('main','p2',encrypt(long_default));{default longitude}
+
+
+      sett.writeInteger('main','annotation_color',annotation_color);
+      sett.writeInteger('main','annotation_diameter',annotation_diameter);
+
+      sett.writeBool('main','add_annotations',add_annotations);{for asteroids}
+
+      sett.writestring('main','cygwin_path',cygwin_path);
+      sett.writeBool('main','show_console',show_console);
+      sett.writestring('main','astrometry_extra_options',astrometry_extra_options);
+
+      for c:=0 to recent_files.count-1  do {add recent files}
+        sett.writestring('main','recent'+inttostr(c),recent_files[c]);
+
+      {########## stackmenu settings #############}
+      sett.writebool('stack','stackmenu_visible',stackmenu1.visible);
+
+      sett.writeInteger('stack','stackmenu_left',stackmenu1.left);
+      sett.writeInteger('stack','stackmenu_top',stackmenu1.top);
+      sett.writeInteger('stack','stackmenu_height',stackmenu1.height);
+      sett.writeInteger('stack','stackmenu_width',stackmenu1.width);
+
+      sett.writeInteger('stack','stack_method',stackmenu1.stack_method1.itemindex);
+
+      sett.writeInteger('stack','mosaic_width',stackmenu1.mosaic_width1.position);
+      sett.writeInteger('stack','mosaic_crop',stackmenu1.mosaic_crop1.position);
+
+      sett.writeInteger('stack','flat_combine_method',stackmenu1.flat_combine_method1.itemindex);
+      sett.writeInteger('stack','stack_tab',stackmenu1.pagecontrol1.tabindex);
+
+      sett.writeString('stack','bayer_pat',stackmenu1.bayer_pattern1.text);
+
+      sett.writeInteger('stack','demosaic_method2',stackmenu1.demosaic_method1.itemindex);
+      sett.writeInteger('stack','conv_program',stackmenu1.raw_conversion_program1.itemindex);
+
+      sett.writeBool('stack','osc_color_convert',stackmenu1.make_osc_color1.checked);
+      sett.writeBool('stack','osc_al',stackmenu1.osc_auto_level1.checked);
+      sett.writeBool('stack','osc_cs',stackmenu1.osc_colour_smooth1.checked);
+      sett.writeBool('stack','osc_pr',stackmenu1.osc_preserve_r_nebula1.checked);
+      sett.writeString('stack','osc_sw',stackmenu1.osc_smart_smooth_width1.text);
+      sett.writestring('stack','osc_sd',stackmenu1.osc_smart_colour_sd1.text);
+
+      sett.writeBool('stack','lrgb_al',stackmenu1.lrgb_auto_level1.checked);
+      sett.writeBool('stack','green_fl',stackmenu1.green_purple_filter1.checked);
+
+      sett.writeBool('stack','lrgb_cs',stackmenu1.lrgb_colour_smooth1.checked);
+      sett.writeBool('stack','lrgb_pr',stackmenu1.lrgb_preserve_r_nebula1.checked);
+      sett.writestring('stack','lrgb_sw',stackmenu1.lrgb_smart_smooth_width1.text);
+      sett.writestring('stack','lrgb_sd',stackmenu1.lrgb_smart_colour_sd1.text);
+
+      sett.writeBool('stack','ignore_header_solution',stackmenu1.ignore_header_solution1.Checked);
+      sett.writeBool('stack','equalise_background',stackmenu1.Equalise_background1.Checked);
+      sett.writeBool('stack','merge_overlap',stackmenu1.merge_overlap1.Checked);
+
+
+      sett.writeBool('stack','classify_object',stackmenu1.classify_object1.Checked);
+      sett.writeBool('stack','classify_filter',stackmenu1.classify_filter1.Checked);
+
+      sett.writeBool('stack','classify_dark_temperature',stackmenu1.classify_dark_temperature1.Checked);
+      sett.writeBool('stack','classify_dark_exposure',stackmenu1.classify_dark_exposure1.Checked);
+      sett.writeBool('stack','classify_flat_filter',stackmenu1.classify_flat_filter1.Checked);
+      sett.writeBool('stack','classify_dark_date',stackmenu1.classify_dark_date1.Checked);
+      sett.writeBool('stack','classify_flat_date',stackmenu1.classify_flat_date1.Checked);
+
+      sett.writeBool('stack','add_time',stackmenu1.add_time1.Checked);
+
+      sett.writeBool('stack','uncheck_outliers',stackmenu1.uncheck_outliers1.Checked);
+
+      sett.writeBool('stack','write_log',stackmenu1.write_log1.checked);{write log to file}
+
+      sett.writeBool('stack','align_blink',stackmenu1.align_blink1.checked);{blink}
+      sett.writeBool('stack','time_stamp',stackmenu1.timestamp1.checked);{blink}
+
+      sett.writeBool('stack','force_slow',stackmenu1.force_oversize1.checked);
+      sett.writeBool('stack','calibrate_prior_solving',stackmenu1.calibrate_prior_solving1.checked);
+
+
+      if  stackmenu1.use_manual_alignment1.checked then sett.writestring('stack','align_method','4')
+      else
+      if  stackmenu1.use_astrometry_internal1.checked then sett.writestring('stack','align_method','3')
+      else
+      if  stackmenu1.use_star_alignment1.checked then sett.writestring('stack','align_method','2')
+      else
+      if  stackmenu1.use_ephemeris_alignment1.checked then  sett.writestring('stack','align_method','1');
+
+      sett.writestring('stack','star_database',stackmenu1.star_database1.text);
+      sett.writestring('stack','solve_search_field',stackmenu1.search_fov1.text);
+      sett.writestring('stack','radius_search',stackmenu1.radius_search1.text);
+      sett.writestring('stack','quad_tolerance',stackmenu1.quad_tolerance1.text);
+      sett.writestring('stack','maximum_stars',stackmenu1.max_stars1.text);
+      sett.writestring('stack','min_star_size',stackmenu1.min_star_size1.text);
+      sett.writestring('stack','min_star_size_stacking',stackmenu1.min_star_size_stacking1.text);
+
+      sett.writestring('stack','manual_centering',stackmenu1.manual_centering1.text);
+
+      sett.writestring('stack','downsample',stackmenu1.downsample_for_solving1.text);
+
+      sett.writestring('stack','oversize',stackmenu1.oversize1.text);
+      sett.writebool('stack','normalise_f',stackmenu1.apply_normalise_filter1.checked);
+
+      sett.writestring('stack','sd_factor',stackmenu1.sd_factor1.text);
+      sett.writestring('stack','blur_factor',stackmenu1.blur_factor1.text);
+      sett.writestring('stack','most_common_filter_radius',stackmenu1.most_common_filter_radius1.text);
+
+      sett.writestring('stack','extract_background_box_size',stackmenu1.extract_background_box_size1.text);
+      sett.writestring('stack','dark_areas_box_size',stackmenu1.dark_areas_box_size1.text);
+      sett.writestring('stack','ring_equalise_factor',stackmenu1.ring_equalise_factor1.text);
+
+      sett.writestring('stack','gradient_filter_factor',stackmenu1.gradient_filter_factor1.text);
+
+      sett.writestring('stack','red_filter1',stackmenu1.red_filter1.text);
+      sett.writestring('stack','red_filter2',stackmenu1.red_filter2.text);
+      sett.writestring('stack','green_filter1',stackmenu1.green_filter1.text);
+      sett.writestring('stack','green_filter2',stackmenu1.green_filter2.text);
+      sett.writestring('stack','blue_filter1',stackmenu1.blue_filter1.text);
+      sett.writestring('stack','blue_filter2',stackmenu1.blue_filter2.text);
+      sett.writestring('stack','luminance_filter1',stackmenu1.luminance_filter1.text);
+      sett.writestring('stack','luminance_filter2',stackmenu1.luminance_filter2.text);
+
+      sett.writestring('stack','rr_factor',stackmenu1.rr1.text);
+      sett.writestring('stack','rg_factor',stackmenu1.rg1.text);
+      sett.writestring('stack','rb_factor',stackmenu1.rb1.text);
+
+      sett.writestring('stack','gr_factor',stackmenu1.gr1.text);
+      sett.writestring('stack','gg_factor',stackmenu1.gg1.text);
+      sett.writestring('stack','gb_factor',stackmenu1.gb1.text);
+
+      sett.writestring('stack','br_factor',stackmenu1.br1.text);
+      sett.writestring('stack','bg_factor',stackmenu1.bg1.text);
+      sett.writestring('stack','bb_factor',stackmenu1.bb1.text);
+
+      sett.writestring('stack','red_filter_add',stackmenu1.red_filter_add1.text);
+      sett.writestring('stack','green_filter_add',stackmenu1.green_filter_add1.text);
+      sett.writestring('stack','blue_filter_add',stackmenu1.blue_filter_add1.text);
+
+      {Colour correction factors}
+      sett.writestring('stack','add_value_R',stackmenu1.add_valueR1.text);
+      sett.writestring('stack','add_value_G',stackmenu1.add_valueG1.text);
+      sett.writestring('stack','add_value_B',stackmenu1.add_valueB1.text);
+      sett.writestring('stack','multiply_R',stackmenu1.multiply_red1.text);
+      sett.writestring('stack','multiply_G',stackmenu1.multiply_green1.text);
+      sett.writestring('stack','multiply_B',stackmenu1.multiply_blue1.text);
+
+      sett.writestring('stack','smart_smooth_width',stackmenu1.smart_smooth_width1.text);
+
+      sett.writestring('stack','star_level_colouring',stackmenu1.star_level_colouring1.text);
+      sett.writestring('stack','filter_artificial_colouring',stackmenu1.filter_artificial_colouring1.text);
+
+      sett.writestring('stack','resize_factor',stackmenu1.resize_factor1.text);
+
+      sett.writestring('stack','mark_outliers_upto',stackmenu1.mark_outliers_upto1.text);
+      sett.writestring('stack','flux_aperture',stackmenu1.flux_aperture1.text);
+      sett.writestring('stack','annulus_radius',stackmenu1.annulus_radius1.text);
+
+      sett.writeBool('stack','ph_annotate',stackmenu1.checkBox_annotate1.checked);
+
+
+      sett.writestring('stack','sigma_decolour',stackmenu1.sigma_decolour1.text);
+
+      sett.writestring('stack','sd_factor_list',stackmenu1.sd_factor_list1.text);
+      sett.writestring('stack','noisefilter_blur',stackmenu1.noisefilter_blur1.text);
+      sett.writestring('stack','noisefilter_sd',stackmenu1.noisefilter_sd1.text);
+
+      sett.writeInteger('stack','hue_fuzziness',stackmenu1.hue_fuzziness1.position);
+      sett.writeInteger('stack','saturation_tolerance',stackmenu1.saturation_tolerance1.position);
+      sett.writeBool('stack','remove_luminance',stackmenu1.remove_luminance1.checked);{asteroids}
+
+      sett.writeInteger('stack','sample_size',stackmenu1.sample_size1.itemindex);
+
+      sett.writestring('stack','live_stack_dir',stackmenu1.live_stacking_path1.caption);
+      sett.writeBool('stack','write_jpeg',stackmenu1.write_jpeg1.checked);{live stacking}
+      sett.writeBool('stack','to_clipboard',stackmenu1.interim_to_clipboard1.checked);{live stacking}
+
+      sett.writeInteger('stack','equinox',stackmenu1.equinox1.itemindex);
+      sett.writeBool('stack','wcs',stackmenu1.mount_write_wcs1.Checked);{uses wcs file for menu mount}
+
+      sett.writestring('stack','obscode',obscode);
+      sett.writeInteger('stack','delim_pos',delim_pos);
+
+      {### save listview values ###}
+      for c:=0 to stackmenu1.ListView1.items.count-1 do {add light images}
+      begin
+        sett.writestring('files','image'+inttostr(c),stackmenu1.ListView1.items[c].caption);
+        sett.writeBool('files','image'+inttostr(c)+'_check',stackmenu1.ListView1.items[c].Checked);
       end;
-    end;
-    initstring.free;
+
+      for c:=0 to stackmenu1.ListView2.items.count-1  do {add dark files}
+      begin
+        sett.writestring('files','dark'+inttostr(c),stackmenu1.ListView2.items[c].caption);
+        sett.writeBool('files','dark'+inttostr(c)+'_check',stackmenu1.ListView2.items[c].Checked);
+      end;
+      for c:=0 to stackmenu1.ListView3.items.count-1  do {add flat files}
+      begin
+        sett.writestring('files','flat'+inttostr(c),stackmenu1.ListView3.items[c].caption);
+        sett.writeBool('files','flat'+inttostr(c)+'_check',stackmenu1.ListView3.items[c].Checked);
+      end;
+      for c:=0 to stackmenu1.ListView4.items.count-1  do {add flat_dark files}
+      begin
+        sett.writestring('files','flat_dark'+inttostr(c),stackmenu1.ListView4.items[c].caption);
+        sett.writeBool('files','flat_dark'+inttostr(c)+'_check',stackmenu1.ListView4.items[c].Checked);
+      end;
+      for c:=0 to stackmenu1.ListView6.items.count-1  do {add blink files}
+      begin
+        sett.writestring('files','blink'+inttostr(c),stackmenu1.ListView6.items[c].caption);
+        sett.writeBool('files','blink'+inttostr(c)+'_check',stackmenu1.ListView6.items[c].Checked);
+      end;
+      for c:=0 to stackmenu1.ListView7.items.count-1  do {add photometry files}
+      begin
+        sett.writestring('files','photometry'+inttostr(c),stackmenu1.ListView7.items[c].caption);
+        sett.writeBool('files','photometry'+inttostr(c)+'_check',stackmenu1.ListView7.items[c].Checked);
+      end;
+      for c:=0 to stackmenu1.ListView8.items.count-1  do {add inspector files}
+      begin
+        sett.writestring('files','inspector'+inttostr(c),stackmenu1.ListView8.items[c].caption);
+        sett.writeBool('files','inspector'+inttostr(c)+'_check',stackmenu1.ListView8.items[c].Checked);
+      end;
+
+    end;{mainwindow}
+  finally
+    Sett.Free; {Note error detection seems not possible with tmeminifile. Tried everything}
   end;
 end;
 
@@ -8485,6 +8807,7 @@ begin
   save_settings2;
 end;
 
+
 procedure Tmainwindow.receivemessage(Sender: TObject);{For OneInstance, called from timer (linux) or SimpleIPCServer1MessageQueued (Windows)}
 begin
   if SimpleIPCServer1.PeekMessage(1,True) then
@@ -8668,6 +8991,11 @@ begin
   end
   else
   plot_text;
+end;
+
+procedure Tmainwindow.preview_demosaic1Click(Sender: TObject);
+begin
+
 end;
 
 
@@ -9524,6 +9852,7 @@ begin
    memo1.setfocus;{required for selectall since hideselection is enabled when not having focus}
    Memo1.SelectAll;
 end;
+
 
 procedure Tmainwindow.menupasteClick(Sender: TObject);{for fits header memo1 popup menu}
 var
@@ -12053,6 +12382,11 @@ procedure Tmainwindow.demosaic_bayermatrix1Click(Sender: TObject);
 var
     oldcursor: tcursor;
 begin
+  if naxis3>1 then {colour}
+  begin
+    memo2_message('Image already in colour. No action.');
+    exit;
+  end;
   {$IFDEF fpc}
   progress_indicator(0,'');
   {$else} {delphi}
@@ -12077,7 +12411,7 @@ begin
   progress_indicator(-100,'');{back to normal}
  {$else} {delphi}
   mainwindow.taskbar1.progressstate:=TTaskBarProgressState.None;
- {$endif}
+  {$endif}
 end;
 
 

@@ -1304,6 +1304,7 @@ object mainwindow: Tmainwindow
         AutoCheck = True
         Caption = 'Activate/deactivate auto de-mosaic'
         Hint = 'If checked, any new image in viewer will be demosaiced using bilinear interpolation.'
+        OnClick = preview_demosaic1Click
       end
       object demosaic_bayermatrix1: TMenuItem
         Caption = 'De-mosaic Bayer matrix '
