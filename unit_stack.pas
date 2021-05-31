@@ -42,6 +42,7 @@ type
     add_substract1: TComboBox;
     add_time1: TCheckBox;
     apply_normalise_filter1: TCheckBox;
+    planetary_image1: TCheckBox;
     classify_dark_date1: TCheckBox;
     classify_flat_date1: TCheckBox;
     flat_combine_method1: TComboBox;
@@ -1600,12 +1601,12 @@ end;
 
 procedure analyse_tab_images;
 var
-  c,hfd_counter  ,i,counts : integer;
-  backgr, hfd_median,alt   : double;
-  Save_Cursor              : TCursor;
-  green,blue,success       : boolean;
-  key,ext,filename1        : string;
-  img                      : image_array;
+  c,hfd_counter  ,i,counts          : integer;
+  backgr, hfd_median,alt            : double;
+  Save_Cursor                       : TCursor;
+  green,blue,success,planetary      : boolean;
+  key,ext,filename1,rawstr          : string;
+  img                               : image_array;
 begin
   with stackmenu1 do
   begin
@@ -1622,6 +1623,7 @@ begin
     esc_pressed:=false;
 
     jd_sum:=0;{for sigma clip advanced average}
+    planetary:=planetary_image1.checked;
 
     green:=false;
     blue:=false;
@@ -1764,8 +1766,10 @@ begin
           end
           else
           begin {light frame}
-
-            analyse_fits(img,10 {snr_min},false,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
+            if planetary=false then
+              analyse_fits(img,10 {snr_min},false,hfd_counter,backgr, hfd_median) {find background, number of stars, median HFD}
+            else
+              begin hfd_counter:=0; backgr:=0;star_level:=0; backgr:=0; hfd_median:=-1; end;
 
             ListView1.Items.BeginUpdate;
             try
@@ -1807,7 +1811,9 @@ begin
                 if set_temperature<>999 then ListView1.Items.item[c].subitems.Strings[L_temperature]:=inttostr(set_temperature);
                 ListView1.Items.item[c].subitems.Strings[L_width]:=inttostr(width2); {width}
                 ListView1.Items.item[c].subitems.Strings[L_height]:=inttostr(height2);{height}
-                ListView1.Items.item[c].subitems.Strings[L_type]:=imagetype+inttostr(nrbits);{type}
+
+                if ((naxis3=1) and (Xbinning=1) and (bayerpat<>'')) then rawstr:=' raw' else rawstr:='';
+                ListView1.Items.item[c].subitems.Strings[L_type]:=copy(imagetype,1,5)+inttostr(nrbits)+rawstr;{type}
                 ListView1.Items.item[c].subitems.Strings[L_datetime]:=StringReplace(date_obs,'T',' ',[]);{date/time}
                 ListView1.Items.item[c].subitems.Strings[L_position]:=prepare_ra5(ra0,': ')+', '+ prepare_dec4(dec0,'° ');{give internal position}
 
@@ -8744,7 +8750,7 @@ begin
       if length(extra2)=1 then
       begin
          memo2.lines.add('Error! One color only. For LRGB stacking a minimum of two colors is required. Removed the check mark classify on "image filter" or add images made with a different color filter.');
-         filters_used[5]:=filters_used[i];
+         //filters_used[5]:=filters_used[i];
          lrgb:=false;{prevent runtime errors with naxis3=3}
       end;
     end;

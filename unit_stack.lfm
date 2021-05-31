@@ -1,9 +1,9 @@
 object stackmenu1: Tstackmenu1
-  Left = 407
+  Left = 66
   Height = 717
-  Top = 215
+  Top = 118
   Width = 1883
-  HorzScrollBar.Page = 1440
+  HorzScrollBar.Page = 1850
   VertScrollBar.Page = 556
   AllowDropFiles = True
   AutoScroll = True
@@ -272,7 +272,7 @@ object stackmenu1: Tstackmenu1
       object Analyse1: TButton
         Left = 136
         Height = 26
-        Hint = 'Analyse and move dark, flat or bias images to the corresponding tabs'
+        Hint = 'Analyse and move dark, flat or bias images to the corresponding tabs. To analyse planetary image on sharpness set in tab alignment max stars on 0.'
         Top = 6
         Width = 220
         Caption = 'Analyse and organise images'
@@ -395,9 +395,10 @@ object stackmenu1: Tstackmenu1
             MinWidth = 50
           end        
           item
-            Alignment = taRightJustify
+            AutoSize = True
             Caption = 'Type'
             MinWidth = 50
+            Width = 40
           end        
           item
             Alignment = taRightJustify
@@ -575,6 +576,15 @@ object stackmenu1: Tstackmenu1
         ParentShowHint = False
         ShowHint = True
         TabOrder = 8
+      end
+      object planetary_image1: TCheckBox
+        Left = 1768
+        Height = 19
+        Hint = 'Checkmark this option for analysing planetary images on sharpness.'
+        Top = 8
+        Width = 69
+        Caption = 'Planetary'
+        TabOrder = 9
       end
     end
     object Darks: TTabSheet
@@ -1224,12 +1234,12 @@ object stackmenu1: Tstackmenu1
       object sd_factor1: TComboBox
         Left = 429
         Height = 23
-        Hint = 'Sigma factor to identify outlier pixels. A factor of around 3.0 will remove satellite tracks and hot pixels. Sigma stands for standard deviation.'
+        Hint = 'Sigma factor to identify outlier pixels. A factor of around 2.0 will remove satellite tracks and hot pixels. Sigma stands for standard deviation.'
         Top = 24
         Width = 68
         DropDownCount = 20
         ItemHeight = 15
-        ItemIndex = 2
+        ItemIndex = 0
         Items.Strings = (
           '2.0'
           '2.2'
@@ -1240,7 +1250,7 @@ object stackmenu1: Tstackmenu1
         )
         ParentFont = False
         TabOrder = 1
-        Text = '2.5'
+        Text = '2.0'
       end
       object oversize1: TComboBox
         Left = 429

@@ -2510,9 +2510,9 @@ begin
     end;
 
   {check alternative mean value}
-  if his_mean[colour]>2*background {2* most common} then
+  if his_mean[colour]>1.5*background {1.5* most common} then  {changed from 2 to 1.5 on 2021-5-29}
   begin
-    memo2_message('Will use mean value '+inttostr(round(his_mean[colour]))+' as background rather then most common value '+inttostr(round(background)));
+    memo2_message(Filename2+', will use mean value '+inttostr(round(his_mean[colour]))+' as background rather then most common value '+inttostr(round(background)));
     background:=his_mean[colour];{strange peak at low value, ignore histogram and use mean}
   end;
 
@@ -3156,7 +3156,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.547, '+about_message4+', dated 2021-5-28';
+  #13+#10+'ASTAP version ß0.9.547a, '+about_message4+', dated 2021-5-31';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
