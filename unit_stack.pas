@@ -2809,6 +2809,7 @@ end;
 procedure listview_update_keyword(tl : tlistview; keyw,value :string );{update key word of multiple files}
 var index,counter,error2: integer;
     waarde              : double;
+    filename_old        : string;
 begin
   index:=0;
   esc_pressed:=false;
@@ -2818,8 +2819,10 @@ begin
     if  tl.Items[index].Selected then
     begin
       filename2:=tl.items[index].caption;
+      filename_old:=filename2;
       if load_image(false,false {plot}) then {load}
       begin
+        if filename_old<>filename2 then tl.items[index].caption:=filename2; {converted cr2 or other format when loaded. Update list with correct filename}
         while length(keyw)<8 do keyw:=keyw+' ';{increase length to 8}
         keyw:=copy(keyw,1,8);{decrease if longer then 8}
 

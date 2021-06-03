@@ -3156,7 +3156,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.547a, '+about_message4+', dated 2021-5-31';
+  #13+#10+'ASTAP version ß0.9.547b, '+about_message4+', dated 2021-6-3';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -8696,7 +8696,7 @@ begin
     else
     result:=true;
     {successful conversion using LibRaw}
-    filename2:=ChangeFileExt(FileName2,'.fit');{for the case you want to save it}
+    filename2:=ChangeFileExt(FileName2,'.fits');{for the case you want to save it}
   end{raw}
 
   else

@@ -389,7 +389,8 @@ of the
 external astrometry.net&nbsp;solver&nbsp;</a></big></li></ul></ul><br>
         <ul>
           <li><big><a href="astap.htm#stack_process">Appendix
-                1 stack process</a></big></li>
+                1 stack process</a></big></li><li><big><a href="astap.htm#1476">Appendix
+                2 the star database 1476 format.</a></big></li>
           <li><big><a href="astap_astrometric_solving.htm">Background
                 info,&nbsp;how
                 does the ASTAP astrometric solving works internally</a></big></li>
@@ -3159,7 +3160,522 @@ or<br>
         <p align="left"> <a href="astap.htm#index">Back
             to index</a></p>
       </div>
+      <div style="text-align: left;"><big style="font-weight: bold;"><span style="text-decoration: underline;"><br><a name="1476"></a>Appendix 2, the 1476 star database format:<br><br></span></big><span class="comment-copy"><b></b><br>
+      The .1476 format divides the sky in&nbsp;1476 area's and 1476
+      corresponding files with the extension .1476. </span><span class="comment-copy">
+      The 1476 areas of similar area size except for the
+      poles which are half of that size. </span><span class="comment-copy">&nbsp;Each star is stored in a record of 5 bytes. The files start 'with a 110 byte header containing a
+      textual description and the record size binary stored in byte 110. &nbsp;<br><br></span><span class="comment-copy">
+The RA values are stored as a 3 bytes word. The DEC positions are stored as a
+two's complement (=standard), three bytes integer. The resolution of
+this three byte storage will be for RA: 360*60*60/((256*256*256)-1) =
+0.077 arc seconds. For the DEC value it will be:
+90*60*60/((128*256*256)-1) = 0.039 arc seconds.&nbsp; The starts are
+sorted on magnitude and the magnitude is stored in a byte of the
+special preceding header with an offset to make all values positive.<br>
+      </span><br><span class="comment-copy">
+      <font face="Courier" size="2"> &nbsp;&nbsp;Example of star Sirius
+        RA and DEC position:<br>
+        &nbsp;&nbsp;The RA position is stored as C3 06 48 equals:
+        (195+6*256+72*256*256)<b>*24</b>/((256*256*256)-1)=6.75247662
+        hours equals: 6:45:8.9<br>
+        &nbsp;&nbsp;The DEC position is stored as D7 39 E8, equals: 215
+        57 -24. The DEC is then (215+57*256-24*256*256)<b>*90</b>/((128*256*256)-1)=-16.7161401
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        degrees equals -16d 42 58<br>
+      </font> </span><br><span class="comment-copy">Record format:<br>
       <br>
+      </span>The 290-5 or 1476-5, short record size of 5 bytes for one star without
+    designation:<br><br><span class="comment-copy"><font face="courier" size="2"><span class="comment-copy">
+          <font face="courier" size="2"> &nbsp;&nbsp;&nbsp;&nbsp;type<br>&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;hnskyhdr290 = packed record<br>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp; ra7&nbsp; : byte;<br>
+            &nbsp; &nbsp; &nbsp;&nbsp; &nbsp;ra8&nbsp; : byte;<br>&nbsp;&nbsp; &nbsp;&nbsp; &nbsp; ra9&nbsp; : byte;<br>&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;&nbsp;dec7 : byte;<br>
+            &nbsp; &nbsp; &nbsp;&nbsp; &nbsp;dec8 : byte;{magnitude and dec9 are
+            written once in preceding header-record} <br>&nbsp;&nbsp; &nbsp;&nbsp; end;<br>
+          </font> <br>
+        </span></font></span><span class="comment-copy"><br></span><span class="comment-copy"></span><span class="comment-copy"><br>
+      Stars are sorted from bright to
+      faint in the "0.1" steps. Within the magnitude range, the stars are
+      additional sorted in DEC. For a series of stars with the same DEC9
+      value, a <span style="font-weight: bold;">header-record</span>
+is preceding containing the DEC9 value stored at location DEC7. Since
+the stars are already sorted in 36 declination bands, the number of
+DEC9 values is already limited by a factor 36.<br>
+      <br>1476-5 <span style="font-weight: bold;">header-record</span> example: FF FF FF 20 06 This indicates the
+      following records have a DEC9 value of 20 -128 offset and a
+      magnitude of (06 - 16)/10 equals -1.0 (new method, +16 offset).<br><br>
+The shorter records methods become only space efficient for very large
+star collection of a few million stars. In these large collections many
+stars can be found with the same magnitude and DEC9 shortint. The Gaia
+database is only issued in the 1476-5 format of 5 bytes per star. or in
+an older format 290-6 (V17) or 290-5. The 290-6 has one more byte for
+the colour information. This is documented in the HNSKY planetarium
+program help file.<br><br>So the record sequence will be as follows:<br><br></span><div style="margin-left: 40px;"><span class="comment-copy">header-record </span><span class="comment-copy">{new section will start with a different magnitude and dec9}</span><br><span class="comment-copy">record</span><br><span class="comment-copy">record</span><br><span class="comment-copy">record</span><br><span class="comment-copy">record</span><br><span class="comment-copy">header-record &nbsp;{new section will start with a different magnitude and dec9}</span><br><span class="comment-copy">record</span><br><span class="comment-copy">record</span><br><span class="comment-copy">
+      </span><br><span class="comment-copy"></span></div><span class="comment-copy"><br><span style="font-weight: bold;">The 1476 areas:</span><br></span><table x:str="" style="border-collapse: collapse; width: 48pt;" border="0" cellpadding="0" cellspacing="0" width="64"><col style="width: 48pt;" width="64"><col>
+  <tbody><tr><td style="height: 12.75pt; width: 48pt;" height="17" width="64">// Each ring is
+  divided by lines of constant RA such that the minimum width in RA is about 5
+  degrees (deltaRA*cos(DEC).</td></tr></tbody><tr style="height: 12.75pt;" height="17"></tr></table><table x:str="" style="border-collapse: collapse; width: 48pt;" border="0" cellpadding="0" cellspacing="0" width="64"><col style="width: 48pt;" width="64"><col>
+  <tbody><tr><td style="height: 12.75pt; width: 48pt;" height="17" width="64">// Each ring is
+  divided by lines of constant RA such that the minimum width in RA is about 5
+  degrees (deltaRA*cos(DEC).</td></tr></tbody><tr style="height: 12.75pt;" height="17"></tr></table>Each ring is divided by lines of constant RA such that the minimum width in RA is about 5 degrees (deltaRA*cos(DEC).<span class="comment-copy"><br>
+      </span>
+ <table style="border-collapse: collapse; width: 689px; height: 866px;" x:str="" border="2" cellpadding="0" cellspacing="0"><col span="2" style="width: 64pt;" width="85">
+ <col style="width: 48pt;" width="64">
+ <col style="width: 48pt;" width="64">
+ <col span="2" style="width: 61pt;" width="81">
+ <col style="width: 59pt;" width="78">
+ <tbody><tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt; font-weight: bold; width: 64pt;" x:str="Declination  " height="17" width="85">Declination<span style=""> minimum &nbsp;</span></td>
+  <td class="xl25" style="width: 64pt; font-weight: bold;" x:str="Declination " width="85">Declination<span style=""> maximum</span></td>
+  <td class="xl24" style="width: 48pt; font-weight: bold;" width="64">Ring</td>
+  <td style="width: 48pt; font-weight: bold;" x:str="RA " width="64">RA cells<span style="">&nbsp;</span></td>
+  <td style="width: 61pt; font-weight: bold;" width="81">RA step north[degr]</td>
+  <td style="width: 61pt; font-weight: bold;" x:str="        RA step " width="81"><span style=""></span>RA step<span style=""> distance south[degr]</span></td>
+  <td style="width: 59pt; font-weight: bold;" width="78">DEC step</td><td></td><td>Files</td>
+ </tr>
+ 
+ 
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="" align="right" height="17">&nbsp;-90.00000000</td>
+  <td class="xl25" x:num="-87.428571430000005" align="right">&nbsp;-87.42857143&nbsp;</td>
+  <td class="xl24">&nbsp;0-1</td>
+  <td x:num="" align="right">1</td>
+  <td class="xl25"></td>
+  <td class="xl25">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</td>
+  <td class="xl25"></td><td></td><td>0101.1476
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="-87.428571430000005" align="right" height="17">-87.42857143</td>
+  <td class="xl25" x:num="-82.285714290000001" align="right">-82.28571429</td>
+  <td class="xl24">&nbsp;1-2</td>
+  <td x:num="" align="right">3</td>
+  <td class="xl25" x:num="5.3837796400000002" align="right">5.38377964</td>
+  <td class="xl25" x:num="16.107991899999998" align="right">16.10799190</td>
+  <td class="xl25">&nbsp;-2.57142857<span style="">&nbsp;&nbsp;</span></td><td>{=90/(2*17.5)}</td><td>0201.1476,&nbsp;0202.1476,&nbsp;0203.1476</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="-82.285714290000001" align="right" height="17">-82.28571429</td>
+  <td class="xl25" x:num="-77.142857140000004" align="right">-77.14285714</td>
+  <td class="xl24">&nbsp;2-3</td>
+  <td x:num="" align="right">9</td>
+  <td class="xl25" x:num="5.3693306300000003" align="right">5.36933063</td>
+  <td class="xl25" x:num="8.9008373600000006" align="right">8.90083736</td>
+  <td class="xl25">&nbsp; &nbsp;-5.14285714<span style="">&nbsp;&nbsp;</span></td><td>{=90/17.5}</td><td>0301.1476,&nbsp; . . . . . ,&nbsp;0309.1476</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="-77.142857140000004" align="right" height="17">-77.14285714</td>
+  <td class="xl25" x:num="" align="right">-72.00000000</td>
+  <td class="xl24">&nbsp;3-4</td>
+  <td x:num="" align="right">15</td>
+  <td class="xl25" x:num="5.34050241" align="right">5.34050241</td>
+  <td class="xl25" x:num="7.4164078599999996" align="right">7.41640786</td>
+  <td class="xl25">&nbsp;-5.14285714<span style="">&nbsp;&nbsp;</span></td><td>{=90/17.5}</td><td>0401.1476,&nbsp; . . . . .&nbsp;,&nbsp;0415.1476</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="" align="right" height="17">-72.00000000</td>
+  <td class="xl25" x:num="-66.857142859999996" align="right">-66.85714286</td>
+  <td class="xl24">&nbsp;4-5</td>
+  <td x:num="" align="right">21</td>
+  <td class="xl25" x:num="5.2974341899999997" align="right">5.29743419</td>
+  <td class="xl25" x:num="6.7375719700000003" align="right">6.73757197</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>0501.1476,&nbsp; . . . . .&nbsp;,&nbsp;0521.1476</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="-66.857142859999996" align="right" height="17">-66.85714286</td>
+  <td class="xl25" x:num="-61.714285709999999" align="right">-61.71428571</td>
+  <td class="xl24">&nbsp;5-6</td>
+  <td x:num="" align="right">27</td>
+  <td class="xl25" x:num="5.2403337600000004" align="right">5.24033376</td>
+  <td class="xl25" x:num="6.3182488299999999" align="right">6.31824883</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>06 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="-61.714285709999999" align="right" height="17">-61.71428571</td>
+  <td class="xl25" x:num="-56.571428570000002" align="right">-56.57142857</td>
+  <td class="xl24">&nbsp;6-7</td>
+  <td x:num="" align="right">33</td>
+  <td class="xl25" x:num="5.1694763200000002" align="right">5.16947632</td>
+  <td class="xl25" x:num="6.0097852500000002" align="right">6.00978525</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>07 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="-56.571428570000002" align="right" height="17">-56.57142857</td>
+  <td class="xl25" x:num="-51.428571429999998" align="right">-51.42857143</td>
+  <td class="xl24">&nbsp;7-8</td>
+  <td x:num="" align="right">38</td>
+  <td class="xl25" x:num="5.2190240299999999" align="right">5.21902403</td>
+  <td class="xl25" x:num="5.9067454899999996" align="right">5.90674549</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>08 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="-51.428571429999998" align="right" height="17">-51.42857143</td>
+  <td class="xl25" x:num="-46.285714290000001" align="right">-46.28571429</td>
+  <td class="xl24">&nbsp;8-9</td>
+  <td x:num="" align="right">43</td>
+  <td class="xl25" x:num="5.2199146199999999" align="right">5.21991462</td>
+  <td class="xl25" x:num="5.7856407799999996" align="right">5.78564078</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>09 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="-46.285714290000001" align="right" height="17">-46.28571429</td>
+  <td class="xl25" x:num="-41.142857139999997" align="right">-41.14285714</td>
+  <td class="xl24">&nbsp;9-10</td>
+  <td x:num="" align="right">48</td>
+  <td class="xl25" x:num="5.18296987" align="right">5.18296987</td>
+  <td class="xl25" x:num="5.6480360000000003" align="right">5.64803600</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>10 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="-41.142857139999997" align="right" height="17">-41.14285714</td>
+  <td class="xl25" x:num="" align="right">-36.00000000</td>
+  <td class="xl24">&nbsp;10-11</td>
+  <td x:num="" align="right">52</td>
+  <td class="xl25" x:num="5.2135716900000002" align="right">5.21357169</td>
+  <td class="xl25" x:num="5.60088688" align="right">5.60088688</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>11 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="" align="right" height="17">-36.00000000</td>
+  <td class="xl25" x:num="-30.85714286" align="right">-30.85714286</td>
+  <td class="xl24">&nbsp;11-12</td>
+  <td x:num="" align="right">56</td>
+  <td class="xl25" x:num="5.20082354" align="right">5.20082354</td>
+  <td class="xl25" x:num="5.5185993900000003" align="right">5.51859939</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>12 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="-30.85714286" align="right" height="17">-30.85714286</td>
+  <td class="xl25" x:num="-25.714285709999999" align="right">-25.71428571</td>
+  <td class="xl24">&nbsp;12-13</td>
+  <td x:num="" align="right">60</td>
+  <td class="xl25" x:num="5.1506927600000001" align="right">5.15069276</td>
+  <td class="xl25" x:num="5.4058132099999998" align="right">5.40581321</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>13 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="-25.714285709999999" align="right" height="17">-25.71428571</td>
+  <td class="xl25" x:num="-20.571428569999998" align="right">-20.57142857</td>
+  <td class="xl24">&nbsp;13-14</td>
+  <td x:num="" align="right">63</td>
+  <td class="xl25" x:num="5.1483935299999999" align="right">5.14839353</td>
+  <td class="xl25" x:num="5.3499135500000001" align="right">5.34991355</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>14 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="-20.571428569999998" align="right" height="17">-20.57142857</td>
+  <td class="xl25" x:num="-15.42857143" align="right">-15.42857143</td>
+  <td class="xl24">&nbsp;14-15</td>
+  <td x:num="" align="right">65</td>
+  <td class="xl25" x:num="5.1853008200000001" align="right">5.18530082</td>
+  <td class="xl25" x:num="5.3388712299999996" align="right">5.33887123</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>15 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="-15.42857143" align="right" height="17">-15.42857143</td>
+  <td class="xl25" x:num="-10.28571429" align="right">-10.28571429</td>
+  <td class="xl24">&nbsp;15-16</td>
+  <td x:num="" align="right">67</td>
+  <td class="xl25" x:num="5.1795019399999997" align="right">5.17950194</td>
+  <td class="xl25" x:num="5.2867858500000002" align="right">5.28678585</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>16 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="-10.28571429" align="right" height="17">-10.28571429</td>
+  <td class="xl25" x:num="-5.1428571400000003" align="right">-5.14285714</td>
+  <td class="xl24">&nbsp;16-17</td>
+  <td x:num="" align="right">68</td>
+  <td class="xl25" x:num="5.2090389999999998" align="right">5.20903900</td>
+  <td class="xl25" x:num="5.2728050900000003" align="right">5.27280509</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>17 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="-5.1428571400000003" align="right" height="17">-5.14285714</td>
+  <td class="xl25" x:num="" align="right">0.00000000</td>
+  <td class="xl24">&nbsp;17-18</td>
+  <td x:num="" align="right">69</td>
+  <td class="xl25" x:num="5.1963876200000003" align="right">5.19638762</td>
+  <td class="xl25" x:num="5.2173913000000001" align="right">5.21739130</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>18 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" height="17"></td>
+  <td class="xl25"></td>
+  <td class="xl24"></td>
+  <td></td>
+  <td class="xl25"></td>
+  <td class="xl25"></td>
+  <td class="xl25"></td><td></td><td></td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="" align="right" height="17">0.00000000</td>
+  <td class="xl25" x:num="5.1428571400000003" align="right">5.14285714</td>
+  <td class="xl24">&nbsp;18-19</td>
+  <td x:num="" align="right">69</td>
+  <td class="xl25" x:num="5.2173913000000001" align="right">5.21739130</td>
+  <td class="xl25" x:num="5.1963876200000003" align="right">5.19638762</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>19 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="5.1428571400000003" align="right" height="17">5.14285714</td>
+  <td class="xl25" x:num="10.28571429" align="right">10.28571429</td>
+  <td class="xl24">&nbsp;19-20</td>
+  <td x:num="" align="right">68</td>
+  <td class="xl25" x:num="5.2728050900000003" align="right">5.27280509</td>
+  <td class="xl25" x:num="5.2090389999999998" align="right">5.20903900</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>20 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="10.28571429" align="right" height="17">10.28571429</td>
+  <td class="xl25" x:num="15.42857143" align="right">15.42857143</td>
+  <td class="xl24">&nbsp; &nbsp;20-21</td>
+  <td x:num="" align="right">67</td>
+  <td class="xl25" x:num="5.2867858500000002" align="right">5.28678585</td>
+  <td class="xl25" x:num="5.1795019399999997" align="right">5.17950194</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>21 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="15.42857143" align="right" height="17">15.42857143</td>
+  <td class="xl25" x:num="20.571428569999998" align="right">20.57142857</td>
+  <td class="xl24">&nbsp;21-22</td>
+  <td x:num="" align="right">65</td>
+  <td class="xl25" x:num="5.3388712299999996" align="right">5.33887123</td>
+  <td class="xl25" x:num="5.1853008200000001" align="right">5.18530082</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>22 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="20.571428569999998" align="right" height="17">20.57142857</td>
+  <td class="xl25" x:num="25.714285709999999" align="right">25.71428571</td>
+  <td class="xl24">&nbsp;22-23</td>
+  <td x:num="" align="right">63</td>
+  <td class="xl25" x:num="5.3499135500000001" align="right">5.34991355</td>
+  <td class="xl25" x:num="5.1483935299999999" align="right">5.14839353</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>23 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="25.714285709999999" align="right" height="17">25.71428571</td>
+  <td class="xl25" x:num="30.85714286" align="right">30.85714286</td>
+  <td class="xl24">&nbsp;23-24</td>
+  <td x:num="" align="right">60</td>
+  <td class="xl25" x:num="5.4058132099999998" align="right">5.40581321</td>
+  <td class="xl25" x:num="5.1506927600000001" align="right">5.15069276</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>24 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="30.85714286" align="right" height="17">30.85714286</td>
+  <td class="xl25" x:num="" align="right">36.00000000</td>
+  <td class="xl24">&nbsp;24-25</td>
+  <td x:num="" align="right">56</td>
+  <td class="xl25" x:num="5.5185993900000003" align="right">5.51859939</td>
+  <td class="xl25" x:num="5.20082354" align="right">5.20082354</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>25 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="" align="right" height="17">36.00000000</td>
+  <td class="xl25" x:num="41.142857139999997" align="right">41.14285714</td>
+  <td class="xl24">&nbsp;25-26</td>
+  <td x:num="" align="right">52</td>
+  <td class="xl25" x:num="5.60088688" align="right">5.60088688</td>
+  <td class="xl25" x:num="5.2135716900000002" align="right">5.21357169</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>26 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="41.142857139999997" align="right" height="17">41.14285714</td>
+  <td class="xl25" x:num="46.285714290000001" align="right">46.28571429</td>
+  <td class="xl24">&nbsp;26-27</td>
+  <td x:num="" align="right">48</td>
+  <td class="xl25" x:num="5.6480360000000003" align="right">5.64803600</td>
+  <td class="xl25" x:num="5.18296987" align="right">5.18296987</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>27 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="46.285714290000001" align="right" height="17">46.28571429</td>
+  <td class="xl25" x:num="51.428571429999998" align="right">51.42857143</td>
+  <td class="xl24">&nbsp;27-28</td>
+  <td x:num="" align="right">43</td>
+  <td class="xl25" x:num="5.7856407799999996" align="right">5.78564078</td>
+  <td class="xl25" x:num="5.2199146199999999" align="right">5.21991462</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>28 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="51.428571429999998" align="right" height="17">51.42857143</td>
+  <td class="xl25" x:num="56.571428570000002" align="right">56.57142857</td>
+  <td class="xl24">&nbsp;28-29</td>
+  <td x:num="" align="right">38</td>
+  <td class="xl25" x:num="5.9067454899999996" align="right">5.90674549</td>
+  <td class="xl25" x:num="5.2190240299999999" align="right">5.21902403</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>29 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="56.571428570000002" align="right" height="17">56.57142857</td>
+  <td class="xl25" x:num="61.714285709999999" align="right">61.71428571</td>
+  <td class="xl24">&nbsp;29-30</td>
+  <td x:num="" align="right">33</td>
+  <td class="xl25" x:num="6.0097852500000002" align="right">6.00978525</td>
+  <td class="xl25" x:num="5.1694763200000002" align="right">5.16947632</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>30 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="61.714285709999999" align="right" height="17">61.71428571</td>
+  <td class="xl25" x:num="66.857142859999996" align="right">66.85714286</td>
+  <td class="xl24">&nbsp;30-31</td>
+  <td x:num="" align="right">27</td>
+  <td class="xl25" x:num="6.3182488299999999" align="right">6.31824883</td>
+  <td class="xl25" x:num="5.2403337600000004" align="right">5.24033376</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>31 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="66.857142859999996" align="right" height="17">66.85714286</td>
+  <td class="xl25" x:num="" align="right">72.00000000</td>
+  <td class="xl24">&nbsp;31-32</td>
+  <td x:num="" align="right">21</td>
+  <td class="xl25" x:num="6.7375719700000003" align="right">6.73757197</td>
+  <td class="xl25" x:num="5.2974341899999997" align="right">5.29743419</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>32 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="" align="right" height="17">72.00000000</td>
+  <td class="xl25" x:num="77.142857140000004" align="right">77.14285714</td>
+  <td class="xl24">&nbsp;32-33</td>
+  <td x:num="" align="right">15</td>
+  <td class="xl25" x:num="7.4164078599999996" align="right">7.41640786</td>
+  <td class="xl25" x:num="5.34050241" align="right">5.34050241</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>33 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="77.142857140000004" align="right" height="17">77.14285714</td>
+  <td class="xl25" x:num="82.285714290000001" align="right">82.28571429</td>
+  <td class="xl24">&nbsp;33-34</td>
+  <td x:num="" align="right">9</td>
+  <td class="xl25" x:num="8.9008373600000006" align="right">8.90083736</td>
+  <td class="xl25" x:num="5.3693306300000003" align="right">5.36933063</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>34 . . .</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="82.285714290000001" align="right" height="17">82.28571429</td>
+  <td class="xl25" x:num="87.428571430000005" align="right">87.42857143</td>
+  <td class="xl24">&nbsp;34-35</td>
+  <td x:num="" align="right">3</td>
+  <td class="xl25" x:num="16.107991899999998" align="right">16.10799190</td>
+  <td class="xl25" x:num="5.3837796400000002" align="right">5.38377964</td>
+  <td style="text-align: left;" class="xl25" x:num="-5.1428571400000003">&nbsp;-5.14285714</td><td></td><td>3501.1476,&nbsp;3502.1476,&nbsp;3503.1476</td>
+ </tr>
+ <tr style="height: 12.75pt;" height="17">
+  <td class="xl25" style="height: 12.75pt;" x:num="87.428571430000005" align="right" height="17">87.42857143</td>
+  <td class="xl25" x:num="" align="right">90.00000000</td>
+  <td class="xl24">&nbsp;36-37</td>
+  <td x:num="" align="right">1</td>
+  <td class="xl25"></td>
+  <td class="xl25"></td>
+  <td style="text-align: left;" class="xl25"></td><td></td><td>3601.1476</td>
+ </tr></tbody></table><br><span class="comment-copy"></span><br><big style="font-weight: bold;"><span style="text-decoration: underline;"><br><br></span></big><p align="left"><a href="astap.htm#index">Back
+            to index</a></p></div><br>
       <big style="font-weight: bold;"><span style="text-decoration: underline;"></span></big>
       <hr size="1"></center>
     <br>
