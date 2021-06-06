@@ -104,6 +104,7 @@ type
     ccdinspector10_1: TMenuItem;
     freetext1: TMenuItem;
     extend1: TMenuItem;
+    annotatemedian1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
     MenuItem26: TMenuItem;
@@ -308,6 +309,7 @@ type
     procedure autocorrectcolours1Click(Sender: TObject);
     procedure batch_annotate1Click(Sender: TObject);
     procedure batch_solve_astrometry_netClick(Sender: TObject);
+    procedure bayer_image1Click(Sender: TObject);
     procedure calibrate_photometry1Click(Sender: TObject);
     procedure freetext1Click(Sender: TObject);
     procedure hfd_contour1Click(Sender: TObject);
@@ -342,8 +344,8 @@ type
     procedure extractgreen1Click(Sender: TObject);
     procedure grid1Click(Sender: TObject);
     procedure ccdinspector10_1Click(Sender: TObject);
+    procedure annotatemedian1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
-    procedure preview_demosaic1Click(Sender: TObject);
     procedure removegreenpurple1Click(Sender: TObject);
     procedure sip1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
@@ -3156,7 +3158,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.547b, '+about_message4+', dated 2021-6-3';
+  #13+#10+'ASTAP version ß0.9.548, '+about_message4+', dated 2021-6-6';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -8818,6 +8820,50 @@ begin
   end;
 end;
 
+procedure convert_mono(var img: image_array);
+var
+   fitsX,fitsY: integer;
+   img_temp : image_array;
+begin
+  if naxis3<3 then exit;{prevent run time error mono images}
+  memo2_message('Converting to mono.');
+  setlength(img_temp,1,width2,height2);{set length of image array mono}
+
+  for fitsY:=0 to height2-1 do
+    for fitsX:=0 to width2-1 do
+      img_temp[0,fitsx,fitsy]:=(img[0,fitsx,fitsy]+img[1,fitsx,fitsy]+img[2,fitsx,fitsy])/3;
+
+  img:=nil;
+  img:=img_temp;
+end;
+
+
+procedure Tmainwindow.convertmono1Click(Sender: TObject);
+var
+   Save_Cursor:TCursor;
+begin
+  if naxis3<3 then exit;{prevent run time error mono images}
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor:= crHourGlass;
+
+  backup_img;
+
+  convert_mono(img_loaded);
+
+  naxis:=2;{mono}
+  update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for colour}
+  naxis3:=1;
+  remove_key('NAXIS3  =',false{all});{some programs don't like NAXIS3=1 like maxim DL}
+
+  add_text('HISTORY   ','Converted to mono');
+
+  {colours are now mixed, redraw histogram}
+  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+  plot_fits(mainwindow.image1,false,true);{plot}
+  Screen.cursor:=Save_Cursor;
+end;
+
+
 procedure Tmainwindow.hfd_contour1Click(Sender: TObject);
 var
   j: integer;
@@ -8840,15 +8886,17 @@ begin
     datamax_org:=65535;
   end;
 
-  if bayer_image1.checked then
+  if naxis3>1 then
   begin
-//    img_average:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-//      setlength(img_average,naxis3,width2,height2);{force a duplication}
-     box_blur(1 {nr of colors},2,img_loaded);
-     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
-   end;
-
-
+    convert_mono(img_loaded);
+    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
+  end
+  else
+  if mainwindow.bayer_image1.checked then {raw Bayer image}
+  begin
+    normalize_OSC_flat(img_loaded);
+    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
+  end;
 
   CCDinspector_analyse(demode);
 
@@ -8982,6 +9030,104 @@ begin
    CCDinspector(10);
 end;
 
+
+procedure Tmainwindow.annotatemedian1Click(Sender: TObject);
+var
+ tx,ty,size,diam, i, j,starX,starY, retries,max_stars,fontsize,halfstepX,halfstepY: integer;
+ X,Y,stepsizeX,stepsizeY,median,median_center,factor          : double;
+ Save_Cursor:TCursor;
+ img_bk                                    : image_array;
+ Flipvertical, Fliphorizontal, restore_req  : boolean;
+ detext  : string;
+begin
+  if fits_file=false then exit; {file loaded?}
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  restore_req:=false;
+  if naxis3>1 then {colour image}
+  begin
+    img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+    setlength(img_bk,naxis3,width2,height2);{force a duplication}
+//    convert_mono(img_loaded);
+    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
+    restore_req:=true;
+  end
+  else
+  if mainwindow.bayer_image1.checked then {raw Bayer image}
+  begin
+    img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+    setlength(img_bk,naxis3,width2,height2);{force a duplication}
+    normalize_OSC_flat(img_loaded);
+    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
+    restore_req:=true;
+  end;
+
+
+  with mainwindow do
+  begin
+    Flipvertical:=mainwindow.flip_vertical1.Checked;
+    Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
+
+
+    image1.Canvas.Pen.Mode := pmMerge;
+    image1.Canvas.brush.Style:=bsClear;
+    image1.Canvas.font.color:=clyellow;
+    fontsize:=round(max(10,8*height2/image1.height));{adapt font to image dimensions}
+    image1.Canvas.font.size:=fontsize;
+
+    stepsizeX:=width2/19;{step size is a double value}
+    stepsizeY:=height2/11;
+
+    halfstepX:=round(stepsizeX/2);
+    halfstepY:=round(stepsizeY/2);
+
+    median_center:=median_background(img_loaded,0{color},trunc(stepsizeX){size},trunc(stepsizeY),width2 div 2,height2 div 2);{find median value of an area at position x,y with sizeX,sizeY}
+
+    Y:=halfstepY;
+    repeat
+
+      X:=halfstepX;
+      repeat
+        median:=median_background(img_loaded,0{color},trunc(stepsizeX){size},trunc(stepsizeY),round(X),round(Y));{find median value of an area at position x,y with sizeX,sizeY}
+        factor:=median/median_center;
+        if abs(1-factor)>0.03 then image1.Canvas.font.color:=$00A5FF {dark orange} else image1.Canvas.font.color:=clYellow;
+        detext:=floattostrf(factor, ffgeneral, 3,3);
+
+        tx:=round(X);
+        ty:=round(Y);
+
+        if Flipvertical=false then  tY:=height2-tY;
+        if Fliphorizontal then tX:=width2-tX;
+
+        tx:=round(X)-(canvas.Textwidth(detext) div 2);{make text centered at x, y}
+        ty:=round(Y)-(canvas.Textheight(detext) div 2);
+        mainwindow.image1.Canvas.textout(tX,tY,detext);{add as text}
+
+        X:=X+stepsizeX;
+
+      until X>=width2-1;
+
+      Y:=Y+stepsizeY;
+    until Y>=height2-1;
+
+
+
+    if restore_req then {raw Bayer image or colour image}
+    begin
+      memo2_message('Restoring image');
+      img_loaded:=nil;
+      img_loaded:=img_bk; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+      get_hist(0,img_loaded);{get histogram of img_loaded and his_total}
+    end;
+  end;
+
+
+  Screen.Cursor:= Save_Cursor;
+end;
+
+
+
 procedure Tmainwindow.positionanddate1Click(Sender: TObject);
 begin
   if fits_file=false then exit;
@@ -8991,11 +9137,6 @@ begin
   end
   else
   plot_text;
-end;
-
-procedure Tmainwindow.preview_demosaic1Click(Sender: TObject);
-begin
-
 end;
 
 
@@ -10267,6 +10408,11 @@ begin
   form_astrometry_net1:=Tform_astrometry_net1.Create(self); {in project option not loaded automatic}
   form_astrometry_net1.ShowModal;
   form_astrometry_net1.release;
+end;
+
+procedure Tmainwindow.bayer_image1Click(Sender: TObject);
+begin
+
 end;
 
 
@@ -12115,7 +12261,8 @@ var
  starlistXY    :array of array of integer;
  mess1,mess2,hfd_value,hfd_arcsec      : string;
  Save_Cursor:TCursor;
- Fliphorizontal, Flipvertical: boolean;
+ Fliphorizontal, Flipvertical,restore_req  : boolean;
+ img_bk                                    : image_array;
 
 var {################# initialised variables #########################}
  len : integer=1000;
@@ -12124,13 +12271,23 @@ begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
- if mainwindow.bayer_image1.checked then {raw Bayer image}
- begin
-   img_average:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-   setlength(img_average,naxis3,width2,height2);{force a duplication}
-   //box_blur(1 {nr of colors},2,img_loaded);
-   normalize_OSC_flat(img_loaded);
-   get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
+  restore_req:=false;
+  if naxis3>1 then {colour image}
+  begin
+    img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+    setlength(img_bk,naxis3,width2,height2);{force a duplication}
+    convert_mono(img_loaded);
+    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
+    restore_req:=true;
+  end
+  else
+  if mainwindow.bayer_image1.checked then {raw Bayer image}
+  begin
+    img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+    setlength(img_bk,naxis3,width2,height2);{force a duplication}
+    normalize_OSC_flat(img_loaded);
+    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
+    restore_req:=true;
   end;
 
   max_stars:=500;
@@ -12260,10 +12417,11 @@ begin
 
     until ((nhfd>=max_stars) or (retries<0));{reduce detection level till enough stars are found. Note that faint stars have less positional accuracy}
 
-    if bayer_image1.checked then {raw Bayer image}
+    if restore_req then {raw Bayer image or colour image}
     begin
-      img_loaded:=img_average; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-      img_average:=nil;
+      memo2_message('Restoring image');
+      img_loaded:=nil;
+      img_loaded:=img_bk; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
       get_hist(0,img_loaded);{get histogram of img_loaded and his_total}
     end;
 
@@ -13855,37 +14013,6 @@ begin
 
   down_xy_valid := False;
   screen.Cursor := crDefault;
-end;
-
-
-procedure Tmainwindow.convertmono1Click(Sender: TObject);
-var
-   Save_Cursor:TCursor;
-   fitsX,fitsY: integer;
-begin
-  if naxis3<3 then exit;{prevent run time error mono images}
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor:= crHourGlass;
-
-  backup_img;
-
-  setlength(img_loaded,1,width2,height2);{set length of image array mono}
-
-  for fitsY:=0 to height2-1 do
-    for fitsX:=0 to width2-1 do
-     img_loaded[0,fitsx,fitsy]:=(img_backup[index_backup].img[0,fitsx,fitsy]+img_backup[index_backup].img[1,fitsx,fitsy]+img_backup[index_backup].img[2,fitsx,fitsy])/3;
-
-  naxis:=2;{mono}
-  update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for colour}
-  naxis3:=1;
-  remove_key('NAXIS3  =',false{all});{some programs don't like NAXIS3=1 like maxim DL}
-
-  add_text('HISTORY   ','Converted to mono');
-
-  {colours are now mixed, redraw histogram}
-  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-  plot_fits(mainwindow.image1,false,true);{plot}
-  Screen.cursor:=Save_Cursor;
 end;
 
 

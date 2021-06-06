@@ -1278,6 +1278,11 @@ object mainwindow: Tmainwindow
           Hint = 'Writes HFD values near each star and in the FITS file. No HFD filtering.'
           OnClick = hfd_contour1Click
         end
+        object annotatemedian1: TMenuItem
+          Caption = 'Median background values'
+          Hint = 'The median background values are annotated  in the image in ration to the center value.'
+          OnClick = annotatemedian1Click
+        end
         object MenuItem25: TMenuItem
           Caption = '-'
         end
@@ -1285,6 +1290,7 @@ object mainwindow: Tmainwindow
           AutoCheck = True
           Caption = 'Check mark this menu if the image is a raw Bayer image'
           Hint = 'A normalise filter is applied. The raw OSC RGGB pixels are normalised to the same mean value. This is better option for raw OSC images.'
+          OnClick = bayer_image1Click
         end
         object MenuItem22: TMenuItem
           Caption = '-'
@@ -1304,7 +1310,6 @@ object mainwindow: Tmainwindow
         AutoCheck = True
         Caption = 'Activate/deactivate auto de-mosaic'
         Hint = 'If checked, any new image in viewer will be demosaiced using bilinear interpolation.'
-        OnClick = preview_demosaic1Click
       end
       object demosaic_bayermatrix1: TMenuItem
         Caption = 'De-mosaic Bayer matrix '

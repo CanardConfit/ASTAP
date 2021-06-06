@@ -28,7 +28,7 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
             &nbsp;<big>version 0.9.547 dated 2021-05-28. &nbsp;Alternative
-            link, the very latest development version 0.9.547a <a href="astap_setup.exe">ASTAP installer</a>
+            link, the very latest development version 0.9.547b <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.exe/download">H17
@@ -105,7 +105,7 @@ work with SharpCap since FOV is not stored.</li></ul>
           <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.deb/download">ASTAP
 debian
                   package</a></big></big><big> </big><big>&nbsp;or&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.tar.gz/download">astap_amd64.tar.gz,</a> </big><big><a href="astap_rpm.htm">openSUSE and Fedora support</a> </big><big>version
-              0.9.547 dated 2021-05-28. Alternative link, development version 0.9.547</big>&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big> ,&nbsp;</big>&nbsp;<a href="astap_amd64.tar.gz">ASTAP tar.gz</a><big>. &nbsp;</big></li>
+              0.9.547 dated 2021-05-28. Alternative link, development version 0.9.547</big>b&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big> ,&nbsp;</big>&nbsp;<a href="astap_amd64.tar.gz">ASTAP tar.gz</a><big>. &nbsp;</big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.deb/download">H17
 star
               database debian package</a></big> (500mb)&nbsp;or <big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.deb/download">H18
@@ -3163,10 +3163,9 @@ or<br>
       <div style="text-align: left;"><big style="font-weight: bold;"><span style="text-decoration: underline;"><br><a name="1476"></a>Appendix 2, the 1476 star database format:<br><br></span></big><span class="comment-copy"><b></b><br>
       The .1476 format divides the sky in&nbsp;1476 area's and 1476
       corresponding files with the extension .1476. </span><span class="comment-copy">
-      The 1476 areas of similar area size except for the
-      poles which are half of that size. </span><span class="comment-copy">&nbsp;Each star is stored in a record of 5 bytes. The files start 'with a 110 byte header containing a
-      textual description and the record size binary stored in byte 110. &nbsp;<br><br></span><span class="comment-copy">
-The RA values are stored as a 3 bytes word. The DEC positions are stored as a
+The 1476 areas have a minimum width or diameter of 5 degrees. &nbsp;The
+boundaries are defined by constant RA and DEC values.</span><span class="comment-copy"> For the similar 290 file format see the <a href="http://www.hnsky.org/help/uk/hnsky.htm#database">HNSKY help file</a><br><br>Each star is stored in a record of 5 bytes. The files start 'with a 110 byte header containing a
+      textual description and the record size binary stored in byte 110. &nbsp;</span><span class="comment-copy">The RA values are stored as a 3 bytes word. The DEC positions are stored as a
 two's complement (=standard), three bytes integer. The resolution of
 this three byte storage will be for RA: 360*60*60/((256*256*256)-1) =
 0.077 arc seconds. For the DEC value it will be:
@@ -3177,10 +3176,10 @@ special preceding header with an offset to make all values positive.<br>
       <font face="Courier" size="2"> &nbsp;&nbsp;Example of star Sirius
         RA and DEC position:<br>
         &nbsp;&nbsp;The RA position is stored as C3 06 48 equals:
-        (195+6*256+72*256*256)<b>*24</b>/((256*256*256)-1)=6.75247662
+        (195 +6*256 +72*256*256)<b>*24</b>/((256*256*256)-1)=6.75247662
         hours equals: 6:45:8.9<br>
         &nbsp;&nbsp;The DEC position is stored as D7 39 E8, equals: 215
-        57 -24. The DEC is then (215+57*256-24*256*256)<b>*90</b>/((128*256*256)-1)=-16.7161401
+        57 -24. The DEC is then (215 +57*256 -24*256*256)<b>*90</b>/((128*256*256)-1)=-16.7161401
 
 
 
@@ -3316,13 +3315,7 @@ database is only issued in the 1476-5 format of 5 bytes per star. or in
 an older format 290-6 (V17) or 290-5. The 290-6 has one more byte for
 the colour information. This is documented in the HNSKY planetarium
 program help file.<br><br>So the record sequence will be as follows:<br><br></span><div style="margin-left: 40px;"><span class="comment-copy">header-record </span><span class="comment-copy">{new section will start with a different magnitude and dec9}</span><br><span class="comment-copy">record</span><br><span class="comment-copy">record</span><br><span class="comment-copy">record</span><br><span class="comment-copy">record</span><br><span class="comment-copy">header-record &nbsp;{new section will start with a different magnitude and dec9}</span><br><span class="comment-copy">record</span><br><span class="comment-copy">record</span><br><span class="comment-copy">
-      </span><br><span class="comment-copy"></span></div><span class="comment-copy"><br><span style="font-weight: bold;">The 1476 areas:</span><br></span><table x:str="" style="border-collapse: collapse; width: 48pt;" border="0" cellpadding="0" cellspacing="0" width="64"><col style="width: 48pt;" width="64"><col>
-  <tbody><tr><td style="height: 12.75pt; width: 48pt;" height="17" width="64">// Each ring is
-  divided by lines of constant RA such that the minimum width in RA is about 5
-  degrees (deltaRA*cos(DEC).</td></tr></tbody><tr style="height: 12.75pt;" height="17"></tr></table><table x:str="" style="border-collapse: collapse; width: 48pt;" border="0" cellpadding="0" cellspacing="0" width="64"><col style="width: 48pt;" width="64"><col>
-  <tbody><tr><td style="height: 12.75pt; width: 48pt;" height="17" width="64">// Each ring is
-  divided by lines of constant RA such that the minimum width in RA is about 5
-  degrees (deltaRA*cos(DEC).</td></tr></tbody><tr style="height: 12.75pt;" height="17"></tr></table>Each ring is divided by lines of constant RA such that the minimum width in RA is about 5 degrees (deltaRA*cos(DEC).<span class="comment-copy"><br>
+      </span><br><span class="comment-copy"></span></div><span class="comment-copy"><br><span style="font-weight: bold;">The 1476 areas:</span> Each ring is divided by lines of constant RA such that the minimum width in RA is about 5 degrees (deltaRA*cos(DEC)</span><br>.<span class="comment-copy"><br>
       </span>
  <table style="border-collapse: collapse; width: 689px; height: 866px;" x:str="" border="2" cellpadding="0" cellspacing="0"><col span="2" style="width: 64pt;" width="85">
  <col style="width: 48pt;" width="64">
@@ -3674,7 +3667,7 @@ program help file.<br><br>So the record sequence will be as follows:<br><br></sp
   <td class="xl25"></td>
   <td class="xl25"></td>
   <td style="text-align: left;" class="xl25"></td><td></td><td>3601.1476</td>
- </tr></tbody></table><br><span class="comment-copy"></span><br><big style="font-weight: bold;"><span style="text-decoration: underline;"><br><br></span></big><p align="left"><a href="astap.htm#index">Back
+ </tr></tbody></table><br>The 1476 areas:<br><span class="comment-copy"></span><img style="width: 681px; height: 650px;" alt="" src="1476_1.png"><br><br>South pole view of the 1476 areas:<br><img style="width: 683px; height: 659px;" alt="" src="1476_2.png"><br><br><br><big style="font-weight: bold;"><span style="text-decoration: underline;"><br><br></span></big><p align="left"><a href="astap.htm#index">Back
             to index</a></p></div><br>
       <big style="font-weight: bold;"><span style="text-decoration: underline;"></span></big>
       <hr size="1"></center>

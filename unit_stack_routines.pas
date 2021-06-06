@@ -983,11 +983,11 @@ begin
                   begin {already pixel filled, try to make an average}
                     for col:=0 to naxis3-1 do {all colors}
                     begin
-                      median:=background_correction_center[col] +background_correction[col]+median_background(img_loaded,col,15,fitsX-1,fitsY-1);{find median value in sizeXsize matrix of img_loaded}
+                      median:=background_correction_center[col] +background_correction[col]+median_background(img_loaded,col,15,15,fitsX-1,fitsY-1);{find median value in sizeXsize matrix of img_loaded}
 
                       if merge_overlap=false then {method 2}
                       begin
-                        median2:=median_background(img_average,col,15,x_new,y_new);{find median value of the destignation img_average}
+                        median2:=median_background(img_average,col,15,15,x_new,y_new);{find median value of the destignation img_average}
                         delta_median:=median-median2;
                         img_average[col,x_new,y_new]:= img_average[col,x_new,y_new]+ delta_median*(1-img_temp[0,x_new,y_new]{distance border}/(dummy+img_temp[0,x_new,y_new]));{adapt overlap}
                       end

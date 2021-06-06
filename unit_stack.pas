@@ -852,7 +852,7 @@ procedure green_purple_filter( var img: image_array);{Balances RGB to remove gre
 procedure date_to_jd(date_time:string;exp :double);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
 function JdToDate(jd:double):string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
-function median_background(var img :image_array;color,size,x,y:integer): double;{find median value in sizeXsize matrix of img}
+function median_background(var img :image_array;color,sizeX,sizeY,x,y:integer): double;{find median value of an area at position x,y with sizeX,sizeY}
 procedure analyse_fits(img : image_array;snr_min:double;report:boolean;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
 procedure sample(sx,sy : integer);{sampe local colour and fill shape with colour}
 procedure apply_most_common(sourc,dest: image_array; radius: integer);  {apply most common filter on first array and place result in second array}
@@ -2306,22 +2306,24 @@ begin
 end;
 
 
-function median_background(var img :image_array;color,size,x,y:integer): double;{find median value in sizeXsize matrix of img}
-var i,j,count,size2,step,value  : integer;
+function median_background(var img :image_array;color,sizeX,sizeY,x,y:integer): double;{find median value of an area at position x,y with sizeX,sizeY}
+var i,j,count,size2,stepX,stepY,value  : integer;
     intArray : array of integer;
     w,h      : integer;
 begin
-  if (size div 2)*2=size then size:=size+1;{requires odd 3,5,7....}
-  size2:=size*size;
+  if (sizeX div 2)*2=sizeX then sizeX:=sizeX+1;{requires odd 3,5,7....}
+  if (sizeY div 2)*2=sizeY then sizeY:=sizeY+1;{requires odd 3,5,7....}
+  size2:=sizeX*sizeY;
   SetLength(intArray,size2) ;
-  step:=size div 2;
+  stepX:=sizeX div 2;
+  stepY:=sizeY div 2;
   count:=0;
   w:=Length(img[0]); {width}
   h:=Length(img[0,0]); {height}
 
   begin
-    for j:=y-step to  y+step do
-      for i:=x-step to x+step do
+    for j:=y-stepY to  y+stepY do
+      for i:=x-stepX to x+stepX do
       begin
         if ((i>=0) and (i<w) and (j>=0) and (j<h) ) then {within the boundaries of the image array}
         begin
