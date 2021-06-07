@@ -483,6 +483,7 @@ type
   star_list   = array of array of double;
 type
    timgbackup  = record
+     datamax: double;
      crpix1 : double;{could be modified by crop}
      crpix2 : double;
      crval1 : double;
@@ -3032,6 +3033,8 @@ begin
     if img_backup=nil then setlength(img_backup,size_backup+1);{create memory for size_backup backup images}
     inc(index_backup,1);
     if index_backup>size_backup then index_backup:=0;
+
+    img_backup[index_backup].datamax:=datamax_org ; {for update histogram}
     img_backup[index_backup].crpix1:=crpix1;{could be modified by crop}
     img_backup[index_backup].crpix2:=crpix2;{could be modified by crop}
     img_backup[index_backup].crval1:=ra0;
@@ -3077,6 +3080,7 @@ begin
 
     resized:=((width2<>old_width2) or ( height2<>old_height2));
 
+    datamax_org:=img_backup[index_backup].datamax;{for update historgram}
     crpix1:=img_backup[index_backup].crpix1;{could be modified by crop}
     crpix2:=img_backup[index_backup].crpix2;
 
@@ -3158,7 +3162,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.548, '+about_message4+', dated 2021-6-6';
+  #13+#10+'ASTAP version ß0.9.549, '+about_message4+', dated 2021-6-7';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;

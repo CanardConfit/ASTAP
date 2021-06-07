@@ -201,7 +201,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 2416
+    Left = 2662
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -219,7 +219,7 @@ object stackmenu1: Tstackmenu1
     Height = 476
     Hint = 'Stack menu'
     Top = 0
-    Width = 1848
+    Width = 2094
     ActivePage = lights
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 448
-      ClientWidth = 1840
+      ClientWidth = 2086
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -309,7 +309,7 @@ object stackmenu1: Tstackmenu1
         Height = 408
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1840
+        Width = 2086
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -590,8 +590,8 @@ object stackmenu1: Tstackmenu1
     object Darks: TTabSheet
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
-      ClientHeight = 422
-      ClientWidth = 1873
+      ClientHeight = 465
+      ClientWidth = 1840
       ImageIndex = 1
       ParentFont = False
       object browse_darks1: TButton
@@ -635,10 +635,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview2: TListView
         Left = 0
-        Height = 382
+        Height = 425
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1873
+        Width = 1840
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -769,8 +769,8 @@ object stackmenu1: Tstackmenu1
     object Flats: TTabSheet
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
-      ClientHeight = 422
-      ClientWidth = 1543
+      ClientHeight = 465
+      ClientWidth = 1840
       ImageIndex = 2
       ParentFont = False
       object browse_flats1: TButton
@@ -820,10 +820,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview3: TListView
         Left = 0
-        Height = 382
+        Height = 425
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1543
+        Width = 1840
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -2227,7 +2227,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the alignment options'
       Caption = 'Alignment'
       ClientHeight = 465
-      ClientWidth = 1873
+      ClientWidth = 1840
       ImageIndex = 7
       ParentFont = False
       object use_star_alignment1: TRadioButton

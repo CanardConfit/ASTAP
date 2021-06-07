@@ -846,7 +846,7 @@ procedure normalize_OSC_flat(var img: image_array); {normalize bayer pattern. Co
 procedure black_spot_filter(var img: image_array);{remove black spots with value zero}
 
 function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
-procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer) inline; {apply dark, flat if required, renew if different exposure or ccd temp}
+procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer; img : image_array) inline; {apply dark, flat if required, renew if different exposure or ccd temp}
 procedure smart_colour_smooth( var img: image_array; wide, sd:double; preserve_r_nebula,measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 procedure green_purple_filter( var img: image_array);{Balances RGB to remove green and purple. For e.g. Hubble palette}
 procedure date_to_jd(date_time:string;exp :double);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
@@ -862,6 +862,7 @@ procedure report_results(object_to_process,stack_info :string;object_counter,col
 procedure apply_factors;{apply r,g,b factors to image}
 procedure listviews_begin_update; {speed up making stackmenu visible having a many items}
 procedure listviews_end_update;{speed up making stackmenu visible having a many items}
+procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse list of FITS files}
 
 
 const
@@ -3691,10 +3692,12 @@ end;
 
 procedure Tstackmenu1.analyseflatsButton3Click(Sender: TObject);
 begin
-  if img_loaded<>nil then {button was used, backup img array and header and restore later}  begin img_backup:=nil;{clear to save memory} backup_img; end;{backup fits for later}
+  if img_loaded<>nil then {backup img array and header and restore later}
+      begin img_backup:=nil;{clear to save memory} backup_img; end;{backup fits for later}
   analyse_listview(listview3,false {light},true {full fits},new_analyse_required3{refresh});
   new_analyse_required3:=false;{analyse done}
-  if img_loaded<>nil then restore_img; {button was used, restore original image array and header}
+  if img_loaded<>nil then
+      restore_img; {button was used, restore original image array and header}
 end;
 
 procedure Tstackmenu1.analyseflatdarksButton4Click(Sender: TObject);
@@ -7972,7 +7975,7 @@ begin
 end;
 
 
-procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer) ; inline; {apply dark, flat if required, renew if different exposure or ccd temp}
+procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer; img : image_array) ; inline; {apply dark, flat if required, renew if different exposure or ccd temp}
 var  {variables in the procedure are created to protect global variables as filter_name against overwriting by loading other fits files}
   fitsX,fitsY,k,light_naxis3{,hotpixelcounter}, light_width,light_height,light_set_temperature : integer;
   calstat_local,light_date_obs              : string;
@@ -8011,7 +8014,7 @@ begin
         begin
           value:=img_dark[0,fitsX,fitsY]; {Darks are always made mono when making master dark}
           for k:=0 to naxis3-1 do {do all colors}
-                      img_loaded[k,fitsX,fitsY]:=img_loaded[k,fitsX,fitsY] - value;
+                      img[k,fitsX,fitsY]:=img[k,fitsX,fitsY] - value;
 
         end;
 
@@ -8043,7 +8046,7 @@ begin
           flat_factor:=flat_norm_value/(img_flat[0,fitsX-1,fitsY-1]+0.001); {bias is already combined in flat in combine_flat}
           if abs(flat_factor)>3 then flat_factor:=1;{un-used sensor area? Prevent huge gain of areas only containing noise and no flat-light value resulting in very strong disturbing noise or high value if dark is missing. Typical problem for converted RAW's by Libraw}
           for k:=0 to naxis3-1 do {do all colors}
-            img_loaded[k,fitsX-1,fitsY-1]:=img_loaded[k,fitsX-1,fitsY-1]*flat_factor;
+            img[k,fitsX-1,fitsY-1]:=img[k,fitsX-1,fitsY-1]*flat_factor;
         end;
       calstat_local:=calstat_local+'FB';{mark that flat and bias have been applied}
     end;{flat correction}
@@ -8090,7 +8093,7 @@ begin
 
         backup_header;{backup header and solution}
 
-        apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp}
+        apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
 
 
         {these global variables are passed-on in procedure to protect against overwriting}

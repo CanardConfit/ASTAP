@@ -206,6 +206,9 @@ begin
 
   SetLength(starlist1,2,nrstars_required);{set array length}
 
+  {Assume the search field is at a crossing of four tiles. The search field area, by definition 100% is split in 8%, 15%, 20%, 57% area for each tile.
+   There are 500 stars required. It will then retrieve 8% x 500, 15% x 500, 20% x 500, 57% x 500 stars from each tile under the condition these stars are within the green area.
+   This will work assuming the star density within the green area is reasonable homogene.}
   find_areas( telescope_ra,telescope_dec, search_field,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
 
   {read 1th area}
@@ -257,11 +260,10 @@ begin
     end;
   end;
 
-  //memo2_message(inttostr(area1)+' '+inttostr(area2)+' '+inttostr(area3)+' '+inttostr(area4));
+//  memo2_message('testareas'+#9+floattostr4(telescope_ra*12/pi)+#9+floattostr4(telescope_dec*180/pi)+#9+inttostr(maga)+#9+inttostr(magb)+#9+inttostr(magc)+#9+inttostr(magd)+#9+floattostr4(frac1)+#9+floattostr4(frac2)+#9+floattostr4(frac3)+#9+floattostr4(frac4)+#9+inttostr(area1)+#9+inttostr(area2)+#9+inttostr(area3)+#9+inttostr(area4));
 
   if nrstars<nrstars_required then
        SetLength(starlist1,2,nrstars); {fix array length on data for case less stars are found}
-
   result:=true;{no errors}
 end;
 
@@ -485,6 +487,10 @@ var
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,info_message,warning,suggest_str,memo1_backup, solved_in, offset_found,ra_offset,dec_offset,mount_info : string;
 
+  light_naxis3, light_width,light_height : integer;
+  datamax_light ,light_exposure          : double;
+  calstat_local,light_date_obs           : string;
+
 const
    popupnotifier_visible : boolean=false;
 
@@ -498,9 +504,27 @@ begin
 
   if stackmenu1.calibrate_prior_solving1.checked then
   begin
+    {preserve header and some important variable}
     memo2_message('Calibrating image prior to solving.');
     memo1_backup:=mainwindow.Memo1.Text;{save header text prior to apply dark, flats}
-    apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count);{apply dark, flat if required, renew if different exposure or ccd temp. This will clear the header in load_fits}
+    calstat_local:=calstat;{Note load darks or flats will overwrite calstat}
+    datamax_light:=datamax_org;
+    light_naxis3:=naxis3; {preserve so it is not overriden by load dark_flat which will reset variable in load_fits}
+    light_width:=width2;
+    light_height:=height2;
+
+    analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected}
+    analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{analyse flat tab, by loading=false the loaded img will not be effected}
+
+    {restore some important variable}
+
+    datamax_org:=datamax_light;{restore. will be overwitten by previouse reads}
+    naxis3:=light_naxis3;{return old value}
+    width2:=light_width;{restore old value}
+    height2:=light_height;{restore old value}
+    date_obs:=light_date_obs;{restore old value}
+
+    apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count,img);{apply dark, flat if required, renew if different exposure or ccd temp. This will clear the header in load_fits}
     mainwindow.Memo1.Text:=memo1_backup;{restore header}
   end;
 
