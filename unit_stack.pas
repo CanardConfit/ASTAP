@@ -584,6 +584,7 @@ type
     procedure align_blink1Change(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
     procedure equinox1Change(Sender: TObject);
+    procedure FormDestroy(Sender: TObject);
     procedure help_mount_tab1Click(Sender: TObject);
     procedure lrgb_auto_level1Change(Sender: TObject);
     procedure mount_analyse1Click(Sender: TObject);
@@ -628,6 +629,8 @@ type
     procedure mount_add_solutions1Click(Sender: TObject);
     procedure new_saturation1Change(Sender: TObject);
     procedure pagecontrol1Change(Sender: TObject);
+    procedure pagecontrol1MouseMove(Sender: TObject; Shift: TShiftState; X,
+      Y: Integer);
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure rainbow_Panel1Paint(Sender: TObject);
@@ -679,8 +682,6 @@ type
     procedure apply_create_gradient1Click(Sender: TObject);
     procedure clear_blink_alignment1Click(Sender: TObject);
     procedure clear_blink_list1Click(Sender: TObject);
-    procedure clear_blink_list2ContextPopup(Sender: TObject; MousePos: TPoint;
-      var Handled: Boolean);
     procedure Edit_width1Change(Sender: TObject);
     procedure extra_star_supression_diameter1Change(Sender: TObject);
     procedure help_astrometric_solving1Click(Sender: TObject);
@@ -1002,6 +1003,15 @@ type
    end;
 var
    header_backup : array of theaderbackup;{dynamic so memory can be freed}
+
+type
+  blink_solution  = record
+    solution_vectorX : solution_vector {array[0..2] of double};
+    solution_vectorY : solution_vector;
+  end;
+
+var
+    bsolutions      : array of blink_solution;
 
 
 {$IFDEF fpc}
@@ -2248,10 +2258,7 @@ begin
   begin
     listview6.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
-    begin
       listview_add(listview6,OpenDialog1.Files[i],true,B_nr);
-      DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
-    end;
     listview6.items.endupdate;
   end;
 end;
@@ -3011,10 +3018,6 @@ procedure Tstackmenu1.listview1ColumnClick(Sender: TObject;
   Column: TListColumn);
 begin
   SortedColumn:= Column.Index;
-
-  {clear alignment}
-  if sender=listview6 then
-    stackmenu1.clear_blink_alignment1Click(sender);{sequence change, reanalyse for alignment}
 end;
 
 
@@ -4192,13 +4195,14 @@ begin
 end;
 
 procedure Tstackmenu1.blink_button1Click(Sender: TObject);
+
 var
   c,i,j: integer;
   Save_Cursor          : TCursor;
   hfd_min              : double;
-  x_new,y_new,fitsX,fitsY,col,first_image,stepnr,nrrows, cycle,step: integer;
-  reference_done, init,solut,astro_solved,store_annotated         : boolean;
-
+  x_new,y_new,fitsX,fitsY,col,first_image,stepnr,nrrows, cycle,step,ps: integer;
+  reference_done, init{,solut},astro_solved,store_annotated           : boolean;
+  st,s                                                                : string;
 begin
   if listview6.items.count<=1 then exit; {no files}
   Save_Cursor := Screen.Cursor;
@@ -4221,6 +4225,7 @@ begin
 
 
   nrrows:=listview6.items.count;
+  setlength(bsolutions,nrrows);{for the solutions in memory. bsolutions is destroyed in formdestroy}
 
   stepnr:=0;
   if ((sender=blink_button1) or (solve_and_annotate1.checked) or (sender=write_video1)) then init:=true {start at beginning for video}
@@ -4293,7 +4298,8 @@ begin
         {find align solution}
         if align_blink1.checked then
         begin
-          if fileexists(ChangeFileExt(Filename2,'.astap_solution'))=false then
+          st:=listview6.Items.item[c].subitems.Strings[B_solution];
+          if st='' then {no solution yet}
           begin
             if reference_done=false then {get reference}
             begin
@@ -4303,9 +4309,11 @@ begin
               find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
 
               reset_solution_vectors(1);{no influence on the first image since reference}
-              save_solution_to_disk; {write solution_vectorX, solution_vectorY and solution_datamin to disk. Including solution_cblack[1]:=flux_magn_offset;}
+              {store solutions in memory}
+              bsolutions[c].solution_vectorX:=solution_vectorX;
+              bsolutions[c].solution_vectorY:=solution_vectorY;
+              listview6.Items.item[c].subitems.Strings[B_solution]:='✓ '+inttostr(c);{store location in listview for case list is sorted/modified}
               reference_done:=true;
-              solut:=true;
             end
             else
             begin
@@ -4315,32 +4323,31 @@ begin
               find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
               begin
-                save_solution_to_disk;{write to disk}
+//                save_solution_to_disk;{write to disk}
+                bsolutions[c].solution_vectorX:=solution_vectorX;
+                bsolutions[c].solution_vectorY:=solution_vectorY;
+                listview6.Items.item[c].subitems.Strings[B_solution]:='✓ '+inttostr(c);{store location in listview for case list is sorted/modified}
+
                 memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                    +'  Solution x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
                    +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) );
-                solut:=true;
+//                solut:=true;
               end
               else
               begin
                 memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
                 reset_solution_vectors(1);{default for no solution}
-                solut:=false;
+  //              solut:=false;
               end;
             end;
           end
           {end find solution}
           else
           begin {reuse solution}
-            AssignFile(savefile,ChangeFileExt(Filename2,'.astap_solution'));
-            Reset(saveFile);
-            read(savefile, solution_vectorX);
-            read(savefile, solution_vectorY);
-            CloseFile(saveFile);
-            solut:=true;
+                ps:=strtoint(copy(st,4,10));
+                solution_vectorX:=bsolutions[ps].solution_vectorX; {restore solution}
+                solution_vectorY:=bsolutions[ps].solution_vectorY;
           end;
-
-          if solut then listview6.Items.item[c].subitems.Strings[B_solution]:='✓' else  listview6.Items.item[c].subitems.Strings[B_solution]:='';
 
           if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then
           begin
@@ -4414,10 +4421,9 @@ procedure Tstackmenu1.clear_blink_alignment1Click(Sender: TObject);
 var
   c         : integer;
 begin
-
   for c:=0 to listview6.items.count-1 do
   begin
-    deletefile(changefileext(ListView6.items[c].caption,'.astap_solution')); { This is done for the case multiple directories are used}
+    bsolutions:=nil;
     listview6.Items.item[c].subitems.Strings[B_solution]:='';{clear alignment marks}
   end;
 end;
@@ -4427,13 +4433,6 @@ procedure Tstackmenu1.clear_blink_list1Click(Sender: TObject);
 begin
   esc_pressed:=true; {stop any running action}
   listview6.Clear;
-end;
-
-
-procedure Tstackmenu1.clear_blink_list2ContextPopup(Sender: TObject;
-  MousePos: TPoint; var Handled: Boolean);
-begin
-
 end;
 
 
@@ -4478,7 +4477,6 @@ begin
     for i:=0 to OpenDialog1.Files.count-1 do {add}
     begin
       listview_add(listview8,OpenDialog1.Files[i],true,L_nr);
-      DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
     end;
     listview8.items.endupdate;
   end;
@@ -4558,10 +4556,7 @@ begin
   begin
     listview7.items.beginupdate;
     for i:=0 to OpenDialog1.Files.count-1 do {add}
-    begin
       listview_add(listview7,OpenDialog1.Files[i],true,P_nr);
-      //DeleteFile(ChangeFileExt(OpenDialog1.Files[i],'.astap_solution'));{delete solution file. These are relative to a reference file which could be different}
-    end;
     listview7.items.endupdate;
   end;
 end;
@@ -5169,15 +5164,30 @@ end;
 
 procedure Tstackmenu1.pagecontrol1Change(Sender: TObject);
 var
-  tab8 : boolean;
+  theindex :integer;
 begin
-  tab8:=stackmenu1.pagecontrol1.tabindex=8; {photometry}
-  mainwindow.shape_alignment_marker1.visible:=tab8; {hide shape if stacked image is plotted}
-  mainwindow.shape_alignment_marker2.visible:=tab8; {hide shape if stacked image is plotted}
-  mainwindow.shape_alignment_marker3.visible:=tab8; {hide shape if stacked image is plotted}
-  mainwindow.labelVar1.visible:=tab8;
-  mainwindow.labelCheck1.visible:=tab8;
-  mainwindow.labelThree1.visible:=tab8;
+  theindex:=stackmenu1.pagecontrol1.tabindex;
+  mainwindow.shape_alignment_marker1.visible:=(theindex=8); {hide shape if stacked image is plotted}
+  mainwindow.shape_alignment_marker2.visible:=(theindex=8); {hide shape if stacked image is plotted}
+  mainwindow.shape_alignment_marker3.visible:=(theindex=8); {hide shape if stacked image is plotted}
+  mainwindow.labelVar1.visible:=(theindex=8);
+  mainwindow.labelCheck1.visible:=(theindex=8);
+  mainwindow.labelThree1.visible:=(theindex=8);
+end;
+
+
+var FLastHintTabIndex : integer;
+procedure Tstackmenu1.pagecontrol1MouseMove(Sender: TObject; {Show hints of each tab when mouse hovers above it}
+  Shift: TShiftState; X, Y: Integer);
+var
+  TabIndex: Integer;
+begin
+  TabIndex := PageControl1.IndexOfTabAt(X, Y);
+  if FLastHintTabIndex <> TabIndex then
+      Application.CancelHint;
+  if TabIndex <> -1 then
+     PageControl1.Hint:= PageControl1.Pages[TabIndex].Hint;
+  FLastHintTabIndex := TabIndex;
 end;
 
 
@@ -5449,20 +5459,22 @@ end;
 
 procedure Tstackmenu1.export_aligned_files1Click(Sender: TObject);
 var
-  c,fitsX,fitsY,x_new,y_new,col : integer;
+  c,fitsX,fitsY,x_new,y_new,col,ps : integer;
   Save_Cursor          : TCursor;
+  st                   : string;
 begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
   esc_pressed:=false;
   for c:=0 to listview6.items.count-1 do {this is not required but nice}
-  if (listview6.Items.item[c].subitems.Strings[B_solution]='✓') then
   begin
-    filename2:=listview6.items[c].caption;
-    mainwindow.caption:=filename2;
-    if fileexists(ChangeFileExt(Filename2,'.astap_solution')) then {read solution}
-    begin {reuse solution}
+    st:=listview6.Items.item[c].subitems.Strings[B_solution];
+    if st<>'' then {Solution available}
+
+    begin
+      filename2:=listview6.items[c].caption;
+      mainwindow.caption:=filename2;
 
       listview6.Selected :=nil; {remove any selection}
       listview6.ItemIndex := c;{mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
@@ -5473,11 +5485,11 @@ begin
       Application.ProcessMessages;
       if esc_pressed then break;
 
-      AssignFile(savefile,ChangeFileExt(Filename2,'.astap_solution')); {read solutions}
-      Reset(saveFile);
-      read(savefile, solution_vectorX);
-      read(savefile, solution_vectorY);
-      CloseFile(saveFile);
+      {reuse solution}
+      ps:=strtoint(copy(st,4,10));
+      solution_vectorX:=bsolutions[ps].solution_vectorX; {use stored solution}
+      solution_vectorY:=bsolutions[ps].solution_vectorY;
+
 
       setlength(img_temp,naxis3,width2,height2);{new size}
 
@@ -5511,6 +5523,7 @@ begin
            else
            annotation_to_array('date_avg: '+date_avg,false,65535,1{size},1,10,img_loaded);{date_obs to image array as annotation}
       end;
+      add_text   ('COMMENT ',' Image aligned with other images.                                    ');
 
       if nrbits=16 then
          save_fits(img_loaded,filename2,16,true)
@@ -5518,15 +5531,12 @@ begin
           save_fits(img_loaded,filename2,-32,true);
        memo2_message('New aligned image created: '+filename2);
       listview6.items[c].caption:=filename2;
-
-      reset_solution_vectors(1);{aligned}
-      save_solution_to_disk;{write solution_vectorX, solution_vectorY and solution_datamin to disk.}
-
-
     end;
+
   end;
   img_temp:=nil;
 
+  plot_fits(mainwindow.image1,false {re_center},true);{the last displayed image doesn't match with header. Just plot last image to fix}
   Screen.Cursor :=Save_Cursor;{back to normal }
 end;
 
@@ -7063,14 +7073,6 @@ var
    c: integer;
 begin
   analyse_listview(listview6,true {light},false {full fits},false{refresh});
-
-  for c:=0 to listview6.items.count-1 do {this is not required but nice}
-  begin
-    if fileexists(ChangeFileExt(listview6.items[c].caption,'.astap_solution')) then {read solution}
-       listview6.Items.item[c].subitems.Strings[B_solution]:='✓'
-    else
-    listview6.Items.item[c].subitems.Strings[B_solution]:='';{clear alignment marks}
-  end;
   listview6.alphasort; {sort on time}
 end;
 
@@ -7084,6 +7086,11 @@ begin
     3 : listview9.column[9].caption:='α [°] app&refr';
   end;
 
+end;
+
+procedure Tstackmenu1.FormDestroy(Sender: TObject);
+begin
+  bsolutions:=nil;{just to be sure to clean up}
 end;
 
 

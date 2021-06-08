@@ -36,7 +36,7 @@ procedure find_quads_xy(starlist :star_list; out starlistquads :star_list);  {FO
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
 procedure display_quads(starlistquads :star_list);{draw quads}
-procedure save_solution_to_disk;{write to disk}
+//procedure save_solution_to_disk;{write to disk}
 
 implementation
 
@@ -712,27 +712,6 @@ begin
   solution_vectorY[0]:=0; // y:=s[1]x+s[2]y+s[3]
   solution_vectorY[1]:=factor;{should be one}
   solution_vectorY[2]:=0;
-end;
-
-
-procedure save_solution_to_disk;{write to disk}
-begin
-  solution_cblack[0]:=cblack;{store datamin in solution vector}
-  {solution_cblack[1] used in blinck for flux_magn_offset}
-  solution_cblack[2]:=0;{spare}
-
-  try
-  AssignFile(savefile,ChangeFileExt(Filename2,'.astap_solution'));
-  ReWrite(saveFile);
-  Write(savefile, solution_vectorX);
-  Write(savefile, solution_vectorY);
-  Write(savefile, solution_cblack);{save background value}
-  CloseFile(saveFile);
-
-  except
-    memo2_message('Error writing .astap_solution file! Abort.');
-    esc_pressed:=true;{stop further processing}
-  end;
 end;
 
 

@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 411
+  Left = 183
   Height = 717
-  Top = 129
+  Top = 130
   Width = 1604
   HorzScrollBar.Page = 1604
   VertScrollBar.Page = 556
@@ -44,6 +44,7 @@ object stackmenu1: Tstackmenu1
   }
   KeyPreview = True
   OnCreate = FormCreate
+  OnDestroy = FormDestroy
   OnDropFiles = FormDropFiles
   OnKeyPress = FormKeyPress
   OnPaint = FormPaint
@@ -201,7 +202,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 2662
+    Left = 3154
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -219,7 +220,7 @@ object stackmenu1: Tstackmenu1
     Height = 476
     Hint = 'Stack menu'
     Top = 0
-    Width = 2094
+    Width = 2586
     ActivePage = lights
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
@@ -231,11 +232,12 @@ object stackmenu1: Tstackmenu1
     TabIndex = 0
     TabOrder = 5
     OnChange = pagecontrol1Change
+    OnMouseMove = pagecontrol1MouseMove
     object lights: TTabSheet
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 448
-      ClientWidth = 2086
+      ClientWidth = 2578
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -309,7 +311,7 @@ object stackmenu1: Tstackmenu1
         Height = 408
         Hint = 'Double click to view image'
         Top = 40
-        Width = 2086
+        Width = 2578
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -591,7 +593,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 465
-      ClientWidth = 1840
+      ClientWidth = 2086
       ImageIndex = 1
       ParentFont = False
       object browse_darks1: TButton
@@ -638,7 +640,7 @@ object stackmenu1: Tstackmenu1
         Height = 425
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1840
+        Width = 2086
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -2224,10 +2226,10 @@ object stackmenu1: Tstackmenu1
       end
     end
     object alignment1: TTabSheet
-      Hint = 'Set here the alignment options'
+      Hint = 'Set here the frame alignment and solver options.'
       Caption = 'Alignment'
       ClientHeight = 465
-      ClientWidth = 1840
+      ClientWidth = 2086
       ImageIndex = 7
       ParentFont = False
       object use_star_alignment1: TRadioButton
@@ -2884,16 +2886,16 @@ object stackmenu1: Tstackmenu1
     object tab_blink1: TTabSheet
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
-      ClientHeight = 422
-      ClientWidth = 1873
+      ClientHeight = 448
+      ClientWidth = 2339
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
         Left = 0
-        Height = 382
+        Height = 408
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1873
+        Width = 2339
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3181,9 +3183,10 @@ object stackmenu1: Tstackmenu1
       end
     end
     object tab_photometry1: TTabSheet
+      Hint = 'Photometry of variable stars.'
       Caption = 'Photometry'
-      ClientHeight = 465
-      ClientWidth = 1873
+      ClientHeight = 448
+      ClientWidth = 2581
       ImageIndex = 19
       ParentFont = False
       object browse_photometry1: TButton
@@ -3268,10 +3271,10 @@ object stackmenu1: Tstackmenu1
       end
       object listview7: TListView
         Left = 0
-        Height = 425
+        Height = 408
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1873
+        Width = 2581
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3621,9 +3624,10 @@ object stackmenu1: Tstackmenu1
       end
     end
     object TabSheet1: TTabSheet
+      Hint = 'Measure the best focus position for several areas of the image.'
       Caption = 'Inspector'
-      ClientHeight = 422
-      ClientWidth = 1873
+      ClientHeight = 465
+      ClientWidth = 2086
       ImageIndex = 17
       object browse_inspector1: TButton
         Left = 32
@@ -3654,7 +3658,7 @@ object stackmenu1: Tstackmenu1
         Height = 382
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1873
+        Width = 2086
         Align = alCustom
         Anchors = [akTop, akLeft, akRight]
         Checkboxes = True
@@ -3852,16 +3856,17 @@ object stackmenu1: Tstackmenu1
       end
     end
     object mount1: TTabSheet
+      Hint = 'Measure the mount celestial position offsets.'
       Caption = 'Mount analyse'
-      ClientHeight = 422
-      ClientWidth = 1873
+      ClientHeight = 465
+      ClientWidth = 2332
       ImageIndex = 21
       object listview9: TListView
         Left = 0
-        Height = 382
+        Height = 425
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1873
+        Width = 2332
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -4085,9 +4090,10 @@ object stackmenu1: Tstackmenu1
       end
     end
     object tab_live_stacking1: TTabSheet
+      Hint = 'Stack live images'
       Caption = 'Live stacking'
-      ClientHeight = 422
-      ClientWidth = 1873
+      ClientHeight = 465
+      ClientWidth = 2086
       ParentFont = False
       object browse_live_stacking1: TButton
         Left = 16
@@ -4252,10 +4258,10 @@ object stackmenu1: Tstackmenu1
       end
     end
     object tab_Pixelmath1: TTabSheet
-      Hint = 'Pixel math tools'
+      Hint = 'Pixel math tools 1'
       Caption = 'Pixel math 1'
       ClientHeight = 465
-      ClientWidth = 1873
+      ClientWidth = 2086
       Enabled = False
       ImageIndex = 4
       ParentFont = False
@@ -5602,9 +5608,10 @@ object stackmenu1: Tstackmenu1
       end
     end
     object tab_Pixelmath2: TTabSheet
+      Hint = 'Pixel math tools 2'
       Caption = 'Pixel math 2'
       ClientHeight = 465
-      ClientWidth = 1873
+      ClientWidth = 2086
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox
