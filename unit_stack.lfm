@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 183
+  Left = 511
   Height = 717
-  Top = 130
+  Top = 215
   Width = 1604
   HorzScrollBar.Page = 1604
   VertScrollBar.Page = 556
@@ -202,7 +202,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 3154
+    Left = 3400
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -220,7 +220,7 @@ object stackmenu1: Tstackmenu1
     Height = 476
     Hint = 'Stack menu'
     Top = 0
-    Width = 2586
+    Width = 2832
     ActivePage = lights
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
@@ -237,7 +237,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 448
-      ClientWidth = 2578
+      ClientWidth = 2824
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -311,7 +311,7 @@ object stackmenu1: Tstackmenu1
         Height = 408
         Hint = 'Double click to view image'
         Top = 40
-        Width = 2578
+        Width = 2824
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True

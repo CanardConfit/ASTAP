@@ -3014,8 +3014,10 @@ begin
 end;
 
 
-procedure Tstackmenu1.listview1ColumnClick(Sender: TObject;
-  Column: TListColumn);
+procedure Tstackmenu1.listview1ColumnClick(Sender: TObject; Column: TListColumn);
+var c,thecount: integer;
+    lc : array of boolean;
+
 begin
   SortedColumn:= Column.Index;
 end;
@@ -3051,12 +3053,27 @@ end;
 
 procedure Tstackmenu1.listview1Compare(Sender: TObject; Item1, Item2: TListItem;
   Data: Integer; var Compare: Integer);
+
+var
+   tem : boolean;
 begin
   if SortedColumn = 0 then Compare := CompareText(Item1.Caption, Item2.Caption)
   else
   if SortedColumn <> 0 then Compare := CompareAnything(Item1.SubItems[SortedColumn-1], Item2.SubItems[SortedColumn-1]);
   if TListView(Sender).SortDirection = sdDescending then
        Compare := -Compare;
+
+
+//   temporary fix for https://bugs.freepascal.org/view.php?id=38137
+  {$IfDef Darwin}// {MacOS}  {still to be tested}
+  if compare<>0 {-1, +1} then
+  begin
+    tem:=item1.Checked;
+    item1.Checked:=item2.Checked;
+    item2.Checked:=tem;
+  end;
+  {$ELSE}
+  {$ENDIF}
 end;
 
 
