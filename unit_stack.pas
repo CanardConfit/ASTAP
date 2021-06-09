@@ -4063,8 +4063,8 @@ begin
     memo2_message('Flux calibration cleared. Recalibrate by ctrl-U. See viewer tool menu');
     flux_magn_offset:=0;
   end;
-  //mainwindow.calibrate_photometry1Click(nil);
 end;
+
 
 procedure Tstackmenu1.help_astrometric_solving1Click(Sender: TObject);
 begin
@@ -4090,25 +4090,14 @@ begin
   end
   else
   begin
-//    if ((files_to_process<>nil) and (sender.Items.item[Item.Index].caption=files_to_process[0].name)) then
-  //     Sender.Canvas.Font.Color :=clHighlight {mark the reference image. Note bold or underline doesn't work with listview}
-//    else
-      Sender.Canvas.Font.Color := clmenutext;{required for high contrast settings. Otherwise it is always black}
+    Sender.Canvas.Font.Color := clmenutext;{required for high contrast settings. Otherwise it is always black}
   end;
  {$ifdef mswindows}
  {$else} {unix}
  {temporary fix for CustomDraw not called}
  if Item.index=0 then  stackmenu1.nr_total1.caption:=inttostr(sender.items.count);{update counting info}
  {$endif}
-
 end;
-
-procedure Tstackmenu1.listview2Change(Sender: TObject; Item: TListItem;
-  Change: TItemChange);
-begin
-
-end;
-
 
 
 procedure Tstackmenu1.listview2CustomDraw(Sender: TCustomListView; const ARect: TRect; var DefaultDraw: Boolean);
