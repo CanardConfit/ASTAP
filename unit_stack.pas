@@ -3063,17 +3063,6 @@ begin
   if TListView(Sender).SortDirection = sdDescending then
        Compare := -Compare;
 
-
-//   temporary fix for https://bugs.freepascal.org/view.php?id=38137
-  {$IfDef Darwin}// {MacOS}  {still to be tested}
-  if compare<>0 {-1, +1} then
-  begin
-    tem:=item1.Checked;
-    item1.Checked:=item2.Checked;
-    item2.Checked:=tem;
-  end;
-  {$ELSE}
-  {$ENDIF}
 end;
 
 
