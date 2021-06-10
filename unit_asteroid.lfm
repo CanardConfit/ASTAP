@@ -7,6 +7,7 @@ object form_asteroids1: Tform_asteroids1
   ClientHeight = 415
   ClientWidth = 596
   KeyPreview = True
+  OnClose = FormClose
   OnKeyPress = FormKeyPress
   OnShow = FormShow
   Position = poScreenCenter

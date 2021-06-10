@@ -489,7 +489,8 @@ var
 
   light_naxis3, light_width,light_height : integer;
   datamax_light ,light_exposure          : double;
-  calstat_local,light_date_obs           : string;
+  light_date_obs                         : string;
+  fitsfile                               : boolean;
 
 const
    popupnotifier_visible : boolean=false;
@@ -507,13 +508,16 @@ begin
     {preserve header and some important variable}
     memo2_message('Calibrating image prior to solving.');
     memo1_backup:=mainwindow.Memo1.Text;{save header text prior to apply dark, flats}
-    calstat_local:=calstat;{Note load darks or flats will overwrite calstat}
+//    calstat_local:=calstat;{Note load darks or flats will overwrite calstat}
     datamax_light:=datamax_org;
     light_naxis3:=naxis3; {preserve so it is not overriden by load dark_flat which will reset variable in load_fits}
     light_width:=width2;
     light_height:=height2;
+    light_date_obs:=date_obs;
 
-    analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected}
+    fitsfile:=fits_file;
+
+    analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
     analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{analyse flat tab, by loading=false the loaded img will not be effected}
 
     {restore some important variable}
@@ -523,9 +527,11 @@ begin
     width2:=light_width;{restore old value}
     height2:=light_height;{restore old value}
     date_obs:=light_date_obs;{restore old value}
+    fits_file:=fitsfile;
 
     apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count,img);{apply dark, flat if required, renew if different exposure or ccd temp. This will clear the header in load_fits}
     mainwindow.Memo1.Text:=memo1_backup;{restore header}
+    update_text ('CALSTAT =',#39+calstat+#39); {calibration status}
   end;
 
   binning:=report_binning;

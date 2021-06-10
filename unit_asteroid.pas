@@ -108,6 +108,7 @@ type
     procedure download_mpcorb1Click(Sender: TObject);
     procedure file_to_add1Click(Sender: TObject);
     procedure file_to_add2Click(Sender: TObject);
+    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormKeyPress(Sender: TObject; var Key: char);
     procedure FormShow(Sender: TObject);
     procedure GroupBox1Click(Sender: TObject);
@@ -1530,6 +1531,29 @@ begin
   end;
 end;
 
+
+procedure set_some_defaults; {wil be set if annotate button is clicked or when form is closed}
+begin
+  with form_asteroids1 do
+  begin
+    {latitude, longitude}
+    sitelat:=latitude1.Text;
+    sitelong:=longitude1.Text;
+
+    lat_default:=sitelat;
+    long_default:=sitelong;
+
+    if midpoint=false then
+      date_obs:=date_obs1.Text
+    else
+      date_avg:=date_obs1.Text;
+
+    annotation_color:=ColorBox1.selected;
+    annotation_diameter:=form_asteroids1.annotation_size2.Position div 2;
+  end;
+end;
+
+
 procedure Tform_asteroids1.annotate_asteroids1Click(Sender: TObject); {han.k}
 var maxcount : integer;
     maxmag   : double;
@@ -1537,26 +1561,16 @@ var maxcount : integer;
 
 
 begin
-  if ((test_mpcorb=false) and (test_cometels=false)) then begin exit; end;{file not found}
+  set_some_defaults;
 
-  mpcorb_path:=form_asteroids1.mpcorb_path1.caption;
-  cometels_path:=form_asteroids1.mpcorb_path2.caption;
+  font_follows_diameter:=font_follows_diameter1.checked;
 
-  if midpoint=false then
-    date_obs:=date_obs1.Text
-  else
-    date_avg:=date_obs1.Text;
 
   maxcount_asteroid:=max_nr_asteroids1.text;
   maxcount:=strtoint(form_asteroids1.max_nr_asteroids1.text);
 
   maxmag_asteroid:=max_magn_asteroids1.text;
   maxmag:=strtofloat2(form_asteroids1.max_magn_asteroids1.text);
-
-  annotation_color:=ColorBox1.selected;
-  annotation_diameter:=form_asteroids1.annotation_size2.Position div 2;
-
-  font_follows_diameter:=font_follows_diameter1.checked;
 
 
   showfullnames:=form_asteroids1.showfullnames1.checked;
@@ -1566,12 +1580,10 @@ begin
 
   add_date:=form_asteroids1.add_subtitle1.checked;
 
-  {latitude, longitude}
-  sitelat:=latitude1.Text;
-  sitelong:=longitude1.Text;
+  if ((test_mpcorb=false) and (test_cometels=false)) then begin exit; end;{file not found}
 
-  lat_default:=sitelat;
-  long_default:=sitelong;
+  mpcorb_path:=form_asteroids1.mpcorb_path1.caption;
+  cometels_path:=form_asteroids1.mpcorb_path2.caption;
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -1635,6 +1647,12 @@ begin
     mpcorb_path2.caption:=OpenDialog1.Files[0];
     test_cometels;
   end;
+end;
+
+procedure Tform_asteroids1.FormClose(Sender: TObject;
+  var CloseAction: TCloseAction);
+begin
+   set_some_defaults;
 end;
 
 

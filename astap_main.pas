@@ -906,6 +906,8 @@ var {################# initialised variables #########################}
 begin
   {some house keeping}
   result:=false; {assume failure}
+  fits_file:=false; {assume failure}
+
   if load_data then mainwindow.caption:=ExtractFileName(filen);
   {house keeping done}
 
@@ -919,7 +921,6 @@ begin
      exit;
   end;
   file_size:=thefile3.size;
-  fits_file:=false; {assume failure}
 
   mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
   mainwindow.memo1.clear;{clear memo for new header}
@@ -1022,7 +1023,7 @@ begin
           mainwindow.statusbar1.panels[7].text:=('Error loading FITS file!! Keyword SIMPLE not found.');
           mainwindow.error_label1.caption:=('Error loading FITS file!! Keyword SIMPLE not found.');
           mainwindow.error_label1.visible:=true;
-          fits_file:=false;
+//          fits_file:=false;
           exit;
         end; {should start with SIMPLE  =,  MaximDL compressed files start with SIMPLE‚=”}
         if ((header_count<get_ext) and (header[0]='X') and (header[1]='T')  and (header[2]='E') and (header[3]='N') and (header[4]='S') and (header[5]='I') and (header[6]='O') and (header[7]='N') and (header[8]='=')) then
@@ -1049,7 +1050,7 @@ begin
         mainwindow.statusbar1.panels[7].text:='Read exception error!!';
         mainwindow.error_label1.caption:='Read exception error!!';
         mainwindow.error_label1.visible:=true;
-        fits_file:=false;
+//        fits_file:=false;
         exit;
       end;
     until ((simple) and (header_count>=get_ext)); {simple is true and correct header found}
@@ -1505,7 +1506,7 @@ begin
     if naxis=0 then result:=true {wcs file}
                else result:=false; {no image}
     mainwindow.image1.visible:=false;
-    fits_file:=false;
+//    fits_file:=false;
     image:=false;
   end;
 
@@ -3162,7 +3163,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.550, '+about_message4+', dated 2021-6-8';
+  #13+#10+'ASTAP version ß0.9.551, '+about_message4+', dated 2021-6-10';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -9131,7 +9132,6 @@ begin
 end;
 
 
-
 procedure Tmainwindow.positionanddate1Click(Sender: TObject);
 begin
   if fits_file=false then exit;
@@ -11104,6 +11104,7 @@ begin
     sqm:=flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
 
     alt:=calculate_altitude(false);
+    if length(centalt)<=1 {'0'} then centalt:=inttostr(round(alt));{for reporting in menu sqm1}
     if alt<>0 then
     begin
       airm:=airmass_calc(alt);
@@ -11126,20 +11127,18 @@ begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-  if calculate_sqm(true {get backgr},false{get histogr})=false then {failure in calculating sqm value}
-  begin
-    beep;
-    Screen.Cursor:= Save_Cursor;
-    exit;
-  end;
-
-//  local_sd(width2 div 4,height2 div 4, width2 div 3,height2 div 3,0{col} ,img_loaded,sd,mean);{calculate local mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-  {find the bit resolution sensor}
   repeat
+    if calculate_sqm(true {get backgr},false{get histogr})=false then {failure in calculating sqm value}
+    begin
+      if centalt='0' then application.messagebox('Could retrieve or calculate altitude. Enter the default geographic location in the "asteroid & comet annotation" menu ',mb_ok);
+      Screen.Cursor:= Save_Cursor;
+      exit;
+    end;
+
     info_message:='SQM='+floattostrF2(sqm,0,2)+' magn/arcsec^2'+#10+
     #10+
     'Background value='+inttostr(round(cblack))+#10+
-    'Altitude='+centalt+#10+
+    'Altitude='+centalt+'°'+#10+
     'Pedestal correction='+inttostr(pedestal)+#10+
     #10+
     'Pre-conditions:'+#10+
@@ -11148,7 +11147,7 @@ begin
     '3) Entering a pedestal value increases the accuracy. (mean value of a dark)'#10+
     '4) Apply on unprocessed images only.'#10+
     '5) No bright nebula should be visible.'#10+
-    '6) Extinction plays a role. An atmospheric extinction correction for star light will applied if CENTALT is specified in the FITS header.'+#10;
+    '6) Extinction plays a role. An atmospheric extinction correction for star light will applied.'+#10;
 
 
     inputvalue:=false;

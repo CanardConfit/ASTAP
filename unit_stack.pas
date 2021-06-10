@@ -689,8 +689,6 @@ type
       var DefaultDraw: Boolean);
     procedure listview1CustomDrawItem(Sender: TCustomListView; Item: TListItem;
       State: TCustomDrawState; var DefaultDraw: Boolean);
-    procedure listview2Change(Sender: TObject; Item: TListItem;
-      Change: TItemChange);
     procedure listview2CustomDraw(Sender: TCustomListView; const ARect: TRect;
       var DefaultDraw: Boolean);
     procedure listview2CustomDrawItem(Sender: TCustomListView; Item: TListItem;
@@ -7980,11 +7978,11 @@ end;
 procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer; img : image_array) ; inline; {apply dark, flat if required, renew if different exposure or ccd temp}
 var  {variables in the procedure are created to protect global variables as filter_name against overwriting by loading other fits files}
   fitsX,fitsY,k,light_naxis3{,hotpixelcounter}, light_width,light_height,light_set_temperature : integer;
-  calstat_local,light_date_obs              : string;
+  {calstat_local,}
+  light_date_obs              : string;
   datamax_light ,light_exposure,value{,dark_outlier_level},flat_factor,dark_norm_value : double;
 
 begin
-  calstat_local:=calstat;{Note load darks or flats will overwrite calstat}
   datamax_light:=datamax_org;
 
   light_naxis3:=naxis3; {preserve so it is not overriden by load dark_flat which will reset variable in load_fits}
@@ -7996,7 +7994,7 @@ begin
 
   date_to_jd(date_obs,exposure); {convert date-obs to global variables jd_start, jd_mid. Use this to find the dark with the best match for the light}
 
-  if pos('D',calstat_local)<>0 then
+  if pos('D',calstat)<>0 then
              memo2_message('Skipping dark calibration, already applied. See header keyword CALSTAT')
   else
   begin
@@ -8020,12 +8018,12 @@ begin
 
         end;
 
-      calstat_local:=calstat_local+'D'; {dark applied}
+      calstat:=calstat+'D'; {dark applied}
       datamax_light:=datamax_light-dark_norm_value;
     end;
   end;{apply dark}
 
-  if pos('F',calstat_local)<>0 then
+  if pos('F',calstat)<>0 then
            memo2_message('Skipping flat calibration, already applied. See header keyword CALSTAT')
   else
   begin
@@ -8050,10 +8048,9 @@ begin
           for k:=0 to naxis3-1 do {do all colors}
             img[k,fitsX-1,fitsY-1]:=img[k,fitsX-1,fitsY-1]*flat_factor;
         end;
-      calstat_local:=calstat_local+'FB';{mark that flat and bias have been applied}
+      calstat:=calstat+'FB';{mark that flat and bias have been applied}
     end;{flat correction}
   end;{do flat & flat dark}
-  calstat:=calstat_local;{report calibration}
 
   datamax_org:=datamax_light;{restore. will be overwitten by previouse reads}
   naxis3:=light_naxis3;{return old value}
