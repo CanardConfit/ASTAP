@@ -91,14 +91,14 @@ begin
 end;
 
 
-function  load_thefile(filen:string) : boolean;
+function load_thefile(filen:string) : boolean;
 var
    ext1 : string;
 begin
   ext1:=uppercase(ExtractFileExt(filen));
 
   if ((ext1='.FIT') or (ext1='.FITS')) then
-    result:= load_fits(filen,true {light},true,0,img_loaded)
+    result:= load_fits(filen,true {light},true,true {update memo},0,img_loaded)
   else
   if check_raw_file_extension(ext1) then {check if extension is from raw file}
     result:=convert_raw(true{load},false{save},filen,img_loaded)

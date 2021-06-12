@@ -245,11 +245,11 @@ begin
 
             {load image}
             Application.ProcessMessages;
-            if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then begin memo2_message('Error');exit;end;
+            if ((esc_pressed) or (load_fits(filename2,true {light}, true,init=false{update memo1} ,0,img_loaded)=false)) then begin memo2_message('Error');exit;end;{update memo for case esc is pressed}
 
             if init=false then
             begin
-              backup_header;{backup header and solution}
+              backup_solution;{backup solution}
 
               initialise_var1;{set variables correct, do this before apply dark}
               initialise_var2;{set variables correct}
@@ -468,19 +468,11 @@ begin
                     begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + img_loaded[0,fitsX-1,fitsY-1]-background_r; end;
                     begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + img_loaded[1,fitsX-1,fitsY-1]-background_g; end;
                     begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + img_loaded[2,fitsX-1,fitsY-1]-background_b; end;
-
-//                    if ((x_new=1908) and (y_new=604)) then
-//                    beep;
-
                   end;
                   if c=5 {Luminance} then
                   begin
                     {rgb is already blurred}
                     {r:=l*(0.33+r)/(r+g+b)}
-
-//                  if ((x_new=1908) and (y_new=604)) then
-//                  beep;
-
                     colr:=img_average[0,x_new,y_new] - 475 + red_add; {lowest_most_common is around 450 to 500}
                     colg:=img_average[1,x_new,y_new] - 475 + green_add;
                     colb:=img_average[2,x_new,y_new] - 475 + blue_add;
@@ -516,6 +508,9 @@ begin
         height2:=height_max;
       end;
     end;{LRGB}
+
+    restore_solution;{restore solution variable of reference image for annotation and mount pointer}
+
   end;{with stackmenu1}
 end;
 
@@ -603,7 +598,7 @@ begin
 
           Application.ProcessMessages;
           {load image}
-          if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
+          if ((esc_pressed) or (load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
 
           if init=true then {first file done}
           begin
@@ -615,7 +610,7 @@ begin
           begin
             binning:=report_binning;{select binning based on the height of the first light}
 
-            backup_header;{backup header and solution}
+            backup_solution;{backup solution}
 
             initialise_var1;{set variables correct. Do this before apply dark}
             initialise_var2;{set variables correct}
@@ -793,6 +788,8 @@ begin
         end;{pixel loop}
       end; {counter<>0}
 
+      restore_solution;{restore solution variable of reference image for annotation and mount pointer}
+
     end;{simple average}
   end;{with stackmenu1}
   {arrays will be nilled later. This is done for early exits}
@@ -845,7 +842,7 @@ begin
           Application.ProcessMessages;
 
           {load image}
-          if ((esc_pressed) or  (load_fits(filename2,true {light},true,0,img_loaded)=false)) then  begin memo2_message('Error');{can't load} exit;end;
+          if ((esc_pressed) or  (load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,img_loaded)=false)) then  begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
 
           if init=true then
           begin
@@ -855,7 +852,7 @@ begin
 
           if init=false then
           begin
-            backup_header;{backup header and solution}
+//            backup_header(true);{backup header and solution}
             initialise_var1;{set variables correct}
             initialise_var2;{set variables correct}
           end;
@@ -1101,7 +1098,7 @@ begin
 
         {load image}
         Application.ProcessMessages;
-        if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
+        if ((esc_pressed) or (load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
 
         if init=true then
         begin
@@ -1113,7 +1110,7 @@ begin
         if init=false then {phase (1) average}
         begin
           binning:=report_binning;{select binning based on the height of the light}
-          backup_header;{backup header and solution}
+          backup_solution;{backup solution}
           initialise_var1;{set variables correct}
           initialise_var2;{set variables correct}
           if ((bayerpat='') and (make_osc_color1.checked)) then
@@ -1305,7 +1302,7 @@ begin
 
           {load image}
           Application.ProcessMessages;
-          if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
+          if ((esc_pressed) or (load_fits(filename2,true {light},true,false{update_memo},0,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
 
           if init=false then
           begin
@@ -1413,7 +1410,7 @@ begin
 
           {load file}
           Application.ProcessMessages;
-          if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
+          if ((esc_pressed) or (load_fits(filename2,true {light},true,false{update_memo},0,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
 
           apply_dark_flat(filter_name, {var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
 
@@ -1491,8 +1488,6 @@ begin
               for col:=0 to naxis3-1 do {do all colors}
               begin
                 value:=img_loaded[col,fitsX-1,fitsY-1]+ background_correction;
-       //         if(( fitsx=100) and (fitsY=100)) then
-      //          beep;
                 if sqr (value - img_average[col,x_new,y_new])< variance_factor*{sd sqr}( img_variance[col,x_new,y_new])  then {not an outlier}
                 begin
                   img_final[col,x_new,y_new]:=img_final[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
@@ -1532,14 +1527,14 @@ begin
               img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
             end; {black spot filter}
       end;{counter<>0}
-    end;{throw out the outliers of light-dark images}
 
+      restore_solution;{restore solution variable of reference image for annotation and mount pointer}
+
+    end;{throw out the outliers of light-dark images}
   end;{with stackmenu1}
   {image arrays will be nilled later. This is done for early exits}
 
   solutions:=nil;
-
-
 end;   {stack using sigma clip average}
 
 procedure calibration_and_alignment(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
@@ -1578,7 +1573,9 @@ begin
 
         {load image}
         Application.ProcessMessages;
-        if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;
+        if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo for saving},0,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
+
+
 
         if init=true then
         begin
@@ -1590,7 +1587,6 @@ begin
         if init=false then
         begin
           binning:=report_binning;{select binning based on the height of the light}
-          backup_header;{backup header and solution}
           initialise_var1;{set variables correct}
           initialise_var2;{set variables correct}
           if ((bayerpat='') and (make_osc_color1.checked)) then
@@ -1653,13 +1649,8 @@ begin
 
           setlength(img_average,naxis3,width_max,height_max);
           setlength(img_temp,naxis3,width_max,height_max);
-          for fitsY:=0 to height_max-1 do
-            for fitsX:=0 to width_max-1 do
-              for col:=0 to naxis3-1 do
-              begin
-                img_average[col,fitsX,fitsY]:=0; {clear img_average}
-                img_temp[col,fitsX,fitsY]:=0; {clear img_temp}
-              end;
+          {clearing image_average and img_temp is done for each image. See below}
+
           old_width:=width2;
           old_height:=height2;
 
@@ -1669,6 +1660,16 @@ begin
             referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
           end;
         end;{init, c=0}
+
+        {clearing image_average and img_temp is done for each image}
+        for fitsY:=0 to height_max-1 do
+          for fitsX:=0 to width_max-1 do
+            for col:=0 to naxis3-1 do
+            begin
+              img_average[col,fitsX,fitsY]:=0; {clear img_average}
+              img_temp[col,fitsX,fitsY]:=0; {clear img_temp}
+            end;
+
 
         solution:=true;
         if use_astrometry_internal then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
@@ -1723,7 +1724,7 @@ begin
           end;
 
           for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
-          for fitsX:=1 to width2  do
+          for fitsX:=1 to width2 do
           begin
             calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
             x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
@@ -1748,6 +1749,7 @@ begin
         for col:=0 to naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
           For fitsY:=0 to height2-1 do
             for fitsX:=0 to width2-1 do
+            begin
             if img_temp[col,fitsX,fitsY]<>0 then img_loaded[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY] {scale to one image by diving by the number of pixels added}
             else
             begin { black spot filter. Note for this version img_temp is counting for each color since they could be different}
@@ -1763,10 +1765,23 @@ begin
               img_loaded[col,fitsX,fitsY]:=0;{clear img_loaded since it is resized}
             end; {black spot filter}
 
+            end;
+
         {save}
         filename2:=ChangeFileExt(Filename2,'_aligned.fit');{rename}
 
-        restore_header;
+        if CD1_1<>0 then
+        begin
+          {quick and dirty method to roughly correct existing solutions}
+          CRPIX1:=solution_vectorX[0]*(CRPIX1-1)+solution_vectorX[1]*(CRPIX2-1)+solution_vectorX[2];{correct for marker_position at ra_dec position}
+          CRPIX2:=solution_vectorY[0]*(CRPIX1-1)+solution_vectorY[1]*(CRPIX2-1)+solution_vectorY[2];
+          update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
+          update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
+          update_text   ('COMMENT S','  After alignment only CRPIX1 & CRPIX2 existing solution corrected.');
+        end;
+
+
+
         update_text   ('COMMENT 1','  Calibrated & aligned by ASTAP. www.hnsky.org');
         update_text   ('CALSTAT =',#39+calstat+#39); {calibration status}
         add_integer('DARK_CNT=',' / Darks used for luminance.               ' ,dark_count);{for interim lum,red,blue...files. Compatible with master darks}
@@ -1779,7 +1794,7 @@ begin
         if nrbits=16 then
           save_fits(img_loaded,filename2,16,true)
         else
-        save_fits(img_loaded,filename2,-32,true);
+          save_fits(img_loaded,filename2,-32,true);
          memo2_message('New aligned image created: '+filename2);
         report_results('?',inttostr(round(exposure)),0,999 {color icon});{report result in tab result using modified filename2}
         progress_indicator(10+round(90*(counter)/length(files_to_process){(ListView1.items.count)}),'Cal');{show progress}
@@ -1788,6 +1803,9 @@ begin
       end;{try}
     end;{}
   end;  {with stackmenu1}
+
+  plot_fits(mainwindow.image1,true,true);{update to last image, activate memo1}
+
   {arrays will be nilled later. This is done for early exits}
 end;   {calibration and alignment}
 

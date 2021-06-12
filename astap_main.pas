@@ -503,10 +503,10 @@ type
 var
   img_backup      : array of timgbackup;{dynamic so memory can be freed}
 
-  settingstring :tstrings; {settings for save and loading}
-
-  user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
   img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_buffer,img_final : image_array;
+
+  settingstring :tstrings; {settings for save and loading}
+  user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
   distortion_data : star_list;
   filename2: string;
   nrbits,Xbinning,Ybinning    : integer;
@@ -628,7 +628,7 @@ var
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
-function load_fits(filen:string;light {load as light of dark/flat},load_data: boolean;get_ext: integer;var img_loaded2: image_array): boolean;{load fits file}
+function load_fits(filen:string;light {load as light of dark/flat},load_data,update_memo: boolean;get_ext: integer;var img_loaded2: image_array): boolean;{load fits file}
 procedure plot_fits(img: timage;center_image,show_header:boolean);
 procedure use_histogram(img: image_array; update_hist: boolean);{get histogram}
 procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
@@ -826,7 +826,7 @@ const
   crMyCursor = 5;
 
 
-function load_fits(filen:string;light {load as light of dark/flat},load_data: boolean;get_ext: integer;var img_loaded2: image_array): boolean;{load fits file}
+function load_fits(filen:string;light {load as light of dark/flat},load_data,update_memo: boolean;get_ext: integer;var img_loaded2: image_array): boolean;{load fits file}
 {if light=true then read also ra0, dec0 ....., else load as dark, flat}
 {if load_data then read all else header only}
 {if reset_var=true, reset variables to zero}
@@ -922,8 +922,11 @@ begin
   end;
   file_size:=thefile3.size;
 
-  mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
-  mainwindow.memo1.clear;{clear memo for new header}
+  if update_memo then
+  begin
+    mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
+    mainwindow.memo1.clear;{clear memo for new header}
+  end;
 
   Reader := TReader.Create (theFile3,500*2880);{number of records. Buffer but not speed difference between 6*2880 and 1000*2880}
   {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
@@ -1059,7 +1062,7 @@ begin
       if load_data then
       begin
         SetString(aline, Pansichar(@header[i]), 80);{convert header line to string}
-        mainwindow.memo1.lines.add(aline); {add line to memo}
+        if update_memo then mainwindow.memo1.lines.add(aline); {add line to memo}
       end;
       if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {naxis}
       begin
@@ -1805,7 +1808,7 @@ begin
     end;
     mainwindow.Memo3.lines.text:=aline;
     aline:=''; {release memory}
-    mainwindow.memo1.visible:=true;{show header}
+    if update_memo then mainwindow.memo1.visible:=true;{show header}
     mainwindow.pagecontrol1.showtabs:=true;{show tabs}
     reader_position:=reader_position+width2*height2;
   end;{read table}
@@ -1825,7 +1828,7 @@ begin
       begin
         mainwindow.error_label1.caption:=('Contains extension(s). Click on the arrows to scroll.');
         mainwindow.error_label1.visible:=true;
-        mainwindow.memo1.visible:=true;{show memo1 since no plotting is comming}
+        mainwindow.memo1.visible:=true;{show memo1 since no plotting is coming}
       end;
     end
     else
@@ -3081,7 +3084,7 @@ begin
 
     resized:=((width2<>old_width2) or ( height2<>old_height2));
 
-    datamax_org:=img_backup[index_backup].datamax;{for update historgram}
+    datamax_org:=img_backup[index_backup].datamax;{for update histogram}
     crpix1:=img_backup[index_backup].crpix1;{could be modified by crop}
     crpix2:=img_backup[index_backup].crpix2;
 
@@ -3163,7 +3166,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.551, '+about_message4+', dated 2021-6-10';
+  #13+#10+'ASTAP version ß0.9.552, '+about_message4+', dated 2021-6-12';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3404,7 +3407,7 @@ end;
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2 or bin3 version}
 begin
   result:=false;
-  if load_fits(filename2,true {light},true {load data},0,img_loaded)=false then exit;
+  if load_fits(filename2,true {light},true {load data},true {update memo},0,img_loaded)=false then exit;
 
   bin_X2X3X4(binfactor);{bin img_loaded 2x or 3x}
 
@@ -5015,7 +5018,7 @@ var
   val                           : single;
 
 begin
-  if load_fits(filename7,true {light},true,0,img_loaded)=false then
+  if load_fits(filename7,true {light},true,true {update memo},0,img_loaded)=false then
   begin
     beep; result:='';
     exit;
@@ -5184,7 +5187,7 @@ begin
     begin
       mainwindow.caption:=opendialog1.filename;
       {load image}
-      if load_fits(opendialog1.filename,true {light},true,0,img_loaded) then
+      if load_fits(opendialog1.filename,true {light},true,true {update memo},0,img_loaded) then
       begin
         if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
@@ -7805,51 +7808,51 @@ begin
       listviews_begin_update; {stop updating listviews}
 
       c:=0;
-      repeat {add images}
+      repeat {add lights}
          dum:=Sett.ReadString('files','image'+inttostr(c),'');
-         if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview1,dum,Sett.ReadBool('main','image'+inttostr(c)+'_check',true),L_nr);
+         if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview1,dum,Sett.ReadBool('files','image'+inttostr(c)+'_check',true),L_nr);
          inc(c);
       until (dum='');
 
       c:=0;
       repeat {add  darks}
         dum:=Sett.ReadString('files','dark'+inttostr(c),'');
-        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview2,dum,Sett.ReadBool('main','dark'+inttostr(c)+'_check',true),D_nr);
+        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview2,dum,Sett.ReadBool('files','dark'+inttostr(c)+'_check',true),D_nr);
         inc(c);
       until (dum='');
 
       c:=0;
       repeat {add  flats}
         dum:=Sett.ReadString('files','flat'+inttostr(c),'');
-        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview3,dum,Sett.ReadBool('main','flat'+inttostr(c)+'_check',true),F_nr);
+        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview3,dum,Sett.ReadBool('files','flat'+inttostr(c)+'_check',true),F_nr);
         inc(c);
       until (dum='');
 
       c:=0;
       repeat {add flat darks}
         dum:=Sett.ReadString('files','flat_dark'+inttostr(c),'');
-        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview4,dum,Sett.ReadBool('main','flat_dark'+inttostr(c)+'_check',true),D_nr);
+        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview4,dum,Sett.ReadBool('files','flat_dark'+inttostr(c)+'_check',true),D_nr);
         inc(c);
       until (dum='');
 
       c:=0;
       repeat {add blink files}
         dum:=Sett.ReadString('files','blink'+inttostr(c),'');
-        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview6,dum,Sett.ReadBool('main','blink'+inttostr(c)+'_check',true),B_nr);
+        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview6,dum,Sett.ReadBool('files','blink'+inttostr(c)+'_check',true),B_nr);
         inc(c);
       until (dum='');
 
       c:=0;
       repeat {add photometry files}
         dum:=Sett.ReadString('files','photometry'+inttostr(c),'');
-        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview7,dum,Sett.ReadBool('main','photometry'+inttostr(c)+'_check',true),P_nr);
+        if ((dum<>'') and (fileexists(dum))) then listview_add(stackmenu1.listview7,dum,Sett.ReadBool('files','photometry'+inttostr(c)+'_check',true),P_nr);
         inc(c);
       until (dum='');
 
       c:=0;
       repeat {add inspector files}
         dum:=Sett.ReadString('files','inspector'+inttostr(c),'');
-        if ((dum<>'') and (fileexists(dum))) then  listview_add(stackmenu1.listview8,dum,Sett.ReadBool('main','inspector'+inttostr(c)+'_check',true),L_nr);
+        if ((dum<>'') and (fileexists(dum))) then  listview_add(stackmenu1.listview8,dum,Sett.ReadBool('files','inspector'+inttostr(c)+'_check',true),L_nr);
         inc(c);
       until (dum='');
 
@@ -8575,7 +8578,7 @@ begin
   else
   begin {fits file created by modified unprocessed_raw}
     if loadfile then
-      result:=load_fits(filename4,true {light},true {load data},0,img); {load new fits file}
+      result:=load_fits(filename4,true {light},true {load data},true {update memo},0,img); {load new fits file}
   end;
 
   if result then filename3:=filename4; {confirm conversion succes with new fits file name}
@@ -8675,7 +8678,7 @@ begin
   {fits}
   if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')or (ext1='.WCS') or (ext1='.AXY') or (ext1='.XYLS') or (ext1='.GSC') or (ext1='.BAK')) then {FITS}
   begin
-    result:=load_fits(filename2,true {light},true,0,img_loaded);
+    result:=load_fits(filename2,true {light},true,true {update memo},0,img_loaded);
     if ((result=false) or (naxis<2))  then {{no image or failure.}
     begin
        update_menu(false);
@@ -8689,7 +8692,7 @@ begin
   begin
     if unpack_cfitsio(filename2)=false then begin beep; exit; end
     else{successful conversion using funpack}
-    result:=load_fits(filename2,true {light},true {load data},0,img_loaded); {load new fits file}
+    result:=load_fits(filename2,true {light},true {load data},true {update memo},0,img_loaded); {load new fits file}
 
     if result=false then begin update_menu(false);exit; end
     else afitsfile:=true;
@@ -9691,7 +9694,7 @@ begin
          filename2:=Strings[i];
          {load fits}
          Application.ProcessMessages;
-         if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then begin exit;end;
+         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,img_loaded)=false)) then begin exit;end;
 
          rotateleft1Click(Sender);{rotate left or right will be defined by the sender in next procedure}
          save_fits(img_loaded,FileName2,16,true);{overwrite}
@@ -10383,7 +10386,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
 
-          if load_fits(filename2,true {light},true,0,img_loaded) then {load image success}
+          if load_fits(filename2,true {light},true,true {update memo},0,img_loaded) then {load image success}
           begin
             if cd1_1=0 then
             begin
@@ -10606,7 +10609,7 @@ begin
     UpDown1.position:=UpDown1.position-1; {no more extensions}
     exit;
   end;
-  if load_fits(filename2,true,true,updown1.position,img_loaded){load fits file } then
+  if load_fits(filename2,true,true,true {update memo},updown1.position,img_loaded){load fits file } then
   begin
     if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
@@ -10958,7 +10961,7 @@ end;
 procedure FITS_BMP(filen:string);{save FITS to BMP file}
 var filename3:string;
 begin
-  if load_fits(filen,true {light},true,0,img_loaded) {load now normal} then
+  if load_fits(filen,true {light},true,true {update memo},0,img_loaded) {load now normal} then
   begin
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     filename3:=ChangeFileExt(Filen,'.bmp');
@@ -12139,7 +12142,7 @@ begin
         if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
 
         {load image and solve image}
-        if load_fits(filename2,true {light},true,0,img_loaded) then {load image success}
+        if load_fits(filename2,true {light},true,true {update memo},0,img_loaded) then {load image success}
         begin
           if ((cd1_1<>0) and (stackmenu1.ignore_header_solution1.checked=false)) then
           begin
@@ -14847,7 +14850,7 @@ begin
 
       for j:=0 to width5-1 do
       begin
-        dum:=bzero2+round(img[k,j,i]);{save all colors}
+        dum:=bzero2+max(0,min(65535,round(img[k,j,i])));{limit between 0 and 65535}
         dum:=dum and $FFFF;{mod 2018-9-10}
         wo:=dum;
         fitsbuffer2[j]:=swap(wo) and $FFFF;{in FITS file hi en low bytes are swapped}

@@ -3,12 +3,12 @@ object stackmenu1: Tstackmenu1
   Height = 717
   Top = 215
   Width = 1604
-  HorzScrollBar.Page = 1257
+  HorzScrollBar.Page = 1604
   VertScrollBar.Page = 556
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
-  ClientHeight = 717
+  ClientHeight = 700
   ClientWidth = 1604
   Color = clForm
   Icon.Data = {
@@ -53,9 +53,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.12.0'
   object Memo2: TMemo
     Left = 0
-    Height = 157
+    Height = 140
     Top = 560
-    Width = 1604
+    Width = 1850
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -202,7 +202,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 3892
+    Left = 4138
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -217,11 +217,11 @@ object stackmenu1: Tstackmenu1
   end
   object pagecontrol1: TPageControl
     Left = 0
-    Height = 493
+    Height = 476
     Hint = 'Stack menu'
     Top = 0
-    Width = 3324
-    ActivePage = Darks
+    Width = 3570
+    ActivePage = lights
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderSpacing.Around = 5
@@ -229,7 +229,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 1
+    TabIndex = 0
     TabOrder = 5
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -772,7 +772,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 465
-      ClientWidth = 1840
+      ClientWidth = 3316
       ImageIndex = 2
       ParentFont = False
       object browse_flats1: TButton
@@ -825,7 +825,7 @@ object stackmenu1: Tstackmenu1
         Height = 425
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1840
+        Width = 3316
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -951,7 +951,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
       ClientHeight = 465
-      ClientWidth = 1873
+      ClientWidth = 3316
       ImageIndex = 3
       ParentFont = False
       object browse_bias1: TButton
@@ -992,7 +992,7 @@ object stackmenu1: Tstackmenu1
         Height = 425
         Hint = 'Double click to view image'
         Top = 40
-        Width = 1873
+        Width = 3316
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -1209,7 +1209,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 465
-      ClientWidth = 1873
+      ClientWidth = 3316
       ImageIndex = 5
       ParentFont = False
       object stack_method1: TComboBox
@@ -1217,14 +1217,14 @@ object stackmenu1: Tstackmenu1
         Height = 23
         Hint = 'Select stack method.'
         Top = 24
-        Width = 190
+        Width = 222
         ItemHeight = 15
         ItemIndex = 0
         Items.Strings = (
           'Average'
           'Sigma clip average'
           'Image stiching mode'
-          'Calibration & alignment only'
+          'Calibration and alignment only'
           'Calibration only'
         )
         OnChange = stack_method1Change
@@ -1234,7 +1234,7 @@ object stackmenu1: Tstackmenu1
         Text = 'Average'
       end
       object sd_factor1: TComboBox
-        Left = 429
+        Left = 448
         Height = 23
         Hint = 'Sigma factor to identify outlier pixels. A factor of around 2.0 will remove satellite tracks and hot pixels. Sigma stands for standard deviation.'
         Top = 24
@@ -1255,7 +1255,7 @@ object stackmenu1: Tstackmenu1
         Text = '2.0'
       end
       object oversize1: TComboBox
-        Left = 429
+        Left = 448
         Height = 23
         Hint = 'Will increase the stack space around the reference image. Negative values will crop the resulting image in ratio.'
         Top = 64
@@ -1287,7 +1287,7 @@ object stackmenu1: Tstackmenu1
         Transparent = False
       end
       object Label2: TLabel
-        Left = 365
+        Left = 384
         Height = 15
         Top = 24
         Width = 44
@@ -1298,7 +1298,7 @@ object stackmenu1: Tstackmenu1
         Transparent = False
       end
       object Label6: TLabel
-        Left = 365
+        Left = 384
         Height = 15
         Top = 64
         Width = 47
@@ -1309,7 +1309,7 @@ object stackmenu1: Tstackmenu1
         Transparent = False
       end
       object Label7: TLabel
-        Left = 504
+        Left = 523
         Height = 15
         Top = 64
         Width = 30
@@ -2199,16 +2199,14 @@ object stackmenu1: Tstackmenu1
         object apply_normalise_filter1: TCheckBox
           Left = 8
           Height = 19
-          Hint = 'Colour shifts by not using a white light source for the flat frames are compensated. The flat shall be raw image.'
+          Hint = 'Colour shift by not using a white light source for the flat frames is compensated. The flat shall be raw image.'
           Top = 68
           Width = 120
           Caption = 'Normalise OSC flat'
-          Checked = True
           Color = clDefault
           Enabled = False
           ParentColor = False
           ParentFont = False
-          State = cbChecked
           TabOrder = 11
         end
         object test_osc_normalise_filter1: TButton
@@ -2229,7 +2227,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the frame alignment and solver options.'
       Caption = 'Alignment'
       ClientHeight = 465
-      ClientWidth = 2086
+      ClientWidth = 3316
       ImageIndex = 7
       ParentFont = False
       object use_star_alignment1: TRadioButton
@@ -2887,7 +2885,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 448
-      ClientWidth = 2339
+      ClientWidth = 3323
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
@@ -2895,7 +2893,7 @@ object stackmenu1: Tstackmenu1
         Height = 408
         Hint = 'Double click to view image'
         Top = 40
-        Width = 2339
+        Width = 3323
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -3186,7 +3184,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Photometry of variable stars.'
       Caption = 'Photometry'
       ClientHeight = 448
-      ClientWidth = 2581
+      ClientWidth = 3565
       ImageIndex = 19
       ParentFont = False
       object browse_photometry1: TButton
@@ -3274,7 +3272,7 @@ object stackmenu1: Tstackmenu1
         Height = 408
         Hint = 'Double click to view image'
         Top = 40
-        Width = 2581
+        Width = 3565
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True

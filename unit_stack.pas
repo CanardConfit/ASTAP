@@ -855,8 +855,9 @@ function median_background(var img :image_array;color,sizeX,sizeY,x,y:integer): 
 procedure analyse_fits(img : image_array;snr_min:double;report:boolean;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
 procedure sample(sx,sy : integer);{sampe local colour and fill shape with colour}
 procedure apply_most_common(sourc,dest: image_array; radius: integer);  {apply most common filter on first array and place result in second array}
-procedure backup_header;{backup solution and header}
-function  restore_header: boolean;{backup solution and header}
+procedure backup_solution;{backup solution}
+
+function  restore_solution: boolean;{restore solution}
 procedure report_results(object_to_process,stack_info :string;object_counter,colorinfo:integer);{report on tab results}
 procedure apply_factors;{apply r,g,b factors to image}
 procedure listviews_begin_update; {speed up making stackmenu visible having a many items}
@@ -1058,7 +1059,7 @@ begin
     result:=99.99;
 end;
 
-procedure backup_header;{backup solution and header}
+procedure backup_solution;{backup solution}
 begin
   if header_backup=nil then setlength(header_backup,1);{create memory}
   header_backup[0].crpix1:=crpix1;
@@ -1074,9 +1075,10 @@ begin
   header_backup[0].cd2_1:=cd2_1;
   header_backup[0].cd2_2:=cd2_2;
   header_backup[0].date_obs:=date_obs;
-  header_backup[0].header:=mainwindow.Memo1.Text;{backup fits header}
+//  if full then header_backup[0].header:=mainwindow.Memo1.Text;{backup fits header}
 end;
-function restore_header;{restore solution and header}
+
+function restore_solution: boolean;{restore solution and header memo}
 begin
   if header_backup=nil then begin result:=false; exit;end;{no backup}
 
@@ -1095,7 +1097,7 @@ begin
   cd2_1:=header_backup[0].cd2_1;
   cd2_2:=header_backup[0].cd2_2;
   date_obs:=header_backup[0].date_obs;
-  mainwindow.Memo1.Text:=header_backup[0].header;{restore fits header}
+//  if full then mainwindow.Memo1.Text:=header_backup[0].header;{restore fits header}
 
   header_backup:=nil; {release memory}
   result:=true;
@@ -1732,7 +1734,7 @@ begin
         if esc_pressed then begin Screen.Cursor :=Save_Cursor;  { back to normal }  exit;  end;
 
 
-        load_fits(filename2,true { update RA0..},true,0,img); {load in memory}
+        load_fits(filename2,true { update RA0..},true,false {update memo},0,img); {load in memory}
 
         if fits_file=false then {failed to load}
         begin
@@ -1901,13 +1903,18 @@ end;
 
 procedure Tstackmenu1.Analyse1Click(Sender: TObject);
 begin
-  if img_loaded<>nil then {button was used, backup img array and header and restore later}
-  begin
-    img_backup:=nil;{clear to save memory}
-    backup_img;
-  end;{backup fits for later}
+  if img_loaded<>nil then backup_solution;{save solution only}
+
   analyse_tab_images;
-  if img_loaded<>nil then restore_img; {button was used, restore original image array and header}
+
+  if img_loaded<>nil then
+  begin
+    restore_solution;{restore solution only}
+    {fix array dimensions}
+    naxis3:=length(img_loaded);{nr colours}
+    width2:=length(img_loaded[0]);{width}
+    height2:=length(img_loaded[0,0]);{length}
+  end;
 end;
 
 
@@ -2037,7 +2044,7 @@ begin
   backup_img;
 
 
-  if load_fits(filename2,true {light},true,0,img_temp) then {success load}
+  if load_fits(filename2,true {light},true,true {update memo},0,img_temp) then {success load}
   begin
     nrcolours:=length(img_loaded)-1;{nr colours - 1}
     for col:=0 to naxis3-1 do {all colors}
@@ -2599,7 +2606,7 @@ begin
     {add, multiply image}
     if length(image_to_add1.Caption)>3 then {file name available}
     begin
-      if load_fits(image_to_add1.Caption,false {dark/flat},true {load data},0,img_temp) then {succes load}
+      if load_fits(image_to_add1.Caption,false {dark/flat},true {load data},true {update memo},0,img_temp) then {succes load}
       begin
         if ((idx=5) or (idx=6)) then {apply file as flat or multiply}
         begin
@@ -2950,7 +2957,7 @@ begin
   begin
     if equalise_background_step=5 then
     begin {restart from step 1}
-      if load_fits(filename2,true {light},true,0,img_loaded) then{succes load}
+      if load_fits(filename2,true {light},true,true {update memo},0,img_loaded) then{succes load}
       begin
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
         plot_fits(mainwindow.image1,false,true);{plot real}
@@ -3237,7 +3244,7 @@ begin
       filename1:=lv.items[c].caption;
       Application.ProcessMessages; if esc_pressed then begin break;{leave loop}end;
 
-      loaded:=load_fits(filename1,light {light or dark/flat},full {full fits},0,img); {for background or background+hfd+star}
+      loaded:=load_fits(filename1,light {light or dark/flat},full {full fits},false {update memo},0,img); {for background or background+hfd+star}
 
       if loaded then
       begin {success loading header only}
@@ -3475,7 +3482,7 @@ begin
 
     {load image}
     Application.ProcessMessages;
-    if ((esc_pressed) or (load_fits(file_list[c],false {light},true,0,img_tmp1)=false))then  begin Screen.Cursor := Save_Cursor;  exit;end;
+    if ((esc_pressed) or (load_fits(file_list[c],false {light},true,true {update memo},0,img_tmp1)=false))then  begin Screen.Cursor := Save_Cursor;  exit;end;
 
     if c=0 then {init}
     begin
@@ -3699,23 +3706,35 @@ end;
 
 procedure Tstackmenu1.analyseflatsButton3Click(Sender: TObject);
 begin
-  if img_loaded<>nil then {backup img array and header and restore later}
-      begin img_backup:=nil;{clear to save memory} backup_img; end;{backup fits for later}
+  if img_loaded<>nil then backup_solution;{save solution only}
+
   analyse_listview(listview3,false {light},true {full fits},new_analyse_required3{refresh});
   new_analyse_required3:=false;{analyse done}
+
   if img_loaded<>nil then
-      restore_img; {button was used, restore original image array and header}
+   begin
+     restore_solution;{restore solution}
+     {fix array dimensions}
+     naxis3:=length(img_loaded);{nr colours}
+     width2:=length(img_loaded[0]);{width}
+     height2:=length(img_loaded[0,0]);{length}
+   end;
 end;
 
 procedure Tstackmenu1.analyseflatdarksButton4Click(Sender: TObject);
 begin
-  if img_loaded<>nil then {button was used, backup img array and header and restore later}
-  begin
-    img_backup:=nil;{clear to save memory}
-    backup_img;
-  end;{backup fits for later}
+  if img_loaded<>nil then backup_solution;{save solution only}
+
   analyse_listview(listview4,false {light},true {full fits},false{refresh});
-  if img_loaded<>nil then restore_img; {button was used, restore original image array and header}
+
+  if img_loaded<>nil then
+  begin
+    restore_solution;{restore solution}
+    {fix array dimensions}
+    naxis3:=length(img_loaded);{nr colours}
+    width2:=length(img_loaded[0]);{width}
+    height2:=length(img_loaded[0,0]);{length}
+  end;
 end;
 
 
@@ -4029,9 +4048,18 @@ end;
 
 procedure Tstackmenu1.analysedarksButton2Click(Sender: TObject);
 begin
-  if img_loaded<>nil then {button was used, backup img array and header and restore later}  begin  img_backup:=nil;{clear to save memory}  backup_img;  end;{backup fits for later}
-  analyse_listview(listview2,false {light},true {full fits},false{refresh});
-  if img_loaded<>nil then restore_img; {button was used, restore original image array and header}
+  if img_loaded<>nil then backup_solution;{save solution only}
+
+  analyse_listview(listview2,false {light},true {full fits},false{refresh}); {img_loaded array and memo1 will not be modified}
+
+  if img_loaded<>nil then
+  begin
+    restore_solution;{restore solution only}
+    {fix array dimensions}
+    naxis3:=length(img_loaded);{nr colours}
+    width2:=length(img_loaded[0]);{width}
+    height2:=length(img_loaded[0,0]);{length}
+  end;
 end;
 
 
@@ -4250,7 +4278,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then break;
         {load image}
-        if load_fits(filename2,true {light},true,0,img_loaded)=false then begin esc_pressed:=true; break;end;
+        if load_fits(filename2,true {light},true,true {update memo},0,img_loaded)=false then begin esc_pressed:=true; break;end;
 
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
@@ -4316,7 +4344,6 @@ begin
               find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
               begin
-//                save_solution_to_disk;{write to disk}
                 bsolutions[c].solution_vectorX:=solution_vectorX;
                 bsolutions[c].solution_vectorY:=solution_vectorY;
                 listview6.Items.item[c].subitems.Strings[B_solution]:='✓ '+inttostr(c);{store location in listview for case list is sorted/modified}
@@ -4324,13 +4351,11 @@ begin
                 memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                    +'  Solution x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
                    +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) );
-//                solut:=true;
               end
               else
               begin
                 memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
                 reset_solution_vectors(1);{default for no solution}
-  //              solut:=false;
               end;
             end;
           end
@@ -4500,7 +4525,7 @@ begin
                  ListView1.ItemIndex := 0;{show wich file is processed}
   filename2:=Listview1.selected.caption;
 
-  if load_fits(filename2,true {light},true,0,img_loaded)=false then
+  if load_fits(filename2,true {light},true,true {update memo},0,img_loaded)=false then
   begin
     memo2_message('Abort, can'+#39+'t load '+ filename2);
     Screen.Cursor :=Save_Cursor;    { back to normal }
@@ -5106,7 +5131,7 @@ begin
       Application.ProcessMessages;
 
       {load image}
-      if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then
+      if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,img_loaded)=false)) then
       begin
         Screen.Cursor :=Save_Cursor;{back to normal }
         exit;
@@ -5473,7 +5498,7 @@ begin
       listview6.ItemIndex := c;{mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
       listview6.Items[c].MakeVisible(False);{scroll to selected item}
 
-      if load_fits(filename2,true {light},true,0,img_loaded)=false then begin esc_pressed:=true; break;end;  {load fits}
+      if load_fits(filename2,true {light},true,true {update memo},0,img_loaded)=false then begin esc_pressed:=true; break;end;  {load fits}
 
       Application.ProcessMessages;
       if esc_pressed then break;
@@ -5863,7 +5888,7 @@ begin
       begin {read solution}
         {load file, and convert astrometric solution to vector solution}
         filename2:=stackmenu1.listview7.items[c].caption;
-        if load_fits(filename2,true {light},false {only read header},0,img_loaded)=false then begin esc_pressed:=true; exit;end;
+        if load_fits(filename2,true {light},false {only read header},false {update memo},0,img_loaded)=false then begin esc_pressed:=true; exit;end;
         {calculate vectors from astrometric solution to speed up}
         sincos(dec0,SIN_dec0,COS_dec0); {do this in advance since it is for each pixel the same}
         astrometric_to_vector;{convert astrometric solution to vectors}
@@ -6100,7 +6125,7 @@ begin
       Application.ProcessMessages;
 
       {load image}
-      if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then
+      if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,img_loaded)=false)) then
       begin
         nil_all;{nil all arrays and restore cursor}
         exit;
@@ -6179,7 +6204,7 @@ begin
         end;
 
         {load image}
-        if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then
+        if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,img_loaded)=false)) then
         begin
            esc_pressed:=true;
            nil_all;
@@ -7471,7 +7496,7 @@ begin
         if esc_pressed then
                      break;
         {load image}
-        if load_fits(filename2,true {light},true,0,img_loaded)=false then begin esc_pressed:=true; break;end;
+        if load_fits(filename2,true {light},true,true {update memo},0,img_loaded)=false then begin esc_pressed:=true; break;end;
 
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
@@ -7626,7 +7651,7 @@ begin
 
       memo2_message('Loading master dark file '+filen);
       dark_count:=0;{set back to zero}
-      if load_fits(filen,false {light},true,0,img_dark)=false then begin memo2_message('Error'); dark_count:=0; exit; end;
+      if load_fits(filen,false {light},true,false {update memo},0,img_dark)=false then begin memo2_message('Error'); dark_count:=0; exit; end;
       {load master in memory img_dark}
       last_dark_loaded:=filen; {required for for change in light_jd}
       if dark_count=0 then dark_count:=1; {is normally updated by load_fits}
@@ -7675,16 +7700,16 @@ begin
     begin
       memo2_message('Loading master flat file '+filen);
       flat_count:=0;{set back to zero}
-      if load_fits(filen,false {light},true,0,img_flat)=false then begin memo2_message('Error'); flat_count:=0; exit; end;
+      if load_fits(filen,false {light},true,false {update memo},0,img_flat)=false then begin memo2_message('Error'); flat_count:=0; exit; end;
       {load master in memory img_flat}
       last_flat_loaded:=filen; {required for for change in light_jd}
       flat_filter:=filter; {mark as loaded}
       if flat_count=0 then flat_count:=1; {is normally updated by load_fits}
 
-      if stackmenu1.apply_normalise_filter1.checked then
+      if  ((stackmenu1.make_osc_color1.checked) and (stackmenu1.apply_normalise_filter1.checked)) then
       begin
         memo2_message('Applying normalise filter on master (OSC) flat.');
-        normalize_OSC_flat(img_loaded);
+        normalize_OSC_flat(img_flat);
       end
 
     end;
@@ -8088,9 +8113,7 @@ begin
 
         {load image}
         Application.ProcessMessages;
-        if ((esc_pressed) or (load_fits(filename2,true {light},true,0,img_loaded)=false)) then begin memo2_message('Error');{can't load} Screen.Cursor := Save_Cursor; exit;end;
-
-        backup_header;{backup header and solution}
+        if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo, required for updates},0,img_loaded)=false)) then begin memo2_message('Error');{can't load} Screen.Cursor := Save_Cursor; exit;end;
 
         apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
 
@@ -8112,8 +8135,6 @@ begin
         if make_osc_color1.checked then {do demosaic bayer}
             demosaic_bayer(img_loaded); {convert OSC image to colour}
          {naxis3 is now 3}
-
-        restore_header;{restore header and solution}
 
         update_text   ('COMMENT 1','  Calibrated by ASTAP. www.hnsky.org');
         update_text   ('CALSTAT =',#39+calstat+#39); {calibration status}
@@ -8140,6 +8161,9 @@ begin
       end;
     end;
   end;{with stackmenu1 do}
+
+  plot_fits(mainwindow.image1,true,true);{update to last image, activate memo1}
+
   Screen.Cursor:=Save_Cursor;
   memo2_message('Calibration of the individual files is complete. New files are posted in the results tab');
 end;
@@ -8362,7 +8386,7 @@ begin
         if esc_pressed then begin restore_img; Screen.Cursor := Save_Cursor; exit;end;
 
         {load file}
-        if load_fits(filename2,true {light},true,0,img_loaded){important required to check CD1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
+        if load_fits(filename2,true {light},true,true {update memo},0,img_loaded){important required to check CD1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
         if ((cd1_1=0) or (ignore)) then solution:= create_internal_solution(img_loaded) else solution:=true;
 
         if solution=false then
@@ -8410,7 +8434,7 @@ begin
         if esc_pressed then begin restore_img; Screen.Cursor := Save_Cursor; exit;end;
 
         {load file}
-        if load_fits(filename2,true {light},true,0,img_loaded){important required to check CD1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
+        if load_fits(filename2,true {light},true,true {update memo},0,img_loaded){important required to check CD1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
 
         crota2:=fnmodulo(crota2,360);
         if ((crota2>=90) and (crota2<270)) then
@@ -8450,7 +8474,7 @@ begin
         if esc_pressed then begin restore_img; Screen.Cursor := Save_Cursor; exit;end;
 
         {load file}
-        if load_fits(filename2,true {light},true,0,img_loaded){important required to check CD1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
+        if load_fits(filename2,true {light},true,true {update memo},0,img_loaded){important required to check CD1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
         plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add_annotations});
         if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2); Screen.Cursor := Save_Cursor; exit;end;
         get_annotation_position;{fill the x,y with annotation position}
@@ -8765,57 +8789,35 @@ begin
     Screen.Cursor := Save_Cursor;  { Always restore to normal }
     if esc_pressed then begin progress_indicator(-2,'ESC'); restore_img;exit;end;
 
-    fits_file:=true;
-    nrbits:=-32; {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
 
     if cal_and_align=false then {do not do this for calibration and alignment only}
-
-    if ((monofile){success none lrgb loop} or (counter_colours<>0{length(extra2)>=2} {lrgb loop})) then
     begin
-      if  counter_colours<>0{length(extra2)>=2} {lrgb loop} then
+      fits_file:=true;
+      nrbits:=-32; {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
+
+      if ((monofile){success none lrgb loop} or (counter_colours<>0{length(extra2)>=2} {lrgb loop})) then
       begin
-        if  stackmenu1.lrgb_auto_level1.checked then
+        if  counter_colours<>0{length(extra2)>=2} {lrgb loop} then
         begin
-          memo2_message('Adjusting colour levels as set in tab "stack method"');
-          stackmenu1.auto_background_level1Click(nil);
-          apply_factors;{histogram is after this action invalid}
-          stackmenu1.reset_factors1Click(nil);{reset factors to default}
-
-          if stackmenu1.green_purple_filter1.checked then
-          begin
-            memo2_message('Applying "remove green and purple" filter');
-            green_purple_filter(img_loaded);
-          end;
-
-          use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-
-          if stackmenu1.lrgb_colour_smooth1.checked then
-          begin
-            memo2_message('Applying colour-smoothing filter image as set in tab "stack method"');
-            smart_colour_smooth(img_loaded,strtofloat2(lrgb_smart_smooth_width1.text),strtofloat2(lrgb_smart_colour_sd1.text),lrgb_preserve_r_nebula1.checked,false {get  hist});{histogram doesn't needs an update}
-          end
-        end
-        else
-        begin
-          memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
-          use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-        end;
-      end
-      else
-      begin
-        if stackmenu1.make_osc_color1.checked then
-        begin
-          if  stackmenu1.osc_auto_level1.checked then
+          if  stackmenu1.lrgb_auto_level1.checked then
           begin
             memo2_message('Adjusting colour levels as set in tab "stack method"');
             stackmenu1.auto_background_level1Click(nil);
             apply_factors;{histogram is after this action invalid}
             stackmenu1.reset_factors1Click(nil);{reset factors to default}
-            use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-            if stackmenu1.osc_colour_smooth1.checked then
+
+            if stackmenu1.green_purple_filter1.checked then
             begin
-              memo2_message('Applying colour-smoothing filter image as set in tab "stack method". Factors are set in tab pixel math 1');
-              smart_colour_smooth(img_loaded,strtofloat2(osc_smart_smooth_width1.text),strtofloat2(osc_smart_colour_sd1.text),osc_preserve_r_nebula1.checked,false {get  hist});{histogram doesn't needs an update}
+              memo2_message('Applying "remove green and purple" filter');
+              green_purple_filter(img_loaded);
+            end;
+
+            use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+
+            if stackmenu1.lrgb_colour_smooth1.checked then
+            begin
+              memo2_message('Applying colour-smoothing filter image as set in tab "stack method"');
+              smart_colour_smooth(img_loaded,strtofloat2(lrgb_smart_smooth_width1.text),strtofloat2(lrgb_smart_colour_sd1.text),lrgb_preserve_r_nebula1.checked,false {get  hist});{histogram doesn't needs an update}
             end
           end
           else
@@ -8824,195 +8826,216 @@ begin
             use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
           end;
         end
-        else {mono files}
-        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-      end;
-
-      restore_header;{restore header and solution}{use saved fits header first FITS file as saved in unit_stack_routines}
-
-      plot_fits(mainwindow.image1,true,true);{plot real}
-
-      remove_key('DATE    ',false{all});{no purpose anymore for the orginal date written}
-      remove_key('EXPTIME',false{all}); {remove, will be added later in the header}
-      remove_key('EXPOSURE',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
-      remove_key('CCD-TEMP',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
-      remove_key('SET-TEMP',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
-      remove_key('LIGH_CNT',false{all});{remove, will be replaced by LUM_CNT, RED_CNT.....}
-      remove_key('DARK_CNT',false{all});{remove, will be replaced by LUM_DARK, RED_DARK.....}
-      remove_key('FLAT_CNT',false{all});{remove, will be replaced by LUM_FLAT, RED_FLAT.....}
-      remove_key('BIAS_CNT',false{all});{remove, will be replaced by LUM_BIAS, RED_BIAS.....}
-
-      { ASTAP keyword standard:}
-      { interim files can contain keywords: EXPTIME, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
-      { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
-
-      update_text   ('COMMENT 1','  Written by ASTAP. www.hnsky.org');
-
-      calstat:=calstat+'S'; {status stacked}
-      update_text ('CALSTAT =',#39+calstat+#39); {calibration status}
-
-      if use_manual_alignment1.checked=false then {don't do this for manual stacking and moving object. Keep the date of the reference image for correct annotation of asteroids}
-      begin
-        remove_key('EXPOSURE',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
-        date_obs:=jdToDate(jd_stop);
-        update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
-        if ((naxis3=1) and (counterL>0)) then {works only for mono}
-        begin
-          update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ', jd_sum/counterL);{give midpoint of exposures}
-          date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
-          update_text ('DATE-AVG=',#39+date_avg+#39);{give midpoint of exposures}
-          add_text   ('COMMENT ',' UT midpoint in decimal notation: '+ UTdecimal(date_avg));
-        end;
-      end
-      else;{keep EXPOSURE and date_obs from reference image for accurate asteroid annotation}
-
-      if pos('D',calstat)>0 then add_text   ('COMMENT ',' D='+ExtractFileName( last_dark_loaded ));
-      if pos('F',calstat)>0 then add_text   ('COMMENT ',' F='+ExtractFileName( last_flat_loaded ));
-
-      if sigma_mode then
-        update_text   ('HISTORY 1','  Stacking method SIGMA CLIP AVERAGE') else
-           update_text   ('HISTORY 1','  Stacking method AVERAGE');{overwrite also any existing header info}
-
-      if naxis3>1 then
-      begin
-        if make_osc_color1.checked then
-        begin
-          remove_key('BAYERPAT',false{all});{remove key word in header}
-          remove_key('XBAYROFF',false{all});{remove key word in header}
-          remove_key('YBAYROFF',false{all});{remove key word in header}
-          update_text('HISTORY 2','  De-mosaic bayer pattern used '+bayer_pattern[bayerpattern_final]);
-          update_text('HISTORY 3','  Colour conversion: '+ stackmenu1.demosaic_method1.text+ ' interpolation.')
-        end
         else
-        update_text('HISTORY 2','  Combined to colour image.');
-      end
-      else
-         update_text('HISTORY 2','  Processed as gray scale images.');
-
-      if lrgb=false then {monochrome}
-      begin
-        {adapt astrometric solution. For colour this is already done during luminance stacking}
-        if ((over_size<>0) and ( cd1_1<>0){solution}) then {adapt astrometric solution for intermediate file}
-        begin {adapt reference pixels of plate solution due to oversize}
-          crpix1:=crpix1+over_size;
-          if over_size>0 then
-            crpix2:=crpix2+over_size
-          else
-          crpix2:=crpix2+round(over_size*height2/width2); {if oversize is negative then shrinking is done in ratio. Y shrinkage is done with factor round(oversize*height/width. Adapt crpix2 accordingly.}
-          update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
-          update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
-        end;
-
-        exposure:=sum_exp;{for annotation asteroid}
-        update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(exposure));
-        add_integer('LUM_EXP =',' / Average luminance exposure time.               ' ,exposureL);
-        add_integer('LUM_CNT =',' / Luminance images combined.                     ' ,counterL);
-        add_integer('LUM_DARK=',' / Darks used for luminance.                      ' ,dark_count);
-        add_integer('LUM_FLAT=',' / Flats used for luminance.                      ' ,flat_count);
-        add_integer('LUM_BIAS=',' / Flat-darks used for luminance.                 ' ,flatdark_count);
-        add_integer('LUM_TEMP=',' / Set temperature used for luminance.            ' ,set_temperature);
-
-        thefilters:=filter_name; {used later for file name}
-        stack_info:=' '+inttostr(flatdark_count)+'x'+'FD  '+
-                        inttostr(flat_count)+'x'+'F  '+
-                        inttostr(dark_count)+'x'+'D  '+
-                        inttostr(counterL)+'x'+inttostr(exposureL)+'L  ('+thefilters+')'; {exposure}
-      end
-      else {made LRGB color}
-      begin
-        naxis:=3;{will be written in save routine}
-        naxis3:=3;{will be written in save routine, {naxis3 is update in  save_fits}
-        if length(extra2)>1 then update_text('FILTER  =',#39+'        '+#39);{wipe filter info}
-        exposure:=exposureL*counterL;{for annotation asteroid}
-        update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(exposure)); {could be used for midpoint. Download time are not included, so it is not perfect}
-
-        if counterL>0 then
         begin
-          add_integer('LUM_EXP =',' / Luminance exposure time.                       ' ,exposureL);
-          add_integer('LUM_CNT =',' / Luminance images combined.                     ' ,counterL);
-          add_integer('LUM_DARK=',' / Darks used for luminance.                      ' ,counterLdark);
-          add_integer('LUM_FLAT=',' / Flats used for luminance.                      ' ,counterLflat);
-          add_integer('LUM_BIAS=',' / Flat-darks used for luminance.                 ' ,counterLbias);
-          add_integer('LUM_TEMP=',' / Set temperature used for luminance.            ' ,temperatureL);
-        end;
-        if counterR>0 then
-        begin
-          add_integer('RED_EXP =',' / Red exposure time.                             ' ,exposureR);
-          add_integer('RED_CNT =',' / Red filter images combined.                    ' ,counterR);
-          add_integer('RED_DARK=',' / Darks used for red.                            ' ,counterRdark);
-          add_integer('RED_FLAT=',' / Flats used for red.                            ' ,counterRflat);
-          add_integer('RED_BIAS=',' / Flat-darks used for red.                       ' ,counterRbias);
-          add_integer('RED_TEMP=',' / Set temperature used for red.                  ' ,temperatureR);
-        end;
-        if counterG>0 then
-        begin
-          add_integer('GRN_EXP =',' / Green exposure time.                           ' ,exposureG);
-          add_integer('GRN_CNT =',' / Green filter images combined.                  ' ,counterG);
-          add_integer('GRN_DARK=',' / Darks used for green.                          ' ,counterGdark);
-          add_integer('GRN_FLAT=',' / Flats used for green.                          ' ,counterGflat);
-          add_integer('GRN_BIAS=',' / Flat-darks used for green.                     ' ,counterGbias);
-          add_integer('GRN_TEMP=',' / Set temperature used for green.                ' ,temperatureG);
-        end;
-        if counterB>0 then
-        begin
-          add_integer('BLU_EXP =',' / Blue exposure time.                            ' ,exposureB);
-          add_integer('BLU_CNT =',' / Blue filter images combined.                   ' ,counterB);
-          add_integer('BLU_DARK=',' / Darks used for blue.                           ' ,counterBdark);
-          add_integer('BLU_FLAT=',' / Flats used for blue.                           ' ,counterBflat);
-          add_integer('BLU_BIAS=',' / Flat-darks used for blue.                      ' ,counterBbias);
-          add_integer('BLU_TEMP=',' / Set temperature used for blue.                 ' ,temperatureB);
-        end;
-        if counterRGB>0 then
-        begin
-          add_integer('RGB_EXP =',' / OSC exposure time.                             ' ,exposureRGB);
-          add_integer('RGB_CNT =',' / OSC images combined.                           ' ,counterRGB);
-          add_integer('RGB_DARK=',' / Darks used for OSC.                            ' ,counterRGBdark);
-          add_integer('RGB_FLAT=',' / Flats used for OSC.                            ' ,counterRGBflat);
-          add_integer('RGB_BIAS=',' / Flat-darks used for OSC.                       ' ,counterRGBbias);
-          add_integer('RGB_TEMP=',' / Set temperature used for OSC.                  ' ,temperatureRGB);
+          if stackmenu1.make_osc_color1.checked then
+          begin
+            if  stackmenu1.osc_auto_level1.checked then
+            begin
+              memo2_message('Adjusting colour levels as set in tab "stack method"');
+              stackmenu1.auto_background_level1Click(nil);
+              apply_factors;{histogram is after this action invalid}
+              stackmenu1.reset_factors1Click(nil);{reset factors to default}
+              use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+              if stackmenu1.osc_colour_smooth1.checked then
+              begin
+                memo2_message('Applying colour-smoothing filter image as set in tab "stack method". Factors are set in tab pixel math 1');
+                smart_colour_smooth(img_loaded,strtofloat2(osc_smart_smooth_width1.text),strtofloat2(osc_smart_colour_sd1.text),osc_preserve_r_nebula1.checked,false {get  hist});{histogram doesn't needs an update}
+              end
+            end
+            else
+            begin
+              memo2_message('Adjusting colour levels and colour smooth are disabled. See tab "stack method"');
+              use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+            end;
+          end
+          else {mono files}
+          use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
         end;
 
-        if counterL>0 then add_text   ('COMMENT 2','  Total luminance exposure '+inttostr(round(counterL*exposureL))+', filter '+filters_used[4]);
-        if counterR>0 then add_text   ('COMMENT 3','  Total red exposure       '+inttostr(round(counterR*exposureR))+', filter '+filters_used[0] );
-        if counterG>0 then add_text   ('COMMENT 4','  Total green exposure     '+inttostr(round(counterG*exposureG))+', filter '+filters_used[1] );
-        if counterB>0 then add_text   ('COMMENT 5','  Total blue exposure      '+inttostr(round(counterB*exposureB))+', filter '+filters_used[2] );
-        if counterRGB>0 then add_text   ('COMMENT 6','  Total RGB exposure      '+inttostr(round(counterRGB*exposureRGB))+', filter '+filters_used[3] );
+        plot_fits(mainwindow.image1,true,true);{plot real}
+
+        remove_key('DATE    ',false{all});{no purpose anymore for the orginal date written}
+        remove_key('EXPTIME',false{all}); {remove, will be added later in the header}
+        remove_key('EXPOSURE',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
+        remove_key('CCD-TEMP',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
+        remove_key('SET-TEMP',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
+        remove_key('LIGH_CNT',false{all});{remove, will be replaced by LUM_CNT, RED_CNT.....}
+        remove_key('DARK_CNT',false{all});{remove, will be replaced by LUM_DARK, RED_DARK.....}
+        remove_key('FLAT_CNT',false{all});{remove, will be replaced by LUM_FLAT, RED_FLAT.....}
+        remove_key('BIAS_CNT',false{all});{remove, will be replaced by LUM_BIAS, RED_BIAS.....}
+
         { ASTAP keyword standard:}
         { interim files can contain keywords: EXPTIME, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
         { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
+        update_text   ('COMMENT 1','  Written by ASTAP. www.hnsky.org');
+
+        calstat:=calstat+'S'; {status stacked}
+        update_text ('CALSTAT =',#39+calstat+#39); {calibration status}
+
+        if use_manual_alignment1.checked=false then {don't do this for manual stacking and moving object. Keep the date of the reference image for correct annotation of asteroids}
+        begin
+          remove_key('EXPOSURE',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
+          date_obs:=jdToDate(jd_stop);
+          update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
+          if ((naxis3=1) and (counterL>0)) then {works only for mono}
+          begin
+            update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ', jd_sum/counterL);{give midpoint of exposures}
+            date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
+            update_text ('DATE-AVG=',#39+date_avg+#39);{give midpoint of exposures}
+            add_text   ('COMMENT ',' UT midpoint in decimal notation: '+ UTdecimal(date_avg));
+          end;
+        end
+        else;{keep EXPOSURE and date_obs from reference image for accurate asteroid annotation}
+
+        if pos('D',calstat)>0 then add_text   ('COMMENT ',' D='+ExtractFileName( last_dark_loaded ));
+        if pos('F',calstat)>0 then add_text   ('COMMENT ',' F='+ExtractFileName( last_flat_loaded ));
+
+        if sigma_mode then
+          update_text   ('HISTORY 1','  Stacking method SIGMA CLIP AVERAGE') else
+             update_text   ('HISTORY 1','  Stacking method AVERAGE');{overwrite also any existing header info}
+
+        if naxis3>1 then
+        begin
+          if make_osc_color1.checked then
+          begin
+            remove_key('BAYERPAT',false{all});{remove key word in header}
+            remove_key('XBAYROFF',false{all});{remove key word in header}
+            remove_key('YBAYROFF',false{all});{remove key word in header}
+            update_text('HISTORY 2','  De-mosaic bayer pattern used '+bayer_pattern[bayerpattern_final]);
+            update_text('HISTORY 3','  Colour conversion: '+ stackmenu1.demosaic_method1.text+ ' interpolation.')
+          end
+          else
+          update_text('HISTORY 2','  Combined to colour image.');
+        end
+        else
+           update_text('HISTORY 2','  Processed as gray scale images.');
+
+        if lrgb=false then {monochrome}
+        begin
+          {adapt astrometric solution. For colour this is already done during luminance stacking}
+          if ((over_size<>0) and ( cd1_1<>0){solution}) then {adapt astrometric solution for intermediate file}
+          begin {adapt reference pixels of plate solution due to oversize}
+            crpix1:=crpix1+over_size;
+            if over_size>0 then
+              crpix2:=crpix2+over_size
+            else
+            crpix2:=crpix2+round(over_size*height2/width2); {if oversize is negative then shrinking is done in ratio. Y shrinkage is done with factor round(oversize*height/width. Adapt crpix2 accordingly.}
+            update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
+            update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
+          end;
+
+          exposure:=sum_exp;{for annotation asteroid}
+          update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(exposure));
+          add_integer('LUM_EXP =',' / Average luminance exposure time.               ' ,exposureL);
+          add_integer('LUM_CNT =',' / Luminance images combined.                     ' ,counterL);
+          add_integer('LUM_DARK=',' / Darks used for luminance.                      ' ,dark_count);
+          add_integer('LUM_FLAT=',' / Flats used for luminance.                      ' ,flat_count);
+          add_integer('LUM_BIAS=',' / Flat-darks used for luminance.                 ' ,flatdark_count);
+          add_integer('LUM_TEMP=',' / Set temperature used for luminance.            ' ,set_temperature);
+
+          thefilters:=filter_name; {used later for file name}
+          stack_info:=' '+inttostr(flatdark_count)+'x'+'FD  '+
+                          inttostr(flat_count)+'x'+'F  '+
+                          inttostr(dark_count)+'x'+'D  '+
+                          inttostr(counterL)+'x'+inttostr(exposureL)+'L  ('+thefilters+')'; {exposure}
+        end
+        else {made LRGB color}
+        begin
+          naxis:=3;{will be written in save routine}
+          naxis3:=3;{will be written in save routine, {naxis3 is update in  save_fits}
+          if length(extra2)>1 then update_text('FILTER  =',#39+'        '+#39);{wipe filter info}
+          exposure:=exposureL*counterL;{for annotation asteroid}
+          update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(exposure)); {could be used for midpoint. Download time are not included, so it is not perfect}
+
+          if counterL>0 then
+          begin
+            add_integer('LUM_EXP =',' / Luminance exposure time.                       ' ,exposureL);
+            add_integer('LUM_CNT =',' / Luminance images combined.                     ' ,counterL);
+            add_integer('LUM_DARK=',' / Darks used for luminance.                      ' ,counterLdark);
+            add_integer('LUM_FLAT=',' / Flats used for luminance.                      ' ,counterLflat);
+            add_integer('LUM_BIAS=',' / Flat-darks used for luminance.                 ' ,counterLbias);
+            add_integer('LUM_TEMP=',' / Set temperature used for luminance.            ' ,temperatureL);
+          end;
+          if counterR>0 then
+          begin
+            add_integer('RED_EXP =',' / Red exposure time.                             ' ,exposureR);
+            add_integer('RED_CNT =',' / Red filter images combined.                    ' ,counterR);
+            add_integer('RED_DARK=',' / Darks used for red.                            ' ,counterRdark);
+            add_integer('RED_FLAT=',' / Flats used for red.                            ' ,counterRflat);
+            add_integer('RED_BIAS=',' / Flat-darks used for red.                       ' ,counterRbias);
+            add_integer('RED_TEMP=',' / Set temperature used for red.                  ' ,temperatureR);
+          end;
+          if counterG>0 then
+          begin
+            add_integer('GRN_EXP =',' / Green exposure time.                           ' ,exposureG);
+            add_integer('GRN_CNT =',' / Green filter images combined.                  ' ,counterG);
+            add_integer('GRN_DARK=',' / Darks used for green.                          ' ,counterGdark);
+            add_integer('GRN_FLAT=',' / Flats used for green.                          ' ,counterGflat);
+            add_integer('GRN_BIAS=',' / Flat-darks used for green.                     ' ,counterGbias);
+            add_integer('GRN_TEMP=',' / Set temperature used for green.                ' ,temperatureG);
+          end;
+          if counterB>0 then
+          begin
+            add_integer('BLU_EXP =',' / Blue exposure time.                            ' ,exposureB);
+            add_integer('BLU_CNT =',' / Blue filter images combined.                   ' ,counterB);
+            add_integer('BLU_DARK=',' / Darks used for blue.                           ' ,counterBdark);
+            add_integer('BLU_FLAT=',' / Flats used for blue.                           ' ,counterBflat);
+            add_integer('BLU_BIAS=',' / Flat-darks used for blue.                      ' ,counterBbias);
+            add_integer('BLU_TEMP=',' / Set temperature used for blue.                 ' ,temperatureB);
+          end;
+          if counterRGB>0 then
+          begin
+            add_integer('RGB_EXP =',' / OSC exposure time.                             ' ,exposureRGB);
+            add_integer('RGB_CNT =',' / OSC images combined.                           ' ,counterRGB);
+            add_integer('RGB_DARK=',' / Darks used for OSC.                            ' ,counterRGBdark);
+            add_integer('RGB_FLAT=',' / Flats used for OSC.                            ' ,counterRGBflat);
+            add_integer('RGB_BIAS=',' / Flat-darks used for OSC.                       ' ,counterRGBbias);
+            add_integer('RGB_TEMP=',' / Set temperature used for OSC.                  ' ,temperatureRGB);
+          end;
+
+          if counterL>0 then add_text   ('COMMENT 2','  Total luminance exposure '+inttostr(round(counterL*exposureL))+', filter '+filters_used[4]);
+          if counterR>0 then add_text   ('COMMENT 3','  Total red exposure       '+inttostr(round(counterR*exposureR))+', filter '+filters_used[0] );
+          if counterG>0 then add_text   ('COMMENT 4','  Total green exposure     '+inttostr(round(counterG*exposureG))+', filter '+filters_used[1] );
+          if counterB>0 then add_text   ('COMMENT 5','  Total blue exposure      '+inttostr(round(counterB*exposureB))+', filter '+filters_used[2] );
+          if counterRGB>0 then add_text   ('COMMENT 6','  Total RGB exposure      '+inttostr(round(counterRGB*exposureRGB))+', filter '+filters_used[3] );
+          { ASTAP keyword standard:}
+          { interim files can contain keywords: EXPTIME, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
+          { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
 
-        thefilters:='';
-        for i:=0 to 4 do if length(filters_used[i])>0 then thefilters:=thefilters+' '+filters_used[i];
-        thefilters:=trim(thefilters);
 
-//        thefilters:=filters_used[0]+' '+filters_used[1]+' '+filters_used[2]+' '+filters_used[3]; {for filename info}
-        stack_info:=' '+inttostr(flatdark_count)+'x'+'FD  '+
-                        inttostr(flat_count)+'x'+'F  '+
-                        inttostr(dark_count)+'x'+'D  '+
-                        inttostr(counterR)+'x'+inttostr(exposureR)+'R  '+
-                        inttostr(counterG)+'x'+inttostr(exposureG)+'G  '+
-                        inttostr(counterB)+'x'+inttostr(exposureB)+'B  '+
-                        inttostr(counterRGB)+'x'+inttostr(exposureRGB)+'RGB  '+
-                        inttostr(counterL)+'x'+inttostr(exposureL)+'L  ('+thefilters+')'; {exposure}
-      end;
+          thefilters:='';
+          for i:=0 to 4 do if length(filters_used[i])>0 then thefilters:=thefilters+' '+filters_used[i];
+          thefilters:=trim(thefilters);
 
-      filename2:=extractfilepath(filename2)+propose_file_name(object_to_process,thefilters);{give it a nice file name}
+  //        thefilters:=filters_used[0]+' '+filters_used[1]+' '+filters_used[2]+' '+filters_used[3]; {for filename info}
+          stack_info:=' '+inttostr(flatdark_count)+'x'+'FD  '+
+                          inttostr(flat_count)+'x'+'F  '+
+                          inttostr(dark_count)+'x'+'D  '+
+                          inttostr(counterR)+'x'+inttostr(exposureR)+'R  '+
+                          inttostr(counterG)+'x'+inttostr(exposureG)+'G  '+
+                          inttostr(counterB)+'x'+inttostr(exposureB)+'B  '+
+                          inttostr(counterRGB)+'x'+inttostr(exposureRGB)+'RGB  '+
+                          inttostr(counterL)+'x'+inttostr(exposureL)+'L  ('+thefilters+')'; {exposure}
+        end;
 
-      if cd1_1<>0 then memo2_message('Astrometric solution reference file preserved for stack.');
-      memo2_message('█ █ █  Saving result '+inttostr(image_counter)+' as '+filename2);
-      save_fits(img_loaded,filename2,-32, true);
+        filename2:=extractfilepath(filename2)+propose_file_name(object_to_process,thefilters);{give it a nice file name}
+
+        if cd1_1<>0 then memo2_message('Astrometric solution reference file preserved for stack.');
+        memo2_message('█ █ █  Saving result '+inttostr(image_counter)+' as '+filename2);
+        save_fits(img_loaded,filename2,-32, true);
 
 
-      if naxis3>1 then report_results(object_to_process,stack_info,object_counter,3 {color icon}) {report result in tab results}
-                  else report_results(object_to_process,stack_info,object_counter,4 {gray icon}); {report result in tab results}
+        if naxis3>1 then report_results(object_to_process,stack_info,object_counter,3 {color icon}) {report result in tab results}
+                    else report_results(object_to_process,stack_info,object_counter,4 {gray icon}); {report result in tab results}
 
-      memo2.lines.add('Finished in '+IntToStr( round((gettickcount64 - startTick)/1000)) + ' sec. The FITS header contains a detailed history.');
+        memo2.lines.add('Finished in '+IntToStr( round((gettickcount64 - startTick)/1000)) + ' sec. The FITS header contains a detailed history.');
 
-      {close the window}
-    end; {not zero count}
-
+        {close the window}
+      end; {not zero count}
+    end; {not calibration and alignment}
     Application.ProcessMessages;{look for keyboard instructions}
     total_counter:=total_counter+counterL; {keep record of lights done}
 
