@@ -1278,10 +1278,11 @@ object mainwindow: Tmainwindow
           Hint = 'Writes HFD values near each star and in the FITS file. No HFD filtering.'
           OnClick = hfd_contour1Click
         end
-        object annotatemedian1: TMenuItem
+        object annotatemedianbackground1: TMenuItem
           Caption = 'Median background values'
+          Enabled = False
           Hint = 'The median background values are annotated  in the image in ration to the center value.'
-          OnClick = annotatemedian1Click
+          OnClick = annotatemedianbackground1Click
         end
         object MenuItem25: TMenuItem
           Caption = '-'

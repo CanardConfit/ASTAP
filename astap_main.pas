@@ -104,7 +104,7 @@ type
     ccdinspector10_1: TMenuItem;
     freetext1: TMenuItem;
     extend1: TMenuItem;
-    annotatemedian1: TMenuItem;
+    annotatemedianbackground1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
     MenuItem26: TMenuItem;
@@ -344,7 +344,7 @@ type
     procedure extractgreen1Click(Sender: TObject);
     procedure grid1Click(Sender: TObject);
     procedure ccdinspector10_1Click(Sender: TObject);
-    procedure annotatemedian1Click(Sender: TObject);
+    procedure annotatemedianbackground1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
     procedure removegreenpurple1Click(Sender: TObject);
     procedure sip1Click(Sender: TObject);
@@ -3166,7 +3166,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.552, '+about_message4+', dated 2021-6-12';
+  #13+#10+'ASTAP version ß0.9.552a, '+about_message4+', dated 2021-6-13';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4864,6 +4864,7 @@ begin
     mainwindow.inspector_diagram1.enabled:=fits; {Voronoi}
     mainwindow.hfd_contour1.enabled:=fits; {2D contour}
     mainwindow.inspector_hfd_values1.enabled:=fits; {add hfd values}
+    mainwindow.annotatemedianbackground1.enabled:=fits; {add hfd values}
 
     mainwindow.convertmono1.enabled:=fits;
 
@@ -9039,9 +9040,9 @@ begin
 end;
 
 
-procedure Tmainwindow.annotatemedian1Click(Sender: TObject);
+procedure Tmainwindow.annotatemedianbackground1Click(Sender: TObject);
 var
- tx,ty,size,diam, i, j,starX,starY, retries,max_stars,fontsize,halfstepX,halfstepY: integer;
+ tx,ty,size,diam, i, j,starX,starY, retries,max_stars,fontsize,halfstepX,halfstepY,stepX,stepY: integer;
  X,Y,stepsizeX,stepsizeY,median,median_center,factor          : double;
  Save_Cursor:TCursor;
  img_bk                                    : image_array;
@@ -9056,19 +9057,19 @@ begin
   if naxis3>1 then {colour image}
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_bk,naxis3,width2,height2);{force a duplication}
-//    convert_mono(img_loaded);
+    setlength(img_bk,naxis3,width2,height2);{force a duplication to a backup image}
+    convert_mono(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
-    restore_req:=true;
+    restore_req:=true;{restore orginal image later}
   end
   else
   if mainwindow.bayer_image1.checked then {raw Bayer image}
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_bk,naxis3,width2,height2);{force a duplication}
+    setlength(img_bk,naxis3,width2,height2);{force a duplication to a backup image}
     normalize_OSC_flat(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
-    restore_req:=true;
+    restore_req:=true; {restore orginal image later}
   end;
 
 
@@ -9081,11 +9082,17 @@ begin
     image1.Canvas.Pen.Mode := pmMerge;
     image1.Canvas.brush.Style:=bsClear;
     image1.Canvas.font.color:=clyellow;
-    fontsize:=round(max(10,8*height2/image1.height));{adapt font to image dimensions}
+    fontsize:=round(max(7,width2/115));{adapt font to image dimensions}
     image1.Canvas.font.size:=fontsize;
 
-    stepsizeX:=width2/19;{step size is a double value}
-    stepsizeY:=height2/11;
+    stepX:=trunc(width2/(fontsize*6));{115/6 => 19  steps maximum, reduce if image is too small for font to fit}
+    stepY:=trunc(stepX*height2/width2);       {stepY in ratio,typical 13 steps}
+
+    if odd(stepX)=false then stepX:=stepX+1; {make odd}
+    if odd(stepY)=false then stepY:=stepY+1; {make odd}
+
+    stepsizeX:=width2/stepX;{stepsizeX is a double value}
+    stepsizeY:=height2/stepY;{stepsizeY is a double value}
 
     halfstepX:=round(stepsizeX/2);
     halfstepY:=round(stepsizeY/2);
@@ -9108,8 +9115,8 @@ begin
         if Flipvertical=false then  tY:=height2-tY;
         if Fliphorizontal then tX:=width2-tX;
 
-        tx:=round(X)-(canvas.Textwidth(detext) div 2);{make text centered at x, y}
-        ty:=round(Y)-(canvas.Textheight(detext) div 2);
+        tx:=round(X)-( mainwindow.image1.canvas.Textwidth(detext) div 2);{make text centered at x, y}
+        ty:=round(Y)-( mainwindow.image1.canvas.Textheight(detext) div 2);
         mainwindow.image1.Canvas.textout(tX,tY,detext);{add as text}
 
         X:=X+stepsizeX;
@@ -9121,7 +9128,7 @@ begin
 
 
 
-    if restore_req then {raw Bayer image or colour image}
+    if restore_req then {restore backup image for raw Bayer image or colour image}
     begin
       memo2_message('Restoring image');
       img_loaded:=nil;
@@ -11133,7 +11140,7 @@ begin
   repeat
     if calculate_sqm(true {get backgr},false{get histogr})=false then {failure in calculating sqm value}
     begin
-      if centalt='0' then application.messagebox('Could retrieve or calculate altitude. Enter the default geographic location in the "asteroid & comet annotation" menu ',mb_ok);
+      if centalt='0' then application.messagebox('Could retrieve or calculate altitude. Enter the default geographic location in the "asteroid & comet annotation" menu ','!!!',mb_ok);
       Screen.Cursor:= Save_Cursor;
       exit;
     end;

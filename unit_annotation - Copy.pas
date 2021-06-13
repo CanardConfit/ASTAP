@@ -466,9 +466,9 @@ begin
     fov:=2.0*sqrt(sqr(0.5*width2*cdelt1)+sqr(0.5*height2*cdelt2))*pi/180; {field of view with 0% extra}
     linepos:=0;
 
-    mainwindow.image1.Canvas.Pen.width :=1; // round(1+height2/mainwindow.image1.height);{thickness lines}
+    mainwindow.image1.Canvas.Pen.width :=1;
     mainwindow.image1.canvas.pen.color:=$00B0FF ;{orange}
-    mainwindow.image1.Canvas.font.size:=8; //round(14*height2/mainwindow.image1.height);{adapt font to image dimensions}
+    mainwindow.image1.Canvas.font.size:=8;
     mainwindow.image1.Canvas.brush.Style:=bsClear;
     mainwindow.image1.Canvas.font.color:=$00B0FF ;{orange}
 
