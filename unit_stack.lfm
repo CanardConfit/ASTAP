@@ -1,14 +1,14 @@
 object stackmenu1: Tstackmenu1
-  Left = 307
+  Left = 73
   Height = 717
-  Top = 215
+  Top = 192
   Width = 1604
-  HorzScrollBar.Page = 1604
+  HorzScrollBar.Page = 1373
   VertScrollBar.Page = 556
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
-  ClientHeight = 700
+  ClientHeight = 717
   ClientWidth = 1604
   Color = clForm
   Icon.Data = {
@@ -53,9 +53,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.12.0'
   object Memo2: TMemo
     Left = 0
-    Height = 140
+    Height = 157
     Top = 560
-    Width = 1850
+    Width = 1604
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -217,11 +217,11 @@ object stackmenu1: Tstackmenu1
   end
   object pagecontrol1: TPageControl
     Left = 0
-    Height = 476
+    Height = 493
     Hint = 'Stack menu'
     Top = 0
-    Width = 3570
-    ActivePage = lights
+    Width = 2000
+    ActivePage = tab_Pixelmath2
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderSpacing.Around = 5
@@ -229,7 +229,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 13
     TabOrder = 5
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -237,7 +237,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 448
-      ClientWidth = 3562
+      ClientWidth = 2238
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -311,7 +311,7 @@ object stackmenu1: Tstackmenu1
         Height = 408
         Hint = 'Double click to view image'
         Top = 40
-        Width = 3562
+        Width = 2238
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -5609,7 +5609,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 2'
       Caption = 'Pixel math 2'
       ClientHeight = 465
-      ClientWidth = 2086
+      ClientWidth = 1992
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox

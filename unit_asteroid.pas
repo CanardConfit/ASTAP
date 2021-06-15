@@ -1309,20 +1309,7 @@ var txtf : textfile;
               add_text ('ANNOTATE=',#39+inttostr(x+1-sizebox)+';'+inttostr(y+1-sizebox)+';'+inttostr(x+1+sizebox)+';'+inttostr(y+1+sizebox)+';-'+fontsize_str {-1 or larger}+';'{boldness}+thetext1+';'+thetext2+';'+#39); {store in FITS coordinates 1..}
               annotated:=true;{header contains annotations}
            end;
-//           else
-//           begin
            plot_the_annotation(x+1-sizebox {x1},y+1-sizebox {y1},x+1+sizebox{x2},y+1+sizebox{y2},-max(1,round(fontsize*10/12)/10){typ},thetext1,thetext2); {plot annotation}
-
-           //             mainwindow.image1.Canvas.textout(x2+sizebox,y2,thetext1+thetext2);
-  //           if sizebox>10 then mainwindow.image1.canvas.ellipse(x2-sizebox,y2-sizebox,x2+1+sizebox,y2+1+sizebox){circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-    //         else
-      //       begin
-        //       mainwindow.image1.canvas.moveto(x2-sizebox,y2);
-          //     mainwindow.image1.canvas.lineto(x2-sizebox div 2,y2);
-            //   mainwindow.image1.canvas.moveto(x2+sizebox,y2);
-//               mainwindow.image1.canvas.lineto(x2+sizebox div 2,y2);
-  //           end;
-//           end;
         end;
       end;
       procedure read_and_plot(asteroid: boolean; path :string);

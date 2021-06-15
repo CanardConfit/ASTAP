@@ -391,7 +391,6 @@ type
     procedure localgaussian1Click(Sender: TObject);
     procedure localcoloursmooth1Click(Sender: TObject);
     procedure hyperleda_annotation1Click(Sender: TObject);
-    procedure ra1DblClick(Sender: TObject);
     procedure clean_up1Click(Sender: TObject);
     procedure remove_colour1Click(Sender: TObject);
     procedure Returntodefaultsettings1Click(Sender: TObject);
@@ -779,7 +778,7 @@ var
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
- unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso;
+ unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -3166,7 +3165,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.552a, '+about_message4+', dated 2021-6-13';
+  #13+#10+'ASTAP version ß0.9.553, '+about_message4+', dated 2021-6-15';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3728,41 +3727,6 @@ begin
       inc(i);
     end
   end;
-end;
-
-
-procedure search_database;
-var
-   ra0,dec0,length0,width0,pa : double;
-   objname : string;
-begin
-  with mainwindow do
-  begin
-    objname:=uppercase(inputbox('Retrieve position from deepsky database','Object name:' , extract_objectname_from_filename(filename2) ));
-    load_deep;{Load the deepsky database once. If loaded, no action}
-    if length(objname)>1 then {Object name length should be two or longer}
-    begin
-      linepos:=2;{Set pointer to the beginning. First two lines are comments}
-      repeat
-        read_deepsky('T' {full search},0 {ra},0 {dec},1 {cos(telescope_dec},2*pi{fov},{var} ra0,dec0,length0,width0,pa);{deepsky database search}
-        if ((objname=uppercase(naam2)) or (objname=uppercase(naam3)) or (objname=uppercase(naam4))) then  {uppercase required for e.g. Sh2-105}
-        begin
-          ra1.text:=prepare_ra(ra0,' ');{Add object position}
-          dec1.text:=prepare_dec(dec0,' ');
-          linepos:=$FFFFFF; {Stop}
-       end;
-      until linepos>=$FFFFFF;{Found object or end of database}
-    end;
-  end;{with mainwindow}
-end;
-
-
-procedure Tmainwindow.ra1DblClick(Sender: TObject); {retrieve object position from database}
-begin
-//  {$IfDef Darwin}// for OS X,
-//    exit; {double click is also triggered by single click.} //SEE https://bugs.freepascal.org/view.php?id=36621
-//  {$ENDIF}
-  search_database;
 end;
 
 
@@ -7628,8 +7592,8 @@ begin
       showfullnames:=Sett.ReadBool('main','showfullnames',true);{asteroids}
       showmagnitude:=Sett.ReadBool('main','showmagnitude',false);{asteroids}
       add_date:=Sett.ReadBool('main','add_date',true);{asteroids}
-      lat_default:=decrypt(Sett.ReadString('stack','p1',''));{lat default}
-      long_default:=decrypt(Sett.ReadString('stack','p2',''));{longitude default}
+      lat_default:=decrypt(Sett.ReadString('main','p1',''));{lat default}
+      long_default:=decrypt(Sett.ReadString('main','p2',''));{longitude default}
 
       annotation_color:=Sett.ReadInteger('main','annotation_color',annotation_color);
       annotation_diameter:=Sett.ReadInteger('main','annotation_diameter',annotation_diameter);
@@ -8458,7 +8422,9 @@ begin
        git clone https://github.com/han-k59/LibRaw-with-16-bit-FITS-support
        cd LibRaw-with-16-bit-FITS-support
        export LDADD=-mmacosx-version-min=10.10
-       make -f Makefile.dist}
+       make -f Makefile.dist
+       #############################################################################################}
+
   end;
 
 
@@ -10052,7 +10018,35 @@ end;
 
 procedure Tmainwindow.radec_search1Click(Sender: TObject);
 begin
-  search_database;
+
+//      objname:=uppercase(inputbox('Retrieve position from deepsky database','Object name:' , objname ));
+//      if length(objname)>1 then {Object name length should be two or longer}
+//      begin
+//        objname:=uppercase(inputbox('Retrieve position from deepsky database','Object name:' , extract_objectname_from_filename(filename2) ));
+//        load_deep;{Load the deepsky database once. If loaded, no action}
+
+
+  keyboard_question:='Retrieve position from deepsky database.'+#10+'Object designation:';
+  keyboard_caption:='Search database';
+  keyboard_text:= extract_objectname_from_filename(filename2);
+
+  form_listbox1:=TForm_listbox1.Create(self); {in project option not loaded automatic}
+  form_listbox1.ShowModal;
+
+  keyboard_question:='Enter object designation:';
+  keyboard_caption:='Search database';
+//  keyboard_text, keyboard_caption, keyboard_question    : string;
+//  object_found : boolean;
+//  ra_data,dec_data, length_data, width_data, pa_data    :   double;
+
+  if object_found then
+  begin
+    ra1.text:=prepare_ra(ra_data,' ');{Add object position}
+    dec1.text:=prepare_dec(dec_data,' ');
+  end;
+  form_listbox1.release;
+
+//  search_database;
 end;
 
 
@@ -11094,86 +11088,15 @@ begin
   end;
 end;
 
-function calculate_sqm(get_bk,get_his : boolean) : boolean; {calculate sqky background value}
-var
-  airm, correction,alt : double;
-begin
-  if ((flux_magn_offset=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
-  begin
-    annulus_radius:=14;{calibrate for extended objects using full star flux}
-    flux_aperture:=99;{calibrate for extended objects}
-
-    plot_and_measure_stars(true {calibration},false {plot stars});
-  end;
-
-  result:=false;
-  if flux_magn_offset>0 then
-  begin
-    if get_bk then get_background(0,img_loaded,get_his {histogram},false {calculate also noise level} ,{var}cblack,star_level);
-    if pedestal>=cblack then begin beep; pedestal:=0; {prevent errors} end;
-    sqm:=flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
-
-    alt:=calculate_altitude(false);
-    if length(centalt)<=1 {'0'} then centalt:=inttostr(round(alt));{for reporting in menu sqm1}
-    if alt<>0 then
-    begin
-      airm:=airmass_calc(alt);
-      correction:= atmospheric_absorption(airm)- 0.28 {absorption at zenith};
-      sqm:=sqm+correction;
-      result:=true;
-    end;
-  end;
-end;
 
 procedure Tmainwindow.sqm1Click(Sender: TObject);
-var
-  info_message    : string;
-  Save_Cursor:TCursor;
-  inputvalue  : boolean;
-
 begin
   if fits_file=false then exit; {file loaded?}
 
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  form_sqm1:=TForm_sqm1.Create(self); {in project option not loaded automatic}
+  form_sqm1.ShowModal;
 
-  repeat
-    if calculate_sqm(true {get backgr},false{get histogr})=false then {failure in calculating sqm value}
-    begin
-      if centalt='0' then application.messagebox('Could retrieve or calculate altitude. Enter the default geographic location in the "asteroid & comet annotation" menu ','!!!',mb_ok);
-      Screen.Cursor:= Save_Cursor;
-      exit;
-    end;
-
-    info_message:='SQM='+floattostrF2(sqm,0,2)+' magn/arcsec^2'+#10+
-    #10+
-    'Background value='+inttostr(round(cblack))+#10+
-    'Altitude='+centalt+'°'+#10+
-    'Pedestal correction='+inttostr(pedestal)+#10+
-    #10+
-    'Pre-conditions:'+#10+
-    '1) Image is astrometrical solved for flux-calibration against the star database.'+#10+
-    '2) The background value is larger then pedestal value. If not exposure longer.'+#10+
-    '3) Entering a pedestal value increases the accuracy. (mean value of a dark)'#10+
-    '4) Apply on unprocessed images only.'#10+
-    '5) No bright nebula should be visible.'#10+
-    '6) Extinction plays a role. An atmospheric extinction correction for star light will applied.'+#10;
-
-
-    inputvalue:=false;
-    case  QuestionDlg (pchar('SQM measurement:'),pchar(info_message),mtCustom,[20,'Copy to clipboard?', 21, 'Enter camera pedestal', 22, 'No', 'IsDefault'],'') of
-         20: Clipboard.AsText:=info_message;
-         21: begin
-               pedestal:=round(strtofloat2(InputBox('Enter camera pedestal correction to zero the background:','pedestal value:', inttostr(pedestal))));
-               if pedestal<>0 then
-                              inputvalue:=true;
-               mainwindow.save_settings1Click(nil);{save pedestal value}
-              end;
-    end;{case}
-
-
-  until inputvalue=false;
-  Screen.Cursor:= Save_Cursor;
+  form_sqm1.release;
 end;
 
 

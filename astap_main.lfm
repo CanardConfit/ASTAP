@@ -3,11 +3,11 @@ object mainwindow: Tmainwindow
   Height = 558
   Hint = ' '
   Top = 173
-  Width = 1088
+  Width = 1348
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
   ClientHeight = 538
-  ClientWidth = 1088
+  ClientWidth = 1348
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -160,7 +160,7 @@ object mainwindow: Tmainwindow
     Top = 0
     Width = 95
     OnChange = ra1Change
-    OnDblClick = ra1DblClick
+    OnDblClick = radec_search1Click
     ParentShowHint = False
     PopupMenu = PopupMenu_ra_dec1
     ShowHint = True
@@ -174,7 +174,7 @@ object mainwindow: Tmainwindow
     Top = 26
     Width = 95
     OnChange = dec1Change
-    OnDblClick = ra1DblClick
+    OnDblClick = radec_search1Click
     ParentShowHint = False
     PopupMenu = PopupMenu_ra_dec1
     ShowHint = True
@@ -204,11 +204,11 @@ object mainwindow: Tmainwindow
     Height = 387
     Hint = 'hint'
     Top = 176
-    Width = 1113
+    Width = 1373
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
     ClientHeight = 387
-    ClientWidth = 1113
+    ClientWidth = 1373
     Color = 2105376
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
@@ -223,7 +223,7 @@ object mainwindow: Tmainwindow
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
     object Image1: TImage
-      Left = 113
+      Left = 210
       Height = 264
       Top = 46
       Width = 608
@@ -766,7 +766,7 @@ object mainwindow: Tmainwindow
     Left = 0
     Height = 23
     Top = 515
-    Width = 1088
+    Width = 1348
     Panels = <    
       item
         Width = 200
@@ -881,7 +881,7 @@ object mainwindow: Tmainwindow
     Left = 595
     Height = 177
     Top = 0
-    Width = 496
+    Width = 756
     ActivePage = TabSheet1
     Anchors = [akTop, akLeft, akRight]
     TabIndex = 0
@@ -889,12 +889,12 @@ object mainwindow: Tmainwindow
     object TabSheet1: TTabSheet
       Caption = 'Header'
       ClientHeight = 149
-      ClientWidth = 488
+      ClientWidth = 748
       object Memo1: TMemo
         Left = 0
         Height = 149
         Top = 0
-        Width = 488
+        Width = 748
         Align = alClient
         Anchors = [akTop, akLeft, akRight]
         Font.Height = -9

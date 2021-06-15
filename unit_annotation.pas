@@ -25,6 +25,7 @@ procedure plot_artificial_stars(img: image_array);{plot stars as single pixel wi
 procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 procedure read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double);{deepsky database search}
 procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y : integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
+function find_object(var objname : string; var ra0,dec0,length0,width0,pa : double): boolean; {find object in database}
 
 
 var
@@ -2107,6 +2108,28 @@ begin
   end;
 end;
 
+
+function find_object(var objname : string; var ra0,dec0,length0,width0,pa : double): boolean; {find object in database}
+begin
+  result:=false;
+  if length(objname)>1 then {Object name length should be two or longer}
+  begin
+    objname:=uppercase(objname);
+    load_deep;{Load the deepsky database once. If already loaded, no action}
+    linepos:=2;{Set pointer to the beginning}
+    repeat
+      read_deepsky('T' {full database search} ,0 {ra},0 {dec},1 {cos(telescope_dec)},2*pi{fov},{var} ra0,dec0,length0,width0,pa);{Deepsky database search}
+      if ((objname=uppercase(naam2)) or (objname=uppercase(naam3)) or (objname=uppercase(naam4))) then
+      begin
+        result:=true;
+        if naam3='' then objname:=naam2 {Add one object name only}
+         else
+         objname:=naam2+'_'+naam3;{Add two object names}
+        linepos:=$FFFFFF; {Stop searching}
+     end;
+    until linepos>=$FFFFFF;{Found object or end of database}
+  end;
+end;
 
 end.
 

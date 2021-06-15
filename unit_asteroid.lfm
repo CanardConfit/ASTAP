@@ -320,7 +320,7 @@ object form_asteroids1: Tform_asteroids1
     object date_obs1: TEdit
       Left = 127
       Height = 23
-      Hint = 'Format YYYY-MM-DDTHH:MM:SS.SSS'
+      Hint = 'Format YYYY-MM-DDTHH:MM:SS.SSS. Timezone 0, universal time'
       Top = 8
       Width = 249
       ParentShowHint = False

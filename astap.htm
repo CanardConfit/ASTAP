@@ -28,7 +28,7 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
             &nbsp;<big>version 0.9.552 dated 2021-06-12. &nbsp;Alternative
-            link, the very latest development version 0.9.552 <a href="astap_setup.exe">ASTAP installer</a>
+            link, the very latest development version 0.9.552a <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.exe/download">H17
@@ -233,7 +233,7 @@ renamed. No pop-up notifier. Will not accept raw files.</li></ul></ul>
                   pkg&nbsp;installer</a></big></big><big>
               &nbsp;(</big>at&nbsp;<a href="https://sourceforge.net/projects/astap-program/">link</a>)
             <big>version
-              0.9.552 dated 2021-06-12.</big></li><li><big><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/variable_stars_update.pkg/download">Update variable_stars database</a><br></big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.pkg/download">H17
+              0.9.552a dated 2021-06-15.</big></li><li><big><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/variable_stars_update.pkg/download">Update variable_stars database</a><br></big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.pkg/download">H17
 star
               database pkg installer</a></big> (0.5 gbyte)&nbsp;or <big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.pkg/download">H18
 star
@@ -337,17 +337,16 @@ renamed. No pop-up notifier. Will not accept raw files.</li></ul></ul>
             <li><big>Tools menu:<br>
               </big></li>
             <ul>
-              <li><big><a href="astap.htm#import">Batch
-                    conversion&nbsp;raw images</a></big><big style="font-weight: bold;"><span style="text-decoration: underline;"></span></big></li>
-              <li><big><a href="astap.htm#deep_sky_annotation">Deep
-                    sky annotation</a></big></li>
+              <li><big><a href="astap.htm#batch_conversion">Batch
+                    conversion</a></big></li><li><big><a href="astap.htm#inspector">CCD
+                    inspector</a></big></li>
+              <li><big><a href="astap.htm#photometry_calibration">Photometry calibration</a></big></li><li><big><a href="astap.htm#sqm">SQM measurement</a></big></li>
               <li><big><a href="#star_annotation">Star
                     annotation and photometry</a></big></li><li><big><a href="#asteroid_annotation">Asteroid
                     annotation</a></big></li>
-              <li><big><a href="astap.htm#inspector">CCD
-                    inspector</a></big></li>
-              <li><big><a href="astap.htm#batch_conversion">Batch
-                    conversion</a></big></li>
+              <li><a href="astap.htm#inspector"><big><a href="astap.htm#deep_sky_annotation">Deep
+                    sky annotation</a></big></a></li>
+              <li><big><a href="astap.htm#batch_conversion"><br></a></big></li>
             </ul>
             <li><big><a href="#viewmenu">View menu</a></big></li>
             <li><big><a href="#viewer_popup">Popup menu</a></big></li><li><big><a href="#fits_tables">FITS tables </a><br></big></li>
@@ -1822,34 +1821,13 @@ solving
         <a href="astap.htm#index">Back to index</a><br>
         <br>
         <br>
-        <br>
-        <p align="left"><span style="font-family: Arial;"><span style="font-weight: bold; text-decoration: underline;"><a name="import"></a></span></span><span style="font-family: Arial;"><span style="text-decoration: underline;"></span></span><big style="font-weight: bold;"><span style="text-decoration: underline;">Viewer, Tools, Batch processing.</span></big></p><p align="left"><big style="font-weight: bold;"></big></p><p style="font-weight: bold;" align="left"><big><a name="batch_conversion"></a>Batch conversion:</big></p>
+        <br><p style="font-weight: bold;" align="left"><big><a name="batch_conversion"></a></big><big style="font-weight: bold;"><span style="text-decoration: underline;">Viewer, Tools, Batch processing</span></big><big>:</big></p>
       <p align="left"><big>With the batch routine
           several&nbsp;FITS image
           can be
-          "astrometric solved". &nbsp; Raw&nbsp;images
-          of OSC (color) sensors using a Bayer matrix can be converted
-          to color.</big></p><br><p align="left"><big style="font-weight: bold;">Conversion
-              of&nbsp; raw
-              images from digital cameras</big></p>
-        <p align="left">The viewer menu tools has a batch convert option. ASTAP will
-          execute
-          DCRAW&nbsp;with
-          parameters -D -4 and this will produce 16 bit PGM raw
-          files.&nbsp;ASTAP
-          can read these PGM files and convert them to a 16 bit FITS.
-          After
-          conversion the intermediate PGM are no longer required and can
-          be
-          deleted manually. The FITS can be used in the stacking. The
-          Bayer
-          matrix conversion to colour will be applied later in ASTAP.
-          With this
-          method the full depth of the original RAW files will be
-          preserved</p>
-        This conversion is not required for ASTAP. Automatic conversion
+          "astrometric solved" or converted. This conversion is not required for ASTAP. Automatic conversion
         is
-        integrated in the menus.<br>
+        integrated in the menus.</big><br></p><br>
         <a href="astap.htm#index">Back
           to index</a><br><br><br><br>
         <br>
@@ -1921,21 +1899,18 @@ This will only indicate the median filtered HFD values next to the
 stars. The same values as in the 2D countour and HFD diagram. To avoid
 false indications by outliers the HFD values are filtered by taking the
 median HFD value of the three closest stars and&nbsp; allocate the
-result to all three stars. <br><br><a href="astap.htm#index">Back to index</a><br><br><big style="text-decoration: underline;"><span style="font-weight: bold;">Viewer, Tools, Calibrate Photometry.<br><br></span></big><big>With
+result to all three stars. <br><br><a href="astap.htm#index">Back to index</a><br><br><big style="text-decoration: underline;"><span style="font-weight: bold;"><a name="photometry_calibration"></a>Viewer, Tools, Calibrate Photometry.<br><br></span></big><big>With
 this option the relation between flux and mangitude is measured. The
 image should be solved in advance to be able to calibrate the star flux
 with star database magnitudes. </big><big> After the calibration is applied, the star
-magnitude at the mouse cursor is displayed.<br></big><br><big><br></big><big style="text-decoration: underline;"><span style="font-weight: bold;">Viewer, Tools, SQM report based on an image<br><br></span></big><big>With
-this option the&nbsp; R-SQM = sky background value relative to the
+magnitude at the mouse cursor is displayed.<br></big><br><br><big><br></big><big style="text-decoration: underline;"><span style="font-weight: bold;"><a name="sqm"></a>Viewer, Tools, SQM report based on an image<br><br></span></big><big>With
+this option the&nbsp;&nbsp;SQM = sky background value relative to the
 stars is measured and expressed in magnitude per square arc
-second.&nbsp;</big><big> The image should be solved in advance to be able to calibrate the star flux with star database magnitudes.<br><br>Note
-this measurement is relative to the stars above the atmosphere. For the
-zenith the reported value will be equal to a value reported by an
-Unihedron SQM-L meter. At lower altitudes the extinction will result in
-fainter reference stars and the reported R-SQM will be lower then the
-SQM value reported by&nbsp;an Unihedron measurement. For
-an&nbsp;altitude of 45 degrees it will report&nbsp;about 0.12
-magnitudes brighter due to atmospheric extinction of the stars.<br><br>See page 9 of:<br><br>http://www.lightpollution.it/download/sqmreport.pdf<br><br><br></big><big><br></big><span style="font-weight: bold;"><a name="star_annotation"></a> </span><big style="text-decoration: underline;"><span style="font-weight: bold;">Viewer, Tools,&nbsp;Magnitude (measured) annotation.<br><br></span></big><big>With
+second.&nbsp;</big><big>
+The image should be solved in advance to be able to calibrate the star
+flux with star database magnitudes. The reported value will be equal to
+a value reported by an
+Unihedron SQM-L meter. &nbsp;A</big><big>tmospheric extinction of the stars</big><big> at lower altitudes will be compensated.<br><br>Some background information:<br><br>http://www.lightpollution.it/download/sqmreport.pdf<br><br><br></big><big><br></big><span style="font-weight: bold;"><a name="star_annotation"></a> </span><big style="text-decoration: underline;"><span style="font-weight: bold;">Viewer, Tools,&nbsp;Magnitude (measured) annotation.<br><br></span></big><big>With
 this option the stars are annotated with the estimated magnitude.&nbsp;</big><big> The image should be solved in advance to be able to calibrate the star flux with star database magnitudes.</big><big><br></big><br><big>If the
         Johnson-V version of the star database is used, the results
         match very
@@ -1952,7 +1927,7 @@ this option the stars are annotated with the estimated magnitude.&nbsp;</big><bi
         measured pixel values should be below saturation.
         <br>
         <br>
-        <a href="astap.htm#index">Back to index</a><br><br><big style="text-decoration: underline;"><span style="font-weight: bold;">Viewer, Tools, Star (database) magnitude.<br><br></span></big><big>With
+        <a href="astap.htm#index">Back to index</a><br><br><br><big style="text-decoration: underline;"><span style="font-weight: bold;">Viewer, Tools, Star (database) magnitude.<br><br></span></big><big>With
 this option the stars are annotated with the star database magnitude</big>. This can be done best with&nbsp;V17 containing the calculated Johnson-V magnitudes.<br>
         <br>For a G-database the indicated magnitude
 is Gaia blue. For a V-database the indicated magnitude is Johnson-V&nbsp; and

@@ -1,0 +1,81 @@
+object form_listbox1: Tform_listbox1
+  Left = 701
+  Height = 294
+  Top = 261
+  Width = 303
+  AutoSize = True
+  BorderWidth = 5
+  Caption = 'keyboard'
+  ClientHeight = 294
+  ClientWidth = 303
+  KeyPreview = True
+  OnClose = FormClose
+  OnKeyPress = FormKeyPress
+  OnShow = FormShow
+  Position = poOwnerFormCenter
+  LCLVersion = '2.0.12.0'
+  object Edit1: TEdit
+    Left = 5
+    Height = 23
+    Hint = 'Use wildcard to find designations. E.g. ngc1* or boo*'
+    Top = 48
+    Width = 291
+    ParentFont = False
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 0
+  end
+  object ok1: TButton
+    Left = 56
+    Height = 30
+    Hint = 'Ok'
+    Top = 256
+    Width = 86
+    Caption = '✔'
+    Default = True
+    OnClick = ok1Click
+    ParentFont = False
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 1
+  end
+  object keyboard_question1: TLabel
+    Left = 7
+    Height = 15
+    Top = 5
+    Width = 103
+    Caption = 'keyboard_question:'
+    ParentColor = False
+    ParentFont = False
+    WordWrap = True
+  end
+  object ListBox1: TListBox
+    AnchorSideLeft.Control = Edit1
+    AnchorSideTop.Control = Edit1
+    AnchorSideTop.Side = asrBottom
+    Left = 5
+    Height = 168
+    Hint = 'This listbox will be filled if you enter an object designation with a wildcard. E.g. ngc10*'
+    Top = 71
+    Width = 291
+    ItemHeight = 0
+    OnClick = ListBox1Click
+    OnDblClick = ListBox1DblClick
+    ParentColor = True
+    ParentShowHint = False
+    ScrollWidth = 273
+    ShowHint = True
+    Sorted = True
+    TabOrder = 2
+  end
+  object cancel1: TBitBtn
+    Left = 184
+    Height = 30
+    Hint = 'Cancel'
+    Top = 256
+    Width = 75
+    Caption = '🗙'
+    OnClick = cancel1Click
+    TabOrder = 3
+  end
+end
