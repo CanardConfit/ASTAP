@@ -1,11 +1,11 @@
 object form_listbox1: Tform_listbox1
-  Left = 701
+  Left = 824
   Height = 294
-  Top = 261
+  Top = 182
   Width = 303
   AutoSize = True
   BorderWidth = 5
-  Caption = 'keyboard'
+  Caption = 'Search database'
   ClientHeight = 294
   ClientWidth = 303
   KeyPreview = True
@@ -17,8 +17,8 @@ object form_listbox1: Tform_listbox1
   object Edit1: TEdit
     Left = 5
     Height = 23
-    Hint = 'Use wildcard to find designations. E.g. ngc1* or boo*'
-    Top = 48
+    Hint = 'Enter designation to retrieve position. Use wildcard to find designations. E.g. ngc1* or boo*'
+    Top = 24
     Width = 291
     ParentFont = False
     ParentShowHint = False
@@ -28,7 +28,7 @@ object form_listbox1: Tform_listbox1
   object ok1: TButton
     Left = 56
     Height = 30
-    Hint = 'Ok'
+    Hint = 'Accept the α, δ of the object as an initial start for solving.'
     Top = 256
     Width = 86
     Caption = '✔'
@@ -43,8 +43,8 @@ object form_listbox1: Tform_listbox1
     Left = 7
     Height = 15
     Top = 5
-    Width = 103
-    Caption = 'keyboard_question:'
+    Width = 131
+    Caption = 'Enter object designation:'
     ParentColor = False
     ParentFont = False
     WordWrap = True
@@ -54,9 +54,9 @@ object form_listbox1: Tform_listbox1
     AnchorSideTop.Control = Edit1
     AnchorSideTop.Side = asrBottom
     Left = 5
-    Height = 168
+    Height = 200
     Hint = 'This listbox will be filled if you enter an object designation with a wildcard. E.g. ngc10*'
-    Top = 71
+    Top = 47
     Width = 291
     ItemHeight = 0
     OnClick = ListBox1Click
@@ -71,7 +71,7 @@ object form_listbox1: Tform_listbox1
   object cancel1: TBitBtn
     Left = 184
     Height = 30
-    Hint = 'Cancel'
+    Hint = 'Cancel search'
     Top = 256
     Width = 75
     Caption = '🗙'

@@ -3165,7 +3165,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.553, '+about_message4+', dated 2021-6-15';
+  #13+#10+'ASTAP version ß0.9.553a, '+about_message4+', dated 2021-6-17';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -10018,26 +10018,10 @@ end;
 
 procedure Tmainwindow.radec_search1Click(Sender: TObject);
 begin
-
-//      objname:=uppercase(inputbox('Retrieve position from deepsky database','Object name:' , objname ));
-//      if length(objname)>1 then {Object name length should be two or longer}
-//      begin
-//        objname:=uppercase(inputbox('Retrieve position from deepsky database','Object name:' , extract_objectname_from_filename(filename2) ));
-//        load_deep;{Load the deepsky database once. If loaded, no action}
-
-
-  keyboard_question:='Retrieve position from deepsky database.'+#10+'Object designation:';
-  keyboard_caption:='Search database';
   keyboard_text:= extract_objectname_from_filename(filename2);
 
   form_listbox1:=TForm_listbox1.Create(self); {in project option not loaded automatic}
   form_listbox1.ShowModal;
-
-  keyboard_question:='Enter object designation:';
-  keyboard_caption:='Search database';
-//  keyboard_text, keyboard_caption, keyboard_question    : string;
-//  object_found : boolean;
-//  ra_data,dec_data, length_data, width_data, pa_data    :   double;
 
   if object_found then
   begin
@@ -10045,8 +10029,6 @@ begin
     dec1.text:=prepare_dec(dec_data,' ');
   end;
   form_listbox1.release;
-
-//  search_database;
 end;
 
 

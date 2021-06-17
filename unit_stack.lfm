@@ -3,12 +3,12 @@ object stackmenu1: Tstackmenu1
   Height = 717
   Top = 192
   Width = 1604
-  HorzScrollBar.Page = 1373
+  HorzScrollBar.Page = 1604
   VertScrollBar.Page = 556
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
-  ClientHeight = 717
+  ClientHeight = 700
   ClientWidth = 1604
   Color = clForm
   Icon.Data = {
@@ -53,9 +53,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.12.0'
   object Memo2: TMemo
     Left = 0
-    Height = 157
+    Height = 140
     Top = 560
-    Width = 1604
+    Width = 1850
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     Lines.Strings = (
@@ -202,7 +202,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 4138
+    Left = 4384
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -217,11 +217,11 @@ object stackmenu1: Tstackmenu1
   end
   object pagecontrol1: TPageControl
     Left = 0
-    Height = 493
+    Height = 476
     Hint = 'Stack menu'
     Top = 0
-    Width = 2000
-    ActivePage = tab_Pixelmath2
+    Width = 2246
+    ActivePage = lights
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
     BorderSpacing.Around = 5
@@ -229,7 +229,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 13
+    TabIndex = 0
     TabOrder = 5
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove

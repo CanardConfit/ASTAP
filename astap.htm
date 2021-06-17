@@ -28,7 +28,7 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
             &nbsp;<big>version 0.9.552 dated 2021-06-12. &nbsp;Alternative
-            link, the very latest development version 0.9.552a <a href="astap_setup.exe">ASTAP installer</a>
+            link, the very latest development version 0.9.553 <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.exe/download">H17
@@ -344,8 +344,8 @@ renamed. No pop-up notifier. Will not accept raw files.</li></ul></ul>
               <li><big><a href="#star_annotation">Star
                     annotation and photometry</a></big></li><li><big><a href="#asteroid_annotation">Asteroid
                     annotation</a></big></li>
-              <li><a href="astap.htm#inspector"><big><a href="astap.htm#deep_sky_annotation">Deep
-                    sky annotation</a></big></a></li>
+              <li><a href="astap.htm#inspector"><big></big></a><big><a href="astap.htm#deep_sky_annotation">Deep
+                    sky annotation</a></big></li>
               <li><big><a href="astap.htm#batch_conversion"><br></a></big></li>
             </ul>
             <li><big><a href="#viewmenu">View menu</a></big></li>
@@ -1910,7 +1910,14 @@ second.&nbsp;</big><big>
 The image should be solved in advance to be able to calibrate the star
 flux with star database magnitudes. The reported value will be equal to
 a value reported by an
-Unihedron SQM-L meter. &nbsp;A</big><big>tmospheric extinction of the stars</big><big> at lower altitudes will be compensated.<br><br>Some background information:<br><br>http://www.lightpollution.it/download/sqmreport.pdf<br><br><br></big><big><br></big><span style="font-weight: bold;"><a name="star_annotation"></a> </span><big style="text-decoration: underline;"><span style="font-weight: bold;">Viewer, Tools,&nbsp;Magnitude (measured) annotation.<br><br></span></big><big>With
+Unihedron SQM-L meter. &nbsp;A</big><big>tmospheric extinction of the stars</big><big> at lower altitudes will be compensated.<br><br>Some background information:<br><br>http://www.lightpollution.it/download/sqmreport.pdf<br><br>At
+zenith&nbsp;the measured star flux and sky background flux are defined
+as comparable and star light extinction is zeroed by subtracting 0.28
+magnitudes from the calculated&nbsp;extinction. So at zenith&nbsp;the
+SQM brightness values are comparable to deepsky object brightness and
+can be expressed in magn/arcsec². At lower altitudes the star and
+deepsky flux are lower due to higher air mass and therefore&nbsp;higher
+extinction minus&nbsp;0.28&nbsp; is taking in account.<br><br>Pre-conditions<br>1) Image is astrometrical solved for flux-calibration against the star database.<br>2) The background value is larger then pedestal value. If not expose longer.<br>3) Entering a pedestal value increases the accuracy. (mean value of a dark)<br>4) Apply on single unprocessed raw images only or <br>&nbsp; &nbsp; calibrate single images and apply zero for the pedestal value.<br>5) DSLR images could require additional preparations.<br>6) No large bright nebula should be visible.<br>7) Extinction plays a role. An atmospheric extinction correction for star light will applied.<br><br><br></big><big><br></big><span style="font-weight: bold;"><a name="star_annotation"></a> </span><big style="text-decoration: underline;"><span style="font-weight: bold;">Viewer, Tools,&nbsp;Magnitude (measured) annotation.<br><br></span></big><big>With
 this option the stars are annotated with the estimated magnitude.&nbsp;</big><big> The image should be solved in advance to be able to calibrate the star flux with star database magnitudes.</big><big><br></big><br><big>If the
         Johnson-V version of the star database is used, the results
         match very

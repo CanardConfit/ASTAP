@@ -62,9 +62,9 @@ var
   form_listbox1: Tform_listbox1;
 
   {global variables as interface}
-  keyboard_text, keyboard_caption, keyboard_question    : string;
-  object_found : boolean;
-  ra_data,dec_data, length_data, width_data, pa_data    :   double;
+  keyboard_text : string;
+  object_found  : boolean;
+  ra_data,dec_data, length_data, width_data, pa_data  :   double;
 
 implementation
 
@@ -94,9 +94,7 @@ end;
 procedure Tform_listbox1.FormShow(Sender: TObject);
 begin
   object_found:=false;
-  caption:=keyboard_caption;
   edit1.text:=keyboard_text;
-  keyboard_question1.caption:=keyboard_question;
 end;
 
 
