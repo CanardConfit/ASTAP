@@ -202,7 +202,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 1
   end
   object more_indication1: TLabel
-    Left = 4384
+    Left = 4630
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -220,7 +220,7 @@ object stackmenu1: Tstackmenu1
     Height = 476
     Hint = 'Stack menu'
     Top = 0
-    Width = 2246
+    Width = 2492
     ActivePage = lights
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
@@ -237,7 +237,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 448
-      ClientWidth = 2238
+      ClientWidth = 2484
       ParentFont = False
       object nr_selected1: TLabel
         Left = 372
@@ -311,7 +311,7 @@ object stackmenu1: Tstackmenu1
         Height = 408
         Hint = 'Double click to view image'
         Top = 40
-        Width = 2238
+        Width = 2484
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -593,7 +593,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 465
-      ClientWidth = 3316
+      ClientWidth = 2238
       ImageIndex = 1
       ParentFont = False
       object browse_darks1: TButton
@@ -640,7 +640,7 @@ object stackmenu1: Tstackmenu1
         Height = 425
         Hint = 'Double click to view image'
         Top = 40
-        Width = 3316
+        Width = 2238
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -772,7 +772,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 465
-      ClientWidth = 3316
+      ClientWidth = 2238
       ImageIndex = 2
       ParentFont = False
       object browse_flats1: TButton
@@ -795,10 +795,12 @@ object stackmenu1: Tstackmenu1
         Caption = 'Replace check-marked by master flat, flat darks included.'
         OnClick = replace_by_master_flat1Click
         ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 1
       end
       object clear_selection2: TButton
-        Left = 920
+        Left = 992
         Height = 25
         Hint = 'Clear image list'
         Top = 6
@@ -825,7 +827,7 @@ object stackmenu1: Tstackmenu1
         Height = 425
         Hint = 'Double click to view image'
         Top = 40
-        Width = 3316
+        Width = 2238
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True
@@ -935,7 +937,7 @@ object stackmenu1: Tstackmenu1
         Transparent = False
       end
       object classify_flat_date1: TCheckBox
-        Left = 672
+        Left = 744
         Height = 19
         Hint = 'Combine flats within 12 hour time range to master'
         Top = 8
@@ -951,7 +953,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
       ClientHeight = 465
-      ClientWidth = 3316
+      ClientWidth = 2238
       ImageIndex = 3
       ParentFont = False
       object browse_bias1: TButton
@@ -992,7 +994,7 @@ object stackmenu1: Tstackmenu1
         Height = 425
         Hint = 'Double click to view image'
         Top = 40
-        Width = 3316
+        Width = 2238
         Align = alCustom
         Anchors = [akTop, akLeft, akRight, akBottom]
         Checkboxes = True

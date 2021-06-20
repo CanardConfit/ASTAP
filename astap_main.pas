@@ -2450,6 +2450,7 @@ begin
 
   opendialog1.Filter :=  'All formats |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;*.fz;'+
                                       '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
+                                      '*.axy;*.xyls'+
                          '|8, 16, 32 and -32 bit FITS files (*.fit*,*.xisf)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.new;*.xisf;*.fz'+
                          '|24 bits PNG, TIFF, JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
                          '|Preview FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
@@ -3165,7 +3166,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.553a, '+about_message4+', dated 2021-6-17';
+  #13+#10+'ASTAP version ß0.9.554, '+about_message4+', dated 2021-6-20';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -8545,9 +8546,15 @@ begin
   else
   begin {fits file created by modified unprocessed_raw}
     if loadfile then
+    begin
       result:=load_fits(filename4,true {light},true {load data},true {update memo},0,img); {load new fits file}
+      if ((result) and (savefile=false)) then
+      begin
+        deletefile(filename4);{delete temporary fits file}
+        filename4:=ChangeFileExt(filename3,'.fits');{rather then creating ".CR3.fits" create extension ".fits" for command line. So ".CR3" result in ".ini" and ".wcs" logs}
+      end;
+    end;
   end;
-
   if result then filename3:=filename4; {confirm conversion succes with new fits file name}
 end;
 
@@ -11777,7 +11784,7 @@ begin
             end;
           end;
           if file_loaded=false then errorlevel:=16;{error file loading}
-          file_loaded:=((file_loaded) or (extend_type>0));{axy}
+          //file_loaded:=((file_loaded) or (extend_type>0));{axy}
         end
         else
         file_loaded:=false;
@@ -13571,7 +13578,7 @@ begin
     Perfect two dimensional Gaussian shape with σ=1:   Numerical HFD=2.3548*σ                     Approximation 2.5066, an offset of +6.4%
     Homogeneous disk of a single value  :              Numerical HFD:=disk_diameter/sqrt(2)       Approximation disk_diameter/1.5, an offset of -6.1%
 
-    The approximation routine is robust and efficient.
+    The approximate routine is robust and efficient.
 
     Since the number of pixels illuminated is small and the calculated center of star gravity is not at the center of an pixel, above summation should be calculated on sub-pixel level (as used here)
     or the image should be re-sampled to a higher resolution.
