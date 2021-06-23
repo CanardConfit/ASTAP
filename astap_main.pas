@@ -345,6 +345,7 @@ type
     procedure grid1Click(Sender: TObject);
     procedure ccdinspector10_1Click(Sender: TObject);
     procedure annotatemedianbackground1Click(Sender: TObject);
+    procedure Panel1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
     procedure removegreenpurple1Click(Sender: TObject);
     procedure sip1Click(Sender: TObject);
@@ -673,7 +674,7 @@ function prepare_dec(decx:double; sep:string):string; {radialen to text, format 
 function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24: 00 00.0 }
 function inttostr5(x:integer):string;{always 5 digit}
 function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
-procedure mad_median(list: array of double;out mad,median :double);{calculate mad and median without modifying the data}
+procedure mad_median(list: array of double; leng :integer;out mad,median :double);{calculate mad and median without modifying the data}
 function floattostrF2(const x:double; width1,decimals1 :word): string;
 procedure DeleteFiles(lpath,FileSpec: string);{delete files such  *.wcs}
 procedure new_to_old_WCS;{convert new style FITsS to old style}
@@ -694,7 +695,7 @@ function extract_temperature_from_filename(filename8: string): integer; {try to 
 function extract_objectname_from_filename(filename8: string): string; {try to extract exposure from filename}
 
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
-procedure measure_magnitudes(annulus_rad:integer; var stars :star_list);{find stars and return, x,y, hfd, flux}
+procedure measure_magnitudes(annulus_rad:integer; deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux}
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2,binx3, binx4 version}
 procedure ra_text_to_radians(inp :string; out ra : double; out errorRA :boolean); {convert ra in text to double in radians}
 procedure dec_text_to_radians(inp :string; out dec : double; out errorDEC :boolean); {convert ra in text to double in radians}
@@ -3166,7 +3167,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.554, '+about_message4+', dated 2021-6-20';
+  #13+#10+'ASTAP version ß0.9.555, '+about_message4+', dated 2021-6-23';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -9114,6 +9115,11 @@ begin
   Screen.Cursor:= Save_Cursor;
 end;
 
+procedure Tmainwindow.Panel1Click(Sender: TObject);
+begin
+
+end;
+
 
 procedure Tmainwindow.positionanddate1Click(Sender: TObject);
 begin
@@ -10045,10 +10051,10 @@ begin
 end;
 
 
-procedure measure_magnitudes(annulus_rad:integer; var stars :star_list);{find stars and return, x,y, hfd, flux}
+procedure measure_magnitudes(annulus_rad:integer; deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux}
 var
   fitsX,fitsY,diam, i, j,nrstars    : integer;
-  hfd1,star_fwhm,snr,flux,xc,yc     : double;
+  hfd1,star_fwhm,snr,flux,xc,yc,detection_level     : double;
 begin
 
   SetLength(stars,4,5000);{set array length}
@@ -10056,6 +10062,8 @@ begin
   setlength(img_temp,1,width2,height2);{set length of image array}
 
   get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
+
+  if deep then detection_level:=noise_level[0] else detection_level:=star_level;
 
   nrstars:=0;{set counters at zero}
 
@@ -10067,7 +10075,7 @@ begin
   begin
     for fitsX:=0 to width2-1-1  do
     begin
-      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack> star_level){star}) then {new star}
+      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack> detection_level)) then {new star}
       begin
         HFD(img_loaded,fitsX,fitsY,annulus_rad {typical 14, box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
@@ -10115,7 +10123,7 @@ begin
 
   img_temp:=nil;{free mem}
 
-  SetLength(stars,4,nrstars+1);{set length correct}
+  SetLength(stars,4,nrstars);{set length correct}
 end;
 
 
@@ -10168,10 +10176,6 @@ const
 //  img_loaded:=img_temp2;
 //  plot_fits(mainwindow.image1,true,true);
 //  exit;
-
-
-
-
 
   get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
@@ -10277,19 +10281,74 @@ const
   Screen.Cursor:= Save_Cursor;
 end;
 
+procedure quicksort(var list: array of double; lo,hi: integer);{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
+  procedure sort ( left, right : integer); {processing takes place in the sort procedure which executes itself recursively.}
+  var
+    i, j       : integer;
+    tmp, pivot : double;    { tmp & pivot are the same type as the elements of array }
+  begin
+    i:=left;
+    j:=right;
+    pivot := list[(left + right) div 2];
+    repeat
+      while pivot > list[i] do inc(i);
+      while pivot < list[j] do dec(j);
+      if i<=j Then Begin
+        tmp:=list[i]; list[i]:=list[j]; list[j]:=tmp; {swap}
+        dec(j); inc(i);
+      end;
+    until i>j;
+    if left<j then sort(left,j);
+    if i<right then sort(i,right);
+  end;
+begin {quicksort};
+  sort(lo,hi);
+end;
+
+
+
+function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
+var
+  mid : integer;
+begin
+ if leng=0 then result:=nan
+ else
+   if leng=1 then result:=list[0]
+   else
+   begin
+     quickSort(list,0,leng-1);
+     mid := (leng-1) div 2; //(high(list) - low(list)) div 2;
+     if Odd(leng) then
+     begin
+       if leng<=3 then  result:=list[mid]
+       else
+       begin
+         result:=(list[mid-1]+list[mid]+list[mid+1])/3;
+       end;
+     end
+     else
+     result:=(list[mid]+list[mid+1])/2;
+  end;
+end;
+
+
 
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
- size, i, starX, starY         : integer;
+ size, i, starX, starY,lim_magn,peak,text_width,fontsize,text_height     : integer;
+ lim_magn_max    : double;
  Save_Cursor:TCursor;
  Fliphorizontal, Flipvertical  : boolean;
  stars : star_list;
+ list : array of double;
 begin
   if fits_file=false then exit; {file loaded?}
+
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
+  memo2_message('This will take some time');
   mainwindow.calibrate_photometry1Click(nil);{measure hfd and calibrate for point or extended sources depending on the setting}
 
   if flux_magn_offset=0 then
@@ -10304,24 +10363,52 @@ begin
 
   image1.Canvas.Pen.Mode := pmMerge;
   image1.Canvas.Pen.width :=1; // round(1+height2/image1.height);{thickness lines}
+  image1.Canvas.Pen.color :=clred;
   image1.Canvas.brush.Style:=bsClear;
   image1.Canvas.font.color:=clyellow;
   image1.Canvas.font.name:='default';
 
-  image1.Canvas.font.size:=10; //round(max(10,8*height2/image1.height));{adapt font to image dimensions}
+  fontsize:=8;
+  image1.Canvas.font.size:=fontsize;
+  text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
+
   mainwindow.image1.Canvas.Pen.Color := clred;
 
-  measure_magnitudes(14,stars);
+  measure_magnitudes(14,true {deep},stars);
+
+  setlength(list,length(stars[0]));
 
   for i:=0 to  length(stars[0])-2 do
   begin
-    if Flipvertical=false then  starY:=round(height2-stars[1,i]) else starY:=round(stars[1,i]);
-    if Fliphorizontal     then starX:=round(width2-stars[0,i])  else starX:=round(stars[0,i]);
+    if Flipvertical=false then  starY:=round(height2-1-stars[1,i]) else starY:=round(stars[1,i]);
+    if Fliphorizontal     then starX:=round(width2-1-stars[0,i])  else starX:=round(stars[0,i]);
 
-    size:=round(5*stars[2,i]);{5*hfd for marking stars}
-    image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-    image1.Canvas.textout(starX+size,starY,inttostr(round((flux_magn_offset-ln(stars[3,i]{flux})*2.511886432/ln(10))*10))   );{add magnitude as text}
+    size:=round(stars[2,i]);{5*hfd for marking stars}
+
+    mainwindow.image1.Canvas.moveto(starX+2*size,starY);
+    mainwindow.image1.Canvas.lineto(starX+size,starY);
+    mainwindow.image1.Canvas.moveto(starX-2*size,starY);
+    mainwindow.image1.Canvas.lineto(starX-size,starY);
+
+    lim_magn:=round((flux_magn_offset-ln(stars[3,i]{flux})*2.511886432/ln(10))*10);
+
+
+    image1.Canvas.textout(starX,starY-text_height,inttostr(lim_magn) );{add magnitude as text}
+    list[i]:=lim_magn;
   end;
+
+
+  {do some filtering, remove some faint extreme outliers}
+  quickSort(list,0,length(list));
+  lim_magn_max:=list[round(0.95*length(list)-1)];
+
+  text_width:=8*mainwindow.image1.Canvas.textwidth('1234567890');{Calculate textwidth for 80 characters. This also works for 4k with "make everything bigger"}
+  fontsize:=trunc(fontsize*(width2-2*fontsize)/text_width);{use full width}
+  image1.Canvas.font.size:=fontsize;
+  image1.Canvas.font.color:=clwhite;
+  text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
+  image1.Canvas.textout(round(fontsize*2),height2-text_height,'10σ limiting magnitude is '+ floattostrF(lim_magn_max/10,ffgeneral,3,3));{}
+  memo2_message('10σ limiting magnitude is '+ floattostrF(lim_magn_max/10,ffgeneral,3,3));
 
   Screen.Cursor:= Save_Cursor;
 end;
@@ -12109,68 +12196,18 @@ begin
 end;
 
 
-procedure quicksort(var list: array of double; lo,hi: integer);{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
-  procedure sort ( left, right : integer); {processing takes place in the sort procedure which executes itself recursively.}
-  var
-    i, j       : integer;
-    tmp, pivot : double;    { tmp & pivot are the same type as the elements of array }
-  begin
-    i:=left;
-    j:=right;
-    pivot := list[(left + right) div 2];
-    repeat
-      while pivot > list[i] do inc(i);
-      while pivot < list[j] do dec(j);
-      if i<=j Then Begin
-        tmp:=list[i]; list[i]:=list[j]; list[j]:=tmp; {swap}
-        dec(j); inc(i);
-      end;
-    until i>j;
-    if left<j then sort(left,j);
-    if i<right then sort(i,right);
-  end;
-begin {quicksort};
-  sort(lo,hi);
-end;
 
-
-
-function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
-var
-  mid : integer;
-begin
- if leng=0 then result:=nan
- else
-   if leng=1 then result:=list[0]
-   else
-   begin
-     quickSort(list,0,leng-1);
-     mid := (leng-1) div 2; //(high(list) - low(list)) div 2;
-     if Odd(leng) then
-     begin
-       if leng<=3 then  result:=list[mid]
-       else
-       begin
-         result:=(list[mid-1]+list[mid]+list[mid+1])/3;
-       end;
-     end
-     else
-     result:=(list[mid]+list[mid+1])/2;
-  end;
-end;
-
-
-procedure mad_median(list: array of double;out mad,median :double);{calculate mad and median without modifying the data}
+procedure mad_median(list: array of double;leng :integer;out mad,median :double);{calculate mad and median without modifying the data}
 var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
-  n,i        : integer;
+  i        : integer;
   list2: array of double;
 begin
-  n:=length(list);
-  setlength(list2,n);
-  for i:=0 to n-1 do list2[i]:=list[i];{copy magn offset data}
-  median:=Smedian(list2,n);
-  for i:=0 to n-1 do list2[i]:=abs(list[i] - median);{fill list2 with offsets}
-  mad:=Smedian(list2,n); //median absolute deviation (MAD)
+
+  setlength(list2,leng);
+  for i:=0 to leng-1 do list2[i]:=list[i];{copy magn offset data}
+  median:=Smedian(list2,leng);
+  for i:=0 to leng-1 do list2[i]:=abs(list[i] - median);{fill list2 with offsets}
+  mad:=Smedian(list2,leng); //median absolute deviation (MAD)
   list2:=nil;
 end;
 
@@ -12426,8 +12463,6 @@ begin
       mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
 
       text_width:=8*mainwindow.image1.Canvas.textwidth('1234567890');{Calculate textwidth for 80 characters. This also works for 4k with "make everything bigger"}
-
-
       fontsize:=trunc(fontsize*(width2-2*fontsize)/text_width);{use full width}
       image1.Canvas.font.size:=fontsize;
       image1.Canvas.font.color:=clwhite;
@@ -13540,6 +13575,7 @@ begin
   if r_aperture<aperture_small then {normal mode}
   begin
      snr:=flux/sqrt(flux +sqr(r_aperture)*pi*sqr(sd)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
+  //   memo2_message(#9+'######'+#9+inttostr(round(flux))+#9+ floattostr6(r_aperture)+#9+floattostr6(sd)+#9+floattostr6(snr)+#9+floattostr6(sqr(r_aperture)*pi*sqr(sd)));
   end
   else
   begin {photometry mode. Measure only brightest part of the stars}

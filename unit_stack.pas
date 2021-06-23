@@ -6253,7 +6253,7 @@ begin
 
           if flux_magn_offset<>0 then
           begin
-            measure_magnitudes(annulus_radius,starlistx); {analyse}
+            measure_magnitudes(annulus_radius,false {deep},starlistx); {analyse}
             starlistpack[c].starlist:=starlistX;{store found stars in memory for finding outlier later}
             starlistpack[c].width:=width2;
             starlistpack[c].height:=height2;
@@ -6414,8 +6414,7 @@ begin
     {do statistics}
     if countVar>=4 then
     begin
-      setlength(starVar,countVar);
-      mad_median(starVar,madVar,medianVar);{calculate mad and median without modifying the data}
+      mad_median(starVar,countVar{length},{var}madVar,medianVar);{calculate mad and median without modifying the data}
       memo2_message('Var star, median:'+floattostrf(medianVar, ffgeneral, 4,4)+', σ: '+floattostrf(1.4826*madVar  {1.0*sigma}, ffgeneral, 4,4));
     end
     else
@@ -6423,16 +6422,14 @@ begin
 
     if countCheck>=4 then
     begin
-      setlength(starCheck,countCheck);
-      mad_median(starCheck,madCheck,medianCheck);{calculate mad and median without modifying the data}
+      mad_median(starCheck,countCheck{counter},{var}madCheck,medianCheck);{calculate mad and median without modifying the data}
       memo2_message('Check star, median:'+floattostrf(medianCheck, ffgeneral, 4,4)+', σ: '+floattostrf(1.4826*madCheck  {1.0*sigma}, ffgeneral, 4,4));
     end
     else
     madCheck:=0;
     if countThree>4 then
     begin
-      setlength(starThree,countThree);
-      mad_median(starThree,madThree,medianThree);{calculate mad and median without modifying the data}
+      mad_median(starThree,countThree{counter},{var}madThree,medianThree);{calculate mad and median without modifying the data}
       memo2_message('3 star, median:'+floattostrf(medianThree, ffgeneral, 4,4)+', σ: '+floattostrf(1.4826*madThree  {1.0*sigma}, ffgeneral, 4,4));
     end
     else madThree:=0;

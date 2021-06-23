@@ -1,12 +1,12 @@
 object mainwindow: Tmainwindow
-  Left = 257
-  Height = 558
+  Left = 229
+  Height = 675
   Hint = ' '
-  Top = 173
+  Top = 165
   Width = 1348
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 538
+  ClientHeight = 655
   ClientWidth = 1348
   Color = clForm
   Icon.Data = {
@@ -201,13 +201,13 @@ object mainwindow: Tmainwindow
   end
   object Panel1: TPanel
     Left = 0
-    Height = 387
+    Height = 504
     Hint = 'hint'
     Top = 176
     Width = 1373
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 387
+    ClientHeight = 504
     ClientWidth = 1373
     Color = 2105376
     Font.CharSet = ANSI_CHARSET
@@ -219,13 +219,14 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     TabOrder = 3
+    OnClick = Panel1Click
     OnMouseMove = Panel1MouseMove
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
     object Image1: TImage
       Left = 210
       Height = 264
-      Top = 46
+      Top = 100
       Width = 608
       Anchors = []
       OnMouseDown = Image1MouseDown
@@ -765,7 +766,7 @@ object mainwindow: Tmainwindow
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
-    Top = 515
+    Top = 632
     Width = 1348
     Panels = <    
       item

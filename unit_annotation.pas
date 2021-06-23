@@ -33,8 +33,9 @@ var
   linepos          : integer;
   naam2,naam3,naam4: string;
 
-const
+var  {################# initialised variables #########################}
   flux_magn_offset       : double=0;{offset between star magnitude and flux. Will be calculated in stars are annotated}
+  limiting_magnitude     : double=0;{magnitude where snr is 5}
   counter_flux_measured  : integer=0;{how many stars used for flux calibration}
   database_nr            : integer=0; {1 is deepsky, 2 is hyperleda, 3 is variable loaded}
 
@@ -1531,18 +1532,18 @@ begin
 end;
 
 
-function get_best_mean(list: array of double) :double;{Remove outliers from polulation using MAD. }
+function get_best_mean(list: array of double; leng : integer) :double;{Remove outliers from polulation using MAD. }
 var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
   i,count         : integer;
   median, mad     : double;
 
 begin
- mad_median(list,mad,median);{{calculate mad and median without modifying the data}
+ mad_median(list,leng,mad,median);{{calculate mad and median without modifying the data}
 
  count:=0;
  result:=0;
 
- for i:=0 to length(list)-1 do
+ for i:=0 to leng-1 do
    if abs(list[i]-median)<1.50*1.4826*mad then {offset less the 2.5*sigma.}
    begin
      result:=result+list[i];{Calculate mean. This gives a little less noise then calculating median again. Note weighted mean gives poorer result and is not applied.}
@@ -1556,11 +1557,11 @@ procedure plot_and_measure_stars(flux_calibration,plot_stars: boolean);{flux cal
 var
   fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2              : double;
-  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2 : integer;
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2  : double;
+  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2               : integer;
   flip_horizontal, flip_vertical,sip   : boolean;
-  mag_offset_array                 : array of double;
-  Save_Cursor                      : TCursor;
+  mag_offset_array                     : array of double;
+  Save_Cursor                          : TCursor;
 
     procedure plot_star;
     begin
@@ -1614,7 +1615,8 @@ var
         if flux_calibration then
         begin
           HFD(img_loaded,round(x),round(y), annulus_radius{14,box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-          if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>30)) then {star detected in img_loaded. 30 is found emperical}
+          if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum}) then
+          if snr>30 then {star detected in img_loaded. 30 is found emperical}
           begin
             if ((flux_calibration){calibrate flux} and
                 (img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
@@ -1629,13 +1631,13 @@ var
                 (img_loaded[0,round(xc+1),round(yc+1)]<datamax_org-1)  ) then {not saturated}
             begin
               magn:=(-ln(flux)*2.511886432/LN(10));
-              if counter_flux_measured>=length(mag_offset_array) then  SetLength(mag_offset_array,counter_flux_measured+500);{increase length array}
+              if counter_flux_measured>=length(mag_offset_array) then
+                 SetLength(mag_offset_array,counter_flux_measured+500);{increase length array}
               mag_offset_array[counter_flux_measured]:=mag2/10-magn;
-              //memo2_message(#9+inttostr(round(flux))+#9+ floattostr6(mag2/10)+#9+floattostr6(magn)+#9+floattostr6(snr)+#9+floattostr6(hfd1)+#9+floattostr6(aperture*2));
               inc(counter_flux_measured); {increase counter of number of stars analysed}
             end;
 
-          end;
+          end; {snr>30}
         end;{flux calibration}
       end;
     end;
@@ -1690,6 +1692,7 @@ begin
 
     max_nr_stars:=round(width2*height2*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
 
+    //max_nr_stars:=6000;
 
     if flux_calibration then
     begin
@@ -1753,20 +1756,21 @@ begin
     begin
       if counter_flux_measured>0 then {use all stars}
       begin
-        SetLength(mag_offset_array,counter_flux_measured);{set length correct}
-        flux_magn_offset:=get_best_mean(mag_offset_array);
+        flux_magn_offset:=get_best_mean(mag_offset_array,counter_flux_measured {length});
 
         if flux_aperture=99 then
            memo2_message('Photometry calibration for EXTENDED OBJECTS successful. '+inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration. Stars with a pixel value '+inttostr(round(datamax_org))+' or higher are ignored.')
         else
-          memo2_message('Photometry calibration for POINT SOURCES successful. '+inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(flux_aperture*2, ffgeneral, 2,2)+'. Annulus inner diameter: '+inttostr(1+(annulus_radius+2)*2){background is measured 2 pixels outside rs}+'. Stars with a pixel value '+inttostr(round(datamax_org))+' or higher are ignored.');
+          memo2_message('Photometry calibration for POINT SOURCES successful. '+inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(flux_aperture*2, ffgeneral, 2,2)+
+                        '. Annulus inner diameter: '+inttostr(1+(annulus_radius+2)*2){background is measured 2 pixels outside rs}+'. Stars with a pixel value '+inttostr(round(datamax_org))+' or higher are ignored.');
+
       end
       else  flux_magn_offset:=0;
+
       mag_offset_array:=nil;
     end;
 
     Screen.Cursor:= Save_Cursor;
-
   end;{fits file}
 end;{plot stars}
 
