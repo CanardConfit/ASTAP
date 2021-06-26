@@ -584,9 +584,11 @@ type
     procedure align_blink1Change(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
     procedure equinox1Change(Sender: TObject);
+    procedure FormClick(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure help_mount_tab1Click(Sender: TObject);
     procedure lrgb_auto_level1Change(Sender: TObject);
+    procedure Memo3Change(Sender: TObject);
     procedure mount_analyse1Click(Sender: TObject);
     procedure analysephotometry1Click(Sender: TObject);
     procedure analyse_inspector1Click(Sender: TObject);
@@ -631,6 +633,7 @@ type
     procedure pagecontrol1Change(Sender: TObject);
     procedure pagecontrol1MouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
+    procedure press_esc_to_abort1Click(Sender: TObject);
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
     procedure rainbow_Panel1Paint(Sender: TObject);
@@ -1385,10 +1388,10 @@ end;
 
 procedure analyse_fits(img : image_array;snr_min:double;report:boolean;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
 var
-   fitsX,fitsY,size,diam,i,j,retries,max_stars         : integer;
-   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min  : double;
+   fitsX,fitsY,size,diam,i,j,retries,max_stars,n,m,xci,yci         : integer;
+   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min,sqr_diam  : double;
    hfd_list                                       : array of double;
-   img_temp2  : image_array;
+   img_sa  : image_array;
 var
   f   :  textfile;
 var   {################# initialised variables #########################}
@@ -1415,16 +1418,16 @@ begin
         writeln(f,'x,y,hfd,snr,flux');
       end;
 
-      setlength(img_temp2,1,width2,height2);{set length of image array}
+      setlength(img_sa,1,width2,height2);{set length of image array}
       for fitsY:=0 to height2-1 do
         for fitsX:=0 to width2-1  do
-          img_temp2[0,fitsX,fitsY]:=0;{mark as no surveyed area}
+          img_sa[0,fitsX,fitsY]:=0;{mark as no surveyed area}
 
       for fitsY:=0 to height2-1 do
       begin
         for fitsX:=0 to width2-1  do
         begin
-          if (( img_temp2[0,fitsX,fitsY]=0){area not surveyed} and (img[0,fitsX,fitsY]-backgr>detection_level)) then {new star. For analyse used sigma is 5, so not too low.}
+          if (( img_sa[0,fitsX,fitsY]=0){area not occupied by a star} and (img[0,fitsX,fitsY]-backgr>detection_level)) then {new star. For analyse used sigma is 5, so not too low.}
           begin
             HFD(img,fitsX,fitsY,14{box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
             if ((hfd1<=30) and (snr>snr_min) and (hfd1>hfd_min) {two pixels minimum} ) then
@@ -1432,11 +1435,19 @@ begin
               hfd_list[star_counter]:=hfd1;{store}
               inc(star_counter);
               if star_counter>=len then begin len:=len+1000; SetLength(hfd_list,len);{increase size} end;
-              diam:=round(3*hfd1);
-              for j:=fitsY to fitsY+diam do {Mark the whole star area as surveyed}
-                 for i:=fitsX-diam to fitsX+diam do
-                   if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
-                     img_temp2[0,i,j]:=1;
+
+              diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
+              sqr_diam:=sqr(3.0*hfd1);
+              xci:=round(xc);{star center as integer}
+              yci:=round(yc);
+              for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
+                for m:=-diam to +diam do
+                begin
+                  j:=n+yci;
+                  i:=m+xci;
+                  if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and ( (sqr(m)+sqr(n))<=sqr_diam)) then
+                    img_sa[0,i,j]:=1;
+                end;
 
               if report then
               begin
@@ -1464,15 +1475,15 @@ begin
   else
   hfd_median:=99;{Most common value image is too low. Ca'+#39+'t process this image. Check camera offset setting.}
 
-  img_temp2:=nil;{free mem}
+  img_sa:=nil;{free mem}
 end;
 
 procedure analyse_fits_extended(img : image_array;var nr_stars, hfd_median,median_center, median_outer_ring, median_bottom_left,median_bottom_right,median_top_left,median_top_right : double); {analyse several areas}
 var
-   fitsX,fitsY,size,diam,i, j, retries,max_stars   : integer;
+   fitsX,fitsY,size,diam,i, j, retries,max_stars,n,m,xci,yci,
    nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right : integer;
-   hfd1,star_fwhm,snr,flux,xc,yc,backgr,detection_level  :double;
-   img_temp2  : image_array;
+   hfd1,star_fwhm,snr,flux,xc,yc,backgr,detection_level,sqr_diam                                    : double;
+   img_sa                                                                                           : image_array;
    hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
 var  {################# initialised variables #########################}
    len: integer=1000;
@@ -1489,7 +1500,7 @@ begin
   SetLength(hfdlist_bottom_left,len);
   SetLength(hfdlist_bottom_right,len);
 
-  setlength(img_temp2,1,width2,height2);{set length of image array}
+  setlength(img_sa,1,width2,height2);{set length of image array}
 
   get_background(0,img,true,true {calculate background and also star level end noise level},{var}backgr,star_level);
 
@@ -1508,13 +1519,13 @@ begin
     begin
       for fitsY:=0 to height2-1 do
         for fitsX:=0 to width2-1  do
-          img_temp2[0,fitsX,fitsY]:=0;{mark as no surveyed area}
+          img_sa[0,fitsX,fitsY]:=0;{mark as no surveyed area}
 
       for fitsY:=0 to height2-1 do
       begin
         for fitsX:=0 to width2-1  do
         begin
-          if (( img_temp2[0,fitsX,fitsY]=0){area not surveyed} and (img[0,fitsX,fitsY]-backgr>detection_level){star}) then {new star. For analyse used sigma is 5, so not too low.}
+          if (( img_sa[0,fitsX,fitsY]=0){area not occupied by a star} and (img[0,fitsX,fitsY]-backgr>detection_level){star}) then {new star. For analyse used sigma is 5, so not too low.}
           begin
             HFD(img,fitsX,fitsY,25 {LARGE box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
             if ((hfd1<=35) and (snr>30) and (hfd1>0.8) {two pixels minimum} ) then
@@ -1532,11 +1543,20 @@ begin
                 if ( (xc<(width2 div 2)) and (yc>(height2 div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+500);        end;
                 if ( (xc>(width2 div 2)) and (yc>(height2 div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+500);      end;
               end;
-              diam:=round(3*hfd1);{for marking area}
-              for j:=fitsY to fitsY+diam do {Mark the whole star area as surveyed}
-                for i:=fitsX-diam to fitsX+diam do
-                  if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
-                     img_temp2[0,i,j]:=1;
+
+              diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
+              sqr_diam:=sqr(3.0*hfd1);
+              xci:=round(xc);{star center as integer}
+              yci:=round(yc);
+              for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
+                for m:=-diam to +diam do
+                begin
+                  j:=n+yci;
+                  i:=m+xci;
+                  if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and ( (sqr(m)+sqr(n))<=sqr_diam)) then
+                    img_sa[0,i,j]:=1;
+                end;
+
             end;
           end;
         end;
@@ -1567,7 +1587,7 @@ begin
   hfdlist_bottom_left:=nil;
   hfdlist_bottom_right:=nil;
 
-  img_temp2:=nil;{free mem}
+  img_sa:=nil;{free mem}
 end;
 
 
@@ -5208,6 +5228,11 @@ begin
   FLastHintTabIndex := TabIndex;
 end;
 
+procedure Tstackmenu1.press_esc_to_abort1Click(Sender: TObject);
+begin
+  esc_pressed:=true;
+end;
+
 
 procedure Tstackmenu1.rainbow_Panel1MouseDown(Sender: TObject;
   Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -7103,6 +7128,13 @@ begin
 
 end;
 
+procedure Tstackmenu1.FormClick(Sender: TObject);
+begin
+
+end;
+
+
+
 procedure Tstackmenu1.FormDestroy(Sender: TObject);
 begin
   bsolutions:=nil;{just to be sure to clean up}
@@ -7124,6 +7156,11 @@ begin
   lrgb_preserve_r_nebula1.enabled:=au;
   lrgb_smart_smooth_width1.enabled:=au;
   lrgb_smart_colour_sd1.enabled:=au;
+end;
+
+procedure Tstackmenu1.Memo3Change(Sender: TObject);
+begin
+
 end;
 
 

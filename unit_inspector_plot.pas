@@ -205,19 +205,20 @@ end;
 
 procedure CCDinspector_analyse(detype: char);
 var
- fitsX,fitsY,size, i, j,nhfd,retries,max_stars,starX,starY,font_luminance  : integer;
- hfd1,star_fwhm,snr,flux,xc,yc,detection_level  : double;
+ fitsX,fitsY,size,diam, i, j,nhfd,retries,max_stars,starX,starY,font_luminance,n,m,xci,yci  : integer;
+ hfd1,star_fwhm,snr,flux,xc,yc,detection_level,sqr_diam                                : double;
  mean, min_value,max_value : single;
  hfd_values  : hfd_array;
  Fliphorizontal, Flipvertical: boolean;
+ img_sa : image_array;
 
- begin
+begin
   if fits_file=false then exit; {file loaded?}
 
   max_stars:=1000;
 
   SetLength(hfd_values,3,4000);{will contain x,y,hfd}
-  setlength(img_temp,1,width2,height2);{set length of image array}
+  setlength(img_sa,1,width2,height2);{set length of image array}
 
   get_background(0,img_loaded,false{ calculate histogram},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
@@ -229,22 +230,29 @@ var
 
     for fitsY:=0 to height2-1 do
       for fitsX:=0 to width2-1  do
-        img_temp[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+        img_sa[0,fitsX,fitsY]:=-1;{mark as not surveyed}
 
     for fitsY:=0 to height2-1-1  do
     begin
       for fitsX:=0 to width2-1-1 do
       begin
-        if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
+        if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
         begin
           HFD(img_loaded,fitsX,fitsY,14{box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if (hfd1>=1.3) {not a hotpixel} and (snr>30) and (hfd1<99) then
           begin
-            size:=round(5*hfd1);{for marking area. For inspector use factor 5 instead of 3}
-            for j:=fitsY to fitsY+size do {mark the whole star area as surveyed}
-              for i:=fitsX-size to fitsX+size do
-                if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
-                  img_temp[0,i,j]:=1;
+            diam:=round(5.0*hfd1);{for marking area. For inspector use factor 5 instead of 3}
+            sqr_diam:=sqr(5.0*hfd1);
+            xci:=round(xc);{star center as integer}
+            yci:=round(yc);
+            for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
+              for m:=-diam to +diam do
+              begin
+                j:=n+yci;
+                i:=m+xci;
+                if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and ( (sqr(m)+sqr(n))<=sqr_diam)) then
+                  img_sa[0,i,j]:=1;
+              end;
 
             {store values}
             if ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
@@ -278,7 +286,7 @@ var
 
   until ((nhfd>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
-  img_temp:=nil;{free mem}
+  img_sa:=nil;{free mem}
 
 
   if nhfd<10 then

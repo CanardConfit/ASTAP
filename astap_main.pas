@@ -724,7 +724,6 @@ function savefits_update_header(filen2:string) : boolean;{save fits file with up
 procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string);{plot annotation from header in ASTAP format}
 
 
-
 const   bufwide=1024*120;{buffer size in bytes}
 
   head1: array [0..28] of ansistring=
@@ -3167,7 +3166,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.555, '+about_message4+', dated 2021-6-23';
+  #13+#10+'ASTAP version ß0.9.557, '+about_message4+', dated 2021-6-26';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -10053,13 +10052,15 @@ end;
 
 procedure measure_magnitudes(annulus_rad:integer; deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux}
 var
-  fitsX,fitsY,diam, i, j,nrstars    : integer;
-  hfd1,star_fwhm,snr,flux,xc,yc,detection_level     : double;
+  fitsX,fitsY,diam, i, j,nrstars,n,m,xci,yci                : integer;
+  hfd1,star_fwhm,snr,flux,xc,yc,detection_level,sqr_diam    : double;
+  img_sa : image_array;
+
 begin
 
   SetLength(stars,4,5000);{set array length}
 
-  setlength(img_temp,1,width2,height2);{set length of image array}
+  setlength(img_sa,1,width2,height2);{set length of image array}
 
   get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
@@ -10069,13 +10070,13 @@ begin
 
   for fitsY:=0 to height2-1 do
     for fitsX:=0 to width2-1  do
-      img_temp[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+      img_sa[0,fitsX,fitsY]:=-1;{mark as not surveyed}
 
   for fitsY:=0 to height2-1-1 do
   begin
     for fitsX:=0 to width2-1-1  do
     begin
-      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack> detection_level)) then {new star}
+      if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- cblack> detection_level)) then {new star}
       begin
         HFD(img_loaded,fitsX,fitsY,annulus_rad {typical 14, box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
@@ -10087,12 +10088,18 @@ begin
           //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
-          diam:=round(3*hfd1);{for marking area}
-          for j:=fitsY to fitsY+diam do {mark the whole star area as surveyed}
-            for i:=fitsX-diam to fitsX+diam do
-             if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
-               img_temp[0,i,j]:=1;
-
+          diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
+          sqr_diam:=sqr(3.0*hfd1);
+          xci:=round(xc);{star center as integer}
+          yci:=round(yc);
+          for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
+            for m:=-diam to +diam do
+            begin
+              j:=n+yci;
+              i:=m+xci;
+              if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and ( (sqr(m)+sqr(n))<=sqr_diam)) then
+                img_sa[0,i,j]:=1;
+            end;
 
           if ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
               (img_loaded[0,round(xc-1),round(yc)]<datamax_org-1) and
@@ -10115,13 +10122,16 @@ begin
             stars[1,nrstars-1]:=yc;
             stars[2,nrstars-1]:=hfd1;
             stars[3,nrstars-1]:=flux;
+
+     //       IF ((abs(xc-1635)<10) and (abs(yc-885)<10)) then
+     //       beep;
           end;{not saturated}
         end;{HFD good}
       end;
     end;
   end;
 
-  img_temp:=nil;{free mem}
+  img_sa:=nil;{free mem}
 
   SetLength(stars,4,nrstars);{set length correct}
 end;
@@ -10129,12 +10139,12 @@ end;
 
 procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
-  size,diam, i,j, starX, starY,fitsX,fitsY     : integer;
+  size,diam, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci     : integer;
   Save_Cursor:TCursor;
-  Fliphorizontal, Flipvertical,astar                                                     : boolean;
-  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit : double;
+  Fliphorizontal, Flipvertical,astar                                                              : boolean;
+  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit,sqr_diam : double;
   messg : string;
-  img_temp2 :image_array;
+  img_temp3,img_sa :image_array;
 const
    default=1000;
 
@@ -10149,8 +10159,8 @@ const
   if flux_magn_offset=0 then
   begin
     beep;
-    img_temp:=nil;
-    img_temp2:=nil;
+    img_sa:=nil;
+    img_temp3:=nil;
     Screen.Cursor:= Save_Cursor;
     exit;
   end;
@@ -10168,27 +10178,27 @@ const
   mainwindow.image1.Canvas.Pen.Color := clred;
 
 
-  setlength(img_temp2,1,width2,height2);{set size of image array}
+  setlength(img_temp3,1,width2,height2);{set size of image array}
   for fitsY:=0 to height2-1 do
     for fitsX:=0 to width2-1  do
-      img_temp2[0,fitsX,fitsY]:=default;{clear}
-  plot_artificial_stars(img_temp2);{create artifical image with database stars as pixels}
-//  img_loaded:=img_temp2;
+      img_temp3[0,fitsX,fitsY]:=default;{clear}
+  plot_artificial_stars(img_temp3);{create artifical image with database stars as pixels}
+//  img_loaded:=img_temp3;
 //  plot_fits(mainwindow.image1,true,true);
 //  exit;
 
   get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
-  setlength(img_temp,1,width2,height2);{set length of image array}
+  setlength(img_sa,1,width2,height2);{set length of image array}
    for fitsY:=0 to height2-1 do
     for fitsX:=0 to width2-1  do
-      img_temp[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+      img_sa[0,fitsX,fitsY]:=-1;{mark as not surveyed}
 
   for fitsY:=0 to height2-1-1 do
   begin
     for fitsX:=0 to width2-1-1  do
     begin
-      if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed} and (img_loaded[0,fitsX,fitsY]- cblack>5*noise_level[0] {star_level} ){star}) then {new star}
+      if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- cblack>5*noise_level[0] {star_level} ){star}) then {new star}
       begin
         HFD(img_loaded,fitsX,fitsY,14{box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<10) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
@@ -10200,12 +10210,17 @@ const
           //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
-          diam:=round(3*hfd1); {for marking area}
-          for j:=fitsY to fitsY+diam do {mark the whole star area as surveyed}
-            for i:=fitsX-diam to fitsX+diam do
-             if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
-               img_temp[0,i,j]:=1;
-
+          diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
+          sqr_diam:=sqr(3.0*hfd1);
+          xci:=round(xc);{star center as integer}
+          yci:=round(yc);
+          for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
+            for m:=-diam to +diam do
+            begin
+              j:=n+yci;
+              i:=m+xci;
+              if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and ( (sqr(m)+sqr(n))<=sqr_diam)) then
+            end;
 
           if ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
               (img_loaded[0,round(xc-1),round(yc)]<datamax_org-1) and
@@ -10226,7 +10241,7 @@ const
                for i:=-3 to 3 do
                  for j:=-3 to 3 do
                  begin {database star available?}
-                   magnd:=img_temp2[0,round(xc)+i,round(yc)+j];
+                   magnd:=img_temp3[0,round(xc)+i,round(yc)+j];
                    if magnd<default then {a star from the database}
                      magn_database:=min(magnd,magn_database);{take brightest}
                  end;
@@ -10258,7 +10273,7 @@ const
             for i:=-2 to 2 do
               for j:=-2 to 2 do
               begin {database star available?}
-                 if img_temp2[0,round(xc)+i,round(yc)+j]>0 then  astar:=true;
+                 if img_temp3[0,round(xc)+i,round(yc)+j]>0 then  astar:=true;
                end;
             if astar=false then
             begin
@@ -10275,8 +10290,8 @@ const
   end;
 
 
-  img_temp2:=nil;{free mem}
-  img_temp:=nil;{free mem}
+  img_temp3:=nil;{free mem}
+  img_sa:=nil;{free mem}
 
   Screen.Cursor:= Save_Cursor;
 end;
@@ -10410,6 +10425,7 @@ begin
   image1.Canvas.textout(round(fontsize*2),height2-text_height,'10σ limiting magnitude is '+ floattostrF(lim_magn_max/10,ffgeneral,3,3));{}
   memo2_message('10σ limiting magnitude is '+ floattostrF(lim_magn_max/10,ffgeneral,3,3));
 
+  list:=nil;
   Screen.Cursor:= Save_Cursor;
 end;
 
@@ -12214,17 +12230,19 @@ end;
 
 procedure CCDinspector(snr_min: double);
 var
- fitsX,fitsY,size,diam, i, j,starX,starY, retries,max_stars,
- nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,x1,x2,x3,x4,y1,y2,y3,y4,fontsize,text_height,text_width : integer;
+ fitsX,fitsY,size,diam, i,j,starX,starY, retries,max_stars,
+ nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,
+ x1,x2,x3,x4,y1,y2,y3,y4,fontsize,text_height,text_width,n,m,xci,yci                      : integer;
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
- hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right, median_top_left, median_top_right,hfd_min : double;
- hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
+ hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right,
+ median_top_left, median_top_right,hfd_min,sqr_diam                                                                        : double;
+ hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring  : array of double;
  starlistXY    :array of array of integer;
  mess1,mess2,hfd_value,hfd_arcsec      : string;
  Save_Cursor:TCursor;
  Fliphorizontal, Flipvertical,restore_req  : boolean;
- img_bk                                    : image_array;
+ img_bk,img_sa                             : image_array;
 
 var {################# initialised variables #########################}
  len : integer=1000;
@@ -12287,7 +12305,7 @@ begin
     SetLength(hfdlist_top_right,len);
     SetLength(hfdlist_bottom_left,len);
     SetLength(hfdlist_bottom_right,len);
-    setlength(img_temp,1,width2,height2);{set length of image array}
+    setlength(img_sa,1,width2,height2);{set length of image array}
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     get_background(0,img_loaded,{cblack=0} false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
@@ -12307,23 +12325,30 @@ begin
 
       for fitsY:=0 to height2-1 do
         for fitsX:=0 to width2-1  do
-          img_temp[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+          img_sa[0,fitsX,fitsY]:=-1;{mark as not surveyed}
 
       for fitsY:=0 to height2-1-1  do
       begin
         for fitsX:=0 to width2-1-1 do
         begin
-          if (( img_temp[0,fitsX,fitsY]<=0){area not surveyed}  and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
+          if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star}  and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
           begin
             HFD(img_loaded,fitsX,fitsY,14{box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
             if ((hfd1<=30) and (snr>snr_min {30}) and (hfd1>hfd_min) ) then
             begin
-              diam:=round(3*hfd1);{for marking area}
-              for j:=fitsY to fitsY+diam do {mark the whole star area as surveyed}
-                for i:=fitsX-diam to fitsX+diam do
-                  if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
-                    img_temp[0,i,j]:=1;
+              diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
+              sqr_diam:=sqr(3.0*hfd1);
+              xci:=round(xc);{star center as integer}
+              yci:=round(yc);
+              for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
+                for m:=-diam to +diam do
+                begin
+                  j:=n+yci;
+                  i:=m+xci;
+                  if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and ( (sqr(m)+sqr(n))<=sqr_diam)) then
+                    img_sa[0,i,j]:=1;
+                end;
 
               if ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
                   (img_loaded[0,round(xc-1),round(yc)]<datamax_org-1) and
@@ -12486,7 +12511,7 @@ begin
 
   starlistXY:=nil;
 
-  img_temp:=nil;{free mem}
+  img_sa:=nil;{free mem}
 
   Screen.Cursor:= Save_Cursor;
 end;
@@ -13574,7 +13599,21 @@ begin
 
   if r_aperture<aperture_small then {normal mode}
   begin
-     snr:=flux/sqrt(flux +sqr(r_aperture)*pi*sqr(sd)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
+     snr:=flux/sqrt(flux +sqr(r_aperture)*pi*sqr(sd));
+     {For both bright stars (shot-noise limited) or skybackground limited situations
+       snr := signal/noise
+       snr := star_signal/sqrt(total_signal)
+       snr := star_signal/sqrt(star_signal + sky_signal)
+       equals
+       snr:=flux/sqrt(flux + r*r*pi* sd^2).
+
+       r is the diameter used for star flux measurement. Flux is the total star flux detected above 3* sd.
+
+       Assuming unity gain ADU/e-=1
+       See https://en.wikipedia.org/wiki/Signal-to-noise_ratio_(imaging)
+       https://www1.phys.vt.edu/~jhs/phys3154/snr20040108.pdf
+       http://spiff.rit.edu/classes/phys373/lectures/signal/signal_illus.html}
+
   //   memo2_message(#9+'######'+#9+inttostr(round(flux))+#9+ floattostr6(r_aperture)+#9+floattostr6(sd)+#9+floattostr6(snr)+#9+floattostr6(sqr(r_aperture)*pi*sqr(sd)));
   end
   else
@@ -13582,12 +13621,6 @@ begin
     flux:=max(sumval_small,0.00001);{prevent dividing by zero or negative values}
     snr:=flux/sqrt(flux +sqr(aperture_small)*pi*sqr(sd)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
   end;
-
-
-  {See https://en.wikipedia.org/wiki/Signal-to-noise_ratio_(imaging)   and  https://www1.phys.vt.edu/~jhs/phys3154/snr20040108.pdf}
-  {snr := signal/noise                                                  }
-  {snr := star_signal/sqrt(total_signal)                                }
-  {snr := star_signal/sqrt(star_signal + sky_signal)                    }
 
 
   {==========Notes on HFD calculation method=================

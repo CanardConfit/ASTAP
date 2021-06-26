@@ -12,8 +12,9 @@ You should have received a copy of the GNU Lesser General Public License (LGPL) 
 
 interface
 
-uses Classes, SysUtils,Graphics,
-     astap_main, unit_stack;
+uses
+   Classes, SysUtils,Graphics,
+   astap_main, unit_stack;
 type
    star_list= array of array of double;
    solution_vector   = array[0..2] of double;
@@ -192,7 +193,10 @@ begin
     begin
       if j<>i{not the first star} then
       begin
-          distance:=sqr(starlist[0,j]-starlist[0,i])+ sqr(starlist[1,j]-starlist[1,i]);
+        distance:=sqr(starlist[0,j]-starlist[0,i])+ sqr(starlist[1,j]-starlist[1,i]);
+
+        if distance>1 then {not an identical star. Mod 2021-6-25}
+        begin
           if distance<distance1 then
           begin
             distance3:=distance2;{distance third closest star}
@@ -218,7 +222,8 @@ begin
           begin
             distance3:=distance;{third closest star}
             j_used3:=j;
-          end
+          end;
+        end;
       end;
     end;{j}
 
@@ -286,6 +291,7 @@ begin
        On E :Exception do
        begin
          memo2_message(E.Message+ ' exception in procedure calc_quad_distances');{bug in fpc 3.20? Sets in once case the last elements of array to zero for file 4254816 new_image.fit'}
+         stackmenu1.Memo2.enablealign;{allow paint messages from other controls to update tmemo. Mod 2021-06-26}
          stackmenu1.Memo2.Lines.EndUpdate; {update memo2}
        end;
      end;
@@ -507,8 +513,8 @@ begin
 
       {in matrix calculations, b_refpositionX[0..nr_equations-1,0..2]:=solution_vectorX[0..2] * A_XYpositions[0..nr_equations-1,0..2]}
       {                        b_refpositionY[0..nr_equations-1,0..2]:=solution_matrixY[0..2] * A_XYpositions[0..nr_equations-1,0..2]}
-      result:=true;{3 or more references}
     end;
+    result:=true;{3 or more references}
   end;
 //  else
 //  if ((nr_references>=2) and (nrquads1<10) and (nrquads2<10)) then {use 8 stars of 2 quads as reference. Solver requires 3 equations minimum}
@@ -598,9 +604,9 @@ end;
 
 procedure find_stars(img :image_array;hfd_min:double;out starlist1: star_list);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,diam,i,j, max_stars,retries    : integer;
-   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level      : double;
-   img_temp2       : image_array;
+   fitsX, fitsY,nrstars,diam,sqr_diam,i,j,m,n, max_stars,retries,xci,yci   : integer;
+   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level              : double;
+   img_sa     : image_array;
    snr_list        : array of double;
 
 // flip_vertical,flip_horizontal  : boolean;
@@ -630,7 +636,7 @@ begin
   SetLength(starlist1,2,buffersize);{set array length}
   setlength(snr_list,buffersize);{set array length}
 
-  setlength(img_temp2,1,width2,height2);{set length of image array}
+  setlength(img_sa,1,width2,height2);{set length of image array}
 
   detection_level:=star_level; {level above background. Start with a high value}
   retries:=2; {try up to three times to get enough stars from the image}
@@ -640,13 +646,13 @@ begin
 
     for fitsY:=0 to height2-1 do
       for fitsX:=0 to width2-1  do
-        img_temp2[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+        img_sa[0,fitsX,fitsY]:=-1;{mark as not surveyed}
 
     for fitsY:=0 to height2-1-1 do
     begin
       for fitsX:=0 to width2-1-1  do
       begin
-        if (( img_temp2[0,fitsX,fitsY]<=0){area not surveyed} and (img[0,fitsX,fitsY]-cblack>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
+        if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img[0,fitsX,fitsY]-cblack>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
         begin
           HFD(img,fitsX,fitsY,14{box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} ) then
@@ -659,11 +665,24 @@ begin
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(snr, ffgeneral, 2,1));{add hfd as text}
 
-            diam:=round(3*hfd1);{for marking area}
-            for j:=fitsY to fitsY+diam do {mark the whole star area as surveyed}
-            for i:=fitsX-diam to fitsX+diam do
-              if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
-                img_temp2[0,i,j]:=1;
+//            diam:=round(3.0*hfd1);{for marking area}
+//            for j:=fitsY to fitsY+diam do {mark the whole star area as surveyed}
+//            for i:=fitsX-diam to fitsX+diam do
+//              if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
+//                img_sa[0,i,j]:=1;
+
+            diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
+            sqr_diam:=sqr(diam);
+            xci:=round(xc);{star center as integer}
+            yci:=round(yc);
+            for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
+              for m:=-diam to +diam do
+              begin
+                j:=n+yci;
+                i:=m+xci;
+                if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and ( (sqr(m)+sqr(n))<=sqr_diam)) then
+                  img_sa[0,i,j]:=1;
+              end;
 
             {store values}
             inc(nrstars);
@@ -689,7 +708,7 @@ begin
 
   until ((nrstars>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
-  img_temp2:=nil;{free mem}
+  img_sa:=nil;{free mem}
 
   SetLength(starlist1,2,nrstars);{set length correct}
   setlength(snr_list,nrstars);{set length correct}
@@ -725,6 +744,7 @@ begin
     reset_solution_vectors(0.001);{nullify}
     exit;
   end;
+
   result:=true;{2 quads are required giving 8 star references or 3 quads giving 3 center quad references}
 
   {in matrix calculations, b_refpositionX[0..nr_equations-1,0..2]:=solution_vectorX[0..2] * A_XYpositions[0..nr_equations-1,0..2]}
@@ -739,12 +759,11 @@ begin
 
   xy_sqr_ratio:=(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]) ) / (0.00000001+ sqr(solution_vectorY[0])+sqr(solution_vectorY[1]) );
 
-
-  if ((xy_sqr_ratio<0.99) or (xy_sqr_ratio>1.01)) then {dimensions x, y are not the same, something wrong}
+  if ((xy_sqr_ratio<0.98) or (xy_sqr_ratio>1.02)) then {dimensions x, y are not the same, something wrong. Mod 2021-6-26, changed it from 0.99 to 0.98 because of problem solving some images like M20 }
   begin
     result:=false;
     reset_solution_vectors(0.001);{nullify}
-    exit;
+    if solve_show_log then {global variable set in find stars} memo2_message('Solution skipped on XY ratio: '+ floattostr(xy_sqr_ratio));
   end;
 end;
 

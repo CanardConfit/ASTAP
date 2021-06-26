@@ -648,6 +648,8 @@ begin
       search_field:=fov2*(pi/180);
       STEP_SIZE:=search_field;{fixed step size search spiral. Prior to version 0.9.211 this was reduced for small star counts}
       stackmenu1.Memo2.Lines.BeginUpdate;{do not update tmemo, very very slow and slows down program}
+      stackmenu1.Memo2.disablealign;{prevent paint messages from other controls to update tmemo and make it grey. Mod 2021-06-26}
+
       match_nr:=0;
       repeat {Maximum accuracy loop. In case math is found on a corner, do a second solve. Result will be more accurate using all stars of the image}
 
@@ -660,6 +662,7 @@ begin
         spiral_dy := -1;{first step size y}
 
         repeat {search in squared spiral}
+
           {begin spiral routine, find a new squared spiral position position}
           if count<>0 then {first do nothing, start with [0 0] then start with [1 0],[1 1],[0 1],[-1 1],[-1 0],[-1 -1],[0 -1],[1 -1],[2 -1].[2 0] ..............}
           begin {start spiral around [0 0]}
@@ -671,8 +674,7 @@ begin
             end;
             spiral_x :=spiral_x+ spiral_dx;{walk through square}
             spiral_y :=spiral_y+ spiral_dy;{walk through square}
-          end;{end spiral around [0 0]
-
+          end;{end spiral around [0 0]}
           {adapt search field to matrix position, +0+0/+1+0,+1+1,+0+1,-1+1,-1+0,-1-1,+0-1,+1-1..}
           telescope_dec:=STEP_SIZE*spiral_y+dec_radians;
 
@@ -710,7 +712,6 @@ begin
                 end;
               end; {info reporting}
 
-
               {If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
               {read nrstars_required stars from database. If search field is oversized, number of required stars increases with the power of the oversize factor. So the star density will be the same as in the image to solve}
               extrastars:=1/1.1;{star with a factor of one}
@@ -738,10 +739,16 @@ begin
               // create supplement lines for sky coverage testing
               // stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
 
-               solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance);{find an solution}
+              solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance);{find an solution}
 
               Application.ProcessMessages;
-              if esc_pressed then  begin  stackmenu1.Memo2.Lines.EndUpdate; Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+              if esc_pressed then
+              begin
+                stackmenu1.Memo2.enablealign;{allow paint messages from other controls to update tmemo. Mod 2021-06-26}
+                stackmenu1.Memo2.Lines.EndUpdate;
+                Screen.Cursor :=Save_Cursor;    { back to normal }
+                exit;
+              end;
             end;{ra in range}
           end;{dec within range}
           inc(count);{step further in spiral}
@@ -768,7 +775,9 @@ begin
         end;
       until ((solution=false) or (current_dist<fov2*0.05){within 5% if image height from center}  or (match_nr>=2));{Maximum accurcy loop. After match possible on a corner do a second solve using the found ra0,dec0 for maximum accuracy USING ALL STARS}
 
+      stackmenu1.Memo2.enablealign;{allow paint messages from other controls to update tmemo. Mod 2021-06-26}
       stackmenu1.Memo2.Lines.EndUpdate;
+
     end; {enough quads in image}
   until ((autoFOV=false) or (solution) or (fov2<=0.38)); {loop for autoFOV from 9.5 to 0.37 degrees. Will lock between 9.5*1.25 downto  0.37/1.25  or 11.9 downto 0.3 degrees}
 

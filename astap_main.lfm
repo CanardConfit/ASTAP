@@ -1,13 +1,13 @@
 object mainwindow: Tmainwindow
-  Left = 229
-  Height = 675
+  Left = 75
+  Height = 658
   Hint = ' '
-  Top = 165
-  Width = 1348
+  Top = 205
+  Width = 1272
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 655
-  ClientWidth = 1348
+  ClientHeight = 638
+  ClientWidth = 1272
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -201,14 +201,14 @@ object mainwindow: Tmainwindow
   end
   object Panel1: TPanel
     Left = 0
-    Height = 504
+    Height = 487
     Hint = 'hint'
     Top = 176
-    Width = 1373
+    Width = 1297
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 504
-    ClientWidth = 1373
+    ClientHeight = 487
+    ClientWidth = 1297
     Color = 2105376
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
@@ -224,9 +224,9 @@ object mainwindow: Tmainwindow
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
     object Image1: TImage
-      Left = 210
+      Left = 182
       Height = 264
-      Top = 100
+      Top = 92
       Width = 608
       Anchors = []
       OnMouseDown = Image1MouseDown
@@ -766,8 +766,8 @@ object mainwindow: Tmainwindow
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
-    Top = 632
-    Width = 1348
+    Top = 615
+    Width = 1272
     Panels = <    
       item
         Width = 200
@@ -882,7 +882,7 @@ object mainwindow: Tmainwindow
     Left = 595
     Height = 177
     Top = 0
-    Width = 756
+    Width = 680
     ActivePage = TabSheet1
     Anchors = [akTop, akLeft, akRight]
     TabIndex = 0
@@ -890,12 +890,12 @@ object mainwindow: Tmainwindow
     object TabSheet1: TTabSheet
       Caption = 'Header'
       ClientHeight = 149
-      ClientWidth = 748
+      ClientWidth = 672
       object Memo1: TMemo
         Left = 0
         Height = 149
         Top = 0
-        Width = 748
+        Width = 672
         Align = alClient
         Anchors = [akTop, akLeft, akRight]
         Font.Height = -9
