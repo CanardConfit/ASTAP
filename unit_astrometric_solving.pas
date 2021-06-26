@@ -194,7 +194,7 @@ end;
 //end;
 
 
-function read_stars(telescope_ra,telescope_dec,search_field : double; nrstars_required: integer; var nrstars:integer): boolean;{read star from star database}
+function read_stars(telescope_ra,telescope_dec,search_field : double; nrstars_required: integer; out nrstars:integer): boolean;{read star from star database}
 var
    Bp_Rp, ra2,dec2,
    frac1,frac2,frac3,frac4  : double;
@@ -595,7 +595,7 @@ begin
     nrstars_required:=round(nrstars*(height2/width2));{square search field based on height.}
 
     solution:=false; {assume no match is found}
-    go_ahead:=(nrstars>=5); {bare minimum for two quads}
+    go_ahead:=(nrstars>=6); {bare minimum for three quads. Should be more but let's try}
 
     if go_ahead then {enough stars, lets find quads}
     begin

@@ -37,7 +37,6 @@ procedure find_quads_xy(starlist :star_list; out starlistquads :star_list);  {FO
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
 procedure display_quads(starlistquads :star_list);{draw quads}
-//procedure save_solution_to_disk;{write to disk}
 
 implementation
 
@@ -342,7 +341,10 @@ begin
     begin
       if j<>i{not the first star} then
       begin
-          distance:=sqr(starlist[0,j]-starlist[0,i])+ sqr(starlist[1,j]-starlist[1,i]);
+        distance:=sqr(starlist[0,j]-starlist[0,i])+ sqr(starlist[1,j]-starlist[1,i]);
+
+        if distance>1 then {not an identical star. Mod 2021-6-25}
+        begin
           if distance<distance1 then
           begin
             distance3:=distance2;{distance third closest star}
@@ -368,7 +370,8 @@ begin
           begin
             distance3:=distance;{third closest star}
             j_used3:=j;
-          end
+          end;
+        end;{not an identical star. Mod 2021-6-25}
       end;
     end;{j}
 
@@ -604,8 +607,8 @@ end;
 
 procedure find_stars(img :image_array;hfd_min:double;out starlist1: star_list);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,diam,sqr_diam,i,j,m,n, max_stars,retries,xci,yci   : integer;
-   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level              : double;
+   fitsX, fitsY,nrstars,diam,i,j,max_stars,retries,m,n,xci,yci          : integer;
+   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level,sqr_diam   : double;
    img_sa     : image_array;
    snr_list        : array of double;
 
@@ -646,13 +649,13 @@ begin
 
     for fitsY:=0 to height2-1 do
       for fitsX:=0 to width2-1  do
-        img_sa[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+        img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
     for fitsY:=0 to height2-1-1 do
     begin
       for fitsX:=0 to width2-1-1  do
       begin
-        if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img[0,fitsX,fitsY]-cblack>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
+        if (( img_sa[0,fitsX,fitsY]<=0){star free area} and (img[0,fitsX,fitsY]-cblack>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
         begin
           HFD(img,fitsX,fitsY,14{box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} ) then
@@ -672,7 +675,7 @@ begin
 //                img_sa[0,i,j]:=1;
 
             diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
-            sqr_diam:=sqr(diam);
+            sqr_diam:=sqr(3.0*hfd1);
             xci:=round(xc);{star center as integer}
             yci:=round(yc);
             for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}

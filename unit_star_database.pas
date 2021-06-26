@@ -2323,7 +2323,7 @@ end;
 
 
 
-procedure area_and_boundaries1476(ra1,dec1 :double; var area_nr: integer; var spaceE,spaceW,spaceN,spaceS: double); {For a ra, dec position find the star database area number and the corresponding boundary distances N, E, W, S}
+procedure area_and_boundaries1476(ra1,dec1 :double; out area_nr: integer; out spaceE,spaceW,spaceN,spaceS: double); {For a ra, dec position find the star database area number and the corresponding boundary distances N, E, W, S}
 var
   rot,cos_dec1 :double;
 begin

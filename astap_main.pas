@@ -10070,7 +10070,7 @@ begin
 
   for fitsY:=0 to height2-1 do
     for fitsX:=0 to width2-1  do
-      img_sa[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+      img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
   for fitsY:=0 to height2-1-1 do
   begin
@@ -10192,7 +10192,7 @@ const
   setlength(img_sa,1,width2,height2);{set length of image array}
    for fitsY:=0 to height2-1 do
     for fitsX:=0 to width2-1  do
-      img_sa[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+      img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
   for fitsY:=0 to height2-1-1 do
   begin
@@ -12325,7 +12325,7 @@ begin
 
       for fitsY:=0 to height2-1 do
         for fitsX:=0 to width2-1  do
-          img_sa[0,fitsX,fitsY]:=-1;{mark as not surveyed}
+          img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
       for fitsY:=0 to height2-1-1  do
       begin

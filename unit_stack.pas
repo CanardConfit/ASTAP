@@ -1421,13 +1421,13 @@ begin
       setlength(img_sa,1,width2,height2);{set length of image array}
       for fitsY:=0 to height2-1 do
         for fitsX:=0 to width2-1  do
-          img_sa[0,fitsX,fitsY]:=0;{mark as no surveyed area}
+          img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
       for fitsY:=0 to height2-1 do
       begin
         for fitsX:=0 to width2-1  do
         begin
-          if (( img_sa[0,fitsX,fitsY]=0){area not occupied by a star} and (img[0,fitsX,fitsY]-backgr>detection_level)) then {new star. For analyse used sigma is 5, so not too low.}
+          if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img[0,fitsX,fitsY]-backgr>detection_level)) then {new star. For analyse used sigma is 5, so not too low.}
           begin
             HFD(img,fitsX,fitsY,14{box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
             if ((hfd1<=30) and (snr>snr_min) and (hfd1>hfd_min) {two pixels minimum} ) then
@@ -1519,13 +1519,13 @@ begin
     begin
       for fitsY:=0 to height2-1 do
         for fitsX:=0 to width2-1  do
-          img_sa[0,fitsX,fitsY]:=0;{mark as no surveyed area}
+          img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
       for fitsY:=0 to height2-1 do
       begin
         for fitsX:=0 to width2-1  do
         begin
-          if (( img_sa[0,fitsX,fitsY]=0){area not occupied by a star} and (img[0,fitsX,fitsY]-backgr>detection_level){star}) then {new star. For analyse used sigma is 5, so not too low.}
+          if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img[0,fitsX,fitsY]-backgr>detection_level){star}) then {new star. For analyse used sigma is 5, so not too low.}
           begin
             HFD(img,fitsX,fitsY,25 {LARGE box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
             if ((hfd1<=35) and (snr>30) and (hfd1>0.8) {two pixels minimum} ) then
