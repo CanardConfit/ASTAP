@@ -205,8 +205,8 @@ end;
 
 procedure CCDinspector_analyse(detype: char);
 var
- fitsX,fitsY,size,diam, i, j,nhfd,retries,max_stars,starX,starY,font_luminance,n,m,xci,yci  : integer;
- hfd1,star_fwhm,snr,flux,xc,yc,detection_level,sqr_diam                                : double;
+ fitsX,fitsY,size,diam, i, j,nhfd,retries,max_stars,starX,starY,font_luminance,n,m,xci,yci,sqr_diam   : integer;
+ hfd1,star_fwhm,snr,flux,xc,yc,detection_level                               : double;
  mean, min_value,max_value : single;
  hfd_values  : hfd_array;
  Fliphorizontal, Flipvertical: boolean;
@@ -242,7 +242,7 @@ begin
           if (hfd1>=1.3) {not a hotpixel} and (snr>30) and (hfd1<99) then
           begin
             diam:=round(5.0*hfd1);{for marking area. For inspector use factor 5 instead of 3}
-            sqr_diam:=sqr(5.0*hfd1);
+            sqr_diam:=sqr(diam);
             xci:=round(xc);{star center as integer}
             yci:=round(yc);
             for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}

@@ -607,8 +607,8 @@ end;
 
 procedure find_stars(img :image_array;hfd_min:double;out starlist1: star_list);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,diam,i,j,max_stars,retries,m,n,xci,yci          : integer;
-   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level,sqr_diam   : double;
+   fitsX, fitsY,nrstars,diam,i,j,max_stars,retries,m,n,xci,yci,sqr_diam : integer;
+   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level           : double;
    img_sa     : image_array;
    snr_list        : array of double;
 
@@ -675,7 +675,7 @@ begin
 //                img_sa[0,i,j]:=1;
 
             diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
-            sqr_diam:=sqr(3.0*hfd1);
+            sqr_diam:=sqr(diam);
             xci:=round(xc);{star center as integer}
             yci:=round(yc);
             for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}

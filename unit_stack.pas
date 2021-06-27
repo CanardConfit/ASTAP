@@ -1388,8 +1388,8 @@ end;
 
 procedure analyse_fits(img : image_array;snr_min:double;report:boolean;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
 var
-   fitsX,fitsY,size,diam,i,j,retries,max_stars,n,m,xci,yci         : integer;
-   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min,sqr_diam  : double;
+   fitsX,fitsY,size,diam,i,j,retries,max_stars,n,m,xci,yci,sqr_diam         : integer;
+   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min                    : double;
    hfd_list                                       : array of double;
    img_sa  : image_array;
 var
@@ -1437,7 +1437,7 @@ begin
               if star_counter>=len then begin len:=len+1000; SetLength(hfd_list,len);{increase size} end;
 
               diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
-              sqr_diam:=sqr(3.0*hfd1);
+              sqr_diam:=sqr(diam);
               xci:=round(xc);{star center as integer}
               yci:=round(yc);
               for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
@@ -1480,9 +1480,9 @@ end;
 
 procedure analyse_fits_extended(img : image_array;var nr_stars, hfd_median,median_center, median_outer_ring, median_bottom_left,median_bottom_right,median_top_left,median_top_right : double); {analyse several areas}
 var
-   fitsX,fitsY,size,diam,i, j, retries,max_stars,n,m,xci,yci,
+   fitsX,fitsY,size,diam,i, j, retries,max_stars,n,m,xci,yci,sqr_diam,
    nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right : integer;
-   hfd1,star_fwhm,snr,flux,xc,yc,backgr,detection_level,sqr_diam                                    : double;
+   hfd1,star_fwhm,snr,flux,xc,yc,backgr,detection_level                                             : double;
    img_sa                                                                                           : image_array;
    hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
 var  {################# initialised variables #########################}
@@ -1545,7 +1545,7 @@ begin
               end;
 
               diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
-              sqr_diam:=sqr(3.0*hfd1);
+              sqr_diam:=sqr(diam);
               xci:=round(xc);{star center as integer}
               yci:=round(yc);
               for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}

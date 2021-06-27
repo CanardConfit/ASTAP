@@ -3166,7 +3166,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.557, '+about_message4+', dated 2021-6-26';
+  #13+#10+'ASTAP version ß0.9.557a, '+about_message4+', dated 2021-6-27';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -10052,8 +10052,8 @@ end;
 
 procedure measure_magnitudes(annulus_rad:integer; deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux}
 var
-  fitsX,fitsY,diam, i, j,nrstars,n,m,xci,yci                : integer;
-  hfd1,star_fwhm,snr,flux,xc,yc,detection_level,sqr_diam    : double;
+  fitsX,fitsY,diam, i, j,nrstars,n,m,xci,yci,sqr_diam    : integer;
+  hfd1,star_fwhm,snr,flux,xc,yc,detection_level          : double;
   img_sa : image_array;
 
 begin
@@ -10089,7 +10089,7 @@ begin
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
           diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
-          sqr_diam:=sqr(3.0*hfd1);
+          sqr_diam:=sqr(diam);
           xci:=round(xc);{star center as integer}
           yci:=round(yc);
           for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
@@ -10211,7 +10211,7 @@ const
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
           diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
-          sqr_diam:=sqr(3.0*hfd1);
+          sqr_diam:=sqr(diam);
           xci:=round(xc);{star center as integer}
           yci:=round(yc);
           for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
@@ -12232,11 +12232,11 @@ procedure CCDinspector(snr_min: double);
 var
  fitsX,fitsY,size,diam, i,j,starX,starY, retries,max_stars,
  nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,
- x1,x2,x3,x4,y1,y2,y3,y4,fontsize,text_height,text_width,n,m,xci,yci                      : integer;
+ x1,x2,x3,x4,y1,y2,y3,y4,fontsize,text_height,text_width,n,m,xci,yci,sqr_diam                     : integer;
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
  hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right,
- median_top_left, median_top_right,hfd_min,sqr_diam                                                                        : double;
+ median_top_left, median_top_right,hfd_min                                                         : double;
  hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring  : array of double;
  starlistXY    :array of array of integer;
  mess1,mess2,hfd_value,hfd_arcsec      : string;
@@ -12338,7 +12338,7 @@ begin
             if ((hfd1<=30) and (snr>snr_min {30}) and (hfd1>hfd_min) ) then
             begin
               diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
-              sqr_diam:=sqr(3.0*hfd1);
+              sqr_diam:=sqr(diam);
               xci:=round(xc);{star center as integer}
               yci:=round(yc);
               for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
