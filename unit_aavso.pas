@@ -5,14 +5,18 @@ unit unit_aavso;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, math;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, math,
+  clipbrd, ExtCtrls, Menus,graph;
 
 type
 
   { Tform_aavso1 }
 
   Tform_aavso1 = class(TForm)
+    Image_photometry1: TImage;
+    MenuItem1: TMenuItem;
     name_check1: TComboBox;
+    PopupMenu1: TPopupMenu;
     report_to_clipboard1: TButton;
     report_to_file1: TButton;
     delimiter1: TComboBox;
@@ -27,6 +31,13 @@ type
     obscode1: TEdit;
     Label1: TLabel;
     Filter1: TComboBox;
+    procedure FormResize(Sender: TObject);
+    procedure Image_photometry1MouseMove(Sender: TObject; Shift: TShiftState;
+      X, Y: Integer);
+    procedure MenuItem1Click(Sender: TObject);
+    procedure name_check1Change(Sender: TObject);
+    procedure name_check1DropDown(Sender: TObject);
+    procedure name_variable1Change(Sender: TObject);
     procedure report_to_clipboard1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormShow(Sender: TObject);
@@ -50,11 +61,19 @@ const
 var
   aavso_report : string;
 
+procedure plot_graph; {plot curve}
 
 implementation
 {$R *.lfm}
 
 uses astap_main, unit_stack;
+
+
+var
+  jd_min,jd_max,magn_min,magn_max : double;
+  w,h  :integer;
+const
+  bspace=50;{border space graph}
 
 { Tform_aavso1 }
 
@@ -79,9 +98,11 @@ end;
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
     c  : integer;
-    err,err_message,snr_str,airmass_str, delim: string;
+    err,err_message,snr_str,airmass_str, delim,fn,fnG: string;
     stdev_valid : boolean;
     snr_value,err_by_snr   : double;
+    PNG: TPortableNetworkGraphic;{FPC}
+
 begin
   get_info;
 
@@ -151,15 +172,266 @@ begin
 
   to_clipboard:=(sender=report_to_clipboard1); {report to clipboard of file}
 
+
+  memo2_message(aavso_report);
+  if to_clipboard then
+    Clipboard.AsText:=aavso_report
+  else
+  begin
+    fn:=ChangeFileExt(filename2,'_report.txt');
+    log_to_file2(fn, aavso_report);
+
+    png:= TPortableNetworkGraphic.Create;   {FPC}
+    try
+      PNG.Assign(Image_photometry1.Picture.Graphic);    //Convert data into png
+      fnG:=ChangeFileExt(filename2,'_graph.png');
+      PNG.SaveToFile(fnG);
+      finally
+       PNG.Free;
+    end;
+
+    memo2_message('AAVSO report written to: '+fn +' and '+fnG );
+  end;
+  save_settings2; {for aavso settings}
+
   form_aavso1.close;   {transfer variables. Normally this form is not loaded}
   mainwindow.setfocus;
 end;
+
+
+procedure Tform_aavso1.Image_photometry1MouseMove(Sender: TObject;
+  Shift: TShiftState; X, Y: Integer);
+var
+  w2,h2 :integer;
+begin
+  w2:=image_photometry1.width;
+  h2:=image_photometry1.height;
+  form_aavso1.caption:= floattostrf(jd_min+(jd_max-jd_min)*((x*w/w2)-bspace)/(w-bspace*2),ffFixed,12,5)+', '+floattostrf(magn_min+(magn_max-magn_min)*(((y*h/h2))-bspace)/(h-bspace*2),ffFixed,5,3);
+end;
+
+procedure Tform_aavso1.MenuItem1Click(Sender: TObject);
+begin
+    Clipboard.Assign(Image_photometry1.Picture.Bitmap);
+end;
+
+procedure Tform_aavso1.name_check1Change(Sender: TObject);
+begin
+  plot_graph;
+end;
+
+procedure Tform_aavso1.name_check1DropDown(Sender: TObject);
+begin
+  name_check1.items.add(name_check);
+  name_check1.items.add(name_check_IAU);
+end;
+
+procedure Tform_aavso1.name_variable1Change(Sender: TObject);
+begin
+  plot_graph;
+end;
+
+
+procedure Tform_aavso1.FormResize(Sender: TObject);
+begin
+  plot_graph;
+end;
+
+
+procedure plot_graph; {plot curve}
+var
+  x1,y1,c,count,textp1,textp2,textp3,nrmarkX, nrmarkY : integer;
+  scale         : double;
+  text1,text2   : string;
+  bmp: TBitmap;
+  dum:string;
+  data : array of array of double;
+const
+  len=3;
+
+  procedure plot_point(x,y,tolerance:integer);
+  begin
+    with form_aavso1.Image_photometry1 do
+     begin
+       if ((x>0) and (y>0) and (x<=w) and( y<=h)) then
+       begin
+         bmp.canvas.Ellipse(x-len,y-len,x+1+len,y+1+len);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+
+         if tolerance>0 then
+         begin
+           bmp.canvas.moveto(x,y-tolerance);
+           bmp.canvas.lineto(x,y+tolerance);
+
+           bmp.canvas.moveto(x-len+1,y-tolerance);
+           bmp.canvas.lineto(x+len,y-tolerance);
+
+           bmp.canvas.moveto(x-len+1,y+tolerance);
+           bmp.canvas.lineto(x+len,y+tolerance);
+         end;
+       end;
+     end;
+  end;
+begin
+  if ((fits_file=false) or (form_aavso1=nil))  then exit;
+
+  jd_min:=+9999999;
+  jd_max:=-9999999 ;
+  magn_min:=99;
+  magn_max:=0;
+
+
+  w:=max(form_aavso1.Image_photometry1.width,(len*2)*stackmenu1.listview7.items.count);{make graph large enough for all points}
+  h:=max(100,form_aavso1.Image_photometry1.height);
+
+  setlength(data,4, stackmenu1.listview7.items.count);
+  with stackmenu1 do
+  for c:=0 to listview7.items.count-1 do {retrieve data from listview}
+  begin
+    if listview7.Items.item[c].checked then
+    begin
+      dum:=(listview7.Items.item[c].subitems.Strings[P_jd_mid]);
+      if dum<>'' then  data[0,c]:=strtofloat(dum) else data[0,c]:=0;
+      if data[0,c]<>0 then
+      begin
+        jd_max:=max(jd_max,data[0,c]);
+        jd_min:=min(jd_min,data[0,c]);
+      end;
+
+      dum:=(listview7.Items.item[c].subitems.Strings[P_magn1]);{var star}
+      if length(dum)>1 {not a ?} then  data[1,c]:=strtofloat(dum) else data[1,c]:=0;
+      if data[1,c]<>0 then
+      begin
+        magn_max:=max(magn_max,data[1,c]);
+        magn_min:=min(magn_min,data[1,c]);
+      end;
+
+      dum:=(listview7.Items.item[c].subitems.Strings[P_magn2]);{chk star}
+      if length(dum)>1 then  data[2,c]:=strtofloat(dum) else data[2,c]:=0;
+      if data[2,c]<>0 then
+      begin
+        magn_max:=max(magn_max,data[2,c]);
+        magn_min:=min(magn_min,data[2,c]);
+      end;
+
+      dum:=(listview7.Items.item[c].subitems.Strings[P_magn3]); {3}
+      if length(dum)>1 then  data[3,c]:=strtofloat(dum) else data[3,c]:=0;
+      if data[3,c]<>0 then
+      begin
+        magn_max:=max(magn_max,data[3,c]);
+        magn_min:=min(magn_min,data[3,c]);
+      end;
+    end;
+
+  end;
+
+  magn_min:=trunc(magn_min*100)/100; {add some rounding}
+  magn_max:=0.01+trunc(magn_max*100)/100;
+
+  with form_aavso1.Image_photometry1 do
+  begin
+    bmp:=TBitmap.Create;
+    bmp.PixelFormat:=pf24bit;
+
+    bmp.SetSize(w,h);
+
+    bmp.Canvas.brush.Style:=bsclear;
+
+    bmp.canvas.brush.color:=clmenu;
+    bmp.canvas.rectangle(-1,-1, w+1, h+1);{background}
+
+    bmp.Canvas.Pen.Color := clmenutext;
+    bmp.Canvas.brush.color :=clmenu;
+    bmp.Canvas.Font.Color := clmenutext;
+
+    bmp.canvas.moveto(w,h-bspace+5);
+    bmp.canvas.lineto(bspace-5,h-bspace+5);{x line}
+    bmp.canvas.lineto(bspace-5,bspace);{y line}
+
+    bmp.canvas.textout(5,bspace div 2,'Magn');
+    bmp.canvas.textout(w-50,h-(bspace div 2),'JD (mid)');
+
+    text1:='Var ('+form_aavso1.name_variable1.text+')';
+    textp1:=10+bspace;
+    bmp.canvas.textout(textp1,len*3,text1);
+
+    textp2:=textp1+40+bmp.canvas.textwidth(text1);
+    text2:='Chk ('+form_aavso1.name_check1.text+')';
+    bmp.canvas.textout(textp2,len*3,text2);
+
+    textp3:=textp2+40+bmp.canvas.textwidth(text2);
+    bmp.canvas.textout(textp3,len*3,'3');
+
+    if object_name<>'' then
+      bmp.canvas.textout(w div 2,len*3,object_name)
+    else
+      bmp.canvas.textout(w div 2,len*3,ExtractFilePath(filename2));
+
+    nrmarkX:=trunc(w*5/1000);
+    for c:=0 to nrmarkX do {markers x line}
+    begin
+      x1:=bspace+round((w-bspace*2)*c/nrmarkX); {x scale has bspace pixels left and right space}
+      y1:=h-bspace+5;
+      bmp.canvas.moveto(x1,y1);
+      bmp.canvas.lineto(x1,y1+5);
+      bmp.canvas.textout(x1,y1+5,floattostrf(jd_min+(jd_max-jd_min)*c/nrmarkX,ffFixed,12,5));
+    end;
+
+    nrmarkY:=trunc(h*5/400);
+    for c:=0 to nrmarkY do {markers y line}
+    begin
+      x1:=bspace-5;
+      y1:= round(bspace+(h-bspace*2)*c/nrmarkY); {y scale has bspace pixels below and above space}
+      bmp.canvas.moveto(x1,y1);
+      bmp.canvas.lineto(x1-5,y1);
+      bmp.canvas.textout(5,y1,floattostrf(magn_min+(magn_max-magn_min)*c/nrmarkY,ffFixed,5,3));
+    end;
+
+
+    if magn_max>98 then exit;
+
+    scale:=(h-(bspace*2))/(magn_max-magn_min);{pixel per magnitudes}
+
+    bmp.Canvas.Pen.Color := clGreen;
+    bmp.Canvas.brush.color :=clGreen;
+    plot_point(textp2,len*3,0);
+    for c:=0 to length(data[0])-1 do
+    begin
+      plot_point( bspace+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[2,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {chk}
+    end;
+
+    bmp.Canvas.Pen.Color := clBlue;
+    bmp.Canvas.brush.color :=clBlue;
+    plot_point(textp3,len*3,0);
+
+    for c:=0 to length(data[0])-1 do
+    begin
+      plot_point( bspace+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[3,c]-magn_min)/(magn_max-magn_min)   ),0); {3}
+    end;
+
+    bmp.Canvas.Pen.Color := clRed;
+    bmp.Canvas.brush.color :=clRed;
+    plot_point(textp1,len*3,0);
+    for c:=0 to length(data[0])-1 do
+    begin
+      plot_point( bspace+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[1,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {var}
+    end;
+
+
+    Picture.Bitmap.SetSize(w,h);
+    Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to image picture
+    bmp.Free;
+  end;
+  data:=nil;
+end;
+
 
 
 
 procedure Tform_aavso1.FormClose(Sender: TObject; var CloseAction: TCloseAction );
 begin
   get_info; {form_aavso1.release will be done in the routine calling the form}
+
+  closeaction:=caFree; {delete form}
+  form_aavso1:=nil;
 end;
 
 
@@ -170,8 +442,6 @@ begin
     else
     name_variable1.text:=name_var;
 
-  name_check1.items.add(name_check);
-  name_check1.items.add(name_check_IAU);
   name_check1.text:=name_check;
 
   if filter_name<>'' then filter1.text:=filter_name else  filter1.itemindex:=0 {TC};
@@ -180,6 +450,9 @@ begin
   Comparison1.Text:=stackmenu1.star_database1.text;
 
   aavso_report:='';
+
+  plot_graph;
+
 end;
 
 end.

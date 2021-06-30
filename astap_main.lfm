@@ -671,7 +671,7 @@ object mainwindow: Tmainwindow
       Hint = 'Stretch factor applied on displayed image. This is a  colour preserving stretch based on an asinh function.'
       Top = 0
       Width = 100
-      DropDownCount = 15
+      DropDownCount = 20
       Enabled = False
       ItemHeight = 15
       ItemIndex = 0

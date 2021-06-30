@@ -84,14 +84,14 @@ begin
   begin
     if get_bk then get_background(0,img_loaded,get_his {histogram},false {calculate also noise level} ,{var}cblack,star_level);
     if pedestal>=cblack then begin beep; pedestal:=0; {prevent errors} end;
-    sqm:=flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
+    sqmfloat:=flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
     alt:=calculate_altitude(true);
     centalt:=inttostr(round(alt));{for reporting in menu sqm1}
     if alt<>0 then
     begin
       airm:=airmass_calc(alt);
       correction:= atmospheric_absorption(airm)- 0.28 {absorption at zenith};
-      sqm:=sqm+correction;
+      sqmfloat:=sqmfloat+correction;
       result:=true;
     end;
   end;
@@ -124,7 +124,7 @@ begin
     pedestal1.caption:=inttostr(pedestal);
     background1.caption:=inttostr(round(cblack));
     altitude1.caption:=centalt;
-    sqm1.caption:=floattostrF2(sqm,0,2)
+    sqm1.caption:=floattostrF2(sqmfloat,0,2)
   end;
 end;
 

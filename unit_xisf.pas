@@ -34,10 +34,10 @@ function load_xisf(filen:string;var img_loaded2: image_array) : boolean;{load un
 
 implementation
 
+
 function load_xisf(filen:string;var img_loaded2: image_array) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
 var
    i,j,k, reader_position,a,b,c,d,e : integer;
-   ccd_temperature                  : double;
    aline,message1,message_key,message_value,message_comment    : ansistring;
    attachment,start_image  : integer;
    error2                  : integer;
@@ -96,55 +96,15 @@ begin
   end;
   mainwindow.error_label1.visible:=false;
 
-  {Reset variables for case they are not specified in the file}
-  Reader := TReader.Create (theFile3,$4000);{number of hnsky records}
-  {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
-  crota2:=99999;{just for the case it is not available, make it later zero}
-  crota1:=99999;
-  ra0:=0;
-  dec0:=0;
-  ra_mount:=99999;
-  dec_mount:=99999;
-  cdelt1:=0;
-  cdelt2:=0;
-  xpixsz:=0;
-  ypixsz:=0;
-  focallen:=0;
-  subsamp:=1;{just for the case it is not available}
-  cd1_1:=0;{just for the case it is not available}
-  cd1_2:=0;{just for the case it is not available}
-  cd2_1:=0;{just for the case it is not available}
-  cd2_2:=0;{just for the case it is not available}
-  date_obs:='';date_avg:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
-  sitelat:='';{Observatory latitude} sitelong:='';{Observatory longitude}
+  reset_fits_global_variables(true{light});  {Reset variables for case they are not specified in the file}
 
-  naxis:=1;
-  naxis3:=1;
-
-  filter_name:='';
-  calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
-  imagetype:='';
-  xbinning:=1;{normal}
-  ybinning:=1;
-  exposure:=0;
-  ccd_temperature:=999;
-  set_temperature:=999;
-
-  x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
-  y_coeff[0]:=0;
-
-  a_order:=0; {reset SIP_polynomial}
-  ap_order:=0; {reset SIP_polynomial}
-  bayerpat:='';{reset bayer pattern}
-  xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
-  ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
-  roworder:='';{'BOTTOM-UP'= lower-left corner first in the file.  or 'TOP-DOWN'= top-left corner first in the file.}
-
-  flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
-  annotated:=false; {any annotation in the file}
+//  ccd_temperature:=999;
   extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
 
   setlength(header2,16);
+  Reader := TReader.Create (theFile3,$4000);{number of hnsky records}
+  {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
+
   reader_position:=0;
   try
     reader.read(header2[0],16);{read XISF signature}

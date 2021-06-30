@@ -2,14 +2,14 @@ object stackmenu1: Tstackmenu1
   Left = 84
   Height = 749
   Top = 154
-  Width = 1272
-  HorzScrollBar.Page = 1272
+  Width = 1785
+  HorzScrollBar.Page = 1785
   VertScrollBar.Page = 556
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
   ClientHeight = 732
-  ClientWidth = 1272
+  ClientWidth = 1785
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 7406
+    Left = 9185
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -455,24 +455,26 @@ object stackmenu1: Tstackmenu1
             Width = 70
           end        
           item
-            Caption = 'CentAlt'
-            MinWidth = 60
-            Width = 60
-          end        
-          item
-            Caption = 'CentAz'
-            MinWidth = 60
-            Width = 60
-          end        
-          item
             Caption = 'Gain'
             MinWidth = 60
             Width = 60
           end        
           item
-            Caption = 'SQM'
+            Caption = 'CentAlt'
             MinWidth = 60
             Width = 60
+          end        
+          item
+            AutoSize = True
+            Caption = 'CentAz'
+            MinWidth = 60
+            Width = 53
+          end        
+          item
+            AutoSize = True
+            Caption = 'SQM'
+            MinWidth = 60
+            Width = 41
           end>
         GridLines = True
         HideSelection = False
@@ -1217,7 +1219,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 470
-      ClientWidth = 1462
+      ClientWidth = 1777
       ImageIndex = 5
       ParentFont = False
       object stack_method1: TComboBox
@@ -4267,7 +4269,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 1'
       Caption = 'Pixel math 1'
       ClientHeight = 470
-      ClientWidth = 1528
+      ClientWidth = 1777
       Enabled = False
       ImageIndex = 4
       ParentFont = False
@@ -5617,7 +5619,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 2'
       Caption = 'Pixel math 2'
       ClientHeight = 470
-      ClientWidth = 1360
+      ClientWidth = 1777
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox
@@ -7513,6 +7515,22 @@ object stackmenu1: Tstackmenu1
     object MenuItem3: TMenuItem
       Caption = '-'
     end
+    object menukeywordchange1: TMenuItem
+      Caption = 'Change column keyword'
+      object keywordchangelast1: TMenuItem
+        Caption = 'Change keyword last column'
+        Hint = 'Change the key listed in this column'
+        OnClick = keywordchangelast1Click
+      end
+      object keywordchangesecondtolast1: TMenuItem
+        Caption = 'Change keyword second to last column'
+        Hint = 'Change the key listed in this column'
+        OnClick = keywordchangesecondtolast1Click
+      end
+    end
+    object MenuItem4: TMenuItem
+      Caption = '-'
+    end
     object unselect1: TMenuItem
       Caption = 'Uncheck selected'
       ImageIndex = 9
@@ -8129,7 +8147,7 @@ object stackmenu1: Tstackmenu1
       Caption = 'View image'
       OnClick = Viewimage1Click
     end
-    object MenuItem4: TMenuItem
+    object MenuItem32: TMenuItem
       Caption = '-'
     end
     object unselect2: TMenuItem

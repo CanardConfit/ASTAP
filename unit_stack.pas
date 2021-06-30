@@ -42,6 +42,10 @@ type
     add_substract1: TComboBox;
     add_time1: TCheckBox;
     apply_normalise_filter1: TCheckBox;
+    menukeywordchange1: TMenuItem;
+    MenuItem32: TMenuItem;
+    keywordchangelast1: TMenuItem;
+    keywordchangesecondtolast1: TMenuItem;
     planetary_image1: TCheckBox;
     classify_dark_date1: TCheckBox;
     classify_flat_date1: TCheckBox;
@@ -588,7 +592,8 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure help_mount_tab1Click(Sender: TObject);
     procedure lrgb_auto_level1Change(Sender: TObject);
-    procedure Memo3Change(Sender: TObject);
+    procedure keywordchangelast1Click(Sender: TObject);
+    procedure keywordchangesecondtolast1Click(Sender: TObject);
     procedure mount_analyse1Click(Sender: TObject);
     procedure analysephotometry1Click(Sender: TObject);
     procedure analyse_inspector1Click(Sender: TObject);
@@ -891,9 +896,9 @@ const
   L_calibration=19;
   L_focpos=20;
   L_foctemp=21;
-  L_centalt=22;
-  L_centaz=23;
-  L_gain=24;
+  L_gain=22;
+  L_centalt=23;
+  L_centaz=24;
   L_sqm=25;
   L_nr=26;{number of fields}
 
@@ -1630,7 +1635,7 @@ begin
 end;
 
 
-procedure analyse_tab_images;
+procedure analyse_tab_lights;
 var
   c,hfd_counter  ,i,counts          : integer;
   backgr, hfd_median,alt            : double;
@@ -1856,13 +1861,14 @@ begin
                 if focus_pos<>0 then ListView1.Items.item[c].subitems.Strings[L_focpos]:=inttostr(focus_pos);
                 if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[L_foctemp]:=floattostrF2(focus_temp,0,1);
 
+                if gain<>999 then ListView1.Items.item[c].subitems.Strings[L_gain]:=inttostr(round(gain));
+
                 alt:=calculate_altitude(false);{convert centalt string to double or calculate altitude from observer location}
                 if alt<>0 then
                            ListView1.Items.item[c].subitems.Strings[L_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
 
                 ListView1.Items.item[c].subitems.Strings[L_centaz]:=centaz;
-                if gain<>999 then ListView1.Items.item[c].subitems.Strings[L_gain]:=inttostr(round(gain));
-                if sqm<>0 then ListView1.Items.item[c].subitems.Strings[L_sqm]:=floattostrF2(sqm,0,1);
+                ListView1.Items.item[c].subitems.Strings[L_sqm]:=sqm_value;
 
                 if use_ephemeris_alignment1.Checked then {ephemeride based stacking}
                    get_annotation_position;{fill the x,y with annotation position}
@@ -1925,7 +1931,7 @@ procedure Tstackmenu1.Analyse1Click(Sender: TObject);
 begin
   if img_loaded<>nil then backup_solution;{save solution only}
 
-  analyse_tab_images;
+  analyse_tab_lights;
 
   if img_loaded<>nil then
   begin
@@ -2964,6 +2970,9 @@ begin
 
   stackmenu1.width_UpDown1.position:=round(width2*strtofloat2(stackmenu1.resize_factor1.caption));
   stackmenu1.make_osc_color1Change(nil);{update glyph stack button}
+
+  stackmenu1.listview1.columns.Items[l_centaz+1].caption:=centaz_key;   {lv.items[l_sqm].caption:=sqm_key; doesn't work}
+  stackmenu1.listview1.columns.Items[l_sqm+1].caption:=sqm_key;   {lv.items[l_sqm].caption:=sqm_key; doesn't work}
 
   hue_fuzziness1Change(nil);{show position}
 
@@ -4604,20 +4613,21 @@ var
   fn: string;
 
 begin
-  form_aavso1:=Tform_aavso1.Create(self); {in project option not loaded automatic}
-  form_aavso1.ShowModal;
-  form_aavso1.release;
+  if form_aavso1=nil then
+      form_aavso1:=Tform_aavso1.Create(self); {in project option not loaded automatic}
+  form_aavso1.Show{Modal};
+ // form_aavso1.release;
 
-  memo2_message(aavso_report);
-  if to_clipboard then
-    Clipboard.AsText:=aavso_report
-  else
-  begin
-    fn:=ChangeFileExt(filename2,'.txt');
-    log_to_file2(fn, aavso_report);
-    memo2_message('AAVSO report written to: '+fn);
-  end;
-  save_settings2; {for aavso settings}
+//  memo2_message(aavso_report);
+//  if to_clipboard then
+//    Clipboard.AsText:=aavso_report
+//  else
+//  begin
+//    fn:=ChangeFileExt(filename2,'.txt');
+//    log_to_file2(fn, aavso_report);
+//    memo2_message('AAVSO report written to: '+fn);
+//  end;
+//  save_settings2; {for aavso settings}
 end;
 
 procedure Tstackmenu1.clear_mount_list1Click(Sender: TObject);
@@ -5071,6 +5081,7 @@ begin
 end;
 
 
+
 {$ifdef mswindows}
 procedure CopyFilesToClipboard(FileList: string); {See https://forum.lazarus.freepascal.org/index.php?topic=18637.0}
 var
@@ -5079,7 +5090,7 @@ var
   iLen: integer;
 begin
   iLen := Length(FileList) + 2;
-  FileList := FileList + #0#0;
+  FileList := FileList + #0#0;   // <-- Important to make it work
   hGlobal := GlobalAlloc(GMEM_SHARE or GMEM_MOVEABLE or GMEM_ZEROINIT,
     SizeOf(TDropFiles) + iLen);
   if (hGlobal = 0) then
@@ -6344,7 +6355,7 @@ begin
 
         mainwindow.image1.Canvas.Pen.Mode := pmMerge;
         mainwindow.image1.Canvas.Pen.width :=1;{thickness lines}
-        mainwindow.image1.Canvas.Pen.Color := clGreen;
+        mainwindow.image1.Canvas.Pen.Color := clRed;
         mainwindow.image1.Canvas.Pen.Cosmetic:= false; {gives better dotted lines}
 
         mainwindow.image1.Canvas.brush.Style:=bsClear;
@@ -6360,7 +6371,7 @@ begin
         begin
           if mainwindow.shape_alignment_marker1.visible then
           begin
-            astr:=measure_star(shape_fitsX,shape_fitsY);
+            astr:=measure_star(shape_fitsX,shape_fitsY); {var star}
             listview7.Items.item[c].subitems.Strings[P_magn1]:=astr;
             listview7.Items.item[c].subitems.Strings[P_snr]:=inttostr(round(snr));
             if ((astr<>'?') and (copy(astr,1,1)<>'S')) then {Good star detected}
@@ -6372,8 +6383,8 @@ begin
 
           if mainwindow.shape_alignment_marker2.visible then
           begin
-            mainwindow.image1.Canvas.Pen.Color := clAqua;
-            astr:=measure_star(shape_fitsX2,shape_fitsY2);
+            mainwindow.image1.Canvas.Pen.Color := clGreen;
+            astr:=measure_star(shape_fitsX2,shape_fitsY2);{chk}
             if first_image=c then
             begin
                sensor_coordinates_to_celestial(xc,yc,{var}   rax,decx {position});
@@ -6389,7 +6400,7 @@ begin
           end;
           if mainwindow.shape_alignment_marker3.visible then
           begin
-            mainwindow.image1.Canvas.Pen.Color := clGray;
+            mainwindow.image1.Canvas.Pen.Color := clAqua; {star 3}
             astr:=measure_star(shape_fitsX3,shape_fitsY3);
             listview7.Items.item[c].subitems.Strings[P_magn3]:=astr;
             if ((astr<>'?') and (copy(astr,1,1)<>'S')) then {Good star detected}
@@ -6461,6 +6472,7 @@ begin
 
     photometry_stdev:=madCheck*1.4826;{mad to standard deviation}
 
+    plot_graph; {aavso report}
   until ((esc_pressed) or (sender<>photometry_repeat1 {single run}));
 
   nil_all;{nil all arrays and restore cursor}
@@ -7158,9 +7170,21 @@ begin
   lrgb_smart_colour_sd1.enabled:=au;
 end;
 
-procedure Tstackmenu1.Memo3Change(Sender: TObject);
-begin
 
+procedure Tstackmenu1.keywordchangelast1Click(Sender: TObject);
+begin
+  sqm_key:=uppercase(InputBox('Type header keyword to display in the last column:','',sqm_key ));
+  new_analyse_required:=true;
+  stackmenu1.listview1.columns.Items[l_sqm+1].caption:=sqm_key;   {lv.items[l_sqm].caption:=sqm_key; doesn't work}
+  while length(sqm_key)<8 do sqm_key:=sqm_key+' ';
+end;
+
+procedure Tstackmenu1.keywordchangesecondtolast1Click(Sender: TObject);
+begin
+  centaz_key:=uppercase(InputBox('Type header keyword to display in the second to last column:','',centaz_key ));
+  new_analyse_required:=true;
+  stackmenu1.listview1.columns.Items[l_centaz+1].caption:=centaz_key;   {lv.items[l_sqm].caption:=sqm_key; doesn't work}
+  while length(centaz_key)<8 do centaz_key:=centaz_key+' ';
 end;
 
 
@@ -8334,7 +8358,7 @@ begin
   if ListView1.items.count<>0 then
   begin
     memo2_message('Analysing images.');
-    analyse_tab_images; {analyse any image not done yet}
+    analyse_tab_lights; {analyse any image not done yet}
     if esc_pressed then exit;
     memo2_message('Stacking ('+stack_method1.text+'), HOLD ESC key to abort.');
   end

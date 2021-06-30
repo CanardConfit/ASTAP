@@ -1,12 +1,13 @@
 object form_aavso1: Tform_aavso1
-  Left = 201
-  Height = 379
-  Top = 128
-  Width = 403
+  Left = 177
+  Height = 398
+  Top = 113
+  Width = 1385
   Caption = 'AAVSO report'
-  ClientHeight = 379
-  ClientWidth = 403
+  ClientHeight = 398
+  ClientWidth = 1385
   OnClose = FormClose
+  OnResize = FormResize
   OnShow = FormShow
   LCLVersion = '2.0.12.0'
   object obscode1: TEdit
@@ -39,7 +40,7 @@ object form_aavso1: Tform_aavso1
     Left = 16
     Height = 25
     Hint = 'Copies the report to the clipboard. Paste it into a text editor, save it and upload it to the AAVSO WebObs.'
-    Top = 344
+    Top = 360
     Width = 168
     Caption = 'Report to clipboard'
     OnClick = report_to_clipboard1Click
@@ -86,6 +87,7 @@ object form_aavso1: Tform_aavso1
     Hint = ': The star''s identifier. It can be the AAVSO Designation, the AAVSO Name, or the AAVSO Unique Identifier, but NOT more than one of these. Limit: 30 characters.'
     Top = 56
     Width = 208
+    OnChange = name_variable1Change
     ParentShowHint = False
     ShowHint = True
     TabOrder = 3
@@ -150,8 +152,8 @@ object form_aavso1: Tform_aavso1
   object report_to_file1: TButton
     Left = 218
     Height = 25
-    Hint = 'Writes report to file.'
-    Top = 344
+    Hint = 'Writes report to file in the same directory as the input files.'
+    Top = 360
     Width = 168
     Caption = 'Report to file'
     OnClick = report_to_clipboard1Click
@@ -164,9 +166,34 @@ object form_aavso1: Tform_aavso1
     Top = 152
     Width = 208
     ItemHeight = 15
+    OnChange = name_check1Change
+    OnDropDown = name_check1DropDown
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
     TabOrder = 7
+  end
+  object Image_photometry1: TImage
+    Cursor = crCross
+    Left = 400
+    Height = 398
+    Top = 0
+    Width = 980
+    Align = alClient
+    BorderSpacing.Left = 400
+    BorderSpacing.Right = 5
+    OnMouseMove = Image_photometry1MouseMove
+    PopupMenu = PopupMenu1
+    Stretch = True
+  end
+  object PopupMenu1: TPopupMenu
+    Left = 685
+    Top = 135
+    object MenuItem1: TMenuItem
+      Caption = 'Copy to clipboard'
+      Hint = 'Copy graph to clipboard'
+      ShortCut = 16451
+      OnClick = MenuItem1Click
+    end
   end
 end

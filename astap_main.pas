@@ -531,9 +531,9 @@ var
   set_temperature : integer;
   star_level  : double;
   object_name, filter_name,calstat,imagetype ,sitelat, sitelong,centalt,centaz: string;
-  exposure,focus_temp,cblack,cwhite,gain   :double; {from FITS}
+  exposure,focus_temp,cblack,cwhite,gain,sqmfloat   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
-  date_obs,date_avg,ut,pltlabel,plateid,telescop,instrum,origin:string;
+  date_obs,date_avg,ut,pltlabel,plateid,telescop,instrum,origin,sqm_value:string;
 
   datamin_org, datamax_org,
   old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
@@ -585,7 +585,9 @@ var
   xbayroff: double=0;{additional bayer pattern offset to apply}
   Ybayroff: double=0;{additional bayer pattern offset to apply}
   annotated : boolean=false;{any annotation in fits file?}
-  sqm: double=0;{sky quality, use in reporting in write_ini}
+  sqm_key   :  ansistring='SQM     ';
+  centaz_key   :  ansistring='CENTAZ  ';
+
   hfd_median : double=0;{median hfd, use in reporting in write_ini}
   hfd_counter: integer=0;{star counter (for hfd_median), use in reporting in write_ini}
   aperture_ratio: double=0; {ratio flux_aperture/hfd_median}
@@ -722,6 +724,7 @@ procedure write_astronomy_wcs(filen:string);
 procedure CCDinspector(snr_min: double);
 function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
 procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string);{plot annotation from header in ASTAP format}
+procedure reset_fits_global_variables(light :boolean); {reset the global variable}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -823,6 +826,73 @@ var {################# initialised variables #########################}
 
 const
   crMyCursor = 5;
+
+procedure reset_fits_global_variables(light :boolean); {reset the global variable}
+begin
+  if light then
+  begin
+    crota2:=99999;{just for the case it is not available, make it later zero}
+    crota1:=99999;
+    ra0:=0;
+    dec0:=0;
+    ra_mount:=99999;
+    dec_mount:=99999;
+    cdelt1:=0;
+    cdelt2:=0;
+    xpixsz:=0;
+    ypixsz:=0;
+    focallen:=0;
+    subsamp:=1;{just for the case it is not available}
+    cd1_1:=0;{just for the case it is not available}
+    cd1_2:=0;{just for the case it is not available}
+    cd2_1:=0;{just for the case it is not available}
+    cd2_2:=0;{just for the case it is not available}
+    bayerpat:='';{reset bayer pattern}
+    xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
+    ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
+    roworder:='';{'BOTTOM-UP'= lower-left corner first in the file.  or 'TOP-DOWN'= top-left corner first in the file.}
+
+    a_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
+    ap_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
+    a_0_2:=0; a_0_3:=0; a_1_1:=0; a_1_2:=0;a_2_0:=0; a_2_1:=0; a_3_0:=0;
+    b_0_2:=0; b_0_3:=0; b_1_1:=0; b_1_2:=0;b_2_0:=0; b_2_1:=0; b_3_0:=0;
+    ap_0_1:=0; ap_0_2:=0; ap_0_3:=0; ap_1_0:=0; ap_1_1:=0; ap_1_2:=0; ap_2_0:=0; ap_2_1:=0; ap_3_0:=0;
+    bp_0_1:=0; bp_0_2:=0; bp_0_3:=0; bp_1_0:=0; bp_1_1:=0; bp_1_2:=0; bp_2_0:=0; bp_2_1:=0; bp_3_0:=0;
+
+    calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
+    centalt:='';{assume no data available}
+    centaz:='';{assume no data available}
+    x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
+    y_coeff[0]:=0;
+    a_order:=0; {SIP_polynomial, use for check if there is data}
+    ap_order:=0; {SIP_polynomial, use for check if there is data}
+
+    xbinning:=1;{normal}
+    ybinning:=1;
+
+    date_obs:=''; date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+    sitelat:=''; sitelong:='';
+
+    focus_temp:=999;{assume no data available}
+    focus_pos:=0;{assume no data available}
+
+    annotated:=false; {any annotation in the file}
+
+    flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
+
+//    sqmfloat:=0;{assume no data available}
+    sqm_value:='';
+  end;
+
+  filter_name:='';
+  naxis:=-1;
+  naxis3:=1;
+  datamin_org:=0;
+  imagetype:='';
+  exposure:=0;
+  set_temperature:=999;
+  gain:=999;{assume no data available}
+end;{reset global variables}
 
 
 function load_fits(filen:string;light {load as light of dark/flat},load_data,update_memo: boolean;get_ext: integer;var img_loaded2: image_array): boolean;{load fits file}
@@ -930,76 +1000,16 @@ begin
   Reader := TReader.Create (theFile3,500*2880);{number of records. Buffer but not speed difference between 6*2880 and 1000*2880}
   {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
-  {Reset variables for case they are not specified in the file}
-  if light  then {reset variables in case they are not available}
-  begin
-    crota2:=99999;{just for the case it is not available, make it later zero}
-    crota1:=99999;
-    ra0:=0;
-    dec0:=0;
-    ra_mount:=99999;
-    dec_mount:=99999;
-    cdelt1:=0;
-    cdelt2:=0;
-    scale:=0; {SGP files}
-    xpixsz:=0;
-    ypixsz:=0;
-    focallen:=0;
-    subsamp:=1;{just for the case it is not available}
-    cd1_1:=0;{just for the case it is not available}
-    cd1_2:=0;{just for the case it is not available}
-    cd2_1:=0;{just for the case it is not available}
-    cd2_2:=0;{just for the case it is not available}
-    bayerpat:='';{reset bayer pattern}
-    xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
-    ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
-    roworder:='';{'BOTTOM-UP'= lower-left corner first in the file.  or 'TOP-DOWN'= top-left corner first in the file.}
+  {Reset GLOBAL variables for case they are not specified in the file}
+  reset_fits_global_variables(light);
 
-    a_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
-    ap_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
-    a_0_2:=0; a_0_3:=0; a_1_1:=0; a_1_2:=0;a_2_0:=0; a_2_1:=0; a_3_0:=0;
-    b_0_2:=0; b_0_3:=0; b_1_1:=0; b_1_2:=0;b_2_0:=0; b_2_1:=0; b_3_0:=0;
-    ap_0_1:=0; ap_0_2:=0; ap_0_3:=0; ap_1_0:=0; ap_1_1:=0; ap_1_2:=0; ap_2_0:=0; ap_2_1:=0; ap_3_0:=0;
-    bp_0_1:=0; bp_0_2:=0; bp_0_3:=0; bp_1_0:=0; bp_1_1:=0; bp_1_2:=0; bp_2_0:=0; bp_2_1:=0; bp_3_0:=0;
-
-    calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
-    centalt:='';{assume no data available}
-    centaz:='';{assume no data available}
-    x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
-    y_coeff[0]:=0;
-    a_order:=0; {SIP_polynomial, use for check if there is data}
-    ap_order:=0; {SIP_polynomial, use for check if there is data}
-
-    if get_ext=0 then extend_type:=0; {always an image in main data block}
-
-    xbinning:=1;{normal}
-    ybinning:=1;
-
-    date_obs:=''; date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
-    sitelat:=''; sitelong:='';
-
-    focus_temp:=999;{assume no data available}
-    focus_pos:=0;{assume no data available}
-
-    annotated:=false; {any annotation in the file}
-  end;{reset variables}
-
-  filter_name:='';
-  naxis:=-1;
+  if get_ext=0 then extend_type:=0; {always an image in main data block}
+  scale:=0; {SGP files}
   naxis1:=0;
-  naxis3:=1;
   bzero:=0;{just for the case it is not available. 0.0 is the default according https://heasarc.gsfc.nasa.gov/docs/fcg/standard_dict.html}
   bscale:=1;
-  datamin_org:=0;
-  imagetype:='';
-  exposure:=0;
   ccd_temperature:=999;
-  set_temperature:=999;
-  gain:=999;{assume no data available}
-  sqm:=0;{assume no data available}
-
   measured_max:=0;
-  flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
 
   header_count:=0;
   bintable:=false;
@@ -1245,12 +1255,11 @@ begin
               object_name:=trim(get_string);{remove all spaces}
           end;
 
-          if ((header[i]='C') and (header[i+1]='E')  and (header[i+2]='N') and (header[i+3]='T') and (header[i+4]='A')) then  {SBIG 1.0 standard}
+          if ((header[i]='C') and (header[i+1]='E')  and (header[i+2]='N') and (header[i+3]='T') and (header[i+4]='A') and (header[i+5]='L') and (header[i+6]='T')) then  {SBIG 1.0 standard}
           begin
-            if ((header[i+5]='L') and (header[i+6]='T')) then begin if header[i+10]=#39 then centalt:=get_string else centalt:=floattostrf(validate_double,ffgeneral, 4, 1); end {accept strings (standard) and floats}
-            else
-            if ((header[i+5]='Z')) then begin if header[i+10]=#39 then centaz:=get_string else centaz:=floattostrf(validate_double,ffgeneral, 4, 1); end;{accept strings (standard) and floats (SGP, older CCDCIEL)}
+            if header[i+10]=#39 then centalt:=get_string else centalt:=floattostrf(validate_double,ffgeneral, 4, 1);  {accept strings (standard) and floats}
           end;
+
 
           if ((header[i]='C') and (header[i+1]='D')) then
           begin
@@ -1346,8 +1355,16 @@ begin
           if ((header[i]='A') and (header[i+1]='N')  and (header[i+2]='N') and (header[i+3]='O') and (header[i+4]='T') and (header[i+5]='A') and (header[i+6]='T')) then
              annotated:=true; {contains annotations}
 
-          if ((header[i]='S') and (header[i+1]='Q')  and (header[i+2]='M') and (header[i+3]=' ')) then
-                 sqm:=validate_double;{sqm value}
+
+          if ((header[i]=sqm_key[1]{S}) and (header[i+1]=sqm_key[2]{Q}) and (header[i+2]=sqm_key[3]{M})and (header[i+3]=sqm_key[4])and (header[i+4]=sqm_key[5])and (header[i+5]=sqm_key[6])and (header[i+6]=sqm_key[7]) and (header[i+7]=sqm_key[8])) then {adjustable keyword}
+          begin
+            if header[i+10]=#39 then sqm_value:=get_string else sqm_value:=floattostrf(validate_double,ffgeneral, 4, 1); {SQM, accept strings (standard) and floats}
+          end;
+
+          if ((header[i]=centaz_key[1]) and (header[i+1]=centaz_key[2]) and (header[i+2]=centaz_key[3])and (header[i+3]=centaz_key[4])and (header[i+4]=centaz_key[5])and (header[i+5]=centaz_key[6])and (header[i+6]=centaz_key[7]) and (header[i+7]=centaz_key[8])) then {adjustable keyword}
+          begin
+            if header[i+10]=#39 then centaz:=get_string else centaz:=floattostrf(validate_double,ffgeneral, 4, 1); {centaz, accept strings (standard) and floats (SGP, older CCDCIEL)}
+          end;
 
 
           if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='N') and (header[i+5]='D')) then {EXTEND}
@@ -1952,55 +1969,7 @@ begin
   Reader := TReader.Create (theFile3,$4000);{number of hnsky records}
   {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
-  {Reset variables}
-  crota2:=99999;{just for the case it is not available, make it later zero}
-  crota1:=99999;
-  ra0:=0;
-  dec0:=0;
-  ra_mount:=99999;
-  dec_mount:=99999;
-  cdelt1:=0;
-  cdelt2:=0;
-  xpixsz:=0;
-  ypixsz:=0;
-  focallen:=0;
-  subsamp:=1;{just for the case it is not available}
-  cd1_1:=0;
-  cd1_2:=0;
-  cd2_1:=0;
-  cd2_2:=0;
-  date_obs:=''; date_avg:='';date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
-  sitelat:='';{Observatory latitude}
-  sitelong:='';{Observatory longitude}
-
-  naxis:=1;
-  naxis3:=1;
-
-  filter_name:='';
-  calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. Example value DFB}
-  imagetype:='';
-  xbinning:=1;{default}
-  ybinning:=1;
-  exposure:=0;
-  set_temperature:=999;
-
-  x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
-  y_coeff[0]:=0;
-
-  a_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
-  ap_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
-
-  bayerpat:='T';{assume image is from Raw DSLR image}
-  xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
-  ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
-  roworder:='';{'BOTTOM-UP'= lower-left corner first in the file.  or 'TOP-DOWN'= top-left corner first in the file.}
-
-  flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
-  annotated:=false; {any annotation in the file}
-  extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
-  gain:=999;{assume no data available}
-  sqm:=0;{assume no data available}
-
+  reset_fits_global_variables(true{light}); {reset the global variable}
 
   I:=0;
   reader_position:=0;
@@ -2241,7 +2210,6 @@ begin
 end;
 
 
-
 function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
   i,j   : integer;
@@ -2334,41 +2302,10 @@ begin
   mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
   mainwindow.memo1.clear;{clear memo for new header}
 
-  {Reset variables}
-  crota2:=99999;{just for the case it is not available, make it later zero}
-  crota1:=99999;
-  ra0:=0;
-  dec0:=0;
-  ra_mount:=99999;
-  dec_mount:=99999;
-  cdelt1:=0;
-  cdelt2:=0;
-  xpixsz:=0;
-  ypixsz:=0;
-  focallen:=0;
-  subsamp:=1;{just for the case it is not available}
-  cd1_1:=0;
-  cd1_2:=0;
-  cd2_1:=0;
-  cd2_2:=0;
-  date_obs:=''; date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
-  sitelat:=''; sitelong:='';
-  filter_name:='';
-  calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. Example value DFB}
-  imagetype:='';
-  xbinning:=1;{default}
-  ybinning:=1;
-  exposure:=0;
-  set_temperature:=999;
-  gain:=999;{assume no data available}
-  sqm:=0;{assume no data available}
-
-  flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
-  annotated:=false; {any annotation in the file}
-  extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
-
+  reset_fits_global_variables(true{light}); {reset the global variable}
 
   {set data}
+  extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
   fits_file:=true;
   nrbits:=16;
   datamin_org:=0;
@@ -2802,33 +2739,8 @@ begin
   mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
   mainwindow.memo1.clear;{clear memo for new header}
 
-  {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
-  crota2:=99999;{just for the case it is not available, make it later zero}
-  crota1:=99999;
-  ra0:=0;
-  ra_mount:=99999;
-  dec_mount:=99999;
-  dec0:=0;
-  cdelt1:=0;
-  cdelt2:=0;
-  xpixsz:=0;
-  ypixsz:=0;
-  focallen:=0;
-  subsamp:=1;{just for the case it is not available}
-  cd1_1:=0;{just for the case it is not available}
-  cd1_2:=0;{just for the case it is not available}
-  cd2_1:=0;{just for the case it is not available}
-  cd2_2:=0;{just for the case it is not available}
-  date_obs:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
-  sitelat:=''; sitelong:='';
-  naxis:=2; {succes, now 2 dimensions}
-  filter_name:='';
-  calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. Example value DFB}
-  imagetype:='';
-  xbinning:=1;{default}
-  ybinning:=1;
-  exposure:=0;
-  set_temperature:=999;
+  reset_fits_global_variables(true);
+
   nrbits:=16;
   extend_type:=0; {no extensions in the file, 1 is ascii_table, 2 bintable}
 
@@ -2841,7 +2753,6 @@ begin
   datamax_org:=65535;
   cblack:=datamin_org;{for case histogram is not called}
   cwhite:=datamax_org;
-
 
   gradient:=stackmenu1.artificial_image_gradient1.checked;
 
@@ -3166,7 +3077,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.557a, '+about_message4+', dated 2021-6-27';
+  #13+#10+'ASTAP version ß0.9.558, '+about_message4+', dated 2021-6-30';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -7605,6 +7516,9 @@ begin
       show_console:=Sett.ReadBool('main','show_console',true);
       dum:=Sett.ReadString('main','cygwin_path',''); if dum<>'' then cygwin_path:=dum;
 
+      dum:=Sett.ReadString('main','sqm_key',''); if dum<>'' then sqm_key:=dum;
+      dum:=Sett.ReadString('main','centaz_key',''); if dum<>'' then centaz_key:=dum;
+
       c:=0;
       recent_files.clear;
       repeat {read recent files}
@@ -7920,6 +7834,9 @@ begin
       sett.writestring('main','cygwin_path',cygwin_path);
       sett.writeBool('main','show_console',show_console);
       sett.writestring('main','astrometry_extra_options',astrometry_extra_options);
+
+      sett.writestring('main','sqm_key',sqm_key+'*' );{add a * to prevent the spaces are removed.Should be at least 8 char}
+      sett.writestring('main','centaz_key',centaz_key+'*');{add a * to prevent the spaces are removed}
 
       for c:=0 to recent_files.count-1  do {add recent files}
         sett.writestring('main','recent'+inttostr(c),recent_files[c]);
@@ -11364,7 +11281,7 @@ begin
     writeln(f,'CD2_1='+floattostrE(cd2_1));       // CD matrix to convert (x,y) to (Ra, Dec)
     writeln(f,'CD2_2='+floattostrE(cd2_2));       // CD matrix to convert (x,y) to (Ra, Dec)
 
-    if sqm>0 then writeln(f,'SQM='+floattostrE(sqm));  // sky background
+    if sqmfloat>0 then writeln(f,'SQM='+floattostrE(sqmfloat));  // sky background
     if hfd_median>0 then writeln(f,'HFD='+floattostrE(hfd_median));
     if hfd_counter>0 then  writeln(f,'STARS='+floattostrE(hfd_counter));//number of stars
   end
@@ -11997,7 +11914,7 @@ begin
             begin
               pedestal:=round(strtofloat2(GetOptionValue('sqm')));
               if calculate_sqm(false {get backgr},false{get histogr}) then {sqm found}
-                update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqm);
+                update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqmfloat);
             end;
 
             if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
@@ -12176,7 +12093,7 @@ begin
           if solve_image(img_loaded,true {get hist}) then {match between loaded image and star database}
           begin
             if ((add_sqm) and (calculate_sqm(false {get backgr},false{get histogr}))) then
-                update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqm);
+                update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqmfloat);
             if add_sip then
                mainwindow.sip1Click(nil);{add sip coefficients}
 
