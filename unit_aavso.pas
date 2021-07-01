@@ -239,7 +239,7 @@ end;
 
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,count,textp1,textp2,textp3,nrmarkX, nrmarkY : integer;
+  x1,y1,c,textp1,textp2,textp3,nrmarkX, nrmarkY : integer;
   scale         : double;
   text1,text2   : string;
   bmp: TBitmap;
@@ -277,7 +277,6 @@ begin
   jd_max:=-9999999 ;
   magn_min:=99;
   magn_max:=0;
-
 
   w:=max(form_aavso1.Image_photometry1.width,(len*2)*stackmenu1.listview7.items.count);{make graph large enough for all points}
   h:=max(100,form_aavso1.Image_photometry1.height);
@@ -346,8 +345,10 @@ begin
     bmp.canvas.lineto(bspace-5,h-bspace+5);{x line}
     bmp.canvas.lineto(bspace-5,bspace);{y line}
 
+    bmp.canvas.font.style:=[fsbold];
     bmp.canvas.textout(5,bspace div 2,'Magn');
     bmp.canvas.textout(w-50,h-(bspace div 2),'JD (mid)');
+    bmp.canvas.font.style:=[];
 
     text1:='Var ('+form_aavso1.name_variable1.text+')';
     textp1:=10+bspace;

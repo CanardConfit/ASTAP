@@ -607,7 +607,7 @@ end;
 
 procedure find_stars(img :image_array;hfd_min:double;out starlist1: star_list);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,diam,i,j,max_stars,retries,m,n,xci,yci,sqr_diam : integer;
+   fitsX, fitsY,nrstars,radius,i,j,max_stars,retries,m,n,xci,yci,sqr_radius : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level           : double;
    img_sa     : image_array;
    snr_list        : array of double;
@@ -671,19 +671,19 @@ begin
 //            diam:=round(3.0*hfd1);{for marking area}
 //            for j:=fitsY to fitsY+diam do {mark the whole star area as surveyed}
 //            for i:=fitsX-diam to fitsX+diam do
-//              if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detections}
+//              if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detection's}
 //                img_sa[0,i,j]:=1;
 
-            diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
-            sqr_diam:=sqr(diam);
+            radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+            sqr_radius:=sqr(radius);
             xci:=round(xc);{star center as integer}
             yci:=round(yc);
-            for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
-              for m:=-diam to +diam do
+            for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
+              for m:=-radius to +radius do
               begin
                 j:=n+yci;
                 i:=m+xci;
-                if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and ( (sqr(m)+sqr(n))<=sqr_diam)) then
+                if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
                   img_sa[0,i,j]:=1;
               end;
 

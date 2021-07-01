@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 9185
+    Left = 9305
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -319,6 +319,7 @@ object stackmenu1: Tstackmenu1
         Top = 36
         Width = 1837
         Align = alClient
+        AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
         Columns = <        
@@ -601,7 +602,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 470
-      ClientWidth = 1264
+      ClientWidth = 1777
       ImageIndex = 1
       ParentFont = False
       object browse_darks1: TButton
@@ -648,8 +649,9 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1264
+        Width = 1777
         Align = alClient
+        AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
         Columns = <        
@@ -780,7 +782,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 470
-      ClientWidth = 1264
+      ClientWidth = 1777
       ImageIndex = 2
       ParentFont = False
       object browse_flats1: TButton
@@ -835,8 +837,9 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1264
+        Width = 1777
         Align = alClient
+        AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
         Columns = <        
@@ -961,7 +964,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
       ClientHeight = 470
-      ClientWidth = 1264
+      ClientWidth = 1777
       ImageIndex = 3
       ParentFont = False
       object browse_bias1: TButton
@@ -1002,8 +1005,9 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1264
+        Width = 1777
         Align = alClient
+        AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
         Columns = <        
@@ -1107,7 +1111,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
       ClientHeight = 470
-      ClientWidth = 1264
+      ClientWidth = 1777
       ImageIndex = 6
       ParentFont = False
       object listview5: TListView
@@ -1115,8 +1119,9 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1264
+        Width = 1777
         Align = alClient
+        AutoSortIndicator = True
         BorderSpacing.Top = 36
         Columns = <        
           item
@@ -2895,7 +2900,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 470
-      ClientWidth = 1598
+      ClientWidth = 1777
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
@@ -2903,8 +2908,9 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1598
+        Width = 1777
         Align = alClient
+        AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
         Columns = <        
@@ -3284,6 +3290,7 @@ object stackmenu1: Tstackmenu1
         Top = 36
         Width = 1840
         Align = alClient
+        AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
         Columns = <        
@@ -3635,7 +3642,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Measure the best focus position for several areas of the image.'
       Caption = 'Inspector'
       ClientHeight = 470
-      ClientWidth = 1293
+      ClientWidth = 1777
       ImageIndex = 17
       object browse_inspector1: TButton
         Left = 32
@@ -3666,8 +3673,9 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1293
+        Width = 1777
         Align = alClient
+        AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
         Columns = <        
@@ -3867,15 +3875,16 @@ object stackmenu1: Tstackmenu1
       Hint = 'Measure the mount celestial position offsets.'
       Caption = 'Mount analyse'
       ClientHeight = 470
-      ClientWidth = 1525
+      ClientWidth = 1777
       ImageIndex = 21
       object listview9: TListView
         Left = 0
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1525
+        Width = 1777
         Align = alClient
+        AutoSortIndicator = True
         BorderSpacing.Top = 36
         Checkboxes = True
         Columns = <        
@@ -4073,7 +4082,7 @@ object stackmenu1: Tstackmenu1
         Left = 448
         Height = 19
         Hint = 'Write solution to a new seperate header file only. (.wcs)'
-        Top = 18
+        Top = 17
         Width = 149
         Caption = 'Do not modify the lights'
         Checked = True

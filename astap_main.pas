@@ -9969,7 +9969,7 @@ end;
 
 procedure measure_magnitudes(annulus_rad:integer; deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux}
 var
-  fitsX,fitsY,diam, i, j,nrstars,n,m,xci,yci,sqr_diam    : integer;
+  fitsX,fitsY,radius, i, j,nrstars,n,m,xci,yci,sqr_radius: integer;
   hfd1,star_fwhm,snr,flux,xc,yc,detection_level          : double;
   img_sa : image_array;
 
@@ -10005,16 +10005,16 @@ begin
           //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
-          diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
-          sqr_diam:=sqr(diam);
+          radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+          sqr_radius:=sqr(radius);
           xci:=round(xc);{star center as integer}
           yci:=round(yc);
-          for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
-            for m:=-diam to +diam do
+          for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
+            for m:=-radius to +radius do
             begin
               j:=n+yci;
               i:=m+xci;
-              if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and ( (sqr(m)+sqr(n))<=sqr_diam)) then
+              if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
                 img_sa[0,i,j]:=1;
             end;
 
@@ -10056,10 +10056,10 @@ end;
 
 procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
-  size,diam, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci     : integer;
+  size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci     : integer;
   Save_Cursor:TCursor;
   Fliphorizontal, Flipvertical,astar                                                              : boolean;
-  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit,sqr_diam : double;
+  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit,sqr_radius : double;
   messg : string;
   img_temp3,img_sa :image_array;
 const
@@ -10127,16 +10127,16 @@ const
           //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
-          diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
-          sqr_diam:=sqr(diam);
+          radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+          sqr_radius:=sqr(radius);
           xci:=round(xc);{star center as integer}
           yci:=round(yc);
-          for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
-            for m:=-diam to +diam do
+          for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
+            for m:=-radius to +radius do
             begin
               j:=n+yci;
               i:=m+xci;
-              if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and ( (sqr(m)+sqr(n))<=sqr_diam)) then
+              if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
             end;
 
           if ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
@@ -12147,9 +12147,9 @@ end;
 
 procedure CCDinspector(snr_min: double);
 var
- fitsX,fitsY,size,diam, i,j,starX,starY, retries,max_stars,
+ fitsX,fitsY,size,radius, i,j,starX,starY, retries,max_stars,
  nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,
- x1,x2,x3,x4,y1,y2,y3,y4,fontsize,text_height,text_width,n,m,xci,yci,sqr_diam                     : integer;
+ x1,x2,x3,x4,y1,y2,y3,y4,fontsize,text_height,text_width,n,m,xci,yci,sqr_radius                     : integer;
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
  hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right,
@@ -12254,16 +12254,16 @@ begin
 
             if ((hfd1<=30) and (snr>snr_min {30}) and (hfd1>hfd_min) ) then
             begin
-              diam:=round(3.0*hfd1);{for marking star area. Emperical a value between 2.5*hfd and 3.5*hfd gives same performance. Note in practise a star PSF has larger wings then predicted by a Gaussian function}
-              sqr_diam:=sqr(diam);
+              radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+              sqr_radius:=sqr(radius);
               xci:=round(xc);{star center as integer}
               yci:=round(yc);
-              for n:=-diam to +diam do {mark the whole circular star area width diameter "diam" as occupied to prevent double detections}
-                for m:=-diam to +diam do
+              for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
+                for m:=-radius to +radius do
                 begin
                   j:=n+yci;
                   i:=m+xci;
-                  if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and ( (sqr(m)+sqr(n))<=sqr_diam)) then
+                  if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
                     img_sa[0,i,j]:=1;
                 end;
 
