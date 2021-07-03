@@ -2261,6 +2261,8 @@ begin
      exit;
   end;
 
+  reset_fits_global_variables(true{light}); {reset the global variable}
+
   {$IF FPC_FULLVERSION >= 30200} {FPC3.2.0}
   colour:=true;
   if ((tiff) and (Image.Extra[TiffGrayBits]<>'0')) then colour:=false; {image grayscale?}
@@ -2301,8 +2303,6 @@ begin
 
   mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
   mainwindow.memo1.clear;{clear memo for new header}
-
-  reset_fits_global_variables(true{light}); {reset the global variable}
 
   {set data}
   extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
@@ -3077,7 +3077,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.558, '+about_message4+', dated 2021-6-30';
+  #13+#10+'ASTAP version ß0.9.558a, '+about_message4+', dated 2021-7-3';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
