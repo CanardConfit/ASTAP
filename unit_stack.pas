@@ -830,6 +830,7 @@ var
   asteroidlist : array of array of array of double;
   solve_show_log  : boolean;
 
+
 var  {################# initialised variables #########################}
   dark_exposure : integer=987654321;{not done indication}
   dark_temperature: integer=987654321;
@@ -837,6 +838,7 @@ var  {################# initialised variables #########################}
   last_light_jd: integer=987654321;
   last_flat_loaded : string='';
   last_dark_loaded : string='';
+  flat_calstat     : string='';
 
   new_analyse_required: boolean=false;{if changed then reanalyse tab 1}
   new_analyse_required3: boolean=false;{if changed then reanalyse tab 3}
@@ -853,7 +855,7 @@ procedure normalize_OSC_flat(var img: image_array); {normalize bayer pattern. Co
 procedure black_spot_filter(var img: image_array);{remove black spots with value zero}
 
 function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
-procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer; img : image_array) inline; {apply dark, flat if required, renew if different exposure or ccd temp}
+procedure apply_dark_and_flat(filter1:string; var dcount,fcount,fdcount: integer; img : image_array) inline; {apply dark, flat if required, renew if different exposure or ccd temp}
 procedure smart_colour_smooth( var img: image_array; wide, sd:double; preserve_r_nebula,measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 procedure green_purple_filter( var img: image_array);{Balances RGB to remove green and purple. For e.g. Hubble palette}
 procedure date_to_jd(date_time:string;exp :double);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
@@ -917,7 +919,8 @@ const
 
   F_filter=10;
   F_jd=11;
-  F_nr=12;{number of fields}
+  F_calibration=12;
+  F_nr=13;{number of fields}
 
   FD_nr=10;{flat darks}
 
@@ -1374,7 +1377,7 @@ begin
             if (quality_mean- strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]))>sd_factor*quality_sd  then
             begin {remove low quality outliers}
               ListView1.Items.item[c].checked:=false;
-              ListView1.Items.item[c].SubitemImages[5]:=icon_thumb_down; {mark as outlier using imageindex}
+              ListView1.Items.item[c].SubitemImages[L_quality]:=icon_thumb_down; {mark as outlier using imageindex}
               memo2_message(ListView1.Items.item[c].caption+ ' unchecked due to low quality = nr stars detected / hfd.' );
           end;
         end;
@@ -1382,7 +1385,7 @@ begin
       until c>counts;
     end;{throw outliers out}
 
-    if best<>0 then    ListView1.Items.item[best_index].SubitemImages[5]:=icon_king; {markbest index. Not nessesary but just nice}
+    if best<>0 then  ListView1.Items.item[best_index].SubitemImages[L_quality]:=icon_king; {markbest index. Not nessesary but just nice}
 
     finally
       ListView1.Items.EndUpdate;
@@ -1816,17 +1819,17 @@ begin
                 ListView1.Items.item[c].subitems.Strings[L_filter]:=filter_name; {filter name, without spaces}
                 if naxis3=3 then ListView1.Items.item[c].subitems.Strings[L_filter]:='colour'; {give RGB lights filter name colour}
 
-                if AnsiCompareText(red_filter1.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=0 else
-                if AnsiCompareText(red_filter2.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=0 else
-                if AnsiCompareText(green_filter1.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[1]:=1; green:=true; end else
-                if AnsiCompareText(green_filter2.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[1]:=1; green:=true; end else
-                if AnsiCompareText(blue_filter1.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[1]:=2; blue:=true; end else
-                if AnsiCompareText(blue_filter2.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[1]:=2; blue:=true; end else
-                if AnsiCompareText(luminance_filter1.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=4 else
-                if AnsiCompareText(luminance_filter2.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[1]:=4 else
-                if naxis3=3 then  ListView1.Items.item[c].SubitemImages[1]:=3 else {RGB color}
-                  if filter_name<>'' then ListView1.Items.item[c].SubitemImages[1]:=7 {question mark} else
-                     ListView1.Items.item[c].SubitemImages[1]:=-1;{blank}
+                if AnsiCompareText(red_filter1.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[L_filter]:=0 else
+                if AnsiCompareText(red_filter2.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[L_filter]:=0 else
+                if AnsiCompareText(green_filter1.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[L_filter]:=1; green:=true; end else
+                if AnsiCompareText(green_filter2.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[L_filter]:=1; green:=true; end else
+                if AnsiCompareText(blue_filter1.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[L_filter]:=2; blue:=true; end else
+                if AnsiCompareText(blue_filter2.text,filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[L_filter]:=2; blue:=true; end else
+                if AnsiCompareText(luminance_filter1.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[L_filter]:=4 else
+                if AnsiCompareText(luminance_filter2.text,filter_name)=0 then  ListView1.Items.item[c].SubitemImages[L_filter]:=4 else
+                if naxis3=3 then  ListView1.Items.item[c].SubitemImages[L_filter]:=3 else {RGB color}
+                  if filter_name<>'' then ListView1.Items.item[c].SubitemImages[L_filter]:=7 {question mark} else
+                     ListView1.Items.item[c].SubitemImages[L_filter]:=-1;{blank}
 
                 ListView1.Items.item[c].subitems.Strings[L_bin]:=inttostr(Xbinning)+' x '+inttostr(Ybinning); {Binning CCD}
 
@@ -1889,10 +1892,10 @@ begin
       {give list an indentification key label based on object, filter and exposure time}
       for c:=0 to ListView1.items.count-1 do
       begin
-        if ListView1.Items.item[c].SubitemImages[5]=icon_thumb_down then {marked at outlier}
+        if ListView1.Items.item[c].SubitemImages[L_quality]=icon_thumb_down then {marked at outlier}
         begin
            ListView1.Items.item[c].checked:=true;{recheck outliers from previous session}
-           ListView1.Items.item[c].SubitemImages[5]:=-1;{remove mark}
+           ListView1.Items.item[c].SubitemImages[L_quality]:=-1;{remove mark}
         end;
 
          if ListView1.items[c].Checked=true then
@@ -3312,21 +3315,22 @@ begin
             if lv.name=stackmenu1.listview3.name then {flat tab}
             begin
               lv.Items.item[c].subitems.Strings[F_filter]:=filter_name; {filter name, without spaces}
-              if AnsiCompareText(stackmenu1.red_filter1.text,filter_name)=0 then  Lv.Items.item[c].SubitemImages[9]:=0 else
-              if AnsiCompareText(stackmenu1.red_filter2.text,filter_name)=0 then  Lv.Items.item[c].SubitemImages[9]:=0 else
-              if AnsiCompareText(stackmenu1.green_filter1.text,filter_name)=0 then begin lv.Items.item[c].SubitemImages[9]:=1; green:=true; end else
-              if AnsiCompareText(stackmenu1.green_filter2.text,filter_name)=0 then begin lv.Items.item[c].SubitemImages[9]:=1; green:=true; end else
-              if AnsiCompareText(stackmenu1.blue_filter1.text,filter_name)=0 then begin lv.Items.item[c].SubitemImages[9]:=2; blue:=true; end else
-              if AnsiCompareText(stackmenu1.blue_filter2.text,filter_name)=0 then begin lv.Items.item[c].SubitemImages[9]:=2; blue:=true; end else
-              if AnsiCompareText(stackmenu1.luminance_filter1.text,filter_name)=0 then  lv.Items.item[c].SubitemImages[9]:=4 else
-              if AnsiCompareText(stackmenu1.luminance_filter2.text,filter_name)=0 then  lv.Items.item[c].SubitemImages[9]:=4 else
-              if naxis3=3 then  lv.Items.item[c].SubitemImages[9]:=3 else {RGB color}
-                 if filter_name<>'' then lv.Items.item[c].SubitemImages[9]:=7 {question mark} else
-                    lv.Items.item[c].SubitemImages[9]:=-1;{blank}
+              if AnsiCompareText(stackmenu1.red_filter1.text,filter_name)=0 then  Lv.Items.item[c].SubitemImages[F_filter]:=0 else
+              if AnsiCompareText(stackmenu1.red_filter2.text,filter_name)=0 then  Lv.Items.item[c].SubitemImages[F_filter]:=0 else
+              if AnsiCompareText(stackmenu1.green_filter1.text,filter_name)=0 then begin lv.Items.item[c].SubitemImages[F_filter]:=1; green:=true; end else
+              if AnsiCompareText(stackmenu1.green_filter2.text,filter_name)=0 then begin lv.Items.item[c].SubitemImages[F_filter]:=1; green:=true; end else
+              if AnsiCompareText(stackmenu1.blue_filter1.text,filter_name)=0 then begin lv.Items.item[c].SubitemImages[F_filter]:=2; blue:=true; end else
+              if AnsiCompareText(stackmenu1.blue_filter2.text,filter_name)=0 then begin lv.Items.item[c].SubitemImages[F_filter]:=2; blue:=true; end else
+              if AnsiCompareText(stackmenu1.luminance_filter1.text,filter_name)=0 then  lv.Items.item[c].SubitemImages[F_filter]:=4 else
+              if AnsiCompareText(stackmenu1.luminance_filter2.text,filter_name)=0 then  lv.Items.item[c].SubitemImages[F_filter]:=4 else
+              if naxis3=3 then  lv.Items.item[c].SubitemImages[F_filter]:=3 else {RGB color}
+                 if filter_name<>'' then lv.Items.item[c].SubitemImages[F_filter]:=7 {question mark} else
+                    lv.Items.item[c].SubitemImages[F_filter]:=-1;{blank}
 
               lv.Items.item[c].subitems.Strings[D_date]:=copy(date_obs,1,10);
               date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
               lv.Items.item[c].subitems.Strings[F_jd]:=floattostrF(jd_start,ffFixed,0,1); {julian day, 1/10 day accuracy}
+              lv.Items.item[c].subitems.Strings[F_calibration]:=calstat;
             end
             else
             if lv.name=stackmenu1.listview4.name then {flat darks tab}
@@ -6917,24 +6921,12 @@ begin
 end;
 
 procedure Tstackmenu1.make_osc_color1Click(Sender: TObject);
-var
-  osc_color : boolean;
 begin
   if ((make_osc_color1.checked) and (classify_filter1.checked)) then
   begin
     memo2_message('■■■■■■■■■■■■■ Due to check-mark "Convert OSC images to colour", un-checked "Classify by filter" ! ■■■■■■■■■■■■■');
     classify_filter1.checked:=false;
   end;
-
-//  {enabe/disable related menu options}
-//  osc_color:=make_osc_color1.checked;
-//  osc_auto_level1.enabled:=osc_color;
-//  bayer_pattern1.enabled:=osc_color;
-//  test_pattern1.enabled:=osc_color;
-  //demosaic_method1.enabled:=osc_color;
-//  osc_colour_smooth1.enabled:=((osc_color) and (osc_auto_level1.checked));
-//  osc_smart_colour_sd1.enabled:=osc_color;
-//  osc_smart_smooth_width1.enabled:=osc_color;
 end;
 
 procedure Tstackmenu1.selectall1Click(Sender: TObject);
@@ -7762,6 +7754,16 @@ begin
       {load master in memory img_flat}
       last_flat_loaded:=filen; {required for for change in light_jd}
       flat_filter:=filter; {mark as loaded}
+      flat_calstat:=calstat; {store flat calstat since it will be detroyed by next search for flat with closest date}
+
+      if pos('B',flat_calstat)=0 then
+      begin
+        if flatdark_count=0 then {not an older flat}
+           memo2_message('█ █ █ █ █ █ Warning: Flat not calibrated with a flat-dark/bias (keywords CALSTAT or BIAS_CNT). █ █ █ █ █ █')
+        else
+          flat_calstat:=flat_calstat+'B'; {older flat temporary till 2022-12 till all flats have "B" in in calstat. Remove 2022-12}
+      end;
+
       if flat_count=0 then flat_count:=1; {is normally updated by load_fits}
 
       if  ((stackmenu1.make_osc_color1.checked) and (stackmenu1.apply_normalise_filter1.checked)) then
@@ -7936,7 +7938,7 @@ begin
               filter:=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter];
               width1:=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]);
               day:=strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]);
-              if flat_dark_width=0 then memo2_message('Warning no flat-dark/bias found!!')
+              if flat_dark_width=0 then memo2_message('█ █ █ █ █ █ Warning no flat-dark/bias found!! █ █ █ █ █ █ ')
               else
               if width1<>flat_dark_width then begin memo2_message('Abort, the width of the flat and flat-dark do not match!!');exit end;
               specified:=true;
@@ -7990,6 +7992,8 @@ begin
           path1:=extractfilepath(file_list[0])+'master_flat_corrected_with_flat_darks_'+extract_letters_only(filter_name)+'_'+inttostr(flat_count)+'xF_'+inttostr(flatdark_count)+'xFD_'+copy(date_obs,1,10)+'.fit';; {extract_letter is added for filter='N/A' for SIPS software}
           update_integer('FLAT_CNT=',' / Number of flat images combined.                ' ,flat_count);
           update_integer('BIAS_CNT=',' / Number of flat-dark or bias images combined.   ' ,flatdark_count);
+          if flatdark_count<>0 then calstat:=calstat+'B';
+          update_text ('CALSTAT =',#39+calstat+#39); {calibration status}
 
           { ASTAP keyword standard:}
           { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
@@ -8058,16 +8062,17 @@ begin
 end;
 
 
-procedure apply_dark_flat(filter1:string; var dcount,fcount,fdcount: integer; img : image_array) ; inline; {apply dark, flat if required, renew if different exposure or ccd temp}
+procedure apply_dark_and_flat(filter1:string; var dcount,fcount,fdcount: integer; img : image_array) ; inline; {apply dark and flat if required, renew if different exposure or ccd temp}
 var  {variables in the procedure are created to protect global variables as filter_name against overwriting by loading other fits files}
   fitsX,fitsY,k,light_naxis3{,hotpixelcounter}, light_width,light_height,light_set_temperature : integer;
-  {calstat_local,}
+  calstat_local,
   light_date_obs              : string;
-  datamax_light ,light_exposure,value{,dark_outlier_level},flat_factor,dark_norm_value : double;
+  datamax_light ,light_exposure,value,flat_factor,dark_norm_value,flat11,flat12,flat21,flat22 : double;
 
 begin
   datamax_light:=datamax_org;
 
+  calstat_local:=calstat;{Note load darks or flats will overwrite calstat}
   light_naxis3:=naxis3; {preserve so it is not overriden by load dark_flat which will reset variable in load_fits}
   light_exposure:=exposure;{preserve so it is not overriden by apply dark_flat}
   light_set_temperature:=round(set_temperature);
@@ -8077,7 +8082,7 @@ begin
 
   date_to_jd(date_obs,exposure); {convert date-obs to global variables jd_start, jd_mid. Use this to find the dark with the best match for the light}
 
-  if pos('D',calstat)<>0 then
+  if pos('D',calstat_local)<>0 then
              memo2_message('Skipping dark calibration, already applied. See header keyword CALSTAT')
   else
   begin
@@ -8101,16 +8106,17 @@ begin
 
         end;
 
-      calstat:=calstat+'D'; {dark applied}
+      calstat_local:=calstat_local+'D'; {dark applied}
       datamax_light:=datamax_light-dark_norm_value;
     end;
   end;{apply dark}
 
-  if pos('F',calstat)<>0 then
+  if pos('F',calstat_local)<>0 then
            memo2_message('Skipping flat calibration, already applied. See header keyword CALSTAT')
   else
   begin
     load_master_flat(filter1,light_width,round(jd_start));{will only be renewed if different filter name.  Note load will overwrite calstat}
+
     fcount:=flat_count;{from master flat loaded}
     fdcount:=flatdark_count;
     last_light_jd:=round(jd_start);
@@ -8118,10 +8124,28 @@ begin
     if flat_count<>0 then
     begin
       flat_norm_value:=0;
+      flat11:=0;
+      flat12:=0;
+      flat21:=0;
+      flat22:=0;
+
       for fitsY:=-2 to 3 do {do even times, 6x6}
          for fitsX:=-2 to 3 do
-           flat_norm_value:=flat_norm_value+img_flat[0,fitsX+(width2 div 2),fitsY +(height2 div 2)];
+         begin
+           value:=img_flat[0,fitsX+(width2 div 2),fitsY +(height2 div 2)];
+           flat_norm_value:=flat_norm_value+value;
+           if ((odd(fitsX)) and (odd(fitsY)) ) then
+                                 flat11:=flat11+value;
+           if ((odd(fitsX)=false) and (odd(fitsY)) ) then
+           flat12:=flat12+value;
+           if ((odd(fitsX)) and (odd(fitsY)=false) ) then
+           flat21:=flat21+value;
+           if ((odd(fitsX)=false) and (odd(fitsY)=false) ) then
+           flat22:=flat22+value;
+         end;
       flat_norm_value:=round(flat_norm_value/36);{scale factor to apply flat. The norm value will result in a factor one for the center.}
+
+      if max(max(flat11,flat12),max(flat21,flat22))/min(min(flat11,flat12),min(flat21,flat22))>2.0 then memo2_message('█ █ █ █ █ █ Warning flat pixels differ too much. Use white light for OSC flats or consider using option "Normalise OSC flat" █ █ █ █ █ █ ');
 
       for fitsY:=1 to height2 do  {apply the flat}
         for fitsX:=1 to width2 do
@@ -8131,10 +8155,11 @@ begin
           for k:=0 to naxis3-1 do {do all colors}
             img[k,fitsX-1,fitsY-1]:=img[k,fitsX-1,fitsY-1]*flat_factor;
         end;
-      calstat:=calstat+'FB';{mark that flat and bias have been applied}
+      calstat_local:=calstat_local+'F'+flat_calstat{B from flat};{mark that flat and bias have been applied}
     end;{flat correction}
   end;{do flat & flat dark}
 
+  calstat:=calstat_local;{report light calibration}
   datamax_org:=datamax_light;{restore. will be overwitten by previouse reads}
   naxis3:=light_naxis3;{return old value}
   exposure:=light_exposure;{restore }
@@ -8173,7 +8198,7 @@ begin
         Application.ProcessMessages;
         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo, required for updates},0,img_loaded)=false)) then begin memo2_message('Error');{can't load} Screen.Cursor := Save_Cursor; exit;end;
 
-        apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
+        apply_dark_and_flat(filter_name,{var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
 
 
         {these global variables are passed-on in procedure to protect against overwriting}
@@ -8242,6 +8267,7 @@ begin
   begin
     if length(files_to_process[i].name)>1 then {has a filename}
     begin
+      stackmenu1.ListView1.Items.item[i].SubitemImages[L_quality]:=-1;{remove any older icon_king}
       width1:=strtoint(stackmenu1.ListView1.Items.item[i].subitems.Strings[L_width]);
       if first=-1 then begin first:=i; largest_width:=width1  end;
 
@@ -8274,7 +8300,7 @@ begin
       files_to_process[first]:=files_to_process[best_index];
       files_to_process[best_index]:=file_to_do;
     end;
-    stackmenu1.ListView1.Items.item[best_index].SubitemImages[5]:=icon_king; {mark as best quality image}
+    stackmenu1.ListView1.Items.item[best_index].SubitemImages[L_quality]:=icon_king; {mark as best quality image}
     memo2_message('Reference image selected based on quality (star_detections/hfd) is: '+files_to_process[best_index].name);
   end;
 end;
@@ -8555,7 +8581,7 @@ begin
 
   for c:=0 to ListView1.items.count-1 do
   begin
-    ListView1.Items.item[c].SubitemImages[2]:=-1;{remove any icons. Mark third columns as not done using the image index of first column}
+    ListView1.Items.item[c].SubitemImages[L_result]:=-1;{remove any icons. Mark third columns as not done using the image index of first column}
     ListView1.Items.item[c].subitems.Strings[L_result]:='';{no stack result}
   end;
 
@@ -8611,7 +8637,7 @@ begin
       begin
         files_to_process[c].name:='';{mark empthy}
         files_to_process[c].listviewindex:=c;{use same index as listview1 except when later put lowest HFD first}
-        if ((ListView1.items[c].Checked=true) and (ListView1.Items.item[c].SubitemImages[2]<0)) then {not done yet}
+        if ((ListView1.items[c].Checked=true) and (ListView1.Items.item[c].SubitemImages[L_result]<0)) then {not done yet}
         begin
           if object_to_process='' then object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a object name to stack}
           if ( (classify_object1.checked=false) or  (mosaic_mode){ignore object name in mosaic} or
@@ -8691,7 +8717,7 @@ begin
         begin
           files_to_process[c].name:='';{mark as empthy}
           files_to_process[c].listviewindex:=c;{use same index as listview except when later put lowest HFD first}
-          if ((ListView1.items[c].Checked=true) and (ListView1.Items.item[c].SubitemImages[2]<0){not yet done} and
+          if ((ListView1.items[c].Checked=true) and (ListView1.Items.item[c].SubitemImages[L_result]<0){not yet done} and
               (length(ListView1.Items.item[c].subitems.Strings[L_filter])>0)  {skip any file without a filter name}
               ) then
           begin  {not done yet}
@@ -8707,7 +8733,7 @@ begin
                 filters_used[i]:=defilter;
                 files_to_process[c].name:=ListView1.items[c].caption;
                 inc(image_counter);{one image more}
-                ListView1.Items.item[c].SubitemImages[2]:=5;{mark 3th columns as done using a stacked icon}
+                ListView1.Items.item[c].SubitemImages[L_result]:=5;{mark 3th columns as done using a stacked icon}
                 ListView1.Items.item[c].subitems.Strings[L_result]:=inttostr(object_counter)+'  ';{show image result number}
                 inc(nrfiles);
                 first_file:=c; {remember first found for case it is the only file}

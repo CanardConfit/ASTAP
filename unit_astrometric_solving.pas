@@ -508,7 +508,6 @@ begin
     {preserve header and some important variable}
     memo2_message('Calibrating image prior to solving.');
     memo1_backup:=mainwindow.Memo1.Text;{save header text prior to apply dark, flats}
-//    calstat_local:=calstat;{Note load darks or flats will overwrite calstat}
     datamax_light:=datamax_org;
     light_naxis3:=naxis3; {preserve so it is not overriden by load dark_flat which will reset variable in load_fits}
     light_width:=width2;
@@ -529,7 +528,7 @@ begin
     date_obs:=light_date_obs;{restore old value}
     fits_file:=fitsfile;
 
-    apply_dark_flat(filter_name,{var} dark_count,flat_count,flatdark_count,img);{apply dark, flat if required, renew if different exposure or ccd temp. This will clear the header in load_fits}
+    apply_dark_and_flat(filter_name,{var} dark_count,flat_count,flatdark_count,img);{apply dark, flat if required, renew if different exposure or ccd temp. This will clear the header in load_fits}
     mainwindow.Memo1.Text:=memo1_backup;{restore header}
     update_text ('CALSTAT =',#39+calstat+#39); {calibration status}
   end;

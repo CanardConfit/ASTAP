@@ -859,7 +859,6 @@ begin
     ap_0_1:=0; ap_0_2:=0; ap_0_3:=0; ap_1_0:=0; ap_1_1:=0; ap_1_2:=0; ap_2_0:=0; ap_2_1:=0; ap_3_0:=0;
     bp_0_1:=0; bp_0_2:=0; bp_0_3:=0; bp_1_0:=0; bp_1_1:=0; bp_1_2:=0; bp_2_0:=0; bp_2_1:=0; bp_3_0:=0;
 
-    calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
     centalt:='';{assume no data available}
     centaz:='';{assume no data available}
     x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
@@ -870,7 +869,7 @@ begin
     xbinning:=1;{normal}
     ybinning:=1;
 
-    date_obs:=''; date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+    date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
     sitelat:=''; sitelong:='';
 
     focus_temp:=999;{assume no data available}
@@ -884,6 +883,8 @@ begin
     sqm_value:='';
   end;
 
+  date_obs:='';
+  calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
   filter_name:='';
   naxis:=-1;
   naxis3:=1;
@@ -1175,6 +1176,9 @@ begin
                 date_avg:=get_string;
 
 
+        if ((header[i]='C') and (header[i+1]='A')  and (header[i+2]='L') and (header[i+3]='S') and (header[i+4]='T') and (header[i+5]='A')) then  {calstat is also for flats}
+            calstat:=get_string;{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. M could indicate master}
+
 
         if light then {read as light ##############################################################################################################################################################}
         begin
@@ -1268,10 +1272,6 @@ begin
             if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then   cd2_1:=validate_double;
             if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='2')) then   cd2_2:=validate_double;
           end;
-
-          if ((header[i]='C') and (header[i+1]='A')  and (header[i+2]='L') and (header[i+3]='S') and (header[i+4]='T') and (header[i+5]='A')) then
-             calstat:=get_string;{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected.}
-
 
           if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and
                           (( (header[i+3]='U') and (header[i+4]='S') and (header[i+5]='T') and (header[i+6]='E')) or
@@ -3077,7 +3077,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.558a, '+about_message4+', dated 2021-7-3';
+  #13+#10+'ASTAP version ß0.9.559, '+about_message4+', dated 2021-7-8';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -11816,16 +11816,20 @@ begin
           stackmenu1.search_fov1.text:=GetOptionValue('fov');
         end;
         if hasoption('r') then stackmenu1.radius_search1.text:=GetOptionValue('r');
+
         if hasoption('ra') then
         begin
            mainwindow.ra1.text:=GetOptionValue('ra');
         end;
+        {else ra from fits header}
+
         if hasoption('spd') then {south pole distance. Negative values can't be passed via commandline}
         begin
           dec0:=strtofloat2(GetOptionValue('spd'))-90;{convert south pole distance to declination}
           str(dec0:0:6,s);
           mainwindow.dec1.text:=s;
         end;
+        {else dec from fits header}
 
         if hasoption('z') then
                  stackmenu1.downsample_for_solving1.text:=GetOptionValue('z');

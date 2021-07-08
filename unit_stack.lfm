@@ -1,14 +1,14 @@
 object stackmenu1: Tstackmenu1
-  Left = 625
+  Left = 33
   Height = 749
-  Top = 247
+  Top = 119
   Width = 1785
-  HorzScrollBar.Page = 1785
+  HorzScrollBar.Page = 1257
   VertScrollBar.Page = 556
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
-  ClientHeight = 732
+  ClientHeight = 749
   ClientWidth = 1785
   Color = clForm
   Icon.Data = {
@@ -53,9 +53,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.12.0'
   object Memo2: TMemo
     Left = 0
-    Height = 172
+    Height = 189
     Top = 560
-    Width = 1845
+    Width = 1785
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     DoubleBuffered = True
@@ -226,8 +226,8 @@ object stackmenu1: Tstackmenu1
     Height = 498
     Hint = 'Stack menu'
     Top = 0
-    Width = 1845
-    ActivePage = lights
+    Width = 1785
+    ActivePage = Flats
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 2
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -360,8 +360,8 @@ object stackmenu1: Tstackmenu1
           item
             Alignment = taRightJustify
             Caption = 'Quality'
-            MinWidth = 80
-            Width = 80
+            MinWidth = 60
+            Width = 60
           end        
           item
             Alignment = taRightJustify
@@ -907,13 +907,20 @@ object stackmenu1: Tstackmenu1
             MinWidth = 50
           end        
           item
+            AutoSize = True
             Caption = 'Filter'
             MinWidth = 50
+            Width = 41
           end        
           item
             AutoSize = True
             Caption = 'JD'
             Width = 27
+          end        
+          item
+            Caption = 'Calibration'
+            MinWidth = 80
+            Width = 80
           end>
         GridLines = True
         HideSelection = False
@@ -2242,7 +2249,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the frame alignment and solver options.'
       Caption = 'Alignment'
       ClientHeight = 470
-      ClientWidth = 1549
+      ClientWidth = 1777
       ImageIndex = 7
       ParentFont = False
       object use_star_alignment1: TRadioButton
