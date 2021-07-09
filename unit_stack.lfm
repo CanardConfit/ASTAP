@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 33
+  Left = 1069
   Height = 749
-  Top = 119
+  Top = 274
   Width = 1785
   HorzScrollBar.Page = 1257
   VertScrollBar.Page = 556

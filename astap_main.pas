@@ -11795,7 +11795,9 @@ begin
             load_image(true,true {plot});{load and show image}
           end
           else
-          begin
+          begin {stdin receive file}
+            memo1.clear;{prepare for some info wcs file}
+            memo1.lines.add('END');{add the END to memo1 for stdin and prevent runtime error since all data is inserted for END}
             file_loaded:=read_stdin_data;
             if debug then
             begin
