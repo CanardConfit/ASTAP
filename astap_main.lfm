@@ -1285,7 +1285,7 @@ object mainwindow: Tmainwindow
           Hint = 'The median background values are annotated  in the image in ration to the center value.'
           OnClick = annotatemedianbackground1Click
         end
-        object MenuItem25: TMenuItem
+        object MenuItem27: TMenuItem
           Caption = '-'
         end
         object bayer_image1: TMenuItem
@@ -1294,7 +1294,7 @@ object mainwindow: Tmainwindow
           Hint = 'A normalise filter is applied. The raw OSC RGGB pixels are normalised to the same mean value. This is better option for raw OSC images.'
           OnClick = bayer_image1Click
         end
-        object MenuItem22: TMenuItem
+        object MenuItem25: TMenuItem
           Caption = '-'
         end
         object show_distortion1: TMenuItem
@@ -1303,6 +1303,16 @@ object mainwindow: Tmainwindow
           Hint = 'Show image distortion using the star positions and solution. Lines a 50x larger then distortion.'
           ShortCut = 117
           OnClick = show_distortion1Click
+        end
+        object MenuItem22: TMenuItem
+          Caption = '-'
+        end
+        object aberration_inspector1: TMenuItem
+          Caption = 'Aberration Inspector'
+          Enabled = False
+          Hint = 'Makes a compilation of the image corners and the center for a closer inspection.'
+          ShortCut = 118
+          OnClick = aberration_inspector1Click
         end
       end
       object MenuItem2: TMenuItem

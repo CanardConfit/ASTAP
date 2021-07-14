@@ -105,6 +105,8 @@ type
     freetext1: TMenuItem;
     extend1: TMenuItem;
     annotatemedianbackground1: TMenuItem;
+    aberration_inspector1: TMenuItem;
+    MenuItem27: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
     MenuItem26: TMenuItem;
@@ -303,6 +305,7 @@ type
     Panel1: TPanel;
     Image1: TImage;
 
+    procedure aberration_inspector1Click(Sender: TObject);
     procedure add_marker_position1Click(Sender: TObject);
     procedure annotate_with_measured_magnitudes1Click(Sender: TObject);
     procedure annotations_visible1Click(Sender: TObject);
@@ -497,6 +500,7 @@ type
      cd2_1  : double;
      cd2_2  : double;
      header : string;
+     filen  : string;{filename}
      img    : array of array of array of single;
    end;
 
@@ -2964,6 +2968,8 @@ begin
     img_backup[index_backup].cd2_2:=cd2_2;
 
     img_backup[index_backup].header:=mainwindow.Memo1.Text;{backup fits header}
+    img_backup[index_backup].filen:=filename2;{backup filename}
+
     img_backup[index_backup].img:=img_loaded;
     setlength(img_backup[index_backup].img,naxis3,width2,height2);{this forces an duplication}{In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
 
@@ -3011,6 +3017,8 @@ begin
     cd2_1:=img_backup[index_backup].cd2_1;
     cd2_2:=img_backup[index_backup].cd2_2;
     mainwindow.Memo1.Text:=img_backup[index_backup].header;{restore fits header}
+    filename2:=img_backup[index_backup].filen;{backup filename}
+
     stackmenu1.test_pattern1.Enabled:=naxis3=1;{allow debayer if mono again}
     img_loaded:=img_backup[index_backup].img; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
     setlength(img_loaded,naxis3,width2,height2);{force a duplication}
@@ -3077,7 +3085,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.559a, '+about_message4+', dated 2021-7-14';
+  #13+#10+'ASTAP version ß0.9.560, '+about_message4+', dated 2021-7-14';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4257,8 +4265,9 @@ begin
   update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
 
+  img_loaded:=nil;
   img_loaded:=img_temp;
-  img_temp:=nil;
+
   if cd1_1<>0 then {update solution for rotation}
   begin
     if right then {rotate right}
@@ -4740,6 +4749,7 @@ begin
     mainwindow.hfd_contour1.enabled:=fits; {2D contour}
     mainwindow.inspector_hfd_values1.enabled:=fits; {add hfd values}
     mainwindow.annotatemedianbackground1.enabled:=fits; {add hfd values}
+    mainwindow.aberration_inspector1.enabled:=fits;
 
     mainwindow.convertmono1.enabled:=fits;
 
@@ -8931,7 +8941,7 @@ end;
 
 procedure Tmainwindow.annotatemedianbackground1Click(Sender: TObject);
 var
- tx,ty,size,diam, i, j,starX,starY, retries,max_stars,fontsize,halfstepX,halfstepY,stepX,stepY: integer;
+ tx,ty,fontsize,halfstepX,halfstepY,stepX,stepY: integer;
  X,Y,stepsizeX,stepsizeY,median,median_center,factor          : double;
  Save_Cursor:TCursor;
  img_bk                                    : image_array;
@@ -9279,8 +9289,8 @@ begin
       end;
   end;
 
+  img_loaded:=nil;
   img_loaded:=img_temp;
-  img_temp:=nil;
 
   if cd1_1<>0 then {update solution for rotation}
   begin
@@ -10266,7 +10276,7 @@ end;
 
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
- size, i, starX, starY,lim_magn,peak,text_width,fontsize,text_height     : integer;
+ size, i, starX, starY,lim_magn,text_width,fontsize,text_height     : integer;
  lim_magn_max    : double;
  Save_Cursor:TCursor;
  Fliphorizontal, Flipvertical  : boolean;
@@ -10493,6 +10503,124 @@ begin
   end
   else
     mainwindow.shape_marker3.visible:=false;
+end;
+
+procedure Tmainwindow.aberration_inspector1Click(Sender: TObject);
+var fitsX,fitsY,col, widthN,heightN                : integer;
+    Save_Cursor:TCursor;
+var  {################# initialised variables #########################}
+   side :integer=250;
+const
+   gap=4;
+begin
+  if fits_file then
+  begin
+   Save_Cursor := Screen.Cursor;
+   Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+   backup_img;
+
+   side:=min(side,height2 div 3);
+   side:=min(side,width2 div 3);
+
+   widthN:=3*side+2*gap;
+   heightN:=widthN;
+   setlength(img_temp,naxis3,widthN,heightN);{set length of image array}
+
+   for col:=0 to naxis3-1 do
+    for fitsY:=0 to heightN-1 do
+      for fitsX:=0 to widthN-1 do {clear img_temp for the gaps}
+         img_temp[col,fitsX,fitsY]:=0;
+
+
+   for col:=0 to naxis3-1 do
+   for fitsY:=0 to side-1 do
+     for fitsX:=0 to side-1 do {copy corner}
+        img_temp[col,fitsX,fitsY]:=img_loaded[col,fitsX,fitsY];
+
+   for col:=0 to naxis3-1 do
+   for fitsY:=0 to side-1 do
+     for fitsX:=0 to side-1 do {copy corner}
+        img_temp[col,fitsX+side+gap,fitsY]:=img_loaded[col,fitsX+(width2 div 2)-(side div 2),fitsY];
+
+
+   for col:=0 to naxis3-1 do
+   for fitsY:=0 to side-1 do
+     for fitsX:=0 to side-1 do {copy corner}
+        img_temp[col,fitsX+2*(side+gap),fitsY]:=img_loaded[col,fitsX+width2-side,fitsY];
+
+
+
+
+   for col:=0 to naxis3-1 do
+   for fitsY:=0 to side-1 do
+     for fitsX:=0 to side-1 do {copy corner}
+        img_temp[col,fitsX,fitsY+(side+gap)]:=img_loaded[col,fitsX,fitsY +(height2 div 2) - (side div 2) ];
+
+   for col:=0 to naxis3-1 do
+   for fitsY:=0 to side-1 do
+     for fitsX:=0 to side-1 do {copy corner}
+        img_temp[col,fitsX+side+gap,fitsY+(side+gap)]:=img_loaded[col,fitsX+(width2 div 2)-(side div 2),fitsY +(height2 div 2) - (side div 2) ];
+
+
+   for col:=0 to naxis3-1 do
+   for fitsY:=0 to side-1 do
+     for fitsX:=0 to side-1 do {copy corner}
+        img_temp[col,fitsX+2*(side+gap),fitsY+(side+gap)]:=img_loaded[col,fitsX+width2-side,fitsY +(height2 div 2) - (side div 2) ];
+
+
+
+
+   for col:=0 to naxis3-1 do
+   for fitsY:=0 to side-1 do
+     for fitsX:=0 to side-1 do {copy corner}
+        img_temp[col,fitsX,fitsY+2*(side+gap)]:=img_loaded[col,fitsX,fitsY + height2 - side];
+
+   for col:=0 to naxis3-1 do
+   for fitsY:=0 to side-1 do
+     for fitsX:=0 to side-1 do {copy corner}
+        img_temp[col,fitsX+side+gap,fitsY+2*(side+gap)]:=img_loaded[col,fitsX+(width2 div 2)-(side div 2),fitsY + height2 - side];
+
+
+   for col:=0 to naxis3-1 do
+   for fitsY:=0 to side-1 do
+     for fitsX:=0 to side-1 do {copy corner}
+        img_temp[col,fitsX+2*(side+gap),fitsY+2*(side+gap)]:=img_loaded[col,fitsX+width2-side,fitsY + height2 - side];
+
+
+//   setlength(img_loaded,naxis3,width2,height2);{set length of image array}
+//   img_loaded[0]:=img_temp[0];
+//   if naxis3>1 then img_loaded[1]:=img_temp[1];
+//   if naxis3>2 then img_loaded[2]:=img_temp[2];
+
+//   img_temp:=nil; {free memory}
+
+   img_loaded:=nil;{release memory}
+   img_loaded:=img_temp;
+
+   width2:=widthN;
+   height2:=heightN;
+
+   update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
+   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+
+   if cd1_1<>0 then {remove solution}
+   begin
+     remove_key('CD1_1   =',true{one});
+     remove_key('CD1_2   =',true{one});
+     remove_key('CD2_1   =',true{one});
+     remove_key('CD2_2   =',true{one});
+     cd1_1:=0;
+   end;
+
+   update_text   ('COMMENT A','  Aberration view '+filename2);
+
+   filename2:=ChangeFileExt(filename2,'_aberration_view.fits');
+   plot_fits(mainwindow.image1,true,true);
+   image_move_to_center:=true;
+
+   Screen.Cursor:=Save_Cursor;
+  end;
 end;
 
 
@@ -12566,7 +12694,7 @@ end;
 
 
 procedure Tmainwindow.CropFITSimage1Click(Sender: TObject);
-var fitsX,fitsY,dum       : integer;
+var fitsX,fitsY,col,dum       : integer;
     ra_c,dec_c, ra_n,dec_n,ra_m, dec_m, delta_ra   : double;
     Save_Cursor:TCursor;
 begin
@@ -12585,20 +12713,13 @@ begin
    setlength(img_temp,naxis3,width2,height2);{set length of image array}
 
 
-   for fitsY:=startY to stopY do
-     for fitsX:=startX to stopX do {crop image INCLUDING rectangle. Do this that if used near corners they are included}
-      begin
-        img_temp[0,fitsX-startX,fitsY-startY]:=img_loaded[0,fitsX,fitsY];
-        if naxis3>1 then img_temp[1,fitsX-startX,fitsY-startY]:=img_loaded[1,fitsX,fitsY];{color}
-        if naxis3>2 then img_temp[2,fitsX-startX,fitsY-startY]:=img_loaded[2,fitsX,fitsY];
-      end;
+   for col:=0 to naxis3-1 do
+     for fitsY:=startY to stopY do
+       for fitsX:=startX to stopX do {crop image INCLUDING rectangle. Do this that if used near corners they are included}
+          img_temp[col,fitsX-startX,fitsY-startY]:=img_loaded[col,fitsX,fitsY];
 
-   setlength(img_loaded,naxis3,width2,height2);{set length of image array}
-   img_loaded[0]:=img_temp[0];
-   if naxis3>1 then img_loaded[1]:=img_temp[1];
-   if naxis3>2 then img_loaded[2]:=img_temp[2];
-
-   img_temp:=nil; {free memory}
+   img_loaded:=nil;{release memory}
+   img_loaded:=img_temp;
 
    update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
    update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
@@ -12651,6 +12772,9 @@ begin
       //   if crpix1<>0 then begin crpix1:=crpix1-startX; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;{adapt reference pixel of plate solution. Is no longer in the middle}
       //   if crpix2<>0 then begin crpix2:=crpix2-startY; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
    end;
+
+   update_text   ('COMMENT C','  Cropped image');
+
 
    plot_fits(mainwindow.image1,true,true);
    image_move_to_center:=true;
