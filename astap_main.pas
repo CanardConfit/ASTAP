@@ -3077,7 +3077,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.559, '+about_message4+', dated 2021-7-8';
+  #13+#10+'ASTAP version ß0.9.559a, '+about_message4+', dated 2021-7-14';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4021,7 +4021,6 @@ end;
 
 procedure plot_text;
 var
-  detext : string;
   fontsize: double;
   posanddate, freet : boolean;
 begin
@@ -4031,7 +4030,7 @@ begin
 
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   mainwindow.image1.Canvas.font.name:='default';
-  fontsize:=max(annotation_diameter,fontsize);
+  fontsize:=max(annotation_diameter,font_size);
   mainwindow.image1.Canvas.font.size:=round(fontsize);
 
   mainwindow.image1.Canvas.font.color:=annotation_color; {default clyellow}

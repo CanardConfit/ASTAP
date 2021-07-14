@@ -130,14 +130,8 @@
         <SyntaxMode Value="Delphi"/>
       </SyntaxOptions>
     </Parsing>
-    <CodeGeneration>
-      <Optimizations>
-        <OptimizationLevel Value="3"/>
-      </Optimizations>
-    </CodeGeneration>
     <Linking>
       <Debugging>
-        <GenerateDebugInfo Value="False"/>
         <UseExternalDbgSyms Value="True"/>
       </Debugging>
       <Options>
@@ -150,13 +144,6 @@
       <CustomOptions Value="-dBorland
 -dVer150
 -dDelphi7"/>
-      <OtherDefines Count="5">
-        <Define0 Value="Borland"/>
-        <Define1 Value="Ver150"/>
-        <Define2 Value="Delphi7"/>
-        <Define3 Value="Compiler6_Up"/>
-        <Define4 Value="PUREPASCAL"/>
-      </OtherDefines>
     </Other>
   </CompilerOptions>
   <Debugging>
