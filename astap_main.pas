@@ -110,6 +110,7 @@ type
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
     MenuItem26: TMenuItem;
+    Shape1: TShape;
     sip1: TMenuItem;
     zoomfactorone1: TMenuItem;
     MenuItem22: TMenuItem;
@@ -1978,7 +1979,6 @@ begin
   I:=0;
   reader_position:=0;
 
-
   aline:='';
   try
     for i:=0 to 2 do begin reader.read(ch,1); aline:=aline+ch; inc(reader_position,1);end;
@@ -3085,7 +3085,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.560, '+about_message4+', dated 2021-7-14';
+  #13+#10+'ASTAP version ß0.9.560a, '+about_message4+', dated 2021-7-18';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4693,6 +4693,7 @@ begin
   mainwindow.add_marker_position1.enabled:=yes;{enable popup menu}
   mainwindow.measuretotalmagnitude1.enabled:=yes;{enable popup menu}
   mainwindow.writeposition1.enabled:=yes;{enable popup menu}
+  mainwindow.writepositionshort1.enabled:=yes;{enable popup menu}
   mainwindow.Copyposition1.enabled:=yes;{enable popup menu}
   mainwindow.Copypositionindeg1.enabled:=yes;{enable popup menu}
   mainwindow.gaia_star_position1.enabled:=yes;{enable popup menu}
@@ -5283,22 +5284,6 @@ begin {make from rax [0..pi*2] a text in array bericht. Length is 8 long}
   Str(trunc(h):2,b);
   prepare_ra5:=b+sep+leadingzero(m)+'.'+ansichar(dm+48);
 end;
-
-
-function prepare_ra4(rax:double; sep:string):string; {radialen to text  format 24h 00}
-  var
-    B : String[2];
-    h,m,dm  :integer;
-begin {make from rax [0..pi*2] a text in array bericht. Length is 8 long}
-  rax:=rax+pi/(24*60); {add of half minute to get correct rounding and not 7:60 results as with round}
-  rax:=rax*12/pi; {make hours}
-  h:=trunc(rax);
-  m:=trunc((rax-h)*60);
-  dm:=trunc((rax-h-m/60)*600);
-  Str(trunc(h):2,b);
-  result:=b+sep+leadingzero(m);
-end;
-
 
 
 function prepare_dec4(decx:double;sep:string):string; {radialen to text  format 90d 00 }
@@ -7046,7 +7031,6 @@ var
   dum : string;
   i,c                : integer;
   initstring :tstrings; {settings for save and loading}
-  t1,t2 : longint;
 
     procedure get_int(var i: integer;s1 : string);
     var
@@ -7422,7 +7406,7 @@ function load_settings(lpath: string)  : boolean;
 var
     Sett : TmemIniFile;
     dum : string;
-    i,c{,t1 }               : integer;
+    c   : integer;
 begin
   result:=false;{assume failure}
 //  t1:=gettickcount;
@@ -12674,8 +12658,7 @@ begin
      decm:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
    end
    else
-   if (mainwindow.Polynomial1.itemindex=0) then
-   begin  {improved new WCS}
+   begin  {mainwindow.Polynomial1.itemindex=0}
      if cd1_1<>0 then
      begin
        dRa :=(cd1_1*(fitsx-crpix1)+cd1_2*(fitsy-crpix2))*pi/180;

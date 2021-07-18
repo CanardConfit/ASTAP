@@ -2,7 +2,7 @@ object mainwindow: Tmainwindow
   Left = 397
   Height = 658
   Hint = ' '
-  Top = 459
+  Top = 350
   Width = 1272
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -1682,6 +1682,7 @@ object mainwindow: Tmainwindow
     end
     object writepositionshort1: TMenuItem
       Caption = 'Add object position short'
+      Enabled = False
       Hint = 'Add object position in short IAU designation style. If there is no lock, no position wll be given. Use then the previouse menu option.'
       OnClick = writeposition1Click
     end

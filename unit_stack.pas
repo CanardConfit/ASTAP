@@ -4784,13 +4784,14 @@ begin
   end;
 end;
 
+
 procedure Tstackmenu1.ephemeris_centering1Change(Sender: TObject);
 begin
   new_analyse_required:=true;{force a new analyse for new x, y position asteroids}
 end;
 
-procedure Tstackmenu1.focallength1Exit(Sender: TObject);
 
+procedure Tstackmenu1.focallength1Exit(Sender: TObject);
 begin
  if sender=focallength1 then {manual entered}
      focallen:=strtofloat2(stackmenu1.focallength1.text);{manual entered focal length, update focallen}
@@ -4827,12 +4828,12 @@ begin
     scale_calc1.Caption:='- - -';
 end;
 
+
 procedure Tstackmenu1.go_step_two1Click(Sender: TObject);
 begin
   load_image(mainwindow.image1.visible=false,true {plot});
   update_equalise_background_step(2); {go to step 3}
 end;
-
 
 
 procedure Tstackmenu1.luminance_filter1exit(Sender: TObject);
@@ -4907,7 +4908,6 @@ begin
 
   if mess then luminance_filter1.font.Style:=[fsbold] else luminance_filter1.font.Style:=[];
   if mess2 then luminance_filter2.font.Style:=[fsbold] else luminance_filter2.font.Style:=[];
-
 end;
 
 
@@ -6621,8 +6621,8 @@ procedure smart_colour_smooth( var img: image_array; wide, sd:double; preserve_r
 var fitsX,fitsY,x,y,step,x2,y2,count,width5,height5  : integer;
     img_temp2            : image_array;
     luminance,red,green,blue,rgb,r,g,b,sqr_dist,strongest_colour_local,top,bg,r2,g2,b2,noise_level1, peak,bgR2,bgB2,bgG2,highest_colour  : single;
-    bgR,bgB,bgG  : double;
-    copydata,red_nebula,preserve_red_nebula : boolean;
+    bgR,bgB,bgG         : double;
+    copydata,red_nebula : boolean;
 begin
   if length(img)<3 then exit;{not a three colour image}
 
@@ -6707,11 +6707,7 @@ begin
         green:=green/count;
         blue:=blue/count;
 
-    //    if ((fitsx=1181) and (fitsY=940)) then
-    //      beep;
-
         if peak>star_level then {star level very close}
-    //       if ((red>3*noise_level1+4*(bgR2-bgR)) or (green>3*noise_level1+4*(bgG2-bgG)) or (blue>3*noise_level1+4*(bgB2-bgB)) ) then {enough flux, so bright flux measured. Factor +4*(bgG2-bgG) for stars in nebula}
         begin
           highest_colour:=max(r2,max(g2,b2));
           if preserve_r_nebula then
@@ -6748,6 +6744,7 @@ begin
   img:=img_temp2;{copy the array}
   img_temp2:=nil;
 end;
+
 
 procedure green_purple_filter( var img: image_array);{Balances RGB to remove green and purple. For e.g. Hubble palette}
 var fitsX,fitsY                : integer;
@@ -7113,8 +7110,6 @@ end;
 
 
 procedure Tstackmenu1.analyseblink1Click(Sender: TObject);
-var
-   c: integer;
 begin
   analyse_listview(listview6,true {light},false {full fits},false{refresh});
   listview6.alphasort; {sort on time}
@@ -7189,8 +7184,6 @@ end;
 
 
 procedure Tstackmenu1.analysephotometry1Click(Sender: TObject);
-var
-   c: integer;
 begin
   if sender=analysephotometrymore1 then
     analyse_listview(listview7,true {light},true {full fits},true{refresh})
@@ -7657,11 +7650,11 @@ begin
 end;
 
 
-procedure load_master_dark(exposure2,temperature2,width1,jd_int: integer {;var Daverage,Dsigma:double});
+procedure load_master_dark(exposure2,temperature2,width1,jd_int: integer);
 var
   c,roundexposure            : integer;
   d,day_offset               : double;
-  filen,datef                : string;
+  filen                      : string;
 
 begin
 //  analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{find dimensions, exposure and temperature}
@@ -7681,7 +7674,6 @@ begin
             begin
               filen:=stackmenu1.ListView2.items[c].caption;
               day_offset:=abs(d-jd_int);
-              datef:=stackmenu1.listview2.Items.item[c].subitems.Strings[D_date];
               roundexposure:=round(exposure);
             end;
           end;
@@ -7719,7 +7711,7 @@ procedure load_master_flat(filter: string;width1,jd_int :integer );
 var
   c              : integer;
   d,day_offset   : double;
-  filen,datef    : string;
+  filen          : string;
 begin
 //  analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{find dimensions, exposure and temperature}
   c:=0;
@@ -7737,7 +7729,6 @@ begin
           begin
             filen:=stackmenu1.ListView3.items[c].caption;
             day_offset:=abs(d-jd_int);
-            datef:=stackmenu1.listview3.Items.item[c].subitems.Strings[D_date];
           end;
         end;
     end;

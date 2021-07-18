@@ -27,8 +27,8 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
           </big></big><big><big><span style="color: red; font-weight: bold;"></span></big></big>
         <ul>
           <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
-            &nbsp;<big>version 0.9.559 dated 2021-07-08. &nbsp;Alternative
-            link, the very latest development version 0.9.559a <a href="astap_setup.exe">ASTAP installer</a>
+            &nbsp;<big>version 0.9.560 dated 2021-07-14. &nbsp;Alternative
+            link, the very latest development version 0.9.560 <a href="astap_setup.exe">ASTAP installer</a>
             , <a href="astap.zip">ASTAP
               executable only</a></big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.exe/download">H17
@@ -69,7 +69,7 @@ work with SharpCap since FOV is not stored.</li></ul>
 zipped
                   package</big></big></a><big>
               version
-              0.9.559 dated 2021-07-08. Extract in directory c:\ program
+              0.9.560 dated 2021-07-14. Extract in directory c:\ program
               files\astap
               or c:\astap. Note that the execution speed of the 32 bit
               version is
@@ -105,7 +105,7 @@ work with SharpCap since FOV is not stored.</li></ul>
           <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.deb/download">ASTAP
 debian
                   package</a></big></big><big> </big><big>&nbsp;or&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.tar.gz/download">astap_amd64.tar.gz,</a> </big><big><a href="astap_rpm.htm">openSUSE and Fedora support</a> </big><big>version
-              0.9.559 dated 2021-07-08. Alternative link, development version 0.9.5</big>59&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big> ,&nbsp;</big>&nbsp;<a href="astap_amd64.tar.gz">ASTAP tar.gz</a><big>. &nbsp;</big></li>
+              0.9.560 dated 2021-07-14. Alternative link, development version 0.9.5</big>60&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big> ,&nbsp;</big>&nbsp;<a href="astap_amd64.tar.gz">ASTAP tar.gz</a><big>. &nbsp;</big></li>
           <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.deb/download">H17
 star
               database debian package</a></big> (500mb)&nbsp;or <big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.deb/download">H18
@@ -339,7 +339,8 @@ renamed. No pop-up notifier. Will not accept raw files.</li></ul></ul>
             <ul>
               <li><big><a href="astap.htm#batch_conversion">Batch
                     conversion</a></big></li><li><big><a href="astap.htm#inspector">CCD
-                    inspector</a></big></li>
+                    inspector</a></big></li><ul><li><big><a href="astap.htm#inspector">CCD
+                    inspector</a></big></li><li><big><a href="astap.htm#hfd_2d_contour">HFD_2d_contour</a></big></li><li><big><a href="astap.htm#hfd_diagram">HFD_diagram</a></big></li><li><big><a href="astap.htm#median_background_values">Median_background_values</a></big></li><li><big><a href="astap.htm#hfd_values">HFD values</a></big></li><li><big><a href="astap.htm#aberration_inspector">Aberration Inspector</a><br></big></li></ul>
               <li><big><a href="astap.htm#photometry_calibration">Photometry calibration</a></big></li><li><big><a href="astap.htm#sqm">SQM measurement</a></big></li>
               <li><big><a href="#star_annotation">Star
                     annotation and photometry</a></big></li><li><big><a href="#asteroid_annotation">Asteroid
@@ -1807,11 +1808,10 @@ solving
         <big style="text-decoration: underline;"><span style="font-weight: bold;"><a name="inspector"></a>CCD
             inspector</span></big><br>
         <br>
-        The viewer&nbsp;has a CCD inspector under menu tools.&nbsp; By
+        T<big>he viewer&nbsp;has a CCD inspector under menu tools.&nbsp; By
         reporting the median HFD value, sensor tilt and curvature the
         inspector
-        will quickly show any problem of the imaging system.&nbsp;<br>
-        <br>
+        will quickly show any problem of the imaging system.&nbsp;<br><br>
         The
         image used for testing should&nbsp;be a single raw image
         with&nbsp;sufficient stars and not containing&nbsp;a disturbing
@@ -1820,20 +1820,21 @@ solving
         long
 
         enough to image many stars but not too long&nbsp;preventing star
-        saturation.<br>
-        <br>
+        saturation.<br><br>
         The routine will detect and annotate the stars with their HFD
         value and
         plot a tilt indicator in the image. A star rich image containing a few hunderd stars or more gives the best accuracy.
-        <p>The following will be reported:
-        </p>
-        <ul><li>Image <strong>median hfd</strong> which is an
+        </big>
+        
+        <p><big>The following will be reported:
+        </big></p>
+        <ul><li><big>Image <strong>median hfd</strong> which is an
             excellent indicator of the quality of focusing. The lower
             the value the
             better the focusing, the sharper the stars are. The value is
             also
             depending on the astronomical seeing and the quality of the
-            optics. If the image is solved it will also be indicated in arc seconds. </li><li><strong>Sensor tilt</strong> as the
+            optics. If the image is solved it will also be indicated in arc seconds. </big></li><li><big><strong>Sensor tilt</strong> as the
             HFD difference between the best and worst corner
             median
             values. In addition as an graphical indication it draws an
@@ -1841,7 +1842,7 @@ solving
             the image based on the four median values.<br>
 There can be some variation in images of the same series. Any tilt
 equal or less then 10% of the range is a good value. Any tilt equal or
-more then 20% of the range indicates a tilt problem.&nbsp;&nbsp; </li><li><strong>Off-axis abberation</strong>
+more then 20% of the range indicates a tilt problem.&nbsp;&nbsp; </big></li><li><big><strong>Off-axis abberation</strong>
 as the delta between the HFD value in the center and in the outer areas
 of the image. The stars in the outer area are normally a little larger,
 oval or comet shaped due to the optics or curvature giving an higher
@@ -1850,30 +1851,34 @@ HFD value. The lower this value the better the optics. This value could
 flattener and the camera. This measurement is only a valid if the focus
 for the center area is perfect. A more advanced measuring
 method&nbsp;is available in <a href="astap.htm#inspector_tab">tab CCD Inspector</a>.
-          </li></ul>
+          </big></li></ul>
         <br>
-        <img src="astap_ccd_inspector.jpg" alt="" style="width: 1053px; height: 797px;"><br><br><img style="width: 810px; height: 494px;" alt="" src="astap_tilt_calculation.png"><br>
-        <br>
-        <br><span style="text-decoration: underline;">HFD 2D contour menu.</span>
-The star half flux diameters (HFD's) are displayed in a 2D contour.
+        <img src="astap_ccd_inspector.jpg" alt="" style="width: 1053px; height: 797px;"><br><br><br><big>CCD inspector c</big><big>alculation method explained:</big><br><img style="width: 810px; height: 494px;" alt="" src="astap_tilt_calculation.png"><br>
+        <br><br>
+        <br><big><span style="text-decoration: underline;"><a name="hfd_2d_contour"></a>HFD 2D contour.</span>
+<br><br>The star half flux diameters (HFD's) are displayed in a 2D contour.
 Dark areas indicate a lower and better HFD value.&nbsp;This will
 quickly visualise&nbsp;sensor tilt or other problems.&nbsp;To avoid
 false indications by outliers the HFD values are filtered by taking the
 median HFD value of the three closest stars and&nbsp; allocate the
 result to all three stars. The HFD values are indicated numerical. They
-grey levels have no direct linea relation with the HFD.<br><img style="width: 1200px; height: 960px;" alt="" src="astap_ccd_inspector3.png"><br><br><br><br><span style="text-decoration: underline;">HFD
-diagram menu</span>. The star HFD values can also be represented by areas of constant HFD.
+grey levels have no direct linea relation with the HFD.</big><br><img style="width: 1200px; height: 960px;" alt="" src="astap_ccd_inspector3.png"><br><br><br><big><br><span style="text-decoration: underline;"><a name="hfd_diagram"></a>HFD
+diagram</span>. </big><br><br><big>The star HFD values can also be represented by areas of constant HFD.
 It is in principle a Voronoi diagram, but by&nbsp; taking the median
 value of each three closest stars and allocate the median to the three
 stars it looks a little different.White areas indicate a star with an
 high HFD value. Darker areas indicate a lower value. The grey level is
-the HFD * 100.<br>
-        <img style="width: 1200px; height: 960px;" alt="" src="astap_ccd_inspector2.png"><br><br><span style="text-decoration: underline;">HFD values menu</span>
-This will only indicate the median filtered HFD values next to the
+the HFD * 100.</big><br>
+        <img style="width: 1200px; height: 960px;" alt="" src="astap_ccd_inspector2.png"><br><br><big><span style="text-decoration: underline;"><a name="hfd_values"></a>HFD values</span> <br><br>This tool will only indicate the median filtered HFD values next to the
 stars. The same values as in the 2D countour and HFD diagram. To avoid
 false indications by outliers the HFD values are filtered by taking the
 median HFD value of the three closest stars and&nbsp; allocate the
-result to all three stars. <br><br><a href="astap.htm#index">Back to index</a><br><br><big style="text-decoration: underline;"><span style="font-weight: bold;"><a name="photometry_calibration"></a>Viewer, Tools, Calibrate Photometry.<br><br></span></big><big>With
+result to all three stars. <br></big><br><br><span style="text-decoration: underline;"><big><a name="median_background_values"></a>Median background values</big><br><br></span><big>This
+tools writes&nbsp;the median background values as numerical values in
+the image. For correct measurement the image should only contains stars.<br><br><img style="width: 878px; height: 664px;" alt="" src="astap_median_background_values.jpg"><br></big><span style="text-decoration: underline;"></span><br><big><span style="text-decoration: underline;"><br><a name="aberration_inspector"></a>Aberration Inspector<br><br></span>This
+tool creates a 3x3 mosaic of the images center, the corners and
+borders. This allows easy an comparison of the star shape at the
+different sections of the image. </big><br><big><span style="text-decoration: underline;"><br></span><span style="text-decoration: underline; font-weight: bold;"><img style="width: 758px; height: 758px;" alt="" src="astap_aberration_inspector.jpg"><br></span></big><br><a href="astap.htm#index">Back to index</a><br><br><br><br><big style="text-decoration: underline;"><span style="font-weight: bold;"><a name="photometry_calibration"></a>Viewer, Tools, Calibrate Photometry.<br><br></span></big><big>With
 this option the relation between flux and mangitude is measured. The
 image should be solved in advance to be able to calibrate the star flux
 with star database magnitudes. </big><big> After the calibration is applied, the star
