@@ -73,7 +73,7 @@ begin
      mean:=mean+b;
   end;
   mean:=mean/nr;
- {usefull length is nr}
+ {useful length is nr}
 end;
 
 procedure voronoi_plot(min_value,max_value : single; nr:integer;hfd_values: hfd_array);
@@ -291,7 +291,7 @@ begin
 
   if nhfd<10 then
    begin
-     memo2_message('Abort, only '+inttostr(nhfd)+' usefull stars!');
+     memo2_message('Abort, only '+inttostr(nhfd)+' useful stars!');
      exit;
    end;
 

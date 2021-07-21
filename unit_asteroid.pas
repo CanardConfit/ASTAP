@@ -1272,7 +1272,7 @@ var txtf : textfile;
       begin
 
        {5. Conversion (RA,DEC) -> (x,y)}
-        sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
+        sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
         delta_ra:=ra2-ra0;
         sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
         HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;

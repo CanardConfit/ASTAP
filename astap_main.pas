@@ -658,7 +658,7 @@ procedure add_integer(inpt,comment1:string;x:integer);{add integer variable to h
 procedure update_float(inpt,comment1:string;x:double);{update keyword of fits header in memo}
 procedure remove_key(inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
 
-function strtofloat2(s:string): double;{works with either dot or komma as decimal seperator}
+function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
 function TextfileSize(const name: string): LongInt;
 function floattostr6(x:double):string;
 function floattostr4(x:double):string;
@@ -1704,7 +1704,7 @@ begin
     if nrbits=24 then
     begin
       datamax_org:=255;
-      nrbits:=8; {already converted to array with seperate colour sections}
+      nrbits:=8; {already converted to array with separate colour sections}
     end
     else {16 bit}
     datamax_org:=measured_max;{most common. It set for nrbits=24 in beginning at 255}
@@ -3708,7 +3708,7 @@ var
 
 begin
   {5. Conversion (RA,DEC) -> (x,y) of reference image}
-  sincos(dec_t,SIN_dec_t,COS_dec_t);{sincos is faster then seperate sin and cos functions}
+  sincos(dec_t,SIN_dec_t,COS_dec_t);{sincos is faster then separate sin and cos functions}
   sincos(dec0,SIN_dec_ref,COS_dec_ref);{}
 
   delta_ra:=ra_t-ra0;
@@ -5217,7 +5217,7 @@ begin
 end;
 
 
-function strtofloat2(s:string): double;{works with either dot or komma as decimal seperator}
+function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
 var
   error1:integer;
 begin
@@ -8943,7 +8943,7 @@ begin
     setlength(img_bk,naxis3,width2,height2);{force a duplication to a backup image}
     convert_mono(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
-    restore_req:=true;{restore orginal image later}
+    restore_req:=true;{restore original image later}
   end
   else
   if mainwindow.bayer_image1.checked then {raw Bayer image}
@@ -8952,7 +8952,7 @@ begin
     setlength(img_bk,naxis3,width2,height2);{force a duplication to a backup image}
     normalize_OSC_flat(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
-    restore_req:=true; {restore orginal image later}
+    restore_req:=true; {restore original image later}
   end;
 
 
@@ -10092,7 +10092,7 @@ const
   for fitsY:=0 to height2-1 do
     for fitsX:=0 to width2-1  do
       img_temp3[0,fitsX,fitsY]:=default;{clear}
-  plot_artificial_stars(img_temp3);{create artifical image with database stars as pixels}
+  plot_artificial_stars(img_temp3);{create artificial image with database stars as pixels}
 //  img_loaded:=img_temp3;
 //  plot_fits(mainwindow.image1,true,true);
 //  exit;
@@ -11535,7 +11535,7 @@ begin
         str(crota2:7:2,crota);
         line2:=cdelt+','+crota+','+flipped+',0.00000,'+confidence;
 
-        apt_request:=pos('IMAGETOSOLVE',uppercase(filename2))>0; {if call from APT then write with numeric seperator according Windows setting as for PlateSolve2 2.28}
+        apt_request:=pos('IMAGETOSOLVE',uppercase(filename2))>0; {if call from APT then write with numeric separator according Windows setting as for PlateSolve2 2.28}
         if ((apt_Request) and (formatSettings.decimalseparator= ',' )) then {create PlateSolve2 v2.28 format}
         begin
           line1:=stringreplace(line1, '.', ',',[rfReplaceAll]);
@@ -11547,7 +11547,7 @@ begin
         writeln(f,resultstr);
         closefile(f);
 
-        {note SGP uses PlateSolve2 v2.29. This version writes APM always with dot as decimal seperator}
+        {note SGP uses PlateSolve2 v2.29. This version writes APM always with dot as decimal separator}
 
         {extra log}
         write_ini(solved);{write solution to ini file}
@@ -12053,7 +12053,7 @@ begin
             begin
               if fits_file_name(filename2) then savefits_update_header(filename2) {update the fits file header}
               else
-              save_fits(img_loaded,ChangeFileExt(filename2,'.fits'),16, true {override});{save orginal png,tiff jpg to 16 fits file}
+              save_fits(img_loaded,ChangeFileExt(filename2,'.fits'),16, true {override});{save original png,tiff jpg to 16 fits file}
             end;
 
             histogram_done:=false;
@@ -12885,7 +12885,7 @@ begin
     shape_marker1_fitsY:=startY+1;
     show_marker_shape(mainwindow.shape_marker1,0 {rectangle},20,20,0 {minimum size},shape_marker1_fitsX, shape_marker1_fitsY);
 
-    mouse_positionRADEC1:=InputBox('Enter α, δ of mouse position seperated by a comma:','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',mouse_positionRADEC1);
+    mouse_positionRADEC1:=InputBox('Enter α, δ of mouse position separated by a comma:','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',mouse_positionRADEC1);
     if mouse_positionRADEC1=''  then exit; {cancel used}
     shape_marker1.hint:='Reference 1: '+mouse_positionRADEC1
   end
@@ -12896,7 +12896,7 @@ begin
     shape_marker2_fitsY:=startY+1;
     show_marker_shape(mainwindow.shape_marker2,0 {rectangle},20,20,0 {minimum size},shape_marker2_fitsX, shape_marker2_fitsY);
 
-    mouse_positionRADEC2:=InputBox('Enter α, δ of mouse position seperated by a comma:','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',mouse_positionRADEC2);
+    mouse_positionRADEC2:=InputBox('Enter α, δ of mouse position separated by a comma:','Format 24 00 00.0, 90 00 00.0   or   24 00, 90 00',mouse_positionRADEC2);
     if mouse_positionRADEC2=''  then exit;  {cancel used}
     shape_marker2.hint:='Reference 2: '+mouse_positionRADEC2
   end;
@@ -14632,7 +14632,7 @@ begin
 end;
 
 
-function number_of_fields(const C: char; const S: string ): integer; {count number of fields in string with C as seperator}
+function number_of_fields(const C: char; const S: string ): integer; {count number of fields in string with C as separator}
 var
   i: Integer;
 begin
@@ -14645,7 +14645,7 @@ begin
 end;
 
 
-function retrieve_memo3_string(x,y :integer;default:string):string; {retrieve string at position x,y. Strings are seperated by #9}
+function retrieve_memo3_string(x,y :integer;default:string):string; {retrieve string at position x,y. Strings are separated by #9}
 var
   m,n1,n2 : integer;
   tal   : string;

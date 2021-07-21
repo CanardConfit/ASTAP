@@ -1379,7 +1379,7 @@ begin
       read_deepsky('S',telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov,{var} ra2,dec2,length1,width1,pa);{deepsky database search}
 
       {5. Conversion (RA,DEC) -> (x,y). See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
-      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
+      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
       delta_ra:=ra2-ra0;
       sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
       HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
@@ -1568,7 +1568,7 @@ var
       if ((flux_calibration) and ( bp_rp>12) and (bp_rp<>999){mono colour database})then exit;{too red star for flux calibration. Bp-Rp>1.2 for about 30% of the stars}
 
      {5. Conversion (RA,DEC) -> (x,y)}
-      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
+      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
       delta_ra:=ra2-ra0;
       sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
       HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
@@ -1789,7 +1789,7 @@ var
     begin
 
      {5. Conversion (RA,DEC) -> (x,y)}
-      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
+      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
       delta_ra:=ra2-ra0;
       sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
       HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
@@ -1977,7 +1977,7 @@ var
     procedure plot_star;
     begin
      {5. Conversion (RA,DEC) -> (x,y)}
-      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
+      sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
       delta_ra:=ra2-ra0;
       sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
       HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;

@@ -185,7 +185,7 @@ begin
     b:=posex('"',aline,a);inc(b,1); {find begin};
     c:=posex('"',aline,b); {find end};
     message1:=trim(copy(aline,b,c-b)); {remove spaces and crlf}
-    if message1='Float32' then nrbits:=-32 {sometimes there is an other Uintf8 behind stop _image, so test first only}  else
+    if message1='Float32' then nrbits:=-32 {sometimes there is another Uintf8 behind stop _image, so test first only}  else
     if message1='UInt16' then nrbits:=16 else
     if message1='UInt8' then nrbits:=8 else
     if message1='Float64' then nrbits:=-64 else

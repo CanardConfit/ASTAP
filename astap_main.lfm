@@ -3190,7 +3190,7 @@ object mainwindow: Tmainwindow
     end
     object selectfont1: TMenuItem
       Caption = 'Select font'
-      Hint = 'Select an other monospace font'
+      Hint = 'Select another monospace font'
       OnClick = selectfont1Click
     end
   end

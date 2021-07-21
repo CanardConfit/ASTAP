@@ -2436,7 +2436,7 @@ begin
 //   img_loaded:=img_temp2;
 //   exit;
 
-   {apply artifical flat}
+   {apply artificial flat}
    for col:=0 to colors-1 do {do all colours}
      for fitsY:=0 to h-1 do
        for fitsX:=0 to w-1 do
@@ -3143,14 +3143,14 @@ begin
 end;
 
 
-function date_obs_regional(thedate : string):string;{fits date but remote T and replace . by comma if that is the regional seperator}
+function date_obs_regional(thedate : string):string;{fits date but remote T and replace . by comma if that is the regional separator}
 begin
   result:=StringReplace(thedate,'T',' ',[]);{date/time}
   if formatSettings.decimalseparator<>'.' then result:=StringReplace(result,'.',formatSettings.decimalseparator,[]); {replaces dot by komma}
 end;
 
 procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse list of FITS files}
-// amode=0 ==> reduced header only, keep orginal ra0, dec0 (for dark and flats
+// amode=0 ==> reduced header only, keep original ra0, dec0 (for dark and flats
 // amode=1 ==> full header only
 // amode=2 ==> reduced header. load image, get background
 // amode=3 ==> full header. load image  force reanalyse
@@ -3363,8 +3363,8 @@ begin
                 lv.Items.item[c].subitems.Strings[P_airmass]:=floattostrf(AirMass_calc(alt),ffgeneral, 5,3); {airmass}
               end;
 
-              {magn is column 9 will be added seperately}
-              {solution is column 12 will be added seperately}
+              {magn is column 9 will be added separately}
+              {solution is column 12 will be added separately}
               if calstat<>'' then lv.Items.item[c].subitems.Strings[P_calibration]:=calstat
                  else lv.Items.item[c].subitems.Strings[P_calibration]:='None'; {calibration calstat info DFB}
 
@@ -3659,7 +3659,7 @@ begin
     begin
       oddX:=odd(fitsX);
       oddY:=odd(fitsY);
-      if ((oddX=false) and (oddY=false)) then begin value1:=value1+img[0,fitsX,fitsY]; inc(counter1) end else {seperate counters for case odd() dimensions are used}
+      if ((oddX=false) and (oddY=false)) then begin value1:=value1+img[0,fitsX,fitsY]; inc(counter1) end else {separate counters for case odd() dimensions are used}
       if ((oddX=true)  and (oddY=false)) then begin value2:=value2+img[0,fitsX,fitsY]; inc(counter2) end else
       if ((oddX=false) and (oddY=true))  then begin value3:=value3+img[0,fitsX,fitsY]; inc(counter3) end else
       if ((oddX=true)  and (oddY=true))  then begin value4:=value4+img[0,fitsX,fitsY]; inc(counter4) end;
@@ -4646,7 +4646,7 @@ var
   Save_Cursor : TCursor;
   fn,fname    : STRING;
 begin
-  if (IDYES= Application.MessageBox('This will extract the combined green channel from the (calibrated) raw files and write to result to new files. Continue?', 'Raw colour seperation', MB_ICONQUESTION + MB_YESNO) )=false then exit;
+  if (IDYES= Application.MessageBox('This will extract the combined green channel from the (calibrated) raw files and write to result to new files. Continue?', 'Raw colour separation', MB_ICONQUESTION + MB_YESNO) )=false then exit;
 
 
   Save_Cursor := Screen.Cursor;
@@ -5423,7 +5423,7 @@ begin
   live_stacking_pause1.font.style:=[];
   live_stacking1.font.style:=[];
 
-  memo2_message('Live stacking stopped and '+inttostr(counter)+' files renamed to orginal file name.');
+  memo2_message('Live stacking stopped and '+inttostr(counter)+' files renamed to original file name.');
 end;
 
 
@@ -5459,7 +5459,7 @@ begin
 
   setlength(img_loaded,3,width2,height2);{new size}
 
-  memo2_message('Seperating stars and nebula. Making everthing white with value '+stackmenu1.star_level_colouring1.text+' above background.');
+  memo2_message('Separating stars and nebula. Making everything white with value '+stackmenu1.star_level_colouring1.text+' above background.');
 
   star_level_colouring:=strtoint(stackmenu1.star_level_colouring1.text);
 
@@ -6586,7 +6586,7 @@ begin
         begin
           val:=img[col,x2,y2]-bg[col];
           if val<60000 {not saturated} then
-            color[col] :=color[col]+   img[col,x2,y2]-bg[col];{if written in seperate term it would be 20% faster but having fixed steps}
+            color[col] :=color[col]+   img[col,x2,y2]-bg[col];{if written in separate term it would be 20% faster but having fixed steps}
 
         end;
       end;
@@ -6733,7 +6733,7 @@ begin
           end;
        end;
      end;
-     if copydata then {keep orginal data but adjust zero level}
+     if copydata then {keep original data but adjust zero level}
      begin
        img_temp2[0,fitsX  ,  fitsY  ]:=max(0,bg+r2);{copy data, but equalise background levels}
        img_temp2[1,fitsX  ,  fitsY  ]:=max(0,bg+g2);
@@ -7198,7 +7198,7 @@ end;
 
 procedure Tstackmenu1.analyse_inspector1Click(Sender: TObject);
 begin
-  stackmenu1.memo2.lines.add('Inspector routine using multiple images at different focus positions. This routine will calculate the best focus position of serveral areas by extrapolation. Usage:');
+  stackmenu1.memo2.lines.add('Inspector routine using multiple images at different focus positions. This routine will calculate the best focus position of several areas by extrapolation. Usage:');
   stackmenu1.memo2.lines.add('- Browse for a number of short exposure images made at different focuser positions around focus. Use a fixed focuser step size and avoid backlash.');
   stackmenu1.memo2.lines.add('- Press analyse to measure the area hfd values of each image.');
   stackmenu1.memo2.lines.add('- Press curve fitting. The curve fit routine will calculate the best focuser position for each area using the hfd values. The focuser differences from center will indicate tilt & curvature of the image.');
@@ -8781,7 +8781,7 @@ begin
               update_text   ('HISTORY 1','  Stacking method AVERAGE');
 
             update_text   ('HISTORY 2','  Active filter: '+filter_name);{show which filter was used to combine}
-            {orginal exposure is still maintained  }
+            {original exposure is still maintained  }
             add_integer('LIGH_CNT=',' / Light frames combined.                  ' ,counterL); {for interim lum,red,blue...files.}
             add_integer('DARK_CNT=',' / Darks used for luminance.               ' ,dark_count);{for interim lum,red,blue...files. Compatible with master darks}
             add_integer('FLAT_CNT=',' / Flats used for luminance.               ' ,flat_count);{for interim lum,red,blue...files. Compatible with master flats}
@@ -8930,7 +8930,7 @@ begin
 
         plot_fits(mainwindow.image1,true,true);{plot real}
 
-        remove_key('DATE    ',false{all});{no purpose anymore for the orginal date written}
+        remove_key('DATE    ',false{all});{no purpose anymore for the original date written}
         remove_key('EXPTIME',false{all}); {remove, will be added later in the header}
         remove_key('EXPOSURE',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
         remove_key('CCD-TEMP',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
@@ -9183,7 +9183,7 @@ begin
     use_astrometry_internal1.checked:=true;
     memo2_message('Switched to INTERNAL ASTROMETRIC alignment. Set in tab aligment the mosaic width and height high enough to have enough work space.');
   end;
-  if mosa then memo2_message('Astrometric image stitching mode. This will stich astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the "Crop each image function". For flat background apply artifical flat in tab pixel math1 in advance if required.');
+  if mosa then memo2_message('Astrometric image stitching mode. This will stich astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the "Crop each image function". For flat background apply artificial flat in tab pixel math1 in advance if required.');
 
   classify_object1.enabled:=(mosa=false); {in mosaic mode ignore object name}
   oversize1.enabled:=(mosa=false); {in mosaic mode ignore this oversize setting}

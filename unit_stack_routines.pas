@@ -77,7 +77,7 @@ Begin
 
 
    {5. Conversion (RA,DEC) -> (x,y) of reference image}
-    sincos(dec_new,SIN_dec_new,COS_dec_new);{sincos is faster then seperate sin and cos functions}
+    sincos(dec_new,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
     delta_ra:=RA_new-ra_ref;
     sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
 
