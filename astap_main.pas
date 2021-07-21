@@ -106,7 +106,9 @@ type
     extend1: TMenuItem;
     annotatemedianbackground1: TMenuItem;
     aberration_inspector1: TMenuItem;
+    MenuItem21: TMenuItem;
     MenuItem27: TMenuItem;
+    simbadquery1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
     MenuItem26: TMenuItem;
@@ -349,6 +351,7 @@ type
     procedure grid1Click(Sender: TObject);
     procedure ccdinspector10_1Click(Sender: TObject);
     procedure annotatemedianbackground1Click(Sender: TObject);
+    procedure simbadquery1Click(Sender: TObject);
     procedure Panel1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
     procedure removegreenpurple1Click(Sender: TObject);
@@ -3085,7 +3088,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.560a, '+about_message4+', dated 2021-7-18';
+  #13+#10+'ASTAP version ß0.9.561, '+about_message4+', dated 2021-7-21';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4696,6 +4699,7 @@ begin
   mainwindow.writepositionshort1.enabled:=yes;{enable popup menu}
   mainwindow.Copyposition1.enabled:=yes;{enable popup menu}
   mainwindow.Copypositionindeg1.enabled:=yes;{enable popup menu}
+  mainwindow.simbadquery1.enabled:=yes;{enable popup menu}
   mainwindow.gaia_star_position1.enabled:=yes;{enable popup menu}
   mainwindow.sip1.enabled:=yes; {allow adding sip coefficients}
 
@@ -9019,15 +9023,19 @@ begin
       get_hist(0,img_loaded);{get histogram of img_loaded and his_total}
     end;
   end;
-
-
   Screen.Cursor:= Save_Cursor;
+end;
+
+procedure Tmainwindow.simbadquery1Click(Sender: TObject);
+begin
+
 end;
 
 procedure Tmainwindow.Panel1Click(Sender: TObject);
 begin
 
 end;
+
 
 
 procedure Tmainwindow.positionanddate1Click(Sender: TObject);
@@ -10909,9 +10917,25 @@ begin
 end;
 
 
+procedure plot_the_circle(x1,y1,x2,y2:integer);{plot circle}
+begin
+  if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
+  begin
+    x1:=(width2-1)-x1;
+    x2:=(width2-1)-x2;
+  end;
+  if mainwindow.flip_vertical1.Checked=false then
+  begin
+    y1:=(height2-1)-y1;
+    y2:=(height2-1)-y2;
+  end;
+  mainwindow.image1.canvas.ellipse(x1,y1,x2+1,y2+1);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+end;
+
+
 procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string);{plot annotation from header in ASTAP format}
-var
-  size,xcenter,ycenter,text_height,text_width  :integer;
+var                                                                               {typ >0 line, value defines thickness line}
+  size,xcenter,ycenter,text_height,text_width  :integer;                          {type<=0 rectangle or two lines, value defines thickness lines}
 begin
   if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
   begin
@@ -10934,7 +10958,8 @@ begin
   else
   begin {rectangle or two indicating lines}
      size:=abs(x2-x1);
-     if size>20 then plot_rectangle(x1,y1,x2,y2) {accurate positioned rectangle on screen coordinates}
+     if size>20 then
+       plot_rectangle(x1,y1,x2,y2) {accurate positioned rectangle on screen coordinates}
      else
      begin {two lines}
        xcenter:=(x2+x1) div 2;
@@ -13265,16 +13290,19 @@ end;
 
 procedure Tmainwindow.gaia_star_position1Click(Sender: TObject);
 var
-   url,ra8,dec8,sgn,window_size : string;
-   ang_h,ang_w,ra1,ra2,dec1,dec2      : double;
+   url,ra8,dec8,sgn,window_size  : string;
+   ang_h,ang_w,ra1,ra2,dec1,dec2 : double;
+   radius,x1,y1                  : integer;
 begin
- //http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,pmRA,pmDE,Gmag,BPmag,RPmag&-c=86.5812345-10.3456,bm=1x1&-out.max=1000000&BPmag=%3C21.5
 
   if ((abs(stopX-startX)<2) and (abs(stopY-startY)<2))then
   begin
     if object_xc>0 then {object sync}
     begin
       window_size:='&-c.rs=5&-out.max=100&Gmag=<23'; {circle search 5 arcsec}
+      stopX:=stopX+5;{create some size for two line annotation}
+      startX:=startX-5;
+      ang_w:=10 {radius 5 arc seconds for Simbad}
     end
     else
     begin
@@ -13284,28 +13312,42 @@ begin
   end
   else
   begin
-    ang_w:=abs(stopX-startX)*cdelt2*3600;{arc sec}
-    ang_h:=abs(stopY-startY)*cdelt2*3600;{arc sec}
+    ang_w:=abs((stopX-startX)*cdelt2*3600);{arc sec}
+    ang_h:=abs((stopY-startY)*cdelt2*3600);{arc sec}
+
+    window_size:='&-c.bs='+ floattostr6(ang_w)+'/'+floattostr6(ang_h)+'&-out.max=300&Gmag=<23';{square box}
 
     sensor_coordinates_to_celestial(startX+1,startY+1,ra1,dec1);{first position}
     sensor_coordinates_to_celestial(stopX+1,stopY+1,ra2,dec2);{first position}
     object_raM:=(ra1+ra2)/2; {center position}
     object_decM:=(dec1+dec2)/2;
-
-    window_size:='&-c.bs='+ floattostr(ang_w)+'/'+floattostr(ang_h)+'&-out.max=300&Gmag=<23';{square box}
-
-    image1.Canvas.Pen.Mode := pmMerge;
-    image1.Canvas.Pen.width :=1;
-    mainwindow.image1.Canvas.Pen.Color:= annotation_color;{clyellow}
-    mainwindow.image1.Canvas.brush.Style:=bsClear;
-    plot_the_annotation(stopX,stopY,startX,startY,0,'','');
   end;
+
+  image1.Canvas.Pen.Mode := pmMerge;
+  image1.Canvas.Pen.width :=1;
+  mainwindow.image1.Canvas.Pen.Color:= annotation_color;{clyellow}
+  mainwindow.image1.Canvas.brush.Style:=bsClear;
 
   str(abs(object_decM*180/pi) :3:10,dec8);
   if object_decM>=0 then sgn:='+'  else sgn:='-';
   str(abs(object_raM*180/pi) :3:10,ra8);
 
-  url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size;
+  if sender=mainwindow.gaia_star_position1 then
+  begin
+    plot_the_annotation(stopX,stopY,startX,startY,0,'','');{square}
+    url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size;
+    //http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,pmRA,pmDE,Gmag,BPmag,RPmag&-c=86.5812345-10.3456,bm=1x1&-out.max=1000000&BPmag=%3C21.5
+
+  end
+  else
+  begin {sender Simbadquery1}
+    radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert elipse to circle}
+    x1:=(stopX+startX) div 2;
+    y1:=(stopY+startY) div 2;
+    plot_the_circle(x1-radius,y1-radius,x1+radius,y1+radius);
+    url:='http://simbad.u-strasbg.fr/simbad/sim-coo?Radius.unit=arcsec&Radius='+floattostr6(max(ang_w,ang_h)/2)+'&Coord='+ra8+'d'+sgn+dec8+'d';
+    //  url:='http://simbad.u-strasbg.fr/simbad/sim-coo?Radius.unit=arcsec&Radius=0.4692&Coord=195.1060d28.1998d
+  end;
   openurl(url);
 end;
 
