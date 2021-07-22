@@ -10918,6 +10918,8 @@ end;
 
 
 procedure plot_the_circle(x1,y1,x2,y2:integer);{plot circle}
+var
+  size,xcenter,ycenter : integer;
 begin
   if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
   begin
@@ -10929,7 +10931,19 @@ begin
     y1:=(height2-1)-y1;
     y2:=(height2-1)-y2;
   end;
-  mainwindow.image1.canvas.ellipse(x1,y1,x2+1,y2+1);{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+  size:=abs(x2-x1);
+  if abs(x2-x1)>20 then {circle}
+    mainwindow.image1.canvas.ellipse(x1,y1,x2+1,y2+1) {circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+  else
+  begin {two lines}
+    xcenter:=(x2+x1) div 2;
+    ycenter:=(y2+y1) div 2;
+    mainwindow.image1.canvas.moveto(xcenter-(size div 2),ycenter);
+    mainwindow.image1.canvas.lineto(xcenter-(size div 4),ycenter);
+    mainwindow.image1.canvas.moveto(xcenter+(size div 2),ycenter);
+    mainwindow.image1.canvas.lineto(xcenter+(size div 4),ycenter);
+  end;
+
 end;
 
 
@@ -10958,7 +10972,7 @@ begin
   else
   begin {rectangle or two indicating lines}
      size:=abs(x2-x1);
-     if size>20 then
+     if abs(x2-x1)>20 then
        plot_rectangle(x1,y1,x2,y2) {accurate positioned rectangle on screen coordinates}
      else
      begin {two lines}
@@ -13304,8 +13318,8 @@ begin
     if object_xc>0 then {object sync}
     begin
       window_size:='&-c.rs=5&-out.max=100&Gmag=<23'; {circle search 5 arcsec}
-      stopX:=stopX+5;{create some size for two line annotation}
-      startX:=startX-5;
+      stopX:=stopX+8;{create some size for two line annotation}
+      startX:=startX-8;
       ang_w:=10 {radius 5 arc seconds for Simbad}
     end
     else
