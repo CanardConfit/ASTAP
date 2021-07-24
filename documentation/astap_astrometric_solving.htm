@@ -1,0 +1,362 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html><head>
+<meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
+<meta name="description" content="ASTAP, Astrometric Stacking Program, fits viewer and PlateSolve2 frontend.">
+<meta name="keywords" content="ASTAP astronomical plate solving method">
+<meta name="author" content="Han K"><title>ASTAP astronomical plate solving method</title></head>
+<body style="background-color: rgb(223, 223, 223);">
+<center> <img src="hnsky_b.gif" alt="hnsky_b.gif" height="38" width="360"> <font size="-2"><a href="http://www.hnsky.org/">www.hnsky.org</a><br>
+<br>
+</font><big style="font-family: Arial;"><big><big>ASTAP,
+the Astrometric STAcking Program, astrometric solver and FITS viewer</big></big></big><br>
+<font size="-2"><br>
+</font>
+<div style="text-align: left;"><big><span style="text-decoration: underline; font-weight: bold;">1
+Introduction to astrometric solving</span><br>
+<br>
+<br>
+<span style="text-decoration: underline;">1.1 How do
+humans do it:</span><br>
+<br>
+Humans look for the brightest stars in the sky, determine the shortest
+distances between the stars (constellation lines) and estimate the
+angles these lines form. They see imaginary&nbsp; constellation
+figures from close bright stars and compare them with constellations
+figures they have in their memory and will recognize a match.<br>
+&nbsp;<br>
+<br>
+<span style="text-decoration: underline;">1.2 How does the
+solver do it:</span>&nbsp;<br>
+<br>
+In ASTAP solver more or less the same process is followed. Select the
+brightest stars, connect them and measure the distances between them.
+ASTAP will search for four closest stars and measure the distances
+between them (the hash code or constellation). This process will be
+done for the image and repeated for the stars in the star database.
+These hash codes created from the star database will be compared with
+the image hash codes&nbsp;till some matches are found. Once some
+matches are found it is possible to calculate the precise position of
+the image with the matching database stars.<br>
+&nbsp;<br>
+<br>
+This matching process is identical as used for image aligning routine
+in a stack program. For aligning a match has to be found between the
+stars in the reference image and a second image prior to stacking. It
+is possible to compare the distances between two stars, three stars
+(triangles using the connecting lines) or four stars (quads or
+tetrahedrons using the connecting lines). Four stars works best with
+sufficient uniqueness but not being too complicated. It is not required
+to measure the angles.<br>
+&nbsp;<br>Irregular&nbsp;tetrahedron figures formed by the star connection lines:</big><br><big><img style="width: 823px; height: 613px;" alt="" src="astap_quads.jpg"><br>
+<br>
+<span style="text-decoration: underline;">1.3 So how is
+this done in more detail:</span><br>
+&nbsp;<br>
+The image is analysed for stars and it maybe finds 2000 stars and their
+x, y positions. It takes the 500 brightest stars and creates from them
+maybe 300 tetrahedron figures of four stars. Between each four
+stars&nbsp;six lines can be drawn forming the tetrahedron. Since
+the image scale is specified, the distances between the four stars
+could be (example):&nbsp;<br>
+</big><br>
+<div style="margin-left: 40px;"><big>&nbsp;&nbsp;&nbsp;
+3&#8221;, 2&#8221;, 1&#8221;, 0.7&#8221;, 0.6&#8221;, 0.5&#8221;</big><br>
+</div>
+<big><br>
+To make it independent of image size, the distance ratios are calculated
+by dividing&nbsp;the distances through the largest distance. The
+longest distance is kept for comparison later. So the hash code or
+constellation figure will consist of two parts:<br>
+</big><br>
+<div style="margin-left: 40px;"><big>&nbsp;&nbsp;&nbsp;
+Largest distance: 3" </big><br>
+<big>&nbsp;&nbsp;&nbsp; Five ratios: 2/3, 1/3, 0.7/3,
+0.6/3, 0.5/3</big><br>
+</div>
+<big><br>
+The five ratios are sufficient for the search. Rotation, scaling,
+flipping&nbsp; of the image has no influence on the "five ratios". </big><big> The "largest&nbsp;distance" is
+later used to detect outliers. </big><br><big><br>From the star database numerous artificial images
+are created using the same star density per degree following a search pattern
+around the initial Ra, Dec position. The artificial images </big><big>hash codes&nbsp;</big><big>are
+compared with the hash codes of the image
+to solve. This is the actual search. Only at about the image location
+a part of the hash codes will match within a small tolerance. In
+addition the&nbsp; "largest distances" should have a fixed ratio
+between the image and artificial database image. <br>
+<br>
+</big><big style="font-weight: bold;"><big><br>
+</big></big></div>
+<div style="text-align: left;"><big><span style="font-weight: bold; text-decoration: underline;">2 How
+does ASTAP, Astrometric STAcking Program solving works in even more detail:<br>
+<br>
+</span>ASTAP
+is using a linear astrometric&nbsp;solution for both stacking and
+solving. &nbsp;The method is based on what&nbsp;traditionally
+is called
+"reducing the plate measurements". First step is to find star matches
+between a test image and a reference image. The reference image is
+either created from a star database or a reference image. The star
+positions x, y are to be calculated in standard coordinates which is
+equivalent to the sensor x,y pixel position. The x,y positions are
+measured
+relative to the&nbsp;image center.<br>
+<br>
+The
+test image center, size and orientation position will be different
+compared with&nbsp;the reference image. The required conversion
+from
+the test image&nbsp;[x,y] star positions to&nbsp;the same stars
+on the test
+images can be written as:<br>
+<br>
+<br>
+</big>
+<div style="margin-left: 40px;"><big>X<sub>ref</sub>
+: = a*X<sub>test</sub> + b*Y<sub>test</sub> + c</big><br>
+<big>Y<sub>ref</sub>&nbsp;:=&nbsp;&nbsp;d*X<sub>test</sub>
++ e*Y<sub>test</sub> + f</big><br>
+</div>
+<big><br>
+The
+factors, a,b,c,d,e,f are called the six plate constants and will be
+slightly
+different different for each star. They describe&nbsp;</big><big>the
+conversion of &nbsp;the
+test image standard coordinates to the reference image standard
+coordinates.</big><big> Using a least square routine
+the best solution fit can be calculated if at least three matching star
+positions are found since there are three unknowns.&nbsp;&nbsp;<br>
+</big><br>
+<big>With
+the solution and the equatorial center position of the reference im</big><big>age
+</big><big>the test image center&nbsp;equatorial
+position, &#945; and &#948; can be
+calculated. From the test image center using small one pixel steps in
+x,
+y,&nbsp;the differences in &#945;, &#948; can be used to calculate the image
+scale and orientation. </big><big><br>
+</big><br>
+<big>For <span style="font-weight: bold;">astrometric
+solving</span>
+(plate solving), this "reducing the plate measurement" is done
+against&nbsp;star positions extracted from a database. The
+resulting&nbsp;absolute astrometric solution&nbsp;will allow
+specification of the&nbsp;&#945;, &#948; equatorial positions </big>o<big>f
+each pixel.<br>
+For <span style="font-weight: bold;">star alignment</span>
+this&nbsp;</big><big>"reducing
+the plate measurement" is done against a reference image. The result
+six plate constants are a relative astrometric solution.
+The&nbsp;position of the reference image is not required. Pixels of
+the
+solved image can be stacked with reference image using the six plate
+constants only.</big><br>
+<big><br>
+To automate this process </big><big>rather then using
+reference stars </big><big>the
+matching reference objects are the center positions of tetrahedrons
+made of&nbsp;four close stars. &nbsp;Comparing the distance
+ratios between the four stars&nbsp;allows automated matching. <span style="font-weight: bold; text-decoration: underline;"><br>
+</span><br>
+<br>
+Below a brief flowchart of the ASTAP astrometric solving process:<br><br><br>
+</big></div>
+<br>
+<div style="text-align: left;">
+<table style="text-align: left; background-color: rgb(204, 204, 204); height: 376px; width: 983px;" border="1" cellpadding="2" cellspacing="2">
+<tbody>
+<tr>
+<td></td>
+<td style="width: 302px;"></td>
+<td style="font-weight: bold; width: 311px;"><big><big>ASTAP
+&nbsp;astrometric solving method (plate solving)</big></big></td>
+<td style="width: 331px;"></td>
+</tr>
+<tr>
+<td></td>
+<td style="width: 302px;"><span style="text-decoration: underline; font-weight: bold;">Image</span></td>
+<td style="width: 311px;"></td>
+<td style="width: 331px;"><span style="text-decoration: underline; font-weight: bold;">Star
+database</span></td>
+</tr>
+<tr>
+<td>1</td>
+<td style="width: 302px;">Find background, noise and
+star level</td>
+<td style="width: 311px;"></td>
+<td style="width: 331px;"></td>
+</tr>
+<tr>
+<td>2</td>
+<td style="width: 302px;">Find stars and their CCD
+x, y position (standard
+coordinates)</td>
+<td style="width: 311px;"></td>
+<td style="width: 331px;">Extract a similar amount
+of stars for the area of interest from the star database that matches
+the star density of the image.<br>
+Convert&nbsp;the &#945;, &#948; equatorial positions into standard
+coordinates (CCD pixel
+x,y coordinates for optical projection) using the rigid method.</td>
+</tr>
+<tr>
+<td>3</td>
+<td style="width: 302px;">Use the extracted stars to
+construct the smallest irregular tetrahedrons figures of four stars called&nbsp;quads.
+Calculate the six distances between the four stars in
+pixels&nbsp;and the mean x, y position of the four stars.</td>
+<td style="width: 311px;"></td>
+<td style="width: 331px;">Use the extracted stars to
+construct the smallest irregular tetrahedrons figures of four stars
+called quads.&nbsp;Calculate the six distances between the four stars
+in
+pixels&nbsp;and the mean x, y position of the four stars.</td>
+</tr>
+<tr>
+<td>4</td>
+<td style="width: 302px;">Sort the&nbsp;six
+distances on size for each quad. d<sub>1</sub>
+is the longest and d<sub>6</sub> the shortest.</td>
+<td style="width: 311px;"></td>
+<td style="width: 331px;">Sort the&nbsp;six
+distances on size for each quad.&nbsp; d1 is the longest and d6 the shortest.</td>
+</tr>
+<tr>
+<td>5</td>
+<td style="width: 302px;">Scale the six quad star distances as (d<sub>1</sub>,
+d<sub>2</sub>/d<sub>1</sub>,d<sub>3</sub>/d<sub>1</sub>,d<sub>4</sub>/d<sub>1</sub>,d<sub>5</sub>/d<sub>1</sub>,d<sub>6</sub>/d<sub>1</sub>). These are the image hash codes</td>
+<td style="width: 311px;"></td>
+<td style="width: 331px;">Scale the six quad star distances as&nbsp;(d<sub>1</sub>,
+d<sub>2</sub>/d<sub>1</sub>,d<sub>3</sub>/d<sub>1</sub>,d<sub>4</sub>/d<sub>1</sub>,d<sub>5</sub>/d<sub>1</sub>,d<sub>6</sub>/d<sub>1</sub>))&nbsp;These are the database hash codes</td>
+</tr>
+<tr>
+<td>6</td>
+<td style="width: 302px;"></td>
+<td style="width: 311px;">Find quad hash code matches
+where the five ratios d<sub>2</sub>/d<sub>1</sub> to d<sub>6</sub>/d<sub>1</sub>
+match within
+a small tolerance.</td>
+<td style="width: 331px;"><br>
+</td>
+</tr>
+<tr>
+<td>7</td>
+<td style="width: 302px;"></td>
+<td style="width: 311px;">For the matching&nbsp;quad hash codes, calculate the longest side ratios d1<sub>database</sub>/d1<sub>image</sub>
+in ["/pixels]. Calculate the median ratio. Compare the quads ratios
+with the median value and remove quads outside a small tolerance.&nbsp;</td>
+<td style="width: 331px;"></td>
+</tr>
+<tr>
+<td>8</td>
+<td style="width: 302px;"></td>
+<td style="width: 311px;">From the remaining
+matching quad hash codes, prepare the "A"
+matrix/array containing the x,y center positions of the test image
+quads in standard coordinates and&nbsp; the arrays X<sub>ref</sub>,
+Y<sub>ref</sub> containing the x, y center positions of the
+reference image quads in standard coordinates.<br>
+<br>
+<small><span style="font-family: Courier New,Courier,monospace;">&nbsp;
+<big style="font-family: Courier New,Courier,monospace;"><span style="font-weight: bold;">A:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+S</span><sub style="font-weight: bold;">x</sub><span style="font-weight: bold;">: &nbsp; &nbsp;X</span><sub style="font-weight: bold;">ref</sub><span style="font-weight: bold;">:</span></big></span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;[x<sub>1</sub>
+y<sub>1</sub>&nbsp;
+1]&nbsp;&nbsp;&nbsp;&nbsp;
+[a]&nbsp;&nbsp;&nbsp;&nbsp; [X<sub>1</sub>]</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;
+[x<sub>2</sub> y<sub>2</sub>&nbsp;
+1]&nbsp;&nbsp;*&nbsp; [b]&nbsp; =&nbsp; [X<sub>2</sub>]</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;
+[x<sub>3</sub> y<sub>3</sub>&nbsp;
+1]&nbsp;&nbsp;&nbsp;&nbsp;
+[c]&nbsp;&nbsp;&nbsp;&nbsp; [X<sub>3</sub>]</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;
+[x<sub>4</sub> y<sub>4</sub>&nbsp;
+1]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[X<sub>4</sub>]</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;
+[.<sub>.</sub> .<sub>.</sub>
+&nbsp;.]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[.<sub>.</sub>]</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;
+[x<sub>n</sub> y<sub>n</sub>&nbsp;
+1]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[X<sub>n</sub>]</span><br style="font-family: Courier New,Courier,monospace;">
+<br style="font-family: Courier New,Courier,monospace;">
+</small><small><span style="font-family: Courier New,Courier,monospace;">&nbsp;
+<big><span style="font-weight: bold;">A:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+S</span><sub style="font-weight: bold;">y</sub><span style="font-weight: bold;">: &nbsp; &nbsp;Y</span><sub style="font-weight: bold;">ref</sub><span style="font-weight: bold;">:</span></big></span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;&nbsp;[x<sub>1</sub>
+y<sub>1</sub>&nbsp;
+1]&nbsp;&nbsp;&nbsp;&nbsp;
+[d]&nbsp;&nbsp;&nbsp;&nbsp; [Y<sub>1</sub>]</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;
+[x<sub>2</sub> y<sub>2</sub>&nbsp;
+1]&nbsp;&nbsp;*&nbsp; [e]&nbsp; =&nbsp; [Y<sub>2</sub>]</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;
+[x<sub>3</sub> y<sub>3</sub>&nbsp;
+1]&nbsp;&nbsp;&nbsp;&nbsp;
+[f]&nbsp;&nbsp;&nbsp;&nbsp; [Y<sub>3</sub>]</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;
+[x<sub>4</sub> y<sub>4</sub>&nbsp;
+1]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp; [Y<sub>4</sub>]</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;
+[.<sub>.</sub> .<sub>.</sub>
+&nbsp;.]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[.<sub>.</sub>]</span><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;">&nbsp;
+[x<sub>n</sub> y<sub>n</sub>&nbsp;
+1]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+[Y<sub>n</sub>]</span><br style="font-family: Courier New,Courier,monospace;">
+</small><br style="font-family: Courier New,Courier,monospace;">
+<span style="font-family: Courier New,Courier,monospace;"></span>Find
+the solution matrices S<sub>x</sub> and Sy&nbsp;of
+&nbsp;this overdetermined system of linear equations.<br>
+<br>
+The solutions S<sub>x</sub> and S<sub>y</sub>
+describe the six parameter &nbsp;plate solution X<sub>ref</sub>:=a*x
++ b*y + c and Y<sub>ref</sub>:=d*x + e*y +f. &nbsp;</td>
+<td style="width: 331px;"></td>
+</tr>
+<tr>
+<td>9</td>
+<td style="width: 302px;"></td>
+<td style="width: 311px;">With
+the solution and the equatorial center position of the reference image
+the test image center&nbsp;equatorial position, &#945; and &#948; can be
+calculated.<br>
+<br>
+Make
+from the test image center small one pixel steps in x, y and use the
+differences in &#945;, &#948; to calculate the image scale and orientation.<br>
+<br>
+This
+is the final solution. The solution vector (for position, scale,
+rotation) can be stored as the FITS keywords crval1, crval2,
+cd1_1,cd1_2,cd_2_1, cd2_2.<br>
+</td>
+<td style="width: 331px;"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div style="text-align: left;"><br>
+</div><br></center>
+<p align="left"><img src="hanemail.gif"></p>
+<p align="left">Version: 2021-03-06</p>
+<p align="left"><span class="ILfuVd"><span class="hgKElc">© </span></span>Han Kleijn,
+www.hnsky.org, 2018, 2021.&nbsp;</p><p align="left">&nbsp;<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width: 0pt;" src="https://i.creativecommons.org/l/by/4.0/88x31.png"> </a>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative
+Commons Attribution 4.0 International License</a>.&nbsp;<em>which
+permits unrestricted use, distribution, and reproduction
+in any medium, provided the original work is properly cited</em>.</p><p align="left"></p><p align="left">
+</p><ul>
+<li><a href="astap.htm#index">Back
+to ASTAP index</a> </li>
+<li><a href="software.htm">Back to the HNSKY
+software page.</a></li>
+</ul>
+<br>
+</body></html>
