@@ -16,242 +16,39 @@ the Astrometric STAcking Program &nbsp; &nbsp;</big></big><a href="https://sourc
                     Forum</a> &nbsp; &nbsp; &nbsp; &nbsp;<a href="astap.htm#index">Documentation</a> &nbsp; &nbsp;&nbsp;<a href="history_astap.htm">Version history</a> &nbsp; <a href="http://www.hnsky.org/astap.htm#conditions">Checklist for solving</a>&nbsp;</big> <big><big><b><small><small>&nbsp;<a href="https://www.youtube.com/channel/UC31VsnorldNC7pJMUL0uniw"><img title="Some demonstration videos" style="border: 0px solid ; width: 93px; height: 42px;" alt="" src="Youtube.gif"></a></small></small></b></big></big><br>&nbsp;&nbsp;&nbsp;
         &nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;<big>
           astrometric (plate) solver, stacking of images, photometry and
-          FITS viewer</big><br><br>
-      </div>
-      <big><big><big></big></big></big>
-      
-      <div style="text-align: left;"><span style="text-decoration: underline; color: red;">ANNOUNCEMENT:</span><br style="color: red;"><pre style="color: red;" class="moz-quote-pre" wrap="">ASTAP solver is now using new H17, H18 star databases. The stars are split in 1476 files of about 5x5 degrees instead of the usual 10x10+ degrees for the 290 files. The blind solving speed increases if your  field-of-view is equal or smaller then about 1.5 degree. Blind solving speed doubles at a field-of-view of 0.5 degree compared with using the G18 star database.<br><br>There is no urgency to replace the existing G17, G18 databases. They will keep on working. In the long term I would recommend for field-of-view smaller then 1 degree to move to the H18. There is no penalty for using the H18 instead of H17, same speed only the size is larger and it goes deeper. If you install the new database, remove/uninstall the old one to activate the new one. </pre><big style="font-weight: bold;"><big><br>
-            Download: <br>
-            <br>
-          </big></big><big><big>For MS Windows 64 bit:<br>
-          </big></big><big><big><span style="color: red; font-weight: bold;"></span></big></big>
-        <ul>
-          <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"><big style="font-weight: bold;"><big>ASTAP installer</big></big></a>,
-            &nbsp;<big>version 0.9.560a dated 2021-07-18. &nbsp;Alternative
-            link, the very latest development version 0.9.561 <a href="astap_setup.exe">ASTAP installer</a>
-            , <a href="astap.zip">ASTAP
-              executable only</a></big></li>
-          <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.exe/download">H17
-star
-              database installer</a></big> up to mag 17 &nbsp;(500 MB installer) or &nbsp;<big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.exe/download">H18
-star
-              database installer</a></big>&nbsp; up to magn 18 (980 MB file) (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;
-for
-            the internal astrometric solver. Select the H18 if your FOV is less then one degree. Alternative links <a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing">H17 installer</a>,&nbsp; <a href="https://drive.google.com/file/d/1kbaDcxjIKMcHwd3KSvNyIsB5m6ztVi9z/view?usp=sharing">H17 zipped</a>,&nbsp; <a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing">H18 installer </a>or &nbsp;<a href="https://drive.google.com/file/d/1qaf23oFmPpnDZbLO30IB42kC8-qBEynJ/view?usp=sharing">H18 zipped</a>,  <a href="http://www.poyntsource.com/hnsky/h18_star_database_mag18.rar">G18 rar</a> or <a href="https://drive.google.com/file/d/1_MYyXn3ZjAGcrhSsKoo6gb7XUKz_-3ji/view?usp=sharing">G17 installer</a>. If you have both the H17 and H18&nbsp;select the correct database in tab alignment. Older G17 and G18 files can be deleted.</li><li>Optional:</li><ul><li>For photometry you
-            could download and install the <a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_colour_astap.exe/download">V17 star database colour</a>&nbsp;up
+          FITS viewer</big><br></div><div style="text-align: left;"><big style="font-weight: bold;"><big><br>
+            Download installers: <br></big></big><table style="text-align: left; width: 1204px; height: 283px;" border="1" cellpadding="2" cellspacing="2"><tbody><tr><td style="font-family: Calibri; font-weight: bold; background-color: rgb(220, 220, 220);">Operating system</td><td style="font-family: Calibri; font-weight: bold; background-color: rgb(220, 220, 220);">Program installer</td><td style="font-family: Calibri; font-weight: bold; background-color: rgb(220, 220, 220);">Large star database</td><td style="font-family: Calibri; font-weight: bold; background-color: rgb(220, 220, 220);">Smaller star database&nbsp;</td><td style="font-family: Calibri; font-weight: bold; background-color: rgb(220, 220, 220);">Photometry &amp; colour star database</td><td style="font-family: Calibri; font-weight: bold; background-color: rgb(220, 220, 220);">Large galaxy database</td></tr><tr><td style="background-color: rgb(233, 233, 233); font-family: Calibri;">Window 64 bit</td><td style="background-color: rgb(233, 233, 233); font-family: Calibri;"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download">Program</a> (0.9.560a, dated 2021-07-18)</td><td colspan="1" rowspan="2" style="background-color: rgb(233, 233, 233); font-family: Calibri;"><a href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.exe/download">H18</a></td><td colspan="1" rowspan="2" style="background-color: rgb(233, 233, 233); font-family: Calibri;"><a href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.exe/download">H17</a></td><td style="background-color: rgb(233, 233, 233); font-family: Calibri;" colspan="1" rowspan="2"><a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_colour_astap.exe/download">V17</a></td><td colspan="1" rowspan="2" style="background-color: rgb(233, 233, 233); font-family: Calibri;"><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.exe/download">Hyperleda</a><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.exe/download"><br></a></td></tr><tr><td style="background-color: rgb(233, 233, 233); font-family: Calibri;">Window 32 bit</td><td style="background-color: rgb(233, 233, 233); font-family: Calibri;"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astapwin32.zip/download">Program zipped&nbsp;</a><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download">(0.9.560a)</a></td></tr><tr><td style="background-color: rgb(233, 233, 233); font-family: Calibri;">Linux 64 bit</td><td style="background-color: rgb(233, 233, 233); font-family: Calibri;"><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.deb/download">Program debian</a> (0.9.560a),<br><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.tar.gz/download">Program .tar.gz</a><br><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.deb/download"> </a><a href="astap_rpm.htm">openSUSE and Fedora support</a> </td><td style="background-color: rgb(233, 233, 233); font-family: Calibri;" colspan="1" rowspan="4"><a href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.deb/download">H18</a></td><td style="background-color: rgb(233, 233, 233); font-family: Calibri;" colspan="1" rowspan="4"><a href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.deb/download">H17</a></td><td style="background-color: rgb(233, 233, 233); font-family: Calibri;" colspan="1" rowspan="4"><a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_colour_astap.deb/download">V17</a></td><td colspan="1" rowspan="4" style="background-color: rgb(233, 233, 233); font-family: Calibri;"><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.deb/download">Hyperleda</a><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.deb/download"><br></a><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.deb/download"><br></a><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.deb/download"><br></a></td></tr><tr><td style="background-color: rgb(233, 233, 233); font-family: Calibri;">Linux 32 bit</td><td style="background-color: rgb(233, 233, 233); font-family: Calibri;"><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_i386.deb/download">Program</a> (0.9.552)</td></tr><tr><td style="background-color: rgb(233, 233, 233); font-family: Calibri;">Raspberry PI, 32 bit</td><td style="background-color: rgb(233, 233, 233); font-family: Calibri;"><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_armhf.deb/download">Program</a> (0.9.559)</td></tr><tr><td style="background-color: rgb(233, 233, 233); font-family: Calibri;">Raspberry PI, 64 bit</td><td style="background-color: rgb(233, 233, 233); font-family: Calibri;"><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_arm64.deb/download">Program</a> (0.9.559)</td></tr><tr><td style="background-color: rgb(233, 233, 233); font-family: Calibri;">MacOS&nbsp;64 bit</td><td style="background-color: rgb(233, 233, 233); font-family: Calibri;"><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/astap.pkg/download">Program</a> (0.9.560a)</td><td style="background-color: rgb(233, 233, 233); font-family: Calibri;"><a href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.pkg/download">H18</a></td><td style="background-color: rgb(233, 233, 233); font-family: Calibri;"><a href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.pkg/download">H17</a></td><td style="background-color: rgb(233, 233, 233); font-family: Calibri;"><a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_colour_astap.pkg/download">V17</a></td><td style="background-color: rgb(233, 233, 233); font-family: Calibri;">included with star database</td></tr></tbody></table><big style="font-weight: bold;"><big><br></big></big><span style="font-family: Calibri;">You have to install: <br></span><div style="margin-left: 40px;"><span style="font-family: Calibri;">1) Program</span><br><span style="font-family: Calibri;">2) One star database.</span><br><span style="font-family: Calibri;"></span></div><span style="font-family: Calibri;"><br>You
+will need only one database, either the H18 (980 mbyte) or the H17 (500
+mbyte). Select the smaller star database if your field of view (image height) is
+larger then one degrees. If you have both the H17 and H18 installed
+then delete the H17 or select the correct database
+in tab alignment. The V17 is only required for photometry. Older G17
+and G18 star databases are&nbsp;</span><a style="font-family: Calibri;" href="h18.htm" target="_top">obsolete&nbsp;</a><span style="font-family: Calibri;">can be uninstalled/deleted.</span><br style="font-family: Calibri;"><big style="font-weight: bold;"><big><br></big></big><big><big><small><small><a href="astap.htm#database_usability">Star database usability</a>:</small></small><br><img style="width: 1110px; height: 195px;" alt="" src="astap_database_range3.png"><br><br></big></big><span style="font-family: Calibri;">For <span style="font-weight: bold;">comment feedback</span> and <span style="font-weight: bold;">questions</span> there is the </span><a style="font-family: Calibri;" href="https://sourceforge.net/p/astap-program/discussion/">ASTAP
+                    Forum.</a><span style="font-family: Calibri;"> The <a href="#index">ASTAP Manual</a> is below</span><br style="font-family: Calibri;"><br style="font-family: Calibri;"><span style="font-family: Calibri;">For<span style="font-weight: bold;"> photometry</span> you
+            could download and install the V17 star database colour&nbsp;up
 to magnitude 17. A 680 MB file.&nbsp;It contains the calculated
 Johnson-V magnitude and colour information (GBp-GRp) for star
 annotations.&nbsp;This one also works best for solving an image with a
-FOV of more then ten degrees</li><li><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.exe/download">Hyperleda</a>,
+FOV of more then ten degrees</span><br style="font-family: Calibri;"><br style="font-family: Calibri;"><span style="font-family: Calibri;"><span style="font-weight: bold;">Hyperleda</span>,
             a very large galaxy database for deep sky annotation.
             2.190.000
             objects.
             Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
             placed in
             the program
-            directory.</li><li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/fpack_funpack.exe/download">Fpack
-              &amp; Funpack</a>,
-            fits image compression &amp; decompression programs from
+            directory.</span><br style="font-family: Calibri;"><big><big><br><br></big></big><big style="font-weight: bold;"><big>
+            Alternative links:</big></big><big style="font-weight: bold;"><big><br></big></big><table style="text-align: left; width: 1204px; height: 283px;" border="1" cellpadding="2" cellspacing="2"><tbody><tr><td style="background-color: rgb(220, 220, 220); font-family: Calibri; font-weight: bold;">Operating system</td><td style="background-color: rgb(220, 220, 220); font-family: Calibri; font-weight: bold;">Program development version</td><td style="background-color: rgb(220, 220, 220); font-family: Calibri; font-weight: bold;">Alternative star database links <br></td><td style="background-color: rgb(220, 220, 220); font-family: Calibri; font-weight: bold;">Fits image compression &amp; decompression programs from
             Nasa HEASARC.
             &nbsp;Only required if you have files with the .fz
-            &nbsp;extension.</li><li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_win64_command-line_version.zip/download">astap_cli</a>
-(v0.9.560a), barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
+            &nbsp;extension.</td><td style="background-color: rgb(220, 220, 220); font-family: Calibri; font-weight: bold;">Barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
 renamed. No pop-up notifier. Will not accept raw files and&nbsp;will not
-work with SharpCap since FOV is not stored.</li></ul>
-          
-          
-        </ul>
-        <big><big><small><small><a href="#database_usability">Database usability</a>:</small></small><br><img style="width: 1110px; height: 195px;" alt="" src="astap_database_range3.png"><br><br><a href="https://sourceforge.net/projects/astap-program/files/">
-            </a>For MS Windows 32 bit:</big></big><big style="font-weight: bold;"><big><br>
-          </big></big><span style="font-family: Arial;"></span>
-        <ul>
-          <li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astapwin32.zip/download"><big style="font-weight: bold;"><big>ASTAP
-zipped
-                  package</big></big></a><big>
-              version
-              0.9.560a dated 2021-07-18. Extract in directory c:\ program
-              files\astap
-              or c:\astap. Note that the execution speed of the 32 bit
-              version is
-              lower then the&nbsp;64 bit version. &nbsp;Alternative link</big>&nbsp;<a href="astapwin32.zip">ASTAP zipped</a><big><big>
-              </big></big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.exe/download">H17
-star
-              database installer</a></big> up to mag 17 &nbsp;(500 MB installer) or &nbsp;<big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.exe/download">H18
-star
-              database installer</a></big>&nbsp; up to magn 18 (980 MB file) (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;
-for
-            the internal astrometric solver. Select the H18 if your FOV is less then one degree. <small>Alternative links <a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing">H17 installer</a>,&nbsp; <a href="https://drive.google.com/file/d/1kbaDcxjIKMcHwd3KSvNyIsB5m6ztVi9z/view?usp=sharing">H17 zipped</a>,&nbsp; <a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing">H18 installer </a>or &nbsp;<a href="https://drive.google.com/file/d/1qaf23oFmPpnDZbLO30IB42kC8-qBEynJ/view?usp=sharing">H18 zipped</a>,  <a href="http://www.poyntsource.com/hnsky/h18_star_database_mag18.rar">G18 rar</a> or <a href="https://drive.google.com/file/d/1_MYyXn3ZjAGcrhSsKoo6gb7XUKz_-3ji/view?usp=sharing">G17 installer</a>.
-If you have both the H17 and H18&nbsp;select the correct database in
-tab alignment.&nbsp; Older G17 and G18 files can be deleted.</small></li><li></li><li>Optional:</li><ul><li>For photometry you
-            could download and install the <a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_colour_astap.exe/download">V17 star database colour</a> up to magnitude 17. A 680 MB file.&nbsp;It contains the calculated Johnson-V magnitude and
-            colour
-            information (GBp-GRp) for star annotations.&nbsp;</li><li><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.exe/download">Hyperleda</a>,
-            a very large galaxy database for deep sky annotation.
-            2.190.000
-            objects.
-            Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
-            placed in
-            the program
-            directory.</li><li><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_win32_command-line_version.zip/download">astap_cli</a>
-(v0.9.560a), barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
-renamed. No pop-up notifier. Will not accept raw files and&nbsp;will not
-work with SharpCap since FOV is not stored.</li></ul>
-          
-        </ul>
-        <big><big>For Linux 64 bit:</big></big>
-        <ul>
-        </ul>
-        <ul>
-          <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.deb/download">ASTAP
-debian
-                  package</a></big></big><big> </big><big>&nbsp;or&nbsp;</big><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64.tar.gz/download">astap_amd64.tar.gz,</a> </big><big><a href="astap_rpm.htm">openSUSE and Fedora support</a> </big><big>version
-              0.9.560a dated 2021-07-18. Alternative link, development version 0.9.5</big>60a&nbsp; <a href="astap_amd64.deb">ASTAP debian package</a><big> ,&nbsp;</big>&nbsp;<a href="astap_amd64.tar.gz">ASTAP tar.gz</a><big>. &nbsp;</big></li>
-          <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.deb/download">H17
-star
-              database debian package</a></big> (500mb)&nbsp;or <big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.deb/download">H18
-star
-              database debian package</a> </big>(980 MB) (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;for
-            internal astrometric solver.&nbsp;<small>Alternatively for manual install at /opt/astap, download <a href="https://drive.google.com/file/d/1oHmbT0auiGrpXqWoe5pIBd-nrqIqwgx1/view?usp=sharing">H17 Debian</a>,&nbsp; <a href="https://drive.google.com/file/d/1kbaDcxjIKMcHwd3KSvNyIsB5m6ztVi9z/view?usp=sharing">H17 zipped</a>,&nbsp; <a href="https://sourceforge.net/projects/hnsky/files/star_databases/g17_star_database_mag17.zip/download">G17 zipped </a>&nbsp;or &nbsp;<a href="https://drive.google.com/file/d/13igQ99_JXrCHp3x2ynOmYz78h8UroNto/view?usp=sharing">H18 debian</a> or &nbsp;<a href="https://drive.google.com/file/d/1qaf23oFmPpnDZbLO30IB42kC8-qBEynJ/view?usp=sharing">H18 zipped </a>or <a href="ftp://hnsky%2540poyntsource.com@ftp.poyntsource.com/g18_star_database_mag18.rar">H18 rar</a>
-&nbsp;If you have both the H17 and H18&nbsp;select the correct database
-in tab alignment.&nbsp; Older G17 and G18 files can be deleted.</small></li><li>Optional:</li><ul><li>For photometry you
-            could download and install the <a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_astap.deb/download">V17 star database Debian package</a>&nbsp;
-up to magnitude 17 . It contains the calculated Johnson-V magnitude and
-colour information (GBp-GRp) for star annotations. This one also works
-best for solving an image with a FOV of more then ten degrees<small>&nbsp;Alternatively for manual install at /opt/astap, download&nbsp;</small><small>&nbsp;<a href="https://sourceforge.net/projects/hnsky/files/star_databases/v17_star_database_mag17_colour.zip/download">V17 zipped</a></small></li><li>For a telescope with a small field of view &lt;30 arcmin you could download the&nbsp;<a href="https://drive.google.com/file/d/1AqH64MXB24SLCIgwQFsNDOiveRtcvgIn/view?usp=sharing">G18 star database Debian package</a>&nbsp;up to mag 18.&nbsp;<small>Alternatively for manual install at /opt/astap, download &nbsp;the <a href="https://sourceforge.net/projects/astap-program/files/star_databases/g18_star_database_mag18.zip/download">G18 zipped</a> version or &nbsp;<a href="http://www.poyntsource.com/hnsky/g18_star_database_mag18.rar">G18 as rar</a></small>.&nbsp;Remove
-the G17 files or force use of the G18 in ASTAP. tab alignment.</li><li><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.deb/download">Hyperleda</a>,
-            a very large galaxy database for deep sky annotation.
-            2.1940.000
-            objects.
-            Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
-            placed in
-            the program
-            directory.</li><li><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64_command-line_version.tar.gz/download">astap_cli&nbsp;</a>
-(v0.9.560a), barebone&nbsp;command-line solver&nbsp;compatible with the GUI version
-if renamed. No pop-up notifier. Will not accept raw files.</li></ul></ul>
-        <big><big><a href="https://sourceforge.net/projects/astap-program/files/">
-            </a></big></big><ul>
-          
-        </ul>
-        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
-        &nbsp;&nbsp; <br>
-        <big><big>For Linux 32 bit:</big></big>
-        <ul>
-          <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_i386.deb/download">ASTAP
-debian
-                  package</a></big></big><big>&nbsp;</big><big>version
-              0.9.552 dated 2021-06-12. &nbsp;</big></li>
-          <li><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/g17_star_database_mag17_astap.deb/download"><big></big></a><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.deb/download">H17
-star
-              database debian package</a></big> (500mb)&nbsp;or <big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.deb/download">H18
-star
-              database debian package</a> </big>(980 MB) (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;for
-            internal astrometric solver.&nbsp;<small>Alternatively for manual install at /opt/astap, download <a href="https://drive.google.com/file/d/1oHmbT0auiGrpXqWoe5pIBd-nrqIqwgx1/view?usp=sharing">H17 Debian</a>,&nbsp; <a href="https://drive.google.com/file/d/1kbaDcxjIKMcHwd3KSvNyIsB5m6ztVi9z/view?usp=sharing">H17 zipped</a>,&nbsp; <a href="https://sourceforge.net/projects/hnsky/files/star_databases/g17_star_database_mag17.zip/download">G17 zipped </a>&nbsp;or &nbsp;<a href="https://drive.google.com/file/d/13igQ99_JXrCHp3x2ynOmYz78h8UroNto/view?usp=sharing">H18 debian</a> or &nbsp;<a href="https://drive.google.com/file/d/1qaf23oFmPpnDZbLO30IB42kC8-qBEynJ/view?usp=sharing">H18 zipped </a>or <a href="ftp://hnsky%2540poyntsource%2Ecom@ftp.poyntsource.com/g18_star_database_mag18.rar">H18 rar</a>
-&nbsp;If you have both the H17 and H18&nbsp;select the correct database
-in tab alignment.&nbsp; Older G17 and G18 files can be deleted.</small></li><li>Optional:</li><ul><li>For&nbsp;photometry you
-            could download and install the <a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_astap.deb/download">V17 star database Debian package</a>&nbsp; up to magnitude 17 . It contains the calculated Johnson-V magnitude and
-            colour
-            information (GBp-GRp) for star annotations. <small>&nbsp;Alternatively for manual install at /opt/astap, download</small>&nbsp;<small> <a href="https://sourceforge.net/projects/hnsky/files/star_databases/v17_star_database_mag17_colour.zip/download">V17 zipped</a></small></li><li>For a telescope with a small field of view &lt;30 arcmin you could download the&nbsp;<a href="https://drive.google.com/file/d/1ReUsfX8aDgF-93OCFCdNaKmmkP9SAJ32/view?usp=sharing">&nbsp;</a><a href="https://drive.google.com/file/d/1AqH64MXB24SLCIgwQFsNDOiveRtcvgIn/view?usp=sharing">G18 star database Debian package</a>&nbsp;up to mag 18 or the&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/g18_star_database_mag18.zip/download">zipped G18</a> star database
-for manual install. at the program directory /opt/astap.&nbsp;Remove
-the G17 files or force use of the G18 in ASTAP. tab alignment.</li><li><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.deb/download">Hyperleda</a>,
-            a very large galaxy database for deep sky annotation.
-            2.1940.000
-            objects.
-            Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
-            placed in
-            the program
-            directory.</li></ul>
-          
-        </ul>
-        <ul style="margin-left: 40px;">
-        </ul>
-        <br>
-        <big><big>For Raspberry PI, 32 bit:&nbsp;</big></big>
-        <ul>
-          <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_armhf.deb/download">ASTAP
-debian
-                  package</a></big></big><big>&nbsp;</big>
-            (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/">link</a>)
-            &nbsp;<big>version
-              0.9.559 dated&nbsp;</big><big>2021-07-08</big><big>.&nbsp;</big></li>
-          <li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.deb/download">H17
-star
-              database debian package</a></big> (500mb)&nbsp;or <big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.deb/download">H18
-star
-              database debian package</a> </big>(980 MB) (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;for
-            internal astrometric solver.&nbsp;<small>Alternatively for manual install at /opt/astap, download <a href="https://drive.google.com/file/d/1oHmbT0auiGrpXqWoe5pIBd-nrqIqwgx1/view?usp=sharing">H17 Debian</a>,&nbsp; <a href="https://drive.google.com/file/d/1kbaDcxjIKMcHwd3KSvNyIsB5m6ztVi9z/view?usp=sharing">H17 zipped</a>,&nbsp; <a href="https://sourceforge.net/projects/hnsky/files/star_databases/g17_star_database_mag17.zip/download">G17 zipped </a>&nbsp;or &nbsp;<a href="https://drive.google.com/file/d/13igQ99_JXrCHp3x2ynOmYz78h8UroNto/view?usp=sharing">H18 debian</a> or &nbsp;<a href="https://drive.google.com/file/d/1qaf23oFmPpnDZbLO30IB42kC8-qBEynJ/view?usp=sharing">H18 zipped </a>or <a href="ftp://hnsky%2540poyntsource%2Ecom@ftp.poyntsource.com/g18_star_database_mag18.rar">H18 rar</a>
-&nbsp;If you have both the H17 and H18&nbsp;select the correct database
-in tab alignment.&nbsp; Older G17 and G18 files can be deleted.</small></li><li>Optional:</li><ul><li>For&nbsp;photometry you
-            could download and install the <a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_astap.deb/download">V17 star database Debian package</a>&nbsp; up to magnitude 17 . It contains the calculated Johnson-V magnitude and
-            colour
-            information (GBp-GRp) for star annotations. <small>&nbsp;Alternatively for manual install at /opt/astap, download&nbsp;</small><small>&nbsp;<a href="https://sourceforge.net/projects/hnsky/files/star_databases/v17_star_database_mag17_colour.zip/download">V17 zipped</a></small></li><li><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.deb/download">Hyperleda</a>,
-            a very large galaxy database for deep sky annotation.
-            2.1940.000
-            objects.
-            Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
-            placed in
-            the program
-            directory.</li><li><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_armhf_command-line_version.zip/download">astap_cli&nbsp;</a>(v0.9.560),&nbsp;
-barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
-renamed. No pop-up notifier. Will not accept raw files.</li></ul>
-          
-        </ul>
-        <big><big><br>
-            For Raspberry PI, 64 bit:&nbsp;</big></big>
-        <ul>
-          <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_arm64.deb/download">ASTAP
-debian
-                  package</a></big></big><big>&nbsp;</big>
-            (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/">link</a>)
-            &nbsp;<big>version
-              0.9.559 dated&nbsp;</big><big>2021-07-08.</big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.deb/download">H17
-star
-              database debian package</a></big> (500mb)&nbsp;or <big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.deb/download">H18
-star
-              database debian package</a> </big>(980 MB) (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;for
-            internal astrometric solver.&nbsp;<small>Alternatively for manual install at /opt/astap, download <a href="https://drive.google.com/file/d/1oHmbT0auiGrpXqWoe5pIBd-nrqIqwgx1/view?usp=sharing">H17 Debian</a>,&nbsp; <a href="https://drive.google.com/file/d/1kbaDcxjIKMcHwd3KSvNyIsB5m6ztVi9z/view?usp=sharing">H17 zipped</a>,&nbsp; <a href="https://sourceforge.net/projects/hnsky/files/star_databases/g17_star_database_mag17.zip/download">G17 zipped </a>&nbsp;or &nbsp;<a href="https://drive.google.com/file/d/13igQ99_JXrCHp3x2ynOmYz78h8UroNto/view?usp=sharing">H18 debian</a> or &nbsp;<a href="https://drive.google.com/file/d/1qaf23oFmPpnDZbLO30IB42kC8-qBEynJ/view?usp=sharing">H18 zipped </a>or <a href="ftp://hnsky%2540poyntsource%2Ecom@ftp.poyntsource.com/g18_star_database_mag18.rar">H18 rar</a>
-&nbsp;If you have both the H17 and H18&nbsp;select the correct database
-in tab alignment.&nbsp; Older G17 and G18 files can be deleted.</small></li><li>Optional:</li><ul><li>For photometry you
-            could download and install the <a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_astap.deb/download">V17 star database Debian package</a>&nbsp; up to magnitude 17 . It contains the calculated Johnson-V magnitude and
-            colour
-            information (GBp-GRp) for star annotations. <small>&nbsp;Alternatively for manual install at /opt/astap, download &nbsp;or&nbsp; <a href="https://sourceforge.net/projects/hnsky/files/star_databases/v17_star_database_mag17_colour.zip/download">V17 zipped</a></small></li><li><a href="https://sourceforge.net/projects/astap-program/files/star_databases/hyperleda.deb/download">Hyperleda</a>,
-            a very large galaxy database for deep sky annotation.
-            2.1940.000
-            objects.
-            Based on extract from leda.univ-lyon1.fr/ &nbsp;Will be
-            placed in
-            the program
-            directory.</li><li><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_arm64_command-line_version.tar.gz/download">astap_cli</a>
-(v0.9.560), barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
-renamed. No pop-up notifier. Will not accept raw files.</li></ul></ul>
-        <big><big></big></big><ul>
-          
-        </ul>
-        <br>
-        <big><big>For MacOS&nbsp;64 bit. &nbsp; &nbsp;&nbsp;&nbsp;<small><span style="color: red;"></span></small></big></big>
-        <ul>
-          <li><big style="font-weight: bold;"><big><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/astap.pkg/download">ASTAP
-                  pkg&nbsp;installer</a></big></big><big>
-              &nbsp;(</big>at&nbsp;<a href="https://sourceforge.net/projects/astap-program/">link</a>)
-            <big>version
-              0.9.560a dated 2021-07-18.</big></li><li><big><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/variable_stars_update.pkg/download">Update variable_stars database</a><br></big></li><li><big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h17_star_database_mag17_astap.pkg/download">H17
-star
-              database pkg installer</a></big> (0.5 gbyte)&nbsp;or <big><a style="font-weight: bold;" href="https://sourceforge.net/projects/astap-program/files/star_databases/h18_star_database_mag18_astap.pkg/download">H18
-star
-              database pkg installer</a> </big>(1 gbyte) (at&nbsp;<a href="https://sourceforge.net/projects/astap-program/files/star_databases/">link</a>)&nbsp;for
-            internal astrometric solver.<big> Will be installed at /usr/local/opt/astap. The
-              Deepsky,&nbsp;HyperLeda and variable star database are included with the G17.</big></li><li><big>Optional:<br></big></li><ul><li>For photometry you
-            could also
-            download and install the <a href="https://sourceforge.net/projects/astap-program/files/star_databases/v17_star_database_mag17_colour_astap.pkg/download">V17&nbsp;star
-              database</a>
-containing&nbsp;105 million stars up to Johnson-V magnitude
-17.&nbsp;The Deepsky,&nbsp;HyperLeda and variable star database are
-included with the V17. &nbsp;This one also works best for solving an
-image with a FOV of more then ten degrees</li><li>For a telescope with a small field of view &lt;30 arcmin you could download the <a href="https://drive.google.com/file/d/1ReUsfX8aDgF-93OCFCdNaKmmkP9SAJ32/view?usp=sharing">g18 star database installer up to mag 18</a>&nbsp;or &nbsp;zipped <a href="https://sourceforge.net/projects/astap-program/files/star_databases/g18_star_database_mag18.zip/download">G18 star database up to mag 18</a> for manual install at&nbsp; /usr/local/opt/astap. Remove the G17 files or force use of the G18 in ASTAP. tab alignment.</li><li><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/astap_command-line_version.zip/download">astap_cli</a>
-(v0.9.560a), barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
-renamed. No pop-up notifier. Will not accept raw files.</li></ul></ul>
-        <big><big></big></big><ul>
-        </ul>
-        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; Any Mac user&nbsp;who could assist in compiling ASTAP for&nbsp;<a href="https://forum.lazarus.freepascal.org/index.php?topic=50297.0">Mac on ARM</a> using Lazarus&nbsp;please contact me.<br><br><br><big style="font-weight: bold;"><big>
+work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"></a><a href="astap_setup.exe">ASTAP_installer</a>_(0.9.561), <br><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"></a><a href="astap.zip">ASTAP
+              executable only</a></td><td colspan="1" rowspan="2" style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing">H18 installer</a><br><a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing"> </a><a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing">H17 installer</a>,<br><a href="https://drive.google.com/file/d/1_MYyXn3ZjAGcrhSsKoo6gb7XUKz_-3ji/view?usp=sharing">G17 installer</a> (obsolete <a href="h18.htm">1)</a>).<br><br><a href="https://drive.google.com/file/d/1qaf23oFmPpnDZbLO30IB42kC8-qBEynJ/view?usp=sharing">H18 zipped</a>,  <br><a href="https://drive.google.com/file/d/1kbaDcxjIKMcHwd3KSvNyIsB5m6ztVi9z/view?usp=sharing">H17 zipped</a>,<br><a href="http://www.poyntsource.com/hnsky/h18_star_database_mag18.rar">G18 rar</a> ((obsolete <a href="h18.htm">1)</a>),<br>for manual install at&nbsp; \programs files\astap or program directory<br><a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing"></a><br></td><td colspan="1" rowspan="2" style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/fpack_funpack.exe/download">Fpack
+              &amp; Funpack</a></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_win64_command-line_version.zip/download">astap_cli</a>
+(v0.9.560a)</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 32 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_win32_command-line_version.zip/download">astap_cli</a>
+(v0.9.560a)</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Linux 64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="astap_amd64.deb">ASTAP_debian_package</a>_(0.9.560a),&nbsp; <br><a href="astap_amd64.tar.gz">ASTAP tar.gz</a></td><td colspan="1" rowspan="4" style="font-family: Calibri; background-color: rgb(234, 234, 234);"> <a href="https://drive.google.com/file/d/13igQ99_JXrCHp3x2ynOmYz78h8UroNto/view?usp=sharing">H18 debian</a><br><a href="https://drive.google.com/file/d/1oHmbT0auiGrpXqWoe5pIBd-nrqIqwgx1/view?usp=sharing">H17 debian</a>,&nbsp; <br><a href="https://drive.google.com/file/d/1AqH64MXB24SLCIgwQFsNDOiveRtcvgIn/view?usp=sharing">G18 debian</a>.<br><br><a href="https://drive.google.com/file/d/1qaf23oFmPpnDZbLO30IB42kC8-qBEynJ/view?usp=sharing">H18 zipped</a><br><a href="https://drive.google.com/file/d/1kbaDcxjIKMcHwd3KSvNyIsB5m6ztVi9z/view?usp=sharing">H17 zipped</a><br><a href="https://sourceforge.net/projects/hnsky/files/star_databases/v17_star_database_mag17_colour.zip/download">V17 zipped</a>&nbsp;,&nbsp;<br><a href="http://www.poyntsource.com/hnsky/g18_star_database_mag18.rar">G18 as rar</a>  ((obsolete <a href="h18.htm">1)</a>), <br><a href="https://sourceforge.net/projects/hnsky/files/star_databases/g17_star_database_mag17.zip/download">G17 zipped</a> ((obsolete <a href="h18.htm">1)</a>)<br>for manual install at /opt/astap<a href="https://sourceforge.net/projects/hnsky/files/star_databases/v17_star_database_mag17_colour.zip/download"></a><a href="https://drive.google.com/file/d/1AqH64MXB24SLCIgwQFsNDOiveRtcvgIn/view?usp=sharing"></a><a href="https://sourceforge.net/projects/hnsky/files/star_databases/v17_star_database_mag17_colour.zip/download"><br></a><a href="https://drive.google.com/file/d/1AqH64MXB24SLCIgwQFsNDOiveRtcvgIn/view?usp=sharing"></a><a href="https://sourceforge.net/projects/hnsky/files/star_databases/v17_star_database_mag17_colour.zip/download"><br></a><a href="https://drive.google.com/file/d/1AqH64MXB24SLCIgwQFsNDOiveRtcvgIn/view?usp=sharing"></a><a href="https://sourceforge.net/projects/hnsky/files/star_databases/v17_star_database_mag17_colour.zip/download"><br></a></td><td colspan="1" rowspan="4" style="font-family: Calibri; background-color: rgb(234, 234, 234);">install from distribution</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/linux_installer/astap_amd64_command-line_version.tar.gz/download">astap_cli&nbsp;</a>
+(v0.9.560a)</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Linux 32 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"></td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Raspberry PI, 32 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"></td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Raspberry PI, 64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"></td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">MacOS&nbsp;64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/astap_command-line_version.zip/download"></a><br></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"> <a href="https://drive.google.com/file/d/1qaf23oFmPpnDZbLO30IB42kC8-qBEynJ/view?usp=sharing">H18 zipped</a><br><a href="https://drive.google.com/file/d/1oHmbT0auiGrpXqWoe5pIBd-nrqIqwgx1/view?usp=sharing"></a><a href="https://drive.google.com/file/d/1kbaDcxjIKMcHwd3KSvNyIsB5m6ztVi9z/view?usp=sharing">H17 zipped</a><br><a href="https://drive.google.com/file/d/1AqH64MXB24SLCIgwQFsNDOiveRtcvgIn/view?usp=sharing"></a><a href="https://sourceforge.net/projects/hnsky/files/star_databases/v17_star_database_mag17_colour.zip/download">V17 zipped</a>&nbsp;,&nbsp; <br>for manual install at&nbsp; /usr/local/opt/astap</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/macOS%20installer/astap_command-line_version.zip/download">astap_cli</a>
+(v0.9.560a)</td></tr><tr><td style="background-color: rgb(234, 234, 234);">MacOS on ARM</td><td style="background-color: rgb(234, 234, 234);">Any Mac user&nbsp;who could assist in compiling ASTAP for&nbsp;<a href="https://forum.lazarus.freepascal.org/index.php?topic=50297.0">Mac on ARM</a> using Lazarus&nbsp;please contact me.</td><td style="background-color: rgb(234, 234, 234);"></td><td style="background-color: rgb(234, 234, 234);"></td><td style="background-color: rgb(234, 234, 234);"></td></tr></tbody></table><br><br><big style="font-weight: bold;"><big>
           </big></big></div>
       <div style="text-align: left;">
         <ul>
