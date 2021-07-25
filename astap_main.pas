@@ -6138,7 +6138,7 @@ begin
       img[2,fitsX  ,  fitsY  ]:=saturation;
     end;
   end;
-  if sat_counter/(width2*height2)>0.1 then memo2_message('█ █ █ █ █ █  More then 10% of the image is saturated and will give poor results!! Try demosaic method AstroSimple and exposure shorter next time. █ █ █ █ █ █ ');
+  if sat_counter/(width2*height2)>0.1 then memo2_message('█ █ █ █ █ █  More than 10% of the image is saturated and will give poor results!! Try demosaic method AstroSimple and exposure shorter next time. █ █ █ █ █ █ ');
   img_temp2:=nil;{free temp memory}
   naxis3:=3;{now three colors}
   naxis:=3; {from 2 to 3 dimensions}

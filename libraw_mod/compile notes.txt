@@ -1,0 +1,36 @@
+   {############################################################################################
+       Linux, compile unprocessed_raw under Linux:
+       git clone https://github.com/han-k59/LibRaw-with-16-bit-FITS-support
+       cd LibRaw-with-16-bit-FITS-support
+       autoreconf --install
+        ./configure --enable-shared=no
+        make clean && make # to rebuild
+
+        This will remove shared (.so) libraries and will build static (.a) instead
+
+   ############################################################################################
+       Windows, in Linux use mingw cross-compiler to make Windows executables:
+       git clone https://github.com/han-k59/LibRaw-with-16-bit-FITS-support
+       cd LibRaw-with-16-bit-FITS-support
+       make clean -f Makefile.mingw # to clean up
+       make  -f Makefile.mingw CXX=x86_64-w64-mingw32-g++ CC=x86_64-w64-mingw32-gcc
+
+       for 32 bit Windows version
+       make clean -f Makefile.mingw # to clean up
+       make -f Makefile.mingw CXX=i686-w64-mingw32-g++ CC=i686-w64-mingw32-gcc
+
+       To make it work edit the file Makefile.mingw and on third row change:
+       CFLAGS=-O3 -I. -w -static-libgcc -static-libstdc++
+
+       You can check the result with the linux file command:
+       file unprocessed_raw.exe
+       unprocessed_raw.exe: PE32+ executable (console) x86-64, for MS Windows
+       file unprocessed_raw.exe
+       unprocessed_raw.exe: PE32 executable (console) Intel 80386, for MS Win
+       #############################################################################################
+       Mac
+
+       git clone https://github.com/han-k59/LibRaw-with-16-bit-FITS-support
+       cd LibRaw-with-16-bit-FITS-support
+       export LDADD=-mmacosx-version-min=10.10
+       make -f Makefile.dist}   

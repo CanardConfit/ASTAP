@@ -4904,7 +4904,7 @@ begin
   luminance_filter2.text:=lum2;
 
   if err then
-    memo2_message('Filter name can be used only once  for RGB! Use matrix to use filter more then once.');
+    memo2_message('Filter name can be used only once  for RGB! Use matrix to use a filter more than once.');
 
   if mess then luminance_filter1.font.Style:=[fsbold] else luminance_filter1.font.Style:=[];
   if mess2 then luminance_filter2.font.Style:=[fsbold] else luminance_filter2.font.Style:=[];
@@ -7204,7 +7204,7 @@ begin
   stackmenu1.memo2.lines.add('- Press curve fitting. The curve fit routine will calculate the best focuser position for each area using the hfd values. The focuser differences from center will indicate tilt & curvature of the image.');
   stackmenu1.memo2.lines.add('');
   stackmenu1.memo2.lines.add('Remarks:');
-  stackmenu1.memo2.lines.add('It is possible to make more then one exposure per focuser position, but this number should be the same for each focuser point.');
+  stackmenu1.memo2.lines.add('It is possible to make more than one exposure per focuser position, but this number should be the same for each focuser point.');
   stackmenu1.memo2.lines.add('Note that hfd values above about 20 will give  erroneous results. Un-check these files prior to curve fitting. ');
   stackmenu1.memo2.lines.add('');
   memo2_message('Start analysing images');
@@ -7873,7 +7873,7 @@ begin
     Application.ProcessMessages;
     if esc_pressed then exit;
 
-    until file_count=0;{make more then one master}
+    until file_count=0;{make more than one master}
     save_settings2;{store settings}
     file_list:=nil;
 
@@ -8023,7 +8023,7 @@ begin
       Application.ProcessMessages;
       if esc_pressed then exit;
 
-    until file_count=0;{make more then one master}
+    until file_count=0;{make more than one master}
 
     if flatdark_used then listview4.Items.Clear;{remove bias if used}
     save_settings2;{store settings}
@@ -8741,7 +8741,7 @@ begin
         end;
         if nrfiles>0 then
         begin
-          if nrfiles>1 then {more then one file}
+          if nrfiles>1 then {more than one file}
           begin
             if mosaic_mode=false then put_best_quality_on_top(files_to_process);
             {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}

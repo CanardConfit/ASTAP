@@ -2893,8 +2893,8 @@ begin
 
     if cache_position>=cache_valid_pos then {add more data to cache. This cache works  about 35 % faster then Treader for files with FOV of 0.5 degrees. This due to re-use cache. No difference for FOV 1.3 degrees. At FOV=0.25 the improvement is 40%}
     begin
-      block_to_read:=min(cache_size, blocksize);{for small files, don't read more then cache size=file size!}
-      block_to_read:=min(block_to_read,cache_size - cache_valid_pos);{don't read more then file size!}
+      block_to_read:=min(cache_size, blocksize);{for small files, don't read more than cache size=file size!}
+      block_to_read:=min(block_to_read,cache_size - cache_valid_pos);{don't read more than file size!}
       thefile_stars.read(cache_array[cache_valid_pos],block_to_read); {fill cache more. In most cases it can be re-used. Especially for small field of view}
       cache_valid_pos:=cache_valid_pos+block_to_read;{increase postion where cache buffer is valid.}
     end;
