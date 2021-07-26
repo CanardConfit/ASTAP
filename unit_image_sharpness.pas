@@ -18,10 +18,8 @@ You should have received a copy of the GNU Lesser General Public License (LGPL) 
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, astap_main;
 
-type
-  image_array = array of array of array of Single;
 
 function image_sharpness(img: image_array): double;{measure the sharpeness of an image. Result is reversed and scaled to be roughly identical to a HFD measurement. So value decreases with sharpness}
 

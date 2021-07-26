@@ -505,7 +505,7 @@ type
      cd2_2  : double;
      header : string;
      filen  : string;{filename}
-     img    : array of array of array of single;
+     img    : image_array;
    end;
 
 var
@@ -733,6 +733,7 @@ procedure CCDinspector(snr_min: double);
 function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
 procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string);{plot annotation from header in ASTAP format}
 procedure reset_fits_global_variables(light :boolean); {reset the global variable}
+function convert_to_fits(var filen: string): boolean; {convert to fits}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -3088,7 +3089,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.561, '+about_message4+', dated 2021-7-21';
+  #13+#10+'ASTAP version ß0.9.562a, '+about_message4+', dated 2021-7-26';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -8129,7 +8130,7 @@ begin
   {try to reconstruct exposure time from filename}
   result:=0;
   exposure_str:='';
-  filename8:=uppercase(filename8);
+  filename8:=uppercase(extractfilename(filename8));
   i:=pos('SEC',filename8);
   if i=0 then i:=pos('S_',filename8);
   if i>2 then
@@ -8155,6 +8156,8 @@ begin
     memo2_message('Failed to extract exposure time from file name. Expects ...Sec or ...S_ ');
   end;
 end;
+
+
 function extract_temperature_from_filename(filename8: string): integer; {try to extract temperature from filename}
 var
   temp_str  :string;
@@ -8164,7 +8167,7 @@ begin
   {try to reconstruct exposure time from filename}
   result:=999;{unknow temperature}
   temp_str:='';
-  filename8:=uppercase(filename8);
+  filename8:=uppercase(extractfilename(filename8));
   i:=pos('0C',filename8);
   if i=0 then i:=pos('1C',filename8);
   if i=0 then i:=pos('2C',filename8);
@@ -8473,6 +8476,47 @@ begin
 end;
 
 
+function convert_to_fits(var filen: string): boolean; {convert to fits}
+var
+  ext : string;
+begin
+  ext:=uppercase(ExtractFileExt(filen));
+  result:=false;
+
+  if check_raw_file_extension(ext) then {raw format}
+  begin
+    result:=convert_raw(false{load},true{save},filen,img_buffer);
+  end
+  else
+  if (ext='.FZ') then {CFITSIO format}
+  begin
+    result:=unpack_cfitsio(filen); {filename2 contains the new file name}
+    if result then filen:=filename2;
+  end
+  else
+  begin
+    if ((ext='.PPM') or (ext='.PGM') or (ext='.PFM') or (ext='.PBM')) then {PPM/PGM/ PFM}
+      result:=load_PPM_PGM_PFM(filen,img_loaded)
+    else
+    if ext='.XISF' then {XISF}
+      result:=load_xisf(filen,img_loaded)
+    else
+    if ((ext='.JPG') or (ext='.JPEG') or (ext='.PNG') or (ext='.TIF') or (ext='.TIFF')) then
+      result:=load_tiffpngJPEG(filen,img_loaded);
+
+    if result then
+    begin
+      exposure:=extract_exposure_from_filename(filen); {try to extract exposure time from filename. Will be added to the header}
+      set_temperature:=extract_temperature_from_filename(filen);
+      update_text('OBJECT  =',#39+extract_objectname_from_filename(filen)+#39); {spaces will be added/corrected later}
+
+      filen:=ChangeFileExt(filen,'.fit');
+      result:=save_fits(img_loaded,filen,nrbits,false);
+    end;
+  end;
+
+end;
+
 procedure Tmainwindow.convert_to_fits1click(Sender: TObject);
 var
   I: integer;
@@ -8507,25 +8551,13 @@ begin
         Application.ProcessMessages;
         if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
         filename2:=Strings[I];
-        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
-        ext:=uppercase(ExtractFileExt(filename2));
+        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
 
-        if check_raw_file_extension(ext) then {raw format}
+        if convert_to_fits(filename2)=false then
         begin
-//          if convert_raw_to_fits(filename2)=false then
-          if convert_raw(false{load},true{save},filename2,img_buffer)=false then
-          begin beep; err:=true; mainwindow.caption:='Error converting '+filename2;end;
-        end
-        else
-        if (ext='.FZ') then {CFITSIO format}
-        begin
-          if unpack_cfitsio(filename2)=false then begin beep; err:=true; mainwindow.caption:='Error converting '+filename2; end;
-        end
-        else
-        {tif, png, bmp, jpeg}
-        if load_tiffpngJPEG(filename2,img_loaded)=false then begin beep; err:=true; mainwindow.caption:='Error converting '+filename2 end
-          else
-          save_fits(img_loaded,ChangeFileExt(filename2,'.fit'),16,false);
+          mainwindow.caption:='Error converting '+filename2;
+          err:=true;
+        end;
       end;
 
       if err=false then mainwindow.caption:='Completed, all files converted.'
@@ -8543,7 +8575,6 @@ end;
 function load_image(re_center,plot: boolean): boolean; {load fits or PNG, BMP, TIF}
 var
    ext1,filename_org   : string;
-   afitsfile           : boolean;
 begin
   if plot then
   begin
@@ -8562,7 +8593,6 @@ begin
   ap_order:=0; {SIP_polynomial, use for check if there is data}
 
   result:=false;{assume failure}
-  afitsfile:=false;
   {fits}
   if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')or (ext1='.WCS') or (ext1='.AXY') or (ext1='.XYLS') or (ext1='.GSC') or (ext1='.BAK')) then {FITS}
   begin
@@ -8572,7 +8602,6 @@ begin
        update_menu(false);
        exit; {WCS file}
     end;
-    afitsfile:=true;
   end
 
   else
@@ -8582,8 +8611,7 @@ begin
     else{successful conversion using funpack}
     result:=load_fits(filename2,true {light},true {load data},true {update memo},0,img_loaded); {load new fits file}
 
-    if result=false then begin update_menu(false);exit; end
-    else afitsfile:=true;
+    if result=false then begin update_menu(false);exit; end;
   end {fz}
 
   else

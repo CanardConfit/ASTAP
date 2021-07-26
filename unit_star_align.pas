@@ -159,9 +159,9 @@ end;
 
 procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2020-9-28}
 var
-   i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrquads,buffersize               : integer;
-   distance,distance1,distance2,distance3{,dummy },x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
-   dist1,dist2,dist3,dist4,dist5,dist6,dummy  :double;
+   i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrquads,buffersize         : integer;
+   distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
+   dist1,dist2,dist3,dist4,dist5,dist6,dummy,distx                          : double;
    identical_quad : boolean;
 begin
 
@@ -192,37 +192,41 @@ begin
     begin
       if j<>i{not the first star} then
       begin
-        distance:=sqr(starlist[0,j]-starlist[0,i])+ sqr(starlist[1,j]-starlist[1,i]);
-
-        if distance>1 then {not an identical star. Mod 2021-6-25}
+        distx:=sqr(starlist[0,j]-starlist[0,i]);
+        if distx<distance3 then {pre-check to increase processing speed with a small amount}
         begin
-          if distance<distance1 then
+          distance:=distx + sqr(starlist[1,j]-starlist[1,i]);
+          if distance>1 then {not an identical star. Mod 2021-6-25}
           begin
-            distance3:=distance2;{distance third closest star}
-            j_used3:=j_used2;
+            if distance<distance1 then
+            begin
+              distance3:=distance2;{distance third closest star}
+              j_used3:=j_used2;
 
-            distance2:=distance1;{distance second closest star}
-            j_used2:=j_used1;
+              distance2:=distance1;{distance second closest star}
+              j_used2:=j_used1;
 
-            distance1:=distance;{distance closest star}
-            j_used1:=j;{mark later as used}
-          end
-          else
-          if distance<distance2 then
-          begin
-            distance3:=distance2;{distance third closest star}
-            j_used3:=j_used2;
+              distance1:=distance;{distance closest star}
+              j_used1:=j;{mark later as used}
+            end
+            else
+            if distance<distance2 then
+            begin
+              distance3:=distance2;{distance third closest star}
+              j_used3:=j_used2;
 
-            distance2:=distance;{distance second closest star}
-            j_used2:=j;
-          end
-          else
-          if distance<distance3 then
-          begin
-            distance3:=distance;{third closest star}
-            j_used3:=j;
-          end;
-        end;
+              distance2:=distance;{distance second closest star}
+              j_used2:=j;
+            end
+            else
+            if distance<distance3 then
+            begin
+              distance3:=distance;{third closest star}
+              j_used3:=j;
+            end;
+          end;{not an identical star. Mod 2021-6-25}
+
+        end; {pre-check}
       end;
     end;{j}
 
@@ -267,8 +271,8 @@ begin
           dist4:=sqrt(sqr(x2-x3)+ sqr(y2-y3));{distance star2-star3}
           dist5:=sqrt(sqr(x2-x4)+ sqr(y2-y4));{distance star2-star4}
           dist6:=sqrt(sqr(x3-x4)+ sqr(y3-y4));{distance star3-star4}
-          {sort 6 distance on size}
-          for j:=1 to 6 do {sort on distance}
+          {sort six distances on size in five steps}
+          for j:=1 to 5 do {sort on distance}
           begin
             if dist6>dist5 then begin dummy:=dist5; dist5:=dist6; dist6:=dummy; end;
             if dist5>dist4 then begin dummy:=dist4; dist4:=dist5; dist5:=dummy; end;

@@ -1644,7 +1644,7 @@ var
   backgr, hfd_median,alt            : double;
   Save_Cursor                       : TCursor;
   green,blue,success,planetary      : boolean;
-  key,ext,filename1,rawstr          : string;
+  key,filename1,rawstr              : string;
   img                               : image_array;
 begin
   with stackmenu1 do
@@ -1674,59 +1674,20 @@ begin
       if ListView1.Items.item[c].checked then
       begin
         filename1:=ListView1.items[c].caption;
-        ext:=uppercase(ExtractFileExt(filename1));
 
-        if (ext='.FZ') then {cfitsio}
+        if fits_file_name(filename1)=false  {fits file name?}    then
         begin
-          memo2_message('Unpacking '+filename1);
+          memo2_message('Converting '+filename1+' to FITS file format');
           Application.ProcessMessages;
           if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-
-          if unpack_cfitsio(filename1) then  {success unpacking}
-             ListView1.items[c].caption:=filename2 {change listview name to FITS.}
+          if convert_to_fits(filename1) {convert to fits} then
+            ListView1.items[c].caption:=filename1 {change listview name to FITS.}
           else
-          begin {conversion failure}
-            ListView1.Items.item[c].checked:=false;
-            ListView1.Items.item[c].subitems.Strings[L_result]:='Funpack required, install!!';
-          end;
-        end {cfitsio}
-        else
-        if (check_raw_file_extension(ext)) then {raw file, convert to FITS}
-        begin
-          memo2_message('Converting '+filename1+' to FITS file format');
-          Application.ProcessMessages;
-          if esc_pressed then begin Screen.Cursor :=Save_Cursor;{ back to normal }  exit;  end;
-
-          if convert_raw(false{load},true{save},filename1,img_buffer) then  {success converting raw to fits. filename1 will contain the new filename}
-             ListView1.items[c].caption:=filename1 {change listview name to FITS.}
-          else
-          begin {conversion failure}
-            ListView1.Items.item[c].checked:=false;
-            ListView1.Items.item[c].subitems.Strings[L_result]:='Conv failure!';
-          end;
-        end {raw}
-        else
-        if ((ext='.JPG') or (ext='.JPEG') or (ext='.PNG') or (ext='.TIF') or (ext='.TIFF')) then
-        begin {tif,png,jpeg}
-          memo2_message('Converting '+filename1+' to FITS file format');
-          Application.ProcessMessages;
-          if esc_pressed then begin Screen.Cursor :=Save_Cursor;{ back to normal }  exit;  end;
-
-          success:=load_tiffpngJPEG(filename1,img);
-          if success then
-          begin
-            exposure:=extract_exposure_from_filename(filename1); {try to extract exposure time from filename}
-            set_temperature:=extract_temperature_from_filename(filename1);{including update header}
-            success:=save_fits(img,ChangeFileExt(filename1,'.fit'),16,false);
-          end;
-          if success then ListView1.items[c].caption:=ChangeFileExt(filename1,'.fit') {change listview name to FITS.}
-          else
-          begin {conversion failure}
+          begin {failure}
             ListView1.Items.item[c].checked:=false;
             ListView1.Items.item[c].subitems.Strings[L_result]:='Conv failure!';
           end;
         end;
-
       end;{checked}
       inc(c);
     end;
@@ -1957,7 +1918,7 @@ begin
   opendialog1.Filter := 'FITS files and DSLR RAW files |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
-                        '|JPEG, TIFF, PNG files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
+                        '|JPEG, TIFF, PNG PPM files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;'+
                         '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
   if opendialog1.execute then
   begin
@@ -2260,7 +2221,7 @@ begin
   opendialog1.Filter := 'FITS files and DSLR RAW files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
-                        '|JPEG, TIFF, PNG files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
+                        '|JPEG, TIFF, PNG PPM files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;'+
                         '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
   fits_file:=true;
   if opendialog1.execute then
@@ -2308,7 +2269,7 @@ begin
   opendialog1.Filter := 'FITS files and DSLR RAW files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
-                        '|JPEG, TIFF, PNG files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
+                        '|JPEG, TIFF, PNG PPM files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;'+
                         '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
   fits_file:=true;
   if opendialog1.execute then
@@ -3158,7 +3119,7 @@ procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse
 var
   c,counts,i,iterations, hfd_counter,theindex : integer;
   backgr, hfd_median, hjd,sd, dummy,alt : double;
-  filename1,ext                    : string;
+  filename1                        : string;
   Save_Cursor                      : TCursor;
   loaded,  success,green,blue      : boolean;
   img                              : image_array;
@@ -3186,57 +3147,18 @@ begin
     if lv.Items.item[c].checked then
     begin
       filename1:=lv.items[c].caption;
-      ext:=uppercase(ExtractFileExt(filename1));
-
-      if (ext='.FZ') then {cfitsio}
+      if fits_file_name(filename1)=false  {fits file name?}    then
       begin
-        memo2_message('Unpacking '+filename1);
+        memo2_message('Converting '+filename1+' to FITS file format');
         Application.ProcessMessages;
         if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-
-        if unpack_cfitsio(filename1) then  {success unpacking}
-           lv.items[c].caption:=filename2 {change listview name to FITS.}
-        else
-        begin {conversion failure}
-          lv.Items.item[c].checked:=false;
-          lv.Items.item[c].subitems.Strings[L_result]:='Funpack required, install!!';
-        end;
-      end {cfitsio}
-      else
-      if (check_raw_file_extension(ext)) then {raw file, convert to PGM}
-      begin
-        memo2_message('Converting '+filename1+' to FITS file format');
-        Application.ProcessMessages;
-        if esc_pressed then begin Screen.Cursor :=Save_Cursor;{ back to normal }  exit;  end;
-
-          if convert_raw(false{load},true{save},filename1,img_buffer) then  {success converting raw to fits. filename1 will contain the new filename}
+        if convert_to_fits(filename1) {convert to fits} then
           lv.items[c].caption:=filename1 {change listview name to FITS.}
         else
-        begin {conversion failure}
+        begin {failure}
           lv.Items.item[c].checked:=false;
           lv.Items.item[c].subitems.Strings[L_result]:='Conv failure!';
-        end;
-      end {raw}
-      else
-      if ((ext='.JPG') or (ext='.JPEG') or (ext='.PNG') or (ext='.TIF') or (ext='.TIFF')) then
-      begin {tif,png,jpeg}
-        memo2_message('Converting '+filename1+' to FITS file format');
-        Application.ProcessMessages;
-        if esc_pressed then begin Screen.Cursor :=Save_Cursor;{ back to normal }  exit;  end;
 
-        success:=load_tiffpngJPEG(filename1,img);
-        if success then
-        begin
-          exposure:=extract_exposure_from_filename(filename1); {try to extract exposure time from filename}
-          set_temperature:=extract_temperature_from_filename(filename1);
-          update_text('OBJECT  =',#39+extract_objectname_from_filename(filename1)+#39); {spaces will be added/corrected later}
-          success:=save_fits(img,ChangeFileExt(filename1,'.fit'),16,false);
-        end;
-        if success then lv.items[c].caption:=ChangeFileExt(filename1,'.fit') {change listview name to FITS.}
-        else
-        begin {conversion failure}
-          lv.Items.item[c].checked:=false;
-          lv.Items.item[c].subitems.Strings[L_result]:='Conv failure!';
         end;
       end;
     end;{checked}
@@ -4497,7 +4419,7 @@ begin
   opendialog1.Filter := 'FITS files and DSLR RAW files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                         '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                         '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
-                        '|JPEG, TIFF, PNG files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;'+
+                        '|JPEG, TIFF, PNG PPM files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;'+
                         '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef';
   if opendialog1.execute then
   begin
