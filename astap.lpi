@@ -23,10 +23,10 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MinorVersionNr Value="9"/>
-      <RevisionNr Value="4"/>
+      <RevisionNr Value="5"/>
       <BuildNr Value="6"/>
       <Attributes pvaPreRelease="True"/>
-      <StringTable CompanyName="www.hnsky.org" FileDescription="Astrometric STAcking Program" LegalCopyright="Han Kleijn" OriginalFilename="astap.exe" ProductName="ASTAP" ProductVersion="File version refers to the interface standard"/>
+      <StringTable CompanyName="www.hnsky.org" FileDescription="Astrometric STAcking Program" LegalCopyright="Han Kleijn" OriginalFilename="astap.exe" ProductName="ASTAP"/>
     </VersionInfo>
     <BuildModes Count="3">
       <Item1 Name="Default" Default="True"/>
@@ -146,7 +146,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="16">
+    <Units Count="18">
       <Unit0>
         <Filename Value="astap.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -213,9 +213,9 @@
         <IsPartOfProject Value="True"/>
       </Unit13>
       <Unit14>
-        <Filename Value="unit_asteroid.pas"/>
+        <Filename Value="unit_sqm.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="form_asteroids1"/>
+        <ComponentName Value="form_sqm1"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit14>
@@ -226,6 +226,20 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit15>
+      <Unit16>
+        <Filename Value="unit_aavso.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="form_aavso1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit16>
+      <Unit17>
+        <Filename Value="unit_listbox.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="form_listbox1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit17>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -243,28 +257,27 @@
     <Linking>
       <Debugging>
         <GenerateDebugInfo Value="False"/>
+        <DebugInfoType Value="dsDwarf2Set"/>
+        <StripSymbols Value="True"/>
       </Debugging>
       <Options>
+        <LinkerOptions Value="-vhl"/>
         <Win32>
           <GraphicApplication Value="True"/>
         </Win32>
       </Options>
     </Linking>
     <Other>
-      <CustomOptions Value="-dBorland
+      <CustomOptions Value="-CX
+-XX
+-vh
+-dBorland
 -dVer150
 -dDelphi7"/>
-      <OtherDefines Count="5">
-        <Define0 Value="Borland"/>
-        <Define1 Value="Ver150"/>
-        <Define2 Value="Delphi7"/>
-        <Define3 Value="Compiler6_Up"/>
-        <Define4 Value="PUREPASCAL"/>
-      </OtherDefines>
     </Other>
   </CompilerOptions>
   <Debugging>
-    <Exceptions Count="11">
+    <Exceptions Count="12">
       <Item1>
         <Name Value="EAbort"/>
       </Item1>
@@ -298,6 +311,9 @@
       <Item11>
         <Name Value="EOutOfMemory"/>
       </Item11>
+      <Item12>
+        <Name Value="EInOutError"/>
+      </Item12>
     </Exceptions>
   </Debugging>
 </CONFIG>
