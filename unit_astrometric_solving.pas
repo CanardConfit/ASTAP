@@ -155,7 +155,8 @@ end;
 {x,y     : CCD coordinates                                           }
 {cdelt:  : scale of CCD pixel in arc seconds                         }
 {ra,dec  : right ascension and declination                           }
-procedure standard_equatorial(ra0,dec0,x,y,cdelt: double; var ra,dec : double); {transformation from CCD coordinates into equatorial coordinates}
+{$INLINE ON}
+procedure standard_equatorial(ra0,dec0,x,y,cdelt: double; var ra,dec : double); inline;{transformation from CCD coordinates into equatorial coordinates}
 var sin_dec0 ,cos_dec0 : double;
 begin
   sincos(dec0  ,sin_dec0 ,cos_dec0);

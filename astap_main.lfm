@@ -219,7 +219,6 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     TabOrder = 3
-    OnClick = Panel1Click
     OnMouseMove = Panel1MouseMove
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
@@ -1282,7 +1281,7 @@ object mainwindow: Tmainwindow
         object annotatemedianbackground1: TMenuItem
           Caption = 'Median background values'
           Enabled = False
-          Hint = 'The median background values are annotated  in the image in ration to the center value.'
+          Hint = 'Annotate the image with the median background values realtive to the center.'
           OnClick = annotatemedianbackground1Click
         end
         object MenuItem27: TMenuItem
@@ -1364,8 +1363,25 @@ object mainwindow: Tmainwindow
         Caption = '-'
       end
       object Stretchdrawmenu1: TMenuItem
-        Caption = 'Stretch draw'
-        Hint = 'Stretch image'
+        Caption = 'Bin or stretch'
+        Hint = 'Bin or stretch the image'
+        object bin_2x2menu1: TMenuItem
+          Caption = 'Bin 2x2'
+          Enabled = False
+          Hint = 'Bin the image 2x2'
+          ShortCut = 16434
+          OnClick = bin_2x2menu1Click
+        end
+        object bin_3x3menu1: TMenuItem
+          Caption = 'Bin 3x3'
+          Enabled = False
+          Hint = 'Bin the image 3x3'
+          ShortCut = 16435
+          OnClick = bin_2x2menu1Click
+        end
+        object MenuItem30: TMenuItem
+          Caption = '-'
+        end
         object stretch_draw1: TMenuItem
           Caption = 'Stretch draw'
           Enabled = False

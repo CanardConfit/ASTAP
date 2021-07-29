@@ -108,6 +108,9 @@ type
     aberration_inspector1: TMenuItem;
     MenuItem21: TMenuItem;
     MenuItem27: TMenuItem;
+    bin_2x2menu1: TMenuItem;
+    bin_3x3menu1: TMenuItem;
+    MenuItem30: TMenuItem;
     simbadquery1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
@@ -351,8 +354,7 @@ type
     procedure grid1Click(Sender: TObject);
     procedure ccdinspector10_1Click(Sender: TObject);
     procedure annotatemedianbackground1Click(Sender: TObject);
-    procedure simbadquery1Click(Sender: TObject);
-    procedure Panel1Click(Sender: TObject);
+    procedure bin_2x2menu1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
     procedure removegreenpurple1Click(Sender: TObject);
     procedure sip1Click(Sender: TObject);
@@ -749,8 +751,8 @@ const   bufwide=1024*120;{buffer size in bytes}
      {6}('EQUINOX =               2000.0 / Equinox of coordinates                         '),
      {7}('DATAMIN =                    0 / Minimum data value                             '),
      {8}('DATAMAX =                  255 / Maximum data value                             '),
-     {9}('BZERO   =                  0.0 / Scaling applied to data                        '),
-    {10}('BSCALE  =                  1.0 / Offset applied to data                         '),
+     {9}('BZERO   =                  0.0 / physical_value = BZERO + BSCALE * array_value  '),
+    {10}('BSCALE  =                  1.0 / physical_value = BZERO + BSCALE * array_value  '),
     {11}('CTYPE1  = '+#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   '),
     {12}('CTYPE2  = '+#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   '),
     {13}('CUNIT1  = '+#39+'deg     '+#39+'           / Unit of coordinates                            '),
@@ -3089,7 +3091,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.562a, '+about_message4+', dated 2021-7-26';
+  #13+#10+'ASTAP version ß0.9.563, '+about_message4+', dated 2021-7-29';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4729,6 +4731,8 @@ begin
     mainwindow.demosaic_Bayermatrix1.Enabled:=fits;
     mainwindow.autocorrectcolours1.Enabled:=fits;
     mainwindow.removegreenpurple1.enabled:=fits;
+    mainwindow.bin_2x2menu1.Enabled:=fits;
+    mainwindow.bin_3x3menu1.Enabled:=fits;
     mainwindow.stretch_draw1.Enabled:=fits;
     mainwindow.stretch_draw_fits1.Enabled:=fits;
 
@@ -9054,16 +9058,23 @@ begin
   Screen.Cursor:= Save_Cursor;
 end;
 
-procedure Tmainwindow.simbadquery1Click(Sender: TObject);
+procedure Tmainwindow.bin_2x2menu1Click(Sender: TObject);
+var
+  Save_Cursor:TCursor;
 begin
+  if fits_file=true then
+  begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
+    backup_img; {move viewer data to img_backup}
+    if sender=bin_2x2menu1 then bin_X2X3X4(2)
+                           else bin_X2X3X4(3);
+
+    plot_fits(mainwindow.image1,true,true);{plot real}
+    Screen.Cursor:=Save_Cursor;
+  end;
 end;
-
-procedure Tmainwindow.Panel1Click(Sender: TObject);
-begin
-
-end;
-
 
 
 procedure Tmainwindow.positionanddate1Click(Sender: TObject);
@@ -11976,7 +11987,8 @@ begin
           else
           begin {stdin receive file}
             memo1.clear;{prepare for some info wcs file}
-            memo1.lines.add('END');{add the END to memo1 for stdin and prevent runtime error since all data is inserted for END}
+            memo1.lines.add(head1[0]);{add SIMPLE for case option -update is used}
+            memo1.lines.add(head1[27]);{add the END to memo1 for stdin and prevent runtime error since all data is inserted for END}
             file_loaded:=read_stdin_data;
             if debug then
             begin
@@ -14088,7 +14100,7 @@ begin
      if flux_magn_offset<>0 then {offset calculated in star annotation call}
      begin
         str(flux_magn_offset-ln(flux)*2.511886432/ln(10):0:2,mag_str);
-        mag_str:=', MAGN='+mag_str;
+        mag_str:=', MAGN='+mag_str {+', '+inttostr(round(flux/snr))+', '+floattostr4(round(r_aperture))};
      end
      else mag_str:='';
 
@@ -14772,7 +14784,8 @@ var
   line0                : ansistring;
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
   OldCursor : TCursor;
-  wo: word;
+  //wo: word;
+  //int_16             : smallint absolute wo;{for 16 signed integer}
   rgb  : byteX3;{array [0..2] containing r,g,b colours}
 begin
   result:=false;
@@ -14836,7 +14849,9 @@ begin
       remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 
     if type1=16 then bzero2:=32768 else bzero2:=0;
-    update_integer('BZERO   =',' / Scaling applied to data                        ' ,bzero2);
+
+    update_integer('BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,bzero2);
+    update_integer('BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
     if type1<>8 then
     begin
       update_integer('DATAMIN =',' / Minimum data value                             ' ,round(datamin_org));
@@ -14860,7 +14875,8 @@ begin
     update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,height5);
     update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
     update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
-    update_integer('BZERO   =',' / Scaling applied to data                        ' ,0);
+    update_integer('BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,0);
+    update_integer('BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
     {update existing header}
   end;
 
@@ -14955,10 +14971,19 @@ begin
 
       for j:=0 to width5-1 do
       begin
-        dum:=bzero2+max(0,min(65535,round(img[k,j,i])));{limit between 0 and 65535}
-        dum:=dum and $FFFF;{mod 2018-9-10}
-        wo:=dum;
-        fitsbuffer2[j]:=swap(wo) and $FFFF;{in FITS file hi en low bytes are swapped}
+        dum:=max(0,min(65535,round(img[k,j,i]))) - bzero2;{limit data between 0 and 65535 and shift it to -32768.. 32767}
+        { value  - bzero              result  shortint    word
+         ($0000  - $8000) and $FFFF = $8000 (-32768       32768 )  note  $0000 - $8000 ==>  $FFFF8000. Highest bits are skipped
+         ($0001  - $8000) and $FFFF = $8001 (-32767       32769 )  note  $0001 - $8000 ==>  $FFFF8001. Highest bits are skipped
+         ($2000  - $8000) and $FFFF = $A000 (-24576       40960 )
+         ($7FFF  - $8000) and $FFFF = $FFFF (    -1       65535 )
+         ($8000  - $8000) and $FFFF = $0000 (     0           0 )
+         ($8001  - $8000) and $FFFF = $0001 (     1           1 )
+         ($A000  - $8000) and $FFFF = $2000 (  8192        8192 )  note $A000 - $8000 equals  $2000.
+         ($FFFE  - $8000) and $FFFF = $7FFE (+32766       32766 )
+         ($FFFF  - $8000) and $FFFF = $7FFF (+32767       32767 )
+        }
+        fitsbuffer2[j]:=swap(word(dum));{in FITS file hi en low bytes are swapped}
       end;
       thefile4.writebuffer(fitsbuffer2,width5+width5); {write as bytes}
     end;

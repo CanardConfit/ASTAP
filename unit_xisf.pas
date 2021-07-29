@@ -389,7 +389,7 @@ begin
             img_loaded2[k-1,j,i]:=65535*fitsbufferDouble[j]{store in memory array, scale from 0..1 to 0..65535}
           else
           if nrbits=+32 then {4 byte, +32 bit FITS image}
-            img_loaded2[k-1,j,i]:=fitsbuffer4[j]/65535;{scale to 0..64000 float}
+            img_loaded2[k-1,j,i]:=fitsbuffer4[j]/65535;{scale to 0..64535 float}
         end;
       end;
     end; {colors naxis3 times}
