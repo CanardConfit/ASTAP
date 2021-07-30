@@ -19,7 +19,7 @@ procedure plot_deepsky;{plot the deep sky object on the image}
 procedure load_deep;{load the deepsky database once. If loaded no action}
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 procedure load_variable;{load variable stars. If loaded no action}
-procedure plot_and_measure_stars(flux_calibration,plot_stars: boolean);{flux calibration,  annotate}
+procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 procedure measure_distortion(plot: boolean; out stars_measured: integer);{measure or plot distortion}
 procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the mangitude. For super nova search}
 procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot image stars and database stars used for the solution}
@@ -1553,14 +1553,14 @@ begin
 end;
 
 
-procedure plot_and_measure_stars(flux_calibration,plot_stars: boolean);{flux calibration,  annotate}
+procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_10  : double;
-  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2                           : integer;
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_10 : double;
+  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2                          : integer;
   flip_horizontal, flip_vertical,sip    : boolean;
-  mag_offset_array,flux_snr_ratio       : array of double;
+  mag_offset_array,hfd_x_sd             : array of double;
   Save_Cursor                           : TCursor;
 
     procedure plot_star;
@@ -1614,10 +1614,9 @@ var
 
         if flux_calibration then
         begin
-          HFD(img_loaded,round(x),round(y), annulus_radius{14,box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+          HFD(img_loaded,round(x),round(y), annulus_radius{14,annulus radius},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum}) then
-            if snr>30 then {star detected in img_loaded. 30 is found emperical}
-//              if snr>10 then {star detected in img_loaded. 30 is found emperical}
+          if snr>30 then {star detected in img_loaded. 30 is found emperical}
           begin
             if ((flux_calibration){calibrate flux} and
                 (img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
@@ -1635,13 +1634,17 @@ var
               if counter_flux_measured>=length(mag_offset_array) then
               begin
                SetLength(mag_offset_array,counter_flux_measured+500);{increase length array}
-               SetLength(flux_snr_ratio,counter_flux_measured+500);{increase length array}
+               if report_lim_magn then  SetLength(hfd_x_sd,counter_flux_measured+500);{increase length array}
               end;
               mag_offset_array[counter_flux_measured]:=mag2/10-magn;
 
-              flux_snr_ratio[counter_flux_measured]:=(flux/snr)*(hfd1/(2*r_aperture));{ hfd1/(2*r_aperture) factor is a compensation for a smaller r_aperture applied measuring faint stars !!. This influences the SNR linear, not square}
-                                                                                      {the r_apeture is reduced for fainter stars and therefore the SNR get better then predicted by brighter stars}
-             // memo2_message(#9+floattostr(flux)+#9+floattostr(snr)+#9+floattostr(flux/snr));
+              if report_lim_magn then
+              begin
+                hfd_x_sd[counter_flux_measured]:=hfd1*sd_bg;{calculate hfd*SD. sd_bg  is a global variable from procedure hfd. The minimum diameter for star detection is 4}
+              end;
+
+//              memo2_message(#9+floattostr4(snr)+#9+floattostr4(hfd1)+#9+floattostr4(R_aperture)+#9+floattostr4(sd_bg) );
+
               inc(counter_flux_measured); {increase counter of number of stars analysed}
             end;
 
@@ -1660,7 +1663,6 @@ begin
 
     sip:=((ap_order>=2) and (mainwindow.Polynomial1.itemindex=1));{use sip corrections?}
 
-    counter_flux_measured:=0;
 
     bp_rp:=999;{not defined in mono versions of the database}
 
@@ -1673,8 +1675,6 @@ begin
     gamma:=sqrt(dRa*dRa+delta*delta);
     telescope_ra:=ra0+arctan(Dra/delta);
     telescope_dec:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
-
-    //linepos:=2;{Set pointer to the beginning. First two lines are comments}
 
     mainwindow.image1.Canvas.Pen.width :=1; // round(1+height2/mainwindow.image1.height);{thickness lines}
     mainwindow.image1.canvas.pen.color:=$00B0FF ;{orange}
@@ -1697,16 +1697,16 @@ begin
 
 
     star_total_counter:=0;{total counter}
+    counter_flux_measured:=0;
+
 
     max_nr_stars:=round(width2*height2*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
 
-    //max_nr_stars:=6000;
-
     if flux_calibration then
     begin
-       max_nr_stars:=round(width2*height2*(800/(2328*1760))); {limit to the brightest stars. Fainter stars have more noise}
+       max_nr_stars:=round(max_nr_stars*0.6); {limit to the brightest stars. Fainter stars have more noise}
        setlength(mag_offset_array,max_nr_stars);
-       setlength(flux_snr_ratio,max_nr_stars);
+       if report_lim_magn then setlength(hfd_x_sd,max_nr_stars);
     end;
 
     if select_star_database(stackmenu1.star_database1.text)=false then
@@ -1767,20 +1767,35 @@ begin
       begin
         flux_magn_offset:=get_best_mean(mag_offset_array,counter_flux_measured {length});
 
-        flux_snr_10:=10*Smedian(flux_snr_ratio,counter_flux_measured {length});{calculate the flux for SNR=10}
-
         if flux_aperture=99 then
-           memo2_message('Photometry calibration for EXTENDED OBJECTS successful. '+inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration. Stars with a pixel value '+inttostr(round(datamax_org))+' or higher are ignored.'+
-                         ' Limiting magnitude estimate '+floattostrf(flux_magn_offset-ln(flux_snr_10)*2.511886432/ln(10),ffgeneral,3,1))
+
+          memo2_message('Photometry calibration for EXTENDED OBJECTS successful. '+inttostr(counter_flux_measured)+
+                        ' Gaia stars used for flux calibration.  Flux aperture diameter: measured star diameter.'+
+                        ' Annulus inner diameter: '+inttostr(1+(annulus_radius+2)*2){background is measured 2 pixels outside rs}+' pixels. Stars with a pixel value '+inttostr(round(datamax_org))+' or higher are ignored.')
+
         else
-          memo2_message('Photometry calibration for POINT SOURCES successful. '+inttostr(counter_flux_measured)+ ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(flux_aperture*2, ffgeneral, 2,2)+
-                        '. Annulus inner diameter: '+inttostr(1+(annulus_radius+2)*2){background is measured 2 pixels outside rs}+'. Stars with a pixel value '+inttostr(round(datamax_org))+' or higher are ignored.');
+          memo2_message('Photometry calibration for POINT SOURCES successful. '+inttostr(counter_flux_measured)+
+                        ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(flux_aperture*2, ffgeneral, 2,2)+' pixels.'+
+                        ' Annulus inner diameter: '+inttostr(1+(annulus_radius+2)*2){background is measured 2 pixels outside rs}+' pixels. Stars with a pixel value '+inttostr(round(datamax_org))+' or higher are ignored.');
+
+        if report_lim_magn then
+        begin
+         {snr formula      snr:=flux/sqrt(flux + r*r*pi* sd^2).
+          for faint stars  snr ≈flux/sqrt( 0 + r*r*pi* sd^2)
+                           flux≈snr*sqrt( 0 + r*r*pi* sd^2)
+                           flux≈snr*r*sqrt(pi)*sd
+                           flux≈snr*(hfd*0.8)*sqrt(pi)*sd   assuming star diameter is 2*hfd, so radius is hfd
+                           flux≈snr*sqrt(pi)*sd*hfd*0.8  }
+          flux_snr_10:=10*sqrt(pi)*Smedian(hfd_x_sd,counter_flux_measured {length})*0.8{fiddle factor} ;{Assuming minimum SNR is 10 and the aperture is reduced to about hfd for the faintest stars.}
+          memo2_message('Limiting magnitude(SNR>10) point sources about: '+floattostrf(flux_magn_offset-ln(flux_snr_10)*2.511886432/ln(10),ffgeneral,3,1));
+        end;
+
 
       end
       else  flux_magn_offset:=0;
 
       mag_offset_array:=nil;
-      flux_snr_ratio:=nil;
+      hfd_x_sd:=nil;
     end;
 
     Screen.Cursor:= Save_Cursor;
@@ -1831,7 +1846,7 @@ var
         if flip_horizontal then x2:=(width2-1)-x else x2:=x;
         if flip_vertical   then y2:=y            else y2:=(height2-1)-y;
 
-        HFD(img_loaded,round(x),round(y), 14 {annulus_radius box size},99 {flux_aperture}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        HFD(img_loaded,round(x),round(y), 14 {annulus_radius},99 {flux_aperture}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
         begin
           if plot then {show distortion}

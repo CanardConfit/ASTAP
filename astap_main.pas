@@ -539,7 +539,7 @@ var
   stretch_c : array[0..32768] of single;{stretch curve}
   stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
   set_temperature : integer;
-  star_level  : double;
+  star_level,sd_bg  : double;
   object_name, filter_name,calstat,imagetype ,sitelat, sitelong,centalt,centaz: string;
   exposure,focus_temp,cblack,cwhite,gain,sqmfloat   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
@@ -3091,7 +3091,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.563, '+about_message4+', dated 2021-7-29';
+  #13+#10+'ASTAP version ß0.9.564, '+about_message4+', dated 2021-7-29';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -9373,7 +9373,7 @@ begin
       annulus_radius:=14;{calibrate for extended objects using full star flux}
       flux_aperture:=99;{calibrate for extended objects}
 
-      plot_and_measure_stars(true {calibration},false {plot stars});
+      plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude});
     end;
     if flux_magn_offset=0 then begin beep; exit;end;
 
@@ -9664,7 +9664,7 @@ begin
 
     backup_img;
 
-    HFD(img_loaded,startX,startY,14{box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+    HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
     if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
     begin
@@ -9681,7 +9681,7 @@ begin
     end;
     show_marker_shape(mainwindow.shape_marker1,shapetype,20,20,10{minimum}, shape_marker1_fitsX,shape_marker1_fitsY);
 
-    HFD(img_loaded,stopX,stopY,14{box size},99 {flux aperture restriction}, hfd2,star_fwhm2,snr2,flux2,xc2,yc2);{star HFD and FWHM}
+    HFD(img_loaded,stopX,stopY,14{annulus radius},99 {flux aperture restriction}, hfd2,star_fwhm2,snr2,flux2,xc2,yc2);{star HFD and FWHM}
     if ((hfd2<15) and (hfd2>=0.8) {two pixels minimum} and (snr2>10) and (flux2>1){rare but happens}) then {star detected in img_loaded}
     begin
       shapetype:=1;{circle}
@@ -10010,7 +10010,7 @@ end;
 procedure measure_magnitudes(annulus_rad:integer; deep: boolean; var stars :star_list);{find stars and return, x,y, hfd, flux}
 var
   fitsX,fitsY,radius, i, j,nrstars,n,m,xci,yci,sqr_radius: integer;
-  hfd1,star_fwhm,snr,flux,xc,yc,detection_level          : double;
+  hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min  : double;
   img_sa : image_array;
 
 begin
@@ -10022,6 +10022,7 @@ begin
   get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
   if deep then detection_level:=noise_level[0] else detection_level:=star_level;
+  hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
   nrstars:=0;{set counters at zero}
 
@@ -10035,8 +10036,8 @@ begin
     begin
       if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- cblack> detection_level)) then {new star}
       begin
-        HFD(img_loaded,fitsX,fitsY,annulus_rad {typical 14, box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-        if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
+        HFD(img_loaded,fitsX,fitsY,annulus_rad {typical 14, annulus radius},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        if ((hfd1<15) and (hfd1>=hfd_min) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
         begin
           {for testing}
           //if flipvertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
@@ -10098,8 +10099,8 @@ procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
   size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci     : integer;
   Save_Cursor:TCursor;
-  Fliphorizontal, Flipvertical,astar                                                              : boolean;
-  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit,sqr_radius : double;
+  Fliphorizontal, Flipvertical,astar                                                                        : boolean;
+  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit,sqr_radius,hfd_min : double;
   messg : string;
   img_temp3,img_sa :image_array;
 const
@@ -10125,6 +10126,7 @@ const
   Flipvertical:=mainwindow.flip_vertical1.Checked;
   Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
   magn_limit:=10*strtoint(copy(stackmenu1.star_database1.text,2,2)); {g18 => 180}
+  hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
   image1.Canvas.Pen.Mode := pmMerge;
   image1.Canvas.Pen.width :=1; // round(1+height2/image1.height);{thickness lines}
@@ -10157,8 +10159,8 @@ const
     begin
       if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- cblack>5*noise_level[0] {star_level} ){star}) then {new star}
       begin
-        HFD(img_loaded,fitsX,fitsY,14{box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-        if ((hfd1<10) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
+        HFD(img_loaded,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        if ((hfd1<10) and (hfd1>=hfd_min) and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
         begin
           {for testing}
           //if flipvertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
@@ -10278,7 +10280,6 @@ begin {quicksort};
 end;
 
 
-
 function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
 var
   mid : integer;
@@ -10304,15 +10305,12 @@ begin
 end;
 
 
-
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
- size, i, starX, starY,lim_magn,text_width,fontsize,text_height     : integer;
- lim_magn_max    : double;
+ size, i, starX, starY,lim_magn,fontsize,text_height     : integer;
  Save_Cursor:TCursor;
  Fliphorizontal, Flipvertical  : boolean;
- stars : star_list;
- list : array of double;
+ stars  : star_list;
 begin
   if fits_file=false then exit; {file loaded?}
 
@@ -10348,41 +10346,26 @@ begin
 
   measure_magnitudes(14,true {deep},stars);
 
-  setlength(list,length(stars[0]));
-
-  for i:=0 to  length(stars[0])-2 do
+  if length(stars[0])>0 then
   begin
-    if Flipvertical=false then  starY:=round(height2-1-stars[1,i]) else starY:=round(stars[1,i]);
-    if Fliphorizontal     then starX:=round(width2-1-stars[0,i])  else starX:=round(stars[0,i]);
+    for i:=0 to  length(stars[0])-2 do
+    begin
+      if Flipvertical=false then  starY:=round(height2-1-stars[1,i]) else starY:=round(stars[1,i]);
+      if Fliphorizontal     then starX:=round(width2-1-stars[0,i])  else starX:=round(stars[0,i]);
 
-    size:=round(stars[2,i]);{5*hfd for marking stars}
+      size:=round(stars[2,i]);{5*hfd for marking stars}
 
-    mainwindow.image1.Canvas.moveto(starX+2*size,starY);
-    mainwindow.image1.Canvas.lineto(starX+size,starY);
-    mainwindow.image1.Canvas.moveto(starX-2*size,starY);
-    mainwindow.image1.Canvas.lineto(starX-size,starY);
+      mainwindow.image1.Canvas.moveto(starX+2*size,starY);
+      mainwindow.image1.Canvas.lineto(starX+size,starY);
+      mainwindow.image1.Canvas.moveto(starX-2*size,starY);
+      mainwindow.image1.Canvas.lineto(starX-size,starY);
 
-    lim_magn:=round((flux_magn_offset-ln(stars[3,i]{flux})*2.511886432/ln(10))*10);
+      image1.Canvas.textout(starX,starY-text_height,inttostr(lim_magn) );{add magnitude as text}
+    end;
+  end
+  else
+  memo2_message('No stars found!');
 
-
-    image1.Canvas.textout(starX,starY-text_height,inttostr(lim_magn) );{add magnitude as text}
-    list[i]:=lim_magn;
-  end;
-
-
-  {do some filtering, remove some faint extreme outliers}
-  quickSort(list,0,length(list));
-  lim_magn_max:=list[round(0.95*length(list)-1)];
-
-  text_width:=8*mainwindow.image1.Canvas.textwidth('1234567890');{Calculate textwidth for 80 characters. This also works for 4k with "make everything bigger"}
-  fontsize:=trunc(fontsize*(width2-2*fontsize)/text_width);{use full width}
-  image1.Canvas.font.size:=fontsize;
-  image1.Canvas.font.color:=clwhite;
-  text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
-  image1.Canvas.textout(round(fontsize*2),height2-text_height,'10σ limiting magnitude is '+ floattostrF(lim_magn_max/10,ffgeneral,3,3));{}
-  memo2_message('10σ limiting magnitude is '+ floattostrF(lim_magn_max/10,ffgeneral,3,3));
-
-  list:=nil;
   Screen.Cursor:= Save_Cursor;
 end;
 
@@ -10497,9 +10480,12 @@ begin
         annul:=strtofloat2(stackmenu1.annulus_radius1.text);
         annulus_radius:=round(hfd_med*annul/2);{radius}
       end;
-    end;
+    end
+    else
+    memo2_message('To increase the accuracy of point sources magnitudes set a smaller aperture diameter in tab "photometry".');
 
-    plot_and_measure_stars(true {calibration},false {plot stars});
+
+    plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude});
     if flux_magn_offset>0 then
     begin
       mainwindow.caption:='Photometry calibration successful';
@@ -12450,7 +12436,7 @@ begin
         begin
           if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star}  and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
           begin
-            HFD(img_loaded,fitsX,fitsY,14{box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            HFD(img_loaded,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
             if ((hfd1<=30) and (snr>snr_min {30}) and (hfd1>hfd_min) ) then
             begin
@@ -12680,7 +12666,7 @@ procedure Tmainwindow.star_annotation1Click(Sender: TObject);
 begin
   mainwindow.calibrate_photometry1Click(nil);{measure hfd and calibrate for point or extended sources depending on the setting}
 
-  plot_and_measure_stars(false {calibration},true {plot stars});{plot stars}
+  plot_and_measure_stars(false {calibration},true {plot stars},false {measure lim magn});{plot stars}
 end;
 
 
@@ -13467,7 +13453,7 @@ begin
       yc:=startY;
     end
     else {star alignment}
-    HFD(img_loaded,startX,startY,14{box size},99 {flux aperture restriction},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
+    HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
 
 
     if hfd2<90 then {detected something}
@@ -13483,7 +13469,7 @@ begin
   if stackmenu1.pagecontrol1.tabindex=8 {photometry} then
   begin
     {star alignment}
-    HFD(img_loaded,startX,startY,14{box size},99 {flux aperture restriction},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
+    HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
     if hfd2<90 then {detected something}
     begin
       if snr>5 then shapetype:=1 {circle} else shapetype:=0;{square}
@@ -13555,14 +13541,17 @@ begin
   end;{left button pressed}
 end;
 
-
-procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
-const                                                                                                                                          {aperture_small is used for photometry of stars. Set at 99 for normal full flux mode}
+{calculates star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
+{aperture_small is used for photometry of stars. Set at 99 for normal full flux mode}
+{Procedure uses two global accessible variables:  r_aperture and sd_bg }
+procedure HFD(img: image_array;x1,y1,rs {annulus diameter}: integer;aperture_small:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);
+const
   max_ri=50; //should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1;
+
 var
   i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter,annulus_width :integer;
   SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
-  val,bg,sd,pixel_counter,valmax,mad_bg : double;
+  val,bg,pixel_counter,valmax,mad_bg : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
   background : array [0..1000] of double;
@@ -13591,7 +13580,7 @@ begin
   else
     annulus_width:=1;{normal & fast}
 
-  r1_square:=rs*rs;{square diameter}
+  r1_square:=rs*rs;{square radius}
   r2:=rs+annulus_width;
   r2_square:=r2*r2;
 
@@ -13619,12 +13608,12 @@ begin
     bg:=Smedian(background,counter);
     for i:=0 to counter-1 do background[i]:=abs(background[i] - bg);{fill background with offsets}
     mad_bg:=Smedian(background,counter); //median absolute deviation (MAD)
-    sd:=mad_bg*1.4826; {Conversion from mad to sd for a normal distribution. See https://en.wikipedia.org/wiki/Median_absolute_deviation}
-    sd:=max(sd,1); {add some value for images with zero noise background. This will prevent that background is seen as a star. E.g. some jpg processed by nova.astrometry.net}
+    sd_bg:=mad_bg*1.4826; {Conversion from mad to sd for a normal distribution. See https://en.wikipedia.org/wiki/Median_absolute_deviation}
+    sd_bg:=max(sd_bg,1); {add some value for images with zero noise background. This will prevent that background is seen as a star. E.g. some jpg processed by nova.astrometry.net}
+    {sd_bg and r_aperture are global variables}
 
-
-    repeat {reduce square box size till symmetry to remove stars}
-    // Get center of gravity whithin star detection box and count signal pixels, repeat reduce box size till symmetry to remove stars
+    repeat {reduce square annulus radius till symmetry to remove stars}
+    // Get center of gravity whithin star detection box and count signal pixels, repeat reduce annulus radius till symmetry to remove stars
       SumVal:=0;
       SumValX:=0;
       SumValY:=0;
@@ -13634,7 +13623,7 @@ begin
       for j:=-rs to rs do
       begin
         val:=(img[0,x1+i,y1+j])- bg;
-        if val>3.0*sd then
+        if val>3.0*sd_bg then
         begin
           SumVal:=SumVal+val;
           SumValX:=SumValX+val*(i);
@@ -13642,7 +13631,7 @@ begin
           inc(signal_counter); {how many pixels are illuminated}
         end;
       end;
-      if sumval<= 12*sd then
+      if sumval<= 12*sd_bg then
          exit; {no star found, too noisy, exit with hfd=999}
 
       Xg:=SumValX/SumVal;
@@ -13663,7 +13652,7 @@ begin
       {check on hot pixels}
       if signal_counter<=1  then
       exit; {one hot pixel}
-    until ((boxed) or (rs<=1)) ;{loop and reduce box size until star is boxed}
+    until ((boxed) or (rs<=1)) ;{loop and reduce annulus radius until star is boxed}
 
     inc(rs,2);{add some space}
 
@@ -13676,7 +13665,7 @@ begin
         if distance<=rs then {build histogram for circel with radius rs}
         begin
           val:=value_subpixel(xc+i,yc+j)-bg;
-          if val>3.0*sd then {3 * sd should be signal }
+          if val>3.0*sd_bg then {3 * sd should be signal }
           begin
             distance_histogram[distance]:=distance_histogram[distance]+1;{build distance histogram up to circel with diameter rs}
             if val>valmax then valmax:=val;{record the peak value of the star}
@@ -13728,7 +13717,7 @@ begin
 
   if r_aperture<aperture_small then {normal mode}
   begin
-     snr:=flux/sqrt(flux +sqr(r_aperture)*pi*sqr(sd));
+     snr:=flux/sqrt(flux +sqr(r_aperture)*pi*sqr(sd_bg));
      {For both bright stars (shot-noise limited) or skybackground limited situations
        snr := signal/noise
        snr := star_signal/sqrt(total_signal)
@@ -13748,9 +13737,8 @@ begin
   else
   begin {photometry mode. Measure only brightest part of the stars}
     flux:=max(sumval_small,0.00001);{prevent dividing by zero or negative values}
-    snr:=flux/sqrt(flux +sqr(aperture_small)*pi*sqr(sd)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
+    snr:=flux/sqrt(flux +sqr(aperture_small)*pi*sqr(sd_bg)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
   end;
-
 
   {==========Notes on HFD calculation method=================
     Documented the HFD definition also in https://en.wikipedia.org/wiki/Half_flux_diameter
@@ -14084,13 +14072,11 @@ begin
 
    end;
 
-
    sensor_coordinates_to_celestial(mouse_fitsx,mouse_fitsy,raM,decM);
    mainwindow.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
 
-
    hfd2:=999;
-   HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),annulus_radius {box size},flux_aperture,hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
+   HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),annulus_radius {annulus radius},flux_aperture,hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
    //mainwindow.caption:=floattostr(mouse_fitsX)+',   '+floattostr(mouse_fitsy)+',         '+floattostr(object_xc)+',   '+floattostr(object_yc);
    if ((hfd2<99) and (hfd2>0)) then
    begin
@@ -14100,7 +14086,7 @@ begin
      if flux_magn_offset<>0 then {offset calculated in star annotation call}
      begin
         str(flux_magn_offset-ln(flux)*2.511886432/ln(10):0:2,mag_str);
-        mag_str:=', MAGN='+mag_str {+', '+inttostr(round(flux/snr))+', '+floattostr4(round(r_aperture))};
+        mag_str:=', MAGN='+mag_str;
      end
      else mag_str:='';
 

@@ -691,7 +691,7 @@ type
     procedure clear_blink_alignment1Click(Sender: TObject);
     procedure clear_blink_list1Click(Sender: TObject);
     procedure Edit_width1Change(Sender: TObject);
-    procedure extra_star_supression_diameter1Change(Sender: TObject);
+    procedure flux_aperture1change(Sender: TObject);
     procedure help_astrometric_solving1Click(Sender: TObject);
     procedure listview1CustomDraw(Sender: TCustomListView; const ARect: TRect;
       var DefaultDraw: Boolean);
@@ -1437,7 +1437,7 @@ begin
         begin
           if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img[0,fitsX,fitsY]-backgr>detection_level)) then {new star. For analyse used sigma is 5, so not too low.}
           begin
-            HFD(img,fitsX,fitsY,14{box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            HFD(img,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
             if ((hfd1<=30) and (snr>snr_min) and (hfd1>hfd_min) {two pixels minimum} ) then
             begin
               hfd_list[star_counter]:=hfd1;{store}
@@ -1535,7 +1535,7 @@ begin
         begin
           if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img[0,fitsX,fitsY]-backgr>detection_level){star}) then {new star. For analyse used sigma is 5, so not too low.}
           begin
-            HFD(img,fitsX,fitsY,25 {LARGE box size},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            HFD(img,fitsX,fitsY,25 {LARGE annulus radius},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
             if ((hfd1<=35) and (snr>30) and (hfd1>0.8) {two pixels minimum} ) then
             begin
               {store values}
@@ -2938,6 +2938,8 @@ begin
   stackmenu1.listview1.columns.Items[l_centaz+1].caption:=centaz_key;   {lv.items[l_sqm].caption:=sqm_key; doesn't work}
   stackmenu1.listview1.columns.Items[l_sqm+1].caption:=sqm_key;   {lv.items[l_sqm].caption:=sqm_key; doesn't work}
 
+  stackmenu1.flux_aperture1change(nil);{disable annulus_radius1 if mode max flux}
+
   hue_fuzziness1Change(nil);{show position}
 
   update_stackmenu;
@@ -4033,9 +4035,9 @@ begin
 end;
 
 
-procedure Tstackmenu1.extra_star_supression_diameter1Change(Sender: TObject);
+procedure Tstackmenu1.flux_aperture1change(Sender: TObject);
 begin
-  esc_pressed:=true; {need to remake img_backup contents for star supression}
+//  esc_pressed:=true; {need to remake img_backup contents for star supression}
   annulus_radius1.enabled:=flux_aperture1.itemindex<>0;{disable annulus_radius1 if mode max flux}
 
   {recalibrate}
@@ -5983,7 +5985,7 @@ var
   var
     starX,starY,len :double;
   begin
-    HFD(img_loaded,round(deX-1),round(deY-1),annulus_radius {14, box size},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+    HFD(img_loaded,round(deX-1),round(deY-1),annulus_radius {14, annulus radius},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
     if ((hfd1<50) and (hfd1>0) and (snr>6)) then {star detected in img_loaded}
     begin
       if calstat='' then saturation_level:=64000 else saturation_level:=60000; {could be dark subtracted changing the saturation level}
@@ -6197,7 +6199,7 @@ begin
         end;
         if  starlistpack[c].height=0 then {not filled with data}
         begin
-          if apert<>0 then {aperture}
+          if apert<>0 then {aperture<>auto}
           begin
             analyse_fits(img_loaded,30,false {report}, hfd_counter,backgr,hfd_med); {find background, number of stars, median HFD}
             if hfd_med<>0 then
@@ -6207,11 +6209,14 @@ begin
             end
             else flux_aperture:=99;{radius for measuring aperture}
           end
-          else
-          flux_aperture:=99;{radius for measuring using a small aperture}
+          else{auto}
+          begin
+            flux_aperture:=99;{radius for measuring using a small aperture}
+            annulus_radius:=14;{annulus radius}
+          end;
 
           {calibrate using POINT SOURCE calibration using hfd_med found earlier!!!}
-          plot_and_measure_stars(true {calibration},false {plot stars}); {get flux_magn_offset}
+          plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude}); {get flux_magn_offset}
 
           if flux_magn_offset<>0 then
           begin

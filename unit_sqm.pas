@@ -69,7 +69,7 @@ var
 
 
 
-function calculate_sqm(get_bk,get_his : boolean) : boolean; {calculate sqky background value}
+function calculate_sqm(get_bk,get_his : boolean) : boolean; {calculate sky background value}
 var
   airm, correction,alt : double;
 begin
@@ -77,7 +77,7 @@ begin
   begin
     annulus_radius:=14;{calibrate for extended objects using full star flux}
     flux_aperture:=99;{calibrate for extended objects}
-    plot_and_measure_stars(true {calibration},false {plot stars});
+    plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude});
   end;
   result:=false;
   if flux_magn_offset>0 then
