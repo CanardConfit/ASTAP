@@ -539,7 +539,7 @@ var
   stretch_c : array[0..32768] of single;{stretch curve}
   stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
   set_temperature : integer;
-  star_level,sd_bg  : double;
+  star_level,sd_bg, magn_limit  : double;
   object_name, filter_name,calstat,imagetype ,sitelat, sitelong,centalt,centaz: string;
   exposure,focus_temp,cblack,cwhite,gain,sqmfloat   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
@@ -3091,7 +3091,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.564, '+about_message4+', dated 2021-7-29';
+  #13+#10+'ASTAP version ß0.9.564a, '+about_message4+', dated 2021-7-29';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -10307,7 +10307,7 @@ end;
 
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
- size, i, starX, starY,lim_magn,fontsize,text_height     : integer;
+ size, i, starX, starY,lim_magn,fontsize,text_height,text_width     : integer;
  Save_Cursor:TCursor;
  Fliphorizontal, Flipvertical  : boolean;
  stars  : star_list;
@@ -10360,11 +10360,23 @@ begin
       mainwindow.image1.Canvas.moveto(starX-2*size,starY);
       mainwindow.image1.Canvas.lineto(starX-size,starY);
 
+      lim_magn:=round((flux_magn_offset-ln(stars[3,i]{flux})*2.511886432/ln(10))*10);
       image1.Canvas.textout(starX,starY-text_height,inttostr(lim_magn) );{add magnitude as text}
     end;
+
+
   end
   else
   memo2_message('No stars found!');
+
+
+  text_width:=8*mainwindow.image1.Canvas.textwidth('1234567890');{Calculate textwidth for 80 characters. This also works for 4k with "make everything bigger"}
+  fontsize:=trunc(fontsize*(width2-2*fontsize)/text_width);{use full width}
+  image1.Canvas.font.size:=fontsize;
+  image1.Canvas.font.color:=clwhite;
+  text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
+  image1.Canvas.textout(round(fontsize*2),height2-text_height,'10σ limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1));{magn_limit global variable calculate in plot_and_measure_stars}
+
 
   Screen.Cursor:= Save_Cursor;
 end;
@@ -10486,10 +10498,10 @@ begin
 
 
     plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude});
-    if flux_magn_offset>0 then
-    begin
-      mainwindow.caption:='Photometry calibration successful';
-    end;
+//    if flux_magn_offset>0 then
+//    begin
+//      mainwindow.caption:='Photometry calibration successful';
+//    end;
   end;
 end;
 
