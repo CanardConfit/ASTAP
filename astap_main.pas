@@ -10021,7 +10021,7 @@ begin
 
   get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
-  if deep then detection_level:=noise_level[0] else detection_level:=star_level;
+  if deep then detection_level:=5*noise_level[0] else detection_level:=star_level;
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
   nrstars:=0;{set counters at zero}

@@ -1787,7 +1787,7 @@ begin
                            flux≈snr*(hfd*0.8)*sqrt(pi)*sd   assuming star diameter is 2*hfd, so radius is hfd
                            flux≈snr*sqrt(pi)*sd*hfd*0.8  }
           flux_snr_10:=10*sqrt(pi)*Smedian(hfd_x_sd,counter_flux_measured {length})*0.8{fiddle factor} ;{Assuming minimum SNR is 10 and the aperture is reduced to about hfd for the faintest stars.}
-          memo2_message('Limiting magnitude(SNR>10) point sources about: '+floattostrf(flux_magn_offset-ln(flux_snr_10)*2.511886432/ln(10),ffgeneral,3,1));
+          //memo2_message('Limiting magnitude(SNR>10) point sources about: '+floattostrf(flux_magn_offset-ln(flux_snr_10)*2.511886432/ln(10),ffgeneral,3,1));
         end;
 
 
