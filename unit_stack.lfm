@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 9908
+    Left = 9971
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -2599,7 +2599,7 @@ object stackmenu1: Tstackmenu1
                 TabOrder = 3
               end
               object downsample_for_solving1: TComboBox
-                Left = 264
+                Left = 263
                 Height = 23
                 Hint = 'Binning of the image will be applied prior to plate solving. 0 is automatic selection. Use binning if image is large or very noisy.'
                 Top = 8
@@ -3559,14 +3559,15 @@ object stackmenu1: Tstackmenu1
       object flux_aperture1: TComboBox
         Left = 648
         Height = 23
-        Hint = 'Flux measuring aperture [x HFD ].  Typical range 1 to max. With max all star flux is measured. Can be adjusted to find the lowest standard deviation in the results (check star). Typical value 1.4'
+        Hint = 'Flux measuring aperture [x HFD ].  Typical range 1 to max. With max all star flux is measured. Can be adjusted to find the lowest standard deviation in the results (check star). Typical values 1.5 or 2.0'
         Top = 6
         Width = 80
         DropDownCount = 10
         ItemHeight = 15
+        ItemIndex = 8
         Items.Strings = (
           'max'
-          '1.2'
+          '1.0'
           '1.5'
           '2.0'
           '2.2'
@@ -3578,8 +3579,10 @@ object stackmenu1: Tstackmenu1
         )
         OnChange = flux_aperture1change
         ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 13
-        Text = '1.4'
+        Text = '3.0'
       end
       object Label26: TLabel
         Left = 589
@@ -3604,12 +3607,12 @@ object stackmenu1: Tstackmenu1
       object annulus_radius1: TComboBox
         Left = 800
         Height = 23
-        Hint = 'Annulus inner diameter [ x HFD]. For a too small diameter the detection could fail.'
+        Hint = 'Annulus inner diameter [ x HFD]. The annulus diameter has to be larger then  the aperture diameter.'
         Top = 6
         Width = 72
         DropDownCount = 17
         ItemHeight = 15
-        ItemIndex = 1
+        ItemIndex = 2
         Items.Strings = (
           '4'
           '5'
@@ -3622,7 +3625,7 @@ object stackmenu1: Tstackmenu1
         OnChange = flux_aperture1change
         ParentFont = False
         TabOrder = 15
-        Text = '5'
+        Text = '6'
       end
       object Label27: TLabel
         Left = 744

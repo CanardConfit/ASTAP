@@ -3091,7 +3091,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.564a, '+about_message4+', dated 2021-7-29';
+  #13+#10+'ASTAP version ß0.9.565, '+about_message4+', dated 2021-7-31';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -10363,8 +10363,6 @@ begin
       lim_magn:=round((flux_magn_offset-ln(stars[3,i]{flux})*2.511886432/ln(10))*10);
       image1.Canvas.textout(starX,starY-text_height,inttostr(lim_magn) );{add magnitude as text}
     end;
-
-
   end
   else
   memo2_message('No stars found!');
@@ -10375,7 +10373,7 @@ begin
   image1.Canvas.font.size:=fontsize;
   image1.Canvas.font.color:=clwhite;
   text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
-  image1.Canvas.textout(round(fontsize*2),height2-text_height,'10σ limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1));{magn_limit global variable calculate in plot_and_measure_stars}
+  image1.Canvas.textout(round(fontsize*2),height2-text_height,'⌀'+stackmenu1.flux_aperture1.text+', 10σ limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1));{magn_limit global variable calculate in plot_and_measure_stars}
 
 
   Screen.Cursor:= Save_Cursor;
@@ -10475,7 +10473,7 @@ var
 begin
   if ((fits_file=false) or (cd1_1=0)) then exit;
 
-  apert:=strtofloat2(stackmenu1.flux_aperture1.text);
+  apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
   if ((flux_magn_offset=0) or (aperture_ratio<>apert){new calibration required})  then
   begin
     annulus_radius:=14;{calibrate for extended objects}
@@ -10496,12 +10494,7 @@ begin
     else
     memo2_message('To increase the accuracy of point sources magnitudes set a smaller aperture diameter in tab "photometry".');
 
-
     plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude});
-//    if flux_magn_offset>0 then
-//    begin
-//      mainwindow.caption:='Photometry calibration successful';
-//    end;
   end;
 end;
 
@@ -13755,7 +13748,7 @@ begin
   {==========Notes on HFD calculation method=================
     Documented the HFD definition also in https://en.wikipedia.org/wiki/Half_flux_diameter
     References:
-    http://www005.upp.so-net.ne.jp/k_miyash/occ02/halffluxdiameter/halffluxdiameter_en.html       by Kazuhisa Miyashita. No sub-pixel calculation
+    https://astro-limovie.info/occultation_observation/halffluxdiameter/halffluxdiameter_en.html       by Kazuhisa Miyashita. No sub-pixel calculation
     https://www.lost-infinity.com/night-sky-image-processing-part-6-measuring-the-half-flux-diameter-hfd-of-a-star-a-simple-c-implementation/
     http://www.ccdware.com/Files/ITS%20Paper.pdf     See page 10, HFD Measurement Algorithm
 

@@ -4037,7 +4037,6 @@ end;
 
 procedure Tstackmenu1.flux_aperture1change(Sender: TObject);
 begin
-//  esc_pressed:=true; {need to remake img_backup contents for star supression}
   annulus_radius1.enabled:=flux_aperture1.itemindex<>0;{disable annulus_radius1 if mode max flux}
 
   {recalibrate}
@@ -9110,7 +9109,7 @@ begin
     use_astrometry_internal1.checked:=true;
     memo2_message('Switched to INTERNAL ASTROMETRIC alignment. Set in tab aligment the mosaic width and height high enough to have enough work space.');
   end;
-  if mosa then memo2_message('Astrometric image stitching mode. This will stich astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the "Crop each image function". For flat background apply artificial flat in tab pixel math1 in advance if required.');
+  if mosa then memo2_message('Astrometric image stitching mode. This will stitch astrometric tiles. Prior to this stack the images to tiles and check for clean edges. If not use the "Crop each image function". For flat background apply artificial flat in tab pixel math1 in advance if required.');
 
   classify_object1.enabled:=(mosa=false); {in mosaic mode ignore object name}
   oversize1.enabled:=(mosa=false); {in mosaic mode ignore this oversize setting}
