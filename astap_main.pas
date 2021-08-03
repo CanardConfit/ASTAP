@@ -3091,7 +3091,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.565, '+about_message4+', dated 2021-7-31';
+  #13+#10+'ASTAP version ß0.9.565a, '+about_message4+', dated 2021-8-3';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -9068,8 +9068,16 @@ begin
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
     backup_img; {move viewer data to img_backup}
-    if sender=bin_2x2menu1 then bin_X2X3X4(2)
-                           else bin_X2X3X4(3);
+    if sender=bin_2x2menu1 then
+    begin
+      bin_X2X3X4(2);
+      filename2:=ChangeFileExt(Filename2,'_bin2x2.fit');
+    end
+    else
+    begin
+      bin_X2X3X4(3);
+      filename2:=ChangeFileExt(Filename2,'_bin3x3.fit');
+    end;
 
     plot_fits(mainwindow.image1,true,true);{plot real}
     Screen.Cursor:=Save_Cursor;
@@ -10488,7 +10496,7 @@ begin
         memo2_message('Median HFD is '+floattostrf(hfd_med, ffgeneral, 2,2)+'. Aperture and annulus will be adapted accordingly.');;
         flux_aperture:=hfd_med*apert/2;{radius}
         annul:=strtofloat2(stackmenu1.annulus_radius1.text);
-        annulus_radius:=round(hfd_med*annul/2);{radius}
+        annulus_radius:=min(50,round(hfd_med*annul/2)-1);{Radius. Limit to 50 to prevent runtime errors}
       end;
     end
     else
@@ -13551,7 +13559,7 @@ end;
 {Procedure uses two global accessible variables:  r_aperture and sd_bg }
 procedure HFD(img: image_array;x1,y1,rs {annulus diameter}: integer;aperture_small:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);
 const
-  max_ri=50; //should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1;
+  max_ri=74; //(50*sqrt(2)+1 assuming rs<=50. Should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1+2;
 
 var
   i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter,annulus_width :integer;
@@ -13559,7 +13567,7 @@ var
   val,bg,pixel_counter,valmax,mad_bg : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
-  background : array [0..1000] of double;
+  background : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
 
     function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
     var
@@ -13580,6 +13588,7 @@ var
       end;
     end;
 begin
+  {rs should be <=50 to prevent runtime errors}
   if  aperture_small<99 then
     annulus_width:=3 {high precession}
   else
@@ -13606,6 +13615,7 @@ begin
       if ((distance>r1_square) and (distance<=r2_square)) then {annulus, circular area outside rs, typical one pixel wide}
       begin
         background[counter]:=img[0,x1+i,y1+j];
+        //for testing: mainwindow.image1.canvas.pixels[x1+i,y1+j]:=$AAAAAA;
         inc(counter);
       end;
     end;

@@ -1532,31 +1532,32 @@ begin
 end;
 
 
-function get_best_mean(list: array of double; leng : integer) :double;{Remove outliers from polulation using MAD. }
+procedure get_best_mean(list: array of double; leng : integer; out mean,cv : double);{Remove outliers from polulation using MAD. }
 var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
   i,count         : integer;
   median, mad     : double;
 
 begin
  mad_median(list,leng,mad,median);{{calculate mad and median without modifying the data}
+ if median>0 then cv:=mad*1.4826/median else cv:=0;  {Coefficient of variation,  defined as the ratio of the standard deviation to the mean}
 
  count:=0;
- result:=0;
+ mean:=0;
 
  for i:=0 to leng-1 do
-   if abs(list[i]-median)<1.50*1.4826*mad then {offset less the 2.5*sigma.}
+   if abs(list[i]-median)<1.50*1.4826*mad then {offset less the 1.5*sigma.}
    begin
-     result:=result+list[i];{Calculate mean. This gives a little less noise then calculating median again. Note weighted mean gives poorer result and is not applied.}
+     mean:=mean+list[i];{Calculate mean. This gives a little less noise then calculating median again. Note weighted mean gives poorer result and is not applied.}
      inc(count);
    end;
- if count>0 then  result:=result/count;  {mean without using outliers}
+ if count>0 then  mean:=mean/count;  {mean without using outliers}
 end;
 
 
 procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
-  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
+  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,cv,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_10,apert : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2                                : integer;
   flip_horizontal, flip_vertical,sip    : boolean;
@@ -1764,20 +1765,22 @@ begin
 
     if flux_calibration then {flux calibration}
     begin
-      if counter_flux_measured>0 then {use all stars}
+      if counter_flux_measured>=3 then {at least three stars}
       begin
-        flux_magn_offset:=get_best_mean(mag_offset_array,counter_flux_measured {length});
+        get_best_mean(mag_offset_array,counter_flux_measured {length},flux_magn_offset,cv );
 
         if flux_aperture=99 then
 
           memo2_message('Photometry calibration for EXTENDED OBJECTS successful. '+inttostr(counter_flux_measured)+
                         ' Gaia stars used for flux calibration.  Flux aperture diameter: measured star diameter.'+
-                        ' Annulus inner diameter: '+inttostr(1+(annulus_radius+2)*2){background is measured 2 pixels outside rs}+' pixels. Stars with a pixel value '+inttostr(round(datamax_org))+' or higher are ignored.')
+                        ' Coefficient of variation: '+floattostrF(cv*100,ffgeneral,2,1)+
+                        '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with a pixel value '+inttostr(round(datamax_org))+' or higher are ignored.')
 
         else
           memo2_message('Photometry calibration for POINT SOURCES successful. '+inttostr(counter_flux_measured)+
                         ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(flux_aperture*2, ffgeneral, 2,2)+' pixels.'+
-                        ' Annulus inner diameter: '+inttostr(1+(annulus_radius+2)*2){background is measured 2 pixels outside rs}+' pixels. Stars with a pixel value '+inttostr(round(datamax_org))+' or higher are ignored.');
+                        ' Coefficient of variation: '+floattostrF(cv*100,ffgeneral,2,1)+
+                        '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with a pixel value '+inttostr(round(datamax_org))+' or higher are ignored.');
 
         if report_lim_magn then
         begin
@@ -1799,7 +1802,13 @@ begin
 
 
       end
-      else  flux_magn_offset:=0;
+      else
+      begin
+        flux_magn_offset:=0;
+        mess:='Calibration failure!';
+        mainwindow.caption:=mess;
+        memo2_message(mess);
+      end;
 
       mag_offset_array:=nil;
       hfd_x_sd:=nil;

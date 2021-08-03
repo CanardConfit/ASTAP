@@ -6204,7 +6204,7 @@ begin
             if hfd_med<>0 then
             begin
               flux_aperture:=hfd_med*apert/2;{radius}
-              annulus_radius:=round(hfd_med*annul/2)-1;{radius   -rs ..0..+rs}
+              annulus_radius:=min(50,round(hfd_med*annul/2)-1);{radius   -rs ..0..+rs, Limit to 50 to prevent runtime errors}
             end
             else flux_aperture:=99;{radius for measuring aperture}
           end
