@@ -12304,7 +12304,12 @@ begin
           else
           begin
             memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
-            if solve_image(img_loaded,true {get hist}) then nrsolved:=nrsolved+1; {solve}
+            if solve_image(img_loaded,true {get hist}) then nrsolved:=nrsolved+1 {solve}
+                                                       else
+                                                       begin
+                                                         nrfailed:=nrfailed+1;
+                                                         failed:=failed+#13+#10+extractfilename(filename2);
+                                                       end;
           end;
 
           if cd1_1<>0 then {solved}
@@ -12337,8 +12342,8 @@ begin
     end;
     progress_indicator(-100,'');{progresss done}
     nrfailed:=OpenDialog1.Files.count-nrsolved-nrskipped;
-    if nrfailed<>0 then memo2_message(failed);
     if nrskipped<>0 then memo2_message(skipped);
+    if nrfailed<>0 then memo2_message(failed);
     memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(nrskipped)+' existing solutions, '+inttostr(nrfailed)+' no solution. Duration '+floattostr(round((GetTickCount64 - startTick)/100)/10)+ ' sec. For re-solve set in TAB alignment option "Ignore existing fits header solution".');
   end;
 end;
@@ -13586,7 +13591,7 @@ const
 var
   i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter,annulus_width :integer;
   SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
-  val,bg,pixel_counter,valmax,mad_bg : double;
+  val,bg,pixel_counter,valmax,mad_bg    : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
   background : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
@@ -13689,7 +13694,7 @@ begin
       {check on hot pixels}
       if signal_counter<=1  then
       exit; {one hot pixel}
-    until ((boxed) or (rs<=1)) ;{loop and reduce annulus radius until star is boxed}
+    until ((boxed) or (rs<=1)) ;{loop and reduce aperture radius until star is boxed}
 
     inc(rs,2);{add some space}
 
