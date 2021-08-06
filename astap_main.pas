@@ -12302,11 +12302,9 @@ begin
             skipped:=skipped+#13+#10+extractfilename(filename2);
           end
           else
-          if cd1_1=0 then
           begin
             memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
-            if solve_image(img_loaded,true {get hist}) then nrsolved:=nrsolved+1 {solve}
-                                                       else
+            if solve_image(img_loaded,true {get hist}) then nrsolved:=nrsolved+1; {solve}
           end;
 
           if cd1_1<>0 then {solved}
