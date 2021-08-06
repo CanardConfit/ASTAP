@@ -394,6 +394,9 @@ begin
     bmp.Canvas.Pen.Color := clGreen;
     bmp.Canvas.brush.color :=clGreen;
     plot_point(textp2,len*3,0);
+
+    if jd_max=jd_min then jd_min:=jd_min-1; {prevent run time errors for one image where jd_max-jd_min}
+
     for c:=0 to length(data[0])-1 do
     begin
       plot_point( bspace+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[2,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {chk}
@@ -402,7 +405,6 @@ begin
     bmp.Canvas.Pen.Color := clBlue;
     bmp.Canvas.brush.color :=clBlue;
     plot_point(textp3,len*3,0);
-
     for c:=0 to length(data[0])-1 do
     begin
       plot_point( bspace+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[3,c]-magn_min)/(magn_max-magn_min)   ),0); {3}

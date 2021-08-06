@@ -1558,7 +1558,7 @@ procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: b
 var
   fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,cv,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_10,apert : double;
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2                                : integer;
   flip_horizontal, flip_vertical,sip    : boolean;
   mag_offset_array,hfd_x_sd             : array of double;
@@ -1790,12 +1790,16 @@ begin
                            flux≈snr*r*sqrt(pi)*sd
                            flux≈snr*(hfd*0.8)*sqrt(pi)*sd   assuming star diameter is 2*hfd, so radius is hfd
                            flux≈snr*sqrt(pi)*sd*hfd*0.8  }
-          flux_snr_10:=10*sqrt(pi)*Smedian(hfd_x_sd,counter_flux_measured {length})*0.8{fiddle factor} ;{Assuming minimum SNR is 10 and the aperture is reduced to about hfd for the faintest stars.}
+          flux_snr_7:=7*sqrt(pi)*Smedian(hfd_x_sd,counter_flux_measured {length}){*0.8{fiddle factor} ;{Assuming minimum SNR is 10 and the aperture is reduced to about hfd for the faintest stars.}
           apert:=strtofloat2(stackmenu1.flux_aperture1.text);{aperture diamater expressed in HFD's. If aperture diameter is HFD, half of the star flux is lost}
-          if apert=0 then apert:=10; {aperture us zero if is set at max text}
-          flux_snr_10:=flux_snr_10*(1-EXP(-0.5*sqr(apert*2.3548/2 {sigma}))); {Correction for reduced aparture.}
-          magn_limit:=flux_magn_offset-ln(flux_snr_10)*2.511886432/ln(10); {global variable}
-          mess:='⌀'+stackmenu1.flux_aperture1.text+', 10σ limiting magnitude about: '+floattostrF(magn_limit,ffgeneral,3,1);
+          if apert=0 then apert:=10; {aperture is zero if is set at max text. Set very high}
+
+          //encircled flux =1-EXP(-0.5*(radial_distance/sigma)^2)
+          //encircled flux =1-EXP(-0.5*((apert*HFD/2)/(HFD/2.3548))^2)
+          //encircled flux =1-EXP(-0.5*(apert*2.3548/2))^2)
+          flux_snr_7:=flux_snr_7*(1-EXP(-0.5*sqr(apert*2.3548/2 {sigma}))); {Correction for reduced aparture.}
+          magn_limit:=flux_magn_offset-ln(flux_snr_7)*2.511886432/ln(10); {global variable}
+          mess:='⌀'+stackmenu1.flux_aperture1.text+', 7σ limiting magnitude about: '+floattostrF(magn_limit,ffgeneral,3,1);
           memo2_message(mess);
           mainwindow.caption:='Photometry calibration successful. '+mess;
         end;
@@ -1907,12 +1911,8 @@ begin
     telescope_ra:=ra0+arctan(Dra/delta);
     telescope_dec:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
 
-    //linepos:=2;{Set pointer to the beginning. First two lines are comments}
-
-
     mainwindow.image1.Canvas.Pen.width :=1; // round(1+height2/mainwindow.image1.height);{thickness lines}
     mainwindow.image1.canvas.pen.color:=$00B0FF ;{orange}
-
 
     star_total_counter:=0;{total counter}
 

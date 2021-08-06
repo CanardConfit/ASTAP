@@ -1142,10 +1142,21 @@ object mainwindow: Tmainwindow
           Hint = 'Find a astrometric solution for selected files and add to the FITS file header. Add also the measured SQM value.'
           OnClick = batch_add_solution1Click
         end
+        object solve_and_add_lim_magn1: TMenuItem
+          Caption = 'Batch solve images and add Limiting Magnitude'
+          Hint = 'Limiting mangitude is added with keyword LIM_MAGN. This keyword can be specified in tab lights for further analysis.'
+          OnClick = batch_add_solution1Click
+        end
+        object MenuItem29: TMenuItem
+          Caption = '-'
+        end
         object batch_solve_astrometry_net: TMenuItem
           Caption = 'Batch solve images using local astrometry.net'
           Hint = 'Solve the image using a local vesion of astrometry.net'
           OnClick = batch_solve_astrometry_netClick
+        end
+        object MenuItem28: TMenuItem
+          Caption = '-'
         end
         object convert_to_fits1: TMenuItem
           Caption = 'Batch convert to FITS'
@@ -1186,6 +1197,7 @@ object mainwindow: Tmainwindow
           Caption = 'Raw colour separation'
           Hint = 'This will extract the colours from a raw DSLR/OCS image write them to separate files.'
           ImageIndex = 14
+          OnClick = split_osc1Click
           object extractgreen1: TMenuItem
             Caption = 'Extract raw GREEN pixels and combine'
             Hint = 'Will combine for each bayer submosaic the two green pixels. Check in advance the de-mosaic pattern in stack menu, tab stack method'

@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 306
+  Left = 99
   Height = 749
-  Top = 185
+  Top = 179
   Width = 1785
   HorzScrollBar.Page = 1785
   VertScrollBar.Page = 556
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 10028
+    Left = 10148
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -410,7 +410,6 @@ object stackmenu1: Tstackmenu1
             Width = 40
           end        
           item
-            Alignment = taRightJustify
             AutoSize = True
             Caption = 'Date/time'
             MinWidth = 120

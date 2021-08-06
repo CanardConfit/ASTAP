@@ -110,7 +110,10 @@ type
     MenuItem27: TMenuItem;
     bin_2x2menu1: TMenuItem;
     bin_3x3menu1: TMenuItem;
+    MenuItem28: TMenuItem;
+    MenuItem29: TMenuItem;
     MenuItem30: TMenuItem;
+    solve_and_add_lim_magn1: TMenuItem;
     simbadquery1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
@@ -358,6 +361,7 @@ type
     procedure positionanddate1Click(Sender: TObject);
     procedure removegreenpurple1Click(Sender: TObject);
     procedure sip1Click(Sender: TObject);
+    procedure split_osc1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
     procedure mountposition1Click(Sender: TObject);
     procedure northeast1Click(Sender: TObject);
@@ -3091,7 +3095,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.565a, '+about_message4+', dated 2021-8-3';
+  #13+#10+'ASTAP version ß0.9.565b, '+about_message4+', dated 2021-8-6';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -9242,21 +9246,29 @@ begin
   Screen.Cursor := Save_cursor;    { Show hourglass cursor }
 end;
 
+procedure Tmainwindow.split_osc1Click(Sender: TObject);
+begin
+
+end;
+
 
 procedure Tmainwindow.extract_pixel_11Click(Sender: TObject);
 begin
   split_raw(1,1,'P11');{extract one of the Bayer matrix pixels}
 end;
 
+
 procedure Tmainwindow.extract_pixel_12Click(Sender: TObject);
 begin
   split_raw(1,2,'P12');{extract one of the Bayer matrix pixels}
 end;
 
+
 procedure Tmainwindow.extract_pixel_21Click(Sender: TObject);
 begin
   split_raw(2,1,'P21');{extract one of the Bayer matrix pixels}
 end;
+
 
 procedure Tmainwindow.extract_pixel_22Click(Sender: TObject);
 begin
@@ -10381,7 +10393,7 @@ begin
   image1.Canvas.font.size:=fontsize;
   image1.Canvas.font.color:=clwhite;
   text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
-  image1.Canvas.textout(round(fontsize*2),height2-text_height,'⌀'+stackmenu1.flux_aperture1.text+', 10σ limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1));{magn_limit global variable calculate in plot_and_measure_stars}
+  image1.Canvas.textout(round(fontsize*2),height2-text_height,'⌀'+stackmenu1.flux_aperture1.text+', 7σ limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1));{magn_limit global variable calculate in plot_and_measure_stars}
 
 
   Screen.Cursor:= Save_Cursor;
@@ -12237,8 +12249,8 @@ procedure Tmainwindow.batch_add_solution1Click(
 var
   Save_Cursor:TCursor;
   i,nrskipped, nrsolved,nrfailed : integer;
-  dobackup,add_sqm,add_sip : boolean;
-  failed,skipped           : string;
+  dobackup,add_sqm,add_sip,add_lim_magn : boolean;
+  failed,skipped                        : string;
   startTick  : qword;{for timing/speed purposes}
 begin
   OpenDialog1.Title := 'Select multiple  files to add plate solution';
@@ -12247,6 +12259,8 @@ begin
   esc_pressed:=false;
   add_sqm:=(sender=solve_and_add_sqm1);
   add_sip:=(sender=batch_add_sip1);
+  add_lim_magn:=(sender=solve_and_add_lim_magn1);
+
 
   if add_sqm then
   begin
@@ -12273,7 +12287,6 @@ begin
       for I := 0 to Count - 1 do
       begin
         filename2:=Strings[I];
-        memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
         progress_indicator(100*i/(count),' Solving');{show progress}
 
         Application.ProcessMessages;
@@ -12285,23 +12298,34 @@ begin
           if ((cd1_1<>0) and (stackmenu1.ignore_header_solution1.checked=false)) then
           begin
             nrskipped:=nrskipped+1; {plate solved}
-            memo2_message('Skipped: '+filename2+ '  Already solution in header. Select ignore  in tab alignment to redo.');
+            memo2_message('Skipped: '+filename2+ '  Already a solution in header. Select ignore  in tab alignment to redo.');
             skipped:=skipped+#13+#10+extractfilename(filename2);
           end
           else
-          if solve_image(img_loaded,true {get hist}) then {match between loaded image and star database}
+          if cd1_1=0 then
+          begin
+            memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
+            if solve_image(img_loaded,true {get hist}) then nrsolved:=nrsolved+1 {solve}
+                                                       else
+          end;
+
+          if cd1_1<>0 then {solved}
           begin
             if ((add_sqm) and (calculate_sqm(false {get backgr},false{get histogr}))) then
                 update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqmfloat);
             if add_sip then
                mainwindow.sip1Click(nil);{add sip coefficients}
+            if add_lim_magn then
+            begin
+              mainwindow.calibrate_photometry1Click(nil);{calibrate}
+              update_float('LIM_MAGN=',' / estimated limiting magnitude for point sources' ,magn_limit);
+            end;
 
             if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
-            nrsolved:=nrsolved+1;
           end
           else
           begin
-            memo2_message('Solve failure: '+filename2);
+            memo2_message('No solution: '+filename2);
             failed:=failed+#13+#10+extractfilename(filename2);
           end;
         end;
@@ -12317,7 +12341,7 @@ begin
     nrfailed:=OpenDialog1.Files.count-nrsolved-nrskipped;
     if nrfailed<>0 then memo2_message(failed);
     if nrskipped<>0 then memo2_message(skipped);
-    memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(nrfailed)+' solve failures, '+inttostr(nrskipped)+' images skipped. Duration '+floattostr(round((GetTickCount64 - startTick)/100)/10)+ ' sec. For re-solve set in TAB alignment option "Ignore existing fits header solution".');
+    memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(nrskipped)+' existing solutions, '+inttostr(nrfailed)+' no solution. Duration '+floattostr(round((GetTickCount64 - startTick)/100)/10)+ ' sec. For re-solve set in TAB alignment option "Ignore existing fits header solution".');
   end;
 end;
 
