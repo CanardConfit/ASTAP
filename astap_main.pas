@@ -117,6 +117,7 @@ type
     batch_overwrite1: TMenuItem;
     convert_to_ppm1: TMenuItem;
     MenuItem31: TMenuItem;
+    MenuItem32: TMenuItem;
     simbadquery1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
@@ -3098,7 +3099,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.566, '+about_message4+', dated 2021-8-7';
+  #13+#10+'ASTAP version ß0.9.566a, '+about_message4+', dated 2021-8-7';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3755,52 +3756,63 @@ begin
   {http://www.rochesterastronomy.org/supernova.html#2020ue
   R.A. = 00h52m33s.814, Decl. = +80°39'37".93 }
 
-  data0:=StringReplace(data0,'s.','.',[]); {for 00h52m33s.814}
+  data0:=uppercase(data0);
+
+  data0:=StringReplace(data0,'S.','.',[]); {for 00h52m33s.814}
   data0:=StringReplace(data0,'".','.',[]); {for +80°39'37".93}
   data0:=StringReplace(data0,'R.A.','',[]); {remove dots from ra}
-  data0:=StringReplace(data0,'Decl.','',[]);{remove dots from decl}
-  data1:='';
+  data0:=StringReplace(data0,'DECL.','',[]);{remove dots from decl}
 
-  for I := 1 to length(data0) do
+  if pos('C',data0)>0 then {place marker in middle}
   begin
-    if (((ord(data0[i])>=48) and (ord(data0[i])<=57)) or (data0[i]='.') or   (data0[i]='-')) then   data1:=data1+data0[i] else data1:=data1+' ';{replace all char by space except for numbers and dot}
-  end;
-  repeat  {remove all double spaces}
-    i:=pos('  ',data1);
-    if i>0 then delete(data1,i,1);
-  until i=0;;
-
-  while ((length(data1)>=1) and (data1[1]=' ')) do {remove spaces in the front for pos1 detectie}
-                                     delete(data1,1,1);
-  while ((length(data1)>=1) and (data1[length(data1)]=' ')) do {remove spaces in the end since VAL( can't cope with them}
-                                     delete(data1,length(data1),1);
-  pos1:=pos(' ',data1);  if pos1=0 then exit;
-  pos2:=posEX(' ',data1,pos1+1); if pos2=0 then pos2:=length(data1)+1;
-  pos3:=posEX(' ',data1,pos2+1); if pos3=0 then pos3:=length(data1)+1;
-  pos4:=posEX(' ',data1,pos3+1); if pos4=0 then pos4:=length(data1)+1;
-  pos5:=posEX(' ',data1,pos4+1); if pos5=0 then pos5:=length(data1)+1;
-  pos6:=posEX(' ',data1,pos5+1); if pos6=0 then pos6:=length(data1)+1;
-
-  if pos5<>pos6  then {6 string position}
-  begin
-    ra_text:=copy(data1,1, pos3);
-    dec_text:=copy(data1,pos3+1,99);
+    sensor_coordinates_to_celestial(width2/2,height2/2,ra_new,dec_new);{calculate the center position also for solutions with the reference pixel somewhere else}
+    error1:=false;
+    error2:=false;
   end
   else
-  if pos3<>pos4  then {4 string position}
-  begin {4 string position}
-    ra_text:=copy(data1,1, pos2);
-    dec_text:=copy(data1,pos2+1,99);
-  end
-  else
-  begin {2 string position}
-    ra_text:=copy(data1,1, pos1);
-    dec_text:=copy(data1,pos1+1,99);
+  begin
+    data1:='';
+
+    for I := 1 to length(data0) do
+    begin
+      if (((ord(data0[i])>=48) and (ord(data0[i])<=57)) or (data0[i]='.') or   (data0[i]='-')) then   data1:=data1+data0[i] else data1:=data1+' ';{replace all char by space except for numbers and dot}
+    end;
+    repeat  {remove all double spaces}
+      i:=pos('  ',data1);
+      if i>0 then delete(data1,i,1);
+    until i=0;;
+
+    while ((length(data1)>=1) and (data1[1]=' ')) do {remove spaces in the front for pos1 detectie}
+                                       delete(data1,1,1);
+    while ((length(data1)>=1) and (data1[length(data1)]=' ')) do {remove spaces in the end since VAL( can't cope with them}
+                                       delete(data1,length(data1),1);
+    pos1:=pos(' ',data1);  if pos1=0 then exit;
+    pos2:=posEX(' ',data1,pos1+1); if pos2=0 then pos2:=length(data1)+1;
+    pos3:=posEX(' ',data1,pos2+1); if pos3=0 then pos3:=length(data1)+1;
+    pos4:=posEX(' ',data1,pos3+1); if pos4=0 then pos4:=length(data1)+1;
+    pos5:=posEX(' ',data1,pos4+1); if pos5=0 then pos5:=length(data1)+1;
+    pos6:=posEX(' ',data1,pos5+1); if pos6=0 then pos6:=length(data1)+1;
+
+    if pos5<>pos6  then {6 string position}
+    begin
+      ra_text:=copy(data1,1, pos3);
+      dec_text:=copy(data1,pos3+1,99);
+    end
+    else
+    if pos3<>pos4  then {4 string position}
+    begin {4 string position}
+      ra_text:=copy(data1,1, pos2);
+      dec_text:=copy(data1,pos2+1,99);
+    end
+    else
+    begin {2 string position}
+      ra_text:=copy(data1,1, pos1);
+      dec_text:=copy(data1,pos1+1,99);
+    end;
+
+    ra_text_to_radians ( ra_text ,ra_new,error1); {convert ra text to ra0 in radians}
+    dec_text_to_radians( dec_text ,dec_new,error2); {convert dec text to dec0 in radians}
   end;
-
-  ra_text_to_radians ( ra_text ,ra_new,error1); {convert ra text to ra0 in radians}
-  dec_text_to_radians( dec_text ,dec_new,error2); {convert dec text to dec0 in radians}
-
 
   if ((error1=false) and (error2=false)) then
   begin
@@ -10548,7 +10560,7 @@ procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
 begin
   if add_marker_position1.checked then
   begin
-    marker_position:=InputBox('Enter α, δ position in one of the following formats: ','23 00 00.0 +89 00 00.0    or  23 00 +89 00  or  23.0000 +89.000',marker_position );
+    marker_position:=InputBox('Enter α, δ position in one of the following formats: ','23 00 00.0 +89 00 00.0    or  23 00 +89 00  or  23.0000 +89.000 or C for center',marker_position );
     if marker_position='' then begin add_marker_position1.checked:=false; exit; end;
 
     mainwindow.shape_marker3.visible:=true;
