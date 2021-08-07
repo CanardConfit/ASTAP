@@ -42,6 +42,15 @@ type
     add_substract1: TComboBox;
     add_time1: TCheckBox;
     apply_normalise_filter1: TCheckBox;
+    browse1: TBitBtn;
+    browse_blink1: TBitBtn;
+    browse_mount1: TBitBtn;
+    browse_live_stacking1: TBitBtn;
+    browse_photometry1: TBitBtn;
+    browse_dark1: TBitBtn;
+    browse_bias1: TBitBtn;
+    browse_flats1: TBitBtn;
+    browse_inspector1: TBitBtn;
     menukeywordchange1: TMenuItem;
     MenuItem32: TMenuItem;
     keywordchangelast1: TMenuItem;
@@ -71,7 +80,6 @@ type
     analysephotometrymore1: TButton;
     blink_button_contB1: TButton;
     blink_unaligned_multi_step_backwards1: TButton;
-    browse_mount1: TButton;
     changekeyword9: TMenuItem;
     clear_mount_list1: TButton;
     keyword9: TMenuItem;
@@ -204,14 +212,6 @@ type
     blue_filter_add1: TEdit;
     blur_factor1: TComboBox;
     br1: TEdit;
-    browse1: TButton;
-    browse_bias1: TButton;
-    browse_blink1: TButton;
-    browse_darks1: TButton;
-    browse_flats1: TButton;
-    browse_inspector1: TButton;
-    browse_live_stacking1: TButton;
-    browse_photometry1: TButton;
     Button_free_resize_fits1: TButton;
     calibrate_prior_solving1: TCheckBox;
     refresh_astrometric_solutions1: TButton;
@@ -1814,7 +1814,7 @@ begin
 
                 if ((naxis3=1) and (Xbinning=1) and (bayerpat<>'')) then rawstr:=' raw' else rawstr:='';
                 ListView1.Items.item[c].subitems.Strings[L_type]:=copy(imagetype,1,5)+inttostr(nrbits)+rawstr;{type}
-                ListView1.Items.item[c].subitems.Strings[L_datetime]:=StringReplace(date_obs,'T',' ',[]);{date/time}
+                ListView1.Items.item[c].subitems.Strings[L_datetime]:=copy(StringReplace(date_obs,'T',' ',[]),1,23);{date/time up to ms}
                 ListView1.Items.item[c].subitems.Strings[L_position]:=prepare_ra5(ra0,': ')+', '+ prepare_dec4(dec0,'° ');{give internal position}
 
                 {is internal solution available?}
@@ -1912,7 +1912,7 @@ procedure Tstackmenu1.browse1Click(Sender: TObject);
 var
    i: integer;
 begin
-  OpenDialog1.Title := 'Select images to stack';
+  OpenDialog1.Title := 'Select lights to stack';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.filename:='';
   opendialog1.Filter := 'FITS files and DSLR RAW files |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
@@ -2215,7 +2215,7 @@ procedure Tstackmenu1.browse_bias1Click(Sender: TObject);
 var
    i: integer;
 begin
-  OpenDialog1.Title := 'Select flat dark images';
+  OpenDialog1.Title := 'Select flat dark (bias) images';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.filename:='';
   opendialog1.Filter := 'FITS files and DSLR RAW files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
@@ -4461,7 +4461,7 @@ procedure Tstackmenu1.browse_live_stacking1Click(Sender: TObject);
 var
   live_stack_directory : string;
 begin
-  if SelectDirectory('Select directory with files to stack live', live_stacking_path1.caption , live_stack_directory) then
+  if SelectDirectory('Select directory containing the files to stack live', live_stacking_path1.caption , live_stack_directory) then
   begin
     live_stacking_path1.caption:=live_stack_directory;{show path}
   end;

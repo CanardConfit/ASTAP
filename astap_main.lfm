@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 397
+  Left = 542
   Height = 658
   Hint = ' '
-  Top = 350
+  Top = 190
   Width = 1272
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -1131,21 +1131,22 @@ object mainwindow: Tmainwindow
           ShortCut = 32848
           OnClick = batch_add_solution1Click
         end
-        object batch_add_sip1: TMenuItem
-          Caption = 'Batch solve images and add SIP'
-          Hint = 'Find an astrometric (plate) solution for selected files and add to the FITS file header. Additional add SIP coefficients for maximum accuracy.'
-          ShortCut = 49232
-          OnClick = batch_add_solution1Click
+        object batch_overwrite1: TMenuItem
+          AutoCheck = True
+          Caption = '          ☑ option "overwrite existing solutions'
+          Hint = 'Overwrite existing astrometric solutions'
         end
-        object solve_and_add_sqm1: TMenuItem
-          Caption = 'Batch solve images and add SQM value'
-          Hint = 'Find a astrometric solution for selected files and add to the FITS file header. Add also the measured SQM value.'
-          OnClick = batch_add_solution1Click
+        object add_limiting_magn_check1: TMenuItem
+          AutoCheck = True
+          Caption = '          ☑ option "Add limiting magnitude"'
+          Hint = 'Add estimated limiting magnitude to the file header. The keyword LIM_MAGN can be configured in tab lights.'
+          ShowAlwaysCheckable = True
         end
-        object solve_and_add_lim_magn1: TMenuItem
-          Caption = 'Batch solve images and add Limiting Magnitude'
-          Hint = 'Limiting mangitude is added with keyword LIM_MAGN. This keyword can be specified in tab lights for further analysis.'
-          OnClick = batch_add_solution1Click
+        object add_sip_check1: TMenuItem
+          AutoCheck = True
+          Caption = '          ☑ option "Add SIP coefficients"       '
+          Hint = 'Add basic SIP coefficients for maximum readout accuracy.'
+          ShowAlwaysCheckable = True
         end
         object MenuItem29: TMenuItem
           Caption = '-'
@@ -1166,8 +1167,16 @@ object mainwindow: Tmainwindow
         end
         object save_to_tiff1: TMenuItem
           Caption = 'Batch convert to TIFF'
-          Hint = 'Convert the selected images to the TIFF format.'
+          Hint = 'Convert the selected images to the 16 bit or 32 bit TIFF format.'
           OnClick = save_to_tiff1Click
+        end
+        object convert_to_ppm1: TMenuItem
+          Caption = 'Batch convert to PBM/PFM'
+          Hint = 'Convert the selected images to the 16 bit PBM (Portable Bit Map) or 32 bit PFM (Portable Float Map) format.'
+          OnClick = convert_to_ppm1Click
+        end
+        object MenuItem31: TMenuItem
+          Caption = '-'
         end
         object bin2x2: TMenuItem
           Caption = 'Batch convert bin2x2'
@@ -1301,8 +1310,9 @@ object mainwindow: Tmainwindow
         end
         object bayer_image1: TMenuItem
           AutoCheck = True
-          Caption = 'Check mark this menu if the image is a raw Bayer image'
+          Caption = '          ☑  this menu if the image is a raw Bayer image'
           Hint = 'A normalise filter is applied. The raw OSC RGGB pixels are normalised to the same mean value. This is better option for raw OSC images.'
+          ShowAlwaysCheckable = True
           OnClick = bayer_image1Click
         end
         object MenuItem25: TMenuItem

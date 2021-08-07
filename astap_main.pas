@@ -99,7 +99,6 @@ type
     hfd_contour1: TMenuItem;
     Inspector_top_menu1: TMenuItem;
     inspector_hfd_values1: TMenuItem;
-    batch_add_sip1: TMenuItem;
     grid1: TMenuItem;
     ccdinspector10_1: TMenuItem;
     freetext1: TMenuItem;
@@ -113,7 +112,11 @@ type
     MenuItem28: TMenuItem;
     MenuItem29: TMenuItem;
     MenuItem30: TMenuItem;
-    solve_and_add_lim_magn1: TMenuItem;
+    add_sip_check1: TMenuItem;
+    add_limiting_magn_check1: TMenuItem;
+    batch_overwrite1: TMenuItem;
+    convert_to_ppm1: TMenuItem;
+    MenuItem31: TMenuItem;
     simbadquery1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
@@ -131,7 +134,6 @@ type
     Shape_alignment_marker2: TShape;
     Shape_alignment_marker3: TShape;
     shape_manual_alignment1: TShape;
-    solve_and_add_sqm1: TMenuItem;
     MenuItem25: TMenuItem;
     sqm1: TMenuItem;
     Rota_mainmenu1: TMenuItem;
@@ -323,6 +325,7 @@ type
     procedure batch_solve_astrometry_netClick(Sender: TObject);
     procedure bayer_image1Click(Sender: TObject);
     procedure calibrate_photometry1Click(Sender: TObject);
+    procedure convert_to_ppm1Click(Sender: TObject);
     procedure freetext1Click(Sender: TObject);
     procedure hfd_contour1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
@@ -2402,8 +2405,8 @@ begin
   opendialog1.Filter :=  'All formats |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;*.fz;'+
                                       '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                                       '*.axy;*.xyls'+
-                         '|8, 16, 32 and -32 bit FITS files (*.fit*,*.xisf)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.new;*.xisf;*.fz'+
-                         '|24 bits PNG, TIFF, JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
+                         '|FITS files (*.fit*,*.xisf)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.new;*.xisf;*.fz'+
+                         '|PNG, TIFF, JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
                          '|Preview FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   opendialog1.filename:=filename2;
   opendialog1.initialdir:=ExtractFileDir(filename2);
@@ -3095,7 +3098,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.565b, '+about_message4+', dated 2021-8-6';
+  #13+#10+'ASTAP version ß0.9.566, '+about_message4+', dated 2021-8-7';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -7486,6 +7489,10 @@ begin
 
 
       mainwindow.preview_demosaic1.Checked:=Sett.ReadBool('main','preview_demosaic',false);
+      mainwindow.batch_overwrite1.checked:=Sett.ReadBool('main','s_overwrite',false);
+      mainwindow.add_sip_check1.Checked:=Sett.ReadBool('main','add_sip',false);
+      mainwindow.add_limiting_magn_check1.Checked:=Sett.ReadBool('main','add_lim_magn',false);
+
 
 
       marker_position :=Sett.ReadString('main','marker_position','');{ra, dec marker}
@@ -7806,8 +7813,10 @@ begin
 
       sett.writeBool('main','add_marker',add_marker_position1.checked);
 
-
       sett.writeBool('main','preview_demosaic',mainwindow.preview_demosaic1.Checked);
+      sett.writeBool('main','s_overwrite',mainwindow.batch_overwrite1.checked);
+      sett.writeBool('main','add_sip',mainwindow.add_sip_check1.Checked);
+      sett.writeBool('main','add_lim_magn',mainwindow.add_limiting_magn_check1.Checked);
 
       sett.writestring('main','ra',ra1.text);
       sett.writestring('main','dec',dec1.text);
@@ -8537,7 +8546,7 @@ begin
   opendialog1.Filter :=  'All formats |*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;*.fz;'+
                                        '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
                          '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
-                         '|24 bits PNG, TIFF, JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
+                         '|PNG, TIFF, JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
                          '|Compressed FITS files|*.fz';
   opendialog1.initialdir:=ExtractFileDir(filename2);
   fits_file:=false;
@@ -8556,6 +8565,7 @@ begin
       with OpenDialog1.Files do
       for I := 0 to Count - 1 do
       begin
+        progress_indicator(100*i/(count),' Solving');{show progress}
         Application.ProcessMessages;
         if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
         filename2:=Strings[I];
@@ -8575,6 +8585,7 @@ begin
       finally
       if dobackup then restore_img;{for the viewer}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
+      progress_indicator(-100,'');{progresss done}
     end;
   end;
 end;
@@ -10518,6 +10529,7 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.freetext1Click(Sender: TObject);
 begin
   if freetext1.checked=false then  {clear screen}
@@ -12249,7 +12261,7 @@ procedure Tmainwindow.batch_add_solution1Click(
 var
   Save_Cursor:TCursor;
   i,nrskipped, nrsolved,nrfailed : integer;
-  dobackup,add_sqm,add_sip,add_lim_magn : boolean;
+  dobackup,add_sip,add_lim_magn,solution_overwrite : boolean;
   failed,skipped                        : string;
   startTick  : qword;{for timing/speed purposes}
 begin
@@ -12257,17 +12269,9 @@ begin
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   esc_pressed:=false;
-  add_sqm:=(sender=solve_and_add_sqm1);
-  add_sip:=(sender=batch_add_sip1);
-  add_lim_magn:=(sender=solve_and_add_lim_magn1);
-
-
-  if add_sqm then
-  begin
-    pedestal:=round(strtofloat2(InputBox('Enter camera pedestal correction to zero the background:','pedestal value:', inttostr(pedestal))));
-    mainwindow.save_settings1Click(nil);{save pedestal value}
-  end;
-
+  add_sip:=add_sip_check1.Checked;
+  add_lim_magn:=add_limiting_magn_check1.Checked;
+  solution_overwrite:=batch_overwrite1.checked;
 
   if OpenDialog1.Execute then
   begin
@@ -12295,10 +12299,10 @@ begin
         {load image and solve image}
         if load_fits(filename2,true {light},true,true {update memo},0,img_loaded) then {load image success}
         begin
-          if ((cd1_1<>0) and (stackmenu1.ignore_header_solution1.checked=false)) then
+          if ((cd1_1<>0) and (solution_overwrite=false)) then
           begin
             nrskipped:=nrskipped+1; {plate solved}
-            memo2_message('Skipped: '+filename2+ '  Already a solution in header. Select ignore  in tab alignment to redo.');
+            memo2_message('Skipped: '+filename2+ '  Already a solution in the header. Select option overwrite to renew.');
             skipped:=skipped+#13+#10+extractfilename(filename2);
           end
           else
@@ -12314,8 +12318,8 @@ begin
 
           if cd1_1<>0 then {solved}
           begin
-            if ((add_sqm) and (calculate_sqm(false {get backgr},false{get histogr}))) then
-                update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqmfloat);
+//            if ((add_sqm) and (calculate_sqm(false {get backgr},false{get histogr}))) then
+//                update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqmfloat);
             if add_sip then
                mainwindow.sip1Click(nil);{add sip coefficients}
             if add_lim_magn then
@@ -12344,7 +12348,10 @@ begin
     nrfailed:=OpenDialog1.Files.count-nrsolved-nrskipped;
     if nrskipped<>0 then memo2_message(skipped);
     if nrfailed<>0 then memo2_message(failed);
-    memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(nrskipped)+' existing solutions, '+inttostr(nrfailed)+' no solution. Duration '+floattostr(round((GetTickCount64 - startTick)/100)/10)+ ' sec. For re-solve set in TAB alignment option "Ignore existing fits header solution".');
+    if solution_overwrite then
+       memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(nrfailed)+' no solution. Duration '+floattostr(round((GetTickCount64 - startTick)/100)/10)+ ' sec. For re-solve set option "overwrite solution.')
+    else
+      memo2_message(inttostr(nrsolved)+' images solved, '+inttostr(nrskipped)+' existing solutions, '+inttostr(nrfailed)+' no solution. Duration '+floattostr(round((GetTickCount64 - startTick)/100)/10)+ ' sec.');
   end;
 end;
 
@@ -14352,7 +14359,7 @@ begin
 end;
 
 
-function save_PPM_PGM_PFM(img: image_array; wide2,height2,colourdepth:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 16 bit portable pixmap/graymap file (PPM/PGM) file }
+function save_PPM_PGM_PFM(img: image_array; wide2,height2,colourdepth:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 16 bit portable pixmap/graymap file (PPM/PGM) or 32 bit PFM file}
 var
   ppmbuffer32: array[0..trunc(bufwide/4)] of Dword; {bufwide is set in astap_main and is 120000}
   ppmbuffer: array[0..bufwide] of byte absolute ppmbuffer32;
@@ -14614,8 +14621,9 @@ begin
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter :=  'All formats except TIF|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.new;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;*.fz;'+
                                       '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
+                         '|FITS files (*.fit*,*.xisf)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.new;*.xisf;*.fz'+
                          '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
-                         '|24 bits PNG, JPEG, BMP(*.png, *.jpg,*.bmp)|*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP'+
+                         '|PNG, JPEG, BMP(*.png, *.jpg,*.bmp)|*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP'+
                          '|Compressed FITS files|*.fz';
   opendialog1.initialdir:=ExtractFileDir(filename2);
   fits_file:=false;
@@ -14632,6 +14640,7 @@ begin
       with OpenDialog1.Files do
       for I := 0 to Count - 1 do
       begin
+        progress_indicator(100*i/(count),' Converting');{show progress}
         Application.ProcessMessages;
         if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
         filename2:=Strings[I];
@@ -14660,6 +14669,89 @@ begin
       finally
       if dobackup then restore_img;{for the viewer}
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
+      progress_indicator(-100,'');{progresss done}
+    end;
+  end;
+end;
+
+
+procedure Tmainwindow.convert_to_ppm1Click(Sender: TObject);
+var
+  I: integer;
+  Save_Cursor:TCursor;
+  err   : boolean;
+  dobackup : boolean;
+begin
+  OpenDialog1.Title := 'Select multiple  files to convert';
+  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter :=  'All formats except PPM |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.xisf;*.fz;'+
+                                      '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
+                         '|FITS files (*.fit*,*.xisf)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.new;*.xisf;*.fz'+
+                         '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF:*.nef;*.NRW:.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;*.NEF;*.nef'+
+                         '|PNG, TIFF, JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
+                         '|Compressed FITS files|*.fz';
+
+    opendialog1.initialdir:=ExtractFileDir(filename2);
+  fits_file:=false;
+  esc_pressed:=false;
+  err:=false;
+  if OpenDialog1.Execute then
+  begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    dobackup:=img_loaded<>nil;
+    if dobackup then backup_img;{preserve img array and fits header of the viewer}
+
+    try { Do some lengthy operation }
+      with OpenDialog1.Files do
+      for I := 0 to Count - 1 do
+      begin
+        progress_indicator(100*i/(count),' Converting');{show progress}
+        Application.ProcessMessages;
+        if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+        filename2:=Strings[I];
+        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
+        if load_image(false {recenter},false {plot}) then
+        begin
+          if naxis3=1 then {monochrome}
+          begin
+            if abs(nrbits)<=16 then
+            begin
+              filename2:=ChangeFileExt(filename2,'.pgm');
+              save_PPM_PGM_PFM(img_loaded,width2,height2,16 {colour depth},filename2,false {flip H},false {flip V});
+            end
+            else
+            begin
+              filename2:=ChangeFileExt(filename2,'.pfm');
+              save_PPM_PGM_PFM(img_loaded,width2,height2,32 {colour depth},filename2,false,false);
+            end;
+          end
+          else
+          begin {colour}
+            if abs(nrbits)<=16 then
+            begin
+              filename2:=ChangeFileExt(filename2,'.ppm');
+              save_PPM_PGM_PFM(img_loaded,width2,height2,48 {colour depth},filename2,false,false);
+            end
+            else
+            begin
+              filename2:=ChangeFileExt(filename2,'.pfm');
+              save_PPM_PGM_PFM(img_loaded,width2,height2,96 {colour depth},filename2,false,false);
+            end;
+
+          end;{colour}
+        end
+        else err:=true;
+      end;
+      if err=false then mainwindow.caption:='Completed, all files converted.'
+      else
+      mainwindow.caption:='Finished, files converted but with errors!';
+
+      finally
+      if dobackup then restore_img;{for the viewer}
+      Screen.Cursor := Save_Cursor;  { Always restore to normal }
+      progress_indicator(-100,'');{progresss done}
+
     end;
   end;
 end;
