@@ -103,7 +103,8 @@ begin
       else
       begin
         memo1.clear;{prepare for some info wcs file}
-        memo1.add('END');{add the END to memo1 for stdin and prevent runtime error since all data is inserted for END}
+        memo1.add(head1[0]);{add SIMPLE for case option -update is used}
+        memo1.add(head1[27]);{add the END to memo1 for stdin and prevent runtime error since all data is inserted for END}
         file_loaded:=read_stdin_data;
       end;
       if file_loaded=false then errorlevel:=16;{error file loading}
@@ -180,7 +181,7 @@ begin
         if fits_file_name(filename2) then
            SaveFITSwithupdatedheader1
         else
-        save_fits16bit(img_loaded,ChangeFileExt(filename2,'.fits'));{save original png,tiff jpg to 16 fits file}
+        save_fits16bit(img_loaded,ChangeFileExt(filename2,'.fits'));{save original png,tiff jpg to 16 bits fits file}
       end;
 
       //histogram_done:=false;

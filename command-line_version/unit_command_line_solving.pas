@@ -178,8 +178,8 @@ end; {lsq_fit}
 procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2020-9-28}
 var
    i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrquads,buffersize               : integer;
-   distance,distance1,distance2,distance3{,dummy },x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
-   dist1,dist2,dist3,dist4,dist5,dist6,dummy  :double;
+   distance,distance1,distance2,distance3{,dummy },x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
+   dist1,dist2,dist3,dist4,dist5,dist6,distx, dummy  :double;
    identical_quad : boolean;
 begin
   nrstars_min_one:=Length(starlist[0])-1;
@@ -209,33 +209,41 @@ begin
     begin
       if j<>i{not the first star} then
       begin
-          distance:=sqr(starlist[0,j]-starlist[0,i])+ sqr(starlist[1,j]-starlist[1,i]);
-          if distance<distance1 then
+        distx:=sqr(starlist[0,j]-starlist[0,i]);
+        if distx<distance3 then {pre-check to increase processing speed with a small amount}
+        begin
+          distance:=distx + sqr(starlist[1,j]-starlist[1,i]);
+          if distance>1 then {not an identical star. Mod 2021-6-25}
           begin
-            distance3:=distance2;{distance third closest star}
-            j_used3:=j_used2;
+            if distance<distance1 then
+            begin
+              distance3:=distance2;{distance third closest star}
+              j_used3:=j_used2;
 
-            distance2:=distance1;{distance second closest star}
-            j_used2:=j_used1;
+              distance2:=distance1;{distance second closest star}
+              j_used2:=j_used1;
 
-            distance1:=distance;{distance closest star}
-            j_used1:=j;{mark later as used}
-          end
-          else
-          if distance<distance2 then
-          begin
-            distance3:=distance2;{distance third closest star}
-            j_used3:=j_used2;
+              distance1:=distance;{distance closest star}
+              j_used1:=j;{mark later as used}
+            end
+            else
+            if distance<distance2 then
+            begin
+              distance3:=distance2;{distance third closest star}
+              j_used3:=j_used2;
 
-            distance2:=distance;{distance second closest star}
-            j_used2:=j;
-          end
-          else
-          if distance<distance3 then
-          begin
-            distance3:=distance;{third closest star}
-            j_used3:=j;
-          end
+              distance2:=distance;{distance second closest star}
+              j_used2:=j;
+            end
+            else
+            if distance<distance3 then
+            begin
+              distance3:=distance;{third closest star}
+              j_used3:=j;
+            end;
+          end;{not an identical star. Mod 2021-6-25}
+
+        end; {pre-check}
       end;
     end;{j}
 
@@ -281,8 +289,8 @@ begin
           dist5:=sqrt(sqr(x2-x4)+ sqr(y2-y4));{distance star2-star4}
           dist6:=sqrt(sqr(x3-x4)+ sqr(y3-y4));{distance star3-star4}
 
-          {sort 6 distance on size}
-          for j:=1 to 6 do {sort on distance}
+          {sort six distances on size in five steps}
+          for j:=1 to 5 do {sort on distance}
           begin
             if dist6>dist5 then begin dummy:=dist5; dist5:=dist6; dist6:=dummy; end;
             if dist5>dist4 then begin dummy:=dist4; dist4:=dist5; dist5:=dummy; end;
@@ -515,7 +523,7 @@ begin
 
   setlength(img_sa,1,width2,height2);{set length of image array}
 
-  detection_level:=star_level; {level above background. Start with a high value}
+  detection_level:=max(3.5*noise_level[0],star_level); {level above background. Start with a high value}
   retries:=2; {try up to three times to get enough stars from the image}
   repeat
     highest_snr:=0;
@@ -565,9 +573,11 @@ begin
     end;
 
     if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(cblack))+ '. Detection level used '+inttostr( round(detection_level))+' above background. Star level is '+inttostr(round(star_level))+' above background. Noise level is '+floattostrF2(noise_level[0],0,0));
-    dec(retries);{try again with lower detection level}
-    if retries =1 then begin if 30*noise_level[0]<star_level then detection_level:=30*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
-    if retries =0 then begin if 10*noise_level[0]<star_level then detection_level:=10*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
+
+    dec(retries);{In principle not required. Try again with lower detection level}
+    if detection_level<=7*noise_level[0] then retries:= -1 {stop}
+    else
+    detection_level:=max(6.999*noise_level[0],min(30*noise_level[0],detection_level*6.999/30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
 
   until ((nrstars>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
@@ -664,7 +674,8 @@ end;
 {ra,dec:   right ascension and declination}
 {xx,yy :   CCD coordinates}
 {cdelt:    CCD scale in arcsec per pixel}
-procedure equatorial_standard(ra0,dec0,ra,dec, cdelt : double; out xx,yy: double);
+{$INLINE ON}
+procedure equatorial_standard(ra0,dec0,ra,dec, cdelt : double; out xx,yy: double); inline;
 var dv,sin_dec0,cos_dec0,sin_dec ,cos_dec,sin_deltaRA,cos_deltaRA: double;
 begin
   sincos(dec0  ,sin_dec0 ,cos_dec0);

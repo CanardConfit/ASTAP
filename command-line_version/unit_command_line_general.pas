@@ -17,7 +17,7 @@ uses
 
 var {################# initialised variables #########################}
   stdin_mode            : boolean=false;{file send via stdin}
-  version: string=' CLI-0.9.561 dated 2021-07-22';
+  version: string=' CLI-0.9.567 dated 2021-08-10';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -120,8 +120,8 @@ type
        {6}('EQUINOX =               2000.0 / Equinox of coordinates                         '),
        {7}('DATAMIN =                    0 / Minimum data value                             '),
        {8}('DATAMAX =                  255 / Maximum data value                             '),
-       {9}('BZERO   =                  0.0 / Scaling applied to data                        '),
-      {10}('BSCALE  =                  1.0 / Offset applied to data                         '),
+       {9}('BZERO   =                  0.0 / Physical_value = BZERO + BSCALE * array_value  '),
+      {10}('BSCALE  =                  1.0 / Physical_value = BZERO + BSCALE * array_value  '),
       {11}('CTYPE1  = '+#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   '),
       {12}('CTYPE2  = '+#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   '),
       {13}('CUNIT1  = '+#39+'deg     '+#39+'           / Unit of coordinates                            '),
@@ -603,7 +603,6 @@ var
   dd : single;
   line0                : ansistring;
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
-  wo: word;
   rgb  : byteX3;{array [0..2] containing r,g,b colours}
 begin
   result:=false;
@@ -634,7 +633,8 @@ begin
     remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 
   bzero2:=32768;
-  update_integer('BZERO   =',' / Scaling applied to data                        ' ,bzero2);
+  update_integer('BZERO   =',' / Physical_value = BZERO + BSCALE * array_value  ' ,bzero2);
+  update_integer('BSCALE  =',' / Physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
   update_integer('DATAMIN =',' / Minimum data value                             ' ,round(datamin_org));
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
   update_integer('CBLACK  =',' / Indicates the black point used when displaying the image.' ,round(cblack) ); {2019-4-9}
@@ -662,12 +662,21 @@ begin
   begin
     for j:=0 to width5-1 do
     begin
-      dum:=bzero2+round(img[k,j,i]);{save all colors}
-      dum:=dum and $FFFF;{mod 2018-9-10}
-      wo:=dum;
-      fitsbuffer2[j]:=swap(wo) and $FFFF;{in FITS file hi en low bytes are swapped}
+      dum:=round(img[k,j,i])-bzero2;{save all colors}
+      { value  - bzero              result  shortint    word
+       ($0000  - $8000) and $FFFF = $8000 (-32768       32768 )  note  $0000 - $8000 ==>  $FFFF8000. Highest bits are skipped
+       ($0001  - $8000) and $FFFF = $8001 (-32767       32769 )  note  $0001 - $8000 ==>  $FFFF8001. Highest bits are skipped
+       ($2000  - $8000) and $FFFF = $A000 (-24576       40960 )
+       ($7FFF  - $8000) and $FFFF = $FFFF (    -1       65535 )
+       ($8000  - $8000) and $FFFF = $0000 (     0           0 )
+       ($8001  - $8000) and $FFFF = $0001 (     1           1 )
+       ($A000  - $8000) and $FFFF = $2000 (  8192        8192 )  note $A000 - $8000 equals  $2000.
+       ($FFFE  - $8000) and $FFFF = $7FFE (+32766       32766 )
+       ($FFFF  - $8000) and $FFFF = $7FFF (+32767       32767 )
+      }
+      fitsbuffer2[j]:=swap(word(dum));{in FITS file hi en low bytes are swapped}
     end;
-    thefile4.writebuffer(fitsbuffer2,width5+width5); {write as bytes}
+     thefile4.writebuffer(fitsbuffer2,width5+width5); {write as bytes}
   end;
 
   remain:=round(2880*(1-frac(thefile4.position/2880)));{follow standard and only write in a multi of 2880 bytes}
@@ -2397,7 +2406,7 @@ begin
 
   get_background(0,img,true,true {calculate background and also star level end noise level},{var}backgr,star_level);
 
-  detection_level:=star_level; {level above background. Start with a high value}
+  detection_level:=max(3.5*noise_level[0],star_level); {level above background. Start with a high value}
   retries:=2; {try up to three times to get enough stars from the image}
 
   if ((backgr<60000) and (backgr>8)) then {not an abnormal file}
@@ -2456,9 +2465,10 @@ begin
         end;
       end;
 
-      dec(retries);{try again with lower detection level}
-      if retries =1 then begin if 30*noise_level[0]<star_level then detection_level:=30*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
-      if retries =0 then begin if 10*noise_level[0]<star_level then detection_level:=10*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
+      dec(retries);{In principle not required. Try again with lower detection level}
+      if detection_level<=7*noise_level[0] then retries:= -1 {stop}
+      else
+      detection_level:=max(6.999*noise_level[0],min(30*noise_level[0],detection_level*6.999/30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
 
       if report then closefile(f);
 

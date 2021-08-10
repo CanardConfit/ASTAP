@@ -2847,7 +2847,8 @@ end;
 //   area290 should be set at 290+1 before any read series
 //   cos_telescope_dec, double variable should contains the cos(telescope_dec) to detect if star read is within the FOV diameter}
 //
-function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,Bp_Rp : double): boolean;{star 290 file database search}
+{$INLINE ON}
+function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,Bp_Rp : double): boolean; inline;{star 290 file database search}
             {searchmode=S screen update }
             {searchmode=M mouse click  search}
             {searchmode=T text search}
@@ -2869,8 +2870,8 @@ begin
 
     if cache_position>=cache_valid_pos then {add more data to cache. This cache works  about 35 % faster then Treader for files with FOV of 0.5 degrees. This due to re-use cache. No difference for FOV 1.3 degrees. At FOV=0.25 the improvement is 40%}
     begin
-      block_to_read:=min(cache_size, blocksize);{don't read more then cache size!}
-      block_to_read:=min(block_to_read,cache_size - cache_valid_pos);{don't read more then file size!}
+      block_to_read:=min(cache_size, blocksize);{don't read more than cache size!}
+      block_to_read:=min(block_to_read,cache_size - cache_valid_pos);{don't read more than file size!}
       thefile_stars.read(cache_array[cache_valid_pos],block_to_read); {fill cache more. In most cases it can be reused. Especially for small field of view}
       cache_valid_pos:=cache_valid_pos+block_to_read;{increase postion where cache buffer is valid.}
     end;
