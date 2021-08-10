@@ -1409,8 +1409,8 @@ begin
   SetLength(hfd_list,len);{set array length to len}
 
   get_background(0,img,true,true {calculate background and also star level end noise level},{var}backgr,star_level);
+  detection_level:=max(3.5*noise_level[0],star_level); {level above background. Start with a high value}
 
-  detection_level:=star_level; {level above background. Start with a high value}
   retries:=2; {try up to three times to get enough stars from the image}
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
@@ -1467,9 +1467,10 @@ begin
         end;
       end;
 
-      dec(retries);{try again with lower detection level}
-      if retries =1 then begin if 30*noise_level[0]<star_level then detection_level:=30*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
-      if retries =0 then begin if 10*noise_level[0]<star_level then detection_level:=10*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
+      dec(retries);{In principle not required. Try again with lower detection level}
+      if detection_level<=7*noise_level[0] then retries:= -1 {stop}
+      else
+      detection_level:=max(6.999*noise_level[0],min(30*noise_level[0],detection_level*6.999/30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
 
       if report then closefile(f);
 
@@ -1512,7 +1513,7 @@ begin
 
   get_background(0,img,true,true {calculate background and also star level end noise level},{var}backgr,star_level);
 
-  detection_level:=star_level; {level above background. Start with a high value}
+  detection_level:=max(3.5*noise_level[0],star_level); {level above background. Start with a high value}
   retries:=2; {try three times to get enough stars from the image}
   repeat
     nhfd:=0;{set counters at zero}
@@ -1572,9 +1573,10 @@ begin
 
     end;
 
-     dec(retries);{try again with lower detection level}
-    if retries =1 then begin if 30*noise_level[0]<star_level then detection_level:=30*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
-    if retries =0 then begin if 10*noise_level[0]<star_level then detection_level:=10*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
+    dec(retries);{In principle not required. Try again with lower detection level}
+    if detection_level<=7*noise_level[0] then retries:= -1 {stop}
+    else
+    detection_level:=max(6.999*noise_level[0],min(30*noise_level[0],detection_level*6.999/30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
 
   until ((nhfd>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
@@ -2831,7 +2833,7 @@ begin
         while length(keyw)<8 do keyw:=keyw+' ';{increase length to 8}
         keyw:=copy(keyw,1,8);{decrease if longer then 8}
 
-        if value='DELETE' then
+        if uppercase(value)='DELETE' then
           remove_key(keyw, true {all}){remove key word in header. If all=true then remove multiple of the same keyword}
         else
         begin
@@ -4171,6 +4173,7 @@ begin
   end;
 end;
 
+
 procedure Tstackmenu1.blink_button1Click(Sender: TObject);
 
 var
@@ -4386,9 +4389,115 @@ end;
 
 
 procedure Tstackmenu1.apply_create_gradient1Click(Sender: TObject);
+var
+   i,j,m,n, factor,stepsize,stepsize2, starcounter,subsampling  : integer;
+   sigma,hole_radius,donut_radius,hfd_diameter,shiftX,shiftY    : double;
+   gradient                  : boolean;
 begin
-   create_test_image;
+  naxis:=0; {0 dimensions}
+
+  mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
+  mainwindow.memo1.clear;{clear memo for new header}
+
+  reset_fits_global_variables(true);
+
+  nrbits:=16;
+  extend_type:=0; {no extensions in the file, 1 is ascii_table, 2 bintable}
+
+  height2:=1800;
+  width2:=1800*3 div 2;{aspect ratio 3:2}
+
+  Randomize; {initialise}
+
+  datamin_org:=1000;{for case histogram is not called}
+  datamax_org:=65535;
+  cblack:=datamin_org;{for case histogram is not called}
+  cwhite:=datamax_org;
+
+  gradient:=stackmenu1.artificial_image_gradient1.checked;
+
+  sigma:=strtofloat2(stackmenu1.hfd_simulation1.text)/2.5;{gaussian shaped star, sigma is HFD/2.5, in perfect world it should be /2.354 but sigma 1 will be measured with current alogorithm as 2.5}
+
+  starcounter:=0;
+
+  {star test image}
+  naxis3:=1; {NAXIS3 number of colors}
+  setlength(img_loaded,naxis3,width2,height2);{set length of image array}
+
+  For i:=0 to height2-1 do
+  for j:=0 to width2-1 do
+  begin
+    if gradient=false then img_loaded[0,j,i]:=randg(1000,100 {noise}){default background is 1000}
+    else
+    img_loaded[0,j,i]:=-500*sqrt( sqr((i-height2/2)/height2) +sqr((j-width2/2)/height2) ){circular gradient}
+                       + randg(1000,100 {noise}){default background is 100}
+  end;
+
+  stepsize:=round(sigma*3);
+  if stepsize<8 then stepsize:=8;{minimum value}
+  subsampling:=5;
+  For i:=stepsize to height2-1-stepsize do
+  for j:=stepsize to width2-1-stepsize do
+  begin
+     if ( (frac(i/100)=0) and (frac(j/100)=0) )  then {reduce star density if HFD increases}
+    begin
+      if i>height2-300 then {hot pixels} img_loaded[0,j,i]:=65535 {hot pixel}
+      else {create real stars}
+      begin
+        shiftX:=-0.5+random(1000)/1000; {result between -0.5 and +0.5}
+        shiftY:=-0.5+random(1000)/1000; {result between -0.5 and +0.5}
+        inc(starcounter);
+        if sigma*2.5<=5 then {gaussian stars}
+        begin
+          stepsize2:=stepsize*subsampling;
+          for m:=-stepsize2 to stepsize2 do for n:=-stepsize2 to stepsize2 do
+          begin
+            img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]:= img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]+(65000/power(starcounter,0.85)){Intensity}*(1/sqr(subsampling)* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))) ); {gaussian shaped stars}
+            if frac(starcounter/20)=0 then img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]:=img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]+(65000/power(starcounter,0.7)){Intensity} *(1/(subsampling*subsampling))* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))); {diagonal gaussian shaped stars}
+          end;
+        end
+        else
+       // if ((i>height2 div 4) and (i<height2 div 2)) then
+        begin  {donut stars}
+          for m:=-stepsize to stepsize do for n:=-stepsize to stepsize do
+          begin
+            hfd_diameter:=sigma*2.5;
+            hole_radius:=trunc(hfd_diameter/3);
+            donut_radius:=sqrt(2*sqr(hfd_diameter/2)-sqr(hole_radius));
+            if ( (sqrt(n*n+m*m)<=donut_radius) and (sqrt(n*n+m*m)>=hole_radius){hole}) then img_loaded[0,j+n,i+m]:=img_loaded[0,j+n,i+m]+1000*sqr(j/width2) {DONUT SHAPED stars}
+          end;
+        end;
+      end;
+    end;
+
+  end;
+  filename2:='star_test_image.fit';
+
+  for j:=0 to 10 do {create an header with fixed sequence}
+    if (j<>5)  then {skip naxis3 for mono images}
+        mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
+  mainwindow.memo1.lines.add(head1[27]); {add end}
+
+  update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
+  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
+  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+  if naxis3=1 then  remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+  update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
+  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
+  update_text   ('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
+
+  update_text   ('COMMENT A','  Artificial image, background has value 1000 with sigma 100 Gaussian noise');
+  update_text   ('COMMENT B','  Top rows contain hotpixels with value 65535');
+  update_text   ('COMMENT C','  Rows below have Gaussian stars with a sigma of '+floattostr6(sigma));
+  update_text   ('COMMENT D','  Which will be measured as HFD '+stackmenu1.hfd_simulation1.text);
+  update_text   ('COMMENT E','  Note that theoretical Gaussian stars with a sigma of 1 are');
+  update_text   ('COMMENT F','  equivalent to a HFD of 2.354 if subsampled enough.');
+
+  update_menu(true);{file loaded, update menu for fits. Set fits_file:=true}
+  use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+  plot_fits(mainwindow.image1,true,true);{plot test image}
 end;
+
 
 
 procedure Tstackmenu1.clear_blink_alignment1Click(Sender: TObject);

@@ -42,7 +42,7 @@ FOV of more then ten degrees</span><br style="font-family: Calibri;"><br style="
             &nbsp;Only required if you have files with the .fz
             &nbsp;extension.</td><td style="background-color: rgb(220, 220, 220); font-family: Calibri; font-weight: bold;">Barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
 renamed. No pop-up notifier. Will not accept raw files and&nbsp;will not
-work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="astap_setup.exe">ASTAP_installer</a>_(0.9.566, 2021-08-07), <br><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"></a><a href="astap.zip">ASTAP
+work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="astap_setup.exe">ASTAP_installer</a>_(0.9.566a, 2021-08-07), <br><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"></a><a href="astap.zip">ASTAP
               executable only</a></td><td colspan="1" rowspan="2" style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing">H18 installer</a><br><a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing"> </a><a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing">H17 installer</a>,<br><a href="https://drive.google.com/file/d/1_MYyXn3ZjAGcrhSsKoo6gb7XUKz_-3ji/view?usp=sharing">G17 installer</a> (obsolete <a href="h18.htm">1)</a>).<br><br><a href="https://drive.google.com/file/d/1qaf23oFmPpnDZbLO30IB42kC8-qBEynJ/view?usp=sharing">H18 zipped</a>,  <br><a href="https://drive.google.com/file/d/1kbaDcxjIKMcHwd3KSvNyIsB5m6ztVi9z/view?usp=sharing">H17 zipped</a>,<br><a href="http://www.poyntsource.com/hnsky/h18_star_database_mag18.rar">G18 rar</a> ((obsolete <a href="h18.htm">1)</a>),<br>for manual install at&nbsp; \programs files\astap or program directory<br><a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing"></a><br></td><td colspan="1" rowspan="2" style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/fpack_funpack.exe/download">Fpack
               &amp; Funpack</a></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_win64_command-line_version.zip/download">astap_cli</a>
 (v0.9.561)</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 32 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_win32_command-line_version.zip/download">astap_cli</a>
@@ -1830,11 +1830,9 @@ header.<br>
         <br>
         <span style="font-weight: bold;">Add marker at &nbsp;&#945;,&nbsp;
           &#948;&nbsp;position</span>,
-will place a yellow square on an object for identification by on the
-entered position.&nbsp; See above sample for orange star. Enabled after
-astrometric solve. Will add <span style="font-weight: bold;"> </span>square marker
-        at&nbsp;&nbsp;&#945;,&nbsp; &#948; position. Persistent. Position will be
-        save with "save settings"<br>
+will place a yellow square at the specified &#945;,&nbsp; &#948; position.&nbsp; See above sample for orange star. Enabled after
+astrometric solve.&nbsp;Persistent. Position will be
+        saved with "save settings". If a C is typed, the marker is placed at the center.<br>
         <br>
         <span style="font-weight: bold;">Measure total magnitude within
           rectangle</span>,
@@ -2004,19 +2002,19 @@ with the mouse and move the copied part to the part to be touched up..<br><br><s
           the&nbsp;astronomical position of the mouse pointer.</big></p>
       <div style="text-align: left;"><big><span style="text-decoration: underline;"><a name="conditions"></a><span style="font-weight: bold;">Conditions required
               for&nbsp;solving:<br></span></span><br>Quick checklist for solving:
-<br></big><div style="margin-left: 40px;"><ul><li><big>At least 30
-stars are visible. For small field-of-view (&lt;1°) and away from
-the Milky-Way-plane expose longer about 30 to 300 seconds and use the H18
-star database.</big></li><li><big>
-Reasonable round stars.</big></li><li><big>
-Image dimensions at least 1280x960 pixels. For smaller dimensions solving is still possible if the image&nbsp;quality is good.
-</big></li><li><big>An approximate position is specified (for a spiral search). This position should be displayed in the left top of the
+<br></big><div style="margin-left: 40px;"><ol><li><big>An approximate celestial position is specified (for a spiral search). This position should be displayed in the left top of the
 viewer menu. (unless you do a 180 degrees search)</big></li><li><big>
-Image is not stretched or heavily photo-shopped.</big></li><li><big>
 Correct image height in degrees specified within preferable 5% accuracy. This
 height (width x height) should be displayed in the status bar of the viewer and in tab
 alignment under "Field of view (height)" (Check focal length, sensor
-size settings or try FOV=auto once)" You can set/force a </big><big>"Field of view (height)" in tab Alignment.</big></li></ul></div>If
+size settings or try FOV=auto once)" You can set/force a </big><big>"Field of view (height)" in tab Alignment.</big></li><li><big>At least 30
+stars are visible. For small field-of-view (&lt;1°) and away from
+the Milky-Way-plane expose longer about 30 to 300 seconds and use the H18
+star database.</big></li><li><big>
+Reasonable round stars and camera in focus.</big></li><li><big>
+Image dimensions at least 1280x960 pixels. For smaller dimensions solving is still possible if the image&nbsp;quality is good.
+</big></li><li><big>
+Image is not stretched, very saturated or heavily photo-shopped.<br></big><big></big></li></ol></div>If
 you still have problems with solving, you could send me a link to
 the&nbsp;file involved (FITS is preferred) and if I have time I
 could&nbsp;have a look. Upload it e.g. to <a href="http://nova.astrometry.net/">http://nova.astrometry.net</a> or <a href="https://ufile.io/">https://ufile.io/</a> and
@@ -2053,70 +2051,62 @@ latitude information" menu.<br><br><big><span style="text-decoration: underline;
           Check list for successful solving with ASTAP:<br>
         </big>
         <ol>
-          <li>Estimated
-            celestial center position of &nbsp;image should be
-            entered/available in
-            the viewer &#945; and &#948;
-            input or passed&nbsp;by the command line.&nbsp;For FITS file
+          <li>An approximate  &#945; and &#948;
+            celestial position is specified (for a spiral search).&nbsp;For FITS file
             this is
             normally read from the FITS file header and set
-            automatically. In case
-            you view an an&nbsp; JPEG, TIFF image, double click
+            automatically. The position can also be passed by the command-line. In case
+            you view an&nbsp;JPEG, TIFF image, double click
             on&nbsp;&#945;
             input to search for a know deep sky object position from the
             database.</li>
-          <li>Field of
-            view of the camera should be available. This is the height
-            of the image
-            in degrees. See &#8721; window, tab alignment,
+          <li>
+Correct image height in degrees specified within preferable 5% accuracy.&nbsp; See &#8721; window, tab alignment,
             group-box&nbsp;astrometric
-            settings. For FITS images this is normally automatic
-            calculated from info in the file header.</li>
-          <li>Image
-height in pixels&nbsp;after ASTAP subsampling should be somewhere
-between 1000 and 3000. If it is higher set&nbsp;subsample at 2. If you
-specify 0 for subsampling, the program will select a subsampling factor
-automatically.</li>
-          <li>Search
-            radius should be set large enough.&nbsp;See&nbsp;<span style="background-color: rgb(153, 153, 153);">&nbsp;&#8721; &nbsp;</span> window, tab
-            alignment,
-            group-box&nbsp;astrometric settings. &nbsp;You could set
-            this
-            at 30° or
-            larger up to 180°.</li>
-          <li>Stars
-            in the image should be pretty round and the camera in focus. You
+            settings, "Field of
+            view (height)". For FITS images this is normally automatic
+            calculated from info in the file header. In cause of doubt you could try&nbsp;"Field of
+            view (height)"=AUTO</li><li>At least 30 stars&nbsp;are visible in the image. They can
+be very faint, barely visible in the noise.&nbsp;For large
+field-of-view (&gt;1°) expose 5 to 10 seconds but for
+small&nbsp;field-of-view (&lt;1°) far away from the Milky-Way plane
+you have to exposure longer 30 to 300 seconds and use the H18 star
+database.</li>
+          <li>
+Reasonable round stars&nbsp;and the camera in focus. You
             could
             verify the star
             detection
             by the <a href="ccd_inspector">CCD inspector</a> or&nbsp;by&nbsp; the <span style="background-color: rgb(153, 153, 153);">&nbsp;Test button to show quads&nbsp;</span>&nbsp;in the&nbsp;<span style="background-color: rgb(153, 153, 153);">&nbsp;&#8721; &nbsp;</span> window, tab alignment). Most
             stars
             should be
-            detected.</li>
-          <li>As
-a minimum about 30 stars&nbsp;should be visible in the image. They can
-be very faint stars, barely visible in the noise.&nbsp;For large
-field-of-view (&gt;1°) expose 5 to 10 seconds but for
-smal&nbsp;field-of-view (&lt;1°) far away from the Milky-Way plane
-you have to exposure longer 30 to 300 seconds and use the H18 star
-database.</li>
-          <li>For
-            images filled with&nbsp;stars, only a small part of the stars may be
-            saturated. The
+            detected.</li><li>
+Image dimensions at least 1280x960 pixels. Set downsample at 0 (=auto) and the program will select a downsampling factor
+automatically.&nbsp;Image
+height in pixels&nbsp;after ASTAP dowsampling should be somewhere
+between 1000 and 3000. </li>
+          <li>Image is not stretched, very saturated or heavily photo-shopped.&nbsp;The
             total exposure time could be hours as long it is possible to
             separate
             the
-            brightest stars from the faint&nbsp;by intensity.</li>
-          <li>For
-bayered images (OSC cameras)&nbsp;or &nbsp;large images use the
-&nbsp;factor 2 downsample option.&nbsp;See&nbsp;<span style="background-color: rgb(153, 153, 153);">&nbsp;&#8721; &nbsp;</span> window, tab alignment,
+            brightest stars from the faint&nbsp;by intensity.</li><li>Search
+            radius should be set large enough.&nbsp;See&nbsp;<span style="background-color: rgb(153, 153, 153);">&nbsp;&#8721; &nbsp;</span> window, tab
+            alignment,
+            group-box&nbsp;astrometric settings. &nbsp;You could set
+            this
+            at 30° or
+            for blind solving at 180°.</li>
+          
+          
+          
+          <li>Use downsample factor 0 (auto) or 2 for
+raw DSLR/OSC&nbsp;images. See&nbsp;<span style="background-color: rgb(153, 153, 153);">&nbsp;&#8721; &nbsp;</span> window, tab alignment,
 group-box&nbsp;astrometric settings. Save settings if modified (Viewer
-pull down menu, file, exit (and save settings). You could also try auto
-auto selection of binning equals 0.</li>
+pull down menu, file, exit (and save settings).&nbsp;</li>
           <li>If
 your image is full of hot pixels you could adjust the "Ignore stars
-less then["]&nbsp; in tab Alignment. This is default set at 1.5" but
-could be set higher for long focal length.</li><li>An other option for&nbsp;hot pixels is option "calibrate
+less then["]"&nbsp; in tab Alignment. This is set default&nbsp;at 1.5" but
+could be set higher for a long focal length.</li><li>An other option for&nbsp;hot pixels is option "calibrate
 prior to solving". Select in the darks tab, a dark or darks with
 similar exposure duration as the lights you trying to solve. If your
 select several darks with&nbsp; different exposure length, check-mark
@@ -2124,27 +2114,22 @@ the option classify, "Dark exposure time".&nbsp;</li><li>The maximum
 number of stars to use should be defined. Typical set at 500.&nbsp;See
 &#8721;&nbsp;window, tab alignment.</li>
           <li>Hash
-code&nbsp;tolerance should be defined. Typical set at 0.007 especially
-for&nbsp;long focal length telescopes which are more sensitive to the
-seeing.. (In previous versions this was set at 0.005). See tab
+code&nbsp;tolerance should be defined. Typical set at 0.007. See tab
 alignment.</li>
           <li>For
-            some failures you could force in
+            some solver failures you could force in
             ASTAP the option "slow" (-speed)&nbsp; for
             more reliable solving. The
             reliability will be very high but solving will be slower.</li><li>In
-case of excellent seeing and small band filter usage the imaged star
+case of excellent seeing the imaged star
 could be smaller then 1.5". &nbsp;Reduce the setting "Ignore stars
-less then 1.5"&nbsp;in tab "Alignment". &nbsp;If the imaged star size
-is about one pixel after downsampling reduce the downsampling to 1
-(auto is often&nbsp;2). Improvements will be reported by a increased number of quad matches.</li><li>For
-long focal length telescopes with a&nbsp;field of view&nbsp;less then
-60 arc minutes it is recommend to install the H18 star database and
-remove the G17 (or force use of the H18 in tab alignment).&nbsp;</li><li>For long focal length telescopes with a small&nbsp;field
-of view where objects like M13 fill the whole image ASTAP could
-struggle to solve. This is caused by the fact that the database has a
-better resolution then the image. Forcing option "slow" could
-&nbsp;help.</li>
+less then 1.5"&nbsp;in tab "Alignment". Star size should 2 pixels or
+more. Adapt downsampling accordingly. Improvements will be reported by
+a increased number of quad matches.</li><li>For a&nbsp;field of view&nbsp;less then
+60 arc minutes (long focal length) it is recommend to install the H18 star database and
+remove the H17 (or force use of the H18 in tab alignment).&nbsp;</li><li>If a global cluster fills the whole field,&nbsp;ASTAP could
+struggle to solve.&nbsp;Forcing option "slow" could
+&nbsp;help.</li><li>Best input format is FITS, RAW or 16 bit PNG, TIFF.&nbsp;JPEG compression or 8 bit PNG, TIFF files are a disadvantage.</li>
         </ol><br><a name="database_usability"></a><br><big>Warnings:</big><br><ul><li>In case you get regular a warning "Star database limit reached" replace
 the G17 database by the H18.&nbsp; This could happen if your field of view
 is small (&lt;30 arcmin).&nbsp;Remove the G17 files to force the use of the H18.</li></ul>In the plane of the Milky-way plane it is easy to image enough stars for solving as shown in this <a href="https://sci.esa.int/web/gaia/-/60170-gaia-s-new-map-of-star-density" class="bbc_url" title="External link" rel="nofollow external">ESA image</a>

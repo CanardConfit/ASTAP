@@ -13,7 +13,7 @@ You should have received a copy of the GNU Lesser General Public License (LGPL) 
 interface
 
 uses
-   Classes, SysUtils,Graphics,
+   Classes, SysUtils,Graphics,math,
    astap_main, unit_stack;
 type
    star_list= array of array of double;
@@ -612,7 +612,7 @@ end;
 procedure find_stars(img :image_array;hfd_min:double;out starlist1: star_list);{find stars and put them in a list}
 var
    fitsX, fitsY,nrstars,radius,i,j,max_stars,retries,m,n,xci,yci,sqr_radius : integer;
-   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level           : double;
+   hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level               : double;
    img_sa     : image_array;
    snr_list        : array of double;
 
@@ -645,7 +645,7 @@ begin
 
   setlength(img_sa,1,width2,height2);{set length of image array}
 
-  detection_level:=star_level; {level above background. Start with a high value}
+  detection_level:=max(3.5*noise_level[0],star_level); {level above background. Start with a high value}
   retries:=2; {try up to three times to get enough stars from the image}
   repeat
     highest_snr:=0;
@@ -671,12 +671,6 @@ begin
           //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(snr, ffgeneral, 2,1));{add hfd as text}
-
-//            diam:=round(3.0*hfd1);{for marking area}
-//            for j:=fitsY to fitsY+diam do {mark the whole star area as surveyed}
-//            for i:=fitsX-diam to fitsX+diam do
-//              if ((j>=0) and (i>=0) and (j<height2) and (i<width2)) then {mark the area of the star square and prevent double detection's}
-//                img_sa[0,i,j]:=1;
 
             radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
             sqr_radius:=sqr(radius);
@@ -709,9 +703,11 @@ begin
     end;
 
     if solve_show_log then memo2_message(inttostr(nrstars)+' stars found of the requested '+inttostr(max_stars)+'. Background value is '+inttostr(round(cblack))+ '. Detection level used '+inttostr( round(detection_level))+' above background. Star level is '+inttostr(round(star_level))+' above background. Noise level is '+floattostrF2(noise_level[0],0,0));
-    dec(retries);{try again with lower detection level}
-    if retries =1 then begin if 30*noise_level[0]<star_level then detection_level:=30*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
-    if retries =0 then begin if 10*noise_level[0]<star_level then detection_level:=10*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
+
+    dec(retries);{In principle not required. Try again with lower detection level}
+    if detection_level<=7*noise_level[0] then retries:= -1 {stop}
+    else
+    detection_level:=max(6.999*noise_level[0],min(30*noise_level[0],detection_level*6.999/30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
 
   until ((nrstars>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
@@ -720,7 +716,7 @@ begin
   SetLength(starlist1,2,nrstars);{set length correct}
   setlength(snr_list,nrstars);{set length correct}
 
-   if nrstars>max_stars then {reduce number of stars if too high}
+  if nrstars>max_stars then {reduce number of stars if too high}
   begin
     if solve_show_log then memo2_message('Selecting the '+ inttostr(max_stars)+' brightest stars only.');
     get_brightest_stars(max_stars, highest_snr, snr_list, starlist1);

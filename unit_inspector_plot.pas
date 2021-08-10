@@ -222,7 +222,7 @@ begin
 
   get_background(0,img_loaded,false{ calculate histogram},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
-  detection_level:=star_level; {level above background. Start with a high value}
+  detection_level:=max(3.5*noise_level[0],star_level); {level above background. Start with a high value}
 
   retries:=2; {try up to three times to get enough stars from the image}
   repeat
@@ -279,10 +279,10 @@ begin
       end;
     end;
 
-    dec(retries);{try again with lower detection level}
-    if retries =1 then begin if 30*noise_level[0]<star_level then detection_level:=30*noise_level[0] else retries:= 0; {skip retries 1} end; {lower  detection level}
-    if retries =0 then begin if 10*noise_level[0]<star_level then detection_level:=10*noise_level[0] else retries:=-1; {skip retries 0} end; {lowest detection level}
-
+    dec(retries);{In principle not required. Try again with lower detection level}
+    if detection_level<=7*noise_level[0] then retries:= -1 {stop}
+    else
+    detection_level:=max(6.999*noise_level[0],min(30*noise_level[0],detection_level*6.999/30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
 
   until ((nhfd>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
 
