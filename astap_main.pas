@@ -2990,7 +2990,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.567, '+about_message4+', dated 2021-8-10';
+  #13+#10+'ASTAP version ß0.9.567a, '+about_message4+', dated 2021-8-10';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -14043,9 +14043,13 @@ begin
      end
      else mag_str:='';
 
+     {centered coordinates}
      sensor_coordinates_to_celestial(object_xc+1,object_yc+1,object_raM,object_decM);{input in FITS coordinates}
-     mainwindow.statusbar1.panels[1].text:=prepare_ra8(object_raM,': ')+'   '+prepare_dec2(object_decM,'° ');
-     mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', SNR='+snr_str+mag_str;
+     if ((object_raM<>0) and (object_decM<>0)) then
+       mainwindow.statusbar1.panels[1].text:=prepare_ra8(object_raM,': ')+'   '+prepare_dec2(object_decM,'° '){object position in RA,DEC}
+     else
+       mainwindow.statusbar1.panels[1].text:=floattostrF(object_xc+1,ffFixed,7,2)+',  '+floattostrF(object_yc+1,ffFixed,7,2);{object position in FITS X,Y}
+     mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', SNR='+snr_str+mag_str{+' '+floattostr4(flux)};
    end
    else
    begin

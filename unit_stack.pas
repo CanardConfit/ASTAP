@@ -687,7 +687,7 @@ type
 
     procedure test_pattern1Click(Sender: TObject);
     procedure blink_button1Click(Sender: TObject);
-    procedure apply_create_gradient1Click(Sender: TObject);
+    procedure create_test_image_stars1Click(Sender: TObject);
     procedure clear_blink_alignment1Click(Sender: TObject);
     procedure clear_blink_list1Click(Sender: TObject);
     procedure Edit_width1Change(Sender: TObject);
@@ -4388,11 +4388,11 @@ begin
 end;
 
 
-procedure Tstackmenu1.apply_create_gradient1Click(Sender: TObject);
+procedure Tstackmenu1.create_test_image_stars1Click(Sender: TObject);
 var
    i,j,m,n, factor,stepsize,stepsize2, starcounter,subsampling  : integer;
-   sigma,hole_radius,donut_radius,hfd_diameter,shiftX,shiftY    : double;
-   gradient                  : boolean;
+   sigma,hole_radius,donut_radius,hfd_diameter,shiftX,shiftY,flux,flux_star    : double;
+   gradient,diagn_star           : boolean;
 begin
   naxis:=0; {0 dimensions}
 
@@ -4422,6 +4422,29 @@ begin
 
   {star test image}
   naxis3:=1; {NAXIS3 number of colors}
+  filename2:='star_test_image.fit';
+  for j:=0 to 10 do {create an header with fixed sequence}
+    if (j<>5)  then {skip naxis3 for mono images}
+        mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
+  mainwindow.memo1.lines.add(head1[27]); {add end}
+
+  update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
+  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
+  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+  if naxis3=1 then  remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+  update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
+  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
+  add_text   ('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
+
+  add_text   ('COMMENT A','  Artificial image, background has value 1000 with sigma 100 Gaussian noise');
+  add_text   ('COMMENT B','  Top rows contain hotpixels with value 65535');
+  add_text   ('COMMENT C','  Rows below have Gaussian stars with a sigma of '+floattostr6(sigma));
+  add_text   ('COMMENT D','  Which will be measured as HFD '+stackmenu1.hfd_simulation1.text);
+  add_text   ('COMMENT E','  Note that theoretical Gaussian stars with a sigma of 1 are');
+  add_text   ('COMMENT F','  equivalent to a HFD of 2.354 if subsampled enough.');
+  add_text   ('COMMENT  ',' ,Star_nr, X, Y, Flux                               ');
+
+
   setlength(img_loaded,naxis3,width2,height2);{set length of image array}
 
   For i:=0 to height2-1 do
@@ -4446,14 +4469,22 @@ begin
       begin
         shiftX:=-0.5+random(1000)/1000; {result between -0.5 and +0.5}
         shiftY:=-0.5+random(1000)/1000; {result between -0.5 and +0.5}
+        flux_star:=0;
+        diagn_star:=false;
         inc(starcounter);
         if sigma*2.5<=5 then {gaussian stars}
         begin
           stepsize2:=stepsize*subsampling;
           for m:=-stepsize2 to stepsize2 do for n:=-stepsize2 to stepsize2 do
           begin
-            img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]:= img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]+(65000/power(starcounter,0.85)){Intensity}*(1/sqr(subsampling)* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))) ); {gaussian shaped stars}
-            if frac(starcounter/20)=0 then img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]:=img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]+(65000/power(starcounter,0.7)){Intensity} *(1/(subsampling*subsampling))* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))); {diagonal gaussian shaped stars}
+            flux:=(65000/power(starcounter,0.85)){Intensity}*(1/sqr(subsampling)* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))));
+            flux_star:=flux_star+flux;
+            img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]:= img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]+flux ; {gaussian shaped stars}
+            if frac(starcounter/20)=0 then
+            begin
+               img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]:=img_loaded[0,180+starcounter+round(shiftX+n/subsampling),130+starcounter+round(shiftY+m/subsampling)]+flux; {diagonal gaussian shaped stars}
+               diagn_star:=true;
+            end;
           end;
         end
         else
@@ -4464,34 +4495,22 @@ begin
             hfd_diameter:=sigma*2.5;
             hole_radius:=trunc(hfd_diameter/3);
             donut_radius:=sqrt(2*sqr(hfd_diameter/2)-sqr(hole_radius));
-            if ( (sqrt(n*n+m*m)<=donut_radius) and (sqrt(n*n+m*m)>=hole_radius){hole}) then img_loaded[0,j+n,i+m]:=img_loaded[0,j+n,i+m]+1000*sqr(j/width2) {DONUT SHAPED stars}
+            if ( (sqrt(n*n+m*m)<=donut_radius) and (sqrt(n*n+m*m)>=hole_radius){hole}) then
+            begin
+              flux:=1000*sqr(j/width2);
+              flux_star:=flux_star+flux;
+              img_loaded[0,j+n,i+m]:=img_loaded[0,j+n,i+m]+flux;{DONUT SHAPED stars}
+            end;
           end;
         end;
+        add_text('COMMENT  ',' ,star'+inttostr(starcounter)+', '+floattostr4(j+shiftX+1)+', '+floattostr4(i+shiftY+1)+', '+floattostr4(flux_star) ); {add the star coordinates to the header}
+        if diagn_star then
+          add_text('COMMENT  ',' ,star'+inttostr(starcounter)+'D, '+floattostr4(j+shiftX+1+180+starcounter)+', '+floattostr4(i+shiftY+1+130+starcounter)+', '+floattostr4(flux_star) ); {diagonal stars}
+
       end;
     end;
 
   end;
-  filename2:='star_test_image.fit';
-
-  for j:=0 to 10 do {create an header with fixed sequence}
-    if (j<>5)  then {skip naxis3 for mono images}
-        mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
-  mainwindow.memo1.lines.add(head1[27]); {add end}
-
-  update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-  if naxis3=1 then  remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
-  update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
-  update_text   ('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
-
-  update_text   ('COMMENT A','  Artificial image, background has value 1000 with sigma 100 Gaussian noise');
-  update_text   ('COMMENT B','  Top rows contain hotpixels with value 65535');
-  update_text   ('COMMENT C','  Rows below have Gaussian stars with a sigma of '+floattostr6(sigma));
-  update_text   ('COMMENT D','  Which will be measured as HFD '+stackmenu1.hfd_simulation1.text);
-  update_text   ('COMMENT E','  Note that theoretical Gaussian stars with a sigma of 1 are');
-  update_text   ('COMMENT F','  equivalent to a HFD of 2.354 if subsampled enough.');
 
   update_menu(true);{file loaded, update menu for fits. Set fits_file:=true}
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}

@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 10268
+    Left = 10328
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -6571,7 +6571,7 @@ object stackmenu1: Tstackmenu1
           Top = 8
           Width = 118
           Caption = 'Stars, hot pixels'
-          OnClick = apply_create_gradient1Click
+          OnClick = create_test_image_stars1Click
           ParentFont = False
           TabOrder = 0
         end
