@@ -4391,7 +4391,7 @@ end;
 procedure Tstackmenu1.create_test_image_stars1Click(Sender: TObject);
 var
    i,j,m,n, factor,stepsize,stepsize2, starcounter,subsampling  : integer;
-   sigma,hole_radius,donut_radius,hfd_diameter,shiftX,shiftY,flux,flux_star    : double;
+   sigma,hole_radius,donut_radius,hfd_diameter,shiftX,shiftY,flux,flux_star,diam    : double;
    gradient,diagn_star           : boolean;
 begin
   naxis:=0; {0 dimensions}
@@ -4488,14 +4488,14 @@ begin
           end;
         end
         else
-       // if ((i>height2 div 4) and (i<height2 div 2)) then
         begin  {donut stars}
           for m:=-stepsize to stepsize do for n:=-stepsize to stepsize do
           begin
             hfd_diameter:=sigma*2.5;
-            hole_radius:=trunc(hfd_diameter/3);
+            hole_radius:=trunc(hfd_diameter/3);{Half outer donut diameter}
             donut_radius:=sqrt(2*sqr(hfd_diameter/2)-sqr(hole_radius));
-            if ( (sqrt(n*n+m*m)<=donut_radius) and (sqrt(n*n+m*m)>=hole_radius){hole}) then
+            diam:=sqrt(n*n+m*m);
+            if ((diam<=donut_radius) and ( diam>=hole_radius {hole})) then
             begin
               flux:=1000*sqr(j/width2);
               flux_star:=flux_star+flux;

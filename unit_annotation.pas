@@ -1827,10 +1827,10 @@ procedure measure_distortion(plot: boolean; out stars_measured : integer);{measu
 var
   fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,snr_min,x,y,x2,y2    : double;
-  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i    : integer;
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,snr_min,x,y,x2,y2,astrometric_error    : double;
+  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,scale    : integer;
   flip_horizontal, flip_vertical,sip   : boolean;
-  mag_offset_array                 : array of double;
+  error_array                          : array of double;
   Save_Cursor                      : TCursor;
 
     procedure plot_star;
@@ -1875,8 +1875,13 @@ var
             mainwindow.image1.Canvas.MoveTo(round(x2), round(y2));
             mainwindow.image1.Canvas.LineTo(round(x2+(x-xc)*50),round(y2-(y-yc)*50 ));
             mainwindow.image1.Canvas.Pen.width :=1;
-            //  totalX:=totalX+(fitsX-xc);
-            //  totalY:=totalY+(fitsY-yc);
+
+            {for median errror}
+            if  ( (x>0.25*height2) and  (x< 0.75*height2) and (y> 0.25*height2) and  (y< 0.75*height2) and (sub_counter<length(error_array))) then
+            begin
+              error_array[sub_counter]:=sqrt(sqr(X-xc)+sqr(Y-yc));{add errors to array}
+              inc(sub_counter);
+            end;
           end {show distortion}
           else
           if stars_measured<max_nr_stars then {store distortion data}
@@ -1915,8 +1920,10 @@ begin
     mainwindow.image1.canvas.pen.color:=$00B0FF ;{orange}
 
     star_total_counter:=0;{total counter}
+    sub_counter:=0;
 
     max_nr_stars:=round(width2*height2*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
+    setlength(error_array,max_nr_stars);
 
     if select_star_database(stackmenu1.star_database1.text)=false then
     begin
@@ -1985,22 +1992,45 @@ begin
 
     if plot then
     begin
+      astrometric_error:=smedian(error_array,sub_counter);
+      memo2_message('The center median astrometric error is '+floattostr4(astrometric_error*cdelt2*3600)+'" or ' +floattostr4(astrometric_error)+' pixel using '+inttostr(sub_counter)+ ' stars.');
+
+
       mainwindow.image1.canvas.pen.color:=annotation_color;
       mainwindow.image1.Canvas.brush.Style:=bsClear;
       mainwindow.image1.Canvas.font.color:=annotation_color;
 
       mainwindow.image1.Canvas.Pen.width :=3;
-      mainwindow.image1.Canvas.MoveTo(20, height2-20);
-      mainwindow.image1.Canvas.LineTo(20+50*3,height2-20);
+
+      {scale in pixels}
+      mainwindow.image1.Canvas.MoveTo(20, height2-30);
+      mainwindow.image1.Canvas.LineTo(20+50*3,height2-30);
+      for i:=0 to 3 do
+      begin
+        mainwindow.image1.Canvas.MoveTo(20+50*i,height2-25);
+        mainwindow.image1.Canvas.LineTo(20+50*i,height2-35);
+        mainwindow.image1.Canvas.textout(17+50*i,height2-25,inttostr(i));
+      end;
+      mainwindow.image1.Canvas.textout(20,height2-60,'Scale in pixels');
+
+
+      {scale in arc seconds}
+      scale:=round(50/(cdelt2*3600));
+      mainwindow.image1.Canvas.MoveTo(220, height2-30);
+      mainwindow.image1.Canvas.LineTo(220+scale*3,height2-30);
+
+      mainwindow.image1.Canvas.textout(350,height2-25,'Median error center '+floattostr4(astrometric_error*cdelt2*3600)+'"');
 
       for i:=0 to 3 do
       begin
-        mainwindow.image1.Canvas.MoveTo(20+50*i,height2-15);
-        mainwindow.image1.Canvas.LineTo(20+50*i,height2-25);
-        mainwindow.image1.Canvas.textout(17+50*i,height2-15,inttostr(i));
+        mainwindow.image1.Canvas.MoveTo(220+scale*i,height2-25);
+        mainwindow.image1.Canvas.LineTo(220+scale*i,height2-35);
+        mainwindow.image1.Canvas.textout(217+scale*i,height2-25,inttostr(i)+'"');
       end;
-      mainwindow.image1.Canvas.textout(20,height2-50,'Scale in pixels');
+      mainwindow.image1.Canvas.textout(220,height2-60,'Scale in arcsecs');
 
+
+      error_array:=nil;
     end;
 
     Screen.Cursor:= Save_Cursor;

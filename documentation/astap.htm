@@ -137,7 +137,7 @@ work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family:
               <li><big><a href="astap.htm#batch_conversion">Batch
                     conversion</a></big></li><li><big><a href="astap.htm#inspector">CCD
                     inspector</a></big></li><ul><li><big><a href="astap.htm#inspector">CCD
-                    inspector</a></big></li><li><big><a href="astap.htm#hfd_2d_contour">HFD_2d_contour</a></big></li><li><big><a href="astap.htm#hfd_diagram">HFD_diagram</a></big></li><li><big><a href="astap.htm#median_background_values">Median_background_values</a></big></li><li><big><a href="astap.htm#hfd_values">HFD values</a></big></li><li><big><a href="astap.htm#aberration_inspector">Aberration Inspector</a><br></big></li></ul>
+                    inspector</a></big></li><li><big><a href="astap.htm#hfd_2d_contour">HFD_2d_contour</a></big></li><li><big><a href="astap.htm#hfd_diagram">HFD_diagram</a></big></li><li><big><a href="astap.htm#median_background_values">Median_background_values</a></big></li><li><big><a href="astap.htm#hfd_values">HFD values</a></big></li><li><big><a href="astap.htm#show_distortion">Show distortion</a><br></big></li><li><big><a href="astap.htm#aberration_inspector">Aberration Inspector</a><br></big></li></ul>
               <li><big><a href="astap.htm#photometry_calibration">Photometry calibration</a></big></li><li><big><a href="astap.htm#sqm">SQM measurement</a></big></li>
               <li><big><a href="#star_annotation">Star
                     annotation and photometry</a></big></li><li><big><a href="#asteroid_annotation">Asteroid
@@ -1014,7 +1014,7 @@ images have poor borders, set option crop images larger then 0%.</big></li><li><
         </big>
         <ul>
           <li><big><strong>Hash code</strong></big><big><strong> tolerance &nbsp;</strong></big><big>No
-              need to change it. Leave this at 0.005 unless you have
+              need to change it. Leave this at 0.007 unless you have
               severe
               optical distortion. If you have false detections, set this
               lower at
@@ -1066,7 +1066,7 @@ initaly the option "auto".</big></li>
               &nbsp;No need to change it. This could be set between 100
               and 1000.</big></li>
           <li><big><strong>Hash code&nbsp;tolerance</strong>:
-              &nbsp;No need to change it. Leave this at 0.005 unless you
+              &nbsp;No need to change it. Leave this at 0.007 unless you
               have
               severe
               optical distortion. If you have false detections, set this
@@ -1580,7 +1580,7 @@ solving
           object
           position as center position using the deep sky database.
           Double click
-          on RA position in
+          on the</big><span class="comment-copy"></span><span class="st"><big><big> &#948; </big></big></span><big>position in
           viewer and enter the object name. The position will be
           retrieved from
           the database.&nbsp;This position will be used as a start point
@@ -1672,7 +1672,16 @@ false indications by outliers the HFD values are filtered by taking the
 median HFD value of the three closest stars and&nbsp; allocate the
 result to all three stars. <br></big><br><br><span style="text-decoration: underline;"><big><a name="median_background_values"></a>Median background values</big><br><br></span><big>This
 tools writes&nbsp;the median background values as numerical values in
-the image. For correct measurement the image should only contains stars.<br><br><img style="width: 878px; height: 664px;" alt="" src="astap_median_background_values.jpg"><br></big><span style="text-decoration: underline;"></span><br><big><span style="text-decoration: underline;"><br><a name="aberration_inspector"></a>Aberration Inspector<br><br></span>This
+the image. For correct measurement the image should only contains stars.<br><br><img style="width: 878px; height: 664px;" alt="" src="astap_median_background_values.jpg"><br></big><span style="text-decoration: underline;"></span><br><br><br><big><span style="text-decoration: underline;"><a name="show_distortion"></a>Show distortion<br><br></span>This
+tools shows the difference between the Gaia star positions and the
+centroids of the imaged stars assuming a linear solution. A difference
+is indicated with a line 50 x larger then the actual difference in
+pixels.&nbsp;A scale is show at the left bottom. Also the&nbsp; median
+astrometric error in arc seconds for the center square (height/2 *
+height/2) is reported. This indicates the error to expect for
+astrometric measurements. Note the database resolution is </big><span class="comment-copy">
+0.077" &nbsp;in&nbsp;</span><span class="st"><big><big><em>&#945;&nbsp;</em></big></big></span><span class="comment-copy">and 0.039" in&nbsp;</span><span class="st"><big><big>&#948;.</big></big></span><br><big><span style="text-decoration: underline;"><br></span></big><a href="astap.htm#index">Back
+            to index</a><br><br><big><span style="text-decoration: underline;"><br><a name="aberration_inspector"></a>Aberration Inspector<br><br></span>This
 tool creates a 3x3 mosaic of the images center, the corners and
 borders. This allows easy an comparison of the star shape at the
 different sections of the image. </big><br><big><span style="text-decoration: underline;"><br></span><span style="text-decoration: underline; font-weight: bold;"><img style="width: 758px; height: 758px;" alt="" src="astap_aberration_inspector.jpg"><br></span></big><br><a href="astap.htm#index">Back to index</a><br><br><br><br><big style="text-decoration: underline;"><span style="font-weight: bold;"><a name="photometry_calibration"></a>Viewer, Tools, Calibrate Photometry.<br></span><br></big><big>With
@@ -1975,12 +1984,10 @@ with the mouse and move the copied part to the part to be touched up..<br><br><s
             &nbsp;No need to change it. This could be set between 100
             and 1000. Default 500.</big></li>
         <li><big><strong>Hash code&nbsp;tolerance</strong>:
-            &nbsp;No need to change it. Leave this at 0.003 unless you
+            &nbsp;No need to change it. Leave this at 0.007 unless you
             have
             severe
-            optical distortion.&nbsp;If you have severe optical
-            distortion or a
-            low resolution image set this at 0.008</big></li>
+            optical distortion.&nbsp;</big></li>
         <li><big><strong>Downsampling</strong>:
             &nbsp;For large image with a height above 3000 pixels
             select&nbsp;downsampling factor 2 or to
@@ -2911,7 +2918,7 @@ boundaries are defined by constan</span>t &#945; and &#948; v<span class="commen
 two's complement (=standard), three bytes integer. The resolution of
 this three byte storage will be for RA: 360*60*60/((256*256*256)-1) =
 0.077 arc seconds. For the DEC value it will be:
-90*60*60/((128*256*256)-1) = 0.039 arc seconds.&nbsp; The starts are
+90*60*60/((128*256*256)-1) = 0.039 arc seconds.&nbsp; The stars are
 sorted on magnitude and the magnitude is stored in a byte of the
 special preceding header with an offset to make all values positive.<br>
       </span><br><span class="comment-copy">

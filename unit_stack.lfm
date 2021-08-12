@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 10328
+    Left = 10388
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
