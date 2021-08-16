@@ -1886,12 +1886,22 @@ begin
   until ((count>50) or (range<0.3));
   if count>50  then
   begin
-    cdelt1:=cdelt1*factor;
-    cdelt2:=cdelt2*factor;
+
+
     cd1_1:=cd1_1*factor;
     cd1_2:=cd1_2*factor;
     cd2_1:=cd2_1*factor;
     cd2_2:=cd2_2*factor;
+    cdelt1:=cdelt1*factor;
+    cdelt2:=cdelt2*factor;
+
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);
+    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);
+
     if factor<1 then memo2_message('Assuming barrel distortion.') else memo2_message('Assuming pincushion distortion.');
     memo2_message('Measured the undisturbed image scale in center and corrected image scale with factor '+floattostr6(factor)+'. Used '+inttostr(round(range*100))+'% of image');
   end

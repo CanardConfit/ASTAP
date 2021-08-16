@@ -1116,7 +1116,7 @@ object mainwindow: Tmainwindow
       object sip1: TMenuItem
         Caption = 'Add SIP coefficients to header'
         Enabled = False
-        Hint = 'SIP polynomial factors will be calculated and added to the header allowing more accurate position measurement outside the image center.  This basic implementation will only compensate for radial distortion.'
+        Hint = 'SIP polynomial factors will be calculated and added to the header allowing more accurate position measurement outside the image center.  This basic implementation will only compensate for  barrel/pincushion distortion.'
         OnClick = sip1Click
       end
       object MenuItem9: TMenuItem
