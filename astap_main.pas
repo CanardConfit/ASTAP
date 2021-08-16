@@ -536,10 +536,10 @@ var
 
 var
   a_order,ap_order: integer;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
-  a_0_2, a_0_3, a_1_1, a_1_2,a_2_0, a_2_1, a_3_0 : double; {SIP, Simple Imaging Polynomial use by astrometry.net, Spitzer}
-  b_0_2, b_0_3, b_1_1, b_1_2,b_2_0, b_2_1, b_3_0 : double; {SIP, Simple Imaging Polynomial use by astrometry.net, Spitzer}
-  ap_0_1, ap_0_2, ap_0_3, ap_1_0, ap_1_1, ap_1_2, ap_2_0, ap_2_1, ap_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
-  bp_0_1, bp_0_2, bp_0_3, bp_1_0, bp_1_1, bp_1_2, bp_2_0, bp_2_1, bp_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
+  a_0_0,   a_0_1, a_0_2,  a_0_3,  a_1_0,  a_1_1,  a_1_2,  a_2_0,  a_2_1,  a_3_0 : double; {SIP, Simple Imaging Polynomial use by astrometry.net, Spitzer}
+  b_0_0,   b_0_1, b_0_2,  b_0_3,  b_1_0,  b_1_1,  b_1_2,  b_2_0,  b_2_1,  b_3_0 : double; {SIP, Simple Imaging Polynomial use by astrometry.net, Spitzer}
+  ap_0_0, ap_0_1,ap_0_2, ap_0_3, ap_1_0, ap_1_1, ap_1_2, ap_2_0, ap_2_1, ap_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
+  bp_0_0, bp_0_1,bp_0_2, bp_0_3, bp_1_0, bp_1_1, bp_1_2, bp_2_0, bp_2_1, bp_3_0 : double;{SIP, Simple Imaging Polynomial use by astrometry.net}
 
   histogram : array[0..2,0..65535] of integer;{red,green,blue,count}
   his_total_red, his_total_green,his_total_blue,extend_type,r_aperture : integer; {histogram number of values}
@@ -799,7 +799,7 @@ var
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
- unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm;
+ unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm,unit_polynomial_regression;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -872,10 +872,10 @@ begin
 
     a_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
     ap_order:=0;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
-    a_0_2:=0; a_0_3:=0; a_1_1:=0; a_1_2:=0;a_2_0:=0; a_2_1:=0; a_3_0:=0;
-    b_0_2:=0; b_0_3:=0; b_1_1:=0; b_1_2:=0;b_2_0:=0; b_2_1:=0; b_3_0:=0;
-    ap_0_1:=0; ap_0_2:=0; ap_0_3:=0; ap_1_0:=0; ap_1_1:=0; ap_1_2:=0; ap_2_0:=0; ap_2_1:=0; ap_3_0:=0;
-    bp_0_1:=0; bp_0_2:=0; bp_0_3:=0; bp_1_0:=0; bp_1_1:=0; bp_1_2:=0; bp_2_0:=0; bp_2_1:=0; bp_3_0:=0;
+    a_0_0:=0; a_0_1:=0; a_0_2:=0; a_0_3:=0; a_1_0:=0; a_1_1:=0; a_1_2:=0;a_2_0:=0; a_2_1:=0; a_3_0:=0;
+    b_0_0:=0; b_0_1:=0; b_0_2:=0; b_0_3:=0; b_1_0:=0; b_1_1:=0; b_1_2:=0;b_2_0:=0; b_2_1:=0; b_3_0:=0;
+    ap_0_0:=0; ap_0_1:=0; ap_0_2:=0; ap_0_3:=0; ap_1_0:=0; ap_1_1:=0; ap_1_2:=0; ap_2_0:=0; ap_2_1:=0; ap_3_0:=0;
+    bp_0_0:=0; bp_0_1:=0; bp_0_2:=0; bp_0_3:=0; bp_1_0:=0; bp_1_1:=0; bp_1_2:=0; bp_2_0:=0; bp_2_1:=0; bp_3_0:=0;
 
     centalt:='';{assume no data available}
     centaz:='';{assume no data available}
@@ -1408,10 +1408,13 @@ begin
             if (header[i+3]='6') then   ppo_coeff[5]:=validate_double;
           end;
           if ((header[i]='A') and (header[i+1]='_')) then
-          begin
+          begin {pixel to sky coefficient}
             if ((header[i+2]='O') and (header[i+3]='R') and (header[i+4]='D')) then a_order:=round(validate_double);{should be >=2 if TAN-SIP convention available}
+            if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='0')) then a_0_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+            if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='1')) then a_0_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='2')) then a_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='3')) then a_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+            if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='0')) then a_1_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then a_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then a_1_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='0')) then a_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
@@ -1419,9 +1422,12 @@ begin
             if ((header[i+2]='3') and (header[i+3]='_') and (header[i+4]='0')) then a_3_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
           end;
           if ((header[i]='B') and (header[i+1]='_')) then
-          begin
+          begin {pixel to sky coefficient}
+            if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='0')) then b_0_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+            if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='1')) then b_0_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='2')) then b_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='3')) then b_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+            if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='o')) then b_1_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then b_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then b_1_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='0')) then b_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
@@ -1429,8 +1435,9 @@ begin
             if ((header[i+2]='3') and (header[i+3]='_') and (header[i+4]='0')) then b_3_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
           end;
           if ((header[i]='A') and (header[i+1]='P') and (header[i+2]='_')) then
-          begin
+          begin {sky to pixel coefficient}
             if ((header[i+3]='O') and (header[i+4]='R') and (header[i+5]='D')) then ap_order:=round(validate_double);{should be >=2 if TAN-SIP convention available}
+            if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='0')) then ap_0_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='1')) then ap_0_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='2')) then ap_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='3')) then ap_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
@@ -1442,7 +1449,8 @@ begin
             if ((header[i+3]='3') and (header[i+4]='_') and (header[i+5]='0')) then ap_3_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
           end;
           if ((header[i]='B') and (header[i+1]='P') and (header[i+2]='_')) then
-          begin
+          begin  {sky to pixel coefficient}
+            if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='0')) then bp_0_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='1')) then bp_0_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='2')) then bp_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
             if ((header[i+3]='0') and (header[i+4]='_') and (header[i+5]='3')) then bp_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
@@ -1698,7 +1706,7 @@ begin
     if ((nrbits<=-32){-32 or -64} or (nrbits=+32)) then
     begin
       scalefactor:=1;
-      if ((measured_max<=1.01) or (measured_max>65535)) then scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
+      if ((measured_max<=2.0) or (measured_max>65535)) then scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
                                                                                               {or if values are above 65535}
       if scalefactor<>1 then {not a 0..65535 range, rescale}
       begin
@@ -2990,7 +2998,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.568, '+about_message4+', dated 2021-8-12';
+  #13+#10+'ASTAP version ß0.9.569, '+about_message4+', dated 2021-8-17';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4242,6 +4250,7 @@ procedure Tmainwindow.show_distortion1Click(Sender: TObject);
 var
   stars_measured :integer;
 begin
+  calculate_undisturbed_image_scale;
   measure_distortion(true {plot},stars_measured);{measure or plot distortion}
 end;
 
@@ -4608,7 +4617,7 @@ begin
   mainwindow.sqm1.enabled:=yes;{enable menu}
   mainwindow.add_marker_position1.enabled:=yes;{enable popup menu}
   mainwindow.measuretotalmagnitude1.enabled:=yes;{enable popup menu}
-  mainwindow.writeposition1.enabled:=yes;{enable popup menu}
+ // mainwindow.writeposition1.enabled:=yes;{enable popup menu}
   mainwindow.writepositionshort1.enabled:=yes;{enable popup menu}
   mainwindow.Copyposition1.enabled:=yes;{enable popup menu}
   mainwindow.Copypositionindeg1.enabled:=yes;{enable popup menu}
@@ -9023,133 +9032,191 @@ end;
 
 procedure Tmainwindow.sip1Click(Sender: TObject); {simple SIP coefficients calculation assuming symmetric radial distortion. Distortion increases with the third power of the off-center distance}
 var
-  stars_measured,i,count        : integer;
-  x,y,xc,yc,r,rc,max_radius,factor  : double;
+  stars_measured,i,countX,countY       : integer;
+  xc,yc,x,y,error_x,error_y,r,rc,factorX,factorY,k1  : double;
   Save_Cursor:TCursor;
-  factors  : array of double;
+  factorsX,factorsY  : array of double;
 begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-  measure_distortion(false {plot},stars_measured);{measure distortion of all stars}
+  calculate_undisturbed_image_scale;{calculate and correct the image scale as if the optical system is undisturbed. The distance between the stars in the center are measured and compared between detection and database. It is assumed that the center of the image is undisturbed optically }
 
-  count:=0;
-  factor:=0;
-  setlength(factors,stars_measured);
-  max_radius:=sqrt(sqr(crpix1)+sqr(crpix2));
-  for i:=0 to stars_measured-1 do
+  measure_distortion(false {plot and no sip correction},stars_measured);{measure distortion of all stars}
+
+  //for i:=0 to stars_measured-1 do
+  //  log_to_file('c:\temp\poly.txt',floattostr(distortionX_data[0,i])+#9+floattostr(distortionX_data[1,i]));{for testing}
+
+  {Xdelta:=Xideal*(k1*r1^2 + k2*r1^4 + ....)
+
+  simplify take only first factor
+
+  Xdelta:=Xideal* k1*r1^2
+
+  Xdelta:=Xideal* k1*(X^2+Y^2)
+
+  Xdelta:=k1*X^3+  k1* X*Y^2           X^3 is AP_3_0      and X*Y^2   is AP_1_2
+
+  to find k1 take the median from all points where r is large enough to measure the distortion:
+
+  Xdelta:=k1*(X^3 +  (X*Y^2)
+
+  k1:=  Xdelta/(X^3 +   X*Y^2)
+
+  or
+
+  k1:=  Xdelta/(X(X^2 +  Y^2)
+
+  or
+
+  k1:=  Xdelta/(X*(r^2)) and k1:= Ydelta/(Y*(r^2))    }
+
+
+  if stars_measured>0 then
   begin
-    x:=distortion_data[0,i];
-    y:=distortion_data[1,i];
-    r:=sqrt(sqr(crpix1-x)+sqr(crpix2-y));
-    xc:=distortion_data[2,i];
-    yc:=distortion_data[3,i];
-    rc:=sqrt(sqr(crpix1-xc)+sqr(crpix2-yc));
+    countX:=0;
+    countY:=0;
+    setlength(factorsX,stars_measured);
+    setlength(factorsY,stars_measured);
 
-    //memo2_message(#9+floattostr(r)+#9+floattostr(rc));
-    if ( (abs(r-rc)>1){severe distortion} or  (r>0.7*max_radius) {far away stars}) then
+    for i:=0 to stars_measured-1 do
     begin
-      factors[count]:=(r-rc)/(rc*rc*rc); {Measure the ratio "offset/r^3". Distortion increases with the third power of the off-center distance or field angle}
-      inc(count,1);
+      x:=distortion_data[0,i]-crpix1;{database, x from center}
+      y:=distortion_data[1,i]-crpix2;
+      r:=sqrt(sqr(x)+sqr(y));
+      xc:=distortion_data[2,i]-crpix1;{measured, x from center}
+      yc:=distortion_data[3,i]-crpix2;
+     //  memo2_message(#9+'factX '+ #9+floattostr(x)+#9+floattostr(y)+ #9+floattostr(xc)+#9+floattostr(yc));
+
+      if ((abs(x-xc)>=1){some offset} and  (abs(x)>0.2*crpix1)) {some distance from center} then
+      begin
+        factorsX[countX]:=(x-xc)/(x*(sqr(x)+sqr(y))); {}
+//        memo2_message(#9+'factX '+ #9+floattostr(r)+#9+floattostr(factorsX[countX]));
+        inc(countX,1);
+      end;
+      if ((abs(y-yc)>=1){some offset} and  (abs(y)>0.2*crpix2)) {some distance from center} then
+      begin
+        factorsY[countY]:=(y-yc)/(y*(sqr(x)+sqr(y))); {}
+  //      memo2_message(#9+'factY '+ #9+floattostr(r)+#9+floattostr(factorsY[countY]));
+       inc(countY,1);
+      end;
     end;
-  end;
-  if count>0 then
-  begin
-    factor:=smedian(factors,count);{filter out outliers using median}
-
-    distortion_data:=nil;{free memory}
-
-    //               0            1           2           3           4             5            6
-    //     u2:=u + a_2_0*u*u + a_0_2*v*v + a_1_1*u*v + a_2_1*u*u*v+ a_1_2*u*v*v + a_3_0*u*u*u + a_0_3*v*v*v; {SIP correction for second or third order}
-    //     v2:=v + b_2_0*u*u + b_0_2*v*v + b_1_1*u*v + b_2_1*u*u*v+ b_1_2*u*v*v + b_3_0*u*u*u + b_0_3*v*v*v; {SIP correction for second or third order}
 
 
+    factorX:=smedian(factorsX,countX);{filter out outliers using median}
+    factorY:=smedian(factorsY,countY);{filter out outliers using median}
+
+    factorsX:=nil;
+    factorsY:=nil;
+
+    //                0            1           2           3           4             5            6
+    //     u2:=u + A_0_0+ a_1_0*u + a_2_0*u*u + a_0_2*v*v + a_1_1*u*v + a_2_1*u*u*v+ a_1_2*u*v*v + a_3_0*u*u*u + a_0_3*v*v*v; {SIP correction for second or third order}
+    //     v2:=v + B_0_0 + b_0_1*v + b_2_0*u*u + b_0_2*v*v + b_1_1*u*v + b_2_1*u*u*v+ b_1_2*u*v*v + b_3_0*u*u*u + b_0_3*v*v*v; {SIP correction for second or third order}
+
+
+    {pixel to sky coefficients}
     A_ORDER:=3;{allow usage in astap}
+    A_0_0:=0;
+    A_0_1:=0;
     A_0_2:=0;
     A_0_3:=0;
+    A_1_0:=0;
     A_1_1:=0;
-    A_1_2:=factor; {important factor}
+    A_1_2:=factorX;
     A_2_0:=0;
     A_2_1:=0;
-    A_3_0:=factor; {important factor}
+    A_3_0:=factorX;
 
-    B_0_2:=A_2_0; {assume symmetry in distortion}
-    B_0_3:=A_3_0;
-    B_1_1:=A_1_1;
-    B_1_2:=A_2_1;
-    B_2_0:=A_0_2;
-    B_2_1:=A_1_2;
-    B_3_0:=A_0_3;
+    B_0_0:=0;
+    B_0_1:=0;
+    B_0_2:=0;
+    B_0_3:=factorY;
+    B_1_0:=0;
+    B_2_0:=0;
+    B_3_0:=0;
+    B_1_1:=0;
+    B_1_2:=0;
+    B_2_1:=factorY;
+    B_3_0:=0;
 
-
+    {sky to pixel coefficients}
     AP_order:=3; {allow usage in astap}
-    AP_0_2:=-A_0_2; {approximation just negative the factors}
-    AP_0_3:=-A_0_3;
-    AP_1_1:=-A_1_1;
-    AP_1_2:=-A_1_2;
-    AP_2_0:=-A_2_0;
-    AP_2_1:=-A_2_1;
-    AP_3_0:=-A_3_0;
+    AP_0_0:=0; {approximation just negative the factors}
+    AP_0_1:=0;
+    AP_0_2:=0;
+    AP_0_3:=0;
+    AP_1_0:=0;
+    AP_1_1:=0;
+    AP_1_2:=-factorX;
+    AP_2_0:=0;
+    AP_2_1:=0;
+    AP_3_0:=-factorX;
 
-    BP_0_2:=-B_0_2; {approximation just negative the factors}
-    BP_0_3:=-B_0_3;
-    BP_1_1:=-B_1_1;
-    BP_1_2:=-B_1_2;
-    BP_2_0:=-B_2_0;
-    BP_2_1:=-B_2_1;
-    BP_3_0:=-B_3_0;
+    BP_0_0:=0; {approximation just negative the factors}
+    BP_0_1:=0;
+    BP_0_2:=0;
+    BP_0_3:=-factorY;
+    BP_1_0:=0;
+    BP_1_1:=0;
+    BP_1_2:=0;
+    BP_2_0:=0;
+    BP_2_1:=-factorY;
+    BP_3_0:=0;
 
-    update_float  ('A_ORDER =',' / Polynomial order, axis 1                       ' ,3);
-    update_float  ('A_0_0   =',' / SIP coefficient                                ' ,0);
-    update_float  ('A_0_1   =',' / SIP coefficient                                ' ,0);
-    update_float  ('A_0_2   =',' / SIP coefficient                                ' ,A_0_2);
-    update_float  ('A_0_3   =',' / SIP coefficient                                ' ,A_0_3);
-    update_float  ('A_1_0   =',' / SIP coefficient                                ' ,0);
-    update_float  ('A_1_1   =',' / SIP coefficient                                ' ,A_1_1);
+
+
+    update_float  ('A_ORDER =',' / Polynomial order, axis 1. Pixel to Sky         ' ,3);
+    remove_key    ('A_0_0   =',false{all});
+    remove_key    ('A_0_1   =',false{all});
+    remove_key    ('A_0_2   =',false{all});
+    remove_key    ('A_0_3   =',false{all});
+    remove_key    ('A_1_0   =',false{all});
+    remove_key    ('A_1_1   =',false{all});
     update_float  ('A_1_2   =',' / SIP coefficient                                ' ,A_1_2);
-    update_float  ('A_2_0   =',' / SIP coefficient                                ' ,A_2_0);
-    update_float  ('A_2_1   =',' / SIP coefficient                                ' ,A_2_1);
+    remove_key    ('A_2_0   =',false{all});
+    remove_key    ('A_2_1   =',false{all});
     update_float  ('A_3_0   =',' / SIP coefficient                                ' ,A_3_0);
 
-    update_float  ('B_ORDER =',' / Polynomial order, axis 2                       ' ,3);
-    update_float  ('B_0_0   =',' / SIP coefficient                                ' ,0);
-    update_float  ('B_0_1   =',' / SIP coefficient                                ' ,0);
-    update_float  ('B_0_2   =',' / SIP coefficient                                ' ,B_0_2);
+    update_float  ('B_ORDER =',' / Polynomial order, axis 2. Pixel to sky.        ' ,3);
+    remove_key    ('B_0_0   =',false{all});
+    remove_key    ('B_0_1   =',false{all});
+    remove_key    ('B_0_2   =',false{all});
     update_float  ('B_0_3   =',' / SIP coefficient                                ' ,B_0_3);
-    update_float  ('B_1_0   =',' / SIP coefficient                                ' ,0);
-    update_float  ('B_1_1   =',' / SIP coefficient                                ' ,B_1_1);
-    update_float  ('B_1_2   =',' / SIP coefficient                                ' ,B_1_2);
-    update_float  ('B_2_0   =',' / SIP coefficient                                ' ,B_2_0);
+    remove_key    ('B_1_0   =',false{all});
+    remove_key    ('B_1_1   =',false{all});
+    remove_key    ('B_1_2   =',false{all});
+    remove_key    ('B_2_0   =',false{all});
     update_float  ('B_2_1   =',' / SIP coefficient                                ' ,B_2_1);
-    update_float  ('B_3_0   =',' / SIP coefficient                                ' ,B_3_0);
+    remove_key    ('B_3_0   =',false{all});
 
-    update_float  ('AP_ORDER=',' / Inv polynomial order, axis 1                   ' ,3);
-    update_float  ('AP_0_0  =',' / SIP coefficient                                ' ,0);
-    update_float  ('AP_0_1  =',' / SIP coefficient                                ' ,0);
-    update_float  ('AP_0_2  =',' / SIP coefficient                                ' ,AP_0_2);
-    update_float  ('AP_0_3  =',' / SIP coefficient                                ' ,AP_0_3);
-    update_float  ('AP_1_0  =',' / SIP coefficient                                ' ,0);
-    update_float  ('AP_1_1  =',' / SIP coefficient                                ' ,AP_1_1);
-    update_float  ('AP_1_2  =',' / SIP coefficient                                ' ,AP_1_2);
-    update_float  ('AP_2_0  =',' / SIP coefficient                                ' ,AP_2_0);
-    update_float  ('AP_2_1  =',' / SIP coefficient                                ' ,AP_2_1);
-    update_float  ('AP_3_0  =',' / SIP coefficient                                ' ,AP_3_0);
+    update_float('AP_ORDER=',' / Inv polynomial order, axis 1. Sky to pixel.      ' ,3);
+    remove_key  ('AP_0_0  =',false{all});
+    remove_key  ('AP_0_1  =',false{all});
+    remove_key  ('AP_0_2  =',false{all});
+    remove_key  ('AP_0_3  =',false{all});
+    remove_key  ('AP_1_0  =',false{all});
+    remove_key  ('AP_1_1  =',false{all});
+    update_float('AP_1_2  =',' / SIP coefficient                                ' ,AP_1_2);
+    remove_key  ('AP_2_0  =',false{all});
+    remove_key  ('AP_2_1  =',false{all});
+    update_float('AP_3_0  =',' / SIP coefficient                                ' ,AP_3_0);
 
-    update_float  ('BP_ORDER=',' / Inv polynomial order, axis 2                   ' ,3);
-    update_float  ('BP_0_0  =',' / SIP coefficient                                ' ,0);
-    update_float  ('BP_0_1  =',' / SIP coefficient                                ' ,0);
-    update_float  ('BP_0_2  =',' / SIP coefficient                                ' ,BP_0_2);
-    update_float  ('BP_0_3  =',' / SIP coefficient                                ' ,BP_0_3);
-    update_float  ('BP_1_0  =',' / SIP coefficient                                ' ,0);
-    update_float  ('BP_1_1  =',' / SIP coefficient                                ' ,BP_1_1);
-    update_float  ('BP_1_2  =',' / SIP coefficient                                ' ,BP_1_2);
-    update_float  ('BP_2_0  =',' / SIP coefficient                                ' ,BP_2_0);
-    update_float  ('BP_2_1  =',' / SIP coefficient                                ' ,BP_2_1);
-    update_float  ('BP_3_0  =',' / SIP coefficient                                ' ,BP_3_0);
+    update_float('BP_ORDER=',' / Inv polynomial order, axis 2. Sky to pixel.    ' ,3);
+    remove_key  ('BP_0_0  =',false{all});
+    remove_key  ('BP_0_1  =',false{all});
+    remove_key  ('BP_0_2  =',false{all});
+    update_float('BP_0_3  =',' / SIP coefficient                                ' ,BP_0_3);
+    remove_key  ('BP_1_0  =',false{all});
+    remove_key  ('BP_1_1  =',false{all});
+    remove_key  ('BP_1_2  =',false{all});
+    remove_key  ('BP_2_0  =',false{all});
+    update_float('BP_2_1  =',' / SIP coefficient                                ' ,BP_2_1);
+    remove_key  ('BP_3_0  =',false{all});
 
     mainwindow.Polynomial1.color:=clform;
     mainwindow.Polynomial1.ItemIndex:=1;{set at SIP}
-    memo2_message('Added SIP coefficients to header for a 3th order radial correction up to '+floattostrF(abs(factor)*max_radius*max_radius*max_radius,ffFixed,3,2)+' pixels.');{factor*radius^3}
+    memo2_message('Added SIP coefficients to header for a 3th order radial correction. This correction will only work for barrel distortion and pincushion distortion. You could test it with the inspector showing the distortion vectors in SIP readout mode.');
+    //up to '+floattostrF(abs(factor)*max_radius*max_radius*max_radius,ffFixed,3,2)+' pixels.');{factor*radius^3}
   end
   else
   begin
@@ -11132,7 +11199,7 @@ end;
 
 procedure Tmainwindow.writeposition1Click(Sender: TObject);
 var  font_height:integer;
-     x7,y7 : integer;
+     x7,y7,x8,y8 : integer;
 begin
   backup_img;
   image1.Canvas.brush.Style:=bsClear;
@@ -11154,7 +11221,12 @@ begin
     if mainwindow.flip_vertical1.Checked=false then y7:=round(height2-object_yc) else y7:=round(object_yc);
 
     if sender<>writepositionshort1 then
-      image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+position_to_string(',',object_raM,object_decM))
+    begin
+      if cd1_1<>0 then {solved}
+        image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+position_to_string(',',object_raM,object_decM))
+      else
+        image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+floattostrF(object_xc,ffFixed,0,2)+', '+floattostrF(object_yc,ffFixed,0,2));{write x,y position if not solved}
+    end
     else
       image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+prepare_IAU_designation(object_raM,object_decM));
   end
@@ -11163,7 +11235,14 @@ begin
     image1.Canvas.font.color:=clred;
 
     if sender<>writepositionshort1 then
-       image1.Canvas.textout(round(3+down_x   /(image1.width/width2)),round(-font_height +(down_y)/(image1.height/height2)),'_'+position_to_string(',',object_raM,object_decM));
+    begin
+      x8:=round(3+down_x   /(image1.width/width2));
+      y8:=round(-font_height +(down_y)/(image1.height/height2));
+      if cd1_1<>0 then
+        image1.Canvas.textout(x8,y8,'_'+position_to_string(',',object_raM,object_decM))
+      else
+        image1.Canvas.textout(x8,y8,'_'+floattostrF(mouse_fitsX,ffFixed,0,2)+', '+floattostrF(mouse_fitsY,ffFixed,0,2));{write x,y position if not solved}
+    end;
   end;
 end;
 
@@ -12665,8 +12744,9 @@ begin
    begin
      u:=fitsx-crpix1;
      v:=fitsy-crpix2;
-     u2:=u + a_2_0*u*u + a_0_2*v*v + a_1_1*u*v + a_2_1*u*u*v+ a_1_2*u*v*v + a_3_0*u*u*u + a_0_3*v*v*v; {SIP correction for second or third order}
-     v2:=v + b_2_0*u*u + b_0_2*v*v + b_1_1*u*v + b_2_1*u*u*v+ b_1_2*u*v*v + b_3_0*u*u*u + b_0_3*v*v*v; {SIP correction for second or third order}
+     u2:=u + a_0_0+ a_0_1*v + a_0_2*v*v + a_0_3*v*v*v + a_1_0*u + a_1_1*u*v + a_1_2*u*v*v + a_2_0*u*u + a_2_1*u*u*v + a_3_0*u*u*u ; {SIP correction for second or third order}
+     v2:=v + b_0_0+ b_0_1*v + b_0_2*v*v + b_0_3*v*v*v + b_1_0*u + b_1_1*u*v + b_1_2*u*v*v + b_2_0*u*u + b_2_1*u*u*v + b_3_0*u*u*u ; {SIP correction for second or third order}
+
      dRa :=(cd1_1*(u2)+cd1_2*(v2))*pi/180;
      dDec:=(cd2_1*(u2)+cd2_2*(v2))*pi/180;
      delta:=cos(dec0)-dDec*sin(dec0);

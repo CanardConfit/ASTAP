@@ -26,6 +26,7 @@ procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot im
 procedure read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double);{deepsky database search}
 procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y : integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 function find_object(var objname : string; var ra0,dec0,length0,width0,pa : double): boolean; {find object in database}
+procedure calculate_undisturbed_image_scale;{calculate and correct the image scale as if the optical system is undisturbed. The distance between the stars in the center are measured and compared between detection and database. It is assumed that the center of the image is undisturbed optically }
 
 
 var
@@ -1392,8 +1393,8 @@ begin
 
       if sip then {apply SIP correction}
       begin
-         x:=round(crpix1 + u0 + ap_0_1*v0+ ap_0_2*v0*v0+ + ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-         y:=round(crpix2 + v0 + bp_0_1*v0+ bp_0_2*v0*v0+ + bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
+         x:=round(crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+         y:=round(crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
       end
       else
       begin
@@ -1581,10 +1582,10 @@ var
       u0:= - (CD1_2*dDEC - CD2_2*dRA) / det;
       v0:= + (CD1_1*dDEC - CD2_1*dRA) / det;
 
-      if sip then {apply SIP correction}
+      if sip then {apply SIP correction, sky to pixel}
       begin
-         x:=(crpix1 + u0 + ap_0_1*v0+ ap_0_2*v0*v0+ + ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-         y:=(crpix2 + v0 + bp_0_1*v0+ bp_0_2*v0*v0+ + bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
+         x:=(crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+         y:=(crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
       end
       else
       begin
@@ -1823,6 +1824,85 @@ begin
 end;{plot stars}
 
 
+procedure calculate_undisturbed_image_scale;{calculate and correct the image scale as if the optical system is undisturbed. The distance between the stars in the center are measured and compared between detection and database. It is assumed that the center of the image is undisturbed optically }
+var
+   i,j,count,stars_measured,count2       : integer;
+   x1,y1,x2,y2,xc1,yc1,xc2,yc2,factor,r1,r2,d1,d2,range   : double;
+   factors      : array of double;
+
+begin
+  measure_distortion(false {plot and no sip correction},stars_measured);{measure stars against the database}
+
+  setlength(factors,stars_measured);
+
+  range:=0.05;
+
+  if stars_measured>0 then
+  repeat
+    count:=0;
+    range:=range+0.05; {increase range of center for finding stars}
+    begin
+      for i:=0 to stars_measured-1 do
+      begin
+        x1:=distortion_data[0,i]-crpix1;{database, x from center}
+        y1:=distortion_data[1,i]-crpix2;
+        r1:=sqr(x1)+sqr(y1);{distance from centre image}
+
+        if  r1<sqr(range{0.1}*height2) then {short distance 10% of image scale, distortion low}
+        begin
+          count2:=0;
+          for j:=0 to stars_measured-1 do {second loop}
+          if ((i<>j) and (count2<6)) then {compare against a few other stars in center}
+          begin
+
+            x2:=distortion_data[0,j]-crpix1;{database, x from center}
+            y2:=distortion_data[1,j]-crpix2;
+            r2:=sqr(x2)+sqr(y2);{distance from centre image}
+
+            if  r2<sqr(range{0.1}*height2) then {short distance 10% of image scale, distortion low}
+            begin
+              xc1:=distortion_data[2,i]-crpix1;{database, x from center}
+              yc1:=distortion_data[3,i]-crpix2;
+              xc2:=distortion_data[2,j]-crpix1;{database, x from center}
+              yc2:=distortion_data[3,j]-crpix2;
+
+              d1:=sqr(x1-x2)+sqr(y1-y2);
+              if d1>sqr(0.5*range{0.1}*height2) then {some distance}
+              begin
+                d2:=sqr(xc1-xc2)+sqr(yc1-yc2);
+                factors[count]:=sqrt(d1/d2) ; //Ratio between close distance stars of database and image stars for center of the image. It is assumed that the center of the image is undisturbed optically
+                inc(count,1);
+                inc(count2,1);
+                if count>length(factors) then
+                          setlength(factors,count+stars_measured);
+              end;
+            end;
+          end;
+
+        end;
+      end;
+      factor:=smedian(factors,count);{filter out outliers using median}
+    end;
+  until ((count>50) or (range<0.3));
+  if count>50  then
+  begin
+    cdelt1:=cdelt1*factor;
+    cdelt2:=cdelt2*factor;
+    cd1_1:=cd1_1*factor;
+    cd1_2:=cd1_2*factor;
+    cd2_1:=cd2_1*factor;
+    cd2_2:=cd2_2*factor;
+    if factor<1 then memo2_message('Assuming barrel distortion.') else memo2_message('Assuming pincushion distortion.');
+    memo2_message('Measured the undisturbed image scale in center and corrected image scale with factor '+floattostr6(factor)+'. Used '+inttostr(round(range*100))+'% of image');
+  end
+  else
+  begin
+    memo2_message('Failed to measure undisturbed image scale');
+    factor:=1;
+  end;
+  factors:=nil;{release memory}
+end;
+
 procedure measure_distortion(plot: boolean; out stars_measured : integer);{measure or plot distortion}
 var
   fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
@@ -1848,12 +1928,12 @@ var
       u0:= - (CD1_2*dDEC - CD2_2*dRA) / det;
       v0:= + (CD1_1*dDEC - CD2_1*dRA) / det;
 
-//      if sip then {apply SIP correction}
-//      begin
-//         x:=(crpix1 + u0 + ap_0_1*v0+ ap_0_2*v0*v0+ + ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-//         y:=(crpix2 + v0 + bp_0_1*v0+ bp_0_2*v0*v0+ + bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
-//      end
-//      else
+      if ((plot) and (sip)) then {apply SIP correction, sky to pixel. Do not apply correction for measurement if plotting is false !!!!}
+      begin
+        x:=(crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+        y:=(crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
+      end
+      else
       begin
         x:=(crpix1 + u0)-1; {in image array range 0..width-1}
         y:=(crpix2 + v0)-1;
@@ -1898,6 +1978,8 @@ var
 begin
   if ((fits_file) and (cd1_1<>0)) then
   begin
+    sip:=((ap_order>=2) and (mainwindow.Polynomial1.itemindex=1));{use sip corrections?}
+
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
@@ -1917,7 +1999,8 @@ begin
     telescope_dec:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
 
     mainwindow.image1.Canvas.Pen.width :=1; // round(1+height2/mainwindow.image1.height);{thickness lines}
-    mainwindow.image1.canvas.pen.color:=$00B0FF ;{orange}
+    if sip=false then mainwindow.image1.canvas.pen.color:=$00B0FF {orange}
+                 else mainwindow.image1.canvas.pen.color:=$00FF00; {green}
 
     star_total_counter:=0;{total counter}
     sub_counter:=0;
@@ -1999,6 +2082,7 @@ begin
       mainwindow.image1.canvas.pen.color:=annotation_color;
       mainwindow.image1.Canvas.brush.Style:=bsClear;
       mainwindow.image1.Canvas.font.color:=annotation_color;
+      mainwindow.image1.Canvas.font.size:=8;
 
       mainwindow.image1.Canvas.Pen.width :=3;
 
@@ -2019,7 +2103,6 @@ begin
       mainwindow.image1.Canvas.MoveTo(220, height2-30);
       mainwindow.image1.Canvas.LineTo(220+scale*3,height2-30);
 
-      mainwindow.image1.Canvas.textout(350,height2-25,'Median error center '+floattostr4(astrometric_error*cdelt2*3600)+'"');
 
       for i:=0 to 3 do
       begin
@@ -2028,6 +2111,15 @@ begin
         mainwindow.image1.Canvas.textout(217+scale*i,height2-25,inttostr(i)+'"');
       end;
       mainwindow.image1.Canvas.textout(220,height2-60,'Scale in arcsecs');
+
+      mainwindow.image1.Canvas.font.size:=12;
+
+      if sip then
+      begin
+        mainwindow.image1.Canvas.textout(700,height2-25,'SIP corrections are applied. Median error for 50% of image '+floattostr4(astrometric_error*cdelt2*3600)+'"');
+      end
+      else
+      mainwindow.image1.Canvas.textout(350,height2-25,'Median error for 50% of image '+floattostr4(astrometric_error*cdelt2*3600)+'"');
 
 
       error_array:=nil;

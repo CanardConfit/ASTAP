@@ -1718,7 +1718,6 @@ object mainwindow: Tmainwindow
     end
     object writeposition1: TMenuItem
       Caption = 'Add object position'
-      Enabled = False
       Hint = 'Add astronomical position of the object near the mouse position. Position is auto centered.'
       OnClick = writeposition1Click
     end
