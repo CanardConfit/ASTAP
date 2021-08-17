@@ -26,7 +26,7 @@ procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot im
 procedure read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double);{deepsky database search}
 procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y : integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 function find_object(var objname : string; var ra0,dec0,length0,width0,pa : double): boolean; {find object in database}
-procedure calculate_undisturbed_image_scale;{calculate and correct the image scale as if the optical system is undisturbed. The distance between the stars in the center are measured and compared between detection and database. It is assumed that the center of the image is undisturbed optically }
+function calculate_undisturbed_image_scale : boolean;{calculate and correct the image scale as if the optical system is undisturbed. The distance between the stars in the center are measured and compared between detection and database. It is assumed that the center of the image is undisturbed optically }
 
 
 var
@@ -1824,18 +1824,18 @@ begin
 end;{plot stars}
 
 
-procedure calculate_undisturbed_image_scale;{calculate and correct the image scale as if the optical system is undisturbed. The distance between the stars in the center are measured and compared between detection and database. It is assumed that the center of the image is undisturbed optically }
+function calculate_undisturbed_image_scale : boolean;{calculate and correct the image scale as if the optical system is undisturbed. The distance between the stars in the center are measured and compared between detection and database. It is assumed that the center of the image is undisturbed optically }
 var
-   i,j,count,stars_measured,count2       : integer;
-   x1,y1,x2,y2,xc1,yc1,xc2,yc2,factor,r1,r2,d1,d2,range   : double;
-   factors      : array of double;
+  i,j,count,stars_measured,count2       : integer;
+  x1,y1,x2,y2,xc1,yc1,xc2,yc2,factor,r1,r2,d1,d2,range   : double;
+  factors      : array of double;
 
 begin
   measure_distortion(false {plot and no sip correction},stars_measured);{measure stars against the database}
 
   setlength(factors,stars_measured);
 
-  range:=0.05;
+  range:=0.05; {start with 0.05+0.05 is 0.1 range}
 
   if stars_measured>0 then
   repeat
@@ -1886,8 +1886,6 @@ begin
   until ((count>50) or (range<0.3));
   if count>50  then
   begin
-
-
     cd1_1:=cd1_1*factor;
     cd1_2:=cd1_2*factor;
     cd2_1:=cd2_1*factor;
@@ -1904,11 +1902,13 @@ begin
 
     if factor<1 then memo2_message('Assuming barrel distortion.') else memo2_message('Assuming pincushion distortion.');
     memo2_message('Measured the undisturbed image scale in center and corrected image scale with factor '+floattostr6(factor)+'. Used '+inttostr(round(range*100))+'% of image');
+    result:=true;
   end
   else
   begin
     memo2_message('Failed to measure undisturbed image scale');
     factor:=1;
+    result:=false;
   end;
   factors:=nil;{release memory}
 end;
