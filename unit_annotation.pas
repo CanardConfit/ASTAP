@@ -1883,7 +1883,7 @@ begin
       end;
       factor:=smedian(factors,count);{filter out outliers using median}
     end;
-  until ((count>50) or (range<0.3));
+  until ((count>50 {about 50/6 stars}) or (range>=0.3));
   if count>50  then
   begin
     cd1_1:=cd1_1*factor;

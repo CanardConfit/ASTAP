@@ -2998,7 +2998,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.569, '+about_message4+', dated 2021-8-17';
+  #13+#10+'ASTAP version ß0.9.569a, '+about_message4+', dated 2021-8-18';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -9044,32 +9044,21 @@ begin
   begin
     measure_distortion(false {plot and no sip correction},stars_measured);{measure distortion of all stars}
 
-    //for i:=0 to stars_measured-1 do
-    //  log_to_file('c:\temp\poly.txt',floattostr(distortionX_data[0,i])+#9+floattostr(distortionX_data[1,i]));{for testing}
+   {Standard formala for optical distortion
 
-    {Xdelta:=Xideal*(k1*r1^2 + k2*r1^4 + ....)
+    Xdelta:=Xideal*(k1*r1^2 + k2*r1^4 + ....)
 
-    simplify take only first factor
+    simplify by taking only the first factor
 
     Xdelta:=Xideal* k1*r1^2
 
     Xdelta:=Xideal* k1*(X^2+Y^2)
 
-    Xdelta:=k1*X^3+  k1* X*Y^2           X^3 is AP_3_0      and X*Y^2   is AP_1_2
+    Xdelta:=k1*X^3+  k1* X*Y^2   formula (1) for the SIP correction       X^3 is AP_3_0      and X*Y^2   is AP_1_2
 
-    to find k1 take the median from all points where r is large enough to measure the distortion:
+    k1:=Xdelta/(X^3 +  (X*Y^2)   formula (2) to find k1
 
-    Xdelta:=k1*(X^3 +  (X*Y^2)
-
-    k1:=  Xdelta/(X^3 +   X*Y^2)
-
-    or
-
-    k1:=  Xdelta/(X(X^2 +  Y^2)
-
-    or
-
-    k1:=  Xdelta/(X*(r^2)) and k1:= Ydelta/(Y*(r^2))    }
+    to find k1 take the median from all points using formula (2) where x or y is large enough to measure the distortion}
 
 
     if stars_measured>0 then
@@ -9085,19 +9074,16 @@ begin
         y:=distortion_data[1,i]-crpix2;
         xc:=distortion_data[2,i]-crpix1;{measured, x from center}
         yc:=distortion_data[3,i]-crpix2;
-       //  memo2_message(#9+'factX '+ #9+floattostr(x)+#9+floattostr(y)+ #9+floattostr(xc)+#9+floattostr(yc));
 
         if ((abs(x-xc)>=1){some offset} and  (abs(x)>0.2*crpix1)) {some distance from center} then
         begin
-          factorsX[countX]:=(x-xc)/(x*(sqr(x)+sqr(y))); {}
-  //        memo2_message(#9+'factX '+ #9+floattostr(r)+#9+floattostr(factorsX[countX]));
+          factorsX[countX]:=(x-xc)/(x*(sqr(x)+sqr(y))); {measure the k1 factor for every star detection}
           inc(countX,1);
         end;
         if ((abs(y-yc)>=1){some offset} and  (abs(y)>0.2*crpix2)) {some distance from center} then
         begin
-          factorsY[countY]:=(y-yc)/(y*(sqr(x)+sqr(y))); {}
-    //      memo2_message(#9+'factY '+ #9+floattostr(r)+#9+floattostr(factorsY[countY]));
-         inc(countY,1);
+          factorsY[countY]:=(y-yc)/(y*(sqr(x)+sqr(y))); {measure the k1 factor for every star detection}
+          inc(countY,1);
         end;
       end;
 
