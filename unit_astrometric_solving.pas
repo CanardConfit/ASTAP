@@ -551,6 +551,20 @@ begin
   else warning:='';
 
   quad_tolerance:=strtofloat2(stackmenu1.quad_tolerance1.text);
+
+  if select_star_database(stackmenu1.star_database1.text)=false then {select database prior to cropping selection}
+  begin
+    result:=false;
+    application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download the h18 (or h17, v17) and install'), pchar('ASTAP error:'),0);
+    errorlevel:=32;{no star database}
+    exit;
+  end
+  else
+  begin
+    stackmenu1.star_database1.text:=name_database;
+    memo2_message('Using star database '+uppercase(name_database));
+  end;
+
   if file290 then {.290 database}
     max_fov:=9.53 {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
   else  {.1476 database}
@@ -636,18 +650,6 @@ begin
 
     if go_ahead then
     begin
-      if select_star_database(stackmenu1.star_database1.text)=false then
-      begin
-        result:=false;
-        application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download the h18 (or h17, v17) and install'), pchar('ASTAP error:'),0);
-        errorlevel:=32;{no star database}
-        exit;
-      end
-      else
-      begin
-        stackmenu1.star_database1.text:=name_database;
-        memo2_message('Using star database '+uppercase(name_database));
-      end;
 
       search_field:=fov2*(pi/180);
       STEP_SIZE:=search_field;{fixed step size search spiral. Prior to version 0.9.211 this was reduced for small star counts}

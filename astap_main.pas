@@ -2998,7 +2998,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.569a, '+about_message4+', dated 2021-8-18';
+  #13+#10+'ASTAP version ß0.9.570, '+about_message4+', dated 2021-8-19';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -9036,6 +9036,7 @@ var
   xc,yc,x,y,factorX,factorY,k1  : double;
   Save_Cursor:TCursor;
   factorsX,factorsY  : array of double;
+  valid              : boolean;
 begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -9060,6 +9061,7 @@ begin
 
     to find k1 take the median from all points using formula (2) where x or y is large enough to measure the distortion}
 
+    valid:=false;
 
     if stars_measured>0 then
     begin
@@ -9075,6 +9077,8 @@ begin
         xc:=distortion_data[2,i]-crpix1;{measured, x from center}
         yc:=distortion_data[3,i]-crpix2;
 
+        if abs(x)>0.35*height2 then valid:=true; {stars detected over 70% or range.}
+
         if ((abs(x-xc)>=1){some offset} and  (abs(x)>0.2*crpix1)) {some distance from center} then
         begin
           factorsX[countX]:=(x-xc)/(x*(sqr(x)+sqr(y))); {measure the k1 factor for every star detection}
@@ -9087,125 +9091,135 @@ begin
         end;
       end;
 
-      factorX:=smedian(factorsX,countX);{filter out outliers using median}
-      factorY:=smedian(factorsY,countY);{filter out outliers using median}
+      if valid then
+      begin
 
-      factorsX:=nil;
-      factorsY:=nil;
+        factorX:=smedian(factorsX,countX);{filter out outliers using median}
+        factorY:=smedian(factorsY,countY);{filter out outliers using median}
 
-      //                0            1           2           3           4             5            6
-      //     u2:=u + A_0_0+ a_1_0*u + a_2_0*u*u + a_0_2*v*v + a_1_1*u*v + a_2_1*u*u*v+ a_1_2*u*v*v + a_3_0*u*u*u + a_0_3*v*v*v; {SIP correction for second or third order}
-      //     v2:=v + B_0_0 + b_0_1*v + b_2_0*u*u + b_0_2*v*v + b_1_1*u*v + b_2_1*u*u*v+ b_1_2*u*v*v + b_3_0*u*u*u + b_0_3*v*v*v; {SIP correction for second or third order}
+        factorsX:=nil;
+        factorsY:=nil;
 
-
-      {pixel to sky coefficients}
-      A_ORDER:=3;{allow usage in astap}
-      A_0_0:=0;
-      A_0_1:=0;
-      A_0_2:=0;
-      A_0_3:=0;
-      A_1_0:=0;
-      A_1_1:=0;
-      A_1_2:=factorX;
-      A_2_0:=0;
-      A_2_1:=0;
-      A_3_0:=factorX;
-
-      B_0_0:=0;
-      B_0_1:=0;
-      B_0_2:=0;
-      B_0_3:=factorY;
-      B_1_0:=0;
-      B_2_0:=0;
-      B_3_0:=0;
-      B_1_1:=0;
-      B_1_2:=0;
-      B_2_1:=factorY;
-      B_3_0:=0;
-
-      {sky to pixel coefficients}
-      AP_order:=3; {allow usage in astap}
-      AP_0_0:=0; {approximation just negative the factors}
-      AP_0_1:=0;
-      AP_0_2:=0;
-      AP_0_3:=0;
-      AP_1_0:=0;
-      AP_1_1:=0;
-      AP_1_2:=-factorX;
-      AP_2_0:=0;
-      AP_2_1:=0;
-      AP_3_0:=-factorX;
-
-      BP_0_0:=0; {approximation just negative the factors}
-      BP_0_1:=0;
-      BP_0_2:=0;
-      BP_0_3:=-factorY;
-      BP_1_0:=0;
-      BP_1_1:=0;
-      BP_1_2:=0;
-      BP_2_0:=0;
-      BP_2_1:=-factorY;
-      BP_3_0:=0;
+        //                0            1           2           3           4             5            6
+        //     u2:=u + A_0_0+ a_1_0*u + a_2_0*u*u + a_0_2*v*v + a_1_1*u*v + a_2_1*u*u*v+ a_1_2*u*v*v + a_3_0*u*u*u + a_0_3*v*v*v; {SIP correction for second or third order}
+        //     v2:=v + B_0_0 + b_0_1*v + b_2_0*u*u + b_0_2*v*v + b_1_1*u*v + b_2_1*u*u*v+ b_1_2*u*v*v + b_3_0*u*u*u + b_0_3*v*v*v; {SIP correction for second or third order}
 
 
+        {pixel to sky coefficients}
+        A_ORDER:=3;{allow usage in astap}
+        A_0_0:=0;
+        A_0_1:=0;
+        A_0_2:=0;
+        A_0_3:=0;
+        A_1_0:=0;
+        A_1_1:=0;
+        A_1_2:=factorX;
+        A_2_0:=0;
+        A_2_1:=0;
+        A_3_0:=factorX;
 
-      update_float  ('A_ORDER =',' / Polynomial order, axis 1. Pixel to Sky         ' ,3);
-      remove_key    ('A_0_0   =',false{all});
-      remove_key    ('A_0_1   =',false{all});
-      remove_key    ('A_0_2   =',false{all});
-      remove_key    ('A_0_3   =',false{all});
-      remove_key    ('A_1_0   =',false{all});
-      remove_key    ('A_1_1   =',false{all});
-      update_float  ('A_1_2   =',' / SIP coefficient                                ' ,A_1_2);
-      remove_key    ('A_2_0   =',false{all});
-      remove_key    ('A_2_1   =',false{all});
-      update_float  ('A_3_0   =',' / SIP coefficient                                ' ,A_3_0);
+        B_0_0:=0;
+        B_0_1:=0;
+        B_0_2:=0;
+        B_0_3:=factorY;
+        B_1_0:=0;
+        B_2_0:=0;
+        B_3_0:=0;
+        B_1_1:=0;
+        B_1_2:=0;
+        B_2_1:=factorY;
+        B_3_0:=0;
 
-      update_float  ('B_ORDER =',' / Polynomial order, axis 2. Pixel to sky.        ' ,3);
-      remove_key    ('B_0_0   =',false{all});
-      remove_key    ('B_0_1   =',false{all});
-      remove_key    ('B_0_2   =',false{all});
-      update_float  ('B_0_3   =',' / SIP coefficient                                ' ,B_0_3);
-      remove_key    ('B_1_0   =',false{all});
-      remove_key    ('B_1_1   =',false{all});
-      remove_key    ('B_1_2   =',false{all});
-      remove_key    ('B_2_0   =',false{all});
-      update_float  ('B_2_1   =',' / SIP coefficient                                ' ,B_2_1);
-      remove_key    ('B_3_0   =',false{all});
+        {sky to pixel coefficients}
+        AP_order:=3; {allow usage in astap}
+        AP_0_0:=0; {approximation just negative the factors}
+        AP_0_1:=0;
+        AP_0_2:=0;
+        AP_0_3:=0;
+        AP_1_0:=0;
+        AP_1_1:=0;
+        AP_1_2:=-factorX;
+        AP_2_0:=0;
+        AP_2_1:=0;
+        AP_3_0:=-factorX;
 
-      update_float('AP_ORDER=',' / Inv polynomial order, axis 1. Sky to pixel.      ' ,3);
-      remove_key  ('AP_0_0  =',false{all});
-      remove_key  ('AP_0_1  =',false{all});
-      remove_key  ('AP_0_2  =',false{all});
-      remove_key  ('AP_0_3  =',false{all});
-      remove_key  ('AP_1_0  =',false{all});
-      remove_key  ('AP_1_1  =',false{all});
-      update_float('AP_1_2  =',' / SIP coefficient                                ' ,AP_1_2);
-      remove_key  ('AP_2_0  =',false{all});
-      remove_key  ('AP_2_1  =',false{all});
-      update_float('AP_3_0  =',' / SIP coefficient                                ' ,AP_3_0);
+        BP_0_0:=0; {approximation just negative the factors}
+        BP_0_1:=0;
+        BP_0_2:=0;
+        BP_0_3:=-factorY;
+        BP_1_0:=0;
+        BP_1_1:=0;
+        BP_1_2:=0;
+        BP_2_0:=0;
+        BP_2_1:=-factorY;
+        BP_3_0:=0;
 
-      update_float('BP_ORDER=',' / Inv polynomial order, axis 2. Sky to pixel.    ' ,3);
-      remove_key  ('BP_0_0  =',false{all});
-      remove_key  ('BP_0_1  =',false{all});
-      remove_key  ('BP_0_2  =',false{all});
-      update_float('BP_0_3  =',' / SIP coefficient                                ' ,BP_0_3);
-      remove_key  ('BP_1_0  =',false{all});
-      remove_key  ('BP_1_1  =',false{all});
-      remove_key  ('BP_1_2  =',false{all});
-      remove_key  ('BP_2_0  =',false{all});
-      update_float('BP_2_1  =',' / SIP coefficient                                ' ,BP_2_1);
-      remove_key  ('BP_3_0  =',false{all});
 
-      mainwindow.Polynomial1.color:=clform;
-      mainwindow.Polynomial1.ItemIndex:=1;{set at SIP}
-      memo2_message('Added SIP coefficients to header for a 3th order radial correction. This correction will only work for barrel distortion and pincushion distortion. You could test it with the inspector showing the distortion vectors in SIP readout mode.');
-      //up to '+floattostrF(abs(factor)*max_radius*max_radius*max_radius,ffFixed,3,2)+' pixels.');{factor*radius^3}
+
+        update_float  ('A_ORDER =',' / Polynomial order, axis 1. Pixel to Sky         ' ,3);
+        remove_key    ('A_0_0   =',false{all});
+        remove_key    ('A_0_1   =',false{all});
+        remove_key    ('A_0_2   =',false{all});
+        remove_key    ('A_0_3   =',false{all});
+        remove_key    ('A_1_0   =',false{all});
+        remove_key    ('A_1_1   =',false{all});
+        update_float  ('A_1_2   =',' / SIP coefficient                                ' ,A_1_2);
+        remove_key    ('A_2_0   =',false{all});
+        remove_key    ('A_2_1   =',false{all});
+        update_float  ('A_3_0   =',' / SIP coefficient                                ' ,A_3_0);
+
+        update_float  ('B_ORDER =',' / Polynomial order, axis 2. Pixel to sky.        ' ,3);
+        remove_key    ('B_0_0   =',false{all});
+        remove_key    ('B_0_1   =',false{all});
+        remove_key    ('B_0_2   =',false{all});
+        update_float  ('B_0_3   =',' / SIP coefficient                                ' ,B_0_3);
+        remove_key    ('B_1_0   =',false{all});
+        remove_key    ('B_1_1   =',false{all});
+        remove_key    ('B_1_2   =',false{all});
+        remove_key    ('B_2_0   =',false{all});
+        update_float  ('B_2_1   =',' / SIP coefficient                                ' ,B_2_1);
+        remove_key    ('B_3_0   =',false{all});
+
+        update_float('AP_ORDER=',' / Inv polynomial order, axis 1. Sky to pixel.      ' ,3);
+        remove_key  ('AP_0_0  =',false{all});
+        remove_key  ('AP_0_1  =',false{all});
+        remove_key  ('AP_0_2  =',false{all});
+        remove_key  ('AP_0_3  =',false{all});
+        remove_key  ('AP_1_0  =',false{all});
+        remove_key  ('AP_1_1  =',false{all});
+        update_float('AP_1_2  =',' / SIP coefficient                                ' ,AP_1_2);
+        remove_key  ('AP_2_0  =',false{all});
+        remove_key  ('AP_2_1  =',false{all});
+        update_float('AP_3_0  =',' / SIP coefficient                                ' ,AP_3_0);
+
+        update_float('BP_ORDER=',' / Inv polynomial order, axis 2. Sky to pixel.    ' ,3);
+        remove_key  ('BP_0_0  =',false{all});
+        remove_key  ('BP_0_1  =',false{all});
+        remove_key  ('BP_0_2  =',false{all});
+        update_float('BP_0_3  =',' / SIP coefficient                                ' ,BP_0_3);
+        remove_key  ('BP_1_0  =',false{all});
+        remove_key  ('BP_1_1  =',false{all});
+        remove_key  ('BP_1_2  =',false{all});
+        remove_key  ('BP_2_0  =',false{all});
+        update_float('BP_2_1  =',' / SIP coefficient                                ' ,BP_2_1);
+        remove_key  ('BP_3_0  =',false{all});
+
+        mainwindow.Polynomial1.color:=clform;
+        mainwindow.Polynomial1.ItemIndex:=1;{set at SIP}
+        memo2_message('Added SIP coefficients to header for a 3th order radial correction. This correction will only work for barrel distortion and pincushion distortion. You could test it with the inspector showing the distortion vectors in SIP readout mode.');
+        //up to '+floattostrF(abs(factor)*max_radius*max_radius*max_radius,ffFixed,3,2)+' pixels.');{factor*radius^3}
+      end
+      else
+      begin
+        beep;
+        memo2_message('Abort, not enough stars detected in outer regions!');
+      end;
+
     end
     else
     begin
       beep;
-      memo2_message('Abort, not enough stars in the outer regions');
+      memo2_message('Abort, not enough stars detected!');
     end;
   end;{succesfull measure scale}
   Screen.Cursor := Save_cursor;    { Show hourglass cursor }
@@ -12231,7 +12245,7 @@ var
   failed,skipped                        : string;
   startTick  : qword;{for timing/speed purposes}
 begin
-  OpenDialog1.Title := 'Select multiple  files to add plate solution';
+  OpenDialog1.Title := 'Select multiple files to add astrometric solution';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   esc_pressed:=false;

@@ -1045,6 +1045,21 @@ begin
   else warning:='';
 
   quad_tolerance:=strtofloat2(quad_tolerance1);
+
+
+  if select_star_database(star_database1)=false then
+  begin
+    result:=false;
+    memo2_message('Error, no star database found at '+database_path+' ! Download the h18 (or h17, v17) and install.');
+    errorlevel:=32;{no star database}
+    exit;
+  end
+  else
+  begin {sets also file290 do this before cropping selection}
+    star_database1:=name_database;
+    memo2_message('Using star database '+uppercase(name_database));
+  end;
+
   if file290 then {.290 database}
     max_fov:=9.53 {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
   else  {.1476 database}
@@ -1145,19 +1160,6 @@ begin
 
     if go_ahead then
     begin
-      if select_star_database(star_database1)=false then
-      begin
-        result:=false;
-        memo2_message('Error, no star database found at '+database_path+' ! Download the h18 (or h17, v17) and install.');
-        errorlevel:=32;{no star database}
-        exit;
-      end
-      else
-      begin
-        star_database1:=name_database;
-        memo2_message('Using star database '+uppercase(name_database));
-      end;
-
       search_field:=fov2*(pi/180);
       STEP_SIZE:=search_field;{fixed step size search spiral. Prior to version 0.9.211 this was reduced for small star counts}
       //stackmenu1.Memo2.Lines.BeginUpdate;{do not update tmemo, very very slow and slows down program}

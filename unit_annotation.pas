@@ -1558,7 +1558,7 @@ end;
 procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
-  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,cv,
+  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,cv,fov_org,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2                                : integer;
   flip_horizontal, flip_vertical,sip    : boolean;
@@ -1712,18 +1712,21 @@ begin
        if report_lim_magn then setlength(hfd_x_sd,max_nr_stars);
     end;
 
+    {sets file290 so do before fov selection}
     if select_star_database(stackmenu1.star_database1.text)=false then
     begin
       application.messagebox(pchar('No star database found!'+#13+'Download the h18 (or h17 or v17) and extract the files to the program directory'), pchar('No star database!'),0);
       exit;
     end;
 
-    fov:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
+    fov_org:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
 
     if file290 then {.290 files}
-      fov:=min(fov,9.53*pi/180) {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+      fov:=min(fov_org,9.53*pi/180) {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
     else {.1476 files}
-      fov:=min(fov,5.142857143*pi/180); {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
+      fov:=min(fov_org,5.142857143*pi/180); {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
+
+    if fov_org>fov then max_nr_stars:=round(max_nr_stars*fov/fov_org);{reduce number of stars for very large FOV}
 
 
     find_areas( telescope_ra,telescope_dec, fov,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
@@ -2018,6 +2021,7 @@ begin
     max_nr_stars:=round(width2*height2*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
     setlength(error_array,max_nr_stars);
 
+    {sets file290 so do before fov selection}
     if select_star_database(stackmenu1.star_database1.text)=false then
     begin
       application.messagebox(pchar('No star database found!'+#13+'Download the h18 (or h17 or v17) and extract the files to the program directory'), pchar('No star database!'),0);
@@ -2192,6 +2196,12 @@ begin
     telescope_ra:=ra0+arctan(Dra/delta);
     telescope_dec:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
 
+    if select_star_database(stackmenu1.star_database1.text)=false then {sets file290 so do before fov selection}
+    begin
+      application.messagebox(pchar('No star database found!'+#13+'Download the h18 (or h17 or v17) and extract the files to the program directory'), pchar('No star database!'),0);
+      exit;
+    end;
+
     fov:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view with 0% extra}
 
     if file290 then {.290 files}
@@ -2201,11 +2211,6 @@ begin
 
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
 
-    if select_star_database(stackmenu1.star_database1.text)=false then
-    begin
-      application.messagebox(pchar('No star database found!'+#13+'Download the h18 (or h17 or v17) and extract the files to the program directory'), pchar('No star database!'),0);
-      exit;
-    end;
 
     find_areas( telescope_ra,telescope_dec, fov,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
 
