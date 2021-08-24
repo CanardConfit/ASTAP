@@ -181,6 +181,7 @@ var
   saturated_level,hfd_min                         : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment,
   use_astrometry_internal,vector_based :boolean;
+  warning  : string;
 
 begin
   with stackmenu1 do
@@ -311,8 +312,8 @@ begin
               end
               else
               begin
-                binning:=report_binning;{select binning based on the height of the light}
-                bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
+                binning:=report_binning(height2);{select binning based on the height of the light}
+                bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1,warning);{bin, measure background, find stars}
                 find_quads(starlist1,0, quad_smallest,quad_star_distances1);{find quads for reference image/database}
               end;
             end;
@@ -360,7 +361,7 @@ begin
                 end
                 else
                 begin{internal alignment}
-                  bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
+                  bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
                   find_quads(starlist2,0, quad_smallest,quad_star_distances2);{find star quads for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
@@ -566,6 +567,8 @@ var
   background_correction, weightF,hfd_min                                                         : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
   tempval   : single;
+  warning  : string;
+
 begin
   with stackmenu1 do
   begin
@@ -608,7 +611,7 @@ begin
 
           if init=false then
           begin
-            binning:=report_binning;{select binning based on the height of the first light}
+            binning:=report_binning(height2);{select binning based on the height of the first light}
 
             backup_solution;{backup solution}
 
@@ -644,7 +647,7 @@ begin
             end
             else
             begin
-              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1,warning);{bin, measure background, find stars}
               find_quads(starlist1,0, quad_smallest,quad_star_distances1);{find quads for reference image}
               pedestal_s:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
               if pedestal_s<500 then pedestal_s:=500;{prevent image noise could go below zero}
@@ -701,7 +704,7 @@ begin
               end
               else
               begin{internal alignment}
-                bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
+                bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
                 background_correction:=pedestal_s-cblack;
                 datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
@@ -1050,14 +1053,12 @@ type
      solution_vectorY : solution_vector;
      cblack : double;
    end;
-
 var
     solutions      : array of tsolution;
-
-var
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,oversizeV         : integer;
     background_correction, variance_factor, value,weightF,hfd_min                                         : double;
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
+    warning  : string;
 
 
 begin
@@ -1109,7 +1110,7 @@ begin
 
         if init=false then {phase (1) average}
         begin
-          binning:=report_binning;{select binning based on the height of the light}
+          binning:=report_binning(height2);{select binning based on the height of the light}
           backup_solution;{backup solution}
           initialise_var1;{set variables correct}
           initialise_var2;{set variables correct}
@@ -1143,7 +1144,7 @@ begin
           end
           else
           begin
-            bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
+            bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1,warning);{bin, measure background, find stars}
 
             find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
             pedestal_s:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
@@ -1195,7 +1196,7 @@ begin
                 end
                 else
                 begin{internal alignment}
-                  bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
+                  bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
                   background_correction:=pedestal_s-cblack;{correct later for difference in background}
                   datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
@@ -1542,6 +1543,7 @@ var
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, binning, oversizeV   : integer;
     background_correction, hfd_min      : double;
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
+    warning  : string;
 begin
   with stackmenu1 do
   begin
@@ -1586,7 +1588,7 @@ begin
 
         if init=false then
         begin
-          binning:=report_binning;{select binning based on the height of the light}
+          binning:=report_binning(height2);{select binning based on the height of the light}
           initialise_var1;{set variables correct}
           initialise_var2;{set variables correct}
           if ((bayerpat='') and (make_osc_color1.checked)) then
@@ -1621,7 +1623,7 @@ begin
           end
           else
           begin
-            bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
+            bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1,warning);{bin, measure background, find stars}
             find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
             pedestal_s:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
             if pedestal_s<500 then pedestal_s:=500;{prevent image noise could go below zero}
@@ -1685,7 +1687,7 @@ begin
             end
             else
             begin{internal alignment}
-              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
               background_correction:=pedestal_s-cblack;
               datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}

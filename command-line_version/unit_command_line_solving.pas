@@ -30,9 +30,8 @@ procedure reset_solution_vectors(factor: double); {reset the solution vectors}
 function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
 
 function solve_image(img :image_array; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
-procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list);{bin, measure background, find stars}
-function report_binning : integer;{select the binning}
-
+procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
+function report_binning(height:double) : integer;{select the binning}
 var
   star1   : array[0..2] of array of single;
 
@@ -945,18 +944,20 @@ begin
 end;
 
 
-procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list);{bin, measure background, find stars}
+procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 var
   old_width,old_height,old_naxis3,nrstars,i : integer;
   img_binned : image_array;
 
 begin
+  short_warning:='';{clear string}
+
   if ((binning>1) or (cropping<1)) then
   begin
     old_width:=width2;
     old_height:=height2;
     old_naxis3:=naxis3;
-    if binning>1 then memo2_message('Creating monochromatic x '+inttostr(binning)+' binning image for solving/star alignment.');
+    if binning>1 then memo2_message('Creating grayscale x '+inttostr(binning)+' binning image for solving/star alignment.');
     if cropping<>1 then memo2_message('Cropping image x '+floattostrF2(cropping,0,2));
 
     if binning=2 then binX2_crop(cropping,img,img_binned) {combine values of 4 pixels, default option if 3 and 4 are not specified}
@@ -978,7 +979,12 @@ begin
     img_binned:=nil;
     nrstars:=Length(starlist3[0]);
 
-    if width2<980 then memo2_message('Info: REDUCE OR REMOVE DOWNSAMPLING IS RECOMMENDED. Set this option in stack menu, tab alignment.');
+    if height2<960 then
+    begin
+      short_warning:='Warning, remaining image dimensions too low! ';  {for FITS header and solution. Dimensions should be equal or better the about 1280x960}
+      memo2_message('Warning, remaining image dimensions too low! Try to REDUCE OR REMOVE DOWNSAMPLING.');
+    end;
+
     width2:=old_width; {restore to original size}
     height2:=old_height;
     naxis3:=old_naxis3;
@@ -991,19 +997,30 @@ begin
   end
   else
   begin
-    if height2>2500 then memo2_message('Info: DOWNSAMPLING IS RECOMMENDED FOR LARGE IMAGES. Set this option in stack menu, tab alignment.');
+    if height2>2500 then
+    begin
+      short_warning:='Warning, increase downsampling!! '; {for FITS header and solution}
+      memo2_message('Info: DOWNSAMPLING IS RECOMMENDED FOR LARGE IMAGES. Set this option in stack menu, tab alignment.');
+    end
+    else
+    if height2<960 then
+    begin
+     short_warning:='Warning, small image dimensions!! ';  {for FITS header and solution. Dimensions should be equal or better the about 1280x960}
+     memo2_message('█ █ █ █ █ █ Warning, small image dimensions!!');
+    end;
+
     get_background(0,img,get_hist {load hist},true {calculate also standard deviation background}, {var} cblack,star_level);{get back ground}
     find_stars(img,hfd_min,starlist3); {find stars of the image and put them in a list}
   end;
 end;
 
 
-function report_binning : integer;{select the binning}
+function report_binning(height:double) : integer;{select the binning}
 begin
   result:=downsample_for_solving1;
   if result<=0 then  {zero gives -1, Auto is 0}
   begin
-    if height2>2500 then result:=2
+    if height>2500 then result:=2
     else
      result:=1;
   end;
@@ -1019,7 +1036,7 @@ var
   quad_tolerance,dummy, extrastars                                                                                   : double;
   solution, go_ahead ,autoFOV      : boolean;
   startTick  : qword;{for timing/speed purposes}
-  distancestr,oversize_mess,mess,warning,suggest_str, solved_in, offset_found,ra_offset,dec_offset,mount_info : string;
+  distancestr,oversize_mess,mess,suggest_str, warning_downsample, solved_in, offset_found,ra_offset,dec_offset,mount_info,mount_offset : string;
 
 
 begin
@@ -1028,23 +1045,12 @@ begin
   warning_str:='';{for header}
   startTick := GetTickCount64;
 
-  binning:=report_binning;
-  if height2<960 then warning_str:='Warning, small format image!! ';  {for FITS header and solution. Dimensions should be equal or better the about 1280x960}
-  if binning>1 then {binning 2 or more}
-  begin
-    if height2<960*binning then warning_str:=warning_str+'Warning, downsample factor too high!! '; {for FITS header and solution}
-  end
-  else {binning is 1}
-  if (height2>2500) then warning_str:=warning_str+'Warning, increase downsampling!! '; {for FITS header and solution}
-
-  if length(warning_str)>0  then
-  begin
-     memo2_message(warning_str);
-     warning:=#10+warning_str;
-  end
-  else warning:='';
-
   quad_tolerance:=strtofloat2(quad_tolerance1);
+
+  if ((fov_specified=false) and (cdelt2<>0)) then {no fov in native command line and cdelt2 in header}
+    fov_org:=height2*abs(cdelt2) {calculate FOV. PI can give negative CDELT2}
+  else
+   fov_org:=min(180,strtofloat2(search_fov1));{use specfied FOV in stackmenu. 180 max to prevent runtime errors later}
 
 
   if select_star_database(star_database1)=false then
@@ -1058,6 +1064,11 @@ begin
   begin {sets also file290 do this before cropping selection}
     star_database1:=name_database;
     memo2_message('Using star database '+uppercase(name_database));
+    if ((fov_org>6) and (file290=false)) then
+    begin
+      warning_str:=warning_str+'Large FOV, use V17 or G17 database! ';
+      memo2_message(warning_str);
+    end;
   end;
 
   if file290 then {.290 database}
@@ -1067,15 +1078,7 @@ begin
 
   dec_radians:=dec0; {store temporary}
   ra_radians:=ra0;
-
-
   min_star_size_arcsec:=strtofloat2(min_star_size1); {arc sec};
-
-  if ((fov_specified=false) and (cdelt2<>0)) then {no fov in native command line and cdelt2 in header}
-    fov_org:=height2*abs(cdelt2) {calculate FOV. PI can give negative CDELT2}
-  else
-    fov_org:=min(180,strtofloat2(search_fov1));{use specfied FOV in stackmenu. 180 max to prevent runtime errors later}
-
   autoFOV:=(fov_org=0);{specified auto FOV}
 
   repeat {autoFOV loop}
@@ -1096,12 +1099,12 @@ begin
     end;
 
 
+    binning:=report_binning(height2*max_fov/max(fov_org{could be zero},max_fov)); {select binning on dimensions of cropped image only}
     hfd_min:=max(0.8,min_star_size_arcsec/(binning*fov_org*3600/height2) );{to ignore hot pixels which are too small}
-    bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
+    bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2, warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
     nrstars:=Length(starlist2[0]);
 
-
-    {prepare popupnotifier1 text}
+     {prepare popupnotifier1 text}
     if force_oversize1=false then mess:=' normal' else mess:=' slow';
     memo2_message('ASTAP solver '+version+#10+
                   'Search radius: '+ radius_search1+' degrees, '+#10+
@@ -1112,8 +1115,6 @@ begin
                   'Quad tolerance:'+quad_tolerance1+#10+
                   'Minimum star size:'+min_star_size1+'"' +#10+
                   'Speed:'+mess);
-
-    memo2_message(warning);
 
     nrstars_required:=round(nrstars*(height2/width2));{square search field based on height.}
 
@@ -1305,27 +1306,25 @@ begin
     new_to_old_WCS;
     solved_in:='Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec';{make string to report in FITS header.}
 
-
     offset_found:=distance_to_string(sep ,sep)+'.';
-
-
 
     if ra_mount<99 then {mount position known and specified}
     begin
       ra_offset:=distance_to_string(dec_mount-dec0,(ra_mount-ra0)*cos(dec0));
       dec_offset:=distance_to_string(dec_mount-dec0,dec_mount-dec0);
+      mount_offset:=' Mount offset RA='+ra_offset+', DEC='+dec_offset;{ascii}
       mount_info:=' Mount offset Δα='+ra_offset+ ',  Δδ='+dec_offset+'. ';
     end
     else
-    mount_info:='';
+    begin
+      mount_offset:='';
+      mount_info:='';
+    end;
 
-    memo2_message('Solution found: '+  prepare_ra(ra0,': ')+' '+prepare_dec(dec0,'d ') +#10+solved_in+', Δ was '+offset_found+', '+ mount_info+' Used stars down to magnitude: '+floattostrF2(mag2/10,0,1) );
+    memo2_message('Solution found: '+  prepare_ra(ra0,': ')+' '+prepare_dec(dec0,'d ') +#10+solved_in+' Δ was '+offset_found+' '+ mount_info+' Used stars down to magnitude: '+floattostrF2(mag2/10,0,1) );
     result:=true;
 
-
     update_text ('CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   ');
-
-
     update_text ('CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
     update_text ('CUNIT1  =',#39+'deg     '+#39+'           / Unit of coordinates                            ');
 
@@ -1346,7 +1345,8 @@ begin
     update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
     update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
     update_text   ('PLTSOLVD=','                   T / ASTAP internal solver      ');
-    update_text   ('COMMENT 6', solved_in+' Offset was '+offset_found+' Mount offset RA='+ra_offset+', DEC='+dec_offset );
+    update_text   ('COMMENT 7', solved_in+' Offset was '+offset_found+mount_offset);
+
 
 
     if ( (fov_org>1.05*(height2*cdelt2) ) or (fov_org<0.95*(height2*cdelt2)) ) then
@@ -1361,8 +1361,10 @@ begin
   begin
     memo2_message('No solution found!  :(');
     update_text   ('PLTSOLVD=','                   F / No plate solution found.   ');
-    remove_key('COMMENT 6',false{all});
+    remove_key('COMMENT 7',false{all});
   end;
+
+  warning_str:=warning_str + warning_downsample; {add the last warning from loop autoFOV}
 
   if nrstars_required>database_stars+4 then
   begin

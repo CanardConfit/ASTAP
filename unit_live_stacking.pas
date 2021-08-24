@@ -144,7 +144,7 @@ var
     init, solution, vector_based,waiting,transition_image,colour_correction :boolean;
     file_ext,filen                    :  string;
     multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}
-
+    warning  : string;
 
     procedure reset_var;{reset variables  including init:=false}
     begin
@@ -158,7 +158,6 @@ var
       dark_exposure:=987654321;{not done indication}
       dark_temperature:=987654321;
       flat_filter:='987654321';{not done indication}
-
     end;
 
 begin
@@ -226,7 +225,7 @@ begin
           begin
             if init=false then
             begin
-              binning:=report_binning;{select binning based on the height of the first light}
+              binning:=report_binning(height2);{select binning based on the height of the first light}
 
               initialise_var1;{set variables correct. Do this before apply dark}
               initialise_var2;{set variables correct}
@@ -252,7 +251,7 @@ begin
 
             if init=false then {first image}
             begin
-              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1,warning);{bin, measure background, find stars}
               find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
             end;
 
@@ -304,7 +303,7 @@ begin
             {align using star match}
             if init=true then {second image}
             begin{internal alignment}
-              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
               find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}

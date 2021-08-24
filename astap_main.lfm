@@ -336,7 +336,7 @@ object mainwindow: Tmainwindow
       Pen.Color = clGreen
       Pen.Mode = pmNotXor
       Pen.Width = 2
-      Shape = stStar
+      Shape = stCircle
       ShowHint = True
       Visible = False
     end

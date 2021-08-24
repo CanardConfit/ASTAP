@@ -17,14 +17,14 @@ uses
 
 var {################# initialised variables #########################}
   stdin_mode            : boolean=false;{file send via stdin}
-  version: string=' CLI-0.9.570 dated 2021-08-20';
+  version: string=' CLI-0.9.571 dated 2021-08-24';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
   radius_search1 : string='180';
   max_stars1: string='500';
   quad_tolerance1: string='0.007';
-  min_star_size1: string='1.5'{ARCSEC};
+  min_star_size1: string='1.5'{arcsec};
   force_oversize1 : boolean=false;
   commandline_log : boolean=false;{file log request in command line}
   solve_show_log  : boolean=false;{log all progress steps}

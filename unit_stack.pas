@@ -3114,6 +3114,7 @@ begin
   if formatSettings.decimalseparator<>'.' then result:=StringReplace(result,'.',formatSettings.decimalseparator,[]); {replaces dot by komma}
 end;
 
+
 procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse list of FITS files}
 // amode=0 ==> reduced header only, keep original ra0, dec0 (for dark and flats
 // amode=1 ==> full header only
