@@ -1,14 +1,14 @@
 object stackmenu1: Tstackmenu1
-  Left = 468
+  Left = 371
   Height = 749
-  Top = 235
+  Top = 138
   Width = 1785
-  HorzScrollBar.Page = 1785
+  HorzScrollBar.Page = 1741
   VertScrollBar.Page = 556
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
-  ClientHeight = 732
+  ClientHeight = 749
   ClientWidth = 1785
   Color = clForm
   Icon.Data = {
@@ -53,9 +53,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.12.0'
   object Memo2: TMemo
     Left = 0
-    Height = 172
+    Height = 189
     Top = 560
-    Width = 1845
+    Width = 1785
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     DoubleBuffered = True
@@ -226,7 +226,7 @@ object stackmenu1: Tstackmenu1
     Height = 498
     Hint = 'Stack menu'
     Top = 0
-    Width = 1845
+    Width = 1785
     ActivePage = lights
     Align = alClient
     Constraints.MaxHeight = 498
@@ -243,7 +243,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 470
-      ClientWidth = 1837
+      ClientWidth = 1777
       ImageIndex = 22
       ParentFont = False
       object nr_selected1: TLabel
@@ -307,7 +307,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1837
+        Width = 1777
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -379,9 +379,9 @@ object stackmenu1: Tstackmenu1
           end        
           item
             Alignment = taRightJustify
-            Caption = 'Temperature'
-            MinWidth = 100
-            Width = 100
+            Caption = 'Temperature '
+            MinWidth = 85
+            Width = 85
           end        
           item
             Alignment = taRightJustify
@@ -578,7 +578,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 7
       end
       object planetary_image1: TCheckBox
-        Left = 1768
+        Left = 1664
         Height = 19
         Hint = 'Checkmark this option for analysing planetary images on sharpness. Note the stack routine is not suitable for stacking of planetary images.'
         Top = 8
@@ -3413,7 +3413,7 @@ object stackmenu1: Tstackmenu1
         Left = 696
         Height = 19
         Hint = 'Write data and time to screen and image array. If the file is saved this annotation in written in the image itself.'
-        Top = 18
+        Top = 17
         Width = 82
         Caption = 'Time stamp'
         Checked = True

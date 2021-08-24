@@ -1640,7 +1640,7 @@ begin
 end;
 
 
-procedure analyse_tab_lights;
+procedure analyse_tab_lights(full : boolean);
 var
   c,hfd_counter  ,i,counts          : integer;
   backgr, hfd_median,alt            : double;
@@ -1768,7 +1768,7 @@ begin
           end
           else
           begin {light frame}
-            if planetary=false then
+            if ((planetary=false) and (full=true))  then
               analyse_fits(img,10 {snr_min},false,hfd_counter,backgr, hfd_median) {find background, number of stars, median HFD}
             else
               begin hfd_counter:=0; backgr:=0;star_level:=0; backgr:=0; hfd_median:=-1; end;
@@ -1897,7 +1897,7 @@ procedure Tstackmenu1.Analyse1Click(Sender: TObject);
 begin
   if img_loaded<>nil then backup_solution;{save solution only}
 
-  analyse_tab_lights;
+  analyse_tab_lights(true {full});
 
   if img_loaded<>nil then
   begin
@@ -8399,7 +8399,7 @@ var
    Save_Cursor:TCursor;
    i,c,over_size,over_sizeL,nrfiles, image_counter,object_counter, first_file, total_counter,counter_colours: integer;
    filter_name1, filter_name2,defilter, filename3, extra1,extra2,object_to_process,stack_info,thefilters    : string;
-   lrgb,solution,monofile,ignore,cal_and_align, mosaic_mode,sigma_mode  : boolean;
+   lrgb,solution,monofile,ignore,cal_and_align, mosaic_mode,sigma_mode,calibration_mode  : boolean;
    startTick      : qword;{for timing/speed purposes}
    min_background,max_background,backgr   : double;
    filters_used : array [0..4] of string;
@@ -8427,10 +8427,12 @@ begin
 
   if img_loaded<>nil then begin img_backup:=nil;{clear to save memory} backup_img;    end; ;{backup image array and header for case esc pressed.}
 
+  calibration_mode:=pos('Calibration only',stackmenu1.stack_method1.text)>0;
+
   if ListView1.items.count<>0 then
   begin
     memo2_message('Analysing images.');
-    analyse_tab_lights; {analyse any image not done yet}
+    analyse_tab_lights(calibration_mode=false); {analyse any image not done yet. For calibration mode skip hfd and background measurments}
     if esc_pressed then exit;
     memo2_message('Stacking ('+stack_method1.text+'), HOLD ESC key to abort.');
   end
@@ -8460,9 +8462,10 @@ begin
   min_background:=65535;
   max_background:=0;
 
-  if pos('Calibration only',stackmenu1.stack_method1.text)>0=true then {calibrate lights only}
+  if calibration_mode then {calibrate lights only}
   begin
      calibration_only;
+     Memo2_message('Ready. Resulting files are available in tab Results and can be copied to the Blink, Photometry or Lights tab.');
      exit;
   end;
 
