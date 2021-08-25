@@ -1114,9 +1114,8 @@ begin
   result:=true;
 end;
 
+
 procedure update_stackmenu;{update stackmenu1 menus, called onshow stackmenu1}
-var
-  osc_color :boolean;
 begin
   with stackmenu1 do
   begin
@@ -1489,7 +1488,7 @@ end;
 
 procedure analyse_fits_extended(img : image_array;var nr_stars, hfd_median,median_center, median_outer_ring, median_bottom_left,median_bottom_right,median_top_left,median_top_right : double); {analyse several areas}
 var
-   fitsX,fitsY,size,radius,i, j, retries,max_stars,n,m,xci,yci,sqr_radius,
+   fitsX,fitsY,radius,i, j, retries,max_stars,n,m,xci,yci,sqr_radius,
    nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right : integer;
    hfd1,star_fwhm,snr,flux,xc,yc,backgr,detection_level                                             : double;
    img_sa                                                                                           : image_array;
@@ -3126,10 +3125,10 @@ var
   backgr, hfd_median, hjd,sd, dummy,alt : double;
   filename1                        : string;
   Save_Cursor                      : TCursor;
-  loaded,  success,green,blue      : boolean;
+  loaded, green,blue               : boolean;
   img                              : image_array;
 
-  nr_stars, hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right,ra_nut,dec_nut,ra_aberr,dec_aberr,ra3,dec3 : double;
+  nr_stars, hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right : double;
 
 begin
   Save_Cursor := Screen.Cursor;
@@ -3560,10 +3559,10 @@ end;
 
 
 procedure normalize_OSC_flat(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
-var fitsX,fitsY,col,h,w,counter1,counter2, counter3,counter4 : integer;
-   img_temp2 : image_array;
-   value1,value2,value3,value4,maxval : double;
-   oddx, oddy :boolean;
+var
+  fitsX,fitsY,col,h,w,counter1,counter2, counter3,counter4 : integer;
+  value1,value2,value3,value4,maxval : double;
+  oddx, oddy :boolean;
 begin
   col:=length(img);{the real number of colours}
   h:=length(img[0,0]);{height}
@@ -3575,12 +3574,9 @@ begin
     exit;
   end;
 
-
   value1:=0; value2:=0; value3:=0; value4:=0;
   counter1:=0; counter2:=0; counter3:=0; counter4:=0;
 
-//    for fitsY:=0 to h-1 do
-//      for fitsX:=0 to w-1 do
   for fitsY:=(h div 4) to (h*3) div 4 do {use one quarter of the image to find factors. Works also a little better if no dark-flat is subtracted. It also wokrs better if boarder is black}
     for fitsX:=(w div 4) to (w*3) div 4 do
     begin
@@ -4176,14 +4172,12 @@ end;
 
 
 procedure Tstackmenu1.blink_button1Click(Sender: TObject);
-
 var
-  c,i,j: integer;
   Save_Cursor          : TCursor;
   hfd_min              : double;
-  x_new,y_new,fitsX,fitsY,col,first_image,stepnr,nrrows, cycle,step,ps: integer;
+  c, x_new,y_new,fitsX,fitsY,col,first_image,stepnr,nrrows, cycle,step,ps: integer;
   reference_done, init{,solut},astro_solved,store_annotated           : boolean;
-  st,s                                                                : string;
+  st                                                                  : string;
 begin
   if listview6.items.count<=1 then exit; {no files}
   Save_Cursor := Screen.Cursor;
@@ -4202,8 +4196,6 @@ begin
   first_image:=-1;
   cycle:=0;
   if sender=blink_button_contB1 then step:=-1 else step:=1;{forward/ backwards}
-
-
 
   nrrows:=listview6.items.count;
   setlength(bsolutions,nrrows);{for the solutions in memory. bsolutions is destroyed in formdestroy}
@@ -4391,7 +4383,7 @@ end;
 
 procedure Tstackmenu1.create_test_image_stars1Click(Sender: TObject);
 var
-   i,j,m,n, factor,stepsize,stepsize2, starcounter,subsampling  : integer;
+   i,j,m,n, stepsize,stepsize2, starcounter,subsampling  : integer;
    sigma,hole_radius,donut_radius,hfd_diameter,shiftX,shiftY,flux,flux_star,diam    : double;
    gradient,diagn_star           : boolean;
 begin
@@ -4664,27 +4656,14 @@ begin
   end;
 end;
 
-procedure Tstackmenu1.aavso_button1Click(Sender: TObject);
-var
-  fn: string;
 
+procedure Tstackmenu1.aavso_button1Click(Sender: TObject);
 begin
   if form_aavso1=nil then
       form_aavso1:=Tform_aavso1.Create(self); {in project option not loaded automatic}
   form_aavso1.Show{Modal};
- // form_aavso1.release;
-
-//  memo2_message(aavso_report);
-//  if to_clipboard then
-//    Clipboard.AsText:=aavso_report
-//  else
-//  begin
-//    fn:=ChangeFileExt(filename2,'.txt');
-//    log_to_file2(fn, aavso_report);
-//    memo2_message('AAVSO report written to: '+fn);
-//  end;
-//  save_settings2; {for aavso settings}
 end;
+
 
 procedure Tstackmenu1.clear_mount_list1Click(Sender: TObject);
 begin
@@ -4692,11 +4671,12 @@ begin
   listview9.Clear;
 end;
 
+
 procedure Tstackmenu1.extract_green1Click(Sender: TObject);
 var
   c           : integer;
   Save_Cursor : TCursor;
-  fn,fname    : STRING;
+  fn          : string;
 begin
   if (IDYES= Application.MessageBox('This will extract the combined green channel from the (calibrated) raw files and write to result to new files. Continue?', 'Raw colour separation', MB_ICONQUESTION + MB_YESNO) )=false then exit;
 
