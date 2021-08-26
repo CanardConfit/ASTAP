@@ -2998,7 +2998,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.571a, '+about_message4+', dated 2021-8-25';
+  #13+#10+'ASTAP version ß0.9.571b, '+about_message4+', dated 2021-8-26';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4573,7 +4573,7 @@ procedure update_statusbar_section5;{update section 5 with image dimensions in d
 begin
   if cdelt2<>0 then
   begin
-    mainwindow.statusbar1.panels[6].text:=floattostrF2(width2*abs(cdelt2),0,2)+' x '+floattostrF2(height2*cdelt2,0,2)+' °';{give image dimensions and bit per pixel info}
+    mainwindow.statusbar1.panels[6].text:=floattostrF2(width2*abs(cdelt2),0,2)+' x '+floattostrF2(height2*abs(cdelt2),0,2)+' °';{give image dimensions and bit per pixel info}
     stackmenu1.search_fov1.text:=floattostrF2(height2*abs(cdelt2),0,2); {negative cdelt2 are produced by PI}
   end
   else mainwindow.statusbar1.panels[6].text:='';
@@ -12615,7 +12615,7 @@ begin
 
       hfd_median:=SMedian(hfdList,nhfd {use length});
       str(hfd_median:0:1,hfd_value);
-      if cdelt2<>0 then begin str(hfd_median*cdelt2*3600:0:1,hfd_arcsec); hfd_arcsec:=' ('+hfd_arcsec+'")'; end else hfd_arcsec:='';
+      if cdelt2<>0 then begin str(hfd_median*abs(cdelt2)*3600:0:1,hfd_arcsec); hfd_arcsec:=' ('+hfd_arcsec+'")'; end else hfd_arcsec:='';
       mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
 
       text_width:=8*mainwindow.image1.Canvas.textwidth('1234567890');{Calculate textwidth for 80 characters. This also works for 4k with "make everything bigger"}

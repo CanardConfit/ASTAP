@@ -4833,7 +4833,7 @@ begin
 
   if cd1_1<>0 then {solved image}
   begin
-    calc_scale:=3600*cdelt2;
+    calc_scale:=3600*abs(cdelt2);
     if sender=focallength1 then {calculate pixelsize from cdelt2 and manual entered focallen}
     begin
       xpixsz:=calc_scale*focallen/((180*3600/1000)/pi);
