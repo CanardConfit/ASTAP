@@ -24,7 +24,7 @@ procedure measure_distortion(plot: boolean; out stars_measured: integer);{measur
 procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the mangitude. For super nova search}
 procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 procedure read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double);{deepsky database search}
-procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y : integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
+procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 function find_object(var objname : string; var ra0,dec0,length0,width0,pa : double): boolean; {find object in database}
 function calculate_undisturbed_image_scale : boolean;{calculate and correct the image scale as if the optical system is undisturbed. The distance between the stars in the center are measured and compared between detection and database. It is assumed that the center of the image is undisturbed optically }
 
@@ -957,7 +957,7 @@ const font_5x9 : packed array[33..126,0..8,0..4] of byte=  {ASTAP native font fo
 (0,0,1,0,0),
 (0,1,0,0,0),
 (0,1,0,0,0),
-(0,0,1,1,0)),//{
+(0,0,1,1,0)),//{  Open curly bracket or open brace
 (
 (0,0,1,0,0),
 (0,0,1,0,0),
@@ -977,7 +977,7 @@ const font_5x9 : packed array[33..126,0..8,0..4] of byte=  {ASTAP native font fo
 (0,0,1,0,0),
 (0,0,0,1,0),
 (0,0,0,1,0),
-(0,1,1,0,0)),//9
+(0,1,1,0,0)),//}  Close curly bracket or close brace
 (
 (0,0,0,0,0),
 (0,0,0,0,0),
@@ -990,8 +990,8 @@ const font_5x9 : packed array[33..126,0..8,0..4] of byte=  {ASTAP native font fo
 (0,0,0,0,0)){~}
 );
 
-procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y : integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
-var
+procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
+var                                                                                       {Screen coordinates are used to have the font with the correct orientation}
  w,h,i,j,k,value,flipV, flipH,len,x2,y2: integer;
  ch : pansichar;
 begin

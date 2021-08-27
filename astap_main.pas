@@ -3002,7 +3002,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.572, '+about_message4+', dated 2021-8-27';
+  #13+#10+'ASTAP version ß0.9.573, '+about_message4+', dated 2021-8-27';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -11114,15 +11114,25 @@ begin
     inc(fontsize); {increase font size}
   end;
 
-  {add the connnection line}
+  {add the connnection line using FITS coordinates}
    deltaX:=stopX-startX;
    deltaY:=stopY-startY;
    len:=round(sqrt(sqr(deltaX)+sqr(deltaY)));
    for i:=0 to len-1 do
       img_loaded[0,startX+round(i*deltaX/len),startY+round(i*deltaY/len) ]:=round((cwhite+cblack)/2);
 
-  if deltaY>=0 then y2:=8 else y2:=0;
-  if deltaX>=0 then x2:=0 else x2:=3-length(value)*7;{place the first pixel or last pixel of the text at the location}
+  {convert to screen coordinates. Screen coordinates are used to have the font with the correct orientation}
+  if mainwindow.flip_horizontal1.checked then begin startX:=width2-startX; stopX:=width2-stopX;  end;
+  if mainwindow.flip_vertical1.checked then begin startY:=height2-startY;  stopY:=height2-stopY; end;
+
+  deltaX:=stopX-startX;
+  deltaY:=stopY-startY;
+  if deltaX>=0 then
+      x2:=0
+  else
+      x2:=3-length(value)*7*fontsize;{place the first pixel or last pixel of the text at the location}
+  if deltaY>=0 then y2:=8*fontsize else y2:=0;
+
   annotation_to_array(value, true{transparant},round((cwhite+cblack)/2) {colour},fontsize,stopX+x2,stopY+y2,img_loaded);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 
   plot_fits(mainwindow.image1,false,true);

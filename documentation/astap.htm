@@ -42,7 +42,7 @@ FOV of more then ten degrees</span><br style="font-family: Calibri;"><br style="
             &nbsp;Only required if you have files with the .fz
             &nbsp;extension.</td><td style="background-color: rgb(220, 220, 220); font-family: Calibri; font-weight: bold;">Barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
 renamed. No pop-up notifier. Will not accept raw files and&nbsp;will not
-work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="astap_setup.exe">ASTAP_installer</a>_(0.9.571a, 2021-08-25), <br><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"></a><a href="astap.zip">ASTAP
+work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="astap_setup.exe">ASTAP_installer</a>_(0.9.572, 2021-08-27), <br><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"></a><a href="astap.zip">ASTAP
               executable only</a></td><td colspan="1" rowspan="2" style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing">H18 installer</a><br><a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing"> </a><a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing">H17 installer</a>,<br><a href="https://drive.google.com/file/d/1_MYyXn3ZjAGcrhSsKoo6gb7XUKz_-3ji/view?usp=sharing">G17 installer</a> (obsolete <a href="h18.htm">1)</a>).<br><br><a href="https://drive.google.com/file/d/1qaf23oFmPpnDZbLO30IB42kC8-qBEynJ/view?usp=sharing">H18 zipped</a>,  <br><a href="https://drive.google.com/file/d/1kbaDcxjIKMcHwd3KSvNyIsB5m6ztVi9z/view?usp=sharing">H17 zipped</a>,<br><a href="http://www.poyntsource.com/hnsky/h18_star_database_mag18.rar">G18 rar</a> ((obsolete <a href="h18.htm">1)</a>),<br>for manual install at&nbsp; \programs files\astap or program directory<br><a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing"></a><br></td><td colspan="1" rowspan="2" style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/fpack_funpack.exe/download">Fpack
               &amp; Funpack</a></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_win64_command-line_version.zip/download">astap_cli</a>
 (v0.9.571</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 32 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_win32_command-line_version.zip/download">astap_cli</a>
@@ -1837,7 +1837,10 @@ text label at a x,y position. It can be connected via a line by first
 holding the right mouse button and moving the mouse away. See sample
 above.&nbsp; Persistent by annotation keyword in the FITS header. The
 annotation can be switched off in pulldown menu "View". Remove by
-removing the annotation line in the header. <br>
+removing the annotation line in the header. &nbsp;If a @ is added to
+the text, the annotation is written persistent in the image data. So
+the image will be permanently altered after saving. Adding two or more
+@ will increase the font size.<br>
         <span style="font-weight: bold;"><br>
           Add marker, </span>rectangle
 marker at x,y position. Draw the rectangle first by holding the right
@@ -1960,8 +1963,8 @@ with the mouse and move the copied part to the part to be touched up..<br><br><s
         menu<br>
         <br>
         <p align="left"><a href="astap.htm#index">Back
-            to index</a></p><p align="left"></p><p align="left"><a href="astap.htm#index"><big style="font-weight: bold;"><big><span style="text-decoration: underline;"><a name="otherpopup"></a>Other popup
-              menus:</span></big></big></a></p><p align="left">Search for an object position:<a href="astap.htm#index"><big style="font-weight: bold;"><big><span style="text-decoration: underline;"></span></big></big></a></p>
+            to index</a></p><p align="left"></p><p align="left"><a href="astap.htm#index"><big style="font-weight: bold;"><big><span style="text-decoration: underline;"></span></big></big></a><big style="font-weight: bold;"><big><a name="otherpopup"></a>Other popup
+              menus:</big></big></p><p align="left">Search for an object position:<a href="astap.htm#index"><big style="font-weight: bold;"><big><span style="text-decoration: underline;"></span></big></big></a></p>
         <img style="width: 441px; height: 264px;" alt="" src="astap_popupmenu_radec.png"><br><br>Copy histogram values to clipboard. You can paste them then in a spreadsheet.<br><img style="width: 456px; height: 252px;" alt="" src="astap_popupmenu_histogram.png"><br><br>Fits header editor<br><img style="width: 1142px; height: 266px;" alt="" src="astap_popupmenu_header.png"><br><br>Status bar. You can select to display the HFD and FWHM in arc seconds.<br><img style="width: 766px; height: 243px;" alt="" src="astap_popupmenu_statusbar.png"><br><br><br><a href="astap.htm#index">Back
             to index</a><br><hr style="width: 100%; height: 2px;"><br>
       </div>
