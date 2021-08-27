@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 816
+  Left = 308
   Height = 658
   Hint = ' '
-  Top = 199
+  Top = 186
   Width = 1272
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -796,7 +796,7 @@ object mainwindow: Tmainwindow
         Width = 50
       end>
     ParentShowHint = False
-    PopupMenu = popupmenu_frame1
+    PopupMenu = popupmenu_statusbar1
     SimplePanel = False
     SizeGrip = False
     OnMouseEnter = StatusBar1MouseEnter
@@ -1697,15 +1697,15 @@ object mainwindow: Tmainwindow
     AutoPopup = False
     Left = 856
     Top = 296
-    object Enterlabel1: TMenuItem
+    object Enter_annotation1: TMenuItem
       Caption = 'Add annotation'
-      Hint = 'Add label to current mouse position. Hold left mouse button down and pull a rectangle with mouse to extend connecting line.'
-      OnClick = Enterlabel1Click
+      Hint = 'Add annotation text to current mouse position. Hold left mouse button down and pull a rectangle with mouse to extend connecting line. Add @ to the text for persistent annotations.'
+      OnClick = Enter_annotation1Click
     end
     object Enter_rectangle_with_label1: TMenuItem
       Caption = 'Add rectangle with annotation'
       Hint = 'Add rectangle. Hold left mouse button down and pull a rectangle with mouse.'
-      OnClick = Enterlabel1Click
+      OnClick = Enter_annotation1Click
     end
     object add_marker1: TMenuItem
       AutoCheck = True
@@ -3346,7 +3346,7 @@ object mainwindow: Tmainwindow
       OnClick = histogram_values_to_clipboard1Click
     end
   end
-  object popupmenu_frame1: TPopupMenu
+  object popupmenu_statusbar1: TPopupMenu
     Left = 1112
     Top = 472
     object j2000_1: TMenuItem
@@ -3364,6 +3364,15 @@ object mainwindow: Tmainwindow
       AutoCheck = True
       Caption = 'Galactic'
       OnClick = galactic1Click
+    end
+    object MenuItem34: TMenuItem
+      Caption = '-'
+    end
+    object hfd_arcseconds1: TMenuItem
+      AutoCheck = True
+      Caption = 'HFD in arc seconds'
+      Hint = 'Display the HFD and FWHM in arc seconds rather then pixels.'
+      OnClick = hfd_arcseconds1Click
     end
   end
   object FontDialog1: TFontDialog

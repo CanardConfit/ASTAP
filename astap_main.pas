@@ -118,6 +118,8 @@ type
     convert_to_ppm1: TMenuItem;
     MenuItem31: TMenuItem;
     MenuItem32: TMenuItem;
+    hfd_arcseconds1: TMenuItem;
+    MenuItem34: TMenuItem;
     simbadquery1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
@@ -153,7 +155,7 @@ type
     mountposition1: TMenuItem;
     northeast1: TMenuItem;
     selectfont1: TMenuItem;
-    popupmenu_frame1: TPopupMenu;
+    popupmenu_statusbar1: TPopupMenu;
     shape_marker4: TShape;
     Stretchdrawmenu1: TMenuItem;
     stretch_draw_fits1: TMenuItem;
@@ -303,7 +305,7 @@ type
     Copypositionindeg1: TMenuItem;
     writeposition1: TMenuItem;
     N7: TMenuItem;
-    Enterlabel1: TMenuItem;
+    Enter_annotation1: TMenuItem;
     Saveasfits1: TMenuItem;
     Stackimages1: TMenuItem;
     Export_image1: TMenuItem;
@@ -328,6 +330,7 @@ type
     procedure calibrate_photometry1Click(Sender: TObject);
     procedure convert_to_ppm1Click(Sender: TObject);
     procedure freetext1Click(Sender: TObject);
+    procedure hfd_arcseconds1Click(Sender: TObject);
     procedure hfd_contour1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
     procedure copy_to_clipboard1Click(Sender: TObject);
@@ -473,7 +476,7 @@ type
     procedure Copyposition1Click(Sender: TObject);
     procedure Copypositionindeg1Click(Sender: TObject);
     procedure writeposition1Click(Sender: TObject);
-    procedure Enterlabel1Click(Sender: TObject);
+    procedure Enter_annotation1Click(Sender: TObject);
     procedure Stackimages1Click(Sender: TObject);
     procedure Saveasfits1Click(Sender: TObject);
     procedure Export_image1Click(Sender: TObject);
@@ -824,6 +827,7 @@ var {################# initialised variables #########################}
   mouse_fitsx : double=0;
   mouse_fitsy : double=0;
   coord_frame : integer=0; {J2000=0 or galactic=1}
+  hfd_arcseconds: boolean=false; {HFD in arc seconds or pixels}
 
   {$IFDEF Darwin}
   font_name: string= 'Courier';
@@ -2998,7 +3002,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.571b, '+about_message4+', dated 2021-8-26';
+  #13+#10+'ASTAP version ß0.9.572, '+about_message4+', dated 2021-8-27';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -10511,6 +10515,11 @@ begin
   end;
 end;
 
+procedure Tmainwindow.hfd_arcseconds1Click(Sender: TObject);
+begin
+  hfd_arcseconds:=hfd_arcseconds1.checked;
+end;
+
 
 procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
 begin
@@ -11093,15 +11102,48 @@ begin
 end;
 
 
-procedure Tmainwindow.Enterlabel1Click(Sender: TObject);
+procedure plot_persistent_annotation(value : string);{writes text in the image array data}
+var
+  i,deltax,deltaY,len,x2,y2,fontsize   : integer;
+
+begin
+  fontsize:=0;
+  while pos('@',value)>0 do
+  begin
+    value:=stringreplace(value, '@', '',[]);{every @ increase the font size}
+    inc(fontsize); {increase font size}
+  end;
+
+  {add the connnection line}
+   deltaX:=stopX-startX;
+   deltaY:=stopY-startY;
+   len:=round(sqrt(sqr(deltaX)+sqr(deltaY)));
+   for i:=0 to len-1 do
+      img_loaded[0,startX+round(i*deltaX/len),startY+round(i*deltaY/len) ]:=round((cwhite+cblack)/2);
+
+  if deltaY>=0 then y2:=8 else y2:=0;
+  if deltaX>=0 then x2:=0 else x2:=3-length(value)*7;{place the first pixel or last pixel of the text at the location}
+  annotation_to_array(value, true{transparant},round((cwhite+cblack)/2) {colour},fontsize,stopX+x2,stopY+y2,img_loaded);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
+
+  plot_fits(mainwindow.image1,false,true);
+end;
+
+
+procedure Tmainwindow.Enter_annotation1Click(Sender: TObject);
 var
   value : string;
   text_x,text_y   : integer;
   boldness        : double;
 begin
   backup_img;
-  value:=InputBox('Label input:','','' );
+  value:=InputBox('Enter annotation text. Add one @ or more to create a persistent annotation','Text:','' );
   if value=''  then exit;
+
+  if pos('@',value)>0 then
+  begin
+    plot_persistent_annotation(value);
+    exit;
+  end;
 
   mainwindow.image1.Canvas.Pen.width:=max(1,round(1*width2/image1.width)); ;
   mainwindow.image1.Canvas.Pen.Color:= annotation_color; {clyellow default}
@@ -13941,9 +13983,9 @@ procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
   Y: Integer);
 
 var
-  hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance,sd,dummy : double;
-  s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str      : string;
-  x_sized,y_sized,factor,flipH,flipV,iterations                    :integer;
+  hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance,sd,dummy,conv_factor : double;
+  s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str             : string;
+  x_sized,y_sized,factor,flipH,flipV,iterations                           : integer;
   color1:tcolor;
   r,b :single;
 begin
@@ -14111,8 +14153,11 @@ begin
    //mainwindow.caption:=floattostr(mouse_fitsX)+',   '+floattostr(mouse_fitsy)+',         '+floattostr(object_xc)+',   '+floattostr(object_yc);
    if ((hfd2<99) and (hfd2>0)) then
    begin
-     if hfd2>1 then str(hfd2:0:1,hfd_str) else str(hfd2:0:2,hfd_str);
-     str(fwhm_star2:0:1,fwhm_str);
+     if ((hfd_arcseconds) and (cd1_1<>0)) then conv_factor:=abs(cdelt2)*3600{arc seconds} else conv_factor:=1;{pixels}
+     if hfd2*conv_factor>1 then str(hfd2*conv_factor:0:1,hfd_str) else str(hfd2*conv_factor:0:2,hfd_str);
+     str(fwhm_star2*conv_factor:0:1,fwhm_str);
+     if ((hfd_arcseconds) and (cd1_1<>0)) then begin hfd_str:=hfd_str+'"';fwhm_str:=fwhm_str+'"';end;
+
      str(snr:0:0,snr_str);
      if flux_magn_offset<>0 then {offset calculated in star annotation call}
      begin
