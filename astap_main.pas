@@ -3002,7 +3002,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.573, '+about_message4+', dated 2021-8-27';
+  #13+#10+'ASTAP version ß0.9.574, '+about_message4+', dated 2021-9-3';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -7339,6 +7339,7 @@ var
     Sett : TmemIniFile;
     dum : string;
     c   : integer;
+    bool: boolean;
 begin
   result:=false;{assume failure}
 //  t1:=gettickcount;
@@ -7393,7 +7394,10 @@ begin
       flip_horizontal1.checked:=Sett.ReadBool('main','fliphorizontal',false);
       flip_vertical1.checked:=Sett.ReadBool('main','flipvertical',false);
 
-      annotations_visible1.checked:=Sett.ReadBool('main','annotations',false);
+      bool:=Sett.ReadBool('main','annotations',false);
+      mainwindow.annotations_visible1.checked:=bool;{set both indicators}
+      stackmenu1.annotations_visible1.enabled:=bool;{set both indicators}
+
       northeast1.checked:=Sett.ReadBool('main','north_east',false);
       mountposition1.checked:=Sett.ReadBool('main','mount_position',false);
       grid1.checked:=Sett.ReadBool('main','grid',false);
@@ -7403,13 +7407,10 @@ begin
 
       add_marker_position1.checked:=Sett.ReadBool('main','add_marker',false);{popup marker selected?}
 
-
       mainwindow.preview_demosaic1.Checked:=Sett.ReadBool('main','preview_demosaic',false);
       mainwindow.batch_overwrite1.checked:=Sett.ReadBool('main','s_overwrite',false);
       mainwindow.add_sip_check1.Checked:=Sett.ReadBool('main','add_sip',false);
       mainwindow.add_limiting_magn_check1.Checked:=Sett.ReadBool('main','add_lim_magn',false);
-
-
 
       marker_position :=Sett.ReadString('main','marker_position','');{ra, dec marker}
       mainwindow.shape_marker3.hint:=marker_position;
@@ -10258,6 +10259,8 @@ const
   Screen.Cursor:= Save_Cursor;
 end;
 
+
+
 procedure quicksort(var list: array of double; lo,hi: integer);{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
   procedure sort ( left, right : integer); {processing takes place in the sort procedure which executes itself recursively.}
   var
@@ -10385,11 +10388,12 @@ end;
 
 procedure Tmainwindow.annotations_visible1Click(Sender: TObject);
 begin
+  stackmenu1.annotations_visible1.enabled:=annotations_visible1.checked; {follow in stack menu}
   if fits_file=false then exit;
   if annotations_visible1.checked=false then  {clear screen}
     plot_fits(mainwindow.image1,false,true)
   else
-  if annotated then plot_annotations(false {use solution vectors},false);
+    if annotated then plot_annotations(false {use solution vectors},false);
 end;
 
 
@@ -12420,7 +12424,7 @@ var
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
  hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right,
- median_top_left, median_top_right,hfd_min                                                         : double;
+ median_top_left, median_top_right,hfd_min,tilt_value                                                         : double;
  hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring  : array of double;
  starlistXY    :array of array of integer;
  mess1,mess2,hfd_value,hfd_arcsec      : string;
@@ -12618,6 +12622,9 @@ begin
       else
       mess1:='';
 
+      hfd_median:=SMedian(hfdList,nhfd {use length});
+
+
       if ((nhfd_top_left>0) and (nhfd_top_right>0) and (nhfd_bottom_left>0) and (nhfd_bottom_right>0)) then  {enough information for tilt calculation}
       begin
         median_top_left:=SMedian(hfdList_top_left,nhfd_top_left);
@@ -12649,7 +12656,20 @@ begin
         image1.Canvas.lineto(x3,y3);{draw diagonal}
         image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
         image1.Canvas.lineto(x4,y4);{draw diagonal}
-        mess2:='  Tilt[HFD]='+floattostrF2(median_worst-median_best,0,2);{estimate tilt value}
+
+        tilt_value:=100*(median_worst-median_best)/hfd_median;
+        mess2:='  Tilt[HFD]='+floattostrF2(median_worst-median_best,0,2)+' ('+floattostrF2(tilt_value,0,0)+'%';{estimate tilt value}
+        if tilt_value<5 then mess2:=mess2+' none)'
+        else
+        if tilt_value<10 then mess2:=mess2+' almost none)'
+        else
+        if tilt_value<15 then mess2:=mess2+' mild)'
+        else
+        if tilt_value<20 then mess2:=mess2+' moderate)'
+        else
+        if tilt_value<30 then mess2:=mess2+' severe)'
+        else
+        mess2:=mess2+' extreme)';
 
 
         fontsize:=fontsize*4;
@@ -12665,12 +12685,11 @@ begin
         mess2:='';
       end;
 
-      hfd_median:=SMedian(hfdList,nhfd {use length});
       str(hfd_median:0:1,hfd_value);
       if cdelt2<>0 then begin str(hfd_median*abs(cdelt2)*3600:0:1,hfd_arcsec); hfd_arcsec:=' ('+hfd_arcsec+'")'; end else hfd_arcsec:='';
       mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
 
-      text_width:=8*mainwindow.image1.Canvas.textwidth('1234567890');{Calculate textwidth for 80 characters. This also works for 4k with "make everything bigger"}
+      text_width:=mainwindow.image1.Canvas.textwidth(mess2);{Calculate textwidt. This also works for 4k with "make everything bigger"}
       fontsize:=trunc(fontsize*(width2-2*fontsize)/text_width);{use full width}
       image1.Canvas.font.size:=fontsize;
       image1.Canvas.font.color:=clwhite;

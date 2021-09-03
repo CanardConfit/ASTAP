@@ -1,7 +1,7 @@
 object form_asteroids1: Tform_asteroids1
-  Left = 515
+  Left = -649
   Height = 415
-  Top = 236
+  Top = 513
   Width = 596
   Caption = 'Annotation of asteroids and comets'
   ClientHeight = 415

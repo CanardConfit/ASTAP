@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 33
+  Left = 168
   Height = 749
-  Top = 168
+  Top = 327
   Width = 1785
   HorzScrollBar.Page = 1701
   VertScrollBar.Page = 556
@@ -3231,7 +3231,7 @@ object stackmenu1: Tstackmenu1
         OnKeyDown = listview1KeyDown
       end
       object clear_blink_list1: TButton
-        Left = 1240
+        Left = 1352
         Height = 25
         Hint = 'Clear image list'
         Top = 5
@@ -3339,7 +3339,7 @@ object stackmenu1: Tstackmenu1
       end
       object help_blink1: TLabel
         Cursor = crHandPoint
-        Left = 1360
+        Left = 1432
         Height = 30
         Hint = 'Online help'
         Top = 1
@@ -3354,7 +3354,7 @@ object stackmenu1: Tstackmenu1
         OnClick = help_blink1Click
       end
       object export_aligned_files1: TButton
-        Left = 1496
+        Left = 1568
         Height = 25
         Hint = 'Export the images with solution to new aligned image files (_aligned.fit). Prior to this run the blink routine once to get alignment solutions.'
         Top = 4
@@ -3379,7 +3379,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 10
       end
       object write_video1: TButton
-        Left = 1400
+        Left = 1472
         Height = 25
         Hint = 'Write image list as YUV4MPEG2 video with extension y4m.'
         Top = 5
@@ -3478,6 +3478,16 @@ object stackmenu1: Tstackmenu1
         }
         OnClick = browse_blink1Click
         TabOrder = 14
+      end
+      object annotations_visible1: TLabel
+        Left = 1195
+        Height = 15
+        Hint = 'Annotation are visible if set in the viewer menu VIEW'
+        Top = 16
+        Width = 101
+        Caption = 'Annotations visible'
+        Enabled = False
+        ParentColor = False
       end
     end
     object tab_photometry1: TTabSheet

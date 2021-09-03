@@ -51,6 +51,7 @@ type
     browse_bias1: TBitBtn;
     browse_flats1: TBitBtn;
     browse_inspector1: TBitBtn;
+    annotations_visible1: TLabel;
     menukeywordchange1: TMenuItem;
     MenuItem32: TMenuItem;
     keywordchangelast1: TMenuItem;
@@ -873,6 +874,7 @@ procedure apply_factors;{apply r,g,b factors to image}
 procedure listviews_begin_update; {speed up making stackmenu visible having a many items}
 procedure listviews_end_update;{speed up making stackmenu visible having a many items}
 procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse list of FITS files}
+function julian_calc(yyyy,mm:integer;dd,hours,minutes,seconds:double):double; {##### calculate julian day, revised 2017}
 
 
 const
@@ -2943,6 +2945,8 @@ begin
 
   hue_fuzziness1Change(nil);{show position}
 
+  annotations_visible1.enabled:= mainwindow.annotations_visible1.checked;
+
   update_stackmenu;
 end;
 
@@ -4263,7 +4267,7 @@ begin
                plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations});
                listview6.Items.item[c].subitems.Strings[B_annotated ]:='✓';
             end;
-            if astro_solved then
+            if ((astro_solved) or (stackmenu1.update_annotation1.checked)) then
                if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;{save solution and annotation}
           end;
         end;{astrometric solve and annotate}
@@ -5676,7 +5680,7 @@ begin
 end;
 
 
-FUNCTION julian_calc(yyyy,mm:integer;dd,hours,minutes,seconds:double):double; {##### calculate julian day, revised 2017}
+function julian_calc(yyyy,mm:integer;dd,hours,minutes,seconds:double):double; {##### calculate julian day, revised 2017}
 var
    Y,M   : integer;
    A, B , XX : double;
