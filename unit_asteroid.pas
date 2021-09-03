@@ -181,18 +181,18 @@ end;
 (*          ( T=(JD-2451545.0)/36525 )                                   *)
 (*-----------------------------------------------------------------------*)
 procedure PMATECL(t1,t2:double;out a: double33);
-var dt,ppi,pi,pa: double;
+var dt,ppi,pii,pa: double;
    c1,s1,c2,s2,c3,s3: double;
 begin
   dt:=t2-t1;
   ppi := 174.876383889 +( ((3289.4789+0.60622*t1)*t1) +
             ((-869.8089-0.50491*t1) + 0.03536*dt)*dt )/3600;
-  pi  := ( (47.0029-(0.06603-0.000598*t1)*t1)+
+  pii  := ( (47.0029-(0.06603-0.000598*t1)*t1)+
            ((-0.03302+0.000598*t1)+0.000060*dt)*dt )*dt/3600;
   pa  := ( (5029.0966+(2.22226-0.000042*t1)*t1)+
            ((1.11113-0.000042*t1)-0.000006*dt)*dt )*dt/3600;
   sincos((ppi+pa)*pi/180,s1,c1);
-  sincos(pi*pi/180,s2,c2);
+  sincos(pii*pi/180,s2,c2);
   sincos(ppi*pi/180,s3,c3);
   a[1,1]:=+c1*c3+s1*c2*s3; a[1,2]:=+c1*s3-s1*c2*c3; a[1,3]:=-s1*s2;
   a[2,1]:=+s1*c3-c1*c2*s3; a[2,2]:=+s1*s3+c1*c2*c3; a[2,3]:=+c1*s2;
@@ -201,8 +201,8 @@ end;
 
 
 (*---------------------------------------------------------------------------*)
-(* PMATEQU: Berechnung der Praezessionsmatrix A[i,j] fuer                    *)
-(*          aequatoriale Koordinaten vom Aequinoktium T1 nach T2             *)
+(* PMATEQU: Calculation precession matrix A[i,j] for                         *)
+(*          equatorial coordinates from equinox T1 to T2                     *)
 (*          ( T=(JD-2451545.0)/36525 )                                       *)
 (*---------------------------------------------------------------------------*)
 procedure PMATEQU(t1,t2:double; out a:double33);
@@ -273,11 +273,11 @@ procedure minor_planet(sun_earth_vector:boolean;julian:double;year,month:integer
 { YEAR:=1997;
 { MONTH:=03;
 { D:=29.74151986;
-{ Q:= 0.901891;{    ! Perihelion distance q in AU, AORQ}
-{ ECC:= 0.994952;{  ! Eccentricity e}
-{ INC2:= 89.0445;{ ! Inclination i, OrbInc}
-{ LAN:= 283.2449; {  ! Longitude of the ascending node, Anode}
-{ AOP:= 130.5115;{  ! Argument of perihelion, Perih}
+{ Q:= 0.901891;  {Perihelion distance q in AU, AORQ}
+{ ECC:= 0.994952;{Eccentricity e}
+{ INC2:= 89.0445;{Inclination i, OrbInc}
+{ LAN:= 283.2449;{Longitude of the ascending node, Anode}
+{ AOP:= 130.5115;{Argument of perihelion, Perih}
 
 Const
   TAU=499.004782;
@@ -309,7 +309,7 @@ begin
   *;
   *       EPOCH  := epoch of elements (TT MJD);
   *       ORBINC := inclination i (radians);
-  *       ANODE  = longitude of the ascend;//
+  *       ANODE  := longitude of the ascend;
   *       PERIH  := argument of perihelion, little omega (radians);
   *       AORQ   := mean distance, a (AU);
   *       E      := eccentricity, e (range 0 to <1);
@@ -319,7 +319,7 @@ begin
   *;
   *       EPOCH  := epoch of elements and perihelion (TT MJD);
   *       ORBINC := inclination i (radians);
-  *       ANODE  = longitude of the ascend;//
+  *       ANODE  := longitude of the ascend;
   *       PERIH  := argument of perihelion, little omega (radians);
   *       AORQ   := perihelion distance, q (AU);
   *       E      := eccentricity, e (range 0 to 10);}
@@ -497,16 +497,16 @@ begin
 
     yy:=strtofloat(centuryA+date_regel[2]+date_regel[3]);{epoch year}
     mm:=strtofloat(monthA);{epoch month}
-    dd:=strtofloat(dayA);{epoch day}
+    dd:=strtofloat(dayA);  {epoch day}
 
-    a_M:=strtofloat(copy(txt,27,35-27+1)); {27 -  35  f9.5   Mean anomaly at the epoch, in degrees}
-    a_w:=strtofloat(copy(txt,38,46-38+1)); {38 -  46  f9.5   Argument of perihelion, J2000.0 (degrees)}
+    a_M:=strtofloat(copy(txt,27,35-27+1));   {27 -  35  f9.5   Mean anomaly at the epoch, in degrees}
+    a_w:=strtofloat(copy(txt,38,46-38+1));   {38 -  46  f9.5   Argument of perihelion, J2000.0 (degrees)}
     a_ohm:=strtofloat(copy(txt,49,57-49+1)); {49 -  57  f9.5   Longitude of the ascending node, J2000.0  (degrees)}
-    a_i:=strtofloat(copy(txt,60,68-60+1)); {60 -  68  f9.5   Inclination to the ecliptic, J2000.0 (degrees)}
+    a_i:=strtofloat(copy(txt,60,68-60+1));   {60 -  68  f9.5   Inclination to the ecliptic, J2000.0 (degrees)}
 
-    a_e:=strtofloat(copy(txt,71,79-71+1)); {71 -  79  f9.7   Orbital eccentricity}
+    a_e:=strtofloat(copy(txt,71,79-71+1));   {71 -  79  f9.7   Orbital eccentricity}
 
-    a_a:=strtofloat(copy(txt,93,103-93+1)); {93 - 103  f11.7  Semimajor axis (AU)}
+    a_a:=strtofloat(copy(txt,93,103-93+1));  {93 - 103  f11.7  Semimajor axis (AU)}
   end;
 end;
 
@@ -557,32 +557,33 @@ end;
 (*         (including terms >0.1" according to IAU 1980)                 *)
 (*         T = (JD-2451545.0)/36525.0                                    *)
 (*-----------------------------------------------------------------------*)
-PROCEDURE NUTEQU(T:double; VAR X,Y,Z:double);
-CONST ARC=206264.8062;          (* arcseconds per radian = 3600*180/pi *)
-      P2 =6.283185307;          (* 2*pi                                *)
-VAR   LS,D,F,N,EPS : double;
-      DPSI,DEPS,C,S: double;
-      DX,DY,DZ     : double;
-  FUNCTION FRAC(X:double):double;
-    (* with several compilers it may be necessary to replace TRUNC *)
-    (* by LONG_TRUNC or INT if T<-24!                              *)
-    BEGIN  FRAC:=X-TRUNC(X) END;
-BEGIN
-  LS  := P2*FRAC(0.993133+  99.997306*T); (* mean anomaly Sun          *)
-  D   := P2*FRAC(0.827362+1236.853087*T); (* diff. longitude Moon-Sun  *)
-  F   := P2*FRAC(0.259089+1342.227826*T); (* mean argument of latitude *)
-  N   := P2*FRAC(0.347346-   5.372447*T); (* longit. ascending node    *)
-  EPS := 0.4090928-2.2696E-4*T;           (* obliquity of the ecliptic *)
-  DPSI := ( -17.200*SIN(N)   - 1.319*SIN(2*(F-D+N)) - 0.227*SIN(2*(F+N))
-            + 0.206*SIN(2*N) + 0.143*SIN(LS) ) / ARC;
-  DEPS := ( + 9.203*COS(N)   + 0.574*COS(2*(F-D+N)) + 0.098*COS(2*(F+N))
-            - 0.090*COS(2*N)                 ) / ARC;
-  C := DPSI*COS(EPS);  S := DPSI*SIN(EPS);
-  DX := -(C*Y+S*Z); DY := (C*X-DEPS*Z); DZ := (S*X+DEPS*Y);
-  X:=X + DX;
-  Y:=Y + DY;
-  Z:=Z + DZ;
-END;
+procedure NUTEQU(t:double; var x,y,z:double);
+const arc=206264.8062;          (* arcseconds per radian = 3600*180/pi *)
+      p2 =6.283185307;          (* 2*pi                                *)
+var   ls,d,f,n,eps : double;
+      dpsi,deps,c,s: double;
+      dx,dy,dz     : double;
+  function frac(x:double):double;
+    (* with several compilers it may be necessary to replace trunc *)
+    (* by long_trunc or int if t<-24!                              *)
+    begin  frac:=x-trunc(x) end;
+begin
+  ls  := p2*frac(0.993133+  99.997306*t); (* mean anomaly sun          *)
+  d   := p2*frac(0.827362+1236.853087*t); (* diff. longitude moon-sun  *)
+  f   := p2*frac(0.259089+1342.227826*t); (* mean argument of latitude *)
+  n   := p2*frac(0.347346-   5.372447*t); (* longit. ascending node    *)
+  eps := 0.4090928-2.2696e-4*t;           (* obliquity of the ecliptic *)
+  dpsi := ( -17.200*sin(n)   - 1.319*sin(2*(f-d+n)) - 0.227*sin(2*(f+n))
+            + 0.206*sin(2*n) + 0.143*sin(ls) ) / arc;
+  deps := ( + 9.203*cos(n)   + 0.574*cos(2*(f-d+n)) + 0.098*cos(2*(f+n))
+            - 0.090*cos(2*n)                 ) / arc;
+  c := dpsi*cos(eps);  s := dpsi*sin(eps);
+  dx := -(c*y+s*z); dy := (c*x-deps*z); dz := (s*x+deps*y);
+  x:=x + dx;
+  y:=y + dy;
+  z:=z + dz;
+end;
+
 
 
 (*-----------------------------------------------------------------------*)
@@ -606,22 +607,21 @@ end;
 (* ABERRAT: velocity vector of the Earth in equatorial coordinates       *)
 (*          (in units of the velocity of light)                          *)
 (*-----------------------------------------------------------------------*)
-PROCEDURE ABERRAT(T: double; out VX,VY,VZ: double);{velocity vector of the Earth in equatorial coordinates, and units of the velocity of light}
-  CONST P2=6.283185307;
-  VAR L,CL: double;
-  FUNCTION FRAC(X:double):double;
-    BEGIN
-      X:=X-TRUNC(X);
-      IF (X<0) THEN X:=X+1;
-      FRAC:=X;
-    END;
-  BEGIN
-    L := P2*FRAC(0.27908+100.00214*T);
-    CL:=COS(L);
-    VX := -0.994E-4*SIN(L);
-    VY := +0.912E-4*CL;
-    VZ := +0.395E-4*CL;
-  END;
+procedure ABERRAT(t: double; out vx,vy,vz: double);{velocity vector of the earth in equatorial coordinates, and units of the velocity of light}
+var l,cl: double;
+function frac(x:double):double;
+  begin
+    x:=x-trunc(x);
+    if (x<0) then x:=x+1;
+    frac:=x;
+  end;
+begin
+  l := 2*pi*frac(0.27908+100.00214*t);
+  cl:=cos(l);
+  vx := -0.994e-4*sin(l);
+  vy := +0.912e-4*cl;
+  vz := +0.395e-4*cl;
+end;
 
 
 (*----------------------------------------------------------------*)
@@ -632,17 +632,17 @@ PROCEDURE ABERRAT(T: double; out VX,VY,VZ: double);{velocity vector of the Earth
 (*   H    : altitude (in rad)                                     *)
 (*   AZ   : azimuth (0 deg .. 2*pi rad, counted S->W->N->E->S)    *)
 (*----------------------------------------------------------------*)
-PROCEDURE EQUHOR2 (DEC,TAU,PHI: double; out H,AZ: double);
-  VAR COS_PHI,SIN_PHI, COS_DEC,SIN_DEC,COS_TAU, SIN_TAU, X,Y,Z, DUMMY: double;
-  BEGIN {updated with sincos function for fastest execution}
-    SINCOS(PHI,SIN_PHI,COS_PHI);
-    SINCOS(DEC,SIN_DEC,COS_DEC);
-    SINCOS(TAU,SIN_TAU,COS_TAU);
-    X:=COS_DEC*SIN_PHI*COS_TAU - SIN_DEC*COS_PHI;
-    Y:=COS_DEC*SIN_TAU;
-    Z:=COS_DEC*COS_PHI*COS_TAU + SIN_DEC*SIN_PHI;
-    POLAR2(X,Y,Z, DUMMY,H,AZ)
-  END;
+procedure equhor2 (dec,tau,phi: double; out h,az: double);
+var cos_phi,sin_phi, cos_dec,sin_dec,cos_tau, sin_tau, x,y,z, dummy: double;
+begin {updated with sincos function for fastest execution}
+  sincos(phi,sin_phi,cos_phi);
+  sincos(dec,sin_dec,cos_dec);
+  sincos(tau,sin_tau,cos_tau);
+  x:=cos_dec*sin_phi*cos_tau - sin_dec*cos_phi;
+  y:=cos_dec*sin_tau;
+  z:=cos_dec*cos_phi*cos_tau + sin_dec*sin_phi;
+  polar2(x,y,z, dummy,h,az)
+end;
 
 
 procedure nutation_aberration_correction_equatorial_classic(julian_et: double;var ra,dec : double);{Input mean equinox, add nutation, aberration result apparent M&P page 208}
