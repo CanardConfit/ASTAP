@@ -307,7 +307,7 @@ Begin
 end;
 
 
-procedure minor_planet(sun_earth_vector:boolean;julian:double;year,month:integer;day,a_e, a_or_q,a_i,a_ohm,a_w,M_anm :double;var RA3,DEC3,DELTA,sun_delta:double);
+procedure minor_planet(sun_earth_vector:boolean;julian:double;year,month:integer;day,a_e, a_or_q,a_i,a_ohm,a_w,a_M :double;var RA3,DEC3,DELTA,sun_delta:double);
 { Comet hale bopp}
 { YEAR:=1997;
 { MONTH:=03;
@@ -335,8 +335,8 @@ begin
   epoch:= julian_calc(year,month,day,0,0,0)-2400000.5; {MJD}
   mjd:=julian-2400000.5;
 
-  if M_anm<1E99 then {asteroid}
-  orbit (mjd, 2 {minor planet}, epoch, a_i*pi/180, a_ohm*pi/180,a_w*pi/180, a_or_q,a_e,M_anm*pi/180, 0, PV, JSTAT) //Determine the position and velocity.
+  if a_M<1E98 then {asteroid. Use a_M, mean anomoly as an indicator for minor planet or comet, The mean anomoly of a comet is in princple zero and at perihelion}
+  orbit (mjd, 2 {minor planet}, epoch, a_i*pi/180, a_ohm*pi/180,a_w*pi/180, a_or_q,a_e,a_M*pi/180, 0, PV, JSTAT) //Determine the position and velocity.
   else
   orbit (mjd, 3 {comet}       , epoch, a_i*pi/180, a_ohm*pi/180,a_w*pi/180,a_or_q, a_e,0           , 0, PV, JSTAT);//Determine the position and velocity.
 
@@ -499,7 +499,7 @@ end;
 
 
 
-procedure convert_MPCORB_line2(txt : string; var desn,name: string; var yy,mm,dd,a_e,a_a,a_i,a_ohm,a_w,M_anm,h,g: double);{read asteroid, han.k}
+procedure convert_MPCORB_line2(txt : string; var desn,name: string; var yy,mm,dd,a_e,a_a,a_i,a_ohm,a_w,a_M,h,g: double);{read asteroid, han.k}
 var
   code2           : integer;
   degrees_to_perihelion,c_epochdelta           : double;
@@ -540,7 +540,7 @@ begin
     mm:=strtofloat(monthA);{epoch month}
     dd:=strtofloat(dayA);{epoch day}
 
-    M_anm:=strtofloat(copy(txt,27,35-27+1)); {27 -  35  f9.5   Mean anomaly at the epoch, in degrees}
+    a_M:=strtofloat(copy(txt,27,35-27+1)); {27 -  35  f9.5   Mean anomaly at the epoch, in degrees}
     a_w:=strtofloat(copy(txt,38,46-38+1)); {38 -  46  f9.5   Argument of perihelion, J2000.0 (degrees)}
     a_ohm:=strtofloat(copy(txt,49,57-49+1)); {49 -  57  f9.5   Longitude of the ascending node, J2000.0  (degrees)}
     a_i:=strtofloat(copy(txt,60,68-60+1)); {60 -  68  f9.5   Inclination to the ecliptic, J2000.0 (degrees)}
@@ -582,7 +582,7 @@ begin
     aop:=strtofloat(copy(txt,51,9));
     lan:=strtofloat(copy(txt,61,9));
     inc2:=strtofloat(copy(txt,71,9));
-    M_anom:=0;{comet values are give at perihelion}
+    M_anom:=1E99;{Should be zero since comet values are give at perihelion. But label this as a a comet by abnormal value 1E99}
 
     {Hale Bopp
     { Q:= 0.91468400000000005;{    ! Perihelion distance q in AU;}
@@ -799,7 +799,7 @@ const
 var txtf : textfile;
     count,fontsize           : integer;
     yy,mm,dd,h,aop,lan,incl,ecc,a_or_q, DELTA,sun_delta,ra2,dec2,mag,phase,delta_t,
-    SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec,u0,v0 ,raX,decX,a_e,a_a,a_i,a_ohm,a_w,M_anm,epoch    : double;
+    SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec,u0,v0 ,raX,decX,a_e,a_a,a_i,a_ohm,a_w,a_M,epoch    : double;
     desn,name,s, thetext1,thetext2,fontsize_str:string;
     flip_horizontal, flip_vertical,form_existing, errordecode,sip : boolean;
 
@@ -861,15 +861,15 @@ var txtf : textfile;
            if length(s)>10 then
            begin
 
-             if asteroid then  convert_MPCORB_line2(s, {var} desn,name, yy,mm,dd,a_e,a_or_q {a},a_i,a_ohm,a_w,M_anm,H,a_g){read MPC asteroid}
-                         else  convert_comet_line (s, {var} desn,name, yy,mm,dd,a_e ,a_or_q {q},a_i,a_ohm,a_w,M_anm,H,c_k); {read MPC comet}
+             if asteroid then  convert_MPCORB_line2(s, {var} desn,name, yy,mm,dd,a_e,a_or_q {a},a_i,a_ohm,a_w,a_M,H,a_g){read MPC asteroid}
+                         else  convert_comet_line (s, {var} desn,name, yy,mm,dd,a_e ,a_or_q {q},a_i,a_ohm,a_w,a_M,H,c_k); {read MPC comet}
              if ((desn<>'') and (a_or_q<>0)) then {data line}
              begin
                try
                  inc(count);
 
-                 {comet is indicated by M_anm:=1E99, an abnormal value}
-                 minor_planet(sun200_calculated,jd_mid+delta_t{delta_t in days},round(yy),round(mm),dd,a_e,a_or_q,a_i,a_ohm,a_w,M_anm,{var} ra2,dec2,delta,sun_delta);
+                 {comet is indicated by a_M:=1E99, Mean anomoly, an abnormal value}
+                 minor_planet(sun200_calculated,jd_mid+delta_t{delta_t in days},round(yy),round(mm),dd,a_e,a_or_q,a_i,a_ohm,a_w,a_M,{var} ra2,dec2,delta,sun_delta);
 
                  if sqr( (ra2-ra0)*cos_telescope_dec)  + sqr(dec2-dec0)< sqr(fov) then {within the image FOV}
                  begin
