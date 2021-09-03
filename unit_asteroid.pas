@@ -146,75 +146,33 @@ begin
 end;
 
 
-(*---------------------------------------------------------------------------*)
-(* ACS: Arcus-Cosinus-Funktion (Gradmass)                                    *)
-(*---------------------------------------------------------------------------*)
-FUNCTION ACS(X:double):double;
-CONST RAD=0.0174532925199433; EPS=1E-7; C=90.0;
-BEGIN
-  IF ABS(X)=1.0
-   THEN ACS:=C-X*C
-   ELSE IF (ABS(X)>EPS) THEN ACS:=C-ARCTAN(X/SQRT((1.0-X)*(1.0+X)))/RAD
-                         ELSE ACS:=C-X/RAD;
-END;
-
-(*-----------------------------------------------------------------------*)
-(* SN: sine function (degrees)                                           *)
-(*-----------------------------------------------------------------------*)
-FUNCTION SN(X:double):double;
-CONST RAD=0.0174532925199433;
-BEGIN
-  SN:=SIN(X*RAD)
-END;
-(*-----------------------------------------------------------------------*)
-(* CS: cosine function (degrees)                                         *)
-(*-----------------------------------------------------------------------*)
-FUNCTION CS(X:double):double;
-CONST RAD=0.0174532925199433;
-BEGIN
-  CS:=COS(X*RAD)
-END;
-
-
-
-(*-----------------------------------------------------------------------*)
-(* CART: conversion of polar coordinates (r,theta,phi)                   *)
-(*       into cartesian coordinates (x,y,z)                              *)
-(*       (theta in [-90 deg,+90 deg]; phi in [-360 deg,+360 deg])        *)
-(*-----------------------------------------------------------------------*)
-PROCEDURE CART(R,THETA,PHI: double; VAR X,Y,Z: double);
-  VAR RCST : double;
-  BEGIN
-    RCST := R*CS(THETA);
-    X    := RCST*CS(PHI); Y := RCST*SN(PHI); Z := R*SN(THETA)
-  END;
-
-
 (*-----------------------------------------------------------------------*)
 (* POLAR2: conversion of cartesian coordinates (x,y,z)                    *)
 (*        into polar coordinates (r,theta,phi)                           *)
 (*        (theta in [-pi/2 deg,+pi/2]; phi in [0 ,+ 2*pi radians]        *)
 (*-----------------------------------------------------------------------*)
-PROCEDURE POLAR2(X,Y,Z:double;out R,THETA,PHI:double);
-  VAR RHO: double;
-  BEGIN
-    RHO:=X*X+Y*Y;  R:=SQRT(RHO+Z*Z);
-    PHI:=arctan2(Y,X); IF PHI<0 THEN PHI:=PHI+2*pi;
-    RHO:=SQRT(RHO); THETA:=arctan2(Z,RHO);
-  END;
+procedure polar2(x,y,z:double;out r,theta,phi:double);
+var rho: double;
+begin
+  rho:=x*x+y*y;  r:=sqrt(rho+z*z);
+  phi:=arctan2(y,x);
+  if phi<0 then phi:=phi+2*pi;
+  rho:=sqrt(rho);
+  theta:=arctan2(z,rho);
+end;
 
 
 (*-----------------------------------------------------------------------*)
 (* ECLEQU: Conversion of ecliptic into equatorial coordinates            *)
 (*         (T: equinox in Julian centuries since J2000)                  *)
 (*-----------------------------------------------------------------------*)
-PROCEDURE ECLEQU(T:double;VAR X,Y,Z:double);
-  VAR EPS,C,S,V: double;
-  BEGIN
-    EPS:=23.43929111-(46.8150+(0.00059-0.001813*T)*T)*T/3600.0;
-    C:=CS(EPS);  S:=SN(EPS);
-    V:=+C*Y-S*Z;  Z:=+S*Y+C*Z;  Y:=V;
-  END;
+procedure ECLEQU(t:double;var x,y,z:double);
+var eps,c,s,v: double;
+begin
+  eps:=23.43929111-(46.8150+(0.00059-0.001813*t)*t)*t/3600.0;
+  sincos(eps*pi/180,s,c);
+  v:=+c*y-s*z;  z:=+s*y+c*z;  y:=v;
+end;
 
 
 (*-----------------------------------------------------------------------*)
@@ -222,63 +180,66 @@ PROCEDURE ECLEQU(T:double;VAR X,Y,Z:double);
 (*          transforming ecliptic coordinates from equinox T1 to T2      *)
 (*          ( T=(JD-2451545.0)/36525 )                                   *)
 (*-----------------------------------------------------------------------*)
-PROCEDURE PMATECL(T1,T2:double;out A: double33);
-  CONST SEC=3600.0;
-  VAR DT,PPI,PI,PA: double;
-      C1,S1,C2,S2,C3,S3: double;
-  BEGIN
-    DT:=T2-T1;
-    PPI := 174.876383889 +( ((3289.4789+0.60622*T1)*T1) +
-              ((-869.8089-0.50491*T1) + 0.03536*DT)*DT )/SEC;
-    PI  := ( (47.0029-(0.06603-0.000598*T1)*T1)+
-             ((-0.03302+0.000598*T1)+0.000060*DT)*DT )*DT/SEC;
-    PA  := ( (5029.0966+(2.22226-0.000042*T1)*T1)+
-             ((1.11113-0.000042*T1)-0.000006*DT)*DT )*DT/SEC;
-    C1:=CS(PPI+PA);  C2:=CS(PI);  C3:=CS(PPI);
-    S1:=SN(PPI+PA);  S2:=SN(PI);  S3:=SN(PPI);
-    A[1,1]:=+C1*C3+S1*C2*S3; A[1,2]:=+C1*S3-S1*C2*C3; A[1,3]:=-S1*S2;
-    A[2,1]:=+S1*C3-C1*C2*S3; A[2,2]:=+S1*S3+C1*C2*C3; A[2,3]:=+C1*S2;
-    A[3,1]:=+S2*S3;          A[3,2]:=-S2*C3;          A[3,3]:=+C2;
-  END;
+procedure PMATECL(t1,t2:double;out a: double33);
+var dt,ppi,pi,pa: double;
+   c1,s1,c2,s2,c3,s3: double;
+begin
+  dt:=t2-t1;
+  ppi := 174.876383889 +( ((3289.4789+0.60622*t1)*t1) +
+            ((-869.8089-0.50491*t1) + 0.03536*dt)*dt )/3600;
+  pi  := ( (47.0029-(0.06603-0.000598*t1)*t1)+
+           ((-0.03302+0.000598*t1)+0.000060*dt)*dt )*dt/3600;
+  pa  := ( (5029.0966+(2.22226-0.000042*t1)*t1)+
+           ((1.11113-0.000042*t1)-0.000006*dt)*dt )*dt/3600;
+  sincos((ppi+pa)*pi/180,s1,c1);
+  sincos(pi*pi/180,s2,c2);
+  sincos(ppi*pi/180,s3,c3);
+  a[1,1]:=+c1*c3+s1*c2*s3; a[1,2]:=+c1*s3-s1*c2*c3; a[1,3]:=-s1*s2;
+  a[2,1]:=+s1*c3-c1*c2*s3; a[2,2]:=+s1*s3+c1*c2*c3; a[2,3]:=+c1*s2;
+  a[3,1]:=+s2*s3;          a[3,2]:=-s2*c3;          a[3,3]:=+c2;
+end;
+
 
 (*---------------------------------------------------------------------------*)
 (* PMATEQU: Berechnung der Praezessionsmatrix A[i,j] fuer                    *)
 (*          aequatoriale Koordinaten vom Aequinoktium T1 nach T2             *)
 (*          ( T=(JD-2451545.0)/36525 )                                       *)
 (*---------------------------------------------------------------------------*)
-PROCEDURE PMATEQU(T1,T2:double; out a:double33);
-  CONST SEC=3600.0;
-  VAR DT,ZETA,Z,THETA: double;
-      C1,S1,C2,S2,C3,S3: double;
-  BEGIN
-   DT:=T2-T1;
-    ZETA  :=  ( (2306.2181+(1.39656-0.000139*T1)*T1)+
-                ((0.30188-0.000345*T1)+0.017998*DT)*DT )*DT/SEC;
-    Z     :=  ZETA + ( (0.79280+0.000411*T1)+0.000205*DT)*DT*DT/SEC;
-    THETA :=  ( (2004.3109-(0.85330+0.000217*T1)*T1)-
-                ((0.42665+0.000217*T1)+0.041833*DT)*DT )*DT/SEC;
-    C1:=CS(Z);  C2:=CS(THETA);  C3:=CS(ZETA);
-    S1:=SN(Z);  S2:=SN(THETA);  S3:=SN(ZETA);
-    A[1,1]:=-S1*S3+C1*C2*C3; A[1,2]:=-S1*C3-C1*C2*S3; A[1,3]:=-C1*S2;
-    A[2,1]:=+C1*S3+S1*C2*C3; A[2,2]:=+C1*C3-S1*C2*S3; A[2,3]:=-S1*S2;
-    A[3,1]:=+S2*C3;          A[3,2]:=-S2*S3;          A[3,3]:=+C2;
-  END;
+procedure PMATEQU(t1,t2:double; out a:double33);
+var dt,zeta,z,theta: double;
+    c1,s1,c2,s2,c3,s3: double;
+begin
+ dt:=t2-t1;
+  zeta  :=  ( (2306.2181+(1.39656-0.000139*t1)*t1)+
+              ((0.30188-0.000345*t1)+0.017998*dt)*dt )*dt/3600;
+  z     :=  zeta + ( (0.79280+0.000411*t1)+0.000205*dt)*dt*dt/3600;
+  theta :=  ( (2004.3109-(0.85330+0.000217*t1)*t1)-
+              ((0.42665+0.000217*t1)+0.041833*dt)*dt )*dt/3600;
+  sincos(z*pi/180,s1,c1);
+  sincos(theta*pi/180,s2,c2);
+  sincos(zeta*pi/180,s3,c3);
+  a[1,1]:=-s1*s3+c1*c2*c3; a[1,2]:=-s1*c3-c1*c2*s3; a[1,3]:=-c1*s2;
+  a[2,1]:=+c1*s3+s1*c2*c3; a[2,2]:=+c1*c3-s1*c2*s3; a[2,3]:=-s1*s2;
+  a[3,1]:=+s2*c3;          a[3,2]:=-s2*s3;          a[3,3]:=+c2;
+end;
+
 
 (*-----------------------------------------------------------------------*)
 (* PRECART: calculate change of coordinates due to precession            *)
 (*          for given transformation matrix A[i,j]                       *)
 (*          (to be used with PMATECL und PMATEQU)                        *)
 (*-----------------------------------------------------------------------*)
-PROCEDURE PRECART(A:double33;VAR X,Y,Z:double);
-  VAR U,V,W: double;
-  BEGIN
-    U := A[1,1]*X+A[1,2]*Y+A[1,3]*Z;
-    V := A[2,1]*X+A[2,2]*Y+A[2,3]*Z;
-    W := A[3,1]*X+A[3,2]*Y+A[3,3]*Z;
-    X:=U; Y:=V; Z:=W;
-  END;
+procedure PRECART(a:double33;var x,y,z:double);
+var u,v,w: double;
+begin
+  u := a[1,1]*x+a[1,2]*y+a[1,3]*z;
+  v := a[2,1]*x+a[2,2]*y+a[2,3]*z;
+  w := a[3,1]*x+a[3,2]*y+a[3,3]*z;
+  x:=u; y:=v; z:=w;
+end;
 
-PROCEDURE PARALLAX_XYZ(WTIME,latitude : double;var X,Y,Z: double); { {X,Y,Z in AU,  By Han Kleijn}
+
+procedure parallax_xyz(wtime,latitude : double;var x,y,z: double); { {X,Y,Z in AU,  By Han Kleijn}
 {wtime= Sidereal time at greenwich - longitude, equals azimuth position of the sky for the observer.
 { wtime:=limit_radialen((+longitude*pi/180)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi);{longitude positive is east}
 { siderealtime2000=(280.46061837-90)*pi/180       earth_angular_velocity=pi*2*1.00273790935}
@@ -379,23 +340,21 @@ begin
 end;
 
 
-
 procedure illum2( x,y,z, xe,ye,Ze: double; out R_SP,R_EP,elong,phi,phase: double);
 var
-  xp,yp,Zp, RE, C_PHI : double;
+  xp,yp,zp, re, c_phi : double;
 begin
   xp:=x-xe; yp:=y-ye; zp:=z-ze; //minor planet geocentric position
 
-  // Compute the distances in the Sun-Earth-planet triangle
-  r_sp:= sqrt(sqr(x)+sqr(y)+sqr(z)); // Distance Sun and minor planet)
-  re  := sqrt(sqr(xe)+sqr(ye)+sqr(ze)); // Distance Sun and Earth
-  r_ep:= sqrt(sqr(xp)+sqr(yp)+sqr(zp)); //Distance Earth and minor planet
+  {Compute the distances in the Sun-Earth-planet triangle}
+  r_sp:= sqrt(sqr(x)+sqr(y)+sqr(z));    {Distance Sun and minor planet}
+  re  := sqrt(sqr(xe)+sqr(ye)+sqr(ze)); {Distance Sun and Earth}
+  r_ep:= sqrt(sqr(xp)+sqr(yp)+sqr(zp)); {Distance Earth and minor planet}
 
-  elong:= ACS ( ( R_EP*R_EP + RE*RE - R_SP*R_SP ) / ( 2.0*R_EP*RE ) );// Calculation elongation, phase angel and phase
-
-  c_phi:= ( sqr(r_ep) + sqr(r_sp) - sqr(re) ) / (2.0*r_ep*r_sp);
-  phi  := ACS ( c_phi );  //phase angle
-  phase := 100*0.5*(1.0+c_phi); {0..100}
+  elong:=(180/pi)*arccos( ( r_ep*r_ep + re*re - r_sp*r_sp ) / ( 2.0*r_ep*re ) );{calculation elongation, phase angle and phase}
+  c_phi:=( sqr(r_ep) + sqr(r_sp) - sqr(re) ) / (2.0*r_ep*r_sp);
+  phi  :=(180/pi)*arccos( c_phi );{phase angle in degrees}
+  phase:= 100*0.5*(1.0+c_phi); {0..100}
 end;
 
 
