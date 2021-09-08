@@ -31,7 +31,7 @@ uses
  math, ExtCtrls, Menus, Buttons,
  LCLIntf,{for for getkeystate, selectobject, openURL}
  clipbrd, Types,strutils,
- astap_main,unit_image_sharpness;
+ astap_main;
 
 
 type
@@ -989,7 +989,9 @@ const
 
 implementation
 
-uses  unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd, unit_live_stacking, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_aavso;
+uses
+  unit_image_sharpness, unit_ephemerides, unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd,
+  unit_live_stacking, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_aavso;
 
 
 type
@@ -1650,6 +1652,8 @@ var
   key,filename1,rawstr              : string;
   img                               : image_array;
 begin
+                  memo2_message('');
+
   with stackmenu1 do
   begin
     counts:=ListView1.items.count-1;
@@ -1830,7 +1834,8 @@ begin
 
                 if gain<>999 then ListView1.Items.item[c].subitems.Strings[L_gain]:=inttostr(round(gain));
 
-                alt:=calculate_altitude(false);{convert centalt string to double or calculate altitude from observer location}
+                alt:=calculate_altitude(true {correct for refraction},true {apple precession},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
+
                 if alt<>0 then
                            ListView1.Items.item[c].subitems.Strings[L_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
 
@@ -1891,6 +1896,9 @@ begin
     Screen.Cursor :=Save_Cursor;    { back to normal }
     progress_indicator(-100,'');{progresss done}
   end;
+
+  memo2_message('');
+
 end;
 
 
@@ -3126,14 +3134,13 @@ procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse
 // amode=4 ==> full header. load image
 var
   c,counts,i,iterations, hfd_counter,theindex : integer;
-  backgr, hfd_median, hjd,sd, dummy,alt : double;
+  backgr, hfd_median, hjd,sd, dummy,alt,ra_image,dec_image : double;
   filename1                        : string;
   Save_Cursor                      : TCursor;
   loaded, green,blue               : boolean;
   img                              : image_array;
 
   nr_stars, hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right : double;
-
 begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -3286,7 +3293,7 @@ begin
               hjd:=JD_to_HJD(jd_mid,RA0,DEC0);{conversion JD to HJD}
               lv.Items.item[c].subitems.Strings[P_jd_helio]:=floattostrF2(Hjd,0,5);{helio julian day}
 
-              alt:=calculate_altitude(false{correct ra, dec});{convert centalt string to double or calculate altitude from observer location}
+              alt:=calculate_altitude(true {correct for refraction},true {apple precession},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
               if alt<>0 then
               begin
                 lv.Items.item[c].subitems.Strings[P_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
@@ -3368,7 +3375,8 @@ begin
               theindex:=stackmenu1.equinox1.itemindex;
               if ra_mount<99 then {mount position known and specified}
               begin
-                if theindex>=1 then  precession2(jd_mid,ra_mount,dec_mount,ra_mount,dec_mount);
+                if theindex>=1 then
+                  precession3(2451545 {J2000}, jd_mid,ra_mount,dec_mount); {precession}
                 if theindex>=2 then  nutation_aberration_correction_equatorial_classic(jd_mid,ra_mount,dec_mount);{nutation, abberation}
 
                 lv.Items.item[c].subitems.Strings[M_ra_m]:=floattostrf(ra_mount*180/pi,ffFixed, 9, 6);
@@ -3377,22 +3385,29 @@ begin
 
               if cd1_1<>0 then
               begin
-                if theindex>=1 then  precession2(jd_mid,ra0,dec0,ra0,dec0); {J2000 to mean equinox}
+                ra_image:=ra0;
+                dec_image:=dec0;
+                if theindex>=1 then   precession3(2451545 {J2000}, jd_mid,ra_image,dec_image); {J2000 to mean equinox}
                 if theindex>=2  then
-                    nutation_aberration_correction_equatorial_classic(jd_mid,ra0,dec0);{Input mean equinox, result apparent.  M&P page 208}
+                    nutation_aberration_correction_equatorial_classic(jd_mid,ra_image,dec_image);{Input mean equinox, result apparent.  M&P page 208}
+                alt:=calculate_altitude(theindex>=3 {correct for refraction},false{precession},ra_image,dec_image);{convert centalt string to double or calculate altitude from observer location}
+                if theindex>=3 then
+                begin
+                  ra_image:=ra_app;{updated via calculate altitude}
+                  dec_image:=dec_app;
+                end;
 
-                alt:=calculate_altitude(theindex>=3 {correct ra0, dec0});{convert centalt string to double or calculate altitude from observer location and correct ra0, dec0}
                 if alt<>0 then
                   lv.Items.item[c].subitems.Strings[M_centalt]:=floattostrf(alt,ffFixed, 3, 1); {altitude}
 
 
-                lv.Items.item[c].subitems.Strings[M_ra]:=floattostrf(ra0*180/pi,ffFixed, 9, 6);
-                lv.Items.item[c].subitems.Strings[M_dec]:=floattostrf(dec0*180/pi,ffFixed, 9, 6);
+                lv.Items.item[c].subitems.Strings[M_ra]:=floattostrf(ra_image*180/pi,ffFixed, 9, 6);
+                lv.Items.item[c].subitems.Strings[M_dec]:=floattostrf(dec_image*180/pi,ffFixed, 9, 6);
 
                 if ra_mount<99 then {mount position known and specified}
                 begin
-                  lv.Items.item[c].subitems.Strings[M_ra_e]:=floattostrf((ra0-ra_mount)*cos(dec0)*3600*180/pi,ffFixed, 6,1);
-                  lv.Items.item[c].subitems.Strings[M_dec_e]:=floattostrf((dec0-dec_mount)*3600*180/pi,ffFixed, 6,1);
+                  lv.Items.item[c].subitems.Strings[M_ra_e]:=floattostrf((ra_image-ra_mount)*cos(dec_image)*3600*180/pi,ffFixed, 6,1);
+                  lv.Items.item[c].subitems.Strings[M_dec_e]:=floattostrf((dec_image-dec_mount)*3600*180/pi,ffFixed, 6,1);
                 end
                 else
                 begin
@@ -4766,7 +4781,7 @@ end;
 
 procedure Tstackmenu1.curve_fitting1Click(Sender: TObject);
 var
-  p,a,b,position, center,hfd : double;
+  p,a,b,posit, center,hfd : double;
   c,img_counter,i,fields     : integer;
   array_hfd : array of tdouble2;
 var {################# initialised variables #########################}
@@ -4788,13 +4803,13 @@ begin
       if Items.item[c].checked then
       begin
 
-        position:=strtofloat2(Items.item[c].subitems.Strings[insp_focus_pos]);{inefficient but simple code to convert string back to float}
-        if position>0 then
+        posit:=strtofloat2(Items.item[c].subitems.Strings[insp_focus_pos]);{inefficient but simple code to convert string back to float}
+        if posit>0 then
         begin
           hfd:=strtofloat(Items.item[c].subitems.Strings[insp_focus_pos+i]);
           if hfd<15 then {valid data}
           begin
-            array_hfd[img_counter,1]:=position;
+            array_hfd[img_counter,1]:=posit;
             array_hfd[img_counter,2]:=hfd;
             inc(img_counter);
             if img_counter>=len then begin len:=len+200; setlength(array_hfd,len); {adapt size} end;
@@ -9061,7 +9076,7 @@ begin
         else {made LRGB color}
         begin
           naxis:=3;{will be written in save routine}
-          naxis3:=3;{will be written in save routine, {naxis3 is update in  save_fits}
+          naxis3:=3;{will be written in save routine, naxis3 is updated in  save_fits}
           if length(extra2)>1 then update_text('FILTER  =',#39+'        '+#39);{wipe filter info}
           exposure:=exposureL*counterL;{for annotation asteroid}
           update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(exposure)); {could be used for midpoint. Download time are not included, so it is not perfect}

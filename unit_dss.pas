@@ -83,7 +83,7 @@ Procedure DSSPOS (xpix ,ypix : double; var xpos, ypos: double);
            y_coeff[10] * xmm3      + y_coeff[11] * ymm *(x2y2 )+
            y_coeff[12] * ymm * x2y2 * x2y2 ;
 
-    {Ignore magnitude and color terms+ wcs->y_coeff[13]*mag	+ wcs->y_coeff[14]*mag*mag +wcs->y_coeff[15]*mag*mag*mag + wcs->y_coeff[16]*mag*ymm + wcs->y_coeff[17]*mag*x2y2)	+ wcs->y_coeff[18]*mag*ymm*x2y2 +wcs->y_coeff[19]*color;
+    {Ignore magnitude and color terms+ wcs->y_coeff[13]*mag	+ wcs->y_coeff[14]*mag*mag +wcs->y_coeff[15]*mag*mag*mag + wcs->y_coeff[16]*mag*ymm + wcs->y_coeff[17]*mag*x2y2)	+ wcs->y_coeff[18]*mag*ymm*x2y2 +wcs->y_coeff[19]*color;}
 
     {Convert to radians }
     xir := xi / cons2r ;

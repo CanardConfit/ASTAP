@@ -48,7 +48,7 @@ object form_asteroids1: Tform_asteroids1
     ShowHint = True
     OnClick = help_asteroid_annotation1Click
   end
-  object GroupBox1: TGroupBox
+  object Group_Box1: TGroupBox
     Left = 8
     Height = 256
     Top = 0
@@ -57,7 +57,7 @@ object form_asteroids1: Tform_asteroids1
     ClientHeight = 236
     ClientWidth = 578
     TabOrder = 2
-    OnClick = GroupBox1Click
+    OnClick = Group_Box1Click
     object file_to_add1: TButton
       Left = 100
       Height = 25
@@ -308,7 +308,7 @@ object form_asteroids1: Tform_asteroids1
       TabOrder = 9
     end
   end
-  object GroupBox2: TGroupBox
+  object Group_Box2: TGroupBox
     Left = 8
     Height = 122
     Top = 256

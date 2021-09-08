@@ -119,6 +119,7 @@ type
     MenuItem31: TMenuItem;
     MenuItem32: TMenuItem;
     hfd_arcseconds1: TMenuItem;
+    MenuItem33: TMenuItem;
     MenuItem34: TMenuItem;
     simbadquery1: TMenuItem;
     positionanddate1: TMenuItem;
@@ -329,6 +330,7 @@ type
     procedure bayer_image1Click(Sender: TObject);
     procedure calibrate_photometry1Click(Sender: TObject);
     procedure convert_to_ppm1Click(Sender: TObject);
+    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure freetext1Click(Sender: TObject);
     procedure hfd_arcseconds1Click(Sender: TObject);
     procedure hfd_contour1Click(Sender: TObject);
@@ -480,7 +482,7 @@ type
     procedure Stackimages1Click(Sender: TObject);
     procedure Saveasfits1Click(Sender: TObject);
     procedure Export_image1Click(Sender: TObject);
-    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+//    procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure CropFITSimage1Click(Sender: TObject);
     procedure maximum1Scroll(Sender: TObject; ScrollCode: TScrollCode; var ScrollPos: Integer);
     procedure stretch1Change(Sender: TObject);
@@ -739,7 +741,6 @@ function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmm
 procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; out  ram,decm  : double {fitsX, Y to ra,dec});
 function extract_letters_only(inp : string): string;
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
-function calculate_altitude(correct_radec_refraction : boolean): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
 procedure write_astronomy_wcs(filen:string);
 procedure CCDinspector(snr_min: double);
 function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
@@ -1515,7 +1516,7 @@ begin
           number:=trim(header[i+5]+header[i+6]+header[i+7]);
           tform_counter:=strtoint(number)-1;
           tform[tform_counter]:=get_string;
-          let:=pos('E',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='E';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{{single e.g. E, 1E or 4E}
+          let:=pos('E',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='E';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{single e.g. E, 1E or 4E}
           let:=pos('D',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='D';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{double e.g. D, 1D or 5D (sub table 5*D) or D25.17}
           let:=pos('L',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='L';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{logical}
           let:=pos('X',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='X';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{bit}
@@ -3002,7 +3003,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.574a1, '+about_message4+', dated 2021-9-3';
+  #13+#10+'ASTAP version ß0.9.575, '+about_message4+', dated 2021-9-5';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -8663,11 +8664,11 @@ begin
 end;
 
 
-procedure Tmainwindow.FormClose(Sender: TObject; var Action: TCloseAction);
-begin
-  esc_pressed:=true;{stop processing. Required for reliable stopping by APT}
-  save_settings2;
-end;
+//procedure Tmainwindow.FormClose(Sender: TObject; var Action: TCloseAction);
+//begin
+//  esc_pressed:=true;{stop processing. Required for reliable stopping by APT}
+//  save_settings2;
+//end;
 
 
 procedure Tmainwindow.receivemessage(Sender: TObject);{For OneInstance, called from timer (linux) or SimpleIPCServer1MessageQueued (Windows)}
@@ -10677,7 +10678,7 @@ begin
     Statusbar1.Panels[2].text:='Local standard deviation or star values';
     Statusbar1.Panels[3].text:='X, Y = [pixel value(s)]';
     Statusbar1.Panels[4].text:='RGB values screen';
-    Statusbar1.Panels[7].text:='w x h   distance[arcsec]  angle';
+    Statusbar1.Panels[7].text:='w x h  angular_distance  angle';
     Statusbar1.Panels[8].text:='zoom factor';
   end;
 end;
@@ -11313,36 +11314,6 @@ begin
       show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
       show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
    end;
-end;
-
-function calculate_altitude(correct_radec_refraction : boolean): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
-var
-  site_lat_radians,site_long_radians : double;
-  errordecode  : boolean;
-begin
-  result:=strtofloat2(centalt);
-
-  if (((result=0) or (correct_radec_refraction)) and (cd1_1<>0)) then {calculate from observation location, image center and time the altitude}
-  begin
-    if sitelat='' then
-    begin
-      sitelat:=lat_default;
-      sitelong:=long_default;
-    end;
-    dec_text_to_radians(sitelat,site_lat_radians,errordecode);
-    if errordecode=false then
-    begin
-      dec_text_to_radians(sitelong,site_long_radians,errordecode);
-      if errordecode=false then
-      begin
-        if jd_start=0 then date_to_jd(date_obs,exposure);{convert date-obs to jd_start, jd_mid}
-        if jd_mid>2400000 then {valid JD}
-        begin
-          result:=(180/pi)*altitude_and_refraction(site_lat_radians,-site_long_radians,jd_mid,focus_temp, correct_radec_refraction, {var} ra0,dec0);{In formulas the longitude is positive to west!!!. }
-        end;
-      end;
-    end;
-  end;
 end;
 
 
@@ -13111,7 +13082,7 @@ begin
     crota2:=-angle*180/pi;{crota2 is defined north to west, so reverse}
     crota1:=crota2;
 
-    old_to_new_WCS;{ {new WCS missing, convert old WCS to new}
+    old_to_new_WCS;{new WCS missing, convert old WCS to new}
 
     update_text ('CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   ');
     update_text ('CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
@@ -14814,6 +14785,12 @@ begin
 
     end;
   end;
+end;
+
+procedure Tmainwindow.FormClose(Sender: TObject; var CloseAction: TCloseAction);
+begin
+  esc_pressed:=true;{stop processing. Required for reliable stopping by APT}
+  save_settings2;
 end;
 
 

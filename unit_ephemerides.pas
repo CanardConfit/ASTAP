@@ -33,13 +33,17 @@ uses
 
 type
   U_array = array[1..13] of double;
-  pv_array = array[1..6] of double;
-  PH_array = array[1..3] of double;
+  r6_array = array[1..6] of double;
+  r3_array = array[1..3] of double;
+  r3x3_array = array[1..3,1..3] of double;
 
-procedure sla_EPV (DATE : double; out PH, VH{, PB, VB} : PH_array); //  J2000 heliocentric and barycentric Earth position and velocity. Light speed corrected.
-//procedure sla_PLANET(DATE : double;  NP: integer; out PV: pv_array; out JSTAT: integer); // J2000 heliocentric position and velocity of planets 1..8 based on original Simon et al Fortran code. Pluto removed.
-procedure orbit(DATE : double; JFORM : integer; EPOCH : double; ORBINC, ANODE,PERIH, AORQ, E, AORL, DM : double; out PV :PV_array; out JSTAT : integer) ;//Heliocentric position and velocity of a planet, asteroid or comet
-{based on planet.f, planel.f, el2ue.f, ue2pv.f,pv2ue.f, epv.f}
+
+procedure sla_EPV (DATE : double; out PH, VH{, PB, VB} : r3_array); //  J2000 heliocentric and barycentric Earth position and velocity. Light speed corrected.
+procedure sla_PLANET(DATE : double;  NP: integer; out PV: r6_array; out JSTAT: integer); // J2000 heliocentric position and velocity of planets 1..8 based on original Simon et al Fortran code. Pluto removed.
+procedure orbit(DATE : double; JFORM : integer; EPOCH : double; ORBINC, ANODE,PERIH, AORQ, E, AORL, DM : double; out PV :r6_array; out JSTAT : integer) ;//Heliocentric position and velocity of a planet, asteroid or comet
+procedure precession3(JD0, JD1: double; var RA, DC : double); {precession}
+
+{based on planet.f, planel.f, el2ue.f, ue2pv.f,pv2ue.f, epv.f, prec.f, dcs2c, dmxv.f, dcc2s.f}
 
 implementation
 
@@ -150,7 +154,7 @@ end;
 *-;
 }
 
-procedure sla_UE2PV (DATE : double; U : u_array; out PV :pv_array; out JSTAT :integer);
+procedure sla_UE2PV (DATE : double; U : u_array; out PV :r6_array; out JSTAT :integer);
 
 const
   //*  Gaussian gravitational constant (exact);
@@ -371,7 +375,7 @@ end;
 *;
 *-;}
 
-procedure sla_PV2UE (PV : pv_array; DATE,PMASS : double; out U : u_array; out JSTAT : integer);
+procedure sla_PV2UE (PV : r6_array; DATE,PMASS : double; out U : u_array; out JSTAT : integer);
 const
 //  Gaussian gravitational constant (exact);
   GCON=0.01720209895;
@@ -595,7 +599,7 @@ var
   J: integer;
   PHT,ARGPH,Q,W,CM,ALPHA,PHS,SW,CW,SI,CI,SO,CO,X,Y,Z,PX,PY,PZ,VX,VY,VZ,DT,FC,FP,PSI: double;
   UL : U_array;
-  PV : pv_array;
+  PV : r6_array;
 
 begin
 //  Validate arguments.
@@ -912,7 +916,7 @@ end;
 }
 
 
-procedure sla_PLANEL ( DATE: double; JFORM: integer; EPOCH : double; ORBINC, ANODE, PERIH,AORQ, E, AORL, DM: double;out PV: PV_array; out  JSTAT : integer);
+procedure sla_PLANEL ( DATE: double; JFORM: integer; EPOCH : double; ORBINC, ANODE, PERIH,AORQ, E, AORL, DM: double;out PV: r6_array; out  JSTAT : integer);
 var
 U: U_array;
 J: integer;
@@ -928,6 +932,505 @@ begin
   //  Wrap up.0;
   JSTAT := J;
 end;
+
+//----------------------------------------------------------------------------------------
+
+{*+
+*     - - - - - -
+*      D C C 2 S
+*     - - - - - -
+*
+*  Cartesian to spherical coordinates (double precision)
+*
+*  Given:
+*     V     d(3)   x,y,z vector
+*
+*  Returned:
+*     A,B   d      spherical coordinates in radians
+*
+*  The spherical coordinates are longitude (+ve anticlockwise looking
+*  from the +ve latitude pole) and latitude.  The Cartesian coordinates
+*  are right handed, with the x axis at zero longitude and latitude, and
+*  the z axis at the +ve latitude pole.
+*
+*  If V is null, zero A and B are returned.  At either pole, zero A is
+*  returned.
+*
+*  Last revision:   22 July 2004
+*
+*  Copyright P.T.Wallace.  All rights reserved.
+*
+*  License:
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*    You should have received a copy of the GNU General Public License
+*    along with this program (see SLA_CONDITIONS); if not, write to the
+*    Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+*    Boston, MA  02111-1307  USA
+*
+*-}
+
+procedure sla_DCC2S (V : r3_array; out  A, B : double);
+var
+  X,Y,Z,R: double;
+begin
+  X := V[1];
+  Y := V[2];
+  Z := V[3];
+  R := SQRT(X*X+Y*Y);
+  if (R = 0) then
+  begin
+  A := 0;
+  end
+  else
+  begin
+    A := ARCTAN2(Y,X);
+  end;
+  if (Z = 0) then
+  begin
+    B := 0;
+  end
+  else
+  begin
+    B := ARCTAN2(Z,R);
+  end;
+end;//
+
+
+//---------------------------------------------------------------------------------------------------
+{*+
+*     - - - - -
+*      D M X V
+*     - - - - -
+*
+*  Performs the 3-D forward unitary transformation:
+*
+*     vector VB = matrix DM * vector VA
+*
+*  (double precision)
+*
+*  Given:
+*     DM       dp(3,3)    matrix
+*     VA       dp(3)      vector
+*
+*  Returned:
+*     VB       dp(3)      result vector
+*
+*  To comply with the ANSI Fortran 77 standard, VA and VB must be
+*  different arrays.  However, the routine is coded so as to work
+*  properly on many platforms even if this rule is violated.
+*
+*  Last revision:   26 December 2004
+*
+*  Copyright P.T.Wallace.  All rights reserved.
+*
+*  License:
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*    You should have received a copy of the GNU General Public License
+*    along with this program (see SLA_CONDITIONS); if not, write to the
+*    Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+*    Boston, MA  02111-1307  USA
+*
+*-}
+
+procedure sla_DMXV (DM : r3x3_array; out VA, VB : r3_array);
+var
+  I,J: integer;
+  w  : double;
+  VW : r3_array;
+begin
+  //  Matrix DM * vector VA -> vector VW;
+  for  J := 1 to 3  do
+  begin
+    W:=0;
+    for  I := 1 to 3  do
+    begin
+      W:=W+DM[J,I]*VA[I];
+    end;
+    VW[J]:=W;
+  end;
+  //  Vector VW -> vector VB;
+  for  J := 1 to 3  do
+  begin
+    VB[J]:=VW[J];
+  end;
+end;//
+
+//--------------------------------------------------------------------------------------------
+
+{*+
+*     - - - - - -
+*      D C S 2 C
+*     - - - - - -
+*
+*  Spherical coordinates to direction cosines (double precision)
+*
+*  Given:
+*     A,B       d      spherical coordinates in radians
+*                         (RA,Dec), (long,lat) etc.
+*
+*  Returned:
+*     V         d(3)   x,y,z unit vector
+*
+*  The spherical coordinates are longitude (+ve anticlockwise looking
+*  from the +ve latitude pole) and latitude.  The Cartesian coordinates
+*  are right handed, with the x axis at zero longitude and latitude, and
+*  the z axis at the +ve latitude pole.
+*
+*  Last revision:   26 December 2004
+*
+*  Copyright P.T.Wallace.  All rights reserved.
+*
+*  License:
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*    You should have received a copy of the GNU General Public License
+*    along with this program (see SLA_CONDITIONS); if not, write to the
+*    Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+*    Boston, MA  02111-1307  USA
+*
+*-}
+
+procedure sla_DCS2C (A, B : double; out V : r3_array);
+var
+  COSB: double;
+begin
+  COSB := COS(B);
+  V[1] := COS(A)*COSB;
+  V[2] := SIN(A)*COSB;
+  V[3] := SIN(B);
+end;//
+
+//-------------------------------------------------------------------------------------------
+
+{*+
+*     - - - - - - -
+*      D E U L E R
+*     - - - - - - -
+*
+*  Form a rotation matrix from the Euler angles - three successive
+*  rotations about specified Cartesian axes (double precision)
+*
+*  Given:
+*    ORDER   string  specifies about which axes the rotations occur
+*    PHI     d       1st rotation (radians)
+*    THETA   d       2nd rotation (   "   )
+*    PSI     d       3rd rotation (   "   )
+*
+*  Returned:
+*    RMAT    d(3,3)  rotation matrix
+*
+*  A rotation is positive when the reference frame rotates
+*  anticlockwise as seen looking towards the origin from the
+*  positive region of the specified axis.
+*
+*  The characters of ORDER define which axes the three successive
+*  rotations are about.  A typical value is 'ZXZ', indicating that
+*  RMAT is to become the direction cosine matrix corresponding to
+*  rotations of the reference frame through PHI radians about the
+*  old Z-axis, followed by THETA radians about the resulting X-axis,
+*  then PSI radians about the resulting Z-axis.
+*
+*  The axis names can be any of the following, in any order or
+*  combination:  X, Y, Z, uppercase or lowercase, 1, 2, 3.  Normal
+*  axis labelling/numbering conventions apply;  the xyz (=123)
+*  triad is right-handed.  Thus, the 'ZXZ' example given above
+*  could be written 'zxz' or '313' (or even 'ZxZ' or '3xZ').  ORDER
+*  is terminated by length or by the first unrecognized character.
+*
+*  Fewer than three rotations are acceptable, in which case the later
+*  angle arguments are ignored.  If all rotations are zero, the
+*  identity matrix is produced.
+*
+*  P.T.Wallace   Starlink   23 May 1997
+*
+*  Copyright (C) 1997 Rutherford Appleton Laboratory
+*
+*  License:
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*    You should have received a copy of the GNU General Public License
+*    along with this program (see SLA_CONDITIONS); if not, write to the
+*    Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+*    Boston, MA  02111-1307  USA
+*}
+
+
+
+procedure sla_DEULER (ORDER : ansistring; PHI, THETA, PSI : double; out RMAT :r3x3_array);
+var
+  J,I,L,N,K: integer;
+  ANGLE, S, C, W: double;
+  RESULT,ROTN,WM: r3x3_array;
+begin
+
+  //  Initialize result matrix;
+  for  J := 1 to 3  do
+  begin
+    for  I := 1 to 3  do
+    begin
+      if (I<>J) then
+      begin
+        RESULT[I,J] := 0;
+      end
+      else
+      begin
+        RESULT[I,J] := 1;
+      end;
+    end;
+  end;
+  //  Establish length of axis string;
+  L := length(ORDER);
+  //  Look at each character of axis string until finished;
+  for  N := 1 to 3  do
+  begin
+    if (N<=L) then
+    begin
+    // Initialize rotation matrix for the current rotation;
+    for  J := 1 to 3  do
+    begin
+      for  I := 1 to 3  do
+      begin
+        if (I<>J) then
+        begin
+          ROTN[I,J] := 0;
+        end else begin
+        ROTN[I,J] := 1;
+      end;
+    end;
+    end;
+    //  Pick up the appropriate Euler angle and take sine & cosine;
+    if (N = 1) then
+    begin
+      ANGLE := PHI;
+    end
+    else
+    if (N = 2) then
+    begin
+      ANGLE := THETA;
+    end
+    else
+    begin
+      ANGLE := PSI;
+    end;
+    S := SIN(ANGLE);
+    C := COS(ANGLE);
+
+    //    Identify the axis;
+    if ORDER[N]= 'X' THEN
+    //  Matrix for x-rotation;
+    begin
+      ROTN[2,2] := C;
+      ROTN[2,3] := S;
+      ROTN[3,2] := -S;
+      ROTN[3,3] := C;
+    end
+    else
+    if ORDER[N]= 'Y' THEN
+    //   Matrix for y-rotation;
+    BEGIN
+      ROTN[1,1] := C;
+      ROTN[1,3] := -S;
+      ROTN[3,1] := S;
+      ROTN[3,3] := C;
+    end
+    else
+    if ORDER[N]= 'Z' THEN
+    //     Matrix for z-rotation;
+    BEGIN
+
+      ROTN[1,1] := C;
+      ROTN[1,2] := S;
+      ROTN[2,1] := -S;
+      ROTN[2,2] := C;
+    end
+    else
+    begin
+    //  Unrecognized character - fake end;
+      L := 0;
+    end;
+
+    //   Apply the current rotation (matrix ROTN x matrix RESULT);
+    for  I := 1 to 3  do
+    begin
+      for  J := 1 to 3  do
+      begin
+        W := 0;
+        for  K := 1 to 3  do
+        begin
+          W := W+ROTN[I,K]*RESULT[K,J];
+        end;
+        WM[I,J] := W;
+      end;
+    end;
+    for  J := 1 to 3  do
+    begin
+      for  I := 1 to 3  do
+      begin
+        RESULT[I,J] := WM[I,J];
+      end;
+    end;
+    end;
+  end;
+  // Copy the result;
+  for  J := 1 to 3  do
+  begin
+    for  I := 1 to 3  do
+    begin
+      RMAT[I,J] := RESULT[I,J];
+    end;
+  end;
+end;//
+
+
+
+//-------------------------------------------------------------------------------------------
+
+{*+
+*     - - - - -
+*      P R E C
+*     - - - - -
+*
+*  Form the matrix of precession between two epochs (IAU 1976, FK5)
+*  (double precision)
+*
+*  Given:
+*     EP0    dp         beginning epoch
+*     EP1    dp         ending epoch
+*
+*  Returned:
+*     RMATP  dp(3,3)    precession matrix
+*
+*  Notes:
+*
+*     1)  The epochs are TDB (loosely ET) Julian epochs.
+*
+*     2)  The matrix is in the sense   V(EP1)  =  RMATP * V(EP0)
+*
+*     3)  Though the matrix method itself is rigorous, the precession
+*         angles are expressed through canonical polynomials which are
+*         valid only for a limited time span.  There are also known
+*         errors in the IAU precession rate.  The absolute accuracy
+*         of the present formulation is better than 0.1 arcsec from
+*         1960AD to 2040AD, better than 1 arcsec from 1640AD to 2360AD,
+*         and remains below 3 arcsec for the whole of the period
+*         500BC to 3000AD.  The errors exceed 10 arcsec outside the
+*         range 1200BC to 3900AD, exceed 100 arcsec outside 4200BC to
+*         5600AD and exceed 1000 arcsec outside 6800BC to 8200AD.
+*         The SLALIB routine sla_PRECL implements a more elaborate
+*         model which is suitable for problems spanning several
+*         thousand years.
+*
+*  References:
+*     Lieske,J.H., 1979. Astron.Astrophys.,73,282.
+*      equations (6) & (7), p283.
+*     Kaplan,G.H., 1981. USNO circular no. 163, pA2.
+*
+*  Called:  sla_DEULER
+*
+*  P.T.Wallace   Starlink   23 August 1996
+*
+*  Copyright (C) 1996 Rutherford Appleton Laboratory
+*
+*  License:
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU General Public License for more details.
+*
+*    You should have received a copy of the GNU General Public License
+*    along with this program (see SLA_CONDITIONS); if not, write to the
+*    Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+*    Boston, MA  02111-1307  USA
+*
+*-}
+
+procedure sla_PREC (EP0, EP1 : double;out RMATP :r3x3_array);
+const
+  // Arc seconds to radians;
+  AS2R=pi/(3600*180);
+var
+  T0,T,TAS2R,W,ZETA,Z,THETA: double;
+begin
+  //  Interval between basic epoch J2000.0 and beginning epoch (JC);
+  T0 := (EP0-2000)/100;
+  //  Interval over which precession required (JC);
+  T := (EP1-EP0)/100;
+  //  Euler angles;
+  TAS2R := T*AS2R;
+  W := 2306.2181+(1.39656-0.000139*T0)*T0;
+  ZETA := (W+((0.30188-0.000344*T0)+0.017998*T)*T)*TAS2R;{result in radians}
+  Z := (W+((1.09468+0.000066*T0)+0.018203*T)*T)*TAS2R;{result in radians}
+  THETA := ((2004.3109+(-0.85330-0.000217*T0)*T0)+((-0.42665-0.000217*T0)-0.041833*T)*T)*TAS2R;{result in radians}
+  //  Rotation matrix;
+  sla_DEULER('ZYZ',-ZETA,THETA,-Z,RMATP);
+end;//
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+procedure precession3(JD0, JD1: double; var RA, DC : double); {precession}
+var
+  RMATP: r3x3_array;
+  V1,V2: r3_array;
+  x,y,z : double;
+begin
+
+  //  Generate appropriate precession matrix;
+  sla_PREC(2000+(jd0 - 2451545) / 365.25,2000+(jd1 - 2451545) / 365.25,RMATP);             // EP1=2000D0 + (DATE-51544.5D0)/365.25D0
+
+  //*     Convert RA,Dec to x,y,z;
+  sla_DCS2C(RA,DC,V1);
+
+  //*     Precess;
+  sla_DMXV(RMATP,V1,V2);
+
+  //*     Back to RA,Dec;
+  sla_DCC2S(V2,RA,DC);
+
+ //make range 0.. 2*pi
+   RA:=RA mod (2*pi);
+   IF RA<0 then RA:=RA+2*pi;
+
+end;//
+
 
 //-----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1069,7 +1572,7 @@ end;
 *    Boston, MA  02111-1307  USA
 *
 *-}
-procedure sla_PLANET (DATE : double;  NP: integer; out PV: pv_array; out JSTAT: integer);
+procedure sla_PLANET (DATE : double;  NP: integer; out PV: r6_array; out JSTAT: integer);
 var
   //  -----------------------;
   //  Mercury through Neptune;
@@ -1288,7 +1791,7 @@ begin
 end;
 //-----------------------------------------------------------------------------------------------------------------------------------------------------
 
-procedure orbit(date : double; JFORM : integer; EPOCH : double; ORBINC, ANODE,PERIH, AORQ, E, AORL, DM : double; out PV :PV_array; out JSTAT : integer) ;//Heliocentric position and velocity of a planet, asteroid or comet
+procedure orbit(date : double; JFORM : integer; EPOCH : double; ORBINC, ANODE,PERIH, AORQ, E, AORL, DM : double; out PV :r6_array; out JSTAT : integer) ;//Heliocentric position and velocity of a planet, asteroid or comet
 var
    U :U_array;
 begin
@@ -1396,9 +1899,56 @@ end;
 *;
 *-----------------------------------------------------------------------;}
 
-const
 
-  {specify useful range of data arrays}
+procedure sla_EPV (DATE : double; out PH, VH {, PB, VB }: r3_array);
+
+{*  ----------------------
+*  Ephemeris Coefficients
+*  ----------------------
+*
+*  The coefficients are stored in arrays of dimension (3,n,3).  There
+*  are separate sets of arrays for (i) the Sun to Earth vector and
+*  (ii) the Solar-System barycenter to Sun vector.  Each of these two
+*  sets contains separate arrays for the terms (n in number) in each
+*  power of time (in Julian years since J2000): T^0, T^1 and T^2.
+*  Within each array, all the Cartesian x-components, elements (i,j,1),
+*  appear first, followed by all the y-components, elements (i,j,2) and
+*  finally all the z-components, elements (i,j,3).  At the lowest level
+*  are groups of three coefficients.  The first coefficient in each
+*  group, element (1,j,k), is the amplitude of the term, the second,
+*  element (2,j,k), is the phase and the third, element (3,j,k), is the
+*  frequency.
+*
+*  The naming scheme is such that a block
+*
+*     DOUBLE PRECISION bn(3,Mbn,3)
+*
+*  applies to body b and time exponent n:
+*
+*    . b can be either E (Earth with respect to Sun) or S (Sun with
+*      respect to Solar-System Barycenter)
+*
+*    . n can be 0, 1 or 2, for T^0, T^1 or T^2
+*
+*  For example, array E2(3,ME2,3) contains the coefficients for
+*  the T^2 terms for the Sun-to-Earth vector.
+*
+*  There is no requirement for the X, Y and Z models for a particular
+*  block to use the same number of coefficients.  The number actually
+*  used is parameterized, the number of terms being used called NbnX,
+*  NbnY, and NbnZ respectively.  The parameter Mbn is the biggest of
+*  the three, and defines the array size.  Unused elements are not
+*  initialized and are never accessed.
+*}
+
+
+  {Notes on the Pascal version:
+  In $mode objfpc it is possible to write the coeffcients arrays without zeros so without the unused areas.
+  But the resulting executable is about 20k larger. So the current setup using simple rectangle arrays is
+  more efficient.}
+
+const
+  {specify useful range of data the arrays. The remainder of the arrays is filled with zero's}
   NE0 : array[1..3] of integer =(501,501,137);ME0 =501;
   NE1 : array[1..3] of integer =( 79, 80, 12);ME1 = 80;
   NE2 : array[1..3] of integer =(  5,  5,  3);ME2 =  5;
@@ -1406,8 +1956,6 @@ const
   NS1 : array[1..3] of integer =( 50, 50, 14);MS1 = 50;
   NS2 : array[1..3] of integer =(  9,  9,  2);MS2 =  9;
 
-
-procedure sla_EPV (DATE : double; out PH, VH {, PB, VB }: PH_array);
 const
   E0: array[1..3,1..ME0,1..3] of double= {501}
   //  Sun-to-Earth, T^0, X
@@ -2669,7 +3217,7 @@ const
   (  0.1719227671416E-09, 0.1887203025202E+01, 0.2265204242912E+03),
   (  0.1527846879755E-09, 0.3982183931157E+01, 0.3341954043900E+03),
   (  0.1128229264847E-09, 0.2787457156298E+01, 0.3119028331842E+03),
-  (                0    ,               0,                   0    ),
+  (                0    ,               0,                   0    ), {not used}
   (                0    ,               0,                   0    ),
   (                0    ,               0,                   0    ),
   (                0    ,               0,                   0    ),
@@ -3215,6 +3763,7 @@ const
   (  0.2518630264831E-10, 0.6108081057122E+01, 0.5481254917084E+01),
   (  0.2421901455384E-10, 0.1651097776260E+01, 0.1349867339771E+01),
   (  0.6348533267831E-11, 0.3220226560321E+01, 0.8433466158131E+02)),
+
   //  Sun-to-Earth, T^1, Z	),
   //DATA ((E1(I,J,3),I=1,3),J=  1, 10)),
   ((  0.2278290449966E-05, 0.3413716033863E+01, 0.6283075850446E+01),
@@ -3230,74 +3779,74 @@ const
   //DATA ((E1(I,J,3),I=1,3),J= 11,NE1Z)),
   (  0.3824857220427E-10, 0.1529755219915E+01, 0.6286599010068E+01),
   (  0.3286995181628E-10, 0.4879512900483E+01, 0.1021328554739E+02),
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    ),{added}
-  (                0    ,               0    ,               0    )));{added}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    ),{not used}
+  (                0    ,               0    ,               0    )));{not used}
 
   //Sun-to-Earth, T^2, X
   //DATA ((E2(I,J,1),I=1,3),J=  1,NE2X) /
@@ -4266,43 +4815,6 @@ const
   AM23= -0.397776982902;
   AM32= +0.397776982902;
   AM33= +0.917482137087;
-  {*  ----------------------;
-  *  Ephemeris Coefficients;
-  *  ----------------------;
-  *;
-  *  The coefficients are stored in arrays of dimension (3,n,3).0  There;
-  *  are separate sets of arrays for (i) the Sun to Earth vector and;
-  *  (ii) the Solar-System barycenter to Sun vector.0  Each of these two;
-  *  sets contains separate arrays for the terms (n in number) in each;
-  *  power of time (in Julian years since J2000): T^0, T^1 and T^2.
-  *  Within each array, all the Cartesian x-components, elements (i,j,1),;
-  *  appear first, followed by all the y-components, elements (i,j,2) and;
-  *  finally all the z-components, elements (i,j,3).0  At the lowest level;
-  *  are groups of three coefficients.0  The first coefficient in each;
-  *  group, element (1,j,k), is the amplitude of the term, the second,;
-  *  element (2,j,k), is the phase and the third, element (3,j,k), is the;
-  *  frequency.
-  *;
-  *  The naming scheme is such that a block;
-  *;
-  *      bn: array[3,Mbn,3] of double;
-  *;
-  *  applies to body b and time exponent n:;
-  *;
-  *    0.0 b can be either E (Earth with respect to Sun) or S (Sun with;
-  *      respect to Solar-System Barycenter);
-  *;
-  *    0.0 n can be 0, 1 or 2, for T^0, T^1 or T^2;
-  *;
-  *  For example, array E2[3,ME2,3] contains the coefficients for;
-  *  the T^2 terms for the Sun-to-Earth vector.
-  *;
-  *  There is no requirement for the X, Y and Z models for a particular;
-  *  block to use the same number of coefficients.0  The number actually;
-  // line not converted// *  used is parameterized, the number of terms bei;
-  // line not converted// *  NbnY, and NbnZ respectively.0  The parameter Mb;
-  *  the three, and defines the array size.0  Unused elements are not;
-  *  initialized and are never accessed;}
 
 //  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -;
 

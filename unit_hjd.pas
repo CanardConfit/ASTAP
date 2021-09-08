@@ -17,23 +17,32 @@ You should have received a copy of the GNU Lesser General Public License (LGPL) 
 interface
 
 uses
-  Classes, SysUtils, math, unit_asteroid;
+  Classes, SysUtils, math;
+
+var
+  ra_app : double=0;
+  dec_app: double=0;
 
 function JD_to_HJD(jd,ra_object,dec_object: double): double;{conversion JD to HJD}  {see https://en.wikipedia.org/wiki/Heliocentric_Julian_Day}
 procedure EQU_GAL(ra,dec:double;out l,b: double);{equatorial to galactic coordinates}
-function altitude(ra2000,dec2000,lat,long,julian:double):double;{conversion ra & dec to altitude only. This routine is created for speed, only the altitude is calculated}
+function calculate_altitude(correct_radec_refraction,apply_precession: boolean;ra3,dec3 : double): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
 function airmass_calc(h: double): double; // where h is apparent altitude in degrees.
 function atmospheric_absorption(airmass: double):double;{magnitudes}
+function altitude_and_refraction(lat,long,julian,temperature:double;correct_radec_refraction: boolean; ra3,dec3: double):double;{altitude calculation and correction ra, dec for refraction}
 
 
 
 implementation
 
-{ sun:      low precision solar coordinates (approx. 1')               }
-{           jd : julian day                                            }
-{           ra : right ascension (in radians; equinox of date)         }
-{           dec: declination (in radians; equinox of date)             }
-{           Factors from "Astronomy on the personal computer"          }
+uses
+  astap_main, unit_stack, unit_ephemerides,unit_asteroid;
+
+
+//{ sun:      low precision solar coordinates (approx. 1')               }
+//{           jd : julian day                                            }
+//{           ra : right ascension (in radians; equinox of date)         }
+//{           dec: declination (in radians; equinox of date)             }
+//{           Factors from "Astronomy on the personal computer"          }
 procedure sun(jd:real; var ra,dec: double); {jd  var ra 0..2*pi, dec [0..pi/2] of Sun equinox of date}
   const
     cos_ecl=cos(23.43929111*pi/180);{obliquity of ecliptic}
@@ -78,11 +87,11 @@ function JD_to_HJD(jd,ra_object,dec_object: double): double;{conversion Julian D
 var                                                         {see https://en.wikipedia.org/wiki/Heliocentric_Julian_Day}
   ra_sun, dec_sun : double;
   sin_dec_object,cos_dec_object,sin_dec_sun,cos_dec_sun : double;
+
+  r1,r2,r3,d1,d2,d3 : double;
 begin
   sun(jd,ra_sun,dec_sun);{get sun position in equinox of date coordinates}
-
-  precession2(2451545 -(jd-2451545){go back to J2000},ra_sun,dec_sun,ra_sun,dec_sun );{convert sun position from mean to J2000}
-
+  precession3(jd, 2451545 {J2000},ra_sun,dec_sun); {precession}
   sincos(dec_object,sin_dec_object,cos_dec_object);
   sincos(dec_sun,sin_dec_sun,cos_dec_sun);
 
@@ -122,10 +131,86 @@ begin
 end;
 
 
-function altitude(ra2000,dec2000,lat,long,julian:double):double;{conversion ra & dec to altitude only. This routine is created for speed, only the altitude is calculated}
+//function altitude(ra3,dec3 {2000},lat,long,julian:double):double;{conversion ra & dec to altitude only. This routine is created for speed, only the altitude is calculated}
+//{input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-pi/2..pi/2], long[-pi..pi] West positive, East negative !!,time[0..2*pi]}
+//var t5,wtime2actual : double;
+//    sin_lat,cos_lat,sin_dec,cos_dec:double;
+//const
+//  siderealtime2000=(280.46061837)*pi/180;{[radians],  90 degrees shifted sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
+//  earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
+
+//begin
+//  wtime2actual:=limit_radialen((-long)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi); {longitude is positive towards west so has to be subtracted from time.}
+        {change by time & longitude in 0 ..pi*2, simular as siderial time}
+        {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
+
+//  precession3(2451545 {J2000},julian,ra3,dec3); {precession, from J2000 to Jnow}
+
+//  t5:=wtime2actual-ra3;
+//  sincos(lat,sin_lat,cos_lat);
+//  sincos(dec3,sin_dec,cos_dec);
+//  try
+//  {***** altitude calculation from RA&DEC, meeus new 12.5 *******}
+//  result:=arcsin(SIN_LAT*SIN_DEC+COS_LAT*COS_DEC*COS(T5));
+//  except
+//  {ignore floating point errors outside builder}
+//  end;
+//end;
+
+
+(*----------------------------------------------------------------*)
+(* EQUHOR: conversion of equatorial into horizontal coordinates   *)
+(*   DEC  : declination (-pi/2 .. +pi/2)                          *)
+(*   TAU  : hour angle (0 .. 2*pi)                                *)
+(*   PHI  : geographical latitude (in rad)                        *)
+(*   H    : altitude (in rad)                                     *)
+(*   AZ   : azimuth (0 deg .. 2*pi rad, counted S->W->N->E->S)    *)
+(*----------------------------------------------------------------*)
+procedure equhor2 (dec,tau,phi: double; out h,az: double);
+var cos_phi,sin_phi, cos_dec,sin_dec,cos_tau, sin_tau, x,y,z, dummy: double;
+begin {updated with sincos function for fastest execution}
+  sincos(phi,sin_phi,cos_phi);
+  sincos(dec,sin_dec,cos_dec);
+  sincos(tau,sin_tau,cos_tau);
+  x:=cos_dec*sin_phi*cos_tau - sin_dec*cos_phi;
+  y:=cos_dec*sin_tau;
+  z:=cos_dec*cos_phi*cos_tau + sin_dec*sin_phi;
+  polar2(x,y,z, dummy,h,az)
+end;
+
+
+PROCEDURE RA_AZ(RA,dec,LAT,LONG,t:double;out azimuth2,altitude2: double);{conversion ra & dec to altitude,azimuth}
+{input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2*pi],time[0..2*pi]}
+begin
+  EQUHOR2(dec,ra-(long)-t,lat, {var:} altitude2,azimuth2);
+  azimuth2:=pi-azimuth2;
+  IF AZIMUTH2<0 THEN AZIMUTH2:=AZIMUTH2+2*Pi;
+end;
+
+
+PROCEDURE AZ_RA(AZ,ALT,LAT,LONG,t:double;out ra,dcr: double);{conversion az,alt to ra,dec}
+{input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
+begin
+  EQUHOR2(alt,az,lat,{var:} dcr,ra);
+  ra:=pi-ra+long +t;
+  while ra<0 do ra:=ra+2*pi;
+  while ra>=2*pi do ra:=ra-2*pi;
+end;
+
+
+function altitude_apparent(altitude_real,p {mbar},t {celsius} :double):double;  {atmospheric refraction}
+var  hn  :real;
+begin
+  hn:=(altitude_real*(180/pi)+10.3/(altitude_real*(180/pi)+5.11))*pi/180;
+                 {watch out with radians and degrees!!!!!!  carefully with factors}
+  result:=altitude_real + ((p/1010)*283/(273+t))*(pi/180)* (1.02/60)/(sin(hn)/cos(hn) ); {note: tan(x) = sin(x)/cos(x)}
+ {bases on meeus 1991 page 102, formula 15.4}
+end;
+
+
+function altitude_and_refraction(lat,long,julian,temperature:double;correct_radec_refraction: boolean; ra3,dec3: double):double;{altitude calculation and correction ra, dec for refraction}
 {input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-pi/2..pi/2], long[-pi..pi] West positive, East negative !!,time[0..2*pi]}
-var t5,wtime2actual,ra_date,dec_date :double;
-    sin_lat,cos_lat,sin_dec,cos_dec:double;
+var wtime2actual,azimuth2,altitude2: double;
 const
   siderealtime2000=(280.46061837)*pi/180;{[radians],  90 degrees shifted sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
   earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
@@ -135,18 +220,52 @@ begin
         {change by time & longitude in 0 ..pi*2, simular as siderial time}
         {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
 
-  precession2(julian, ra2000,dec2000, {var} ra_date,dec_date);
+  RA_AZ(ra3,dec3,LAT,0,wtime2actual,{var} azimuth2,altitude2);{conversion ra & dec to altitude,azimuth}
 
-  t5:=wtime2actual-ra_date;
-  sincos(lat,sin_lat,cos_lat);
-  sincos(dec_date,sin_dec,cos_dec);
-  try
-  {***** altitude calculation from RA&DEC, meeus new 12.5 *******}
-  result:=arcsin(SIN_LAT*SIN_DEC+COS_LAT*COS_DEC*COS(T5));
-  except
-  {ignore floating point errors outside builder}
+  if correct_radec_refraction then {correct for temperature and correct ra0, dec0 for refraction}
+  begin
+    if temperature>=100 {999} then temperature:=10 {default temperature celsius};
+    result:=altitude_apparent(altitude2,1010 {mbar},temperature {celsius});{apparant altitude}
+    AZ_RA(azimuth2,result,LAT,0,wtime2actual, {var} ra_app,dec_app);{conversion az,alt to ra_app,dec_app corrected for refraction}
+  end
+  else
+  begin
+    result:=altitude2;
   end;
 end;
+
+
+function calculate_altitude(correct_radec_refraction,apply_precession: boolean;ra3,dec3 : double): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
+var
+  site_lat_radians,site_long_radians : double;
+  errordecode  : boolean;
+begin
+  result:=strtofloat2(centalt);
+
+  if (((result=0) or (correct_radec_refraction)) and (cd1_1<>0)) then {calculate from observation location, image center and time the altitude}
+  begin
+    if sitelat='' then
+    begin
+      sitelat:=lat_default;
+      sitelong:=long_default;
+    end;
+    dec_text_to_radians(sitelat,site_lat_radians,errordecode);
+    if errordecode=false then
+    begin
+      dec_text_to_radians(sitelong,site_long_radians,errordecode);
+      if errordecode=false then
+      begin
+        if jd_start=0 then date_to_jd(date_obs,exposure);{convert date-obs to jd_start, jd_mid}
+        if jd_mid>2400000 then {valid JD}
+        begin
+          if apply_precession then precession3(2451545 {J2000},jd_mid,ra3,dec3); {precession, from J2000 to Jnow}
+          result:=(180/pi)*altitude_and_refraction(site_lat_radians,-site_long_radians,jd_mid,focus_temp, correct_radec_refraction, ra3,dec3);{In formulas the longitude is positive to west!!!. }
+        end;
+      end;
+    end;
+  end;
+end;
+
 
 
 function airmass_calc(h: double): double; // where h is apparent altitude in degrees.

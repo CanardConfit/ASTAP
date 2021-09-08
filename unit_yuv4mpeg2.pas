@@ -1,4 +1,5 @@
 unit unit_yuv4mpeg2;{writes YUV4MPEG2 uncompressed video file. Pixels are taken from Timage}
+{$MODE Delphi}
 
 {Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org

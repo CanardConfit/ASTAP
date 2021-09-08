@@ -33,8 +33,8 @@ type
     download_mpcorb1: TLabel;
     file_to_add1: TButton;
     file_to_add2: TButton;
-    GroupBox1: TGroupBox;
-    GroupBox2: TGroupBox;
+    Group_Box1: TGroupBox;
+    Group_Box2: TGroupBox;
     help_asteroid_annotation1: TLabel;
     label_start_mid1: TLabel;
     Label2: TLabel;
@@ -67,7 +67,7 @@ type
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormKeyPress(Sender: TObject; var Key: char);
     procedure FormShow(Sender: TObject);
-    procedure GroupBox1Click(Sender: TObject);
+    procedure Group_Box1Click(Sender: TObject);
     procedure help_asteroid_annotation1Click(Sender: TObject);
     procedure latitude1Change(Sender: TObject);
     procedure longitude1Change(Sender: TObject);
@@ -93,9 +93,9 @@ const
    add_date: boolean=true;
 
 procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot :boolean) ;{read MPCORB.dat}{han.k}
-procedure precession2(julian_et,raold,decold:double;var ranew,decnew:double);{correct precession for equatorial coordinates}
+//procedure precession2(julian_et,raold,decold:double;var ranew,decnew:double);{correct precession for equatorial coordinates}
 procedure nutation_aberration_correction_equatorial_classic(julian_et: double;var ra,dec:double);
-function altitude_and_refraction(lat,long,julian,temperature:double;correct_radec_refraction: boolean; var ra_date,dec_date :double):double;{altitude calculation and correction ra, dec for refraction}
+procedure polar2(x,y,z:double;out r,theta,phi:double);
 
 implementation
 
@@ -119,8 +119,8 @@ const
 
 
 VAR TEQX    : double;
-    ph_earth, vh_earth : ph_array;{helio centric earth vector}
-    ph_pln             : ph_array;{helio centric planet vector}
+    ph_earth, vh_earth : r3_array;{helio centric earth vector}
+    ph_pln             : r3_array;{helio centric planet vector}
 
 
 
@@ -200,51 +200,15 @@ begin
 end;
 
 
-(*---------------------------------------------------------------------------*)
-(* PMATEQU: Calculation precession matrix A[i,j] for                         *)
-(*          equatorial coordinates from equinox T1 to T2                     *)
-(*          ( T=(JD-2451545.0)/36525 )                                       *)
-(*---------------------------------------------------------------------------*)
-procedure PMATEQU(t1,t2:double; out a:double33);
-var dt,zeta,z,theta: double;
-    c1,s1,c2,s2,c3,s3: double;
-begin
- dt:=t2-t1;
-  zeta  :=  ( (2306.2181+(1.39656-0.000139*t1)*t1)+
-              ((0.30188-0.000345*t1)+0.017998*dt)*dt )*dt/3600;
-  z     :=  zeta + ( (0.79280+0.000411*t1)+0.000205*dt)*dt*dt/3600;
-  theta :=  ( (2004.3109-(0.85330+0.000217*t1)*t1)-
-              ((0.42665+0.000217*t1)+0.041833*dt)*dt )*dt/3600;
-  sincos(z*pi/180,s1,c1);
-  sincos(theta*pi/180,s2,c2);
-  sincos(zeta*pi/180,s3,c3);
-  a[1,1]:=-s1*s3+c1*c2*c3; a[1,2]:=-s1*c3-c1*c2*s3; a[1,3]:=-c1*s2;
-  a[2,1]:=+c1*s3+s1*c2*c3; a[2,2]:=+c1*c3-s1*c2*s3; a[2,3]:=-s1*s2;
-  a[3,1]:=+s2*c3;          a[3,2]:=-s2*s3;          a[3,3]:=+c2;
-end;
+procedure parallax_xyz(wtime,latitude : double;var x,y,z: double); {X,Y,Z in AU,  By Han Kleijn}
+ {wtime= Sidereal time at greenwich - longitude, equals azimuth position of the sky for the observer.
+  wtime:=limit_radialen((+longitude*pi/180)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi);
+  longitude positive is east
+  siderealtime2000=(280.46061837-90)*pi/180
+  earth_angular_velocity=pi*2*1.00273790935
+  see also new meeus page 78
+  parallax can be 8.8 arcsec per au distance.}
 
-
-(*-----------------------------------------------------------------------*)
-(* PRECART: calculate change of coordinates due to precession            *)
-(*          for given transformation matrix A[i,j]                       *)
-(*          (to be used with PMATECL und PMATEQU)                        *)
-(*-----------------------------------------------------------------------*)
-procedure PRECART(a:double33;var x,y,z:double);
-var u,v,w: double;
-begin
-  u := a[1,1]*x+a[1,2]*y+a[1,3]*z;
-  v := a[2,1]*x+a[2,2]*y+a[2,3]*z;
-  w := a[3,1]*x+a[3,2]*y+a[3,3]*z;
-  x:=u; y:=v; z:=w;
-end;
-
-
-procedure parallax_xyz(wtime,latitude : double;var x,y,z: double); { {X,Y,Z in AU,  By Han Kleijn}
-{wtime= Sidereal time at greenwich - longitude, equals azimuth position of the sky for the observer.
-{ wtime:=limit_radialen((+longitude*pi/180)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi);{longitude positive is east}
-{ siderealtime2000=(280.46061837-90)*pi/180       earth_angular_velocity=pi*2*1.00273790935}
-{see also new meeus page 78}
-{parallax can be 8.8 arcsec  per au distance. }
 var
     sin_latitude_corrected,
     cos_latitude_corrected,
@@ -269,15 +233,15 @@ end;
 
 
 procedure minor_planet(sun_earth_vector:boolean;julian:double;year,month:integer;day,a_e, a_or_q,a_i,a_ohm,a_w,a_M :double;var RA3,DEC3,DELTA,sun_delta:double);
-{ Comet hale bopp}
-{ YEAR:=1997;
-{ MONTH:=03;
-{ D:=29.74151986;
-{ Q:= 0.901891;  {Perihelion distance q in AU, AORQ}
-{ ECC:= 0.994952;{Eccentricity e}
-{ INC2:= 89.0445;{Inclination i, OrbInc}
-{ LAN:= 283.2449;{Longitude of the ascending node, Anode}
-{ AOP:= 130.5115;{Argument of perihelion, Perih}
+{ Comet hale bopp
+  YEAR:=1997;
+  MONTH:=03;
+  D:=29.74151986;
+  Q:= 0.901891;   Perihelion distance q in AU, AORQ
+  ECC:= 0.994952; Eccentricity e
+  INC2:= 89.0445; Inclination i, OrbInc
+  LAN:= 283.2449; Longitude of the ascending node, Anode
+  AOP:= 130.5115; Argument of perihelion, Perih}
 
 Const
   TAU=499.004782;
@@ -285,7 +249,7 @@ var
   JSTAT,I : integer;
   x_pln,y_pln,z_pln,TL,R, epoch,mjd : double;
   U : U_array;
-  pv : pv_array;
+  pv : r6_array;
 
 begin
   if sun_earth_vector=false then
@@ -544,11 +508,11 @@ begin
     M_anom:=1E99;{Should be zero since comet values are give at perihelion. But label this as a a comet by abnormal value 1E99}
 
     {Hale Bopp
-    { Q:= 0.91468400000000005;{    ! Perihelion distance q in AU;}
-    { ECC:= 0.99492999999999998;{  ! Eccentricity e}
-    { INC2:= 88.987200000000001;{ ! Inclination i}
-    { LAN:= 283.36720000000003; {  ! Longitude of the ascending node}
-    { AOP:= 130.62989999999999;{  ! Argument of perihelion}
+      Q:= 0.91468400000000005; Perihelion distance q in AU;
+      ECC:= 0.99492999999999998; Eccentricity e
+      INC2:= 88.987200000000001; Inclination i
+      LAN:= 283.36720000000003;  Longitude of the ascending node
+      AOP:= 130.62989999999999;  Argument of perihelion}
   end;
 end;
 
@@ -624,27 +588,6 @@ begin
 end;
 
 
-(*----------------------------------------------------------------*)
-(* EQUHOR: conversion of equatorial into horizontal coordinates   *)
-(*   DEC  : declination (-pi/2 .. +pi/2)                          *)
-(*   TAU  : hour angle (0 .. 2*pi)                                *)
-(*   PHI  : geographical latitude (in rad)                        *)
-(*   H    : altitude (in rad)                                     *)
-(*   AZ   : azimuth (0 deg .. 2*pi rad, counted S->W->N->E->S)    *)
-(*----------------------------------------------------------------*)
-procedure equhor2 (dec,tau,phi: double; out h,az: double);
-var cos_phi,sin_phi, cos_dec,sin_dec,cos_tau, sin_tau, x,y,z, dummy: double;
-begin {updated with sincos function for fastest execution}
-  sincos(phi,sin_phi,cos_phi);
-  sincos(dec,sin_dec,cos_dec);
-  sincos(tau,sin_tau,cos_tau);
-  x:=cos_dec*sin_phi*cos_tau - sin_dec*cos_phi;
-  y:=cos_dec*sin_tau;
-  z:=cos_dec*cos_phi*cos_tau + sin_dec*sin_phi;
-  polar2(x,y,z, dummy,h,az)
-end;
-
-
 procedure nutation_aberration_correction_equatorial_classic(julian_et: double;var ra,dec : double);{Input mean equinox, add nutation, aberration result apparent M&P page 208}
 var r,x0,y0,z0,vx,vy,vz : double;
 begin
@@ -674,81 +617,6 @@ begin
   polar2(x0,y0,z0,r,dec,ra);
 end;
 
-
-procedure precession2(julian_et,raold,decold:double;var ranew,decnew:double);{correct precession for equatorial coordinates}
-var teqxn,R : double;
-    A       : double33;
-    x,y,z : double;
-begin
-  //http://www.bbastrodesigns.com/coordErrors.html  Gives same values within a fraction of arcsec.
-  //2020-1-1, JD=2458850.50000, RA,DEC position 12:00:00, 40:00:00, precession +00:01:01.45, -00:06:40.8, Nutation -00:00:01.1,  +00:00:06.6, Annual aberration +00:00:00.29, -00:00:14.3
-  //2020-1-1, JD=2458850.50000  RA,DEC position 06:00:00, 40:00:00, precession +00:01:23.92, -00:00:01.2, Nutation -00:00:01.38, -00:00:01.7, Annual aberration +00:00:01.79, +00:00:01.0
-  //2030-6-1, JD=2462654.50000  RA,DEC position 06:00:00, 40:00:00, precession +00:02:07.63, -00°00'02.8",Nutation +00:00:01.32, -0°00'02.5", Annual aberration -00:00:01.65, +00°00'01.10"
-  CART2(1,decold,raold,X,Y,Z);
-  TEQX :=0 /100.0; {J2000}
-  TEQXn := (julian_ET-2451545.0)/(365.25*100.0);
-
-  PMATEQU(TEQX,TEQXN,a);
-  PRECART(A,X,Y,Z);
-  TEQX := TEQXN;
-  POLAR2(X,Y,Z ,R,DECnew,RAnew);
-end;
-
-
-PROCEDURE RA_AZ(RA,dec,LAT,LONG,t:double;out azimuth2,altitude2: double);{conversion ra & dec to altitude,azimuth}
-{input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2*pi],time[0..2*pi]}
-begin
-  EQUHOR2(dec,ra-(long)-t,lat, {var:} altitude2,azimuth2);
-  azimuth2:=pi-azimuth2;
-  IF AZIMUTH2<0 THEN AZIMUTH2:=AZIMUTH2+2*Pi;
-end;
-
-
-PROCEDURE AZ_RA(AZ,ALT,LAT,LONG,t:double;out ra,dcr: double);{conversion az,alt to ra,dec}
-{input AZ [0..2pi], ALT [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2pi],time[0..2*pi]}
-begin
-  EQUHOR2(alt,az,lat,{var:} dcr,ra);
-  ra:=pi-ra+long +t;
-  while ra<0 do ra:=ra+2*pi;
-  while ra>=2*pi do ra:=ra-2*pi;
-end;
-
-
-function altitude_apparent(altitude_real,p {mbar},t {celsius} :double):double;  {atmospheric refraction}
-var  hn  :real;
-begin
-  hn:=(altitude_real*(180/pi)+10.3/(altitude_real*(180/pi)+5.11))*pi/180;
-                 {watch out with radians and degrees!!!!!!  carefully with factors}
-  result:=altitude_real + ((p/1010)*283/(273+t))*(pi/180)* (1.02/60)/(sin(hn)/cos(hn) ); {note: tan(x) = sin(x)/cos(x)}
- {bases on meeus 1991 page 102, formula 15.4}
-end;
-
-
-function altitude_and_refraction(lat,long,julian,temperature:double;correct_radec_refraction: boolean; var ra_date,dec_date :double):double;{altitude calculation and correction ra, dec for refraction}
-{input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-pi/2..pi/2], long[-pi..pi] West positive, East negative !!,time[0..2*pi]}
-var wtime2actual,azimuth2,altitude2: double;
-const
-  siderealtime2000=(280.46061837)*pi/180;{[radians],  90 degrees shifted sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
-  earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
-
-begin
-  wtime2actual:=limit_radialen((-long)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi); {longitude is positive towards west so has to be subtracted from time.}
-        {change by time & longitude in 0 ..pi*2, simular as siderial time}
-        {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
-
-  RA_AZ(RA_date,dec_date,LAT,0,wtime2actual,{var} azimuth2,altitude2);{conversion ra & dec to altitude,azimuth}
-
-
-
-  if correct_radec_refraction then {correct for temperature and correct ra0, dec0 for refraction}
-  begin
-    if temperature>=100 {999} then temperature:=10 {default temperature celsius};
-    result:=altitude_apparent(altitude2,1010 {mbar},temperature {celsius});{apparant altitude}
-    AZ_RA(azimuth2,result,LAT,0,wtime2actual, {var} ra_date,dec_date);{conversion az,alt to ra,dec corrected for refraction}
-  end
-  else
-    result:=altitude2;
-end;
 
 
 procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot :boolean) ;{read MPCORB.dat}{han.k}
@@ -1202,7 +1070,7 @@ begin
 end;
 
 
-procedure Tform_asteroids1.GroupBox1Click(Sender: TObject);
+procedure Tform_asteroids1.Group_Box1Click(Sender: TObject);
 begin
   mpcorb_path:='';
 end;
