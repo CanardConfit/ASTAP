@@ -1,5 +1,14 @@
 unit unit_aavso;
+{Copyright (C) 2021 by Han Kleijn, www.hnsky.org
+ email: han.k.. at...hnsky.org
 
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License (LGPL) as published
+by the Free Software Foundation, either version 3 of the License, or(at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License (LGPL) along with this program. If not, see <http://www.gnu.org/licenses/>.}
 {$mode delphi}
 
 interface
@@ -9,9 +18,6 @@ uses
   clipbrd, ExtCtrls, Menus;
 
 type
-
-  { Tform_aavso1 }
-
   Tform_aavso1 = class(TForm)
     Image_photometry1: TImage;
     MenuItem1: TMenuItem;
@@ -68,14 +74,11 @@ implementation
 
 uses astap_main, unit_stack;
 
-
 var
   jd_min,jd_max,magn_min,magn_max : double;
   w,h  :integer;
 const
   bspace=50;{border space graph}
-
-{ Tform_aavso1 }
 
 function floattostr3(x:double):string;
 begin
@@ -89,7 +92,6 @@ begin
     obscode:=obscode1.text;
     name_var:=name_variable1.text;
     name_check:=name_check1.text;
-//    filter_type:=filter1.text;
     delim_pos:=delimiter1.itemindex;
   end;
 end;
@@ -425,8 +427,6 @@ begin
   end;
   data:=nil;
 end;
-
-
 
 
 procedure Tform_aavso1.FormClose(Sender: TObject; var CloseAction: TCloseAction );

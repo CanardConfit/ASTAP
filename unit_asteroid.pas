@@ -72,15 +72,11 @@ type
     procedure latitude1Change(Sender: TObject);
     procedure longitude1Change(Sender: TObject);
   private
-
   public
-
   end;
 
 var
   form_asteroids1: Tform_asteroids1;
-
-
 const
    maxcount_asteroid : string='10000';
    maxmag_asteroid : string='17';
@@ -93,9 +89,10 @@ const
    add_date: boolean=true;
 
 procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot :boolean) ;{read MPCORB.dat}{han.k}
-procedure polar2(x,y,z:double;out r,theta,phi:double);
 
 implementation
+
+uses unit_hjd; {for polar2}
 
 {$R *.lfm}
 type
@@ -115,12 +112,9 @@ const
    earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
    AE=149597870.700; {ae has been fixed to the value 149597870.700 km as adopted by the International Astronomical Union in 2012.  Note average earth distance is 149597870.662 * 1.000001018 see meeus new 379}
 
-
 VAR TEQX    : double;
     ph_earth, vh_earth : r3_array;{helio centric earth vector}
     ph_pln             : r3_array;{helio centric planet vector}
-
-
 
 procedure Tform_asteroids1.help_asteroid_annotation1Click(Sender: TObject); {han.k}
 begin
@@ -141,22 +135,6 @@ var
 begin
   dec_text_to_radians(longitude1.Text,site_long_radians,errordecode);
   if errordecode then longitude1.color:=clred else longitude1.color:=clwindow;
-end;
-
-
-(*-----------------------------------------------------------------------*)
-(* POLAR2: conversion of cartesian coordinates (x,y,z)                    *)
-(*        into polar coordinates (r,theta,phi)                           *)
-(*        (theta in [-pi/2 deg,+pi/2]; phi in [0 ,+ 2*pi radians]        *)
-(*-----------------------------------------------------------------------*)
-procedure polar2(x,y,z:double;out r,theta,phi:double);
-var rho: double;
-begin
-  rho:=x*x+y*y;  r:=sqrt(rho+z*z);
-  phi:=arctan2(y,x);
-  if phi<0 then phi:=phi+2*pi;
-  rho:=sqrt(rho);
-  theta:=arctan2(z,rho);
 end;
 
 
@@ -202,15 +180,13 @@ procedure minor_planet(sun_earth_vector:boolean;julian:double;year,month:integer
   INC2:= 89.0445; Inclination i, OrbInc
   LAN:= 283.2449; Longitude of the ascending node, Anode
   AOP:= 130.5115; Argument of perihelion, Perih}
-
-Const
+const
   TAU=499.004782;
 var
   JSTAT,I : integer;
   x_pln,y_pln,z_pln,TL,R, epoch,mjd : double;
   U : U_array;
   pv : r6_array;
-
 begin
   if sun_earth_vector=false then
   begin
@@ -282,7 +258,7 @@ begin
 end;
 
 
-function illum_planet : double ; { Get phase angle comet. Only valid is comet routine is called first.}
+function illum_planet : double; { Get phase angle comet. Only valid is comet routine is called first.}
 var
   r_sp,r_ep,elong,phi1,phase1 :double;
 begin
@@ -342,7 +318,6 @@ begin
   y:=(2000 +(JD-2451544.5)/365.25);
   year:=round(y);
 
-
   if ((year>=2016) and (year<=2020)) then
   begin
     t:=y-2016;
@@ -381,8 +356,7 @@ begin
 end;
 
 
-
-procedure convert_MPCORB_line2(txt : string; var desn,name: string; var yy,mm,dd,a_e,a_a,a_i,a_ohm,a_w,a_M,h,g: double);{read asteroid, han.k}
+procedure convert_MPCORB_line(txt : string; var desn,name: string; var yy,mm,dd,a_e,a_a,a_i,a_ohm,a_w,a_M,h,g: double);{read asteroid, han.k}
 var
   code2           : integer;
   degrees_to_perihelion,c_epochdelta           : double;
@@ -441,11 +415,8 @@ var
   g               : double;
 begin
   desn:='';{assume failure}
-
   //date_regel:=copy(txt,21,25-21+1); {21 -  25  a5     Epoch (in packed form, .0 TT), see http://www.minorplanetcenter.net/iau/info/MPOrbitFormat.html}
-
   yy:=strtofloat(copy(txt,15,4));{epoch year}
-
   if ((yy>1900) and (yy<2200)) then {do only data}
   begin
     name:=copy(txt,103,39);
@@ -523,7 +494,6 @@ var txtf : textfile;
            if flip_horizontal then x2:=(width2-1)-x else x2:=x;
            if flip_vertical   then y2:=y         else y2:=(height2-1)-y;
 
-
            if showfullnames then thetext1:=trim(name) else thetext1:=trim(desn)+'('+floattostrF(mag,ffgeneral,3,1)+')';
            if showmagnitude then thetext2:='{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext2:='';
 
@@ -546,7 +516,7 @@ var txtf : textfile;
            if length(s)>10 then
            begin
 
-             if asteroid then  convert_MPCORB_line2(s, {var} desn,name, yy,mm,dd,a_e,a_or_q {a},a_i,a_ohm,a_w,a_M,H,a_g){read MPC asteroid}
+             if asteroid then  convert_MPCORB_line(s, {var} desn,name, yy,mm,dd,a_e,a_or_q {a},a_i,a_ohm,a_w,a_M,H,a_g){read MPC asteroid}
                          else  convert_comet_line (s, {var} desn,name, yy,mm,dd,a_e ,a_or_q {q},a_i,a_ohm,a_w,a_M,H,c_k); {read MPC comet}
              if ((desn<>'') and (a_or_q<>0)) then {data line}
              begin
@@ -570,7 +540,6 @@ var txtf : textfile;
                                                10      0.65
                                                15      0.83
                                                20      1}
-
                    end
                    else
                    begin {comet magnitude}
@@ -601,17 +570,12 @@ var txtf : textfile;
 begin
   if fits_file=false then exit;
   if cd1_1=0 then begin memo2_message('Abort, first solve the image!');exit;end;
-
   cos_telescope_dec:=cos(dec0);
   fov:=1.5*sqrt(sqr(0.5*width2*cdelt1)+sqr(0.5*height2*cdelt2))*pi/180; {field of view with 50% extra}
-
   flip_vertical:=mainwindow.flip_vertical1.Checked;
   flip_horizontal:=mainwindow.flip_horizontal1.Checked;
-
   sip:=((ap_order>=2) and (mainwindow.Polynomial1.itemindex=1));{use sip corrections?}
-
   mainwindow.image1.Canvas.brush.Style:=bsClear;
-
   form_existing:=assigned(form_asteroids1);{form existing}
 
   {$ifdef mswindows}
@@ -635,7 +599,6 @@ begin
   end;
   mainwindow.image1.Canvas.font.size:=fontsize;
   str(max(1,fontsize/12):0:1,fontsize_str); {store font size for header annotations}
-
 
   if date_avg<>'' then
     date_to_jd(date_avg,0 {exposure}){convert date-AVG to jd_mid be using exposure=0}
@@ -673,7 +636,6 @@ begin
      annotated:=false;
   end;
 
-
   if mpcorb_path<>'' then
   begin
     if  fileexists(mpcorb_path) then
@@ -700,7 +662,6 @@ begin
     begin
       if add_date then
       begin
-//        image1.Canvas.font.size:=fontsize;
         mainwindow.image1.Canvas.textout(round(0.5*fontsize),height2-round(4*fontsize),'Position[α,δ]:  '+mainwindow.ra1.text+'    '+mainwindow.dec1.text);{}
         mainwindow.image1.Canvas.textout(round(0.5*fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(exposure))+'s');{}
       end;
@@ -708,7 +669,6 @@ begin
   end;
 end;
 
-{ Tform_asteroids1 }
 
 function test_mpcorb : boolean;
 begin
@@ -785,7 +745,6 @@ begin
   maxmag_asteroid:=max_magn_asteroids1.text;
   maxmag:=strtofloat2(form_asteroids1.max_magn_asteroids1.text);
 
-
   showfullnames:=form_asteroids1.showfullnames1.checked;
   showmagnitude:=form_asteroids1.showmagnitude1.checked;
 
@@ -831,6 +790,7 @@ begin
   mainwindow.setfocus;
 end;
 
+
 procedure Tform_asteroids1.download_mpcorb1Click(Sender: TObject);
 begin
   openurl('https://minorplanetcenter.net/iau/MPCORB.html');
@@ -861,6 +821,7 @@ begin
     test_cometels;
   end;
 end;
+
 
 procedure Tform_asteroids1.FormClose(Sender: TObject;
   var CloseAction: TCloseAction);

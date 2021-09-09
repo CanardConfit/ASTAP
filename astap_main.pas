@@ -5838,7 +5838,6 @@ begin
     end;{x loop}
   end;{y loop}
 
-
   img:=img_temp2;
   img_temp2:=nil;{free temp memory}
   naxis3:=3;{now three colors}

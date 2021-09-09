@@ -24,24 +24,22 @@ var
   dec_mean: double=0;
 
 function JD_to_HJD(jd,ra_object,dec_object: double): double;{conversion JD to HJD}  {see https://en.wikipedia.org/wiki/Heliocentric_Julian_Day}
-procedure EQU_GAL(ra,dec:double;out l,b: double);{equatorial to galactic coordinates}
+procedure equ_gal(ra,dec:double;out l,b: double);{equatorial to galactic coordinates}
 function airmass_calc(h: double): double; // where h is apparent altitude in degrees.
 function atmospheric_absorption(airmass: double):double;{magnitudes}
 function calculate_altitude(calc_mode : integer;ra3,dec3 : double): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
-
-
+procedure polar2(x,y,z:double;out r,theta,phi:double);
 
 implementation
-
 uses
   astap_main, unit_stack, unit_ephemerides,unit_asteroid;
 
 
-//{ sun:      low precision solar coordinates (approx. 1')               }
-//{           jd : julian day                                            }
-//{           ra : right ascension (in radians; equinox of date)         }
-//{           dec: declination (in radians; equinox of date)             }
-//{           Factors from "Astronomy on the personal computer"          }
+{ sun:      low precision solar coordinates (approx. 1')               }
+{           jd : julian day                                            }
+{           ra : right ascension (in radians; equinox of date)         }
+{           dec: declination (in radians; equinox of date)             }
+{           Factors from "Astronomy on the personal computer"          }
 procedure sun(jd:real; var ra,dec: double); {jd  var ra 0..2*pi, dec [0..pi/2] of Sun equinox of date}
   const
     cos_ecl=cos(23.43929111*pi/180);{obliquity of ecliptic}
@@ -82,12 +80,11 @@ procedure sun(jd:real; var ra,dec: double); {jd  var ra 0..2*pi, dec [0..pi/2] o
 //  dec2:=dec1+(ddec*t*100);
 //end;
 
+
 function JD_to_HJD(jd,ra_object,dec_object: double): double;{conversion Julian Day to Heliocentric Julian Day}
 var                                                         {see https://en.wikipedia.org/wiki/Heliocentric_Julian_Day}
   ra_sun, dec_sun : double;
   sin_dec_object,cos_dec_object,sin_dec_sun,cos_dec_sun : double;
-
-  r1,r2,r3,d1,d2,d3 : double;
 begin
   sun(jd,ra_sun,dec_sun);{get sun position in equinox of date coordinates}
   precession3(jd, 2451545 {J2000},ra_sun,dec_sun); {precession}
@@ -98,7 +95,7 @@ begin
 end;
 
 
-procedure EQU_GAL(ra,dec:double;out l,b: double);{equatorial to galactic coordinates}
+procedure equ_gal(ra,dec:double;out l,b: double);{equatorial to galactic coordinates}
 const
   {North_galactic pole (J2000)}
   pole_ra : double = (12+51/60+26.27549/3600)*pi/12; {12h51m26.27549    https://www.aanda.org/articles/aa/pdf/2011/02/aa14961-10.pdf }
@@ -157,6 +154,22 @@ end;
 //end;
 
 
+{-----------------------------------------------------------------------}
+{ POLAR2: conversion of cartesian coordinates (x,y,z)                   }
+{        into polar coordinates (r,theta,phi)                           }
+{        (theta in [-pi/2 deg,+pi/2]; phi in [0 ,+ 2*pi radians]        }
+{-----------------------------------------------------------------------}
+procedure polar2(x,y,z:double;out r,theta,phi:double);
+var rho: double;
+begin
+  rho:=x*x+y*y;  r:=sqrt(rho+z*z);
+  phi:=arctan2(y,x);
+  if phi<0 then phi:=phi+2*pi;
+  rho:=sqrt(rho);
+  theta:=arctan2(z,rho);
+end;
+
+
 {----------------------------------------------------------------}
 { EQUHOR: conversion of equatorial into horizontal coordinates   }
 {   DEC  : declination (-pi/2 .. +pi/2)                          }
@@ -167,7 +180,7 @@ end;
 {----------------------------------------------------------------}
 procedure equhor2 (dec,tau,phi: double; out h,az: double);
 var cos_phi,sin_phi, cos_dec,sin_dec,cos_tau, sin_tau, x,y,z, dummy: double;
-begin {updated with sincos function for fastest execution}
+begin
   sincos(phi,sin_phi,cos_phi);
   sincos(dec,sin_dec,cos_dec);
   sincos(tau,sin_tau,cos_tau);
@@ -241,9 +254,7 @@ begin
   {calc_mode 1: use CENTALT from header or if not available calculate it}
   {calc_mode 2: calculate it, apply refration astrometric to apparent}
   {calc_mode 3: calculate it, apply refration apparent to astrometric!!}
-
   result:=strtofloat2(centalt);
-
   if (((result=0) or (calc_mode>1)) and (cd1_1<>0)) then {calculate from observation location, image center and time the altitude}
   begin
     if sitelat='' then
@@ -271,10 +282,9 @@ begin
 end;
 
 
-
 function airmass_calc(h: double): double; // where h is apparent altitude in degrees.
 begin
-  // Pickering, 2002
+  // Pickering, 2002, https://en.wikipedia.org/wiki/Air_mass_(astronomy)
   if h>=0.0000001 then
     result := 1 / sin((pi/180) * (h + (244 / (165 + 47 * power(h,1.1)))))
   else
@@ -294,7 +304,6 @@ begin
   a_aer:=airmass*0.120; {Extinction due to aerosol scattering is due to particulates including dust, water droplets and manmade pollutants. Expressed in magnitudes}
   result:=a_ozon+a_ray+a_aer;{Total extinction, scattering, absorption due to the atmosphere expressed in magnitudes}
 end;
-
 
 
 end.
