@@ -3003,7 +3003,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.575, '+about_message4+', dated 2021-9-5';
+  #13+#10+'ASTAP version ß0.9.576, '+about_message4+', dated 2021-9-9';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4832,11 +4832,10 @@ end;
 function extract_raw_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
 var
   img_temp11 : image_array;
-  FitsX, fitsY,w,h,xp2,yp2      : integer;
-  ratio                         : double;
-  get_green                     : boolean;
-  val                           : single;
-
+  FitsX, fitsY,w,h,xp2,yp2,pattern,pattern2  : integer;
+  ratio                             : double;
+  get_green                         : boolean;
+  val                               : single;
 begin
   if load_fits(filename7,true {light},true,true {update memo},0,img_loaded)=false then
   begin
@@ -4853,31 +4852,32 @@ begin
 
     setlength(img_temp11,1,w,h);
 
+    pattern:=get_demosaic_pattern; {analyse pattern}
     get_green:=false;
     if filtern='TR' then {red}
     begin
-      case get_demosaic_pattern {analyse pattern} of
+      case pattern of
          0: begin xp:=2; yp:=1; end;{'GRBG'}
          1: begin xp:=2; yp:=2; end;{'BGGR'}
          2: begin xp:=1; yp:=1; end;{'RGGB'}
-         3: begin xp:=2; yp:=1; end;{'GBRG'}
+         3: begin xp:=1; yp:=2; end;{'GBRG'}
       end;
     end
     else
     if filtern='TB' then {blue}
     begin
-      case get_demosaic_pattern {analyse pattern} of
+      case pattern of
          0: begin xp:=1; yp:=2; end;{'GRBG'}
          1: begin xp:=1; yp:=1; end;{'BGGR'}
          2: begin xp:=2; yp:=2; end;{'RGGB'}
-         3: begin xp:=1; yp:=2; end;{'GBRG'}
+         3: begin xp:=2; yp:=1; end;{'GBRG'}
       end;
     end
     else
     if filtern='TG' then {green}
     begin
       get_green:=true;
-      case get_demosaic_pattern {analyse pattern} of
+      case pattern of
          0: begin xp:=1; yp:=1; xp2:=2; yp2:=2; end;{'GRBG'}
          1: begin xp:=2; yp:=1; xp2:=1; yp2:=2; end;{'BGGR'}
          2: begin xp:=2; yp:=1; xp2:=1; yp2:=2; end;{'RGGB'}
@@ -4885,13 +4885,27 @@ begin
       end;
     end;
 
-    case get_demosaic_pattern {analyse pattern} of
-       0: begin memo2_message('GRBG => G'); end;{'GRBG'}
-       1: begin memo2_message('BGGR => G'); end;{'BGGR'}
-       2: begin memo2_message('RGGB => G'); end;{'RGGB'}
-       3: begin memo2_message('GBRG => G'); end;{'GBRG'}
+    {info message}
+    if pos('BOT',roworder)>0 then {'BOTTOM-UP'= lower-left corner first in the file. or 'TOP-DOWN'= top-left corner first in the file.(default)}
+    begin {top-down keyword,  flip in the message the patterns upside down. So GRBG becomes BGGR}
+      if pattern=0 then pattern2:=1 else
+      if pattern=1 then pattern2:=0 else
+      if pattern=2 then pattern2:=3 else
+      if pattern=3 then pattern2:=2;
+    end
+    else
+    begin  {normal no keyword or TOP-DOWN keyword}
+      pattern2:=pattern;
     end;
 
+    case pattern2 of
+       0: begin memo2_message('GRBG => '+filtern[2]); end;{'GRBG'}
+       1: begin memo2_message('BGGR => '+filtern[2]); end;{'BGGR'}
+       2: begin memo2_message('RGGB => '+filtern[2]); end;{'RGGB'}
+       3: begin memo2_message('GBRG => '+filtern[2]); end;{'GBRG'}
+    end;
+
+    {extract}
     for fitsY:=0 to h-1 do
       for fitsX:=0 to w-1  do
       begin
@@ -4949,7 +4963,7 @@ begin
   end
   else
   begin
-    if naxis3>1 then memo2_message('Skipped COLOUR image '+ filename7+', Raw green pixel extraction is only possible for raw images.')
+    if naxis3>1 then memo2_message('Skipped COLOUR image '+ filename7+', Raw red, green or blue pixel extraction is only possible for raw images.')
     else
     memo2_message('Skipped image '+ filename7+', FILTER indicates earlier extraction!');
   end;
@@ -6209,7 +6223,7 @@ begin
 
  {corrections for xbayroff,ybayroff, TOP-DOWN}
   ybayroff2:=ybayroff;
-  if pos('BOT', roworder)>0 then
+  if pos('BOT',roworder)>0 then
                     ybayroff2:=ybayroff2+1;{'BOTTOM-UP'= lower-left corner first in the file. or 'TOP-DOWN'= top-left corner first in the file.(default)}
 
   if odd(round(xbayroff)) then

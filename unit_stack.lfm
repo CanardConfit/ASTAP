@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 168
+  Left = 89
   Height = 749
-  Top = 327
+  Top = 215
   Width = 1785
   HorzScrollBar.Page = 1701
   VertScrollBar.Page = 556
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 10448
+    Left = 10511
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -2194,6 +2194,7 @@ object stackmenu1: Tstackmenu1
           Top = 14
           Width = 104
           ItemHeight = 15
+          ItemIndex = 0
           Items.Strings = (
             'auto'
             'GRBG'
@@ -2206,6 +2207,7 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
           Style = csDropDownList
           TabOrder = 1
+          Text = 'auto'
         end
         object Label12: TLabel
           Left = 232
@@ -3501,7 +3503,7 @@ object stackmenu1: Tstackmenu1
         Left = 120
         Height = 26
         Hint = 'Analyse image files'
-        Top = 6
+        Top = 5
         Width = 80
         Caption = 'Analyse'
         OnClick = analysephotometry1Click
@@ -3509,10 +3511,10 @@ object stackmenu1: Tstackmenu1
         TabOrder = 0
       end
       object nr_total_photometry1: TLabel
-        Left = 272
+        Left = 280
         Height = 15
         Hint = 'Number of images in the list'
-        Top = 10
+        Top = 9
         Width = 6
         Caption = '0'
         ParentColor = False
@@ -3522,7 +3524,7 @@ object stackmenu1: Tstackmenu1
         Left = 352
         Height = 26
         Hint = 'Stop photometry blinking'
-        Top = 6
+        Top = 5
         Width = 75
         Caption = '⏹'
         OnClick = blink_stop1Click
@@ -3533,7 +3535,7 @@ object stackmenu1: Tstackmenu1
         Left = 440
         Height = 26
         Hint = 'Scroll through the check-marked images once'
-        Top = 6
+        Top = 5
         Width = 75
         Caption = '▶|'
         OnClick = photometry_button1Click
@@ -3544,7 +3546,7 @@ object stackmenu1: Tstackmenu1
         Left = 528
         Height = 26
         Hint = 'Continous scrolling through the check-marked images'
-        Top = 6
+        Top = 5
         Width = 40
         Caption = '▶'
         OnClick = photometry_button1Click
@@ -3729,10 +3731,10 @@ object stackmenu1: Tstackmenu1
       end
       object help_photometry1: TLabel
         Cursor = crHandPoint
-        Left = 1368
+        Left = 1384
         Height = 30
         Hint = 'Online help'
-        Top = 2
+        Top = 1
         Width = 9
         Caption = '?'
         Font.Color = clBlue
@@ -3744,7 +3746,7 @@ object stackmenu1: Tstackmenu1
         OnClick = help_photometry1Click
       end
       object photometry_binx2: TButton
-        Left = 1392
+        Left = 1400
         Height = 26
         Hint = 'Bin the images for better photometric detection.  Orginal files will not be affected.'
         Top = 6
@@ -3786,7 +3788,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
       end
       object refresh_astrometric_solutions1: TButton
-        Left = 1024
+        Left = 1040
         Height = 25
         Hint = 'This will renew the astrometric solutions and photometric calibration . Use this only for the rare case  the solutions are wrong and alignment is poor.'
         Top = 6
@@ -3809,7 +3811,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 9
       end
       object aavso_button1: TButton
-        Left = 1216
+        Left = 1240
         Height = 25
         Hint = 'Generate AAVSO report'
         Top = 6
@@ -3822,11 +3824,11 @@ object stackmenu1: Tstackmenu1
       object extract_green1: TButton
         Left = 888
         Height = 25
-        Hint = 'For raw OSC images only. Not for images converted to colour. The routine will combine for each bayer submosaic the two green pixels. Check in advance the de-mosaic pattern in stack menu, tab stack method.'
+        Hint = 'For raw OSC images only. Not for images converted to colour. The routine will combine for each bayer submosaic the two green pixels or red or blue pixel. Check in advance the de-mosaic pattern in stack menu, tab stack method.'
         Top = 6
-        Width = 123
+        Width = 133
         AutoSize = True
-        Caption = 'Extract raw GREEN'
+        Caption = 'RAW RGB extraction'
         OnClick = extract_green1Click
         TabOrder = 11
       end
@@ -3868,10 +3870,10 @@ object stackmenu1: Tstackmenu1
         ParentColor = False
       end
       object analysephotometrymore1: TButton
-        Left = 192
+        Left = 200
         Height = 26
         Hint = 'Analyse image files'
-        Top = 6
+        Top = 5
         Width = 56
         Caption = '+'
         OnClick = analysephotometry1Click
@@ -3911,7 +3913,7 @@ object stackmenu1: Tstackmenu1
         ParentColor = False
       end
       object SpeedButton2: TSpeedButton
-        Left = 1328
+        Left = 1352
         Height = 25
         Hint = 'Default observer location for the case it is not available in the file header. Use this for DSLR images.'
         Top = 6

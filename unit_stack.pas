@@ -1652,8 +1652,6 @@ var
   key,filename1,rawstr              : string;
   img                               : image_array;
 begin
-                  memo2_message('');
-
   with stackmenu1 do
   begin
     counts:=ListView1.items.count-1;
@@ -1834,7 +1832,7 @@ begin
 
                 if gain<>999 then ListView1.Items.item[c].subitems.Strings[L_gain]:=inttostr(round(gain));
 
-                alt:=calculate_altitude(true {correct for refraction},true {apple precession},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
+                alt:=calculate_altitude(true {correct for refraction},true {apply precession},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
 
                 if alt<>0 then
                            ListView1.Items.item[c].subitems.Strings[L_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
@@ -1896,9 +1894,6 @@ begin
     Screen.Cursor :=Save_Cursor;    { back to normal }
     progress_indicator(-100,'');{progresss done}
   end;
-
-  memo2_message('');
-
 end;
 
 
@@ -3293,11 +3288,11 @@ begin
               hjd:=JD_to_HJD(jd_mid,RA0,DEC0);{conversion JD to HJD}
               lv.Items.item[c].subitems.Strings[P_jd_helio]:=floattostrF2(Hjd,0,5);{helio julian day}
 
-              alt:=calculate_altitude(true {correct for refraction},true {apple precession},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
+              alt:=calculate_altitude(true {correct for refraction},true {apply precession},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
               if alt<>0 then
               begin
                 lv.Items.item[c].subitems.Strings[P_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
-                lv.Items.item[c].subitems.Strings[P_airmass]:=floattostrf(AirMass_calc(alt),ffgeneral, 5,3); {airmass}
+                lv.Items.item[c].subitems.Strings[P_airmass]:=floattostrf(AirMass_calc(alt),ffgeneral, 5,2); {airmass}
               end;
 
               {magn is column 9 will be added separately}
@@ -4695,10 +4690,15 @@ procedure Tstackmenu1.extract_green1Click(Sender: TObject);
 var
   c           : integer;
   Save_Cursor : TCursor;
-  fn          : string;
+  fn,col        : string;
 begin
-  if (IDYES= Application.MessageBox('This will extract the combined green channel from the (calibrated) raw files and write to result to new files. Continue?', 'Raw colour separation', MB_ICONQUESTION + MB_YESNO) )=false then exit;
-
+  case  QuestionDlg (pchar('Raw colour separation'),pchar('This will extract the green, blue or red pixels from the (calibrated) raw files and write to result to new files. Select colour:'),mtCustom
+                                                          ,[20,'Red pixels', 21, 'Green pixels', 'IsDefault', 22, 'Blue pixels', 23, 'Cancel'],'') of
+       20: col:='TR';
+       21: col:='TG';
+       22: col:='TB';
+       else exit;
+  end;{case}
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -4715,7 +4715,7 @@ begin
          beep;
          exit;
        end;
-       fn:=extract_raw_colour_to_file(ListView7.items[c].caption,'TG',1,1); {extract green channel}
+       fn:=extract_raw_colour_to_file(ListView7.items[c].caption,col{'TG' or 'TB'},1,1); {extract green red or blue channel}
        if fn<>'' then
        begin
            ListView7.items[c].caption:=fn;
