@@ -157,14 +157,14 @@ end;
 //end;
 
 
-(*----------------------------------------------------------------*)
-(* EQUHOR: conversion of equatorial into horizontal coordinates   *)
-(*   DEC  : declination (-pi/2 .. +pi/2)                          *)
-(*   TAU  : hour angle (0 .. 2*pi)                                *)
-(*   PHI  : geographical latitude (in rad)                        *)
-(*   H    : altitude (in rad)                                     *)
-(*   AZ   : azimuth (0 deg .. 2*pi rad, counted S->W->N->E->S)    *)
-(*----------------------------------------------------------------*)
+{----------------------------------------------------------------}
+{ EQUHOR: conversion of equatorial into horizontal coordinates   }
+{   DEC  : declination (-pi/2 .. +pi/2)                          }
+{   TAU  : hour angle (0 .. 2*pi)                                }
+{   PHI  : geographical latitude (in rad)                        }
+{   H    : altitude (in rad)                                     }
+{   AZ   : azimuth (0 deg .. 2*pi rad, counted S->W->N->E->S)    }
+{----------------------------------------------------------------}
 procedure equhor2 (dec,tau,phi: double; out h,az: double);
 var cos_phi,sin_phi, cos_dec,sin_dec,cos_tau, sin_tau, x,y,z, dummy: double;
 begin {updated with sincos function for fastest execution}

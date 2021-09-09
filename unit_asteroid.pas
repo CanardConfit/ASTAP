@@ -160,44 +160,6 @@ begin
 end;
 
 
-(*-----------------------------------------------------------------------*)
-(* ECLEQU: Conversion of ecliptic into equatorial coordinates            *)
-(*         (T: equinox in Julian centuries since J2000)                  *)
-(*-----------------------------------------------------------------------*)
-procedure ECLEQU(t:double;var x,y,z:double);
-var eps,c,s,v: double;
-begin
-  eps:=23.43929111-(46.8150+(0.00059-0.001813*t)*t)*t/3600.0;
-  sincos(eps*pi/180,s,c);
-  v:=+c*y-s*z;  z:=+s*y+c*z;  y:=v;
-end;
-
-
-(*-----------------------------------------------------------------------*)
-(* PMATECL: calculates the precession matrix A[i,j] for                  *)
-(*          transforming ecliptic coordinates from equinox T1 to T2      *)
-(*          ( T=(JD-2451545.0)/36525 )                                   *)
-(*-----------------------------------------------------------------------*)
-procedure PMATECL(t1,t2:double;out a: double33);
-var dt,ppi,pii,pa: double;
-   c1,s1,c2,s2,c3,s3: double;
-begin
-  dt:=t2-t1;
-  ppi := 174.876383889 +( ((3289.4789+0.60622*t1)*t1) +
-            ((-869.8089-0.50491*t1) + 0.03536*dt)*dt )/3600;
-  pii  := ( (47.0029-(0.06603-0.000598*t1)*t1)+
-           ((-0.03302+0.000598*t1)+0.000060*dt)*dt )*dt/3600;
-  pa  := ( (5029.0966+(2.22226-0.000042*t1)*t1)+
-           ((1.11113-0.000042*t1)-0.000006*dt)*dt )*dt/3600;
-  sincos((ppi+pa)*pi/180,s1,c1);
-  sincos(pii*pi/180,s2,c2);
-  sincos(ppi*pi/180,s3,c3);
-  a[1,1]:=+c1*c3+s1*c2*s3; a[1,2]:=+c1*s3-s1*c2*c3; a[1,3]:=-s1*s2;
-  a[2,1]:=+s1*c3-c1*c2*s3; a[2,2]:=+s1*s3+c1*c2*c3; a[2,3]:=+c1*s2;
-  a[3,1]:=+s2*s3;          a[3,2]:=-s2*c3;          a[3,3]:=+c2;
-end;
-
-
 procedure parallax_xyz(wtime,latitude : double;var x,y,z: double); {X,Y,Z in AU,  By Han Kleijn}
  {wtime= Sidereal time at greenwich - longitude, equals azimuth position of the sky for the observer.
   wtime:=limit_radialen((+longitude*pi/180)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi);
@@ -513,57 +475,6 @@ begin
       AOP:= 130.62989999999999;  Argument of perihelion}
   end;
 end;
-
-(*-----------------------------------------------------------------------*)
-(* NUTEQU: transformation of mean to true coordinates                    *)
-(*         (including terms >0.1" according to IAU 1980)                 *)
-(*         T = (JD-2451545.0)/36525.0                                    *)
-(*-----------------------------------------------------------------------*)
-procedure NUTEQU(t:double; var x,y,z:double);
-const arc=206264.8062;          (* arcseconds per radian = 3600*180/pi *)
-      p2 =6.283185307;          (* 2*pi                                *)
-var   ls,d,f,n,eps : double;
-      dpsi,deps,c,s: double;
-      dx,dy,dz     : double;
-  function frac(x:double):double;
-    (* with several compilers it may be necessary to replace trunc *)
-    (* by long_trunc or int if t<-24!                              *)
-    begin  frac:=x-trunc(x) end;
-begin
-  ls  := p2*frac(0.993133+  99.997306*t); (* mean anomaly sun          *)
-  d   := p2*frac(0.827362+1236.853087*t); (* diff. longitude moon-sun  *)
-  f   := p2*frac(0.259089+1342.227826*t); (* mean argument of latitude *)
-  n   := p2*frac(0.347346-   5.372447*t); (* longit. ascending node    *)
-  eps := 0.4090928-2.2696e-4*t;           (* obliquity of the ecliptic *)
-  dpsi := ( -17.200*sin(n)   - 1.319*sin(2*(f-d+n)) - 0.227*sin(2*(f+n))
-            + 0.206*sin(2*n) + 0.143*sin(ls) ) / arc;
-  deps := ( + 9.203*cos(n)   + 0.574*cos(2*(f-d+n)) + 0.098*cos(2*(f+n))
-            - 0.090*cos(2*n)                 ) / arc;
-  c := dpsi*cos(eps);  s := dpsi*sin(eps);
-  dx := -(c*y+s*z); dy := (c*x-deps*z); dz := (s*x+deps*y);
-  x:=x + dx;
-  y:=y + dy;
-  z:=z + dz;
-end;
-
-
-
-(*-----------------------------------------------------------------------*)
-(* CART2: conversion of polar coordinates (r,theta,phi)                   *)
-(*       into cartesian coordinates (x,y,z)                              *)
-(*       (theta in [-pi/2.. pi/2 rad]; phi in [-pi*2,+pi*2 rad])         *)
-(*-----------------------------------------------------------------------*)
-procedure cart2(R,THETA,PHI: double; out X,Y,Z: double);
-  VAR RCST : double;
-      cos_theta,sin_theta :double;
-      cos_phi,sin_phi     :double;
-begin
-  sincos(theta,sin_theta,cos_theta);
-  sincos(phi  ,sin_phi  ,cos_phi);
-  RCST := R*COS_THETA;
-  X    := RCST*COS_PHI; Y := RCST*SIN_PHI; Z := R*SIN_THETA;
-end;
-
 
 
 procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot :boolean) ;{read MPCORB.dat}{han.k}
