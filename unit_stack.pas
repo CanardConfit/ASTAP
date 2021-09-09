@@ -589,7 +589,6 @@ type
     procedure align_blink1Change(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
     procedure equinox1Change(Sender: TObject);
-    procedure FormClick(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure help_mount_tab1Click(Sender: TObject);
     procedure lrgb_auto_level1Change(Sender: TObject);
@@ -1832,7 +1831,7 @@ begin
 
                 if gain<>999 then ListView1.Items.item[c].subitems.Strings[L_gain]:=inttostr(round(gain));
 
-                alt:=calculate_altitude(true {correct for refraction},true {apply precession},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
+                alt:=calculate_altitude(0 {can use header. Astrometric_to_apparent},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
 
                 if alt<>0 then
                            ListView1.Items.item[c].subitems.Strings[L_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
@@ -3288,7 +3287,7 @@ begin
               hjd:=JD_to_HJD(jd_mid,RA0,DEC0);{conversion JD to HJD}
               lv.Items.item[c].subitems.Strings[P_jd_helio]:=floattostrF2(Hjd,0,5);{helio julian day}
 
-              alt:=calculate_altitude(true {correct for refraction},true {apply precession},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
+              alt:=calculate_altitude(0 {can use header CENT_ALT. Astrometric_to_apparent},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
               if alt<>0 then
               begin
                 lv.Items.item[c].subitems.Strings[P_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
@@ -3372,7 +3371,6 @@ begin
               begin
                 if theindex>=1 then
                   precession3(2451545 {J2000}, jd_mid,ra_mount,dec_mount); {precession}
-                if theindex>=2 then  nutation_aberration_correction_equatorial_classic(jd_mid,ra_mount,dec_mount);{nutation, abberation}
 
                 lv.Items.item[c].subitems.Strings[M_ra_m]:=floattostrf(ra_mount*180/pi,ffFixed, 9, 6);
                 lv.Items.item[c].subitems.Strings[M_dec_m]:=floattostrf(dec_mount*180/pi,ffFixed, 9, 6);
@@ -3380,18 +3378,14 @@ begin
 
               if cd1_1<>0 then
               begin
-                ra_image:=ra0;
+                ra_image:=ra0;{J2000 apparent from image solution}
                 dec_image:=dec0;
-                if theindex>=1 then   precession3(2451545 {J2000}, jd_mid,ra_image,dec_image); {J2000 to mean equinox}
-                if theindex>=2  then
-                    nutation_aberration_correction_equatorial_classic(jd_mid,ra_image,dec_image);{Input mean equinox, result apparent.  M&P page 208}
-                alt:=calculate_altitude(theindex>=3 {correct for refraction},false{precession},ra_image,dec_image);{convert centalt string to double or calculate altitude from observer location}
-                if theindex>=3 then
+                if theindex>=1 then
                 begin
-                  ra_image:=ra_app;{updated via calculate altitude}
-                  dec_image:=dec_app;
+                  alt:=calculate_altitude(3 {apparent to astrometric !!!!},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
+                  ra_image:=ra_mean;{precession was applied by calculate altitude routine}
+                  dec_image:=dec_mean;
                 end;
-
                 if alt<>0 then
                   lv.Items.item[c].subitems.Strings[M_centalt]:=floattostrf(alt,ffFixed, 3, 1); {altitude}
 
@@ -7175,17 +7169,8 @@ begin
   case equinox1.itemindex of
     0 : listview9.column[9].caption:='α [°] J2000';
     1 : listview9.column[9].caption:='α [°] mean';
-    2 : listview9.column[9].caption:='α [°] app';
-    3 : listview9.column[9].caption:='α [°] app&refr';
   end;
-
 end;
-
-procedure Tstackmenu1.FormClick(Sender: TObject);
-begin
-
-end;
-
 
 
 procedure Tstackmenu1.FormDestroy(Sender: TObject);

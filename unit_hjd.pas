@@ -20,15 +20,14 @@ uses
   Classes, SysUtils, math;
 
 var
-  ra_app : double=0;
-  dec_app: double=0;
+  ra_mean : double=0;
+  dec_mean: double=0;
 
 function JD_to_HJD(jd,ra_object,dec_object: double): double;{conversion JD to HJD}  {see https://en.wikipedia.org/wiki/Heliocentric_Julian_Day}
 procedure EQU_GAL(ra,dec:double;out l,b: double);{equatorial to galactic coordinates}
-function calculate_altitude(correct_radec_refraction,apply_precession: boolean;ra3,dec3 : double): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
 function airmass_calc(h: double): double; // where h is apparent altitude in degrees.
 function atmospheric_absorption(airmass: double):double;{magnitudes}
-function altitude_and_refraction(lat,long,julian,temperature:double;correct_radec_refraction: boolean; ra3,dec3: double):double;{altitude calculation and correction ra, dec for refraction}
+function calculate_altitude(calc_mode : integer;ra3,dec3 : double): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
 
 
 
@@ -198,17 +197,17 @@ begin
 end;
 
 
-function altitude_apparent(altitude_real,p {mbar},t {celsius} :double):double;  {atmospheric refraction}
+function atmospheric_refraction(altitude_real,p {mbar},t {celsius} :double):double;  {atmospheric refraction}
 var  hn  :real;
 begin
   hn:=(altitude_real*(180/pi)+10.3/(altitude_real*(180/pi)+5.11))*pi/180;
                  {watch out with radians and degrees!!!!!!  carefully with factors}
-  result:=altitude_real + ((p/1010)*283/(273+t))*(pi/180)* (1.02/60)/(sin(hn)/cos(hn) ); {note: tan(x) = sin(x)/cos(x)}
+  result:=((p/1010)*283/(273+t))*(pi/180)* (1.02/60)/(sin(hn)/cos(hn) ); {note: tan(x) = sin(x)/cos(x)}
  {bases on meeus 1991 page 102, formula 15.4}
 end;
 
 
-function altitude_and_refraction(lat,long,julian,temperature:double;correct_radec_refraction: boolean; ra3,dec3: double):double;{altitude calculation and correction ra, dec for refraction}
+function altitude_and_refraction(lat,long,julian,temperature:double;calc_mode: integer; ra3,dec3: double):double;{altitude calculation and correction ra, dec for refraction}
 {input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-pi/2..pi/2], long[-pi..pi] West positive, East negative !!,time[0..2*pi]}
 var wtime2actual,azimuth2,altitude2: double;
 const
@@ -222,27 +221,30 @@ begin
 
   RA_AZ(ra3,dec3,LAT,0,wtime2actual,{var} azimuth2,altitude2);{conversion ra & dec to altitude,azimuth}
 
-  if correct_radec_refraction then {correct for temperature and correct ra0, dec0 for refraction}
-  begin
-    if temperature>=100 {999} then temperature:=10 {default temperature celsius};
-    result:=altitude_apparent(altitude2,1010 {mbar},temperature {celsius});{apparant altitude}
-    AZ_RA(azimuth2,result,LAT,0,wtime2actual, {var} ra_app,dec_app);{conversion az,alt to ra_app,dec_app corrected for refraction}
-  end
+ {correct for temperature and correct ra0, dec0 for refraction}
+  if temperature>=100 {999} then temperature:=10 {default temperature celsius};
+  result:=atmospheric_refraction(altitude2,1010 {mbar},temperature {celsius});{apparant altitude}
+  if calc_mode=2 then result:=altitude2+result {astrometric to apparent}
   else
-  begin
-    result:=altitude2;
+  begin {calc_mode=3, apparent to astrometric}
+    result:=altitude2-result; {apparent to astrometric !!!!}
+    AZ_RA(azimuth2,result,LAT,0,wtime2actual, {var} ra_mean,dec_mean);{conversion az,alt to ra_mean,dec_mean reverse corrected for refraction}
   end;
 end;
 
 
-function calculate_altitude(correct_radec_refraction,apply_precession: boolean;ra3,dec3 : double): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
+function calculate_altitude(calc_mode : integer;ra3,dec3 : double): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
 var
   site_lat_radians,site_long_radians : double;
   errordecode  : boolean;
 begin
+  {calc_mode 1: use CENTALT from header or if not available calculate it}
+  {calc_mode 2: calculate it, apply refration astrometric to apparent}
+  {calc_mode 3: calculate it, apply refration apparent to astrometric!!}
+
   result:=strtofloat2(centalt);
 
-  if (((result=0) or (correct_radec_refraction)) and (cd1_1<>0)) then {calculate from observation location, image center and time the altitude}
+  if (((result=0) or (calc_mode>1)) and (cd1_1<>0)) then {calculate from observation location, image center and time the altitude}
   begin
     if sitelat='' then
     begin
@@ -258,11 +260,13 @@ begin
         if jd_start=0 then date_to_jd(date_obs,exposure);{convert date-obs to jd_start, jd_mid}
         if jd_mid>2400000 then {valid JD}
         begin
-          if apply_precession then precession3(2451545 {J2000},jd_mid,ra3,dec3); {precession, from J2000 to Jnow}
-          result:=(180/pi)*altitude_and_refraction(site_lat_radians,-site_long_radians,jd_mid,focus_temp, correct_radec_refraction, ra3,dec3);{In formulas the longitude is positive to west!!!. }
-        end;
+          precession3(2451545 {J2000},jd_mid,ra3,dec3); {precession, from J2000 to Jnow}
+          result:=(180/pi)*altitude_and_refraction(site_lat_radians,-site_long_radians,jd_mid,focus_temp, calc_mode, ra3,dec3);{In formulas the longitude is positive to west!!!. }
+        end
+        else memo2_message('Error decoding Julian day!');
       end;
     end;
+    if errordecode then memo2_message('Error decoding site longitude or latitude!');
   end;
 end;
 

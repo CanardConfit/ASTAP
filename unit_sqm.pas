@@ -85,7 +85,7 @@ begin
     if get_bk then get_background(0,img_loaded,get_his {histogram},false {calculate also noise level} ,{var}cblack,star_level);
     if pedestal>=cblack then begin beep; pedestal:=0; {prevent errors} end;
     sqmfloat:=flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
-    alt:=calculate_altitude(true {correct for refraction},true {precession},{var} ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
+    alt:=calculate_altitude(1 {astrometric_to_apparent_or_reverse},{var} ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
 
     centalt:=inttostr(round(alt));{for reporting in menu sqm1}
     if alt<>0 then

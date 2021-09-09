@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 89
+  Left = 82
   Height = 749
-  Top = 215
+  Top = 196
   Width = 1785
   HorzScrollBar.Page = 1701
   VertScrollBar.Page = 556
@@ -4457,17 +4457,14 @@ object stackmenu1: Tstackmenu1
         Top = 8
         Width = 240
         ItemHeight = 15
-        ItemIndex = 0
         Items.Strings = (
-          'J2000'
-          'mean equinox of date'
-          'Apparent without refraction'
-          'Apparent'
+          'J2000 apparent (unmodified)'
+          'Mean equinox of date (in vacuum)'
         )
         OnChange = equinox1Change
         ParentFont = False
         TabOrder = 5
-        Text = 'J2000'
+        Text = 'J2000 apparent (unmodfied)'
       end
       object mount_write_wcs1: TCheckBox
         Left = 448

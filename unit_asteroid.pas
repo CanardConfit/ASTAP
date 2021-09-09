@@ -93,8 +93,6 @@ const
    add_date: boolean=true;
 
 procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot :boolean) ;{read MPCORB.dat}{han.k}
-//procedure precession2(julian_et,raold,decold:double;var ranew,decnew:double);{correct precession for equatorial coordinates}
-procedure nutation_aberration_correction_equatorial_classic(julian_et: double;var ra,dec:double);
 procedure polar2(x,y,z:double;out r,theta,phi:double);
 
 implementation
@@ -564,57 +562,6 @@ begin
   sincos(phi  ,sin_phi  ,cos_phi);
   RCST := R*COS_THETA;
   X    := RCST*COS_PHI; Y := RCST*SIN_PHI; Z := R*SIN_THETA;
-end;
-
-
-(*-----------------------------------------------------------------------*)
-(* ABERRAT: velocity vector of the Earth in equatorial coordinates       *)
-(*          (in units of the velocity of light)                          *)
-(*-----------------------------------------------------------------------*)
-procedure ABERRAT(t: double; out vx,vy,vz: double);{velocity vector of the earth in equatorial coordinates, and units of the velocity of light}
-var l,cl: double;
-function frac(x:double):double;
-  begin
-    x:=x-trunc(x);
-    if (x<0) then x:=x+1;
-    frac:=x;
-  end;
-begin
-  l := 2*pi*frac(0.27908+100.00214*t);
-  cl:=cos(l);
-  vx := -0.994e-4*sin(l);
-  vy := +0.912e-4*cl;
-  vz := +0.395e-4*cl;
-end;
-
-
-procedure nutation_aberration_correction_equatorial_classic(julian_et: double;var ra,dec : double);{Input mean equinox, add nutation, aberration result apparent M&P page 208}
-var r,x0,y0,z0,vx,vy,vz : double;
-begin
-  //http://www.bbastrodesigns.com/coordErrors.html  Gives same value within a fraction of arcsec.
-  //2020-1-1, JD=2458850.50000, RA,DEC position 12:00:00, 40:00:00, precession +00:01:01.45, -00:06:40.8, Nutation -00:00:01.1,  +00:00:06.6, Annual aberration +00:00:00.29, -00:00:14.3
-  //2020-1-1, JD=2458850.50000  RA,DEC position 06:00:00, 40:00:00, precession +00:01:23.92, -00:00:01.2, Nutation -00:00:01.38, -00:00:01.7, Annual aberration +00:00:01.79, +00:00:01.0
-  //2030-6-1, JD=2462654.50000  RA,DEC position 06:00:00, 40:00:00, precession +00:02:07.63, -00°00'02.8",Nutation +00:00:01.32, -0°00'02.5", Annual aberration -00:00:01.65, +00°00'01.10"
-
-//  Meeus Astronomical algorithms. Example 22.a and 20.b
-//  2028-11-13.19     JD 2462088.69
-//  J2000, RA=41.054063, DEC=49.22775
-//  Mean   RA=41.547214, DEC=49.348483
-//  True   RA=41.55996122, DEC=49.35207022  {error  with Astronomy on the computer 0.23" and -0.06"}
-//  Nutation ["]   RA 15.843, DEC	6.218
-//  Aberration["]  RA 30.047, DEC	6.696
-
-
-  cart2(1,dec,ra,x0,y0,z0); {make cartesian coordinates}
-
-  NUTEQU((julian_et-2451545.0)/36525.0 ,x0,y0,z0);{add nutation}
-
-  ABERRAT((julian_et-2451545.0)/36525.0,vx,vy,vz);{ABERRAT: velocity vector of the Earth in equatorial coordinates and units of the velocity of light}
-  x0:=x0+VX;{apply aberration,(v_earth/speed_light)*180/pi=20.5"}
-  y0:=y0+VY;
-  z0:=z0+VZ;
-
-  polar2(x0,y0,z0,r,dec,ra);
 end;
 
 
