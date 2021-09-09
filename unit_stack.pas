@@ -1275,8 +1275,8 @@ begin
  for i:=0 to listview1.Items.Count-1 do
    if listview1.Items[i].Selected then
   begin
-    ListView1.Items.item[i].subitems.Strings[L_X]:=floattostrF2(fitsX,0,2);
-    ListView1.Items.item[i].subitems.Strings[L_Y]:=floattostrF2(fitsY,0,2);
+    ListView1.Items.item[i].subitems.Strings[L_X]:=floattostrF(fitsX,ffFixed,0,2);
+    ListView1.Items.item[i].subitems.Strings[L_Y]:=floattostrF(fitsY,ffFixed,0,2);
   end;
 end;
 
@@ -1361,7 +1361,7 @@ begin
           inc(c); {go to next file}
         until c>counts;
         quality_sd:=sqrt(quality_sd/nr_good_images);
-        memo2_message('Analysing group '+key+ ' for outliers.'+#9+#9+' Average image quality (nr stars/hfd)='+floattostrF2(quality_mean,3,0)+ ', σ='+floattostrF2(quality_sd,3,1));
+        memo2_message('Analysing group '+key+ ' for outliers.'+#9+#9+' Average image quality (nr stars/hfd)='+floattostrF(quality_mean,ffFixed,0,0)+ ', σ='+floattostrF(quality_sd,ffFixed,0,1));
 
         {remove outliers}
         sd:=stackmenu1.sd_factor_list1.Text;
@@ -1798,7 +1798,7 @@ begin
 
                 ListView1.Items.item[c].subitems.Strings[L_bin]:=inttostr(Xbinning)+' x '+inttostr(Ybinning); {Binning CCD}
 
-                ListView1.Items.item[c].subitems.Strings[L_hfd]:=floattostrF2(hfd_median,0,1);
+                ListView1.Items.item[c].subitems.Strings[L_hfd]:=floattostrF(hfd_median,ffFixed,0,1);
                 ListView1.Items.item[c].subitems.Strings[L_quality]:=inttostr5(round(hfd_counter/hfd_median)); {quality number of stars divided by hfd}
 
                 if hfd_median>=99 then ListView1.Items.item[c].checked:=false {no stars, can't process this image}
@@ -1806,7 +1806,7 @@ begin
                 begin {image can be futher analysed}
                   ListView1.Items.item[c].subitems.Strings[L_starlevel]:=inttostr5(round(star_level));
                   ListView1.Items.item[c].subitems.Strings[L_background]:=inttostr5(round(backgr));
-                  ListView1.Items.item[c].subitems.Strings[L_sharpness]:=floattostrF2(image_sharpness(img),1,3); {sharpness test}
+                  ListView1.Items.item[c].subitems.Strings[L_sharpness]:=floattostrF(image_sharpness(img),ffFixed,0,3); {sharpness test}
                 end;
 
                 if exposure>=10 then  ListView1.Items.item[c].subitems.Strings[L_exposure]:=inttostr(round(exposure)) {round values above 10 seconds}
@@ -1827,7 +1827,7 @@ begin
 
                 ListView1.Items.item[c].subitems.Strings[L_calibration]:=calstat; {status calibration}
                 if focus_pos<>0 then ListView1.Items.item[c].subitems.Strings[L_focpos]:=inttostr(focus_pos);
-                if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[L_foctemp]:=floattostrF2(focus_temp,0,1);
+                if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[L_foctemp]:=floattostrF(focus_temp,ffFixed,0,1);
 
                 if gain<>999 then ListView1.Items.item[c].subitems.Strings[L_gain]:=inttostr(round(gain));
 
@@ -3282,16 +3282,16 @@ begin
               lv.Items.item[c].subitems.Strings[P_date]:=StringReplace(copy(date_obs,1,19),'T',' ',[]);{date/time for blink. Remove fractions of seconds}
               lv.Items.item[c].subitems.Strings[P_filter]:=filter_name;
               date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
-              lv.Items.item[c].subitems.Strings[P_jd_mid]:=floattostrF2(jd_mid,0,5);{julian day}
+              lv.Items.item[c].subitems.Strings[P_jd_mid]:=floattostrF(jd_mid,ffFixed,0,5);{julian day}
 
               hjd:=JD_to_HJD(jd_mid,RA0,DEC0);{conversion JD to HJD}
-              lv.Items.item[c].subitems.Strings[P_jd_helio]:=floattostrF2(Hjd,0,5);{helio julian day}
+              lv.Items.item[c].subitems.Strings[P_jd_helio]:=floattostrF(Hjd,ffFixed,0,5);{helio julian day}
 
               alt:=calculate_altitude(0 {can use header CENT_ALT. Astrometric_to_apparent},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
               if alt<>0 then
               begin
-                lv.Items.item[c].subitems.Strings[P_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
-                lv.Items.item[c].subitems.Strings[P_airmass]:=floattostrf(AirMass_calc(alt),ffgeneral, 5,2); {airmass}
+                lv.Items.item[c].subitems.Strings[P_centalt]:=floattostrf(alt,ffFixed, 0, 1); {altitude}
+                lv.Items.item[c].subitems.Strings[P_airmass]:=floattostrf(AirMass_calc(alt),ffFixed, 0,3); {airmass}
               end;
 
               {magn is column 9 will be added separately}
@@ -3307,7 +3307,7 @@ begin
 
                 analyse_fits(img,10 {snr_min},false,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
                 lv.Items.item[c].subitems.Strings[P_background]:=inttostr5(round(backgr));
-                lv.Items.item[c].subitems.Strings[P_hfd]:=floattostrF2(hfd_median,0,1);
+                lv.Items.item[c].subitems.Strings[P_hfd]:=floattostrF(hfd_median,ffFixed,0,1);
                 lv.Items.item[c].subitems.Strings[P_stars]:=inttostr5(hfd_counter); {number of stars}
               end;
             end
@@ -3325,15 +3325,15 @@ begin
                 lv.Items.item[c].subitems.Strings[insp_nr_stars]:='❌'    ;
               end
               else
-              lv.Items.item[c].subitems.Strings[insp_nr_stars]:=floattostrF2(nr_stars,0,0);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars]:=floattostrF(nr_stars,ffFixed,0,0);
 
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+2]:=floattostrF2(hfd_median,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+3]:=floattostrF2(hfd_center,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+4]:=floattostrF2(hfd_outer_ring,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+5]:=floattostrF2(hfd_bottom_left,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+6]:=floattostrF2(hfd_bottom_right,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+7]:=floattostrF2(hfd_top_left,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+8]:=floattostrF2(hfd_top_right,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+2]:=floattostrF(hfd_median,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+3]:=floattostrF(hfd_center,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+4]:=floattostrF(hfd_outer_ring,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+5]:=floattostrF(hfd_bottom_left,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+6]:=floattostrF(hfd_bottom_right,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+7]:=floattostrF(hfd_top_left,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+8]:=floattostrF(hfd_top_right,ffFixed,0,3);
             end
             else
 
@@ -3364,7 +3364,7 @@ begin
         //      jd:=2456385.46875;
 
 
-              lv.Items.item[c].subitems.Strings[M_jd_mid]:=floattostrF2(jd_mid,0,7);{julian day}
+              lv.Items.item[c].subitems.Strings[M_jd_mid]:=floattostrF(jd_mid,ffFixed,0,7);{julian day}
 
               theindex:=stackmenu1.equinox1.itemindex;
               if ra_mount<99 then {mount position known and specified}
@@ -3404,7 +3404,7 @@ begin
                  lv.Items.item[c].subitems.Strings[M_dec_e]:='?';
                 end;
 
-                if focus_temp<>999 then Lv.Items.item[c].subitems.Strings[M_foctemp]:=floattostrF2(focus_temp,4,1);
+                if focus_temp<>999 then Lv.Items.item[c].subitems.Strings[M_foctemp]:=floattostrF(focus_temp,ffFixed,0,1);
 
               end;
 
@@ -4816,13 +4816,13 @@ begin
     begin
       find_best_hyperbola_fit(array_hfd, img_counter, p,a,b); {input data[n,1]=position,data[n,2]=hfd, output: bestfocusposition=p, a, b of hyperbola}
 
-      if i=1 then       memo2_message('full image'+#9+#9+ 'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'_____________'            +#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));
-      if i=2 then begin memo2_message('center'+#9+#9+     'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'_____________'            +#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));center:=p;end;
-      if i=3 then       memo2_message('outer ring'+#9+#9+ 'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));
-      if i=4 then       memo2_message('bottom left'+#9+#9+'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));
-      if i=5 then       memo2_message('bottom right'+#9+  'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));
-      if i=6 then       memo2_message('top left'+#9+#9+   'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));
-      if i=7 then       memo2_message('top right'+#9+#9+  'Focus='+floattostrf2(p,0,0)+#9+'a='+floattostrf2(a,0,5)+#9+' b='+floattostrf2(b,9,5) +#9+'offset='+floattostrf2(p-center,5,0)+#9+#9+'error='+floattostrf2(lowest_error,0,5)+#9+' iteration cycles='+floattostrf2(iteration_cycles,0,0));
+      if i=1 then       memo2_message('full image'+#9+#9+ 'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'_____________'            +#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
+      if i=2 then begin memo2_message('center'+#9+#9+     'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'_____________'            +#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));center:=p;end;
+      if i=3 then       memo2_message('outer ring'+#9+#9+ 'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,5,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
+      if i=4 then       memo2_message('bottom left'+#9+#9+'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,5,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
+      if i=5 then       memo2_message('bottom right'+#9+  'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,5,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
+      if i=6 then       memo2_message('top left'+#9+#9+   'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,5,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
+      if i=7 then       memo2_message('top right'+#9+#9+  'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,5,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
     end
     else
     if i=1 then memo2_message('█ █ █ █ █ █  Error, four or more images are required at different focus positions! █ █ █ █ █ █ ');
@@ -5498,7 +5498,7 @@ begin
   setlength(img_temp,3,width2,height2);{new size}
   apply_most_common(img_backup[index_backup].img,img_temp,radius); {apply most common filter on first array and place result in second array}
 
-  memo2_message('Applying Gaussian blur of '+floattostrF2(radius*2,0,1));
+  memo2_message('Applying Gaussian blur of '+floattostrF(radius*2,ffFixed,0,1));
   gaussian_blur2(img_temp,radius*2);
 
 
@@ -7727,8 +7727,8 @@ begin
     if ((dark_count=0){restart} or (filen<>last_dark_loaded)) then
     begin
 
-      if ((roundexposure<>0 {global}) and (exposure2{request}<>roundexposure)) then memo2_message('█ █ █ █ █ █ Warning dark exposure time ('+floattostrF2(exposure,0,0)+') different then light exposure time ('+floattostrF2(exposure2,0,0) +')! █ █ █ █ █ █ ');
-      if ((set_temperature<>999 {global}) and (temperature2{request}<>set_temperature)) then memo2_message('█ █ █ █ █ █ Warning dark sensor temperature ('+floattostrF2(set_temperature,0,0)+') different then light sensor temperature ('+floattostrF2(temperature2,0,0) +')! █ █ █ █ █ █ ');
+      if ((roundexposure<>0 {global}) and (exposure2{request}<>roundexposure)) then memo2_message('█ █ █ █ █ █ Warning dark exposure time ('+floattostrF(exposure,ffFixed,0,0)+') different then light exposure time ('+floattostrF(exposure2,ffFixed,0,0) +')! █ █ █ █ █ █ ');
+      if ((set_temperature<>999 {global}) and (temperature2{request}<>set_temperature)) then memo2_message('█ █ █ █ █ █ Warning dark sensor temperature ('+floattostrF(set_temperature,ffFixed,0,0)+') different then light sensor temperature ('+floattostrF(temperature2,ffFixed,0,0) +')! █ █ █ █ █ █ ');
 
       memo2_message('Loading master dark file '+filen);
       dark_count:=0;{set back to zero}

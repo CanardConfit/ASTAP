@@ -125,12 +125,12 @@ end;
 function distance_to_string(dist, inp:double):string; {angular distance to string intended for RA and DEC. Unit is based on dist}
 begin
   if abs(dist)<pi/(180*60) then {unit seconds}
-      result:= floattostrF2(inp*3600*180/pi,0,1)+'"'
+      result:= floattostrF(inp*3600*180/pi,ffFixed,0,1)+'"'
   else
   if abs(dist)<pi/180 then {unit minutes}
-      result:= floattostrF2(inp*60*180/pi,0,1)+#39
+      result:= floattostrF(inp*60*180/pi,ffFixed,0,1)+#39
   else
-  result:= floattostrF2(inp*180/pi,0,1)+'°';
+  result:= floattostrF(inp*180/pi,ffFixed,0,1)+'°';
 end;
 
 {transformation of equatorial coordinates into CCD pixel coordinates for optical projection, rigid method}
@@ -425,7 +425,7 @@ begin
     old_height:=height2;
     old_naxis3:=naxis3;
     if binning>1 then memo2_message('Creating grayscale x '+inttostr(binning)+' binning image for solving/star alignment.');
-    if cropping<>1 then memo2_message('Cropping image x '+floattostrF2(cropping,0,2));
+    if cropping<>1 then memo2_message('Cropping image x '+floattostrF(cropping,ffFixed,0,2));
 
     if binning=2 then binX2_crop(cropping,img,img_binned) {combine values of 4 pixels, default option if 3 and 4 are not specified}
     else
@@ -592,7 +592,7 @@ begin
     if autoFOV then
     begin
       if fov_org=0 then fov_org:=9.5 else fov_org:=fov_org/1.5;
-      memo2_message('Trying FOV: '+floattostrF2(fov_org,0,1));
+      memo2_message('Trying FOV: '+floattostrF(fov_org,ffFixed,0,1));
     end;
     if fov_org>max_fov then
     begin
@@ -621,7 +621,7 @@ begin
     {prepare popupnotifier1 text}
     if stackmenu1.force_oversize1.checked=false then info_message:='▶▶' {normal} else info_message:='▶'; {slow}
     info_message:= ' [' +stackmenu1.radius_search1.text+'°]'+#9+#9+info_message+#9+#9+inttostr(nrstars)+' 🟊' +
-                    #10+'↕ '+floattostrf2(fov_org,0,2)+'°'+ #9+#9+inttostr(binning)+'x'+inttostr(binning)+' ⇒ '+inttostr(width2)+'x'+inttostr(height2)+
+                    #10+'↕ '+floattostrf(fov_org,ffFixed,0,2)+'°'+ #9+#9+inttostr(binning)+'x'+inttostr(binning)+' ⇒ '+inttostr(width2)+'x'+inttostr(height2)+
                     popup_warningV17+popup_warningSample+
                     #10+mainwindow.ra1.text+'h,'+mainwindow.dec1.text+'°'+{for tray icon}
                     #10+filename2;
@@ -655,7 +655,8 @@ begin
       radius:=strtofloat2(stackmenu1.radius_search1.text);{radius search field}
 
       max_distance:=round(radius/(fov2+0.00001));
-      memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(nrstars_required)+' database stars, '+inttostr(round(nr_quads*nrstars_required/nrstars))+' database quads required for the square search field of '+floattostrF2(fov2,0,1)+'°. '+oversize_mess );
+      memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(nrstars_required)+' database stars, '
+                             +inttostr(round(nr_quads*nrstars_required/nrstars))+' database quads required for the square search field of '+floattostrF(fov2,ffFixed,0,1)+'°. '+oversize_mess );
       minimum_quads:=3 + nr_quads div 100; {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum}
     end
     else
@@ -754,7 +755,7 @@ begin
               if solve_show_log then {global variable set in find stars}
               begin
                 if extrastars>1 then memo2_message('Too many small quads excluded due to higher resolution database, increased the number of stars with '+inttostr(round((extrastars-1)*100))+'%');
-                memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(telescope_ra,': ')+#9+prepare_dec(telescope_dec,'° ')+#9+' Down to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(database_stars)+' database stars' +#9+' '+inttostr(length(quad_star_distances1[0]))+' database quads to compare.'+mess);
+                memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'],'+#9+'position: '+#9+ prepare_ra(telescope_ra,': ')+#9+prepare_dec(telescope_dec,'° ')+#9+' Down to magn '+ floattostrF(mag2/10,ffFixed,0,1) +#9+' '+inttostr(database_stars)+' database stars' +#9+' '+inttostr(length(quad_star_distances1[0]))+' database quads to compare.'+mess);
               end;
 
               // for testing purposes
@@ -858,7 +859,7 @@ begin
     else
     mount_info:='';{no mount info}
 
-    memo2_message('Solution found: '+  prepare_ra(ra0,': ')+#9+prepare_dec(dec0,'° ') +#9+ solved_in+#9+' Δ was '+offset_found+#9+ mount_info+' Used stars down to magnitude: '+floattostrF2(mag2/10,0,1) );
+    memo2_message('Solution found: '+  prepare_ra(ra0,': ')+#9+prepare_dec(dec0,'° ') +#9+ solved_in+#9+' Δ was '+offset_found+#9+ mount_info+' Used stars down to magnitude: '+floattostrF(mag2/10,ffFixed,0,1) );
     mainwindow.caption:=('Solution found:    '+  prepare_ra(ra0,': ')+'     '+prepare_dec(dec0,'° ')  );
     result:=true;
 
@@ -894,8 +895,8 @@ begin
 
     if ( (fov_org>1.05*(height2*cdelt2) ) or (fov_org<0.95*(height2*cdelt2)) ) then
     begin
-      if xpixsz<>0 then suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF2(height2*cdelt2,0,2)+'d, scale='+floattostrF2(cdelt2*3600,0,1)+'", FL='+inttostr(round((180/(pi*1000)*xpixsz/cdelt2)) )+'mm '
-                   else suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF2(height2*cdelt2,0,2)+'d, scale='+floattostrF2(cdelt2*3600,0,1)+'" ';
+      if xpixsz<>0 then suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF(height2*cdelt2,ffFixed,0,2)+'d, scale='+floattostrF(cdelt2*3600,ffFixed,0,1)+'", FL='+inttostr(round((180/(pi*1000)*xpixsz/cdelt2)) )+'mm '
+                   else suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF(height2*cdelt2,ffFixed,0,2)+'d, scale='+floattostrF(cdelt2*3600,ffFixed,0,1)+'" ';
       memo2_message(suggest_str);
       warning_str:=suggest_str+warning_str;
     end;

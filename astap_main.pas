@@ -700,7 +700,6 @@ function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24
 function inttostr5(x:integer):string;{always 5 digit}
 function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
 procedure mad_median(list: array of double; leng :integer;out mad,median :double);{calculate mad and median without modifying the data}
-function floattostrF2(const x:double; width1,decimals1 :word): string;
 procedure DeleteFiles(lpath,FileSpec: string);{delete files such  *.wcs}
 procedure new_to_old_WCS;{convert new style FITsS to old style}
 procedure old_to_new_WCS;{ convert old WCS to new}
@@ -4578,8 +4577,8 @@ procedure update_statusbar_section5;{update section 5 with image dimensions in d
 begin
   if cdelt2<>0 then
   begin
-    mainwindow.statusbar1.panels[6].text:=floattostrF2(width2*abs(cdelt2),0,2)+' x '+floattostrF2(height2*abs(cdelt2),0,2)+' °';{give image dimensions and bit per pixel info}
-    stackmenu1.search_fov1.text:=floattostrF2(height2*abs(cdelt2),0,2); {negative cdelt2 are produced by PI}
+    mainwindow.statusbar1.panels[6].text:=floattostrF(width2*abs(cdelt2),ffFixed,0,2)+' x '+floattostrF(height2*abs(cdelt2),ffFixed,0,2)+' °';{give image dimensions and bit per pixel info}
+    stackmenu1.search_fov1.text:=floattostrF(height2*abs(cdelt2),ffFixed,0,2); {negative cdelt2 are produced by PI}
   end
   else mainwindow.statusbar1.panels[6].text:='';
 end;
@@ -5133,6 +5132,7 @@ begin
   end;
 end;
 
+
 function floattostr6(x:double):string;{float to string with 6 decimals}
 begin
   str(x:0:6,result);
@@ -5148,13 +5148,6 @@ end;
 function floattostrE(x:double):string;
 begin
   str(x,result);
-end;
-
-
-function floattostrF2(const x:double; width1,decimals1 :word): string;
-begin
-  str(x:width1:decimals1,result);
-  if formatSettings.decimalseparator<>'.' then result:=StringReplace(result,'.',formatSettings.decimalseparator,[]); {replaces dot by komma}
 end;
 
 
@@ -5202,6 +5195,7 @@ Function LeadingZero(w : integer) : String;
      s := '0' + s;
    LeadingZero := s;
  end;
+
 
 procedure addstring(position:integer;inp :double); {update string head1}
 var
@@ -5313,8 +5307,7 @@ Function prepare_dec2(decx:double; sep:string):string; {radialen to text, format
    B,ds2 : String[5];
    g,m,s,ds :integer;
    sign   : ansichar;
-begin {make from rax [0..pi*2] a text in array bericht. Length is 10 long}
-//  if decX>2*pi then decX:=2*pi;
+begin {make from decx [-pi/2..pi/2] a text in array bericht. Length is 10 long}
   if decx<0 then sign:='-' else sign:='+';
   decx:=abs(decx)+pi*0.1/(360*60*60); {add 1/20 second to get correct rounding and not 7:60 results as with round}
   decx:=decx*180/pi; {make degrees}
@@ -11596,7 +11589,7 @@ begin
         else
         search_field:= min(180,sqrt(regions)*0.5*field_size);{regions 1000 is equivalent to 32x32 regions. So distance form center is 0.5*32=16 region heights}
 
-        stackmenu1.radius_search1.text:=floattostrF2(search_field,0,1);{convert to radius of a square search field}
+        stackmenu1.radius_search1.text:=floattostrF(search_field,ffFixed,0,1);{convert to radius of a square search field}
 
         {$ifdef CPUARM}
         {$else}
@@ -12092,8 +12085,8 @@ begin
            begin
              if isConsole then {stdout available, compile targe option -wh used}
              begin
-               writeln('FOCUS='+floattostrF2(focus_best,0,1));
-               writeln('ERROR_MIN='+floattostrF2(lowest_error,0,5));
+               writeln('FOCUS='+floattostrF(focus_best,ffFixed,0,1));
+               writeln('ERROR_MIN='+floattostrF(lowest_error,ffFixed,0,5));
              end;
             {$IFDEF msWindows}
              halt(round(focus_best)*10000 +min(9999,round(lowest_error*1000)));
@@ -12117,7 +12110,7 @@ begin
             analyse_fits(img_loaded,snr_min,extractspecified, hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
             if isConsole then {stdout available, compile targe option -wh used}
             begin
-              writeln('HFD_MEDIAN='+floattostrF2(hfd_median,0,1));
+              writeln('HFD_MEDIAN='+floattostrF(hfd_median,ffFixed,0,1));
               writeln('STARS='+inttostr(hfd_counter));
             end;
             update_float('HFD     =',' / Median Half Flux Diameter' ,hfd_median);
@@ -12203,7 +12196,7 @@ begin
 
             if ((fov_specified) and (stackmenu1.search_fov1.text='0' ) {auto}) then {preserve new found fov}
             begin
-              stackmenu1.search_fov1.text:=floattostrF2(height2*abs(cdelt2),0,2);
+              stackmenu1.search_fov1.text:=floattostrF(height2*abs(cdelt2),ffFixed,0,2);
               save_settings2;{save settings with correct fov}
             end;
           end {solution}
@@ -12601,7 +12594,7 @@ begin
       begin
         median_center:=SMedian(hfdlist_center,nhfd_center);
         median_outer_ring:=SMedian(hfdlist_outer_ring,nhfd_outer_ring);
-        mess1:='  Off-axis aberration[HFD]='+floattostrF2(median_outer_ring-(median_center),0,2);{}
+        mess1:='  Off-axis aberration[HFD]='+floattostrF(median_outer_ring-(median_center),ffFixed,0,2);{}
       end
       else
       mess1:='';
@@ -12642,7 +12635,7 @@ begin
         image1.Canvas.lineto(x4,y4);{draw diagonal}
 
         tilt_value:=100*(median_worst-median_best)/hfd_median;
-        mess2:='  Tilt[HFD]='+floattostrF2(median_worst-median_best,0,2)+' ('+floattostrF2(tilt_value,0,0)+'%';{estimate tilt value}
+        mess2:='  Tilt[HFD]='+floattostrF(median_worst-median_best,ffFixed,0,2)+' ('+floattostrF(tilt_value,ffFixed,0,0)+'%';{estimate tilt value}
         if tilt_value<5 then mess2:=mess2+' none)'
         else
         if tilt_value<10 then mess2:=mess2+' almost none)'
@@ -12658,11 +12651,11 @@ begin
 
         fontsize:=fontsize*4;
         image1.Canvas.font.size:=fontsize;
-        image1.Canvas.textout(x4,y4,floattostrF2(median_top_left,0,2));
-        image1.Canvas.textout(x3,y3,floattostrF2(median_top_right,0,2));
-        image1.Canvas.textout(x1,y1,floattostrF2(median_bottom_left,0,2));
-        image1.Canvas.textout(x2,y2,floattostrF2(median_bottom_right,0,2));
-        image1.Canvas.textout(width2 div 2,height2 div 2,floattostrF2(median_center,0,2));
+        image1.Canvas.textout(x4,y4,floattostrF(median_top_left,ffFixed,0,2));
+        image1.Canvas.textout(x3,y3,floattostrF(median_top_right,ffFixed,0,2));
+        image1.Canvas.textout(x1,y1,floattostrF(median_bottom_left,ffFixed,0,2));
+        image1.Canvas.textout(x2,y2,floattostrF(median_bottom_right,ffFixed,0,2));
+        image1.Canvas.textout(width2 div 2,height2 div 2,floattostrF(median_center,ffFixed,0,2));
       end
       else
       begin

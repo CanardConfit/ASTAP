@@ -208,7 +208,7 @@ begin
             begin
               transition_image:=true; {image with possible slewing involved}
               stackmenu1.memo2.clear;{clear memo2}
-              memo2_message('New telescope position at distance '+floattostrF2(distance*180/pi,0,2)+'°. New stack started. First transition image will be skipped');
+              memo2_message('New telescope position at distance '+floattostrF(distance*180/pi,ffFixed,0,2)+'°. New stack started. First transition image will be skipped');
             end;
           end
           else

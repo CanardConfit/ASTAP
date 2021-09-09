@@ -125,7 +125,7 @@ begin
     pedestal1.caption:=inttostr(pedestal);
     background1.caption:=inttostr(round(cblack));
     altitude1.caption:=centalt;
-    sqm1.caption:=floattostrF2(sqmfloat,0,2)
+    sqm1.caption:=floattostrF(sqmfloat,ffFixed,0,2)
   end;
 end;
 
