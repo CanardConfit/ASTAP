@@ -140,7 +140,7 @@ end;
 
 procedure parallax_xyz(wtime,latitude : double;var x,y,z: double); {X,Y,Z in AU,  By Han Kleijn}
  {wtime= Sidereal time at greenwich - longitude, equals azimuth position of the sky for the observer.
-  wtime:=limit_radialen((+longitude*pi/180)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi);
+  wtime:=fnmodulo((+longitude*pi/180)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi);
   longitude positive is east
   siderealtime2000=(280.46061837-90)*pi/180
   earth_angular_velocity=pi*2*1.00273790935
@@ -301,12 +301,12 @@ begin
 end;
 
 
-function  limit_radialen(z,range:double):double; {han.k}
+function  fnmodulo(z,range:double):double; {han.k}
 begin
   {range should be 2*pi or 24 hours}
   z:=range*frac(z/(range));{quick method for big numbers}
   while z<0 do z:=z+range;
-  limit_radialen:=z;
+  fnmodulo:=z;
 end;
 
 
@@ -622,7 +622,7 @@ begin
 
   delta_t:=deltaT_calc(jd_mid); {calculate delta_T in days}
 
-  wtime2actual:=limit_radialen(site_long_radians+siderealtime2000 +(jd_mid-2451545 )* earth_angular_velocity,2*pi);  {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
+  wtime2actual:=fnmodulo(site_long_radians+siderealtime2000 +(jd_mid-2451545 )* earth_angular_velocity,2*pi);  {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
         {change by time & longitude in 0 ..pi*2, simular as siderial time}
         {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
 

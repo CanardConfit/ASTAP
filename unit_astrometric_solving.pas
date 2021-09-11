@@ -113,12 +113,11 @@ var
   mag2  : double; {magnitude of star found}
 
 
-function fnmodulo (x,range: double):double;
+function fnmodulo(x,range: double):double;
 begin
   {range should be 2*pi or 24 hours or 0 .. 360}
-  x:=range *frac(X /range); {quick method for big numbers}
-  if x<0 then x:=x+range;   {do not like negative numbers}
-  fnmodulo:=x;
+  result:=range*frac(x/range);
+  if result<0 then result:=result+range;   {do not like negative numbers}
 end;
 
 

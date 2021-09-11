@@ -56,6 +56,7 @@ type
     MenuItem32: TMenuItem;
     keywordchangelast1: TMenuItem;
     keywordchangesecondtolast1: TMenuItem;
+    calc_polar_alignment_error1: TButton;
     planetary_image1: TCheckBox;
     classify_dark_date1: TCheckBox;
     classify_flat_date1: TCheckBox;
@@ -594,6 +595,7 @@ type
     procedure lrgb_auto_level1Change(Sender: TObject);
     procedure keywordchangelast1Click(Sender: TObject);
     procedure keywordchangesecondtolast1Click(Sender: TObject);
+    procedure calc_polar_alignment_error1Click(Sender: TObject);
     procedure mount_analyse1Click(Sender: TObject);
     procedure analysephotometry1Click(Sender: TObject);
     procedure analyse_inspector1Click(Sender: TObject);
@@ -883,8 +885,8 @@ const
   L_bin=3;
   L_hfd=4;
   L_quality=5;
-  L_starlevel=6;
-  L_background=7;
+  L_background=6;
+  L_starlevel=7;
   L_sharpness=8;
   L_exposure=9;
   L_temperature=10;
@@ -7211,6 +7213,152 @@ begin
   new_analyse_required:=true;
   stackmenu1.listview1.columns.Items[l_centaz+1].caption:=centaz_key;   {lv.items[l_sqm].caption:=sqm_key; doesn't work}
   while length(centaz_key)<8 do centaz_key:=centaz_key+' ';
+end;
+
+
+
+{Polar error calculation based on two celestial reference points and the error of the telescope mount at these point(s).
+ Based on formulas from Ralph Pass documented at https://rppass.com/align.pdf.
+ These are based on the book “Telescope Control’ by Trueblood and Genet, p.111
+ Ralph added sin(latitude) term in the equation for the error in RA.
+
+ The fundamental calculations (3) are:
+
+   delta_ra:= de * (TAN(dec2)*SIN(h_2)-TAN(dec1)*SIN(h_1))  + da * COS(lat)*(TAN(dec1)*COS(h_1)-TAN(dec2)*COS(h_2));
+   delta_dec:=de * (COS(h_2)-COS(h_1))  + da * COS(lat)*(SIN(h_2)-SIN(h_1));
+
+   where de is the polar error in elevation (altitude)
+   where da is the polar error in azimuth
+   where h_1 and h_2 are the hour angle of the two reference point so h_1:=ra1 - local_sidereal_time1;  and  h_2:=ra1 - local_sidereal_time2;
+   Writing the above formulas in matrix notation and reversing the formula to calculate the de and da results in the calculation below.
+
+   Mount is assumed to be ideal. Mount fabrication error, cone errors are assumed to be zero   }
+procedure polar_error_calc(ra1,dec1,ra1_mount,dec1_mount,jd1,ra2,dec2,ra2_mount,dec2_mount,jd2,latitude,longitude: double; out delta_alt,delta_az : double);{calculate polar error based on the solves}
+const
+  siderealtime2000=(280.46061837)*pi/180;{[radians],  90 degrees shifted sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
+  earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
+var
+   determinant,delta_ra, delta_dec,sidereal_time1,sidereal_time2,h_1,h_2 : double;
+   ew,ns  : string;
+begin
+  sidereal_time1:=fnmodulo((-longitude)+siderealtime2000 +(jd1-2451545 )* earth_angular_velocity,2*pi); {longitude is positive towards west so has to be subtracted from time.}
+         {change by time & longitude in 0 ..pi*2, simular as siderial time}
+  sidereal_time2:=fnmodulo((-longitude)+siderealtime2000 +(jd2-2451545 )* earth_angular_velocity,2*pi); {longitude is positive towards west so has to be subtracted from time.}
+          {change by time & longitude in 0 ..pi*2, simular as siderial time}
+
+  if longitude>0 then ew:=' E' else  ew:=' W';
+  if latitude>0 then ns:=' N' else  ns:=' S';
+  memo2_message('Location (rounded) '+inttostr(round(latitude*180/pi))+ns+'  '+inttostr(round(longitude*180/pi))+ew);
+  memo2_message('Local sidereal time image 1:     '+prepare_ra6(sidereal_time1,' ')); {24 00 00}
+  memo2_message('Local sidereal time image 2:     '+prepare_ra6(sidereal_time2,' ')); {24 00 00}
+
+
+  delta_ra:=(ra2_mount-ra2)+ (ra1_mount-ra1);
+  delta_dec:=(dec2_mount-dec2)+ (dec1_mount-dec1);
+
+  h_1:=ra1_mount-sidereal_time1;
+  h_2:=ra2_mount-sidereal_time2;
+
+
+  determinant:=COS(latitude)*(TAN(dec1_mount)+TAN(dec2_mount))*(1-COS(h_1-h_2));
+  delta_alt:=delta_ra*COS(latitude)*(SIN(h_2)-SIN(h_1))/determinant  - delta_dec*COS(latitude)*( TAN(dec1_mount)*COS(h_1) -  TAN(dec2_mount)*COS(h_2) )/determinant;
+  delta_az :=delta_ra*(COS(h_1)-COS(h_2))/determinant + delta_dec*( TAN(dec2_mount)*SIN(h_2)- TAN(dec1)*SIN(h_1) )/determinant;
+
+
+end;
+
+
+procedure Tstackmenu1.calc_polar_alignment_error1Click(Sender: TObject);
+var
+   c: integer;
+   Save_Cursor          : TCursor;
+   errordecode          : boolean;
+   thefile              : string;
+   ra1,dec1,ra1_mount,dec1_mount,jd1,ra2,dec2,ra2_mount,dec2_mount,jd2, delta_alt,delta_az,sep,
+   site_long_radians,site_lat_radians                                          : double;
+   counter                                                                     : integer;
+   ns,ew                                                                       : string;
+begin
+  memo2_message('Instructions:');
+  memo2_message('   1: Synchronise the mount and take one image.');
+  memo2_message('   2: Slew the mount to a second point in the sky and take a second image without synchronising the mount.');
+  memo2_message('Conditions: The image header should contain the correct time and observer location. Images should be solvable.');
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  esc_pressed:=false;
+
+  stackmenu1.equinox1.itemindex:=1;{jnow}
+  stackmenu1.mount_add_solutions1Click(nil);{add any missing solutions and analyse after that}
+
+  counter:=0;
+  {solve lights first to allow flux to magnitude calibration}
+  with stackmenu1 do
+  for c:=0 to listview9.items.count-1 do {check for astrometric solutions}
+  begin
+    if ((esc_pressed=false) and (listview9.Items.item[c].checked) and (listview9.Items.item[c].subitems.Strings[M_ra]<>''))  then
+    begin
+      filename2:=listview9.items[c].caption;
+
+      Application.ProcessMessages;
+
+      {load image}
+      if esc_pressed then
+      begin
+        Screen.Cursor :=Save_Cursor;{back to normal }
+        exit;
+      end;
+
+      if counter=0 then
+      begin
+        ra1:=strtofloat(listview9.Items.item[c].subitems.Strings[M_ra])*pi/180;
+        dec1:=strtofloat(listview9.Items.item[c].subitems.Strings[M_dec])*pi/180;
+        ra1_mount:=strtofloat(listview9.Items.item[c].subitems.Strings[M_ra_m])*pi/180;
+        dec1_mount:=strtofloat(listview9.Items.item[c].subitems.Strings[M_dec_m])*pi/180;
+        jd1:=strtofloat(listview9.Items.item[c].subitems.Strings[M_jd_mid]);
+        memo2_message('Image 1: '+filename2);
+        inc(counter);
+      end
+      else
+      begin
+        ra2:=strtofloat(listview9.Items.item[c].subitems.Strings[M_ra])*pi/180;
+        dec2:=strtofloat(listview9.Items.item[c].subitems.Strings[M_dec])*pi/180;
+        ra2_mount:=strtofloat(listview9.Items.item[c].subitems.Strings[M_ra_m])*pi/180;
+        dec2_mount:=strtofloat(listview9.Items.item[c].subitems.Strings[M_dec_m])*pi/180;
+        jd2:=strtofloat(listview9.Items.item[c].subitems.Strings[M_jd_mid]);
+        ang_sep(ra1,dec1,ra2,dec2, {out}sep);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
+        if sep>10*pi/180 then
+        begin
+          dec_text_to_radians(sitelat,site_lat_radians,errordecode);
+          if errordecode then
+          begin
+            memo2_message('Warning observatory latitude not found in the fits header');
+            exit;
+          end;
+
+          dec_text_to_radians(sitelong,site_long_radians,errordecode); {longitude is in degrees, not in hours. East is positive according ESA standard and diffractionlimited}
+                                                                       {see https://indico.esa.int/event/124/attachments/711/771/06_ESA-SSA-NEO-RS-0003_1_6_FITS_keyword_requirements_2014-08-01.pdf}
+          if errordecode then
+          begin
+            memo2_message('Warning observatory longitude not found in the fits header');
+            exit;
+          end;
+
+          memo2_message('Image 2: '+filename2);
+          polar_error_calc(ra1,dec1,ra1_mount,dec1_mount,jd1,ra2,dec2,ra2_mount,dec2_mount,jd2,site_lat_radians,site_long_radians, {out} delta_alt,delta_az);{calculate polar error based on the solves}
+          if delta_alt>0 then ns:=' above the pole' else ns:=' below the pole';
+          if delta_az>0 then ew:=' east of the pole.' else ew:=' west of the pole.';
+          memo2_message('Polar axis is '+floattostrF(abs(delta_alt)*60*180/pi,ffFixed,0,1)+#39+ns+' and '+floattostrF(abs(delta_az)*60*180/pi,ffFixed,0,1)+#39+ew);
+          counter:=0;{restart for next images}
+        end
+        else
+        memo2_message('Skipped image ' +filename2+'. The angular distance between the two images is too small!');
+      end;
+    end;
+  end;
+  Screen.Cursor :=Save_Cursor;{back to normal }
+
+  stackmenu1.mount_analyse1Click(nil);{update}
 end;
 
 

@@ -118,12 +118,12 @@ begin
 end;
 
 
-function  limit_radialen(z,range:double):double;
+function  fnmodulo(z,range:double):double;
 begin
   {range should be 2*pi or 24 hours}
   z:=range*frac(z/(range));{quick method for big numbers}
   while z<0 do z:=z+range;
-  limit_radialen:=z;
+  fnmodulo:=z;
 end;
 
 
@@ -136,7 +136,7 @@ end;
 //  earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
 
 //begin
-//  wtime2actual:=limit_radialen((-long)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi); {longitude is positive towards west so has to be subtracted from time.}
+//  wtime2actual:=fnmodulo((-long)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi); {longitude is positive towards west so has to be subtracted from time.}
         {change by time & longitude in 0 ..pi*2, simular as siderial time}
         {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
 
@@ -228,7 +228,7 @@ const
   earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
 
 begin
-  wtime2actual:=limit_radialen((-long)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi); {longitude is positive towards west so has to be subtracted from time.}
+  wtime2actual:=fnmodulo((-long)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi); {longitude is positive towards west so has to be subtracted from time.}
         {change by time & longitude in 0 ..pi*2, simular as siderial time}
         {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
 

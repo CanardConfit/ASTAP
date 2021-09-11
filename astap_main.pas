@@ -782,6 +782,9 @@ const   bufwide=1024*120;{buffer size in bytes}
     {27}('END                                                                             '),
     {28}('                                                                                ')); {should be empthy !!}
 
+
+    pi_=pi; {for evaluate in debugging}
+
 type  byteX3  = array[0..2] of byte;
       byteXX3 = array[0..2] of word;
       byteXXXX3 = array[0..2] of single;
@@ -2757,8 +2760,6 @@ begin
 end;
 
 
-
-
 procedure progress_indicator(i:double; info:string);{0..100 is 0 to 100% indication of progress}
 begin
 //  mainwindow.caption:=inttostr(round(i))+'%'+info;
@@ -3002,7 +3003,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.577, '+about_message4+', dated 2021-9-9';
+  #13+#10+'ASTAP version ß0.9.578, '+about_message4+', dated 2021-9-11';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
