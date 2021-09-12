@@ -2889,7 +2889,8 @@ begin
   if sender=renametobak5 then listview_rename_bak(listview5);{from popupmenu}
   if sender=renametobak6 then listview_rename_bak(listview6);{from popupmenu blink}
   if sender=renametobak7 then listview_rename_bak(listview7);{from popupmenu photometry}
-  if sender=renametobak8 then listview_rename_bak(listview8);{from popupmenu photometry}
+  if sender=renametobak8 then listview_rename_bak(listview8);{from popupmenu inspector}
+  if sender=renametobak9 then listview_rename_bak(listview9);{from popupmenu mount analyse}
 end;
 
 
@@ -5219,7 +5220,6 @@ begin
         exit;
       end;
       if ((cd1_1=0) or (refresh_solutions)) then
-
       begin
         listview9.Selected :=nil; {remove any selection}
         listview9.ItemIndex := c;{mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
@@ -7232,22 +7232,20 @@ end;
    where h_1 and h_2 are the hour angle of the two reference point so h_1:=ra1 - local_sidereal_time1;  and  h_2:=ra1 - local_sidereal_time2;
    Writing the above formulas in matrix notation and reversing the formula to calculate the de and da results in the calculation below.
 
-   Mount is assumed to be ideal. Mount fabrication error, cone errors are assumed to be zero   }
-procedure polar_error_calc(ra1,dec1,ra1_mount,dec1_mount,jd1,ra2,dec2,ra2_mount,dec2_mount,jd2,latitude,longitude: double; out delta_alt,delta_az : double);{calculate polar error based on the solves}
+   Mount is assumed to be ideal. Mount fabrication error & cone errors are assumed to be zero   }
+procedure polar_error_calc(ra1,dec1,ra1_mount,dec1_mount,jd1,ra2,dec2,ra2_mount,dec2_mount,jd2,latitude,longitude: double; out delta_alt,delta_az : double);{calculate polar error based on two images}
 const
-  siderealtime2000=(280.46061837)*pi/180;{[radians],  90 degrees shifted sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
-  earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
+  siderealtime2000=(280.46061837)*pi/180;{[radians], sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
+  earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity daily. See new Meeus page 83}
 var
    determinant,delta_ra, delta_dec,sidereal_time1,sidereal_time2,h_1,h_2 : double;
    ew,ns  : string;
 begin
-  sidereal_time1:=fnmodulo((-longitude)+siderealtime2000 +(jd1-2451545 )* earth_angular_velocity,2*pi); {longitude is positive towards west so has to be subtracted from time.}
-         {change by time & longitude in 0 ..pi*2, simular as siderial time}
-  sidereal_time2:=fnmodulo((-longitude)+siderealtime2000 +(jd2-2451545 )* earth_angular_velocity,2*pi); {longitude is positive towards west so has to be subtracted from time.}
-          {change by time & longitude in 0 ..pi*2, simular as siderial time}
+  sidereal_time1:=fnmodulo(+longitude+siderealtime2000 +(jd1-2451545 )* earth_angular_velocity,2*pi); {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
+  sidereal_time2:=fnmodulo(+longitude+siderealtime2000 +(jd2-2451545 )* earth_angular_velocity,2*pi); {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
 
   if longitude>0 then ew:=' E' else  ew:=' W';
-  if latitude>0 then ns:=' N' else  ns:=' S';
+  if latitude>0  then ns:=' N' else  ns:=' S';
   memo2_message('Location (rounded) '+inttostr(round(latitude*180/pi))+ns+'  '+inttostr(round(longitude*180/pi))+ew);
   memo2_message('Local sidereal time image 1:     '+prepare_ra6(sidereal_time1,' ')); {24 00 00}
   memo2_message('Local sidereal time image 2:     '+prepare_ra6(sidereal_time2,' ')); {24 00 00}
@@ -7259,12 +7257,9 @@ begin
   h_1:=ra1_mount-sidereal_time1;
   h_2:=ra2_mount-sidereal_time2;
 
-
   determinant:=COS(latitude)*(TAN(dec1_mount)+TAN(dec2_mount))*(1-COS(h_1-h_2));
   delta_alt:=delta_ra*COS(latitude)*(SIN(h_2)-SIN(h_1))/determinant  - delta_dec*COS(latitude)*( TAN(dec1_mount)*COS(h_1) -  TAN(dec2_mount)*COS(h_2) )/determinant;
   delta_az :=delta_ra*(COS(h_1)-COS(h_2))/determinant + delta_dec*( TAN(dec2_mount)*SIN(h_2)- TAN(dec1)*SIN(h_1) )/determinant;
-
-
 end;
 
 
@@ -7282,7 +7277,7 @@ begin
   memo2_message('Instructions:');
   memo2_message('   1: Synchronise the mount and take one image.');
   memo2_message('   2: Slew the mount to a second point in the sky and take a second image without synchronising the mount.');
-  memo2_message('Conditions: The image header should contain the correct time and observer location. Images should be solvable.');
+  memo2_message('Conditions: The image header should contain the correct time, observer location and mount position. Images should be solvable.');
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 

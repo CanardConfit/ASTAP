@@ -1587,9 +1587,17 @@ begin
 
     if ((light) and (ra0<>0) and (dec0<>0)) then
     begin
-       mainwindow.ra1.text:=prepare_ra(ra0,' ');
+       mainwindow.ra1.text:=prepare_ra(ra0,' ');{this will create Ra_radians for solving}
        mainwindow.dec1.text:=prepare_dec(dec0,' ');
     end;
+    { condition           keyword    to
+     if ra_mount>999 then objctra--->ra1.text--------------->ra_radians--->ra_mount
+                               ra--->ra_mount  if ra0=0 then   ra_mount--->ra0
+                           crval1--->ra0
+
+     if ra0<>0 then           ra0--->ra1.text------------------->ra_radians}
+
+
 
     if ((cd1_1=0) and (cdelt2=0)) then  {no scale, try to fix it}
     begin
@@ -3003,7 +3011,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.578, '+about_message4+', dated 2021-9-11';
+  #13+#10+'ASTAP version ß0.9.578, '+about_message4+', dated 2021-9-12';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4587,7 +4595,7 @@ end;
 function fits_file_name(inp : string): boolean; {fits file name?}
 begin
   inp:=uppercase(extractfileext(inp));
-  result:=((inp='.FIT') or (inp='.FITS') or (inp='.FTS'));
+  result:=((inp='.FIT') or (inp='.FITS') or (inp='.FTS') or (inp='.WCS') or (inp='.WCSS'));{wcs for telescope tab}
 end;
 
 

@@ -136,7 +136,7 @@ end;
 //  earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
 
 //begin
-//  wtime2actual:=fnmodulo((-long)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi); {longitude is positive towards west so has to be subtracted from time.}
+//  wtime2actual:=fnmodulo((long)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi); {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
         {change by time & longitude in 0 ..pi*2, simular as siderial time}
         {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
 
@@ -224,16 +224,12 @@ function altitude_and_refraction(lat,long,julian,temperature:double;calc_mode: i
 {input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-pi/2..pi/2], long[-pi..pi] West positive, East negative !!,time[0..2*pi]}
 var wtime2actual,azimuth2,altitude2: double;
 const
-  siderealtime2000=(280.46061837)*pi/180;{[radians],  90 degrees shifted sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
+  siderealtime2000=(280.46061837)*pi/180;{[radians],sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
   earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
 
 begin
-  wtime2actual:=fnmodulo((-long)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi); {longitude is positive towards west so has to be subtracted from time.}
-        {change by time & longitude in 0 ..pi*2, simular as siderial time}
-        {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
-
+  wtime2actual:=fnmodulo(+long+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi);{Local sidereal time. As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
   RA_AZ(ra3,dec3,LAT,0,wtime2actual,{var} azimuth2,altitude2);{conversion ra & dec to altitude,azimuth}
-
  {correct for temperature and correct ra0, dec0 for refraction}
   if temperature>=100 {999} then temperature:=10 {default temperature celsius};
   result:=atmospheric_refraction(altitude2,1010 {mbar},temperature {celsius});{apparant altitude}

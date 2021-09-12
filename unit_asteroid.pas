@@ -108,10 +108,6 @@ var
 const
    sun200_calculated : boolean=false; {sun200 calculated for comets}
 
-   siderealtime2000=(280.46061837)*pi/180;{[radians],  90 degrees shifted sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
-   earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
-   AE=149597870.700; {ae has been fixed to the value 149597870.700 km as adopted by the International Astronomical Union in 2012.  Note average earth distance is 149597870.662 * 1.000001018 see meeus new 379}
-
 VAR TEQX    : double;
     ph_earth, vh_earth : r3_array;{helio centric earth vector}
     ph_pln             : r3_array;{helio centric planet vector}
@@ -138,23 +134,16 @@ begin
 end;
 
 
-procedure parallax_xyz(wtime,latitude : double;var x,y,z: double); {X,Y,Z in AU,  By Han Kleijn}
- {wtime= Sidereal time at greenwich - longitude, equals azimuth position of the sky for the observer.
-  wtime:=fnmodulo((+longitude*pi/180)+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi);
-  longitude positive is east
-  siderealtime2000=(280.46061837-90)*pi/180
-  earth_angular_velocity=pi*2*1.00273790935
-  see also new meeus page 78
-  parallax can be 8.8 arcsec per au distance.}
-
+procedure parallax_xyz(wtime,latitude : double;var x,y,z: double);  {X,Y,Z in AU, parallax can be 8.8 arcsec  per au distance. See new meeus page 78}
+const
+  AE=149597870.700; {ae has been fixed to the value 149597870.700 km as adopted by the International Astronomical Union in 2012.  Note average earth distance is 149597870.662 * 1.000001018 see meeus new 379}
 var
-    sin_latitude_corrected,
-    cos_latitude_corrected,
-    height_above_sea,
-    flatteningearth,
-    x_observ,y_observ,z_observ,u :double;
-
-Begin
+  sin_latitude_corrected,
+  cos_latitude_corrected,
+  height_above_sea,
+  flatteningearth,
+  x_observ,y_observ,z_observ,u :double;
+begin
   height_above_sea:=100;{meters}
   flatteningearth:=0.99664719; {earth is not perfect round}
 
@@ -450,14 +439,16 @@ end;
 
 procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot :boolean) ;{read MPCORB.dat}{han.k}
 const
-   a_g : double =0.15;{asteroid_slope_factor}
-
-var txtf : textfile;
-    count,fontsize           : integer;
-    yy,mm,dd,h,aop,lan,incl,ecc,a_or_q, DELTA,sun_delta,ra2,dec2,mag,phase,delta_t,
-    SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec,u0,v0 ,raX,decX,a_e,a_a,a_i,a_ohm,a_w,a_M,epoch    : double;
-    desn,name,s, thetext1,thetext2,fontsize_str:string;
-    flip_horizontal, flip_vertical,form_existing, errordecode,sip : boolean;
+  a_g : double =0.15;{asteroid_slope_factor}
+  siderealtime2000=(280.46061837)*pi/180;{[radians], sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
+  earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
+var
+  txtf : textfile;
+  count,fontsize           : integer;
+  yy,mm,dd,h,aop,lan,incl,ecc,a_or_q, DELTA,sun_delta,ra2,dec2,mag,phase,delta_t,
+  SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec,u0,v0 ,raX,decX,a_e,a_a,a_i,a_ohm,a_w,a_M,epoch    : double;
+  desn,name,s, thetext1,thetext2,fontsize_str:string;
+  flip_horizontal, flip_vertical,form_existing, errordecode,sip : boolean;
 
       procedure plot_asteroid(sizebox :integer);
       var
@@ -622,9 +613,7 @@ begin
 
   delta_t:=deltaT_calc(jd_mid); {calculate delta_T in days}
 
-  wtime2actual:=fnmodulo(site_long_radians+siderealtime2000 +(jd_mid-2451545 )* earth_angular_velocity,2*pi);  {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
-        {change by time & longitude in 0 ..pi*2, simular as siderial time}
-        {2451545...for making dayofyear not to big, otherwise small errors occur in sin and cos}
+  wtime2actual:=fnmodulo(site_long_radians+siderealtime2000 +(jd_mid-2451545 )* earth_angular_velocity,2*pi);{Local sidereal time. As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
 
   sun200_calculated:=false;
   count:=0;
