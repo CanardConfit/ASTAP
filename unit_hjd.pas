@@ -236,7 +236,10 @@ begin
   if calc_mode=2 then result:=altitude2+result {astrometric to apparent}
   else
   begin {calc_mode=3, apparent to astrometric}
+    if calc_mode=3 then result:=altitude2 {no refaction compensation}
+    else
     result:=altitude2-result; {apparent to astrometric !!!!}
+
     AZ_RA(azimuth2,result,LAT,0,wtime2actual, {var} ra_mean,dec_mean);{conversion az,alt to ra_mean,dec_mean reverse corrected for refraction}
   end;
 end;
@@ -249,7 +252,8 @@ var
 begin
   {calc_mode 1: use CENTALT from header or if not available calculate it}
   {calc_mode 2: calculate it, apply refration astrometric to apparent}
-  {calc_mode 3: calculate it, apply refration apparent to astrometric!!}
+  {calc_mode 3: calculate it, no refaction compensation}
+  {calc_mode 4: calculate it, apply refration apparent to astrometric!!}
   result:=strtofloat2(centalt);
   if (((result=0) or (calc_mode>1)) and (cd1_1<>0)) then {calculate from observation location, image center and time the altitude}
   begin

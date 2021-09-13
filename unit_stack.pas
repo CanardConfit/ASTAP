@@ -3383,9 +3383,15 @@ begin
               begin
                 ra_image:=ra0;{J2000 apparent from image solution}
                 dec_image:=dec0;
-                if theindex>=1 then
+                if theindex=1 then
                 begin
-                  alt:=calculate_altitude(3 {apparent to astrometric !!!!},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
+                  alt:=calculate_altitude(3 {no refraction correction},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
+                  ra_image:=ra_mean;{precession was applied by calculate altitude routine}
+                  dec_image:=dec_mean;
+                end;
+                if theindex=2 then
+                begin
+                  alt:=calculate_altitude(4 {apparent to astrometric !!!!},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
                   ra_image:=ra_mean;{precession was applied by calculate altitude routine}
                   dec_image:=dec_mean;
                 end;
@@ -7222,7 +7228,7 @@ end;
  These are based on the book “Telescope Control’ by Trueblood and Genet, p.111
  Ralph added sin(latitude) term in the equation for the error in RA.
 
- The fundamental calculations (3) are:
+ The fundamental calculations (4) are:
 
    delta_ra:= de * (TAN(dec2)*SIN(h_2)-TAN(dec1)*SIN(h_1))  + da * COS(lat)*(TAN(dec1)*COS(h_1)-TAN(dec2)*COS(h_2));
    delta_dec:=de * (COS(h_2)-COS(h_1))  + da * COS(lat)*(SIN(h_2)-SIN(h_1));
@@ -7232,34 +7238,37 @@ end;
    where h_1 and h_2 are the hour angle of the two reference point so h_1:=ra1 - local_sidereal_time1;  and  h_2:=ra1 - local_sidereal_time2;
    Writing the above formulas in matrix notation and reversing the formula to calculate the de and da results in the calculation below.
 
-   Mount is assumed to be ideal. Mount fabrication error & cone errors are assumed to be zero   }
-procedure polar_error_calc(ra1,dec1,ra1_mount,dec1_mount,jd1,ra2,dec2,ra2_mount,dec2_mount,jd2,latitude,longitude: double; out delta_alt,delta_az : double);{calculate polar error based on two images}
+   Mount is assumed to be ideal. Mount fabrication error & cone errors are assumed to be zero. Meridian crossing between the two images should be avoided}
+procedure polar_error_calc(ra1,dec1,ra1_mount,dec1_mount,jd1,ra2,dec2,ra2_mount,dec2_mount,jd2,latitude,longitude: double; out delta_alt,delta_az : double);{calculate polar error based on two images. All values in radians}
 const
-  siderealtime2000=(280.46061837)*pi/180;{[radians], sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
+  siderealtime2000=(280.46061837)*pi/180;{[radians], sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new Meeus 11.4}
   earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity daily. See new Meeus page 83}
 var
    determinant,delta_ra, delta_dec,sidereal_time1,sidereal_time2,h_1,h_2 : double;
    ew,ns  : string;
 begin
+  latitude:=52.99815560090125*pi/180;
+  longitude:=6.590695438543198*pi/180;
+
   sidereal_time1:=fnmodulo(+longitude+siderealtime2000 +(jd1-2451545 )* earth_angular_velocity,2*pi); {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
   sidereal_time2:=fnmodulo(+longitude+siderealtime2000 +(jd2-2451545 )* earth_angular_velocity,2*pi); {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
 
-  if longitude>0 then ew:=' E' else  ew:=' W';
-  if latitude>0  then ns:=' N' else  ns:=' S';
-  memo2_message('Location (rounded) '+inttostr(round(latitude*180/pi))+ns+'  '+inttostr(round(longitude*180/pi))+ew);
-  memo2_message('Local sidereal time image 1:     '+prepare_ra6(sidereal_time1,' ')); {24 00 00}
-  memo2_message('Local sidereal time image 2:     '+prepare_ra6(sidereal_time2,' ')); {24 00 00}
+//  memo2_message('Local sidereal time image 1:     '+prepare_ra6(sidereal_time1,' ')); {24 00 00}
+//  memo2_message('Local sidereal time image 2:     '+prepare_ra6(sidereal_time2,' ')); {24 00 00}
 
 
-  delta_ra:=(ra2_mount-ra2)+ (ra1_mount-ra1);
-  delta_dec:=(dec2_mount-dec2)+ (dec1_mount-dec1);
+  delta_ra:=(ra2_mount-ra2)- (ra1_mount-ra1);
+  delta_dec:=(dec2_mount-dec2)- (dec1_mount-dec1);
+
 
   h_1:=ra1_mount-sidereal_time1;
   h_2:=ra2_mount-sidereal_time2;
 
   determinant:=COS(latitude)*(TAN(dec1_mount)+TAN(dec2_mount))*(1-COS(h_1-h_2));
+  if determinant<0.1 then
+      memo2_message('█ █ █ █ █ █ Warning the calculation determinant is close to zero! Select other celestial locations. Avoid locations with similar hour angles, locations close to the celestial equator and locations whose declinations are close to negatives of each other. █ █ █ █ █ █ ');
   delta_alt:=delta_ra*COS(latitude)*(SIN(h_2)-SIN(h_1))/determinant  - delta_dec*COS(latitude)*( TAN(dec1_mount)*COS(h_1) -  TAN(dec2_mount)*COS(h_2) )/determinant;
-  delta_az :=delta_ra*(COS(h_1)-COS(h_2))/determinant + delta_dec*( TAN(dec2_mount)*SIN(h_2)- TAN(dec1)*SIN(h_1) )/determinant;
+  delta_az :=delta_ra*(COS(h_1)-COS(h_2))/determinant + delta_dec*( TAN(dec2_mount)*SIN(h_2)- TAN(dec1_mount)*SIN(h_1) )/determinant;
 end;
 
 
@@ -7270,7 +7279,7 @@ var
    errordecode          : boolean;
    thefile              : string;
    ra1,dec1,ra1_mount,dec1_mount,jd1,ra2,dec2,ra2_mount,dec2_mount,jd2, delta_alt,delta_az,sep,
-   site_long_radians,site_lat_radians                                          : double;
+   site_long_radians,site_lat_radians,distance                                 : double;
    counter                                                                     : integer;
    ns,ew                                                                       : string;
 begin
@@ -7283,7 +7292,11 @@ begin
 
   esc_pressed:=false;
 
-  stackmenu1.equinox1.itemindex:=1;{jnow}
+  if stackmenu1.equinox1.itemindex=0 then
+  begin
+    stackmenu1.equinox1.itemindex:=1;{jnow}
+    memo2_message('Switched to "Mean equinox of date (in air)" mode. You could switch to "Mean equinox of date (in vacuum)"');
+  end;
   stackmenu1.mount_add_solutions1Click(nil);{add any missing solutions and analyse after that}
 
   counter:=0;
@@ -7322,7 +7335,7 @@ begin
         dec2_mount:=strtofloat(listview9.Items.item[c].subitems.Strings[M_dec_m])*pi/180;
         jd2:=strtofloat(listview9.Items.item[c].subitems.Strings[M_jd_mid]);
         ang_sep(ra1,dec1,ra2,dec2, {out}sep);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
-        if sep>10*pi/180 then
+        if sep>5*pi/180 then
         begin
           dec_text_to_radians(sitelat,site_lat_radians,errordecode);
           if errordecode then
@@ -7340,14 +7353,18 @@ begin
           end;
 
           memo2_message('Image 2: '+filename2);
+          if site_long_radians>0 then ew:=' E' else  ew:=' W';
+          if site_lat_radians>0  then ns:=' N' else  ns:=' S';
+          memo2_message('Location (rounded) '+inttostr(round(site_lat_radians*180/pi))+ns+'  '+inttostr(round(site_long_radians*180/pi))+ew+'. Angular seperation between the images is '+floattostrF(sep*180/pi,ffFixed,0,1)+'°' );
+
           polar_error_calc(ra1,dec1,ra1_mount,dec1_mount,jd1,ra2,dec2,ra2_mount,dec2_mount,jd2,site_lat_radians,site_long_radians, {out} delta_alt,delta_az);{calculate polar error based on the solves}
-          if delta_alt>0 then ns:=' above the pole' else ns:=' below the pole';
-          if delta_az>0 then ew:=' east of the pole.' else ew:=' west of the pole.';
+          if delta_alt>0 then ns:=' above the celestial pole' else ns:=' below the celestial pole';
+          if delta_az>0 then ew:=' east of the celestial pole.' else ew:=' west of the celestial pole.';
           memo2_message('Polar axis is '+floattostrF(abs(delta_alt)*60*180/pi,ffFixed,0,1)+#39+ns+' and '+floattostrF(abs(delta_az)*60*180/pi,ffFixed,0,1)+#39+ew);
           counter:=0;{restart for next images}
         end
         else
-        memo2_message('Skipped image ' +filename2+'. The angular distance between the two images is too small!');
+        memo2_message('Skipped image ' +filename2+'. The angular distance between the two images is '+floattostrF(sep*180/pi,ffFixed,0,1)+'°'+' and too small!');
       end;
     end;
   end;
