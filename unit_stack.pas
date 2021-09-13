@@ -7222,6 +7222,13 @@ begin
 end;
 
 
+//procedure polar_error_to_ra_dec(ra2
+//var
+//begin
+//   dRa:=de*(TAN(dec2)*SIN(h_2)-TAN(dec1)*SIN(h_1))  +da*COS(lat)*(TAN(dec1)*COS(h_1)-TAN(dec2)*COS(h_2));
+//   dDec:=de*(COS(h_2)-COS(h_1))  +da*COS(lat)*(SIN(h_2)-SIN(h_1));
+//end;
+
 
 {Polar error calculation based on two celestial reference points and the error of the telescope mount at these point(s).
  Based on formulas from Ralph Pass documented at https://rppass.com/align.pdf.
@@ -7247,8 +7254,7 @@ var
    determinant,delta_ra, delta_dec,sidereal_time1,sidereal_time2,h_1,h_2 : double;
    ew,ns  : string;
 begin
-  latitude:=52.99815560090125*pi/180;
-  longitude:=6.590695438543198*pi/180;
+
 
   sidereal_time1:=fnmodulo(+longitude+siderealtime2000 +(jd1-2451545 )* earth_angular_velocity,2*pi); {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
   sidereal_time2:=fnmodulo(+longitude+siderealtime2000 +(jd2-2451545 )* earth_angular_velocity,2*pi); {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
