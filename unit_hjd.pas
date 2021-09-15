@@ -118,14 +118,12 @@ begin
 end;
 
 
-function  fnmodulo(z,range:double):double;
+function fnmodulo(x,range: double):double;
 begin
-  {range should be 2*pi or 24 hours}
-  z:=range*frac(z/(range));{quick method for big numbers}
-  while z<0 do z:=z+range;
-  fnmodulo:=z;
+  {range should be 2*pi or 24 hours or 0 .. 360}
+  result:=range*frac(x/range);
+  if result<0 then result:=result+range;   {do not like negative numbers}
 end;
-
 
 //function altitude(ra3,dec3 {2000},lat,long,julian:double):double;{conversion ra & dec to altitude only. This routine is created for speed, only the altitude is calculated}
 //{input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-pi/2..pi/2], long[-pi..pi] West positive, East negative !!,time[0..2*pi]}
@@ -191,12 +189,12 @@ begin
 end;
 
 
-PROCEDURE RA_AZ(RA,dec,LAT,LONG,t:double;out azimuth2,altitude2: double);{conversion ra & dec to altitude,azimuth}
+PROCEDURE RA_AZ(RA,de,LAT,LONG,t:double;out azimuth2,altitude2: double);{conversion ra & dec to altitude,azimuth}
 {input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-0.5*pi..0.5*pi],long[0..2*pi],time[0..2*pi]}
 begin
-  EQUHOR2(dec,ra-(long)-t,lat, {var:} altitude2,azimuth2);
+  EQUHOR2(de,ra-long-t,lat, {var:} altitude2,azimuth2);
   azimuth2:=pi-azimuth2;
-  IF AZIMUTH2<0 THEN AZIMUTH2:=AZIMUTH2+2*Pi;
+  if azimuth2<0 then azimuth2:=azimuth2+2*Pi;
 end;
 
 
@@ -229,7 +227,8 @@ const
 
 begin
   wtime2actual:=fnmodulo(+long+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi);{Local sidereal time. As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
-  RA_AZ(ra3,dec3,LAT,0,wtime2actual,{var} azimuth2,altitude2);{conversion ra & dec to altitude,azimuth}
+  RA_AZ(ra3,dec3,lat,0,wtime2actual,{var} azimuth2,altitude2);{conversion ra & dec to altitude,azimuth}
+
  {correct for temperature and correct ra0, dec0 for refraction}
   if temperature>=100 {999} then temperature:=10 {default temperature celsius};
   result:=atmospheric_refraction(altitude2,1010 {mbar},temperature {celsius});{apparant altitude}
@@ -241,6 +240,14 @@ begin
     result:=altitude2-result; {apparent to astrometric !!!!}
 
     AZ_RA(azimuth2,result,LAT,0,wtime2actual, {var} ra_mean,dec_mean);{conversion az,alt to ra_mean,dec_mean reverse corrected for refraction}
+
+//    RA_AZ((23+9/60)*pi/12,(-6-43/60)*pi/180,(38+55/60)*pi/180,-(5+8/60)*pi/12,(8+(34)/60)*pi/12,{var} azimuth2,altitude2);{conversion ra & dec to altitude,azimuth}
+//    RA_AZ2((23+9/60)*pi/12,(-6-43/60)*pi/180,(38+55/60)*pi/180,0,(8-5+(34-8)/60)*pi/12,{var} azimuth2,altitude2);{conversion ra & dec to altitude,azimuth}
+//    RA_AZ2((23+9/60)*pi/12,(-6-43/60)*pi/180,(38+55/60)*pi/180,+(5+8/60)*pi/12,(8+(34)/60)*pi/12,{var} azimuth2,altitude2);{conversion ra & dec to altitude,azimuth}
+//    AZ_RA(AZIMUTH2,ALTITUDE2,39*pi/180,0,(8-5+(34-8)/60)*pi/12, {var} ra_mean,dec_mean);{conversion az,alt to ra_mean,dec_mean reverse corrected for refraction}
+//    AZ_RA2(AZIMUTH2,ALTITUDE2,39*pi/180,0,(8-5+(34-8)/60)*pi/12, {var} ra_mean,dec_mean);{conversion az,alt to ra_mean,dec_mean reverse corrected for refraction}
+//    AZ_RA2(AZIMUTH2,ALTITUDE2,39*pi/180,+(5+8/60)*pi/12,(8+(34)/60)*pi/12, {var} ra_mean,dec_mean);{conversion az,alt to ra_mean,dec_mean reverse corrected for refraction}
+//    beep;
   end;
 end;
 

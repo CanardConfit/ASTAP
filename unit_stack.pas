@@ -1401,7 +1401,7 @@ end;
 procedure analyse_fits(img : image_array;snr_min:double;report:boolean;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
 var
    fitsX,fitsY,size,radius,i,j,retries,max_stars,n,m,xci,yci,sqr_radius         : integer;
-   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min                    : double;
+   hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min, min_background        : double;
    hfd_list                                       : array of double;
    img_sa  : image_array;
 var
@@ -1418,7 +1418,8 @@ begin
   retries:=2; {try up to three times to get enough stars from the image}
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
-  if ((backgr<60000) and (backgr>8)) then {not an abnormal file}
+  if nrbits=8 then min_background:=0 else min_background:=8;
+  if ((backgr<60000) and (backgr>min_background) ) then {not an abnormal file}
   begin
     repeat {try three time to find enough stars}
       star_counter:=0;
@@ -5740,6 +5741,9 @@ var
 begin
   jd_start:=0;
   val(copy(date_time,18,7),ss,error2); if error2<>0 then exit; {read also milliseconds}
+//  val(copy(date_time,18,2),ss,error2); if error2<>0 then exit; {read also milliseconds}
+
+
   val(copy(date_time,15,2),min,error2);if error2<>0 then exit;
   val(copy(date_time,12,2),hh,error2);if error2<>0 then exit;
   val(copy(date_time,09,2),dd,error2);if error2<>0 then exit;
@@ -7213,6 +7217,8 @@ begin
   while length(sqm_key)<8 do sqm_key:=sqm_key+' ';
 end;
 
+
+
 procedure Tstackmenu1.keywordchangesecondtolast1Click(Sender: TObject);
 begin
   centaz_key:=uppercase(InputBox('Type header keyword to display in the second to last column:','',centaz_key ));
@@ -7222,12 +7228,36 @@ begin
 end;
 
 
-//procedure polar_error_to_ra_dec(ra2
-//var
-//begin
-//   dRa:=de*(TAN(dec2)*SIN(h_2)-TAN(dec1)*SIN(h_1))  +da*COS(lat)*(TAN(dec1)*COS(h_1)-TAN(dec2)*COS(h_2));
-//   dDec:=de*(COS(h_2)-COS(h_1))  +da*COS(lat)*(SIN(h_2)-SIN(h_1));
-//end;
+{ Calculate the offset in ra, dec from polar error
+  input     delta_altitude: elevation error pole
+            delta_azimuth : azimuth error pole
+            ra1_mount     : ra position mount 1
+            dec1_mount    : dec position mount 1
+            jd1           : Julian day measurement 1
+            ra2_mount     : ra position mount 2
+            dec2_mount    : dec position mount 2
+            jd2           : Julian day measurement 2
+            latitude
+            longitude
+
+  output    delta_ra
+            delta_dec                             }
+procedure polar_error_to_position_error(delta_alt ,delta_az, ra1_mount,dec1_mount,jd1,ra2_mount,dec2_mount,jd2,latitude,longitude: double; out delta_ra,delta_dec : double);
+const
+  siderealtime2000=(280.46061837)*pi/180;{[radians], sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new Meeus 11.4}
+  earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity daily. See new Meeus page 83}
+var
+  sidereal_time1,sidereal_time2,h_1,h_2 : double;
+begin
+  sidereal_time1:=fnmodulo(+longitude+siderealtime2000 +(jd1-2451545 )* earth_angular_velocity,2*pi); {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
+  sidereal_time2:=fnmodulo(+longitude+siderealtime2000 +(jd2-2451545 )* earth_angular_velocity,2*pi); {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
+
+  h_1:=ra1_mount-sidereal_time1;
+  h_2:=ra2_mount-sidereal_time2;
+
+  delta_Ra:=delta_alt*(TAN(dec2_mount)*SIN(h_2)-TAN(dec1_mount)*SIN(h_1))  +delta_az*COS(latitude)*(TAN(dec1_mount)*COS(h_1)-TAN(dec2_mount)*COS(h_2));
+  delta_Dec:=delta_alt*(COS(h_2)-COS(h_1))  +delta_az*COS(latitude)*(SIN(h_2)-SIN(h_1));
+end;
 
 
 {Polar error calculation based on two celestial reference points and the error of the telescope mount at these point(s).
@@ -7253,6 +7283,7 @@ const
 var
    determinant,delta_ra, delta_dec,sidereal_time1,sidereal_time2,h_1,h_2 : double;
    ew,ns  : string;
+   delta_ra2,delta_dec2 : double;
 begin
 
 
@@ -7275,6 +7306,11 @@ begin
       memo2_message('█ █ █ █ █ █ Warning the calculation determinant is close to zero! Select other celestial locations. Avoid locations with similar hour angles, locations close to the celestial equator and locations whose declinations are close to negatives of each other. █ █ █ █ █ █ ');
   delta_alt:=delta_ra*COS(latitude)*(SIN(h_2)-SIN(h_1))/determinant  - delta_dec*COS(latitude)*( TAN(dec1_mount)*COS(h_1) -  TAN(dec2_mount)*COS(h_2) )/determinant;
   delta_az :=delta_ra*(COS(h_1)-COS(h_2))/determinant + delta_dec*( TAN(dec2_mount)*SIN(h_2)- TAN(dec1_mount)*SIN(h_1) )/determinant;
+
+//  polar_error_to_position_error(delta_alt ,delta_az, ra1_mount,dec1_mount,jd1,ra2_mount,dec2_mount,jd2,latitude,longitude,delta_ra2,delta_dec2);
+//  polar_error_to_position_error(0 ,delta_az, ra1_mount,dec1_mount,jd1,ra2_mount,dec2_mount,jd2,latitude,longitude,delta_ra2,delta_dec2);
+
+
 end;
 
 

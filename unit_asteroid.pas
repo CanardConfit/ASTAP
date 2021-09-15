@@ -290,14 +290,12 @@ begin
 end;
 
 
-function  fnmodulo(z,range:double):double; {han.k}
+function fnmodulo(x,range: double):double;
 begin
-  {range should be 2*pi or 24 hours}
-  z:=range*frac(z/(range));{quick method for big numbers}
-  while z<0 do z:=z+range;
-  fnmodulo:=z;
+  {range should be 2*pi or 24 hours or 0 .. 360}
+  result:=range*frac(x/range);
+  if result<0 then result:=result+range;   {do not like negative numbers}
 end;
-
 
 function deltaT_calc(jd: double) : double; {in seconds} {han.k}
 var
