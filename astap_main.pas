@@ -697,6 +697,8 @@ function prepare_ra6(rax:double; sep:string):string; {radialen to text  format 2
 function prepare_dec4(decx:double;sep:string):string; {radialen to text  format 90d 00 }
 function prepare_dec(decx:double; sep:string):string; {radialen to text, format 90d 00 00}
 function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24: 00 00.0 }
+function prepare_ra8(rax:double; sep:string):string; {radialen to text, format 24: 00 00.00 }
+Function prepare_dec2(decx:double; sep:string):string; {radialen to text, format 90d 00 00.1}
 function inttostr5(x:integer):string;{always 5 digit}
 function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
 procedure mad_median(list: array of double; leng :integer;out mad,median :double);{calculate mad and median without modifying the data}
@@ -3011,7 +3013,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.579b, '+about_message4+', dated 2021-9-15';
+  #13+#10+'ASTAP version ß0.9.579c, '+about_message4+', dated 2021-9-23';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;

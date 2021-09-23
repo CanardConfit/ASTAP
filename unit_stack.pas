@@ -52,6 +52,7 @@ type
     browse_flats1: TBitBtn;
     browse_inspector1: TBitBtn;
     annotations_visible1: TLabel;
+    hours_and_minutes1: TCheckBox;
     menukeywordchange1: TMenuItem;
     MenuItem32: TMenuItem;
     keywordchangelast1: TMenuItem;
@@ -3375,9 +3376,16 @@ begin
               begin
                 if theindex>=1 then
                   precession3(2451545 {J2000}, jd_mid,ra_mount,dec_mount); {precession}
-
-                lv.Items.item[c].subitems.Strings[M_ra_m]:=floattostrf(ra_mount*180/pi,ffFixed, 9, 6);
-                lv.Items.item[c].subitems.Strings[M_dec_m]:=floattostrf(dec_mount*180/pi,ffFixed, 9, 6);
+                if stackmenu1.hours_and_minutes1.checked then
+                begin
+                  lv.Items.item[c].subitems.Strings[M_ra_m]:=prepare_ra8(ra_mount,':'); {radialen to text, format 24: 00 00.00 }
+                  lv.Items.item[c].subitems.Strings[M_dec_m]:=prepare_dec2(dec_mount,':');{radialen to text, format 90d 00 00.1}
+                end
+                else
+                begin
+                  lv.Items.item[c].subitems.Strings[M_ra_m]:=floattostrf(ra_mount*180/pi,ffFixed, 9, 6);
+                  lv.Items.item[c].subitems.Strings[M_dec_m]:=floattostrf(dec_mount*180/pi,ffFixed, 9, 6);
+                  end;
               end;
 
               if cd1_1<>0 then
@@ -3399,9 +3407,16 @@ begin
                 if alt<>0 then
                   lv.Items.item[c].subitems.Strings[M_centalt]:=floattostrf(alt,ffFixed, 3, 1); {altitude}
 
-
-                lv.Items.item[c].subitems.Strings[M_ra]:=floattostrf(ra_image*180/pi,ffFixed, 9, 6);
-                lv.Items.item[c].subitems.Strings[M_dec]:=floattostrf(dec_image*180/pi,ffFixed, 9, 6);
+                if stackmenu1.hours_and_minutes1.checked then
+                begin
+                  lv.Items.item[c].subitems.Strings[M_ra]:=prepare_ra8(ra_image,':'); {radialen to text, format 24: 00 00.00 }
+                  lv.Items.item[c].subitems.Strings[M_dec]:=prepare_dec2(dec_image,':');{radialen to text, format 90d 00 00.1}
+                end
+                else
+                begin
+                  lv.Items.item[c].subitems.Strings[M_ra]:=floattostrf(ra_image*180/pi,ffFixed, 9, 6);
+                  lv.Items.item[c].subitems.Strings[M_dec]:=floattostrf(dec_image*180/pi,ffFixed, 9, 6);
+                end;
 
                 if ra_mount<99 then {mount position known and specified}
                 begin
@@ -6777,7 +6792,8 @@ begin
 
           if red_nebula=false then
           begin
-            if red<blue*1.06 then {>6000k} green:=0.6604*red+0.3215*blue; {prevent purple stars, purple stars are physical not possible. Emperical formula calculated from colour table http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html}
+            if red<blue*1.06 then{>6000k}
+              green:=max(green,0.6604*red+0.3215*blue); {prevent purple stars, purple stars are physical not possible. Emperical formula calculated from colour table http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html}
 
             luminance:=(r2+g2+b2)/3;
             rgb:=(red+green+blue+0.00001)/3; {0.00001, prevent dividing by zero}
@@ -7262,55 +7278,79 @@ end;
 
 {Polar error calculation based on two celestial reference points and the error of the telescope mount at these point(s).
  Based on formulas from Ralph Pass documented at https://rppass.com/align.pdf.
- These are based on the book “Telescope Control’ by Trueblood and Genet, p.111
+ They are based on the book “Telescope Control’ by Trueblood and Genet, p.111
  Ralph added sin(latitude) term in the equation for the error in RA.
 
- The fundamental calculations (4) are:
 
-   delta_ra:= de * (TAN(dec2)*SIN(h_2)-TAN(dec1)*SIN(h_1))  + da * COS(lat)*(TAN(dec1)*COS(h_1)-TAN(dec2)*COS(h_2));
-   delta_dec:=de * (COS(h_2)-COS(h_1))  + da * COS(lat)*(SIN(h_2)-SIN(h_1));
+ For one reference image the difference in RA and DEC caused by the misalignment of the polar axis, formula (3):
+   delta_ra:= de * TAN(dec)*SIN(h)  + da * (sin(lat)- COS(lat)*(TAN(dec1)*COS(h_1))
+   delta_dec:=de * COS(h)  + da * COS(lat)*SIN(h))
 
    where de is the polar error in elevation (altitude)
    where da is the polar error in azimuth
-   where h_1 and h_2 are the hour angle of the two reference point so h_1:=ra1 - local_sidereal_time1;  and  h_2:=ra1 - local_sidereal_time2;
-   Writing the above formulas in matrix notation and reversing the formula to calculate the de and da results in the calculation below.
+   where h is the hour angle of the reference point equal ra - local_sidereal_time
 
-   Mount is assumed to be ideal. Mount fabrication error & cone errors are assumed to be zero. Meridian crossing between the two images should be avoided}
-procedure polar_error_calc(ra1,dec1,ra1_mount,dec1_mount,jd1,ra2,dec2,ra2_mount,dec2_mount,jd2,latitude,longitude: double; out delta_alt,delta_az : double);{calculate polar error based on two images. All values in radians}
+ Using the above formula calculate the difference in RA and DEC by subtracting the first image postion from the second reference image. The common term sin(lat) will be nulified. Formula (4)
+
+ Writing the above formulas in matrix notation:
+   [delta_Ra;delta_Dec]= A * [delta_Elv;delta_Azm]
+   then
+   [delta_Elv;delta_Az] = inv(A)*[delta_Ra;delta_Dec]
+
+ Mount is assumed to be ideal. Mount fabrication error & cone errors are assumed to be zero. Meridian crossing between the two images should be avoided}
+procedure polar_error_calc(ra1,dec1,ra1_mount,dec1_mount,jd1,ra2,dec2,ra2_mount,dec2_mount,jd2,latitude,longitude: double; out delta_Elv,delta_az : double);{calculate polar error based on two images. All values in radians}
 const
   siderealtime2000=(280.46061837)*pi/180;{[radians], sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new Meeus 11.4}
   earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity daily. See new Meeus page 83}
 var
    determinant,delta_ra, delta_dec,sidereal_time1,sidereal_time2,h_1,h_2 : double;
-   ew,ns  : string;
-   delta_ra2,delta_dec2 : double;
+   A,B, C, C_inv : array[0..1,0..1] of double;
 begin
-
-
   sidereal_time1:=fnmodulo(+longitude+siderealtime2000 +(jd1-2451545 )* earth_angular_velocity,2*pi); {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
   sidereal_time2:=fnmodulo(+longitude+siderealtime2000 +(jd2-2451545 )* earth_angular_velocity,2*pi); {As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
 
-//  memo2_message('Local sidereal time image 1:     '+prepare_ra6(sidereal_time1,' ')); {24 00 00}
-//  memo2_message('Local sidereal time image 2:     '+prepare_ra6(sidereal_time2,' ')); {24 00 00}
-
+  memo2_message('Local sidereal time image 1:     '+prepare_ra6(sidereal_time1,' ')); {24 00 00}
+  memo2_message('Local sidereal time image 2:     '+prepare_ra6(sidereal_time2,' ')); {24 00 00}
 
   delta_ra:=(ra2_mount-ra2)- (ra1_mount-ra1);
   delta_dec:=(dec2_mount-dec2)- (dec1_mount-dec1);
 
-
   h_1:=ra1_mount-sidereal_time1;
   h_2:=ra2_mount-sidereal_time2;
 
-  determinant:=COS(latitude)*(TAN(dec1_mount)+TAN(dec2_mount))*(1-COS(h_1-h_2));
-  if determinant<0.1 then
+  // [delta_Ra;delta_Dec]= A * [delta_Elv;delta_Azm]
+  // Fill matrix image 1 with data.
+  A[0,0]:=TAN(dec1_mount)*SIN(h_1);
+  A[1,0]:=COS(latitude)* ({SIN(LAT_rad)}-TAN(dec1_mount)*COS(h_1)); //sin(lat_rad) will be nulified anyhow when B-A is calculated}
+  A[0,1]:=COS(h_1);
+  A[1,1]:=COS(latitude)*SIN(h_1);
+
+  // Fill matrix image 2 with data.
+  B[0,0]:=TAN(dec2_mount)*SIN(h_2);
+  B[1,0]:=COS(latitude)*({SIN(LAT_rad)}-TAN(dec2_mount)*COS(h_2));  //sin(lat_rad) will be nulified anyhow when B-A is calculated}
+  B[0,1]:=COS(h_2);
+  B[1,1]:=COS(latitude)*SIN(h_2);
+
+  //difference,  image 2 - image 1
+  C[0,0]:=B[0,0]-A[0,0];
+  C[1,0]:=B[1,0]-A[1,0];
+  C[0,1]:=B[0,1]-A[0,1];
+  C[1,1]:=B[1,1]-A[1,1];
+
+  // Calculate the inverse matrix inv(C)
+  determinant:=C[0,0]*C[1,1]-C[0,1]*C[1,0];
+  C_inv[0,0]:=+C[1,1]/determinant;
+  C_inv[1,1]:=+C[0,0]/determinant;
+  C_inv[1,0]:=-C[1,0]/determinant;
+  C_inv[0,1]:=-C[0,1]/determinant;
+
+  // [delta_Elv;delta_Az] = inv(A)*[delta_Ra;delta_Dec]
+  // Use the inverse matrix to calculate the polar axis elevation and azimuth error from the delta_dec and delta_ra between the two image positions.
+  delta_Elv:=C_inv[0,0]*delta_ra+C_inv[1,0]*delta_Dec;
+  delta_Az:=C_inv[0,1]*delta_ra+C_inv[1,1]*delta_Dec;
+
+  if abs(determinant)<0.1 then
       memo2_message('█ █ █ █ █ █ Warning the calculation determinant is close to zero! Select other celestial locations. Avoid locations with similar hour angles, locations close to the celestial equator and locations whose declinations are close to negatives of each other. █ █ █ █ █ █ ');
-  delta_alt:=delta_ra*COS(latitude)*(SIN(h_2)-SIN(h_1))/determinant  - delta_dec*COS(latitude)*( TAN(dec1_mount)*COS(h_1) -  TAN(dec2_mount)*COS(h_2) )/determinant;
-  delta_az :=delta_ra*(COS(h_1)-COS(h_2))/determinant + delta_dec*( TAN(dec2_mount)*SIN(h_2)- TAN(dec1_mount)*SIN(h_1) )/determinant;
-
-//  polar_error_to_position_error(delta_alt ,delta_az, ra1_mount,dec1_mount,jd1,ra2_mount,dec2_mount,jd2,latitude,longitude,delta_ra2,delta_dec2);
-//  polar_error_to_position_error(0 ,delta_az, ra1_mount,dec1_mount,jd1,ra2_mount,dec2_mount,jd2,latitude,longitude,delta_ra2,delta_dec2);
-
-
 end;
 
 
