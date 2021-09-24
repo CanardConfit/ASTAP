@@ -167,6 +167,8 @@ begin
     live_stacking:=true;{to block other instruction like solve button}
     reset_var; {reset variables  including init:=false}
 
+
+
     pause_pressed:=false;
     esc_pressed:=false;
     total_counter:=0;
@@ -176,6 +178,9 @@ begin
     colour_correction:=((stackmenu1.make_osc_color1.checked) and (stackmenu1.osc_auto_level1.checked));
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
+    {Prepare for dark and flats}
+    analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
+    analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{analyse flat tab, by loading=false the loaded img will not be effected}
 
 //   (file_available2(path,filename2 {file found}));
 
@@ -241,6 +246,9 @@ begin
             {these global variables are passed-on in procedure to protect against overwriting}
 
             memo2_message('Adding file: '+inttostr(counter+1)+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
+
+            if inspect_latest_image1.checked then CCDinspector(30);
+
 //            Application.ProcessMessages;
 //            if esc_pressed then exit;
 

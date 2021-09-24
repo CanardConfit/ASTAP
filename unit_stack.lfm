@@ -4706,12 +4706,12 @@ object stackmenu1: Tstackmenu1
       end
       object GroupBox15: TGroupBox
         Left = 960
-        Height = 91
+        Height = 115
         Top = 32
         Width = 291
         AutoSize = True
         Caption = 'Monitoring'
-        ClientHeight = 71
+        ClientHeight = 95
         ClientWidth = 287
         TabOrder = 4
         object interim_to_clipboard1: TCheckBox
@@ -4724,7 +4724,7 @@ object stackmenu1: Tstackmenu1
           TabOrder = 0
         end
         object write_jpeg1: TCheckBox
-          Left = 1
+          Left = 0
           Height = 19
           Hint = 'After adding a file write result to file stack.jpeg at the same location as the files.'
           Top = 0
@@ -4733,12 +4733,21 @@ object stackmenu1: Tstackmenu1
           TabOrder = 1
         end
         object Label22: TLabel
-          Left = 1
+          Left = 0
           Height = 15
-          Top = 56
+          Top = 80
           Width = 174
           Caption = 'For log use the log option below.'
           ParentColor = False
+        end
+        object inspect_latest_image1: TCheckBox
+          Left = 0
+          Height = 19
+          Hint = 'Analyse the  latest image.'
+          Top = 48
+          Width = 234
+          Caption = 'Apply CCD inspector on the latest image'
+          TabOrder = 2
         end
       end
       object browse_live_stacking1: TBitBtn

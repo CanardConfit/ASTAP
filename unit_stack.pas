@@ -53,6 +53,7 @@ type
     browse_inspector1: TBitBtn;
     annotations_visible1: TLabel;
     hours_and_minutes1: TCheckBox;
+    inspect_latest_image1: TCheckBox;
     menukeywordchange1: TMenuItem;
     MenuItem32: TMenuItem;
     keywordchangelast1: TMenuItem;
@@ -7933,7 +7934,7 @@ end;
 
 procedure load_master_dark(exposure2,temperature2,width1,jd_int: integer);
 var
-  c,roundexposure            : integer;
+  c,roundexposure,dummy            : integer;
   d,day_offset               : double;
   filen                      : string;
 

@@ -3013,7 +3013,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.579c, '+about_message4+', dated 2021-9-23';
+  #13+#10+'ASTAP version ß0.9.580, '+about_message4+', dated 2021-9-24';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -7625,6 +7625,8 @@ begin
       stackmenu1.live_stacking_path1.caption:=Sett.ReadString('stack','live_stack_dir','');
       stackmenu1.write_jpeg1.Checked:=Sett.ReadBool('stack','write_jpeg',false);{live stacking}
       stackmenu1.interim_to_clipboard1.Checked:=Sett.ReadBool('stack','to_clipboard',false);{live stacking}
+      stackmenu1.inspect_latest_image1.Checked:=Sett.ReadBool('stack','live_inspect',false);{live stacking}
+
 
       stackmenu1.equinox1.itemindex:=Sett.ReadInteger('stack','equinox',987654321);if c<>987654321 then stackmenu1.equinox1.itemindex:=c;
       stackmenu1.mount_write_wcs1.Checked:=Sett.ReadBool('stack','wcs',true);{use wcs files for mount}
@@ -7949,6 +7951,8 @@ begin
       sett.writestring('stack','live_stack_dir',stackmenu1.live_stacking_path1.caption);
       sett.writeBool('stack','write_jpeg',stackmenu1.write_jpeg1.checked);{live stacking}
       sett.writeBool('stack','to_clipboard',stackmenu1.interim_to_clipboard1.checked);{live stacking}
+      sett.writeBool('stack','live_inspect',stackmenu1.inspect_latest_image1.checked);{live stacking}
+
 
       sett.writeInteger('stack','equinox',stackmenu1.equinox1.itemindex);
       sett.writeBool('stack','wcs',stackmenu1.mount_write_wcs1.Checked);{uses wcs file for menu mount}
@@ -12684,6 +12688,7 @@ begin
       text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
 
       image1.Canvas.textout(round(fontsize*2),height2-text_height,mess2);{median HFD and tilt indication}
+      memo2_message(mess2);{for stacking live}
     end
     else
       image1.Canvas.textout(round(fontsize*2),height2- round(fontsize*4),'No stars detected');
