@@ -1340,8 +1340,6 @@ begin
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
-    sip:=((ap_order>=2) and (mainwindow.Polynomial1.itemindex=1));{use sip corrections?}
-
 
     {6. Passage (x,y) -> (RA,DEC) to find RA0,DEC0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
     dRa :=(cd1_1*((width2/2)-crpix1)+cd1_2*((height2/2)-crpix2))*pi/180; {also valid for case crpix1,crpix2 is not in the middle}
@@ -1561,7 +1559,7 @@ var
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,cv,fov_org,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2                                : integer;
-  flip_horizontal, flip_vertical,sip    : boolean;
+  flip_horizontal, flip_vertical        : boolean;
   mag_offset_array,hfd_x_sd             : array of double;
   Save_Cursor                           : TCursor;
   mess                                  : string;
@@ -1592,6 +1590,7 @@ var
         x:=(crpix1 + u0)-1; {in image array range 0..width-1}
         y:=(crpix2 + v0)-1;
       end;
+
 
       if ((x>-50) and (x<=width2+50) and (y>-50) and (y<=height2+50)) then {within image1 with some overlap}
       begin
@@ -1664,7 +1663,7 @@ begin
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
-    sip:=((ap_order>=2) and (mainwindow.Polynomial1.itemindex=1));{use sip corrections?}
+//    sip:=((ap_order>=2) and (mainwindow.Polynomial1.itemindex=1));{use sip corrections?}  Already set
 
 
     bp_rp:=999;{not defined in mono versions of the database}
@@ -1991,8 +1990,6 @@ var
 begin
   if ((fits_file) and (cd1_1<>0)) then
   begin
-    sip:=((ap_order>=2) and (mainwindow.Polynomial1.itemindex=1));{use sip corrections?}
-
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 

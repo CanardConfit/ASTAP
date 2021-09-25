@@ -604,6 +604,7 @@ var
   database_path:string='';{to be set in main}
   bayerpat: string='';{bayer pattern}
   bayerpattern_final :integer=2; {ASI294, ASI071, most common pattern}
+  sip                : boolean=false; {use SIP coefficients}
 
   xbayroff: double=0;{additional bayer pattern offset to apply}
   Ybayroff: double=0;{additional bayer pattern offset to apply}
@@ -3013,7 +3014,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.580, '+about_message4+', dated 2021-9-24';
+  #13+#10+'ASTAP version ß0.9.581, '+about_message4+', dated 2021-9-25';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3632,8 +3633,7 @@ end;
 procedure celestial_to_pixel(ra_t,dec_t: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 var
   SIN_dec_t,COS_dec_t,
-  SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec : double;
-
+  SIN_dec_ref,COS_dec_ref,det, delta_ra,SIN_delta_ra,COS_delta_ra, H, dRa,dDec,u0,v0 : double;
 begin
   {5. Conversion (RA,DEC) -> (x,y) of reference image}
   sincos(dec_t,SIN_dec_t,COS_dec_t);{sincos is faster then separate sin and cos functions}
@@ -3648,22 +3648,32 @@ begin
 
   det:=CD2_2*CD1_1 - CD1_2*CD2_1;
 
-  fitsX:=+CRPIX1  - (CD1_2*dDEC - CD2_2*dRA) / det;
-  fitsY:=+CRPIX2  + (CD1_1*dDEC - CD2_1*dRA) / det;
+  u0:= - (CD1_2*dDEC - CD2_2*dRA) / det;
+  v0:= + (CD1_1*dDEC - CD2_1*dRA) / det;
+
+
+  if sip then {apply SIP correction, sky to pixel}
+  begin
+    fitsX:=(crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0); {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+    fitsY:=(crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0); {3th order SIP correction}
+  end
+  else
+  begin
+    fitsX:=crpix1 + u0; {in fits range 1..width}
+    fitsY:=crpix2 + v0;
+  end;
 end;
 
 
 function place_marker_radec(data0: string): boolean;{place ra,dec marker in image}
 var
   ra_new,dec_new, fitsx,fitsy : double;
-  error1,error2  : boolean;
-  data1,ra_text,dec_text  :string;
+  error1,error2,degrees   : boolean;
+  data1,ra_text,dec_text,sipwcs  : string;
   pos1,pos2,pos3,pos4,pos5,pos6,i :integer;
 
 begin
   if ((fits_file=false) or (cd1_1=0) or (mainwindow.shape_marker3.visible=false)) then exit;{no solution to place marker}
-
-
 
   {Simbad sirius    06 45 08.917 -16 42 58.02      }
   {Orion   5h 35.4m; Declination_symbol1: 5o 27′ south    }
@@ -3671,7 +3681,7 @@ begin
   R.A. = 00h52m33s.814, Decl. = +80°39'37".93 }
 
   data0:=uppercase(data0);
-
+  degrees:=pos('D',data0)>0;{degrees ?}
   data0:=StringReplace(data0,'S.','.',[]); {for 00h52m33s.814}
   data0:=StringReplace(data0,'".','.',[]); {for +80°39'37".93}
   data0:=StringReplace(data0,'R.A.','',[]); {remove dots from ra}
@@ -3682,6 +3692,7 @@ begin
     sensor_coordinates_to_celestial(width2/2,height2/2,ra_new,dec_new);{calculate the center position also for solutions with the reference pixel somewhere else}
     error1:=false;
     error2:=false;
+    data1:='Center image '; {for hint}
   end
   else
   begin
@@ -3689,12 +3700,12 @@ begin
 
     for I := 1 to length(data0) do
     begin
-      if (((ord(data0[i])>=48) and (ord(data0[i])<=57)) or (data0[i]='.') or   (data0[i]='-')) then   data1:=data1+data0[i] else data1:=data1+' ';{replace all char by space except for numbers and dot}
+      if (((ord(data0[i])>=48) and (ord(data0[i])<=57)) or (data0[i]='.') or (data0[i]='-')) then   data1:=data1+data0[i] else data1:=data1+' ';{replace all char by space except for numbers and dot}
     end;
     repeat  {remove all double spaces}
       i:=pos('  ',data1);
       if i>0 then delete(data1,i,1);
-    until i=0;;
+    until i=0;
 
     while ((length(data1)>=1) and (data1[1]=' ')) do {remove spaces in the front for pos1 detectie}
                                        delete(data1,1,1);
@@ -3721,6 +3732,7 @@ begin
     else
     begin {2 string position}
       ra_text:=copy(data1,1, pos1);
+      if degrees then ra_text:='D'+ra_text;{convert it as degrees}
       dec_text:=copy(data1,pos1+1,99);
     end;
 
@@ -3735,6 +3747,9 @@ begin
     shape_marker3_fitsX:=fitsX;
     shape_marker3_fitsY:=fitsY;
     show_marker_shape(mainwindow.shape_marker3,0 {rectangle},20,20,10,shape_marker3_fitsX, shape_marker3_fitsY);
+    if sip then sipwcs:='SIP' else sipwcs:='WCS';
+    mainwindow.shape_marker3.hint:=data1+#10+sipwcs+'  x='+floattostrF(shape_marker3_fitsX,ffFixed,0,1)+'  y='+ floattostrF(shape_marker3_fitsY,ffFixed,0,1); ;
+
   end
   else
   begin
@@ -3872,7 +3887,6 @@ procedure plot_mount; {plot star where mount is}
 var
    fitsX,fitsY: double;
 begin
-  //  celestial_to_pixel(ra0,dec0, fitsX,fitsY);{ra,dec to fitsX,fitsY}
   if ra_mount<99 then {ra mount was specified}
   begin
     celestial_to_pixel(ra_mount,dec_mount, fitsX,fitsY);{ra,dec to fitsX,fitsY}
@@ -4272,13 +4286,16 @@ end;
 
 procedure Tmainwindow.Polynomial1Change(Sender: TObject);
 begin
- if  (
+  if  (
      ((mainwindow.polynomial1.itemindex=1) and (ap_order=0) ) or {SIP polynomial selected but no data}
      ((mainwindow.polynomial1.itemindex=2) and (x_coeff[0]=0) and (y_coeff[0]=0)) {DSS polynomial selected but no data}
      ) then
    mainwindow.Polynomial1.color:=clred
    else
    mainwindow.Polynomial1.color:=cldefault;
+
+  sip:=((ap_order>=2) and (mainwindow.Polynomial1.itemindex=1));{use sip corrections?}
+
 end;
 
 
@@ -9233,6 +9250,8 @@ begin
 
         mainwindow.Polynomial1.color:=clform;
         mainwindow.Polynomial1.ItemIndex:=1;{set at SIP}
+        sip:=true;{generic variable. Use sip corrections for plotting}
+
         memo2_message('Added SIP coefficients to header for a 3th order radial correction. This correction will only work for barrel distortion and pincushion distortion. You could test it with the inspector showing the distortion vectors in SIP readout mode.');
         //up to '+floattostrF(abs(factor)*max_radius*max_radius*max_radius,ffFixed,3,2)+' pixels.');{factor*radius^3}
       end
@@ -10541,6 +10560,7 @@ begin
   end;
 end;
 
+
 procedure Tmainwindow.hfd_arcseconds1Click(Sender: TObject);
 begin
   hfd_arcseconds:=hfd_arcseconds1.checked;
@@ -10551,16 +10571,16 @@ procedure Tmainwindow.add_marker_position1Click(Sender: TObject);
 begin
   if add_marker_position1.checked then
   begin
-    marker_position:=InputBox('Enter α, δ position in one of the following formats: ','23 00 00.0 +89 00 00.0    or  23 00 +89 00  or  23.0000 +89.000 or C for center',marker_position );
+    marker_position:=InputBox('Enter α, δ position in one of the following formats: ','23 00 00.0 +89 00 00.0   or  23.99 +89.99  or  359.99d 89.99  or  C for center',marker_position );
     if marker_position='' then begin add_marker_position1.checked:=false; exit; end;
 
     mainwindow.shape_marker3.visible:=true;
     add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
-    mainwindow.shape_marker3.hint:=marker_position;
   end
   else
     mainwindow.shape_marker3.visible:=false;
 end;
+
 
 procedure Tmainwindow.aberration_inspector1Click(Sender: TObject);
 var fitsX,fitsY,col, widthN,heightN                : integer;
@@ -10932,10 +10952,15 @@ end;
 
 procedure Tmainwindow.add_marker1Click(Sender: TObject);
 begin
-  shape_marker1_fitsX:=startX+1;
-  shape_marker1_fitsY:=startY+1;
-  show_marker_shape(mainwindow.shape_marker1,0 {rectangle},20,20,0 {minimum size},shape_marker1_fitsX, shape_marker1_fitsY);
-  shape_marker1.hint:='Marker';
+  if add_marker1.checked=false then
+    mainwindow.shape_marker1.Visible:=false
+  else
+  begin
+    shape_marker1_fitsX:=startX+1;
+    shape_marker1_fitsY:=startY+1;
+    show_marker_shape(mainwindow.shape_marker1,0 {rectangle},20,20,0 {minimum size},shape_marker1_fitsX, shape_marker1_fitsY);
+    shape_marker1.hint:='Marker x='+floattostrF(shape_marker1_fitsX,ffFixed,0,1)+' y='+ floattostrF(shape_marker1_fitsY,ffFixed,0,1);
+  end;
 end;
 
 
@@ -11016,9 +11041,14 @@ procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string
 var                                                                               {typ >0 line, value defines thickness line}
   size,xcenter,ycenter,text_height,text_width  :integer;                          {type<=0 rectangle or two lines, value defines thickness lines}
 begin
+  dec(x1); {convert to screen coordinates 0..}
+  dec(y1);
+  dec(x2);
+  dec(y2);
+
   if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
   begin
-    x1:=(width2-1)-x1;
+    x1:=(width2-1)-x1;{flip for screen coordinates, 0...width2-1}
     x2:=(width2-1)-x2;
   end;
   if mainwindow.flip_vertical1.Checked=false then
@@ -11026,6 +11056,8 @@ begin
     y1:=(height2-1)-y1;
     y2:=(height2-1)-y2;
   end;
+
+
   mainwindow.image1.Canvas.Pen.width:=max(1,round(1*abs(typ))); ;
   mainwindow.image1.Canvas.font.size:=max(12,round(12*abs(typ)));
 
@@ -11095,10 +11127,10 @@ begin
 
         if list.count>=6  then {correct annotation}
         begin
-          x1:=round(strtofloat2(list[0]))-1;{subtract 1 for conversion fits coordinates 1... to screen coordinates 0...}
-          y1:=round(strtofloat2(list[1]))-1;
-          x2:=round(strtofloat2(list[2]))-1;
-          y2:=round(strtofloat2(list[3]))-1;
+          x1:=round(strtofloat2(list[0]));
+          y1:=round(strtofloat2(list[1]));
+          x2:=round(strtofloat2(list[2]));
+          y2:=round(strtofloat2(list[3]));
 
           if use_solution_vectors then {for blink routine, images are aligned and possible flipped making the annotation position invalid}
           begin
@@ -12172,16 +12204,6 @@ begin
             write_ini(true);{write solution to ini file}
 
             add_long_comment('cmdline:'+cmdline);{log command line in wcs file}
-            remove_key('NAXIS1  =',true{one});
-            remove_key('NAXIS2  =',true{one});
-            update_integer('NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
-            update_integer('BITPIX  =',' /                                                ' ,8);
-
-            if hasoption('wcs') then
-              write_astronomy_wcs(ChangeFileExt(filename2,'.wcs'))  {write WCS astronomy.net style}
-            else
-              try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
-
 
             if hasoption('update') then
             begin
@@ -12189,6 +12211,16 @@ begin
               else
               save_fits(img_loaded,ChangeFileExt(filename2,'.fits'),16, true {override});{save original png,tiff jpg to 16 fits file}
             end;
+
+            remove_key('NAXIS1  =',true{one});
+            remove_key('NAXIS2  =',true{one});
+            update_integer('NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
+            update_integer('BITPIX  =',' /                                                ' ,8);
+            if hasoption('wcs') then
+              write_astronomy_wcs(ChangeFileExt(filename2,'.wcs'))  {write WCS astronomy.net style}
+            else
+              try mainwindow.Memo1.Lines.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
+
 
             histogram_done:=false;
             if hasoption('annotate') then
@@ -12398,7 +12430,6 @@ var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation
   i        : integer;
   list2: array of double;
 begin
-
   setlength(list2,leng);
   for i:=0 to leng-1 do list2[i]:=list[i];{copy magn offset data}
   median:=Smedian(list2,leng);
@@ -12933,31 +12964,41 @@ end;
 procedure ra_text_to_radians(inp :string; out ra : double; out errorRA :boolean); {convert ra in text to double in radians}
 var
   rah,ram,ras,plusmin :double;
-  position1,position2,position3,error1,error2,error3:integer;
+  position1,position2,position3,error1,error2,error3, i :integer;
+  degrees : boolean;
+  data    : string;
 begin
-
+  inp:=uppercase(inp); {upcase once instead of every stringreplace using rfIgnorecase}
+  degrees:=pos('D',inp)>0;{degrees ?}
   inp:= stringreplace(inp, ',', '.',[rfReplaceAll]);
-  inp:= stringreplace(inp, ':', ' ',[rfReplaceAll]);
-  inp:= stringreplace(inp, 'h', ' ',[rfReplaceAll]);
-  inp:= stringreplace(inp, 'm', ' ',[rfReplaceAll]);
-  inp:= stringreplace(inp, 's', ' ',[rfReplaceAll]);
-  inp:= stringreplace(inp, '  ', ' ',[rfReplaceAll]);
-  inp:= stringreplace(inp, '  ', ' ',[rfReplaceAll]);
 
-  inp:=trim(inp)+' ';
-  if pos('-',inp)>0 then plusmin:=-1 else plusmin:=1;
+  data:='';
+  for i := 1 to length(inp) do
+  begin
+    if (((ord(inp[i])>=48) and (ord(inp[i])<=57)) or (inp[i]='.') or (inp[i]='-')) then   data:=data+inp[i] else data:=data+' ';{replace all char by space except for numbers and dot}
+  end;
+  repeat  {remove all double spaces}
+    i:=pos('  ',data);
+    if i>0 then delete(data,i,1);
+  until i=0;
 
-  position1:=pos(' ',inp);
-  val(copy(inp,1,position1-1),rah,error1);
 
-  position2:=posex(' ',inp,position1+1);
+  data:=trim(data)+' ';
+  if pos('-',data)>0 then plusmin:=-1 else plusmin:=1;
+
+  position1:=pos(' ',data);
+  val(copy(data,1,position1-1),rah,error1);
+  if degrees then rah:=rah*24/360;{input was in degrees}
+
+
+  position2:=posex(' ',data,position1+1);
   if position2-position1>1 then {ram available}
   begin
-    val(copy(inp,position1+1,position2-position1-1),ram,error2);
+    val(copy(data,position1+1,position2-position1-1),ram,error2);
 
     {ram found try ras}
-    position3:=posex(' ',inp,position2+1);
-    if position3-position2>1 then val( copy(inp,position2+1,position3-position2-1),ras,error3)
+    position3:=posex(' ',data,position2+1);
+    if position3-position2>1 then val( copy(data,position2+1,position3-position2-1),ras,error3)
        else begin ras:=0;error3:=0;end;
   end
   else
@@ -12985,31 +13026,36 @@ end;
 procedure dec_text_to_radians(inp :string; out dec : double; out errorDEC :boolean); {convert dec in text to double in radians}
 var
   decd,decm,decs :double;
-  position1,position2,position3,error1,error2,error3,plusmin:integer ;
+  position1,position2,position3,error1,error2,error3,plusmin,i : integer ;
+  data                                                       : string;
 begin
   inp:= stringreplace(inp, ',', '.',[rfReplaceAll]);
-  inp:= stringreplace(inp, ':', ' ',[rfReplaceAll]);
-  inp:= stringreplace(inp, 'd', ' ',[rfReplaceAll]);
-  inp:= stringreplace(inp, 'm', ' ',[rfReplaceAll]);
-  inp:= stringreplace(inp, 's', ' ',[rfReplaceAll]);
-  inp:= stringreplace(inp, '°', ' ',[rfReplaceAll]);
-  inp:= stringreplace(inp, '  ', ' ',[rfReplaceAll]);
-  inp:= stringreplace(inp, '  ', ' ',[rfReplaceAll]);
-  inp:=trim(inp)+' ';
-  if pos('-',inp)>0 then plusmin:=-1 else plusmin:=1;
-
-  position1:=pos(' ',inp);
-  val(copy(inp,1,position1-1),decd,error1);
+  data:='';
+  for i := 1 to length(inp) do
+  begin
+    if (((ord(inp[i])>=48) and (ord(inp[i])<=57)) or (inp[i]='.') or (inp[i]='-')) then   data:=data+inp[i] else data:=data+' ';{replace all char by space except for numbers and dot}
+  end;
+  repeat  {remove all double spaces}
+    i:=pos('  ',data);
+    if i>0 then delete(data,i,1);
+  until i=0;;
 
 
-  position2:=posex(' ',inp,position1+1);
+  data:=trim(data)+' ';
+  if pos('-',data)>0 then plusmin:=-1 else plusmin:=1;
+
+  position1:=pos(' ',data);
+  val(copy(data,1,position1-1),decd,error1);
+
+
+  position2:=posex(' ',data,position1+1);
   if position2-position1>1 then {decm available}
   begin
-    val(copy(inp,position1+1,position2-position1-1),decm,error2);
+    val(copy(data,position1+1,position2-position1-1),decm,error2);
 
     {decm found try decs}
-    position3:=posex(' ',inp,position2+1);
-    if position3-position2>1 then val( copy(inp,position2+1,position3-position2-1),decs,error3)
+    position3:=posex(' ',data,position2+1);
+    if position3-position2>1 then val( copy(data,position2+1,position3-position2-1),decs,error3)
        else begin decs:=0;error3:=0;end;
   end
   else

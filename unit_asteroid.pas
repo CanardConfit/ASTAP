@@ -468,20 +468,20 @@ var
 
         if sip then {apply SIP correction}
         begin
-           x:=round(crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-           y:=round(crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
+           x:=round(crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0); {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+           y:=round(crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0); {3th order SIP correction}
         end
         else
         begin
-          x:=round(crpix1 + u0)-1; {in image array range 0..width-1}
-          y:=round(crpix2 + v0)-1;
+          x:=round(crpix1 + u0); {in FITS range 1..width}
+          y:=round(crpix2 + v0);
         end;
 
         if ((x>-50) and (x<=width2+50) and (y>-50) and (y<=height2+50)) then {within image1 with some overlap}
         begin
           {annotate}
-           if flip_horizontal then x2:=(width2-1)-x else x2:=x;
-           if flip_vertical   then y2:=y         else y2:=(height2-1)-y;
+           if flip_horizontal then x2:=(width2)-x else x2:=x;
+           if flip_vertical   then y2:=y         else y2:=(height2)-y;
 
            if showfullnames then thetext1:=trim(name) else thetext1:=trim(desn)+'('+floattostrF(mag,ffgeneral,3,1)+')';
            if showmagnitude then thetext2:='{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext2:='';
@@ -563,7 +563,6 @@ begin
   fov:=1.5*sqrt(sqr(0.5*width2*cdelt1)+sqr(0.5*height2*cdelt2))*pi/180; {field of view with 50% extra}
   flip_vertical:=mainwindow.flip_vertical1.Checked;
   flip_horizontal:=mainwindow.flip_horizontal1.Checked;
-  sip:=((ap_order>=2) and (mainwindow.Polynomial1.itemindex=1));{use sip corrections?}
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   form_existing:=assigned(form_asteroids1);{form existing}
 
