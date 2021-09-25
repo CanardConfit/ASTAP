@@ -166,6 +166,15 @@ begin
       write_ini(true);{write solution to ini file}
 
       add_long_comment('cmdline:'+cmdline);{log command line in wcs file}
+
+      if hasoption('update') then
+      begin
+        if fits_file_name(filename2) then
+           SaveFITSwithupdatedheader1
+        else
+        save_fits16bit(img_loaded,ChangeFileExt(filename2,'.fits'));{save original png,tiff jpg to 16 bits fits file}
+      end;
+
       remove_key('NAXIS1  =',true{one});
       remove_key('NAXIS2  =',true{one});
       update_integer('NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
@@ -175,14 +184,6 @@ begin
         write_astronomy_wcs  {write WCS astronomy.net style}
       else
         try Memo1.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
-
-      if hasoption('update') then
-      begin
-        if fits_file_name(filename2) then
-           SaveFITSwithupdatedheader1
-        else
-        save_fits16bit(img_loaded,ChangeFileExt(filename2,'.fits'));{save original png,tiff jpg to 16 bits fits file}
-      end;
 
       //histogram_done:=false;
     end {solution}

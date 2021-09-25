@@ -1048,7 +1048,7 @@ begin
   quad_tolerance:=strtofloat2(quad_tolerance1);
 
   if ((fov_specified=false) and (cdelt2<>0)) then {no fov in native command line and cdelt2 in header}
-    fov_org:=height2*abs(cdelt2) {calculate FOV. PI can give negative CDELT2}
+    fov_org:=min(180,height2*abs(cdelt2)) {calculate FOV. PI can give negative CDELT2}
   else
    fov_org:=min(180,strtofloat2(search_fov1));{use specfied FOV in stackmenu. 180 max to prevent runtime errors later}
 
@@ -1066,7 +1066,10 @@ begin
     memo2_message('Using star database '+uppercase(name_database));
     if ((fov_org>6) and (file290=false)) then
     begin
-      warning_str:=warning_str+'Large FOV, use V17 or G17 database! ';
+      if fov_org<90 then
+        warning_str:=warning_str+'Large FOV, use V17 or G17 database! '
+      else
+        warning_str:=warning_str+'Abnormal large FOV!! ';
       memo2_message(warning_str);
     end;
   end;

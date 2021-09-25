@@ -17,7 +17,7 @@ uses
 
 var {################# initialised variables #########################}
   stdin_mode            : boolean=false;{file send via stdin}
-  version: string=' CLI-0.9.571 dated 2021-08-24';
+  version: string=' CLI-0.9.580 dated 2021-09-24';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -844,7 +844,8 @@ begin
       memo1.add(aline); {add line to memo}
       if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {naxis}
       begin
-        if (header[i+5]=' ') then naxis:=round(validate_double)
+        if (header[i+5]=' ') then
+            naxis:=round(validate_double)
         else    {NAXIS number of colors}
         if (header[i+5]='1') then begin naxis1:=round(validate_double);width2:=naxis1; end else {NAXIS1 pixels}
         if (header[i+5]='2') then height2:=round(validate_double) else   {NAXIS2 pixels}
