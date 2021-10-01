@@ -853,8 +853,8 @@ begin
 
     if ra_mount<99 then {mount position known and specified}
     begin
-      ra_offset:=distance_to_string(dec_mount-dec0,(ra_mount-ra0)*cos(dec0));
-      dec_offset:=distance_to_string(dec_mount-dec0,dec_mount-dec0);
+      ra_offset:=distance_to_string(sep, fnmodulo(ra_mount-ra0,pi)*cos((dec0+dec_mount)*0.5 {average dec}));
+      dec_offset:=distance_to_string(sep,dec_mount-dec0);
       mount_offset:=' Mount offset RA='+ra_offset+', DEC='+dec_offset;{ascii}
       mount_info:=' Mount offset Δα='+ra_offset+ ',  Δδ='+dec_offset+'. '+#9;
     end
