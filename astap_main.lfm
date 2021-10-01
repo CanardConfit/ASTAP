@@ -775,7 +775,7 @@ object mainwindow: Tmainwindow
         Width = 200
       end    
       item
-        Width = 230
+        Width = 280
       end    
       item
         Width = 220
