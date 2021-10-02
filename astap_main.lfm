@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = -1297
+  Left = 18
   Height = 658
   Hint = ' '
-  Top = 261
+  Top = 73
   Width = 1272
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -953,7 +953,7 @@ object mainwindow: Tmainwindow
   object MainMenu1: TMainMenu
     Images = ImageList1
     Left = 856
-    Top = 208
+    Top = 207
     object File1: TMenuItem
       Caption = '&File'
       Hint = 'Load a FITS, PNG, JPG or BPM file.'
