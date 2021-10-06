@@ -8354,7 +8354,7 @@ begin
     until file_count=0;{make more than one master}
 
     if flatdark_used then listview4.Items.Clear;{remove bias if used}
-//    save_settings2;{store settings}
+    save_settings2;{store settings}
     file_list:=nil;
 
     memo2_message('Master flat(s) ready.');
