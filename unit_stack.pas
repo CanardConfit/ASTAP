@@ -52,6 +52,8 @@ type
     browse_flats1: TBitBtn;
     browse_inspector1: TBitBtn;
     annotations_visible1: TLabel;
+    classify_flat_date1: TCheckBox;
+    classify_flat_exposure1: TCheckBox;
     hours_and_minutes1: TCheckBox;
     inspect_latest_image1: TCheckBox;
     menukeywordchange1: TMenuItem;
@@ -61,7 +63,6 @@ type
     calc_polar_alignment_error1: TButton;
     planetary_image1: TCheckBox;
     classify_dark_date1: TCheckBox;
-    classify_flat_date1: TCheckBox;
     flat_combine_method1: TComboBox;
     GroupBox8: TGroupBox;
     green_purple_filter1: TCheckBox;
@@ -130,7 +131,7 @@ type
     Analyse1: TButton;
     analyseblink1: TButton;
     analysedarksButton2: TButton;
-    analyseflatdarksButton4: TButton;
+    analyseflatdarksButton1: TButton;
     analyseflatsButton3: TButton;
     analysephotometry1: TButton;
     analyse_inspector1: TButton;
@@ -720,7 +721,7 @@ type
     procedure resize_factor1Change(Sender: TObject);
     procedure analysedarksButton2Click(Sender: TObject);
     procedure analyseflatsButton3Click(Sender: TObject);
-    procedure analyseflatdarksButton4Click(Sender: TObject);
+    procedure analyseflatdarksButton1Click(Sender: TObject);
     procedure changekeyword1Click(Sender: TObject);
     procedure dark_spot_filter1Click(Sender: TObject);
     procedure free_resize_fits1Click(Sender: TObject);
@@ -922,11 +923,13 @@ const
   D_jd=10;
   D_nr=11;{number of fields}
 
+  F_exposure=0;  {flats}
   F_filter=10;
   F_jd=11;
   F_calibration=12;
   F_nr=13;{number of fields}
 
+  FD_exposure=0;  {flat_darks}
   FD_nr=10;{flat darks}
 
   B_exposure=0;  {blink}
@@ -3510,7 +3513,7 @@ begin
 end;
 
 
-function average_flatdarks: integer;
+function average_flatdarks(exposure:double): integer;
 var
   c,file_count : integer;
   file_list    : array of string;
@@ -3522,8 +3525,11 @@ begin
   for c:=0 to stackmenu1.listview4.items.count-1 do
     if stackmenu1.listview4.items[c].checked=true then
     begin
+      if ((exposure<0){disabled} or (abs(strtofloat(stackmenu1.listview4.Items.item[c].subitems.Strings[FD_exposure])-exposure)<0.01)) then
+      begin
         file_list[file_count]:=stackmenu1.ListView4.items[c].caption;
         inc(file_count);
+      end;
     end;
   if file_count<>0 then
   begin
@@ -3711,11 +3717,11 @@ begin
    end;
 end;
 
-procedure Tstackmenu1.analyseflatdarksButton4Click(Sender: TObject);
+procedure Tstackmenu1.analyseflatdarksButton1Click(Sender: TObject);
 begin
   if img_loaded<>nil then backup_solution;{save solution only}
 
-  analyse_listview(listview4,false {light},true {full fits},false{refresh});
+  analyse_listview(listview4,false {light},sender<>nil {true=full fits},false{refresh});
 
   if img_loaded<>nil then
   begin
@@ -4235,7 +4241,7 @@ begin
   setlength(bsolutions,nrrows);{for the solutions in memory. bsolutions is destroyed in formdestroy}
 
   stepnr:=0;
-  if ((sender=blink_button1) or (solve_and_annotate1.checked) or (sender=write_video1)) then init:=true {start at beginning for video}
+  if ((sender=blink_button1) or (solve_and_annotate1.checked) or (sender=write_video1) or (sender=nil){export aligned}) then init:=true {start at beginning for video}
     else init:=false;{start at selection}
   reference_done:=false;{ check if reference image is loaded. Could be after first image if abort was given}
   repeat
@@ -4408,7 +4414,7 @@ begin
       inc(c,step);
     until ((c>=nrrows) or (c<0));
 
-  until ((esc_pressed) or (sender=blink_button1 {single run}) or (sender=write_video1));
+  until ((esc_pressed) or (sender=blink_button1 {single run}) or (sender=write_video1) or (sender=nil){export aligned});
 
   img_temp:=nil;{free memory}
   Screen.Cursor :=Save_Cursor;{back to normal }
@@ -5595,11 +5601,25 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
   esc_pressed:=false;
+
+  align_blink1.checked:=true;
+  for c:=0 to listview6.items.count-1 do {check alignement and if not align}
+  begin
+    st:=listview6.Items.item[c].subitems.Strings[B_solution];
+    if st='' then
+    begin
+      memo2_message('Doing the alignment first');
+      stackmenu1.clear_blink_alignment1Click(nil);
+      stackmenu1.blink_button1Click(nil);
+      break;
+    end;
+  end;
+
+
   for c:=0 to listview6.items.count-1 do {this is not required but nice}
   begin
     st:=listview6.Items.item[c].subitems.Strings[B_solution];
     if st<>'' then {Solution available}
-
     begin
       filename2:=listview6.items[c].caption;
       mainwindow.caption:=filename2;
@@ -5659,12 +5679,14 @@ begin
           save_fits(img_loaded,filename2,-32,true);
        memo2_message('New aligned image created: '+filename2);
       listview6.items[c].caption:=filename2;
-    end;
+    end
+
 
   end;
   img_temp:=nil;
 
-  plot_fits(mainwindow.image1,false {re_center},true);{the last displayed image doesn't match with header. Just plot last image to fix}
+  if fits_file=true then
+    plot_fits(mainwindow.image1,false {re_center},true);{the last displayed image doesn't match with header. Just plot last image to fix}
   Screen.Cursor :=Save_Cursor;{back to normal }
 end;
 
@@ -7360,11 +7382,10 @@ var
    c: integer;
    Save_Cursor          : TCursor;
    errordecode          : boolean;
-   thefile              : string;
    ra1,dec1,ra1_mount,dec1_mount,jd1,ra2,dec2,ra2_mount,dec2_mount,jd2, delta_alt,delta_az,sep,
-   site_long_radians,site_lat_radians,distance                                 : double;
-   counter                                                                     : integer;
-   ns,ew                                                                       : string;
+   site_long_radians,site_lat_radians                              : double;
+   counter                                                         : integer;
+   ns,ew                                                           : string;
 begin
   memo2_message('Instructions:');
   memo2_message('   1: Synchronise the mount and take one image.');
@@ -8176,9 +8197,9 @@ procedure replace_by_master_flat;
 var
    fitsX,fitsY,file_count    : integer;
    path1,filen,filter        : string;
-   day                       : double;
+   day,flatdark_exposure,flat_exposure     : double;
    c,counter,i : integer;
-   specified: boolean;
+   specified,classify_exposure: boolean;
    width1,flat_dark_width: integer;
    flatdark_used : boolean;
    file_list : array of string;
@@ -8190,9 +8211,11 @@ begin
     analyse_listview(listview3,false {light},false {full fits},new_analyse_required3{refresh});{update the tab information. Convert to FITS if required}
     if esc_pressed then exit;{esc could be pressed in analyse}
     new_analyse_required3:=false;
+    flatdark_exposure:=-99;
+    classify_exposure:=classify_flat_exposure1.checked;
 
-    flat_dark_width:=average_flatdarks;{average of bias frames. Convert to FITS if required}
-    flatdark_used:=false;
+//    flat_dark_width:=average_flatdarks(exposure : double;{average of bias frames. Convert to FITS if required}
+//    flatdark_used:=false;
 
     setlength(file_list,stackmenu1.listview3.items.count);
     repeat
@@ -8211,21 +8234,21 @@ begin
               filter:=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter];
               width1:=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]);
               day:=strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]);
-              if flat_dark_width=0 then memo2_message('█ █ █ █ █ █ Warning no flat-dark/bias found!! █ █ █ █ █ █ ')
-              else
-              if width1<>flat_dark_width then begin memo2_message('Abort, the width of the flat and flat-dark do not match!!');exit end;
+              flat_exposure:=strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_exposure]);
               specified:=true;
             end;
 
             if ((stackmenu1.classify_flat_filter1.checked=false) or (filter=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter])) then {filter correct?}
               if  width1=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct}
                 if ((classify_flat_date1.Checked=false) or  (abs(day-strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]))<=0.5)) then {within 12 hours made}
-                begin
-                  file_list[file_count]:=filen;
-                  inc(file_count);
-                end;
+                  if ((classify_exposure=false) or (abs(flat_exposure-strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_exposure]))<0.01 )) then {exposure correct?}
+                  begin
+                    file_list[file_count]:=filen;
+                    inc(file_count);
+                  end;
           end;
         end;{checked}
+
 
       Application.ProcessMessages;
       if esc_pressed then exit;
@@ -8236,8 +8259,30 @@ begin
         memo2_message('Combining flats and flat-darks.');
 
         average('flat',file_list,file_count,img_flat);{only average, make color also mono}
-
         flat_count:=file_count;
+        flat_exposure:=exposure;
+
+        Application.ProcessMessages;
+        if esc_pressed then exit;
+
+        if ((flat_count>0) and (abs(flat_exposure-flatdark_exposure)>0.01)) then
+        begin
+          if classify_exposure=false then
+          begin
+             flat_exposure:=-99; {do not classify on flat dark exposure time}
+          end
+          else
+          begin
+            analyseflatdarksButton1Click(nil); {exposure lengths are required for selection}
+            memo2_message('Selecting flat darks with exposure time '+floattostrF(flat_exposure,FFgeneral,0,2)+ 'sec');
+          end;
+          flat_dark_width:=average_flatdarks(flat_exposure);{average of bias frames. Convert to FITS if required}
+          flatdark_exposure:=flat_exposure;{store this exposure for next time}
+          if flat_dark_width=0 then memo2_message('█ █ █ █ █ █ Warning no flat-dark/bias found!! █ █ █ █ █ █ ')
+          else
+          if width1<>flat_dark_width then begin memo2_message('Abort, the width of the flat and flat-dark do not match!!');exit end;
+          flatdark_used:=false;
+        end;
 
         Application.ProcessMessages;
         if esc_pressed then
@@ -8247,11 +8292,12 @@ begin
         begin
           if flatdark_count<>0 then
           begin
+            memo2_message('Applying the combined flat-dark on the combined flat.');
             flatdark_used:=true;
             for fitsY:=0 to height2-1 do
               for fitsX:=0 to width2-1 do
               begin
-                 img_flat[0,fitsX,fitsY]:=img_flat[0,fitsX,  fitsY  ] - img_bias[0,fitsX,  fitsY  ]; {flats and bias already many mono in procedure average}
+                 img_flat[0,fitsX,fitsY]:=img_flat[0,fitsX,  fitsY  ] - img_bias[0,fitsX,  fitsY  ]; {flats and bias already made mono in procedure average}
               end;
           end;
         end;
@@ -8308,7 +8354,7 @@ begin
     until file_count=0;{make more than one master}
 
     if flatdark_used then listview4.Items.Clear;{remove bias if used}
-    save_settings2;{store settings}
+//    save_settings2;{store settings}
     file_list:=nil;
 
     memo2_message('Master flat(s) ready.');

@@ -3,7 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 749
   Top = 167
   Width = 1785
-  HorzScrollBar.Page = 1701
+  HorzScrollBar.Page = 1345
   VertScrollBar.Page = 556
   AllowDropFiles = True
   AutoScroll = True
@@ -68,7 +68,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 5
   end
   object press_esc_to_abort1: TLabel
-    Left = 304
+    Left = 288
     Height = 15
     Hint = 'Hit ESC key or click on this text to stop.'
     Top = 515
@@ -83,13 +83,13 @@ object stackmenu1: Tstackmenu1
     OnClick = press_esc_to_abort1Click
   end
   object classify_groupbox1: TGroupBox
-    Left = 488
+    Left = 440
     Height = 60
     Top = 496
-    Width = 480
+    Width = 648
     Caption = 'Classify by'
     ClientHeight = 40
-    ClientWidth = 476
+    ClientWidth = 644
     ParentFont = False
     TabOrder = 1
     object classify_filter1: TCheckBox
@@ -153,10 +153,34 @@ object stackmenu1: Tstackmenu1
       ShowHint = True
       TabOrder = 3
     end
+    object classify_flat_exposure1: TCheckBox
+      Left = 368
+      Height = 19
+      Hint = 'Activate this option if you want classify the flats and flat darks based on exposure time.'
+      Top = 16
+      Width = 181
+      Caption = 'Flat && Flat-Dark exposure time'
+      ParentFont = False
+      ParentShowHint = False
+      ShowHint = True
+      TabOrder = 5
+    end
+    object classify_flat_date1: TCheckBox
+      Left = 528
+      Height = 19
+      Hint = 'Combine flats within 12 hour time range to master'
+      Top = -2
+      Width = 65
+      Caption = 'Flat date'
+      ParentFont = False
+      ParentShowHint = False
+      ShowHint = True
+      TabOrder = 6
+    end
   end
   object help_stack_menu2: TLabel
     Cursor = crHandPoint
-    Left = 1000
+    Left = 1136
     Height = 30
     Hint = 'Help'
     Top = 507
@@ -171,7 +195,7 @@ object stackmenu1: Tstackmenu1
     OnClick = help_stack_menu1Click
   end
   object powerdown_enabled1: TCheckBox
-    Left = 1080
+    Left = 1168
     Height = 19
     Hint = 'If selected, shutdown computer after completion.'
     Top = 507
@@ -183,7 +207,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 2
   end
   object write_log1: TCheckBox
-    Left = 1080
+    Left = 1168
     Height = 19
     Hint = 'Write the stack log to a file with extension .txt'
     Top = 529
@@ -227,7 +251,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1785
-    ActivePage = lights
+    ActivePage = Bias
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +259,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 3
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -1054,18 +1078,6 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         Transparent = False
       end
-      object classify_flat_date1: TCheckBox
-        Left = 744
-        Height = 19
-        Hint = 'Combine flats within 12 hour time range to master'
-        Top = 8
-        Width = 205
-        Caption = 'Classify by date for master creation'
-        ParentFont = False
-        ParentShowHint = False
-        ShowHint = True
-        TabOrder = 4
-      end
       object browse_flats1: TBitBtn
         Left = 16
         Height = 25
@@ -1130,7 +1142,7 @@ object stackmenu1: Tstackmenu1
           000000000000000000000000000000000000
         }
         OnClick = browse_flats1Click
-        TabOrder = 5
+        TabOrder = 4
       end
     end
     object Bias: TTabSheet
@@ -1152,7 +1164,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         TabOrder = 0
       end
-      object analyseflatdarksButton4: TButton
+      object analyseflatdarksButton1: TButton
         Left = 136
         Height = 25
         Hint = 'Analyse image files'
@@ -1160,7 +1172,7 @@ object stackmenu1: Tstackmenu1
         Width = 67
         AutoSize = True
         Caption = 'Analyse'
-        OnClick = analyseflatdarksButton4Click
+        OnClick = analyseflatdarksButton1Click
         ParentFont = False
         TabOrder = 1
       end

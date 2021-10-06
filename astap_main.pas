@@ -3014,7 +3014,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.581c, '+about_message4+', dated 2021-10-2';
+  #13+#10+'ASTAP version ß0.9.582, '+about_message4+', dated 2021-10-6';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -7534,6 +7534,8 @@ begin
       stackmenu1.classify_flat_filter1.checked:= Sett.ReadBool('stack','classify_flat_filter',false);
       stackmenu1.classify_dark_date1.checked:= Sett.ReadBool('stack','classify_dark_date',false);
       stackmenu1.classify_flat_date1.checked:= Sett.ReadBool('stack','classify_flat_date',false);
+      stackmenu1.classify_flat_exposure1.checked:= Sett.ReadBool('stack','classify_flat_exposure',false);
+
       stackmenu1.add_time1.checked:= Sett.ReadBool('stack','add_time',false); {add time to resulting stack file name}
 
       stackmenu1.uncheck_outliers1.checked:= Sett.ReadBool('stack','uncheck_outliers',false);
@@ -7859,6 +7861,7 @@ begin
       sett.writeBool('stack','classify_flat_filter',stackmenu1.classify_flat_filter1.Checked);
       sett.writeBool('stack','classify_dark_date',stackmenu1.classify_dark_date1.Checked);
       sett.writeBool('stack','classify_flat_date',stackmenu1.classify_flat_date1.Checked);
+      sett.writeBool('stack','classify_flat_exposure',stackmenu1.classify_flat_exposure1.Checked);
 
       sett.writeBool('stack','add_time',stackmenu1.add_time1.Checked);
 
