@@ -8185,6 +8185,23 @@ begin
 end;
 
 
+function extract_letters_only(inp : string): string;
+var
+  i : integer;
+  ch: char;
+begin
+  result:='';
+  for i:=1 to length(inp) do
+  begin
+    ch:=inp[i];
+    case ch of // valid char
+     'A'..'Z','a'..'z','-' : result := result + ch;
+    end;{case}
+  end;
+end;
+
+
+
 procedure Tstackmenu1.replace_by_master_dark1Click(Sender: TObject); {this routine works with mono files but makes coloured files mono, so less suitable for commercial cameras producing coloured raw lights}
 begin
   if img_loaded<>nil then {button was used, backup img array and header and restore later}  begin  img_backup:=nil;{clear to save memory}  backup_img;  end;{backup fits for later}
@@ -8195,12 +8212,12 @@ end;
 
 procedure replace_by_master_flat;
 var
-   fitsX,fitsY,file_count    : integer;
-   path1,filen,filter        : string;
+   fitsX,fitsY,flat_count                        : integer;
+   path1,filen,flat_filter,expos                 : string;
    day,flatdark_exposure,flat_exposure     : double;
    c,counter,i : integer;
    specified,classify_exposure: boolean;
-   width1,flat_dark_width: integer;
+   flat_width,flat_dark_width: integer;
    flatdark_used : boolean;
    file_list : array of string;
 begin
@@ -8214,12 +8231,9 @@ begin
     flatdark_exposure:=-99;
     classify_exposure:=classify_flat_exposure1.checked;
 
-//    flat_dark_width:=average_flatdarks(exposure : double;{average of bias frames. Convert to FITS if required}
-//    flatdark_used:=false;
-
     setlength(file_list,stackmenu1.listview3.items.count);
     repeat
-      file_count:=0;
+      flat_count:=0;
       specified:=false;
 
       i:=stackmenu1.listview3.items.count-1;
@@ -8231,20 +8245,20 @@ begin
           begin {set specification master}
             if specified=false then
             begin
-              filter:=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter];
-              width1:=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]);
+              flat_filter:=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter];
+              flat_width:=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]);
               day:=strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]);
               flat_exposure:=strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_exposure]);
               specified:=true;
             end;
 
-            if ((stackmenu1.classify_flat_filter1.checked=false) or (filter=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter])) then {filter correct?}
-              if  width1=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct}
+            if ((stackmenu1.classify_flat_filter1.checked=false) or (flat_filter=stackmenu1.listview3.Items.item[c].subitems.Strings[F_filter])) then {filter correct?}
+              if  flat_width=strtoint(stackmenu1.listview3.Items.item[c].subitems.Strings[D_width]) then {width correct}
                 if ((classify_flat_date1.Checked=false) or  (abs(day-strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_jd]))<=0.5)) then {within 12 hours made}
                   if ((classify_exposure=false) or (abs(flat_exposure-strtofloat(stackmenu1.listview3.Items.item[c].subitems.Strings[F_exposure]))<0.01 )) then {exposure correct?}
                   begin
-                    file_list[file_count]:=filen;
-                    inc(file_count);
+                    file_list[flat_count]:=filen;
+                    inc(flat_count);
                   end;
           end;
         end;{checked}
@@ -8253,19 +8267,13 @@ begin
       Application.ProcessMessages;
       if esc_pressed then exit;
 
-      flat_count:=0;
-      if file_count<>0 then
+      if flat_count<>0 then
       begin
-        memo2_message('Combining flats and flat-darks.');
-
-        average('flat',file_list,file_count,img_flat);{only average, make color also mono}
-        flat_count:=file_count;
-        flat_exposure:=exposure;
 
         Application.ProcessMessages;
         if esc_pressed then exit;
 
-        if ((flat_count>0) and (abs(flat_exposure-flatdark_exposure)>0.01)) then
+        if  abs(flat_exposure-flatdark_exposure)>0.01 then  {already a dark loaded?}
         begin
           if classify_exposure=false then
           begin
@@ -8280,10 +8288,16 @@ begin
           flatdark_exposure:=flat_exposure;{store this exposure for next time}
           if flat_dark_width=0 then memo2_message('█ █ █ █ █ █ Warning no flat-dark/bias found!! █ █ █ █ █ █ ')
           else
-          if width1<>flat_dark_width then begin memo2_message('Abort, the width of the flat and flat-dark do not match!!');exit end;
+          if flat_width<>flat_dark_width then begin memo2_message('Abort, the width of the flat and flat-dark do not match!!');exit end;
           flatdark_used:=false;
         end;
 
+        memo2_message('Combining flats.');
+        Application.ProcessMessages;
+        if esc_pressed then exit;
+        average('flat',file_list,flat_count,img_flat);{only average, make color also mono}
+
+        memo2_message('Combining flats and flat-darks.');
         Application.ProcessMessages;
         if esc_pressed then
         exit;
@@ -8306,9 +8320,12 @@ begin
         if esc_pressed then exit;
 
         naxis3:=1; {any color is made mono in the routine}
-        if file_count<>0 then
+        if flat_count<>0 then
         begin
-          path1:=extractfilepath(file_list[0])+'master_flat_corrected_with_flat_darks_'+extract_letters_only(filter_name)+'_'+inttostr(flat_count)+'xF_'+inttostr(flatdark_count)+'xFD_'+copy(date_obs,1,10)+'.fit';; {extract_letter is added for filter='N/A' for SIPS software}
+          flat_filter:=extract_letters_only(flat_filter); {extract_letter is added for filter='N/A' for SIPS software}
+          if flat_filter='' then filter_name:=copy(extractfilename(file_list[0]),1,10);{for DSLR images}
+          if classify_exposure then begin str(flat_exposure:0:2,expos);flat_filter:=flat_filter+'_'+expos+'sec'; end;
+          path1:=extractfilepath(file_list[0])+'master_flat_corrected_with_flat_darks_'+flat_filter+'_'+inttostr(flat_count)+'xF_'+inttostr(flatdark_count)+'xFD_'+copy(date_obs,1,10)+'.fit';;
           update_integer('FLAT_CNT=',' / Number of flat images combined.                ' ,flat_count);
           update_integer('BIAS_CNT=',' / Number of flat-dark or bias images combined.   ' ,flatdark_count);
           if flatdark_count<>0 then calstat:=calstat+'B';
@@ -8325,7 +8342,7 @@ begin
           if save_fits(img_flat,path1,-32,false) then {saved}
           begin
             listview3.Items.BeginUpdate; {remove the flats added to master}
-            for i:=0 to  file_count do
+            for i:=0 to  flat_count do
             begin
               c:=0;
               counter:=listview3.Items.Count;
@@ -8351,7 +8368,7 @@ begin
       Application.ProcessMessages;
       if esc_pressed then exit;
 
-    until file_count=0;{make more than one master}
+    until flat_count=0;{make more than one master}
 
     if flatdark_used then listview4.Items.Clear;{remove bias if used}
     save_settings2;{store settings}

@@ -741,7 +741,6 @@ function extract_raw_colour_to_file(filename7,filtern: string; xp,yp : integer) 
 function fits_file_name(inp : string): boolean; {fits file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
 procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; out  ram,decm  : double {fitsX, Y to ra,dec});
-function extract_letters_only(inp : string): string;
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 procedure write_astronomy_wcs(filen:string);
 procedure CCDinspector(snr_min: double);
@@ -3014,7 +3013,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.582, '+about_message4+', dated 2021-10-6';
+  #13+#10+'ASTAP version ß0.9.583, '+about_message4+', dated 2021-10-7';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -5142,22 +5141,6 @@ begin
   end {fits file}
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
-end;
-
-
-function extract_letters_only(inp : string): string;
-var
-  i : integer;
-  ch: char;
-begin
-  result:='';
-  for i:=1 to length(inp) do
-  begin
-    ch:=inp[i];
-    case ch of // valid char
-     'A'..'Z','a'..'z' : result := result + ch;
-    end;{case}
-  end;
 end;
 
 
