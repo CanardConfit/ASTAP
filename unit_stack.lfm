@@ -3,7 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 749
   Top = 167
   Width = 1785
-  HorzScrollBar.Page = 1345
+  HorzScrollBar.Page = 1470
   VertScrollBar.Page = 556
   AllowDropFiles = True
   AutoScroll = True
@@ -86,10 +86,10 @@ object stackmenu1: Tstackmenu1
     Left = 440
     Height = 60
     Top = 496
-    Width = 648
+    Width = 520
     Caption = 'Classify by'
     ClientHeight = 40
-    ClientWidth = 644
+    ClientWidth = 516
     ParentFont = False
     TabOrder = 1
     object classify_filter1: TCheckBox
@@ -153,34 +153,10 @@ object stackmenu1: Tstackmenu1
       ShowHint = True
       TabOrder = 3
     end
-    object classify_flat_exposure1: TCheckBox
-      Left = 368
-      Height = 19
-      Hint = 'Activate this option if you want classify the flats and flat darks based on exposure time.'
-      Top = 16
-      Width = 181
-      Caption = 'Flat && Flat-Dark exposure time'
-      ParentFont = False
-      ParentShowHint = False
-      ShowHint = True
-      TabOrder = 5
-    end
-    object classify_flat_date1: TCheckBox
-      Left = 528
-      Height = 19
-      Hint = 'Combine flats within 12 hour time range to master'
-      Top = -2
-      Width = 65
-      Caption = 'Flat date'
-      ParentFont = False
-      ParentShowHint = False
-      ShowHint = True
-      TabOrder = 6
-    end
   end
   object help_stack_menu2: TLabel
     Cursor = crHandPoint
-    Left = 1136
+    Left = 1032
     Height = 30
     Hint = 'Help'
     Top = 507
@@ -195,7 +171,7 @@ object stackmenu1: Tstackmenu1
     OnClick = help_stack_menu1Click
   end
   object powerdown_enabled1: TCheckBox
-    Left = 1168
+    Left = 1064
     Height = 19
     Hint = 'If selected, shutdown computer after completion.'
     Top = 507
@@ -207,7 +183,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 2
   end
   object write_log1: TCheckBox
-    Left = 1168
+    Left = 1064
     Height = 19
     Hint = 'Write the stack log to a file with extension .txt'
     Top = 529
@@ -251,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1785
-    ActivePage = Bias
+    ActivePage = tab_stackmethod1
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -259,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 3
+    TabIndex = 5
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -1143,6 +1119,30 @@ object stackmenu1: Tstackmenu1
         }
         OnClick = browse_flats1Click
         TabOrder = 4
+      end
+      object classify_flat_date1: TCheckBox
+        Left = 672
+        Height = 19
+        Hint = 'Combine flats within 12 hour time range to master'
+        Top = 0
+        Width = 205
+        Caption = 'Classify by date for master creation'
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 5
+      end
+      object classify_flat_exposure1: TCheckBox
+        Left = 672
+        Height = 19
+        Hint = 'Activate this option if you want classify the flats and flat darks based on exposure time.'
+        Top = 16
+        Width = 260
+        Caption = 'Classify by exposure time for master creation.'
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        TabOrder = 6
       end
     end
     object Bias: TTabSheet
@@ -2234,7 +2234,7 @@ object stackmenu1: Tstackmenu1
         object demosaic_method1: TComboBox
           Left = 8
           Height = 23
-          Hint = 'Demosaic method of color filter array.  Best method are AstroC and Simple.  For pure white stars you could AstroM. '
+          Hint = 'Demosaic method of colour filter array.  Best methods are AstroC and Simple.  For pure white stars you could AstroM. '
           Top = 156
           Width = 390
           ItemHeight = 15
@@ -2244,8 +2244,6 @@ object stackmenu1: Tstackmenu1
             'AstroM, white stars'
             'AstroSimple'
             'Bilinear interpolation'
-            'Malvar_He_Cutler (not for astro)'
-            ''
           )
           ParentFont = False
           Style = csDropDownList

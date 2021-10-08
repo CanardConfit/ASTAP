@@ -3013,7 +3013,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.583, '+about_message4+', dated 2021-10-7';
+  #13+#10+'ASTAP version ß0.9.584, '+about_message4+', dated 2021-10-8';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -6091,88 +6091,6 @@ begin
 end;
 
 
-
-procedure demosaic_Malvar_He_Cutler(var img:image_array;pattern: integer);{make from sensor bayer pattern the three colors. Nor very suitable for astro images}
-{Based on paper HIGH-QUALITY LINEAR INTERPOLATION FOR DEMOSAICING OF BAYER-PATTERNED COLOR IMAGES
-                Henrique S. Malvar, Li-wei He, and Ross Cutler, Microsoft Research}
-var
-    X,Y,offsetx, offsety: integer;
-    red,green_odd,green_even,blue : boolean;
-    img_temp2 : image_array;
-begin
-  case pattern  of
-     0: begin offsetx:=0; offsety:=0; end;
-     1: begin offsetx:=0; offsety:=1; end;
-     2: begin offsetx:=1; offsety:=0; end;
-     3: begin offsetx:=1; offsety:=1; end;
-     else exit;
-  end;
-  setlength(img_temp2,3,width2,height2);{set length of image array color}
-
-  for y := 2 to height2-3 do   {-3 = -1 -2, ignore borders}
-  begin
-    for x:=2 to width2-3 do
-    begin
-      try
-      green_even:= ( (odd(x+1+offsetX)) and (odd(y+1+offsetY)) );{even(i) function is odd(i+1), even is here for array position not fits position}
-      green_odd := ( (odd(x+offsetX)) and  (odd(y+offsetY)) );
-      red :=( (odd(x+offsetX)) and (odd(y+1+offsetY)) );
-      blue:=( (odd(x+1+offsetX)) and (odd(y+offsetY)) );
-      if green_odd then begin {red up and down, blue left and right }
-                   img_temp2[0,x,y]:=(  5*img[0,x,y]
-                                      + 4*img[0,x,y+1] + 4*img[0,x,y-1]
-                                      -img[0,x-1,y-1] -img[0,x+1,y-1] -img[0,x-1,y+1] -img[0,x+1,y+1]
-                                      -img[0,x,y-2  ] -img[0,x,y+2  ]
-                                      +0.5*img[0,x-2 ,y]   +0.5*img[0,x+2,y])/8;
-                   img_temp2[1,x,y]:= (img[0,x,  y  ] );
-                   img_temp2[2,x,y]:=(  5*img[0,x,y]
-                                      + 4*img[0,x-1,y]     +4*img[0,x+1,y]
-                                         -img[0,x-1,y-1]     -img[0,x+1,y-1] -img[0,x-1,y+1] -img[0,x+1,y+1]
-                                         -img[0,x-2,y  ]     -img[0,x+2,y  ]
-                                     +0.5*img[0,x  ,y-2] +0.5*img[0,x  ,y+2])/8;end
-      else
-      if green_even then begin {red left and right, blue up and down }
-                   img_temp2[0,x,y]:=(  5*img[0,x,y]
-                                      + 4*img[0,x-1,y]    + 4*img[0,x+1,y]
-                                         -img[0,x-1,y-1]     -img[0,x+1,y-1] -img[0,x-1,y+1] -img[0,x+1,y+1]
-                                         -img[0,x-2,y  ]     -img[0,x+2,y  ]
-                                     +0.5*img[0,x  ,y-2] +0.5*img[0,x  ,y+2])/8;
-                   img_temp2[1,x,y]:= (img[0,x,  y  ] );
-                   img_temp2[2,x,y]:=(5*img[0,x,y]
-                                      + 4*img[0,x  ,y-1] +4*img[0,x  ,y+1]
-                                         -img[0,x-1,y-1]   -img[0,x+1,y-1] -img[0,x-1,y+1] -img[0,x+1,y+1]
-                                         -img[0,x  ,y-2]   -img[0,x  ,y+2]
-                                     +0.5*img[0,x-2,y] +0.5*img[0,x+2,y])/8;end
-      else
-      if red then begin
-                   img_temp2[0,x,y]:=  (img[0,x,  y  ]);
-                   img_temp2[1,x,y]:=(4*img[0,x,y]
-                                     +2*img[0,x-1,y  ]+2*img[0,x+1,y  ]+2*img[0,x  ,y-1]+2*img[0,x  ,y+1]
-                                     -img[0,x-2,y  ]    -img[0,x+2,y  ]  -img[0,x  ,y-2]  -img[0,x  ,y+2])/8;
-                   img_temp2[2,x,y]:=(  6*img[0,x,y]
-                                       +2*img[0,x-1,y-1]  +2*img[0,x+1,y-1]   +2*img[0,x-1,y+1]+2*img[0,x+1,y+1]
-                                     -1.5*img[0,x-2,y  ]-1.5*img[0,x+2,y  ]-1.5*img[0,x  ,y-2]-1.5*img[0,x  ,y+2])/8; end
-      else
-      if blue then begin
-                   img_temp2[0,x,y]:=(  6*img[0,x,y]
-                                       +2*img[0,x-1,y-1]  +2*img[0,x+1,y-1]  +2*img[0,x-1,y+1]  +2*img[0,x+1,y+1]
-                                     -1.5*img[0,x-2,y  ]-1.5*img[0,x+2,y  ]-1.5*img[0,x  ,y-2]-1.5*img[0,x  ,y+2])/8;
-                   img_temp2[1,x,y]:=(4*img[0,x,y]
-                                     +2*img[0,x-1,y  ]+2*img[0,x+1,y  ]+2*img[0,x  ,y-1]+2*img[0,x  ,y+1]
-                                       -img[0,x-2,y  ]  -img[0,x+2,y  ]  -img[0,x  ,y-2]  -img[0,x  ,y+2])/8;
-                   img_temp2[2,x,y]:=  (img[0,x,  y  ]  ); end;
-      except
-      end;
-    end;{x loop}
-  end;{y loop}
-
-  img:=img_temp2;
-  img_temp2:=nil;{free temp memory}
-  naxis3:=3;{now three colors}
-  naxis:=3; {from 2 to 3 dimensions}
-end;
-
-
 procedure preserve_colour_saturated_bayer(img: image_array);{for bayer matrix}
 var
     fitsX,fitsY,w,h : integer;
@@ -6264,17 +6182,15 @@ begin
   if pos('Simple',stackmenu1.demosaic_method1.text)<>0  then {}
     demosaic_astrosimple(img,get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
-  if pos('Bilinear',stackmenu1.demosaic_method1.text)<>0  then {use Bilinear interpolation}
-    demosaic_bilinear_interpolation(img,get_demosaic_pattern){make from sensor bayer pattern the three colors}
-  else
   if pos('AstroM',stackmenu1.demosaic_method1.text)<>0  then {}
     demosaic_astroM_bilinear_interpolation(img,get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
   if pos('X-',stackmenu1.bayer_pattern1.Text)<>0  then {}
-     demosaic_x_trans(img){make from Fuji X-trans three colors}
+    demosaic_x_trans(img){make from Fuji X-trans three colors}
   else
-    demosaic_Malvar_He_Cutler(img,get_demosaic_pattern);{make from sensor bayer pattern the three colors}
+  demosaic_bilinear_interpolation(img,get_demosaic_pattern);{use Bilinear interpolation. Make from sensor bayer pattern the three colors}
 end;
+
 
 procedure demosaic_advanced(var img : image_array);{demosaic img}
 begin

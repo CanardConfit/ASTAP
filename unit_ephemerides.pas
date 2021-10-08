@@ -1050,7 +1050,7 @@ end;//
 *
 *-}
 
-procedure sla_DMXV (DM : r3x3_array; out VA, VB : r3_array);
+procedure sla_DMXV (DM : r3x3_array; VA : r3_array; out VB : r3_array);
 var
   I,J: integer;
   w  : double;
