@@ -3,7 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 749
   Top = 167
   Width = 1785
-  HorzScrollBar.Page = 1470
+  HorzScrollBar.Page = 1701
   VertScrollBar.Page = 556
   AllowDropFiles = True
   AutoScroll = True
@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1785
-    ActivePage = tab_stackmethod1
+    ActivePage = lights
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 5
+    TabIndex = 0
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -909,7 +909,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 0
       end
       object clear_selection2: TButton
-        Left = 992
+        Left = 1040
         Height = 25
         Hint = 'Clear image list'
         Top = 5
@@ -1121,7 +1121,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 4
       end
       object classify_flat_date1: TCheckBox
-        Left = 672
+        Left = 714
         Height = 19
         Hint = 'Combine flats within 12 hour time range to master'
         Top = 0
@@ -1133,7 +1133,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 5
       end
       object classify_flat_exposure1: TCheckBox
-        Left = 672
+        Left = 714
         Height = 19
         Hint = 'Activate this option if you want classify the flats and flat darks based on exposure time.'
         Top = 16
