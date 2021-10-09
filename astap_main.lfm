@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 18
+  Left = 336
   Height = 658
   Hint = ' '
-  Top = 73
+  Top = 83
   Width = 1272
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -1689,6 +1689,7 @@ object mainwindow: Tmainwindow
     Top = 208
   end
   object SaveDialog1: TSaveDialog
+    Options = [ofExtensionDifferent, ofEnableSizing, ofViewDetail]
     Left = 952
     Top = 288
   end

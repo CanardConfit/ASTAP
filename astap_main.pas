@@ -3013,7 +3013,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.584, '+about_message4+', dated 2021-10-8';
+  #13+#10+'ASTAP version ß0.9.584a, '+about_message4+', dated 2021-10-9';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -14785,70 +14785,70 @@ begin
       if savedialog1.filterindex=1 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_png16(img_temp,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked);
+        save_png16(img_temp,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked);  {Change extension is only required due to bug in macOS only. 2021-10-9 See https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39423}
       end
       else
       if savedialog1.filterindex=2 then
-        save_png16(img_loaded,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked)
+        save_png16(img_loaded,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=3 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_tiff16(img_temp,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked);
+        save_tiff16(img_temp,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=4 then
-        save_tiff16(img_loaded,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked)
+        save_tiff16(img_loaded,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=5 then
-      save_tiff_96(img_loaded,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked) {old uncompressed routine in unit_tiff}
+      save_tiff_96(img_loaded,width2,height2,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked) {old uncompressed routine in unit_tiff}
       else
       if savedialog1.filterindex=6 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_PPM_PGM_PFM(img_temp,width2,height2,48 {colour depth},savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked);
+        save_PPM_PGM_PFM(img_temp,width2,height2,48 {colour depth},ChangeFileExt(savedialog1.filename,'.ppm'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=7 then
-          save_PPM_PGM_PFM(img_loaded,width2,height2,48 {colour depth},savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked)
+          save_PPM_PGM_PFM(img_loaded,width2,height2,48 {colour depth},ChangeFileExt(savedialog1.filename,'.ppm'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=8 then
-          save_PPM_PGM_PFM(img_loaded,width2,height2,96 {colour depth},savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked);
+          save_PPM_PGM_PFM(img_loaded,width2,height2,96 {colour depth},ChangeFileExt(savedialog1.filename,'.pfm'),flip_horizontal1.checked,flip_vertical1.checked);
     end {color}
     else
     begin {gray}
       if savedialog1.filterindex=1 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_png16(img_temp,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked);
+        save_png16(img_temp,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=2 then
-        save_png16(img_loaded,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked)
+        save_png16(img_loaded,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=3 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_tiff16(img_temp,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked);
+        save_tiff16(img_temp,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=4 then
-      save_tiff16(img_loaded,naxis3,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked)
+      save_tiff16(img_loaded,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=5 then
-        save_tiff_32(img_loaded,width2,height2,savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked){old uncompressed routine in unit_tiff}
+        save_tiff_32(img_loaded,width2,height2,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked){old uncompressed routine in unit_tiff}
       else
       if savedialog1.filterindex=6 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_PPM_PGM_PFM(img_temp,width2,height2,16{colour depth}, savedialog1.filename, flip_horizontal1.checked,flip_vertical1.checked);
+        save_PPM_PGM_PFM(img_temp,width2,height2,16{colour depth}, ChangeFileExt(savedialog1.filename,'.pgm'), flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=7 then
-          save_PPM_PGM_PFM(img_loaded,width2,height2,16{colour depth},savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked)
+          save_PPM_PGM_PFM(img_loaded,width2,height2,16{colour depth},ChangeFileExt(savedialog1.filename,'.pgm'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=8 then
-          save_PPM_PGM_PFM(img_loaded,width2,height2,32 {colour depth},savedialog1.filename,flip_horizontal1.checked,flip_vertical1.checked);
+          save_PPM_PGM_PFM(img_loaded,width2,height2,32 {colour depth},ChangeFileExt(savedialog1.filename,'.pfm'),flip_horizontal1.checked,flip_vertical1.checked);
 
     end;
 
