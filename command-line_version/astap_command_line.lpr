@@ -3,7 +3,7 @@ program astap_command_line;
 {$mode objfpc}{$H+}
 
 uses
-  {$IFDEF UNIX}{$IFDEF UseCThreads}
+  {$IFDEF UNIX or ANDROID}{$IFDEF UseCThreads}
   cthreads,
   {$ENDIF}{$ENDIF}
   Classes, SysUtils, CustApp,
@@ -43,7 +43,7 @@ begin
   database_path:=extractfilepath(paramstr(0));{}
 
     {$ifdef mswindows}
-    {$else} {unix}
+    {$else} {UNIX or ANDROID}
     if copy(database_path,1,4)='/usr' then {for Linux distributions}
       database_path:='/usr/share/astap/data/';
     {$endif}

@@ -242,7 +242,7 @@ end;
 
 procedure memo2_message(s: string);{message to memo2. Is also used for log to file in commandline mode}
 begin
-  {$IFDEF unix}  {linux and mac}
+  {$IFDEF UNIX or ANDROID}  {linux and mac}
   if filename2='stdin' then s:='COMMENT='+s;
   writeln(s); {linux command line can write unicode}
   {$ELSE }
