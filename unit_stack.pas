@@ -8689,7 +8689,7 @@ var
    Save_Cursor:TCursor;
    i,c,over_size,over_sizeL,nrfiles, image_counter,object_counter, first_file, total_counter,counter_colours: integer;
    filter_name1, filter_name2,defilter, filename3, extra1,extra2,object_to_process,stack_info,thefilters    : string;
-   lrgb,solution,monofile,ignore,cal_and_align, mosaic_mode,sigma_mode,calibration_mode  : boolean;
+   lrgb,solution,monofile,ignore,cal_and_align, mosaic_mode,sigma_mode,calibration_mode,skip_combine  : boolean;
    startTick      : qword;{for timing/speed purposes}
    min_background,max_background,backgr   : double;
    filters_used : array [0..4] of string;
@@ -8706,6 +8706,9 @@ begin
   memo2_message('Oversize '+oversize1.text+ ' pixels');
   mosaic_mode:=pos('stich',stackmenu1.stack_method1.text)>0;
   sigma_mode:=pos('Sigma',stackmenu1.stack_method1.text)>0;
+  skip_combine:=pos('skip',stackmenu1.stack_method1.text)>0;
+  cal_and_align:=pos('alignment',stackmenu1.stack_method1.text)>0; {calibration and alignment only}
+
   if  ((stackmenu1.use_manual_alignment1.checked) and (sigma_mode) and (pos('Comet',stackmenu1.manual_centering1.text)<>0)) then memo2_message('█ █ █ █ █ █ Warning, use for comet stacking the stack method "Average"!. █ █ █ █ █ █ ');
 
   if  stackmenu1.use_ephemeris_alignment1.checked then
@@ -8964,7 +8967,6 @@ begin
     for i:=0 to 4 do filters_used[i]:='';
     inc(object_counter);
 
-    cal_and_align:=pos('alignment',stackmenu1.stack_method1.text)>0; {calibration and alignment only}
     lrgb:=((classify_filter1.checked) and (cal_and_align=false));{ignore lrgb for calibration and alignmentis true}
     over_size:=round(strtofloat2(stackmenu1.oversize1.Text));{accept also commas but round later}
     if lrgb=false then
@@ -9190,22 +9192,26 @@ begin
           extra1:=extra1+filter_name;
         end;
       end;{for loop for 4 RGBL}
-      if length(extra2)>=2 then {at least two colors required}
-      begin
-        files_to_process_LRGB[0]:=files_to_process_LRGB[5];{use luminance as reference for alignment}  {contains, REFERENCE, R,G,B,RGB,L}
-        if files_to_process_LRGB[0].name='' then  files_to_process_LRGB[0]:=files_to_process_LRGB[1]; {use red channel as reference is no luminance is available}
-        if files_to_process_LRGB[0].name='' then  files_to_process_LRGB[0]:=files_to_process_LRGB[2]; {use green channel as reference is no luminance is available}
+
+      if skip_combine=false then
+      begin {combine colours}
+        if length(extra2)>=2 then {at least two colors required}
+        begin
+          files_to_process_LRGB[0]:=files_to_process_LRGB[5];{use luminance as reference for alignment}  {contains, REFERENCE, R,G,B,RGB,L}
+          if files_to_process_LRGB[0].name='' then  files_to_process_LRGB[0]:=files_to_process_LRGB[1]; {use red channel as reference is no luminance is available}
+          if files_to_process_LRGB[0].name='' then  files_to_process_LRGB[0]:=files_to_process_LRGB[2]; {use green channel as reference is no luminance is available}
 
 
-        stack_LRGB(over_sizeL {zero if already stacked from several files},files_to_process_LRGB, counter_colours); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,RGB,L]}
-        if esc_pressed then  begin progress_indicator(-2,'ESC'); restore_img;Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-      end
-      else
-      if length(extra2)=1 then
-      begin
-         memo2.lines.add('Error! One color only. For LRGB stacking a minimum of two colors is required. Removed the check mark classify on "image filter" or add images made with a different color filter.');
-         //filters_used[5]:=filters_used[i];
-         lrgb:=false;{prevent runtime errors with naxis3=3}
+          stack_LRGB(over_sizeL {zero if already stacked from several files},files_to_process_LRGB, counter_colours); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,RGB,L]}
+          if esc_pressed then  begin progress_indicator(-2,'ESC'); restore_img;Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+        end
+        else
+        if length(extra2)=1 then
+        begin
+           memo2.lines.add('Error! One color only. For LRGB stacking a minimum of two colors is required. Removed the check mark classify on "image filter" or add images made with a different color filter.');
+           //filters_used[5]:=filters_used[i];
+           lrgb:=false;{prevent runtime errors with naxis3=3}
+        end;
       end;
     end;
 
@@ -9213,7 +9219,7 @@ begin
     if esc_pressed then begin progress_indicator(-2,'ESC'); restore_img;exit;end;
 
 
-    if cal_and_align=false then {do not do this for calibration and alignment only}
+    if ((cal_and_align=false) and (skip_combine=false)) then {do not do this for calibration and alignment only, and skip combine}
     begin
       fits_file:=true;
       nrbits:=-32; {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
@@ -9514,12 +9520,14 @@ end;
 
 procedure Tstackmenu1.stack_method1Change(Sender: TObject);
 var
+   method : integer;
    sigm, mosa,cal_and_align,cal_only : boolean;
 begin
-  sigm:=stack_method1.ItemIndex=1;{sigma clip}
-  mosa:=stack_method1.ItemIndex=2;{mosaic}
-  cal_and_align:=stack_method1.ItemIndex=3;{}
-  cal_only:=stack_method1.ItemIndex=4;{}
+  method:=stack_method1.ItemIndex;
+  sigm:=(method in [1,6]);{sigma clip}
+  mosa:=(method=2);{mosaic}
+  cal_and_align:=(method=3);{}
+  cal_only:=(method=4);{}
 
   mosaic_box1.enabled:=mosa;
   raw_box1.enabled:=(mosa=false);
@@ -9539,7 +9547,9 @@ begin
   classify_filter1.enabled:=((cal_and_align=false) and (cal_only=false));
   classify_object1.enabled:=(cal_only=false);
 
-  stack_button1.caption:='Stack ('+stack_method1.text+')';
+  stack_button1.caption:='STACK  ('+stack_method1.text+')';
+
+  if ((method>=5) and (classify_filter1.Checked=false)) then  memo2_message('█ █ █ █ █ █ Warning, classify on Image Filter is not check marked !!! █ █ █ █ █ █ ')
 end;
 
 

@@ -68,7 +68,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 5
   end
   object press_esc_to_abort1: TLabel
-    Left = 288
+    Left = 296
     Height = 15
     Hint = 'Hit ESC key or click on this text to stop.'
     Top = 515
@@ -199,7 +199,7 @@ object stackmenu1: Tstackmenu1
     Height = 41
     Hint = 'Stack check marked images using darks, flats and flat dark frames.'
     Top = 507
-    Width = 248
+    Width = 260
     Caption = 'Stack check marked images'
     OnClick = stack_button1Click
     ParentFont = False
@@ -1483,6 +1483,8 @@ object stackmenu1: Tstackmenu1
           'Image stiching mode'
           'Calibration and alignment only'
           'Calibration only'
+          'Average, skip LRGB  combine'
+          'Sigma clip, skip LRGB combine'
         )
         OnChange = stack_method1Change
         ParentFont = False
