@@ -13,7 +13,7 @@ You should have received a copy of the GNU Lesser General Public License (LGPL) 
 
 interface
 uses
-   forms,Classes, SysUtils,strutils, math,graphics, Controls {for tcursor},astap_main;
+   forms,Classes, SysUtils,strutils, math,graphics, Controls {for tcursor},astap_main,  unit_stars_wide_field;
 
 procedure plot_deepsky;{plot the deep sky object on the image}
 procedure load_deep;{load the deepsky database once. If loaded no action}
@@ -1558,7 +1558,7 @@ var
   fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,cv,fov_org,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert : double;
-  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2                                : integer;
+  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count                          : integer;
   flip_horizontal, flip_vertical        : boolean;
   mag_offset_array,hfd_x_sd             : array of double;
   Save_Cursor                           : TCursor;
@@ -1720,51 +1720,76 @@ begin
 
     fov_org:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
 
-    if file290 then {.290 files}
-      fov:=min(fov_org,9.53*pi/180) {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
-    else {.1476 files}
-      fov:=min(fov_org,5.142857143*pi/180); {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
-
-    if fov_org>fov then max_nr_stars:=round(max_nr_stars*fov/fov_org);{reduce number of stars for very large FOV}
-
-
-    find_areas( telescope_ra,telescope_dec, fov,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
-
     sincos(dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
-    {read 1th area}
-    if area1<>0 then {read 1th area}
+    if database_type<>001 then {1476 or 290 files}
     begin
-      if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
-      nrstars_required2:=trunc(max_nr_stars * frac1);
-      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
-    end;
+      if database_type=1476 then {.1476 files}
+      fov:=min(fov_org,5.142857143*pi/180) {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
+      else {.290 files}
+      fov:=min(fov_org,9.53*pi/180); {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
 
-    {read 2th area}
-    if area2<>0 then {read 2th area}
-    begin
-      if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
-      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2));
-      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
-    end;
 
-    {read 3th area}
-    if area3<>0 then {read 3th area}
-    begin
-      if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
-      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
-      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
-    end;
-    {read 4th area}
-    if area4<>0 then {read 4th area}
-    begin
-      if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
-      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
-      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp))
-      and (bp_rp>12) ) do plot_star;{add star}
-    end;
+      if fov_org>fov then max_nr_stars:=round(max_nr_stars*fov/fov_org);{reduce number of stars for very large FOV}
 
-    close_star_database;
+      find_areas( telescope_ra,telescope_dec, fov,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
+
+
+      {read 1th area}
+      if area1<>0 then {read 1th area}
+      begin
+        if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
+        nrstars_required2:=trunc(max_nr_stars * frac1);
+        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+      end;
+
+      {read 2th area}
+      if area2<>0 then {read 2th area}
+      begin
+        if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
+        nrstars_required2:=trunc(max_nr_stars * (frac1+frac2));
+        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+      end;
+
+      {read 3th area}
+      if area3<>0 then {read 3th area}
+      begin
+        if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
+        nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
+        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+      end;
+      {read 4th area}
+      if area4<>0 then {read 4th area}
+      begin
+        if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
+        nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
+        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp))
+        and (bp_rp>12) ) do plot_star;{add star}
+      end;
+
+      close_star_database;
+    end
+    else
+    begin {001 database}
+      if length(wide_field_stars)=0 then
+                              read_stars_wide_field;{load wide field stars array}
+      count:=0;
+      cos_telescope_dec:=cos(telescope_dec);
+      while ((star_total_counter<max_nr_stars) and  (count<length(wide_field_stars) div 3) ) do {star file 001 database read. Read up to nrstars_required}
+      begin
+        mag2:=wide_field_stars[count*3];{contains: mag1, ra1,dec1, mag2,ra2,dec2,mag3........}
+        ra2:=wide_field_stars[count*3+1];
+        dec2:=wide_field_stars[count*3+2];
+        delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;
+        if   ((delta_ra*cos_telescope_dec <fov_org/2) and (abs(dec2-telescope_dec)<fov_org/2))  then
+        begin
+          plot_star;{add star}
+          inc(star_total_counter);
+
+        end;
+        inc(count);
+      end;
+    end;
 
     if flux_calibration then {flux calibration}
     begin
@@ -1917,10 +1942,10 @@ end;
 
 procedure measure_distortion(plot: boolean; out stars_measured : integer);{measure or plot distortion}
 var
-  fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
+  fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,snr_min,x,y,x2,y2,astrometric_error    : double;
-  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,scale    : integer;
+  star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,scale,count    : integer;
   flip_horizontal, flip_vertical,sip   : boolean;
   error_array                          : array of double;
   Save_Cursor                      : TCursor;
@@ -2028,51 +2053,79 @@ begin
     if plot=false then setlength(distortion_data,4,max_nr_stars);
     stars_measured:=0;{star number}
 
-    fov:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
+    fov_org:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
 
-    if file290 then {.290 files}
-      fov:=min(fov,9.53*pi/180) {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
-    else {.1476 files}
-      fov:=min(fov,5.142857143*pi/180); {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
-
-
-    find_areas( telescope_ra,telescope_dec, fov,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
 
     sincos(dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
-    {read 1th area}
-    if area1<>0 then {read 1th area}
+    if database_type<>001 then {1476 or 290 files}
     begin
-      if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
-      nrstars_required2:=trunc(max_nr_stars * frac1);
-      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+      if  database_type=1476 then {.1476 files}
+        fov:=min(fov_org,5.142857143*pi/180) {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
+      else
+      if  database_type=290 then {.290 files}
+        fov:=min(fov_org,9.53*pi/180); {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+
+
+      find_areas( telescope_ra,telescope_dec, fov,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
+
+      {read 1th area}
+      if area1<>0 then {read 1th area}
+      begin
+        if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
+        nrstars_required2:=trunc(max_nr_stars * frac1);
+        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+      end;
+
+      {read 2th area}
+      if area2<>0 then {read 2th area}
+      begin
+        if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
+        nrstars_required2:=trunc(max_nr_stars * (frac1+frac2));
+        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+      end;
+
+      {read 3th area}
+      if area3<>0 then {read 3th area}
+      begin
+        if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
+        nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
+        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
+      end;
+      {read 4th area}
+      if area4<>0 then {read 4th area}
+      begin
+        if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
+        nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
+        while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp))
+        and (bp_rp>12) ) do plot_star;{add star}
+      end;
+
+      close_star_database;
+    end
+    else
+    begin {001 database}
+      if length(wide_field_stars)=0 then
+                              read_stars_wide_field;{load wide field stars array}
+      count:=0;
+      cos_telescope_dec:=cos(telescope_dec);
+      while ((star_total_counter<max_nr_stars) and  (count<length(wide_field_stars) div 3) ) do {star file 001 database read. Read up to nrstars_required}
+      begin
+        mag2:=wide_field_stars[count*3];{contains: mag1, ra1,dec1, mag2,ra2,dec2,mag3........}
+        ra2:=wide_field_stars[count*3+1];
+        dec2:=wide_field_stars[count*3+2];
+        delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;
+        if   ((delta_ra*cos_telescope_dec <fov_org/2) and (abs(dec2-telescope_dec)<fov_org/2))  then
+        begin
+          plot_star;{add star}
+          inc(star_total_counter);
+
+        end;
+        inc(count);
+      end;
     end;
 
-    {read 2th area}
-    if area2<>0 then {read 2th area}
-    begin
-      if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
-      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2));
-      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
-    end;
 
-    {read 3th area}
-    if area3<>0 then {read 3th area}
-    begin
-      if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
-      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3));
-      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp)) ) do plot_star;{add star}
-    end;
-    {read 4th area}
-    if area4<>0 then {read 4th area}
-    begin
-      if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
-      nrstars_required2:=trunc(max_nr_stars * (frac1+frac2+frac3+frac4));
-      while ((star_total_counter<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp))
-      and (bp_rp>12) ) do plot_star;{add star}
-    end;
-
-    close_star_database;
 
     {$ifdef mswindows}
      mainwindow.image1.Canvas.Font.Name :='default';
@@ -2145,10 +2198,10 @@ end;{measure distortion}
 
 procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
 var
-  fitsX,fitsY, fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
+  fitsX,fitsY, fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
   mag2,Bp_Rp, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4              : double;
-  x,y, max_nr_stars, area1,area2,area3,area4   : integer;
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4      : double;
+  x,y, max_nr_stars, area1,area2,area3,area4,count                                  : integer;
   Save_Cursor                      : TCursor;
 
     procedure plot_star;
@@ -2199,48 +2252,72 @@ begin
       exit;
     end;
 
-    fov:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view with 0% extra}
-
-    if file290 then {.290 files}
-      fov:=min(fov,9.53*pi/180) {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
-    else {.1476 files}
-      fov:=min(fov,5.142857143*pi/180); {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
+    fov_org:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view with 0% extra}
 
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
 
-
-    find_areas( telescope_ra,telescope_dec, fov,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
-
     sincos(dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
-    {read 1th area}
-    if area1<>0 then {read 1th area}
+    if database_type<>001 then {1476 or 290 files}
     begin
-      if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
-      while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
-    end;
+      if  database_type=1476 then {.1476 files}
+        fov:=min(fov_org,5.142857143*pi/180) {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
+      else
+      if  database_type=290 then {.290 files}
+        fov:=min(fov_org,9.53*pi/180); {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
 
-    {read 2th area}
-    if area2<>0 then {read 2th area}
-    begin
-      if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
-      while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
-    end;
 
-    {read 3th area}
-    if area3<>0 then {read 3th area}
-    begin
-      if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
-      while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
-    end;
-    {read 4th area}
-    if area4<>0 then {read 4th area}
-    begin
-      if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
-      while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
-    end;
+      find_areas( telescope_ra,telescope_dec, fov,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
 
-    close_star_database;
+      {read 1th area}
+      if area1<>0 then {read 1th area}
+      begin
+        if open_database(telescope_dec,area1)=false then begin exit; end; {open database file or reset buffer}
+        while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
+      end;
+
+      {read 2th area}
+      if area2<>0 then {read 2th area}
+      begin
+        if open_database(telescope_dec,area2)=false then begin exit; end; {open database file or reset buffer}
+        while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
+      end;
+
+      {read 3th area}
+      if area3<>0 then {read 3th area}
+      begin
+        if open_database(telescope_dec,area3)=false then begin exit; end; {open database file or reset buffer}
+        while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
+      end;
+      {read 4th area}
+      if area4<>0 then {read 4th area}
+      begin
+        if open_database(telescope_dec,area4)=false then begin exit; end; {open database file or reset buffer}
+        while readdatabase290(telescope_ra,telescope_dec, fov,{var} ra2,dec2, mag2,Bp_Rp) do plot_star;{add star}
+      end;
+
+      close_star_database;
+
+    end
+    else
+    begin {001 database}
+      if length(wide_field_stars)=0 then
+                              read_stars_wide_field;{load wide field stars array}
+      count:=0;
+      cos_telescope_dec:=cos(telescope_dec);
+      while  (count<length(wide_field_stars) div 3)  do {star 001 database read.}
+      begin
+        mag2:=wide_field_stars[count*3];{contains: mag1, ra1,dec1, mag2,ra2,dec2,mag3........}
+        ra2:=wide_field_stars[count*3+1];
+        dec2:=wide_field_stars[count*3+2];
+        delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;
+        if   ((delta_ra*cos_telescope_dec <fov_org/2) and (abs(dec2-telescope_dec)<fov_org/2))  then
+        begin
+          plot_star;{add star}
+        end;
+        inc(count);
+      end;
+    end;
 
     Screen.Cursor:= Save_Cursor;
 

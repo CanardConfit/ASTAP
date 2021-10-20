@@ -1,12 +1,12 @@
 object mainwindow: Tmainwindow
-  Left = 336
-  Height = 658
+  Left = -7
+  Height = 646
   Hint = ' '
-  Top = 83
+  Top = 0
   Width = 1272
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
-  ClientHeight = 638
+  ClientHeight = 626
   ClientWidth = 1272
   Color = clForm
   Icon.Data = {
@@ -201,13 +201,13 @@ object mainwindow: Tmainwindow
   end
   object Panel1: TPanel
     Left = 0
-    Height = 487
+    Height = 475
     Hint = 'hint'
     Top = 176
     Width = 1297
     Align = alCustom
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ClientHeight = 487
+    ClientHeight = 475
     ClientWidth = 1297
     Color = 2105376
     Font.CharSet = ANSI_CHARSET
@@ -225,7 +225,7 @@ object mainwindow: Tmainwindow
     object Image1: TImage
       Left = 182
       Height = 264
-      Top = 92
+      Top = 87
       Width = 608
       Anchors = []
       OnMouseDown = Image1MouseDown
@@ -765,7 +765,7 @@ object mainwindow: Tmainwindow
   object StatusBar1: TStatusBar
     Left = 0
     Height = 23
-    Top = 615
+    Top = 603
     Width = 1272
     Panels = <    
       item
@@ -1313,7 +1313,6 @@ object mainwindow: Tmainwindow
           Caption = '          ☑  this menu if the image is a raw Bayer image'
           Hint = 'A normalise filter is applied. The raw OSC RGGB pixels are normalised to the same mean value. This is better option for raw OSC images.'
           ShowAlwaysCheckable = True
-          OnClick = bayer_image1Click
         end
         object MenuItem25: TMenuItem
           Caption = '-'
@@ -1613,6 +1612,12 @@ object mainwindow: Tmainwindow
         Caption = 'Mount position'
         Hint = 'Shows the mount position as a star and a large orientation indicator in the solved image. The center of the image is indicated as  tiny lime coloured square. '
         OnClick = mountposition1Click
+      end
+      object Constellations1: TMenuItem
+        AutoCheck = True
+        Caption = 'Constellations'
+        Hint = 'Add the constellations to the image.'
+        OnClick = Constellations1Click
       end
       object grid1: TMenuItem
         AutoCheck = True

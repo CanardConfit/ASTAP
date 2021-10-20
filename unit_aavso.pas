@@ -76,9 +76,8 @@ uses astap_main, unit_stack;
 
 var
   jd_min,jd_max,magn_min,magn_max : double;
-  w,h  :integer;
-const
-  bspace=50;{border space graph}
+  w,h,bspace  :integer;
+
 
 function floattostr3(x:double):string;
 begin
@@ -241,7 +240,7 @@ end;
 
 procedure plot_graph; {plot curve}
 var
-  x1,y1,c,textp1,textp2,textp3,nrmarkX, nrmarkY : integer;
+  x1,y1,c,textp1,textp2,textp3,nrmarkX, nrmarkY,wtext : integer;
   scale         : double;
   text1,text2   : string;
   bmp: TBitmap;
@@ -282,6 +281,8 @@ begin
 
   w:=max(form_aavso1.Image_photometry1.width,(len*2)*stackmenu1.listview7.items.count);{make graph large enough for all points}
   h:=max(100,form_aavso1.Image_photometry1.height);
+  bspace:=2*mainwindow.image1.Canvas.textheight('T');{{border space graph. Also for 4k with "make everything bigger"}
+  wtext:=mainwindow.image1.Canvas.textwidth('12.3456');
 
   setlength(data,4, stackmenu1.listview7.items.count);
   with stackmenu1 do
@@ -298,7 +299,7 @@ begin
       end;
 
       dum:=(listview7.Items.item[c].subitems.Strings[P_magn1]);{var star}
-      if length(dum)>1 {not a ?} then  data[1,c]:=strtofloat(dum) else data[1,c]:=0;
+      if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then  data[1,c]:=strtofloat(dum) else data[1,c]:=0;
       if data[1,c]<>0 then
       begin
         magn_max:=max(magn_max,data[1,c]);
@@ -306,7 +307,7 @@ begin
       end;
 
       dum:=(listview7.Items.item[c].subitems.Strings[P_magn2]);{chk star}
-      if length(dum)>1 then  data[2,c]:=strtofloat(dum) else data[2,c]:=0;
+      if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then  data[2,c]:=strtofloat(dum) else data[2,c]:=0;
       if data[2,c]<>0 then
       begin
         magn_max:=max(magn_max,data[2,c]);
@@ -314,7 +315,12 @@ begin
       end;
 
       dum:=(listview7.Items.item[c].subitems.Strings[P_magn3]); {3}
-      if length(dum)>1 then  data[3,c]:=strtofloat(dum) else data[3,c]:=0;
+      try
+      if ((length(dum)>1 {not a ?}) and (dum[1]<>'S'{saturated})) then  data[3,c]:=strtofloat(dum) else data[3,c]:=0;
+
+      except
+        data[3,c]:=0;
+      end;
       if data[3,c]<>0 then
       begin
         magn_max:=max(magn_max,data[3,c]);
@@ -344,16 +350,16 @@ begin
     bmp.Canvas.Font.Color := clmenutext;
 
     bmp.canvas.moveto(w,h-bspace+5);
-    bmp.canvas.lineto(bspace-5,h-bspace+5);{x line}
-    bmp.canvas.lineto(bspace-5,bspace);{y line}
+    bmp.canvas.lineto(wtext-5,h-bspace+5);{x line}
+    bmp.canvas.lineto(wtext-5,bspace);{y line}
 
     bmp.canvas.font.style:=[fsbold];
     bmp.canvas.textout(5,bspace div 2,'Magn');
-    bmp.canvas.textout(w-50,h-(bspace div 2),'JD (mid)');
+    bmp.canvas.textout(w-2*bspace,h-(bspace div 2),'JD (mid)');
     bmp.canvas.font.style:=[];
 
     text1:='Var ('+form_aavso1.name_variable1.text+')';
-    textp1:=10+bspace;
+    textp1:=10+wtext;
     bmp.canvas.textout(textp1,len*3,text1);
 
     textp2:=textp1+40+bmp.canvas.textwidth(text1);
@@ -371,7 +377,7 @@ begin
     nrmarkX:=trunc(w*5/1000);
     for c:=0 to nrmarkX do {markers x line}
     begin
-      x1:=bspace+round((w-bspace*2)*c/nrmarkX); {x scale has bspace pixels left and right space}
+      x1:=wtext+round((w-bspace*2)*c/nrmarkX); {x scale has bspace pixels left and right space}
       y1:=h-bspace+5;
       bmp.canvas.moveto(x1,y1);
       bmp.canvas.lineto(x1,y1+5);
@@ -381,7 +387,7 @@ begin
     nrmarkY:=trunc(h*5/400);
     for c:=0 to nrmarkY do {markers y line}
     begin
-      x1:=bspace-5;
+      x1:=wtext-5;
       y1:= round(bspace+(h-bspace*2)*c/nrmarkY); {y scale has bspace pixels below and above space}
       bmp.canvas.moveto(x1,y1);
       bmp.canvas.lineto(x1-5,y1);
@@ -401,7 +407,7 @@ begin
 
     for c:=0 to length(data[0])-1 do
     begin
-      plot_point( bspace+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[2,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {chk}
+      plot_point(wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[2,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {chk}
     end;
 
     bmp.Canvas.Pen.Color := clBlue;
@@ -409,7 +415,7 @@ begin
     plot_point(textp3,len*3,0);
     for c:=0 to length(data[0])-1 do
     begin
-      plot_point( bspace+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[3,c]-magn_min)/(magn_max-magn_min)   ),0); {3}
+      plot_point(wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[3,c]-magn_min)/(magn_max-magn_min)   ),0); {3}
     end;
 
     bmp.Canvas.Pen.Color := clRed;
@@ -417,7 +423,7 @@ begin
     plot_point(textp1,len*3,0);
     for c:=0 to length(data[0])-1 do
     begin
-      plot_point( bspace+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[1,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {var}
+      plot_point( wtext+round((w-bspace*2)*(data[0,c]-jd_min)/(jd_max-jd_min)), round(bspace+(h-bspace*2)*(data[1,c]-magn_min)/(magn_max-magn_min)   ),round(scale*photometry_stdev*2.5)); {var}
     end;
 
 

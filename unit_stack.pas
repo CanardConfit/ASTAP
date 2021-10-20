@@ -2298,39 +2298,16 @@ begin
 end;
 
 
-procedure QuickSort(var A: array of Integer; iLo, iHi: Integer) ;{idea by https://www.thoughtco.com/implementing-quicksort-sorting-algorithm-in-delphi-1058220}
-var
-  Lo, Hi, Pivot, T: Integer;
-begin
-  Lo := iLo;
-  Hi := iHi;
-  Pivot := A[(Lo + Hi) div 2];
-  repeat
-    while A[Lo] < Pivot do Inc(Lo) ;
-    while A[Hi] > Pivot do Dec(Hi) ;
-    if Lo <= Hi then
-    begin
-      T := A[Lo];
-      A[Lo] := A[Hi];
-      A[Hi] := T;
-      Inc(Lo) ;
-      Dec(Hi) ;
-    end;
-  until Lo > Hi;
-  if Hi > iLo then QuickSort(A, iLo, Hi) ;
-  if Lo < iHi then QuickSort(A, Lo, iHi) ;
-end;
-
-
 function median_background(var img :image_array;color,sizeX,sizeY,x,y:integer): double;{find median value of an area at position x,y with sizeX,sizeY}
-var i,j,count,size2,stepX,stepY,value  : integer;
-    intArray : array of integer;
+var i,j,count,size2,stepX,stepY  : integer;
+    value                        : double;
+    pixArray : array of double;
     w,h      : integer;
 begin
   if (sizeX div 2)*2=sizeX then sizeX:=sizeX+1;{requires odd 3,5,7....}
   if (sizeY div 2)*2=sizeY then sizeY:=sizeY+1;{requires odd 3,5,7....}
   size2:=sizeX*sizeY;
-  SetLength(intArray,size2) ;
+  SetLength(pixArray,size2) ;
   stepX:=sizeX div 2;
   stepY:=sizeY div 2;
   count:=0;
@@ -2343,10 +2320,10 @@ begin
       begin
         if ((i>=0) and (i<w) and (j>=0) and (j<h) ) then {within the boundaries of the image array}
         begin
-          value:=round(img[color,i ,j]);
+          value:=img[color,i ,j];
           if value<>0 then {ignore zero}
           begin
-            intArray[count]:=value;
+            pixArray[count]:=value;
             inc(count);
           end;
         end;
@@ -2354,8 +2331,9 @@ begin
   end;
 
   //sort
-  QuickSort(intArray, Low(intArray), count-1 { normally 8 for 3*3 equals High(intArray)}) ;
-  result:=intArray[count div 2];  {for 3x3 matrix the median is 5th element equals in range 0..8 equals intArray[4]}
+  QuickSort(pixArray, Low(pixArray), count-1 { normally 8 for 3*3 equals High(intArray)}) ;
+  result:=pixArray[count div 2];  {for 3x3 matrix the median is 5th element equals in range 0..8 equals intArray[4]}
+  pixArray:=nil;
 end;
 
 
@@ -9460,8 +9438,6 @@ begin
         if naxis3>1 then report_results(object_to_process,stack_info,object_counter,3 {color icon}) {report result in tab results}
                     else report_results(object_to_process,stack_info,object_counter,4 {gray icon}); {report result in tab results}
 
-        memo2.lines.add('Finished in '+IntToStr( round((gettickcount64 - startTick)/1000)) + ' sec. The FITS header contains a detailed history.');
-
         {close the window}
       end; {not zero count}
     end; {not calibration and alignment}
@@ -9477,7 +9453,10 @@ begin
     if classify_filter1.checked then memo2.lines.add('Hint: remove check mark from classify by "image filter" if required.');
     if classify_object1.checked then memo2.lines.add('Hint: remove check mark from classify by "image object" if required.');
     if use_astrometry_internal1.checked then memo2.lines.add('Hint: check field of view camera in tab alignment.');
-  end;
+  end
+  else
+  memo2.lines.add('Finished in '+IntToStr( round((gettickcount64 - startTick)/1000)) + ' sec. The FITS header contains a detailed history.');
+
 
   {$IFDEF fpc}
   progress_indicator(-100,'');{back to normal}

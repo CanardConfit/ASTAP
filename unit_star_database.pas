@@ -188,7 +188,7 @@ type
 var
   name_database         : string;{name star database}
   cache_valid_pos       : integer;
-  file290               : boolean;
+  database_type         : integer;
 
 var {################# initialised variables #########################}
   file_open: boolean=false;{file is not open}
@@ -2704,7 +2704,7 @@ begin
   ra_cornerWS:=ra1-fov_half/cos(dec_cornerS); if ra_cornerWS<0     then ra_cornerWS:=ra_cornerWS+2*pi;
   ra_cornerES:=ra1+fov_half/cos(dec_cornerS); if ra_cornerES>=2*pi then ra_cornerES:=ra_cornerES-2*pi;
 
-  if file290 then
+  if database_type=290 then
   begin
     {corner 1}
     area_and_boundaries(ra_cornerEN,dec_cornerN, area1, spaceE,spaceW,spaceN,spaceS);
@@ -2763,32 +2763,37 @@ end;
 function select_star_database(database:string): boolean; {select a star database, report false if none is found}
 begin
   result:=true;
-  file290:=true;{type .290 database}
+  database_type:=1476;{type .1476 database}
   database:=lowercase(database);
-  if copy(database,1,1)<>'h' then
+
+
+  if copy(database,1,1)='h' then
   begin
-    if fileexists( database_path+database+'_0101.290') then begin name_database:=database; {try preference}exit; end
+    if fileexists( database_path+database+'_0101.1476') then begin name_database:=database; {try preference}  exit; end;
   end
   else
+  if copy(database,1,1)='g' then
   begin
-    if fileexists( database_path+database+'_0101.1476') then begin name_database:=database; {try preference} file290:=false; exit; end;
+    if fileexists( database_path+database+'_0101.290') then begin name_database:=database; {try preference}database_type:=290;exit; end
+  end
+  else
+  if copy(database,1,1)='w' then
+  begin
+    if fileexists( database_path+database+'_0101.001') then begin name_database:=database; {try preference}database_type:=001;exit; end
   end;
 
-  if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18'; file290:=false; end
+
+  if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18'; end
   else
-  if fileexists( database_path+'g18_0101.290') then name_database:='g18' {database required}
+  if fileexists( database_path+'g18_0101.290') then begin name_database:='g18'; database_type:=290; end
   else
-  if fileexists( database_path+'h17_0101.1476') then begin name_database:='h17'; file290:=false; end
+  if fileexists( database_path+'h17_0101.1476') then begin name_database:='h17'; end
   else
-  if fileexists( database_path+'g17_0101.290') then name_database:='g17' {database required}
+  if fileexists( database_path+'g17_0101.290') then begin name_database:='g17'; database_type:=290; end
   else
-  if fileexists( database_path+'v17_0101.290') then name_database:='v17' {database required}
+  if fileexists( database_path+'v17_0101.290') then begin name_database:='v17'; database_type:=290; end
   else
-  if fileexists( database_path+'g16_0101.290') then name_database:='g16' {database required}
-  else
-  if fileexists( database_path+'v16_0101.290') then name_database:='v16' {database required}
-  else
-  if fileexists( database_path+'u16_0101.290') then name_database:='u16' {database required}
+  if fileexists( database_path+'u16_0101.290') then begin name_database:='u16'; database_type:=290; end
   else
   result:=false;
 end;
@@ -2815,7 +2820,7 @@ begin
   begin
     close_star_database;{close the reader if open}
 
-    if file290 then
+    if  database_type=290 then
       namefile:=name_database+'_'+filenames290[area290] {g17_0101.290}
     else
       namefile:=name_database+'_'+filenames1476[area290]; {g17_0101.1476}
@@ -2948,7 +2953,7 @@ begin
     delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;
   until
     (header_record=false) and
-    (  (abs(delta_ra*cos_telescope_dec)<field_diameter/2) and (abs(dec2-telescope_dec)<field_diameter/2)  );
+    (  (delta_ra*cos_telescope_dec<field_diameter/2) and (abs(dec2-telescope_dec)<field_diameter/2)  );
                            {calculate distance and skip when too far from center screen, {if false then outside screen,go to next line}
 end;
 

@@ -596,14 +596,15 @@ begin
     begin
       starlist1[0,count]:=starlist1[0,i];{overwrite in the same array}
       starlist1[1,count]:=starlist1[1,i];
-   //   memo2_message(#9+floattostr(snr_list[i])+#9+floattostr(starlist2[0,count])+ #9 +floattostr(starlist2[1,count]));
-      inc(count);
-     //  For testing:
-     //  mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-     //  mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
-     //  mainwindow.image1.Canvas.brush.Style:=bsClear;
-     //  mainwindow.image1.Canvas.Pen.Color := clred;
-     //  mainwindow.image1.Canvas.Rectangle(round(starlist1[0,i])-15,height2-round(starlist1[1,i])-15, round(starlist1[0,i])+15, height2-round(starlist1[1,i])+15);{indicate hfd with rectangle}
+   //  For testing:
+   //  memo2_message(#9+floattostr(snr_list[i])+#9+floattostr(starlist2[0,count])+ #9 +floattostr(starlist2[1,count]));
+   //  mainwindow.image1.Canvas.Pen.Mode := pmMerge;
+   //  mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
+   //  mainwindow.image1.Canvas.brush.Style:=bsClear;
+   //  mainwindow.image1.Canvas.Pen.Color := clred;
+   //  mainwindow.image1.Canvas.Rectangle(round(starlist1[0,i])-15,height2-round(starlist1[1,i])-15, round(starlist1[0,i])+15, height2-round(starlist1[1,i])+15);{indicate hfd with rectangle}
+
+       inc(count);
      end;
   setlength(starlist1,2,count);{reduce length to used length}
 end;

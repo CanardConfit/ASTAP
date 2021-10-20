@@ -121,6 +121,7 @@ type
     hfd_arcseconds1: TMenuItem;
     MenuItem33: TMenuItem;
     MenuItem34: TMenuItem;
+    Constellations1: TMenuItem;
     simbadquery1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
@@ -327,8 +328,8 @@ type
     procedure autocorrectcolours1Click(Sender: TObject);
     procedure batch_annotate1Click(Sender: TObject);
     procedure batch_solve_astrometry_netClick(Sender: TObject);
-    procedure bayer_image1Click(Sender: TObject);
     procedure calibrate_photometry1Click(Sender: TObject);
+    procedure Constellations1Click(Sender: TObject);
     procedure convert_to_ppm1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure freetext1Click(Sender: TObject);
@@ -748,6 +749,7 @@ function savefits_update_header(filen2:string) : boolean;{save fits file with up
 procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string);{plot annotation from header in ASTAP format}
 procedure reset_fits_global_variables(light :boolean); {reset the global variable}
 function convert_to_fits(var filen: string): boolean; {convert to fits}
+procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -807,7 +809,7 @@ var
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
-     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm;
+     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -3013,7 +3015,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.584a, '+about_message4+', dated 2021-10-9';
+  #13+#10+'ASTAP version ß0.9.586, '+about_message4+', dated 2021-10-20';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4011,6 +4013,87 @@ begin
     mainwindow.image1.Canvas.textout(width2 -round(fontsize) -mainwindow.image1.canvas.textwidth(freetext),height2-round(2*fontsize),freetext);{right bottom corner, right aligned}
 end;
 
+procedure plot_constellations;
+var
+  fitsX,fitsY,overshoot, ra2,dec2,sep   : double;
+  x1,y1,dia                             : integer;
+  flip_horizontal, flip_vertical,outside: boolean;
+  Save_Cursor:TCursor;
+begin
+  if ((fits_file=false) or (cd1_1=0) or (mainwindow.constellations1.checked=false)) then exit;
+
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  {$ifdef mswindows}
+   mainwindow.image1.Canvas.Font.Name :='default';
+  {$endif}
+  {$ifdef linux}
+  mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
+  {$endif}
+  {$ifdef darwin} {MacOS}
+  mainwindow.image1.Canvas.Font.Name :='Helvetica';
+  {$endif}
+
+  flip_vertical:=mainwindow.flip_vertical1.Checked;
+  flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+
+  mainwindow.image1.Canvas.Pen.Mode:= pmXor;
+  mainwindow.image1.Canvas.Pen.width :=max(1,trunc(height2/1000));
+  mainwindow.image1.Canvas.Pen.color:= $009000;
+
+  mainwindow.image1.Canvas.brush.Style:=bsClear;
+  mainwindow.image1.Canvas.font.color:= clgray;
+  mainwindow.image1.Canvas.font.size:=8;
+
+
+  for dia:=0 to length(constpos)-1 do  {constellations abreviations}
+  begin
+    ra2:=constpos[dia,0]*pi/12000;
+    dec2:=constpos[dia,1]*pi/18000;
+    ang_sep(ra2,dec2,ra0,dec0, sep);
+    if   sep<pi*0.6 then
+    begin
+      celestial_to_pixel(ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      if ((fitsx>0) and (fitsx<width2) and (fitsy>0) and (fitsy<height2)) then {within screen}
+      begin
+        if flip_horizontal then x1:=round((width2-1)-(fitsX-1)) else x1:=round(fitsX-1);
+        if flip_vertical=false then y1:=round((height2-1)-(fitsY-1)) else y1:=round(fitsY-1);
+        mainwindow.image1.Canvas.textout(x1,y1,Constshortname[dia]);
+      end;
+    end;
+  end;
+
+  overshoot:=height2;
+  outside:=true;
+  for dia:=0 to length(constellation)-1 {602} do  {constellations}
+  begin
+    ra2:=constellation[dia].ra*pi/12000;
+    dec2:=constellation[dia].dec*pi/18000;
+    ang_sep(ra2,dec2,ra0,dec0, sep);
+    if   sep<pi*0.6 then
+    begin
+      celestial_to_pixel(ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
+      if ((fitsx>-overshoot) and (fitsx<width2+overshoot) and (fitsy>-overshoot) and (fitsy<height2+overshoot)) then {within screen}
+      begin
+        if flip_horizontal then x1:=round((width2-1)-(fitsX-1)) else x1:=round(fitsX-1);
+        if flip_vertical=false then y1:=round((height2-1)-(fitsY-1)) else y1:=round(fitsY-1);
+
+        if ((constellation[dia].dm=-2) or (outside)) then
+          mainwindow.image1.Canvas.moveto(x1,y1)
+        else
+          mainwindow.image1.Canvas.lineto(x1,y1);
+        TextOut(mainwindow.image1.Canvas.handle,  x1,y1, constellation[dia].bay,length(constellation[dia].bay) );{do not use here dc.textout since it will move position}
+        outside:=false;
+      end
+      else
+      outside:=true;
+    end;
+  end;
+
+  Screen.Cursor := Save_cursor;    { Restore cursor}
+end;
+
 
 procedure plot_grid;
 var
@@ -4062,7 +4145,7 @@ begin
   flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
   mainwindow.image1.Canvas.Pen.Mode:= pmXor;
-  mainwindow.image1.Canvas.Pen.width :=1;
+  mainwindow.image1.Canvas.Pen.width :=max(1,trunc(height2/2000));
   mainwindow.image1.Canvas.Pen.color:= $909000;
 
   mainwindow.image1.Canvas.brush.Style:=bsClear;
@@ -4177,7 +4260,7 @@ begin
     until ((i>=centRa+stepRA*6) or (i>=(centRA-6*stepRA)+360));
     j:=j+step;
   until j>=min(centDEC+step*6,90);
-  Screen.Cursor := Save_cursor;    { Show hourglass cursor }
+  Screen.Cursor := Save_cursor;    { Restore cursor}
 end;
 
 
@@ -4767,6 +4850,7 @@ begin
     plot_north_on_image;
     plot_large_north_indicator;
     plot_grid;
+    plot_constellations;
     plot_text;
 
     image1.Repaint;{show north-east indicator}
@@ -6444,6 +6528,7 @@ begin
     if mainwindow.add_marker_position1.checked then
       mainwindow.add_marker_position1.checked:=place_marker_radec(marker_position);{place a marker}
     plot_grid;
+    plot_constellations;
     plot_text;
     if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(false {use solution vectors},false);
 
@@ -7334,6 +7419,7 @@ begin
 
       northeast1.checked:=Sett.ReadBool('main','north_east',false);
       mountposition1.checked:=Sett.ReadBool('main','mount_position',false);
+      Constellations1.checked:=Sett.ReadBool('main','constellations',false);
       grid1.checked:=Sett.ReadBool('main','grid',false);
       positionanddate1.checked:=Sett.ReadBool('main','pos_date',false);
       freetext1.checked:=Sett.ReadBool('main','freetxt',false);
@@ -7660,6 +7746,7 @@ begin
       sett.writeBool('main','annotations',annotations_visible1.checked);
       sett.writeBool('main','north_east',northeast1.checked);
       sett.writeBool('main','mount_position',mountposition1.checked);
+      sett.writeBool('main','constellations',constellations1.checked);
       sett.writeBool('main','grid',grid1.checked);
       sett.writeBool('main','pos_date',positionanddate1.checked);
       sett.writeBool('main','freetxt',freetext1.checked);
@@ -10204,29 +10291,31 @@ end;
 
 
 
-procedure quicksort(var list: array of double; lo,hi: integer);{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
-  procedure sort ( left, right : integer); {processing takes place in the sort procedure which executes itself recursively.}
-  var
-    i, j       : integer;
-    tmp, pivot : double;    { tmp & pivot are the same type as the elements of array }
-  begin
-    i:=left;
-    j:=right;
-    pivot := list[(left + right) div 2];
-    repeat
-      while pivot > list[i] do inc(i);
-      while pivot < list[j] do dec(j);
-      if i<=j Then Begin
-        tmp:=list[i]; list[i]:=list[j]; list[j]:=tmp; {swap}
-        dec(j); inc(i);
-      end;
-    until i>j;
-    if left<j then sort(left,j);
-    if i<right then sort(i,right);
-  end;
-begin {quicksort};
-  sort(lo,hi);
+procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
+var
+  Lo, Hi : integer;
+  Pivot, T: double;{ pivot, T, T2 are the same type as the elements of array }
+begin
+  Lo := iLo;
+  Hi := iHi;
+  Pivot := A[(Lo + Hi) div 2];
+  repeat
+    while A[Lo] < Pivot do Inc(Lo) ;
+    while A[Hi] > Pivot do Dec(Hi) ;
+    if Lo <= Hi then
+    begin {swap}
+      T := A[Lo];
+      A[Lo] := A[Hi];
+      A[Hi] := T;
+      Inc(Lo) ;
+      Dec(Hi) ;
+    end;
+  until Lo > Hi;
+  if Hi > iLo then QuickSort(A, iLo, Hi) ;  {executes itself recursively}
+  if Lo < iHi then QuickSort(A, Lo, iHi) ;  {executes itself recursively}
 end;
+
+
 
 
 function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
@@ -10410,11 +10499,6 @@ begin
   form_astrometry_net1.release;
 end;
 
-procedure Tmainwindow.bayer_image1Click(Sender: TObject);
-begin
-
-end;
-
 
 procedure Tmainwindow.calibrate_photometry1Click(Sender: TObject);
 var
@@ -10446,6 +10530,17 @@ begin
 
     plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude});
   end;
+end;
+
+procedure Tmainwindow.Constellations1Click(Sender: TObject);
+begin
+  if fits_file=false then exit;
+  if Constellations1.checked=false then  {clear screen}
+  begin
+    plot_fits(mainwindow.image1,false,true);
+  end
+  else
+  plot_constellations;
 end;
 
 

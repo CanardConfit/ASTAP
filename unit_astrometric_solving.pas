@@ -98,7 +98,7 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 interface
 
 uses   Classes,SysUtils,controls,forms,math,
-       unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation;
+       unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation,unit_stars_wide_field;
 
 function solve_image(img :image_array; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
@@ -197,8 +197,8 @@ end;
 function read_stars(telescope_ra,telescope_dec,search_field : double; nrstars_required: integer; out nrstars:integer): boolean;{read star from star database}
 var
    Bp_Rp, ra2,dec2,
-   frac1,frac2,frac3,frac4  : double;
-   area1,area2,area3,area4,nrstars_required2  : integer;
+   frac1,frac2,frac3,frac4,delta_ra, correctionX,correctionY  : double;
+   area1,area2,area3,area4,nrstars_required2,count  : integer;
 begin
   result:=false;{assume failure}
   nrstars:=0;{set counters at zero}
@@ -206,58 +206,81 @@ begin
 
   SetLength(starlist1,2,nrstars_required);{set array length}
 
-  {Assume the search field is at a crossing of four tiles. The search field area, by definition 100% is split in 8%, 15%, 20%, 57% area for each tile.
-   There are 500 stars required. It will then retrieve 8% x 500, 15% x 500, 20% x 500, 57% x 500 stars from each tile under the condition these stars are within the green area.
-   This will work assuming the star density within the green area is reasonable homogene.}
-  find_areas( telescope_ra,telescope_dec, search_field,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
-
-  {read 1th area}
-  if area1<>0 then {read 1th area}
+  if database_type<>001 then {1476 or 290 files}
   begin
-    if open_database(telescope_dec,area1)=false then
-      exit;{open database file or reset buffer}
-    nrstars_required2:=min(nrstars_required,trunc(nrstars_required * frac1));
-    while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
-    begin {add star}
-      equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
-      inc(nrstars);
-    end;
-  end;
+    {Assume the search field is at a crossing of four tiles. The search field area, by definition 100% is split in 8%, 15%, 20%, 57% area for each tile.
+     There are 500 stars required. It will then retrieve 8% x 500, 15% x 500, 20% x 500, 57% x 500 stars from each tile under the condition these stars are within the green area.
+     This will work assuming the star density within the green area is reasonable homogene.}
+    find_areas( telescope_ra,telescope_dec, search_field,{var} area1,area2,area3,area4, frac1,frac2,frac3,frac4);{find up to four star database areas for the square image}
 
-  if area2<>0 then {read 2th area}
-  begin
-    if open_database(telescope_dec,area2)=false then
-      exit; {open database file or reset buffer}
-    nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2)));{prevent round up errors resulting in error starlist1}
-    while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
-    begin {add star}
-      equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
-      inc(nrstars);
+    {read 1th area}
+    if area1<>0 then {read 1th area}
+    begin
+      if open_database(telescope_dec,area1)=false then
+        exit;{open database file or reset buffer}
+      nrstars_required2:=min(nrstars_required,trunc(nrstars_required * frac1));
+      while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do {star 290 file database read. Read up to nrstars_required}
+      begin {add star}
+        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+        inc(nrstars);
+      end;
     end;
-  end;
 
-  if area3<>0 then {read 3th area}
-  begin
-    if open_database(telescope_dec,area3)=false then
-      exit; {open database file or reset buffer}
-    nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2+frac3)));
-    while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
-    begin {add star}
-      equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
-      inc(nrstars);
+    if area2<>0 then {read 2th area}
+    begin
+      if open_database(telescope_dec,area2)=false then
+        exit; {open database file or reset buffer}
+      nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2)));{prevent round up errors resulting in error starlist1}
+      while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do {star 290 file database read. Read up to nrstars_required}
+      begin {add star}
+        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+        inc(nrstars);
+      end;
     end;
-  end;
 
-  if area4<>0 then {read 4th area}
-  begin
-    if open_database(telescope_dec,area4)=false then
-     exit; {open database file}
-    nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2+frac3+frac4)));
-    while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
-    begin {add star}
-      equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
-      inc(nrstars);
+    if area3<>0 then {read 3th area}
+    begin
+      if open_database(telescope_dec,area3)=false then
+        exit; {open database file or reset buffer}
+      nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2+frac3)));
+      while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do {star 290 file database read. Read up to nrstars_required}
+      begin {add star}
+        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+        inc(nrstars);
+      end;
     end;
+
+    if area4<>0 then {read 4th area}
+    begin
+      if open_database(telescope_dec,area4)=false then
+       exit; {open database file}
+      nrstars_required2:=min(nrstars_required,trunc(nrstars_required * (frac1+frac2+frac3+frac4)));
+      while ((nrstars<nrstars_required2) and (readdatabase290(telescope_ra,telescope_dec, search_field, {var} ra2,dec2, mag2,Bp_Rp)) ) do{star 290 file database read. Read up to nrstars_required}
+      begin {add star}
+        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+        inc(nrstars);
+      end;
+    end;
+  end
+  else
+  begin {wide field database}
+    if length(wide_field_stars)=0 then read_stars_wide_field;{load wide field stars array}
+    count:=0;
+    cos_telescope_dec:=cos(telescope_dec);
+    while ((nrstars<nrstars_required) and  (count<length(wide_field_stars) div 3) ) do{star 290 file database read. Read up to nrstars_required}
+    begin
+      ra2:=wide_field_stars[count*3+1];{contains: mag1, ra1,dec1, mag2,ra2,dec2,mag3........}
+      dec2:=wide_field_stars[count*3+2];
+      delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;
+//      if   ((delta_ra*cos_telescope_dec<search_field/2) and (abs(dec2-telescope_dec)<search_field/2)) then
+      if   ((delta_ra*cos(dec2)<search_field/2) and (abs(dec2-telescope_dec)<search_field/2)) then
+      begin
+        equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
+        inc(nrstars);
+      end;
+      inc(count);
+    end;
+    mag2:=wide_field_stars[(count-1)*3];{for reporting of highest magnitude used for solving}
   end;
 
 //  memo2_message('testareas'+#9+floattostr4(telescope_ra*12/pi)+#9+floattostr4(telescope_dec*180/pi)+#9+inttostr(maga)+#9+inttostr(magb)+#9+inttostr(magc)+#9+inttostr(magd)+#9+floattostr4(frac1)+#9+floattostr4(frac2)+#9+floattostr4(frac3)+#9+floattostr4(frac4)+#9+inttostr(area1)+#9+inttostr(area2)+#9+inttostr(area3)+#9+inttostr(area4));
@@ -265,6 +288,12 @@ begin
   if nrstars<nrstars_required then
        SetLength(starlist1,2,nrstars); {fix array length on data for case less stars are found}
   result:=true;{no errors}
+
+  //for testing
+//  equatorial_standard(telescope_ra,telescope_dec,ra0,dec0,1,correctionX,correctionY);{calculate correction for x,y position of database center and image center}
+//  plot_stars_used_for_solving(correctionX,correctionY); {plot image stars and database stars used for the solution}
+
+
 end;
 
 
@@ -497,7 +526,7 @@ function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{
 var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,distance,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t                                                                  : integer;
-  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,oversize,sep,
+  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,sep,
   ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,
   quad_tolerance,dummy, extrastars                                                                                   : double;
   solution, go_ahead ,autoFOV      : boolean;
@@ -560,6 +589,7 @@ begin
   else
     fov_org:=min(180,strtofloat2(stackmenu1.search_fov1.text));{use specfied FOV in stackmenu. 180 max to prevent runtime errors later}
 
+
   if select_star_database(stackmenu1.star_database1.text)=false then {select database prior to cropping selection}
   begin
     result:=false;
@@ -571,21 +601,25 @@ begin
   begin
     stackmenu1.star_database1.text:=name_database;
     memo2_message('Using star database '+uppercase(name_database));
-    if ((fov_org>6) and (file290=false)) then
-    begin
-      if fov_org<90 then
-        warning_str:=warning_str+'Large FOV, use V17 or G17 database! '
-      else
-        warning_str:=warning_str+'Abnormal large FOV!! ';
-      memo2_message(warning_str);
-      popup_warningV17:=#10+warning_str;
-    end;
+
+    if ((fov_org>30) and (database_type<>001)) then
+      warning_str:=warning_str+'Wide field image, use W07 database! '
+    else
+    if ((fov_org>6) and (database_type=1476)) then
+      warning_str:=warning_str+'Large FOV, use V17 or G17 database! ';
+
+    if warning_str<>'' then memo2_message(warning_str);
+     popup_warningV17:=#10+warning_str;
+
   end;
 
-  if file290 then {.290 database}
-    max_fov:=9.53 {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+  if  database_type=1476  then {.1476 database}
+    max_fov:=5.142857143 {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
   else  {.1476 database}
-    max_fov:=5.142857143; {warning FOV should be less the database tiles dimensions, so <=5.142857143 degrees. Otherwise a tile beyond next tile could be selected}
+  if  database_type=290  then {.290 database}
+    max_fov:=9.53 {warning FOV should be less the database tiles dimensions, so <=9.53 degrees. Otherwise a tile beyond next tile could be selected}
+  else
+    max_fov:=180;
 
   min_star_size_arcsec:=strtofloat2(stackmenu1.min_star_size1.text); {arc sec};
   autoFOV:=(fov_org=0);{specified auto FOV}
@@ -593,7 +627,20 @@ begin
   repeat {autoFOV loop}
     if autoFOV then
     begin
-      if fov_org=0 then fov_org:=9.5 else fov_org:=fov_org/1.5;
+      if fov_org=0 then
+      begin
+        if database_type<>001 then
+        begin
+          fov_org:=9.5;
+          fov_min:=0.38;
+        end
+        else
+        begin
+          fov_org:=90;
+          fov_min:=12;
+        end
+      end
+      else fov_org:=fov_org/1.5;
       memo2_message('Trying FOV: '+floattostrF(fov_org,ffFixed,0,1));
     end;
     if fov_org>max_fov then
@@ -635,7 +682,7 @@ begin
 
     if go_ahead then {enough stars, lets find quads}
     begin
-      find_quads(starlist2,0 {min length}, quad_smallest,quad_star_distances2);{find star quads for new image. Quads and quad_smallest are binning independend}
+      find_quads(starlist2,0 {min length}, quad_smallest,quad_star_distances2);{find star quads for new image. Quads and quad_smallest are binning independent}
       nr_quads:=Length(quad_star_distances2[0]);
       go_ahead:=nr_quads>=3; {enough quads?}
 
@@ -646,7 +693,7 @@ begin
       else
       oversize:=2*sqrt(25/nr_quads);{calculate between 25 th=2 and 100 th=1, quads are area related so take sqrt to get oversize}
 
-      if stackmenu1.force_oversize1.checked then
+      if ((stackmenu1.force_oversize1.checked) or (database_type=001)) then   {for always oversize for wide field database}
       begin
         oversize:=2;
         oversize_mess:='Search window at 200%'
@@ -748,6 +795,18 @@ begin
                   errorlevel:=33;{read error star database}
                   exit; {no stars}
                 end;
+
+
+               // exit;
+
+
+
+
+
+
+
+
+
                 find_quads(starlist1,quad_smallest*(fov_org*3600/height2 {pixelsize in"})*0.99 {filter value to exclude too small quads, convert pixels to arcsec as in database}, dummy,quad_star_distances1);{find quads for reference image/database. Filter out too small quads for Earth based telescopes}
                                      {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
               until ((nrstars_required>database_stars) {No more stars available in the database}
@@ -804,7 +863,7 @@ begin
       stackmenu1.Memo2.Lines.EndUpdate;
 
     end; {enough quads in image}
-  until ((autoFOV=false) or (solution) or (fov2<=0.38)); {loop for autoFOV from 9.5 to 0.37 degrees. Will lock between 9.5*1.25 downto  0.37/1.25  or 11.9 downto 0.3 degrees}
+  until ((autoFOV=false) or (solution) or (fov2<=fov_min)); {loop for autoFOV from 9.5 to 0.37 degrees. Will lock between 9.5*1.25 downto  0.37/1.25  or 11.9 downto 0.3 degrees}
 
   if solution then
   begin
