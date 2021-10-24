@@ -72,7 +72,10 @@ procedure plot_graph; {plot curve}
 implementation
 {$R *.lfm}
 
-uses astap_main, unit_stack;
+uses astap_main,
+     unit_stack,
+     unit_star_database;{for name_database only}
+
 
 var
   jd_min,jd_max,magn_min,magn_max : double;
@@ -167,7 +170,7 @@ begin
                      airmass_str+delim+
                      'na'+delim+
                      'na'+delim+
-                     'Ensemble of Gaia eDR3 stars '+star_database1.text+'. '+err_message+#13+#10;
+                     'Ensemble of Gaia eDR3 stars '+name_database{+star_database1.text}+'. '+err_message+#13+#10;
      end;
    end;
 

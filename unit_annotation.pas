@@ -1556,8 +1556,8 @@ end;
 procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
-  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,cv,fov_org,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert : double;
+  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,delta_dec,sep,det,SIN_dec_ref,COS_dec_ref,cv,fov_org,
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,xx,yy : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count                          : integer;
   flip_horizontal, flip_vertical        : boolean;
   mag_offset_array,hfd_x_sd             : array of double;
@@ -1712,7 +1712,7 @@ begin
     end;
 
     {sets file290 so do before fov selection}
-    if select_star_database(stackmenu1.star_database1.text)=false then
+    if select_star_database(stackmenu1.star_database1.text,15 {neutral})=false then
     begin
       application.messagebox(pchar('No star database found!'+#13+'Download the h18 (or h17 or v17) and extract the files to the program directory'), pchar('No star database!'),0);
       exit;
@@ -1771,7 +1771,7 @@ begin
     end
     else
     begin {001 database}
-      if length(wide_field_stars)=0 then
+      if wide_database<>name_database then
                               read_stars_wide_field;{load wide field stars array}
       count:=0;
       cos_telescope_dec:=cos(telescope_dec);
@@ -1780,8 +1780,8 @@ begin
         mag2:=wide_field_stars[count*3];{contains: mag1, ra1,dec1, mag2,ra2,dec2,mag3........}
         ra2:=wide_field_stars[count*3+1];
         dec2:=wide_field_stars[count*3+2];
-        delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;
-        if   ((delta_ra*cos_telescope_dec <fov_org/2) and (abs(dec2-telescope_dec)<fov_org/2))  then
+        ang_sep(ra2,dec2,telescope_ra,telescope_dec, sep);{angular seperation}
+        if ((sep<fov_org*0.5*0.9*(2/sqrt(pi))) and  (sep<pi/2)) then  {factor 2/sqrt(pi) is to adapt circle search field to surface square. Factor 0.9 is a fiddle factor for trees, house and dark corners. Factor <pi/2 is the limit for procedure equatorial_standard}
         begin
           plot_star;{add star}
           inc(star_total_counter);
@@ -1944,7 +1944,7 @@ procedure measure_distortion(plot: boolean; out stars_measured : integer);{measu
 var
   fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,snr_min,x,y,x2,y2,astrometric_error    : double;
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,snr_min,x,y,x2,y2,astrometric_error,sep   : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,scale,count    : integer;
   flip_horizontal, flip_vertical,sip   : boolean;
   error_array                          : array of double;
@@ -2044,7 +2044,7 @@ begin
     setlength(error_array,max_nr_stars);
 
     {sets file290 so do before fov selection}
-    if select_star_database(stackmenu1.star_database1.text)=false then
+    if select_star_database(stackmenu1.star_database1.text,15 {neutral})=false then
     begin
       application.messagebox(pchar('No star database found!'+#13+'Download the h18 (or h17 or v17) and extract the files to the program directory'), pchar('No star database!'),0);
       exit;
@@ -2105,7 +2105,7 @@ begin
     end
     else
     begin {001 database}
-      if length(wide_field_stars)=0 then
+      if wide_database<>name_database then
                               read_stars_wide_field;{load wide field stars array}
       count:=0;
       cos_telescope_dec:=cos(telescope_dec);
@@ -2114,8 +2114,8 @@ begin
         mag2:=wide_field_stars[count*3];{contains: mag1, ra1,dec1, mag2,ra2,dec2,mag3........}
         ra2:=wide_field_stars[count*3+1];
         dec2:=wide_field_stars[count*3+2];
-        delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;
-        if   ((delta_ra*cos_telescope_dec <fov_org/2) and (abs(dec2-telescope_dec)<fov_org/2))  then
+        ang_sep(ra2,dec2,telescope_ra,telescope_dec, sep);{angular seperation}
+        if ((sep<fov_org*0.5*0.9*(2/sqrt(pi))) and  (sep<pi/2)) then  {factor 2/sqrt(pi) is to adapt circle search field to surface square. Factor 0.9 is a fiddle factor for trees, house and dark corners. Factor <pi/2 is the limit for procedure equatorial_standard}
         begin
           plot_star;{add star}
           inc(star_total_counter);
@@ -2200,7 +2200,7 @@ procedure plot_artificial_stars(img: image_array);{plot stars as single pixel wi
 var
   fitsX,fitsY, fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
   mag2,Bp_Rp, delta_ra,det,SIN_dec_ref,COS_dec_ref,
-  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4      : double;
+  SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,sep      : double;
   x,y, max_nr_stars, area1,area2,area3,area4,count                                  : integer;
   Save_Cursor                      : TCursor;
 
@@ -2246,7 +2246,7 @@ begin
     telescope_ra:=ra0+arctan(Dra/delta);
     telescope_dec:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
 
-    if select_star_database(stackmenu1.star_database1.text)=false then {sets file290 so do before fov selection}
+    if select_star_database(stackmenu1.star_database1.text,15 {neutral})=false then {sets file290 so do before fov selection}
     begin
       application.messagebox(pchar('No star database found!'+#13+'Download the h18 (or h17 or v17) and extract the files to the program directory'), pchar('No star database!'),0);
       exit;
@@ -2301,7 +2301,7 @@ begin
     end
     else
     begin {001 database}
-      if length(wide_field_stars)=0 then
+      if wide_database<>name_database then
                               read_stars_wide_field;{load wide field stars array}
       count:=0;
       cos_telescope_dec:=cos(telescope_dec);
@@ -2310,8 +2310,8 @@ begin
         mag2:=wide_field_stars[count*3];{contains: mag1, ra1,dec1, mag2,ra2,dec2,mag3........}
         ra2:=wide_field_stars[count*3+1];
         dec2:=wide_field_stars[count*3+2];
-        delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;
-        if   ((delta_ra*cos_telescope_dec <fov_org/2) and (abs(dec2-telescope_dec)<fov_org/2))  then
+        ang_sep(ra2,dec2,telescope_ra,telescope_dec, sep);{angular seperation}
+        if ((sep<fov_org*0.5*0.9*(2/sqrt(pi))) and  (sep<pi/2)) then  {factor 2/sqrt(pi) is to adapt circle search field to surface square. Factor 0.9 is a fiddle factor for trees, house and dark corners. Factor <pi/2 is the limit for procedure equatorial_standard}
         begin
           plot_star;{add star}
         end;

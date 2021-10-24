@@ -3015,7 +3015,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.586, '+about_message4+', dated 2021-10-20';
+  #13+#10+'ASTAP version ß0.9.587, '+about_message4+', dated 2021-10-23';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4039,12 +4039,12 @@ begin
   flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
   mainwindow.image1.Canvas.Pen.Mode:= pmXor;
-  mainwindow.image1.Canvas.Pen.width :=max(1,trunc(height2/1000));
+  mainwindow.image1.Canvas.Pen.width :=max(1, height2 div 1000);
   mainwindow.image1.Canvas.Pen.color:= $009000;
 
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   mainwindow.image1.Canvas.font.color:= clgray;
-  mainwindow.image1.Canvas.font.size:=8;
+  mainwindow.image1.Canvas.font.size:=max(8,height2 div 120);
 
 
   for dia:=0 to length(constpos)-1 do  {constellations abreviations}
@@ -5340,14 +5340,13 @@ end;
 
 function prepare_ra6(rax:double; sep:string):string; {radialen to text, format 24: 00 00}
  var
-   h,m,s,ds  :integer;
+   h,m,s  :integer;
  begin   {make from rax [0..pi*2] a text in array bericht. Length is 8 long}
   rax:=rax+pi/(24*60*60); {add half second to get correct rounding and not 7:60 results as with round}
   rax:=rax*12/pi; {make hours}
   h:=trunc(rax);
   m:=trunc((rax-h)*60);
   s:=trunc((rax-h-m/60)*3600);
-  ds:=trunc((rax-h-m/60-s/3600)*36000);
   result:=leadingzero(h)+sep+leadingzero(m)+' '+leadingzero(s);
 end;
 
@@ -10895,10 +10894,16 @@ procedure Tmainwindow.FormCreate(Sender: TObject);
 var
    param1: string;
 begin
-  {OneInstance, if one parameter specified, so if user clicks on an associated image}
-  if paramcount=1 then param1:=paramstr(1) else param1:='T';
-  if ((paramcount=1) and  (ord(param1[length(param1)])>57  {letter, not a platesolve command} )) then {2019-5-4, modification only unique instance if called with file as parameter(1)}
-    check_second_instance;{check for and other instance of the application. If so send paramstr(1) and quit}
+  {OneInstance of ASTAP if only one parameter is specified. So if user clicks on an associated image in explorer}
+  if paramcount=1 then
+  begin
+    param1:=paramstr(1);
+    if ord(param1[length(param1)])>57  {letter, not a platesolve command}  then {2019-5-4, modification only unique instance if called with file as parameter(1)}
+      check_second_instance;{check for and other instance of the application. If so send paramstr(1) and quit}
+  end
+  else
+  if paramcount>1 then {commandline mode}
+     trayicon1.visible:=true;{Show trayicon. Do it early otherwise in Win10 it is not shown in the command line mode}
 
   application_path:= extractfilepath(application.location);{}
 
@@ -10987,6 +10992,7 @@ procedure Tmainwindow.FormDestroy(Sender: TObject);
 begin
   settingstring.free;
   deepstring.free;{free deepsky}
+  wide_field_stars:=nil; {free wide_field_database}
   recent_files.free;
 end;
 
@@ -11635,10 +11641,10 @@ begin
 
         stackmenu1.radius_search1.text:=floattostrF(search_field,ffFixed,0,1);{convert to radius of a square search field}
 
-        {$ifdef CPUARM}
-        {$else}
-          trayicon1.visible:=true;{show progress in hint of trayicon}
-        {$endif}
+//        {$ifdef CPUARM}
+//        {$else}
+//          trayicon1.visible:=true;{show progress in hint of trayicon}
+//        {$endif}
 
         if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
         begin
@@ -12123,8 +12129,6 @@ begin
              inc(focus_count);
            end;
            stackmenu1.curve_fitting1Click(nil);
-          // save_settings2;{too many lost selected files . so first save settings}
-          // application.messagebox( pchar(inttostr(best_focus)), pchar('Focus'),MB_OK);
            if debug=false then
            begin
              if isConsole then {stdout available, compile targe option -wh used}
@@ -12179,16 +12183,16 @@ begin
             end;
           end;{analyse fits and report HFD value}
 
-          if hasoption('d') then
-               database_path:=GetOptionValue('d')+DirectorySeparator; {specify a different database path}
+          if hasoption('d') then database_path:=GetOptionValue('d')+DirectorySeparator; {specify a different database path}
 
           if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
           begin
-            {$ifdef CPUARM}
-            {set tray icon visible gives a fatal error in old compiler for armhf}
-            {$else}
-              trayicon1.visible:=true;{show progress in hint of trayicon}
-            {$endif}
+//            {$ifdef CPUARM}
+//            {set tray icon visible gives a fatal error in old compiler for armhf}
+//            {$else}
+//            trayicon1.visible:=true;{show progress in hint of trayicon}
+//            trayicon1.show;{show progress in hint of trayicon}
+//            {$endif}
 
             if hasoption('sqm') then {sky quality}
             begin
@@ -12290,6 +12294,7 @@ begin
       end;{-f option}
     end;{with application}
 
+
     {filename as parameter 1}
     Mainwindow.stretch1Change(nil);{create gamma curve}
     load_image(true,true {plot});{show image of parameter1}
@@ -12297,12 +12302,12 @@ begin
   else
   Mainwindow.stretch1Change(nil);{create gamma curve for image if loaded later and set gamma_on}
 
+
   {$IfDef Darwin}// for OS X,
   {$IF FPC_FULLVERSION <= 30200} {FPC3.2.0}
      application.messagebox( pchar('Warning this code requires later LAZARUS 2.1 and FPC 3.3.1 version!!!'), pchar('Warning'),MB_OK);
   {$ENDIF}
   {$ENDIF}
-
 
   memo1.font.size:=font_size;
   memo1.font.color:=font_color;

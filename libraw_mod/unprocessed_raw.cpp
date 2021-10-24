@@ -2,7 +2,7 @@
  * File: unprocessed_raw.cpp
  * Copyright 2009-2021 LibRaw LLC (info@libraw.org)
  * Created: Fri Jan 02, 2009
- * Modified for adding meta data to PPM file and FITS export. Version 2021-3-15
+ * Modified for adding meta data to PPM file and FITS export. Version 2021-10-22
  *
  * LibRaw sample
  * Generates unprocessed raw image: with masked pixels and without black
@@ -51,92 +51,6 @@ void write_fits(char fits_header[],unsigned width, unsigned height, unsigned lef
 void write_tiff(int width, int height, unsigned short *bitmap,
                 const char *basename);
 
-
-
-static const struct {
-    const int NumId;
-    const char *StrId;
-} CorpToStr[] = {
-    {LIBRAW_CAMERAMAKER_Agfa,           "LIBRAW_CAMERAMAKER_Agfa"},
-    {LIBRAW_CAMERAMAKER_Alcatel,        "LIBRAW_CAMERAMAKER_Alcatel"},
-    {LIBRAW_CAMERAMAKER_Apple,          "LIBRAW_CAMERAMAKER_Apple"},
-    {LIBRAW_CAMERAMAKER_Aptina,         "LIBRAW_CAMERAMAKER_Aptina"},
-    {LIBRAW_CAMERAMAKER_AVT,            "LIBRAW_CAMERAMAKER_AVT"},
-    {LIBRAW_CAMERAMAKER_Baumer,         "LIBRAW_CAMERAMAKER_Baumer"},
-    {LIBRAW_CAMERAMAKER_Broadcom,       "LIBRAW_CAMERAMAKER_Broadcom"},
-    {LIBRAW_CAMERAMAKER_Canon,          "LIBRAW_CAMERAMAKER_Canon"},
-    {LIBRAW_CAMERAMAKER_Casio,          "LIBRAW_CAMERAMAKER_Casio"},
-    {LIBRAW_CAMERAMAKER_CINE,           "LIBRAW_CAMERAMAKER_CINE"},
-    {LIBRAW_CAMERAMAKER_Clauss,         "LIBRAW_CAMERAMAKER_Clauss"},
-    {LIBRAW_CAMERAMAKER_Contax,         "LIBRAW_CAMERAMAKER_Contax"},
-    {LIBRAW_CAMERAMAKER_Creative,       "LIBRAW_CAMERAMAKER_Creative"},
-    {LIBRAW_CAMERAMAKER_DJI,            "LIBRAW_CAMERAMAKER_DJI"},
-    {LIBRAW_CAMERAMAKER_DXO,            "LIBRAW_CAMERAMAKER_DXO"},
-    {LIBRAW_CAMERAMAKER_Epson,          "LIBRAW_CAMERAMAKER_Epson"},
-    {LIBRAW_CAMERAMAKER_Foculus,        "LIBRAW_CAMERAMAKER_Foculus"},
-    {LIBRAW_CAMERAMAKER_Fujifilm,       "LIBRAW_CAMERAMAKER_Fujifilm"},
-    {LIBRAW_CAMERAMAKER_Generic,        "LIBRAW_CAMERAMAKER_Generic"},
-    {LIBRAW_CAMERAMAKER_Gione,          "LIBRAW_CAMERAMAKER_Gione"},
-    {LIBRAW_CAMERAMAKER_GITUP,          "LIBRAW_CAMERAMAKER_GITUP"},
-    {LIBRAW_CAMERAMAKER_Google,         "LIBRAW_CAMERAMAKER_Google"},
-    {LIBRAW_CAMERAMAKER_GoPro,          "LIBRAW_CAMERAMAKER_GoPro"},
-    {LIBRAW_CAMERAMAKER_Hasselblad,     "LIBRAW_CAMERAMAKER_Hasselblad"},
-    {LIBRAW_CAMERAMAKER_HTC,            "LIBRAW_CAMERAMAKER_HTC"},
-    {LIBRAW_CAMERAMAKER_I_Mobile,       "LIBRAW_CAMERAMAKER_I_Mobile"},
-    {LIBRAW_CAMERAMAKER_Imacon,         "LIBRAW_CAMERAMAKER_Imacon"},
-    {LIBRAW_CAMERAMAKER_Kodak,          "LIBRAW_CAMERAMAKER_Kodak"},
-    {LIBRAW_CAMERAMAKER_Konica,         "LIBRAW_CAMERAMAKER_Konica"},
-    {LIBRAW_CAMERAMAKER_Leaf,           "LIBRAW_CAMERAMAKER_Leaf"},
-    {LIBRAW_CAMERAMAKER_Leica,          "LIBRAW_CAMERAMAKER_Leica"},
-    {LIBRAW_CAMERAMAKER_Lenovo,         "LIBRAW_CAMERAMAKER_Lenovo"},
-    {LIBRAW_CAMERAMAKER_LG,             "LIBRAW_CAMERAMAKER_LG"},
-    {LIBRAW_CAMERAMAKER_Logitech,       "LIBRAW_CAMERAMAKER_Logitech"},
-    {LIBRAW_CAMERAMAKER_Mamiya,         "LIBRAW_CAMERAMAKER_Mamiya"},
-    {LIBRAW_CAMERAMAKER_Matrix,         "LIBRAW_CAMERAMAKER_Matrix"},
-    {LIBRAW_CAMERAMAKER_Meizu,          "LIBRAW_CAMERAMAKER_Meizu"},
-    {LIBRAW_CAMERAMAKER_Micron,         "LIBRAW_CAMERAMAKER_Micron"},
-    {LIBRAW_CAMERAMAKER_Minolta,        "LIBRAW_CAMERAMAKER_Minolta"},
-    {LIBRAW_CAMERAMAKER_Motorola,       "LIBRAW_CAMERAMAKER_Motorola"},
-    {LIBRAW_CAMERAMAKER_NGM,            "LIBRAW_CAMERAMAKER_NGM"},
-    {LIBRAW_CAMERAMAKER_Nikon,          "LIBRAW_CAMERAMAKER_Nikon"},
-    {LIBRAW_CAMERAMAKER_Nokia,          "LIBRAW_CAMERAMAKER_Nokia"},
-    {LIBRAW_CAMERAMAKER_Olympus,        "LIBRAW_CAMERAMAKER_Olympus"},
-    {LIBRAW_CAMERAMAKER_OmniVison,      "LIBRAW_CAMERAMAKER_OmniVison"},
-    {LIBRAW_CAMERAMAKER_Panasonic,      "LIBRAW_CAMERAMAKER_Panasonic"},
-    {LIBRAW_CAMERAMAKER_Parrot,         "LIBRAW_CAMERAMAKER_Parrot"},
-    {LIBRAW_CAMERAMAKER_Pentax,         "LIBRAW_CAMERAMAKER_Pentax"},
-    {LIBRAW_CAMERAMAKER_PhaseOne,       "LIBRAW_CAMERAMAKER_PhaseOne"},
-    {LIBRAW_CAMERAMAKER_PhotoControl,   "LIBRAW_CAMERAMAKER_PhotoControl"},
-    {LIBRAW_CAMERAMAKER_Photron,        "LIBRAW_CAMERAMAKER_Photron"},
-    {LIBRAW_CAMERAMAKER_Pixelink,       "LIBRAW_CAMERAMAKER_Pixelink"},
-    {LIBRAW_CAMERAMAKER_Polaroid,       "LIBRAW_CAMERAMAKER_Polaroid"},
-    {LIBRAW_CAMERAMAKER_RED,            "LIBRAW_CAMERAMAKER_RED"},
-    {LIBRAW_CAMERAMAKER_Ricoh,          "LIBRAW_CAMERAMAKER_Ricoh"},
-    {LIBRAW_CAMERAMAKER_Rollei,         "LIBRAW_CAMERAMAKER_Rollei"},
-    {LIBRAW_CAMERAMAKER_RoverShot,      "LIBRAW_CAMERAMAKER_RoverShot"},
-    {LIBRAW_CAMERAMAKER_Samsung,        "LIBRAW_CAMERAMAKER_Samsung"},
-    {LIBRAW_CAMERAMAKER_Sigma,          "LIBRAW_CAMERAMAKER_Sigma"},
-    {LIBRAW_CAMERAMAKER_Sinar,          "LIBRAW_CAMERAMAKER_Sinar"},
-    {LIBRAW_CAMERAMAKER_SMaL,           "LIBRAW_CAMERAMAKER_SMaL"},
-    {LIBRAW_CAMERAMAKER_Sony,           "LIBRAW_CAMERAMAKER_Sony"},
-    {LIBRAW_CAMERAMAKER_ST_Micro,       "LIBRAW_CAMERAMAKER_ST_Micro"},
-    {LIBRAW_CAMERAMAKER_THL,            "LIBRAW_CAMERAMAKER_THL"},
-    {LIBRAW_CAMERAMAKER_Xiaomi,         "LIBRAW_CAMERAMAKER_Xiaomi"},
-    {LIBRAW_CAMERAMAKER_XIAOYI,         "LIBRAW_CAMERAMAKER_XIAOYI"},
-    {LIBRAW_CAMERAMAKER_YI,             "LIBRAW_CAMERAMAKER_YI"},
-    {LIBRAW_CAMERAMAKER_Yuneec,         "LIBRAW_CAMERAMAKER_Yuneec"},
-    {LIBRAW_CAMERAMAKER_Zeiss,          "LIBRAW_CAMERAMAKER_Zeiss"},
-};
-
-
-const char *CameraMaker_idx2str(unsigned maker) {
-  for (unsigned i = 0; i < (sizeof CorpToStr / sizeof *CorpToStr); i++)
-    if(CorpToStr[i].NumId == (int)maker)
-      return CorpToStr[i].StrId;
-  return 0;
-}
-
-
 int main(int ac, char *av[])
 {
   int i, ret;
@@ -151,7 +65,7 @@ int main(int ac, char *av[])
   if (ac < 2)
   {
   usage:
-    printf("unprocessed_raw - LibRaw %s with FITS support mod. %d cameras supported\n"
+    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2021-10-22\n"
            "Usage: %s [-q] [-A] [-g] [-s N] raw-files....\n"
            "\t-q - be quiet\n"
            "\t-s N - select Nth image in file (default=0)\n"
@@ -166,9 +80,14 @@ int main(int ac, char *av[])
   }
 
 #define S RawProcessor.imgdata.sizes
+//#define OUT RawProcessor.imgdata.params
+#define OUTR RawProcessor.imgdata.rawparams
 #define P1 RawProcessor.imgdata.idata
 #define P2 RawProcessor.imgdata.other
 #define P3 RawProcessor.imgdata.makernotes.common
+#define exifLens RawProcessor.imgdata.lens
+#define C RawProcessor.imgdata.color
+
 
 #define OUT RawProcessor.imgdata.params
 
@@ -191,7 +110,7 @@ int main(int ac, char *av[])
       else if (av[i][1] == 's' && av[i][2] == 0)
       {
         i++;
-        OUT.shot_select = av[i] ? atoi(av[i]) : 0;
+        OUTR.shot_select = av[i] ? atoi(av[i]) : 0;
       }
       else
         goto usage;
@@ -255,11 +174,11 @@ int main(int ac, char *av[])
         printf("Gamma-corrected....\n");
     }
 
-    if (OUT.shot_select)
+    if (OUTR.shot_select)
     {
-      if (out_fits>1)  {snprintf(outfn, sizeof(outfn), "%s-%d.%s", av[i], OUT.shot_select,"fits"); }
+      if (out_fits>1)  {snprintf(outfn, sizeof(outfn), "%s-%d.%s", av[i], OUTR.shot_select,"fits"); }
       else
-      snprintf(outfn, sizeof(outfn), "%s-%d.%s", av[i], OUT.shot_select,
+      snprintf(outfn, sizeof(outfn), "%s-%d.%s", av[i], OUTR.shot_select,
                out_tiff ? "tiff" : "pgm");
     }
     else
@@ -281,12 +200,12 @@ int main(int ac, char *av[])
       if (out_fits>1) //export full sensor
         { S.top_margin=0; S.left_margin=0;  }
 
-      strcpy(fits_header,"SIMPLE  =                    T / FITS header                            ");
+      strcpy(fits_header,"SIMPLE  =                    T / FITS header                                      ");
       fits_header[80]='\0'; // length should be exactly 80
 
-      strcpy(str,"BITPIX  =                   16 / Bits per entry                                 ");
+      strcpy(str,        "BITPIX  =                   16 / Bits per entry                                   ");
       str[80]='\0'; strcat(fits_header,str);//line 2. Length of each keyword record should be exactly 80
-      strcpy(str,"NAXIS   =                    2 / Number of dimensions                            ");
+      strcpy(str,        "NAXIS   =                    2 / Number of dimensions                             ");
       str[80]='\0'; strcat(fits_header,str);//line 3. Length of each keyword record should be exactly 80
 
       sprintf(str,"NAXIS1  = %020d                                                                       ",S.raw_width- S.left_margin );
@@ -312,18 +231,47 @@ int main(int ac, char *av[])
 
       sprintf(str,"GAIN    = %020d                                                                       ",(int)P2.iso_speed);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+      
+      if (C.cblack[0] != 0)
+      {
+      sprintf(str,"PEDESTAL= %020d                                                                       ",(int)C.cblack[0]);
+      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+      sprintf(str,"PEDESTA2= %020d                                                                       ",(int)C.cblack[1]);
+      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+      sprintf(str,"PEDESTA3= %020d                                                                       ",(int)C.cblack[2]);
+      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+      sprintf(str,"PEDESTA4= %020d                                                                       ",(int)C.cblack[3]);
+      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+      }
+
+      if (C.linear_max[0] != 0)
+      {
+      sprintf(str,"DATAMAX = %020d                                                                       ",(int)C.linear_max[0]);
+      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+      sprintf(str,"DATAMAX2= %020d                                                                       ",(int)C.linear_max[1]);
+      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+      sprintf(str,"DATAMAX3= %020d                                                                       ",(int)C.linear_max[2]);
+      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+      sprintf(str,"DATAMAX4= %020d                                                                       ",(int)C.linear_max[3]);
+      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+      }
+
 
       sprintf(str,"APERTURE= %020g                                                                       ",P2.aperture);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
 
-      sprintf(str,"FOCALLEN= %020d                                                                       ",P2.focal_len);
+      sprintf(str,"FOCALLEN= %020d                                                                       ",(int)P2.focal_len);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
 
-      sprintf(str,"INSTRUME= '%s'                                                                        ",CameraMaker_idx2str(P1.maker_index));
+      sprintf(str,"CAMMAKER= '%s'                                                                        ",P1.make);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
 
-      sprintf(str,"CAMERA  = %020g                                                                       ",P1.model);
+      sprintf(str,"INSTRUME= '%s'                                                                        ",P1.model );
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+      
+      sprintf(str,"TELESCOP= '%s'                                                                        ",exifLens.Lens );
+      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+    
 
       if (P1.filters)
       {
@@ -344,11 +292,14 @@ int main(int ac, char *av[])
         str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
       }
 
-      sprintf(str,"IMG_FLIP= %020d                                                                        ",S.flip);
+      sprintf(str,"IMG_FLIP= %020d                                                                        ",(int)S.flip);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
 
       sprintf(str,"COMMENT raw conversion by LibRaw-with-16-bit-FITS-support. www.hnsky.org               ");
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+      
+      
+      
 
 
       strcpy(str,"END                                                                                     ");
@@ -364,15 +315,16 @@ int main(int ac, char *av[])
 
     else
       {
-      sprintf(str,"%g",P2.shutter);                          strcpy(meta,"# EXPTIME=");   strcat(meta, str);
+      sprintf(str,"%g",P2.shutter);                          strcpy(meta,"# EXPTIME=");   strcat(meta,str);
       sprintf(str, "%d",(int)P2.timestamp);                  strcat(meta,"# TIMESTAMP="); strcat(meta,str);
-      sprintf(str, "%g",P3.SensorTemperature);               strcat(meta,"# CCD-TEMP=");  strcat(meta,str);
-      sprintf(str, "%g",P3.CameraTemperature);               strcat(meta,"# CAM-TEMP=");  strcat(meta,str);
+      sprintf(str, "%d",(int)P3.SensorTemperature);          strcat(meta,"# CCD-TEMP=");  strcat(meta,str);
+      sprintf(str, "%d",(int)P3.CameraTemperature);          strcat(meta,"# CAM-TEMP=");  strcat(meta,str);
       sprintf(str, "%d",(int)P2.iso_speed);                  strcat(meta,"# ISOSPEED=");  strcat(meta,str);
       sprintf(str, "%0.1f",P2.aperture);                     strcat(meta,"# APERTURE=");  strcat(meta,str);
-      sprintf(str, "%d",P2.focal_len);                       strcat(meta,"# FOCALLEN=");  strcat(meta,str);
-      sprintf(str, "%s",CameraMaker_idx2str(P1.maker_index));strcat(meta,"# MAKE=");      strcat(meta,str);
-      sprintf(str, "%g", P1.model);                          strcat(meta,"# MODEL=");     strcat(meta,str);
+      sprintf(str, "%d",(int)P2.focal_len);                  strcat(meta,"# FOCALLEN=");  strcat(meta,str);
+      sprintf(str, "%s", P1.make);                           strcat(meta,"# MAKE=");      strcat(meta,str);
+      sprintf(str, "%s", P1.model);                          strcat(meta,"# MODEL=");     strcat(meta,str);
+      sprintf(str, "%s", exifLens.Lens);                     strcat(meta,"# LENS=");      strcat(meta,str);
 
       write_ppm(meta,S.raw_width, S.raw_height,
                 RawProcessor.imgdata.rawdata.raw_image, outfn);

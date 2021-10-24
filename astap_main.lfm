@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = -7
+  Left = 198
   Height = 646
   Hint = ' '
-  Top = 0
+  Top = 92
   Width = 1272
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -51,6 +51,7 @@ object mainwindow: Tmainwindow
   OnResize = FormResize
   OnShow = FormShow
   ParentFont = True
+  Position = poDesktopCenter
   LCLVersion = '2.0.12.0'
   object Label1: TLabel
     Left = 54
@@ -1622,7 +1623,7 @@ object mainwindow: Tmainwindow
       object grid1: TMenuItem
         AutoCheck = True
         Caption = 'α, δ grid'
-        Hint = 'Adds a right ascension, & declination grid to image'
+        Hint = 'Adds a right ascension & declination grid to image'
         ShortCut = 16455
         OnClick = grid1Click
       end

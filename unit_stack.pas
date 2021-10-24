@@ -6132,7 +6132,7 @@ var
 
   function measure_star(deX,deY :double): string;{measure position and flux}
   var
-    starX,starY,len :double;
+    starX,starY :double;
   begin
     HFD(img_loaded,round(deX-1),round(deY-1),annulus_radius {14, annulus radius},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
     if ((hfd1<50) and (hfd1>0) and (snr>6)) then {star detected in img_loaded}
@@ -7138,6 +7138,7 @@ begin
       until FindNext(SearchRec) <> 0;
     end;
     FindClose(SearchRec);
+    star_database1.items.add('auto');
   end;
   flux_magn_offset:=0;{reset flux calibration. Required if V17 is selected instead of H17}
 end;
@@ -8791,7 +8792,8 @@ begin
 
         {load file}
         if load_fits(filename2,true {light},true,true {update memo},0,img_loaded){important required to check CD1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
-        if ((cd1_1=0) or (ignore)) then solution:= create_internal_solution(img_loaded) else solution:=true;
+        if ((cd1_1=0) or (ignore)) then
+                                  solution:= create_internal_solution(img_loaded) else solution:=true;
 
         if solution=false then
         begin {no solution found}

@@ -34,7 +34,7 @@ var
 // preconditions:
 //   cos_telescope_dec, double variable should contains the cos(telescope_dec) to detect if star read is within the FOV diameter}
 
-function select_star_database(database:string): boolean; {select a star database, report false if none is found}
+function select_star_database(database:string;fov:double): boolean; {select a star database, report false if none is found}
 procedure find_areas(ra1,dec1,fov :double; out area1,area2,area3,area4 :integer; out frac1,frac2,frac3,frac4:double);{find up to four star database areas for the square image.  Maximum size is a little lesse the one database field 9.5x9.5 degrees for .290 files and 5.14 x 5.14 degrees for .1476 files}
 function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; out ra2,dec2, mag2,Bp_Rp : double): boolean; inline;{star 290 file database search}
 procedure close_star_database;{Close the tfilestream}
@@ -2760,29 +2760,39 @@ begin
 end;
 
 
-function select_star_database(database:string): boolean; {select a star database, report false if none is found}
+function select_star_database(database:string;fov:double): boolean; {select a star database, report false if none is found}
+var
+  typ : ansichar;
 begin
   result:=true;
   database_type:=1476;{type .1476 database}
   database:=lowercase(database);
 
+  typ:=database[1];
 
-  if copy(database,1,1)='h' then
+  if typ<>'a' then {manual setting}
   begin
-    if fileexists( database_path+database+'_0101.1476') then begin name_database:=database; {try preference}  exit; end;
+    if typ='w' then
+    begin
+      if fileexists( database_path+database+'_0101.001') then begin name_database:=database; {try preference}database_type:=001;exit; end
+    end
+    else
+    if typ='h' then
+    begin
+      if fileexists( database_path+database+'_0101.1476') then begin name_database:=database; {try preference}  exit; end;
+    end
+    else
+    if typ in ['v','g'] then
+    begin
+      if fileexists( database_path+database+'_0101.290') then begin name_database:=database; {try preference}database_type:=290;exit; end
+    end;
+  end;{auto}
+
+  if fov>20 then
+  begin
+    if fileexists( database_path+'w08_0101.001') then begin name_database:='w08';database_type:=001; end;
   end
   else
-  if copy(database,1,1)='g' then
-  begin
-    if fileexists( database_path+database+'_0101.290') then begin name_database:=database; {try preference}database_type:=290;exit; end
-  end
-  else
-  if copy(database,1,1)='w' then
-  begin
-    if fileexists( database_path+database+'_0101.001') then begin name_database:=database; {try preference}database_type:=001;exit; end
-  end;
-
-
   if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18'; end
   else
   if fileexists( database_path+'g18_0101.290') then begin name_database:='g18'; database_type:=290; end
@@ -2792,8 +2802,6 @@ begin
   if fileexists( database_path+'g17_0101.290') then begin name_database:='g17'; database_type:=290; end
   else
   if fileexists( database_path+'v17_0101.290') then begin name_database:='v17'; database_type:=290; end
-  else
-  if fileexists( database_path+'u16_0101.290') then begin name_database:='u16'; database_type:=290; end
   else
   result:=false;
 end;

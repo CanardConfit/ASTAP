@@ -276,7 +276,6 @@ var
 var
   thefile : tfilestream;
   i,j,k,m : integer;
-  dum: double;
 
   buf32: single;
   buffer : array[0..3] of byte absolute buf32;

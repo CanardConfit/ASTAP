@@ -764,7 +764,8 @@ begin
 
   xy_sqr_ratio:=(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]) ) / (0.00000001+ sqr(solution_vectorY[0])+sqr(solution_vectorY[1]) );
 
-  if ((xy_sqr_ratio<0.98) or (xy_sqr_ratio>1.02)) then {dimensions x, y are not the same, something wrong. Mod 2021-6-26, changed it from 0.99 to 0.98 because of problem solving some images like M20 }
+//  if ((xy_sqr_ratio<0.98) or (xy_sqr_ratio>1.02)) then {dimensions x, y are not the same, something wrong. Mod 2021-6-26, changed it from 0.99 to 0.98 because of problem solving some images like M20 }
+  if ((xy_sqr_ratio<0.9) or (xy_sqr_ratio>1.1)) then {dimensions x, y are not the same, something wrong. Mod 2021-6-26, changed it from 0.99 to 0.98 because of problem solving some images like M20 }
   begin
     result:=false;
     reset_solution_vectors(0.001);{nullify}

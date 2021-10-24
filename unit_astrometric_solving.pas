@@ -197,8 +197,9 @@ end;
 function read_stars(telescope_ra,telescope_dec,search_field : double; nrstars_required: integer; out nrstars:integer): boolean;{read star from star database}
 var
    Bp_Rp, ra2,dec2,
-   frac1,frac2,frac3,frac4,delta_ra, correctionX,correctionY  : double;
+   frac1,frac2,frac3,frac4,sep                      : double;
    area1,area2,area3,area4,nrstars_required2,count  : integer;
+   correctionX,correctionY : double;
 begin
   result:=false;{assume failure}
   nrstars:=0;{set counters at zero}
@@ -264,16 +265,15 @@ begin
   end
   else
   begin {wide field database}
-    if length(wide_field_stars)=0 then read_stars_wide_field;{load wide field stars array}
+    if wide_database<>name_database then read_stars_wide_field;{load wide field stars array}
     count:=0;
     cos_telescope_dec:=cos(telescope_dec);
     while ((nrstars<nrstars_required) and  (count<length(wide_field_stars) div 3) ) do{star 290 file database read. Read up to nrstars_required}
     begin
       ra2:=wide_field_stars[count*3+1];{contains: mag1, ra1,dec1, mag2,ra2,dec2,mag3........}
       dec2:=wide_field_stars[count*3+2];
-      delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;
-//      if   ((delta_ra*cos_telescope_dec<search_field/2) and (abs(dec2-telescope_dec)<search_field/2)) then
-      if   ((delta_ra*cos(dec2)<search_field/2) and (abs(dec2-telescope_dec)<search_field/2)) then
+      ang_sep(ra2,dec2,telescope_ra,telescope_dec, sep);{angular seperation. Required for large field of view around the pole. Can not use simple formulas anymore}
+      if ((sep<search_field*0.5*0.9*(2/sqrt(pi))) and  (sep<pi/2)) then  {factor 2/sqrt(pi) is to adapt circle search field to surface square. Factor 0.9 is a fiddle factor for trees, house and dark corners. Factor <pi/2 is the limit for procedure equatorial_standard}
       begin
         equatorial_standard(telescope_ra,telescope_dec,ra2,dec2,1,starlist1[0,nrstars]{x},starlist1[1,nrstars]{y});{store star CCD x,y position}
         inc(nrstars);
@@ -292,8 +292,6 @@ begin
   //for testing
 //  equatorial_standard(telescope_ra,telescope_dec,ra0,dec0,1,correctionX,correctionY);{calculate correction for x,y position of database center and image center}
 //  plot_stars_used_for_solving(correctionX,correctionY); {plot image stars and database stars used for the solution}
-
-
 end;
 
 
@@ -590,7 +588,7 @@ begin
     fov_org:=min(180,strtofloat2(stackmenu1.search_fov1.text));{use specfied FOV in stackmenu. 180 max to prevent runtime errors later}
 
 
-  if select_star_database(stackmenu1.star_database1.text)=false then {select database prior to cropping selection}
+  if select_star_database(stackmenu1.star_database1.text,fov_org)=false then {select database prior to cropping selection}
   begin
     result:=false;
     application.messagebox(pchar('No star database found at '+database_path+' !'+#13+'Download the h18 (or h17, v17) and install'), pchar('ASTAP error:'),0);
@@ -599,11 +597,11 @@ begin
   end
   else
   begin
-    stackmenu1.star_database1.text:=name_database;
+    //stackmenu1.star_database1.text:=name_database;
     memo2_message('Using star database '+uppercase(name_database));
 
     if ((fov_org>30) and (database_type<>001)) then
-      warning_str:=warning_str+'Wide field image, use W07 database! '
+      warning_str:=warning_str+'Wide field image, use W08 database! '
     else
     if ((fov_org>6) and (database_type=1476)) then
       warning_str:=warning_str+'Large FOV, use V17 or G17 database! ';
@@ -669,11 +667,11 @@ begin
 
     {prepare popupnotifier1 text}
     if stackmenu1.force_oversize1.checked=false then info_message:='▶▶' {normal} else info_message:='▶'; {slow}
-    info_message:= ' [' +stackmenu1.radius_search1.text+'°]'+#9+#9+info_message+#9+#9+inttostr(nrstars)+' 🟊' +
+    info_message:= ' [' +stackmenu1.radius_search1.text+'°]'+#9+info_message+#9+inttostr(nrstars)+' 🟊' +
                     #10+'↕ '+floattostrf(fov_org,ffFixed,0,2)+'°'+ #9+#9+inttostr(binning)+'x'+inttostr(binning)+' ⇒ '+inttostr(width2)+'x'+inttostr(height2)+
                     popup_warningV17+popup_warningSample+
-                    #10+mainwindow.ra1.text+'h,'+mainwindow.dec1.text+'°'+{for tray icon}
-                    #10+filename2;
+                    #10+mainwindow.ra1.text+'h, '+mainwindow.dec1.text+'° '+#9+{for tray icon} extractfilename(filename2)+
+                    #10+extractfileDir(filename2);
 
     nrstars_required:=round(nrstars*(height2/width2));{square search field based on height.}
 
@@ -693,7 +691,7 @@ begin
       else
       oversize:=2*sqrt(25/nr_quads);{calculate between 25 th=2 and 100 th=1, quads are area related so take sqrt to get oversize}
 
-      if ((stackmenu1.force_oversize1.checked) or (database_type=001)) then   {for always oversize for wide field database}
+      if ((stackmenu1.force_oversize1.checked) {or (database_type=001)}) then   {for always oversize for wide field database}
       begin
         oversize:=2;
         oversize_mess:='Search window at 200%'
@@ -703,7 +701,7 @@ begin
 
       radius:=strtofloat2(stackmenu1.radius_search1.text);{radius search field}
 
-      max_distance:=round(radius/(fov2+0.00001));
+
       memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(nrstars_required)+' database stars, '
                              +inttostr(round(nr_quads*nrstars_required/nrstars))+' database quads required for the square search field of '+floattostrF(fov2,ffFixed,0,1)+'°. '+oversize_mess );
       minimum_quads:=3 + nr_quads div 100; {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum}
@@ -716,9 +714,17 @@ begin
 
     if go_ahead then
     begin
-
       search_field:=fov2*(pi/180);
       STEP_SIZE:=search_field;{fixed step size search spiral. Prior to version 0.9.211 this was reduced for small star counts}
+      if database_type=1 then
+      begin {make smal steps for wide field images. Much more reliable}
+        step_size:=step_size*0.25;
+        max_distance:=round(radius/(0.25*fov2+0.00001)); {expressed in steps}
+        memo2_message('Wide field, making small steps for reliable solving.');
+      end
+      else
+      max_distance:=round(radius/(fov2+0.00001));{expressed in steps}
+
       stackmenu1.Memo2.Lines.BeginUpdate;{do not update tmemo, very very slow and slows down program}
       stackmenu1.Memo2.disablealign;{prevent paint messages from other controls to update tmemo and make it grey. Mod 2021-06-26}
 
@@ -763,7 +769,7 @@ begin
               if ((spiral_x>distance) or (spiral_y>distance)) then {new distance reached. Update once in the square spiral, so not too often since it cost CPU time}
               begin
                 distance:=max(spiral_x,spiral_y);{update status}
-                distancestr:=inttostr(  round((distance) * fov2))+'°';{show on stackmenu what's happening}
+                distancestr:=inttostr(  round(distance*STEP_SIZE*180/pi))+'°';{show on stackmenu what's happening}
                 stackmenu1.actual_search_distance1.caption:=distancestr;
                 stackmenu1.caption:= 'Search distance:  '+distancestr;
                 mainwindow.caption:= 'Search distance:  '+distancestr;
@@ -797,15 +803,9 @@ begin
                 end;
 
 
-               // exit;
 
-
-
-
-
-
-
-
+//                beep;
+//                exit;
 
                 find_quads(starlist1,quad_smallest*(fov_org*3600/height2 {pixelsize in"})*0.99 {filter value to exclude too small quads, convert pixels to arcsec as in database}, dummy,quad_star_distances1);{find quads for reference image/database. Filter out too small quads for Earth based telescopes}
                                      {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
