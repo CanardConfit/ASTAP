@@ -3760,7 +3760,7 @@ object stackmenu1: Tstackmenu1
       object photometry_binx2: TButton
         Left = 1400
         Height = 26
-        Hint = 'Bin the images for better photometric detection.  Orginal files will not be affected.'
+        Hint = 'Bin the images for better photometric detection.  Original files will not be affected.'
         Top = 6
         Width = 61
         Caption = 'Bin x 2'
@@ -5288,7 +5288,7 @@ object stackmenu1: Tstackmenu1
         object subtract_background1: TButton
           Left = 24
           Height = 26
-          Hint = 'Subtract the created background from the orginal image and display the result.'
+          Hint = 'Subtract the created background from the original image and display the result.'
           Top = 212
           Width = 278
           Caption = 'Subtract background from saved image.'
