@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="11"/>
+    <Version Value="12"/>
     <PathDelim Value="\"/>
     <General>
       <Flags>
         <MainUnitHasUsesSectionForAllUnits Value="False"/>
         <MainUnitHasCreateFormStatements Value="False"/>
         <MainUnitHasTitleStatement Value="False"/>
+        <CompatibilityMode Value="True"/>
       </Flags>
       <SessionStorage Value="InProjectDir"/>
-      <MainUnit Value="0"/>
       <Title Value="astap"/>
       <Scaled Value="True"/>
       <UseAppBundle Value="False"/>
@@ -137,7 +137,10 @@
     <Other>
       <CustomOptions Value="-dBorland
 -dVer150
--dDelphi7"/>
+-dDelphi7
+-Cg  
+-k-pie 
+-k-znow"/>
     </Other>
   </CompilerOptions>
   <Debugging>
