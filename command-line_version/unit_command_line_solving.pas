@@ -57,31 +57,29 @@ begin
 end;
 
 
-
-procedure quicksort(var list: array of double; lo,hi: integer);{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
-  procedure sort ( left, right : integer); {processing takes place in the sort procedure which executes itself recursively.}
-  var
-    i, j       : integer;
-    tmp, pivot : double;    { tmp & pivot are the same type as the elements of array }
-  begin
-    i:=left;
-    j:=right;
-    pivot := list[(left + right) div 2];
-    repeat
-      while pivot > list[i] do inc(i);
-      while pivot < list[j] do dec(j);
-      if i<=j Then Begin
-        tmp:=list[i]; list[i]:=list[j]; list[j]:=tmp; {swap}
-        dec(j); inc(i);
-      end;
-    until i>j;
-    if left<j then sort(left,j);
-    if i<right then sort(i,right);
-  end;
-begin {quicksort};
-  sort(lo,hi);
+procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
+var
+  Lo, Hi : integer;
+  Pivot, T: double;{ pivot, T, T2 are the same type as the elements of array }
+begin
+  Lo := iLo;
+  Hi := iHi;
+  Pivot := A[(Lo + Hi) div 2];
+  repeat
+    while A[Lo] < Pivot do Inc(Lo) ;
+    while A[Hi] > Pivot do Dec(Hi) ;
+    if Lo <= Hi then
+    begin {swap}
+      T := A[Lo];
+      A[Lo] := A[Hi];
+      A[Hi] := T;
+      Inc(Lo) ;
+      Dec(Hi) ;
+    end;
+  until Lo > Hi;
+  if Hi > iLo then QuickSort(A, iLo, Hi) ;  {executes itself recursively}
+  if Lo < iHi then QuickSort(A, Lo, iHi) ;  {executes itself recursively}
 end;
-
 
 
 function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
