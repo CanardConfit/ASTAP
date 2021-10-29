@@ -199,7 +199,7 @@ var
    Bp_Rp, ra2,dec2,
    frac1,frac2,frac3,frac4,sep                      : double;
    area1,area2,area3,area4,nrstars_required2,count  : integer;
-   correctionX,correctionY : double;
+//   correctionX,correctionY : double;
 begin
   result:=false;{assume failure}
   nrstars:=0;{set counters at zero}
@@ -608,7 +608,6 @@ begin
 
     if warning_str<>'' then memo2_message(warning_str);
      popup_warningV17:=#10+warning_str;
-
   end;
 
   if  database_type=1476  then {.1476 database}
@@ -700,7 +699,6 @@ begin
       oversize_mess:='Search window at '+ inttostr(round((oversize)*100)) +'% based on the number of quads. Step size at 100% of image height';
 
       radius:=strtofloat2(stackmenu1.radius_search1.text);{radius search field}
-
 
       memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(nrstars_required)+' database stars, '
                              +inttostr(round(nr_quads*nrstars_required/nrstars))+' database quads required for the square search field of '+floattostrF(fov2,ffFixed,0,1)+'°. '+oversize_mess );
@@ -801,12 +799,6 @@ begin
                   errorlevel:=33;{read error star database}
                   exit; {no stars}
                 end;
-
-
-
-//                beep;
-//                exit;
-
                 find_quads(starlist1,quad_smallest*(fov_org*3600/height2 {pixelsize in"})*0.99 {filter value to exclude too small quads, convert pixels to arcsec as in database}, dummy,quad_star_distances1);{find quads for reference image/database. Filter out too small quads for Earth based telescopes}
                                      {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
               until ((nrstars_required>database_stars) {No more stars available in the database}

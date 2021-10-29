@@ -198,7 +198,7 @@ var {################# initialised variables #########################}
 
 implementation
 
-uses astap_main;
+uses astap_main, unit_stack {for memo2_message};
 
 var {################# initialised variables #########################}
 
@@ -2790,7 +2790,9 @@ begin
 
   if fov>20 then
   begin
-    if fileexists( database_path+'w08_0101.001') then begin name_database:='w08';database_type:=001; end;
+    if fileexists( database_path+'w08_0101.001') then begin name_database:='w08';database_type:=001; end
+    else
+    memo2_message('Could not find w08 star database. Will try with an other database.');
   end
   else
   if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18'; end
@@ -2890,9 +2892,9 @@ function readdatabase290(telescope_ra,telescope_dec, field_diameter:double; out 
             {searchmode=M mouse click  search}
             {searchmode=T text search}
   var
-    ra_raw,i,block_to_read         : integer;
-    delta_ra                       : double;
-    header_record                  : boolean;
+    ra_raw,block_to_read         : integer;
+    delta_ra                     : double;
+    header_record                : boolean;
 const
    blocksize=5*6*4*1024; {a multiply of record sizes 5, 6}
 begin

@@ -55,11 +55,6 @@
         <GenerateDebugInfo Value="False"/>
       </Debugging>
     </Linking>
-    <Other>
-      <CustomOptions Value="-Cg
--k-pie
--k-znow"/>
-    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">

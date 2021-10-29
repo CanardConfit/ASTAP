@@ -13690,8 +13690,7 @@ const
 
 var
   i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter,annulus_width :integer;
-  SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r,{xs,ys,}
-  val,bg,pixel_counter,valmax,mad_bg    : double;
+  SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r, val,bg,pixel_counter,valmax,mad_bg    : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
   background : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
@@ -13883,7 +13882,7 @@ begin
   end;
 
   {==========Notes on HFD calculation method=================
-    Documented the HFD definition also in https://en.wikipedia.org/wiki/Half_flux_diameter
+    Documented this HFD definition also in https://en.wikipedia.org/wiki/Half_flux_diameter
     References:
     https://astro-limovie.info/occultation_observation/halffluxdiameter/halffluxdiameter_en.html       by Kazuhisa Miyashita. No sub-pixel calculation
     https://www.lost-infinity.com/night-sky-image-processing-part-6-measuring-the-half-flux-diameter-hfd-of-a-star-a-simple-c-implementation/

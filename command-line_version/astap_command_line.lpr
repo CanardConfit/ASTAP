@@ -35,7 +35,6 @@ var
   backgr, hfd_median,snr_min          : double;
   hfd_counter                         : integer;
 begin
-
   {$IfDef Darwin}// for OS X,
     database_path:='/usr/local/opt/astap/';
   {$else}
@@ -223,7 +222,6 @@ begin
      application.messagebox( pchar('Warning this code requires later LAZARUS 2.1 and FPC 3.3.1 version!!!'), pchar('Warning'),MB_OK);
   {$ENDIF}
   {$ENDIF}
-
   terminate;
 end;
 
