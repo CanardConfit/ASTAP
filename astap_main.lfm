@@ -1307,14 +1307,14 @@ object mainwindow: Tmainwindow
           Caption = 'Star unroundness 2D contour diagram'
           Enabled = False
           Hint = 'Creates a 2D contour diagram based on the star aspect values. The aspect value is the ratio of the major axis to the minor axis of each imaged star. The gray values represent the aspect *100. The aspect values are local median filtered for each three stars'
-          ShortCut = 115
+          ShortCut = 16499
           OnClick = hfd_contour1Click
         end
         object inspector_aspect_diagram1: TMenuItem
           Caption = 'Star unroundness diagram'
           Enabled = False
           Hint = 'Creates a diagram based on the star aspect ratio values. The aspect value is the ratio of the major axis to the minor axis of each imaged star. The gray values represent the aspect *100. The aspect values are local median filtered for each three stars'
-          ShortCut = 114
+          ShortCut = 16498
           OnClick = hfd_contour1Click
         end
         object inspector_aspect_values1: TMenuItem
