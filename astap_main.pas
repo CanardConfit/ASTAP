@@ -51,12 +51,15 @@ type
   { Tmainwindow }
   Tmainwindow = class(TForm)
     add_marker_position1: TMenuItem;
+    aspect_contour1: TMenuItem;
+    inspector_aspect_diagram1: TMenuItem;
     bin3x3: TMenuItem;
     BitBtn1: TBitBtn;
     ccdinspector30_1: TMenuItem;
     error_label1: TLabel;
     FontDialog1: TFontDialog;
     image_north_arrow1: TImage;
+    inspector_aspect_values1: TMenuItem;
     LabelThree1: TLabel;
     LabelVar1: TLabel;
     LabelCheck1: TLabel;
@@ -74,7 +77,7 @@ type
     center_lost_windows: TMenuItem;
     deepsky_annotation1: TMenuItem;
     hyperleda_annotation1: TMenuItem;
-    inspector_diagram1: TMenuItem;
+    inspector_hfd_diagram1: TMenuItem;
     MenuItem10: TMenuItem;
     annotate_with_measured_magnitudes1: TMenuItem;
     compress_fpack1: TMenuItem;
@@ -122,6 +125,8 @@ type
     MenuItem33: TMenuItem;
     MenuItem34: TMenuItem;
     Constellations1: TMenuItem;
+    MenuItem35: TMenuItem;
+    MenuItem36: TMenuItem;
     simbadquery1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
@@ -553,7 +558,7 @@ var
   stretch_c : array[0..32768] of single;{stretch curve}
   stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
   set_temperature : integer;
-  star_level,sd_bg, magn_limit  : double;
+  star_level,star_bg,sd_bg, magn_limit  : double;
   object_name, filter_name,calstat,imagetype ,sitelat, sitelong,centalt,centaz: string;
   exposure,focus_temp,cblack,cwhite,gain,sqmfloat   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
@@ -3015,7 +3020,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.587, '+about_message4+', dated 2021-10-23';
+  #13+#10+'ASTAP version ß0.9.588, '+about_message4+', dated 2021-11-01';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4788,9 +4793,14 @@ begin
 
     mainwindow.ccdinspector30_1.enabled:=fits;
     mainwindow.ccdinspector10_1.enabled:=fits;
-    mainwindow.inspector_diagram1.enabled:=fits; {Voronoi}
+    mainwindow.inspector_hfd_diagram1.enabled:=fits; {Voronoi}
     mainwindow.hfd_contour1.enabled:=fits; {2D contour}
     mainwindow.inspector_hfd_values1.enabled:=fits; {add hfd values}
+
+    mainwindow.inspector_aspect_diagram1.enabled:=fits; {Voronoi}
+    mainwindow.aspect_contour1.enabled:=fits; {2D contour}
+    mainwindow.inspector_aspect_values1.enabled:=fits; {add hfd values}
+
     mainwindow.annotatemedianbackground1.enabled:=fits; {add hfd values}
     mainwindow.aberration_inspector1.enabled:=fits;
 
@@ -8720,6 +8730,8 @@ begin
     for fitsX:=0 to width2-1 do
       img_temp[0,fitsx,fitsy]:=(img[0,fitsx,fitsy]+img[1,fitsx,fitsy]+img[2,fitsx,fitsy])/3;
 
+  naxis:=2;{mono}
+  naxis3:=1;
   img:=nil;
   img:=img_temp;
 end;
@@ -8737,9 +8749,7 @@ begin
 
   convert_mono(img_loaded);
 
-  naxis:=2;{mono}
   update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for colour}
-  naxis3:=1;
   remove_key('NAXIS3  =',false{all});{some programs don't like NAXIS3=1 like maxim DL}
 
   add_text('HISTORY   ','Converted to mono');
@@ -8756,16 +8766,24 @@ var
   j: integer;
   Save_Cursor:TCursor;
   demode : char;
+  aspect : boolean;
 begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   backup_img;
 
-  if Sender=hfd_contour1 then demode:='2'
+  if Sender=hfd_contour1 then begin demode:='2'; aspect:=false;end
   else
-  if Sender=inspector_diagram1 then demode:='V'
+  if Sender=inspector_hfd_diagram1 then begin demode:='V';aspect:=false; end
   else
-  demode:='A';
+  if sender=inspector_hfd_values1 then begin demode:='A';aspect:=false;end
+  else
+  if Sender=aspect_contour1 then begin demode:='2'; aspect:=true;end
+  else
+  if Sender=inspector_aspect_diagram1 then begin demode:='V';aspect:=true; end
+  else
+  if sender=inspector_aspect_values1 then begin demode:='A';aspect:=true;end;
+
 
   if nrbits=8 then {convert to 16 bit}
   begin
@@ -8785,7 +8803,7 @@ begin
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
   end;
 
-  CCDinspector_analyse(demode);
+  CCDinspector_analyse(demode,aspect);
 
   {$ifdef mswindows}
   filename2:=ExtractFileDir(filename2)+'\hfd_values.fit';
@@ -10313,8 +10331,6 @@ begin
   if Hi > iLo then QuickSort(A, iLo, Hi) ;  {executes itself recursively}
   if Lo < iHi then QuickSort(A, Lo, iHi) ;  {executes itself recursively}
 end;
-
-
 
 
 function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
@@ -12425,7 +12441,6 @@ begin
 end;
 
 
-
 procedure mad_median(list: array of double;leng :integer;out mad,median :double);{calculate mad and median without modifying the data}
 var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
   i        : integer;
@@ -12448,7 +12463,7 @@ var
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
  hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right,
- median_top_left, median_top_right,hfd_min,tilt_value                                                         : double;
+ median_top_left, median_top_right,hfd_min,tilt_value, aspect                                             : double;
  hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring  : array of double;
  starlistXY    :array of array of integer;
  mess1,mess2,hfd_value,hfd_arcsec      : string;
@@ -12548,10 +12563,12 @@ begin
 
             if ((hfd1<=30) and (snr>snr_min {30}) and (hfd1>hfd_min) ) then
             begin
+
               radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
               sqr_radius:=sqr(radius);
               xci:=round(xc);{star center as integer}
               yci:=round(yc);
+
               for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
                 for m:=-radius to +radius do
                 begin
@@ -12579,10 +12596,9 @@ begin
     //            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
     //            mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
-
-
                 {store values}
                 hfdlist[nhfd]:=hfd1;
+
                 starlistXY[0,nhfd]:=starX; {store star position in image coordinates, not FITS coordinates}
                 starlistXY[1,nhfd]:=starY;
                 inc(nhfd); if nhfd>=length(hfdlist) then
@@ -12601,7 +12617,6 @@ begin
                   if ( (starX<(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+100);        end;
                   if ( (starX>(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
                 end;
-
               end;
             end;
           end;
@@ -13690,7 +13705,7 @@ const
 
 var
   i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter,annulus_width :integer;
-  SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r, val,bg,pixel_counter,valmax,mad_bg    : double;
+  SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r, val,pixel_counter,valmax,mad_bg    : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
   background : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
@@ -13746,12 +13761,12 @@ begin
       end;
     end;
 
-    bg:=Smedian(background,counter);
-    for i:=0 to counter-1 do background[i]:=abs(background[i] - bg);{fill background with offsets}
+    star_bg:=Smedian(background,counter);
+    for i:=0 to counter-1 do background[i]:=abs(background[i] - star_bg);{fill background with offsets}
     mad_bg:=Smedian(background,counter); //median absolute deviation (MAD)
     sd_bg:=mad_bg*1.4826; {Conversion from mad to sd for a normal distribution. See https://en.wikipedia.org/wiki/Median_absolute_deviation}
     sd_bg:=max(sd_bg,1); {add some value for images with zero noise background. This will prevent that background is seen as a star. E.g. some jpg processed by nova.astrometry.net}
-    {sd_bg and r_aperture are global variables}
+    {star_bg, sd_bg and r_aperture are global variables}
 
     repeat {reduce square annulus radius till symmetry to remove stars}
     // Get center of gravity whithin star detection box and count signal pixels, repeat reduce annulus radius till symmetry to remove stars
@@ -13763,7 +13778,7 @@ begin
       for i:=-rs to rs do
       for j:=-rs to rs do
       begin
-        val:=(img[0,x1+i,y1+j])- bg;
+        val:=(img[0,x1+i,y1+j])- star_bg;
         if val>3.0*sd_bg then
         begin
           SumVal:=SumVal+val;
@@ -13805,7 +13820,7 @@ begin
         distance:=round(sqrt(i*i + j*j)); {distance from gravity center} {modA}
         if distance<=rs then {build histogram for circel with radius rs}
         begin
-          val:=value_subpixel(xc+i,yc+j)-bg;
+          val:=value_subpixel(xc+i,yc+j)-star_bg;
           if val>3.0*sd_bg then {3 * sd should be signal }
           begin
             distance_histogram[distance]:=distance_histogram[distance]+1;{build distance histogram up to circel with diameter rs}
@@ -13843,7 +13858,7 @@ begin
   for i:=-r_aperture to r_aperture do {Make steps of one pixel}
   for j:=-r_aperture to r_aperture do
   begin
-    Val:=value_subpixel(xc+i,yc+j)-bg; {The calculated center of gravity is a floating point position and can be anyware, so calculate pixel values on sub-pixel level}
+    Val:=value_subpixel(xc+i,yc+j)-star_bg; {The calculated center of gravity is a floating point position and can be anyware, so calculate pixel values on sub-pixel level}
     r:=sqrt(i*i+j*j); {Distance from star gravity center}
     if r<=aperture_small then SumVal_small:=SumVal_small+Val; {For photometry only. Flux within aperture_small. Works more accurate for differential photometry}
     SumVal:=SumVal+Val;{Sumval will be star total star flux}

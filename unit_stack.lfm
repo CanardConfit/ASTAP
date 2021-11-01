@@ -3144,7 +3144,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 470
-      ClientWidth = 1777
+      ClientWidth = 1702
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
@@ -3152,7 +3152,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1777
+        Width = 1702
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36

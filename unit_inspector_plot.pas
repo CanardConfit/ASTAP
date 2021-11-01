@@ -10,7 +10,7 @@ uses
 type
   hfd_array   = array of array of integer;
 
-procedure CCDinspector_analyse(detype: char);
+procedure CCDinspector_analyse(detype: char; aspect: boolean);
 
 implementation
 
@@ -203,13 +203,82 @@ begin
 end;
 
 
-procedure CCDinspector_analyse(detype: char);
+procedure measure_star_aspect( img: image_array;x1,y1: double; rs:integer;  out aspect : double); {measures the aspect of a single star}
+var
+  i, j,pixel_counter,a,b,k,inside_counter,outside_counter,missing_inside : integer;
+  val, average_distance,average_distance_circle,r_circle,meas,ecc,r,
+  ns,ew,nw_se,ne_sw,themax,themin,max_value : double;
+  function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
+  var
+    x_trunc,y_trunc: integer;
+    x_frac,y_frac  : double;
+  begin
+    x_trunc:=trunc(x1);
+    y_trunc:=trunc(y1);
+    if ((x_trunc<=0) or (x_trunc>=(width2-2)) or (y_trunc<=0) or (y_trunc>=(height2-2))) then begin result:=0; exit;end;
+    x_frac :=frac(x1);
+    y_frac :=frac(y1);
+    try
+      result:=         (img[0,x_trunc  ,y_trunc  ]) * (1-x_frac)*(1-y_frac);{pixel left top, 1}
+      result:=result + (img[0,x_trunc+1,y_trunc  ]) * (  x_frac)*(1-y_frac);{pixel right top, 2}
+      result:=result + (img[0,x_trunc  ,y_trunc+1]) * (1-x_frac)*(  y_frac);{pixel left bottom, 3}
+      result:=result + (img[0,x_trunc+1,y_trunc+1]) * (  x_frac)*(  y_frac);{pixel right bottom, 4}
+    except
+    end;
+  end;
+
+begin
+  aspect:=-99;{failure indication}
+  pixel_counter:=0;
+  inside_counter:=0;
+  outside_counter:=0;
+  ns:=0;{north south}
+  ew:=0;
+  nw_se:=0; {north west or south east}
+  ne_sw:=0;
+  if ((x1-rs>=0) and (x1+rs<=width2) and (y1-rs>0) and (y1+rs<height2))  then {measurement within screen}
+  begin
+
+    max_value:=value_subpixel(x1,y1)- star_bg {from procedure hfd};
+    for i:=-rs to rs do
+    for j:=-rs to rs do
+    begin
+      val:=value_subpixel(x1+i,y1+j)- star_bg {from procedure hfd};
+
+
+      if val>4*sd_bg {from procedure hfd} then
+      begin
+        val:=sqrt(val);{reduce contrast}
+        r:=sqrt(sqr(i)+sqr(j));{distance}
+        if abs(j)>=abs(i) then  ns:=ns+val*r;
+        if abs(j)<=abs(i) then   ew:=ew+val*r;
+        if j*i>=0 then  nw_se:=nw_se+val*r;
+        if j*i<=0 then  ne_sw:=ne_sw+val*r;
+
+        inc(pixel_counter); {how many pixels are illuminated}
+      end;
+    end;
+    if pixel_counter<4 then
+    begin
+      exit; {not enough pixels}
+    end;
+    themax:=max(max(ns,ew),max(nw_se,ne_sw));
+    themin:=min(min(ns,ew),min(nw_se,ne_sw));
+
+    aspect:=themax/(themin+0.00001);
+  end;
+end;
+
+
+procedure CCDinspector_analyse(detype: char; aspect: boolean);
 var
  fitsX,fitsY,size,radius, i, j,nhfd,retries,max_stars,starX,starY,font_luminance,n,m,xci,yci,sqr_radius   : integer;
- hfd1,star_fwhm,snr,flux,xc,yc,detection_level                               : double;
+ hfd1,star_fwhm,snr,flux,xc,yc,detection_level,med                                                        : double;
  mean, min_value,max_value : single;
  hfd_values  : hfd_array;
+ hfds        : array of double;
  Fliphorizontal, Flipvertical: boolean;
+ mess: string;
  img_sa : image_array;
 
 begin
@@ -241,6 +310,8 @@ begin
           HFD(img_loaded,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if (hfd1>=1.3) {not a hotpixel} and (snr>30) and (hfd1<99) then
           begin
+
+
             radius:=round(5.0*hfd1);{for marking area. For inspector use factor 5 instead of 3}
             sqr_radius:=sqr(radius);
             xci:=round(xc);{star center as integer}
@@ -254,8 +325,10 @@ begin
                   img_sa[0,i,j]:=1;
               end;
 
+            if aspect then  measure_star_aspect(img_loaded,xc,yc,round(hfd1*1.5),{out} hfd1);{store the star aspect in hfd1}
+
             {store values}
-            if ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
+            if  ( ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
                   (img_loaded[0,round(xc-1),round(yc)]<datamax_org-1) and
                   (img_loaded[0,round(xc+1),round(yc)]<datamax_org-1) and
                   (img_loaded[0,round(xc),round(yc-1)]<datamax_org-1) and
@@ -264,7 +337,9 @@ begin
                   (img_loaded[0,round(xc-1),round(yc-1)]<datamax_org-1) and
                   (img_loaded[0,round(xc-1),round(yc+1)]<datamax_org-1) and
                   (img_loaded[0,round(xc+1),round(yc-1)]<datamax_org-1) and
-                  (img_loaded[0,round(xc+1),round(yc+1)]<datamax_org-1)  ) then {not saturated}
+                  (img_loaded[0,round(xc+1),round(yc+1)]<datamax_org-1)){not saturated}
+                  or ((aspect) and (hfd1>0)) )
+                  then
             begin
               if nhfd>=length(hfd_values)-1 then
                   SetLength(hfd_values,3,nhfd+100);{adapt length if required}
@@ -314,13 +389,30 @@ begin
   size:=max(1,height2 div 1000);{font size, 1 is 9x5 pixels}
 
 
+  setlength(hfds,nhfd);
+
   for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
    begin
      if Fliphorizontal     then starX:=width2-hfd_values[0,i]   else starX:=hfd_values[0,i];
      if Flipvertical       then starY:=height2-hfd_values[1,i] else starY:=hfd_values[1,i];
-     annotation_to_array(floattostrf(hfd_values[2,i]/100 , ffgeneral, 2,1){text},true,round(img_loaded[0,starX,starY]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurment.}
+     annotation_to_array(floattostrf(hfd_values[2,i]/100 , ffgeneral, 2,1){text},true{transparent},round(img_loaded[0,starX,starY]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurment.}
+
+     hfds[i]:=hfd_values[2,i];
   end;
 
+  quickSort(hfds,0,nhfd-1);
+
+  med:=hfds[round((nhfd-1)*0.9)];
+
+  hfds:=nil;{free memory}
+
+  if aspect then
+     mess:='10% of the aspect ratio measurements is worse or equal then '
+  else
+     mess:='10% of the HFD measurements is worse or equal then ';
+  mess:=mess+floattostrf(med/100 , ffgeneral, 2,1);
+  memo2_message(mess);
+  annotation_to_array(mess,true {transparent},65535,size*2 {size},5,10+size*2*9,img_loaded); {report median value}
   hfd_values:=nil;
 
   plot_fits(mainwindow.image1,false,true);{plot image included text in pixel data}

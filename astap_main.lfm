@@ -1,8 +1,8 @@
 object mainwindow: Tmainwindow
-  Left = 198
+  Left = 625
   Height = 646
   Hint = ' '
-  Top = 92
+  Top = 117
   Width = 1272
   AllowDropFiles = True
   Caption = 'Astrometric Stacking Program and fits viewer (ASTAP)'
@@ -1287,7 +1287,7 @@ object mainwindow: Tmainwindow
           ShortCut = 115
           OnClick = hfd_contour1Click
         end
-        object inspector_diagram1: TMenuItem
+        object inspector_hfd_diagram1: TMenuItem
           Caption = 'HFD diagram'
           Enabled = False
           Hint = 'Creates a diagram based on the HFD values. The gray values represent the HFD *100. The HFD values are local median filtered for each three stars'
@@ -1299,6 +1299,32 @@ object mainwindow: Tmainwindow
           Enabled = False
           Hint = 'Writes HFD values near each star and in the FITS file. No HFD filtering.'
           OnClick = hfd_contour1Click
+        end
+        object MenuItem35: TMenuItem
+          Caption = '-'
+        end
+        object aspect_contour1: TMenuItem
+          Caption = 'Star unroundness 2D contour diagram'
+          Enabled = False
+          Hint = 'Creates a 2D contour diagram based on the star aspect values. The aspect value is the ratio of the major axis to the minor axis of each imaged star. The gray values represent the aspect *100. The aspect values are local median filtered for each three stars'
+          ShortCut = 115
+          OnClick = hfd_contour1Click
+        end
+        object inspector_aspect_diagram1: TMenuItem
+          Caption = 'Star unroundness diagram'
+          Enabled = False
+          Hint = 'Creates a diagram based on the star aspect ratio values. The aspect value is the ratio of the major axis to the minor axis of each imaged star. The gray values represent the aspect *100. The aspect values are local median filtered for each three stars'
+          ShortCut = 114
+          OnClick = hfd_contour1Click
+        end
+        object inspector_aspect_values1: TMenuItem
+          Caption = 'Star unroundness values'
+          Enabled = False
+          Hint = 'Writes the star aspect ratio values near each star and in the FITS file. No aspect filtering.  The aspect value is the ratio of the major axis to the minor axis of each imaged star. '
+          OnClick = hfd_contour1Click
+        end
+        object MenuItem36: TMenuItem
+          Caption = '-'
         end
         object annotatemedianbackground1: TMenuItem
           Caption = 'Median background values'
