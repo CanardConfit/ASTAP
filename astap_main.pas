@@ -1202,9 +1202,6 @@ begin
         if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
                 date_obs:=get_string;
 
-//        if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and  (header[i+4]='O') and (header[i+5]='B')) then
-//                date_obs:=get_string;
-
 
         if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='A') and (header[i+6]='V')) then
                 date_avg:=get_string;
@@ -1570,7 +1567,6 @@ begin
 //    fits_file:=false;
     image:=false;
   end;
-
 
   if image then {read image data #########################################}
   begin
@@ -3020,7 +3016,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.588, '+about_message4+', dated 2021-11-01';
+  #13+#10+'ASTAP version ß0.9.588a, '+about_message4+', dated 2021-11-02';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -5140,6 +5136,7 @@ begin
     if (  (pos('.fit',opendialog1.FileName)>0) or (pos('.FIT',opendialog1.FileName)>0)  )  then
     begin
       mainwindow.caption:=opendialog1.filename;
+      application.processmessages;{show file selection}
       {load image}
       if load_fits(opendialog1.filename,true {light},true,true {update memo},0,img_loaded) then
       begin
@@ -8824,7 +8821,7 @@ begin
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(cwhite));
   update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
-  if demode='V'  then update_text   ('COMMENT G','  Grey values indicate HFD values * 100');
+  if demode='V'  then update_text   ('COMMENT G','  Grey values indicate measured values * 100');
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
 
