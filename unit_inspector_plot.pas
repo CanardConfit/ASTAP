@@ -354,7 +354,7 @@ begin
       end;
     end;
 
-    dec(retries);{In principle not required. Try again with lower detection level}
+    dec(retries);{prepare for trying with lower detection level}
     if detection_level<=7*noise_level[0] then retries:= -1 {stop}
     else
     detection_level:=max(6.999*noise_level[0],min(30*noise_level[0],detection_level*6.999/30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}

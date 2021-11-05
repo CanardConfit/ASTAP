@@ -56,6 +56,7 @@ type
     classify_flat_exposure1: TCheckBox;
     hours_and_minutes1: TCheckBox;
     inspect_latest_image1: TCheckBox;
+    removeselected5: TMenuItem;
     menukeywordchange1: TMenuItem;
     MenuItem32: TMenuItem;
     keywordchangelast1: TMenuItem;
@@ -1394,7 +1395,7 @@ begin
       until c>counts;
     end;{throw outliers out}
 
-    if best<>0 then  ListView1.Items.item[best_index].SubitemImages[L_quality]:=icon_king; {markbest index. Not nessesary but just nice}
+    if best<>0 then  ListView1.Items.item[best_index].SubitemImages[L_quality]:=icon_king; {mark best index. Not nessesary but just nice}
 
     finally
       ListView1.Items.EndUpdate;
@@ -2133,10 +2134,11 @@ begin
   if sender=removeselected2 then listview_removeselect(listview2);{from popup menu}
   if sender=removeselected3 then listview_removeselect(listview3);{from popup menu}
   if sender=removeselected4 then listview_removeselect(listview4);{from popup menu}
+  if sender=removeselected5 then listview_removeselect(listview5);{from popup menu}
   if sender=removeselected6 then listview_removeselect(listview6);{from popup menu blink}
   if sender=removeselected7 then listview_removeselect(listview7);{from popup menu photometry}
   if sender=removeselected8 then listview_removeselect(listview8);{inspector}
-  if sender=removeselected9 then listview_removeselect(listview9);{inspector}
+  if sender=removeselected9 then listview_removeselect(listview9);{mount analyse}
 end;
 
 
@@ -4300,10 +4302,13 @@ begin
               find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
 
               reset_solution_vectors(1);{no influence on the first image since reference}
+
               {store solutions in memory}
               bsolutions[c].solution_vectorX:=solution_vectorX;
               bsolutions[c].solution_vectorY:=solution_vectorY;
               listview6.Items.item[c].subitems.Strings[B_solution]:='✓ '+inttostr(c);{store location in listview for case list is sorted/modified}
+              ListView6.Items.item[c].SubitemImages[B_solution]:=icon_king; {mark as best quality image}
+
               reference_done:=true;
             end
             else
@@ -4317,6 +4322,7 @@ begin
                 bsolutions[c].solution_vectorX:=solution_vectorX;
                 bsolutions[c].solution_vectorY:=solution_vectorY;
                 listview6.Items.item[c].subitems.Strings[B_solution]:='✓ '+inttostr(c);{store location in listview for case list is sorted/modified}
+                ListView6.Items.item[c].SubitemImages[B_solution]:=-1; {{remove any older icon_king}
 
                 memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                    +'  Solution x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])

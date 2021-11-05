@@ -3016,7 +3016,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.588a, '+about_message4+', dated 2021-11-02';
+  #13+#10+'ASTAP version ß0.9.588b, '+about_message4+', dated 2021-11-05';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -8800,7 +8800,7 @@ begin
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
   end;
 
-  CCDinspector_analyse(demode,aspect);
+  CCDinspector_analyse(demode,aspect {unroundness or HFD mode});
 
   {$ifdef mswindows}
   filename2:=ExtractFileDir(filename2)+'\hfd_values.fit';
@@ -12620,7 +12620,7 @@ begin
         end;
       end;
 
-      dec(retries);{In principle not required. Try again with lower detection level}
+      dec(retries);{prepare for trying with lower detection level}
       if detection_level<=7*noise_level[0] then retries:= -1 {stop}
       else
       detection_level:=max(6.999*noise_level[0],min(30*noise_level[0],detection_level*6.999/30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
