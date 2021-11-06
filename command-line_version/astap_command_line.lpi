@@ -55,6 +55,11 @@
         <GenerateDebugInfo Value="False"/>
       </Debugging>
     </Linking>
+    <Other>
+      <CustomOptions Value="-XX
+-Si
+-vh"/>
+    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">

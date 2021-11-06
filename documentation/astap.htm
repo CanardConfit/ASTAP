@@ -142,7 +142,7 @@ work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family:
               <li><big><a href="astap.htm#add_sip">Add SIP coefficients to the header</a></big></li><li><big><a href="astap.htm#batch_conversion">Batch
                     conversion</a></big></li><li><big><a href="astap.htm#inspector">CCD
                     inspector</a></big></li><ul><li><big><a href="astap.htm#inspector">CCD
-                    inspector</a></big></li><li><big><a href="astap.htm#hfd_2d_contour">HFD_2d_contour</a></big></li><li><big><a href="astap.htm#hfd_diagram">HFD_diagram</a></big></li><li><big><a href="astap.htm#median_background_values">Median_background_values</a></big></li><li><big><a href="astap.htm#hfd_values">HFD values</a></big></li><li><big><a href="astap.htm#show_distortion">Show distortion</a><br></big></li><li><big><a href="astap.htm#aberration_inspector">Aberration Inspector</a><br></big></li></ul>
+                    inspector</a></big></li><li><big><a href="astap.htm#hfd_2d_contour">HFD_2d_contour</a></big></li><li><big><a href="astap.htm#hfd_diagram">HFD_diagram</a></big></li><li><big><a href="astap.htm#median_background_values">Median_background_values</a></big></li><li><big><a href="astap.htm#hfd_values">HFD values</a></big></li><li><big><a href="astap.htm#unroundness">Unroundness of the imaged stars.</a><br></big></li><li><big><a href="astap.htm#show_distortion">Show distortion</a><br></big></li><li><big><a href="astap.htm#aberration_inspector">Aberration Inspector</a><br></big></li></ul>
               <li><big><a href="astap.htm#photometry_calibration">Photometry calibration</a></big></li><li><big><a href="astap.htm#sqm">SQM measurement</a></big></li>
               <li><big><a href="#star_annotation">Star
                     annotation and photometry</a></big></li><li><big><a href="#asteroid_annotation">Asteroid
@@ -1685,7 +1685,10 @@ the HFD * 100.</big><br>
 stars. The same values as in the 2D countour and HFD diagram. To avoid
 false indications by outliers the HFD values are filtered by taking the
 median HFD value of the three closest stars and&nbsp; allocate the
-result to all three stars. <br></big><br><br><span style="text-decoration: underline;"><big><a name="median_background_values"></a>Median background values</big><br><br></span><big>This
+result to all three stars. <br><br></big><big><span style="text-decoration: underline;"><a name="unroundness"></a>Unroundness</span> <br><br>This
+tool measured the unroundness of the imaged stars. The values are
+similar to the aspect ratio of an ellipse but the measuring principle
+is totally different.<br><br><img style="width: 1314px; height: 519px;" alt="" src="astap_unroundness.png"><br></big><big><br></big><br><br><span style="text-decoration: underline;"><big><a name="median_background_values"></a>Median background values</big><br><br></span><big>This
 tools writes&nbsp;the median background values as numerical values in
 the image. Stars will be ignored but nebula will influence the background measurement..<br><br><img style="width: 878px; height: 664px;" alt="" src="astap_median_background_values.jpg"><br></big><span style="text-decoration: underline;"></span><br><br><br><big><span style="text-decoration: underline;"><a name="show_distortion"></a>Show distortion<br><br></span>This
 tools shows the difference between the Gaia star positions and the

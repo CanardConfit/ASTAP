@@ -135,12 +135,9 @@
       </Options>
     </Linking>
     <Other>
-      <CustomOptions Value="-dBorland
--dVer150
--dDelphi7
--Cg  
--k-pie 
--k-znow"/>
+      <CustomOptions Value="-XX
+-Si
+-vh"/>
     </Other>
   </CompilerOptions>
   <Debugging>
