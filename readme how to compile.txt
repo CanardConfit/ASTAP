@@ -8,7 +8,7 @@ How to compile ASTAP:
 2b) Command line:
 
   Windows: 
-     lazbuild -B astap_linux.lpi
+     lazbuild -B astap.lpi
 
   Linux:  
     lazbuild -B astap_linux.lpi
