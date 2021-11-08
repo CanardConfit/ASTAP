@@ -58,7 +58,13 @@
     <Other>
       <CustomOptions Value="-XX
 -Si
--vh"/>
+-vh
+
+// compiler settings for  a
+// PIE executable that you can run only via a terminal or a symlink.
+-Cg
+-k-pie
+-k-znow"/>
     </Other>
   </CompilerOptions>
   <Debugging>
