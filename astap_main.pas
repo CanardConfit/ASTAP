@@ -1277,12 +1277,11 @@ begin
               begin
                 mainwindow.dec1.text:=get_string;{triggers an onchange event which will convert the string to dec_radians}
                 dec_mount:=dec_radians;
-              end;
-
-  //            else {for older MaximDL5}
-  //            if ((header[i+5]='A') and (header[i+6]='L') and (centaz=999)) then begin if header[i+10]=#39 then centalt:=get_string else centalt:=validate_double; end{temporary accept floats}
-  //            else {for older MaximDL5}
-  //            if ((header[i+5]='A') and (header[i+6]='Z')and (centalt=999)) then  begin if header[i+10]=#39 then centaz:=get_string else centaz:=validate_double; end;{temporary accept floats}
+              end
+              else {for older MaximDL5}
+              if ((header[i+5]='A') and (header[i+6]='L') and (centalt='')) then centalt:=get_as_string {universal for string and floats}
+              else {for older MaximDL5}
+              if ((header[i+5]='A') and (header[i+6]='Z')and (centaz='')) then centaz:=get_as_string; {universal for string and floats}
             end;
 
             if ((header[i+3]='E') and (header[i+4]='C') and (header[i+5]='T')) then {OBJECT}
@@ -1292,7 +1291,7 @@ begin
 
           if ((header[i]='C') and (header[i+1]='E')  and (header[i+2]='N') and (header[i+3]='T') and (header[i+4]='A') and (header[i+5]='L') and (header[i+6]='T')) then  {SBIG 1.0 standard}
           begin
-            if header[i+10]=#39 then centalt:=get_string else centalt:=floattostrf(validate_double,ffgeneral, 4, 1);  {accept strings (standard) and floats}
+            centalt:=get_as_string; {universal for string and floats}
           end;
 
 
@@ -1389,12 +1388,12 @@ begin
 
           if ((header[i]=sqm_key[1]{S}) and (header[i+1]=sqm_key[2]{Q}) and (header[i+2]=sqm_key[3]{M})and (header[i+3]=sqm_key[4])and (header[i+4]=sqm_key[5])and (header[i+5]=sqm_key[6])and (header[i+6]=sqm_key[7]) and (header[i+7]=sqm_key[8])) then {adjustable keyword}
           begin
-            if header[i+10]=#39 then sqm_value:=get_string else sqm_value:=floattostrf(validate_double,ffgeneral, 4, 1); {SQM, accept strings (standard) and floats}
+            sqm_value:=get_as_string; {universal for string and floats}{SQM, accept strings (standard) and floats}
           end;
 
           if ((header[i]=centaz_key[1]) and (header[i+1]=centaz_key[2]) and (header[i+2]=centaz_key[3])and (header[i+3]=centaz_key[4])and (header[i+4]=centaz_key[5])and (header[i+5]=centaz_key[6])and (header[i+6]=centaz_key[7]) and (header[i+7]=centaz_key[8])) then {adjustable keyword}
           begin
-            if header[i+10]=#39 then centaz:=get_string else centaz:=floattostrf(validate_double,ffgeneral, 4, 1); {centaz, accept strings (standard) and floats (SGP, older CCDCIEL)}
+            centaz:=get_as_string; {universal for string and floats} {SGP, older CCDCIEL}
           end;
 
 
@@ -3016,7 +3015,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.588b, '+about_message4+', dated 2021-11-05';
+  #13+#10+'ASTAP version ß0.9.589, '+about_message4+', dated 2021-11-08';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;

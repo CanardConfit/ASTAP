@@ -219,7 +219,7 @@ end;
 
 
 function altitude_and_refraction(lat,long,julian,temperature:double;calc_mode: integer; ra3,dec3: double):double;{altitude calculation and correction ra, dec for refraction}
-{input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-pi/2..pi/2], long[-pi..pi] West positive, East negative !!,time[0..2*pi]}
+{input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-pi/2..pi/2], long[-pi..pi] West NEGATIVE, East POSTIVE !!,time[0..2*pi]}
 var wtime2actual,azimuth2,altitude2: double;
 const
   siderealtime2000=(280.46061837)*pi/180;{[radians],sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
@@ -256,12 +256,14 @@ function calculate_altitude(calc_mode : integer;ra3,dec3 : double): double;{conv
 var
   site_lat_radians,site_long_radians : double;
   errordecode  : boolean;
+  err          : integer;
 begin
   {calc_mode 1: use CENTALT from header or if not available calculate it}
   {calc_mode 2: calculate it, apply refration astrometric to apparent}
   {calc_mode 3: calculate it, no refaction compensation}
   {calc_mode 4: calculate it, apply refration apparent to astrometric!!}
   result:=strtofloat2(centalt);
+
   if (((result=0) or (calc_mode>1)) and (cd1_1<>0)) then {calculate from observation location, image center and time the altitude}
   begin
     if sitelat='' then
@@ -269,17 +271,25 @@ begin
       sitelat:=lat_default;
       sitelong:=long_default;
     end;
-    dec_text_to_radians(sitelat,site_lat_radians,errordecode);
+    val(sitelat,site_lat_radians,err); {try to process  3.7E+01}
+    if err=0 then
+      begin site_lat_radians:=site_lat_radians*pi/180; errordecode:=false end
+    else  {try to process string 37 00 00}
+      dec_text_to_radians(sitelat,site_lat_radians,errordecode);
     if errordecode=false then
     begin
-      dec_text_to_radians(sitelong,site_long_radians,errordecode);
+      val(sitelong,site_long_radians,err); {try to process  3.7E+01}
+      if err=0 then
+        begin site_long_radians:=site_long_radians*pi/180; errordecode:=false end
+      else  {try to process string  37 00 00}
+        dec_text_to_radians(sitelong,site_long_radians,errordecode);
       if errordecode=false then
       begin
         if jd_start=0 then date_to_jd(date_obs,exposure);{convert date-obs to jd_start, jd_mid}
         if jd_mid>2400000 then {valid JD}
         begin
           precession3(2451545 {J2000},jd_mid,ra3,dec3); {precession, from J2000 to Jnow}
-          result:=(180/pi)*altitude_and_refraction(site_lat_radians,-site_long_radians,jd_mid,focus_temp, calc_mode, ra3,dec3);{In formulas the longitude is positive to west!!!. }
+          result:=(180/pi)*altitude_and_refraction(site_lat_radians,site_long_radians,jd_mid,focus_temp, calc_mode, ra3,dec3);{In formulas the longitude is positive to west!!!. }
         end
         else memo2_message('Error decoding Julian day!');
       end;
