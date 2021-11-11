@@ -1827,7 +1827,8 @@ begin
           //encircled flux =1-EXP(-0.5*(apert*2.3548/2))^2)
           flux_snr_7:=flux_snr_7*(1-EXP(-0.5*sqr(apert*2.3548/2 {sigma}))); {Correction for reduced aparture.}
           magn_limit:=flux_magn_offset-ln(flux_snr_7)*2.511886432/ln(10); {global variable}
-          mess:='⌀'+stackmenu1.flux_aperture1.text+', 7σ limiting magnitude about: '+floattostrF(magn_limit,ffgeneral,3,1);
+          mess:='Limiting magnitude is about '+ floattostrF(magn_limit,ffgeneral,3,1)+'   (7σ, aperture ⌀'+stackmenu1.flux_aperture1.text+')';
+
           memo2_message(mess);
           mainwindow.caption:='Photometry calibration successful. '+mess;
         end;

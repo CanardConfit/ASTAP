@@ -1,7 +1,7 @@
 object form_asteroids1: Tform_asteroids1
-  Left = -649
+  Left = 98
   Height = 415
-  Top = 513
+  Top = 181
   Width = 596
   Caption = 'Annotation of asteroids and comets'
   ClientHeight = 415
@@ -274,7 +274,7 @@ object form_asteroids1: Tform_asteroids1
     object annotation_size1: TEdit
       Left = 424
       Height = 23
-      Hint = 'Annotation diameter. For diameter 20 or smaller, two lines will be used for annotation.  Comets annotations are five times larger.  For negative values the font and line thickness will follow.'
+      Hint = 'Annotation diameter. For diameter 5 or smaller, two lines will be used for annotation.  Comets annotations are five times larger.'
       Top = 80
       Width = 48
       MaxLength = 4
@@ -292,7 +292,7 @@ object form_asteroids1: Tform_asteroids1
       Associate = annotation_size1
       Increment = 2
       Max = 500
-      Min = 0
+      Min = 2
       Position = 40
       TabOrder = 8
     end

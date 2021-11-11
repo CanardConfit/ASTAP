@@ -1837,7 +1837,7 @@ object mainwindow: Tmainwindow
     object MenuItem21: TMenuItem
       Caption = 'Online query'
       ImageIndex = 37
-      object simbadquery1: TMenuItem
+      object simbad_query1: TMenuItem
         Caption = 'Simbad online query'
         Enabled = False
         Hint = 'Retrieve online info of the select area in the default browser.'
@@ -1850,6 +1850,21 @@ object mainwindow: Tmainwindow
         Hint = 'Will display the online information for any star within 5 arc seconds of the centroid. The Gaia BP (blue) magnitude matches the best with visual.'
         ImageIndex = 36
         OnClick = gaia_star_position1Click
+      end
+      object MenuItem38: TMenuItem
+        Caption = '-'
+      end
+      object aavso_chart1: TMenuItem
+        Caption = 'AAVSO, browser chart request'
+        Enabled = False
+        Hint = 'Retrieve an AAVSO chart'
+        OnClick = gaia_star_position1Click
+      end
+      object import_auid1: TMenuItem
+        Caption = 'AAVSO,  import AUID from clipboard'
+        Enabled = False
+        Hint = 'Import AUID stars from clipboard. Copy first the AUID lines from the AAVSO webpage table into the clipboard.'
+        OnClick = import_auid1Click
       end
     end
     object N9: TMenuItem

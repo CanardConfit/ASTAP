@@ -127,7 +127,10 @@ type
     Constellations1: TMenuItem;
     MenuItem35: TMenuItem;
     MenuItem36: TMenuItem;
-    simbadquery1: TMenuItem;
+    aavso_chart1: TMenuItem;
+    import_auid1: TMenuItem;
+    MenuItem38: TMenuItem;
+    simbad_query1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
     MenuItem26: TMenuItem;
@@ -352,6 +355,7 @@ type
     procedure Image1Paint(Sender: TObject);
     procedure imageflipv1Click(Sender: TObject);
     procedure annotate_unknown_stars1Click(Sender: TObject);
+    procedure import_auid1Click(Sender: TObject);
     procedure j2000d1Click(Sender: TObject);
     procedure measuretotalmagnitude1Click(Sender: TObject);
     procedure loadsettings1Click(Sender: TObject);
@@ -3015,7 +3019,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.589, '+about_message4+', dated 2021-11-08';
+  #13+#10+'ASTAP version ß0.9.590, '+about_message4+', dated 2021-11-11';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3547,7 +3551,7 @@ var
 begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass; { Show hourglass cursor }
-  backup_img;
+//  backup_img;
   load_hyperleda;   { Load the database once. If loaded no action}
   plot_deepsky;{plot the deep sky object on the image}
   Screen.Cursor:=Save_Cursor;
@@ -4735,8 +4739,10 @@ begin
   mainwindow.writepositionshort1.enabled:=yes;{enable popup menu}
   mainwindow.Copyposition1.enabled:=yes;{enable popup menu}
   mainwindow.Copypositionindeg1.enabled:=yes;{enable popup menu}
-  mainwindow.simbadquery1.enabled:=yes;{enable popup menu}
+  mainwindow.simbad_query1.enabled:=yes;{enable popup menu}
+  mainwindow.aavso_chart1.enabled:=yes;{enable popup menu}
   mainwindow.gaia_star_position1.enabled:=yes;{enable popup menu}
+  mainwindow.import_auid1.enabled:=yes;{enable popup menu}
   mainwindow.sip1.enabled:=yes; {allow adding sip coefficients}
 
   stackmenu1.focallength1Exit(nil); {update output calculator}
@@ -9058,6 +9064,8 @@ begin
 end;
 
 
+
+
 procedure Tmainwindow.positionanddate1Click(Sender: TObject);
 begin
   if fits_file=false then exit;
@@ -10302,6 +10310,59 @@ const
   Screen.Cursor:= Save_Cursor;
 end;
 
+procedure Tmainwindow.import_auid1Click(Sender: TObject);
+var
+  s,name,mag,t,regel: string;
+  x1,x2,n1,n2 : integer;
+  rad,decd    : double;
+var
+  Save_Cursor:TCursor;
+begin
+  Save_Cursor := Screen.Cursor;
+//  AUID 	RA 	Dec 	Label 	V 	B-V 	Comments
+//  000-BBN-792 	07:51:41.99 [117.92495728°] 	01:46:00.7 [1.7668609599999998°] 	51 	5.140 (0.100)22 	-0.120 (0.173)
+//  000-BBN-799 	07:52:11.35 [118.04729462000002°] 	01:34:38.3 [1.57730603°] 	98 	9.834 (0.069)16 	1.002 (0.137)
+
+  database_nr:=0; {clear}
+  load_variable;{load the variable star database once. If loaded no action}
+
+  x2:=1;
+  s:=Clipboard.AsText;
+  repeat
+    x1:=posex('000-',s,x2);
+
+    if x1>0 then
+    begin
+      name:=copy(s,x1,11);
+      n1:=posex('[',s,x2+1);
+      n2:=posex(']',s,x2+1);
+      t:=copy(s,n1+1,n2-n1-3);
+      rad:=strtofloat2(t);
+      n1:=posex('[',s,n2+1);
+      n2:=posex(']',s,n2+1);
+      t:=copy(s,n1+1,n2-n1-3);
+      decd:=strtofloat2(t);
+
+      n1:=posex(#9,s,n2+1);{skip label}
+      n1:=posex(#9,s,n1+1);{star V magnitude}
+      n2:=posex(#10,s,n1+1);{end line}
+      if n2=0 then n2:=n1+30;{if no end line at least 30 characters}
+
+      t:=trim(copy(s,n1+1,n2-n1));
+      t:=stringreplace(t,#9,';',[rfReplaceAll]);{}
+
+      //RA[0..864000], DEC[-324000..324000], label
+      regel:=inttostr(round(rad*864000/360))+','+inttostr(round(decd*324000/90))+','+name+';'+t;
+      deepstring.add(regel);
+      x2:=max(n2,x2+50);{move to next line}
+    end;
+  until x1=0;
+
+  deepstring.add('');
+  plot_deepsky;{plot the deep sky object on the image}
+  Screen.Cursor:=Save_Cursor;
+end;
+
 
 
 procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
@@ -10422,7 +10483,7 @@ begin
   image1.Canvas.font.size:=fontsize;
   image1.Canvas.font.color:=clwhite;
   text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
-  image1.Canvas.textout(round(fontsize*2),height2-text_height,'⌀'+stackmenu1.flux_aperture1.text+', 7σ limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1));{magn_limit global variable calculate in plot_and_measure_stars}
+  image1.Canvas.textout(round(fontsize*2),height2-text_height,'Limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1)+'   (7σ, aperture ⌀'+stackmenu1.flux_aperture1.text+')');{magn_limit global variable calculate in plot_and_measure_stars}
 
 
   Screen.Cursor:= Save_Cursor;
@@ -10846,7 +10907,7 @@ var
 begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass; { Show hourglass cursor }
-  backup_img;
+//  backup_img;
   load_variable;  { Load the database once. If loaded no action}
   plot_deepsky;{plot the deep sky object on the image}
   Screen.Cursor:=Save_Cursor;
@@ -11084,7 +11145,7 @@ begin
   else
   begin {rectangle or two indicating lines}
      size:=abs(x2-x1);
-     if abs(x2-x1)>20 then
+     if abs(x2-x1)>5 then
        plot_rectangle(x1,y1,x2,y2) {accurate positioned rectangle on screen coordinates}
      else
      begin {two lines}
@@ -13485,16 +13546,20 @@ end;
 
 procedure Tmainwindow.gaia_star_position1Click(Sender: TObject);
 var
-   url,ra8,dec8,sgn,window_size  : string;
+   url,ra8,dec8,sgn,window_size,magn  : string;
    ang_h,ang_w,ra1,ra2,dec1,dec2 : double;
-   radius,x1,y1                  : integer;
+   radius,x1,y1,mag               : integer;
 begin
+  if sender=mainwindow.aavso_chart1 then
+  magn:=inputbox('Chart request','Limiting magnitude chart:' ,'15');
+
+
 
   if ((abs(stopX-startX)<2) and (abs(stopY-startY)<2))then
   begin
     if object_xc>0 then {object sync}
     begin
-      window_size:='&-c.rs=5&-out.max=100&Gmag=<23'; {circle search 5 arcsec}
+      window_size:='&-c.bs=5&-out.max=100&Gmag=<23'; {circle search 5 arcsec}
       stopX:=stopX+8;{create some size for two line annotation}
       startX:=startX-8;
       ang_w:=10 {radius 5 arc seconds for Simbad}
@@ -13511,7 +13576,8 @@ begin
     ang_h:=abs((stopY-startY)*cdelt2*3600);{arc sec}
 
     window_size:='&-c.bs='+ floattostr6(ang_w)+'/'+floattostr6(ang_h)+'&-out.max=300&Gmag=<23';{square box}
-
+    {-c.geom=b  square box, -c.bs=10 box size 10arc
+    else radius}
     sensor_coordinates_to_celestial(startX+1,startY+1,ra1,dec1);{first position}
     sensor_coordinates_to_celestial(stopX+1,stopY+1,ra2,dec2);{first position}
     object_raM:=(ra1+ra2)/2; {center position}
@@ -13529,20 +13595,41 @@ begin
 
   if sender=mainwindow.gaia_star_position1 then
   begin
-    plot_the_annotation(stopX,stopY,startX,startY,0,'','');{square}
+    plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,'','');{rectangle, +1 to fits coordinates}
     url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size;
     //http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,pmRA,pmDE,Gmag,BPmag,RPmag&-c=86.5812345-10.3456,bm=1x1&-out.max=1000000&BPmag=%3C21.5
 
   end
   else
-  begin {sender Simbadquery1}
+  if sender=mainwindow.simbad_query1 then
+  begin {sender simbad_query1}
     radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert elipse to circle}
     x1:=(stopX+startX) div 2;
     y1:=(stopY+startY) div 2;
     plot_the_circle(x1-radius,y1-radius,x1+radius,y1+radius);
     url:='http://simbad.u-strasbg.fr/simbad/sim-coo?Radius.unit=arcsec&Radius='+floattostr6(max(ang_w,ang_h)/2)+'&Coord='+ra8+'d'+sgn+dec8+'d';
     //  url:='http://simbad.u-strasbg.fr/simbad/sim-coo?Radius.unit=arcsec&Radius=0.4692&Coord=195.1060d28.1998d
+  end
+  else
+  begin {sender aavso_chart1}
+
+    radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert elipse to circle}
+    x1:=(stopX+startX) div 2;
+    y1:=(stopY+startY) div 2;
+    plot_the_annotation(x1-radius+1,y1-radius+1,x1+radius+1,y1+radius+1,0,'','');{square}
+
+    ra8:=prepare_ra(object_raM,' '); {radialen to text, format 24: 00 00.0 }
+    dec8:=prepare_dec(object_decM,' '); {radialen to text, format 90d 00 00}
+
+//    plot_the_circle(x1-radius,y1-radius,x1+radius,y1+radius);
+
+    url:='https://app.aavso.org/vsp/chart/?ra='+copy(ra8,1,2)+'%3A'+copy(ra8,4,2)+'%3A'+copy(ra8,7,99)+'&dec='+copy(dec8,1,3)+'%3A'+copy(dec8,5,2)+'%3A'+copy(dec8,8,99)+'&scale=C&orientation=visual&type=chart&fov='+inttostr(round( (ang_w+ang_w)/(60*2)))+'&maglimit='+trim(magn)+'&resolution=150&north=up&east=left'
+
+    //  https://app.aavso.org/vsp/chart/?ra=08%3A40%3A29.63&dec=40%3A07%3A24.4&scale=C&orientation=visual&type=chart&fov=120.0&maglimit=12.0&resolution=150&north=up&east=left
   end;
+
+
+
   openurl(url);
 end;
 

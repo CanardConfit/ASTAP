@@ -95,8 +95,6 @@ implementation
 uses unit_hjd; {for polar2}
 
 {$R *.lfm}
-type
-  double33= array[1..3,1..3] of double;
 
 var
    X_pln,Y_pln,Z_pln : double; {of planet}
@@ -443,8 +441,8 @@ const
 var
   txtf : textfile;
   count,fontsize           : integer;
-  yy,mm,dd,h,aop,lan,incl,ecc,a_or_q, DELTA,sun_delta,ra2,dec2,mag,phase,delta_t,
-  SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec,u0,v0 ,raX,decX,a_e,a_a,a_i,a_ohm,a_w,a_M,epoch    : double;
+  yy,mm,dd,h,a_or_q, DELTA,sun_delta,ra2,dec2,mag,phase,delta_t,
+  SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec,u0,v0 ,a_e,a_a,a_i,a_ohm,a_w,a_M   : double;
   desn,name,s, thetext1,thetext2,fontsize_str:string;
   flip_horizontal, flip_vertical,form_existing, errordecode,sip : boolean;
 
