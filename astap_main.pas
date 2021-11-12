@@ -3019,7 +3019,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.590, '+about_message4+', dated 2021-11-11';
+  #13+#10+'ASTAP version ß0.9.591, '+about_message4+', dated 2021-11-12';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -13546,15 +13546,10 @@ end;
 
 procedure Tmainwindow.gaia_star_position1Click(Sender: TObject);
 var
-   url,ra8,dec8,sgn,window_size,magn  : string;
+   url,ra8,dec8,sgn,window_size,magn,dec_degrees  : string;
    ang_h,ang_w,ra1,ra2,dec1,dec2 : double;
    radius,x1,y1,mag               : integer;
 begin
-  if sender=mainwindow.aavso_chart1 then
-  magn:=inputbox('Chart request','Limiting magnitude chart:' ,'15');
-
-
-
   if ((abs(stopX-startX)<2) and (abs(stopY-startY)<2))then
   begin
     if object_xc>0 then {object sync}
@@ -13612,6 +13607,7 @@ begin
   end
   else
   begin {sender aavso_chart1}
+    magn:=inputbox('Chart request','Limiting magnitude chart:' ,'15');
 
     radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert elipse to circle}
     x1:=(stopX+startX) div 2;
@@ -13621,9 +13617,8 @@ begin
     ra8:=prepare_ra(object_raM,' '); {radialen to text, format 24: 00 00.0 }
     dec8:=prepare_dec(object_decM,' '); {radialen to text, format 90d 00 00}
 
-//    plot_the_circle(x1-radius,y1-radius,x1+radius,y1+radius);
-
-    url:='https://app.aavso.org/vsp/chart/?ra='+copy(ra8,1,2)+'%3A'+copy(ra8,4,2)+'%3A'+copy(ra8,7,99)+'&dec='+copy(dec8,1,3)+'%3A'+copy(dec8,5,2)+'%3A'+copy(dec8,8,99)+'&scale=C&orientation=visual&type=chart&fov='+inttostr(round( (ang_w+ang_w)/(60*2)))+'&maglimit='+trim(magn)+'&resolution=150&north=up&east=left'
+    if dec8[1]='+' then dec_degrees:=copy(dec8,2,2) else dec_degrees:=copy(dec8,1,3);
+     url:='https://app.aavso.org/vsp/chart/?ra='+copy(ra8,1,2)+'%3A'+copy(ra8,4,2)+'%3A'+copy(ra8,7,99)+'&dec='+dec_degrees+'%3A'+copy(dec8,5,2)+'%3A'+copy(dec8,8,99)+'&scale=C&orientation=visual&type=chart&fov='+inttostr(round( (ang_w+ang_w)/(60*2)))+'&maglimit='+trim(magn)+'&resolution=150&north=up&east=left'
 
     //  https://app.aavso.org/vsp/chart/?ra=08%3A40%3A29.63&dec=40%3A07%3A24.4&scale=C&orientation=visual&type=chart&fov=120.0&maglimit=12.0&resolution=150&north=up&east=left
   end;
