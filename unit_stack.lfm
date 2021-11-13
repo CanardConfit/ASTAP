@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 8
+  Left = 196
   Height = 646
-  Top = 103
+  Top = 102
   Width = 1710
   HorzScrollBar.Page = 1701
   VertScrollBar.Page = 558
@@ -657,7 +657,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 470
-      ClientWidth = 1777
+      ClientWidth = 1702
       ImageIndex = 1
       ParentFont = False
       object replace_by_master_dark1: TButton
@@ -691,7 +691,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1777
+        Width = 1702
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36

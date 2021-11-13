@@ -510,7 +510,7 @@ begin
       end;
     end;{LRGB}
 
-    restore_solution;{restore solution variable of reference image for annotation and mount pointer}
+    restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}
 
   end;{with stackmenu1}
 end;
@@ -791,7 +791,7 @@ begin
         end;{pixel loop}
       end; {counter<>0}
 
-      restore_solution;{restore solution variable of reference image for annotation and mount pointer}
+      restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}
 
     end;{simple average}
   end;{with stackmenu1}
@@ -1529,7 +1529,7 @@ begin
             end; {black spot filter}
       end;{counter<>0}
 
-      restore_solution;{restore solution variable of reference image for annotation and mount pointer}
+      restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}
 
     end;{throw out the outliers of light-dark images}
   end;{with stackmenu1}

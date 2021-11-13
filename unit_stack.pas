@@ -873,7 +873,7 @@ procedure sample(sx,sy : integer);{sampe local colour and fill shape with colour
 procedure apply_most_common(sourc,dest: image_array; radius: integer);  {apply most common filter on first array and place result in second array}
 procedure backup_solution;{backup solution}
 
-function  restore_solution: boolean;{restore solution}
+function  restore_solution(clear :boolean): boolean;{restore solution}
 procedure report_results(object_to_process,stack_info :string;object_counter,colorinfo:integer);{report on tab results}
 procedure apply_factors;{apply r,g,b factors to image}
 procedure listviews_begin_update; {speed up making stackmenu visible having a many items}
@@ -1100,7 +1100,7 @@ begin
 //  if full then header_backup[0].header:=mainwindow.Memo1.Text;{backup fits header}
 end;
 
-function restore_solution: boolean;{restore solution and header memo}
+function restore_solution(clear:boolean) : boolean;{restore solution and header memo}
 begin
   if header_backup=nil then begin result:=false; exit;end;{no backup}
 
@@ -1121,7 +1121,7 @@ begin
   date_obs:=header_backup[0].date_obs;
 //  if full then mainwindow.Memo1.Text:=header_backup[0].header;{restore fits header}
 
-  header_backup:=nil; {release memory}
+  if clear then header_backup:=nil; {release memory}
   result:=true;
 end;
 
@@ -1913,7 +1913,7 @@ begin
 
   if img_loaded<>nil then
   begin
-    restore_solution;{restore solution only}
+    restore_solution(true);{restore solution only}
     {fix array dimensions}
     naxis3:=length(img_loaded);{nr colours}
     width2:=length(img_loaded[0]);{width}
@@ -3689,7 +3689,7 @@ begin
 
   if img_loaded<>nil then
    begin
-     restore_solution;{restore solution}
+     restore_solution(true);{restore solution}
      {fix array dimensions}
      naxis3:=length(img_loaded);{nr colours}
      width2:=length(img_loaded[0]);{width}
@@ -3705,7 +3705,7 @@ begin
 
   if img_loaded<>nil then
   begin
-    restore_solution;{restore solution}
+    restore_solution(true);{restore solution}
     {fix array dimensions}
     naxis3:=length(img_loaded);{nr colours}
     width2:=length(img_loaded[0]);{width}
@@ -4030,7 +4030,7 @@ begin
 
   if img_loaded<>nil then
   begin
-    restore_solution;{restore solution only}
+    restore_solution(true);{restore solution only}
     {fix array dimensions}
     naxis3:=length(img_loaded);{nr colours}
     width2:=length(img_loaded[0]);{width}
@@ -6014,7 +6014,7 @@ begin
 
         w:=(starlistpack[c].width div factor);
         h:=(starlistpack[c].height div factor);
-        if w2>w then w2:=w;{find smallets dimensions used}
+        if w2>w then w2:=w;{find smallest dimensions used}
         if h2>h then h2:=h;
         if created=false then
         begin
@@ -6072,11 +6072,6 @@ begin
         outliers[i,j]:=0;
 
     {find largest outliers}
-//    outliers[2,0]:=0;
-//    outliers[2,1]:=0;
-//    outliers[2,2]:=0;
-//    outliers[2,3]:=0;
-
     for i:=0 to w2 do
       for j:=0 to h2 do
       begin
@@ -6127,7 +6122,8 @@ end;
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   Save_Cursor          : TCursor;
-  magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,backgr,hfd_med,apert,annul,rax,decx : double;
+  magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,backgr,hfd_med,apert,annul,rax,decx,
+  rax1,decx1,rax2,decx2,rax3,decx3,xn,yn                                                     : double;
   saturation_level                                                                           : single;
   c,i,x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr,countVar, countCheck,countThree : integer;
   flipvertical,fliphorizontal,init,refresh_solutions,analysedP,store_annotated, warned  :boolean;
@@ -6160,20 +6156,34 @@ var
 //        mainwindow.image1.Canvas.textout(round(dex)+40,round(dey)+20,'hhhhhhhhhhhhhhh'+floattostrf(magn, ffgeneral, 3,3) );
 //        mainwindow.image1.Canvas.textout(round(dex)+20,round(dey)+20,'decX,Y '+floattostrf(deX, ffgeneral, 3,3)+','+floattostrf(deY, ffgeneral, 3,3)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 3,3)+','+floattostrf(yc, ffgeneral, 3,3));
 //        memo2_message(filename2+'decX,Y '+floattostrf(deX, ffgeneral, 4,4)+', '+floattostrf(deY, ffgeneral, 4,4)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 4,4)+', '+floattostrf(yc, ffgeneral, 4,4)+'    '+result+  '  deltas:'  + floattostrf(deX-xc, ffgeneral, 4,4)+',' + floattostrf(deY-yc, ffgeneral, 4,4)+'offset '+floattostrf(starlistpack[c].flux_magn_offset, ffgeneral, 6,6)+'fluxlog '+floattostrf(ln(flux)*2.511886432/ln(10), ffgeneral, 6,6) );
-        if Flipvertical=false then  starY:=(height2-yc) else starY:=(yc);
-        if Fliphorizontal     then starX:=(width2-xc)  else starX:=(xc);
-        if flux_aperture<99 {<>max setting}then
-        begin
-          mainwindow.image1.Canvas.Pen.style:=psSolid;
-          mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-        end;
-        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius),round(starY-annulus_radius),round(starX+annulus_radius),round(starY+annulus_radius));{three pixels, 1,2,3}
-        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-4),round(starY-annulus_radius-4),round(starX+annulus_radius+4),round(starY+annulus_radius+4));
+
+//        if Flipvertical=false then  starY:=(height2-yc) else starY:=(yc);
+//        if Fliphorizontal     then starX:=(width2-xc)  else starX:=(xc);
+//        if flux_aperture<99 {<>max setting}then
+//        begin
+//          mainwindow.image1.Canvas.Pen.style:=psSolid;
+//          mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+//        end;
+//        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius),round(starY-annulus_radius),round(starX+annulus_radius),round(starY+annulus_radius));{three pixels, 1,2,3}
+//        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-4),round(starY-annulus_radius-4),round(starX+annulus_radius+4),round(starY+annulus_radius+4));
       end
       else result:='Saturated';
      end
     else
     result:='?';
+  end;
+
+  procedure plot_annulus(x,y: integer); {plot the aperture and annulus}
+  begin
+    if Flipvertical=false then  starY:=(height2-y) else starY:=(y);
+    if Fliphorizontal     then starX:=(width2-x)  else starX:=(x);
+    if flux_aperture<99 {<>max setting}then
+    begin
+      mainwindow.image1.Canvas.Pen.style:=psSolid;
+      mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+    end;
+    mainwindow.image1.canvas.ellipse(round(starX-annulus_radius),round(starY-annulus_radius),round(starX+annulus_radius),round(starY+annulus_radius));{three pixels, 1,2,3}
+    mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-4),round(starY-annulus_radius-4),round(starX+annulus_radius+4),round(starY+annulus_radius+4));
   end;
 
   procedure plot_outliers;{plot up to 4 yellow circles around the outliers}
@@ -6198,6 +6208,7 @@ var
     outliers:=nil;
     starCheck:=nil;
     starThree:=nil;
+    header_backup:=nil;
     Screen.Cursor :=Save_Cursor;{back to normal }
   end;
 
@@ -6397,9 +6408,73 @@ begin
 
         if first_image=c then
         begin
-           astr:=measure_star(shape_fitsX2,shape_fitsY2);
-           sensor_coordinates_to_celestial(xc,yc,{var}   rax,decx {position});
-           name_check_iau:=prepare_IAU_designation(rax,decx);
+          backup_solution;{backup solution for deepsky annotation}
+          sensor_coordinates_to_celestial(shape_fitsX2,shape_fitsY2,{var}   rax2,decx2 {position});
+          name_check_iau:=prepare_IAU_designation(rax2,decx2);
+
+          sensor_coordinates_to_celestial(shape_fitsX,shape_fitsY,rax1,decx1 {fitsX, Y to ra,dec});
+          sensor_coordinates_to_celestial(shape_fitsX3,shape_fitsY3,rax3,decx3 {fitsX, Y to ra,dec});
+        end;
+
+
+
+        mainwindow.image1.Canvas.Pen.Mode := pmMerge;
+        mainwindow.image1.Canvas.Pen.width :=1;{thickness lines}
+        mainwindow.image1.Canvas.Pen.Color := clRed;
+        mainwindow.image1.Canvas.Pen.Cosmetic:= false; {gives better dotted lines}
+
+        mainwindow.image1.Canvas.brush.Style:=bsClear;
+        mainwindow.image1.Canvas.font.color:=clyellow;
+        mainwindow.image1.Canvas.font.size:=10; //round(max(10,8*height2/image1.height));{adapt font to image dimensions}
+
+        {measure the three stars selected by the mouse in the ORIGINAL IMAGE}
+         listview7.Items.item[c].subitems.Strings[P_magn1]:=''; {MAGN, always blank}
+        listview7.Items.item[c].subitems.Strings[P_magn2]:=''; {MAGN, always blank}
+        listview7.Items.item[c].subitems.Strings[P_magn3]:=''; {MAGN, always blank}
+
+        if starlistpack[c].flux_magn_offset<>0 then {valid flux calibration}
+        begin
+          if mainwindow.shape_alignment_marker1.visible then
+          begin
+            mainwindow.image1.Canvas.Pen.Color := clRed;
+            celestial_to_pixel(rax1,decx1, xn,yn); {ra,dec to fitsX,fitsY}
+            astr:=measure_star(xn,yn); {var star}
+            listview7.Items.item[c].subitems.Strings[P_magn1]:=astr;
+            listview7.Items.item[c].subitems.Strings[P_snr]:=inttostr(round(snr));
+            if ((astr<>'?') and (copy(astr,1,1)<>'S')) then {Good star detected}
+            begin
+              starVar[countVar]:=strtofloat2(astr);
+              inc(countVar);
+            end;
+          end;
+
+          if mainwindow.shape_alignment_marker2.visible then
+          begin
+            mainwindow.image1.Canvas.Pen.Color := clGreen;
+
+            celestial_to_pixel(rax2,decx2, xn,yn); {ra,dec to fitsX,fitsY}
+            astr:=measure_star(xn,yn); {chk}
+            listview7.Items.item[c].subitems.Strings[P_magn2]:=astr;
+            if ((astr<>'?') and (copy(astr,1,1)<>'S')) then {Good star detected}
+            begin
+              starCheck[countCheck]:=strtofloat2(astr);
+              inc(countCheck);
+            end;
+
+          end;
+          if mainwindow.shape_alignment_marker3.visible then
+          begin
+            mainwindow.image1.Canvas.Pen.Color := clAqua; {star 3}
+
+            celestial_to_pixel(rax3,decx3, xn,yn); {ra,dec to fitsX,fitsY}
+            astr:=measure_star(xn,yn); {star3}
+            listview7.Items.item[c].subitems.Strings[P_magn3]:=astr;
+            if ((astr<>'?') and (copy(astr,1,1)<>'S')) then {Good star detected}
+            begin
+              starThree[countThree]:=strtofloat2(astr);
+              inc(countThree);
+            end;
+          end;
         end;
 
 
@@ -6437,65 +6512,36 @@ begin
         if ((annotated) and (mainwindow.annotations_visible1.checked)) then
           plot_annotations(true {use solution vectors!!!!},false); {corrected annotations in case a part of the lights are flipped in the alignment routien}
 
-
-
         mainwindow.image1.Canvas.Pen.Mode := pmMerge;
         mainwindow.image1.Canvas.Pen.width :=1;{thickness lines}
-        mainwindow.image1.Canvas.Pen.Color := clRed;
         mainwindow.image1.Canvas.Pen.Cosmetic:= false; {gives better dotted lines}
 
         mainwindow.image1.Canvas.brush.Style:=bsClear;
         mainwindow.image1.Canvas.font.color:=clyellow;
         mainwindow.image1.Canvas.font.size:=10; //round(max(10,8*height2/image1.height));{adapt font to image dimensions}
 
-        listview7.Items.item[c].subitems.Strings[P_magn1]:=''; {MAGN, always blank}
-        listview7.Items.item[c].subitems.Strings[P_magn2]:=''; {MAGN, always blank}
-        listview7.Items.item[c].subitems.Strings[P_magn3]:=''; {MAGN, always blank}
 
-        {measure the three stars selected by the mouse}
+        {plot the aperture and annulus}
         if starlistpack[c].flux_magn_offset<>0 then {valid flux calibration}
         begin
           if mainwindow.shape_alignment_marker1.visible then
           begin
-            astr:=measure_star(shape_fitsX,shape_fitsY); {var star}
-            listview7.Items.item[c].subitems.Strings[P_magn1]:=astr;
-            listview7.Items.item[c].subitems.Strings[P_snr]:=inttostr(round(snr));
-            if ((astr<>'?') and (copy(astr,1,1)<>'S')) then {Good star detected}
-            begin
-              starVar[countVar]:=strtofloat2(astr);
-              inc(countVar);
-            end;
+            mainwindow.image1.Canvas.Pen.Color := clRed;
+            plot_annulus(round(shape_fitsX),round(shape_fitsY));
           end;
 
           if mainwindow.shape_alignment_marker2.visible then
           begin
             mainwindow.image1.Canvas.Pen.Color := clGreen;
-            astr:=measure_star(shape_fitsX2,shape_fitsY2);{chk}
-            if first_image=c then
-            begin
-               sensor_coordinates_to_celestial(xc,yc,{var}   rax,decx {position});
-               name_check_iau:=prepare_IAU_designation(rax,decx);
-            end;
-            listview7.Items.item[c].subitems.Strings[P_magn2]:=astr;
-            if ((astr<>'?') and (copy(astr,1,1)<>'S')) then {Good star detected}
-            begin
-              starCheck[countCheck]:=strtofloat2(astr);
-              inc(countCheck);
-            end;
-
+            plot_annulus(round(shape_fitsX2),round(shape_fitsY2));
           end;
           if mainwindow.shape_alignment_marker3.visible then
           begin
             mainwindow.image1.Canvas.Pen.Color := clAqua; {star 3}
-            astr:=measure_star(shape_fitsX3,shape_fitsY3);
-            listview7.Items.item[c].subitems.Strings[P_magn3]:=astr;
-            if ((astr<>'?') and (copy(astr,1,1)<>'S')) then {Good star detected}
-            begin
-              starThree[countThree]:=strtofloat2(astr);
-              inc(countThree);
-            end;
+            plot_annulus(round(shape_fitsX3),round(shape_fitsY3));
           end;
         end;
+
 
         mainwindow.image1.Canvas.Pen.width :=round(1+height2/mainwindow.image1.height);{thickness lines}
         mainwindow.image1.Canvas.Pen.style:=psSolid;
@@ -6522,6 +6568,7 @@ begin
         if checkBox_annotate1.checked then
         begin
           load_variable; { Load the database once. If loaded no action}
+          restore_solution(false {keep solution});{restore solution from reference image}
           plot_deepsky;  {plot the deep sky object on the image}
         end;
       end;{find star magnitudes}
@@ -6529,7 +6576,7 @@ begin
     if ((stepnr=1) and (countvar>4)) then {do it once after one cycle finished}
     begin
       find_star_outliers(strtofloat2(mark_outliers_upto1.text), outliers);
-      fits_file:=true;{Previous instruction will set fits:=false while it only loads header. Set back to tru to allow to set the three measure markers. The displayed image array and header will be compatible}
+      fits_file:=true;{Previous instruction will set fits:=false while it only loads header. Set back to true to allow to set the three measure markers. The displayed image array and header will be compatible}
       if outliers<>nil then plot_outliers;
     end;
 

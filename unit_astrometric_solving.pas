@@ -651,6 +651,8 @@ begin
       fov2:=fov_org;
     end;
 
+
+
     binning:=report_binning(height2*cropping); {select binning on dimensions of cropped image}
     hfd_min:=max(0.8,min_star_size_arcsec/(binning*fov_org*3600/height2) );{to ignore hot pixels which are too small}
     bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2, warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}

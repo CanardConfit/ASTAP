@@ -17,7 +17,7 @@ uses
 
 var {################# initialised variables #########################}
   stdin_mode            : boolean=false;{file send via stdin}
-  version: string=' CLI-0.9.587 dated 2021-10-29';
+  version: string=' CLI-0.9.587a dated 2021-11-12';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -2056,6 +2056,8 @@ var
 begin
   if calc_hist then
              get_hist(colour,img);{get histogram of img_loaded and his_total}
+
+  background:=img[0,0,0];{define something for images containing 0 or 65535 only}
 
   {find peak in histogram which should be the average background}
   pixels:=0;

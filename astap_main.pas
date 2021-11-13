@@ -751,6 +751,7 @@ function extract_raw_colour_to_file(filename7,filtern: string; xp,yp : integer) 
 function fits_file_name(inp : string): boolean; {fits file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
 procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; out  ram,decm  : double {fitsX, Y to ra,dec});
+procedure celestial_to_pixel(ra_t,dec_t: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
 procedure write_astronomy_wcs(filen:string);
 procedure CCDinspector(snr_min: double);
@@ -2488,8 +2489,9 @@ var
   i, pixels,max_range,above,his_total, fitsX, fitsY,counter,stepsize,width5,height5, iterations : integer;
   value,sd, sd_old : double;
 begin
-  if calc_hist then
-             get_hist(colour,img);{get histogram of img_loaded and his_total}
+  if calc_hist then  get_hist(colour,img);{get histogram of img_loaded and his_total}
+
+  background:=img[0,0,0];{define something for images containing 0 or 65535 only}
 
   {find peak in histogram which should be the average background}
   pixels:=0;
@@ -3019,7 +3021,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.591, '+about_message4+', dated 2021-11-12';
+  #13+#10+'ASTAP version ß0.9.592, '+about_message4+', dated 2021-11-13';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -6646,7 +6648,7 @@ begin
     minm:=0;
     maxm:=0;
     above:=0;
-
+    histo_peak_position:=0;{define something for images containing zeros only}
     histo_peakR:=-99999999;
     for i := 1 to max_range-1{65535} do
       if histogram[0,i]>histo_peakR then begin histo_peakR:=histogram[0,i]; histo_peak_position:=i;{find most common value = background.}end;
@@ -13618,13 +13620,10 @@ begin
     dec8:=prepare_dec(object_decM,' '); {radialen to text, format 90d 00 00}
 
     if dec8[1]='+' then dec_degrees:=copy(dec8,2,2) else dec_degrees:=copy(dec8,1,3);
-     url:='https://app.aavso.org/vsp/chart/?ra='+copy(ra8,1,2)+'%3A'+copy(ra8,4,2)+'%3A'+copy(ra8,7,99)+'&dec='+dec_degrees+'%3A'+copy(dec8,5,2)+'%3A'+copy(dec8,8,99)+'&scale=C&orientation=visual&type=chart&fov='+inttostr(round( (ang_w+ang_w)/(60*2)))+'&maglimit='+trim(magn)+'&resolution=150&north=up&east=left'
+    url:='https://app.aavso.org/vsp/chart/?ra='+copy(ra8,1,2)+'%3A'+copy(ra8,4,2)+'%3A'+copy(ra8,7,99)+'&dec='+dec_degrees+'%3A'+copy(dec8,5,2)+'%3A'+copy(dec8,8,99)+'&scale=C&orientation=visual&type=chart&fov='+inttostr(round( (ang_w+ang_w)/(60*2)))+'&maglimit='+trim(magn)+'&resolution=150&north=up&east=left'
 
     //  https://app.aavso.org/vsp/chart/?ra=08%3A40%3A29.63&dec=40%3A07%3A24.4&scale=C&orientation=visual&type=chart&fov=120.0&maglimit=12.0&resolution=150&north=up&east=left
   end;
-
-
-
   openurl(url);
 end;
 
