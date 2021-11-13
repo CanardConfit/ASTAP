@@ -121,7 +121,7 @@ begin
 
   aavso_report:= '#TYPE=Extended'+#13+#10+
                  '#OBSCODE='+obscode+#13+#10+
-                 '#SOFTWARE=ASTAP, photometry version ß0.5'+#13+#10+
+                 '#SOFTWARE=ASTAP, photometry version ß0.9'+#13+#10+
                  '#DELIM='+delimiter1.text+#13+#10+
                  '#DATE=JD'+#13+#10+
                  '#OBSTYPE=CCD'+#13+#10+
@@ -244,7 +244,7 @@ end;
 procedure plot_graph; {plot curve}
 var
   x1,y1,c,textp1,textp2,textp3,nrmarkX, nrmarkY,wtext : integer;
-  scale         : double;
+  scale,range         : double;
   text1,text2   : string;
   bmp: TBitmap;
   dum:string;
@@ -334,7 +334,10 @@ begin
   end;
 
   magn_min:=trunc(magn_min*100)/100; {add some rounding}
-  magn_max:=0.01+trunc(magn_max*100)/100;
+  magn_max:=trunc(magn_max*100)/100;
+  range:=magn_max-magn_min;
+  magn_max:=magn_max + range*0.05;  {faint star, bottom}
+  magn_min:=magn_min - range*0.05; {bright star, top}
 
   with form_aavso1.Image_photometry1 do
   begin
@@ -358,7 +361,7 @@ begin
 
     bmp.canvas.font.style:=[fsbold];
     bmp.canvas.textout(5,bspace div 2,'Magn');
-    bmp.canvas.textout(w-2*bspace,h-(bspace div 2),'JD (mid)');
+    bmp.canvas.textout(w-4*bspace,h-(bspace div 2),'JD (mid)');
     bmp.canvas.font.style:=[];
 
     text1:='Var ('+form_aavso1.name_variable1.text+')';

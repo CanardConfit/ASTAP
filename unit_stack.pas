@@ -6584,7 +6584,7 @@ begin
     if countVar>=4 then
     begin
       mad_median(starVar,countVar{length},{var}madVar,medianVar);{calculate mad and median without modifying the data}
-      memo2_message('Var star, median:'+floattostrf(medianVar, ffgeneral, 4,4)+', σ: '+floattostrf(1.4826*madVar  {1.0*sigma}, ffgeneral, 4,4));
+      memo2_message('Var star, median: '+floattostrf(medianVar, ffgeneral, 4,4)+', σ: '+floattostrf(1.4826*madVar  {1.0*sigma}, ffgeneral, 4,4));
     end
     else
     madVar:=0;
@@ -6592,14 +6592,14 @@ begin
     if countCheck>=4 then
     begin
       mad_median(starCheck,countCheck{counter},{var}madCheck,medianCheck);{calculate mad and median without modifying the data}
-      memo2_message('Check star, median:'+floattostrf(medianCheck, ffgeneral, 4,4)+', σ: '+floattostrf(1.4826*madCheck  {1.0*sigma}, ffgeneral, 4,4));
+      memo2_message('Check star, median: '+floattostrf(medianCheck, ffgeneral, 4,4)+', σ: '+floattostrf(1.4826*madCheck  {1.0*sigma}, ffgeneral, 4,4));
     end
     else
     madCheck:=0;
     if countThree>4 then
     begin
       mad_median(starThree,countThree{counter},{var}madThree,medianThree);{calculate mad and median without modifying the data}
-      memo2_message('3 star, median:'+floattostrf(medianThree, ffgeneral, 4,4)+', σ: '+floattostrf(1.4826*madThree  {1.0*sigma}, ffgeneral, 4,4));
+      memo2_message('3 star, median: '+floattostrf(medianThree, ffgeneral, 4,4)+', σ: '+floattostrf(1.4826*madThree  {1.0*sigma}, ffgeneral, 4,4));
     end
     else madThree:=0;
 
