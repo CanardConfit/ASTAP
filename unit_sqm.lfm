@@ -1,7 +1,7 @@
 object form_sqm1: Tform_sqm1
-  Left = 519
+  Left = 735
   Height = 541
-  Top = 91
+  Top = 81
   Width = 596
   Caption = 'SQM measurement'
   ClientHeight = 541
@@ -38,7 +38,7 @@ object form_sqm1: Tform_sqm1
     OnExit = date_obs1Exit
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 0
+    TabOrder = 1
     Text = '2020-02-11T22:10:41.222'
   end
   object date_label1: TLabel
@@ -68,7 +68,7 @@ object form_sqm1: Tform_sqm1
     OnExit = latitude1Exit
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 1
+    TabOrder = 2
     Text = '0'
   end
   object Label2: TLabel
@@ -99,7 +99,7 @@ object form_sqm1: Tform_sqm1
     OnExit = longitude1Exit
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 2
+    TabOrder = 3
     Text = '0'
   end
   object ok1: TButton
@@ -114,7 +114,7 @@ object form_sqm1: Tform_sqm1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 7
+    TabOrder = 0
   end
   object altitude_label1: TLabel
     Left = 19
@@ -139,7 +139,7 @@ object form_sqm1: Tform_sqm1
     Height = 150
     Top = 328
     Width = 404
-    Caption = 'Pre-conditions'#13#10'1) Image is astrometrical solved for flux-calibration against the star database.'#13#10'2) The background value is larger then pedestal value. If not expose longer.'#13#10'3) Entering a pedestal value increases the accuracy. (mean value of a dark)'#13#10'4) Apply on single unprocessed raw images only'#13#10'    or calibrate single images and apply zero for the pedestal value.'#13#10'5) DSLR images could require additional preparations.'#13#10'6) No large bright nebula should be visible.'#13#10'7) Calculated altitude is correct. The altitude will be used for an atmospheric'#13#10'    extinction correction of the star light.'
+    Caption = 'Pre-conditions'#13#10'1) Image is astrometrical solved for flux-calibration against the star database.'#13#10'2) The background value is larger then pedestal value. If not expose longer.'#13#10'3) Entering a pedestal value increases the accuracy. (mean value of a dark)'#13#10'4) Apply on single unprocessed raw images only'#13#10'    or calibrate single images and apply zero for the pedestal value.'#13#10'5) DSLR/OSC raw images require 2x2 binning.'#13#10'6) No large bright nebula should be visible.'#13#10'7) Calculated altitude is correct. The altitude will be used for an atmospheric'#13#10'    extinction correction of the star light.'
     ParentColor = False
   end
   object Label4: TLabel
@@ -169,7 +169,7 @@ object form_sqm1: Tform_sqm1
     OnExit = pedestal1Exit
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 3
+    TabOrder = 4
     Text = '0'
   end
   object background1: TEdit
@@ -183,7 +183,7 @@ object form_sqm1: Tform_sqm1
     ParentShowHint = False
     ReadOnly = True
     ShowHint = True
-    TabOrder = 4
+    TabOrder = 5
     Text = '0'
   end
   object altitude1: TEdit
@@ -197,7 +197,7 @@ object form_sqm1: Tform_sqm1
     ParentShowHint = False
     ReadOnly = True
     ShowHint = True
-    TabOrder = 5
+    TabOrder = 6
     Text = '0'
   end
   object sqm1: TEdit
@@ -213,7 +213,7 @@ object form_sqm1: Tform_sqm1
     ParentShowHint = False
     ReadOnly = True
     ShowHint = True
-    TabOrder = 6
+    TabOrder = 7
     Text = '0'
   end
   object message1: TLabel

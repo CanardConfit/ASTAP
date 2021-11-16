@@ -914,13 +914,13 @@ object mainwindow: Tmainwindow
     end
     object TabSheet2: TTabSheet
       Caption = 'Table'
-      ClientHeight = 146
-      ClientWidth = 676
+      ClientHeight = 149
+      ClientWidth = 672
       object Memo3: TMemo
         Left = 0
         Height = 149
         Top = 0
-        Width = 743
+        Width = 672
         Align = alClient
         Anchors = [akTop, akLeft, akRight]
         Font.Height = -9

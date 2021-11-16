@@ -56,6 +56,7 @@ type
     classify_flat_exposure1: TCheckBox;
     hours_and_minutes1: TCheckBox;
     inspect_latest_image1: TCheckBox;
+    center_position1: TLabel;
     removeselected5: TMenuItem;
     menukeywordchange1: TMenuItem;
     MenuItem32: TMenuItem;
@@ -2402,9 +2403,9 @@ begin
 
 procedure artificial_flatV2(var img :image_array; centrum_diameter:integer);
  var
-    fitsx,fitsy,dist,col,
-    colors,w,h,leng,angle,count   :integer;
-    offset                   : single;
+    fitsx,fitsy,dist,col,centerX,centerY,
+    colors,w,h,leng,angle,count,largest_distX,largest_distY   :integer;
+    offset,oldoffset         : single;
     bg,sn,cs                 : double;
     median,test              : array of double;
 begin
@@ -2412,51 +2413,83 @@ begin
   w:=Length(img[0]); {width}
   h:=Length(img[0,0]); {height}
 
+    areax1:=startX;
+  areay1:=startY;
+  areax2:=stopX;
+  areay2:=stopY;
+
+  if pos('de',stackmenu1.center_position1.caption)>0 then {contains word default}
+  begin
+    centerX:=w div 2;
+    centerY:=h div 2;
+  end
+  else
+  begin
+    centerX:=(areax1+areax2) div 2;
+    centerY:=(areay1+areay2) div 2;
+  end;
+
+
   centrum_diameter:=round(h*centrum_diameter/100);{transfer percentage to pixels}
-  leng:=round(sqrt(sqr(w div 2)+sqr(h div 2)));
+
+  largest_distX:=max(centerX, w-centerX);
+  largest_distY:=max(centerY, h-centerY);
+
+  leng:=round(sqrt(sqr(largest_distX)+sqr(largest_distY)));
   setlength(median,leng+1);
 
   for col:=0 to colors-1 do {do all colours}
   begin
     get_background(col,img,true,false{do not calculate noise_level},bg,star_level); {should be about 500 for mosaic since that is the target value}
-
+    oldoffset:=0;
     for dist:=leng downto 0 do
     begin
       if dist>centrum_diameter  then
       begin{outside centrum}
-        setlength(test,360);
+        setlength(test,360*3);
         count:=0;
-        for angle:=0 to 359 do
+        for angle:=0 to (356*3)-1 do
         begin
-          sincos(angle*pi/180,sn,cs);
-          fitsy:=round(sn*dist) + (height2 div 2);
-          fitsx:=round(cs*dist) + (width2 div 2);
-          if ((fitsX<w) and (fitsX>=0) and (fitsY<h) and (fitsY>=0)) then
+          sincos(angle*pi/(180*3),sn,cs);
+          fitsy:=round(sn*dist) + (centerY);
+          fitsx:=round(cs*dist) + (centerX);
+          if ((fitsX<w) and (fitsX>=0) and (fitsY<h) and (fitsY>=0)) then {within the image}
+ //           if ((fitsX<w-1) and (fitsX>=0+1) and (fitsY<h-1) and (fitsY>=0+1)) then {within the image}
           begin
             //memo2_message(inttostr(angle)+'    ' +floattostr(fitsX)+'     '+floattostr(fitsY) );
-            test[count]:=img[col,fitsX,fitsY];
-            inc(count);
+            offset:=img[col,fitsX,fitsY]-bg;
+
+            if oldoffset<>0 then offset:=0.1*offset+0.9*oldoffset;{smoothing}
+            oldoffset:=offset;
+
+            test[count]:=img[col,fitsX,fitsY]-bg;
+            inc(count,1);
           end;
         end;
-           if count>0 then
+        if count>5 then {at least five points}
         begin
-//          setlength(test,count);{reduce size if not all point are used}
           median[dist]:=smedian(test,count);
         end
-        else median[dist]:=0;
+        else
+        median[dist]:=0;
+
+ //       memo2_message(#9+ floattostr(dist)+#9+ floattostr(median[dist]) +#9+ inttostr(count));
       end {outside centrum}
       else
         median[dist]:=median[dist+1];
     end;
+
+
     for fitsY:=0 to h-1 do
     for fitsX:=0 to w-1 do
     begin
-      dist:=round(sqrt(sqr(fitsX -  (w div 2))+sqr(fitsY -  (h div 2))));{distance from centre}
+      dist:=round(sqrt(sqr(fitsX -  (centerX))+sqr(fitsY -  (centerY))));{distance from centre}
       if median[dist]<>0 then
       begin
-        offset:=median[dist]-bg;
+        offset:=median[dist];
         img[col,fitsX,fitsY]:=img[col,fitsX,fitsY]-offset;
       end;
+
     end;
   end;{all colors}
   test:=nil;
@@ -8438,6 +8471,7 @@ var  {variables in the procedure are created to protect global variables as filt
   datamax_light ,light_exposure,value,flat_factor,dark_norm_value,flat11,flat12,flat21,flat22 : double;
 
 begin
+
   datamax_light:=datamax_org;
 
   calstat_local:=calstat;{Note load darks or flats will overwrite calstat}

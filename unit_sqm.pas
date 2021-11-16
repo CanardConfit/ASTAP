@@ -72,7 +72,23 @@ var
 function calculate_sqm(get_bk,get_his : boolean) : boolean; {calculate sky background value}
 var
   airm, correction,alt : double;
+   bayer  : boolean;
 begin
+//  if ((bayerpat<>'') or (naxis3>1)) then {can not process colour or OSC images}
+//  begin
+//    result:=false;
+//    exit;
+//  end;
+   bayer:=((bayerpat<>'') and (Xbinning=1));
+   if bayer then
+   begin
+     form_sqm1.message1.font.color:=clgreen;
+     form_sqm1.message1.caption:='This OSC image is automatic binned 2x2.';
+     application.processmessages;
+     backup_img; {move viewer data to img_backup}
+     bin_X2X3X4(2);
+   end;
+
   if ((flux_magn_offset=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
   begin
     annulus_radius:=14;{calibrate for extended objects using full star flux}
@@ -96,6 +112,11 @@ begin
       result:=true;
     end;
   end;
+
+  if bayer then
+  begin
+    restore_img;
+  end;
 end;
 
 
@@ -103,6 +124,8 @@ procedure display_sqm;
 begin
   with form_sqm1 do
   begin
+    message1.caption:='';
+
     date_to_jd(date_obs,exposure);{convert date-OBS to jd_start and jd_mid}
 
     if jd_start<=2400000 then {no date, found year <1858}
@@ -112,14 +135,21 @@ begin
       exit;
     end;
 
+    if naxis3>1 then {no date, found year <1858}
+    begin
+      message1.caption:='Can not process colour images!!';
+      sqm1.caption:='?';
+      exit;
+    end;
+
+
     {calc}
     if calculate_sqm(true {get backgr},false{get histogr})=false then {failure in calculating sqm value}
     begin
       if centalt='0' then message1.caption:='Could not retrieve or calculate altitude. Enter the default geographic location';
       sqm1.caption:='?';
       exit;
-    end
-    else  message1.caption:='';
+    end;
 
     {report}
     pedestal1.caption:=inttostr(pedestal);
@@ -168,7 +198,7 @@ end;
 
 procedure Tform_sqm1.ok1Click(Sender: TObject);
 begin
-  form_sqm1.close;   {normal this form is not loaded}
+  form_sqm1.close;   {normally this form is not loaded}
   mainwindow.setfocus;
 
   mainwindow.save_settings1Click(nil);{save pedestal value}
@@ -208,8 +238,11 @@ end;
 procedure Tform_sqm1.date_obs1Exit(Sender: TObject);
 begin
   date_obs:=date_obs1.text;
-  display_sqm;
+ // if sender=form_sqm1.date_obs1 then
+                  display_sqm;
 end;
+
+
 
 procedure Tform_sqm1.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin

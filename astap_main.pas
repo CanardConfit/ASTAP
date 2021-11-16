@@ -530,6 +530,11 @@ type
      cd2_2  : double;
      header : string;
      filen  : string;{filename}
+     xbinning: integer; {for binning routien. If twice binned or SQM routine}
+     ybinning: integer;
+     XPIXSZ : double;
+     YPIXSZ : double;
+
      img    : image_array;
    end;
 
@@ -2902,6 +2907,11 @@ begin
     img_backup[index_backup].cd1_2:=cd1_2;
     img_backup[index_backup].cd2_1:=cd2_1;
     img_backup[index_backup].cd2_2:=cd2_2;
+    img_backup[index_backup].xbinning:=xbinning;
+    img_backup[index_backup].ybinning:=ybinning;
+    img_backup[index_backup].XPIXSZ:=XPIXSZ;
+    img_backup[index_backup].YPIXSZ:=YPIXSZ;
+
 
     img_backup[index_backup].header:=mainwindow.Memo1.Text;{backup fits header}
     img_backup[index_backup].filen:=filename2;{backup filename}
@@ -2952,6 +2962,12 @@ begin
     cd1_2:=img_backup[index_backup].cd1_2;
     cd2_1:=img_backup[index_backup].cd2_1;
     cd2_2:=img_backup[index_backup].cd2_2;
+    xbinning:=img_backup[index_backup].xbinning;
+    ybinning:=img_backup[index_backup].ybinning;
+    XPIXSZ:=img_backup[index_backup].XPIXSZ;
+    YPIXSZ:=img_backup[index_backup].YPIXSZ;
+
+
     mainwindow.Memo1.Text:=img_backup[index_backup].header;{restore fits header}
     filename2:=img_backup[index_backup].filen;{backup filename}
 
@@ -3021,7 +3037,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.592a, '+about_message4+', dated 2021-11-13';
+  #13+#10+'ASTAP version ß0.9.593, '+about_message4+', dated 2021-11-16';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3246,12 +3262,16 @@ begin
     update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
     update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
   end;
-  update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING*binfactor));
-  update_integer('YBINNING=',' / Binning factor in height                        ' ,round(yBINNING*binfactor));
+  XBINNING:=XBINNING*binfactor;
+  YBINNING:=YBINNING*binfactor;
+  update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING));
+  update_integer('YBINNING=',' / Binning factor in height                        ' ,round(yBINNING));
   if XPIXSZ<>0 then
   begin
-    update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,XPIXSZ*binfactor);{note: comment will be never used since it is an existing keyword}
-    update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,YPIXSZ*binfactor);
+    XPIXSZ:=XPIXSZ*binfactor;
+    YPIXSZ:=YPIXSZ*binfactor;
+    update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,XPIXSZ);{note: comment will be never used since it is an existing keyword}
+    update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,YPIXSZ);
   end;
   fact:=inttostr(binfactor);
   fact:=fact+'x'+fact;
@@ -11452,11 +11472,13 @@ procedure Tmainwindow.sqm1Click(Sender: TObject);
 begin
   if fits_file=false then exit; {file loaded?}
 
+
+
   form_sqm1:=TForm_sqm1.Create(self); {in project option not loaded automatic}
   form_sqm1.ShowModal;
 
   form_sqm1.release;
-end;
+ end;
 
 
 procedure Tmainwindow.FormResize(Sender: TObject);
@@ -13301,6 +13323,7 @@ begin
   areax2:=stopX;
   areay2:=stopY;
   stackmenu1.area_set1.caption:='✓';
+  stackmenu1.center_position1.caption:='Center: '+inttostr((startX+stopX) div 2)+', '+inttostr((startY+stopY) div 2);
 end;
 
 
