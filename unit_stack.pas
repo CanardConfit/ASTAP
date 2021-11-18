@@ -46,6 +46,7 @@ type
     browse_blink1: TBitBtn;
     browse_mount1: TBitBtn;
     browse_live_stacking1: TBitBtn;
+    file_to_add1: TBitBtn;
     browse_photometry1: TBitBtn;
     browse_dark1: TBitBtn;
     browse_bias1: TBitBtn;
@@ -253,7 +254,6 @@ type
     extract_background_box_size1: TComboBox;
     field1: TLabel;
     files_live_stacked1: TLabel;
-    file_to_add1: TButton;
     filter_artificial_colouring1: TComboBox;
     filter_groupbox1: TGroupBox;
     Flats: TTabSheet;
