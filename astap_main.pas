@@ -3037,7 +3037,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.593a, '+about_message4+', dated 2021-11-18';
+  #13+#10+'ASTAP version ß0.9.594, '+about_message4+', dated 2021-11-19';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -8246,23 +8246,23 @@ var
   filename4 :string;
   JD2                               : double;
   conv_index                        : integer;
-var
-  commando  :string;
+  commando,param  :string;
 
 begin
   result:=true; {assume success}
   conv_index:=stackmenu1.raw_conversion_program1.itemindex; {DCRaw or libraw}
 
   {conversion direct to FITS}
-  if conv_index=0 then {Libraw}
+  if ((conv_index=0) or (conv_index=2)) then {Libraw}
   begin
+    if conv_index=2 then param:='-i' else param:='-f';
     result:=true; {assume success again}
     {$ifdef mswindows}
     if fileexists(application_path+'unprocessed_raw.exe')=false then
       result:=false {failure}
     else
     begin
-       ExecuteAndWait(application_path+'unprocessed_raw.exe -f "'+filename3+'"',false);{execute command and wait}
+       ExecuteAndWait(application_path+'unprocessed_raw.exe '+param+' "'+filename3+'"',false);{execute command and wait}
        filename4:=FileName3+'.fits';{direct to fits using modified version of unprocessed_raw}
      end;
     {$endif}
@@ -8287,7 +8287,7 @@ begin
     end
     else
     begin
-      execute_unix2(application_path+'unprocessed_raw-astap -f "'+filename3+'"');{direct to fits using modified version of unprocessed_raw}
+      execute_unix2(application_path+'unprocessed_raw-astap '+param+' "'+filename3+'"');{direct to fits using modified version of unprocessed_raw}
       filename4:=FileName3+'.fits';{ filename.NEF.pgm}
     end;
    {$endif}
@@ -8295,8 +8295,8 @@ begin
     if fileexists(application_path+'/unprocessed_raw')=false then
        result:=false {failure}
     else
-    begin                                                {F instead of f temporay  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!}
-      execute_unix2(application_path+'/unprocessed_raw -f "'+filename3+'"'); {direct to fits using modified version of unprocessed_raw}
+    begin
+      execute_unix2(application_path+'/unprocessed_raw '+param+' "'+filename3+'"'); {direct to fits using modified version of unprocessed_raw}
       filename4:=FileName3+'.fits';{ filename.NEF.pgm}
     end;
    {$endif}

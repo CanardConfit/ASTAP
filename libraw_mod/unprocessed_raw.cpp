@@ -2,7 +2,7 @@
  * File: unprocessed_raw.cpp
  * Copyright 2009-2021 LibRaw LLC (info@libraw.org)
  * Created: Fri Jan 02, 2009
- * Modified for adding meta data to PPM file and FITS export. Version 2021-10-22
+ * Modified for adding meta data to PPM file and FITS export. Version 2021-11-199
  *
  * LibRaw sample
  * Generates unprocessed raw image: with masked pixels and without black
@@ -46,15 +46,15 @@ void gamma_curve(unsigned short curve[]);
 
 void write_ppm(char meta[],unsigned width, unsigned height, unsigned short *bitmap,
                const char *basename);
-void write_fits(char fits_header[],unsigned width, unsigned height, unsigned leftmargin, unsigned topmargin, unsigned short *bitmap,
+void write_fits(char fits_header[],unsigned width, unsigned height, unsigned left_margin, unsigned top_margin, unsigned right_margin, unsigned bottom_margin, unsigned short *bitmap,
                const char *fname);
 void write_tiff(int width, int height, unsigned short *bitmap,
                 const char *basename);
 
 int main(int ac, char *av[])
 {
-  int i, ret;
-  int verbose = 1, autoscale = 0, use_gamma = 0, out_tiff = 0, out_fits = 0;
+  int i, ret,width2,height2;
+  int verbose = 1, autoscale = 0, use_gamma = 0, out_tiff = 0, out_fits = 0, top_margin=0, left_margin = 0, bottom_margin = 0, right_margin = 0;
   char outfn[1024];
   char meta[256];
   char str[180];
@@ -65,7 +65,7 @@ int main(int ac, char *av[])
   if (ac < 2)
   {
   usage:
-    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2021-10-22\n"
+    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2021-11-19\n"
            "Usage: %s [-q] [-A] [-g] [-s N] raw-files....\n"
            "\t-q - be quiet\n"
            "\t-s N - select Nth image in file (default=0)\n"
@@ -73,8 +73,9 @@ int main(int ac, char *av[])
            "visual inspection only)\n"
            "\t-A - autoscaling (by integer factor)\n"
            "\t-T - write tiff instead of pgm\n"
-           "\t-F - write fits instead of pgm\n"
-           "\t-f - write fits instead of pgm, used sensor area only\n",
+           "\t-F - write fits instead of pgm, full sensor area\n"
+           "\t-f - write fits instead of pgm, used sensor area only (full image size)\n"
+           "\t-i - write fits instead of pgm, official sensor size (thumb size)\n",
             LibRaw::version(), LibRaw::cameraCount(), av[0]);
     return 0;
   }
@@ -103,10 +104,12 @@ int main(int ac, char *av[])
         use_gamma = 1;
       else if (av[i][1] == 'T' && av[i][2] == 0)
         out_tiff = 1;
-      else if (av[i][1] == 'F' && av[i][2] == 0)
-       out_fits = 2;
-      else if (av[i][1] == 'f' && av[i][2] == 0)
-        out_fits = 1;
+      else if (av[i][1] == 'F' && av[i][2] == 0)  // fits in full raw size 
+       out_fits = 1;
+      else if (av[i][1] == 'f' && av[i][2] == 0)  // fits in image size 
+        out_fits = 2;
+      else if (av[i][1] == 'i' && av[i][2] == 0)  // fits in thumb size
+        out_fits = 3;
       else if (av[i][1] == 's' && av[i][2] == 0)
       {
         i++;
@@ -126,9 +129,12 @@ int main(int ac, char *av[])
     }
     if (verbose)
     {
-      printf("Image size: %dx%d\nRaw size: %dx%d\n", S.width, S.height,
-             S.raw_width, S.raw_height);
-      printf("Margins: top=%d, left=%d\n", S.top_margin, S.left_margin);
+      printf("Raw size: %dx%d\n",   S.raw_width, S.raw_height);
+      printf("Image size: %dx%d\n", S.width, S.height);
+     //  printf("Margins image: top=%d, left=%d\n", S.top_margin, S.left_margin);
+      printf("Thumb size: %dx%d\n", S.raw_inset_crops[0].cwidth, S.raw_inset_crops[0].cheight);
+     //  if ((S.raw_inset_crops[0].ctop != 0xffff) && (S.raw_inset_crops[0].cleft != 0xffff))
+     //    printf("Margins thumb: top=%d, left=%d\n", S.raw_inset_crops[0].ctop, S.raw_inset_crops[0].cleft);
     }
 
     if ((ret = RawProcessor.unpack()) != LIBRAW_SUCCESS)
@@ -174,9 +180,10 @@ int main(int ac, char *av[])
         printf("Gamma-corrected....\n");
     }
 
+
     if (OUTR.shot_select)
     {
-      if (out_fits>1)  {snprintf(outfn, sizeof(outfn), "%s-%d.%s", av[i], OUTR.shot_select,"fits"); }
+      if (out_fits>0)  {snprintf(outfn, sizeof(outfn), "%s-%d.%s", av[i], OUTR.shot_select,"fits"); }
       else
       snprintf(outfn, sizeof(outfn), "%s-%d.%s", av[i], OUTR.shot_select,
                out_tiff ? "tiff" : "pgm");
@@ -187,18 +194,39 @@ int main(int ac, char *av[])
       else
       snprintf(outfn, sizeof(outfn), "%s.%s", av[i], out_tiff ? "tiff" : "pgm");
       }
-
-    if (out_tiff)
-      write_tiff(S.raw_width, S.raw_height,
-                 RawProcessor.imgdata.rawdata.raw_image, outfn);
+      
 
 //====================================================================================================================================
 
     if (out_fits>0)   //FITS routine written by Han Kleijn, www.hnsky.org, FITS standard at https://fits.gsfc.nasa.gov/fits_standard.html
       {
 
-      if (out_fits>1) //export full sensor
-        { S.top_margin=0; S.left_margin=0;  }
+      if (out_fits==1) //export full sensor
+         {width2 = S.raw_width;    
+          height2 = S.raw_height;    
+          left_margin = 0;
+          top_margin = 0;
+          right_margin = 0;
+          bottom_margin =0;}
+
+          
+      if (out_fits==2) //export maximum usable sensor size
+         {width2 = S.width;    
+          height2 = S.height;    
+          left_margin = S.left_margin;
+          top_margin = S.top_margin;
+          right_margin = 0;
+          bottom_margin =0;}
+          
+      if (out_fits==3) //export offical sensor size (thumb)
+         {width2 = S.raw_inset_crops[0].cwidth;    
+          height2 = S.raw_inset_crops[0].cheight;    
+          left_margin = S.left_margin;
+          top_margin = S.top_margin;
+          right_margin = S.raw_width - width2 - S.left_margin;
+          bottom_margin = S.raw_height - height2 - S.top_margin;}
+          
+         
 
       strcpy(fits_header,"SIMPLE  =                    T / FITS header                                      ");
       fits_header[80]='\0'; // length should be exactly 80
@@ -208,10 +236,10 @@ int main(int ac, char *av[])
       strcpy(str,        "NAXIS   =                    2 / Number of dimensions                             ");
       str[80]='\0'; strcat(fits_header,str);//line 3. Length of each keyword record should be exactly 80
 
-      sprintf(str,"NAXIS1  = %020d                                                                       ",S.raw_width- S.left_margin );
+      sprintf(str,"NAXIS1  = %020d                                                                       ",width2);
       str[80]='\0'; strcat(fits_header,str);//line 4. Length of each keyword record should be exactly 80
 
-      sprintf(str,"NAXIS2  = %020d                                                                       ",S.raw_height - S.top_margin);
+      sprintf(str,"NAXIS2  = %020d                                                                       ",height2);
       str[80]='\0'; strcat(fits_header,str);//line 5. Length of each keyword record should be exactly 80
 
       sprintf(str,"EXPTIME = %020g                                                                       ",P2.shutter);
@@ -298,8 +326,6 @@ int main(int ac, char *av[])
       sprintf(str,"COMMENT raw conversion by LibRaw-with-16-bit-FITS-support. www.hnsky.org               ");
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
       
-      
-      
 
 
       strcpy(str,"END                                                                                     ");
@@ -309,25 +335,31 @@ int main(int ac, char *av[])
         fits_header[i]=' ';//fill with space
       fits_header[2880]='\0';//header should be a multiply of 38 records equals 2880 bytes
 
-      write_fits(fits_header,S.raw_width, S.raw_height, S.left_margin, S.top_margin,
-                 RawProcessor.imgdata.rawdata.raw_image, outfn);
+      write_fits(fits_header,S.raw_width, S.raw_height, left_margin, top_margin,right_margin, bottom_margin, RawProcessor.imgdata.rawdata.raw_image, outfn);
       }
+//====================================================================================================================================
 
-    else
+      else
       {
-      sprintf(str,"%g",P2.shutter);                          strcpy(meta,"# EXPTIME=");   strcat(meta,str);
-      sprintf(str, "%d",(int)P2.timestamp);                  strcat(meta,"# TIMESTAMP="); strcat(meta,str);
-      sprintf(str, "%d",(int)P3.SensorTemperature);          strcat(meta,"# CCD-TEMP=");  strcat(meta,str);
-      sprintf(str, "%d",(int)P3.CameraTemperature);          strcat(meta,"# CAM-TEMP=");  strcat(meta,str);
-      sprintf(str, "%d",(int)P2.iso_speed);                  strcat(meta,"# ISOSPEED=");  strcat(meta,str);
-      sprintf(str, "%0.1f",P2.aperture);                     strcat(meta,"# APERTURE=");  strcat(meta,str);
-      sprintf(str, "%d",(int)P2.focal_len);                  strcat(meta,"# FOCALLEN=");  strcat(meta,str);
-      sprintf(str, "%s", P1.make);                           strcat(meta,"# MAKE=");      strcat(meta,str);
-      sprintf(str, "%s", P1.model);                          strcat(meta,"# MODEL=");     strcat(meta,str);
-      sprintf(str, "%s", exifLens.Lens);                     strcat(meta,"# LENS=");      strcat(meta,str);
+      if (out_tiff)
+        {write_tiff(S.raw_width, S.raw_height,
+                  RawProcessor.imgdata.rawdata.raw_image, outfn); } 
+        else  //write ppm
+        {
+        sprintf(str,"%g",P2.shutter);                          strcpy(meta,"# EXPTIME=");   strcat(meta,str);
+        sprintf(str, "%d",(int)P2.timestamp);                  strcat(meta,"# TIMESTAMP="); strcat(meta,str);
+        sprintf(str, "%d",(int)P3.SensorTemperature);          strcat(meta,"# CCD-TEMP=");  strcat(meta,str);
+        sprintf(str, "%d",(int)P3.CameraTemperature);          strcat(meta,"# CAM-TEMP=");  strcat(meta,str);
+        sprintf(str, "%d",(int)P2.iso_speed);                  strcat(meta,"# ISOSPEED=");  strcat(meta,str);
+        sprintf(str, "%0.1f",P2.aperture);                     strcat(meta,"# APERTURE=");  strcat(meta,str);
+        sprintf(str, "%d",(int)P2.focal_len);                  strcat(meta,"# FOCALLEN=");  strcat(meta,str);
+        sprintf(str, "%s", P1.make);                           strcat(meta,"# MAKE=");      strcat(meta,str);
+        sprintf(str, "%s", P1.model);                          strcat(meta,"# MODEL=");     strcat(meta,str);
+        sprintf(str, "%s", exifLens.Lens);                     strcat(meta,"# LENS=");      strcat(meta,str);
 
-      write_ppm(meta,S.raw_width, S.raw_height,
+        write_ppm(meta,S.raw_width, S.raw_height,
                 RawProcessor.imgdata.rawdata.raw_image, outfn);
+        }          
       }
 
     if (verbose)
@@ -491,12 +523,13 @@ void write_tiff(int width, int height, unsigned short *bitmap, const char *fn)
 
 
 
-void write_fits(char fits_header[],unsigned width, unsigned height, unsigned leftmargin, unsigned topmargin, unsigned short *bitmap,
+void write_fits(char fits_header[],unsigned width, unsigned height, unsigned left_margin, unsigned top_margin,unsigned  right_margin,unsigned bottom_margin, unsigned short *bitmap,
                const char *fname)
 //FITS routine written by Han Kleijn, www.hnsky.org, FITS standard at https://fits.gsfc.nasa.gov/fits_standard.html
 {
   double  frac;
-  int remain;
+  int remain, buff;
+  long int counter;
 
   if (!bitmap)
     return;
@@ -511,25 +544,22 @@ void write_fits(char fits_header[],unsigned width, unsigned height, unsigned lef
   unsigned char *data = (unsigned char *)bitmap;
   unsigned data_size = width * height * 2;
   
-  // convert to big-endian
-  #define SWAP(a, b)                                                           \
-  {                                                                            \
-    a ^= b;                                                                    \
-    a ^= (b ^= a);                                                             \
-  }
-  for (unsigned i = 0; i < data_size; i += 2)
-    SWAP(data[i], data[i + 1]);
-  #undef SWAP
 
-// remove unused sensor left and top sections
-  if ((topmargin>0) || (leftmargin>0))
-  {
-  data_size=(width-leftmargin) * (height-topmargin)*2 ;
-  printf("FITS cropping\n");
-  for (unsigned y = 0; y < (height-topmargin); y++)
-         for (unsigned x = 0; x < (width-leftmargin)*2; x++)
-            data[x+y*(width-leftmargin)*2]=data[x+leftmargin*2*(y+topmargin+1) +(y+topmargin)*(width-leftmargin)*2];
-  }
+  // skip unused sensor areas and convert to big endian 
+  counter = 0;  
+  data_size=(width-left_margin-right_margin+1) * (height-top_margin-bottom_margin)*2 ;
+  for (unsigned y = 0; y < (height); y++)
+     for (unsigned x = 0; x < (width); x++)   //step in pixel steps equals 16 bit
+       {
+       if ((x>=left_margin) && (x<(width-right_margin))  && (y>=top_margin)  && (y<=height-bottom_margin)) 
+       {
+        buff=  data[(x+y*width)*2  ];// extract and at the same time convert to big-endian
+        data[counter]=data[(x+y*width)*2+1];
+        data[counter+1]=buff;
+        counter = counter +2;           
+       } 
+       }   
+
 
   fwrite(data, data_size, 1, f);//write fits data block
 
