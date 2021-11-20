@@ -2,7 +2,7 @@
  * File: unprocessed_raw.cpp
  * Copyright 2009-2021 LibRaw LLC (info@libraw.org)
  * Created: Fri Jan 02, 2009
- * Modified for adding meta data to PPM file and FITS export. Version 2021-11-199
+ * Modified for adding meta data to PPM file and FITS export. Version 2021-11-20
  *
  * LibRaw sample
  * Generates unprocessed raw image: with masked pixels and without black
@@ -53,8 +53,8 @@ void write_tiff(int width, int height, unsigned short *bitmap,
 
 int main(int ac, char *av[])
 {
-  int i, ret,width2,height2;
-  int verbose = 1, autoscale = 0, use_gamma = 0, out_tiff = 0, out_fits = 0, top_margin=0, left_margin = 0, bottom_margin = 0, right_margin = 0;
+  long int i, ret,width2,height2;
+  long int verbose = 1, autoscale = 0, use_gamma = 0, out_tiff = 0, out_fits = 0, top_margin=0, left_margin = 0, bottom_margin = 0, right_margin = 0;
   char outfn[1024];
   char meta[256];
   char str[180];
@@ -65,7 +65,7 @@ int main(int ac, char *av[])
   if (ac < 2)
   {
   usage:
-    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2021-11-19\n"
+    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2021-11-20\n"
            "Usage: %s [-q] [-A] [-g] [-s N] raw-files....\n"
            "\t-q - be quiet\n"
            "\t-s N - select Nth image in file (default=0)\n"
@@ -131,10 +131,11 @@ int main(int ac, char *av[])
     {
       printf("Raw size: %dx%d\n",   S.raw_width, S.raw_height);
       printf("Image size: %dx%d\n", S.width, S.height);
-     //  printf("Margins image: top=%d, left=%d\n", S.top_margin, S.left_margin);
       printf("Thumb size: %dx%d\n", S.raw_inset_crops[0].cwidth, S.raw_inset_crops[0].cheight);
+     //  printf("Margins raw image: top=%d, left=%d\n", S.top_margin, S.left_margin);
+      
      //  if ((S.raw_inset_crops[0].ctop != 0xffff) && (S.raw_inset_crops[0].cleft != 0xffff))
-     //    printf("Margins thumb: top=%d, left=%d\n", S.raw_inset_crops[0].ctop, S.raw_inset_crops[0].cleft);
+     //    printf("Margins thumb: top=%d, left=%d\n", S.raw_inset_crops[0].ctop, S.raw_inset_crops[0].cleft);//Why is there no cbottom?
     }
 
     if ((ret = RawProcessor.unpack()) != LIBRAW_SUCCESS)
@@ -236,16 +237,16 @@ int main(int ac, char *av[])
       strcpy(str,        "NAXIS   =                    2 / Number of dimensions                             ");
       str[80]='\0'; strcat(fits_header,str);//line 3. Length of each keyword record should be exactly 80
 
-      sprintf(str,"NAXIS1  = %020d                                                                       ",width2);
+      sprintf(str,"NAXIS1  = %20d / Length of x axis                                                     ", width2);// long int is required for the correct formating
       str[80]='\0'; strcat(fits_header,str);//line 4. Length of each keyword record should be exactly 80
 
-      sprintf(str,"NAXIS2  = %020d                                                                       ",height2);
+      sprintf(str,"NAXIS2  = %20d / Length of y axis                                                     ", height2);
       str[80]='\0'; strcat(fits_header,str);//line 5. Length of each keyword record should be exactly 80
 
-      sprintf(str,"EXPTIME = %020g                                                                       ",P2.shutter);
+      sprintf(str,"EXPTIME = %20G / Exposure time in seconds                                             ",(double)P2.shutter);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
 
-      sprintf(str,"JD      = %20.5f                                                                      ",2440587.5+ (double)P2.timestamp/(24*60*60));//{convert to Julian Day by adding factor. Unix time is seconds since 1.1.1970}
+      sprintf(str,"JD      = %20.5f / Date image was taken in Julian days                                ",2440587.5+ (double)P2.timestamp/(24*60*60));//{convert to Julian Day by adding factor. Unix time is seconds since 1.1.1970}
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
 
       if (P3.SensorTemperature>-999) {temperature=P3.SensorTemperature;}
@@ -254,41 +255,41 @@ int main(int ac, char *av[])
       else
       {temperature=999;}
 
-      sprintf(str,"CCD-TEMP= %020g                                                                       ",temperature);
+      sprintf(str,"CCD-TEMP= %20G / Sensor or camera temperature                                         ",(double)temperature);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
 
-      sprintf(str,"GAIN    = %020d                                                                       ",(int)P2.iso_speed);
+      sprintf(str,"GAIN    = %20d / ISO speed                                                            ",(long int)P2.iso_speed);// long int is required for the correct formating
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
       
       if (C.cblack[0] != 0)
       {
-      sprintf(str,"PEDESTAL= %020d                                                                       ",(int)C.cblack[0]);
+      sprintf(str,"PEDESTAL= %20d / Black level                                                          ",(long int)C.cblack[0]);// long int is required for the correct formating
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      sprintf(str,"PEDESTA2= %020d                                                                       ",(int)C.cblack[1]);
+      sprintf(str,"PEDESTA2= %20d                                                                        ",(long int)C.cblack[1]);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      sprintf(str,"PEDESTA3= %020d                                                                       ",(int)C.cblack[2]);
+      sprintf(str,"PEDESTA3= %20d                                                                        ",(long int)C.cblack[2]);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      sprintf(str,"PEDESTA4= %020d                                                                       ",(int)C.cblack[3]);
+      sprintf(str,"PEDESTA4= %20d                                                                        ",(long int)C.cblack[3]);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
       }
 
       if (C.linear_max[0] != 0)
       {
-      sprintf(str,"DATAMAX = %020d                                                                       ",(int)C.linear_max[0]);
+      sprintf(str,"DATAMAX = %20d / Max value where still linear                                         ",(long int)C.linear_max[0]);// long int is required for the correct formating
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      sprintf(str,"DATAMAX2= %020d                                                                       ",(int)C.linear_max[1]);
+      sprintf(str,"DATAMAX2= %20d                                                                        ",(long int)C.linear_max[1]);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      sprintf(str,"DATAMAX3= %020d                                                                       ",(int)C.linear_max[2]);
+      sprintf(str,"DATAMAX3= %20d                                                                        ",(long int)C.linear_max[2]);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
-      sprintf(str,"DATAMAX4= %020d                                                                       ",(int)C.linear_max[3]);
+      sprintf(str,"DATAMAX4= %20d                                                                        ",(long int)C.linear_max[3]);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
       }
 
 
-      sprintf(str,"APERTURE= %020g                                                                       ",P2.aperture);
+      sprintf(str,"APERTURE= %20d / Lens aperture                                                        ",(long int)P2.aperture);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
 
-      sprintf(str,"FOCALLEN= %020d                                                                       ",(int)P2.focal_len);
+      sprintf(str,"FOCALLEN= %20d / Focal length lens                                                    ",(long int)P2.focal_len);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
 
       sprintf(str,"CAMMAKER= '%s'                                                                        ",P1.make);
@@ -320,10 +321,10 @@ int main(int ac, char *av[])
         str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
       }
 
-      sprintf(str,"IMG_FLIP= %020d                                                                        ",(int)S.flip);
+      sprintf(str,"IMG_FLIP= %20d                                                                         ",(long int)S.flip);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
 
-      sprintf(str,"COMMENT raw conversion by LibRaw-with-16-bit-FITS-support. www.hnsky.org               ");
+      sprintf(str,"COMMENT Raw conversion by LibRaw-with-16-bit-FITS-support. www.hnsky.org               ");
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
       
 
@@ -344,15 +345,15 @@ int main(int ac, char *av[])
       if (out_tiff)
         {write_tiff(S.raw_width, S.raw_height,
                   RawProcessor.imgdata.rawdata.raw_image, outfn); } 
-        else  //write ppm
+        else  //write ppm with meta data as comments
         {
         sprintf(str,"%g",P2.shutter);                          strcpy(meta,"# EXPTIME=");   strcat(meta,str);
-        sprintf(str, "%d",(int)P2.timestamp);                  strcat(meta,"# TIMESTAMP="); strcat(meta,str);
-        sprintf(str, "%d",(int)P3.SensorTemperature);          strcat(meta,"# CCD-TEMP=");  strcat(meta,str);
-        sprintf(str, "%d",(int)P3.CameraTemperature);          strcat(meta,"# CAM-TEMP=");  strcat(meta,str);
-        sprintf(str, "%d",(int)P2.iso_speed);                  strcat(meta,"# ISOSPEED=");  strcat(meta,str);
+        sprintf(str, "%d",(long int)P2.timestamp);                  strcat(meta,"# TIMESTAMP="); strcat(meta,str);
+        sprintf(str, "%d",(long int)P3.SensorTemperature);          strcat(meta,"# CCD-TEMP=");  strcat(meta,str);
+        sprintf(str, "%d",(long int)P3.CameraTemperature);          strcat(meta,"# CAM-TEMP=");  strcat(meta,str);
+        sprintf(str, "%d",(long int)P2.iso_speed);                  strcat(meta,"# ISOSPEED=");  strcat(meta,str);
         sprintf(str, "%0.1f",P2.aperture);                     strcat(meta,"# APERTURE=");  strcat(meta,str);
-        sprintf(str, "%d",(int)P2.focal_len);                  strcat(meta,"# FOCALLEN=");  strcat(meta,str);
+        sprintf(str, "%d",(long int)P2.focal_len);                  strcat(meta,"# FOCALLEN=");  strcat(meta,str);
         sprintf(str, "%s", P1.make);                           strcat(meta,"# MAKE=");      strcat(meta,str);
         sprintf(str, "%s", P1.model);                          strcat(meta,"# MODEL=");     strcat(meta,str);
         sprintf(str, "%s", exifLens.Lens);                     strcat(meta,"# LENS=");      strcat(meta,str);

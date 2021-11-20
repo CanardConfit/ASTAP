@@ -1839,7 +1839,7 @@ begin
                 if focus_pos<>0 then ListView1.Items.item[c].subitems.Strings[L_focpos]:=inttostr(focus_pos);
                 if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[L_foctemp]:=floattostrF(focus_temp,ffFixed,0,1);
 
-                if gain<>999 then ListView1.Items.item[c].subitems.Strings[L_gain]:=inttostr(round(gain));
+                if gain<>'' then ListView1.Items.item[c].subitems.Strings[L_gain]:=gain;
 
                 alt:=calculate_altitude(0 {can use header. Astrometric_to_apparent},ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
 
@@ -3255,7 +3255,7 @@ begin
               lv.Items.item[c].subitems.Strings[D_background]:=inttostr5(round(backgr));
               if ((lv.name=stackmenu1.listview2.name) or (lv.name=stackmenu1.listview3.name) or (lv.name=stackmenu1.listview4.name)) then
                      lv.Items.item[c].subitems.Strings[D_sigma]:=inttostr(noise_level[0]); {noise level}
-              lv.Items.item[c].subitems.Strings[D_gain]:=inttostr(round(gain)); {camera gain}
+              lv.Items.item[c].subitems.Strings[D_gain]:=gain; {camera gain}
             end;
 
             if lv.name=stackmenu1.listview2.name then {dark tab}

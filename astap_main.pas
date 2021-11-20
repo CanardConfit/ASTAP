@@ -569,9 +569,9 @@ var
   set_temperature : integer;
   star_level,star_bg,sd_bg, magn_limit  : double;
   object_name, filter_name,calstat,imagetype ,sitelat, sitelong,centalt,centaz: string;
-  exposure,focus_temp,cblack,cwhite,gain,sqmfloat   :double; {from FITS}
+  exposure,focus_temp,cblack,cwhite,sqmfloat   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
-  date_obs,date_avg,ut,pltlabel,plateid,telescop,instrum,origin,sqm_value:string;
+  date_obs,date_avg,ut,pltlabel,plateid,telescop,instrum,origin,sqm_value,gain:string;
 
   datamin_org, datamax_org,
   old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
@@ -936,7 +936,7 @@ begin
   imagetype:='';
   exposure:=0;
   set_temperature:=999;
-  gain:=999;{assume no data available}
+  gain:='';{assume no data available}
 end;{reset global variables}
 
 
@@ -1186,7 +1186,9 @@ begin
                  ybinning:=round(validate_double);{binning}
 
         if ((header[i]='G') and (header[i+1]='A')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]=' ')) then
-               gain:=validate_double;{gain CCD}
+               gain:=get_as_string; {gain CCD}
+        if ((header[i]='I') and (header[i+1]='S')  and (header[i+2]='O') and (header[i+3]='S') and (header[i+4]='P')) then
+               if gain='' then gain:=get_as_string;{isospeed, do not override gain}
 
 
         {following variable are not set at zero Set at zero somewhere in the code}
@@ -2069,7 +2071,7 @@ begin
           else
           begin
             if expdet then begin exposure:=strtofloat2(comm);expdet:=false; end;{get exposure time from comments,special dcraw 0.9.28dev1}
-            if isodet then begin gain:=strtofloat2(comm);isodet:=false; end;{get iso speed as gain}
+            if isodet then begin gain:=comm;isodet:=false; end;{get iso speed as gain}
             if instdet then begin instrum:=comm;instdet:=false;end;{camera}
             if ccdtempdet then begin set_temperature:=round(strtofloat2(comm));ccdtempdet:=false;end;{sensor temperature}
             if timedet then
@@ -2253,7 +2255,7 @@ begin
   update_integer('DATAMAX =',' / Maximum data value                           ' ,round(datamax_org));
 
   if exposure<>0 then   update_float('EXPTIME =',' / duration of exposure in seconds                ' ,exposure);
-  if gain<>999 then     update_float('GAIN    =',' / iso speed                                      ' ,gain);
+  if gain<>'' then    update_integer('GAIN    =',' / iso speed                                      ' ,strtoint(gain));
 
   if date_obs<>'' then update_text   ('DATE-OBS=',#39+date_obs+#39);
   if instrum<>''  then update_text   ('INSTRUME=',#39+INSTRUM+#39);
@@ -3037,7 +3039,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version ß0.9.594, '+about_message4+', dated 2021-11-19';
+  #13+#10+'ASTAP version 1.0.0RC1, '+about_message4+', dated 2021-11-20';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
