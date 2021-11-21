@@ -7526,7 +7526,17 @@ begin
       c:=Sett.ReadInteger('stack','stack_tab',987654321); if c<>987654321 then stackmenu1.pagecontrol1.tabindex:=c;
 
       c:=Sett.ReadInteger('stack','demosaic_method2',987654321); if c<>987654321 then stackmenu1.demosaic_method1.itemindex:=c;
-      c:=Sett.ReadInteger('stack','conv_program',987654321);if c<>987654321 then stackmenu1.raw_conversion_program1.itemindex:=c;
+
+                 {remove this code in 2022-6}
+                 c:=Sett.ReadInteger('stack','conv_program',987654321);if c<>987654321 then
+                 begin
+                   if c=1 {dcraw} then c:=2;
+                   stackmenu1.raw_conversion_program1.itemindex:=c;
+                 end
+                 else
+                 {end remove}
+      c:=Sett.ReadInteger('stack','conv_progr',987654321);if c<>987654321 then stackmenu1.raw_conversion_program1.itemindex:=c;
+
 
       stackmenu1.make_osc_color1.checked:=Sett.ReadBool('stack','osc_color_convert',false);
       stackmenu1.osc_auto_level1.checked:=Sett.ReadBool('stack','osc_al',true);
@@ -7852,7 +7862,7 @@ begin
       sett.writeString('stack','bayer_pat',stackmenu1.bayer_pattern1.text);
 
       sett.writeInteger('stack','demosaic_method2',stackmenu1.demosaic_method1.itemindex);
-      sett.writeInteger('stack','conv_program',stackmenu1.raw_conversion_program1.itemindex);
+      sett.writeInteger('stack','conv_progr',stackmenu1.raw_conversion_program1.itemindex);
 
       sett.writeBool('stack','osc_color_convert',stackmenu1.make_osc_color1.checked);
       sett.writeBool('stack','osc_al',stackmenu1.osc_auto_level1.checked);

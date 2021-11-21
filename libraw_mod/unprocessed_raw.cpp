@@ -2,7 +2,7 @@
  * File: unprocessed_raw.cpp
  * Copyright 2009-2021 LibRaw LLC (info@libraw.org)
  * Created: Fri Jan 02, 2009
- * Modified for adding meta data to PPM file and FITS export. Version 2021-11-20
+ * Modified for adding meta data to PPM file and FITS export. By Han Kleijn. Version 2021-11-21
  *
  * LibRaw sample
  * Generates unprocessed raw image: with masked pixels and without black
@@ -46,15 +46,15 @@ void gamma_curve(unsigned short curve[]);
 
 void write_ppm(char meta[],unsigned width, unsigned height, unsigned short *bitmap,
                const char *basename);
-void write_fits(char fits_header[],unsigned width, unsigned height, unsigned left_margin, unsigned top_margin, unsigned right_margin, unsigned bottom_margin, unsigned short *bitmap,
-               const char *fname);
+void write_fits(char fits_header[],unsigned width, unsigned height, unsigned left_margin, unsigned top_margin,unsigned  width2,unsigned height2, unsigned short *bitmap,
+                const char *fname);
 void write_tiff(int width, int height, unsigned short *bitmap,
                 const char *basename);
 
 int main(int ac, char *av[])
 {
-  long int i, ret,width2,height2;
-  long int verbose = 1, autoscale = 0, use_gamma = 0, out_tiff = 0, out_fits = 0, top_margin=0, left_margin = 0, bottom_margin = 0, right_margin = 0;
+  int i, ret,width2,height2;
+  int verbose = 1, autoscale = 0, use_gamma = 0, out_tiff = 0, out_fits = 0, top_margin=0, left_margin = 0;
   char outfn[1024];
   char meta[256];
   char str[180];
@@ -65,7 +65,7 @@ int main(int ac, char *av[])
   if (ac < 2)
   {
   usage:
-    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2021-11-20\n"
+    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2021-11-21\n"
            "Usage: %s [-q] [-A] [-g] [-s N] raw-files....\n"
            "\t-q - be quiet\n"
            "\t-s N - select Nth image in file (default=0)\n"
@@ -73,10 +73,15 @@ int main(int ac, char *av[])
            "visual inspection only)\n"
            "\t-A - autoscaling (by integer factor)\n"
            "\t-T - write tiff instead of pgm\n"
-           "\t-F - write fits instead of pgm, full sensor area\n"
-           "\t-f - write fits instead of pgm, used sensor area only (full image size)\n"
-           "\t-i - write fits instead of pgm, official sensor size (thumb size)\n",
+           "\t-F - write fits instead of pgm, full sensor area including masked areas\n"
+           "\t-f - write fits instead of pgm, active area\n"
+           "\t-i - write fits instead of pgm, default cropped active area\n",
             LibRaw::version(), LibRaw::cameraCount(), av[0]);
+            
+    //MaskedAreas: This tag contains a list of non-overlapping rectangle coordinates of fully masked pixels, which can be optionally used by DNG readers to measure the black encoding level.
+    //ActiveArea: This rectangle defines the active (non-masked) pixels of the sensor.
+    //DefaultCropSize: Raw images often store extra pixels around the edges of the final image. These extra pixels help prevent interpolation artifacts near the edges of the final image. DefaultCropSize specifies the size of the final image area, in raw image coordinates (i.e., before the DefaultScale has been applied).            
+            
     return 0;
   }
 
@@ -104,11 +109,11 @@ int main(int ac, char *av[])
         use_gamma = 1;
       else if (av[i][1] == 'T' && av[i][2] == 0)
         out_tiff = 1;
-      else if (av[i][1] == 'F' && av[i][2] == 0)  // fits in full raw size 
+      else if (av[i][1] == 'F' && av[i][2] == 0)  // fits in full raw size, full sensor area including masked areas 
        out_fits = 1;
-      else if (av[i][1] == 'f' && av[i][2] == 0)  // fits in image size 
+      else if (av[i][1] == 'f' && av[i][2] == 0)  // fits in image size, ActiveArea 
         out_fits = 2;
-      else if (av[i][1] == 'i' && av[i][2] == 0)  // fits in thumb size
+      else if (av[i][1] == 'i' && av[i][2] == 0)  // fits in thumb size, cropped active area
         out_fits = 3;
       else if (av[i][1] == 's' && av[i][2] == 0)
       {
@@ -130,12 +135,13 @@ int main(int ac, char *av[])
     if (verbose)
     {
       printf("Raw size: %dx%d\n",   S.raw_width, S.raw_height);
-      printf("Image size: %dx%d\n", S.width, S.height);
-      printf("Thumb size: %dx%d\n", S.raw_inset_crops[0].cwidth, S.raw_inset_crops[0].cheight);
-     //  printf("Margins raw image: top=%d, left=%d\n", S.top_margin, S.left_margin);
+      printf("Active area size: %dx%d\n", S.width, S.height);
+      printf("Default cropped active area: %dx%d\n", S.raw_inset_crops[0].cwidth, S.raw_inset_crops[0].cheight);
+     
+       printf("Margins active area: left=%d, top=%d\n", S.left_margin, S.top_margin);
       
-     //  if ((S.raw_inset_crops[0].ctop != 0xffff) && (S.raw_inset_crops[0].cleft != 0xffff))
-     //    printf("Margins thumb: top=%d, left=%d\n", S.raw_inset_crops[0].ctop, S.raw_inset_crops[0].cleft);//Why is there no cbottom?
+       if (S.raw_inset_crops[0].ctop != 0xffff) // happens for .ARW
+         printf("Margins cropped active area: left=%d, top=%d\n", S.raw_inset_crops[0].cleft, S.raw_inset_crops[0].ctop);
     }
 
     if ((ret = RawProcessor.unpack()) != LIBRAW_SUCCESS)
@@ -201,33 +207,32 @@ int main(int ac, char *av[])
 
     if (out_fits>0)   //FITS routine written by Han Kleijn, www.hnsky.org, FITS standard at https://fits.gsfc.nasa.gov/fits_standard.html
       {
+     
+      if (out_fits==3)// check if there is crop data available
+         {if ((S.raw_inset_crops[0].cwidth == 0) && (S.raw_inset_crops[0].cleft == 0xffff)) //thumb size is 0 or cleft is undefined, fall back to out_fits=2. Happens for .PEF format
+         { printf("Cropped active area undefined! Will export full active sensor area.\n");
+           out_fits=2;} 
+         }       
 
-      if (out_fits==1) //export full sensor
+      if (out_fits==1) //export full sensor data including masked dark areas
          {width2 = S.raw_width;    
           height2 = S.raw_height;    
           left_margin = 0;
-          top_margin = 0;
-          right_margin = 0;
-          bottom_margin =0;}
-
+          top_margin = 0; }
           
-      if (out_fits==2) //export maximum usable sensor size
+      if (out_fits==2) //export active area
          {width2 = S.width;    
           height2 = S.height;    
           left_margin = S.left_margin;
-          top_margin = S.top_margin;
-          right_margin = 0;
-          bottom_margin =0;}
+          top_margin = S.top_margin; }
           
-      if (out_fits==3) //export offical sensor size (thumb)
-         {width2 = S.raw_inset_crops[0].cwidth;    
+      if (out_fits==3) //export default cropped active area 
+         {width2 = S.raw_inset_crops[0].cwidth;
           height2 = S.raw_inset_crops[0].cheight;    
-          left_margin = S.left_margin;
-          top_margin = S.top_margin;
-          right_margin = S.raw_width - width2 - S.left_margin;
-          bottom_margin = S.raw_height - height2 - S.top_margin;}
-          
+          left_margin = S.raw_inset_crops[0].cleft;
+          top_margin = S.raw_inset_crops[0].ctop; }
          
+   
 
       strcpy(fits_header,"SIMPLE  =                    T / FITS header                                      ");
       fits_header[80]='\0'; // length should be exactly 80
@@ -237,10 +242,10 @@ int main(int ac, char *av[])
       strcpy(str,        "NAXIS   =                    2 / Number of dimensions                             ");
       str[80]='\0'; strcat(fits_header,str);//line 3. Length of each keyword record should be exactly 80
 
-      sprintf(str,"NAXIS1  = %20d / Length of x axis                                                     ", width2);// long int is required for the correct formating
+      sprintf(str,"NAXIS1  = %20d / Length of x axis                                                     ", (long int)width2);// long int is required for the correct formating
       str[80]='\0'; strcat(fits_header,str);//line 4. Length of each keyword record should be exactly 80
 
-      sprintf(str,"NAXIS2  = %20d / Length of y axis                                                     ", height2);
+      sprintf(str,"NAXIS2  = %20d / Length of y axis                                                     ", (long int)height2);
       str[80]='\0'; strcat(fits_header,str);//line 5. Length of each keyword record should be exactly 80
 
       sprintf(str,"EXPTIME = %20G / Exposure time in seconds                                             ",(double)P2.shutter);
@@ -324,7 +329,7 @@ int main(int ac, char *av[])
       sprintf(str,"IMG_FLIP= %20d                                                                         ",(long int)S.flip);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
 
-      sprintf(str,"COMMENT Raw conversion by LibRaw-with-16-bit-FITS-support. www.hnsky.org               ");
+      sprintf(str,"COMMENT   Raw conversion by LibRaw-with-16-bit-FITS-support. www.hnsky.org             ");
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
       
 
@@ -335,8 +340,8 @@ int main(int ac, char *av[])
       for (unsigned i = strlen(fits_header)-1; i < 2880; i += 1)  //complete to 2880
         fits_header[i]=' ';//fill with space
       fits_header[2880]='\0';//header should be a multiply of 38 records equals 2880 bytes
-
-      write_fits(fits_header,S.raw_width, S.raw_height, left_margin, top_margin,right_margin, bottom_margin, RawProcessor.imgdata.rawdata.raw_image, outfn);
+      
+      write_fits(fits_header,S.raw_width, S.raw_height, left_margin, top_margin,width2, height2, RawProcessor.imgdata.rawdata.raw_image, outfn);
       }
 //====================================================================================================================================
 
@@ -524,8 +529,8 @@ void write_tiff(int width, int height, unsigned short *bitmap, const char *fn)
 
 
 
-void write_fits(char fits_header[],unsigned width, unsigned height, unsigned left_margin, unsigned top_margin,unsigned  right_margin,unsigned bottom_margin, unsigned short *bitmap,
-               const char *fname)
+void write_fits(char fits_header[],unsigned width, unsigned height, unsigned left_margin, unsigned top_margin,unsigned  width2,unsigned height2, unsigned short *bitmap,
+                const char *fname)
 //FITS routine written by Han Kleijn, www.hnsky.org, FITS standard at https://fits.gsfc.nasa.gov/fits_standard.html
 {
   double  frac;
@@ -548,11 +553,11 @@ void write_fits(char fits_header[],unsigned width, unsigned height, unsigned lef
 
   // skip unused sensor areas and convert to big endian 
   counter = 0;  
-  data_size=(width-left_margin-right_margin+1) * (height-top_margin-bottom_margin)*2 ;
-  for (unsigned y = 0; y < (height); y++)
-     for (unsigned x = 0; x < (width); x++)   //step in pixel steps equals 16 bit
+  data_size=(width2) * (height2)*2 ;// new size of cropped image
+  for (unsigned y = 0; y < (height); y++) //scan through full raw data in pixel steps equals 16 bit
+     for (unsigned x = 0; x < (width); x++)  
        {
-       if ((x>=left_margin) && (x<(width-right_margin))  && (y>=top_margin)  && (y<=height-bottom_margin)) 
+       if ((x>=left_margin) && (x<(left_margin+width2))  && (y>=top_margin)  && (y<top_margin+height2)) 
        {
         buff=  data[(x+y*width)*2  ];// extract and at the same time convert to big-endian
         data[counter]=data[(x+y*width)*2+1];
@@ -560,7 +565,6 @@ void write_fits(char fits_header[],unsigned width, unsigned height, unsigned lef
         counter = counter +2;           
        } 
        }   
-
 
   fwrite(data, data_size, 1, f);//write fits data block
 
