@@ -3039,7 +3039,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 1.0.0RC1, '+about_message4+', dated 2021-11-20';
+  #13+#10+'ASTAP version 1.0.0RC2, '+about_message4+', dated 2021-11-21';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -8265,9 +8265,9 @@ begin
   conv_index:=stackmenu1.raw_conversion_program1.itemindex; {DCRaw or libraw}
 
   {conversion direct to FITS}
-  if ((conv_index=0) or (conv_index=2)) then {Libraw}
+  if conv_index<=1 then {Libraw}
   begin
-    if conv_index=2 then param:='-i' else param:='-f';
+    if conv_index=1 then param:='-i' else param:='-f';
     result:=true; {assume success again}
     {$ifdef mswindows}
     if fileexists(application_path+'unprocessed_raw.exe')=false then
@@ -8353,7 +8353,7 @@ begin
   end;
 
 
-  if conv_index=1  then {dcraw specified}
+  if conv_index=2  then {dcraw specified}
   begin
     if ExtractFileExt(filename3)='.CR3' then begin result:=false; exit; end; {dcraw can't process .CR3}
     commando:='-D -4 -t 0';   {-t 0 disables the rotation}
@@ -8409,7 +8409,7 @@ begin
   if result=false then {no conversion program}
   begin
 
-    if conv_index=1 then
+    if conv_index=2 then
     begin
     {$ifdef mswindows}
        application.messagebox(pchar('Could not find: '+application_path+'dcraw.exe !!' ),pchar('Error'),MB_ICONWARNING+MB_OK);
@@ -8422,8 +8422,8 @@ begin
     {$endif}
     end;
 
-    if conv_index=0 then
-    begin {libraw}
+    if conv_index<=1 then
+    begin {LibRaw}
       {$ifdef mswindows}
       application.messagebox(pchar('Could not find: '+application_path+'unprocessed_raw.exe !!, Download, libraw and place in program directory' ),pchar('Error'),MB_ICONWARNING+MB_OK);
       {$endif}
@@ -8459,9 +8459,9 @@ begin
     else
       result:=false;
 
-    if ((savefile) and (conv_index=1) and (result)) then {PPM interstage file, save to fits, Not required for the new unprocessed_raw-astap}
+    if ((savefile) and (conv_index=2) and (result)) then {PPM interstage file, save to fits, Not required for the new unprocessed_raw-astap}
     begin
-      if conv_index=1 {dcraw} then set_temperature:=extract_temperature_from_filename(filename4);{including update header}
+      if conv_index=2 {dcraw} then set_temperature:=extract_temperature_from_filename(filename4);{including update header}
       update_text('OBJECT  =',#39+extract_objectname_from_filename(filename4)+#39); {spaces will be added/corrected later}
       result:=save_fits(img_buffer,filename4,16,true);{overwrite. Filename2 will be set to fits file}
     end;
