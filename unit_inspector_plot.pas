@@ -5,7 +5,8 @@ unit unit_inspector_plot;
 interface
 
 uses
-  Classes, SysUtils,math,astap_main, unit_stack, unit_annotation,graphics;
+  Classes, SysUtils,LCLintf,
+  math,astap_main, unit_stack, unit_annotation,graphics;
 
 type
   hfd_array   = array of array of integer;
@@ -203,11 +204,11 @@ begin
 end;
 
 
-procedure measure_star_aspect( img: image_array;x1,y1: double; rs:integer;  out aspect : double); {measures the aspect of a single star}
+procedure measure_star_aspect(img: image_array;x1,y1: double; rs:integer;  out aspect : double; out orientation : integer); {measures the aspect of a single star}
 var
-  i, j,pixel_counter,a,b,k,inside_counter,outside_counter,missing_inside : integer;
-  val, average_distance,average_distance_circle,r_circle,meas,ecc,r,
-  ns,ew,nw_se,ne_sw,themax,themin,max_value : double;
+  i, j,angle,pixel_counter,a,bk ,orientationMin, orientationMax : integer;
+  val,r,themax,themin,g,delta_angle,val2,mean_angle,distance : double;
+  data : array[-51..51,-51..51] of double;
   function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
   var
     x_trunc,y_trunc: integer;
@@ -228,54 +229,115 @@ var
   end;
 
 begin
-  aspect:=-99;{failure indication}
+  aspect:=999;{failure indication}
+  rs:=min(rs,51);
+
   pixel_counter:=0;
-  inside_counter:=0;
-  outside_counter:=0;
-  ns:=0;{north south}
-  ew:=0;
-  nw_se:=0; {north west or south east}
-  ne_sw:=0;
   if ((x1-rs>=0) and (x1+rs<=width2) and (y1-rs>0) and (y1+rs<height2))  then {measurement within screen}
   begin
 
-    max_value:=value_subpixel(x1,y1)- star_bg {from procedure hfd};
     for i:=-rs to rs do
     for j:=-rs to rs do
     begin
       val:=value_subpixel(x1+i,y1+j)- star_bg {from procedure hfd};
+//      val:=img[0,round(x1+i),round(y1+j)]- star_bg {from procedure hfd};
 
 
-      if val>4*sd_bg {from procedure hfd} then
+      if val>7*sd_bg {from procedure hfd} then
       begin
         val:=sqrt(val);{reduce contrast}
         r:=sqrt(sqr(i)+sqr(j));{distance}
-        if abs(j)>=abs(i) then  ns:=ns+val*r;
-        if abs(j)<=abs(i) then   ew:=ew+val*r;
-        if j*i>=0 then  nw_se:=nw_se+val*r;
-        if j*i<=0 then  ne_sw:=ne_sw+val*r;
-
+        data[i,j]:=val*(r);
         inc(pixel_counter); {how many pixels are illuminated}
-      end;
+      end
+      else
+      data[i,j]:=0;
+
     end;
     if pixel_counter<4 then
     begin
       exit; {not enough pixels}
     end;
-    themax:=max(max(ns,ew),max(nw_se,ne_sw));
-    themin:=min(min(ns,ew),min(nw_se,ne_sw));
+
+    themax:=0;
+    themin:=1E99;
+    for angle:=0 to 179 do {rotate 180 degr}
+    begin
+      val2:=0;
+      distance:=0;
+      for i:=-rs to rs do
+      for j:=-rs to rs do
+      begin
+        if data[i,j]>0 then
+        begin
+          g:=arctan2(j,i);
+          delta_angle:=((angle*pi/180) - g);
+          //split star with a line with "angle" and measure the sum (average) of distances to line. This distance will be smallest if the line splits the star in the length
+          // Distance to split line is r*sin(delta_angle). r is already included in the data.
+          distance:=distance+data[i,j]*abs(sin(delta_angle));{add to get sum of the distances}
+          //  img_loaded[0,round(x1+i),round(y1+j)]:=50000;
+        end;
+      end;
+      if distance>themax then
+      begin
+        themax:=distance;
+        orientationMax:=angle;
+      end;
+      if distance<themin then
+      begin
+        themin:=distance;
+        orientationMin:=angle;
+      end;
+    end;
+
+    orientation:=orientationMin;
 
     aspect:=themax/(themin+0.00001);
+
+    if aspect>5 then aspect:=999; {failure}
+  //  memo2_message(#9+floattostr(aspect)+#9+ inttostr(round(orientationMax))+#9+ inttostr(orientationMin));
+
   end;
 end;
 
 
+procedure plot_vector(x,y,r,orientation : double);
+var sinO,cosO,xstep,ystep              : double;
+    wd                                 : integer;
+begin
+  wd:=max(1,height2 div 1000);
+  mainwindow.image1.canvas.Pen.Color := clred;
+  mainwindow.image1.canvas.Pen.width := wd;
+
+  r:=r*wd;
+  sincos(orientation,sinO,cosO);
+  xstep:=r*cosO;
+  ystep:=r*sinO;
+
+  if mainwindow.flip_horizontal1.checked then
+  begin
+    x:=width2-x;
+    xstep:=-xstep;
+  end;
+
+  if mainwindow.flip_vertical1.checked=false then
+  begin
+    y:=height2-y;
+    ystep:=-ystep;
+  end;
+
+  moveToex(mainwindow.image1.Canvas.handle,round(x-xstep),round(y-ystep),nil);
+  lineTo(mainwindow.image1.Canvas.handle,round(x+xstep),round(y+ystep)); {line}
+end;
+
+
+
 procedure CCDinspector_analyse(detype: char; aspect: boolean);
 var
- fitsX,fitsY,size,radius, i, j,nhfd,retries,max_stars,starX,starY,font_luminance,n,m,xci,yci,sqr_radius   : integer;
- hfd1,star_fwhm,snr,flux,xc,yc,detection_level,med                                                        : double;
+ fitsX,fitsY,size,radius, i, j,nhfd,retries,max_stars,starX,starY,font_luminance,n,m,xci,yci,sqr_radius,orientation    : integer;
+ hfd1,star_fwhm,snr,flux,xc,yc,detection_level,med                                                                     : double;
  mean, min_value,max_value : single;
- hfd_values  : hfd_array;
+ hfd_values  : hfd_array; {array of integers}
  hfds        : array of double;
  Fliphorizontal, Flipvertical: boolean;
  mess: string;
@@ -286,7 +348,7 @@ begin
 
   max_stars:=1000;
 
-  SetLength(hfd_values,3,4000);{will contain x,y,hfd}
+  SetLength(hfd_values,4,4000);{will contain x,y,hfd}
   setlength(img_sa,1,width2,height2);{set length of image array}
 
   get_background(0,img_loaded,false{ calculate histogram},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
@@ -325,10 +387,12 @@ begin
                   img_sa[0,i,j]:=1;
               end;
 
-            if aspect then  measure_star_aspect(img_loaded,xc,yc,round(hfd1*1.5),{out} hfd1);{store the star aspect in hfd1}
+            if aspect then measure_star_aspect(img_loaded,xc,yc,round(hfd1*1.5),{out} hfd1 {aspect},orientation);{store the star aspect in hfd1}
+//            if aspect then measure_star_aspect(img_loaded,xc,yc,round(hfd1*2),{out} hfd1,orientation);{store the star aspect in hfd1}
 
             {store values}
-            if  ( ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
+            if hfd1<>999 then
+            if ( ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
                   (img_loaded[0,round(xc-1),round(yc)]<datamax_org-1) and
                   (img_loaded[0,round(xc+1),round(yc)]<datamax_org-1) and
                   (img_loaded[0,round(xc),round(yc-1)]<datamax_org-1) and
@@ -338,14 +402,16 @@ begin
                   (img_loaded[0,round(xc-1),round(yc+1)]<datamax_org-1) and
                   (img_loaded[0,round(xc+1),round(yc-1)]<datamax_org-1) and
                   (img_loaded[0,round(xc+1),round(yc+1)]<datamax_org-1)){not saturated}
-                  or ((aspect) and (hfd1>0)) )
+                  or ((aspect))  )
                   then
             begin
+
               if nhfd>=length(hfd_values)-1 then
-                  SetLength(hfd_values,3,nhfd+100);{adapt length if required}
+                  SetLength(hfd_values,4,nhfd+100);{adapt length if required}
               hfd_values[0,nhfd]:=round(xc);
               hfd_values[1,nhfd]:=round(yc);
               hfd_values[2,nhfd]:=round(hfd1*100);
+              hfd_values[3,nhfd]:=orientation;
               inc(nhfd);
 
             end;
@@ -413,9 +479,17 @@ begin
   mess:=mess+floattostrf(med/100 , ffgeneral, 2,1);
   memo2_message(mess);
   annotation_to_array(mess,true {transparent},65535,size*2 {size},5,10+size*2*9,img_loaded); {report median value}
-  hfd_values:=nil;
 
   plot_fits(mainwindow.image1,false,true);{plot image included text in pixel data}
+
+  if aspect then
+  for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
+  begin
+      plot_vector(hfd_values[0,i],hfd_values[1,i],20*(hfd_values[2,i]/100-1) {aspect},hfd_values[3,i]*pi/180);
+  end;
+
+  hfd_values:=nil;
+
 
 end;
 
