@@ -2454,7 +2454,6 @@ begin
           fitsy:=round(sn*dist) + (centerY);
           fitsx:=round(cs*dist) + (centerX);
           if ((fitsX<w) and (fitsX>=0) and (fitsY<h) and (fitsY>=0)) then {within the image}
- //           if ((fitsX<w-1) and (fitsX>=0+1) and (fitsY<h-1) and (fitsY>=0+1)) then {within the image}
           begin
             //memo2_message(inttostr(angle)+'    ' +floattostr(fitsX)+'     '+floattostr(fitsY) );
             offset:=img[col,fitsX,fitsY]-bg;
@@ -2687,6 +2686,7 @@ procedure Tstackmenu1.undo_button2Click(Sender: TObject);
 begin
   if mainwindow.Undo1.enabled then restore_img;
 end;
+
 
 procedure Tstackmenu1.UpDown1Click(Sender: TObject; Button: TUDBtnType);
 begin
@@ -8746,6 +8746,7 @@ begin
     decodetime(time,hh,mm,ss,ms);
     result:=result+'_'+leadingzero(hh)+leadingzero(mm)+leadingzero(ss);
   end;
+  if pos('Aver',stackmenu1.stack_method1.text)>0 then result:=result+'_average';
   result:=result+'_stacked.fits';
 end;
 

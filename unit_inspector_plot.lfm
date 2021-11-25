@@ -1,0 +1,172 @@
+object form_inspection1: Tform_inspection1
+  Cursor = crHandPoint
+  Left = 446
+  Height = 308
+  Top = 242
+  Width = 281
+  Caption = 'Image inspection'
+  ClientHeight = 308
+  ClientWidth = 281
+  OnClose = FormClose
+  OnShow = FormShow
+  Position = poOwnerFormCenter
+  LCLVersion = '2.0.12.0'
+  object hfd_button1: TButton
+    Left = 16
+    Height = 25
+    Top = 272
+    Width = 49
+    AutoSize = True
+    Caption = 'HFD'
+    OnClick = hfd_button1Click
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 1
+  end
+  object roundness_button1: TButton
+    Left = 88
+    Height = 25
+    Hint = 'Measure the unroundness of the stars.'
+    Top = 272
+    Width = 84
+    AutoSize = True
+    Caption = 'Roundness'
+    OnClick = hfd_button1Click
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 2
+  end
+  object values1: TCheckBox
+    Left = 32
+    Height = 19
+    Hint = 'Add the value persistent to the fits file'
+    Top = 88
+    Width = 78
+    Caption = 'Add values'
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 5
+  end
+  object vectors1: TCheckBox
+    Left = 32
+    Height = 19
+    Hint = 'Show the orientation of the star unroundness'
+    Top = 120
+    Width = 155
+    Caption = 'Add unroundness vectors'
+    Checked = True
+    ParentShowHint = False
+    ShowHint = True
+    State = cbChecked
+    TabOrder = 6
+  end
+  object contour1: TCheckBox
+    Left = 32
+    Height = 19
+    Hint = 'Creates a 2D contour diagram based on the values. The gray values represent the values *100. The values are local median filtered for each three stars.'
+    Top = 24
+    Width = 126
+    Caption = '2D contour diagram'
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 3
+  end
+  object voronoi1: TCheckBox
+    Left = 32
+    Height = 19
+    Hint = 'Creates a diagram based on the values. The gray values represent the values *100. The values are local median filtered for each three stars'
+    Top = 56
+    Width = 109
+    Caption = 'Voronoi diagram'
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 4
+  end
+  object close_button1: TButton
+    Left = 192
+    Height = 25
+    Hint = 'Close this window'
+    Top = 272
+    Width = 75
+    Caption = 'Close'
+    OnClick = close_button1Click
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 0
+  end
+  object undo_button1: TBitBtn
+    Left = 192
+    Height = 30
+    Hint = 'Restore image'
+    Top = 224
+    Width = 30
+    Glyph.Data = {
+      36040000424D3604000000000000360000002800000010000000100000000100
+      2000000000000004000000000000000000000000000000000000FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00C0C0C000C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00C0C0C000C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+      FF00C0C0C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+      FF00C0C0C000C0C0C000FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00
+      FF00C0C0C000FF00FF00FF00FF00FF00FF00C0C0C000C0C0C000FF00FF00FF00
+      FF00FF00FF00FF00FF00C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00C0C0C000C0C0
+      C000C0C0C000C0C0C000FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+      FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+    }
+    OnClick = undo_button1Click
+    ParentFont = False
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 7
+  end
+  object check_bayer1: TCheckBox
+    Left = 32
+    Height = 19
+    Hint = 'A normalise filter is applied. The raw OSC RGGB pixels are normalised to the same mean value. This is better option for raw OSC images.'
+    Top = 176
+    Width = 203
+    Caption = 'Image is a raw Bayer matrix image '
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 8
+  end
+  object help_uncheck_outliers1: TLabel
+    Cursor = crHandPoint
+    Left = 256
+    Height = 30
+    Hint = 'Online help about inspector'
+    Top = 224
+    Width = 9
+    Caption = '?'
+    Font.Color = clBlue
+    Font.Height = -21
+    ParentColor = False
+    ParentFont = False
+    ParentShowHint = False
+    ShowHint = True
+    OnClick = help_uncheck_outliers1Click
+  end
+end

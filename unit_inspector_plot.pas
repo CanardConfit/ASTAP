@@ -1,21 +1,59 @@
 unit unit_inspector_plot;
 
-{$mode delphi}
+{$mode Delphi}
 
 interface
 
 uses
-  Classes, SysUtils,LCLintf,
-  math,astap_main, unit_stack, unit_annotation,graphics;
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, LCLintf, StdCtrls,
+  Buttons, math, astap_main, unit_stack, unit_annotation;
+
+type
+
+  { Tform_inspection1 }
+
+  Tform_inspection1 = class(TForm)
+    close_button1: TButton;
+    help_uncheck_outliers1: TLabel;
+    undo_button1: TBitBtn;
+    values1: TCheckBox;
+    vectors1: TCheckBox;
+    contour1: TCheckBox;
+    check_bayer1: TCheckBox;
+    voronoi1: TCheckBox;
+    hfd_button1: TButton;
+    roundness_button1: TButton;
+    procedure close_button1Click(Sender: TObject);
+    procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
+    procedure FormShow(Sender: TObject);
+    procedure help_uncheck_outliers1Click(Sender: TObject);
+    procedure hfd_button1Click(Sender: TObject);
+    procedure undo_button1Click(Sender: TObject);
+  private
+
+  public
+
+  end;
+
+var
+  form_inspection1: Tform_inspection1;
+
 
 type
   hfd_array   = array of array of integer;
 
-procedure CCDinspector_analyse(detype: char; aspect: boolean);
+var
+  contour_check: boolean=false;
+  voronoi_check: boolean=false;
+  values_check: boolean=true;
+  vectors_check: boolean=true;
+
 
 implementation
+{$R *.lfm}
 
-
+var
+   executed : boolean;
 
 procedure filter_hfd(var mean,min_value,max_value : single; nr : integer; hfd_values: hfd_array); {filter array of hfd values}
 var
@@ -124,7 +162,6 @@ begin
     for fitsX:=0 to width2-1 do
       img_loaded[0,fitsX,fitsY]:={img_loaded[0,fitsX,fitsY]}+img_hfd[0,fitsX div scaledown,fitsY div scaledown];
 
-
   img_hfd:=nil;{free memory}
 
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
@@ -134,7 +171,6 @@ begin
   mainwindow.minimum1.position:=round(min_value-5);{+5, -5 for very flat fields}
   mainwindow.maximum1.position:=round(max_value+5);
  end;
-
 
 
 procedure contour_plot(mean: single; nr:integer;hfd_values: hfd_array);
@@ -240,8 +276,6 @@ begin
     for j:=-rs to rs do
     begin
       val:=value_subpixel(x1+i,y1+j)- star_bg {from procedure hfd};
-//      val:=img[0,round(x1+i),round(y1+j)]- star_bg {from procedure hfd};
-
 
       if val>7*sd_bg {from procedure hfd} then
       begin
@@ -331,8 +365,7 @@ begin
 end;
 
 
-
-procedure CCDinspector_analyse(detype: char; aspect: boolean);
+procedure CCDinspector_analyse(detype: char; aspect,values,vectors: boolean);
 var
  fitsX,fitsY,size,radius, i, j,nhfd,retries,max_stars,starX,starY,font_luminance,n,m,xci,yci,sqr_radius,orientation    : integer;
  hfd1,star_fwhm,snr,flux,xc,yc,detection_level,med                                                                     : double;
@@ -429,21 +462,19 @@ begin
 
   img_sa:=nil;{free mem}
 
-
   if nhfd<10 then
    begin
      memo2_message('Abort, only '+inttostr(nhfd)+' useful stars!');
      exit;
    end;
 
-  if detype<>'A' then
+  if detype<>' ' then {contour or voronoi}
   begin
      filter_hfd(mean, min_value,max_value ,nhfd, hfd_values); {apply the median value for each three grouped stars}
      font_luminance:=100;
   end
   else
   font_luminance:=500;
-
 
 
   if detype='V' then voronoi_plot(min_value,max_value,nhfd,hfd_values)
@@ -459,10 +490,12 @@ begin
 
   for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
    begin
-     if Fliphorizontal     then starX:=width2-hfd_values[0,i]   else starX:=hfd_values[0,i];
-     if Flipvertical       then starY:=height2-hfd_values[1,i] else starY:=hfd_values[1,i];
-     annotation_to_array(floattostrf(hfd_values[2,i]/100 , ffgeneral, 2,1){text},true{transparent},round(img_loaded[0,starX,starY]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurment.}
-
+     if values then
+     begin
+       if Fliphorizontal     then starX:=width2-hfd_values[0,i]   else starX:=hfd_values[0,i];
+       if Flipvertical       then starY:=height2-hfd_values[1,i] else starY:=hfd_values[1,i];
+       annotation_to_array(floattostrf(hfd_values[2,i]/100 , ffgeneral, 2,1){text},true{transparent},round(img_loaded[0,starX,starY]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurment.}
+     end;
      hfds[i]:=hfd_values[2,i];
   end;
 
@@ -482,7 +515,7 @@ begin
 
   plot_fits(mainwindow.image1,false,true);{plot image included text in pixel data}
 
-  if aspect then
+  if ((aspect) and (vectors)) then
   for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
   begin
       plot_vector(hfd_values[0,i],hfd_values[1,i],20*(hfd_values[2,i]/100-1) {aspect},hfd_values[3,i]*pi/180);
@@ -494,6 +527,123 @@ begin
 end;
 
 
-end.
+procedure Tform_inspection1.hfd_button1Click(Sender: TObject);
+var
+  j: integer;
+  Save_Cursor:TCursor;
+  demode : char;
+  aspect : boolean;
+begin
+  Save_Cursor := Screen.Cursor;
+  screen.Cursor := crHourglass;    { Show hourglass cursor }
 
+  if ((executed) and  (mainwindow.Undo1.enabled)) then
+  begin
+    restore_img {a retry}
+  end;
+
+  backup_img;
+  executed:=true;
+
+  if contour1.checked then demode:='2'
+  else
+  if voronoi1.checked then demode:='V'
+  else
+  demode:=' ';
+
+  aspect:=((sender=hfd_button1)=false);
+
+  if nrbits=8 then {convert to 16 bit}
+  begin
+    nrbits:=16;
+    datamax_org:=65535;
+  end;
+
+  if naxis3>1 then
+  begin
+    convert_mono(img_loaded);
+    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
+  end
+  else
+  if check_bayer1.checked then {raw Bayer image}
+  begin
+    normalize_OSC_flat(img_loaded);
+    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
+  end;
+
+  CCDinspector_analyse(demode,aspect {unroundness or HFD mode}, values1.checked,vectors1.checked);
+
+  {$ifdef mswindows}
+  filename2:=ExtractFileDir(filename2)+'\hfd_values.fit';
+  {$ELSE}{linux}
+  filename2:=ExtractFileDir(filename2)+'/hfd_values.fit';
+  {$ENDIF}
+  mainwindow.memo1.lines.clear;
+  for j:=0 to 10 do {create an header with fixed sequence}
+    if (j<>5)  then {skip naxis3 for mono images}
+        mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
+  mainwindow.memo1.lines.add(head1[27]); {add end}
+
+  update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
+  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
+  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+  if naxis3=1 then  remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+
+  update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
+  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(cwhite));
+  update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
+  if demode='V'  then update_text   ('COMMENT G','  Grey values indicate measured values * 100');
+
+
+  Screen.Cursor := Save_Cursor;  { Always restore to normal }
+end;
+
+
+procedure Tform_inspection1.undo_button1Click(Sender: TObject);
+begin
+  if mainwindow.Undo1.enabled then
+  begin
+    restore_img;
+    executed:=false;
+  end;
+end;
+
+
+procedure Tform_inspection1.close_button1Click(Sender: TObject);
+begin
+  form_inspection1.close;   {normal this form is not loaded}
+  mainwindow.setfocus;
+end;
+
+
+procedure Tform_inspection1.FormClose(Sender: TObject;
+  var CloseAction: TCloseAction);
+begin
+  contour_check:=contour1.checked;
+  voronoi_check:=voronoi1.checked;
+  values_check:=values1.checked;
+  vectors_check:=vectors1.checked;
+  mainwindow.bayer_image1.checked:=check_bayer1.checked;
+end;
+
+
+procedure Tform_inspection1.FormShow(Sender: TObject);
+begin
+  executed:=false;
+  contour1.checked:=contour_check;
+  voronoi1.checked:=voronoi_check;
+  values1.checked:=values_check;
+  vectors1.checked:=vectors_check;
+  check_bayer1.checked:=mainwindow.bayer_image1.checked;
+
+end;
+
+
+procedure Tform_inspection1.help_uncheck_outliers1Click(Sender: TObject);
+begin
+  openurl('http://www.hnsky.org/astap.htm#inspector');
+end;
+
+
+end.
 

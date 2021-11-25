@@ -52,15 +52,12 @@ type
   { Tmainwindow }
   Tmainwindow = class(TForm)
     add_marker_position1: TMenuItem;
-    aspect_contour1: TMenuItem;
-    inspector_aspect_diagram1: TMenuItem;
     bin3x3: TMenuItem;
     BitBtn1: TBitBtn;
     ccdinspector30_1: TMenuItem;
     error_label1: TLabel;
     FontDialog1: TFontDialog;
     image_north_arrow1: TImage;
-    inspector_aspect_values1: TMenuItem;
     LabelThree1: TLabel;
     LabelVar1: TLabel;
     LabelCheck1: TLabel;
@@ -78,7 +75,6 @@ type
     center_lost_windows: TMenuItem;
     deepsky_annotation1: TMenuItem;
     hyperleda_annotation1: TMenuItem;
-    inspector_hfd_diagram1: TMenuItem;
     MenuItem10: TMenuItem;
     annotate_with_measured_magnitudes1: TMenuItem;
     compress_fpack1: TMenuItem;
@@ -100,9 +96,7 @@ type
     extract_pixel_22: TMenuItem;
     batch_solve_astrometry_net: TMenuItem;
     copy_to_clipboard1: TMenuItem;
-    hfd_contour1: TMenuItem;
     Inspector_top_menu1: TMenuItem;
-    inspector_hfd_values1: TMenuItem;
     grid1: TMenuItem;
     ccdinspector10_1: TMenuItem;
     freetext1: TMenuItem;
@@ -110,7 +104,6 @@ type
     annotatemedianbackground1: TMenuItem;
     aberration_inspector1: TMenuItem;
     MenuItem21: TMenuItem;
-    MenuItem27: TMenuItem;
     bin_2x2menu1: TMenuItem;
     bin_3x3menu1: TMenuItem;
     MenuItem28: TMenuItem;
@@ -126,11 +119,9 @@ type
     MenuItem33: TMenuItem;
     MenuItem34: TMenuItem;
     Constellations1: TMenuItem;
-    MenuItem35: TMenuItem;
-    MenuItem36: TMenuItem;
     aavso_chart1: TMenuItem;
     import_auid1: TMenuItem;
-    dummymenu: TMenuItem;
+    inspection_menu1: TMenuItem;
     N4: TMenuItem;
     MenuItem38: TMenuItem;
     simbad_query1: TMenuItem;
@@ -345,7 +336,6 @@ type
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure freetext1Click(Sender: TObject);
     procedure hfd_arcseconds1Click(Sender: TObject);
-    procedure hfd_contour1Click(Sender: TObject);
     procedure compress_fpack1Click(Sender: TObject);
     procedure copy_to_clipboard1Click(Sender: TObject);
     procedure extract_pixel_11Click(Sender: TObject);
@@ -359,6 +349,7 @@ type
     procedure imageflipv1Click(Sender: TObject);
     procedure annotate_unknown_stars1Click(Sender: TObject);
     procedure import_auid1Click(Sender: TObject);
+    procedure inspection_menu1Click(Sender: TObject);
     procedure j2000d1Click(Sender: TObject);
     procedure measuretotalmagnitude1Click(Sender: TObject);
     procedure loadsettings1Click(Sender: TObject);
@@ -768,6 +759,7 @@ procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string
 procedure reset_fits_global_variables(light :boolean); {reset the global variable}
 function convert_to_fits(var filen: string): boolean; {convert to fits}
 procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
+procedure convert_mono(var img: image_array);
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -3042,7 +3034,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 1.0.0RC2, '+about_message4+', dated 2021-11-21';
+  #13+#10+'ASTAP version 1.0.0RC3, '+about_message4+', dated 2021-11-25';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3071,10 +3063,8 @@ begin
 end;
 
 
-
 procedure update_recent_file_menu;{recent file menu update}
 begin
-   mainwindow.dummymenu.visible:=true; {bug fix temporary for RC2  See https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39484}
   if recent_files.count>=1 then begin mainwindow.recent1.visible:=true;mainwindow.recent1.caption:=recent_files[0];end else mainwindow.recent1.visible:=false;
   if recent_files.count>=2 then begin mainwindow.recent2.visible:=true;mainwindow.recent2.caption:=recent_files[1];end else mainwindow.recent2.visible:=false;
   if recent_files.count>=3 then begin mainwindow.recent3.visible:=true;mainwindow.recent3.caption:=recent_files[2];end else mainwindow.recent3.visible:=false;
@@ -4823,13 +4813,7 @@ begin
 
     mainwindow.ccdinspector30_1.enabled:=fits;
     mainwindow.ccdinspector10_1.enabled:=fits;
-    mainwindow.inspector_hfd_diagram1.enabled:=fits; {Voronoi}
-    mainwindow.hfd_contour1.enabled:=fits; {2D contour}
-    mainwindow.inspector_hfd_values1.enabled:=fits; {add hfd values}
-
-    mainwindow.inspector_aspect_diagram1.enabled:=fits; {Voronoi}
-    mainwindow.aspect_contour1.enabled:=fits; {2D contour}
-    mainwindow.inspector_aspect_values1.enabled:=fits; {add hfd values}
+    mainwindow.inspection_menu1.enabled:=fits;
 
     mainwindow.annotatemedianbackground1.enabled:=fits; {add hfd values}
     mainwindow.aberration_inspector1.enabled:=fits;
@@ -7689,6 +7673,11 @@ begin
       c:=Sett.ReadInteger('stack','delim_pos',987654321);if c<>987654321 then delim_pos:=c;
 
 
+      contour_check:=Sett.ReadBool('insp','contour',false);
+      voronoi_check:=Sett.ReadBool('insp','voronoi',false);
+      values_check:=Sett.ReadBool('insp','values',true);
+      vectors_check:=Sett.ReadBool('insp','vectors',true);
+
       listviews_begin_update; {stop updating listviews}
 
       c:=0;
@@ -8015,6 +8004,11 @@ begin
 
       sett.writestring('stack','obscode',obscode);
       sett.writeInteger('stack','delim_pos',delim_pos);
+
+      sett.writeBool('insp','contour',contour_check);
+      sett.writeBool('insp','voronoi',voronoi_check);
+      sett.writeBool('insp','values',values_check);
+      sett.writeBool('insp','vectors',vectors_check);
 
       {### save listview values ###}
       for c:=0 to stackmenu1.ListView1.items.count-1 do {add light images}
@@ -8802,72 +8796,7 @@ begin
 end;
 
 
-procedure Tmainwindow.hfd_contour1Click(Sender: TObject);
-var
-  j: integer;
-  Save_Cursor:TCursor;
-  demode : char;
-  aspect : boolean;
-begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
-  backup_img;
 
-  if Sender=hfd_contour1 then begin demode:='2'; aspect:=false;end
-  else
-  if Sender=inspector_hfd_diagram1 then begin demode:='V';aspect:=false; end
-  else
-  if sender=inspector_hfd_values1 then begin demode:='A';aspect:=false;end
-  else
-  if Sender=aspect_contour1 then begin demode:='2'; aspect:=true;end
-  else
-  if Sender=inspector_aspect_diagram1 then begin demode:='V';aspect:=true; end
-  else
-  if sender=inspector_aspect_values1 then begin demode:='A';aspect:=true;end;
-
-
-  if nrbits=8 then {convert to 16 bit}
-  begin
-    nrbits:=16;
-    datamax_org:=65535;
-  end;
-
-  if naxis3>1 then
-  begin
-    convert_mono(img_loaded);
-    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
-  end
-  else
-  if mainwindow.bayer_image1.checked then {raw Bayer image}
-  begin
-    normalize_OSC_flat(img_loaded);
-    get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
-  end;
-
-  CCDinspector_analyse(demode,aspect {unroundness or HFD mode});
-
-  {$ifdef mswindows}
-  filename2:=ExtractFileDir(filename2)+'\hfd_values.fit';
-  {$ELSE}{linux}
-  filename2:=ExtractFileDir(filename2)+'/hfd_values.fit';
-  {$ENDIF}
-  mainwindow.memo1.lines.clear;
-  for j:=0 to 10 do {create an header with fixed sequence}
-    if (j<>5)  then {skip naxis3 for mono images}
-        mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
-  mainwindow.memo1.lines.add(head1[27]); {add end}
-
-  update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-  if naxis3=1 then  remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
-
-  update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(cwhite));
-  update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
-  if demode='V'  then update_text   ('COMMENT G','  Grey values indicate measured values * 100');
-  Screen.Cursor := Save_Cursor;  { Always restore to normal }
-end;
 
 procedure Tmainwindow.compress_fpack1Click(Sender: TObject);
 var
@@ -9125,8 +9054,8 @@ end;
 
 procedure Tmainwindow.sip1Click(Sender: TObject); {simple SIP coefficients calculation assuming symmetric radial distortion. Distortion increases with the third power of the off-center distance}
 var
-  stars_measured,i,countX,countY       : integer;
-  xc,yc,x,y,factorX,factorY,k1  : double;
+  stars_measured,i,countX,countY  : integer;
+  xc,yc,x,y,factorX,factorY       : double;
   Save_Cursor:TCursor;
   factorsX,factorsY  : array of double;
   valid              : boolean;
@@ -10403,6 +10332,15 @@ begin
 end;
 
 
+procedure Tmainwindow.inspection_menu1Click(Sender: TObject);
+begin
+  form_inspection1:=Tform_inspection1.Create(self); {in project option not loaded automatic}
+  form_inspection1.ShowModal;
+  form_inspection1.release;
+  save_settings2;
+end;
+
+
 
 procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
 var
@@ -11493,7 +11431,6 @@ begin
 
   form_sqm1:=TForm_sqm1.Create(self); {in project option not loaded automatic}
   form_sqm1.ShowModal;
-
   form_sqm1.release;
  end;
 
@@ -13590,7 +13527,7 @@ procedure Tmainwindow.gaia_star_position1Click(Sender: TObject);
 var
    url,ra8,dec8,sgn,window_size,magn,dec_degrees  : string;
    ang_h,ang_w,ra1,ra2,dec1,dec2 : double;
-   radius,x1,y1,mag               : integer;
+   radius,x1,y1                  : integer;
 begin
   if ((abs(stopX-startX)<2) and (abs(stopY-startY)<2))then
   begin
