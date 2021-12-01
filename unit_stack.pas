@@ -3625,7 +3625,10 @@ begin
   begin
     memo2_message('Skipping normalise filter. This filter works only for raw OSC images!');
     exit;
-  end;
+  end
+  else
+    memo2_message('Normalising '+filename2);
+
 
   value1:=0; value2:=0; value3:=0; value4:=0;
   counter1:=0; counter2:=0; counter3:=0; counter4:=0;
@@ -6655,6 +6658,8 @@ procedure Tstackmenu1.save_settings_extra_button1Click(Sender: TObject);
 begin
   save_settings2;{too many lost selected files . so first save settings}
 end;
+
+
 
 
 procedure star_smooth(img: image_array;x1,y1: integer);

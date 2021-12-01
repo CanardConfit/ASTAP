@@ -1266,64 +1266,19 @@ object mainwindow: Tmainwindow
       object N6: TMenuItem
         Caption = '-'
       end
-      object Inspector_top_menu1: TMenuItem
-        Caption = 'Image (CCD) inspector'
-        ImageIndex = 17
-        object ccdinspector30_1: TMenuItem
-          Caption = 'Image (CCD) inspector (accurate)'
-          Enabled = False
-          Hint = 'Calculate average HFD value , curvature and tilt. Uses all stars with SNR >30. The absolute font size will be smaller if you zoom in.'
-          ImageIndex = 17
+      object imageinspection1: TMenuItem
+        Caption = 'Image inspection'
+        Enabled = False
+        object inspector1: TMenuItem
+          Caption = 'Image inspector'
+          Hint = 'Calculate tilt and curvature. The absolute font size will be smaller if you zoom in.'
           ShortCut = 116
-          OnClick = CCDinspector1Click
+          OnClick = inspector1Click
         end
-        object ccdinspector10_1: TMenuItem
-          Caption = 'Image (CCD) inspector (max stars)'
-          Enabled = False
-          Hint = 'Calculate average HFD value , curvature and tilt. Uses all stars with SNR >10. The absolute font size will be smaller if you zoom in.'
-          ShortCut = 16500
-          OnClick = ccdinspector10_1Click
-        end
-        object annotatemedianbackground1: TMenuItem
-          Caption = 'Median background values'
-          Enabled = False
-          Hint = 'Annotate the image with the median background values realtive to the center.'
-          OnClick = annotatemedianbackground1Click
-        end
-        object inspection_menu1: TMenuItem
-          Caption = 'INSPECTION MENU'
-          Enabled = False
-          ImageIndex = 17
+        object pull_down_menu_inspection1: TMenuItem
+          Caption = 'Inspection menu'
           ShortCut = 115
-          OnClick = inspection_menu1Click
-        end
-        object bayer_image1: TMenuItem
-          AutoCheck = True
-          Caption = '          ☑  this menu if the image is a raw Bayer image'
-          Hint = 'A normalise filter is applied. The raw OSC RGGB pixels are normalised to the same mean value. This is better option for raw OSC images.'
-          ShowAlwaysCheckable = True
-        end
-        object MenuItem25: TMenuItem
-          Caption = '-'
-        end
-        object show_distortion1: TMenuItem
-          Caption = 'Show distortion'
-          Enabled = False
-          Hint = 'Show image distortion using the star positions and solution. Lines a 50x larger then distortion.'
-          ImageIndex = 40
-          ShortCut = 117
-          OnClick = show_distortion1Click
-        end
-        object MenuItem22: TMenuItem
-          Caption = '-'
-        end
-        object aberration_inspector1: TMenuItem
-          Caption = 'Aberration Inspector'
-          Enabled = False
-          Hint = 'Makes a compilation of the image corners and the center for a closer inspection.'
-          ImageIndex = 39
-          ShortCut = 118
-          OnClick = aberration_inspector1Click
+          OnClick = pull_down_menu_inspection1Click
         end
       end
       object MenuItem2: TMenuItem
@@ -1939,7 +1894,7 @@ object mainwindow: Tmainwindow
     Left = 1024
     Top = 207
     Bitmap = {
-      4C69290000001000000010000000000000000000000000000000000000000000
+      4C692A0000001000000010000000000000000000000000000000000000000000
       00000000000000000000A0A0A0FFA0A0A0FF0000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
       000000000000A0A0A0FFA0A0A0FFA0A0A0FFA0A0A0FF00000000000000000000
@@ -3251,7 +3206,39 @@ object mainwindow: Tmainwindow
       5BFF0000000000000000000000000000000000000000000000005B5B5BFF5B5B
       5BFF5B5B5BFF5B5B5BFF000000005B5B5BFF0000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
-      000000000000000000005B5B5BFF
+      000000000000000000005B5B5BFF000000000000000000000000000000000000
+      00000000000000000000474747FF474747FF474747FF474747FF474747FF4747
+      47FF00000000000000000000000000000000474747FF474747FF474747FF4747
+      47FF474747FF474747FF00000000000000000000000000000000474747FF4747
+      47FF00000000000000000000000000000000474747FF474747FF000000000000
+      00000000000000000000000000000000000000000000474747FF000000004747
+      47FF00000000000000000000000000000000474747FF00000000474747FF0000
+      000000000000000000000000000000000000474747FF00000000000000004747
+      47FF00000000000000000000000000000000474747FF00000000000000004747
+      47FF000000000000000000000000474747FF0000000000000000000000000000
+      0000474747FF000000000000000000000000474747FF00000000000000000000
+      0000474747FF00000000474747FF000000000000000000000000000000000000
+      0000474747FF000000000000000000000000474747FF00000000000000000000
+      000000000000474747FF00000000000000000000000000000000000000000000
+      0000474747FF0000000000000000474747FF0000000000000000000000000000
+      0000474747FF00000000474747FF000000000000000000000000000000000000
+      0000474747FF0000000000000000474747FF0000000000000000000000004747
+      47FF000000000000000000000000474747FF0000000000000000000000000000
+      000000000000474747FF00000000474747FF0000000000000000474747FF0000
+      000000000000000000000000000000000000474747FF00000000000000000000
+      000000000000474747FF00000000474747FF00000000474747FF000000000000
+      00000000000000000000000000000000000000000000474747FF000000000000
+      000000000000474747FF00000000474747FF474747FF00000000000000000000
+      0000000000000000000000000000000000000000000000000000474747FF0000
+      000000000000474747FF00000000474747FF474747FF474747FF474747FF0000
+      0000000000000000000000000000000000000000000000000000000000004747
+      47FF0000000000000000474747FF000000000000000000000000000000004747
+      47FF474747FF474747FF474747FF000000000000000000000000000000000000
+      0000474747FF00000000474747FF000000000000000000000000000000000000
+      0000000000000000000000000000474747FF474747FF474747FF474747FF0000
+      000000000000474747FF474747FF000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000004747
+      47FF474747FF474747FF474747FF
     }
   end
   object TrayIcon1: TTrayIcon
@@ -3388,7 +3375,7 @@ object mainwindow: Tmainwindow
   end
   object PopupMenu_memo2: TPopupMenu
     Left = 904
-    Top = 376
+    Top = 384
     object Menufind2: TMenuItem
       Caption = 'Find'
       ShortCut = 16454

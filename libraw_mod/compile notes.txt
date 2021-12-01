@@ -33,4 +33,5 @@
        git clone https://github.com/han-k59/LibRaw-with-16-bit-FITS-support
        cd LibRaw-with-16-bit-FITS-support
        export LDADD=-mmacosx-version-min=10.10
-       make -f Makefile.dist}   
+       make -f Makefile.dist
+   

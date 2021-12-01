@@ -2195,8 +2195,6 @@ begin
 end;{measure distortion}
 
 
-
-
 procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
 var
   fitsX,fitsY, fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,

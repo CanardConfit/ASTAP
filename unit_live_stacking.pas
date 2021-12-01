@@ -17,7 +17,8 @@ interface
 uses
   Classes, SysUtils,forms,fileutil,
   clipbrd, {for copy to clipboard}
-  graphics;
+  graphics,
+  math;
 
 procedure stack_live(oversize:integer; path :string);{stack live average}
 
@@ -27,7 +28,7 @@ const
 
 implementation
 
-uses unit_stack, astap_main,unit_stack_routines,unit_astrometric_solving,unit_star_align,math;
+uses unit_stack, astap_main,unit_stack_routines,unit_astrometric_solving,unit_star_align,unit_inspector_plot;
 
 const
   oldra0  :double=0;
@@ -247,7 +248,7 @@ begin
 
             memo2_message('Adding file: '+inttostr(counter+1)+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
 
-            if inspect_latest_image1.checked then CCDinspector(30);
+            if inspect_latest_image1.checked then CCDinspector(30,false,0);
 
 //            Application.ProcessMessages;
 //            if esc_pressed then exit;
