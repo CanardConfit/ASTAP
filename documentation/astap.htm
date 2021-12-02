@@ -42,7 +42,7 @@ FOV of more then ten degrees</span><br style="font-family: Calibri;"><br style="
             &nbsp;Only required if you have files with the .fz
             &nbsp;extension.</td><td style="background-color: rgb(220, 220, 220); font-family: Calibri; font-weight: bold;">Barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
 renamed. No pop-up notifier. Will not accept raw files and&nbsp;will not
-work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="astap_setup.exe">ASTAP_installer</a>_(1.0.0RC3 dated 2021-11-25), <br><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"></a><a href="astap.zip">ASTAP
+work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="astap_setup.exe">ASTAP_installer</a>_(1.0.0RC4 dated 2021-12-01), <br><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"></a><a href="astap.zip">ASTAP
               executable only</a></td><td colspan="1" rowspan="2" style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing">H18 installer</a><br><a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing"> </a><a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing">H17 installer</a>,<br><a href="https://drive.google.com/file/d/1_MYyXn3ZjAGcrhSsKoo6gb7XUKz_-3ji/view?usp=sharing">G17 installer</a> (obsolete <a href="h18.htm">1)</a>).<br><br><a href="https://drive.google.com/file/d/1qaf23oFmPpnDZbLO30IB42kC8-qBEynJ/view?usp=sharing">H18 zipped</a>,  <br><a href="https://drive.google.com/file/d/1kbaDcxjIKMcHwd3KSvNyIsB5m6ztVi9z/view?usp=sharing">H17 zipped</a>,<br><a href="https://sourceforge.net/projects/astap-program/files/star_databases/w08_star_database_mag08_astap.zip/download">W08 zipped</a>,&nbsp;<br><a href="http://www.poyntsource.com/hnsky/h18_star_database_mag18.rar">G18 rar</a> ((obsolete <a href="h18.htm">1)</a>),<br>for manual install at&nbsp; \programs files\astap or program directory<br><a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing"></a><br></td><td colspan="1" rowspan="2" style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/fpack_funpack.exe/download">Fpack
               &amp; Funpack</a></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_command-line_version_win64.zip/download">astap_cli</a>
 (v0.9.587</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 32 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_command-line_version_win32.zip/download">astap_cli</a>
@@ -1146,9 +1146,8 @@ does
           For objects which are moving in the sky, select the stack
           option
           "average" and not option "sigma clip".<br><br></big><big><img style="width: 1036px; height: 591px;" alt="" src="astap_manual_alignment.png"><br><br><span style="text-decoration: underline;"><a name="ephemeris_alignment"></a>Ephemeris alignment<br><br></span>Rather
-then manual selecting the center point it is also possible to use the
-ephemeris of an asteroid or comet. In ASTAP this is reallised by using the
-annotation markers written in the header.&nbsp;</big><br><br><big>To align go through the follow steps:<br><br>Preperation:&nbsp; &nbsp;<br></big><ul><li><big>Configure and test the viewer&nbsp;<a href="#asteroid_annotation">asteroid annotation menu</a> shortcut CTRL+Q</big></li></ul><big>Stacking:<br></big><ul><li><big>Select&nbsp;ephemeris alignment</big></li><li><big>Browse for all the images in the image tab and add if available the dark, flats.</big></li><li><big>Press the button </big><span style="background-color: rgb(153, 153, 153);"><big> &nbsp; Analyse the selected file in tab images</big> &nbsp;</span>.</li><li><big>Select from the&nbsp;combobox the asteroid or comet to align on. See screenshot below.</big></li><li><big>Hit the </big><span style="background-color: rgb(153, 153, 153);"><big> &nbsp;Stack check marked images</big>&nbsp;&nbsp;</span><big> button.&nbsp;</big></li><li><big>After the stacking is finished, it is possible to annotate the result. &nbsp;</big></li></ul><br><big>Only the object selected will be sharp. The stars will form trails <br><br></big><img style="width: 1505px; height: 615px;" alt="" src="astap_ephemeris_alignment.png"><br>
+then manual selecting the reference point&nbsp;it is also possible to use the
+ephemeris of an asteroid or comet. </big><big>To align by ephemerides go through the follow steps:<br><br>Preperation:&nbsp; &nbsp;<br></big><ul><li><big>Configure and test the viewer&nbsp;<a href="#asteroid_annotation">asteroid annotation menu</a> shortcut CTRL+Q</big></li></ul><big>Stacking:<br></big><ul><li><big>Select&nbsp;ephemeris alignment</big></li><li><big>Browse for all the images in the image tab and add if available the dark, flats.</big></li><li><big>Press the button </big><span style="background-color: rgb(153, 153, 153);"><big> &nbsp; Analyse the selected file in tab images</big> &nbsp;</span>.</li><li><big>Select from the&nbsp;combobox the asteroid or comet to align on. See screenshot below.</big></li><li><big>Hit the </big><span style="background-color: rgb(153, 153, 153);"><big> &nbsp;Stack check marked images</big>&nbsp;&nbsp;</span><big> button.&nbsp;</big></li><li><big>After the stacking is finished, it is possible to annotate the result. &nbsp;</big></li></ul><br><big>Only the solar object&nbsp;selected will be sharp. The stars will form trails <br><br></big><img style="width: 1505px; height: 615px;" alt="" src="astap_ephemeris_alignment.png"><br>
       </div>
       <p align="left"><a href="astap.htm#index">Back
           to index</a></p>
@@ -1614,7 +1613,7 @@ center and the slight disturbed outer regions. <br><br>The SIP correction can be
         <big style="text-decoration: underline;"><span style="font-weight: bold;"><a name="inspector"></a>CCD
             inspector</span></big><br>
         <br>
-        T<big>he viewer&nbsp;has a CCD inspector under menu tools.&nbsp; By
+        T<big>he viewer&nbsp;has a CCD inspector under the menu tools.&nbsp; By
         reporting the median HFD value, sensor tilt and curvature the
         inspector
         will quickly show any problem of the imaging system.&nbsp;<br><br>
@@ -1659,8 +1658,16 @@ for the center area is perfect. A more advanced measuring
 method&nbsp;is available in <a href="astap.htm#inspector_tab">tab CCD Inspector</a>.
           </big></li></ul>
         <br>
-        <img src="astap_ccd_inspector.jpg" alt="" style="width: 1053px; height: 797px;"><br><br><br><big>CCD inspector c</big><big>alculation method explained:</big><br><img style="width: 810px; height: 494px;" alt="" src="astap_tilt_calculation.png"><br>
-        <br><br>
+        <img src="astap_ccd_inspector.jpg" alt="" style="width: 1053px; height: 797px;"><br><br><br><big>CCD inspector c</big><big>alculation method explained:</big><br><img style="width: 810px; height: 743px;" alt="" src="astap_tilt_calculation.png"><br>
+        <br><big>The
+new three corner option is intended for adjusting your tilt adapter with three adjustment screws.
+First solve an image, then flip the image in the viewer such that north
+is up and east is west (northern hemisphere). Then apply the adjustable three corner&nbsp;angle such
+that the orientation of the adapter screw matches with the three
+corners show. You can click on the tilt button without refresh.<br><br>The
+three corner option measures in an circular area width a diameter
+equals the image height. This&nbsp;area is split in three equal areas.
+The center is excluded.<br></big><br><big>It is possible to automate the loading and tilt measurement using <a href="#live_stacking">live stacking</a></big><br><br>
         <br><big><span style="text-decoration: underline;"><a name="hfd_2d_contour"></a>HFD 2D contour.</span>
 <br><br>The star half flux diameters (HFD's) are displayed in a 2D contour.
 Dark areas indicate a lower and better HFD value.&nbsp;This will
@@ -1707,7 +1714,7 @@ distortion. You could also use the advanced SIP solution from
 Astrometry.net but select "order" three rather then the default two.</big><br><span class="st"><big><big><br></big></big></span><big><span style="text-decoration: underline;"></span></big><a href="astap.htm#index">Back
             to index</a><br><br><big><span style="text-decoration: underline;"><br><a name="aberration_inspector"></a>Aberration Inspector<br><br></span>This
 tool creates a 3x3 mosaic of the images center, the corners and
-borders. This allows easy an comparison of the star shape at the
+borders. This allows an easy&nbsp;comparison of the star shape at the
 different sections of the image. </big><br><big><span style="text-decoration: underline;"><br></span><span style="text-decoration: underline; font-weight: bold;"><img style="width: 758px; height: 758px;" alt="" src="astap_aberration_inspector.jpg"><br></span></big><br><a href="astap.htm#index">Back to index</a><br><br><br><br><big style="text-decoration: underline;"><span style="font-weight: bold;"><a name="photometry_calibration"></a>Viewer, Tools, Calibrate Photometry.<br></span><br></big><big>With
 this option the relation between flux and magnitude is measured. The
 image should be solved in advance to be able to calibrate the star flux
@@ -1742,7 +1749,7 @@ this option the stars are annotated with the estimated magnitude.&nbsp;</big><bi
         <br><big>
 For best accuracy the image should be monochrome and&nbsp;the Gaia
 Johnson-V star databases V17 should have been installed and selected.
-The image should have&nbsp; taken with a Johnson-V filter or none
+The image should have taken with a Johnson-V filter or none
 (clear). Saturated stars will be ignored since it is not possible to
 measure then accurately.<br><br><img style="width: 884px; height: 218px;" alt="" src="astap_limiting_magnitude.png"><br><br>In
 the left bottom corner of the image an estimate for the limiting

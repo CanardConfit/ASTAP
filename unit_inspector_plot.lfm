@@ -1,35 +1,23 @@
 object form_inspection1: Tform_inspection1
   Cursor = crHandPoint
-  Left = 446
-  Height = 300
-  Top = 242
+  Left = 213
+  Height = 270
+  Top = 219
   Width = 663
   Caption = 'Image inspection'
-  ClientHeight = 300
+  ClientHeight = 270
   ClientWidth = 663
   KeyPreview = True
   OnClose = FormClose
   OnKeyPress = FormKeyPress
   OnShow = FormShow
-  Position = poOwnerFormCenter
+  Position = poDesktopCenter
   LCLVersion = '2.0.12.0'
-  object close_button1: TButton
-    Left = 216
-    Height = 25
-    Hint = 'Close this window'
-    Top = 269
-    Width = 75
-    Caption = 'Close'
-    OnClick = close_button1Click
-    ParentShowHint = False
-    ShowHint = True
-    TabOrder = 0
-  end
   object undo_button1: TBitBtn
-    Left = 320
+    Left = 464
     Height = 30
     Hint = 'Restore image'
-    Top = 264
+    Top = 208
     Width = 30
     Glyph.Data = {
       36040000424D3604000000000000360000002800000010000000100000000100
@@ -71,14 +59,14 @@ object form_inspection1: Tform_inspection1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 1
+    TabOrder = 0
   end
   object help_uncheck_outliers1: TLabel
     Cursor = crHandPoint
-    Left = 384
+    Left = 576
     Height = 30
     Hint = 'Online help about inspector'
-    Top = 264
+    Top = 208
     Width = 9
     Caption = '?'
     Font.Color = clBlue
@@ -90,48 +78,45 @@ object form_inspection1: Tform_inspection1
     OnClick = help_uncheck_outliers1Click
   end
   object show_distortion1: TBitBtn
-    Left = 496
+    Left = 464
     Height = 26
     Hint = 'Show image distortion using the star positions and solution. Lines a 50x larger then distortion.'
-    Top = 112
-    Width = 129
-    AutoSize = True
+    Top = 96
+    Width = 173
     Caption = 'Show distortion'
     Images = mainwindow.ImageList1
     ImageIndex = 40
     OnClick = show_distortion1Click
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 2
+    TabOrder = 1
   end
   object aberration_inspector1: TBitBtn
-    Left = 496
+    Left = 464
     Height = 26
     Hint = 'Makes a compilation of the image corners and the center for a closer inspection.'
-    Top = 152
-    Width = 154
-    AutoSize = True
+    Top = 136
+    Width = 173
     Caption = 'Aberration inspector'
     Images = mainwindow.ImageList1
     ImageIndex = 39
     OnClick = aberration_inspector1Click
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 3
+    TabOrder = 2
   end
   object background_values1: TBitBtn
-    Left = 496
+    Left = 464
     Height = 25
     Hint = 'Annotate the image with the median background values relative to the center.'
-    Top = 72
-    Width = 126
-    AutoSize = True
+    Top = 56
+    Width = 173
     Caption = 'Background values'
     Images = mainwindow.ImageList1
     OnClick = background_values1Click
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 4
+    TabOrder = 3
   end
   object GroupBox3: TGroupBox
     Left = 8
@@ -140,11 +125,11 @@ object form_inspection1: Tform_inspection1
     Width = 432
     ClientHeight = 228
     ClientWidth = 428
-    TabOrder = 5
+    TabOrder = 4
     object GroupBox2: TGroupBox
       Left = 8
       Height = 200
-      Top = 0
+      Top = 24
       Width = 185
       ClientHeight = 180
       ClientWidth = 181
@@ -154,8 +139,7 @@ object form_inspection1: Tform_inspection1
         Height = 26
         Hint = 'Calculate tilt and curvature. The absolute font size will be smaller if you zoom in.'
         Top = 144
-        Width = 62
-        AutoSize = True
+        Width = 122
         Caption = 'Tilt'
         Images = mainwindow.ImageList1
         ImageIndex = 41
@@ -205,6 +189,7 @@ object form_inspection1: Tform_inspection1
         Hint = 'Rotation angle. Use first the tools menu to flip the image vertical or horizontal to get the north up en east left. Then set rotation such that it matches with the three screws of the tilt adapter.'
         Top = 68
         Width = 72
+        DropDownCount = 13
         ItemHeight = 15
         ItemIndex = 0
         Items.Strings = (
@@ -233,7 +218,7 @@ object form_inspection1: Tform_inspection1
     object GroupBox1: TGroupBox
       Left = 216
       Height = 200
-      Top = 0
+      Top = 24
       Width = 197
       ClientHeight = 180
       ClientWidth = 193
@@ -246,6 +231,7 @@ object form_inspection1: Tform_inspection1
         Width = 155
         Caption = 'Add unroundness vectors'
         Checked = True
+        OnChange = vectors1Change
         ParentShowHint = False
         ShowHint = True
         State = cbChecked
@@ -258,6 +244,7 @@ object form_inspection1: Tform_inspection1
         Top = 72
         Width = 78
         Caption = 'Add values'
+        OnChange = values1Change
         ParentShowHint = False
         ShowHint = True
         TabOrder = 1
@@ -269,6 +256,7 @@ object form_inspection1: Tform_inspection1
         Top = 40
         Width = 109
         Caption = 'Voronoi diagram'
+        OnChange = voronoi1Change
         ParentShowHint = False
         ShowHint = True
         TabOrder = 2
@@ -280,6 +268,7 @@ object form_inspection1: Tform_inspection1
         Top = 8
         Width = 126
         Caption = '2D contour diagram'
+        OnChange = contour1Change
         ParentShowHint = False
         ShowHint = True
         TabOrder = 3
@@ -289,8 +278,7 @@ object form_inspection1: Tform_inspection1
         Height = 25
         Hint = 'Creates a diagram based on the HFD values. The gray values represent the HFD *100. The HFD values are local median filtered for each three stars.'
         Top = 144
-        Width = 49
-        AutoSize = True
+        Width = 86
         Caption = 'HFD'
         OnClick = hfd_button1Click
         ParentShowHint = False
@@ -298,7 +286,7 @@ object form_inspection1: Tform_inspection1
         TabOrder = 4
       end
       object roundness_button1: TButton
-        Left = 80
+        Left = 104
         Height = 25
         Hint = 'Measure the unroundness of the stars.'
         Top = 144
@@ -311,17 +299,32 @@ object form_inspection1: Tform_inspection1
         TabOrder = 5
       end
     end
-    object bayer_image1: TCheckBox
-      Left = 24
-      Height = 19
-      Hint = 'A normalise filter is applied. The raw OSC RGGB pixels are normalised to the same mean value. This is better option for raw OSC images.'
-      Top = 209
-      Width = 203
-      Caption = 'Image is a raw Bayer matrix image '
-      OnChange = bayer_image1Change
-      ParentShowHint = False
-      ShowHint = True
+    object normalise_mode1: TComboBox
+      Left = 112
+      Height = 23
+      Hint = 'A normalise filter could be applied. The raw OSC RGGB pixels are normalised to the same mean value. This is better option for raw OSC images.'
+      Top = 0
+      Width = 73
+      ItemHeight = 15
+      ItemIndex = 0
+      Items.Strings = (
+        'auto'
+        '✔'
+        ''
+      )
+      OnChange = normalise_mode1Change
+      ParentFont = False
+      Style = csDropDownList
       TabOrder = 2
+      Text = 'auto'
+    end
+    object bayer_label1: TLabel
+      Left = 208
+      Height = 15
+      Top = 0
+      Width = 102
+      Caption = 'Bayer matrix image'
+      ParentColor = False
     end
   end
 end

@@ -3,7 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 712
   Top = 156
   Width = 1710
-  HorzScrollBar.Page = 1701
+  HorzScrollBar.Page = 1241
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1710
-    ActivePage = lights
+    ActivePage = Result1
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 4
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -1137,7 +1137,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
       ClientHeight = 470
-      ClientWidth = 1840
+      ClientWidth = 1702
       ImageIndex = 6
       ParentFont = False
       object listview5: TListView
@@ -1145,7 +1145,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1840
+        Width = 1702
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -1250,7 +1250,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 470
-      ClientWidth = 1840
+      ClientWidth = 1702
       ImageIndex = 5
       ParentFont = False
       object stack_method1: TComboBox
@@ -2928,7 +2928,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 470
-      ClientWidth = 1840
+      ClientWidth = 1702
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
@@ -2936,7 +2936,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1840
+        Width = 1702
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -5707,7 +5707,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 2'
       Caption = 'Pixel math 2'
       ClientHeight = 470
-      ClientWidth = 1840
+      ClientWidth = 1702
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox

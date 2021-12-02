@@ -13,13 +13,13 @@ type
   { Tform_inspection1 }
 
   Tform_inspection1 = class(TForm)
+    bayer_label1: TLabel;
+    normalise_mode1: TComboBox;
     show_distortion1: TBitBtn;
     aberration_inspector1: TBitBtn;
     tilt1: TBitBtn;
     background_values1: TBitBtn;
     extra_stars1: TCheckBox;
-    bayer_image1: TCheckBox;
-    close_button1: TButton;
     contour1: TCheckBox;
     GroupBox1: TGroupBox;
     GroupBox2: TGroupBox;
@@ -36,8 +36,8 @@ type
     voronoi1: TCheckBox;
     procedure aberration_inspector1Click(Sender: TObject);
     procedure background_values1Click(Sender: TObject);
-    procedure bayer_image1Change(Sender: TObject);
     procedure close_button1Click(Sender: TObject);
+    procedure contour1Change(Sender: TObject);
     procedure extra_stars1Change(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormKeyPress(Sender: TObject; var Key: char);
@@ -45,10 +45,14 @@ type
     procedure help_uncheck_outliers1Click(Sender: TObject);
     procedure hfd_button1Click(Sender: TObject);
     procedure measuring_angle1Change(Sender: TObject);
+    procedure normalise_mode1Change(Sender: TObject);
     procedure show_distortion1Click(Sender: TObject);
     procedure tilt1Click(Sender: TObject);
     procedure triangle1Change(Sender: TObject);
     procedure undo_button1Click(Sender: TObject);
+    procedure values1Change(Sender: TObject);
+    procedure vectors1Change(Sender: TObject);
+    procedure voronoi1Change(Sender: TObject);
   private
 
   public
@@ -71,6 +75,10 @@ var
   extra_stars  : boolean=false;
   three_corners: boolean=false;
   measuring_angle : string='0';
+  normalise_mode: integer=0; {auto}
+  insp_left: integer=100;
+  insp_top: integer=100;
+
 
 procedure CCDinspector(snr_min: double; triangle : boolean; measuring_angle: double);
 
@@ -983,9 +991,9 @@ begin
   backup_img;
   executed:=2;{restore required to undo}
 
-  if contour1.checked then demode:='2'
+  if contour_check then demode:='2'
   else
-  if voronoi1.checked then demode:='V'
+  if voronoi_check then demode:='V'
   else
   demode:=' ';
 
@@ -1003,13 +1011,13 @@ begin
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
   end
   else
-  if bayer_image1.checked then {raw Bayer image}
+  if bayer_image then {raw Bayer image}
   begin
     normalize_OSC_flat(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
   end;
 
-  CCDinspector_analyse(demode,aspect {unroundness or HFD mode}, values1.checked,vectors1.checked);
+  CCDinspector_analyse(demode,aspect {unroundness or HFD mode}, values_check,vectors_check);
 
   {$ifdef mswindows}
   filename2:=ExtractFileDir(filename2)+'\hfd_values.fit';
@@ -1041,6 +1049,43 @@ begin
   measuring_angle:=measuring_angle1.text;
 end;
 
+procedure check_bayer;
+begin
+  with form_inspection1 do
+  begin
+    if normalise_mode=2 then
+    begin
+      bayer_label1.caption:='Normal image';
+      bayer_image:=false;
+    end
+    else
+    if normalise_mode=1 then
+    begin
+      bayer_label1.caption:='Bayer matrix image';
+      bayer_image:=true;
+    end
+    else {auto}
+    begin
+      if ((naxis3=1) and (bayerpat<>'')) then
+      begin
+        bayer_label1.caption:='Bayer matrix image';
+        bayer_image:=true;
+      end
+      else
+      begin
+        bayer_label1.caption:='Normal image';
+        bayer_image:=false;
+      end;
+    end;
+  end;
+end;
+
+procedure Tform_inspection1.normalise_mode1Change(Sender: TObject);
+begin
+  normalise_mode:=normalise_mode1.ItemIndex;
+  check_bayer;
+end;
+
 
 procedure Tform_inspection1.show_distortion1Click(Sender: TObject);
 var
@@ -1065,6 +1110,7 @@ begin
     CCDinspector(10,three_corners,strtofloat2(measuring_angle1.text));
 end;
 
+
 procedure Tform_inspection1.triangle1Change(Sender: TObject);
 begin
   three_corners:=triangle1.checked;
@@ -1073,14 +1119,31 @@ end;
 
 procedure Tform_inspection1.undo_button1Click(Sender: TObject);
 begin
-  if ((executed=2) and (mainwindow.Undo1.enabled)) then
+  if executed=1 then plot_fits(mainwindow.image1,false,true) {only refresh required}
+  else
+  if mainwindow.Undo1.enabled then
   begin
     restore_img;
-  end
-  else
-  if executed=1 then plot_fits(mainwindow.image1,false,true);
+  end;
   executed:=0;
+end;
 
+
+procedure Tform_inspection1.values1Change(Sender: TObject);
+begin
+  values_check:=values1.checked;
+end;
+
+
+procedure Tform_inspection1.vectors1Change(Sender: TObject);
+begin
+  vectors_check:=vectors1.checked;
+end;
+
+
+procedure Tform_inspection1.voronoi1Change(Sender: TObject);
+begin
+  voronoi_check:=voronoi1.checked;
 end;
 
 
@@ -1090,9 +1153,22 @@ begin
   mainwindow.setfocus;
 end;
 
+procedure Tform_inspection1.contour1Change(Sender: TObject);
+begin
+  contour_check:=contour1.checked;
+end;
+
 procedure Tform_inspection1.extra_stars1Change(Sender: TObject);
 begin
   extra_stars:=extra_stars1.checked;
+end;
+
+procedure Tform_inspection1.FormClose(Sender: TObject;
+  var CloseAction: TCloseAction);
+begin
+  insp_left:=left;
+  insp_top:=top;
+  mainwindow.setfocus;
 end;
 
 
@@ -1199,10 +1275,6 @@ begin
   Screen.Cursor:= Save_Cursor;
 end;
 
-procedure Tform_inspection1.bayer_image1Change(Sender: TObject);
-begin
-  bayer_image:=bayer_image1.checked;
-end;
 
 procedure Tform_inspection1.aberration_inspector1Click(Sender: TObject);
 var fitsX,fitsY,col, widthN,heightN                : integer;
@@ -1325,16 +1397,6 @@ begin
 end;
 
 
-procedure Tform_inspection1.FormClose(Sender: TObject;
-  var CloseAction: TCloseAction);
-begin
-  contour_check:=contour1.checked;
-  voronoi_check:=voronoi1.checked;
-  values_check:=values1.checked;
-  vectors_check:=vectors1.checked;
-end;
-
-
 procedure Tform_inspection1.FormKeyPress(Sender: TObject; var Key: char);
 begin
   if key=#27 then close_button1Click(sender);
@@ -1343,13 +1405,18 @@ end;
 
 procedure Tform_inspection1.FormShow(Sender: TObject);
 begin
+  form_inspection1.left:=insp_left;
+  form_inspection1.top:=insp_top;
+
   executed:=0;
   contour1.checked:=contour_check;
   voronoi1.checked:=voronoi_check;
   values1.checked:=values_check;
   vectors1.checked:=vectors_check;
   show_distortion1.enabled:=cd1_1<>0;
-  bayer_image1.checked:=bayer_image;
+//  bayer_image1.checked:=bayer_image;
+  normalise_mode1.ItemIndex:=normalise_mode;
+  check_bayer;
   triangle1.checked:=three_corners;
   extra_stars1.checked:=extra_stars;
   measuring_angle1.text:=measuring_angle;

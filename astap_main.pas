@@ -3021,7 +3021,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 1.0.0RC4, '+about_message4+', dated 2021-12-01';
+  #13+#10+'ASTAP version 1.0.0RC4, '+about_message4+', dated 2021-12-02';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -7642,11 +7642,13 @@ begin
       c:=Sett.ReadInteger('stack','delim_pos',987654321);if c<>987654321 then delim_pos:=c;
 
 
+      c:=Sett.ReadInteger('insp','insp_left',987654321); if c<>987654321 then insp_left:=c;
+      c:=Sett.ReadInteger('insp','insp_top',987654321); if c<>987654321 then insp_top:=c;
       contour_check:=Sett.ReadBool('insp','contour',false);
       voronoi_check:=Sett.ReadBool('insp','voronoi',false);
       values_check:=Sett.ReadBool('insp','values',true);
       vectors_check:=Sett.ReadBool('insp','vectors',true);
-      bayer_image:=Sett.ReadBool('insp','raw_bayer',false);
+      normalise_mode:=Sett.ReadInteger('insp','rawbayer',0);
       three_corners:=Sett.ReadBool('insp','3corners',false);
       extra_stars:=Sett.ReadBool('insp','extra_stars',false);
 
@@ -7975,11 +7977,14 @@ begin
       sett.writestring('stack','obscode',obscode);
       sett.writeInteger('stack','delim_pos',delim_pos);
 
+
+      sett.writeInteger('insp','insp_left',insp_left);{position window}
+      sett.writeInteger('insp','insp_top',insp_top);
       sett.writeBool('insp','contour',contour_check);
       sett.writeBool('insp','voronoi',voronoi_check);
       sett.writeBool('insp','values',values_check);
       sett.writeBool('insp','vectors',vectors_check);
-      sett.writebool('insp','raw_bayer',bayer_image);
+      sett.writeInteger('insp','rawbayer',normalise_mode);
       sett.writebool('insp','3corners',three_corners);
       sett.writebool('insp','extra_stars',extra_stars);
 
@@ -8915,6 +8920,7 @@ end;
 procedure Tmainwindow.pull_down_menu_inspection1Click(Sender: TObject);
 begin
   form_inspection1:=Tform_inspection1.Create(self); {in project option not loaded automatic}
+
   form_inspection1.ShowModal;
   form_inspection1.release;
   save_settings2;
@@ -10773,6 +10779,8 @@ begin
   mainwindow.top:=0;
   stackmenu1.left:=0;
   stackmenu1.top:=0;
+  insp_left:=0;
+  insp_top:=0;
 end;
 
 
