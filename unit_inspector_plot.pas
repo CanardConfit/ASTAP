@@ -108,7 +108,7 @@ procedure CCDinspector(snr_min: double; triangle : boolean; measuring_angle: dou
 var
  fitsX,fitsY,size,radius, i,j,starX,starY, retries,max_stars,x_centered,y_centered,starX2,starY2,
  nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,
- x1,x2,x3,x4,y1,y2,y3,y4,fontsize,text_height,text_width,n,m,xci,yci,sqr_radius                     : integer;
+ x1,x2,x3,x4,y1,y2,y3,y4,fontsize,text_height,text_width,n,m,xci,yci,sqr_radius,left_margin                         : integer;
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
  hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right,
@@ -457,7 +457,7 @@ begin
         mess2:=mess2+' extreme)';
 
 
-        fontsize:=fontsize*4;
+   //     fontsize:=fontsize*4;
         image1.Canvas.font.size:=fontsize;
         image1.Canvas.textout(x4,y4,floattostrF(median_top_left,ffFixed,0,2));
         image1.Canvas.textout(x3,y3,floattostrF(median_top_right,ffFixed,0,2));
@@ -474,13 +474,14 @@ begin
       if cdelt2<>0 then begin str(hfd_median*abs(cdelt2)*3600:0:1,hfd_arcsec); hfd_arcsec:=' ('+hfd_arcsec+'")'; end else hfd_arcsec:='';
       mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
 
-      text_width:=mainwindow.image1.Canvas.textwidth(mess2);{Calculate textwidt. This also works for 4k with "make everything bigger"}
-      fontsize:=trunc(fontsize*(width2-2*fontsize)/text_width);{use full width}
+      text_width:=mainwindow.image1.Canvas.textwidth(mess2);{Calculate textwidth. This also works for 4k with "make everything bigger"}
+      fontsize:=trunc(fontsize*(width2*0.9)/text_width);{use 90% of width}
       image1.Canvas.font.size:=fontsize;
       image1.Canvas.font.color:=clwhite;
       text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
 
-      image1.Canvas.textout(round(fontsize*2),height2-text_height,mess2);{median HFD and tilt indication}
+      left_margin:=min(width2 div 20,round(fontsize*2));{twice font size but not more then 5% of width. Required for small images}
+      image1.Canvas.textout(left_margin,height2-text_height,mess2);{median HFD and tilt indication}
       memo2_message(mess2);{for stacking live}
     end
     else
@@ -997,7 +998,10 @@ begin
   else
   demode:=' ';
 
-  aspect:=((sender=hfd_button1)=false);
+  if sender=nil {F3 hidden main menu} then
+    aspect:=true
+  else
+    aspect:=((sender=hfd_button1)=false);
 
   if nrbits=8 then {convert to 16 bit}
   begin

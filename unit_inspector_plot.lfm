@@ -140,7 +140,7 @@ object form_inspection1: Tform_inspection1
         Hint = 'Calculate tilt and curvature. The absolute font size will be smaller if you zoom in.'
         Top = 144
         Width = 122
-        Caption = 'Tilt'
+        Caption = 'Tilt    F4'
         Images = mainwindow.ImageList1
         ImageIndex = 41
         OnClick = tilt1Click
@@ -278,7 +278,7 @@ object form_inspection1: Tform_inspection1
         Height = 25
         Hint = 'Creates a diagram based on the HFD values. The gray values represent the HFD *100. The HFD values are local median filtered for each three stars.'
         Top = 144
-        Width = 86
+        Width = 72
         Caption = 'HFD'
         OnClick = hfd_button1Click
         ParentShowHint = False
@@ -286,13 +286,13 @@ object form_inspection1: Tform_inspection1
         TabOrder = 4
       end
       object roundness_button1: TButton
-        Left = 104
+        Left = 88
         Height = 25
         Hint = 'Measure the unroundness of the stars.'
         Top = 144
-        Width = 84
+        Width = 105
         AutoSize = True
-        Caption = 'Roundness'
+        Caption = 'Roundness   F3'
         OnClick = hfd_button1Click
         ParentShowHint = False
         ShowHint = True

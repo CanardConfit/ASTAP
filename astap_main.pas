@@ -103,7 +103,7 @@ type
     bin_3x3menu1: TMenuItem;
     imageinspection1: TMenuItem;
     inspector1: TMenuItem;
-    pull_down_menu_inspection1: TMenuItem;
+    roundness1: TMenuItem;
     MenuItem28: TMenuItem;
     MenuItem29: TMenuItem;
     MenuItem30: TMenuItem;
@@ -361,9 +361,11 @@ type
     procedure extractgreen1Click(Sender: TObject);
     procedure grid1Click(Sender: TObject);
     procedure bin_2x2menu1Click(Sender: TObject);
+    procedure MenuItem22Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
-    procedure pull_down_menu_inspection1Click(Sender: TObject);
+    procedure inspection1click(Sender: TObject);
     procedure removegreenpurple1Click(Sender: TObject);
+    procedure roundness1Click(Sender: TObject);
     procedure sip1Click(Sender: TObject);
     procedure split_osc1Click(Sender: TObject);
     procedure sqm1Click(Sender: TObject);
@@ -8905,6 +8907,11 @@ begin
   end;
 end;
 
+procedure Tmainwindow.MenuItem22Click(Sender: TObject);
+begin
+  CCDinspector(30,three_corners,strtofloat2(measuring_angle))
+end;
+
 
 procedure Tmainwindow.positionanddate1Click(Sender: TObject);
 begin
@@ -8917,19 +8924,20 @@ begin
   plot_text;
 end;
 
-procedure Tmainwindow.pull_down_menu_inspection1Click(Sender: TObject);
+procedure Tmainwindow.inspection1click(Sender: TObject);
 begin
-  form_inspection1:=Tform_inspection1.Create(self); {in project option not loaded automatic}
-
-  form_inspection1.ShowModal;
-  form_inspection1.release;
-  save_settings2;
+  CCDinspector(30,three_corners,strtofloat2(measuring_angle))
 end;
 
 
 procedure Tmainwindow.removegreenpurple1Click(Sender: TObject);
 begin
   green_purple_filter(img_loaded);
+end;
+
+procedure Tmainwindow.roundness1Click(Sender: TObject);
+begin
+  form_inspection1.hfd_button1Click(nil);
 end;
 
 
@@ -10214,7 +10222,11 @@ end;
 
 procedure Tmainwindow.inspector1Click(Sender: TObject);
 begin
-  CCDinspector(30,three_corners,strtofloat2(measuring_angle))
+  form_inspection1:=Tform_inspection1.Create(self); {in project option not loaded automatic}
+
+  form_inspection1.ShowModal;
+  form_inspection1.release;
+  save_settings2;
 end;
 
 
@@ -10332,7 +10344,7 @@ begin
 
 
   text_width:=8*mainwindow.image1.Canvas.textwidth('1234567890');{Calculate textwidth for 80 characters. This also works for 4k with "make everything bigger"}
-  fontsize:=trunc(fontsize*(width2-2*fontsize)/text_width);{use full width}
+  fontsize:=trunc(fontsize*(width2-2*fontsize)/text_width);{use full width for 80 characters}
   image1.Canvas.font.size:=fontsize;
   image1.Canvas.font.color:=clwhite;
   text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}

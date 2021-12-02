@@ -1267,19 +1267,23 @@ object mainwindow: Tmainwindow
         Caption = '-'
       end
       object imageinspection1: TMenuItem
-        Caption = 'Image inspection'
+        Caption = 'Image Inspection '
         Enabled = False
-        object inspector1: TMenuItem
-          Caption = 'Image inspector'
-          Hint = 'Calculate tilt and curvature. The absolute font size will be smaller if you zoom in.'
-          ShortCut = 116
-          OnClick = inspector1Click
-        end
-        object pull_down_menu_inspection1: TMenuItem
-          Caption = 'Inspection menu'
-          ShortCut = 115
-          OnClick = pull_down_menu_inspection1Click
-        end
+        ImageIndex = 17
+        ShortCut = 116
+        OnClick = inspector1Click
+      end
+      object inspector1: TMenuItem
+        Caption = '--- Hidden inspector ---'
+        ShortCut = 115
+        Visible = False
+        OnClick = inspection1click
+      end
+      object roundness1: TMenuItem
+        Caption = '--- Hidden roundness'
+        ShortCut = 114
+        Visible = False
+        OnClick = roundness1Click
       end
       object MenuItem2: TMenuItem
         Caption = '-'
