@@ -1144,6 +1144,7 @@ end;
 procedure Tform_inspection1.voronoi1Change(Sender: TObject);
 begin
   voronoi_check:=voronoi1.checked;
+  if ((voronoi_check) and (contour_check)) then contour1.checked:=false;
 end;
 
 
@@ -1156,6 +1157,7 @@ end;
 procedure Tform_inspection1.contour1Change(Sender: TObject);
 begin
   contour_check:=contour1.checked;
+  if ((voronoi_check) and (contour_check)) then voronoi1.checked:=false;
 end;
 
 procedure Tform_inspection1.extra_stars1Change(Sender: TObject);
@@ -1399,7 +1401,10 @@ end;
 
 procedure Tform_inspection1.FormKeyPress(Sender: TObject; var Key: char);
 begin
-  if key=#27 then close_button1Click(sender);
+  if key=#27 then close_button1Click(sender)
+  else
+  if key=#26 then {ctrl+Z}
+       form_inspection1.undo_button1Click(nil);
 end;
 
 

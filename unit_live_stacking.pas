@@ -250,8 +250,8 @@ begin
 
             if inspect_latest_image1.checked then CCDinspector(30,false,0);
 
-//            Application.ProcessMessages;
-//            if esc_pressed then exit;
+            Application.ProcessMessages;
+            if esc_pressed then exit;
 
             if make_osc_color1.checked then
                demosaic_bayer(img_loaded); {convert OSC image to colour}
