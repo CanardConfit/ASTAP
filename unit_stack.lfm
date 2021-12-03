@@ -3,7 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 712
   Top = 155
   Width = 1710
-  HorzScrollBar.Page = 1701
+  HorzScrollBar.Page = 1368
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1710
-    ActivePage = lights
+    ActivePage = tab_Pixelmath2
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 13
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -5120,7 +5120,6 @@ object stackmenu1: Tstackmenu1
           Width = 80
           Caption = 'Signal below σ:'
           ParentColor = False
-          ParentFont = False
         end
       end
       object GroupBox2: TGroupBox
@@ -5263,7 +5262,6 @@ object stackmenu1: Tstackmenu1
           Caption = 'σ factor'
           Color = clBtnFace
           ParentColor = False
-          ParentFont = False
           Transparent = False
         end
         object noisefilter_sd1: TComboBox
@@ -5371,7 +5369,6 @@ object stackmenu1: Tstackmenu1
           Caption = 'Gaussian blur'
           Color = clBtnFace
           ParentColor = False
-          ParentFont = False
           Transparent = False
         end
       end
@@ -6363,7 +6360,6 @@ object stackmenu1: Tstackmenu1
           Width = 15
           Caption = '---'
           ParentColor = False
-          ParentFont = False
           WordWrap = True
         end
         object apply_file1: TButton
@@ -6579,7 +6575,6 @@ object stackmenu1: Tstackmenu1
           Caption = '1080'
           Color = clBtnFace
           ParentColor = False
-          ParentFont = False
           Transparent = False
         end
         object new_height2: TLabel
@@ -6590,7 +6585,6 @@ object stackmenu1: Tstackmenu1
           Caption = 'x'
           Color = clBtnFace
           ParentColor = False
-          ParentFont = False
           Transparent = False
         end
       end
@@ -6652,7 +6646,7 @@ object stackmenu1: Tstackmenu1
           Width = 104
           Alignment = taRightJustify
           AutoSize = False
-          Caption = 'Sensor pixel size [µm]'
+          Caption = 'Sensor pixel size after binning [µm]'
           Color = clBtnFace
           ParentColor = False
           ParentFont = False
@@ -6662,7 +6656,7 @@ object stackmenu1: Tstackmenu1
         object pixelsize1: TEdit
           Left = 128
           Height = 23
-          Hint = 'The image sensor pixel size in micrometer.'
+          Hint = 'The image sensor pixel size in micrometer after binning.'
           Top = 48
           Width = 48
           BorderSpacing.Around = 5
@@ -6679,7 +6673,6 @@ object stackmenu1: Tstackmenu1
           BorderSpacing.Around = 5
           Caption = '0.0'
           ParentColor = False
-          ParentFont = False
         end
         object scale_calc1: TLabel
           Left = 232
@@ -6691,13 +6684,22 @@ object stackmenu1: Tstackmenu1
         end
         object Label28: TLabel
           Left = 192
-          Height = 15
-          Top = 32
-          Width = 18
+          Height = 37
+          Top = 16
+          Width = 23
           BorderSpacing.Around = 5
-          Caption = '-->'
+          Caption = '⇒'
+          Font.Height = -27
           ParentColor = False
           ParentFont = False
+        end
+        object binning1: TLabel
+          Left = 8
+          Height = 15
+          Top = 96
+          Width = 30
+          Caption = '------'
+          ParentColor = False
         end
       end
       object GroupBox17: TGroupBox

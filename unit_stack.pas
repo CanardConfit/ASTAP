@@ -58,6 +58,7 @@ type
     hours_and_minutes1: TCheckBox;
     inspect_latest_image1: TCheckBox;
     center_position1: TLabel;
+    binning1: TLabel;
     removeselected5: TMenuItem;
     menukeywordchange1: TMenuItem;
     MenuItem32: TMenuItem;
@@ -1806,7 +1807,7 @@ begin
                   if filter_name<>'' then ListView1.Items.item[c].SubitemImages[L_filter]:=7 {question mark} else
                      ListView1.Items.item[c].SubitemImages[L_filter]:=-1;{blank}
 
-                ListView1.Items.item[c].subitems.Strings[L_bin]:=inttostr(Xbinning)+' x '+inttostr(Ybinning); {Binning CCD}
+                ListView1.Items.item[c].subitems.Strings[L_bin]:=floattostrf(Xbinning,ffgeneral,0,0)+' x '+floattostrf(Ybinning,ffgeneral,0,0); {Binning CCD}
 
                 ListView1.Items.item[c].subitems.Strings[L_hfd]:=floattostrF(hfd_median,ffFixed,0,1);
                 ListView1.Items.item[c].subitems.Strings[L_quality]:=inttostr5(round(hfd_counter/hfd_median)); {quality number of stars divided by hfd}
@@ -3239,7 +3240,7 @@ begin
               else lv.Items.item[c].subitems.Strings[D_exposure]:=floattostrf(exposure,ffgeneral, 6, 6);
 
             lv.Items.item[c].subitems.Strings[D_temperature]:=inttostr(set_temperature);
-            lv.Items.item[c].subitems.Strings[D_binning]:=inttostr(Xbinning)+' x '+inttostr(Ybinning); {Binning CCD}
+            lv.Items.item[c].subitems.Strings[D_binning]:=floattostrf(Xbinning,ffgeneral,0,0)+' x '+floattostrf(Ybinning,ffgeneral,0,0); {Binning CCD}
             lv.Items.item[c].subitems.Strings[D_width]:=inttostr(width2); {image width}
             lv.Items.item[c].subitems.Strings[D_height]:=inttostr(height2);{image height}
             lv.Items.item[c].subitems.Strings[D_type]:=imagetype;{image type}
@@ -3930,13 +3931,19 @@ begin
     update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
   end;
 
-  update_float  ('XBINNING=',' / Binning factor in width                         ' ,XBINNING/ratio);
-  update_float  ('YBINNING=',' / Binning factor in height                        ' ,YBINNING/ratio);
+  XBINNING:=XBINNING/ratio;
+  YBINNING:=YBINNING/ratio;
+  update_float  ('XBINNING=',' / Binning factor in width                         ' ,XBINNING);
+  update_float  ('YBINNING=',' / Binning factor in height                        ' ,YBINNING);
 
   if XPIXSZ<>0 then
   begin
-    update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ' ,XPIXSZ/ratio);{note: comment will be never used since it is an existing keyword}
-    update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ' ,YPIXSZ/ratio);
+    XPIXSZ:=XPIXSZ/ratio;
+    YPIXSZ:=YPIXSZ/ratio;
+    update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ' ,XPIXSZ);
+    update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ' ,YPIXSZ);
+    update_float('PIXSIZE1=',' / Pixel width in microns (after stretching)       ' ,XPIXSZ);
+    update_float('PIXSIZE2=',' / Pixel height in microns (after stretching)      ' ,YPIXSZ);
   end;
   add_text   ('HISTORY   ','Image resized with factor '+ floattostr6(ratio));
 end;

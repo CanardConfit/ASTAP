@@ -514,8 +514,8 @@ type
      cd2_2  : double;
      header : string;
      filen  : string;{filename}
-     xbinning: integer; {for binning routien. If twice binned or SQM routine}
-     ybinning: integer;
+     xbinning: double; {for binning routine. If twice binned or SQM routine}
+     ybinning: double;
      XPIXSZ : double;
      YPIXSZ : double;
 
@@ -531,12 +531,11 @@ var
   user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
   distortion_data : star_list;
   filename2: string;
-  nrbits,Xbinning,Ybinning    : integer;
-  size_backup,index_backup    : integer;{number of backup images for ctrl-z, numbered 0,1,2,3}
-  crota2,crota1                      : double; {image rotation at center in degrees}
-  cd1_1,cd1_2,cd2_1,cd2_2 :double;
-  ra_radians,dec_radians, pixel_size : double;
-  ra_mount,dec_mount                     : double; {telescope ra,dec}
+  nrbits,size_backup,index_backup    : integer;{number of backup images for ctrl-z, numbered 0,1,2,3}
+  crota2,crota1, {image rotation at center in degrees}
+  ra_mount,dec_mount,{telescope ra,dec}
+  Xbinning,Ybinning, cd1_1,cd1_2,cd2_1,cd2_2,
+  ra_radians,dec_radians, pixel_size     : double;
 
 var
   a_order,ap_order: integer;{Simple Imaging Polynomial use by astrometry.net, if 2 then available}
@@ -1165,9 +1164,9 @@ begin
            filter_name:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
 
         if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-                 xbinning:=round(validate_double);{binning}
+                 xbinning:=validate_double;{binning}
         if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-                 ybinning:=round(validate_double);{binning}
+                 ybinning:=validate_double;{binning}
 
         if ((header[i]='G') and (header[i+1]='A')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]=' ')) then
                gain:=get_as_string; {gain CCD}
@@ -1234,9 +1233,9 @@ begin
                 begin cdelt2:=validate_double/3600; {deg/pixel for RA} cdelt1:=cdelt2; end; {no CDELT1/2 found yet, use alternative}
           end;
 
-          if ((header[i]='X') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {xpixsz}
+          if ((header[i]='X') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {Xpixsz}
                  xpixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
-          if ((header[i]='Y') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {xpixsz}
+          if ((header[i]='Y') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {Ypixsz}
                  ypixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
 
           if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') and (header[i+5]='L')) then  {focall}
@@ -3256,8 +3255,10 @@ begin
   begin
     XPIXSZ:=XPIXSZ*binfactor;
     YPIXSZ:=YPIXSZ*binfactor;
-    update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,XPIXSZ);{note: comment will be never used since it is an existing keyword}
+    update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,XPIXSZ);
     update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,YPIXSZ);
+    update_float('PIXSIZE1=',' / Pixel width in microns (after binning)          ' ,XPIXSZ);
+    update_float('PIXSIZE2=',' / Pixel height in microns (after binning)         ' ,YPIXSZ);
   end;
   fact:=inttostr(binfactor);
   fact:=fact+'x'+fact;
@@ -4813,6 +4814,7 @@ begin
 
   stackmenu1.focallength1.Text:=floattostrf(focallen,ffgeneral, 4, 4);
   stackmenu1.pixelsize1.text:=floattostrf(xpixsz{*XBINNING},ffgeneral, 4, 4);
+  stackmenu1.binning1.caption:=inttostr(width2)+'x'+inttostr(height2)+' pixels, binned '+floattostrf(Xbinning,ffgeneral,0,0)+'x'+floattostrf(Ybinning,ffgeneral,0,0);
   stackmenu1.focallength1Exit(nil); {update calculator}
 end;
 
@@ -5051,13 +5053,21 @@ begin
       update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
     end;
 
-    update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING/ratio));
-    update_integer('YBINNING=',' / Binning factor in height                        ' ,round(yBINNING/ratio));
+    XBINNING:=XBINNING/ratio;
+    YBINNING:=YBINNING/ratio;
+    update_float  ('XBINNING=',' / Binning factor in width                         ' ,XBINNING);
+    update_float  ('YBINNING=',' / Binning factor in height                        ' ,YBINNING);
+
 
     if XPIXSZ<>0 then
     begin
-      update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ' ,XPIXSZ/ratio);{note: comment will be never used since it is an existing keyword}
-      update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ' ,YPIXSZ/ratio);
+      XPIXSZ:=XPIXSZ/ratio;
+      YPIXSZ:=YPIXSZ/ratio;
+      update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,XPIXSZ);{note: comment will be never used since it is an existing keyword}
+      update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,YPIXSZ);
+      update_float('PIXSIZE1=',' / Pixel width in microns (after binning)          ' ,XPIXSZ);
+      update_float('PIXSIZE2=',' / Pixel height in microns (after binning)         ' ,YPIXSZ);
+
     end;
 
     add_text   ('HISTORY   ','One raw colour extracted.');
@@ -10607,13 +10617,19 @@ begin
         update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
       end;
 
-      update_float  ('XBINNING=',' / Binning factor in width                         ' ,XBINNING/ratio);
-      update_float  ('YBINNING=',' / Binning factor in height                        ' ,YBINNING/ratio);
+      XBINNING:=XBINNING/ratio;
+      YBINNING:=YBINNING/ratio;
+      update_float  ('XBINNING=',' / Binning factor in width                         ' ,XBINNING);
+      update_float  ('YBINNING=',' / Binning factor in height                        ' ,YBINNING);
 
       if XPIXSZ<>0 then
       begin
-        update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ' ,XPIXSZ/ratio);{note: comment will be never used since it is an existing keyword}
-        update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ' ,YPIXSZ/ratio);
+        XPIXSZ:=XPIXSZ/ratio;
+        YPIXSZ:=YPIXSZ/ratio;
+        update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ' ,XPIXSZ);
+        update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ' ,YPIXSZ);
+        update_float('PIXSIZE1=',' / Pixel width in microns (after stretching)       ' ,XPIXSZ);
+        update_float('PIXSIZE2=',' / Pixel height in microns (after stretching)      ' ,YPIXSZ);
       end;
 
       add_text   ('HISTORY   ','Image stretched with factor '+ floattostr6(ratio));
