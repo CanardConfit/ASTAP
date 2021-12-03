@@ -1287,6 +1287,11 @@ begin
   begin
     ListView1.Items.item[i].subitems.Strings[L_X]:=floattostrF(fitsX,ffFixed,0,2);
     ListView1.Items.item[i].subitems.Strings[L_Y]:=floattostrF(fitsY,ffFixed,0,2);
+
+    {$ifdef darwin} {MacOS}
+    {bugfix darwin green red colouring}
+    stackmenu1.ListView1.Items.item[i].Subitems.strings[L_result]:='✓ star';
+    {$endif}
   end;
 end;
 
@@ -1397,7 +1402,10 @@ begin
       until c>counts;
     end;{throw outliers out}
 
-    if best<>0 then  ListView1.Items.item[best_index].SubitemImages[L_quality]:=icon_king; {mark best index. Not nessesary but just nice}
+    if best<>0 then
+    begin
+      ListView1.Items.item[best_index].SubitemImages[L_quality]:=icon_king; {mark best index. Not nessesary but just nice}
+    end;
 
     finally
       ListView1.Items.EndUpdate;
@@ -4351,7 +4359,6 @@ begin
               bsolutions[c].solution_vectorY:=solution_vectorY;
               listview6.Items.item[c].subitems.Strings[B_solution]:='✓ '+inttostr(c);{store location in listview for case list is sorted/modified}
               ListView6.Items.item[c].SubitemImages[B_solution]:=icon_king; {mark as best quality image}
-
               reference_done:=true;
             end
             else
@@ -8682,6 +8689,13 @@ begin
     if length(files_to_process[i].name)>1 then {has a filename}
     begin
       stackmenu1.ListView1.Items.item[i].SubitemImages[L_quality]:=-1;{remove any older icon_king}
+
+      {$ifdef darwin} {MacOS}
+      {bugfix darwin icons}
+       stackmenu1.ListView1.Items.item[i].Subitems.strings[L_quality]:=stringreplace(stackmenu1.ListView1.Items.item[i].Subitems.strings[L_quality],'♛','',[]);
+      {$endif}
+
+
       width1:=strtoint(stackmenu1.ListView1.Items.item[i].subitems.Strings[L_width]);
       if first=-1 then begin first:=i; largest_width:=width1  end;
 
@@ -8715,6 +8729,12 @@ begin
       files_to_process[best_index]:=file_to_do;
     end;
     stackmenu1.ListView1.Items.item[best_index].SubitemImages[L_quality]:=icon_king; {mark as best quality image}
+   {$ifdef darwin} {MacOS}
+    {bugfix darwin icons}
+    stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality]:='♛'+ stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality];
+   {$endif}
+
+
     memo2_message('Reference image selected based on quality (star_detections/hfd) is: '+files_to_process[best_index].name);
   end;
 end;
@@ -9069,6 +9089,14 @@ begin
 
             ListView1.Items.item[c].SubitemImages[L_result]:=5;{mark 3th columns as done using a stacked icon}
             ListView1.Items.item[c].subitems.Strings[L_result]:=inttostr(object_counter)+'  ';{show image result number}
+
+
+            {$ifdef darwin} {MacOS}
+            {bugfix darwin green red colouring}
+            if length(ListView1.Items.item[c].subitems.Strings[L_X])>1 then {manual position added, colour it}
+              ListView1.Items.item[c].subitems.Strings[L_result]:='✓ star'+ListView1.Items.item[c].subitems.Strings[L_result];
+            {$endif}
+
             inc(nrfiles);
             if mosaic_mode then
             begin

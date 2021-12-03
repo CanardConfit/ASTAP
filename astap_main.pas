@@ -22,6 +22,20 @@ You should have received a copy of the GNU Lesser General Public License (LGPL) 
    LCL widegetset: cocoa
 }
 
+{open compiler isssues:
+MacOS
+Listview smallimages are not displayed.
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39193
+
+MacOS
+ScrollCode=scEndScroll does not appears at the end of scroll
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/37454
+
+Mac
+Listview event OnCustomDrawItem is never triggered/fired in Mac, widget Cocoa
+https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39500
+}
+
 interface
 uses
  {$ifdef mswindows}
