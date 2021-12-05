@@ -950,8 +950,8 @@ begin
 
     if ( (fov_org>1.05*(height2*cdelt2) ) or (fov_org<0.95*(height2*cdelt2)) ) then
     begin
-      if xpixsz<>0 then suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF(height2*cdelt2,ffFixed,0,2)+'d or scale='+floattostrF(cdelt2*3600,ffFixed,0,1)+'"/pix or FL='+inttostr(round((180/(pi*1000)*xpixsz/cdelt2)) )+'mm '
-                   else suggest_str:='Warning scale was inaccurate! Set FOV='+floattostrF(height2*cdelt2,ffFixed,0,2)+'d or scale='+floattostrF(cdelt2*3600,ffFixed,0,1)+'"/pix ';
+      if xpixsz<>0 then suggest_str:='Warning inexact scale! Set FOV='+floattostrF(height2*cdelt2,ffFixed,0,2)+'d or scale='+floattostrF(cdelt2*3600,ffFixed,0,1)+'"/pix or FL='+inttostr(round((180/(pi*1000)*xpixsz/cdelt2)) )+'mm '
+                   else suggest_str:='Warning inexact scale! Set FOV='+floattostrF(height2*cdelt2,ffFixed,0,2)+'d or scale='+floattostrF(cdelt2*3600,ffFixed,0,1)+'"/pix ';
       memo2_message(suggest_str);
       warning_str:=suggest_str+warning_str;
     end;
