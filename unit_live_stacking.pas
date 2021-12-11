@@ -433,8 +433,8 @@ begin
           memo2_message('Live stack is waiting for files.');
         end;
         waiting:=true;
-        Application.ProcessMessages;
-        sleep(1000); {no new files, wait some time}
+        //Application.ProcessMessages;
+        wait(1000);  {smart sleep}{no new files, wait some time}
       end;
 
     end;{live average}

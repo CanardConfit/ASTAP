@@ -762,6 +762,7 @@ procedure reset_fits_global_variables(light :boolean); {reset the global variabl
 function convert_to_fits(var filen: string): boolean; {convert to fits}
 procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
 procedure convert_mono(var img: image_array);
+procedure Wait(wt:single=500);  {smart sleep}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -1913,6 +1914,17 @@ begin
 end;
 
 
+procedure Wait(wt:single=500);  {smart sleep}
+var endt: TDateTime;
+begin
+  endt:=now+wt/MSecsPerDay;
+  while now<endt do begin
+    Sleep(5);
+    if GetCurrentThreadId=MainThreadID then Application.ProcessMessages;
+  end;
+end;
+
+
 procedure read_keys_memo;
 var
   key      : string;
@@ -3035,7 +3047,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 1.0.0RC4, '+about_message4+', dated 2021-12-08';
+  #13+#10+'ASTAP version 1.0.0RC5a, '+about_message4+', dated 2021-12-11';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -6926,7 +6938,7 @@ begin
   AProcess.Execute;
   repeat
    begin
-     sleep(100);
+     wait(100);{smart sleep}
      if (AProcess.Output<>nil) then
      begin
        if ((show_output) and (AProcess.Output.NumBytesAvailable>0)) then
@@ -11332,29 +11344,6 @@ begin
 end;
 
 
-//procedure Tmainwindow.Button1Click(Sender: TObject);
-//var i, j,k : integer;
-//begin
-//  for i:=0 to 120 do
-//  BEGIN
-//  k:=i;
-//  if k>25 then k:=k+6;
-//  log_to_file('d:\temp\font.txt', '(');
-//    for j:=0 to 8 do
-//    begin
-//    log_to_file('d:\temp\font.txt', '('+
-//                                        inttostr(round(img_loaded[0,2+I*6,28-j]/65535))+
-//                                    ','+inttostr(round(img_loaded[0,3+i*6,28-j]/65535))+
-//                                    ','+inttostr(round(img_loaded[0,4+i*6,28-j]/65535))+
-//                                    ','+inttostr(round(img_loaded[0,5+i*6,28-j]/65535))+
-//                                    ','+inttostr(round(img_loaded[0,6+i*6,28-j]/65535))+
-//                                    '),');
-//    end;
-//    log_to_file('d:\temp\font.txt', '),'+'{'+inttostr(i*6+3)+'}');
-//  end;
-//end;
-
-
 procedure save_annotated_jpg(filename: string);{save viewer as annotated jpg}
 var
    JPG: TJPEGImage;
@@ -11461,9 +11450,6 @@ begin
       if list.count>=6  then
          val(list[0],dummy,error1);{extra test, is this a platesolve2 command?}
 
-     // application.messagebox( pchar(inttostr(error1)), pchar( 'error1'),MB_OK);
-      //if logging then log_to_file(command1+'  command line'); {command line is also written to .ini file}
-
       if ((list.count>=6) and (error1=0)) then {this is a platesolve2 command line}
       begin
         result:=true;
@@ -11477,11 +11463,6 @@ begin
 
         ra1.Text:=floattostr6(strtofloat2(list[0])*12/pi);
         dec1.Text:=floattostr6(strtofloat2(list[1])*180/pi);
-        {$IfDef Darwin}// for OS X,
-          //mainwindow.ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
-          //mainwindow.dec1change(nil);
-        {$ENDIF}
-
         field_size:=strtofloat2(list[3])*180/pi;{field height in degrees}
         stackmenu1.search_fov1.text:=floattostr6(field_size);{field width in degrees}
         fov_specified:=true; {always for platesolve2 command}
@@ -11491,12 +11472,6 @@ begin
         search_field:= min(180,sqrt(regions)*0.5*field_size);{regions 1000 is equivalent to 32x32 regions. So distance form center is 0.5*32=16 region heights}
 
         stackmenu1.radius_search1.text:=floattostrF(search_field,ffFixed,0,1);{convert to radius of a square search field}
-
-//        {$ifdef CPUARM}
-//        {$else}
-//          trayicon1.visible:=true;{show progress in hint of trayicon}
-//        {$endif}
-
         if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
         begin
           resultstr:='Valid plate solution';
@@ -11566,10 +11541,6 @@ begin
 
         {extra log}
         write_ini(solved);{write solution to ini file}
-//        log_to_file2(ChangeFileExt(filename2,'.txt'),'Command: '+command1+#10+
-//                                                     'RA : '+mainwindow.ra1.text+#10+
-//                                                     'DEC: '+mainwindow.dec1.text+#10+
-//                                                     'Height: '+stackmenu1.search_fov1.text);
         count:=0;
         while  ((fileexists(ChangeFileExt(filename2,'.apm'))=false) and  (count<60)) do begin sleep(50);inc(count); end;{wait maximum 3 seconds till solution file is available before closing the program}
       end {list count}

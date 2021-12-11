@@ -210,7 +210,7 @@ begin
 
   if fileexists(filename_new) then
   begin
-    sleep(500);
+    wait(500);{smart sleep}
     deletefile(filename_bak);{delete otherwise next rename is not possible}
     if renamefile(filename3,filename_bak) then
     begin

@@ -190,7 +190,7 @@ begin
 
   if update_header then
   begin
-    sleep(500);
+    wait(500);{smart sleep}
     deletefile(changeFileExt(filename3,'.bak'));{delete otherwise next rename is not possible}
     if renamefile(filename3,changeFileExt(filename3,'.bak')) then  renamefile(changeFileExt(filename3,'.new'),filename3) ;
   end;

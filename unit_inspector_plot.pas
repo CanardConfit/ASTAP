@@ -456,8 +456,7 @@ begin
         else
         mess2:=mess2+' extreme)';
 
-
-   //     fontsize:=fontsize*4;
+        fontsize:=fontsize*4;
         image1.Canvas.font.size:=fontsize;
         image1.Canvas.textout(x4,y4,floattostrF(median_top_left,ffFixed,0,2));
         image1.Canvas.textout(x3,y3,floattostrF(median_top_right,ffFixed,0,2));
@@ -482,6 +481,7 @@ begin
 
       left_margin:=min(width2 div 20,round(fontsize*2));{twice font size but not more then 5% of width. Required for small images}
       image1.Canvas.textout(left_margin,height2-text_height,mess2);{median HFD and tilt indication}
+
       memo2_message(mess2);{for stacking live}
     end
     else
