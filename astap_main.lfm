@@ -1174,6 +1174,11 @@ object mainwindow: Tmainwindow
           Hint = 'Convert the selected images to the 16 bit or 32 bit TIFF format.'
           OnClick = save_to_tiff1Click
         end
+        object convert_to_png1: TMenuItem
+          Caption = 'Batch convert to PNG'
+          Hint = 'Convert the selected images to the 16 bit PNG'
+          OnClick = convert_to_png1Click
+        end
         object convert_to_ppm1: TMenuItem
           Caption = 'Batch convert to PBM/PFM'
           Hint = 'Convert the selected images to the 16 bit PBM (Portable Bit Map) or 32 bit PFM (Portable Float Map) format.'

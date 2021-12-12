@@ -261,32 +261,37 @@ begin
             if c=1 then
             begin
                get_background(0,img_loaded,true,false, {var} background_r,star_level);{unknown, do not calculate noise_level}
-               cblack:=round( background_r);
+               background_r:=background_r-500;{pedestal 500}
+               cblack:=round(background_r);
                counterR:=light_count ;counterRdark:=dark_count; counterRflat:=flat_count; counterRbias:=flatdark_count; exposureR:=round(exposure);temperatureR:=set_temperature;{for historical reasons}
             end;
             if c=2 then
             begin
               get_background(0,img_loaded,true,false, {var} background_g,star_level);{unknown, do not calculate noise_level}
-              cblack:=round( background_g);
+              background_g:=background_g-500; {pedestal +500}
+              cblack:=round(background_g);
               counterG:=light_count;counterGdark:=dark_count; counterGflat:=flat_count; counterGbias:=flatdark_count; exposureG:=round(exposure);temperatureG:=set_temperature;
             end;
             if c=3 then
             begin
               get_background(0,img_loaded,true,false, {var} background_b,star_level);{unknown, do not calculate noise_level}
+              background_b:=background_b-500; {pedestal +500}
               cblack:=round( background_b);
               counterB:=light_count; counterBdark:=dark_count; counterBflat:=flat_count; counterBbias:=flatdark_count; exposureB:=round(exposure);temperatureB:=set_temperature;
             end;
             if c=4 then
             begin
               get_background(0,img_loaded,true,false, {var} background_r,star_level);{unknown, do not calculate noise_level}
+              background_r:=background_r-500; {pedestal +500}
+              background_g:=background_r-500;
+              background_b:=background_r-500;
               cblack:=round( background_r);
-              background_g:=background_r;
-              background_b:=background_r;
               counterRGB:=light_count; counterRGBdark:=dark_count; counterRGBflat:=flat_count; counterRGBbias:=flatdark_count; exposureRGB:=round(exposure);;temperatureRGB:=set_temperature;
             end;
             if c=5 then {Luminance}
             begin
               get_background(0,img_loaded,true,false, {var} background_L,star_level);{unknown, do not calculate noise_level}
+              background_L:=background_L-500;
               cblack:=round( background_L);
               counterL:=light_count; counterLdark:=dark_count; counterLflat:=flat_count; counterLbias:=flatdark_count; exposureL:=round(exposure);temperatureL:=set_temperature;
             end;
@@ -334,16 +339,12 @@ begin
               width_max:=width2+oversize*2;
 
               setlength(img_average,3,width_max,height_max);{will be color}
-              setlength(img_temp,3,width_max,height_max);{mono}
               for fitsY:=0 to height_max-1 do
                 for fitsX:=0 to width_max-1 do
                 begin
-                  img_average[0,fitsX,fitsY]:=500; {clear img_average. Set default at 500}
-                  img_average[1,fitsX,fitsY]:=500; {clear img_average}
-                  img_average[2,fitsX,fitsY]:=500; {clear img_average}
-                  img_temp[0,fitsX,fitsY]:=0;
-                  img_temp[1,fitsX,fitsY]:=0; {clear img_temp}
-                  img_temp[2,fitsX,fitsY]:=0; {clear img_temp}
+                  img_average[0,fitsX,fitsY]:=0; {clear img_average}
+                  img_average[1,fitsX,fitsY]:=0; {clear img_average}
+                  img_average[2,fitsX,fitsY]:=0; {clear img_average}
                 end;
             end;{init, c=0}
 
@@ -409,39 +410,38 @@ begin
                     value:=img_loaded[0,fitsX-1,fitsY-1];
                     if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
                     begin
-                      img_temp[0,x_new,y_new]:=-99999; {saturation marker, process later as black spot}
-                      img_temp[1,x_new,y_new]:=-99999; {saturation marker}
-                      img_temp[2,x_new,y_new]:=-99999; {saturation marker}
-                      img_average[0,x_new,y_new]:=0;
+                      img_average[0,x_new,y_new]:=0;//saturation marker, process later as black spot
                       img_average[1,x_new,y_new]:=0;
                       img_average[2,x_new,y_new]:=0;
                     end
                     else
                     begin
                       value:=(value-background_r);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
-                      if rr_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + rr_factor*value;{execute only if greater then zero for speed} end;
-                      if rg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + rg_factor*value; end;
-                      if rb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + rb_factor*value; end;
+                      if rr_factor>0.00001 then begin img_average[0,x_new,y_new]:=rr_factor*value;{execute only if greater then zero for speed} end;
+                      if rg_factor>0.00001 then begin img_average[1,x_new,y_new]:=rg_factor*value; end;
+                      if rb_factor>0.00001 then begin img_average[2,x_new,y_new]:=rb_factor*value; end;
                     end;
                   end;
                   if c=2 {green} then
                   begin
+ //                   if fitsx=1583 then
+//                       if fitsy=1474 then
+//                    beep;
+
+
                     value:=img_loaded[0,fitsX-1,fitsY-1];
                     if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
                     begin
-                      img_temp[0,x_new,y_new]:=-99999; {saturation marker, process later as black spot}
-                      img_temp[1,x_new,y_new]:=-99999; {saturation marker}
-                      img_temp[2,x_new,y_new]:=-99999; {saturation marker}
-                      img_average[0,x_new,y_new]:=0;
+                      img_average[0,x_new,y_new]:=0;//saturation marker, process later as black spot
                       img_average[1,x_new,y_new]:=0;
                       img_average[2,x_new,y_new]:=0;
                     end
                     else
                     begin
                       value:=(value-background_g);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
-                      if gr_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + gr_factor*value;{execute only if greater then zero for speed} end;
-                      if gg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + gg_factor*value; end;
-                      if gb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + gb_factor*value;  end;
+                      if gr_factor>0.00001 then begin img_average[0,x_new,y_new]:=gr_factor*value;{execute only if greater then zero for speed} end;
+                      if gg_factor>0.00001 then begin img_average[1,x_new,y_new]:=gg_factor*value; end;
+                      if gb_factor>0.00001 then begin img_average[2,x_new,y_new]:=gb_factor*value;  end;
                     end;
                   end;
                   if c=3 {blue}  then
@@ -449,26 +449,23 @@ begin
                     value:=img_loaded[0,fitsX-1,fitsY-1];
                     if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
                     begin
-                      img_temp[0,x_new,y_new]:=-99999; {saturation marker, process later as black spot}
-                      img_temp[1,x_new,y_new]:=-99999; {saturation marker}
-                      img_temp[2,x_new,y_new]:=-99999; {saturation marker}
-                      img_average[0,x_new,y_new]:=0;
+                      img_average[0,x_new,y_new]:=0;//saturation marker, process later as black spot
                       img_average[1,x_new,y_new]:=0;
                       img_average[2,x_new,y_new]:=0;
                     end
                     else
                     begin
                       value:=(value-background_b);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
-                      if br_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + br_factor*value;{execute only if greater then zero for speed} end;
-                      if bg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + bg_factor*value; end;
-                      if bb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + bb_factor*value; end;
+                      if br_factor>0.00001 then begin img_average[0,x_new,y_new]:=br_factor*value;{execute only if greater then zero for speed} end;
+                      if bg_factor>0.00001 then begin img_average[1,x_new,y_new]:=bg_factor*value; end;
+                      if bb_factor>0.00001 then begin img_average[2,x_new,y_new]:=bb_factor*value; end;
                     end;
                   end;
                   if c=4 {RGB image, naxis3=3}   then
                   begin
-                    begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + img_loaded[0,fitsX-1,fitsY-1]-background_r; end;
-                    begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + img_loaded[1,fitsX-1,fitsY-1]-background_g; end;
-                    begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + img_loaded[2,fitsX-1,fitsY-1]-background_b; end;
+                    begin img_average[0,x_new,y_new]:=img_loaded[0,fitsX-1,fitsY-1]-background_r; end;
+                    begin img_average[1,x_new,y_new]:=img_loaded[1,fitsX-1,fitsY-1]-background_g; end;
+                    begin img_average[2,x_new,y_new]:=img_loaded[2,fitsX-1,fitsY-1]-background_b; end;
                   end;
                   if c=5 {Luminance} then
                   begin

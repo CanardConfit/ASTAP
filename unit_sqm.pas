@@ -83,7 +83,7 @@ begin
    if bayer then
    begin
      form_sqm1.message1.font.color:=clgreen;
-     form_sqm1.message1.caption:='This OSC image is automatic binned 2x2.';
+     form_sqm1.message1.caption:='This OSC image is automatically binned 2x2.';
      application.processmessages;
      backup_img; {move viewer data to img_backup}
      bin_X2X3X4(2);

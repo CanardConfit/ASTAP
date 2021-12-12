@@ -3667,13 +3667,40 @@ end;
 
 
 procedure black_spot_filter(var img: image_array);{remove black spots with value zero} {execution time about 0.4 sec}
-var fitsX,fitsY,k,x1,y1,col,w,h,i,j,counter,range : integer;
+var fitsX,fitsY,k,x1,y1,col,w,h,i,j,counter,range,left,right,bottom,top : integer;
    img_temp2 : image_array;
    value, value2 : single;
+   black : boolean;
 begin
   col:=length(img);{the real number of colours}
   h:=length(img[0,0]);{height}
   w:=length(img[0]);{width}
+
+  {find the black borders.}
+  left:=-1;
+  repeat
+    inc(left);
+    black:=( (img[0,left, h div 2]=0) or ((col>=1) and (img[1,left, h div 2]=0)) or  ((col>=2) and (img[2,left, h div 2]=0)))
+  until ((black=false) or (left>=w-1));
+
+  right:=w;
+  repeat
+    dec(right);
+    black:=( (img[0,right, h div 2]=0) or ((col>=1) and (img[1,right, h div 2]=0)) or  ((col>=2) and (img[2,right, h div 2]=0)))
+  until ((black=false) or (right<=0));
+
+  bottom:=-1;
+  repeat
+    inc(bottom);
+    black:=( (img[0,w div 2, bottom]=0) or ((col>=1) and (img[1,w div 2,bottom]=0)) or  ((col>=2) and (img[2,w div 2,bottom]=0)))
+  until ((black=false) or (bottom>=h-1));
+
+  top:=h;
+  repeat
+    dec(top);
+    black:=( (img[0,w div 2,top]=0) or ((col>=1) and (img[1,w div 2,top]=0)) or  ((col>=2) and (img[2,w div 2,top]=0)))
+  until ((black=false) or (top<=0));
+
 
   range:=1;
   setlength(img_temp2,col,w,h);{set length of image array}
@@ -3684,6 +3711,7 @@ begin
       begin
         value:=img[k,fitsX, fitsY];
         if value<=0 then {black spot or or -99999 saturation marker}
+        if ((fitsX>=left) and (fitsX<=right) and (fitsY>=bottom) and (fitsY<=top)) then {not the incomplete borders}
         begin
           range:=1;
           repeat
@@ -3691,19 +3719,22 @@ begin
             for i:=-range to range do
             for j:=-range to range do
             begin
-              x1:=fitsX+i;
-              y1:=fitsY+j;
-              if ((x1>=0) and (x1<=w-1) and (y1>=0) and (y1<=h-1)) then
+              if ((abs(i)=range) or (abs(j)=range)) then {square search range}
               begin
-                value2:=img[k,x1,  y1];
-                if value2>0 then begin value:=value+value2; inc(counter);end;{ignore zeros or -99999 saturation markers}
+                x1:=fitsX+i;
+                y1:=fitsY+j;
+                if ((fitsX>=left) and (fitsX<=right) and (fitsY>=bottom) and (fitsY<=top)) then {not the incomplete borders}
+                begin
+                  value2:=img[k,x1,  y1];
+                  if value2>0 then begin value:=value+value2; inc(counter);end;{ignore zeros or -99999 saturation markers}
+                end;
               end;
             end;
             if counter<>0 then
                         value:=value/counter
             else
             inc(range);
-          until ((counter<>0) or (range>3));{try til (3+3) x (3+3) }
+          until ((counter<>0) or (range>=100));{try till 100 pixels away}
         end;
         img_temp2[k,fitsX,fitsY]:=value;
       end;

@@ -117,6 +117,7 @@ type
     bin_3x3menu1: TMenuItem;
     imageinspection1: TMenuItem;
     inspector1: TMenuItem;
+    convert_to_png1: TMenuItem;
     roundness1: TMenuItem;
     MenuItem28: TMenuItem;
     MenuItem29: TMenuItem;
@@ -375,7 +376,7 @@ type
     procedure extractgreen1Click(Sender: TObject);
     procedure grid1Click(Sender: TObject);
     procedure bin_2x2menu1Click(Sender: TObject);
-    procedure MenuItem22Click(Sender: TObject);
+    procedure convert_to_png1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
     procedure inspection1click(Sender: TObject);
     procedure removegreenpurple1Click(Sender: TObject);
@@ -3047,7 +3048,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 1.0.0RC5a, '+about_message4+', dated 2021-12-11';
+  #13+#10+'ASTAP version 1.0.0RC6, '+about_message4+', dated 2021-12-12';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -8942,11 +8943,6 @@ begin
   end;
 end;
 
-procedure Tmainwindow.MenuItem22Click(Sender: TObject);
-begin
-  CCDinspector(30,three_corners,strtofloat2(measuring_angle))
-end;
-
 
 procedure Tmainwindow.positionanddate1Click(Sender: TObject);
 begin
@@ -14384,6 +14380,59 @@ begin
     end;
   end;
 end;
+
+procedure Tmainwindow.convert_to_png1Click(Sender: TObject);
+var
+  I: integer;
+  Save_Cursor:TCursor;
+  err   : boolean;
+  dobackup : boolean;
+begin
+  OpenDialog1.Title := 'Select multiple  files to convert';
+  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter :=  'All formats except PPM |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.xisf;*.fz;'+
+                                       '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;'+
+                         '|FITS files (*.fit*,*.xisf)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.new;*.xisf;*.fz'+
+                         '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;'+
+                         '|PNG, TIFF, JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
+                         '|Compressed FITS files|*.fz';
+
+  opendialog1.initialdir:=ExtractFileDir(filename2);
+  fits_file:=false;
+  esc_pressed:=false;
+  err:=false;
+  if OpenDialog1.Execute then
+  begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    dobackup:=img_loaded<>nil;
+    if dobackup then backup_img;{preserve img array and fits header of the viewer}
+
+    try { Do some lengthy operation }
+      with OpenDialog1.Files do
+      for I := 0 to Count - 1 do
+      begin
+        progress_indicator(100*i/(count),' Converting');{show progress}
+        Application.ProcessMessages;
+        if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+        filename2:=Strings[I];
+        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
+        if load_image(false {recenter},false {plot}) then
+          save_png16(img_loaded,naxis3,width2,height2,ChangeFileExt(filename2,'.png'),false {flip H},false {flip V})
+        else err:=true;
+      end;
+      if err=false then mainwindow.caption:='Completed, all files converted.'
+      else
+      mainwindow.caption:='Finished, files converted but with errors!';
+
+      finally
+      if dobackup then restore_img;{for the viewer}
+      Screen.Cursor := Save_Cursor;  { Always restore to normal }
+      progress_indicator(-100,'');{progresss done}
+    end;
+  end;
+end;
+
 
 procedure Tmainwindow.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
