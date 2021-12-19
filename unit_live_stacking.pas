@@ -198,7 +198,7 @@ begin
 
           Application.ProcessMessages;
           {load image}
-          if ((esc_pressed) or (load_thefile(filename2)=false)) then
+          if ((esc_pressed) or (load_image(false,false {plot})=false)) then
           begin
             if esc_pressed=false then memo2_message('Error loading file'); {can't load}
             live_stacking_pause1.font.style:=[];
