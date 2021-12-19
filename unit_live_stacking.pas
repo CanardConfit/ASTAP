@@ -38,7 +38,7 @@ var
   memo1_text : string;{for backup header}
 
 
-function file_available(stack_directory:string; var filen: string ) : boolean; {check if fits file is available and report the filename}
+function file_available(stack_directory:string; out filen: string ) : boolean; {check if fits file is available and report the filename}
 var
    thefiles : Tstringlist;
    f : file;
@@ -146,6 +146,8 @@ var
     file_ext,filen                    :  string;
     multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}
     warning  : string;
+var
+    rename_counter: integer=0;
 
     procedure reset_var;{reset variables  including init:=false}
     begin
@@ -248,7 +250,6 @@ begin
 
             memo2_message('Adding file: '+inttostr(counter+1)+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
 
-            if inspect_latest_image1.checked then CCDinspector(30,false,0);
 
             Application.ProcessMessages;
             if esc_pressed then exit;
@@ -415,7 +416,11 @@ begin
           if pos('_@',filename2)=0 then filen:=copy(filename2,1,length(filename2)-length(file_ext))+'_@'+ date_string {function} +file_ext+'_' {mark file with date for SGP since the file name will not change if first file is renamed}
                                    else filen:=copy(filename2,1,length(filename2)-length(file_ext))+file_ext+'_'; {already marked with date}
           if RenameFile(filename2,filen)=false then {mark files as done with file extension+'_', beep if failure}
+          begin
+           // if RenameFile(filename2,filen)=false then
             beep;
+
+          end;
         finally
         end;
       end

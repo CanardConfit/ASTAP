@@ -118,6 +118,7 @@ type
     imageinspection1: TMenuItem;
     inspector1: TMenuItem;
     convert_to_png1: TMenuItem;
+    MenuItem22: TMenuItem;
     roundness1: TMenuItem;
     MenuItem28: TMenuItem;
     MenuItem29: TMenuItem;
@@ -377,6 +378,7 @@ type
     procedure grid1Click(Sender: TObject);
     procedure bin_2x2menu1Click(Sender: TObject);
     procedure convert_to_png1Click(Sender: TObject);
+    procedure MenuItem22Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
     procedure inspection1click(Sender: TObject);
     procedure removegreenpurple1Click(Sender: TObject);
@@ -3048,7 +3050,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 1.0.0RC6, '+about_message4+', dated 2021-12-12';
+  #13+#10+'ASTAP version 1.0.0RC7, '+about_message4+', dated 2021-12-19';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -7405,12 +7407,15 @@ begin
       begin
         result:=true; {Important read error detection. No other read error method works for Tmeminifile. Important for creating directories for new installations}
         mainwindow.left:=c;
-      end;
-
-      if c=987654321 then {remove this line after 2022-5-7}
+      end
+      else
       begin
-        result:=loadsettingsold(lpath);{old format}  {remove this line after 2022-5-7}
-        exit;  {remove this line after 2022-5-7}
+        mainwindow.top:=0;{for case the form was not set at the main screen}
+        mainwindow.left:=0;
+
+         result:=loadsettingsold(lpath);{old format}  {remove this line after 2022-5-7}
+
+        exit;
       end;
 
 
@@ -7668,10 +7673,11 @@ begin
       c:=Sett.ReadInteger('stack','sample_size',987654321);if c<>987654321 then stackmenu1.sample_size1.itemindex:=c;
 
       stackmenu1.live_stacking_path1.caption:=Sett.ReadString('stack','live_stack_dir','');
+      stackmenu1.monitoring_path1.caption:=Sett.ReadString('stack','monitor_dir','');
       stackmenu1.write_jpeg1.Checked:=Sett.ReadBool('stack','write_jpeg',false);{live stacking}
       stackmenu1.interim_to_clipboard1.Checked:=Sett.ReadBool('stack','to_clipboard',false);{live stacking}
-      stackmenu1.inspect_latest_image1.Checked:=Sett.ReadBool('stack','live_inspect',false);{live stacking}
 
+      c:=Sett.ReadInteger('stack','live_inspect',987654321);if c<>987654321 then stackmenu1.monitor_action1.itemindex:=c;
 
       stackmenu1.equinox1.itemindex:=Sett.ReadInteger('stack','equinox',987654321);if c<>987654321 then stackmenu1.equinox1.itemindex:=c;
       stackmenu1.mount_write_wcs1.Checked:=Sett.ReadBool('stack','wcs',true);{use wcs files for mount}
@@ -7682,6 +7688,7 @@ begin
 
       c:=Sett.ReadInteger('insp','insp_left',987654321); if c<>987654321 then insp_left:=c;
       c:=Sett.ReadInteger('insp','insp_top',987654321); if c<>987654321 then insp_top:=c;
+      measuring_angle:=Sett.Readstring('insp','insp_angle','0');
       contour_check:=Sett.ReadBool('insp','contour',false);
       voronoi_check:=Sett.ReadBool('insp','voronoi',false);
       values_check:=Sett.ReadBool('insp','values',true);
@@ -7689,7 +7696,6 @@ begin
       normalise_mode:=Sett.ReadInteger('insp','rawbayer',0);
       three_corners:=Sett.ReadBool('insp','3corners',false);
       extra_stars:=Sett.ReadBool('insp','extra_stars',false);
-
 
       listviews_begin_update; {stop updating listviews}
 
@@ -8004,10 +8010,11 @@ begin
       sett.writeInteger('stack','sample_size',stackmenu1.sample_size1.itemindex);
 
       sett.writestring('stack','live_stack_dir',stackmenu1.live_stacking_path1.caption);
+      sett.writestring('stack','monitor_dir',stackmenu1.monitoring_path1.caption);
       sett.writeBool('stack','write_jpeg',stackmenu1.write_jpeg1.checked);{live stacking}
       sett.writeBool('stack','to_clipboard',stackmenu1.interim_to_clipboard1.checked);{live stacking}
-      sett.writeBool('stack','live_inspect',stackmenu1.inspect_latest_image1.checked);{live stacking}
 
+      sett.writeInteger('stack','live_inspect',stackmenu1.monitor_action1.itemindex);
 
       sett.writeInteger('stack','equinox',stackmenu1.equinox1.itemindex);
       sett.writeBool('stack','wcs',stackmenu1.mount_write_wcs1.Checked);{uses wcs file for menu mount}
@@ -8018,6 +8025,7 @@ begin
 
       sett.writeInteger('insp','insp_left',insp_left);{position window}
       sett.writeInteger('insp','insp_top',insp_top);
+      sett.writestring('insp','insp_angle',measuring_angle);
       sett.writeBool('insp','contour',contour_check);
       sett.writeBool('insp','voronoi',voronoi_check);
       sett.writeBool('insp','values',values_check);
@@ -14432,6 +14440,13 @@ begin
     end;
   end;
 end;
+
+procedure Tmainwindow.MenuItem22Click(Sender: TObject);
+begin
+  form_inspection1.aberration_inspector1Click(nil);
+end;
+
+
 
 
 procedure Tmainwindow.FormClose(Sender: TObject; var CloseAction: TCloseAction);

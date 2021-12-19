@@ -1290,6 +1290,12 @@ object mainwindow: Tmainwindow
         Visible = False
         OnClick = roundness1Click
       end
+      object MenuItem22: TMenuItem
+        Caption = '--- Hidden abberation'
+        ShortCut = 117
+        Visible = False
+        OnClick = MenuItem22Click
+      end
       object MenuItem2: TMenuItem
         Caption = '-'
       end

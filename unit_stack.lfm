@@ -4169,7 +4169,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Stack live images'
       Caption = 'Live stacking'
       ClientHeight = 470
-      ClientWidth = 1840
+      ClientWidth = 1702
       ParentFont = False
       object live_stacking1: TButton
         Left = 16
@@ -4320,15 +4320,6 @@ object stackmenu1: Tstackmenu1
           Caption = 'For log use the log option below.'
           ParentColor = False
         end
-        object inspect_latest_image1: TCheckBox
-          Left = 0
-          Height = 19
-          Hint = 'Analyse the  latest image.'
-          Top = 48
-          Width = 234
-          Caption = 'Apply CCD inspector on the latest image'
-          TabOrder = 2
-        end
       end
       object browse_live_stacking1: TBitBtn
         Left = 16
@@ -4342,6 +4333,101 @@ object stackmenu1: Tstackmenu1
         ImageIndex = 24
         OnClick = browse_live_stacking1Click
         TabOrder = 5
+      end
+    end
+    object TabSheet2: TTabSheet
+      Caption = 'Monitoring'
+      ClientHeight = 470
+      ClientWidth = 1702
+      object Label3: TLabel
+        Left = 128
+        Height = 15
+        Top = 24
+        Width = 586
+        Caption = 'Load (and analyse) any new file in the selected folder. Darks and flats and debayer will be applied as configured.'
+        ParentColor = False
+      end
+      object browse_monitoring1: TBitBtn
+        Left = 16
+        Height = 26
+        Hint = 'Select the directory to monitor. Program will read FITS, RAW(s), JPEG, TIFF, PNG.'
+        Top = 16
+        Width = 79
+        AutoSize = True
+        Caption = 'Folder'
+        Images = ImageList2
+        ImageIndex = 24
+        OnClick = browse_monitoring1Click
+        TabOrder = 0
+      end
+      object live_monitoring1: TButton
+        Left = 16
+        Height = 25
+        Hint = 'Start monitoring.'
+        Top = 128
+        Width = 75
+        Caption = '>'
+        OnClick = live_monitoring1Click
+        ParentFont = False
+        TabOrder = 1
+      end
+      object monitoring_stop1: TButton
+        Left = 16
+        Height = 25
+        Hint = 'Stop monitoring'
+        Top = 208
+        Width = 75
+        Caption = '⏹'
+        OnClick = monitoring_stop1Click
+        ParentFont = False
+        TabOrder = 2
+      end
+      object monitor_date1: TLabel
+        Left = 16
+        Height = 15
+        Top = 96
+        Width = 15
+        Caption = '---'
+        ParentColor = False
+        ParentFont = False
+      end
+      object monitoring_path1: TLabel
+        Left = 16
+        Height = 15
+        Top = 64
+        Width = 15
+        Caption = '---'
+        ParentColor = False
+        ParentFont = False
+      end
+      object monitor_action1: TComboBox
+        Left = 248
+        Height = 23
+        Hint = 'Sample size colours'
+        Top = 128
+        Width = 224
+        BorderSpacing.Around = 5
+        ItemHeight = 15
+        ItemIndex = 0
+        Items.Strings = (
+          'none'
+          'Tilt, 4 point measurement & HFD'
+          'Tilt, 3 point measurement & HFD'
+          'Aberration view'
+        )
+        OnChange = resize_factor1Change
+        ParentFont = False
+        Style = csDropDownList
+        TabOrder = 3
+        Text = 'none'
+      end
+      object Label43: TLabel
+        Left = 200
+        Height = 15
+        Top = 128
+        Width = 38
+        Caption = 'Action:'
+        ParentColor = False
       end
     end
     object tab_Pixelmath1: TTabSheet

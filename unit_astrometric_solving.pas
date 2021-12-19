@@ -601,10 +601,10 @@ begin
     memo2_message('Using star database '+uppercase(name_database));
 
     if ((fov_org>30) and (database_type<>001)) then
-      warning_str:=warning_str+'Wide field image, use W08 database! '
+      warning_str:=warning_str+'Very large FOV, use W08 database! '
     else
     if ((fov_org>6) and (database_type=1476)) then
-      warning_str:=warning_str+'Large FOV, use V17 or G17 database! ';
+      warning_str:=warning_str+'Large FOV, use V17 database! ';
 
     if warning_str<>'' then memo2_message(warning_str);
      popup_warningV17:=#10+warning_str;

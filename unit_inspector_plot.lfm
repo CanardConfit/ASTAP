@@ -97,7 +97,7 @@ object form_inspection1: Tform_inspection1
     Hint = 'Makes a compilation of the image corners and the center for a closer inspection.'
     Top = 136
     Width = 173
-    Caption = 'Aberration inspector'
+    Caption = 'Aberration inspector  F6'
     Images = mainwindow.ImageList1
     ImageIndex = 39
     OnClick = aberration_inspector1Click

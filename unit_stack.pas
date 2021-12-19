@@ -44,8 +44,10 @@ type
     apply_normalise_filter1: TCheckBox;
     browse1: TBitBtn;
     browse_blink1: TBitBtn;
+    browse_monitoring1: TBitBtn;
     browse_mount1: TBitBtn;
     browse_live_stacking1: TBitBtn;
+    monitor_date1: TLabel;
     file_to_add1: TBitBtn;
     browse_photometry1: TBitBtn;
     browse_dark1: TBitBtn;
@@ -56,9 +58,13 @@ type
     classify_flat_date1: TCheckBox;
     classify_flat_exposure1: TCheckBox;
     hours_and_minutes1: TCheckBox;
-    inspect_latest_image1: TCheckBox;
     center_position1: TLabel;
     binning1: TLabel;
+    Label3: TLabel;
+    Label43: TLabel;
+    live_monitoring1: TButton;
+    monitoring_path1: TLabel;
+    monitoring_stop1: TButton;
     removeselected5: TMenuItem;
     menukeywordchange1: TMenuItem;
     MenuItem32: TMenuItem;
@@ -118,12 +124,14 @@ type
     PopupMenu9: TPopupMenu;
     removeselected9: TMenuItem;
     renametobak9: TMenuItem;
+    monitor_action1: TComboBox;
     select9: TMenuItem;
     selectall5: TMenuItem;
     selectall9: TMenuItem;
     SpeedButton2: TSpeedButton;
     mount1: TTabSheet;
     apply_box_filter2: TButton;
+    TabSheet2: TTabSheet;
     test_osc_normalise_filter1: TButton;
     undo_button6: TBitBtn;
     unselect9: TMenuItem;
@@ -595,9 +603,12 @@ type
     procedure add_noise1Click(Sender: TObject);
     procedure align_blink1Change(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
+    procedure browse_monitoring1Click(Sender: TObject);
     procedure equinox1Change(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure help_mount_tab1Click(Sender: TObject);
+    procedure live_monitoring1Click(Sender: TObject);
+    procedure monitoring_stop1Click(Sender: TObject);
     procedure lrgb_auto_level1Change(Sender: TObject);
     procedure keywordchangelast1Click(Sender: TObject);
     procedure keywordchangesecondtolast1Click(Sender: TObject);
@@ -1006,7 +1017,7 @@ implementation
 
 uses
   unit_image_sharpness, unit_ephemerides, unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd,
-  unit_live_stacking, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_aavso;
+  unit_live_stacking, unit_live_monitoring, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_aavso;
 
 
 type
@@ -7305,6 +7316,16 @@ begin
   listview6.alphasort; {sort on time}
 end;
 
+procedure Tstackmenu1.browse_monitoring1Click(Sender: TObject);
+var
+  live_monitor_directory : string;
+begin
+  if SelectDirectory('Select directory to monitor', monitoring_path1.caption , live_monitor_directory) then
+  begin
+    monitoring_path1.caption:=live_monitor_directory;{show path}
+  end;
+end;
+
 
 procedure Tstackmenu1.equinox1Change(Sender: TObject);
 begin
@@ -7324,6 +7345,23 @@ end;
 procedure Tstackmenu1.help_mount_tab1Click(Sender: TObject);
 begin
    openurl('http://www.hnsky.org/astap.htm#mount_tab');
+end;
+
+procedure Tstackmenu1.live_monitoring1Click(Sender: TObject);
+begin
+  save_settings2;{too many lost selected files . so first save settings}
+  esc_pressed:=false;
+  live_monitoring1.font.style:=[fsbold,fsunderline];
+  Application.ProcessMessages; {process font changes}
+
+  monitoring(monitoring_path1.caption){monitor a directory}
+end;
+
+procedure Tstackmenu1.monitoring_stop1Click(Sender: TObject);
+begin
+  esc_pressed:=true;
+  live_monitoring1.font.style:=[];
+  Application.ProcessMessages; {process font changes}
 end;
 
 

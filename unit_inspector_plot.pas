@@ -1109,9 +1109,9 @@ begin
   executed:=1;{only refresh required to undo}
 
   if extra_stars=false then
-    CCDinspector(30,three_corners,strtofloat2(measuring_angle1.text))
+    CCDinspector(30,three_corners,strtofloat(measuring_angle))
   else
-    CCDinspector(10,three_corners,strtofloat2(measuring_angle1.text));
+    CCDinspector(10,three_corners,strtofloat(measuring_angle));
 end;
 
 
@@ -1267,8 +1267,6 @@ begin
 
       Y:=Y+stepsizeY;
     until Y>=height2-1;
-
-
 
     if restore_req then {restore backup image for raw Bayer image or colour image}
     begin

@@ -1435,7 +1435,7 @@ end;
 //-----------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-{For this Pascal version Pluto has been removed. Pluto position will be retrieved as a minor planet}
+{For this Pascal version minor Pluto has been removed. Pluto position will be retrieved as a minor planet}
 {*+
 *     - - - - - - -
 *      P L A N E T
