@@ -1802,13 +1802,13 @@ begin
           memo2_message('Photometry calibration for EXTENDED OBJECTS successful. '+inttostr(counter_flux_measured)+
                         ' Gaia stars used for flux calibration.  Flux aperture diameter: measured star diameter.'+
                         ' Coefficient of variation: '+floattostrF(cv*100,ffgeneral,2,1)+
-                        '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with a pixel value '+inttostr(round(datamax_org))+' or higher are ignored.')
+                        '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(datamax_org))+' or higher are ignored.')
 
         else
           memo2_message('Photometry calibration for POINT SOURCES successful. '+inttostr(counter_flux_measured)+
                         ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(flux_aperture*2, ffgeneral, 2,2)+' pixels.'+
                         ' Coefficient of variation: '+floattostrF(cv*100,ffgeneral,2,1)+
-                        '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with a pixel value '+inttostr(round(datamax_org))+' or higher are ignored.');
+                        '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(datamax_org))+' or higher are ignored.');
 
         if report_lim_magn then
         begin

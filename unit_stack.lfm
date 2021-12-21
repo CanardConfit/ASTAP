@@ -3913,14 +3913,14 @@ object stackmenu1: Tstackmenu1
       Hint = 'Measure the mount celestial position offsets.'
       Caption = 'Mount analyse'
       ClientHeight = 470
-      ClientWidth = 1840
+      ClientWidth = 1702
       ImageIndex = 21
       object listview9: TListView
         Left = 0
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1840
+        Width = 1702
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -4272,7 +4272,7 @@ object stackmenu1: Tstackmenu1
         Cursor = crHandPoint
         Left = 208
         Height = 30
-        Hint = 'Online help about blink and photometry'
+        Hint = 'Online help about live stacking'
         Top = 11
         Width = 9
         Caption = '?'
@@ -4428,6 +4428,31 @@ object stackmenu1: Tstackmenu1
         Width = 38
         Caption = 'Action:'
         ParentColor = False
+      end
+      object help_monitoring1: TLabel
+        Cursor = crHandPoint
+        Left = 464
+        Height = 30
+        Hint = 'Online help about monitoring'
+        Top = 49
+        Width = 9
+        Caption = '?'
+        Font.Color = clBlue
+        Font.Height = -21
+        ParentColor = False
+        ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
+        OnClick = help_monitoring1Click
+      end
+      object monitor_applydarkflat1: TCheckBox
+        Left = 248
+        Height = 19
+        Hint = 'Apply dark and flat for each image'
+        Top = 80
+        Width = 120
+        Caption = 'Apply dark and flat'
+        TabOrder = 4
       end
     end
     object tab_Pixelmath1: TTabSheet

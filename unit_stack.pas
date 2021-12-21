@@ -47,6 +47,8 @@ type
     browse_monitoring1: TBitBtn;
     browse_mount1: TBitBtn;
     browse_live_stacking1: TBitBtn;
+    monitor_applydarkflat1: TCheckBox;
+    help_monitoring1: TLabel;
     monitor_date1: TLabel;
     file_to_add1: TBitBtn;
     browse_photometry1: TBitBtn;
@@ -606,6 +608,7 @@ type
     procedure browse_monitoring1Click(Sender: TObject);
     procedure equinox1Change(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure help_monitoring1Click(Sender: TObject);
     procedure help_mount_tab1Click(Sender: TObject);
     procedure live_monitoring1Click(Sender: TObject);
     procedure monitoring_stop1Click(Sender: TObject);
@@ -7341,6 +7344,11 @@ begin
   bsolutions:=nil;{just to be sure to clean up}
 end;
 
+procedure Tstackmenu1.help_monitoring1Click(Sender: TObject);
+begin
+  openurl('http://www.hnsky.org/astap.htm#monitoring');
+end;
+
 
 procedure Tstackmenu1.help_mount_tab1Click(Sender: TObject);
 begin
@@ -8177,12 +8185,7 @@ begin
       flat_calstat:=calstat; {store flat calstat since it will be detroyed by next search for flat with closest date}
 
       if pos('B',flat_calstat)=0 then
-      begin
-        if flatdark_count=0 then {not an older flat}
-           memo2_message('█ █ █ █ █ █ Warning: Flat not calibrated with a flat-dark/bias (keywords CALSTAT or BIAS_CNT). █ █ █ █ █ █')
-        else
-          flat_calstat:=flat_calstat+'B'; {older flat temporary till 2022-12 till all flats have "B" in in calstat. Remove 2022-12}
-      end;
+         memo2_message('█ █ █ █ █ █ Warning: Flat not calibrated with a flat-dark/bias (keywords CALSTAT or BIAS_CNT). █ █ █ █ █ █');
 
       if flat_count=0 then flat_count:=1; {is normally updated by load_fits}
 
@@ -8555,10 +8558,10 @@ begin
     if dark_count>0 then
     begin
       dark_norm_value:=0;
-      for fitsY:=-2 to 3 do {do even times, 6x6}
-         for fitsX:=-2 to 3 do
+      for fitsY:=-4 to 5 do {do even times, 10x10 for bayer matrix}
+         for fitsX:=-4 to 5 do
            dark_norm_value:=dark_norm_value+img_dark[0,fitsX+(width2 div 2),fitsY +(height2 div 2)];
-      dark_norm_value:=round(dark_norm_value/36);{scale factor to apply flat. The norm value will result in a factor one for the center.}
+      dark_norm_value:=round(dark_norm_value/100);{scale factor to apply flat. The norm value will result in a factor one for the center.}
 
       for fitsY:=0 to height2-1 do  {apply the dark}
         for fitsX:=0 to width2-1  do
@@ -8592,8 +8595,8 @@ begin
       flat21:=0;
       flat22:=0;
 
-      for fitsY:=-2 to 3 do {do even times, 6x6}
-         for fitsX:=-2 to 3 do
+      for fitsY:=-4 to 5 do {do even times, 10x10 for Bay matrix}
+         for fitsX:=-4 to 5 do
          begin
            value:=img_flat[0,fitsX+(width2 div 2),fitsY +(height2 div 2)];
            flat_norm_value:=flat_norm_value+value;
@@ -8606,7 +8609,7 @@ begin
            if ((odd(fitsX)=false) and (odd(fitsY)=false) ) then
            flat22:=flat22+value;
          end;
-      flat_norm_value:=round(flat_norm_value/36);{scale factor to apply flat. The norm value will result in a factor one for the center.}
+      flat_norm_value:=round(flat_norm_value/100);{scale factor to apply flat. The norm value will result in a factor one for the center.}
 
       if max(max(flat11,flat12),max(flat21,flat22))/min(min(flat11,flat12),min(flat21,flat22))>2.0 then memo2_message('█ █ █ █ █ █ Warning flat pixels differ too much. Use white light for OSC flats or consider using option "Normalise OSC flat" █ █ █ █ █ █ ');
 

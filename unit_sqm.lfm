@@ -1,10 +1,10 @@
 object form_sqm1: Tform_sqm1
   Left = 735
-  Height = 541
+  Height = 572
   Top = 81
   Width = 596
   Caption = 'SQM measurement'
-  ClientHeight = 541
+  ClientHeight = 572
   ClientWidth = 596
   KeyPreview = True
   OnClose = FormClose
@@ -17,7 +17,7 @@ object form_sqm1: Tform_sqm1
     Left = 536
     Height = 30
     Hint = 'Help asteroid annotation'
-    Top = 488
+    Top = 536
     Width = 9
     Caption = '?'
     Font.Color = clBlue
@@ -106,7 +106,7 @@ object form_sqm1: Tform_sqm1
     Left = 256
     Height = 30
     Hint = 'Ok'
-    Top = 488
+    Top = 536
     Width = 86
     Caption = '✔'
     Default = True
@@ -119,7 +119,7 @@ object form_sqm1: Tform_sqm1
   object altitude_label1: TLabel
     Left = 19
     Height = 15
-    Top = 240
+    Top = 248
     Width = 118
     Caption = 'Altitude calculated [°]:'
     ParentColor = False
@@ -127,7 +127,7 @@ object form_sqm1: Tform_sqm1
   object sqm_label1: TLabel
     Left = 20
     Height = 15
-    Top = 272
+    Top = 280
     Width = 117
     Caption = 'SQM [magn/arcsec²]:'
     Font.Style = [fsBold]
@@ -137,15 +137,15 @@ object form_sqm1: Tform_sqm1
   object Label1: TLabel
     Left = 16
     Height = 150
-    Top = 328
+    Top = 376
     Width = 404
-    Caption = 'Pre-conditions'#13#10'1) Image is astrometrical solved for flux-calibration against the star database.'#13#10'2) The background value is larger then pedestal value. If not expose longer.'#13#10'3) Entering a pedestal value increases the accuracy. (mean value of a dark)'#13#10'4) Apply on single unprocessed raw images only'#13#10'    or calibrate single images and apply zero for the pedestal value.'#13#10'5) DSLR/OSC raw images require 2x2 binning.'#13#10'6) No large bright nebula should be visible.'#13#10'7) Calculated altitude is correct. The altitude will be used for an atmospheric'#13#10'    extinction correction of the star light.'
+    Caption = 'Pre-conditions'#13#10'1) Image is astrometrical solved for flux-calibration against the star database.'#13#10'2) The background value is larger then pedestal value. If not expose longer.'#13#10'3) Entering a pedestal value increases the accuracy. (mean value of a dark)'#13#10'4) Apply on single unprocessed raw images only'#13#10'    or calibrate single images and apply zero for the pedestal value.'#13#10'5) DSLR/OSC raw images require 2x2 binning.'#13#10'6) No large bright nebula should be visible.'#13#10'7) Calculated altitude is correct. The altitude will be used for an atmospheric'#13#10'    extinction correction the star light.'
     ParentColor = False
   end
   object Label4: TLabel
     Left = 7
     Height = 15
-    Top = 208
+    Top = 216
     Width = 130
     Caption = 'Background (measured):'
     ParentColor = False
@@ -165,7 +165,6 @@ object form_sqm1: Tform_sqm1
     Hint = 'Enter camera pedestal correction to zero the background. Measure for the median or mean value of a dark frame and use that as pedestal value.'
     Top = 128
     Width = 113
-    OnChange = longitude1Change
     OnExit = pedestal1Exit
     ParentShowHint = False
     ShowHint = True
@@ -176,7 +175,7 @@ object form_sqm1: Tform_sqm1
     Left = 144
     Height = 23
     Hint = 'Automatically measured from the light frame'
-    Top = 208
+    Top = 216
     Width = 113
     Color = clMenu
     OnChange = longitude1Change
@@ -190,7 +189,7 @@ object form_sqm1: Tform_sqm1
     Left = 144
     Height = 23
     Hint = 'Calculated from light frame time, geographic location and celestial position'
-    Top = 240
+    Top = 248
     Width = 113
     Color = clMenu
     OnChange = longitude1Change
@@ -204,7 +203,7 @@ object form_sqm1: Tform_sqm1
     Left = 144
     Height = 23
     Hint = 'The measured sky background expressed in magnitudes per square arcseconds.'
-    Top = 272
+    Top = 280
     Width = 113
     Color = clMenu
     Font.Style = [fsBold]
@@ -216,14 +215,38 @@ object form_sqm1: Tform_sqm1
     TabOrder = 7
     Text = '0'
   end
-  object message1: TLabel
+  object error_message1: TLabel
     Left = 16
-    Height = 15
-    Top = 304
-    Width = 79
+    Height = 56
+    Top = 312
+    Width = 567
+    AutoSize = False
     Caption = 'Message: none'
     Font.Color = clRed
     ParentColor = False
     ParentFont = False
+    WordWrap = True
+  end
+  object sqm_applydf1: TCheckBox
+    Left = 280
+    Height = 19
+    Hint = 'Use the darks & flats in the stack menu'
+    Top = 128
+    Width = 113
+    Caption = 'Apply dark && flat '
+    OnChange = sqm_applydf1Change
+    TabOrder = 8
+  end
+  object green_message1: TLabel
+    Left = 144
+    Height = 48
+    Top = 168
+    Width = 432
+    AutoSize = False
+    Caption = 'Message: none'
+    Font.Color = clGreen
+    ParentColor = False
+    ParentFont = False
+    WordWrap = True
   end
 end

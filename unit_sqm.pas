@@ -16,7 +16,9 @@ type
   { Tform_sqm1 }
 
   Tform_sqm1 = class(TForm)
-    message1: TLabel;
+    green_message1: TLabel;
+    sqm_applydf1: TCheckBox;
+    error_message1: TLabel;
     sqm1: TEdit;
     date_label1: TLabel;
     date_obs1: TEdit;
@@ -46,6 +48,7 @@ type
     procedure longitude1Exit(Sender: TObject);
     procedure ok1Click(Sender: TObject);
     procedure pedestal1Exit(Sender: TObject);
+    procedure sqm_applydf1Change(Sender: TObject);
   private
 
   public
@@ -55,6 +58,7 @@ type
 var
   form_sqm1: Tform_sqm1;
 
+  sqm_applyDF: boolean;
 
 function calculate_sqm(get_bk,get_his : boolean) : boolean; {calculate sqky background value}
 
@@ -79,15 +83,16 @@ begin
 //    result:=false;
 //    exit;
 //  end;
-   bayer:=((bayerpat<>'') and (Xbinning=1));
-   if bayer then
-   begin
-     form_sqm1.message1.font.color:=clgreen;
-     form_sqm1.message1.caption:='This OSC image is automatically binned 2x2.';
-     application.processmessages;
-     backup_img; {move viewer data to img_backup}
-     bin_X2X3X4(2);
-   end;
+  bayer:=((bayerpat<>'') and (Xbinning=1));
+  if bayer then
+  begin
+    form_sqm1.green_message1.caption:='This OSC image is automatically binned 2x2.'+#10;
+    application.processmessages;
+    backup_img; {move viewer data to img_backup}
+    bin_X2X3X4(2);
+  end
+  else
+  form_sqm1.green_message1.caption:='';
 
   if ((flux_magn_offset=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
   begin
@@ -99,7 +104,26 @@ begin
   if flux_magn_offset>0 then
   begin
     if get_bk then get_background(0,img_loaded,get_his {histogram},false {calculate also noise level} ,{var}cblack,star_level);
-    if pedestal>=cblack then begin beep; pedestal:=0; {prevent errors} end;
+
+    if (pos('D',calstat)>0) then
+    begin
+      if pedestal>0 then
+      begin
+        form_sqm1.green_message1.caption:=form_sqm1.error_message1.caption+'Dark already applied! Pedestal should be zero.'+#10;
+        pedestal:=0; {prevent wrong values}
+      end;
+    end
+    else
+    if pedestal=0 then
+      form_sqm1.error_message1.caption:=form_sqm1.error_message1.caption+'Pedestal value missing!'+#10;
+
+    if pedestal>=cblack then
+    begin
+      form_sqm1.error_message1.caption:=form_sqm1.error_message1.caption+'Too high pedestal value!'+#10;
+      beep;
+      pedestal:=0; {prevent errors}
+    end;
+
     sqmfloat:=flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
     alt:=calculate_altitude(1 {astrometric_to_apparent_or_reverse},{var} ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
 
@@ -121,32 +145,50 @@ end;
 
 
 procedure display_sqm;
+var
+  update_hist : boolean;
 begin
   with form_sqm1 do
   begin
-    message1.caption:='';
+    update_hist:=false;
+    error_message1.caption:='';
 
     date_to_jd(date_obs,exposure);{convert date-OBS to jd_start and jd_mid}
 
     if jd_start<=2400000 then {no date, found year <1858}
     begin
-      message1.caption:='Error converting date obs.';
+      error_message1.caption:='Error converting date obs.'+#10;
       sqm1.caption:='?';
       exit;
     end;
 
     if naxis3>1 then {no date, found year <1858}
     begin
-      message1.caption:='Can not process colour images!!';
+      error_message1.caption:=error_message1.caption+'Can not process colour images!!'+#10;
       sqm1.caption:='?';
       exit;
     end;
 
+    if sqm_applydf1.checked then
+    begin
+      analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
+      analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{analyse flat tab, by loading=false the loaded img will not be effected}
+      apply_dark_and_flat(filter_name,{round(exposure),set_temperature,width2,}{var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
+      if pos('D',calstat)>0 then                                                                   {these global variables are passed-on in procedure to protect against overwriting}
+      begin
+        memo2_message('Dark was or is applied to the light.');
+        update_text('CALSTAT =',#39+calstat+#39);
+        pedestal:=0;{pedestal no longer required}
+        update_hist:=true; {dark is applied, update histogram for background measurement}
+      end
+      else
+      error_message1.caption:=error_message1.caption+'No darks found. Result invalid!'+#10; {error}
+    end;
 
     {calc}
-    if calculate_sqm(true {get backgr},false{get histogr})=false then {failure in calculating sqm value}
+    if calculate_sqm(true {get backgr},update_hist{get histogr})=false then {failure in calculating sqm value}
     begin
-      if centalt='0' then message1.caption:='Could not retrieve or calculate altitude. Enter the default geographic location';
+      if centalt='0' then error_message1.caption:=error_message1.caption+'Could not retrieve or calculate altitude. Enter the default geographic location'+#10;
       sqm1.caption:='?';
       exit;
     end;
@@ -210,6 +252,12 @@ begin
   display_sqm;
 end;
 
+procedure Tform_sqm1.sqm_applydf1Change(Sender: TObject);
+begin
+  pedestal1.enabled:=sqm_applydf1.checked=false;
+  display_sqm;
+end;
+
 
 procedure set_some_defaults; {wil be set if annotate button is clicked or when form is closed}
 begin
@@ -223,6 +271,7 @@ begin
     long_default:=sitelong;
 
     date_obs:=date_obs1.Text;
+    sqm_applyDF:=sqm_applyDF1.checked;
   end;
 end;
 
@@ -238,8 +287,7 @@ end;
 procedure Tform_sqm1.date_obs1Exit(Sender: TObject);
 begin
   date_obs:=date_obs1.text;
- // if sender=form_sqm1.date_obs1 then
-                  display_sqm;
+   display_sqm;
 end;
 
 
@@ -254,6 +302,7 @@ procedure Tform_sqm1.FormShow(Sender: TObject);{han.k}
 begin
   esc_pressed:=false;{reset from cancel}
 
+  sqm_applyDF1.checked:=sqm_applyDF;
   date_obs1.Text:=date_obs;
 
   {latitude, longitude}

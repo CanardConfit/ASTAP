@@ -108,10 +108,11 @@ begin
 //    total_counter:=0;
     latest_time:=0;{for finding files}
 
-    {Prepare for dark and flats}
-    analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
-    analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{analyse flat tab, by loading=false the loaded img will not be effected}
-
+    if monitor_applydarkflat1.checked then   {Prepare for dark and flats}
+    begin
+      analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
+      analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{analyse flat tab, by loading=false the loaded img will not be effected}
+    end;
 
     {live stacking}
     repeat
@@ -134,8 +135,12 @@ begin
           end;
           memo2_message('Loading file: '+filename2) ;
 
-          apply_dark_and_flat(filter_name,{round(exposure),set_temperature,width2,}{var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
-          {these global variables are passed-on in procedure to protect against overwriting}
+          if monitor_applydarkflat1.checked then
+          begin
+            apply_dark_and_flat(filter_name,{round(exposure),set_temperature,width2,}{var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
+            {these global variables are passed-on in procedure to protect against overwriting}
+            update_text('CALSTAT =',#39+calstat+#39);
+          end;
 
 
           Application.ProcessMessages;
