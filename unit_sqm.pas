@@ -78,7 +78,7 @@ var
   airm, correction,alt : double;
    bayer  : boolean;
 begin
-//  if ((bayerpat<>'') or (naxis3>1)) then {can not process colour or OSC images}
+//  if ((bayerpat<>'') or (head.naxis3>1)) then {can not process colour or OSC images}
 //  begin
 //    result:=false;
 //    exit;
@@ -105,7 +105,7 @@ begin
   begin
     if get_bk then get_background(0,img_loaded,get_his {histogram},false {calculate also noise level} ,{var}cblack,star_level);
 
-    if (pos('D',calstat)>0) then
+    if (pos('D',head.calstat)>0) then
     begin
       if pedestal>0 then
       begin
@@ -124,8 +124,8 @@ begin
       pedestal:=0; {prevent errors}
     end;
 
-    sqmfloat:=flux_magn_offset-ln((cblack-pedestal)/sqr(cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
-    alt:=calculate_altitude(1 {astrometric_to_apparent_or_reverse},{var} ra0,dec0);{convert centalt string to double or calculate altitude from observer location}
+    sqmfloat:=flux_magn_offset-ln((cblack-pedestal)/sqr(head.cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
+    alt:=calculate_altitude(1 {astrometric_to_apparent_or_reverse},{var} head.ra0,head.dec0);{convert centalt string to double or calculate altitude from observer location}
 
     centalt:=inttostr(round(alt));{for reporting in menu sqm1}
     if alt<>0 then
@@ -153,7 +153,7 @@ begin
     update_hist:=false;
     error_message1.caption:='';
 
-    date_to_jd(date_obs,exposure);{convert date-OBS to jd_start and jd_mid}
+    date_to_jd(head.date_obs,head.exposure);{convert date-OBS to jd_start and jd_mid}
 
     if jd_start<=2400000 then {no date, found year <1858}
     begin
@@ -162,7 +162,7 @@ begin
       exit;
     end;
 
-    if naxis3>1 then {no date, found year <1858}
+    if head.naxis3>1 then {no date, found year <1858}
     begin
       error_message1.caption:=error_message1.caption+'Can not process colour images!!'+#10;
       sqm1.caption:='?';
@@ -173,11 +173,13 @@ begin
     begin
       analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
       analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{analyse flat tab, by loading=false the loaded img will not be effected}
-      apply_dark_and_flat(filter_name,{round(exposure),set_temperature,width2,}{var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
-      if pos('D',calstat)>0 then                                                                   {these global variables are passed-on in procedure to protect against overwriting}
+      apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+
+      if pos('D',head.calstat)>0  then {status of dark application}
       begin
-        memo2_message('Dark was or is applied to the light.');
-        update_text('CALSTAT =',#39+calstat+#39);
+        memo2_message('Calibration status '+head.calstat+'. Used '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
+
+        update_text('CALSTAT =',#39+head.calstat+#39);
         pedestal:=0;{pedestal no longer required}
         update_hist:=true; {dark is applied, update histogram for background measurement}
       end
@@ -270,7 +272,7 @@ begin
     lat_default:=sitelat;
     long_default:=sitelong;
 
-    date_obs:=date_obs1.Text;
+    head.date_obs:=date_obs1.Text;
     sqm_applyDF:=sqm_applyDF1.checked;
   end;
 end;
@@ -286,7 +288,7 @@ end;
 
 procedure Tform_sqm1.date_obs1Exit(Sender: TObject);
 begin
-  date_obs:=date_obs1.text;
+  head.date_obs:=date_obs1.text;
    display_sqm;
 end;
 
@@ -303,7 +305,7 @@ begin
   esc_pressed:=false;{reset from cancel}
 
   sqm_applyDF1.checked:=sqm_applyDF;
-  date_obs1.Text:=date_obs;
+  date_obs1.Text:=head.date_obs;
 
   {latitude, longitude}
   if sitelat='' then {use values from previous time}

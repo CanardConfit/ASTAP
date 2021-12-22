@@ -98,8 +98,8 @@ end;
 
 procedure flip_xy(fliph,flipv :boolean; var x,y : integer);{flip if required for plotting. From array to image1 coordinates}
 begin
- if Fliph       then x:=width2-x;
- if Flipv=false then y:=height2-y;
+ if Fliph       then x:=head.width-x;
+ if Flipv=false then y:=head.height-y;
 end;
 
 
@@ -128,10 +128,10 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
   restore_req:=false;
-  if naxis3>1 then {colour image}
+  if head.naxis3>1 then {colour image}
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_bk,naxis3,width2,height2);{force a duplication}
+    setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication}
     convert_mono(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
     restore_req:=true;
@@ -140,7 +140,7 @@ begin
   if bayer_image then {raw Bayer image}
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_bk,naxis3,width2,height2);{force a duplication}
+    setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication}
     normalize_OSC_flat(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
     restore_req:=true;
@@ -158,8 +158,8 @@ begin
     image1.Canvas.brush.Style:=bsClear;
     image1.Canvas.font.color:=clyellow;
     image1.Canvas.Pen.Color := clred;
-    image1.Canvas.Pen.width := round(1+height2/image1.height);{thickness lines}
-    fontsize:=round(max(10,8*height2/image1.height));{adapt font to image dimensions}
+    image1.Canvas.Pen.width := round(1+head.height/image1.height);{thickness lines}
+    fontsize:=round(max(10,8*head.height/image1.height));{adapt font to image dimensions}
     image1.Canvas.font.size:=fontsize;
 
     hfd_median:=0;
@@ -181,7 +181,7 @@ begin
     SetLength(hfdlist_top_right,len);
     SetLength(hfdlist_bottom_left,len);
     SetLength(hfdlist_bottom_right,len);
-    setlength(img_sa,1,width2,height2);{set length of image array}
+    setlength(img_sa,1,head.width,head.height);{set length of image array}
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     get_background(0,img_loaded,{cblack=0} false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
@@ -198,13 +198,13 @@ begin
       nhfd_outer_ring:=0;
 
 
-      for fitsY:=0 to height2-1 do
-        for fitsX:=0 to width2-1  do
+      for fitsY:=0 to head.height-1 do
+        for fitsX:=0 to head.width-1  do
           img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
-      for fitsY:=0 to height2-1-1  do
+      for fitsY:=0 to head.height-1-1  do
       begin
-        for fitsX:=0 to width2-1-1 do
+        for fitsX:=0 to head.width-1-1 do
         begin
           if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star}  and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
           begin
@@ -223,26 +223,26 @@ begin
                 begin
                   j:=n+yci;
                   i:=m+xci;
-                  if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
+                  if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
                     img_sa[0,i,j]:=1;
                 end;
 
-              if ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
-                  (img_loaded[0,round(xc-1),round(yc)]<datamax_org-1) and
-                  (img_loaded[0,round(xc+1),round(yc)]<datamax_org-1) and
-                  (img_loaded[0,round(xc),round(yc-1)]<datamax_org-1) and
-                  (img_loaded[0,round(xc),round(yc+1)]<datamax_org-1) and
+              if ((img_loaded[0,round(xc),round(yc)]<head.datamax_org-1) and
+                  (img_loaded[0,round(xc-1),round(yc)]<head.datamax_org-1) and
+                  (img_loaded[0,round(xc+1),round(yc)]<head.datamax_org-1) and
+                  (img_loaded[0,round(xc),round(yc-1)]<head.datamax_org-1) and
+                  (img_loaded[0,round(xc),round(yc+1)]<head.datamax_org-1) and
 
-                  (img_loaded[0,round(xc-1),round(yc-1)]<datamax_org-1) and
-                  (img_loaded[0,round(xc-1),round(yc+1)]<datamax_org-1) and
-                  (img_loaded[0,round(xc+1),round(yc-1)]<datamax_org-1) and
-                  (img_loaded[0,round(xc+1),round(yc+1)]<datamax_org-1)  ) then {not saturated}
+                  (img_loaded[0,round(xc-1),round(yc-1)]<head.datamax_org-1) and
+                  (img_loaded[0,round(xc-1),round(yc+1)]<head.datamax_org-1) and
+                  (img_loaded[0,round(xc+1),round(yc-1)]<head.datamax_org-1) and
+                  (img_loaded[0,round(xc+1),round(yc+1)]<head.datamax_org-1)  ) then {not saturated}
               begin
 
                 starX:=round(xc);
                 starY:=round(yc);
-    //            if Fliphorizontal     then starX:=round(width2-xc)   else starX:=round(xc);
-    //            if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
+    //            if Fliphorizontal     then starX:=round(head.width-xc)   else starX:=round(xc);
+    //            if Flipvertical=false then  starY:=round(head.height-yc) else starY:=round(yc);
 
     //            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
     //            mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
@@ -304,28 +304,28 @@ begin
         mainwindow.image1.Canvas.Rectangle(starX2-size,starY2-size, starX2+size, starY2+size);{indicate hfd with rectangle}
         mainwindow.image1.Canvas.textout(starX2+size,starY2+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
-        if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))<sqr(0.25)*(sqr(width2 div 2)+sqr(height2 div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
+        if  sqr(starX - (head.width div 2) )+sqr(starY - (head.height div 2))<sqr(0.25)*(sqr(head.width div 2)+sqr(head.height div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
         else
         begin
-          if  sqr(starX - (width2 div 2) )+sqr(starY - (height2 div 2))>sqr(0.75)*(sqr(width2 div 2)+sqr(height2 div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
+          if  sqr(starX - (head.width div 2) )+sqr(starY - (head.height div 2))>sqr(0.75)*(sqr(head.width div 2)+sqr(head.height div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
           if triangle=false then
           begin
-            if ( (starX<(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
-            if ( (starX>(width2 div 2)) and (starY<(height2 div 2)) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
-            if ( (starX>(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
-            if ( (starX<(width2 div 2)) and (starY>(height2 div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+100);        end;
+            if ( (starX<(head.width div 2)) and (starY<(head.height div 2)) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
+            if ( (starX>(head.width div 2)) and (starY<(head.height div 2)) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
+            if ( (starX>(head.width div 2)) and (starY>(head.height div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
+            if ( (starX<(head.width div 2)) and (starY>(head.height div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+100);        end;
           end
           else
           begin
-            x_centered:=starX- (width2 div 2); {array coordinates}
-            y_centered:=starY- (height2 div 2);
+            x_centered:=starX- (head.width div 2); {array coordinates}
+            y_centered:=starY- (head.height div 2);
             theangle:=arctan2(y_centered,x_centered)*180/pi;{angle in array}
             theradius:=sqrt(sqr(x_centered)+sqr(x_centered));
 
 
-            if ( (abs(fnmodulo2(theangle-screw1,360))<30) and (theradius<height2 div 2) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
-            if ( (abs(fnmodulo2(theangle-screw2,360))<30) and (theradius<height2 div 2) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
-            if ( (abs(fnmodulo2(theangle-screw3,360))<30) and (theradius<height2 div 2) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
+            if ( (abs(fnmodulo2(theangle-screw1,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
+            if ( (abs(fnmodulo2(theangle-screw2,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
+            if ( (abs(fnmodulo2(theangle-screw3,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
           end
 
         end;
@@ -352,16 +352,16 @@ begin
         median_best:=min(median_top_right,min(median_bottom_left,median_bottom_right));{find best corner}
         median_worst:=max(median_top_right,max(median_bottom_left,median_bottom_right));{find worst corner}
 
-        scale_factor:=width2*0.35/median_worst;
-        x1:=round(-median_bottom_left*scale_factor*sin(screw1*pi/180)+width2/2);
-        y1:=round(-median_bottom_left*scale_factor*cos(screw1*pi/180)+height2/2);{calculate coordinates}
+        scale_factor:=head.width*0.35/median_worst;
+        x1:=round(-median_bottom_left*scale_factor*sin(screw1*pi/180)+head.width/2);
+        y1:=round(-median_bottom_left*scale_factor*cos(screw1*pi/180)+head.height/2);{calculate coordinates}
 
 
-        x2:=round(-median_bottom_right*scale_factor*sin(screw2*pi/180)+width2/2);
-        y2:=round(-median_bottom_right*scale_factor*cos(screw2*pi/180)+height2/2);
+        x2:=round(-median_bottom_right*scale_factor*sin(screw2*pi/180)+head.width/2);
+        y2:=round(-median_bottom_right*scale_factor*cos(screw2*pi/180)+head.height/2);
 
-        x3:=round(-median_top_right*scale_factor*sin(screw3*pi/180)+width2/2);
-        y3:=round(-median_top_right*scale_factor*cos(screw3*pi/180)+height2/2);
+        x3:=round(-median_top_right*scale_factor*sin(screw3*pi/180)+head.width/2);
+        y3:=round(-median_top_right*scale_factor*cos(screw3*pi/180)+head.height/2);
 
         flip_xy(fliph,flipv,x1,y1); {from array to image coordinates}
         flip_xy(fliph,flipv,x2,y2);
@@ -376,9 +376,9 @@ begin
         image1.Canvas.lineto(x3,y3);{draw triangle}
         image1.Canvas.lineto(x1,y1);{draw triangle}
 
-        image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
+        image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
         image1.Canvas.lineto(x2,y2);{draw diagonal}
-        image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
+        image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
         image1.Canvas.lineto(x3,y3);{draw diagonal}
 
         tilt_value:=100*(median_worst-median_best)/hfd_median;
@@ -401,7 +401,7 @@ begin
         image1.Canvas.textout(x3,y3,floattostrF(median_top_right,ffFixed,0,2));
         image1.Canvas.textout(x1,y1,floattostrF(median_bottom_left,ffFixed,0,2));
         image1.Canvas.textout(x2,y2,floattostrF(median_bottom_right,ffFixed,0,2));
-        image1.Canvas.textout(width2 div 2,height2 div 2,floattostrF(median_center,ffFixed,0,2));
+        image1.Canvas.textout(head.width div 2,head.height div 2,floattostrF(median_center,ffFixed,0,2));
       end
       else
       if ((triangle=false) and (nhfd_top_left>0) and (nhfd_top_right>0) and (nhfd_bottom_left>0) and (nhfd_bottom_right>0)) then  {enough information for tilt calculation}
@@ -413,11 +413,11 @@ begin
         median_best:=min(min(median_top_left, median_top_right),min(median_bottom_left,median_bottom_right));{find best corner}
         median_worst:=max(max(median_top_left, median_top_right),max(median_bottom_left,median_bottom_right));{find worst corner}
 
-        scale_factor:=width2*0.25/median_worst;
-        x1:=round(-median_bottom_left*scale_factor+width2/2);y1:=round(-median_bottom_left*scale_factor+height2/2);{calculate coordinates counter clockwise}
-        x2:=round(+median_bottom_right*scale_factor+width2/2);y2:=round(-median_bottom_right*scale_factor+height2/2);
-        x3:=round(+median_top_right*scale_factor+width2/2);y3:=round(+median_top_right*scale_factor+height2/2);
-        x4:=round(-median_top_left*scale_factor+width2/2);y4:=round(+median_top_left*scale_factor+height2/2);
+        scale_factor:=head.width*0.25/median_worst;
+        x1:=round(-median_bottom_left*scale_factor+head.width/2);y1:=round(-median_bottom_left*scale_factor+head.height/2);{calculate coordinates counter clockwise}
+        x2:=round(+median_bottom_right*scale_factor+head.width/2);y2:=round(-median_bottom_right*scale_factor+head.height/2);
+        x3:=round(+median_top_right*scale_factor+head.width/2);y3:=round(+median_top_right*scale_factor+head.height/2);
+        x4:=round(-median_top_left*scale_factor+head.width/2);y4:=round(+median_top_left*scale_factor+head.height/2);
 
         flip_xy(fliph,flipv,x1,y1); {from array to image coordinates}
         flip_xy(fliph,flipv,x2,y2);
@@ -435,11 +435,11 @@ begin
         image1.Canvas.lineto(x4,y4);{draw trapezium}
         image1.Canvas.lineto(x1,y1);{draw trapezium}
 
-        image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
+        image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
         image1.Canvas.lineto(x2,y2);{draw diagonal}
-        image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
+        image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
         image1.Canvas.lineto(x3,y3);{draw diagonal}
-        image1.Canvas.lineto(width2 div 2,height2 div 2);{draw diagonal}
+        image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
         image1.Canvas.lineto(x4,y4);{draw diagonal}
 
         tilt_value:=100*(median_worst-median_best)/hfd_median;
@@ -462,7 +462,7 @@ begin
         image1.Canvas.textout(x3,y3,floattostrF(median_top_right,ffFixed,0,2));
         image1.Canvas.textout(x1,y1,floattostrF(median_bottom_left,ffFixed,0,2));
         image1.Canvas.textout(x2,y2,floattostrF(median_bottom_right,ffFixed,0,2));
-        image1.Canvas.textout(width2 div 2,height2 div 2,floattostrF(median_center,ffFixed,0,2));
+        image1.Canvas.textout(head.width div 2,head.height div 2,floattostrF(median_center,ffFixed,0,2));
       end
       else
       begin
@@ -470,22 +470,22 @@ begin
       end;
 
       str(hfd_median:0:1,hfd_value);
-      if cdelt2<>0 then begin str(hfd_median*abs(cdelt2)*3600:0:1,hfd_arcsec); hfd_arcsec:=' ('+hfd_arcsec+'")'; end else hfd_arcsec:='';
+      if head.cdelt2<>0 then begin str(hfd_median*abs(head.cdelt2)*3600:0:1,hfd_arcsec); hfd_arcsec:=' ('+hfd_arcsec+'")'; end else hfd_arcsec:='';
       mess2:='Median HFD='+hfd_value+hfd_arcsec+ mess2+'  Stars='+ inttostr(nhfd)+mess1 ;
 
       text_width:=mainwindow.image1.Canvas.textwidth(mess2);{Calculate textwidth. This also works for 4k with "make everything bigger"}
-      fontsize:=trunc(fontsize*(width2*0.9)/text_width);{use 90% of width}
+      fontsize:=trunc(fontsize*(head.width*0.9)/text_width);{use 90% of width}
       image1.Canvas.font.size:=fontsize;
       image1.Canvas.font.color:=clwhite;
       text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
 
-      left_margin:=min(width2 div 20,round(fontsize*2));{twice font size but not more then 5% of width. Required for small images}
-      image1.Canvas.textout(left_margin,height2-text_height,mess2);{median HFD and tilt indication}
+      left_margin:=min(head.width div 20,round(fontsize*2));{twice font size but not more then 5% of width. Required for small images}
+      image1.Canvas.textout(left_margin,head.height-text_height,mess2);{median HFD and tilt indication}
 
       memo2_message(mess2);{for stacking live}
     end
     else
-      image1.Canvas.textout(round(fontsize*2),height2- round(fontsize*4),'No stars detected');
+      image1.Canvas.textout(round(fontsize*2),head.height- round(fontsize*4),'No stars detected');
   end;{with mainwindow}
 
   hfdlist:=nil;{release memory}
@@ -573,9 +573,9 @@ var
     zeros_left : boolean;
 
 begin
-  scaledown:=1+ width2 div 1000;
-  w:=(width2 div scaledown)+1;
-  h:=(height2 div scaledown)+1;
+  scaledown:=1+ head.width div 1000;
+  w:=(head.width div scaledown)+1;
+  h:=(head.height div scaledown)+1;
 
   setlength(img_hfd,1,w,h);{set length of image array}
   for fitsY:=0 to h-1  do
@@ -607,10 +607,10 @@ begin
     inc(size);
   until ((zeros_left=false) or (size>h/5));
 
-  if naxis>1 then setlength(img_loaded,1,width2,height2);
-  naxis3:=1;
-  for fitsY:=0 to height2-1  do
-    for fitsX:=0 to width2-1 do
+  if head.naxis>1 then setlength(img_loaded,1,head.width,head.height);
+  head.naxis3:=1;
+  for fitsY:=0 to head.height-1  do
+    for fitsX:=0 to head.width-1 do
       img_loaded[0,fitsX,fitsY]:={img_loaded[0,fitsX,fitsY]}+img_hfd[0,fitsX div scaledown,fitsY div scaledown];
 
   img_hfd:=nil;{free memory}
@@ -632,9 +632,9 @@ var
     distance,factor,influence, sum_influence,pixels_per_star: double;
 
 begin
-  scaledown:=1+ width2 div 1000;
-  w:=(width2 div scaledown)+1;
-  h:=(height2 div scaledown)+1;
+  scaledown:=1+ head.width div 1000;
+  w:=(head.width div scaledown)+1;
+  h:=(head.height div scaledown)+1;
 
   setlength(img_hfd,1,w,h);{set length of image array}
   for fitsY:=0 to h-1  do
@@ -668,15 +668,15 @@ begin
 
   end;
 
-  if naxis>1 then setlength(img_loaded,1,width2,height2);
-  naxis3:=1;
+  if head.naxis>1 then setlength(img_loaded,1,head.width,head.height);
+  head.naxis3:=1;
 
   {introduce rounding to show layers}
   step_adjust:=((max_value-min_value)/60);
 
   {convert back}
-  for fitsY:=0 to height2-1  do
-    for fitsX:=0 to width2-1 do
+  for fitsY:=0 to head.height-1  do
+    for fitsX:=0 to head.width-1 do
       img_loaded[0,fitsX,fitsY]:=(1/step_adjust)*round(step_adjust*img_hfd[0,fitsX div scaledown,fitsY div scaledown]);
 
 
@@ -703,7 +703,7 @@ var
   begin
     x_trunc:=trunc(x1);
     y_trunc:=trunc(y1);
-    if ((x_trunc<=0) or (x_trunc>=(width2-2)) or (y_trunc<=0) or (y_trunc>=(height2-2))) then begin result:=0; exit;end;
+    if ((x_trunc<=0) or (x_trunc>=(head.width-2)) or (y_trunc<=0) or (y_trunc>=(head.height-2))) then begin result:=0; exit;end;
     x_frac :=frac(x1);
     y_frac :=frac(y1);
     try
@@ -720,7 +720,7 @@ begin
   rs:=min(rs,51);
 
   pixel_counter:=0;
-  if ((x1-rs>=0) and (x1+rs<=width2) and (y1-rs>0) and (y1+rs<height2))  then {measurement within screen}
+  if ((x1-rs>=0) and (x1+rs<=head.width) and (y1-rs>0) and (y1+rs<head.height))  then {measurement within screen}
   begin
 
     for i:=-rs to rs do
@@ -790,7 +790,7 @@ procedure plot_vector(x,y,r,orientation : double);
 var sinO,cosO,xstep,ystep              : double;
     wd                                 : integer;
 begin
-  wd:=max(1,height2 div 1000);
+  wd:=max(1,head.height div 1000);
   mainwindow.image1.canvas.Pen.Color := clred;
   mainwindow.image1.canvas.Pen.width := wd;
 
@@ -801,13 +801,13 @@ begin
 
   if mainwindow.flip_horizontal1.checked then
   begin
-    x:=width2-x;
+    x:=head.width-x;
     xstep:=-xstep;
   end;
 
   if mainwindow.flip_vertical1.checked=false then
   begin
-    y:=height2-y;
+    y:=head.height-y;
     ystep:=-ystep;
   end;
 
@@ -833,7 +833,7 @@ begin
   max_stars:=1000;
 
   SetLength(hfd_values,4,4000);{will contain x,y,hfd}
-  setlength(img_sa,1,width2,height2);{set length of image array}
+  setlength(img_sa,1,head.width,head.height);{set length of image array}
 
   get_background(0,img_loaded,false{ calculate histogram},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
@@ -843,13 +843,13 @@ begin
   repeat
     nhfd:=0;{set counters at zero}
 
-    for fitsY:=0 to height2-1 do
-      for fitsX:=0 to width2-1  do
+    for fitsY:=0 to head.height-1 do
+      for fitsX:=0 to head.width-1  do
         img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
-    for fitsY:=0 to height2-1-1  do
+    for fitsY:=0 to head.height-1-1  do
     begin
-      for fitsX:=0 to width2-1-1 do
+      for fitsX:=0 to head.width-1-1 do
       begin
         if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- cblack>detection_level){star}) then {new star}
         begin
@@ -867,7 +867,7 @@ begin
               begin
                 j:=n+yci;
                 i:=m+xci;
-                if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
+                if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
                   img_sa[0,i,j]:=1;
               end;
 
@@ -876,16 +876,16 @@ begin
 
             {store values}
             if hfd1<>999 then
-            if ( ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
-                  (img_loaded[0,round(xc-1),round(yc)]<datamax_org-1) and
-                  (img_loaded[0,round(xc+1),round(yc)]<datamax_org-1) and
-                  (img_loaded[0,round(xc),round(yc-1)]<datamax_org-1) and
-                  (img_loaded[0,round(xc),round(yc+1)]<datamax_org-1) and
+            if ( ((img_loaded[0,round(xc),round(yc)]<head.datamax_org-1) and
+                  (img_loaded[0,round(xc-1),round(yc)]<head.datamax_org-1) and
+                  (img_loaded[0,round(xc+1),round(yc)]<head.datamax_org-1) and
+                  (img_loaded[0,round(xc),round(yc-1)]<head.datamax_org-1) and
+                  (img_loaded[0,round(xc),round(yc+1)]<head.datamax_org-1) and
 
-                  (img_loaded[0,round(xc-1),round(yc-1)]<datamax_org-1) and
-                  (img_loaded[0,round(xc-1),round(yc+1)]<datamax_org-1) and
-                  (img_loaded[0,round(xc+1),round(yc-1)]<datamax_org-1) and
-                  (img_loaded[0,round(xc+1),round(yc+1)]<datamax_org-1)){not saturated}
+                  (img_loaded[0,round(xc-1),round(yc-1)]<head.datamax_org-1) and
+                  (img_loaded[0,round(xc-1),round(yc+1)]<head.datamax_org-1) and
+                  (img_loaded[0,round(xc+1),round(yc-1)]<head.datamax_org-1) and
+                  (img_loaded[0,round(xc+1),round(yc+1)]<head.datamax_org-1)){not saturated}
                   or ((aspect))  )
                   then
             begin
@@ -934,7 +934,7 @@ begin
 
   Flipvertical:=mainwindow.flip_vertical1.Checked;
   Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
-  size:=max(1,height2 div 1000);{font size, 1 is 9x5 pixels}
+  size:=max(1,head.height div 1000);{font size, 1 is 9x5 pixels}
 
 
   setlength(hfds,nhfd);
@@ -943,8 +943,8 @@ begin
    begin
      if values then
      begin
-       if Fliphorizontal     then starX:=width2-hfd_values[0,i]   else starX:=hfd_values[0,i];
-       if Flipvertical       then starY:=height2-hfd_values[1,i] else starY:=hfd_values[1,i];
+       if Fliphorizontal     then starX:=head.width-hfd_values[0,i]   else starX:=hfd_values[0,i];
+       if Flipvertical       then starY:=head.height-hfd_values[1,i] else starY:=hfd_values[1,i];
        annotation_to_array(floattostrf(hfd_values[2,i]/100 , ffgeneral, 2,1){text},true{transparent},round(img_loaded[0,starX,starY]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurment.}
      end;
      hfds[i]:=hfd_values[2,i];
@@ -1006,10 +1006,10 @@ begin
   if nrbits=8 then {convert to 16 bit}
   begin
     nrbits:=16;
-    datamax_org:=65535;
+    head.datamax_org:=65535;
   end;
 
-  if naxis3>1 then
+  if head.naxis3>1 then
   begin
     convert_mono(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
@@ -1030,14 +1030,14 @@ begin
   {$ENDIF}
   mainwindow.memo1.lines.clear;
   for j:=0 to 10 do {create an header with fixed sequence}
-    if (j<>5)  then {skip naxis3 for mono images}
+    if (j<>5)  then {skip head.naxis3 for mono images}
         mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
   mainwindow.memo1.lines.add(head1[27]); {add end}
 
   update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-  if naxis3=1 then  remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
+  if head.naxis3=1 then  remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(cwhite));
@@ -1070,7 +1070,7 @@ begin
     end
     else {auto}
     begin
-      if ((naxis3=1) and (bayerpat<>'')) then
+      if ((head.naxis3=1) and (bayerpat<>'')) then
       begin
         bayer_label1.caption:='Bayer matrix image';
         bayer_image:=true;
@@ -1196,10 +1196,10 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
   restore_req:=false;
-  if naxis3>1 then {colour image}
+  if head.naxis3>1 then {colour image}
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_bk,naxis3,width2,height2);{force a duplication to a backup image}
+    setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication to a backup image}
     convert_mono(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
     restore_req:=true;{restore original image later}
@@ -1208,7 +1208,7 @@ begin
   if bayer_image then {raw Bayer image}
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_bk,naxis3,width2,height2);{force a duplication to a backup image}
+    setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication to a backup image}
     normalize_OSC_flat(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
     restore_req:=true; {restore original image later}
@@ -1224,22 +1224,22 @@ begin
     image1.Canvas.Pen.Mode := pmMerge;
     image1.Canvas.brush.Style:=bsClear;
     image1.Canvas.font.color:=clyellow;
-    fontsize:=round(max(7,width2/115));{adapt font to image dimensions}
+    fontsize:=round(max(7,head.width/115));{adapt font to image dimensions}
     image1.Canvas.font.size:=fontsize;
 
-    stepX:=trunc(width2/(fontsize*6));{115/6 => 19  steps maximum, reduce if image is too small for font to fit}
-    stepY:=trunc(stepX*height2/width2);       {stepY in ratio,typical 13 steps}
+    stepX:=trunc(head.width/(fontsize*6));{115/6 => 19  steps maximum, reduce if image is too small for font to fit}
+    stepY:=trunc(stepX*head.height/head.width);       {stepY in ratio,typical 13 steps}
 
     if odd(stepX)=false then stepX:=stepX+1; {make odd}
     if odd(stepY)=false then stepY:=stepY+1; {make odd}
 
-    stepsizeX:=width2/stepX;{stepsizeX is a double value}
-    stepsizeY:=height2/stepY;{stepsizeY is a double value}
+    stepsizeX:=head.width/stepX;{stepsizeX is a double value}
+    stepsizeY:=head.height/stepY;{stepsizeY is a double value}
 
     halfstepX:=round(stepsizeX/2);
     halfstepY:=round(stepsizeY/2);
 
-    median_center:=median_background(img_loaded,0{color},trunc(stepsizeX){size},trunc(stepsizeY),width2 div 2,height2 div 2);{find median value of an area at position x,y with sizeX,sizeY}
+    median_center:=median_background(img_loaded,0{color},trunc(stepsizeX){size},trunc(stepsizeY),head.width div 2,head.height div 2);{find median value of an area at position x,y with sizeX,sizeY}
 
     Y:=halfstepY;
     repeat
@@ -1254,8 +1254,8 @@ begin
         tx:=round(X);
         ty:=round(Y);
 
-        if Flipvertical=false then  tY:=height2-tY;
-        if Fliphorizontal then tX:=width2-tX;
+        if Flipvertical=false then  tY:=head.height-tY;
+        if Fliphorizontal then tX:=head.width-tX;
 
         tx:=round(X)-( mainwindow.image1.canvas.Textwidth(detext) div 2);{make text centered at x, y}
         ty:=round(Y)-( mainwindow.image1.canvas.Textheight(detext) div 2);
@@ -1263,10 +1263,10 @@ begin
 
         X:=X+stepsizeX;
 
-      until X>=width2-1;
+      until X>=head.width-1;
 
       Y:=Y+stepsizeY;
-    until Y>=height2-1;
+    until Y>=head.height-1;
 
     if restore_req then {restore backup image for raw Bayer image or colour image}
     begin
@@ -1297,97 +1297,97 @@ begin
    backup_img;
    executed:=2;{restore required to undo}
 
-   side:=min(side,height2 div 3);
-   side:=min(side,width2 div 3);
+   side:=min(side,head.height div 3);
+   side:=min(side,head.width div 3);
 
    widthN:=3*side+2*gap;
    heightN:=widthN;
-   setlength(img_temp,naxis3,widthN,heightN);{set length of image array}
+   setlength(img_temp,head.naxis3,widthN,heightN);{set length of image array}
 
-   for col:=0 to naxis3-1 do
+   for col:=0 to head.naxis3-1 do
     for fitsY:=0 to heightN-1 do
       for fitsX:=0 to widthN-1 do {clear img_temp for the gaps}
          img_temp[col,fitsX,fitsY]:=0;
 
 
-   for col:=0 to naxis3-1 do
+   for col:=0 to head.naxis3-1 do
    for fitsY:=0 to side-1 do
      for fitsX:=0 to side-1 do {copy corner}
         img_temp[col,fitsX,fitsY]:=img_loaded[col,fitsX,fitsY];
 
-   for col:=0 to naxis3-1 do
+   for col:=0 to head.naxis3-1 do
    for fitsY:=0 to side-1 do
      for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX+side+gap,fitsY]:=img_loaded[col,fitsX+(width2 div 2)-(side div 2),fitsY];
+        img_temp[col,fitsX+side+gap,fitsY]:=img_loaded[col,fitsX+(head.width div 2)-(side div 2),fitsY];
 
 
-   for col:=0 to naxis3-1 do
+   for col:=0 to head.naxis3-1 do
    for fitsY:=0 to side-1 do
      for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX+2*(side+gap),fitsY]:=img_loaded[col,fitsX+width2-side,fitsY];
+        img_temp[col,fitsX+2*(side+gap),fitsY]:=img_loaded[col,fitsX+head.width-side,fitsY];
 
 
 
 
-   for col:=0 to naxis3-1 do
+   for col:=0 to head.naxis3-1 do
    for fitsY:=0 to side-1 do
      for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX,fitsY+(side+gap)]:=img_loaded[col,fitsX,fitsY +(height2 div 2) - (side div 2) ];
+        img_temp[col,fitsX,fitsY+(side+gap)]:=img_loaded[col,fitsX,fitsY +(head.height div 2) - (side div 2) ];
 
-   for col:=0 to naxis3-1 do
+   for col:=0 to head.naxis3-1 do
    for fitsY:=0 to side-1 do
      for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX+side+gap,fitsY+(side+gap)]:=img_loaded[col,fitsX+(width2 div 2)-(side div 2),fitsY +(height2 div 2) - (side div 2) ];
+        img_temp[col,fitsX+side+gap,fitsY+(side+gap)]:=img_loaded[col,fitsX+(head.width div 2)-(side div 2),fitsY +(head.height div 2) - (side div 2) ];
 
 
-   for col:=0 to naxis3-1 do
+   for col:=0 to head.naxis3-1 do
    for fitsY:=0 to side-1 do
      for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX+2*(side+gap),fitsY+(side+gap)]:=img_loaded[col,fitsX+width2-side,fitsY +(height2 div 2) - (side div 2) ];
+        img_temp[col,fitsX+2*(side+gap),fitsY+(side+gap)]:=img_loaded[col,fitsX+head.width-side,fitsY +(head.height div 2) - (side div 2) ];
 
 
 
 
-   for col:=0 to naxis3-1 do
+   for col:=0 to head.naxis3-1 do
    for fitsY:=0 to side-1 do
      for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX,fitsY+2*(side+gap)]:=img_loaded[col,fitsX,fitsY + height2 - side];
+        img_temp[col,fitsX,fitsY+2*(side+gap)]:=img_loaded[col,fitsX,fitsY + head.height - side];
 
-   for col:=0 to naxis3-1 do
+   for col:=0 to head.naxis3-1 do
    for fitsY:=0 to side-1 do
      for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX+side+gap,fitsY+2*(side+gap)]:=img_loaded[col,fitsX+(width2 div 2)-(side div 2),fitsY + height2 - side];
+        img_temp[col,fitsX+side+gap,fitsY+2*(side+gap)]:=img_loaded[col,fitsX+(head.width div 2)-(side div 2),fitsY + head.height - side];
 
 
-   for col:=0 to naxis3-1 do
+   for col:=0 to head.naxis3-1 do
    for fitsY:=0 to side-1 do
      for fitsX:=0 to side-1 do {copy corner}
-        img_temp[col,fitsX+2*(side+gap),fitsY+2*(side+gap)]:=img_loaded[col,fitsX+width2-side,fitsY + height2 - side];
+        img_temp[col,fitsX+2*(side+gap),fitsY+2*(side+gap)]:=img_loaded[col,fitsX+head.width-side,fitsY + head.height - side];
 
 
-//   setlength(img_loaded,naxis3,width2,height2);{set length of image array}
+//   setlength(img_loaded,head.naxis3,head.width,head.height);{set length of image array}
 //   img_loaded[0]:=img_temp[0];
-//   if naxis3>1 then img_loaded[1]:=img_temp[1];
-//   if naxis3>2 then img_loaded[2]:=img_temp[2];
+//   if head.naxis3>1 then img_loaded[1]:=img_temp[1];
+//   if head.naxis3>2 then img_loaded[2]:=img_temp[2];
 
 //   img_temp:=nil; {free memory}
 
    img_loaded:=nil;{release memory}
    img_loaded:=img_temp;
 
-   width2:=widthN;
-   height2:=heightN;
+   head.width:=widthN;
+   head.height:=heightN;
 
-   update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+   update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
+   update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
 
-   if cd1_1<>0 then {remove solution}
+   if head.cd1_1<>0 then {remove solution}
    begin
      remove_key('CD1_1   =',true{one});
      remove_key('CD1_2   =',true{one});
      remove_key('CD2_1   =',true{one});
      remove_key('CD2_2   =',true{one});
-     cd1_1:=0;
+     head.cd1_1:=0;
    end;
 
    update_text   ('COMMENT A','  Aberration view '+filename2);
@@ -1420,7 +1420,7 @@ begin
   voronoi1.checked:=voronoi_check;
   values1.checked:=values_check;
   vectors1.checked:=vectors_check;
-  show_distortion1.enabled:=cd1_1<>0;
+  show_distortion1.enabled:=head.cd1_1<>0;
 //  bayer_image1.checked:=bayer_image;
   normalise_mode1.ItemIndex:=normalise_mode;
   check_bayer;

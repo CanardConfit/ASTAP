@@ -48,14 +48,14 @@ Begin
 
   if vector_based then {vector based correction}
   begin
-     x_new_float:=solution_vectorX[0]*(fitsxfloat-1)+solution_vectorX[1]*(fitsYfloat-1)+solution_vectorX[2]; {correction x:=aX+bY+c  x_new_float in image array range 0..width2-1}
+     x_new_float:=solution_vectorX[0]*(fitsxfloat-1)+solution_vectorX[1]*(fitsYfloat-1)+solution_vectorX[2]; {correction x:=aX+bY+c  x_new_float in image array range 0..head.width-1}
      y_new_float:=solution_vectorY[0]*(fitsxfloat-1)+solution_vectorY[1]*(fitsYfloat-1)+solution_vectorY[2]; {correction y:=aX+bY+c}
   end
   else
   begin {astrometric based correction}
     {6. Conversion (x,y) -> (RA,DEC)  for image to be added}
-    u0:=fitsXfloat-crpix1;
-    v0:=fitsYfloat-crpix2;
+    u0:=fitsXfloat-head.crpix1;
+    v0:=fitsYfloat-head.crpix2;
 
     if a_order>=2 then {apply SIP correction up second order}
     begin
@@ -68,11 +68,11 @@ Begin
       v:=v0;
     end;
 
-    dRa :=(cd1_1 * u +cd1_2 * v)*pi/180;
-    dDec:=(cd2_1 * u +cd2_2 * v)*pi/180;
+    dRa :=(head.cd1_1 * u +head.cd1_2 * v)*pi/180;
+    dDec:=(head.cd2_1 * u +head.cd2_2 * v)*pi/180;
     delta:=COS_dec0 - dDec*SIN_dec0;
     gamma:=sqrt(dRa*dRa+delta*delta);
-    RA_new:=ra0+arctan(Dra/delta);
+    RA_new:=head.ra0+arctan(Dra/delta);
     DEC_new:=arctan((SIN_dec0+dDec*COS_dec0)/gamma);
 
 
@@ -123,7 +123,7 @@ begin
   solution_vectorY[0]:=-(x_new_float- solution_vectorX[2]);
   solution_vectorY[1]:=+(y_new_float- solution_vectorY[2]);
 
-  flipped:=(cd1_1/cd2_2)>0; {flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+  flipped:=(head.cd1_1/head.cd2_2)>0; {flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
   flipped_reference:=(cd1_1_ref/cd2_2_ref)>0; {flipped reference image}
   if flipped<>flipped_reference then {this can happen is user try to add images from a diffent camera/setup}
   begin
@@ -134,17 +134,17 @@ end;
 
 procedure initialise_var1;{set variables correct}
 begin
-  ra_ref:=ra0;
-  dec_ref:=dec0;
+  ra_ref:=head.ra0;
+  dec_ref:=head.dec0;
   sincos(dec_ref,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
-  crpix1_ref:=crpix1;
-  crpix2_ref:=crpix2;
-  CD1_1_ref:=CD1_1;
-  CD1_2_ref:=CD1_2;
-  CD2_1_ref:=CD2_1;
-  CD2_2_ref:=CD2_2;
+  crpix1_ref:=head.crpix1;
+  crpix2_ref:=head.crpix2;
+  CD1_1_ref:=head.cd1_1;
+  CD1_2_ref:=head.cd1_2;
+  CD2_1_ref:=head.cd2_1;
+  CD2_2_ref:=head.cd2_2;
 
-  exposure_ref:=exposure;
+  exposure_ref:=head.exposure;
 end;
 
 procedure initialise_var2;{set variables correct}
@@ -246,38 +246,37 @@ begin
 
             {load image}
             Application.ProcessMessages;
-            if ((esc_pressed) or (load_fits(filename2,true {light}, true,init=false{update memo1} ,0,img_loaded)=false)) then begin memo2_message('Error');exit;end;{update memo for case esc is pressed}
+            if ((esc_pressed) or (load_fits(filename2,true {light}, true,init=false{update memo1} ,0,head,img_loaded)=false)) then begin memo2_message('Error');exit;end;{update memo for case esc is pressed}
 
             if init=false then
             begin
-              backup_solution;{backup solution}
-
+              head_ref:=head;{backup solution}
               initialise_var1;{set variables correct, do this before apply dark}
               initialise_var2;{set variables correct}
             end;
 
-            saturated_level:=datamax_org*0.97;{130}
+            saturated_level:=head.datamax_org*0.97;{130}
 
             if c=1 then
             begin
                get_background(0,img_loaded,true,false, {var} background_r,star_level);{unknown, do not calculate noise_level}
                background_r:=background_r-500;{pedestal 500}
                cblack:=round(background_r);
-               counterR:=light_count ;counterRdark:=dark_count; counterRflat:=flat_count; counterRbias:=flatdark_count; exposureR:=round(exposure);temperatureR:=set_temperature;{for historical reasons}
+               counterR:=head.light_count ;counterRdark:=head.dark_count; counterRflat:=head.flat_count; counterRbias:=head.flatdark_count; exposureR:=round(head.exposure);temperatureR:=head.set_temperature;{for historical reasons}
             end;
             if c=2 then
             begin
               get_background(0,img_loaded,true,false, {var} background_g,star_level);{unknown, do not calculate noise_level}
               background_g:=background_g-500; {pedestal +500}
               cblack:=round(background_g);
-              counterG:=light_count;counterGdark:=dark_count; counterGflat:=flat_count; counterGbias:=flatdark_count; exposureG:=round(exposure);temperatureG:=set_temperature;
+              counterG:=head.light_count;counterGdark:=head.dark_count; counterGflat:=head.flat_count; counterGbias:=head.flatdark_count; exposureG:=round(head.exposure);temperatureG:=head.set_temperature;
             end;
             if c=3 then
             begin
               get_background(0,img_loaded,true,false, {var} background_b,star_level);{unknown, do not calculate noise_level}
               background_b:=background_b-500; {pedestal +500}
               cblack:=round( background_b);
-              counterB:=light_count; counterBdark:=dark_count; counterBflat:=flat_count; counterBbias:=flatdark_count; exposureB:=round(exposure);temperatureB:=set_temperature;
+              counterB:=head.light_count; counterBdark:=head.dark_count; counterBflat:=head.flat_count; counterBbias:=head.flatdark_count; exposureB:=round(head.exposure);temperatureB:=head.set_temperature;
             end;
             if c=4 then
             begin
@@ -286,25 +285,25 @@ begin
               background_g:=background_r-500;
               background_b:=background_r-500;
               cblack:=round( background_r);
-              counterRGB:=light_count; counterRGBdark:=dark_count; counterRGBflat:=flat_count; counterRGBbias:=flatdark_count; exposureRGB:=round(exposure);;temperatureRGB:=set_temperature;
+              counterRGB:=head.light_count; counterRGBdark:=head.dark_count; counterRGBflat:=head.flat_count; counterRGBbias:=head.flatdark_count; exposureRGB:=round(head.exposure);;temperatureRGB:=head.set_temperature;
             end;
             if c=5 then {Luminance}
             begin
               get_background(0,img_loaded,true,false, {var} background_L,star_level);{unknown, do not calculate noise_level}
               background_L:=background_L-500;
               cblack:=round( background_L);
-              counterL:=light_count; counterLdark:=dark_count; counterLflat:=flat_count; counterLbias:=flatdark_count; exposureL:=round(exposure);temperatureL:=set_temperature;
+              counterL:=head.light_count; counterLdark:=head.dark_count; counterLflat:=head.flat_count; counterLbias:=head.flatdark_count; exposureL:=round(head.exposure);temperatureL:=head.set_temperature;
             end;
 
             if use_astrometry_internal then {internal solver, create new solutions for the R, G, B and L stacked images if required}
             begin
               memo2_message('Preparing astrometric solution for interim file: '+filename2);
-              if cd1_1=0 then solution:= create_internal_solution(img_loaded) else solution:=true;
+              if head.cd1_1=0 then solution:= create_internal_solution(img_loaded) else solution:=true;
               if solution=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, No astrometric solution for '+filename2); exit;end;{no solution found}
-              //if c=0 then cdelt2_lum:=cdelt2;
+              //if c=0 then cdelt2_lum:=head.cdelt2;
               //if ((c=1) or (c=2)  or (c=3) or (c=4)) then
               //begin
-              //  if cdelt2>cdelt2_lum*1.01 then memo2_message('█ █ █ █ █ █  Warning!! RGB images have a larger pixel size ('+floattostrF(cdelt2*3600,ffgeneral,3,2)+'arcsec) then the luminance image ('+floattostrF(cdelt2_lum*3600,ffgeneral,3,2)+'arcsec). If the stack result is poor, select in tab "stack method" the 3x3 mean or 5x5 mean filter for smoothing interim RGB.');
+              //  if head.cdelt2>cdelt2_lum*1.01 then memo2_message('█ █ █ █ █ █  Warning!! RGB images have a larger pixel size ('+floattostrF(head.cdelt2*3600,ffgeneral,3,2)+'arcsec) then the luminance image ('+floattostrF(cdelt2_lum*3600,ffgeneral,3,2)+'arcsec). If the stack result is poor, select in tab "stack method" the 3x3 mean or 5x5 mean filter for smoothing interim RGB.');
               //end;
             end
             else
@@ -317,7 +316,7 @@ begin
               end
               else
               begin
-                binning:=report_binning(height2);{select binning based on the height of the light}
+                binning:=report_binning(head.height);{select binning based on the height of the light}
                 bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1,warning);{bin, measure background, find stars}
                 find_quads(starlist1,0, quad_smallest,quad_star_distances1);{find quads for reference image/database}
               end;
@@ -327,16 +326,16 @@ begin
             begin
               if oversize<0 then {shrink a lot, adapt in ratio}
               begin
-                oversize:=max(oversize,-round((width2-100)/2) );{minimum image width is 100}
-                oversizeV:=round(oversize*height2/width2);{vertical shrinkage in pixels}
-                height_max:=height2+oversizeV*2;
+                oversize:=max(oversize,-round((head.width-100)/2) );{minimum image width is 100}
+                oversizeV:=round(oversize*head.height/head.width);{vertical shrinkage in pixels}
+                height_max:=head.height+oversizeV*2;
               end
               else
               begin
                 oversizeV:=oversize;
-                height_max:=height2+oversize*2;
+                height_max:=head.height+oversize*2;
               end;
-              width_max:=width2+oversize*2;
+              width_max:=head.width+oversize*2;
 
               setlength(img_average,3,width_max,height_max);{will be color}
               for fitsY:=0 to height_max-1 do
@@ -349,7 +348,7 @@ begin
             end;{init, c=0}
 
             solution:=true;{assume solution is found}
-            if use_astrometry_internal then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+            if use_astrometry_internal then sincos(head.dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
             else
             begin {align using star match}
               if init=true then {second image}
@@ -387,9 +386,9 @@ begin
             if ((c<>0) and (solution)) then  {do not add reference channel c=0, in most case luminance file.}
             begin
               inc(counter);{count number of colour files involved}
-              date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
+              date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
               if jd_start>jd_stop then jd_stop:=jd_start;{find latest start time}
-              jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
+              jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint head.exposure}
 
               vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
               if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
@@ -398,8 +397,8 @@ begin
                 vector_based:=true;
               end;
 
-              for fitsY:=1 to height2 do {skip outside pixels if color}
-              for fitsX:=1 to width2 do
+              for fitsY:=1 to head.height do {skip outside pixels if color}
+              for fitsX:=1 to head.width do
               begin
                 calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
                 x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
@@ -461,7 +460,7 @@ begin
                       if bb_factor>0.00001 then begin img_average[2,x_new,y_new]:=bb_factor*value; end;
                     end;
                   end;
-                  if c=4 {RGB image, naxis3=3}   then
+                  if c=4 {RGB image, head.naxis3=3}   then
                   begin
                     begin img_average[0,x_new,y_new]:=img_loaded[0,fitsX-1,fitsY-1]-background_r; end;
                     begin img_average[1,x_new,y_new]:=img_loaded[1,fitsX-1,fitsY-1]-background_g; end;
@@ -500,14 +499,16 @@ begin
       end;
       if counter<>0 then
       begin
-        naxis3:=3;
+        head:=head_ref; {restore solution. Works only if no oversize is used}
+
+        head.naxis3:=3;
         img_loaded:=img_average;
-        width2:=width_max;
-        height2:=height_max;
+        head.width:=width_max;
+        head.height:=height_max;
       end;
     end;{LRGB}
 
-    restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}
+//    restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}
 
   end;{with stackmenu1}
 end;
@@ -598,19 +599,19 @@ begin
 
           Application.ProcessMessages;
           {load image}
-          if ((esc_pressed) or (load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
+          if ((esc_pressed) or (load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
 
           if init=true then {first file done}
           begin
-             if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-             if naxis3>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine colour to mono files.'); exit;end;
+             if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
+             if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine colour to mono files.'); exit;end;
           end;
 
           if init=false then
           begin
-            binning:=report_binning(height2);{select binning based on the height of the first light}
+            binning:=report_binning(head.height);{select binning based on the height of the first light}
 
-            backup_solution;{backup solution}
+            head_ref:=head;{backup solution}
 
             initialise_var1;{set variables correct. Do this before apply dark}
             initialise_var2;{set variables correct}
@@ -620,19 +621,19 @@ begin
                if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, grayscale image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
           end;
 
-          apply_dark_and_flat(filter_name,{var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
+          apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
           {these global variables are passed-on in procedure to protect against overwriting}
 
-          memo2_message('Adding file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
+          memo2_message('Adding file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to average. Using '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
           Application.ProcessMessages;
           if esc_pressed then exit;
 
           if make_osc_color1.checked then {do demosaic bayer}
           begin
-            if naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+            if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
             else
             demosaic_bayer(img_loaded); {convert OSC image to colour}
-           {naxis3 is now 3}
+           {head.naxis3 is now 3}
           end;
 
           if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
@@ -649,7 +650,7 @@ begin
               pedestal_s:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
               if pedestal_s<500 then pedestal_s:=500;{prevent image noise could go below zero}
               background_correction:=pedestal_s-cblack;
-              datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
+              head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
             end;
           end;
 
@@ -657,28 +658,28 @@ begin
           begin
             if oversize<0 then {shrink a lot, adapt in ratio}
             begin
-              oversize:=max(oversize,-round((width2-100)/2) );{minimum image width is 100}
-              oversizeV:=round(oversize*height2/width2);
-              height_max:=height2+oversizeV*2;
+              oversize:=max(oversize,-round((head.width-100)/2) );{minimum image width is 100}
+              oversizeV:=round(oversize*head.height/head.width);
+              height_max:=head.height+oversizeV*2;
             end
             else
             begin
               oversizeV:=oversize;
-              height_max:=height2+oversize*2;
+              height_max:=head.height+oversize*2;
             end;
-            width_max:=width2+oversize*2;
+            width_max:=head.width+oversize*2;
 
-            setlength(img_average,naxis3,width_max,height_max);
+            setlength(img_average,head.naxis3,width_max,height_max);
             setlength(img_temp,1,width_max,height_max);
             for fitsY:=0 to height_max-1 do
               for fitsX:=0 to width_max-1 do
               begin
-                for col:=0 to naxis3-1 do
+                for col:=0 to head.naxis3-1 do
                   img_average[col,fitsX,fitsY]:=0; {clear img_average}
                 img_temp[0,fitsX,fitsY]:=0; {clear img_temp}
               end;
-            old_width:=width2;
-            old_height:=height2;
+            old_width:=head.width;
+            old_height:=head.height;
 
             if ((use_manual_align) or (use_ephemeris_alignment)) then
             begin
@@ -688,7 +689,7 @@ begin
           end;{init, c=0}
 
           solution:=true;
-          if use_astrometry_internal then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+          if use_astrometry_internal then sincos(head.dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
           else
           begin {align using star match}
             if init=true then {second image}
@@ -704,7 +705,7 @@ begin
                 bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
                 background_correction:=pedestal_s-cblack;
-                datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
+                head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
 
                 find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
                 if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
@@ -730,12 +731,12 @@ begin
           if solution then
           begin
             inc(counter);
-            sum_exp:=sum_exp+exposure;
-            if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
+            sum_exp:=sum_exp+head.exposure;
+            if head.exposure<>0 then weightF:=head.exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
 
-            date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
+            date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
             if jd_start>jd_stop then jd_stop:=jd_start;{find latest start time}
-            jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
+            jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint head.exposure}
 
             vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
             if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
@@ -744,15 +745,15 @@ begin
               vector_based:=true;
             end;
 
-            for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
-            for fitsX:=1 to width2  do
+            for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
+            for fitsX:=1 to head.width  do
             begin
               calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
               x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversizeV;
               x_new:=round(x_new_float);y_new:=round(y_new_float);
               if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
-                for col:=0 to naxis3-1 do {all colors}
+                for col:=0 to head.naxis3-1 do {all colors}
                 img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1] +background_correction;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
                 img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples.}
               end;
@@ -765,15 +766,16 @@ begin
 
       if counter<>0 then
       begin
-        height2:=height_max;
-        width2:=width_max;
-        setlength(img_loaded,naxis3,width2,height2);{new size}
+        head:=head_ref;{restore solution variable of reference image for annotation and mount pointer. Works only if not resized}
+        head.height:=height_max;
+        head.width:=width_max;
+        setlength(img_loaded,head.naxis3,head.width,head.height);{new size}
 
-        For fitsY:=0 to height2-1 do
-        for fitsX:=0 to width2-1 do
+        For fitsY:=0 to head.height-1 do
+        for fitsX:=0 to head.width-1 do
         begin {pixel loop}
           tempval:=img_temp[0,fitsX,fitsY];
-          for col:=0 to naxis3-1 do
+          for col:=0 to head.naxis3-1 do
           begin {colour loop}
             if tempval<>0 then img_loaded[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]/tempval {scale to one image by diving by the number of pixels added}
             else
@@ -788,8 +790,7 @@ begin
         end;{pixel loop}
       end; {counter<>0}
 
-      restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}
-
+     // restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}
     end;{simple average}
   end;{with stackmenu1}
   {arrays will be nilled later. This is done for early exits}
@@ -842,17 +843,16 @@ begin
           Application.ProcessMessages;
 
           {load image}
-          if ((esc_pressed) or  (load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,img_loaded)=false)) then  begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
+          if ((esc_pressed) or  (load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false)) then  begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
 
           if init=true then
           begin
-             // not for mosaic||| if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-             if naxis3>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
+             // not for mosaic||| if init=true then   if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
+             if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
           end;
 
           if init=false then
           begin
-//            backup_header(true);{backup header and solution}
             initialise_var1;{set variables correct}
             initialise_var2;{set variables correct}
           end;
@@ -863,17 +863,17 @@ begin
 
           if init=false then {init}
           begin
-            oversize:=width2*mosaic_width1.position div 2;{increase the oversize to have space for the tiles}
-            width_max:=width2+oversize*2;
-            height_max:=height2+oversize*2;
+            oversize:=head.width*mosaic_width1.position div 2;{increase the oversize to have space for the tiles}
+            width_max:=head.width+oversize*2;
+            height_max:=head.height+oversize*2;
 
-            setlength(img_average,naxis3,width_max,height_max);
+            setlength(img_average,head.naxis3,width_max,height_max);
             setlength(img_temp,1,width_max,height_max);{gray}
 
             for fitsY:=0 to height_max-1 do
               for fitsX:=0 to width_max-1 do
               begin
-                for col:=0 to naxis3-1 do
+                for col:=0 to head.naxis3-1 do
                 begin
                   img_average[col,fitsX,fitsY]:=0; {clear img_average}
                 end;
@@ -881,11 +881,11 @@ begin
               end;
           end;{init, c=0}
 
-          for col:=0 to naxis3-1 do {calculate background and noise if required}
+          for col:=0 to head.naxis3-1 do {calculate background and noise if required}
           begin
             if equalise_background then
             begin
-                background[col]:=mode(img_loaded,col,round(0.2*width2),round(0.8*width2),round(0.2*height2),round(0.8*height2),32000); {most common 80% center}
+                background[col]:=mode(img_loaded,col,round(0.2*head.width),round(0.8*head.width),round(0.2*head.height),round(0.8*head.height),32000); {most common 80% center}
                 background_correction_center[col]:=1000 - background[col] ;
               end
             else
@@ -895,16 +895,16 @@ begin
             end;
           end;
 
-          sincos(dec0,SIN_dec0,COS_dec0); {Alway astrometric. Do this in advance since it is for each pixel the same}
+          sincos(head.dec0,SIN_dec0,COS_dec0); {Alway astrometric. Do this in advance since it is for each pixel the same}
 
           {solutions are already added in unit_stack}
           begin
             inc(counter);
-            sum_exp:=sum_exp+exposure;
+            sum_exp:=sum_exp+head.exposure;
 
-            date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
+            date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
             if jd_start>jd_stop then jd_stop:=jd_start;{find latest start time}
-            jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
+            jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint head.exposure}
 
             vector_based:=false;
             if a_order=0 then {no SIP from astronomy.net}
@@ -913,8 +913,8 @@ begin
               vector_based:=true;
             end;
 
-            cropW:=trunc(stackmenu1.mosaic_crop1.Position*width2/200);
-            cropH:=trunc(stackmenu1.mosaic_crop1.Position*height2/200);
+            cropW:=trunc(stackmenu1.mosaic_crop1.Position*head.width/200);
+            cropH:=trunc(stackmenu1.mosaic_crop1.Position*head.height/200);
 
 
             background_correction[0]:=0;
@@ -927,8 +927,8 @@ begin
             counter_overlap[1]:=0;
             counter_overlap[2]:=0;
 
-              for fitsY:=1+1+cropH to height2-1-cropH do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
-              for fitsX:=1+1+cropW to width2-1-cropW  do
+              for fitsY:=1+1+cropH to head.height-1-cropH do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
+              for fitsX:=1+1+cropW to head.width-1-cropW  do
               begin
                 calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
                 x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
@@ -938,7 +938,7 @@ begin
                   begin
                     if img_average[0,x_new,y_new]<>0 then {filled pixel}
                     begin
-                      for col:=0 to naxis3-1 do {all colors}
+                      for col:=0 to head.naxis3-1 do {all colors}
                       begin
                         correction:=round(img_average[col,x_new,y_new]-(img_loaded[col,fitsX-1,fitsY-1]+background_correction_center[col]) );
                         if abs(correction)<max_dev_backgr*1.5 then {acceptable offset based on the lowest and highest background measured earlier}
@@ -959,8 +959,8 @@ begin
 
             init:=true;{initialize for first image done}
 
-            for fitsY:=1+1+cropH to height2-1-cropH do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
-            for fitsX:=1+1+cropW to width2-1-cropW  do
+            for fitsY:=1+1+cropH to head.height-1-cropH do {skip outside "bad" pixels if mosaic mode. Don't use the pixel at borders, so crop is minimum 1 pixel}
+            for fitsX:=1+1+cropW to head.width-1-cropW  do
             begin
               calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
               x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversize);
@@ -968,17 +968,17 @@ begin
               begin
                 if img_loaded[0,fitsX-1,fitsY-1]>0.0001 then {not a black area around image}
                 begin
-                  dummy:=1+minimum_distance_borders(fitsX,fitsY,width2,height2);{minimum distance borders}
+                  dummy:=1+minimum_distance_borders(fitsX,fitsY,head.width,head.height);{minimum distance borders}
                   if img_temp[0,x_new,y_new]=0 then {blank pixel}
                   begin
-                     for col:=0 to naxis3-1 do {all colors}
+                     for col:=0 to head.naxis3-1 do {all colors}
                      img_average[col,x_new,y_new]:=img_loaded[col,fitsX-1,fitsY-1]+background_correction_center[col] +background_correction[col];{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
                      img_temp[0,x_new,y_new]:=dummy;
 
                   end
                   else
                   begin {already pixel filled, try to make an average}
-                    for col:=0 to naxis3-1 do {all colors}
+                    for col:=0 to head.naxis3-1 do {all colors}
                     begin
                       median:=background_correction_center[col] +background_correction[col]+median_background(img_loaded,col,15,15,fitsX-1,fitsY-1);{find median value in sizeXsize matrix of img_loaded}
 
@@ -1014,15 +1014,15 @@ begin
 
       if counter<>0 then
       begin
-        height2:=height_max;
-        width2:=width_max;
-        setlength(img_loaded,naxis3,width2,height2);{new size}
+        head.height:=height_max;
+        head.width:=width_max;
+        setlength(img_loaded,head.naxis3,head.width,head.height);{new size}
 
-        For fitsY:=0 to height2-1 do
-        for fitsX:=0 to width2-1 do
+        For fitsY:=0 to head.height-1 do
+        for fitsX:=0 to head.width-1 do
         begin {pixel loop}
           tempval:=img_temp[0,fitsX,fitsY]; {if <>0 then something was written}
-          for col:=0 to naxis3-1 do
+          for col:=0 to head.naxis3-1 do
           begin {colour loop}
             if tempval<>0 then img_loaded[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY] {no divide}
             else
@@ -1096,19 +1096,19 @@ begin
 
         {load image}
         Application.ProcessMessages;
-        if ((esc_pressed) or (load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
+        if ((esc_pressed) or (load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
 
         if init=true then
         begin
-           if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-           if naxis3>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
+           if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
+           if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
         end;
 
 
         if init=false then {phase (1) average}
         begin
-          binning:=report_binning(height2);{select binning based on the height of the light}
-          backup_solution;{backup solution}
+          binning:=report_binning(head.height);{select binning based on the height of the light}
+          head_ref:=head;{backup solution}
           initialise_var1;{set variables correct}
           initialise_var2;{set variables correct}
           if ((bayerpat='') and (make_osc_color1.checked)) then
@@ -1117,19 +1117,19 @@ begin
              if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, grayscale image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
         end;
 
-        apply_dark_and_flat(filter_name,{var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
+        apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
         {these global variables are passed-on in procedure to protect against overwriting}
 
-        memo2_message('Adding light file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
+        memo2_message('Adding light file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
         Application.ProcessMessages;
         if esc_pressed then exit;
 
         if make_osc_color1.checked then {do demosaic bayer}
         begin
-          if naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+          if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
           else
           demosaic_bayer(img_loaded); {convert OSC image to colour}
-         {naxis3 is now 3}
+         {head.naxis3 is now 3}
         end;
 
         if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
@@ -1147,7 +1147,7 @@ begin
             pedestal_s:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
             if pedestal_s<500 then pedestal_s:=500;{prevent image noise could go below zero}
             background_correction:=pedestal_s-cblack;
-            datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
+            head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
           end;
         end;
 
@@ -1155,32 +1155,32 @@ begin
         begin
           if oversize<0 then {shrink, adapt in ratio}
           begin
-            oversize:=max(oversize,-round((width2-100)/2) );{minimum image width is 100}
-            oversizeV:=round(oversize*height2/width2);{vertical}
-            height_max:=height2+oversizeV*2;
+            oversize:=max(oversize,-round((head.width-100)/2) );{minimum image width is 100}
+            oversizeV:=round(oversize*head.height/head.width);{vertical}
+            height_max:=head.height+oversizeV*2;
           end
           else
           begin
             oversizeV:=oversize;
-            height_max:=height2+oversize*2;
+            height_max:=head.height+oversize*2;
           end;
-          width_max:=width2+oversize*2;
+          width_max:=head.width+oversize*2;
 
-          setlength(img_average,naxis3,width_max,height_max);
-          setlength(img_temp,naxis3,width_max,height_max);
+          setlength(img_average,head.naxis3,width_max,height_max);
+          setlength(img_temp,head.naxis3,width_max,height_max);
             for fitsY:=0 to height_max-1 do
              for fitsX:=0 to width_max-1 do
-               for col:=0 to naxis3-1 do
+               for col:=0 to head.naxis3-1 do
                begin
                  img_average[col,fitsX,fitsY]:=0; {clear img_average}
                  img_temp[col,fitsX,fitsY]:=0; {clear img_temp}
                end;
-          old_width:=width2;
-          old_height:=height2;
+          old_width:=head.width;
+          old_height:=head.height;
         end;{init, c=0}
 
         solution:=true;
-        if use_astrometry_internal then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+        if use_astrometry_internal then sincos(head.dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
         else
         begin {align using star match}
            if init=true then {second image}
@@ -1196,7 +1196,7 @@ begin
                   bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
                   background_correction:=pedestal_s-cblack;{correct later for difference in background}
-                  datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
+                  head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
 
                   find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
@@ -1235,12 +1235,12 @@ begin
         if solution then
         begin
           inc(counter);
-          sum_exp:=sum_exp+exposure;
-          if exposure<>0 then weightF:=exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
+          sum_exp:=sum_exp+head.exposure;
+          if head.exposure<>0 then weightF:=head.exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
 
-          date_to_jd(date_obs,exposure);{convert date_obs string and exposure time to global variables jd_start (julian day start exposure) and jd_mid (julian day middle of the exposure)}
+          date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
           if jd_start>jd_stop then jd_stop:=jd_start;{find latest start time}
-          jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
+          jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint head.exposure}
 
           vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
@@ -1249,15 +1249,15 @@ begin
             vector_based:=true;
           end;
 
-          for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
-          for fitsX:=1 to width2  do
+          for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
+          for fitsX:=1 to head.width  do
           begin
             calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
             x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
 
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
-              for col:=0 to naxis3-1 do
+              for col:=0 to head.naxis3-1 do
               begin
                 img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1]+background_correction;{Note fits count from 1, image from zero}
                 img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
@@ -1272,7 +1272,7 @@ begin
       if counter<>0 then
       For fitsY:=0 to height_max-1 do
         for fitsX:=0 to width_max-1 do
-            for col:=0 to naxis3-1 do
+            for col:=0 to head.naxis3-1 do
             if img_temp[col,fitsX,fitsY]<>0 then
                img_average[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY];{scale to one image by diving by the number of pixels added}
 //      img_loaded[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]
@@ -1300,43 +1300,43 @@ begin
 
           {load image}
           Application.ProcessMessages;
-          if ((esc_pressed) or (load_fits(filename2,true {light},true,false{update_memo},0,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
+          if ((esc_pressed) or (load_fits(filename2,true {light},true,false{update_memo},0,head,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
 
           if init=false then
           begin
             {not required. Done in first step}
           end;
 
-          apply_dark_and_flat(filter_name, {var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
+          apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
           {these global variables are passed-on in procedure to protect against overwriting}
 
-          memo2_message('Calculating pixels σ of light file '+inttostr(c+1)+'-'+nr_selected1.caption+' '+filename2+' Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
+          memo2_message('Calculating pixels σ of light file '+inttostr(c+1)+'-'+nr_selected1.caption+' '+filename2+' Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
           Application.ProcessMessages;
           if esc_pressed then exit;
 
           if make_osc_color1.checked then {do demosaic bayer}
           begin
-            if naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+            if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
             else
             demosaic_bayer(img_loaded); {convert OSC image to colour}
-           {naxis3 is now 3}
+           {head.naxis3 is now 3}
           end;
 
           if init=false then {init (2) for standard deviation step}
           begin
-            setlength(img_variance,naxis3,width_max,height_max);{mono}
+            setlength(img_variance,head.naxis3,width_max,height_max);{mono}
             for fitsY:=0 to height_max-1 do
             for fitsX:=0 to width_max-1 do
             begin
-              for col:=0 to naxis3-1 do img_variance[col,fitsX,fitsY]:=0; {clear img_average}
+              for col:=0 to head.naxis3-1 do img_variance[col,fitsX,fitsY]:=0; {clear img_average}
             end;
-            old_width:=width2;
-            old_height:=height2;
+            old_width:=head.width;
+            old_height:=head.height;
           end;{c=0}
 
           inc(counter);
 
-          if use_astrometry_internal then  sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+          if use_astrometry_internal then  sincos(head.dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
           else
           begin {align using star match, read saved solution vectors}
             if ((use_manual_align) or (use_ephemeris_alignment)) then
@@ -1357,7 +1357,7 @@ begin
               solution_vectorY:=solutions[c].solution_vectorY;
               cblack:=solutions[c].cblack;
               background_correction:=pedestal_s-cblack;{correction for difference in background}
-              datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
+              head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
             end;
           end;
           init:=true;{initialize for first image done}
@@ -1369,14 +1369,14 @@ begin
             vector_based:=true;
           end;
 
-          for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
-          for fitsX:=1 to width2  do
+          for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
+          for fitsX:=1 to head.width  do
           begin
             calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
             x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
-              for col:=0 to naxis3-1 do img_variance[col,x_new,y_new]:=img_variance[col,x_new,y_new] +  sqr( img_loaded[col,fitsX-1,fitsY-1]+ background_correction - img_average[col,x_new,y_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
+              for col:=0 to head.naxis3-1 do img_variance[col,x_new,y_new]:=img_variance[col,x_new,y_new] +  sqr( img_loaded[col,fitsX-1,fitsY-1]+ background_correction - img_average[col,x_new,y_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
             end;
           end;
           progress_indicator(10+30+round(0.33333*90*(counter)/length(files_to_process){(ListView1.items.count)}),' ■■□');{show progress}
@@ -1386,7 +1386,7 @@ begin
       if counter<>0 then
         For fitsY:=0 to height_max-1 do
           for fitsX:=0 to width_max-1 do
-            for col:=0 to naxis3-1 do
+            for col:=0 to head.naxis3-1 do
               if img_temp[col,fitsX,fitsY]<>0 then {reuse the img_temp from light average}
                  img_variance[col,fitsX,fitsY]:=1+img_variance[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY]; {the extra 1 is for saturated images giving a SD=0}{scale to one image by diving by the number of pixels tested}
     end; {standard deviation of light images}
@@ -1408,42 +1408,42 @@ begin
 
           {load file}
           Application.ProcessMessages;
-          if ((esc_pressed) or (load_fits(filename2,true {light},true,false{update_memo},0,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
+          if ((esc_pressed) or (load_fits(filename2,true {light},true,false{update_memo},0,head,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
 
-          apply_dark_and_flat(filter_name, {var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
+          apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
-          memo2_message('Combining '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'", ignoring outliers. Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
+          memo2_message('Combining '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'", ignoring outliers. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
           Application.ProcessMessages;
           if esc_pressed then exit;
 
           if make_osc_color1.checked then {do demosaic bayer}
           begin
-            if naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+            if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
             else
             demosaic_bayer(img_loaded); {convert OSC image to colour}
-           {naxis3 is now 3}
+           {head.naxis3 is now 3}
           end;
 
           if init=false then {init, (3) step throw outliers out}
           begin
-            setlength(img_temp,naxis3,width_max,height_max);
-            setlength(img_final,naxis3,width_max,height_max);
+            setlength(img_temp,head.naxis3,width_max,height_max);
+            setlength(img_final,head.naxis3,width_max,height_max);
             for fitsY:=0 to height_max-1 do
             for fitsX:=0 to width_max-1 do
             begin
-              for col:=0 to naxis3-1 do
+              for col:=0 to head.naxis3-1 do
               begin
                 img_temp[col,fitsX,fitsY]:=0; {clear img_temp}
                 img_final[col,fitsX,fitsY]:=0; {clear img_temp}
               end;
             end;
-            old_width:=width2;
-            old_height:=height2;
+            old_width:=head.width;
+            old_height:=head.height;
           end;{init}
 
           inc(counter);
 
-          if use_astrometry_internal then  sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+          if use_astrometry_internal then  sincos(head.dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
           else
           begin {align using star match, read saved solution vectors}
             if ((use_manual_align) or (use_ephemeris_alignment)) then
@@ -1464,7 +1464,7 @@ begin
               solution_vectorY:=solutions[c].solution_vectorY;
               cblack:=solutions[c].cblack;
               background_correction:=pedestal_s-cblack;{correct for difference in background}
-              datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
+              head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
             end;
           end;
           init:=true;{initialize for first image done}
@@ -1476,14 +1476,14 @@ begin
             vector_based:=true;
           end;
 
-          for fitsY:=1 to height2 do
-          for fitsX:=1 to width2  do
+          for fitsY:=1 to head.height do
+          for fitsX:=1 to head.width  do
           begin
             calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
             x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
-              for col:=0 to naxis3-1 do {do all colors}
+              for col:=0 to head.naxis3-1 do {do all colors}
               begin
                 value:=img_loaded[col,fitsX-1,fitsY-1]+ background_correction;
                 if sqr (value - img_average[col,x_new,y_new])< variance_factor*{sd sqr}( img_variance[col,x_new,y_new])  then {not an outlier}
@@ -1503,13 +1503,14 @@ begin
      {scale to number of pixels}
       if counter<>0 then
       begin
-        height2:=height_max;
-        width2:=width_max;
-        setlength(img_loaded,naxis3,width2,height2);{new size}
+        head:=head_ref;{restore solution variable of reference image for annotation and mount pointer. Works only if not oversized}
+        head.height:=height_max;
+        head.width:=width_max;
+        setlength(img_loaded,head.naxis3,head.width,head.height);{new size}
 
-        for col:=0 to naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
-          For fitsY:=0 to height2-1 do
-            for fitsX:=0 to width2-1 do
+        for col:=0 to head.naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
+          For fitsY:=0 to head.height-1 do
+            for fitsX:=0 to head.width-1 do
             if img_temp[col,fitsX,fitsY]<>0 then img_loaded[col,fitsX,fitsY]:=img_final[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY] {scale to one image by diving by the number of pixels added}
             else
             begin { black spot filter. Note for this version img_temp is counting for each color since they could be different}
@@ -1526,7 +1527,7 @@ begin
             end; {black spot filter}
       end;{counter<>0}
 
-      restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}
+      //restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}
 
     end;{throw out the outliers of light-dark images}
   end;{with stackmenu1}
@@ -1572,20 +1573,20 @@ begin
 
         {load image}
         Application.ProcessMessages;
-        if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo for saving},0,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
+        if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo for saving},0,head,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
 
 
 
         if init=true then
         begin
-           if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-           if naxis3>length(img_average) {naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
+           if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
+           if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
         end;
 
 
         if init=false then
         begin
-          binning:=report_binning(height2);{select binning based on the height of the light}
+          binning:=report_binning(head.height);{select binning based on the height of the light}
           initialise_var1;{set variables correct}
           initialise_var2;{set variables correct}
           if ((bayerpat='') and (make_osc_color1.checked)) then
@@ -1594,19 +1595,19 @@ begin
              if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, grayscale image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
         end;
 
-        apply_dark_and_flat(filter_name,{var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
+        apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
         {these global variables are passed-on in procedure to protect against overwriting}
 
-        memo2_message('Calibrating and aligning file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(dark_count)+' dark(s), '+inttostr(flat_count)+' flat(s), '+inttostr(flatdark_count)+' flat-dark(s)') ;
+        memo2_message('Calibrating and aligning file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+' dark compensated to light average. Using '+inttostr(head.dark_count)+' dark(s), '+inttostr(head.flat_count)+' flat(s), '+inttostr(head.flatdark_count)+' flat-dark(s)') ;
         Application.ProcessMessages;
         if esc_pressed then exit;
 
         if make_osc_color1.checked then {do demosaic bayer}
         begin
-          if naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
+          if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
           else
           demosaic_bayer(img_loaded); {convert OSC image to colour}
-         {naxis3 is now 3}
+         {head.naxis3 is now 3}
         end
         else
         if bayerpat<>'' then memo2_message('█ █ █ █ █ █ Warning, alignment (shifting, rotating) will ruin Bayer pattern!! Select calibrate only for photometry or checkmark "Convert OSC image to colour" █ █ █ █ █ █');
@@ -1625,7 +1626,7 @@ begin
             pedestal_s:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
             if pedestal_s<500 then pedestal_s:=500;{prevent image noise could go below zero}
             background_correction:=pedestal_s-cblack;
-            datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
+            head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
           end;
         end;
 
@@ -1634,24 +1635,24 @@ begin
         begin
           if oversize<0 then {shrink a lot, adapt in ratio}
           begin
-            oversize:=max(oversize,-round((width2-100)/2) );{minimum image width is 100}
-            oversizeV:=round(oversize*height2/width2);{vertical shrinkage in pixels}
-            height_max:=height2+oversizeV*2;
+            oversize:=max(oversize,-round((head.width-100)/2) );{minimum image width is 100}
+            oversizeV:=round(oversize*head.height/head.width);{vertical shrinkage in pixels}
+            height_max:=head.height+oversizeV*2;
           end
           else
           begin
             oversizeV:=oversize;
-            height_max:=height2+oversize*2;
+            height_max:=head.height+oversize*2;
           end;
-          width_max:=width2+oversize*2;
+          width_max:=head.width+oversize*2;
 
 
-          setlength(img_average,naxis3,width_max,height_max);
-          setlength(img_temp,naxis3,width_max,height_max);
+          setlength(img_average,head.naxis3,width_max,height_max);
+          setlength(img_temp,head.naxis3,width_max,height_max);
           {clearing image_average and img_temp is done for each image. See below}
 
-          old_width:=width2;
-          old_height:=height2;
+          old_width:=head.width;
+          old_height:=head.height;
 
           if ((use_manual_align) or (use_ephemeris_alignment)) then
           begin
@@ -1663,7 +1664,7 @@ begin
         {clearing image_average and img_temp is done for each image}
         for fitsY:=0 to height_max-1 do
           for fitsX:=0 to width_max-1 do
-            for col:=0 to naxis3-1 do
+            for col:=0 to head.naxis3-1 do
             begin
               img_average[col,fitsX,fitsY]:=0; {clear img_average}
               img_temp[col,fitsX,fitsY]:=0; {clear img_temp}
@@ -1671,7 +1672,7 @@ begin
 
 
         solution:=true;
-        if use_astrometry_internal then sincos(dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+        if use_astrometry_internal then sincos(head.dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
         else
         begin {align using star match}
           if init=true then {second image}
@@ -1687,7 +1688,7 @@ begin
               bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
               background_correction:=pedestal_s-cblack;
-              datamax_org:=datamax_org+background_correction; if datamax_org>$FFFF then  datamax_org:=$FFFF; {note datamax_org is already corrected in apply dark}
+              head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
 
               find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
@@ -1722,15 +1723,15 @@ begin
             vector_based:=true;
           end;
 
-          for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
-          for fitsX:=1 to width2 do
+          for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
+          for fitsX:=1 to head.width do
           begin
             calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
             x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
 
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
-              for col:=0 to naxis3-1 do
+              for col:=0 to head.naxis3-1 do
               begin
                 img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1]+background_correction;{Note fits count from 1, image from zero}
                 img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+1;{count the number of image pixels added=samples}
@@ -1741,13 +1742,13 @@ begin
 
 
         {scale to number of pixels}
-        height2:=height_max;
-        width2:=width_max;
-        setlength(img_loaded,naxis3,width2,height2);{new size}
+        head.height:=height_max;
+        head.width:=width_max;
+        setlength(img_loaded,head.naxis3,head.width,head.height);{new size}
 
-        for col:=0 to naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
-          For fitsY:=0 to height2-1 do
-            for fitsX:=0 to width2-1 do
+        for col:=0 to head.naxis3-1 do {do one or three colors} {compensate for number of pixel values added per position}
+          For fitsY:=0 to head.height-1 do
+            for fitsX:=0 to head.width-1 do
             begin
             if img_temp[col,fitsX,fitsY]<>0 then img_loaded[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY] {scale to one image by diving by the number of pixels added}
             else
@@ -1769,25 +1770,25 @@ begin
         {save}
         filename2:=ChangeFileExt(Filename2,'_aligned.fit');{rename}
 
-        if CD1_1<>0 then
+        if head.cd1_1<>0 then
         begin
           {quick and dirty method to roughly correct existing solutions}
-          CRPIX1:=solution_vectorX[0]*(CRPIX1-1)+solution_vectorX[1]*(CRPIX2-1)+solution_vectorX[2];{correct for marker_position at ra_dec position}
-          CRPIX2:=solution_vectorY[0]*(CRPIX1-1)+solution_vectorY[1]*(CRPIX2-1)+solution_vectorY[2];
-          update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
-          update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
+          head.crpix1:=solution_vectorX[0]*(head.crpix1-1)+solution_vectorX[1]*(head.crpix2-1)+solution_vectorX[2];{correct for marker_position at ra_dec position}
+          head.crpix2:=solution_vectorY[0]*(head.crpix1-1)+solution_vectorY[1]*(head.crpix2-1)+solution_vectorY[2];
+          update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);
+          update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
           update_text   ('COMMENT S','  After alignment only CRPIX1 & CRPIX2 existing solution corrected.');
         end;
 
 
 
         update_text   ('COMMENT 1','  Calibrated & aligned by ASTAP. www.hnsky.org');
-        update_text   ('CALSTAT =',#39+calstat+#39); {calibration status}
-        add_integer('DARK_CNT=',' / Darks used for luminance.               ' ,dark_count);{for interim lum,red,blue...files. Compatible with master darks}
-        add_integer('FLAT_CNT=',' / Flats used for luminance.               ' ,flat_count);{for interim lum,red,blue...files. Compatible with master flats}
-        add_integer('BIAS_CNT=',' / Flat-darks used for luminance.          ' ,flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
+        update_text   ('CALSTAT =',#39+head.calstat+#39); {calibration status}
+        add_integer('DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
+        add_integer('FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
+        add_integer('BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
          { ASTAP keyword standard:}
-         { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
+         { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
          { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
         if nrbits=16 then
@@ -1795,7 +1796,7 @@ begin
         else
           save_fits(img_loaded,filename2,-32,true);
          memo2_message('New aligned image created: '+filename2);
-        report_results('?',inttostr(round(exposure)),0,999 {color icon});{report result in tab result using modified filename2}
+        report_results('?',inttostr(round(head.exposure)),0,999 {color icon});{report result in tab result using modified filename2}
         progress_indicator(10+round(90*(counter)/length(files_to_process){(ListView1.items.count)}),'Cal');{show progress}
         finally
         end;

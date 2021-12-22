@@ -454,32 +454,32 @@ var
 
        {5. Conversion (RA,DEC) -> (x,y)}
         sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
-        delta_ra:=ra2-ra0;
+        delta_ra:=ra2-head.ra0;
         sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
         HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
         dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
         dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
-        det:=CD2_2*CD1_1 - CD1_2*CD2_1;
+        det:=head.cd2_2*head.cd1_1 - head.cd1_2*head.cd2_1;
 
-        u0:= - (CD1_2*dDEC - CD2_2*dRA) / det;
-        v0:= + (CD1_1*dDEC - CD2_1*dRA) / det;
+        u0:= - (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+        v0:= + (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
 
         if sip then {apply SIP correction}
         begin
-           x:=round(crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0); {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-           y:=round(crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0); {3th order SIP correction}
+           x:=round(head.crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0); {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+           y:=round(head.crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0); {3th order SIP correction}
         end
         else
         begin
-          x:=round(crpix1 + u0); {in FITS range 1..width}
-          y:=round(crpix2 + v0);
+          x:=round(head.crpix1 + u0); {in FITS range 1..width}
+          y:=round(head.crpix2 + v0);
         end;
 
-        if ((x>-50) and (x<=width2+50) and (y>-50) and (y<=height2+50)) then {within image1 with some overlap}
+        if ((x>-50) and (x<=head.width+50) and (y>-50) and (y<=head.height+50)) then {within image1 with some overlap}
         begin
           {annotate}
-           if flip_horizontal then x2:=(width2)-x else x2:=x;
-           if flip_vertical   then y2:=y         else y2:=(height2)-y;
+           if flip_horizontal then x2:=(head.width)-x else x2:=x;
+           if flip_vertical   then y2:=y         else y2:=(head.height)-y;
 
            if showfullnames then thetext1:=trim(name) else thetext1:=trim(desn)+'('+floattostrF(mag,ffgeneral,3,1)+')';
            if showmagnitude then thetext2:='{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext2:='';
@@ -513,7 +513,7 @@ var
                  {comet is indicated by a_M:=1E99, Mean anomoly, an abnormal value}
                  minor_planet(sun200_calculated,jd_mid+delta_t{delta_t in days},round(yy),round(mm),dd,a_e,a_or_q,a_i,a_ohm,a_w,a_M,{var} ra2,dec2,delta,sun_delta);
 
-                 if sqr( (ra2-ra0)*cos_telescope_dec)  + sqr(dec2-dec0)< sqr(fov) then {within the image FOV}
+                 if sqr( (ra2-head.ra0)*cos_telescope_dec)  + sqr(dec2-head.dec0)< sqr(fov) then {within the image FOV}
                  begin
                    if asteroid then
                    begin
@@ -556,9 +556,9 @@ var
 
 begin
   if fits_file=false then exit;
-  if cd1_1=0 then begin memo2_message('Abort, first solve the image!');exit;end;
-  cos_telescope_dec:=cos(dec0);
-  fov:=1.5*sqrt(sqr(0.5*width2*cdelt1)+sqr(0.5*height2*cdelt2))*pi/180; {field of view with 50% extra}
+  if head.cd1_1=0 then begin memo2_message('Abort, first solve the image!');exit;end;
+  cos_telescope_dec:=cos(head.dec0);
+  fov:=1.5*sqrt(sqr(0.5*head.width*head.cdelt1)+sqr(0.5*head.height*head.cdelt2))*pi/180; {field of view with 50% extra}
   flip_vertical:=mainwindow.flip_vertical1.Checked;
   flip_horizontal:=mainwindow.flip_horizontal1.Checked;
   mainwindow.image1.Canvas.brush.Style:=bsClear;
@@ -576,7 +576,7 @@ begin
 
   mainwindow.image1.canvas.pen.color:=annotation_color;{color circel}
   mainwindow.image1.Canvas.font.color:=annotation_color;
-  fontsize:=round(min(20,max(10,height2*20/4176)));
+  fontsize:=round(min(20,max(10,head.height*20/4176)));
 
   if font_follows_diameter then
   begin
@@ -587,9 +587,9 @@ begin
   str(max(1,fontsize/12):0:1,fontsize_str); {store font size for header annotations}
 
   if date_avg<>'' then
-    date_to_jd(date_avg,0 {exposure}){convert date-AVG to jd_mid be using exposure=0}
+    date_to_jd(date_avg,0 {head.exposure}){convert date-AVG to jd_mid be using head.exposure=0}
   else
-    date_to_jd(date_obs,exposure);{convert date-OBS to jd_start and jd_mid}
+    date_to_jd(head.date_obs,head.exposure);{convert date-OBS to jd_start and jd_mid}
 
   if jd_start<=2400000 then {no date, found year <1858}
   begin
@@ -612,7 +612,7 @@ begin
 
   sun200_calculated:=false;
   count:=0;
-  sincos(dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
+  sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
   if add_annot then
   begin
@@ -646,8 +646,8 @@ begin
     begin
       if add_date then
       begin
-        mainwindow.image1.Canvas.textout(round(0.5*fontsize),height2-round(4*fontsize),'Position[α,δ]:  '+mainwindow.ra1.text+'    '+mainwindow.dec1.text);{}
-        mainwindow.image1.Canvas.textout(round(0.5*fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(exposure))+'s');{}
+        mainwindow.image1.Canvas.textout(round(0.5*fontsize),head.height-round(4*fontsize),'Position[α,δ]:  '+mainwindow.ra1.text+'    '+mainwindow.dec1.text);{}
+        mainwindow.image1.Canvas.textout(round(0.5*fontsize),head.height-round(2*fontsize),'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(head.exposure))+'s');{}
       end;
     end;
   end;
@@ -701,7 +701,7 @@ begin
     long_default:=sitelong;
 
     if midpoint=false then
-      date_obs:=date_obs1.Text
+      head.date_obs:=date_obs1.Text
     else
       date_avg:=date_obs1.Text;
 
@@ -842,7 +842,7 @@ begin
   begin
     date_label1.caption:='DATE_OBS';
     label_start_mid1.caption:='Start of the observation';
-    date_obs1.Text:=date_obs;
+    date_obs1.Text:=head.date_obs;
     midpoint:=false;
   end;
 

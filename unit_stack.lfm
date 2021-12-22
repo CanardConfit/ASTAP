@@ -603,7 +603,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 470
-      ClientWidth = 1840
+      ClientWidth = 1702
       ImageIndex = 1
       ParentFont = False
       object replace_by_master_dark1: TButton
@@ -637,7 +637,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1840
+        Width = 1702
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -783,7 +783,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 470
-      ClientWidth = 1840
+      ClientWidth = 1702
       ImageIndex = 2
       ParentFont = False
       object replace_by_master_flat1: TButton
@@ -829,7 +829,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1840
+        Width = 1702
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36

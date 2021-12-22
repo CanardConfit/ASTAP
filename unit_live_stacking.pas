@@ -77,15 +77,15 @@ begin
   update_text('COMMENT 1','  Written by Astrometric Stacking Program. www.hnsky.org');
   update_text   ('HISTORY 1','  Stacking method LIVE STACKING');
   update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(sum_exp));
-  update_text ('CALSTAT =',#39+calstat+#39); {calibration status}
+  update_text ('CALSTAT =',#39+head.calstat+#39); {calibration status}
   update_text ('DATE-OBS=',#39+JdToDate(jd_stop)+#39);{give end point exposures}
   update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ', jd_sum/counterL);{give midpoint of exposures}
   date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
   update_text ('DATE-AVG=',#39+date_avg+#39);{give midpoint of exposures}
   update_integer('LIGH_CNT=',' / Light frames combined.                  ' ,counterL); {for interim lum,red,blue...files.}
-  update_integer('DARK_CNT=',' / Darks used for luminance.               ' ,dark_count);{for interim lum,red,blue...files. Compatible with master darks}
-  update_integer('FLAT_CNT=',' / Flats used for luminance.               ' ,flat_count);{for interim lum,red,blue...files. Compatible with master flats}
-  update_integer('BIAS_CNT=',' / Flat-darks used for luminance.          ' ,flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
+  update_integer('DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
+  update_integer('FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
+  update_integer('BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
 
   mainwindow.memo1.visible:=true;{Show new header again}
 
@@ -99,12 +99,12 @@ begin
   ext1:=uppercase(ExtractFileExt(filen));
 
   if ((ext1='.FIT') or (ext1='.FITS')) then
-    result:= load_fits(filen,true {light},true,true {update memo},0,img_loaded)
+    result:= load_fits(filen,true {light},true,true {update memo},0,head,img_loaded)
   else
   if check_raw_file_extension(ext1) then {check if extension is from raw file}
     result:=convert_raw(true{load},false{save},filen,img_loaded)
   else
-    result:=load_tiffpngJPEG(filen,img_loaded);
+    result:=load_tiffpngJPEG(filen,head,img_loaded);
 end;
 
 
@@ -207,8 +207,8 @@ begin
             exit;
           end;
 
-          ang_sep(ra0,dec0,oldra0,olddec0 ,distance); {calculate distance in radians.   {test of mount has moved}
-          oldra0:=ra0;olddec0:=dec0;
+          ang_sep(head.ra0,head.dec0,oldra0,olddec0 ,distance); {calculate distance in radians.   {test of mount has moved}
+          oldra0:=head.ra0;olddec0:=head.dec0;
           if distance>(0.2*pi/180) then
           begin
             reset_var; {reset variables including init:=false}
@@ -220,20 +220,20 @@ begin
             end;
           end
           else
-          {test if exposure has changed}
-          if exposure<>oldexposure then
+          {test if head.exposure has changed}
+          if head.exposure<>oldexposure then
           begin
             reset_var; {reset variables including init:=false}
             stackmenu1.memo2.clear;{clear memo2}
             memo2_message('New exposure time. New stack started');
           end;
-          oldexposure:=exposure;
+          oldexposure:=head.exposure;
 
           if transition_image=false then {else skip this image, could slewed during this image}
           begin
             if init=false then
             begin
-              binning:=report_binning(height2);{select binning based on the height of the first light}
+              binning:=report_binning(head.height);{select binning based on the height of the first light}
 
               initialise_var1;{set variables correct. Do this before apply dark}
               initialise_var2;{set variables correct}
@@ -245,10 +245,9 @@ begin
                 if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, grayscale image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
             end;
 
-            apply_dark_and_flat(filter_name,{round(exposure),set_temperature,width2,}{var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
-            {these global variables are passed-on in procedure to protect against overwriting}
+            apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
-            memo2_message('Adding file: '+inttostr(counter+1)+' "'+filename2+'"  to average. Using '+inttostr(dark_count)+' darks, '+inttostr(flat_count)+' flats, '+inttostr(flatdark_count)+' flat-darks') ;
+            memo2_message('Adding file: '+inttostr(counter+1)+' "'+filename2+'"  to average. Using '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
 
 
             Application.ProcessMessages;
@@ -257,7 +256,7 @@ begin
             if make_osc_color1.checked then
                demosaic_bayer(img_loaded); {convert OSC image to colour}
 
-            if init=true then   if ((old_width<>width2) or (old_height<>height2)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
+            if init=true then   if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
 
             if init=false then {first image}
             begin
@@ -270,18 +269,18 @@ begin
             begin
               memo2_message('Reference image is: '+filename2);
 //              image_path:=ExtractFilePath(filename2); {for saving later}
-              width_max:=width2+oversize*2;
-              height_max:=height2+oversize*2;
+              width_max:=head.width+oversize*2;
+              height_max:=head.height+oversize*2;
 
-              setlength(img_average,naxis3,width_max,height_max);
+              setlength(img_average,head.naxis3,width_max,height_max);
               for fitsY:=0 to height_max-1 do
                 for fitsX:=0 to width_max-1 do
-                  for col:=0 to naxis3-1 do
+                  for col:=0 to head.naxis3-1 do
                   begin
                     img_average[col,fitsX,fitsY]:=0; {clear img_average}
                   end;
-              old_width:=width2;
-              old_height:=height2;
+              old_width:=head.width;
+              old_height:=head.height;
 
               if colour_correction then
               begin
@@ -336,24 +335,24 @@ begin
             begin
               inc(counter);
               inc(total_counter);
-              sum_exp:=sum_exp+exposure;
-              date_to_jd(date_obs,exposure);{convert date-obs to jd}
+              sum_exp:=sum_exp+head.exposure;
+              date_to_jd(head.date_obs,head.exposure);{convert date-obs to jd}
               if jd_mid>jd_stop then jd_stop:=jd_mid;
-              jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure.}
+              jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint head.exposure.}
 
               vector_based:=true;
 
               if colour_correction=false then {no colour correction}
               begin
-                for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
-                for fitsX:=1 to width2  do
+                for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
+                for fitsX:=1 to head.width  do
                 begin
                   calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
                   x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversize;
                   x_new:=round(x_new_float);y_new:=round(y_new_float);
                   if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
                   begin
-                    for col:=0 to naxis3-1 do {all colors}
+                    for col:=0 to head.naxis3-1 do {all colors}
                     begin
                       {serial stacking}
                       img_average[col,x_new,y_new]:=(img_average[col,x_new,y_new]*(counter-1)+ img_loaded[col,fitsX-1,fitsY-1])/counter;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
@@ -364,8 +363,8 @@ begin
 
               else {colour correction}
               begin
-                for fitsY:=1 to height2 do {skip outside "bad" pixels if mosaic mode}
-                for fitsX:=1 to width2  do
+                for fitsY:=1 to head.height do {skip outside "bad" pixels if mosaic mode}
+                for fitsX:=1 to head.width  do
                 begin
                   calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
                   x_new_float:=x_new_float+oversize;y_new_float:=y_new_float+oversize;
@@ -379,11 +378,11 @@ begin
                         if dum<0 then dum:=0;
                        img_average[0,x_new,y_new]:=(img_average[0,x_new,y_new]*(counter-1)+ dum)/counter;
                       end;
-                    if naxis3>1 then {colour}
+                    if head.naxis3>1 then {colour}
                     begin
                       dum:=img_loaded[1,fitsX-1,fitsY-1];   if dum<>0 then {signal} begin dum:=(dum+add_valueG)*multiply_green/largest; if dum<0 then dum:=0; img_average[1,x_new,y_new]:=(img_average[1,x_new,y_new]*(counter-1)+ dum)/counter;end;
                     end;
-                    if naxis3>2 then {colour}
+                    if head.naxis3>2 then {colour}
                     begin
                       dum:=img_loaded[2,fitsX-1,fitsY-1]; if dum<>0 then {signal} begin dum:=(dum+add_valueB)*multiply_blue/largest; if dum<0 then dum:=0; img_average[2,x_new,y_new]:=(img_average[2,x_new,y_new]*(counter-1)+ dum)/counter;end;
                     end;
@@ -392,9 +391,9 @@ begin
               end;
 
 
-              CD1_1:=0;{kill any existing north arrow during plotting. Most likely wrong after stacking}
-              height2:=height_max;
-              width2:=width_max;
+              head.cd1_1:=0;{kill any existing north arrow during plotting. Most likely wrong after stacking}
+              head.height:=height_max;
+              head.width:=width_max;
               img_loaded:=img_average;{copy the pointer. Both have now access to the data!!}
 
               if counter=1 then {set range correct}

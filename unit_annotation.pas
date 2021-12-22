@@ -1300,7 +1300,7 @@ end;
 
 
 { transformation of equatorial coordinates into CCD pixel coordinates for optical projection, rigid method}
-{ ra0,dec0: right ascension and declination of the optical axis}
+{ head.ra0,head.dec0: right ascension and declination of the optical axis}
 { ra,dec:   right ascension and declination}
 { xx,yy :   CCD coordinates}
 { cdelt:    CCD scale in arcsec per pixel}
@@ -1332,7 +1332,7 @@ var
   Save_Cursor:TCursor;
 
 begin
-  if ((fits_file) and (cd1_1<>0)) then
+  if ((fits_file) and (head.cd1_1<>0)) then
   begin
      Save_Cursor := Screen.Cursor;
      Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -1341,18 +1341,18 @@ begin
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
 
-    {6. Passage (x,y) -> (RA,DEC) to find RA0,DEC0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
-    dRa :=(cd1_1*((width2/2)-crpix1)+cd1_2*((height2/2)-crpix2))*pi/180; {also valid for case crpix1,crpix2 is not in the middle}
-    dDec:=(cd2_1*((width2/2)-crpix1)+cd2_2*((height2/2)-crpix2))*pi/180;
-    delta:=cos(dec0)-dDec*sin(dec0);
+    {6. Passage (x,y) -> (RA,DEC) to find head.ra0,head.dec0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
+    dRa :=(head.cd1_1*((head.width/2)-head.crpix1)+head.cd1_2*((head.height/2)-head.crpix2))*pi/180; {also valid for case head.crpix1,head.crpix2 is not in the middle}
+    dDec:=(head.cd2_1*((head.width/2)-head.crpix1)+head.cd2_2*((head.height/2)-head.crpix2))*pi/180;
+    delta:=cos(head.dec0)-dDec*sin(head.dec0);
     gamma:=sqrt(dRa*dRa+delta*delta);
-    telescope_ra:=ra0+arctan(Dra/delta);
-    telescope_dec:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
+    telescope_ra:=head.ra0+arctan(Dra/delta);
+    telescope_dec:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
 
     cos_telescope_dec:=cos(telescope_dec);
-    fov:=1.5*sqrt(sqr(0.5*width2*cdelt1)+sqr(0.5*height2*cdelt2))*pi/180; {field of view with 50% extra}
+    fov:=1.5*sqrt(sqr(0.5*head.width*head.cdelt1)+sqr(0.5*head.height*head.cdelt2))*pi/180; {field of view with 50% extra}
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
-    if cdelt1*cdelt2>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;
+    if head.cdelt1*head.cdelt2>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;
 
     {$ifdef mswindows}
      mainwindow.image1.Canvas.Font.Name :='default';
@@ -1372,40 +1372,40 @@ begin
     text_counter:=0;
     setlength(text_dimensions,200);
 
-    sincos(dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
+    sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
     repeat
       read_deepsky('S',telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov,{var} ra2,dec2,length1,width1,pa);{deepsky database search}
 
       {5. Conversion (RA,DEC) -> (x,y). See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
       sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
-      delta_ra:=ra2-ra0;
+      delta_ra:=ra2-head.ra0;
       sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
       HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
       dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
       dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
-      det:=CD2_2*CD1_1 - CD1_2*CD2_1;
+      det:=head.cd2_2*head.cd1_1 - head.cd1_2*head.cd2_1;
 
-      u0:= - (CD1_2*dDEC - CD2_2*dRA) / det;
-      v0:= + (CD1_1*dDEC - CD2_1*dRA) / det;
+      u0:= - (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+      v0:= + (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
 
       if sip then {apply SIP correction}
       begin
-         x:=round(crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-         y:=round(crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
+         x:=round(head.crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+         y:=round(head.crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
       end
       else
       begin
-        x:=round(crpix1 + u0)-1; {in image array range 0..width-1}
-        y:=round(crpix2 + v0)-1;
+        x:=round(head.crpix1 + u0)-1; {in image array range 0..width-1}
+        y:=round(head.crpix2 + v0)-1;
       end;
 
-      if ((x>-0.25*width2) and (x<=1.25*width2) and (y>-0.25*height2) and (y<=1.25*height2)) then {within image1 with some overlap}
+      if ((x>-0.25*head.width) and (x<=1.25*head.width) and (y>-0.25*head.height) and (y<=1.25*head.height)) then {within image1 with some overlap}
       begin
-        gx_orientation:=pa*flipped+crota2;
-        if flip_horizontal then begin x:=(width2-1)-x; gx_orientation:=-gx_orientation; end;
-        if flip_vertical then gx_orientation:=-gx_orientation else y:=(height2-1)-y;
-        len:=length1/(abs(cdelt2)*60*10*2); {Length in pixels}
+        gx_orientation:=pa*flipped+head.crota2;
+        if flip_horizontal then begin x:=(head.width-1)-x; gx_orientation:=-gx_orientation; end;
+        if flip_vertical then gx_orientation:=-gx_orientation else y:=(head.height-1)-y;
+        len:=length1/(abs(head.cdelt2)*60*10*2); {Length in pixels}
 
         {Plot deepsky text labels on an empthy text space.}
         { 1) If the center of the deepsky object is outside the image then don't plot text}
@@ -1413,7 +1413,7 @@ begin
         { 3) If the text crosses the right side of the image then move the text to the left.}
         { 4) If the text is moved in y then connect the text to the deepsky object with a vertical line.}
 
-        if ( (x>=0) and (x<=width2-1) and (y>=0) and (y<=height2-1) and (naam2<>'') ) then {plot only text if center object is visible and has a name}
+        if ( (x>=0) and (x<=head.width-1) and (y>=0) and (y<=head.height-1) and (naam2<>'') ) then {plot only text if center object is visible and has a name}
         begin
           if naam3='' then name:=naam2
           else
@@ -1433,7 +1433,7 @@ begin
           x2:=x+ tw;
           y2:=y+ th ;
 
-          if ((x1<=width2) and (x2>width2)) then begin x1:=x1-(x2-width2);x2:=width2;end; {if text is beyond right side, move left}
+          if ((x1<=head.width) and (x2>head.width)) then begin x1:=x1-(x2-head.width);x2:=head.width;end; {if text is beyond right side, move left}
 
           if text_counter>0 then {find free space in y for text}
           begin
@@ -1453,7 +1453,7 @@ begin
                   overlap:=true; {text overlaps an existing text}
                   y1:=y1+(th div 3);{try to shift text one third of the text height down}
                   y2:=y2+(th div 3);
-                  if y2>=height2 then {no space left, use original position}
+                  if y2>=head.height then {no space left, use original position}
                   begin
                     y1:=y;
                     y2:=y+th ;
@@ -1570,34 +1570,34 @@ var
 
      {5. Conversion (RA,DEC) -> (x,y)}
       sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
-      delta_ra:=ra2-ra0;
+      delta_ra:=ra2-head.ra0;
       sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
       HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
       dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
       dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
-      det:=CD2_2*CD1_1 - CD1_2*CD2_1;
+      det:=head.cd2_2*head.cd1_1 - head.cd1_2*head.cd2_1;
 
-      u0:= - (CD1_2*dDEC - CD2_2*dRA) / det;
-      v0:= + (CD1_1*dDEC - CD2_1*dRA) / det;
+      u0:= - (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+      v0:= + (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
 
       if sip then {apply SIP correction, sky to pixel}
       begin
-         x:=(crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-         y:=(crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
+         x:=(head.crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+         y:=(head.crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
       end
       else
       begin
-        x:=(crpix1 + u0)-1; {in image array range 0..width-1}
-        y:=(crpix2 + v0)-1;
+        x:=(head.crpix1 + u0)-1; {in image array range 0..width-1}
+        y:=(head.crpix2 + v0)-1;
       end;
 
 
-      if ((x>-50) and (x<=width2+50) and (y>-50) and (y<=height2+50)) then {within image1 with some overlap}
+      if ((x>-50) and (x<=head.width+50) and (y>-50) and (y<=head.height+50)) then {within image1 with some overlap}
       begin
         inc(star_total_counter);
 
-        if flip_horizontal then x2:=(width2-1)-x else x2:=x;
-        if flip_vertical   then y2:=y            else y2:=(height2-1)-y;
+        if flip_horizontal then x2:=(head.width-1)-x else x2:=x;
+        if flip_vertical   then y2:=y            else y2:=(head.height-1)-y;
 
         if plot_stars then
         begin {annotate}
@@ -1621,16 +1621,16 @@ var
           if snr>30 then {star detected in img_loaded. 30 is found emperical}
           begin
             if ((flux_calibration){calibrate flux} and
-                (img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
-                (img_loaded[0,round(xc-1),round(yc)]<datamax_org-1) and
-                (img_loaded[0,round(xc+1),round(yc)]<datamax_org-1) and
-                (img_loaded[0,round(xc),round(yc-1)]<datamax_org-1) and
-                (img_loaded[0,round(xc),round(yc+1)]<datamax_org-1) and
+                (img_loaded[0,round(xc),round(yc)]<head.datamax_org-1) and
+                (img_loaded[0,round(xc-1),round(yc)]<head.datamax_org-1) and
+                (img_loaded[0,round(xc+1),round(yc)]<head.datamax_org-1) and
+                (img_loaded[0,round(xc),round(yc-1)]<head.datamax_org-1) and
+                (img_loaded[0,round(xc),round(yc+1)]<head.datamax_org-1) and
 
-                (img_loaded[0,round(xc-1),round(yc-1)]<datamax_org-1) and
-                (img_loaded[0,round(xc-1),round(yc+1)]<datamax_org-1) and
-                (img_loaded[0,round(xc+1),round(yc-1)]<datamax_org-1) and
-                (img_loaded[0,round(xc+1),round(yc+1)]<datamax_org-1)  ) then {not saturated}
+                (img_loaded[0,round(xc-1),round(yc-1)]<head.datamax_org-1) and
+                (img_loaded[0,round(xc-1),round(yc+1)]<head.datamax_org-1) and
+                (img_loaded[0,round(xc+1),round(yc-1)]<head.datamax_org-1) and
+                (img_loaded[0,round(xc+1),round(yc+1)]<head.datamax_org-1)  ) then {not saturated}
             begin
               magn:=(-ln(flux)*2.511886432/LN(10));
               if counter_flux_measured>=length(mag_offset_array) then
@@ -1655,7 +1655,7 @@ var
       end;
     end;
 begin
-  if ((fits_file) and (cd1_1<>0)) then
+  if ((fits_file) and (head.cd1_1<>0)) then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -1668,17 +1668,17 @@ begin
 
     bp_rp:=999;{not defined in mono versions of the database}
 
-    fitsX_middle:=(width2+1)/2;{range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
-    fitsY_middle:=(height2+1)/2;
+    fitsX_middle:=(head.width+1)/2;{range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
+    fitsY_middle:=(head.height+1)/2;
 
-    dRa :=(cd1_1*(fitsx_middle-crpix1)+cd1_2*(fitsy_middle-crpix2))*pi/180;
-    dDec:=(cd2_1*(fitsx_middle-crpix1)+cd2_2*(fitsy_middle-crpix2))*pi/180;
-    delta:=cos(dec0)-dDec*sin(dec0);
+    dRa :=(head.cd1_1*(fitsx_middle-head.crpix1)+head.cd1_2*(fitsy_middle-head.crpix2))*pi/180;
+    dDec:=(head.cd2_1*(fitsx_middle-head.crpix1)+head.cd2_2*(fitsy_middle-head.crpix2))*pi/180;
+    delta:=cos(head.dec0)-dDec*sin(head.dec0);
     gamma:=sqrt(dRa*dRa+delta*delta);
-    telescope_ra:=ra0+arctan(Dra/delta);
-    telescope_dec:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
+    telescope_ra:=head.ra0+arctan(Dra/delta);
+    telescope_dec:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
 
-    mainwindow.image1.Canvas.Pen.width :=1; // round(1+height2/mainwindow.image1.height);{thickness lines}
+    mainwindow.image1.Canvas.Pen.width :=1; // round(1+head.height/mainwindow.image1.height);{thickness lines}
     mainwindow.image1.canvas.pen.color:=$00B0FF ;{orange}
 
 
@@ -1692,7 +1692,7 @@ begin
     mainwindow.image1.Canvas.Font.Name :='Helvetica';
     {$endif}
 
-    mainwindow.image1.Canvas.font.size:=8; //round(14*height2/mainwindow.image1.height);{adapt font to image dimensions}
+    mainwindow.image1.Canvas.font.size:=8; //round(14*head.height/mainwindow.image1.height);{adapt font to image dimensions}
     mainwindow.image1.Canvas.brush.Style:=bsClear;
 
     mainwindow.image1.Canvas.font.color:=$00B0FF ;{orange}
@@ -1702,7 +1702,7 @@ begin
     counter_flux_measured:=0;
 
 
-    max_nr_stars:=round(width2*height2*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
+    max_nr_stars:=round(head.width*head.height*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
 
     if flux_calibration then
     begin
@@ -1718,9 +1718,9 @@ begin
       exit;
     end;
 
-    fov_org:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
+    fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
 
-    sincos(dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
+    sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
     if database_type<>001 then {1476 or 290 files}
     begin
@@ -1802,13 +1802,13 @@ begin
           memo2_message('Photometry calibration for EXTENDED OBJECTS successful. '+inttostr(counter_flux_measured)+
                         ' Gaia stars used for flux calibration.  Flux aperture diameter: measured star diameter.'+
                         ' Coefficient of variation: '+floattostrF(cv*100,ffgeneral,2,1)+
-                        '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(datamax_org))+' or higher are ignored.')
+                        '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(head.datamax_org))+' or higher are ignored.')
 
         else
           memo2_message('Photometry calibration for POINT SOURCES successful. '+inttostr(counter_flux_measured)+
                         ' Gaia stars used for flux calibration.  Flux aperture diameter: '+floattostrf(flux_aperture*2, ffgeneral, 2,2)+' pixels.'+
                         ' Coefficient of variation: '+floattostrF(cv*100,ffgeneral,2,1)+
-                        '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(datamax_org))+' or higher are ignored.');
+                        '%. Annulus inner diameter: '+inttostr(1+(annulus_radius)*2){background is measured 2 pixels outside rs}+' pixels. Stars with pixel values of '+inttostr(round(head.datamax_org))+' or higher are ignored.');
 
         if report_lim_magn then
         begin
@@ -1872,30 +1872,30 @@ begin
     begin
       for i:=0 to stars_measured-1 do
       begin
-        x1:=distortion_data[0,i]-crpix1;{database, x from center}
-        y1:=distortion_data[1,i]-crpix2;
+        x1:=distortion_data[0,i]-head.crpix1;{database, x from center}
+        y1:=distortion_data[1,i]-head.crpix2;
         r1:=sqr(x1)+sqr(y1);{distance from centre image}
 
-        if  r1<sqr(range{0.1}*height2) then {short distance 10% of image scale, distortion low}
+        if  r1<sqr(range{0.1}*head.height) then {short distance 10% of image scale, distortion low}
         begin
           count2:=0;
           for j:=0 to stars_measured-1 do {second loop}
           if ((i<>j) and (count2<6)) then {compare against a few other stars in center}
           begin
 
-            x2:=distortion_data[0,j]-crpix1;{database, x from center}
-            y2:=distortion_data[1,j]-crpix2;
+            x2:=distortion_data[0,j]-head.crpix1;{database, x from center}
+            y2:=distortion_data[1,j]-head.crpix2;
             r2:=sqr(x2)+sqr(y2);{distance from centre image}
 
-            if  r2<sqr(range{0.1}*height2) then {short distance 10% of image scale, distortion low}
+            if  r2<sqr(range{0.1}*head.height) then {short distance 10% of image scale, distortion low}
             begin
-              xc1:=distortion_data[2,i]-crpix1;{database, x from center}
-              yc1:=distortion_data[3,i]-crpix2;
-              xc2:=distortion_data[2,j]-crpix1;{database, x from center}
-              yc2:=distortion_data[3,j]-crpix2;
+              xc1:=distortion_data[2,i]-head.crpix1;{database, x from center}
+              yc1:=distortion_data[3,i]-head.crpix2;
+              xc2:=distortion_data[2,j]-head.crpix1;{database, x from center}
+              yc2:=distortion_data[3,j]-head.crpix2;
 
               d1:=sqr(x1-x2)+sqr(y1-y2);
-              if d1>sqr(0.5*range{0.1}*height2) then {some distance}
+              if d1>sqr(0.5*range{0.1}*head.height) then {some distance}
               begin
                 d2:=sqr(xc1-xc2)+sqr(yc1-yc2);
                 factors[count]:=sqrt(d1/d2) ; //Ratio between close distance stars of database and image stars for center of the image. It is assumed that the center of the image is undisturbed optically
@@ -1914,19 +1914,19 @@ begin
   until ((count>50 {about 50/6 stars}) or (range>=0.3));
   if count>50  then
   begin
-    cd1_1:=cd1_1*factor;
-    cd1_2:=cd1_2*factor;
-    cd2_1:=cd2_1*factor;
-    cd2_2:=cd2_2*factor;
-    cdelt1:=cdelt1*factor;
-    cdelt2:=cdelt2*factor;
+    head.cd1_1:=head.cd1_1*factor;
+    head.cd1_2:=head.cd1_2*factor;
+    head.cd2_1:=head.cd2_1*factor;
+    head.cd2_2:=head.cd2_2*factor;
+    head.cdelt1:=head.cdelt1*factor;
+    head.cdelt2:=head.cdelt2*factor;
 
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
-    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);
-    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
+    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);
+    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
 
     if factor<1 then memo2_message('Assuming barrel distortion.') else memo2_message('Assuming pincushion distortion.');
     memo2_message('Measured the undisturbed image scale in center and corrected image scale with factor '+floattostr6(factor)+'. Used '+inttostr(round(range*100))+'% of image');
@@ -1956,33 +1956,33 @@ var
 
      {5. Conversion (RA,DEC) -> (x,y)}
       sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
-      delta_ra:=ra2-ra0;
+      delta_ra:=ra2-head.ra0;
       sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
       HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
       dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
       dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
-      det:=CD2_2*CD1_1 - CD1_2*CD2_1;
+      det:=head.cd2_2*head.cd1_1 - head.cd1_2*head.cd2_1;
 
-      u0:= - (CD1_2*dDEC - CD2_2*dRA) / det;
-      v0:= + (CD1_1*dDEC - CD2_1*dRA) / det;
+      u0:= - (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+      v0:= + (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
 
       if ((plot) and (sip)) then {apply SIP correction, sky to pixel. Do not apply correction for measurement if plotting is false !!!!}
       begin
-        x:=(crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-        y:=(crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
+        x:=(head.crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+        y:=(head.crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
       end
       else
       begin
-        x:=(crpix1 + u0)-1; {in image array range 0..width-1}
-        y:=(crpix2 + v0)-1;
+        x:=(head.crpix1 + u0)-1; {in image array range 0..width-1}
+        y:=(head.crpix2 + v0)-1;
       end;
 
-      if ((x>-50) and (x<=width2+50) and (y>-50) and (y<=height2+50)) then {within image1 with some overlap}
+      if ((x>-50) and (x<=head.width+50) and (y>-50) and (y<=head.height+50)) then {within image1 with some overlap}
       begin
         inc(star_total_counter);
 
-        if flip_horizontal then x2:=(width2-1)-x else x2:=x;
-        if flip_vertical   then y2:=y            else y2:=(height2-1)-y;
+        if flip_horizontal then x2:=(head.width-1)-x else x2:=x;
+        if flip_vertical   then y2:=y            else y2:=(head.height-1)-y;
 
         HFD(img_loaded,round(x),round(y), 14 {annulus_radius},99 {flux_aperture}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
@@ -1995,7 +1995,7 @@ var
             mainwindow.image1.Canvas.Pen.width :=1;
 
             {for median errror}
-            if  ( (x>0.25*height2) and  (x< 0.75*height2) and (y> 0.25*height2) and  (y< 0.75*height2) and (sub_counter<length(error_array))) then
+            if  ( (x>0.25*head.height) and  (x< 0.75*head.height) and (y> 0.25*head.height) and  (y< 0.75*head.height) and (sub_counter<length(error_array))) then
             begin
               error_array[sub_counter]:=sqrt(sqr(X-xc)+sqr(Y-yc));{add errors to array}
               inc(sub_counter);
@@ -2014,7 +2014,7 @@ var
       end;
     end;{sub procedure}
 begin
-  if ((fits_file) and (cd1_1<>0)) then
+  if ((fits_file) and (head.cd1_1<>0)) then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -2024,24 +2024,24 @@ begin
 
     bp_rp:=999;{not defined in mono versions of the database}
 
-    fitsX_middle:=(width2+1)/2;{range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
-    fitsY_middle:=(height2+1)/2;
+    fitsX_middle:=(head.width+1)/2;{range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
+    fitsY_middle:=(head.height+1)/2;
 
-    dRa :=(cd1_1*(fitsx_middle-crpix1)+cd1_2*(fitsy_middle-crpix2))*pi/180;
-    dDec:=(cd2_1*(fitsx_middle-crpix1)+cd2_2*(fitsy_middle-crpix2))*pi/180;
-    delta:=cos(dec0)-dDec*sin(dec0);
+    dRa :=(head.cd1_1*(fitsx_middle-head.crpix1)+head.cd1_2*(fitsy_middle-head.crpix2))*pi/180;
+    dDec:=(head.cd2_1*(fitsx_middle-head.crpix1)+head.cd2_2*(fitsy_middle-head.crpix2))*pi/180;
+    delta:=cos(head.dec0)-dDec*sin(head.dec0);
     gamma:=sqrt(dRa*dRa+delta*delta);
-    telescope_ra:=ra0+arctan(Dra/delta);
-    telescope_dec:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
+    telescope_ra:=head.ra0+arctan(Dra/delta);
+    telescope_dec:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
 
-    mainwindow.image1.Canvas.Pen.width :=1; // round(1+height2/mainwindow.image1.height);{thickness lines}
+    mainwindow.image1.Canvas.Pen.width :=1; // round(1+head.height/mainwindow.image1.height);{thickness lines}
     if sip=false then mainwindow.image1.canvas.pen.color:=$00B0FF {orange}
                  else mainwindow.image1.canvas.pen.color:=$00FF00; {green}
 
     star_total_counter:=0;{total counter}
     sub_counter:=0;
 
-    max_nr_stars:=round(width2*height2*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
+    max_nr_stars:=round(head.width*head.height*(1216/(2328*1760))); {Check 1216 stars in a circle resulting in about 1000 stars in a rectangle for image 2328 x1760 pixels}
     setlength(error_array,max_nr_stars);
 
     {sets file290 so do before fov selection}
@@ -2054,10 +2054,10 @@ begin
     if plot=false then setlength(distortion_data,4,max_nr_stars);
     stars_measured:=0;{star number}
 
-    fov_org:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
+    fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
 
 
-    sincos(dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
+    sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
     if database_type<>001 then {1476 or 290 files}
     begin
@@ -2141,7 +2141,7 @@ begin
     if plot then
     begin
       astrometric_error:=smedian(error_array,sub_counter);
-      memo2_message('The center median astrometric error is '+floattostr4(astrometric_error*cdelt2*3600)+'" or ' +floattostr4(astrometric_error)+' pixel using '+inttostr(sub_counter)+ ' stars.');
+      memo2_message('The center median astrometric error is '+floattostr4(astrometric_error*head.cdelt2*3600)+'" or ' +floattostr4(astrometric_error)+' pixel using '+inttostr(sub_counter)+ ' stars.');
 
 
       mainwindow.image1.canvas.pen.color:=annotation_color;
@@ -2152,39 +2152,39 @@ begin
       mainwindow.image1.Canvas.Pen.width :=3;
 
       {scale in pixels}
-      mainwindow.image1.Canvas.MoveTo(20, height2-30);
-      mainwindow.image1.Canvas.LineTo(20+50*3,height2-30);
+      mainwindow.image1.Canvas.MoveTo(20, head.height-30);
+      mainwindow.image1.Canvas.LineTo(20+50*3,head.height-30);
       for i:=0 to 3 do
       begin
-        mainwindow.image1.Canvas.MoveTo(20+50*i,height2-25);
-        mainwindow.image1.Canvas.LineTo(20+50*i,height2-35);
-        mainwindow.image1.Canvas.textout(17+50*i,height2-25,inttostr(i));
+        mainwindow.image1.Canvas.MoveTo(20+50*i,head.height-25);
+        mainwindow.image1.Canvas.LineTo(20+50*i,head.height-35);
+        mainwindow.image1.Canvas.textout(17+50*i,head.height-25,inttostr(i));
       end;
-      mainwindow.image1.Canvas.textout(20,height2-60,'Scale in pixels');
+      mainwindow.image1.Canvas.textout(20,head.height-60,'Scale in pixels');
 
 
       {scale in arc seconds}
-      scale:=round(50/(cdelt2*3600));
-      mainwindow.image1.Canvas.MoveTo(220, height2-30);
-      mainwindow.image1.Canvas.LineTo(220+scale*3,height2-30);
+      scale:=round(50/(head.cdelt2*3600));
+      mainwindow.image1.Canvas.MoveTo(220, head.height-30);
+      mainwindow.image1.Canvas.LineTo(220+scale*3,head.height-30);
 
 
       for i:=0 to 3 do
       begin
-        mainwindow.image1.Canvas.MoveTo(220+scale*i,height2-25);
-        mainwindow.image1.Canvas.LineTo(220+scale*i,height2-35);
-        mainwindow.image1.Canvas.textout(217+scale*i,height2-25,inttostr(i)+'"');
+        mainwindow.image1.Canvas.MoveTo(220+scale*i,head.height-25);
+        mainwindow.image1.Canvas.LineTo(220+scale*i,head.height-35);
+        mainwindow.image1.Canvas.textout(217+scale*i,head.height-25,inttostr(i)+'"');
       end;
-      mainwindow.image1.Canvas.textout(220,height2-60,'Scale in arcsecs');
+      mainwindow.image1.Canvas.textout(220,head.height-60,'Scale in arcsecs');
 
       mainwindow.image1.Canvas.font.size:=12;
 
       if sip then
       begin
-        mainwindow.image1.Canvas.textout(700,height2-25,'SIP corrections are applied. Median error for 50% of image '+floattostr4(astrometric_error*cdelt2*3600)+'"');
+        mainwindow.image1.Canvas.textout(700,head.height-25,'SIP corrections are applied. Median error for 50% of image '+floattostr4(astrometric_error*head.cdelt2*3600)+'"');
       end
       else
-      mainwindow.image1.Canvas.textout(350,height2-25,'Median error for 50% of image '+floattostr4(astrometric_error*cdelt2*3600)+'"');
+      mainwindow.image1.Canvas.textout(350,head.height-25,'Median error for 50% of image '+floattostr4(astrometric_error*head.cdelt2*3600)+'"');
 
 
       error_array:=nil;
@@ -2207,18 +2207,18 @@ var
     begin
      {5. Conversion (RA,DEC) -> (x,y)}
       sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
-      delta_ra:=ra2-ra0;
+      delta_ra:=ra2-head.ra0;
       sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
       HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
       dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
       dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
-      det:=CD2_2*CD1_1 - CD1_2*CD2_1;
-      fitsX:= +crpix1 - (CD1_2*dDEC - CD2_2*dRA) / det; {1..width2}
-      fitsY:= +crpix2 + (CD1_1*dDEC - CD2_1*dRA) / det; {1..height2}
-      x:=round(fitsX-1); {0..width2-1}
-      y:=round(fitsY-1); {0..height2-1}
+      det:=head.cd2_2*head.cd1_1 - head.cd1_2*head.cd2_1;
+      fitsX:= +head.crpix1 - (head.cd1_2*dDEC - head.cd2_2*dRA) / det; {1..head.width}
+      fitsY:= +head.crpix2 + (head.cd1_1*dDEC - head.cd2_1*dRA) / det; {1..head.height}
+      x:=round(fitsX-1); {0..head.width-1}
+      y:=round(fitsY-1); {0..head.height-1}
 
-      if ((x>=0) and (x<=width2-1) and (y>=0) and (y<=height2-1)) then {within image1}
+      if ((x>=0) and (x<=head.width-1) and (y>=0) and (y<=head.height-1)) then {within image1}
       begin
         img[0,x,y]:=min(img[0,x,y],mag2);{take brightest star}
       end;
@@ -2226,7 +2226,7 @@ var
 
 
 begin
-  if ((fits_file) and (cd1_1<>0)) then
+  if ((fits_file) and (head.cd1_1<>0)) then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -2235,15 +2235,15 @@ begin
 
     bp_rp:=999;{not defined in mono versions}
 
-    fitsX_middle:=(width2+1)/2;{range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
-    fitsY_middle:=(height2+1)/2;
+    fitsX_middle:=(head.width+1)/2;{range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
+    fitsY_middle:=(head.height+1)/2;
 
-    dRa :=(cd1_1*(fitsx_middle-crpix1)+cd1_2*(fitsy_middle-crpix2))*pi/180;
-    dDec:=(cd2_1*(fitsx_middle-crpix1)+cd2_2*(fitsy_middle-crpix2))*pi/180;
-    delta:=cos(dec0)-dDec*sin(dec0);
+    dRa :=(head.cd1_1*(fitsx_middle-head.crpix1)+head.cd1_2*(fitsy_middle-head.crpix2))*pi/180;
+    dDec:=(head.cd2_1*(fitsx_middle-head.crpix1)+head.cd2_2*(fitsy_middle-head.crpix2))*pi/180;
+    delta:=cos(head.dec0)-dDec*sin(head.dec0);
     gamma:=sqrt(dRa*dRa+delta*delta);
-    telescope_ra:=ra0+arctan(Dra/delta);
-    telescope_dec:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
+    telescope_ra:=head.ra0+arctan(Dra/delta);
+    telescope_dec:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
 
     if select_star_database(stackmenu1.star_database1.text,15 {neutral})=false then {sets file290 so do before fov selection}
     begin
@@ -2251,11 +2251,11 @@ begin
       exit;
     end;
 
-    fov_org:= sqrt(sqr(width2*cdelt1)+sqr(height2*cdelt2))*pi/180; {field of view with 0% extra}
+    fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view with 0% extra}
 
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
 
-    sincos(dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
+    sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
     if database_type<>001 then {1476 or 290 files}
     begin
@@ -2336,15 +2336,15 @@ begin
   {do image stars}
   nrstars:=length(starlist2[0]);
   mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-  mainwindow.image1.Canvas.Pen.width := round(1+height2/mainwindow.image1.height);{thickness lines}
+  mainwindow.image1.Canvas.Pen.width := round(1+head.height/mainwindow.image1.height);{thickness lines}
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   mainwindow.image1.Canvas.Pen.Color :=clred;
 
   for i:=0 to nrstars-1 do
   begin
 
-    if flip_horizontal=true then starX:=round((width2-starlist2[0,i]))  else starX:=round(starlist2[0,i]);
-    if flip_vertical=false  then starY:=round((height2-starlist2[1,i])) else starY:=round(starlist2[1,i]);
+    if flip_horizontal=true then starX:=round((head.width-starlist2[0,i]))  else starX:=round(starlist2[0,i]);
+    if flip_vertical=false  then starY:=round((head.height-starlist2[1,i])) else starY:=round(starlist2[1,i]);
     size:=15;
     mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
  end;
@@ -2354,12 +2354,12 @@ begin
   mainwindow.image1.Canvas.Pen.Color := annotation_color;
   for i:=0 to nrstars-1 do
   begin
-    xx:=(starlist1[0,i]-correctionX)/(cdelt1*3600);{apply correction for database stars center and image center and convert arc seconds to pixels}
-    yy:=(starlist1[1,i]-correctionY)/(cdelt2*3600);
-    rotate((90-crota2)*pi/180,xx,yy,X,Y);{rotate to screen orientation}
+    xx:=(starlist1[0,i]-correctionX)/(head.cdelt1*3600);{apply correction for database stars center and image center and convert arc seconds to pixels}
+    yy:=(starlist1[1,i]-correctionY)/(head.cdelt2*3600);
+    rotate((90-head.crota2)*pi/180,xx,yy,X,Y);{rotate to screen orientation}
 
-    if flip_horizontal=false then begin starX:=round(crpix1-x); end else begin starX:=round(crpix1+x); end;
-    if flip_vertical=false   then begin starY:=round(crpix2-y); end else begin starY:=round(crpix2+y); end;
+    if flip_horizontal=false then begin starX:=round(head.crpix1-x); end else begin starX:=round(head.crpix1+x); end;
+    if flip_vertical=false   then begin starY:=round(head.crpix2-y); end else begin starY:=round(head.crpix2+y); end;
 
     size:=20;
     mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}

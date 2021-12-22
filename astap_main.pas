@@ -514,49 +514,62 @@ var
 type
   image_array = array of array of array of Single;
   star_list   = array of array of double;
+
+  Theader =record
+    height : integer; {image height}
+    width  : integer;
+    naxis  : integer; {number of dimensions}
+    naxis3 : integer; {number of colors}
+    crpix1 : double;  {reference point X}
+    crpix2 : double;
+    cdelt1 : double;  {X pixel size (deg)}
+    cdelt2 : double;  {Y pixel size (deg)}
+    ra0    : double;  {mount position}
+    dec0   : double;
+    crota1 : double; {image rotation at center in degrees}
+    crota2 : double; {image rotation at center in degrees}
+    cd1_1  : double; {solution matrix}
+    cd1_2  : double;
+    cd2_1  : double;
+    cd2_2  : double;
+    exposure: double;
+    datamin_org,
+    datamax_org: double;{for update histogram}
+    set_temperature,
+    dark_count,
+    light_count,
+    flat_count,
+    flatdark_count : integer;
+    date_obs,
+    calstat,
+    filter_name: string;
+  end;
+
 type
    timgbackup  = record
-     datamax: double;
-     crpix1 : double;{could be modified by crop}
-     crpix2 : double;
-     crval1 : double;
-     crval2 : double;
-     crota1 : double;{for 90 degrees rotate}
-     crota2 : double;
-     cdelt1 : double;
-     cdelt2 : double;
-     cd1_1  : double;
-     cd1_2  : double;
-     cd2_1  : double;
-     cd2_2  : double;
-     header : string;
-     filen  : string;{filename}
+     head_val: Theader;{most important header values}
+     header  : string; {full header text}
+     filen   : string;{filename}
      xbinning: double; {for binning routine. If twice binned or SQM routine}
      ybinning: double;
-     XPIXSZ : double;
-     YPIXSZ : double;
-
-     img    : image_array;
+     XPIXSZ  : double;
+     YPIXSZ  : double;
+     img     : image_array;
    end;
 
-   Theader =record
-     height : integer;
-     width  : integer;
-   end;
 
 var
   img_backup      : array of timgbackup;{dynamic so memory can be freed}
   img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_buffer,img_final : image_array;
-  hlight   : Theader;
+  head,head_2,head_ref   : Theader;{contains the most important header info}
 
   settingstring :tstrings; {settings for save and loading}
   user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
   distortion_data : star_list;
   filename2: string;
   nrbits,size_backup,index_backup    : integer;{number of backup images for ctrl-z, numbered 0,1,2,3}
-  crota2,crota1, {image rotation at center in degrees}
   ra_mount,dec_mount,{telescope ra,dec}
-  Xbinning,Ybinning, cd1_1,cd1_2,cd2_1,cd2_2,
+  Xbinning,Ybinning,
   ra_radians,dec_radians, pixel_size     : double;
 
 var
@@ -571,14 +584,13 @@ var
   his_mean,noise_level : array[0..2] of integer;
   stretch_c : array[0..32768] of single;{stretch curve}
   stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
-  set_temperature : integer;
   star_level,star_bg,sd_bg, magn_limit  : double;
-  object_name, filter_name,calstat,imagetype ,sitelat, sitelong,centalt,centaz: string;
-  exposure,focus_temp,cblack,cwhite,sqmfloat   :double; {from FITS}
+  object_name,
+  imagetype ,sitelat, sitelong,centalt,centaz: string;
+  focus_temp,cblack,cwhite,sqmfloat   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
-  date_obs,date_avg,ut,pltlabel,plateid,telescop,instrum,origin,sqm_value,gain:string;
+  date_avg,ut,pltlabel,plateid,telescop,instrum,origin,sqm_value,gain:string;
 
-  datamin_org, datamax_org,
   old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
 
   warning_str,{for solver}
@@ -593,18 +605,8 @@ var
   var {################# initialised variables #########################}
   PatternToFind : string=''; {for fits header memo1 popup menu }
   hist_range  {range histogram 255 or 65535 or streched} : integer=255;
-  width2  : integer=100;
-  height2: integer=100;{do not use reserved word height}
-  naxis  : integer=2;{number of dimensions}
-  naxis3 : integer=1;{number of colors}
   fits_file: boolean=false;
   image_move_to_center : boolean=false;
-  ra0 : double=0;
-  dec0: double=0; {plate center values}
-  crpix1: double=0;{reference pixel}
-  crpix2: double=0;
-  cdelt1: double=0;{deg/pixel for x}
-  cdelt2: double=0;
   xpixsz: double=0;//Pixel Width in microns (after binning)
   ypixsz: double=0;//Pixel height in microns (after binning)
   focallen: double=0;
@@ -674,7 +676,7 @@ var
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
-function load_fits(filen:string;light {load as light of dark/flat},load_data,update_memo: boolean;get_ext: integer;var img_loaded2: image_array): boolean;{load fits file}
+function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;out head: Theader; out img_loaded2: image_array): boolean;{load fits file}
 procedure plot_fits(img: timage;center_image,show_header:boolean);
 procedure use_histogram(img: image_array; update_hist: boolean);{get histogram}
 procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
@@ -733,7 +735,7 @@ function convert_raw(loadfile,savefile :boolean;var filename3: string; var img: 
 function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
-function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+function load_TIFFPNGJPEG(filen:string; var head :theader; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, starlevel: double); {get background and star level from peek histogram}
 
 function extract_exposure_from_filename(filename8: string):integer; {try to extract exposure from filename}
@@ -766,7 +768,7 @@ procedure show_shape_manual_alignment(index: integer);{show the marker on the re
 procedure write_astronomy_wcs(filen:string);
 function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
 procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string);{plot annotation from header in ASTAP format}
-procedure reset_fits_global_variables(light :boolean); {reset the global variable}
+procedure reset_fits_global_variables(light :boolean; out head:theader ); {reset the global variable}
 function convert_to_fits(var filen: string): boolean; {convert to fits}
 procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
 procedure convert_mono(var img: image_array);
@@ -877,26 +879,26 @@ var {################# initialised variables #########################}
 const
   crMyCursor = 5;
 
-procedure reset_fits_global_variables(light :boolean); {reset the global variable}
+procedure reset_fits_global_variables(light :boolean;out head:theader); {reset the global variable}
 begin
   if light then
   begin
-    crota2:=99999;{just for the case it is not available, make it later zero}
-    crota1:=99999;
-    ra0:=0;
-    dec0:=0;
+    head.crota2:=99999;{just for the case it is not available, make it later zero}
+    head.crota1:=99999;
+    head.ra0:=0;
+    head.dec0:=0;
     ra_mount:=99999;
     dec_mount:=99999;
-    cdelt1:=0;
-    cdelt2:=0;
+    head.cdelt1:=0;
+    head.cdelt2:=0;
     xpixsz:=0;
     ypixsz:=0;
     focallen:=0;
     subsamp:=1;{just for the case it is not available}
-    cd1_1:=0;{just for the case it is not available}
-    cd1_2:=0;{just for the case it is not available}
-    cd2_1:=0;{just for the case it is not available}
-    cd2_2:=0;{just for the case it is not available}
+    head.cd1_1:=0;{just for the case it is not available}
+    head.cd1_2:=0;{just for the case it is not available}
+    head.cd2_1:=0;{just for the case it is not available}
+    head.cd2_2:=0;{just for the case it is not available}
     bayerpat:='';{reset bayer pattern}
     xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
     ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
@@ -928,26 +930,24 @@ begin
     annotated:=false; {any annotation in the file}
 
     flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
-
-//    sqmfloat:=0;{assume no data available}
     sqm_value:='';
   end;
 
-  date_obs:='';
-  calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
-  filter_name:='';
-  naxis:=-1;
-  naxis3:=1;
-  datamin_org:=0;
+  head.date_obs:='';
+  head.calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
+  head.filter_name:='';
+  head.naxis:=-1;{assume failure}
+  head.naxis3:=1;
+  head.datamin_org:=0;
   imagetype:='';
-  exposure:=0;
-  set_temperature:=999;
+  head.exposure:=0;
+  head.set_temperature:=999;
   gain:='';{assume no data available}
 end;{reset global variables}
 
 
-function load_fits(filen:string;light {load as light of dark/flat},load_data,update_memo: boolean;get_ext: integer;var img_loaded2: image_array): boolean;{load fits file}
-{if light=true then read also ra0, dec0 ....., else load as dark, flat}
+function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;out head: Theader; out img_loaded2: image_array): boolean;{load fits file}
+{if light=true then read also head.ra0, head.dec0 ....., else load as dark, flat}
 {if load_data then read all else header only}
 {if reset_var=true, reset variables to zero}
 var
@@ -1052,7 +1052,7 @@ begin
   {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   {Reset GLOBAL variables for case they are not specified in the file}
-  reset_fits_global_variables(light);
+  reset_fits_global_variables(light,head);
 
   if get_ext=0 then extend_type:=0; {always an image in main data block}
   scale:=0; {SGP files}
@@ -1086,7 +1086,6 @@ begin
           mainwindow.statusbar1.panels[7].text:=('Error loading FITS file!! Keyword SIMPLE not found.');
           mainwindow.error_label1.caption:=('Error loading FITS file!! Keyword SIMPLE not found.');
           mainwindow.error_label1.visible:=true;
-//          fits_file:=false;
           exit;
         end; {should start with SIMPLE  =,  MaximDL compressed files start with SIMPLE‚=”}
         if ((header_count<get_ext) and (header[0]='X') and (header[1]='T')  and (header[2]='E') and (header[3]='N') and (header[4]='S') and (header[5]='I') and (header[6]='O') and (header[7]='N') and (header[8]='=')) then
@@ -1113,7 +1112,6 @@ begin
         mainwindow.statusbar1.panels[7].text:='Read exception error!!';
         mainwindow.error_label1.caption:='Read exception error!!';
         mainwindow.error_label1.visible:=true;
-//        fits_file:=false;
         exit;
       end;
     until ((simple) and (header_count>=get_ext)); {simple is true and correct header found}
@@ -1124,23 +1122,23 @@ begin
         SetString(aline, Pansichar(@header[i]), 80);{convert header line to string}
         if update_memo then mainwindow.memo1.lines.add(aline); {add line to memo}
       end;
-      if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {naxis}
+      if ((header[i]='N') and (header[i+1]='A')  and (header[i+2]='X') and (header[i+3]='I') and (header[i+4]='S')) then {head.naxis}
       begin
-        if (header[i+5]=' ') then naxis:=round(validate_double)
-        else    {NAXIS number of colors}
-        if (header[i+5]='1') then begin naxis1:=round(validate_double);width2:=naxis1; end else {NAXIS1 pixels}
-        if (header[i+5]='2') then height2:=round(validate_double) else   {NAXIS2 pixels}
+        if (header[i+5]=' ') then head.naxis:=round(validate_double)
+        else    {head.naxis number of colors}
+        if (header[i+5]='1') then begin naxis1:=round(validate_double);head.width:=naxis1; end else {NAXIS1 pixels}
+        if (header[i+5]='2') then head.height:=round(validate_double) else   {NAXIS2 pixels}
         if (header[i+5]='3') then
         begin
-           naxis3:=round(validate_double); {NAXIS3 number of colors}
-           if ((naxis=3) and (naxis1=3)) {naxis1} then  {type NAXIS = 3 / Number of dimensions
+           head.naxis3:=round(validate_double); {head.naxis3 number of colors}
+           if ((head.naxis=3) and (naxis1=3)) {naxis1} then  {type head.naxis = 3 / Number of dimensions
                                      NAXIS1 = 3 / Number of Colors
                                      NAXIS2 = 382 / Row length
-                                     NAXIS3 = 255 / Number of rows}
+                                     head.naxis3 = 255 / Number of rows}
                       begin   {RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
-                        width2:=height2;
-                        height2:=naxis3;
-                        naxis3:=1;
+                        head.width:=head.height;
+                        head.height:=head.naxis3;
+                        head.naxis3:=1;
                       end;
          end;
       end;
@@ -1170,21 +1168,21 @@ begin
         end;
 
         if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='P') and (header[i+3]='O') and (header[i+4]='S') and (header[i+5]='U') and (header[i+6]='R')) then
-              exposure:=validate_double;{read double value}
+              head.exposure:=validate_double;{read double value}
         if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='P') and (header[i+3]='T') and (header[i+4]='I') and (header[i+5]='M') and (header[i+6]='E') and (header[i+7]=' ')) then {exptime and not exptimer}
-              exposure:=validate_double;{read double value}
+              head.exposure:=validate_double;{read double value}
 
         if ((header[i]='C') and (header[i+1]='C')  and (header[i+2]='D') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
              ccd_temperature:=validate_double;{read double value}
         if ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
-               try set_temperature:=round(validate_double);{read double value} except; end; {some programs give huge values}
+               try head.set_temperature:=round(validate_double);{read double value} except; end; {some programs give huge values}
 
 
         if ((header[i]='I') and (header[i+1]='M')  and (header[i+2]='A') and (header[i+3]='G') and (header[i+4]='E') and (header[i+5]='T') and (header[i+6]='Y')) then
            imagetype:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
 
         if ((header[i]='F') and (header[i+1]='I')  and (header[i+2]='L') and (header[i+3]='T') and (header[i+4]='E') and (header[i+5]='R') and (header[i+6]=' ')) then
-           filter_name:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
+           head.filter_name:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
 
         if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
                  xbinning:=validate_double;{binning}
@@ -1199,34 +1197,34 @@ begin
 
         {following variable are not set at zero Set at zero somewhere in the code}
         if ((header[i]='L') and (header[i+1]='I')  and (header[i+2]='G') and (header[i+3]='H') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
-             light_count:=round(validate_double);{read integer as double value}
+             head.light_count:=round(validate_double);{read integer as double value}
         if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='R') and (header[i+3]='K') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
-             dark_count:=round(validate_double);{read integer as double value}
+             head.dark_count:=round(validate_double);{read integer as double value}
         if ((header[i]='F') and (header[i+1]='L')  and (header[i+2]='A') and (header[i+3]='T') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
-             flat_count:=round(validate_double);{read integer as double value}
+             head.flat_count:=round(validate_double);{read integer as double value}
         if ((header[i]='B') and (header[i+1]='I')  and (header[i+2]='A') and (header[i+3]='S') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
-             flatdark_count:=round(validate_double);{read integer as double value}
+             head.flatdark_count:=round(validate_double);{read integer as double value}
 
         if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
-                if date_obs='' then date_obs:=get_string;
+                if head.date_obs='' then head.date_obs:=get_string;
 
         if ((header[i]='J') and (header[i+1]='D')  and (header[i+2]=' ') and (header[i+3]=' ') and (header[i+4]=' ')) then
-        if date_obs='' then {DATE-OBS overrules any JD value}
+        if head.date_obs='' then {DATE-OBS overrules any JD value}
         begin
           jd2:=validate_double;
-          date_obs:=JdToDate(jd2);
+          head.date_obs:=JdToDate(jd2);
         end;
 
         if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
-                date_obs:=get_string;
+                head.date_obs:=get_string;
 
 
         if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='A') and (header[i+6]='V')) then
                 date_avg:=get_string;
 
 
-        if ((header[i]='C') and (header[i+1]='A')  and (header[i+2]='L') and (header[i+3]='S') and (header[i+4]='T') and (header[i+5]='A')) then  {calstat is also for flats}
-            calstat:=get_string;{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. M could indicate master}
+        if ((header[i]='C') and (header[i+1]='A')  and (header[i+2]='L') and (header[i+3]='S') and (header[i+4]='T') and (header[i+5]='A')) then  {head.calstat is also for flats}
+            head.calstat:=get_string;{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. M could indicate master}
 
 
         if light then {read as light ##############################################################################################################################################################}
@@ -1234,26 +1232,26 @@ begin
           if ((header[i]='E') and (header[i+1]='Q')  and (header[i+2]='U') and (header[i+3]='I') and (header[i+4]='N') and (header[i+5]='O') and (header[i+6]='X')) then
                equinox:=validate_double;
 
-          if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='O') and (header[i+3]='T') and (header[i+4]='A')) then  {crota2}
+          if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='O') and (header[i+3]='T') and (header[i+4]='A')) then  {head.crota2}
           begin
-             if (header[i+5]='2') then  crota2:=validate_double else {read double value}
-             if (header[i+5]='1') then  crota1:=validate_double;{read double value}
+             if (header[i+5]='2') then  head.crota2:=validate_double else {read double value}
+             if (header[i+5]='1') then  head.crota1:=validate_double;{read double value}
           end;
-          if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='P') and (header[i+3]='I') and (header[i+4]='X')) then {crpix1}
+          if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='P') and (header[i+3]='I') and (header[i+4]='X')) then {head.crpix1}
           begin
-            if header[i+5]='1' then crpix1:=validate_double else{ref pixel for x}
-            if header[i+5]='2' then crpix2:=validate_double;    {ref pixel for y}
+            if header[i+5]='1' then head.crpix1:=validate_double else{ref pixel for x}
+            if header[i+5]='2' then head.crpix2:=validate_double;    {ref pixel for y}
           end;
-          if ((header[i]='C') and (header[i+1]='D')  and (header[i+2]='E') and (header[i+3]='L') and (header[i+4]='T')) then {cdelt1}
+          if ((header[i]='C') and (header[i+1]='D')  and (header[i+2]='E') and (header[i+3]='L') and (header[i+4]='T')) then {head.cdelt1}
           begin
-            if header[i+5]='1' then cdelt1:=validate_double else{deg/pixel for RA}
-            if header[i+5]='2' then cdelt2:=validate_double;    {deg/pixel for DEC}
+            if header[i+5]='1' then head.cdelt1:=validate_double else{deg/pixel for RA}
+            if header[i+5]='2' then head.cdelt2:=validate_double;    {deg/pixel for DEC}
           end;
           if ( ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) or     {secpix1/2}
                ((header[i]='P') and (header[i+1]='I')  and (header[i+2]='X') and (header[i+3]='S') and (header[i+4]='C') and (header[i+5]='A')) ) then {pixscale}
           begin
-            if cdelt2=0 then
-                begin cdelt2:=validate_double/3600; {deg/pixel for RA} cdelt1:=cdelt2; end; {no CDELT1/2 found yet, use alternative}
+            if head.cdelt2=0 then
+                begin head.cdelt2:=validate_double/3600; {deg/pixel for RA} head.cdelt1:=head.cdelt2; end; {no head.cdelt1/2 found yet, use alternative}
           end;
 
           if ((header[i]='X') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {Xpixsz}
@@ -1266,18 +1264,18 @@ begin
 
           if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='V') and (header[i+3]='A') and (header[i+4]='L')) then {crval1/2}
           begin
-            if (header[i+5]='1') then  ra0:=validate_double*pi/180; {ra center, read double value}
-            if (header[i+5]='2') then  dec0:=validate_double*pi/180; {dec center, read double value}
+            if (header[i+5]='1') then  head.ra0:=validate_double*pi/180; {ra center, read double value}
+            if (header[i+5]='2') then  head.dec0:=validate_double*pi/180; {dec center, read double value}
           end;
           if ((header[i]='R') and (header[i+1]='A')  and (header[i+2]=' ')) then  {ra}
           begin
             ra_mount:=validate_double*pi/180;
-            if ra0=0 then ra0:=ra_mount; {ra telescope, read double value only if crval is not available}
+            if head.ra0=0 then head.ra0:=ra_mount; {ra telescope, read double value only if crval is not available}
           end;
           if ((header[i]='D') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]=' ')) then {dec}
           begin
             dec_mount:=validate_double*pi/180;
-            if dec0=0 then dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
+            if head.dec0=0 then head.dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
           end;
 
 
@@ -1315,10 +1313,10 @@ begin
 
           if ((header[i]='C') and (header[i+1]='D')) then
           begin
-            if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then   cd1_1:=validate_double;
-            if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then   cd1_2:=validate_double;
-            if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then   cd2_1:=validate_double;
-            if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='2')) then   cd2_2:=validate_double;
+            if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then   head.cd1_1:=validate_double;
+            if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then   head.cd1_2:=validate_double;
+            if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then   head.cd2_1:=validate_double;
+            if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='2')) then   head.cd2_2:=validate_double;
           end;
 
           if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and
@@ -1393,11 +1391,11 @@ begin
           if ((header[i]='B') and (header[i+1]='A')  and (header[i+2]='N') and (header[i+3]='D') and (header[i+4]='P') and (header[i+5]='A') and (header[i+6]='S')) then
           begin
              BANDPASS:=validate_double;{read integer as double value. Deep sky survey keyword}
-             if ((bandpass=35) or (bandpass=8)) then filter_name:='red'{ 37 possII IR,  35=possII red, 18=possII blue, 8=POSSI red, 7=POSSI blue}
+             if ((bandpass=35) or (bandpass=8)) then head.filter_name:='red'{ 37 possII IR,  35=possII red, 18=possII blue, 8=POSSI red, 7=POSSI blue}
              else
-             if ((bandpass=18) or (bandpass=7)) then filter_name:='blue'
+             if ((bandpass=18) or (bandpass=7)) then head.filter_name:='blue'
              else
-             filter_name:=floattostr(bandpass);
+             head.filter_name:=floattostr(bandpass);
           end;
 
           if ((header[i]='A') and (header[i+1]='N')  and (header[i+2]='N') and (header[i+3]='O') and (header[i+4]='T') and (header[i+5]='A') and (header[i+6]='T')) then
@@ -1576,9 +1574,9 @@ begin
   until end_record; {header, 2880 bytes loop}
 
 
-  if naxis<2 then
+  if head.naxis<2 then
   begin
-    if naxis=0 then result:=true {wcs file}
+    if head.naxis=0 then result:=true {wcs file}
                else result:=false; {no image}
     mainwindow.image1.visible:=false;
 //    fits_file:=false;
@@ -1587,47 +1585,47 @@ begin
 
   if image then {read image data #########################################}
   begin
-    if ((naxis=3) and (naxis1=3)) then
+    if ((head.naxis=3) and (naxis1=3)) then
     begin
        nrbits:=24; {threat RGB fits as 2 dimensional with 24 bits data}
-       naxis3:=3; {will be converted while reading}
+       head.naxis3:=3; {will be converted while reading}
     end;
-    if ( ((cdelt1=0) or (crota2>=999)) and (cd1_1<>0)) then
+    if ( ((head.cdelt1=0) or (head.crota2>=999)) and (head.cd1_1<>0)) then
     begin
       new_to_old_WCS;{ convert old WCS to new}
     end
     else
-    if ((crota2<999) and (cd1_1=0) and(cdelt1<>0)) then {valid crota2 value}
+    if ((head.crota2<999) and (head.cd1_1=0) and(head.cdelt1<>0)) then {valid head.crota2 value}
     begin
       old_to_new_WCS;{ convert old WCS to new}
     end;
 
-    if set_temperature=999 then set_temperature:=round(ccd_temperature); {temperature}
+    if head.set_temperature=999 then head.set_temperature:=round(ccd_temperature); {temperature}
 
-    if crota2>999 then crota2:=0;{not defined, set at 0}
-    if crota1>999 then crota1:=crota2; {for case crota1 is not used}
+    if head.crota2>999 then head.crota2:=0;{not defined, set at 0}
+    if head.crota1>999 then head.crota1:=head.crota2; {for case head.crota1 is not used}
 
-    if ((light) and (ra0<>0) and (dec0<>0)) then
+    if ((light) and (head.ra0<>0) and (head.dec0<>0)) then
     begin
-       mainwindow.ra1.text:=prepare_ra(ra0,' ');{this will create Ra_radians for solving}
-       mainwindow.dec1.text:=prepare_dec(dec0,' ');
+       mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
+       mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
     end;
     { condition           keyword    to
      if ra_mount>999 then objctra--->ra1.text--------------->ra_radians--->ra_mount
-                               ra--->ra_mount  if ra0=0 then   ra_mount--->ra0
-                           crval1--->ra0
+                               ra--->ra_mount  if head.ra0=0 then   ra_mount--->head.ra0
+                           crval1--->head.ra0
 
-     if ra0<>0 then           ra0--->ra1.text------------------->ra_radians}
+     if head.ra0<>0 then           head.ra0--->ra1.text------------------->ra_radians}
 
 
 
-    if ((cd1_1=0) and (cdelt2=0)) then  {no scale, try to fix it}
+    if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
     begin
        if scale<>0 then {sgp file, use scale to find image dimensions}
-         cdelt2:=scale/3600 {scale is in arcsec/pixel }
+         head.cdelt2:=scale/3600 {scale is in arcsec/pixel }
        else
        if ((focallen<>0) and (xpixsz<>0)) then
-         cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
+         head.cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
     end;
     unsaved_import:=false;{file is available for astrometry.net}
 
@@ -1638,7 +1636,7 @@ begin
 
     {############################## read image}
     i:=round(bufwide/(abs(nrbits/8)));{check if buffer is wide enough for one image line}
-    if width2>i then
+    if head.width>i then
     begin
       beep;
       textout(mainwindow.image1.canvas.handle,30,30,'Too wide FITS file !!!!!',25);
@@ -1646,15 +1644,15 @@ begin
       exit;
     end;
 
-    setlength(img_loaded2,naxis3,width2,height2);
+    setlength(img_loaded2,head.naxis3,head.width,head.height);
 
     if nrbits=16 then
-    for k:=0 to naxis3-1 do {do all colors}
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
-      For j:=0 to height2-1 do
+      For j:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,width2*2);except; end; {read file info}
-        for i:=0 to width2-1 do
+        try reader.read(fitsbuffer,head.width*2);except; end; {read file info}
+        for i:=0 to head.width-1 do
         begin
           word16:=swap(fitsbuffer2[i]);{move data to wo and therefore sign_int}
           col_float:=int_16*bscale + bzero; {save in col_float for measuring measured_max}
@@ -1662,15 +1660,15 @@ begin
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
-    end {colors naxis3 times}
+    end {colors head.naxis3 times}
     else
     if nrbits=-32 then
-    for k:=0 to naxis3-1 do {do all colors}
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
-      For j:=0 to height2-1 do
+      For j:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,width2*4);except; end; {read file info}
-        for i:=0 to width2-1 do
+        try reader.read(fitsbuffer,head.width*4);except; end; {read file info}
+        for i:=0 to head.width-1 do
         begin
           x_longword:=swapendian(fitsbuffer4[i]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
           col_float:=x_single*bscale+bzero; {int_IEEE, swap four bytes and the read as floating point}
@@ -1679,26 +1677,26 @@ begin
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
-    end {colors naxis3 times}
+    end {colors head.naxis3 times}
     else
     if nrbits=8 then
-    for k:=0 to naxis3-1 do {do all colors}
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
-      For j:=0 to height2-1 do
+      For j:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,width2);except; end; {read file info}
-        for i:=0 to width2-1 do
+        try reader.read(fitsbuffer,head.width);except; end; {read file info}
+        for i:=0 to head.width-1 do
         begin
           img_loaded2[k,i,j]:=(fitsbuffer[i]*bscale + bzero);
         end;
       end;
-    end {colors naxis3 times}
+    end {colors head.naxis3 times}
     else
     if nrbits=24 then
-    For j:=0 to height2-1 do
+    For j:=0 to head.height-1 do
     begin
-      try reader.read(fitsbuffer,width2*3);except; end; {read file info}
-      for i:=0 to width2-1 do
+      try reader.read(fitsbuffer,head.width*3);except; end; {read file info}
+      for i:=0 to head.width-1 do
       begin
         rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
         img_loaded2[0,i,j]:=rgbdummy[0];{store in memory array}
@@ -1708,12 +1706,12 @@ begin
     end
     else
     if nrbits=+32 then
-    for k:=0 to naxis3-1 do {do all colors}
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
-      For j:=0 to height2-1 do
+      For j:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,width2*4);except; end; {read file info}
-        for i:=0 to width2-1 do
+        try reader.read(fitsbuffer,head.width*4);except; end; {read file info}
+        for i:=0 to head.width-1 do
         begin
           col_float:=(swapendian(fitsbuffer4[i])*bscale+bzero)/(65535);{scale to 0..64535 or 0..1 float}
                          {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
@@ -1721,15 +1719,15 @@ begin
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
-    end {colors naxis3 times}
+    end {colors head.naxis3 times}
     else
     if nrbits=-64 then
-    for k:=0 to naxis3-1 do {do all colors}
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
-      For j:=0 to height2-1 do
+      For j:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,width2*8);except; end; {read file info}
-        for i:=0 to width2-1 do
+        try reader.read(fitsbuffer,head.width*8);except; end; {read file info}
+        for i:=0 to head.width-1 do
         begin
           x_qword:=swapendian(fitsbuffer8[i]);{conversion 64 bit "big-endian" data, x_double    : double absolute x_int64;}
           col_float:=x_double*bscale + bzero; {int_IEEE, swap four bytes and the read as floating point}
@@ -1737,7 +1735,7 @@ begin
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
         end;
       end;
-    end; {colors naxis3 times}
+    end; {colors head.naxis3 times}
 
     {rescale if required}
     if ((nrbits<=-32){-32 or -64} or (nrbits=+32)) then
@@ -1747,39 +1745,39 @@ begin
                                                                                               {or if values are above 65535}
       if scalefactor<>1 then {not a 0..65535 range, rescale}
       begin
-        for k:=0 to naxis3-1 do {do all colors}
-          for j:=0 to height2-1 do
-            for i:=0 to width2-1 do
+        for k:=0 to head.naxis3-1 do {do all colors}
+          for j:=0 to head.height-1 do
+            for i:=0 to head.width-1 do
               img_loaded2[k,i,j]:= img_loaded2[k,i,j]*scalefactor;
-        datamax_org:=65535;
+        head.datamax_org:=65535;
       end
-      else  datamax_org:=measured_max;
+      else  head.datamax_org:=measured_max;
 
     end
     else
-    if nrbits=8 then datamax_org:=255 {not measured}
+    if nrbits=8 then head.datamax_org:=255 {not measured}
     else
     if nrbits=24 then
     begin
-      datamax_org:=255;
+      head.datamax_org:=255;
       nrbits:=8; {already converted to array with separate colour sections}
     end
     else {16 bit}
-    datamax_org:=measured_max;{most common. It set for nrbits=24 in beginning at 255}
+    head.datamax_org:=measured_max;{most common. It set for nrbits=24 in beginning at 255}
 
-    cblack:=datamin_org;{for case histogram is not called}
-    cwhite:=datamax_org;
+    cblack:=head.datamin_org;{for case histogram is not called}
+    cwhite:=head.datamax_org;
 
     result:=true;
     fits_file:=true;{succes}
-    reader_position:=reader_position+width2*height2*(abs(nrbits) div 8)
+    reader_position:=reader_position+head.width*head.height*(abs(nrbits) div 8)
   end{image block}
 
 
 
 
   else
-  if  ((naxis=2) and ((bintable) or (asciitable)) ) then
+  if  ((head.naxis=2) and ((bintable) or (asciitable)) ) then
   begin {read table ############################################}
     if bintable then extend_type:=3;
     if asciitable then extend_type:=2;
@@ -1793,11 +1791,11 @@ begin
        aline:=aline+tunit[k]+#9;
     aline:=aline+sLineBreak;
 
-    for j:=0 to height2-1 do {rows}
+    for j:=0 to head.height-1 do {rows}
     begin
-      try reader.read(fitsbuffer[0],width2);{read one row} except end;
+      try reader.read(fitsbuffer[0],head.width);{read one row} except end;
 
-      if extend_type=2 {ascii_table} then SetString(field, Pansichar(@fitsbuffer[0]),width2);{convert to string}
+      if extend_type=2 {ascii_table} then SetString(field, Pansichar(@fitsbuffer[0]),head.width);{convert to string}
 
       pointer:=0;
       for k:=0 to tfields-1 do {columns}
@@ -1889,7 +1887,7 @@ begin
     aline:=''; {release memory}
     if update_memo then mainwindow.memo1.visible:=true;{show header}
     mainwindow.pagecontrol1.showtabs:=true;{show tabs}
-    reader_position:=reader_position+width2*height2;
+    reader_position:=reader_position+head.width*head.height;
   end;{read table}
 
 
@@ -1903,7 +1901,7 @@ begin
       mainwindow.pagecontrol1.showtabs:=true;{show tabs}
 
       last_extension:=false;
-      if naxis<2 then
+      if head.naxis<2 then
       begin
         mainwindow.error_label1.caption:=('Contains extension(s). Click on the arrows to scroll.');
         mainwindow.error_label1.visible:=true;
@@ -1945,31 +1943,31 @@ var
        val(aline,result,err);
      end;
 begin
-  crota2:=99999;{just for the case it is not available, make it later zero}
-  crota1:=99999;
-  ra0:=0;
-  dec0:=0;
+  head.crota2:=99999;{just for the case it is not available, make it later zero}
+  head.crota1:=99999;
+  head.ra0:=0;
+  head.dec0:=0;
   ra_mount:=99999;
   dec_mount:=99999;
-  cdelt1:=0;
-  cdelt2:=0;
+  head.cdelt1:=0;
+  head.cdelt2:=0;
   xpixsz:=0;
   ypixsz:=0;
   focallen:=0;
   subsamp:=1;{just for the case it is not available}
-  cd1_1:=0;{just for the case it is not available}
-  cd1_2:=0;{just for the case it is not available}
-  cd2_1:=0;{just for the case it is not available}
-  cd2_2:=0;{just for the case it is not available}
-  date_obs:='';date_avg:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
+  head.cd1_1:=0;{just for the case it is not available}
+  head.cd1_2:=0;{just for the case it is not available}
+  head.cd2_1:=0;{just for the case it is not available}
+  head.cd2_2:=0;{just for the case it is not available}
+  head.date_obs:='';date_avg:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
   sitelat:=''; sitelong:='';
-  filter_name:='';
-  calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
+  head.filter_name:='';
+  head.calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
   imagetype:='';
   xbinning:=1;{normal}
   ybinning:=1;
-  exposure:=0;
-  set_temperature:=999;
+  head.exposure:=0;
+  head.set_temperature:=999;
   x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
   y_coeff[0]:=0;
   a_order:=0; {reset SIP_polynomial, use for check if there is data}
@@ -1980,10 +1978,10 @@ begin
   while count1>1 do {read bare minimum keys since TIFF is not required for stacking}
   begin
     key:=copy(mainwindow.Memo1.Lines[count1],1,9);
-    if key='CD1_1   =' then cd1_1:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
-    if key='CD1_2   =' then cd1_2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
-    if key='CD2_1   =' then cd2_1:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
-    if key='CD2_2   =' then cd2_2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
+    if key='CD1_1   =' then head.cd1_1:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
+    if key='CD1_2   =' then head.cd1_2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
+    if key='CD2_1   =' then head.cd2_1:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
+    if key='CD2_2   =' then head.cd2_2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
 
     if key='CRVAL1  =' then ra2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
     if key='CRVAL2  =' then dec2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
@@ -1993,16 +1991,16 @@ begin
   end;
   if ((ra2<>999) and (dec2<>999)) then {data available}
   begin
-    ra0:=ra2*pi/180; {degrees -> radians}
-    dec0:=dec2*pi/180;
-    mainwindow.ra1.text:=prepare_ra(ra0,' ');{show center of image}
-    mainwindow.dec1.text:=prepare_dec(dec0,' ');
+    head.ra0:=ra2*pi/180; {degrees -> radians}
+    head.dec0:=dec2*pi/180;
+    mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{show center of image}
+    mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
   end;
-  if cd1_1<>0 then new_to_old_WCS;
+  if head.cd1_1<>0 then new_to_old_WCS;
 end;
 
 
-function load_PPM_PGM_PFM(filen:string; var img_loaded2: image_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
+function load_PPM_PGM_PFM(filen:string; var load :theader; var img_loaded2: image_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
    i,j, reader_position  : integer;
    aline,w1,h1,bits,comm  : ansistring;
@@ -2025,7 +2023,7 @@ var
      end;
 
 begin
-  naxis:=0; {0 dimensions}
+  head.naxis:=0; {0 dimensions}
   result:=false; {assume failure}
 
   try
@@ -2043,7 +2041,7 @@ begin
   Reader := TReader.Create (theFile3,$4000);{number of hnsky records}
   {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
-  reset_fits_global_variables(true{light}); {reset the global variable}
+  reset_fits_global_variables(true{light},head); {reset the global variable}
 
   I:=0;
   reader_position:=0;
@@ -2087,14 +2085,14 @@ begin
           if ch in [';','#',' ',char($0A)]=false then comm:=comm+ch
           else
           begin
-            if expdet then begin exposure:=strtofloat2(comm);expdet:=false; end;{get exposure time from comments,special dcraw 0.9.28dev1}
+            if expdet then begin head.exposure:=strtofloat2(comm);expdet:=false; end;{get head.exposure time from comments,special dcraw 0.9.28dev1}
             if isodet then begin gain:=comm;isodet:=false; end;{get iso speed as gain}
             if instdet then begin instrum:=comm;instdet:=false;end;{camera}
-            if ccdtempdet then begin set_temperature:=round(strtofloat2(comm));ccdtempdet:=false;end;{sensor temperature}
+            if ccdtempdet then begin head.set_temperature:=round(strtofloat2(comm));ccdtempdet:=false;end;{sensor temperature}
             if timedet then
             begin
               JD2:=2440587.5+ strtoint(comm)/(24*60*60);{convert to Julian Day by adding factor. Unix time is seconds since 1.1.1970}
-              date_obs:=JdToDate(jd2);
+              head.date_obs:=JdToDate(jd2);
               timedet:=false;
             end;{get date from comments}
             comm:='';{clear for next keyword}
@@ -2122,18 +2120,18 @@ begin
       end;
     until ((i>=3) or (reader_position>200)) ;
 
-    val(w1,width2,err);
-    val(h1,height2,err2);
+    val(w1,head.width,err);
+    val(h1,head.height,err2);
 
     val(bits,range,err3);{number of bits}
 
     nrbits:=round(range);
 
-    if pfm then begin nrbits:=-32; datamax_org:=$FFFF;end     {little endian PFM format. If nrbits=-1 then range 0..1. If nrbits=+1 then big endian with range 0..1 }
+    if pfm then begin nrbits:=-32; head.datamax_org:=$FFFF;end     {little endian PFM format. If nrbits=-1 then range 0..1. If nrbits=+1 then big endian with range 0..1 }
     else
-    if nrbits=65535 then begin nrbits:=16; datamax_org:=$FFFF;end
+    if nrbits=65535 then begin nrbits:=16; head.datamax_org:=$FFFF;end
     else
-    if nrbits=255 then begin nrbits:=8;datamax_org:=$FF; end
+    if nrbits=255 then begin nrbits:=8;head.datamax_org:=$FF; end
     else
       err3:=999;
 
@@ -2148,26 +2146,26 @@ begin
       exit;
     end; {should contain 255 or 65535}
 
-    datamin_org:=0;
+    head.datamin_org:=0;
     fits_file:=true;
 
-    cblack:=datamin_org;{for case histogram is not called}
-    cwhite:=datamax_org;
+    cblack:=head.datamin_org;{for case histogram is not called}
+    cwhite:=head.datamax_org;
 
     if color7 then
     begin
        package:=round((abs(nrbits)*3/8));{package size, 3 or 6 bytes}
-       naxis3:=3; {NAXIS3 number of colors}
-       naxis:=3; {number of dimensions}
+       head.naxis3:=3; {head.naxis3 number of colors}
+       head.naxis:=3; {number of dimensions}
     end
     else
     begin {gray image without bayer matrix applied}
       package:=round((abs(nrbits)/8));{package size, 1 or 2 bytes}
-      naxis3:=1; {NAXIS3 number of colors}
-      naxis:=2;{number of dimensions}
+      head.naxis3:=1; {head.naxis3 number of colors}
+      head.naxis:=2;{number of dimensions}
     end;
     i:=round(bufwide/package);
-    if width2>i then
+    if head.width>i then
     begin
       beep;
       textout(mainwindow.image1.canvas.handle,30,30,'Too large FITS file !!!!!',25);
@@ -2176,13 +2174,13 @@ begin
     end
     else
     begin {not too large}
-      setlength(img_loaded2,naxis3,width2,height2);
+      setlength(img_loaded2,head.naxis3,head.width,head.height);
       begin
-        For i:=0 to height2-1 do
+        For i:=0 to head.height-1 do
         begin
-          try reader.read(fitsbuffer,width2*package);except; end; {read file info}
+          try reader.read(fitsbuffer,head.width*package);except; end; {read file info}
 
-          for j:=0 to width2-1 do
+          for j:=0 to head.width-1 do
           begin
             if color7=false then {gray scale without bayer matrix applied}
             begin
@@ -2258,23 +2256,23 @@ begin
   result:=true;{succes}
 
   for j:=0 to 10 do {create an header with fixed sequence}
-    if ((j<>5) or  (naxis3<>1)) then {skip naxis3 for mono images}
+    if ((j<>5) or  (head.naxis3<>1)) then {skip head.naxis3 for mono images}
         mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
   mainwindow.memo1.lines.add(head1[27]); {add end}
 
   update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
-  update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for colour}
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-  if naxis3<>1 then
-    update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3);
+  update_integer('NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
+  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
+  if head.naxis3<>1 then
+    update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,head.naxis3);
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-  update_integer('DATAMAX =',' / Maximum data value                           ' ,round(datamax_org));
+  update_integer('DATAMAX =',' / Maximum data value                           ' ,round(head.datamax_org));
 
-  if exposure<>0 then   update_float('EXPTIME =',' / duration of exposure in seconds                ' ,exposure);
+  if head.exposure<>0 then   update_float('EXPTIME =',' / duration of exposure in seconds                ' ,head.exposure);
   if gain<>'' then    update_integer('GAIN    =',' / iso speed                                      ' ,strtoint(gain));
 
-  if date_obs<>'' then update_text   ('DATE-OBS=',#39+date_obs+#39);
+  if head.date_obs<>'' then update_text   ('DATE-OBS=',#39+head.date_obs+#39);
   if instrum<>''  then update_text   ('INSTRUME=',#39+INSTRUM+#39);
 
   update_text   ('BAYERPAT=',#39+'T'+#39+'                  / Unknown Bayer color pattern                  ');
@@ -2283,7 +2281,7 @@ begin
 end;
 
 
-function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+function load_TIFFPNGJPEG(filen:string; var head : theader;var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
   i,j   : integer;
   jd2   : double;
@@ -2292,7 +2290,7 @@ var
   tiff, png,jpeg,colour,saved_header  : boolean;
   ext,descrip   : string;
 begin
-  naxis:=0; {0 dimensions}
+  head.naxis:=0; {0 dimensions}
   result:=false; {assume failure}
   tiff:=false;
   jpeg:=false;
@@ -2334,7 +2332,7 @@ begin
      exit;
   end;
 
-  reset_fits_global_variables(true{light}); {reset the global variable}
+  reset_fits_global_variables(true{light},head); {reset the global variable}
 
   {$IF FPC_FULLVERSION >= 30200} {FPC3.2.0}
   colour:=true;
@@ -2365,13 +2363,13 @@ begin
 
   if colour=false then
   begin
-     naxis:=2;
-     naxis3:=1;
+     head.naxis:=2;
+     head.naxis3:=1;
   end
   else
   begin
-    naxis:=3; {three dimensions, x,y and 3 colours}
-    naxis3:=3;
+    head.naxis:=3; {three dimensions, x,y and 3 colours}
+    head.naxis3:=3;
   end;
 
   mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
@@ -2381,31 +2379,31 @@ begin
   extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
   fits_file:=true;
   nrbits:=16;
-  datamin_org:=0;
-  datamax_org:=$FFFF;
-  cblack:=datamin_org;{for case histogram is not called}
-  cwhite:=datamax_org;
+  head.datamin_org:=0;
+  head.datamax_org:=$FFFF;
+  cblack:=head.datamin_org;{for case histogram is not called}
+  cwhite:=head.datamax_org;
 
 
-  width2:=image.width;
-  height2:=image.height;
-  setlength(img_loaded2,naxis3,width2,height2);
+  head.width:=image.width;
+  head.height:=image.height;
+  setlength(img_loaded2,head.naxis3,head.width,head.height);
 
-  if naxis3=3 then
+  if head.naxis3=3 then
   begin
-    For i:=0 to height2-1 do
-      for j:=0 to width2-1 do
+    For i:=0 to head.height-1 do
+      for j:=0 to head.width-1 do
       begin
-        img_loaded2[0,j,height2-1-i]:=image.Colors[j,i].red;
-        img_loaded2[1,j,height2-1-i]:=image.Colors[j,i].green;
-        img_loaded2[2,j,height2-1-i]:=image.Colors[j,i].blue;
+        img_loaded2[0,j,head.height-1-i]:=image.Colors[j,i].red;
+        img_loaded2[1,j,head.height-1-i]:=image.Colors[j,i].green;
+        img_loaded2[2,j,head.height-1-i]:=image.Colors[j,i].blue;
       end;
   end
   else
   begin
-    For i:=0 to height2-1 do
-      for j:=0 to width2-1 do
-        img_loaded2[0,j,height2-1-i]:=image.Colors[j,i].red;
+    For i:=0 to head.height-1 do
+      for j:=0 to head.width-1 do
+        img_loaded2[0,j,head.height-1-i]:=image.Colors[j,i].red;
   end;
 
   if tiff then
@@ -2421,24 +2419,24 @@ begin
   else {no fits header in tiff file available}
   begin
     for j:=0 to 10 do {create an header with fixed sequence}
-      if ((j<>5) or  (naxis3<>1)) then {skip naxis3 for mono images}
+      if ((j<>5) or  (head.naxis3<>1)) then {skip head.naxis3 for mono images}
         mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
     mainwindow.memo1.lines.add(head1[27]); {add end}
     if descrip<>'' then add_long_comment(descrip);{add TIFF describtion}
   end;
 
   update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
-  update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for colour}
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+  update_integer('NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
+  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
+  update_integer('DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
 
   if saved_header=false then {saved header in tiff is not restored}
   begin
     JD2:=2415018.5+(FileDateToDateTime(fileage(filen))); {fileage ra, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
-    date_obs:=JdToDate(jd2);
-    update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
+    head.date_obs:=JdToDate(jd2);
+    update_text ('DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
   end;
 
   update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
@@ -2558,7 +2556,7 @@ begin
     starlevel:=starlevel-background-1;{star level above background. Important subtract 1 for saturated images. Otherwise no stars are detected}
 
     {calculate noise level}
-    stepsize:=round(height2/71);{get about 71x71=5000 samples. So use only a fraction of the pixels}
+    stepsize:=round(head.height/71);{get about 71x71=5000 samples. So use only a fraction of the pixels}
     if odd(stepsize)=false then stepsize:=stepsize+1;{prevent problems with even raw OSC images}
 
     width5:=Length(img[0]);    {width}
@@ -2881,9 +2879,9 @@ var
    i,j,col,count_neg  :integer;
 begin
    if xmin<0 then xmin:=0;
-  if xmax>width2-1 then xmax:=width2-1;
+  if xmax>head.width-1 then xmax:=head.width-1;
   if ymin<0 then ymin:=0;
-  if ymax>height2-1 then ymax:=height2-1;
+  if ymax>head.height-1 then ymax:=head.height-1;
 
   result:=0;
   count_neg:=0;
@@ -2912,30 +2910,18 @@ begin
     inc(index_backup,1);
     if index_backup>size_backup then index_backup:=0;
 
-    img_backup[index_backup].datamax:=datamax_org ; {for update histogram}
-    img_backup[index_backup].crpix1:=crpix1;{could be modified by crop}
-    img_backup[index_backup].crpix2:=crpix2;{could be modified by crop}
-    img_backup[index_backup].crval1:=ra0;
-    img_backup[index_backup].crval2:=dec0;
-    img_backup[index_backup].crota1:=crota1;{for 90 degrees rotate}
-    img_backup[index_backup].crota2:=crota2;{for 90 degrees rotate}
-    img_backup[index_backup].cdelt1:=cdelt1;
-    img_backup[index_backup].cdelt2:=cdelt2;
-    img_backup[index_backup].cd1_1:=cd1_1;
-    img_backup[index_backup].cd1_2:=cd1_2;
-    img_backup[index_backup].cd2_1:=cd2_1;
-    img_backup[index_backup].cd2_2:=cd2_2;
+    img_backup[index_backup].head_val:=head;
+
     img_backup[index_backup].xbinning:=xbinning;
     img_backup[index_backup].ybinning:=ybinning;
     img_backup[index_backup].XPIXSZ:=XPIXSZ;
     img_backup[index_backup].YPIXSZ:=YPIXSZ;
 
-
     img_backup[index_backup].header:=mainwindow.Memo1.Text;{backup fits header}
     img_backup[index_backup].filen:=filename2;{backup filename}
 
     img_backup[index_backup].img:=img_loaded;
-    setlength(img_backup[index_backup].img,naxis3,width2,height2);{this forces an duplication}{In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
+    setlength(img_backup[index_backup].img,head.naxis3,head.width,head.height);{this forces an duplication}{In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
 
     mainwindow.Undo1.Enabled:=true;
   end;
@@ -2955,43 +2941,24 @@ begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
+    old_width2:=head.width;
+    old_height2:=head.height;
 
-    old_width2:=width2;
-    old_height2:=height2;
+    head:=img_backup[index_backup].head_val;{restore main header values}
 
-    naxis3:=length(img_backup[index_backup].img);{nr colours}
-    width2:=length(img_backup[index_backup].img[0]);{width}
-    height2:=length(img_backup[index_backup].img[0,0]);{length}
+    resized:=((head.width<>old_width2) or ( head.height<>old_height2));
 
-    resized:=((width2<>old_width2) or ( height2<>old_height2));
-
-    datamax_org:=img_backup[index_backup].datamax;{for update histogram}
-    crpix1:=img_backup[index_backup].crpix1;{could be modified by crop}
-    crpix2:=img_backup[index_backup].crpix2;
-
-    ra0:=img_backup[index_backup].crval1;
-    dec0:=img_backup[index_backup].crval2;
-
-    crota1:=img_backup[index_backup].crota1;{for 90 degrees rotate}
-    crota2:=img_backup[index_backup].crota2;
-    cdelt1:=img_backup[index_backup].cdelt1;
-    cdelt2:=img_backup[index_backup].cdelt2;
-    cd1_1:=img_backup[index_backup].cd1_1;
-    cd1_2:=img_backup[index_backup].cd1_2;
-    cd2_1:=img_backup[index_backup].cd2_1;
-    cd2_2:=img_backup[index_backup].cd2_2;
     xbinning:=img_backup[index_backup].xbinning;
     ybinning:=img_backup[index_backup].ybinning;
     XPIXSZ:=img_backup[index_backup].XPIXSZ;
     YPIXSZ:=img_backup[index_backup].YPIXSZ;
 
-
     mainwindow.Memo1.Text:=img_backup[index_backup].header;{restore fits header}
     filename2:=img_backup[index_backup].filen;{backup filename}
 
-    stackmenu1.test_pattern1.Enabled:=naxis3=1;{allow debayer if mono again}
+    stackmenu1.test_pattern1.Enabled:=head.naxis3=1;{allow debayer if mono again}
     img_loaded:=img_backup[index_backup].img; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
-    setlength(img_loaded,naxis3,width2,height2);{force a duplication}
+    setlength(img_loaded,head.naxis3,head.width,head.height);{force a duplication}
 
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainwindow.image1,resized,true);{restore image1}
@@ -3006,8 +2973,7 @@ begin
 
     if img_backup[index_backup].img=nil then
     begin
-      mainwindow.Undo1.Enabled:=false;
-      //memo2_message('No more backups');
+      mainwindow.Undo1.Enabled:=false;  //No more backups
     end
     else
     memo2_message('Restored backup index '+inttostr(index_backup));
@@ -3055,7 +3021,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 1.0.0RC8, '+about_message4+', dated 2021-12-21';
+  #13+#10+'ASTAP version 1.0.0RC9_early2, '+about_message4+', dated 2021-12-22';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3154,7 +3120,7 @@ begin
     if startX2>stopX2 then begin dum:=stopX2; stopX2:=startX2; startX2:=dum; end;{swap}
     if startY2>stopY2 then begin dum:=stopY2; stopY2:=startY2; startY2:=dum; end;
 
-    for k:=0 to naxis3-1 do {do all colors}
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
       mode_left_bottom:=mode(img_loaded,k,startX2-10,startX2+10,startY2-10,startY2+10,32000);{for this area get most common value equals peak in histogram}
       mode_left_top:=   mode(img_loaded,k,startX2-10,startX2+10,stopY2-10,stopY2+10,32000);{for this area get most common value equals peak in histogram}
@@ -3167,7 +3133,7 @@ begin
         begin
           Application.ProcessMessages;{this could change startX, startY}
           if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-          progress_value:=round(100*( k/naxis3 +  0.3333*(fitsY-startY2)/(stopY2-startY2)));
+          progress_value:=round(100*( k/head.naxis3 +  0.3333*(fitsY-startY2)/(stopY2-startY2)));
           progress_indicator(progress_value,'');{report progress}
         end;
         for fitsX:=startX2 to stopX2-1 do
@@ -3198,12 +3164,12 @@ procedure bin_X2X3X4(binfactor:integer);{bin img_loaded 2x or 3x}
 
 begin
   binfactor:=min(4,binfactor);{max factor is 4}
-  w:=trunc(width2/binfactor);  {half size & cropped. Use trunc for image 1391 pixels wide like M27 test image. Otherwise exception error}
-  h:=trunc(height2/binfactor);
-  setlength(img_temp2,naxis3,w,h);
+  w:=trunc(head.width/binfactor);  {half size & cropped. Use trunc for image 1391 pixels wide like M27 test image. Otherwise exception error}
+  h:=trunc(head.height/binfactor);
+  setlength(img_temp2,head.naxis3,w,h);
   if binfactor=2 then
   begin
-    for k:=0 to naxis3-1 do
+    for k:=0 to head.naxis3-1 do
       for fitsY:=0 to h-1 do
          for fitsX:=0 to w-1  do
          begin
@@ -3216,7 +3182,7 @@ begin
   else
   if binfactor=3 then
   begin {bin3x3}
-    for k:=0 to naxis3-1 do
+    for k:=0 to head.naxis3-1 do
       for fitsY:=0 to h-1 do
          for fitsX:=0 to w-1  do
          begin
@@ -3233,7 +3199,7 @@ begin
   end
   else
   begin {bin4x4}
-    for k:=0 to naxis3-1 do
+    for k:=0 to head.naxis3-1 do
       for fitsY:=0 to h-1 do
          for fitsX:=0 to w-1  do
          begin
@@ -3256,29 +3222,29 @@ begin
            end;
   end;
   img_loaded:=img_temp2;
-  width2:=w;
-  height2:=h;
+  head.width:=w;
+  head.height:=h;
   img_temp2:=nil;
 
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
 
-  if crpix1<>0 then begin crpix1:=crpix1/binfactor; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
-  if crpix2<>0 then begin crpix2:=crpix2/binfactor; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
+  if head.crpix1<>0 then begin head.crpix1:=head.crpix1/binfactor; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);end;
+  if head.crpix2<>0 then begin head.crpix2:=head.crpix2/binfactor; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);end;
 
-  if cdelt1<>0 then begin cdelt1:=cdelt1*binfactor; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
-  if cdelt2<>0 then begin cdelt2:=cdelt2*binfactor; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
+  if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1*binfactor; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);end;
+  if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2*binfactor; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);end;
 
-  if cd1_1<>0 then
+  if head.cd1_1<>0 then
   begin
-    cd1_1:=cd1_1*binfactor;
-    cd1_2:=cd1_2*binfactor;
-    cd2_1:=cd2_1*binfactor;
-    cd2_2:=cd2_2*binfactor;
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+    head.cd1_1:=head.cd1_1*binfactor;
+    head.cd1_2:=head.cd1_2*binfactor;
+    head.cd2_1:=head.cd2_1*binfactor;
+    head.cd2_2:=head.cd2_2*binfactor;
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
   end;
   XBINNING:=XBINNING*binfactor;
   YBINNING:=YBINNING*binfactor;
@@ -3302,7 +3268,7 @@ end;
 function binX2X3_file(binfactor:integer) : boolean; {converts filename2 to binx2 or bin3 version}
 begin
   result:=false;
-  if load_fits(filename2,true {light},true {load data},true {update memo},0,img_loaded)=false then exit;
+  if load_fits(filename2,true {light},true {load data},true {update memo},0,head,img_loaded)=false then exit;
 
   bin_X2X3X4(binfactor);{bin img_loaded 2x or 3x}
 
@@ -3401,8 +3367,8 @@ begin
     backup_img;
     if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
     if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
-    setlength(img_temp,naxis3,stopX-startX,stopY-startY);
-    for k:=0 to naxis3-1 do {do all colors}
+    setlength(img_temp,head.naxis3,stopX-startX,stopY-startY);
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
       for fitsY:=startY to stopY-1 do
       for fitsX:=startX to stopX-1 do
@@ -3414,7 +3380,7 @@ begin
     end;{k color}
     gaussian_blur2(img_temp,strtofloat2(stackmenu1.blur_factor1.text));
 
-    for k:=0 to naxis3-1 do {do all colors}
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
       for fitsY:=startY to stopY-1 do
       for fitsX:=startX to stopX-1 do
@@ -3447,7 +3413,7 @@ var
    begin
      if y<0 then checkY:=0
      else
-     if y>height2-1 then checkY:=height2-1
+     if y>head.height-1 then checkY:=head.height-1
      else
      checkY:=y;
    end;
@@ -3455,7 +3421,7 @@ var
    begin
      if x<0 then checkX:=0
      else
-     if x>width2-1 then checkX:=width2-1
+     if x>head.width-1 then checkX:=head.width-1
      else
      checkX:=x;
    end;
@@ -3479,7 +3445,7 @@ begin
     a:=(stopX-1-startx)/2;
     b:=(stopY-1-startY)/2;
 
-    for k:=0 to naxis3-1 do {do all colors}
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
 
       mode_left_bottom[k]:=mode(img_loaded,k,startx-bsize,startx,starty-bsize,starty,32000);{for this area get most common value equals peak in histogram}
@@ -3505,7 +3471,7 @@ begin
       begin
         angle_from_center:=arctan(abs(fitsy-center_Y)/max(1,abs(fitsX-center_X)));
         if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
-        for k:=0 to naxis3-1 do {do all colors}
+        for k:=0 to head.naxis3-1 do {do all colors}
         begin
           begin
             line_bottom:=mode_left_bottom[k]*(stopX-fitsx)/(stopX-startx)+ mode_right_bottom[k] *(fitsx-startX)/(stopX-startx);{median value at bottom line}
@@ -3528,7 +3494,7 @@ begin
         angle_from_center:=arctan(abs(fitsy-center_Y)/max(1,abs(fitsX-center_X)));
         if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
         begin
-          for k:=0 to naxis3-1 do {do all colors}
+          for k:=0 to head.naxis3-1 do {do all colors}
           begin
             line_bottom:=mode_left_bottom[k]*(stopX-fitsx)/(stopX-startx)+ mode_right_bottom[k] *(fitsx-startX)/(stopX-startx);{median value at bottom line}
             line_top:=  mode_left_top[k] *   (stopX-fitsx)/(stopX-startx)+ mode_right_top[k]*(fitsx-startX)/(stopX-startx);{median value at top line}
@@ -3600,7 +3566,7 @@ begin
 end;
 
 
-function extract_objectname_from_filename(filename8: string): string; {try to extract exposure from filename}
+function extract_objectname_from_filename(filename8: string): string; {try to extract head.exposure from filename}
 var
   i   : integer;
 begin
@@ -3638,7 +3604,7 @@ var
    val  : single;
    Save_Cursor:TCursor;
 begin
-  if ((naxis3<>3) or (fits_file=false)) then exit;
+  if ((head.naxis3<>3) or (fits_file=false)) then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
     Save_Cursor := Screen.Cursor;
@@ -3684,30 +3650,30 @@ var
 begin
   {5. Conversion (RA,DEC) -> (x,y) of reference image}
   sincos(dec_t,SIN_dec_t,COS_dec_t);{sincos is faster then separate sin and cos functions}
-  sincos(dec0,SIN_dec_ref,COS_dec_ref);{}
+  sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{}
 
-  delta_ra:=ra_t-ra0;
+  delta_ra:=ra_t-head.ra0;
   sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
 
   H := SIN_dec_t*sin_dec_ref + COS_dec_t*COS_dec_ref*COS_delta_ra;
   dRA := (COS_dec_t*SIN_delta_ra / H)*180/pi;
   dDEC:= ((SIN_dec_t*COS_dec_ref - COS_dec_t*SIN_dec_ref*COS_delta_ra ) / H)*180/pi;
 
-  det:=CD2_2*CD1_1 - CD1_2*CD2_1;
+  det:=head.cd2_2*head.cd1_1 - head.cd1_2*head.cd2_1;
 
-  u0:= - (CD1_2*dDEC - CD2_2*dRA) / det;
-  v0:= + (CD1_1*dDEC - CD2_1*dRA) / det;
+  u0:= - (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  v0:= + (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
 
 
   if sip then {apply SIP correction, sky to pixel}
   begin
-    fitsX:=(crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0); {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-    fitsY:=(crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0); {3th order SIP correction}
+    fitsX:=(head.crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0); {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+    fitsY:=(head.crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0); {3th order SIP correction}
   end
   else
   begin
-    fitsX:=crpix1 + u0; {in fits range 1..width}
-    fitsY:=crpix2 + v0;
+    fitsX:=head.crpix1 + u0; {in fits range 1..width}
+    fitsY:=head.crpix2 + v0;
   end;
 end;
 
@@ -3720,7 +3686,7 @@ var
   pos1,pos2,pos3,pos4,pos5,pos6,i :integer;
 
 begin
-  if ((fits_file=false) or (cd1_1=0) or (mainwindow.shape_marker3.visible=false)) then exit;{no solution to place marker}
+  if ((fits_file=false) or (head.cd1_1=0) or (mainwindow.shape_marker3.visible=false)) then exit;{no solution to place marker}
 
   {Simbad sirius    06 45 08.917 -16 42 58.02      }
   {Orion   5h 35.4m; Declination_symbol1: 5o 27′ south    }
@@ -3736,7 +3702,7 @@ begin
 
   if pos('C',data0)>0 then {place marker in middle}
   begin
-    sensor_coordinates_to_celestial(width2/2,height2/2,ra_new,dec_new);{calculate the center position also for solutions with the reference pixel somewhere else}
+    sensor_coordinates_to_celestial(head.width/2,head.height/2,ra_new,dec_new);{calculate the center position also for solutions with the reference pixel somewhere else}
     error1:=false;
     error2:=false;
     data1:='Center image '; {for hint}
@@ -3783,8 +3749,8 @@ begin
       dec_text:=copy(data1,pos1+1,99);
     end;
 
-    ra_text_to_radians ( ra_text ,ra_new,error1); {convert ra text to ra0 in radians}
-    dec_text_to_radians( dec_text ,dec_new,error2); {convert dec text to dec0 in radians}
+    ra_text_to_radians ( ra_text ,ra_new,error1); {convert ra text to head.ra0 in radians}
+    dec_text_to_radians( dec_text ,dec_new,error2); {convert dec text to head.dec0 in radians}
   end;
 
   if ((error1=false) and (error2=false)) then
@@ -3808,7 +3774,7 @@ begin
 end;
 
 
-procedure plot_north;{draw arrow north. If cd1_1=0 then clear north arrow}
+procedure plot_north;{draw arrow north. If head.cd1_1=0 then clear north arrow}
 const xpos=25;{position arrow}
       ypos=25;
       leng=24;{half of length}
@@ -3822,13 +3788,13 @@ begin
   mainwindow.image_north_arrow1.canvas.brush.color:=clmenu;
   mainwindow.image_north_arrow1.canvas.rectangle(-1,-1, mainwindow.image_north_arrow1.width+1, mainwindow.image_north_arrow1.height+1);
 
-  if ((fits_file=false) or (cd1_1=0)) then {remove rotation indication and exit}
+  if ((fits_file=false) or (head.cd1_1=0)) then {remove rotation indication and exit}
   begin
      mainwindow.rotation1.caption:='';
      exit;
   end;
 
-  mainwindow.rotation1.caption:=floattostrf(crota2, FFfixed, 0, 2)+'°';{show rotation}
+  mainwindow.rotation1.caption:=floattostrf(head.crota2, FFfixed, 0, 2)+'°';{show rotation}
 
 
   mainwindow.image_north_arrow1.Canvas.Pen.Color := clred;
@@ -3836,41 +3802,41 @@ begin
   if mainwindow.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
   if mainwindow.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
 
-  cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{length of one pixel step to the north}
+  cdelt1_a:=sqrt(head.cd1_1*head.cd1_1+head.cd1_2*head.cd1_2);{length of one pixel step to the north}
 
   moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);
-  det:=CD2_2*CD1_1-CD1_2*CD2_1;{this result can be negative !!}
+  det:=head.cd2_2*head.cd1_1-head.cd1_2*head.cd2_1;{this result can be negative !!}
   dRa:=0;
   dDec:=cdelt1_a*leng;
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
   dRa:=cdelt1_a*-3;
   dDec:=cdelt1_a*(leng-5);
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
   dRa:=cdelt1_a*+3;
   dDec:=cdelt1_a*(leng-5);
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
   dRa:=0;
   dDec:=cdelt1_a*leng;
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
 
   moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
   dRa:= cdelt1_a*leng/3;
   dDec:=0;
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
 end;
 
-procedure plot_north_on_image;{draw arrow north. If cd1_1=0 then clear north arrow}
+procedure plot_north_on_image;{draw arrow north. If head.cd1_1=0 then clear north arrow}
 var
       dra,ddec,
       cdelt1_a, det,x,y :double;
@@ -3879,12 +3845,12 @@ var
       wd,
       flipV, flipH : integer;
 begin
-  if ((fits_file=false) or (cd1_1=0) or (mainwindow.northeast1.checked=false)) then exit;
+  if ((fits_file=false) or (head.cd1_1=0) or (mainwindow.northeast1.checked=false)) then exit;
 
-  xpos:=height2 div 50;
-  ypos:=height2 div 50;
-  leng:=height2 div 50;
-  wd:=max(1,height2 div 1000);
+  xpos:=head.height div 50;
+  ypos:=head.height div 50;
+  leng:=head.height div 50;
+  wd:=max(1,head.height div 1000);
   mainwindow.image1.canvas.Pen.Color := clred;
   mainwindow.image1.canvas.Pen.width := wd;
 
@@ -3892,40 +3858,40 @@ begin
   if mainwindow.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
   if mainwindow.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
 
-  cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{length of one pixel step to the north}
+  cdelt1_a:=sqrt(head.cd1_1*head.cd1_1+head.cd1_2*head.cd1_2);{length of one pixel step to the north}
 
   moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);
-  det:=CD2_2*CD1_1-CD1_2*CD2_1;{this result can be negative !!}
+  det:=head.cd2_2*head.cd1_1-head.cd1_2*head.cd2_1;{this result can be negative !!}
   dRa:=0;
   dDec:=cdelt1_a*leng;
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
 
 
   dRa:=cdelt1_a*-3*wd;
   dDec:=cdelt1_a*(leng-5*wd);
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
   dRa:=cdelt1_a*+3*wd;
   dDec:=cdelt1_a*(leng-5*wd);
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
   dRa:=0;
   dDec:=cdelt1_a*leng;
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
   moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
   dRa:= cdelt1_a*leng/3;
   dDec:=0;
-  x := (CD1_2*dDEC - CD2_2*dRA) / det;
-  y := (CD1_1*dDEC - CD2_1*dRA) / det;
+  x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
 end;
 
@@ -3946,7 +3912,7 @@ begin
 end;
 
 
-procedure plot_large_north_indicator;{draw arrow north. If cd1_1=0 then clear north arrow}
+procedure plot_large_north_indicator;{draw arrow north. If head.cd1_1=0 then clear north arrow}
 
 var
   dra,ddec,cdelt1_a, det,x,y,
@@ -3958,7 +3924,7 @@ var
 begin
   {clear}
 
-  if ((fits_file=false) or (cd1_1=0) or (mainwindow.mountposition1.checked=false)) then
+  if ((fits_file=false) or (head.cd1_1=0) or (mainwindow.mountposition1.checked=false)) then
   begin
     mainwindow.shape_marker4.visible:=false;{could be visible from previous image}
     exit;
@@ -3966,10 +3932,10 @@ begin
 
   mainwindow.image1.canvas.Pen.Color := clred;
 
-  xpos:=-1+(width2+1)/2;{fits coordinates -1}
-  ypos:=-1+(height2+1)/2;
-  leng:=height2 div 3;
-  wd:=max(2,height2 div 700);
+  xpos:=-1+(head.width+1)/2;{fits coordinates -1}
+  ypos:=-1+(head.height+1)/2;
+  leng:=head.height div 3;
+  wd:=max(2,head.height div 700);
 
   mainwindow.image1.canvas.Pen.width := wd;
 
@@ -3977,34 +3943,34 @@ begin
   if mainwindow.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
   if mainwindow.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
 
-  cdelt1_a:=sqrt(CD1_1*CD1_1+CD1_2*CD1_2);{length of one pixel step to the north}
+  cdelt1_a:=sqrt(head.cd1_1*head.cd1_1+head.cd1_2*head.cd1_2);{length of one pixel step to the north}
 
   moveToex(mainwindow.image1.Canvas.handle,round(xpos),round(ypos),nil);
 
-  det:=CD2_2*CD1_1-CD1_2*CD2_1;{this result can be negative !!}
+  det:=head.cd2_2*head.cd1_1-head.cd1_2*head.cd2_1;{this result can be negative !!}
   dRa:=0;
   dDec:=cdelt1_a*leng;
-  x :=-1+(CD1_2*dDEC - CD2_2*dRA) / det;
-  y :=-1+ (CD1_1*dDEC - CD2_1*dRA) / det;
+  x :=-1+(head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  y :=-1+ (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
 
 
   dRa:=cdelt1_a*-6*wd;
   dDec:=cdelt1_a*(leng-10*wd);
-  x :=-1+ (CD1_2*dDEC - CD2_2*dRA) / det;
-  y :=-1+ (CD1_1*dDEC - CD2_1*dRA) / det;
+  x :=-1+ (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  y :=-1+ (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
   dRa:=cdelt1_a*+6*wd;
   dDec:=cdelt1_a*(leng-10*wd);
-  x :=-1+ (CD1_2*dDEC - CD2_2*dRA) / det;
-  y :=-1+ (CD1_1*dDEC - CD2_1*dRA) / det;
+  x :=-1+ (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  y :=-1+ (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
   dRa:=0;
   dDec:=cdelt1_a*leng;
-  x :=-1+ (CD1_2*dDEC - CD2_2*dRA) / det;
-  y :=-1+ (CD1_1*dDEC - CD2_1*dRA) / det;
+  x :=-1+ (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  y :=-1+ (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
 
 
@@ -4017,8 +3983,8 @@ begin
 
   dRa:= cdelt1_a*leng/3;
   dDec:=0;
-  x := -1+(CD1_2*dDEC - CD2_2*dRA) / det;
-  y := -1+(CD1_1*dDEC - CD2_1*dRA) / det;
+  x := -1+(head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+  y := -1+(head.cd1_1*dDEC - head.cd2_1*dRA) / det;
   lineTo(mainwindow.image1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
 
   for i:= trunc(xpos-1) to  round(xpos+1.00001) do
@@ -4045,18 +4011,18 @@ begin
 
   if posanddate then
   begin
-    if cd1_1<>0 then  mainwindow.image1.Canvas.textout(round(0.5*fontsize),height2-round(4*fontsize),'Position[α,δ]:  '+mainwindow.ra1.text+'    '+mainwindow.dec1.text);{}
+    if head.cd1_1<>0 then  mainwindow.image1.Canvas.textout(round(0.5*fontsize),head.height-round(4*fontsize),'Position[α,δ]:  '+mainwindow.ra1.text+'    '+mainwindow.dec1.text);{}
 
 
     if date_avg<>'' then
-      date_to_jd(date_avg,0 {exposure}){convert date-AVG to jd_mid be using exposure=0}
+      date_to_jd(date_avg,0 {head.exposure}){convert date-AVG to jd_mid be using head.exposure=0}
     else
-      date_to_jd(date_obs,exposure);{convert date-OBS to jd_start and jd_mid}
+      date_to_jd(head.date_obs,head.exposure);{convert date-OBS to jd_start and jd_mid}
 
-    mainwindow.image1.Canvas.textout(round(0.5*fontsize),height2-round(2*fontsize),'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(exposure))+'s');{}
+    mainwindow.image1.Canvas.textout(round(0.5*fontsize),head.height-round(2*fontsize),'Midpoint date: '+JdToDate(jd_mid)+', total exp: '+inttostr(round(head.exposure))+'s');{}
   end;
   if ((freet) and (freetext<>'')) then
-    mainwindow.image1.Canvas.textout(width2 -round(fontsize) -mainwindow.image1.canvas.textwidth(freetext),height2-round(2*fontsize),freetext);{right bottom corner, right aligned}
+    mainwindow.image1.Canvas.textout(head.width -round(fontsize) -mainwindow.image1.canvas.textwidth(freetext),head.height-round(2*fontsize),freetext);{right bottom corner, right aligned}
 end;
 
 procedure plot_constellations;
@@ -4066,7 +4032,7 @@ var
   flip_horizontal, flip_vertical,outside: boolean;
   Save_Cursor:TCursor;
 begin
-  if ((fits_file=false) or (cd1_1=0) or (mainwindow.constellations1.checked=false)) then exit;
+  if ((fits_file=false) or (head.cd1_1=0) or (mainwindow.constellations1.checked=false)) then exit;
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -4085,45 +4051,45 @@ begin
   flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
   mainwindow.image1.Canvas.Pen.Mode:= pmXor;
-  mainwindow.image1.Canvas.Pen.width :=max(1, height2 div 1000);
+  mainwindow.image1.Canvas.Pen.width :=max(1, head.height div 1000);
   mainwindow.image1.Canvas.Pen.color:= $009000;
 
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   mainwindow.image1.Canvas.font.color:= clgray;
-  mainwindow.image1.Canvas.font.size:=max(8,height2 div 120);
+  mainwindow.image1.Canvas.font.size:=max(8,head.height div 120);
 
 
   for dia:=0 to length(constpos)-1 do  {constellations abreviations}
   begin
     ra2:=constpos[dia,0]*pi/12000;
     dec2:=constpos[dia,1]*pi/18000;
-    ang_sep(ra2,dec2,ra0,dec0, sep);
+    ang_sep(ra2,dec2,head.ra0,head.dec0, sep);
     if   sep<pi*0.6 then
     begin
       celestial_to_pixel(ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
-      if ((fitsx>0) and (fitsx<width2) and (fitsy>0) and (fitsy<height2)) then {within screen}
+      if ((fitsx>0) and (fitsx<head.width) and (fitsy>0) and (fitsy<head.height)) then {within screen}
       begin
-        if flip_horizontal then x1:=round((width2-1)-(fitsX-1)) else x1:=round(fitsX-1);
-        if flip_vertical=false then y1:=round((height2-1)-(fitsY-1)) else y1:=round(fitsY-1);
+        if flip_horizontal then x1:=round((head.width-1)-(fitsX-1)) else x1:=round(fitsX-1);
+        if flip_vertical=false then y1:=round((head.height-1)-(fitsY-1)) else y1:=round(fitsY-1);
         mainwindow.image1.Canvas.textout(x1,y1,Constshortname[dia]);
       end;
     end;
   end;
 
-  overshoot:=height2;
+  overshoot:=head.height;
   outside:=true;
   for dia:=0 to length(constellation)-1 {602} do  {constellations}
   begin
     ra2:=constellation[dia].ra*pi/12000;
     dec2:=constellation[dia].dec*pi/18000;
-    ang_sep(ra2,dec2,ra0,dec0, sep);
+    ang_sep(ra2,dec2,head.ra0,head.dec0, sep);
     if   sep<pi*0.6 then
     begin
       celestial_to_pixel(ra2,dec2, fitsX,fitsY);{ra,dec to fitsX,fitsY}
-      if ((fitsx>-overshoot) and (fitsx<width2+overshoot) and (fitsy>-overshoot) and (fitsy<height2+overshoot)) then {within screen}
+      if ((fitsx>-overshoot) and (fitsx<head.width+overshoot) and (fitsy>-overshoot) and (fitsy<head.height+overshoot)) then {within screen}
       begin
-        if flip_horizontal then x1:=round((width2-1)-(fitsX-1)) else x1:=round(fitsX-1);
-        if flip_vertical=false then y1:=round((height2-1)-(fitsY-1)) else y1:=round(fitsY-1);
+        if flip_horizontal then x1:=round((head.width-1)-(fitsX-1)) else x1:=round(fitsX-1);
+        if flip_vertical=false then y1:=round((head.height-1)-(fitsY-1)) else y1:=round(fitsY-1);
 
         if ((constellation[dia].dm=-2) or (outside)) then
           mainwindow.image1.Canvas.moveto(x1,y1)
@@ -4172,7 +4138,7 @@ var ra_values  : array[0..20] of double =  {nice rounded RA steps in 24 hr syste
      (1/48));{step RA 00:00:05}
 
 begin
-  if ((fits_file=false) or (cd1_1=0) or (mainwindow.grid1.checked=false)) then exit;
+  if ((fits_file=false) or (head.cd1_1=0) or (mainwindow.grid1.checked=false)) then exit;
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -4191,14 +4157,14 @@ begin
   flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
   mainwindow.image1.Canvas.Pen.Mode:= pmXor;
-  mainwindow.image1.Canvas.Pen.width :=max(1,trunc(height2/2000));
+  mainwindow.image1.Canvas.Pen.width :=max(1,trunc(head.height/2000));
   mainwindow.image1.Canvas.Pen.color:= $909000;
 
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   mainwindow.image1.Canvas.font.color:= clgray;
   mainwindow.image1.Canvas.font.size:=8;
 
-  range:=cdelt2*sqrt(sqr(width2/2)+sqr(height2/2));{range in degrees, FROM CENTER}
+  range:=head.cdelt2*sqrt(sqr(head.width/2)+sqr(head.height/2));{range in degrees, FROM CENTER}
 
   {calculate DEC step size}
   if range>16 then
@@ -4241,7 +4207,7 @@ begin
   end;
 
   {calculate RA step size}
-  step2:=min(45,step/(cos(dec0)+0.000001)); {exact value for stepRA, but not well rounded}
+  step2:=min(45,step/(cos(head.dec0)+0.000001)); {exact value for stepRA, but not well rounded}
   k:=0;
   repeat {select nice rounded values for ra_step}
     stepRA:=ra_values[k];
@@ -4249,8 +4215,8 @@ begin
   until ((stepRA<=step2) or (k>=length(ra_values)));{repeat until comparible value is found in ra_values}
 
   {round image centers}
-  centra:=stepRA*round(ra0*180/(pi*stepRA)); {rounded image centers}
-  centdec:=step*round(dec0*180/(pi*step));
+  centra:=stepRA*round(head.ra0*180/(pi*stepRA)); {rounded image centers}
+  centdec:=step*round(head.dec0*180/(pi*step));
 
   {plot DEC grid}
   i:=centRA-6*stepRA;
@@ -4258,16 +4224,16 @@ begin
     j:=max(centDEC-6*step,-90);
     repeat
       celestial_to_pixel(i*pi/180,j*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
-      if flip_horizontal then x1:=round((width2-1)-(fitsX-1)) else x1:=round(fitsX-1);
-      if flip_vertical=false then y1:=round((height2-1)-(fitsY-1)) else y1:=round(fitsY-1);
+      if flip_horizontal then x1:=round((head.width-1)-(fitsX-1)) else x1:=round(fitsX-1);
+      if flip_vertical=false then y1:=round((head.height-1)-(fitsY-1)) else y1:=round(fitsY-1);
 
 
       celestial_to_pixel(i*pi/180,(j+step)*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
-      if flip_horizontal then x2:=round((width2-1)-(fitsX-1)) else x2:=round(fitsX-1);
-      if flip_vertical=false then y2:=round((height2-1)-(fitsY-1)) else y2:=round(fitsY-1);
+      if flip_horizontal then x2:=round((head.width-1)-(fitsX-1)) else x2:=round(fitsX-1);
+      if flip_vertical=false then y2:=round((head.height-1)-(fitsY-1)) else y2:=round(fitsY-1);
 
-      if (  ((x1>=0) and (y1>=0) and (x1<width2)and (y1<height2)) or
-            ((x2>=0) and (y2>=0) and (x2<width2)and (y2<height2)) ) then
+      if (  ((x1>=0) and (y1>=0) and (x1<head.width)and (y1<head.height)) or
+            ((x2>=0) and (y2>=0) and (x2<head.width)and (y2<head.height)) ) then
       begin {line is partly within image1. Strictly not necessary but more secure}
         if ((abs(i-centRA)<0.00001) or (abs(j-centDEC)<0.00001)) then
         begin
@@ -4290,14 +4256,14 @@ begin
     i:=centRA-stepRA*6;
     repeat
       celestial_to_pixel(i*pi/180,j*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
-      if flip_horizontal then x1:=round((width2-1)-(fitsX-1)) else x1:=round(fitsX-1);
-      if flip_vertical=false then y1:=round((height2-1)-(fitsY-1)) else y1:=round(fitsY-1);
+      if flip_horizontal then x1:=round((head.width-1)-(fitsX-1)) else x1:=round(fitsX-1);
+      if flip_vertical=false then y1:=round((head.height-1)-(fitsY-1)) else y1:=round(fitsY-1);
       celestial_to_pixel((i+step)*pi/180,j*pi/180, fitsX,fitsY);{ra,dec to fitsX,fitsY}
-      if flip_horizontal then x2:=round((width2-1)-(fitsX-1)) else x2:=round(fitsX-1);
-      if flip_vertical=false then y2:=round((height2-1)-(fitsY-1)) else y2:=round(fitsY-1);
+      if flip_horizontal then x2:=round((head.width-1)-(fitsX-1)) else x2:=round(fitsX-1);
+      if flip_vertical=false then y2:=round((head.height-1)-(fitsY-1)) else y2:=round(fitsY-1);
 
-      if (  ((x1>=0) and (y1>=0) and (x1<width2)and (y1<height2)) or
-            ((x2>=0) and (y2>=0) and (x2<width2)and (y2<height2)) ) then
+      if (  ((x1>=0) and (y1>=0) and (x1<head.width)and (y1<head.height)) or
+            ((x2>=0) and (y2>=0) and (x2<head.width)and (y2<head.height)) ) then
       begin {line is partly within image1. Strictly not necessary but more secure}
         mainwindow.image1.Canvas.moveto(x1,y1);
         mainwindow.image1.Canvas.lineto(x2,y2);
@@ -4328,58 +4294,58 @@ begin
   if flip_horizontal1.checked then right:= (right=false);{change rotation if flipped}
   if flip_vertical1.checked then   right:= (right=false);{change rotation if flipped}
 
-  setlength(img_temp,naxis3, height2,width2);{set length of image with swapped width and height}
+  setlength(img_temp,head.naxis3, head.height,head.width);{set length of image with swapped width and height}
 
-  for col:=0 to naxis3-1 do {do all colours}
+  for col:=0 to head.naxis3-1 do {do all colours}
   begin
-    For fitsY:=0 to (height2-1) do
-      for fitsX:=0 to (width2-1) do
+    For fitsY:=0 to (head.height-1) do
+      for fitsX:=0 to (head.width-1) do
       begin
-        if right=false then img_temp[col,(height2-1)-fitsY,fitsX]:=img_loaded[col,fitsX,fitsY]
-                       else img_temp[col, fitsY,(width2-1)-fitsX]:=img_loaded[col,fitsX,fitsY];
+        if right=false then img_temp[col,(head.height-1)-fitsY,fitsX]:=img_loaded[col,fitsX,fitsY]
+                       else img_temp[col, fitsY,(head.width-1)-fitsX]:=img_loaded[col,fitsX,fitsY];
       end;
   end;
   {swap width and height}
-  dum:=width2;
-  width2:=height2;
-  height2:=dum;
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+  dum:=head.width;
+  head.width:=head.height;
+  head.height:=dum;
+  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
 
   img_loaded:=nil;
   img_loaded:=img_temp;
 
-  if cd1_1<>0 then {update solution for rotation}
+  if head.cd1_1<>0 then {update solution for rotation}
   begin
     if right then {rotate right}
     begin
-      dummy:=cd1_1; cd1_1:=cd1_2; cd1_2:=-dummy;
-      dummy:=cd2_1; cd2_1:=cd2_2; cd2_2:=-dummy;
+      dummy:=head.cd1_1; head.cd1_1:=head.cd1_2; head.cd1_2:=-dummy;
+      dummy:=head.cd2_1; head.cd2_1:=head.cd2_2; head.cd2_2:=-dummy;
 
-      dummy:=crpix1; crpix1:=crpix2; crpix2:=height2-dummy;
+      dummy:=head.crpix1; head.crpix1:=head.crpix2; head.crpix2:=head.height-dummy;
     end
     else
     begin {rotate left}
-      dummy:=cd1_1; cd1_1:=-cd1_2; cd1_2:=dummy;
-      dummy:=cd2_1; cd2_1:=-cd2_2; cd2_2:=dummy;
-      dummy:=crpix1; crpix1:=width2-crpix2; crpix2:=dummy;
+      dummy:=head.cd1_1; head.cd1_1:=-head.cd1_2; head.cd1_2:=dummy;
+      dummy:=head.cd2_1; head.cd2_1:=-head.cd2_2; head.cd2_2:=dummy;
+      dummy:=head.crpix1; head.crpix1:=head.width-head.crpix2; head.crpix2:=dummy;
     end;
-    new_to_old_WCS;{convert new style FITS to old style, calculate crota1,crota2,cdelt1,cdelt2}
+    new_to_old_WCS;{convert new style FITS to old style, calculate head.crota1,head.crota2,head.cdelt1,head.cdelt2}
 
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
 
 
-    update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
-    update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
+    update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);
+    update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
 
-    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);
-    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);
+    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);
+    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
 
-    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
-    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
+    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
+    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
 
     remove_key('ROWORDER',false{all});{just remove to prevent debayer confusion}
     add_text   ('HISTORY   ','Rotated 90 degrees.');
@@ -4436,8 +4402,8 @@ begin
      (shape.visible=false)) then
      exit;
 
-  xF:=(fitsX-0.5)*(mainwindow.image1.width/width2)-0.5; //inverse of  fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at 1}
-  yF:=-(fitsY-height2-0.5)*(mainwindow.image1.height/height2)-0.5; //inverse of fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at 1}
+  xF:=(fitsX-0.5)*(mainwindow.image1.width/head.width)-0.5; //inverse of  fitsx:=0.5+(0.5+xf)/(image1.width/head.width);{starts at 1}
+  yF:=-(fitsY-head.height-0.5)*(mainwindow.image1.height/head.height)-0.5; //inverse of fitsy:=0.5+head.height-(0.5+yf)/(image1.height/head.height); {from bottom to top, starts at 1}
 
   if mainwindow.Flip_horizontal1.Checked then x:=mainwindow.image1.width-xF else x:=xF;
   if mainwindow.flip_vertical1.Checked then y:=mainwindow.image1.height-yF else y:=yF;
@@ -4448,9 +4414,9 @@ begin
 
   with shape do
   begin
-     hh:=max(minimum,round(h*mainwindow.image1.height/height2));
+     hh:=max(minimum,round(h*mainwindow.image1.height/head.height));
      height:=hh;
-     ww:= max(minimum,round(w*mainwindow.image1.width/width2));
+     ww:= max(minimum,round(w*mainwindow.image1.width/head.width));
      width:=ww;
      ll:=round(mainwindow.image1.left + x - width/2);
      left:=ll;
@@ -4611,8 +4577,8 @@ begin
 
   if ((abs(stopX-startX)>2)and (abs(stopY-starty)>2))=false then {do statistics on whole image}
   begin
-    startx:=0;stopX:=width2-1;
-    starty:=0;stopY:=height2-1;
+    startx:=0;stopX:=head.width-1;
+    starty:=0;stopY:=head.height-1;
   end;
 
   if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
@@ -4631,7 +4597,7 @@ begin
   minstep:=99999;
   {measure the median of the suroundings}
 
-  for col:=0 to naxis3-1 do  {do all colours}
+  for col:=0 to head.naxis3-1 do  {do all colours}
   begin
     local_sd(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,img_loaded, {var} sd,mean,iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
@@ -4674,7 +4640,7 @@ begin
 
     if col=0 then range:=maximum-minimum;
 
-    if naxis3>1 then if col=0 then info_message:=info_message+'Red:'+#10;
+    if head.naxis3>1 then if col=0 then info_message:=info_message+'Red:'+#10;
     if col=1 then info_message:=info_message+#10+#10+'Green:'+#10;
     if col=2 then info_message:=info_message+#10+#10+'Blue:'+#10;
 
@@ -4688,12 +4654,12 @@ begin
                                  'M :   '+floattostrf(maximum,ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter))+' x)'+#10+
                                  '≥64E3 :  '+inttostr(round(saturated));
   end;
-  if ((abs(stopX-startx)>=width2-1) and (most_common<>0){prevent division by zero}) then
+  if ((abs(stopX-startx)>=head.width-1) and (most_common<>0){prevent division by zero}) then
   begin
     mc_1:=mode(img_loaded,0,          0{x1},      50{x2},           0{y1},       50{y2},32000);{for this area get most common value equals peak in histogram}
-    mc_2:=mode(img_loaded,0,          0{x1},      50{x2},height2-1-50{y1},height2-1{y2},32000);
-    mc_3:=mode(img_loaded,0,width2-1-50{x1},width2-1{x2},height2-1-50{y1},height2-1{y2},32000);
-    mc_4:=mode(img_loaded,0,width2-1-50{x1},width2-1{x2},           0{y1},50       {y2},32000);
+    mc_2:=mode(img_loaded,0,          0{x1},      50{x2},head.height-1-50{y1},head.height-1{y2},32000);
+    mc_3:=mode(img_loaded,0,head.width-1-50{x1},head.width-1{x2},head.height-1-50{y1},head.height-1{y2},32000);
+    mc_4:=mode(img_loaded,0,head.width-1-50{x1},head.width-1{x2},           0{y1},50       {y2},32000);
 
     info_message:=info_message+#10+#10+'Vignetting [Mo corners/Mo]: '+inttostr(round(100*(1-(mc_1+mc_2+mc_3+mc_4)/(most_common*4))))+'%';
   end;
@@ -4722,10 +4688,10 @@ end;
 
 procedure update_statusbar_section5;{update section 5 with image dimensions in degrees}
 begin
-  if cdelt2<>0 then
+  if head.cdelt2<>0 then
   begin
-    mainwindow.statusbar1.panels[6].text:=floattostrF(width2*abs(cdelt2),ffFixed,0,2)+' x '+floattostrF(height2*abs(cdelt2),ffFixed,0,2)+' °';{give image dimensions and bit per pixel info}
-    stackmenu1.search_fov1.text:=floattostrF(height2*abs(cdelt2),ffFixed,0,2); {negative cdelt2 are produced by PI}
+    mainwindow.statusbar1.panels[6].text:=floattostrF(head.width*abs(head.cdelt2),ffFixed,0,2)+' x '+floattostrF(head.height*abs(head.cdelt2),ffFixed,0,2)+' °';{give image dimensions and bit per pixel info}
+    stackmenu1.search_fov1.text:=floattostrF(head.height*abs(head.cdelt2),ffFixed,0,2); {negative head.cdelt2 are produced by PI}
   end
   else mainwindow.statusbar1.panels[6].text:='';
 end;
@@ -4838,16 +4804,16 @@ begin
   mainwindow.error_label1.visible:=(fits=false);
 
   mainwindow.SaveFITSwithupdatedheader1.Enabled:=((fits) and (fits_file_name(filename2)) and (fileexists(filename2)));{menu disable, no file available to update header}
-  mainwindow.saturation_factor_plot1.enabled:=naxis3=3;{colour};
+  mainwindow.saturation_factor_plot1.enabled:=head.naxis3=3;{colour};
   mainwindow.Polynomial1Change(nil);{update color}
 
-  update_menu_related_to_solver((fits) and (cd1_1<>0));
+  update_menu_related_to_solver((fits) and (head.cd1_1<>0));
   stackmenu1.resize_factor1Change(nil);{update dimensions binning menu}
-  stackmenu1.test_pattern1.Enabled:=naxis3=1;{mono}
+  stackmenu1.test_pattern1.Enabled:=head.naxis3=1;{mono}
 
   stackmenu1.focallength1.Text:=floattostrf(focallen,ffgeneral, 4, 4);
   stackmenu1.pixelsize1.text:=floattostrf(xpixsz{*XBINNING},ffgeneral, 4, 4);
-  stackmenu1.binning1.caption:=inttostr(width2)+'x'+inttostr(height2)+' pixels, binned '+floattostrf(Xbinning,ffgeneral,0,0)+'x'+floattostrf(Ybinning,ffgeneral,0,0);
+  stackmenu1.binning1.caption:=inttostr(head.width)+'x'+inttostr(head.height)+' pixels, binned '+floattostrf(Xbinning,ffgeneral,0,0)+'x'+floattostrf(Ybinning,ffgeneral,0,0);
   stackmenu1.focallength1Exit(nil); {update calculator}
 end;
 
@@ -4870,10 +4836,10 @@ begin
   {solve internal}
   mainwindow.caption:='Solving.......';
   save1.Enabled:=solve_image(img_loaded,false {get hist, is already available});{match between loaded image and star database}
-  if cd1_1<>0 then
+  if head.cd1_1<>0 then
   begin
-    mainwindow.ra1.text:=prepare_ra(ra0,' ');{show center of image}
-    mainwindow.dec1.text:=prepare_dec(dec0,' ');
+    mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{show center of image}
+    mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
     {$IfDef Darwin}// {MacOS}
       //ra1change(nil);{OSX doesn't trigger an event, so ra_label is not updated}
       //mainwindow.dec1change(nil);
@@ -4914,9 +4880,9 @@ procedure Tmainwindow.remove_above1Click(Sender: TObject);
 begin
   {calculate in array coordinates}
   {startY is already defined by mousedown}
-  if flip_vertical1.checked=false then stopY:=0 else stopY:=height2-1;
+  if flip_vertical1.checked=false then stopY:=0 else stopY:=head.height-1;
   startx:=0;
-  stopX:=width2-1;
+  stopX:=head.width-1;
   mainwindow.CropFITSimage1Click(nil);
  end;
 
@@ -4925,9 +4891,9 @@ procedure Tmainwindow.remove_below1Click(Sender: TObject);
 begin
   {calculate in array coordinates}
   {startY is already defined by mousedown}
-  if flip_vertical1.checked then stopY:=0 else stopY:=height2-1;
+  if flip_vertical1.checked then stopY:=0 else stopY:=head.height-1;
   startx:=0;
-  stopX:=width2-1;
+  stopX:=head.width-1;
   mainwindow.CropFITSimage1Click(nil);
 end;
 
@@ -4935,9 +4901,9 @@ procedure Tmainwindow.remove_left1Click(Sender: TObject);
 begin
   {calculate in array coordinates}
   starty:=0;{no change in y}
-  stopY:=height2-1;
+  stopY:=head.height-1;
   {startx is already defined by mousedown}
-  if flip_horizontal1.checked then stopX:=0 else stopX:=width2-1;
+  if flip_horizontal1.checked then stopX:=0 else stopX:=head.width-1;
   mainwindow.CropFITSimage1Click(nil);
 end;
 
@@ -4945,9 +4911,9 @@ procedure Tmainwindow.remove_right1Click(Sender: TObject);
 begin
   {calculate in array coordinates}
   starty:=0;{no change in y}
-  stopY:=height2-1;
+  stopY:=head.height-1;
   {startx is already defined by mousedown}
-  if flip_horizontal1.checked=false then stopX:=0 else stopX:=width2-1;
+  if flip_horizontal1.checked=false then stopX:=0 else stopX:=head.width-1;
   mainwindow.CropFITSimage1Click(nil);
 end;
 
@@ -4979,18 +4945,18 @@ var
   get_green                         : boolean;
   val                               : single;
 begin
-  if load_fits(filename7,true {light},true,true {update memo},0,img_loaded)=false then
+  if load_fits(filename7,true {light},true,true {update memo},0,head,img_loaded)=false then
   begin
     beep; result:='';
     exit;
   end;
 
-  if ((pos('TR',filter_name)=0) and (pos('TG',filter_name)=0) and (pos('TB',filter_name)=0) and (naxis3=1)) then
+  if ((pos('TR',head.filter_name)=0) and (pos('TG',head.filter_name)=0) and (pos('TB',head.filter_name)=0) and (head.naxis3=1)) then
   begin
 
     ratio:=0.5;
-    w:=trunc(width2/2);  {half size}
-    h:=trunc(height2/2);
+    w:=trunc(head.width/2);  {half size}
+    h:=trunc(head.height/2);
 
     setlength(img_temp11,1,w,h);
 
@@ -5056,34 +5022,34 @@ begin
         img_temp11[0,fitsX,fitsY]:=val;
       end;
 
-    width2:=w;
-    height2:=h;
+    head.width:=w;
+    head.height:=h;
 
-    update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-    update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-
-
-    update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-    update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+    update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
+    update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
 
 
+    update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
+    update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
 
-    if crpix1<>0 then begin crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
-    if crpix2<>0 then begin crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
 
-    if cdelt1<>0 then begin cdelt1:=cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
-    if cdelt2<>0 then begin cdelt2:=cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
 
-    if cd1_1<>0 then
+    if head.crpix1<>0 then begin head.crpix1:=head.crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);end;
+    if head.crpix2<>0 then begin head.crpix2:=head.crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);end;
+
+    if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);end;
+    if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);end;
+
+    if head.cd1_1<>0 then
     begin
-      cd1_1:=cd1_1/ratio;
-      cd1_2:=cd1_2/ratio;
-      cd2_1:=cd2_1/ratio;
-      cd2_2:=cd2_2/ratio;
-      update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
-      update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
-      update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
-      update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+      head.cd1_1:=head.cd1_1/ratio;
+      head.cd1_2:=head.cd1_2/ratio;
+      head.cd2_1:=head.cd2_1/ratio;
+      head.cd2_2:=head.cd2_2/ratio;
+      update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
+      update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
+      update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
+      update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
     end;
 
     XBINNING:=XBINNING/ratio;
@@ -5113,7 +5079,7 @@ begin
   end
   else
   begin
-    if naxis3>1 then memo2_message('Skipped COLOUR image '+ filename7+', Raw red, green or blue pixel extraction is only possible for raw images.')
+    if head.naxis3>1 then memo2_message('Skipped COLOUR image '+ filename7+', Raw red, green or blue pixel extraction is only possible for raw images.')
     else
     memo2_message('Skipped image '+ filename7+', FILTER indicates earlier extraction!');
   end;
@@ -5172,9 +5138,9 @@ begin
       mainwindow.caption:=opendialog1.filename;
       application.processmessages;{show file selection}
       {load image}
-      if load_fits(opendialog1.filename,true {light},true,true {update memo},0,img_loaded) then
+      if load_fits(opendialog1.filename,true {light},true,true {update memo},0,head,img_loaded) then
       begin
-        if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
+        if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
         plot_fits(mainwindow.image1,false {re_center},true);
       end;
@@ -5232,7 +5198,7 @@ begin
     a:=(stopX-1-startx)/2;
     b:=(stopY-1-startY)/2;
 
-    for k:=0 to naxis3-1 do {do all colors}
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
 
       mode_left_bottom:=mode(img_loaded,k,startx-bsize,startx+bsize,starty-bsize,starty+bsize,32000);{for this area get most common value equals peak in histogram}
@@ -5460,12 +5426,12 @@ procedure old_to_new_WCS;{ convert old WCS to new}
 var
    sign  : integer;
 begin
-  cd1_1:=cdelt1*cos(crota2*pi/180); {note 2013 should be crota1 if skewed}
-  if cdelt1>=0 then sign:=+1 else sign:=-1;
-  cd1_2:=abs(cdelt2)*sign*sin(crota2*pi/180);{note 2013 should be crota1 if skewed}
-  if cdelt2>=0 then sign:=+1 else sign:=-1;
-  cd2_1:=-abs(cdelt1)*sign*sin(crota2*pi/180);
-  cd2_2:= cdelt2*cos(crota2*pi/180);
+  head.cd1_1:=head.cdelt1*cos(head.crota2*pi/180); {note 2013 should be head.crota1 if skewed}
+  if head.cdelt1>=0 then sign:=+1 else sign:=-1;
+  head.cd1_2:=abs(head.cdelt2)*sign*sin(head.crota2*pi/180);{note 2013 should be head.crota1 if skewed}
+  if head.cdelt2>=0 then sign:=+1 else sign:=-1;
+  head.cd2_1:=-abs(head.cdelt1)*sign*sin(head.crota2*pi/180);
+  head.cd2_2:= head.cdelt2*cos(head.crota2*pi/180);
 end;
 
 
@@ -5474,13 +5440,13 @@ var
    sign  : integer;
 begin
   { convert to old WCS. Based on draft 1988 , do not use conversion article Alain Klotz, give sometimes zero CROTA}
-  if (cd1_1*cd2_2-cd1_2*cd2_1)>=0 then sign:=+1 else sign:=-1;
+  if (head.cd1_1*head.cd2_2-head.cd1_2*head.cd2_1)>=0 then sign:=+1 else sign:=-1;
 
-  cdelt1:=sqrt(sqr(cd1_1)+sqr(cd2_1))*sign;{if no old wcs header use cd2_2 of new WCS style for pixel size}
-  cdelt2:=sqrt(sqr(cd1_2)+sqr(cd2_2));{if no old wcs header use cd2_2 of new WCS style for pixel size}
+  head.cdelt1:=sqrt(sqr(head.cd1_1)+sqr(head.cd2_1))*sign;{if no old wcs header use head.cd2_2 of new WCS style for pixel size}
+  head.cdelt2:=sqrt(sqr(head.cd1_2)+sqr(head.cd2_2));{if no old wcs header use head.cd2_2 of new WCS style for pixel size}
 
-  crota1:= +arctan2(sign*cd1_2,cd2_2)*180/pi;
-  crota2:= -arctan2(cd2_1,sign*cd1_1)*180/pi;  //  crota2old := (atn_2(sign*cd1_1,cd2_1)-pi/2)*180/pi;
+  head.crota1:= +arctan2(sign*head.cd1_2,head.cd2_2)*180/pi;
+  head.crota2:= -arctan2(head.cd2_1,sign*head.cd1_1)*180/pi;  //  crota2old := (atn_2(sign*head.cd1_1,head.cd2_1)-pi/2)*180/pi;
 end;
 
 
@@ -5506,11 +5472,11 @@ begin
      else exit;
   end;
 
-  setlength(img_temp2,3,width2,height2);{set length of image array color}
+  setlength(img_temp2,3,head.width,head.height);{set length of image array color}
 
-  for y := 1 to height2-2 do   {-2 = -1 -1}
+  for y := 1 to head.height-2 do   {-2 = -1 -1}
   begin
-    for x:=1 to width2-2 do
+    for x:=1 to head.width-2 do
     begin
      {http://cilab.knu.ac.kr/English/research/Color/Interpolation.htm ,  Bilinear interpolation}
 
@@ -5549,8 +5515,8 @@ begin
 
   img:=img_temp2;
   img_temp2:=nil;{free temp memory}
-  naxis3:=3;{now three colors}
-  naxis:=3; {from 2 to 3 dimensions}
+  head.naxis3:=3;{now three colors}
+  head.naxis:=3; {from 2 to 3 dimensions}
 end;
 
 
@@ -5561,12 +5527,12 @@ var
     img_temp2 : image_array;
 begin
 
-  setlength(img_temp2,3,width2,height2);{set length of image array color}
+  setlength(img_temp2,3,head.width,head.height);{set length of image array color}
 
 
-  for y := 2 to height2-2 do   {-2 = -1 -1}
+  for y := 2 to head.height-2 do   {-2 = -1 -1}
   begin
-    for x:=2 to width2-2 do
+    for x:=2 to head.width-2 do
     begin
      {http://cilab.knu.ac.kr/English/research/Color/Interpolation.htm ,  Bilinear interpolation}
 
@@ -5636,8 +5602,8 @@ begin
 
   img:=img_temp2;
   img_temp2:=nil;{free temp memory}
-  naxis3:=3;{now three colors}
-  naxis:=3; {from 2 to 3 dimensions}
+  head.naxis3:=3;{now three colors}
+  head.naxis:=3; {from 2 to 3 dimensions}
 end;
 
 procedure demosaic_astrosimple(var img:image_array;pattern: integer);{Spread each colour pixel to 2x2. Works well for astro oversampled images. Idea by Han.k}
@@ -5655,17 +5621,17 @@ begin
      else exit;
   end;
 
-  setlength(img_temp2,3,width2,height2);{set length of image array color}
+  setlength(img_temp2,3,head.width,head.height);{set length of image array color}
 
-  for y := 0 to height2-2 do   {-2 = -1 -1}
-    for x:=0 to width2-2 do
+  for y := 0 to head.height-2 do   {-2 = -1 -1}
+    for x:=0 to head.width-2 do
   begin {clear green}
       img_temp2[1,x,y]:=0;
   end;
 
-  for y := 0 to height2-2 do   {-2 = -1 -1}
+  for y := 0 to head.height-2 do   {-2 = -1 -1}
   begin
-    for x:=0 to width2-2 do
+    for x:=0 to head.width-2 do
     begin
       try
       green_even:= ( (odd(x+1+offsetX)) and (odd(y+1+offsetY)) );{even(i) function is odd(i+1), even is here for array position not fits position}
@@ -5706,8 +5672,8 @@ begin
   end;{y loop}
   img:=img_temp2;
   img_temp2:=nil;{free temp memory}
-  naxis3:=3;{now three colors}
-  naxis:=3; {from 2 to 3 dimensions}
+  head.naxis3:=3;{now three colors}
+  head.naxis:=3; {from 2 to 3 dimensions}
 end;
 
 {not used}
@@ -5726,17 +5692,17 @@ begin
      else exit;
   end;
 
-  setlength(img_temp2,3,width2,height2);{set length of image array color}
+  setlength(img_temp2,3,head.width,head.height);{set length of image array color}
 
-  for y := 0 to height2-2 do   {-2 = -1 -1}
-    for x:=0 to width2-2 do
+  for y := 0 to head.height-2 do   {-2 = -1 -1}
+    for x:=0 to head.width-2 do
   begin {clear green}
       img_temp2[1,x,y]:=0;
   end;
 
-  for y := 0 to height2-2 do   {-2 = -1 -1}
+  for y := 0 to head.height-2 do   {-2 = -1 -1}
   begin
-    for x:=0 to width2-2 do
+    for x:=0 to head.width-2 do
     begin
       try
       green_even:= ( (odd(x+1+offsetX)) and (odd(y+1+offsetY)) );{even(i) function is odd(i+1), even is here for array position not fits position}
@@ -5787,8 +5753,8 @@ begin
   end;{y loop}
   img:=img_temp2;
   img_temp2:=nil;{free temp memory}
-  naxis3:=3;{now three colors}
-  naxis:=3; {from 2 to 3 dimensions}
+  head.naxis3:=3;{now three colors}
+  head.naxis:=3; {from 2 to 3 dimensions}
 end;
 
 
@@ -5807,12 +5773,12 @@ begin
      3: begin offsetx:=1; offsety:=1; end;
      else exit;
   end;
-  setlength(img_temp2,3,width2,height2);{set length of image array color}
+  setlength(img_temp2,3,head.width,head.height);{set length of image array color}
   {calculate mean background value}
   count:=0;
   bg:=0;
-  for y:= 10 to (height2-10) div 100  do
-  for x:=10 to (width2-10) div 100 do
+  for y:= 10 to (head.height-10) div 100  do
+  for x:=10 to (head.width-10) div 100 do
   begin
     bg:=bg+img[0,x  ,y  ]+
     img[0,x+1,y  ]+
@@ -5825,9 +5791,9 @@ begin
   signal:=0.5*bg;     {2 values   140,100  average is 120, delta is 20/120 is 16.7%}
   signal2:=signal/1.67; {4 values   140,100,100,100  average is 110, delta 30/110 is 27.2%, so factor 1.67 difference}
 
-  for y := 1 to height2-2 do   {-2 = -1 -1}
+  for y := 1 to head.height-2 do   {-2 = -1 -1}
   begin
-    for x:=1 to width2-2 do
+    for x:=1 to head.width-2 do
     begin
 
       try
@@ -5968,8 +5934,8 @@ begin
 
   img:=img_temp2;
   img_temp2:=nil;{free temp memory}
-  naxis3:=3;{now three colors}
-  naxis:=3; {from 2 to 3 dimensions}
+  head.naxis3:=3;{now three colors}
+  head.naxis:=3; {from 2 to 3 dimensions}
 end;
 
 
@@ -5991,14 +5957,14 @@ begin
      else exit;
   end;
 
-  setlength(img_temp2,3,width2,height2);{set length of image array color}
+  setlength(img_temp2,3,head.width,head.height);{set length of image array color}
 
   bg:=0;
   counter:=0;{prevent divide by zero for fully saturated images}
 
-  for y := 1 to height2-2 do   {-2 = -1 -1}
+  for y := 1 to head.height-2 do   {-2 = -1 -1}
   begin
-    for x:=1 to width2-2 do
+    for x:=1 to head.width-2 do
     begin
 
       try
@@ -6138,8 +6104,8 @@ begin
 
     bg:=bg/counter; {background}
     sat_counter:=0;
-    for fitsY:=0 to height2-1 do
-    for fitsX:=0 to width2-1 do
+    for fitsY:=0 to head.height-1 do
+    for fitsX:=0 to head.width-1 do
     if img_temp2[1,fitsX,fitsY]=$FFFFFF {marker saturated} then
     begin
       colred:=0;
@@ -6157,7 +6123,7 @@ begin
            y2:=fitsY+y;
 
 
-           if ((x2>=0) and (x2<width2) and (y2>=0) and (y2<height2) ) then {within image}
+           if ((x2>=0) and (x2<head.width) and (y2>=0) and (y2<head.height) ) then {within image}
            begin
              sqr_dist:=x*x+y*y;
              if sqr_dist<=step*step then {circle only}
@@ -6200,18 +6166,18 @@ begin
   end{not full saturated}
   else
   begin {fully saturated image}
-    for fitsY:=0 to height2-1 do
-    for fitsX:=0 to width2-1 do
+    for fitsY:=0 to head.height-1 do
+    for fitsX:=0 to head.width-1 do
     begin
       img[0,fitsX  ,  fitsY  ]:=saturation;
       img[1,fitsX  ,  fitsY  ]:=saturation;
       img[2,fitsX  ,  fitsY  ]:=saturation;
     end;
   end;
-  if sat_counter/(width2*height2)>0.1 then memo2_message('█ █ █ █ █ █  More than 10% of the image is saturated and will give poor results!! Try demosaic method AstroSimple and exposure shorter next time. █ █ █ █ █ █ ');
+  if sat_counter/(head.width*head.height)>0.1 then memo2_message('█ █ █ █ █ █  More than 10% of the image is saturated and will give poor results!! Try demosaic method AstroSimple and exposure shorter next time. █ █ █ █ █ █ ');
   img_temp2:=nil;{free temp memory}
-  naxis3:=3;{now three colors}
-  naxis:=3; {from 2 to 3 dimensions}
+  head.naxis3:=3;{now three colors}
+  head.naxis:=3; {from 2 to 3 dimensions}
 end;
 
 
@@ -6222,8 +6188,8 @@ begin
   Application.ProcessMessages;
   if esc_pressed then begin exit;end;
 
-  w:=trunc(width2/2);  {half size}
-  h:=trunc(height2/2);
+  w:=trunc(head.width/2);  {half size}
+  h:=trunc(head.height/2);
 
   for fitsY:=0 to h-1 do {go through all 2x2 and replace and if saturated replace with previous 2x2}
    for fitsX:=1 to w-1  do
@@ -6296,9 +6262,9 @@ begin
   if stackmenu1.bayer_pattern1.Text='' then memo2_message('█ █ █ █ █ █ Update required. Please test and set Bayer pattern in tab "Stack method"! █ █ █ █ █ █ ');
   if pos('AstroC',stackmenu1.demosaic_method1.text)<>0  then
   begin
-    if datamax_org>16384 then demosaic_astroC_bilinear_interpolation(img,65535 div 2,get_demosaic_pattern){16 bit image. Make from sensor bayer pattern the three colors}
+    if head.datamax_org>16384 then demosaic_astroC_bilinear_interpolation(img,65535 div 2,get_demosaic_pattern){16 bit image. Make from sensor bayer pattern the three colors}
     else
-    if datamax_org>4096 then demosaic_astroC_bilinear_interpolation(img,16383 div 2,get_demosaic_pattern){14 bit image. Make from sensor bayer pattern the three colors}
+    if head.datamax_org>4096 then demosaic_astroC_bilinear_interpolation(img,16383 div 2,get_demosaic_pattern){14 bit image. Make from sensor bayer pattern the three colors}
     else
     demosaic_astroC_bilinear_interpolation(img,4095 div 2,get_demosaic_pattern){12 bit image. Make from sensor bayer pattern the three colors}
   end
@@ -6439,8 +6405,8 @@ begin
   try
     with bitmap do
     begin
-      width := width2;
-      height := height2;
+      width := head.width;
+      height := head.height;
         // Unclear why this must follow width/height to work correctly.
         // If PixelFormat precedes width/height, bitmap will always be black.
       bitmap.PixelFormat := pf24bit;
@@ -6455,16 +6421,16 @@ begin
   cwhite:=mainwindow.maximum1.position;
   if cwhite<=cblack then cwhite:=cblack+1;
 
-  for i:=0 to height2-1 do
+  for i:=0 to head.height-1 do
   begin
-    pixelrow := Bitmap.ScanLine[(height2-1)-i];{height2-1)-i, FITS count from bottom, windows from top}
-    for j:=0 to width2-1 do
+    pixelrow := Bitmap.ScanLine[(head.height-1)-i];{head.height-1)-i, FITS count from bottom, windows from top}
+    for j:=0 to head.width-1 do
     begin
 
       col:=round(img_loaded[0,j,i]);
       colrr:=(col-cblack)/(cwhite-cblack);{scale to 1}
 
-      if naxis3>=2 then {at least two colours}
+      if head.naxis3>=2 then {at least two colours}
       begin
         col:=round(img_loaded[1,j,i]);
         colgg:=(col-cblack)/(cwhite-cblack);{scale to 1}
@@ -6472,7 +6438,7 @@ begin
       else
       colgg:=colrr;
 
-      if naxis3>=3 then {at least three colours}
+      if head.naxis3>=3 then {at least three colours}
       begin
         col:=round(img_loaded[2,j,i]);
         colbb:=(col-cblack)/(cwhite-cblack);{scale to 1}
@@ -6553,7 +6519,7 @@ begin
     img.left:=0;
 
   end;
-  img.width:=round(img.height*width2/height2); {lock image aspect always for case a image with a different is clicked on in stack menu}
+  img.width:=round(img.height*head.width/head.height); {lock image aspect always for case a image with a different is clicked on in stack menu}
 
 
   if img=mainwindow.image1 then {plotting to mainwindow?}
@@ -6562,7 +6528,7 @@ begin
     if mainwindow.Flip_horizontal1.Checked then mainwindow.Flip_horizontal1Click(nil);
     if mainwindow.flip_vertical1.Checked then mainwindow.flip_vertical1Click(nil);
 
-    plot_north; {draw arrow or clear indication position north depending on value cd1_1}
+    plot_north; {draw arrow or clear indication position north depending on value head.cd1_1}
     plot_north_on_image;
     plot_large_north_indicator;
     if mainwindow.add_marker_position1.checked then
@@ -6572,7 +6538,7 @@ begin
     plot_text;
     if ((annotated) and (mainwindow.annotations_visible1.checked)) then plot_annotations(false {use solution vectors},false);
 
-    mainwindow.statusbar1.panels[5].text:=inttostr(width2)+' x '+inttostr(height2)+' x '+inttostr(naxis3)+'   '+inttostr(nrbits)+' BPP';{give image dimensions and bit per pixel info}
+    mainwindow.statusbar1.panels[5].text:=inttostr(head.width)+' x '+inttostr(head.height)+' x '+inttostr(head.naxis3)+'   '+inttostr(nrbits)+' BPP';{give image dimensions and bit per pixel info}
     update_statusbar_section5;{update section 5 with image dimensions in degrees}
     mainwindow.statusbar1.panels[7].text:=''; {2020-2-15 moved from load_fits to plot_image. Clear any outstanding error}
 
@@ -6657,15 +6623,15 @@ begin
     if number_colors>2 then get_hist(2, img);{blue}
   end;
 
-  max_range:=round(min(datamax_org,65535)); {measured while loading, Prevent runtime error if datamax_org>65535}
+  max_range:=round(min(head.datamax_org,65535)); {measured while loading, Prevent runtime error if head.datamax_org>65535}
 
   case mainwindow.range1.itemindex of
     -1,0,1: above_R:=0.001;{low range}
        2,3: above_R:=0.003; {medium range}
        4,5: above_R:=0.01;  {high range}
-       6,7: begin minm:=round(datamin_org);maxm:=round(datamax_org)end;{6=range and 7=manual}
+       6,7: begin minm:=round(head.datamin_org);maxm:=round(head.datamax_org)end;{6=range and 7=manual}
        8: begin minm:=round(max_range*0.95); maxm:=round(max_range);  end;{Show saturation}
-       9: begin minm:=0; maxm:=65535;datamax_org:=65535; end;{max range, use datamin/max}
+       9: begin minm:=0; maxm:=65535;head.datamax_org:=65535; end;{max range, use datamin/max}
   end;
 
   {calculate peak values }
@@ -6696,7 +6662,7 @@ begin
     end;
   end;
 
-  hist_range:=round(min(datamax_org,2*maxm));{adapt histogram range}
+  hist_range:=round(min(head.datamax_org,2*maxm));{adapt histogram range}
   mainwindow.minimum1.max:= max(hist_range,1); {set minimum to 1 to prevent runtime failure for fully black image}
   mainwindow.maximum1.max:= max(hist_range,1);
 
@@ -8133,7 +8099,7 @@ begin
 
   if sender<>nil then {not from plot_fits, redraw required}
   begin
-    plot_north; {draw arrow or clear indication position north depending on value cd1_1}
+    plot_north; {draw arrow or clear indication position north depending on value head.cd1_1}
   end;
 end;
 
@@ -8159,13 +8125,13 @@ begin
 end;
 
 
-function extract_exposure_from_filename(filename8: string):integer; {try to extract exposure from filename}
+function extract_exposure_from_filename(filename8: string):integer; {try to extract head.exposure from filename}
 var
   exposure_str  :string;
   i,x,err      : integer;
   ch : char;
 begin
-  {try to reconstruct exposure time from filename}
+  {try to reconstruct head.exposure time from filename}
   result:=0;
   exposure_str:='';
   filename8:=uppercase(extractfilename(filename8));
@@ -8202,7 +8168,7 @@ var
   i,x,err   : integer;
   ch : char;
 begin
-  {try to reconstruct exposure time from filename}
+  {try to reconstruct head.exposure time from filename}
   result:=999;{unknow temperature}
   temp_str:='';
   filename8:=uppercase(extractfilename(filename8));
@@ -8471,17 +8437,17 @@ begin
 
   if ExtractFileExt(filename4)='.pgm' then {pgm file}
   begin
-    if load_PPM_PGM_PFM(fileName4,img) then {succesfull PGM load}
+    if load_PPM_PGM_PFM(fileName4,head,img) then {succesfull PGM load}
     begin
 
       deletefile(filename4);{delete temporary pgm file}
       filename4:=ChangeFileExt(FileName4,'.fits');
 
-      if date_obs='' then {no date detected in comments}
+      if head.date_obs='' then {no date detected in comments}
       begin
         JD2:=2415018.5+(FileDateToDateTime(fileage(filename3))); {fileage raw, convert to Julian Day by adding factor. filedatatodatetime counts from 30 dec 1899.}
-        date_obs:=JdToDate(jd2);
-        update_text ('DATE-OBS=',#39+date_obs+#39);{give start point exposures}
+        head.date_obs:=JdToDate(jd2);
+        update_text ('DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
       end;
       update_text ('BAYERPAT=',#39+'????'+#39);{identify raw OSC image}
       add_text   ('HISTORY  ','Converted from '+filename3);
@@ -8492,7 +8458,7 @@ begin
 
     if ((savefile) and (conv_index=2) and (result)) then {PPM interstage file, save to fits, Not required for the new unprocessed_raw-astap}
     begin
-      if conv_index=2 {dcraw} then set_temperature:=extract_temperature_from_filename(filename4);{including update header}
+      if conv_index=2 {dcraw} then head.set_temperature:=extract_temperature_from_filename(filename4);{including update header}
       update_text('OBJECT  =',#39+extract_objectname_from_filename(filename4)+#39); {spaces will be added/corrected later}
       result:=save_fits(img_buffer,filename4,16,true);{overwrite. Filename2 will be set to fits file}
     end;
@@ -8502,7 +8468,7 @@ begin
   begin {fits file created by modified unprocessed_raw}
     if loadfile then
     begin
-      result:=load_fits(filename4,true {light},true {load data},true {update memo},0,img); {load new fits file}
+      result:=load_fits(filename4,true {light},true {load data},true {update memo},0,head,img); {load new fits file}
       if ((result) and (savefile=false)) then
       begin
         deletefile(filename4);{delete temporary fits file}
@@ -8534,18 +8500,18 @@ begin
   else
   begin
     if ((ext='.PPM') or (ext='.PGM') or (ext='.PFM') or (ext='.PBM')) then {PPM/PGM/ PFM}
-      result:=load_PPM_PGM_PFM(filen,img_loaded)
+      result:=load_PPM_PGM_PFM(filen,head,img_loaded)
     else
     if ext='.XISF' then {XISF}
-      result:=load_xisf(filen,img_loaded)
+      result:=load_xisf(filen,head,img_loaded)
     else
     if ((ext='.JPG') or (ext='.JPEG') or (ext='.PNG') or (ext='.TIF') or (ext='.TIFF')) then
-      result:=load_tiffpngJPEG(filen,img_loaded);
+      result:=load_tiffpngJPEG(filen,head,img_loaded);
 
     if result then
     begin
-      exposure:=extract_exposure_from_filename(filen); {try to extract exposure time from filename. Will be added to the header}
-      set_temperature:=extract_temperature_from_filename(filen);
+      head.exposure:=extract_exposure_from_filename(filen); {try to extract head.exposure time from filename. Will be added to the header}
+      head.set_temperature:=extract_temperature_from_filename(filen);
       update_text('OBJECT  =',#39+extract_objectname_from_filename(filen)+#39); {spaces will be added/corrected later}
 
       filen:=ChangeFileExt(filen,'.fit');
@@ -8636,8 +8602,8 @@ begin
   {fits}
   if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')or (ext1='.WCS') or (ext1='.AXY') or (ext1='.XYLS') or (ext1='.GSC') or (ext1='.BAK')) then {FITS}
   begin
-    result:=load_fits(filename2,true {light},true,true {update memo},0,img_loaded);
-    if ((result=false) or (naxis<2))  then {{no image or failure.}
+    result:=load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded);
+    if ((result=false) or (head.naxis<2))  then {{no image or failure.}
     begin
        update_menu(false);
        exit; {WCS file}
@@ -8649,7 +8615,7 @@ begin
   begin
     if unpack_cfitsio(filename2)=false then begin beep; exit; end
     else{successful conversion using funpack}
-    result:=load_fits(filename2,true {light},true {load data},true {update memo},0,img_loaded); {load new fits file}
+    result:=load_fits(filename2,true {light},true {load data},true {update memo},0,head,img_loaded); {load new fits file}
 
     if result=false then begin update_menu(false);exit; end;
   end {fz}
@@ -8668,7 +8634,7 @@ begin
   else
   if ((ext1='.PPM') or (ext1='.PGM') or (ext1='.PFM') or (ext1='.PBM')) then {PPM/PGM/ PFM}
   begin
-    if load_PPM_PGM_PFM(filename2,img_loaded)=false then begin update_menu(false);exit; end {load the simple formats ppm color or pgm grayscale, exit on failure}
+    if load_PPM_PGM_PFM(filename2,head,img_loaded)=false then begin update_menu(false);exit; end {load the simple formats ppm color or pgm grayscale, exit on failure}
     else
       result:=true;
   end
@@ -8676,21 +8642,21 @@ begin
   else
   if ext1='.XISF' then {XISF}
   begin
-    if load_xisf(filename2,img_loaded)=false then begin update_menu(false);exit; end {load XISF, exit on failure}
+    if load_xisf(filename2,head,img_loaded)=false then begin update_menu(false);exit; end {load XISF, exit on failure}
     else
       result:=true;
   end
 
   else
   {tif, png, bmp, jpeg}
-  if load_tiffpngJPEG(filename2,img_loaded)=false then
+  if load_tiffpngJPEG(filename2,head,img_loaded)=false then
         begin update_menu(false);exit; end  {load tif, exit on failure}
   else
     result:=true;
 
   if plot then
   begin
-    if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
+    if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     image_move_to_center:=re_center;
     plot_fits(mainwindow.image1,re_center,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
@@ -8762,7 +8728,7 @@ begin
 
   if sender<>nil then {not from plot_fits, redraw required}
   begin
-    plot_north; {draw arrow or clear indication position north depending on value cd1_1}
+    plot_north; {draw arrow or clear indication position north depending on value head.cd1_1}
   end;
 end;
 
@@ -8789,16 +8755,16 @@ var
    fitsX,fitsY: integer;
    img_temp : image_array;
 begin
-  if naxis3<3 then exit;{prevent run time error mono images}
+  if head.naxis3<3 then exit;{prevent run time error mono images}
   memo2_message('Converting to mono.');
-  setlength(img_temp,1,width2,height2);{set length of image array mono}
+  setlength(img_temp,1,head.width,head.height);{set length of image array mono}
 
-  for fitsY:=0 to height2-1 do
-    for fitsX:=0 to width2-1 do
+  for fitsY:=0 to head.height-1 do
+    for fitsX:=0 to head.width-1 do
       img_temp[0,fitsx,fitsy]:=(img[0,fitsx,fitsy]+img[1,fitsx,fitsy]+img[2,fitsx,fitsy])/3;
 
-  naxis:=2;{mono}
-  naxis3:=1;
+  head.naxis:=2;{mono}
+  head.naxis3:=1;
   img:=nil;
   img:=img_temp;
 end;
@@ -8808,7 +8774,7 @@ procedure Tmainwindow.convertmono1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
 begin
-  if naxis3<3 then exit;{prevent run time error mono images}
+  if head.naxis3<3 then exit;{prevent run time error mono images}
   Save_Cursor := Screen.Cursor;
   Screen.Cursor:= crHourGlass;
 
@@ -8816,7 +8782,7 @@ begin
 
   convert_mono(img_loaded);
 
-  update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for colour}
+  update_integer('NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
   remove_key('NAXIS3  =',false{all});{some programs don't like NAXIS3=1 like maxim DL}
 
   add_text('HISTORY   ','Converted to mono');
@@ -8877,8 +8843,8 @@ begin
       TmpBmp := TBitmap.Create;
       try
         {convert array coordinates to screen coordinates}
-        if flip_horizontal1.Checked then begin x1:=width2-1-startX;x2:=width2-stopX; end else begin x1:=startx;x2:=stopX;end;
-        if flip_vertical1.Checked=false then begin y1:=height2-1-startY;y2:=height2-1-stopY; end else begin y1:=startY;y2:=stopY;end;
+        if flip_horizontal1.Checked then begin x1:=head.width-1-startX;x2:=head.width-stopX; end else begin x1:=startx;x2:=stopX;end;
+        if flip_vertical1.Checked=false then begin y1:=head.height-1-startY;y2:=head.height-1-stopY; end else begin y1:=startY;y2:=stopY;end;
 
         TmpBmp.Width  := abs(x2-x1);
         TmpBmp.Height := abs(y2-y1);
@@ -9030,19 +8996,19 @@ begin
 
       for i:=0 to stars_measured-1 do
       begin
-        x:=distortion_data[0,i]-crpix1;{database, x from center}
-        y:=distortion_data[1,i]-crpix2;
-        xc:=distortion_data[2,i]-crpix1;{measured, x from center}
-        yc:=distortion_data[3,i]-crpix2;
+        x:=distortion_data[0,i]-head.crpix1;{database, x from center}
+        y:=distortion_data[1,i]-head.crpix2;
+        xc:=distortion_data[2,i]-head.crpix1;{measured, x from center}
+        yc:=distortion_data[3,i]-head.crpix2;
 
-        if abs(x)>0.35*height2 then valid:=true; {stars detected over 70% or range.}
+        if abs(x)>0.35*head.height then valid:=true; {stars detected over 70% or range.}
 
-        if ((abs(x-xc)>=1){some offset} and  (abs(x)>0.2*crpix1)) {some distance from center} then
+        if ((abs(x-xc)>=1){some offset} and  (abs(x)>0.2*head.crpix1)) {some distance from center} then
         begin
           factorsX[countX]:=(x-xc)/(x*(sqr(x)+sqr(y))); {measure the k1 factor for every star detection}
           inc(countX,1);
         end;
-        if ((abs(y-yc)>=1){some offset} and  (abs(y)>0.2*crpix2)) {some distance from center} then
+        if ((abs(y-yc)>=1){some offset} and  (abs(y)>0.2*head.crpix2)) {some distance from center} then
         begin
           factorsY[countY]:=(y-yc)/(y*(sqr(x)+sqr(y))); {measure the k1 factor for every star detection}
           inc(countY,1);
@@ -9239,7 +9205,7 @@ begin
   for c := 0 to 65535 do
   begin
      info:=info+inttostr(c)+#9+inttostr(histogram[0,c]);
-     if naxis3>1 then info:=info+#9+inttostr(histogram[1,c])+#9+inttostr(histogram[2,c]);{add green and blue if colour image}
+     if head.naxis3>1 then info:=info+#9+inttostr(histogram[1,c])+#9+inttostr(histogram[2,c]);{add green and blue if colour image}
      if c=0 then info:=info+ #9+'Value, Red count, Green count, Blue count';
      info:=info+slinebreak;
   end;
@@ -9266,46 +9232,46 @@ begin
 
   vertical:= ((sender=imageflipv1) or (sender=stackmenu1.stack_button1));
 
-  setlength(img_temp,naxis3, width2,height2);
+  setlength(img_temp,head.naxis3, head.width,head.height);
 
-  for col:=0 to naxis3-1 do {do all colours}
+  for col:=0 to head.naxis3-1 do {do all colours}
   begin
-    For fitsY:=0 to (height2-1) do
-      for fitsX:=0 to (width2-1) do
+    For fitsY:=0 to (head.height-1) do
+      for fitsX:=0 to (head.width-1) do
       begin
-        if vertical then img_temp[col, fitsX,(height2-1)-fitsY]:=img_loaded[col,fitsX,fitsY]
+        if vertical then img_temp[col, fitsX,(head.height-1)-fitsY]:=img_loaded[col,fitsX,fitsY]
         else
-        img_temp[col,(width2-1)-fitsX,fitsY]:=img_loaded[col,fitsX,fitsY];
+        img_temp[col,(head.width-1)-fitsX,fitsY]:=img_loaded[col,fitsX,fitsY];
       end;
   end;
 
   img_loaded:=nil;
   img_loaded:=img_temp;
 
-  if cd1_1<>0 then {update solution for rotation}
+  if head.cd1_1<>0 then {update solution for rotation}
   begin
     if vertical then {rotate right}
     begin
-      cd1_2:=-cd1_2;
-      cd2_2:=-cd2_2;
+      head.cd1_2:=-head.cd1_2;
+      head.cd2_2:=-head.cd2_2;
     end
     else
     begin {rotate horizontal}
-      cd1_1:=-cd1_1;
-      cd2_1:=-cd2_1;
+      head.cd1_1:=-head.cd1_1;
+      head.cd2_1:=-head.cd2_1;
     end;
-    new_to_old_WCS;{convert new style FITS to old style, calculate crota1,crota2,cdelt1,cdelt2}
+    new_to_old_WCS;{convert new style FITS to old style, calculate head.crota1,head.crota2,head.cdelt1,head.cdelt2}
 
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
 
-    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);
-    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);
+    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);
+    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
 
-    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
-    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
+    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
+    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
 
     remove_key('ROWORDER',false{all});{just remove to be sure no debayer confusion}
     add_text     ('HISTORY   ','Flipped.                                                           ');
@@ -9324,7 +9290,7 @@ var
    mag_str               : string;
    bg_array              : array of double;
 begin
-  if ((cd1_1=0) or (fits_file=false)) then exit;
+  if ((head.cd1_1=0) or (fits_file=false)) then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
     if ((flux_magn_offset=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
@@ -9344,9 +9310,9 @@ begin
     tx:=stopX;
     ty:=stopY;
     if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
-      tx:=width2-1-tx;
+      tx:=head.width-1-tx;
     if mainwindow.flip_vertical1.Checked=false then
-      ty:=height2-1-ty;
+      ty:=head.height-1-ty;
 
 
     if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
@@ -9465,16 +9431,16 @@ begin
     b:=(stopY2-1-startY2)/2;
 
     {prepare a smooth background image}
-    setlength(img_buffer,naxis3,stopX2-startX2,stopY2-startY2);{new size}
-    setlength(img_temp,naxis3,stopX2-startX2,stopY2-startY2);{new size}
-    for k:=0 to naxis3-1 do
+    setlength(img_buffer,head.naxis3,stopX2-startX2,stopY2-startY2);{new size}
+    setlength(img_temp,head.naxis3,stopX2-startX2,stopY2-startY2);{new size}
+    for k:=0 to head.naxis3-1 do
     for fitsY:=startY2 to stopY2-1 do
     for fitsX:=startX2 to stopX2-1 do img_buffer[k,fitsX-startX2,fitsY-startY2]:=img_loaded[k,fitsX,fitsY];{copy section of interest}
     apply_most_common(img_buffer,img_temp,bsize); {apply most common filter on first array and place result in second array}
     gaussian_blur2(img_temp,bsize+bsize);
 
     {correct image}
-    for k:=0 to naxis3-1 do {do all colors}
+    for k:=0 to head.naxis3-1 do {do all colors}
     begin
       mode_left_bottom:=mode(img_loaded,k,startX2-bsize,startX2+bsize,startY2-bsize,startY2+bsize,32000);{for this area get most common value equals peak in histogram}
       mode_left_top:=   mode(img_loaded,k,startX2-bsize,startX2+bsize,stopY2-bsize,stopY2+bsize,32000);{for this area get most common value equals peak in histogram}
@@ -9489,7 +9455,7 @@ begin
         begin
           Application.ProcessMessages;{this could change startX, startY}
           if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-          progress_value:=round(100*( k/naxis3 +  0.3333*(fitsY-startY2)/(stopY2-startY2)));
+          progress_value:=round(100*( k/head.naxis3 +  0.3333*(fitsY-startY2)/(stopY2-startY2)));
           progress_indicator(progress_value,'');{report progress}
         end;
 
@@ -9595,7 +9561,7 @@ begin
          filename2:=Strings[i];
          {load fits}
          Application.ProcessMessages;
-         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,img_loaded)=false)) then begin exit;end;
+         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded)=false)) then begin exit;end;
 
          rotateleft1Click(Sender);{rotate left or right will be defined by the sender in next procedure}
          save_fits(img_loaded,FileName2,16,true);{overwrite}
@@ -9656,10 +9622,10 @@ begin
     end;
     show_marker_shape(mainwindow.shape_marker2,shapetype,20,20,10{minimum},shape_marker2_fitsX,shape_marker2_fitsY);
 
-    angle:=fnmodulo (arctan2(shape_marker2_fitsX-shape_marker1_fitsX,shape_marker2_fitsY-shape_marker1_fitsY)*180/pi + crota2,360);
+    angle:=fnmodulo (arctan2(shape_marker2_fitsX-shape_marker1_fitsX,shape_marker2_fitsY-shape_marker1_fitsY)*180/pi + head.crota2,360);
 
-    info_message2:=floattostrf(sqrt(sqr(shape_marker2_fitsX-shape_marker1_fitsX)+sqr(shape_marker2_fitsY-shape_marker1_fitsY))*cdelt2*3600,ffgeneral,5,5);
-    if cdelt2<>0 then  info_message2:=info_message2+'"'
+    info_message2:=floattostrf(sqrt(sqr(shape_marker2_fitsX-shape_marker1_fitsX)+sqr(shape_marker2_fitsY-shape_marker1_fitsY))*head.cdelt2*3600,ffgeneral,5,5);
+    if head.cdelt2<>0 then  info_message2:=info_message2+'"'
                  else  info_message2:=info_message2+' pixels';
 
     info_message2:=info_message2+#9+'        ∠='+floattostrf(angle,ffgeneral,5,5)+'°';
@@ -9784,25 +9750,25 @@ begin
 
     bsize:=20;
     colrr1:=mode(img_loaded,0,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
-    if naxis3>1 then colgg1:=mode(img_loaded,1,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
-    if naxis3>2 then colbb1:=mode(img_loaded,2,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
+    if head.naxis3>1 then colgg1:=mode(img_loaded,1,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
+    if head.naxis3>2 then colbb1:=mode(img_loaded,2,startX-bsize,startX+bsize,startY-bsize,startY+bsize,65535);{find most common colour of a local area}
 
     colrr2:=mode(img_loaded,0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
-    if naxis3>1 then colgg2:=mode(img_loaded,0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
-    if naxis3>2 then colbb2:=mode(img_loaded,0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
+    if head.naxis3>1 then colgg2:=mode(img_loaded,0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
+    if head.naxis3>2 then colbb2:=mode(img_loaded,0,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize,65535);{find most common colour of a local area}
 
     a:=sqrt(sqr(stopX-startX)+sqr(stopY-startY)); {distance between bright and dark area}
 
-    for fitsY:=0 to height2-1 do
-      for fitsX:=0 to width2-1 do
+    for fitsY:=0 to head.height-1 do
+      for fitsX:=0 to head.width-1 do
       begin
         b:=sqrt(sqr(fitsX-startX)+sqr(fitsY-startY)); {distance from dark spot}
         c:=sqrt(sqr(fitsX-stopX)+sqr(fitsY-stopY)); {distance from bright spot}
         p:=-((sqr(b)-sqr(a)-sqr(c))/(2*a)); {projectiestelling scheefhoekige driehoek (Dutch), polytechnisch zakboekje 42 edition, a2/24 3.2}
 
         img_loaded[0,fitsX,fitsY]:=img_loaded[0,fitsX,fitsY]-(colrr2-colrr1)*(a-p)/a;
-        if naxis3>1 then img_loaded[1,fitsX,fitsY]:=img_loaded[1,fitsX,fitsY]-(colgg2-colgg1)*(a-p)/a;
-        if naxis3>2 then img_loaded[2,fitsX,fitsY]:=img_loaded[2,fitsX,fitsY]-(colbb2-colbb1)*(a-p)/a;
+        if head.naxis3>1 then img_loaded[1,fitsX,fitsY]:=img_loaded[1,fitsX,fitsY]-(colgg2-colgg1)*(a-p)/a;
+        if head.naxis3>2 then img_loaded[2,fitsX,fitsY]:=img_loaded[2,fitsX,fitsY]-(colbb2-colbb1)*(a-p)/a;
       end;
 
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
@@ -9976,7 +9942,7 @@ begin
 
   SetLength(stars,4,5000);{set array length}
 
-  setlength(img_sa,1,width2,height2);{set length of image array}
+  setlength(img_sa,1,head.width,head.height);{set length of image array}
 
   get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
@@ -9985,13 +9951,13 @@ begin
 
   nrstars:=0;{set counters at zero}
 
-  for fitsY:=0 to height2-1 do
-    for fitsX:=0 to width2-1  do
+  for fitsY:=0 to head.height-1 do
+    for fitsX:=0 to head.width-1  do
       img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
-  for fitsY:=0 to height2-1-1 do
+  for fitsY:=0 to head.height-1-1 do
   begin
-    for fitsX:=0 to width2-1-1  do
+    for fitsX:=0 to head.width-1-1  do
     begin
       if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- cblack> detection_level)) then {new star}
       begin
@@ -9999,8 +9965,8 @@ begin
         if ((hfd1<15) and (hfd1>=hfd_min) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
         begin
           {for testing}
-          //if flipvertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
-          //if fliphorizontal=true then starX:=round(width2-xc)  else starX:=round(xc);
+          //if flipvertical=false  then  starY:=round(head.height-yc) else starY:=round(yc);
+          //if fliphorizontal=true then starX:=round(head.width-xc)  else starX:=round(xc);
           //  size:=round(5*hfd1);
           //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
@@ -10014,20 +9980,20 @@ begin
             begin
               j:=n+yci;
               i:=m+xci;
-              if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
+              if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
                 img_sa[0,i,j]:=1;
             end;
 
-          if ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
-              (img_loaded[0,round(xc-1),round(yc)]<datamax_org-1) and
-              (img_loaded[0,round(xc+1),round(yc)]<datamax_org-1) and
-              (img_loaded[0,round(xc),round(yc-1)]<datamax_org-1) and
-              (img_loaded[0,round(xc),round(yc+1)]<datamax_org-1) and
+          if ((img_loaded[0,round(xc),round(yc)]<head.datamax_org-1) and
+              (img_loaded[0,round(xc-1),round(yc)]<head.datamax_org-1) and
+              (img_loaded[0,round(xc+1),round(yc)]<head.datamax_org-1) and
+              (img_loaded[0,round(xc),round(yc-1)]<head.datamax_org-1) and
+              (img_loaded[0,round(xc),round(yc+1)]<head.datamax_org-1) and
 
-              (img_loaded[0,round(xc-1),round(yc-1)]<datamax_org-1) and
-              (img_loaded[0,round(xc-1),round(yc+1)]<datamax_org-1) and
-              (img_loaded[0,round(xc+1),round(yc-1)]<datamax_org-1) and
-              (img_loaded[0,round(xc+1),round(yc+1)]<datamax_org-1)  ) then {not saturated}
+              (img_loaded[0,round(xc-1),round(yc-1)]<head.datamax_org-1) and
+              (img_loaded[0,round(xc-1),round(yc+1)]<head.datamax_org-1) and
+              (img_loaded[0,round(xc+1),round(yc-1)]<head.datamax_org-1) and
+              (img_loaded[0,round(xc+1),round(yc+1)]<head.datamax_org-1)  ) then {not saturated}
           begin
             {store values}
             inc(nrstars);
@@ -10088,17 +10054,17 @@ const
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
   image1.Canvas.Pen.Mode := pmMerge;
-  image1.Canvas.Pen.width :=1; // round(1+height2/image1.height);{thickness lines}
+  image1.Canvas.Pen.width :=1; // round(1+head.height/image1.height);{thickness lines}
   image1.Canvas.brush.Style:=bsClear;
   image1.Canvas.font.color:=clyellow;
   image1.Canvas.font.name:='default';
-  image1.Canvas.font.size:=10; //round(max(10,8*height2/image1.height));{adapt font to image dimensions}
+  image1.Canvas.font.size:=10; //round(max(10,8*head.height/image1.height));{adapt font to image dimensions}
   mainwindow.image1.Canvas.Pen.Color := clred;
 
 
-  setlength(img_temp3,1,width2,height2);{set size of image array}
-  for fitsY:=0 to height2-1 do
-    for fitsX:=0 to width2-1  do
+  setlength(img_temp3,1,head.width,head.height);{set size of image array}
+  for fitsY:=0 to head.height-1 do
+    for fitsX:=0 to head.width-1  do
       img_temp3[0,fitsX,fitsY]:=default;{clear}
   plot_artificial_stars(img_temp3);{create artificial image with database stars as pixels}
 //  img_loaded:=img_temp3;
@@ -10107,14 +10073,14 @@ const
 
   get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
-  setlength(img_sa,1,width2,height2);{set length of image array}
-   for fitsY:=0 to height2-1 do
-    for fitsX:=0 to width2-1  do
+  setlength(img_sa,1,head.width,head.height);{set length of image array}
+   for fitsY:=0 to head.height-1 do
+    for fitsX:=0 to head.width-1  do
       img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
-  for fitsY:=0 to height2-1-1 do
+  for fitsY:=0 to head.height-1-1 do
   begin
-    for fitsX:=0 to width2-1-1  do
+    for fitsX:=0 to head.width-1-1  do
     begin
       if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- cblack>5*noise_level[0] {star_level} ){star}) then {new star}
       begin
@@ -10122,8 +10088,8 @@ const
         if ((hfd1<10) and (hfd1>=hfd_min) and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
         begin
           {for testing}
-          //if flipvertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
-          //if fliphorizontal=true then starX:=round(width2-xc)  else starX:=round(xc);
+          //if flipvertical=false  then  starY:=round(head.height-yc) else starY:=round(yc);
+          //if fliphorizontal=true then starX:=round(head.width-xc)  else starX:=round(xc);
           //  size:=round(5*hfd1);
           //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
@@ -10137,19 +10103,19 @@ const
             begin
               j:=n+yci;
               i:=m+xci;
-              if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
+              if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
             end;
 
-          if ((img_loaded[0,round(xc),round(yc)]<datamax_org-1) and
-              (img_loaded[0,round(xc-1),round(yc)]<datamax_org-1) and
-              (img_loaded[0,round(xc+1),round(yc)]<datamax_org-1) and
-              (img_loaded[0,round(xc),round(yc-1)]<datamax_org-1) and
-              (img_loaded[0,round(xc),round(yc+1)]<datamax_org-1) and
+          if ((img_loaded[0,round(xc),round(yc)]<head.datamax_org-1) and
+              (img_loaded[0,round(xc-1),round(yc)]<head.datamax_org-1) and
+              (img_loaded[0,round(xc+1),round(yc)]<head.datamax_org-1) and
+              (img_loaded[0,round(xc),round(yc-1)]<head.datamax_org-1) and
+              (img_loaded[0,round(xc),round(yc+1)]<head.datamax_org-1) and
 
-              (img_loaded[0,round(xc-1),round(yc-1)]<datamax_org-1) and
-              (img_loaded[0,round(xc-1),round(yc+1)]<datamax_org-1) and
-              (img_loaded[0,round(xc+1),round(yc-1)]<datamax_org-1) and
-              (img_loaded[0,round(xc+1),round(yc+1)]<datamax_org-1)  ) then {not saturated}
+              (img_loaded[0,round(xc-1),round(yc-1)]<head.datamax_org-1) and
+              (img_loaded[0,round(xc-1),round(yc+1)]<head.datamax_org-1) and
+              (img_loaded[0,round(xc+1),round(yc-1)]<head.datamax_org-1) and
+              (img_loaded[0,round(xc+1),round(yc+1)]<head.datamax_org-1)  ) then {not saturated}
            begin
              measured_magn:=(flux_magn_offset-ln(flux)*2.511886432/ln(10))*10; {magnitude x 10}
 
@@ -10167,8 +10133,8 @@ const
                delta_magn:=measured_magn - magn_database; {delta magnitude time 10}
                if  delta_magn<-10 then {unknown star, 1 magnitude brighter then database}
                begin {mark}
-                 if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
-                 if Fliphorizontal     then starX:=round(width2-xc)  else starX:=round(xc);
+                 if Flipvertical=false then  starY:=round(head.height-yc) else starY:=round(yc);
+                 if Fliphorizontal     then starX:=round(head.width-xc)  else starX:=round(xc);
 
                  if delta_magn<-500 then
                  begin
@@ -10196,8 +10162,8 @@ const
             if astar=false then
             begin
               size:=round(5*hfd1); {for rectangle annotation}
-              if Flipvertical=false then  starY:=round(height2-yc) else starY:=round(yc);
-              if Fliphorizontal     then starX:=round(width2-xc)  else starX:=round(xc);
+              if Flipvertical=false then  starY:=round(head.height-yc) else starY:=round(yc);
+              if Fliphorizontal     then starX:=round(head.width-xc)  else starX:=round(xc);
               image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate unknown star with rectangle}
             end;
           end;
@@ -10354,7 +10320,7 @@ begin
   Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
 
   image1.Canvas.Pen.Mode := pmMerge;
-  image1.Canvas.Pen.width :=1; // round(1+height2/image1.height);{thickness lines}
+  image1.Canvas.Pen.width :=1; // round(1+head.height/image1.height);{thickness lines}
   image1.Canvas.Pen.color :=clred;
   image1.Canvas.brush.Style:=bsClear;
   image1.Canvas.font.color:=clyellow;
@@ -10372,8 +10338,8 @@ begin
   begin
     for i:=0 to  length(stars[0])-2 do
     begin
-      if Flipvertical=false then  starY:=round(height2-1-stars[1,i]) else starY:=round(stars[1,i]);
-      if Fliphorizontal     then starX:=round(width2-1-stars[0,i])  else starX:=round(stars[0,i]);
+      if Flipvertical=false then  starY:=round(head.height-1-stars[1,i]) else starY:=round(stars[1,i]);
+      if Fliphorizontal     then starX:=round(head.width-1-stars[0,i])  else starX:=round(stars[0,i]);
 
       size:=round(stars[2,i]);{5*hfd for marking stars}
 
@@ -10391,11 +10357,11 @@ begin
 
 
   text_width:=8*mainwindow.image1.Canvas.textwidth('1234567890');{Calculate textwidth for 80 characters. This also works for 4k with "make everything bigger"}
-  fontsize:=trunc(fontsize*(width2-2*fontsize)/text_width);{use full width for 80 characters}
+  fontsize:=trunc(fontsize*(head.width-2*fontsize)/text_width);{use full width for 80 characters}
   image1.Canvas.font.size:=fontsize;
   image1.Canvas.font.color:=clwhite;
   text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
-  image1.Canvas.textout(round(fontsize*2),height2-text_height,'Limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1)+'   (7σ, aperture ⌀'+stackmenu1.flux_aperture1.text+')');{magn_limit global variable calculate in plot_and_measure_stars}
+  image1.Canvas.textout(round(fontsize*2),head.height-text_height,'Limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1)+'   (7σ, aperture ⌀'+stackmenu1.flux_aperture1.text+')');{magn_limit global variable calculate in plot_and_measure_stars}
 
 
   Screen.Cursor:= Save_Cursor;
@@ -10452,9 +10418,9 @@ begin
           Application.ProcessMessages;
           if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
 
-          if load_fits(filename2,true {light},true,true {update memo},0,img_loaded) then {load image success}
+          if load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded) then {load image success}
           begin
-            if cd1_1=0 then
+            if head.cd1_1=0 then
             begin
               skipped:=skipped+1; {not astrometric solved}
               memo2_message('Skipped: '+filename2+' No solution in header found. First batch solve the images');
@@ -10489,7 +10455,7 @@ var
   apert,annul,backgr,hfd_med : double;
   hfd_counter                : integer;
 begin
-  if ((fits_file=false) or (cd1_1=0)) then exit;
+  if ((fits_file=false) or (head.cd1_1=0)) then exit;
 
   apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
   if ((flux_magn_offset=0) or (aperture_ratio<>apert){new calibration required})  then
@@ -10500,7 +10466,7 @@ begin
     aperture_ratio:=apert;{remember setting}
     if apert<>0 then {smaller aperture for photometry. Setting <> max}
     begin
-      analyse_fits(img_loaded,30,false {report}, hfd_counter,backgr,hfd_med); {find background, number of stars, median HFD}
+      analyse_image(img_loaded,30,false {report}, hfd_counter,backgr,hfd_med); {find background, number of stars, median HFD}
       if hfd_med<>0 then
       begin
         memo2_message('Median HFD is '+floattostrf(hfd_med, ffgeneral, 2,2)+'. Aperture and annulus will be adapted accordingly.');;
@@ -10609,49 +10575,49 @@ begin
       ARect := Rect(0,0, mainwindow.image1.width, mainwindow.image1.height);
       TmpBmp.Canvas.StretchDraw(ARect, mainwindow.Image1.Picture.bitmap);
 
-      ratio:=TmpBmp.width/width2;
+      ratio:=TmpBmp.width/head.width;
 
-      width2:=TmpBmp.width;
-      height2:=TmpBmp.Height;
+      head.width:=TmpBmp.width;
+      head.height:=TmpBmp.Height;
 
       flipH:=mainwindow.flip_horizontal1.checked;
       flipV:=mainwindow.flip_vertical1.checked;
 
-      setlength(img_loaded,naxis3,width2,height2);
+      setlength(img_loaded,head.naxis3,head.width,head.height);
 
-      for y := 0 to height2 -1 do begin {place in array}
+      for y := 0 to head.height -1 do begin {place in array}
         xLine := TmpBmp.ScanLine[y];
-        for x := 0 to width2 -1 do
+        for x := 0 to head.width -1 do
         begin
-          if flipH then x2:=width2-1-x else x2:=x;
-          if flipV=false then y2:=height2-1-y else y2:=y;
+          if flipH then x2:=head.width-1-x else x2:=x;
+          if flipV=false then y2:=head.height-1-y else y2:=y;
           img_loaded[0,x2,y2]:=xLine^[x*3];{red}
-          if naxis3>1 then img_loaded[1,x2,y2]:=xLine^[x*3+1];{green}
-          if naxis3>2 then img_loaded[2,x2,y2]:=xLine^[x*3+2];{blue}
+          if head.naxis3>1 then img_loaded[1,x2,y2]:=xLine^[x*3+1];{green}
+          if head.naxis3>2 then img_loaded[2,x2,y2]:=xLine^[x*3+2];{blue}
         end;
       end;
 
-      update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-      update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+      update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
+      update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
       update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
 
 
-      if crpix1<>0 then begin crpix1:=crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;
-      if crpix2<>0 then begin crpix2:=crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
+      if head.crpix1<>0 then begin head.crpix1:=head.crpix1*ratio; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);end;
+      if head.crpix2<>0 then begin head.crpix2:=head.crpix2*ratio; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);end;
 
-      if cdelt1<>0 then begin cdelt1:=cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);end;
-      if cdelt2<>0 then begin cdelt2:=cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);end;
+      if head.cdelt1<>0 then begin head.cdelt1:=head.cdelt1/ratio; update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);end;
+      if head.cdelt2<>0 then begin head.cdelt2:=head.cdelt2/ratio; update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);end;
 
-      if cd1_1<>0 then
+      if head.cd1_1<>0 then
       begin
-        cd1_1:=cd1_1/ratio;
-        cd1_2:=cd1_2/ratio;
-        cd2_1:=cd2_1/ratio;
-        cd2_2:=cd2_2/ratio;
-        update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
-        update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
-        update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
-        update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+        head.cd1_1:=head.cd1_1/ratio;
+        head.cd1_2:=head.cd1_2/ratio;
+        head.cd2_1:=head.cd2_1/ratio;
+        head.cd2_2:=head.cd2_2/ratio;
+        update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
+        update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
+        update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
+        update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
       end;
 
       XBINNING:=XBINNING/ratio;
@@ -10691,9 +10657,9 @@ begin
     UpDown1.position:=UpDown1.position-1; {no more extensions}
     exit;
   end;
-  if load_fits(filename2,true,true,true {update memo},updown1.position,img_loaded){load fits file } then
+  if load_fits(filename2,true,true,true {update memo},updown1.position,head,img_loaded){load fits file } then
   begin
-    if ((naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
+    if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainwindow.image1,false {re_center},true);
   end;
@@ -10890,13 +10856,13 @@ var
 begin
   if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
   begin
-    x1:=(width2-1)-x1;
-    x2:=(width2-1)-x2;
+    x1:=(head.width-1)-x1;
+    x2:=(head.width-1)-x2;
   end;
   if mainwindow.flip_vertical1.Checked=false then
   begin
-    y1:=(height2-1)-y1;
-    y2:=(height2-1)-y2;
+    y1:=(head.height-1)-y1;
+    y2:=(head.height-1)-y2;
   end;
   size:=abs(x2-x1);
   if abs(x2-x1)>20 then {circle}
@@ -10925,13 +10891,13 @@ begin
 
   if mainwindow.Flip_horizontal1.Checked then {restore based on flipped conditions}
   begin
-    x1:=(width2-1)-x1;{flip for screen coordinates, 0...width2-1}
-    x2:=(width2-1)-x2;
+    x1:=(head.width-1)-x1;{flip for screen coordinates, 0...head.width-1}
+    x2:=(head.width-1)-x2;
   end;
   if mainwindow.flip_vertical1.Checked=false then
   begin
-    y1:=(height2-1)-y1;
-    y2:=(height2-1)-y2;
+    y1:=(head.height-1)-y1;
+    y2:=(head.height-1)-y2;
   end;
 
 
@@ -10983,7 +10949,7 @@ begin
   mainwindow.image1.Canvas.Pen.Color:= annotation_color;{clyellow}
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   mainwindow.image1.Canvas.font.color:=annotation_color;
-  // mainwindow.image1.Canvas.font.size:=round(min(20,max(10,height2*20/4176)));
+  // mainwindow.image1.Canvas.font.size:=round(min(20,max(10,head.height*20/4176)));
 
 
   {$ifdef mswindows}
@@ -11057,8 +11023,8 @@ begin
       img_loaded[0,startX+round(i*deltaX/len),startY+round(i*deltaY/len) ]:=round((cwhite+cblack)/2);
 
   {convert to screen coordinates. Screen coordinates are used to have the font with the correct orientation}
-  if mainwindow.flip_horizontal1.checked then begin startX:=width2-startX; stopX:=width2-stopX;  end;
-  if mainwindow.flip_vertical1.checked then begin startY:=height2-startY;  stopY:=height2-stopY; end;
+  if mainwindow.flip_horizontal1.checked then begin startX:=head.width-startX; stopX:=head.width-stopX;  end;
+  if mainwindow.flip_vertical1.checked then begin startY:=head.height-startY;  stopY:=head.height-stopY; end;
 
   deltaX:=stopX-startX;
   deltaY:=stopY-startY;
@@ -11090,12 +11056,12 @@ begin
     exit;
   end;
 
-  mainwindow.image1.Canvas.Pen.width:=max(1,round(1*width2/image1.width)); ;
+  mainwindow.image1.Canvas.Pen.width:=max(1,round(1*head.width/image1.width)); ;
   mainwindow.image1.Canvas.Pen.Color:= annotation_color; {clyellow default}
 
   image1.Canvas.brush.Style:=bsClear;
   image1.Canvas.font.color:=annotation_color;
-  image1.Canvas.font.size:=max(12,round(12*width2/image1.width));
+  image1.Canvas.font.size:=max(12,round(12*head.width/image1.width));
 
   image1.Canvas.moveto(startX,startY);
   if ((stopX<>startx) or (stopY<>startY) )=true then {rubber rectangle in action}
@@ -11120,7 +11086,7 @@ begin
   text_X:=text_X+1; {convert to fits range 1...}
   text_Y:=text_Y+1; {convert to fits range 1...}
 
-  if sender<>Enter_rectangle_with_label1 then boldness:=width2/image1.width else boldness:=-width2/image1.width;
+  if sender<>Enter_rectangle_with_label1 then boldness:=head.width/image1.width else boldness:=-head.width/image1.width;
 
   plot_the_annotation(startX,startY,text_X,text_Y,boldness,value,'');
   add_text ('ANNOTATE=',#39+inttostr(startX)+';'+inttostr(startY)+';'+inttostr(text_X)+';'+inttostr(text_Y)+';'+floattostr6(boldness)+';'+value+';'+#39);
@@ -11138,7 +11104,7 @@ end;
 procedure FITS_BMP(filen:string);{save FITS to BMP file}
 var filename3:string;
 begin
-  if load_fits(filen,true {light},true,true {update memo},0,img_loaded) {load now normal} then
+  if load_fits(filen,true {light},true,true {update memo},0,head,img_loaded) {load now normal} then
   begin
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     filename3:=ChangeFileExt(Filen,'.bmp');
@@ -11154,13 +11120,13 @@ begin
   'Origin: '+origin+#13+#10+
   'Telescope: '+ telescop+#13+#10+
   'Instrument: '+instrum+#13+#10+
-  'Date-obs: '+Date_obs+#13+#10+
+  'Date-obs: '+head.date_obs+#13+#10+
   'UT-time: '+UT+#13+#10+
   'Plt-label: '+Pltlabel+#13+#10+
   'Plate-id: '+plateid+#13+#10+
   'Bandpass: '+floattostr(bandpass)+#13+#10+
   'Equinox: '+floattostr(equinox)+#13+#10+
-  'Exposure-time: '+floattostr(exposure));
+  'Exposure-time: '+floattostr(head.exposure));
   messagebox(mainwindow.handle,bericht,'FITS HEADER',MB_OK);
 end;
 
@@ -11202,12 +11168,12 @@ begin
   begin
     image1.Canvas.font.color:=$00AAFF;
 
-    if mainwindow.Flip_horizontal1.Checked=true then x7:=round(width2-object_xc) else x7:=round(object_xc);
-    if mainwindow.flip_vertical1.Checked=false then y7:=round(height2-object_yc) else y7:=round(object_yc);
+    if mainwindow.Flip_horizontal1.Checked=true then x7:=round(head.width-object_xc) else x7:=round(object_xc);
+    if mainwindow.flip_vertical1.Checked=false then y7:=round(head.height-object_yc) else y7:=round(object_yc);
 
     if sender<>writepositionshort1 then
     begin
-      if cd1_1<>0 then {solved}
+      if head.cd1_1<>0 then {solved}
         image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+position_to_string(',',object_raM,object_decM))
       else
         image1.Canvas.textout(round(3+x7),round(-font_height+ y7),'_'+floattostrF(object_xc,ffFixed,0,2)+', '+floattostrF(object_yc,ffFixed,0,2));{write x,y position if not solved}
@@ -11221,9 +11187,9 @@ begin
 
     if sender<>writepositionshort1 then
     begin
-      x8:=round(3+down_x   /(image1.width/width2));
-      y8:=round(-font_height +(down_y)/(image1.height/height2));
-      if cd1_1<>0 then
+      x8:=round(3+down_x   /(image1.width/head.width));
+      y8:=round(-font_height +(down_y)/(image1.height/head.height));
+      if head.cd1_1<>0 then
         image1.Canvas.textout(x8,y8,'_'+position_to_string(',',object_raM,object_decM))
       else
         image1.Canvas.textout(x8,y8,'_'+floattostrF(mouse_fitsX,ffFixed,0,2)+', '+floattostrF(mouse_fitsY,ffFixed,0,2));{write x,y position if not solved}
@@ -11278,7 +11244,7 @@ begin
 
   mw:=mainwindow.width;
   h:=StatusBar1.top-panel1.top;
-  w:=round(h*width2/height2);
+  w:=round(h*head.width/head.height);
 
   panel1.width:=mw;
   panel1.height:=h;
@@ -11314,8 +11280,8 @@ end;
 //    end;
 //    except
 //  end;
-//  width2:=mainwindow.Image1.Picture.width;
-//  height2:=mainwindow.Image1.Picture.height;
+//  head.width:=mainwindow.Image1.Picture.width;
+//  head.height:=mainwindow.Image1.Picture.height;
 //end;
 
 
@@ -11394,19 +11360,19 @@ begin
   if solution then
   begin
     writeln(f,'PLTSOLVD=T');
-    writeln(f,'CRPIX1='+floattostrE(crpix1));// X of reference pixel
-    writeln(f,'CRPIX2='+floattostrE(crpix2));// Y of reference pixel
+    writeln(f,'CRPIX1='+floattostrE(head.crpix1));// X of reference pixel
+    writeln(f,'CRPIX2='+floattostrE(head.crpix2));// Y of reference pixel
 
-    writeln(f,'CRVAL1='+floattostrE(ra0*180/pi)); // RA (j2000_1) of reference pixel [deg]
-    writeln(f,'CRVAL2='+floattostrE(dec0*180/pi));// DEC (j2000_1) of reference pixel [deg]
-    writeln(f,'CDELT1='+floattostrE(cdelt1));     // X pixel size [deg]
-    writeln(f,'CDELT2='+floattostrE(cdelt2));     // Y pixel size [deg]
-    writeln(f,'CROTA1='+floattostrE(crota1));    // Image twist of X axis [deg]
-    writeln(f,'CROTA2='+floattostrE(crota2));    // Image twist of Y axis [deg]
-    writeln(f,'CD1_1='+floattostrE(cd1_1));       // CD matrix to convert (x,y) to (Ra, Dec)
-    writeln(f,'CD1_2='+floattostrE(cd1_2));       // CD matrix to convert (x,y) to (Ra, Dec)
-    writeln(f,'CD2_1='+floattostrE(cd2_1));       // CD matrix to convert (x,y) to (Ra, Dec)
-    writeln(f,'CD2_2='+floattostrE(cd2_2));       // CD matrix to convert (x,y) to (Ra, Dec)
+    writeln(f,'CRVAL1='+floattostrE(head.ra0*180/pi)); // RA (j2000_1) of reference pixel [deg]
+    writeln(f,'CRVAL2='+floattostrE(head.dec0*180/pi));// DEC (j2000_1) of reference pixel [deg]
+    writeln(f,'CDELT1='+floattostrE(head.cdelt1));     // X pixel size [deg]
+    writeln(f,'CDELT2='+floattostrE(head.cdelt2));     // Y pixel size [deg]
+    writeln(f,'CROTA1='+floattostrE(head.crota1));    // Image twist of X axis [deg]
+    writeln(f,'CROTA2='+floattostrE(head.crota2));    // Image twist of Y axis [deg]
+    writeln(f,'CD1_1='+floattostrE(head.cd1_1));       // CD matrix to convert (x,y) to (Ra, Dec)
+    writeln(f,'CD1_2='+floattostrE(head.cd1_2));       // CD matrix to convert (x,y) to (Ra, Dec)
+    writeln(f,'CD2_1='+floattostrE(head.cd2_1));       // CD matrix to convert (x,y) to (Ra, Dec)
+    writeln(f,'CD2_2='+floattostrE(head.cd2_2));       // CD matrix to convert (x,y) to (Ra, Dec)
 
     if sqmfloat>0 then writeln(f,'SQM='+floattostrE(sqmfloat));  // sky background
     if hfd_median>0 then writeln(f,'HFD='+floattostrE(hfd_median));
@@ -11496,8 +11462,8 @@ begin
          //999,999,-1
          //0,0,0,0,404
          //Maximum search limit exceeded
-          ra0:=999;
-          dec0:=999;
+          head.ra0:=999;
+          head.dec0:=999;
           resultV:=',-1';
           resultstr:='Maximum search limit exceeded';
           confidence:='000';
@@ -11505,7 +11471,7 @@ begin
           errorlevel:=1;{no solution}
         end;
         //  0.16855631,0.71149576,1              (ra [rad],dec [rad],1 }
-        //  2.69487,0.5,1.00005,-0.00017,395     {pixelsize*3600, crota2, flipped,? ,confidence}
+        //  2.69487,0.5,1.00005,-0.00017,395     {pixelsize*3600, head.crota2, flipped,? ,confidence}
         //  Valid plate solution
 
         // .1844945, .72046475, 1
@@ -11517,24 +11483,24 @@ begin
         assignfile(f,ChangeFileExt(filename2,'.apm'));
         rewrite(f);
 
-        str(ra0:9:7,rastr);{mimic format of PlateSolve2}
-        str(dec0:9:7,decstr);
+        str(head.ra0:9:7,rastr);{mimic format of PlateSolve2}
+        str(head.dec0:9:7,decstr);
         line1:=rastr+','+decstr+resultV {,1 or ,-1};
 
-        str(cdelt2*3600:7:5,cdelt);
-        if ((cdelt2=0{prevent divide by zero}) or (cdelt1/cdelt2<0)) then
+        str(head.cdelt2*3600:7:5,cdelt);
+        if ((head.cdelt2=0{prevent divide by zero}) or (head.cdelt1/head.cdelt2<0)) then
         begin
           if source_fits then flipped:='1.0000' else flipped:='-1.0000'; {PlateSolve2 sees a FITS file flipped while not flipped due to the orientation 1,1 at left bottom}
         end
         else
         begin
           if source_fits then flipped:='-1.0000' else flipped:='1.0000';{PlateSolve2 sees a FITS file flipped while not flipped due to the orientation 1,1 at left bottom}
-          crota2:=180-crota2;{mimic strange Platesolve2 angle calculation.}
+          head.crota2:=180-head.crota2;{mimic strange Platesolve2 angle calculation.}
         end;
 
-        crota2:=fnmodulo(crota2,360); {Platesolve2 reports in 0..360 degrees, mimic this behavior for SGP}
+        head.crota2:=fnmodulo(head.crota2,360); {Platesolve2 reports in 0..360 degrees, mimic this behavior for SGP}
 
-        str(crota2:7:2,crota);
+        str(head.crota2:7:2,crota);
         line2:=cdelt+','+crota+','+flipped+',0.00000,'+confidence;
 
         apt_request:=pos('IMAGETOSOLVE',uppercase(filename2))>0; {if call from APT then write with numeric separator according Windows setting as for PlateSolve2 2.28}
@@ -11741,7 +11707,7 @@ var
   InputStream: TIOStream;
 begin
   result:=false;{assume failure}
-  cd1_1:=0;{no solution}
+  head.cd1_1:=0;{no solution}
 
   try
 
@@ -11749,12 +11715,12 @@ begin
     {read header}
     Count := InputStream.Read(format_type, 4);
 
-    naxis3:=1; {assume mono}
+    head.naxis3:=1; {assume mono}
     if format_type=$32574152 then nrbits:=16 {RAW2, 16 bit mono identifier}
     else
     if format_type=$31574152 then nrbits:=8 {RAW1, 8 bit mono}
     else
-    if format_type=$33574152 then begin nrbits:=24; {24bit RGB = RAW3 = 0x33574152, rgb,rgb,rgb} naxis3:=3;end
+    if format_type=$33574152 then begin nrbits:=24; {24bit RGB = RAW3 = 0x33574152, rgb,rgb,rgb} head.naxis3:=3;end
     else
     if format_type=$34574152 then nrbits:=32 {RAW4, 32 bit mono}
     else
@@ -11762,15 +11728,15 @@ begin
     else
     exit;
 
-    naxis3:=1;
+    head.naxis3:=1;
 
-    Count := InputStream.Read(width2, 4);
-    Count := InputStream.Read(height2, 4);
+    Count := InputStream.Read(head.width, 4);
+    Count := InputStream.Read(head.height, 4);
 
     {read image data}
-    setlength(img_loaded,naxis3,width2,height2);
+    setlength(img_loaded,head.naxis3,head.width,head.height);
     h:=0;
-    bufferlength:=width2*(nrbits div 8);
+    bufferlength:=head.width*(nrbits div 8);
     repeat
       count:=0;
       repeat {adapt reading to one image line}
@@ -11778,38 +11744,38 @@ begin
       until count>=bufferlength;
       begin
         if nrbits=16 then
-          for i:=0 to width2-1 do {fill array} img_loaded[0,i,h]:=fitsbuffer2[i]
+          for i:=0 to head.width-1 do {fill array} img_loaded[0,i,h]:=fitsbuffer2[i]
         else
         if nrbits=8 then
-           for i:=0 to width2-1 do {fill array} img_loaded[0,i,h]:=fitsbuffer[i]
+           for i:=0 to head.width-1 do {fill array} img_loaded[0,i,h]:=fitsbuffer[i]
         else
         if nrbits=24 then
         begin
-           for i:=0 to width2-1 do {fill array}
+           for i:=0 to head.width-1 do {fill array}
            begin
              rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
              img_loaded[0,i,h]:=rgbdummy[0];{store in memory array}
              img_loaded[1,i,h]:=rgbdummy[1];{store in memory array}
              img_loaded[2,i,h]:=rgbdummy[2];{store in memory array}
            end;
-           naxis3:=3;
+           head.naxis3:=3;
         end
         else
         if nrbits=-32 then {floats}
-           for i:=0 to width2-1 do {fill array}
+           for i:=0 to head.width-1 do {fill array}
            begin
              x_longword:=fitsbuffer4[i];
              img_loaded[0,i,h]:= x_single;{for conversion 32 bit float}
            end
         else
         if nrbits=32 then
-           for i:=0 to width2-1 do {fill array} img_loaded[0,i,h]:= fitsbuffer4[i];
+           for i:=0 to head.width-1 do {fill array} img_loaded[0,i,h]:= fitsbuffer4[i];
       end;
       inc(h)
-    until ((h>=height2-1) or (count=0));
+    until ((h>=head.height-1) or (count=0));
     result:=true;
-    datamin_org:=0;
-    datamax_org:=65535;
+    head.datamin_org:=0;
+    head.datamax_org:=65535;
   except
   end;
 end;
@@ -11938,8 +11904,8 @@ begin
 
         if hasoption('spd') then {south pole distance. Negative values can't be passed via commandline}
         begin
-          dec0:=strtofloat2(GetOptionValue('spd'))-90;{convert south pole distance to declination}
-          str(dec0:0:6,s);
+          head.dec0:=strtofloat2(GetOptionValue('spd'))-90;{convert south pole distance to declination}
+          str(head.dec0:0:6,s);
           mainwindow.dec1.text:=s;
         end;
         {else dec from fits header}
@@ -11989,7 +11955,7 @@ begin
             if ((analysespecified) or (analysespecified2)) then snr_min:=strtofloat2(getoptionvalue('analyse'));
             if extractspecified then snr_min:=strtofloat2(getoptionvalue('extract'));
             if snr_min=0 then snr_min:=30;
-            analyse_fits(img_loaded,snr_min,extractspecified, hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
+            analyse_image(img_loaded,snr_min,extractspecified, hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
             if isConsole then {stdout available, compile targe option -wh used}
             begin
               writeln('HFD_MEDIAN='+floattostrF(hfd_median,ffFixed,0,1));
@@ -12077,7 +12043,7 @@ begin
 
             if ((fov_specified) and (stackmenu1.search_fov1.text='0' ) {auto}) then {preserve new found fov}
             begin
-              stackmenu1.search_fov1.text:=floattostrF(height2*abs(cdelt2),ffFixed,0,2);
+              stackmenu1.search_fov1.text:=floattostrF(head.height*abs(head.cdelt2),ffFixed,0,2);
               save_settings2;{save settings with correct fov}
             end;
           end {solution}
@@ -12193,9 +12159,9 @@ begin
         if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
 
         {load image and solve image}
-        if load_fits(filename2,true {light},true,true {update memo},0,img_loaded) then {load image success}
+        if load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded) then {load image success}
         begin
-          if ((cd1_1<>0) and (solution_overwrite=false)) then
+          if ((head.cd1_1<>0) and (solution_overwrite=false)) then
           begin
             nrskipped:=nrskipped+1; {plate solved}
             memo2_message('Skipped: '+filename2+ '  Already a solution in the header. Select option overwrite to renew.');
@@ -12213,7 +12179,7 @@ begin
             end;
           end;
 
-          if ((cd1_1<>0) and ((solved) or (add_sip) or (add_lim_magn)) )  then {time to save}
+          if ((head.cd1_1<>0) and ((solved) or (add_sip) or (add_lim_magn)) )  then {time to save}
           begin
 //            if ((add_sqm) and (calculate_sqm(false {get backgr},false{get histogr}))) then
 //                update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqmfloat);
@@ -12277,7 +12243,7 @@ procedure Tmainwindow.demosaic_bayermatrix1Click(Sender: TObject);
 var
     oldcursor: tcursor;
 begin
-  if naxis3>1 then {colour}
+  if head.naxis3>1 then {colour}
   begin
     memo2_message('Image already in colour. No action.');
     exit;
@@ -12343,7 +12309,7 @@ var
    dRa,dDec,delta,gamma  : double;
 
 begin
- RAM:=0;DECM:=0;{for case wrong index or CD1_1=0}
+ RAM:=0;DECM:=0;{for case wrong index or head.cd1_1=0}
  {DSS polynom solution}
  if mainwindow.polynomial1.itemindex=2 then {DSS survey}
  begin
@@ -12360,34 +12326,34 @@ begin
  begin {WCS and SIP solutions}
    if ((mainwindow.Polynomial1.itemindex=1) and (a_order>=2)) then {SIP, Simple Imaging Polynomial use by astrometry.net or spitzer}
    begin
-     u:=fitsx-crpix1;
-     v:=fitsy-crpix2;
+     u:=fitsx-head.crpix1;
+     v:=fitsy-head.crpix2;
      u2:=u + a_0_0+ a_0_1*v + a_0_2*v*v + a_0_3*v*v*v + a_1_0*u + a_1_1*u*v + a_1_2*u*v*v + a_2_0*u*u + a_2_1*u*u*v + a_3_0*u*u*u ; {SIP correction for second or third order}
      v2:=v + b_0_0+ b_0_1*v + b_0_2*v*v + b_0_3*v*v*v + b_1_0*u + b_1_1*u*v + b_1_2*u*v*v + b_2_0*u*u + b_2_1*u*u*v + b_3_0*u*u*u ; {SIP correction for second or third order}
 
-     dRa :=(cd1_1*(u2)+cd1_2*(v2))*pi/180;
-     dDec:=(cd2_1*(u2)+cd2_2*(v2))*pi/180;
-     delta:=cos(dec0)-dDec*sin(dec0);
+     dRa :=(head.cd1_1*(u2)+head.cd1_2*(v2))*pi/180;
+     dDec:=(head.cd2_1*(u2)+head.cd2_2*(v2))*pi/180;
+     delta:=cos(head.dec0)-dDec*sin(head.dec0);
      gamma:=sqrt(dRa*dRa+delta*delta);
 
-     ram:=ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
+     ram:=head.ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
      if ram<0 then ram:=ram+2*pi;
      if ram>pi*2 then ram:=ram-pi*2;
-     decm:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
+     decm:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
    end
    else
    begin  {mainwindow.Polynomial1.itemindex=0}
-     if cd1_1<>0 then
+     if head.cd1_1<>0 then
      begin
-       dRa :=(cd1_1*(fitsx-crpix1)+cd1_2*(fitsy-crpix2))*pi/180;
-       dDec:=(cd2_1*(fitsx-crpix1)+cd2_2*(fitsy-crpix2))*pi/180;
-       delta:=cos(dec0)-dDec*sin(dec0);
+       dRa :=(head.cd1_1*(fitsx-head.crpix1)+head.cd1_2*(fitsy-head.crpix2))*pi/180;
+       dDec:=(head.cd2_1*(fitsx-head.crpix1)+head.cd2_2*(fitsy-head.crpix2))*pi/180;
+       delta:=cos(head.dec0)-dDec*sin(head.dec0);
        gamma:=sqrt(dRa*dRa+delta*delta);
 
-       ram:=ra0+arctan2(Dra,delta); {arctan2 is required for images containing celestial pole}
+       ram:=head.ra0+arctan2(Dra,delta); {arctan2 is required for images containing celestial pole}
        if ram<0 then ram:=ram+2*pi;
        if ram>pi*2 then ram:=ram-pi*2;
-       decm:=arctan((sin(dec0)+dDec*cos(dec0))/gamma);
+       decm:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
      end;
    end;
  end;{WCS solution}
@@ -12409,12 +12375,12 @@ begin
    if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
    if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
 
-   width2:=stopX-startx+1;
-   height2:=stopY-starty+1;
-   setlength(img_temp,naxis3,width2,height2);{set length of image array}
+   head.width:=stopX-startx+1;
+   head.height:=stopY-starty+1;
+   setlength(img_temp,head.naxis3,head.width,head.height);{set length of image array}
 
 
-   for col:=0 to naxis3-1 do
+   for col:=0 to head.naxis3-1 do
      for fitsY:=startY to stopY do
        for fitsX:=startX to stopX do {crop image INCLUDING rectangle. Do this that if used near corners they are included}
           img_temp[col,fitsX-startX,fitsY-startY]:=img_loaded[col,fitsX,fitsY];
@@ -12422,56 +12388,56 @@ begin
    img_loaded:=nil;{release memory}
    img_loaded:=img_temp;
 
-   update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-   update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+   update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
+   update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
 
    {new reference pixel}
 
-   if cd1_1<>0 then
+   if head.cd1_1<>0 then
    begin
      {do the rigid method.}
      sensor_coordinates_to_celestial((startX+stopX)/2,(startY+stopY)/2 , ra_c,dec_c {new center RA, DEC position});
-     //make 1 step in direction crpix1. Do first the two steps because cd1_1, cd2_1..... are required so they have to be updated after the two steps.
-     sensor_coordinates_to_celestial(1+(startX+stopX)/2,(startY+stopY)/2 , ra_n,dec_n {RA, DEC position, one pixel moved in crpix1});
-     //make 1 step in direction crpix2
-     sensor_coordinates_to_celestial((startX+stopX)/2,1+(startY+stopY)/2 , ra_m,dec_m {RA, DEC position, one pixel moved in crpix2});
+     //make 1 step in direction head.crpix1. Do first the two steps because head.cd1_1, head.cd2_1..... are required so they have to be updated after the two steps.
+     sensor_coordinates_to_celestial(1+(startX+stopX)/2,(startY+stopY)/2 , ra_n,dec_n {RA, DEC position, one pixel moved in head.crpix1});
+     //make 1 step in direction head.crpix2
+     sensor_coordinates_to_celestial((startX+stopX)/2,1+(startY+stopY)/2 , ra_m,dec_m {RA, DEC position, one pixel moved in head.crpix2});
 
      delta_ra:=ra_n-ra_c;
      if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
      if delta_ra<-pi then delta_ra:=delta_ra-2*pi; {1  -> 359,  -2:=(1-359) -360  }
-     cd1_1:=(delta_ra)*cos(dec_c)*(180/pi);
-     cd2_1:=(dec_n-dec_c)*(180/pi);
+     head.cd1_1:=(delta_ra)*cos(dec_c)*(180/pi);
+     head.cd2_1:=(dec_n-dec_c)*(180/pi);
 
      delta_ra:=ra_m-ra_c;
      if delta_ra>+pi then delta_ra:=2*pi-delta_ra; {359-> 1,    +2:=360 - (359- 1)}
      if delta_ra<-pi then delta_ra:=delta_ra-2*pi; {1  -> 359,  -2:=(1-359) -360  }
-     cd1_2:=(delta_ra)*cos(dec_c)*(180/pi);
-     cd2_2:=(dec_m-dec_c)*(180/pi);
+     head.cd1_2:=(delta_ra)*cos(dec_c)*(180/pi);
+     head.cd2_2:=(dec_m-dec_c)*(180/pi);
 
-     ra0:=ra_c;
-     dec0:=dec_c;
-     crpix1:=(width2+1)/2;
-     crpix2:=(height2+1)/2;
+     head.ra0:=ra_c;
+     head.dec0:=dec_c;
+     head.crpix1:=(head.width+1)/2;
+     head.crpix2:=(head.height+1)/2;
 
       new_to_old_WCS;
 
-      update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,ra0*180/pi);
-      update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,dec0*180/pi);
+      update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,head.ra0*180/pi);
+      update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,head.dec0*180/pi);
 
-      update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);{adapt reference pixel of plate solution. Is no longer in the middle}
-      update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
+      update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);{adapt reference pixel of plate solution. Is no longer in the middle}
+      update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
 
-      update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
-      update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
+      update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
+      update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
 
-      update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
-      update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
-      update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
-      update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+      update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
+      update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
+      update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
+      update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
 
       //   Alternative method keeping the old center poistion. Images center outside the image causes problems for image selection in planetarium program
-      //   if crpix1<>0 then begin crpix1:=crpix1-startX; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);end;{adapt reference pixel of plate solution. Is no longer in the middle}
-      //   if crpix2<>0 then begin crpix2:=crpix2-startY; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);end;
+      //   if head.crpix1<>0 then begin head.crpix1:=head.crpix1-startX; update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);end;{adapt reference pixel of plate solution. Is no longer in the middle}
+      //   if head.crpix2<>0 then begin head.crpix2:=head.crpix2-startY; update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);end;
    end;
 
    update_text   ('COMMENT C','  Cropped image');
@@ -12638,30 +12604,30 @@ begin
   begin
     flipped:=flipped1.checked; {flipped image}
 
-    crpix1:=shape_marker1_fitsX;
-    crpix2:=shape_marker1_fitsY;
+    head.crpix1:=shape_marker1_fitsX;
+    head.crpix2:=shape_marker1_fitsY;
 
     kommapos:=pos(',',mouse_positionRADEC1);
-    ra_text_to_radians (copy(mouse_positionRADEC1,1  ,kommapos-1) ,ra0,error2); {convert ra text to ra_1 in radians}
+    ra_text_to_radians (copy(mouse_positionRADEC1,1  ,kommapos-1) ,head.ra0,error2); {convert ra text to ra_1 in radians}
     if error2 then begin beep;exit;end;
-    dec_text_to_radians(copy(mouse_positionRADEC1,kommapos+1,99) ,dec0,error2); {convert dec text to dec_1 in radians}
+    dec_text_to_radians(copy(mouse_positionRADEC1,kommapos+1,99) ,head.dec0,error2); {convert dec text to dec_1 in radians}
     if error2 then begin beep;exit;end;
 
     kommapos:=pos(',',mouse_positionRADEC2);
-    ra_text_to_radians (copy(mouse_positionRADEC2,1  ,kommapos-1) ,ra2,error2); {convert ra text to ra0 in radians}
+    ra_text_to_radians (copy(mouse_positionRADEC2,1  ,kommapos-1) ,ra2,error2); {convert ra text to head.ra0 in radians}
     if error2 then begin beep;exit;end;
-    dec_text_to_radians(copy(mouse_positionRADEC2,kommapos+1,99) ,dec2,error2); {convert dec text to dec0 in radians}
+    dec_text_to_radians(copy(mouse_positionRADEC2,kommapos+1,99) ,dec2,error2); {convert dec text to head.dec0 in radians}
     if error2 then begin beep;exit;end;
 
     pixeldistance:=sqrt(sqr(shape_marker2_fitsX- shape_marker1_fitsX)+sqr(shape_marker2_fitsY- shape_marker1_fitsY));
-    ang_sep(ra0,dec0,ra2,dec2 ,distance);{calculate distance in radians}
+    ang_sep(head.ra0,head.dec0,ra2,dec2 ,distance);{calculate distance in radians}
 
-    cdelt2:=distance*180/(pi*pixeldistance);
-    if flipped then cdelt1:=-cdelt2 else cdelt1:=cdelt2;
+    head.cdelt2:=distance*180/(pi*pixeldistance);
+    if flipped then head.cdelt1:=-head.cdelt2 else head.cdelt1:=head.cdelt2;
 
-    {find crota2}
+    {find head.crota2}
    {see meeus new formula 46.5, angle of moon limb}
-    angle2:=arctan2(cos(dec2)*sin(ra2-ra0),sin(dec2)*cos(dec0) - cos(dec2)*sin(dec0)*cos(ra2-ra0)); {angle between line between the two stars and north}
+    angle2:=arctan2(cos(dec2)*sin(ra2-head.ra0),sin(dec2)*cos(head.dec0) - cos(dec2)*sin(head.dec0)*cos(ra2-head.ra0)); {angle between line between the two stars and north}
     angle3:=arctan2(shape_marker2_fitsX- shape_marker1_fitsX,shape_marker2_fitsY- shape_marker1_fitsY); {angle between top and line between two reference pixels}
 
     if flipped then
@@ -12672,8 +12638,8 @@ begin
     if angle< -pi then angle:=angle+2*pi;
     if angle>=+pi then angle:=angle-2*pi;
 
-    crota2:=-angle*180/pi;{crota2 is defined north to west, so reverse}
-    crota1:=crota2;
+    head.crota2:=-angle*180/pi;{head.crota2 is defined north to west, so reverse}
+    head.crota1:=head.crota2;
 
     old_to_new_WCS;{new WCS missing, convert old WCS to new}
 
@@ -12681,23 +12647,23 @@ begin
     update_text ('CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
     update_text ('CUNIT1  =',#39+'deg     '+#39+'           / Unit of coordinates                            ');
 
-    update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
-    update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
+    update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);
+    update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
 
-    update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,ra0*180/pi);
-    update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,dec0*180/pi);
+    update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,head.ra0*180/pi);
+    update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,head.dec0*180/pi);
 
 
-    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,cdelt1);
-    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,cdelt2);
+    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);
+    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
 
-    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
-    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
+    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
+    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
 
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
     update_text   ('PLTSOLVD=','                   T / ASTAP manual with two positions');
 
     update_menu_related_to_solver(true); {update menu section related to solver succesfull}
@@ -12720,16 +12686,16 @@ begin
 
   if nrbits=8 then max_range:= 255 else max_range:=65535;
 
-  for col:=0 to naxis3-1 do {do all colours}
+  for col:=0 to head.naxis3-1 do {do all colours}
   begin
-    For fitsY:=0 to (height2-1) do
-      for fitsX:=0 to (width2-1) do
+    For fitsY:=0 to (head.height-1) do
+      for fitsX:=0 to (head.width-1) do
       begin
         img_loaded[col,fitsX,fitsY]:=max_range-img_loaded[col,fitsX,fitsY]
       end;
   end;
 
-  datamax_org:=max_range;
+  head.datamax_org:=max_range;
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);
 
@@ -12762,9 +12728,6 @@ var
   valueI : string;
   Save_Cursor:TCursor;
 begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
   if sender<>extend1 then
   begin
     valueI:=InputBox('Rotation angle CCW in degrees:','','' );
@@ -12774,26 +12737,30 @@ begin
   else
   angle:=0;{this will effectively extend the canvas}
 
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+
   memo2_message('Start rotation. This takes some time.');
   backup_img;
 
   if flip_horizontal1.checked then angle:=-angle;{change rotation if flipped}
   if flip_vertical1.checked then   angle:=-angle;{change rotation if flipped}
 
-  if width2<>height2 then {fresh image}
-    maxsize:=round(1+sqrt(sqr(height2)+sqr(width2))) {add one pixel otherwise not enough resulting in runtime errors}
+  if head.width<>head.height then {fresh image}
+    maxsize:=round(1+sqrt(sqr(head.height)+sqr(head.width))) {add one pixel otherwise not enough resulting in runtime errors}
   else {assume this image is already rotated. Enough space to rotate}
-    maxsize:=width2;
+    maxsize:=head.width;
 
   centerX:=maxsize/2;
   centerY:=maxsize/2;
-  centerxs:=width2/2;
-  centerys:=height2/2;
+  centerxs:=head.width/2;
+  centerys:=head.height/2;
 
-  setlength(img_temp,naxis3, maxsize,maxsize);{set length of new image}
+  setlength(img_temp,head.naxis3, maxsize,maxsize);{set length of new image}
 
   {clear array}
-  for col:=0 to naxis3-1 do {do all colours}
+  for col:=0 to head.naxis3-1 do {do all colours}
   begin
     For fitsY:=0 to (maxsize-1) do
       for fitsX:=0 to (maxsize-1) do
@@ -12806,7 +12773,7 @@ begin
 
 
   progressC:=0;
-  For fitsY:=0 to (height2-1) do
+  For fitsY:=0 to (head.height-1) do
   begin
     inc(progressC);{counter}
     if frac(fitsY/100)=0 then
@@ -12814,11 +12781,11 @@ begin
         Application.ProcessMessages;{this could change startX, startY}
         if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
 
-        progress_value:=round(progressC*100/(height2));{progress in %}
+        progress_value:=round(progressC*100/(head.height));{progress in %}
         progress_indicator(progress_value,'');{report progress}
       end;
 
-    for fitsX:=0 to (width2-1) do
+    for fitsX:=0 to (head.width-1) do
     begin
       value:=img_loaded[0,fitsX,fitsY];
       if value>=0.01 then {do only data. Use red for detection}
@@ -12830,46 +12797,46 @@ begin
         yy:=trunc(centerY +(fitsX-centerxs-0.5+i/resolution)*sinA + (fitsY-centerys-0.5+j/resolution)*cosA);
         {do all colours}
         img_temp[0,xx,yy ]:=img_temp[0,xx,yy] + value*factor;{factor is typical 1/100 due to 10x10 subpixel}
-        if naxis3>=2 then img_temp[1,xx,yy]:=img_temp[1,xx,yy] + img_loaded[1,fitsX,fitsY]*factor; {this is the fastest way rather then for col:=0 to naxis3-1 loop}
-        if naxis3>=3 then img_temp[2,xx,yy]:=img_temp[2,xx,yy] + img_loaded[2,fitsX,fitsY]*factor;
+        if head.naxis3>=2 then img_temp[1,xx,yy]:=img_temp[1,xx,yy] + img_loaded[1,fitsX,fitsY]*factor; {this is the fastest way rather then for col:=0 to head.naxis3-1 loop}
+        if head.naxis3>=3 then img_temp[2,xx,yy]:=img_temp[2,xx,yy] + img_loaded[2,fitsX,fitsY]*factor;
       end;
     end;
   end;
 
-  width2:=maxsize;
-  height2:=maxsize;
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
+  head.width:=maxsize;
+  head.height:=maxsize;
+  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
 
   img_loaded:=img_temp;
   img_temp:=nil;
 
-  if cd1_1<>0 then {update solution for rotation}
+  if head.cd1_1<>0 then {update solution for rotation}
   begin
-     if ((crpix1<>0.5+centerxs) or (crpix2<>0.5+centerys)) then {reference is not center}
+     if ((head.crpix1<>0.5+centerxs) or (head.crpix2<>0.5+centerys)) then {reference is not center}
      begin  {to much hassle to fix. Just remove the solution}
        remove_key('CD1_1   ',false);
        remove_key('CD1_2   ',false);
        remove_key('CD2_1   ',false);
        remove_key('CD2_2   ',false);
      end;
-     crota2:=fnmodulo(crota2+angle,360);
-     crota1:=fnmodulo(crota1+angle,360);
-     crpix1:=centerX;
-     crpix2:=centerY;
+     head.crota2:=fnmodulo(head.crota2+angle,360);
+     head.crota1:=fnmodulo(head.crota1+angle,360);
+     head.crpix1:=centerX;
+     head.crpix2:=centerY;
      old_to_new_WCS;{convert old style FITS to newd style}
 
-     update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_1);
-     update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
-     update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
-     update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
+     update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
+     update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
+     update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
+     update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
 
 
-     update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,crpix1);
-     update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,crpix2);
+     update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);
+     update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
 
-     update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,crota1);
-     update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,crota2);
+     update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
+     update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
 
      add_text   ('HISTORY   ','Rotated CCW by angle '+valueI);
   end;
@@ -12937,7 +12904,7 @@ var
   begin
     x_trunc:=trunc(x1);
     y_trunc:=trunc(y1);
-    if ((x_trunc<=0) or (x_trunc>=(width2-2)) or (y_trunc<=0) or (y_trunc>=(height2-2))) then begin result:=0; exit;end;
+    if ((x_trunc<=0) or (x_trunc>=(head.width-2)) or (y_trunc<=0) or (y_trunc>=(head.height-2))) then begin result:=0; exit;end;
     x_frac :=frac(x1);
     y_frac :=frac(y1);
     try
@@ -13020,8 +12987,8 @@ begin
   end
   else
   begin
-    ang_w:=abs((stopX-startX)*cdelt2*3600);{arc sec}
-    ang_h:=abs((stopY-startY)*cdelt2*3600);{arc sec}
+    ang_w:=abs((stopX-startX)*head.cdelt2*3600);{arc sec}
+    ang_h:=abs((stopY-startY)*head.cdelt2*3600);{arc sec}
 
     window_size:='&-c.bs='+ floattostr6(ang_w)+'/'+floattostr6(ang_h)+'&-out.max=300&Gmag=<23';{square box}
     {-c.geom=b  square box, -c.bs=10 box size 10arc
@@ -13095,14 +13062,14 @@ end;
 procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
-  xf,yf,k, fx,fy, shapetype                 : integer;
-  hfd2,fwhm_star2,snr,flux,xc,yc,xcf,ycf : double;
+  width5,height5, xf,yf,k, fx,fy, shapetype  : integer;
+  hfd2,fwhm_star2,snr,flux,xc,yc,xcf,ycf     : double;
 begin
   if flip_horizontal1.Checked then xf:=image1.width-1-x else xf:=x;;
   if flip_vertical1.Checked then yf:=image1.height-1-y else yf:=y;
 
-  startX:=round(-0.5+(xf+0.5)/(image1.width/width2));{starts at -0.5 and  middle pixels is 0}
-  startY:=round(-0.5+height2-(yf+0.5)/(image1.height/height2)); {from bottom to top, starts at -0.5 and 0 at middle first pixel}
+  startX:=round(-0.5+(xf+0.5)/(image1.width/head.width));{starts at -0.5 and  middle pixels is 0}
+  startY:=round(-0.5+head.height-(yf+0.5)/(image1.height/head.height)); {from bottom to top, starts at -0.5 and 0 at middle first pixel}
 
   stopX:=startX;{prevent random crop and other actions}
   stopY:=startY;
@@ -13112,7 +13079,7 @@ begin
   hfd2:=2;{just a good value}
 
   {for manual alignment and photometry}
-  if  ((stackmenu1.pagecontrol1.tabindex=0) and (stackmenu1.use_manual_alignment1.checked) and (pos('S',calstat)=0 {ignore stacked images unless callled from listview1. See doubleclick listview1} )) then
+  if  ((stackmenu1.pagecontrol1.tabindex=0) and (stackmenu1.use_manual_alignment1.checked) and (pos('S',head.calstat)=0 {ignore stacked images unless callled from listview1. See doubleclick listview1} )) then
   begin
     if pos('small',stackmenu1.manual_centering1.text)<>0 then {comet}
     begin
@@ -13132,7 +13099,7 @@ begin
     else
     if pos('No',stackmenu1.manual_centering1.text)<>0 then {no centering}
     begin
-      xc:=startX;{0..width2-1}
+      xc:=startX;{0..head.width-1}
       yc:=startY;
     end
     else {star alignment}
@@ -13202,19 +13169,21 @@ begin
   begin
     screen.Cursor := crhandpoint;
 
-    if ((naxis3=3) and (stackmenu1.pagecontrol1.tabindex=12) {pixelmath 1}) then {for colour replace function}
+    if ((head.naxis3=3) and (stackmenu1.pagecontrol1.tabindex=12) {pixelmath 1}) then {for colour replace function}
     begin
       sample(startX,startY);
     end;
 
     if copy_paste then {paste copied image part}
     begin
-      for k:=0 to naxis3-1 do {do all colors}
+      width5:=Length(img_loaded[0]);    {width}
+      height5:=Length(img_loaded[0][0]); {height}
+      for k:=0 to head.naxis3-1 do {do all colors}
       begin
         for fy:=copy_paste_y to copy_paste_y+copy_paste_h-1 do
         for fX:=copy_paste_x to copy_paste_x+copy_paste_w-1 do
         begin
-          img_loaded[k,max(0,min(width2-1,round(startX+(fx-copy_paste_x)- (copy_paste_w div 2)))),max(0,min(height2-1,round(startY+(fy-copy_paste_y) - (copy_paste_h div 2))))]:=img_backup[index_backup].img[k,fx,fy];{use backup for case overlap occurs}
+          img_loaded[k,max(0,min(width5-1,round(startX+(fx-copy_paste_x)- (copy_paste_w div 2)))),max(0,min(height5-1,round(startY+(fy-copy_paste_y) - (copy_paste_h div 2))))]:=img_backup[index_backup].img[k,fx,fy];{use backup for case overlap occurs}
         end;
       end;{k color}
       plot_fits(mainwindow.image1,false,true);
@@ -13232,7 +13201,7 @@ const
   max_ri=74; //(50*sqrt(2)+1 assuming rs<=50. Should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1+2;
 
 var
-  i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter,annulus_width :integer;
+  width5,height5,i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter,annulus_width :integer;
   SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r, val,pixel_counter,valmax,mad_bg    : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
@@ -13245,7 +13214,7 @@ var
     begin
       x_trunc:=trunc(x1);
       y_trunc:=trunc(y1);
-      if ((x_trunc<=0) or (x_trunc>=(width2-2)) or (y_trunc<=0) or (y_trunc>=(height2-2))) then begin result:=0; exit;end;
+      if ((x_trunc<=0) or (x_trunc>=(width5-2)) or (y_trunc<=0) or (y_trunc>=(height5-2))) then begin result:=0; exit;end;
       x_frac :=frac(x1);
       y_frac :=frac(y1);
       try
@@ -13257,6 +13226,9 @@ var
       end;
     end;
 begin
+  width5:=Length(img[0]);    {width}
+  height5:=Length(img[0][0]); {height}
+
   {rs should be <=50 to prevent runtime errors}
   if  aperture_small<99 then
     annulus_width:=3 {high precession}
@@ -13267,8 +13239,8 @@ begin
   r2:=rs+annulus_width;
   r2_square:=r2*r2;
 
-  if ((x1-r2<=0) or (x1+r2>=width2-1) or
-      (y1-r2<=0) or (y1+r2>=height2-1) )
+  if ((x1-r2<=0) or (x1+r2>=width5-1) or
+      (y1-r2<=0) or (y1+r2>=height5-1) )
     then begin hfd1:=999; snr:=0; exit;end;
 
   valmax:=0;
@@ -13324,7 +13296,7 @@ begin
       yc:=(y1+Yg);
      {center of gravity found}
 
-      if ((xc-rs<0) or (xc+rs>width2-1) or (yc-rs<0) or (yc+rs>height2-1) ) then
+      if ((xc-rs<0) or (xc+rs>width5-1) or (yc-rs<0) or (yc+rs>height5-1) ) then
                                  exit;{prevent runtime errors near sides of images}
       boxed:=(signal_counter>=(2/9)*sqr(rs+rs+1));{are inside the box 2 of the 9 of the pixels illuminated? Works in general better for solving then ovality measurement as used in the past}
 
@@ -13565,7 +13537,7 @@ begin
   begin
     mainwindow.image1.Canvas.Pen.color:=clblack;{define otherwise problems in Linux}
     mainwindow.image1.Canvas.Pen.Mode := pmNotXor;       { use XOR mode to draw/erase }
-    mainwindow.image1.Canvas.Pen.width := round(1+width2/mainwindow.image1.width);{thick lines because image is stretched smaller and otherwise line can't been seen}
+    mainwindow.image1.Canvas.Pen.width := round(1+head.width/mainwindow.image1.width);{thick lines because image is stretched smaller and otherwise line can't been seen}
     mainwindow.image1.Canvas.MoveTo(start_RX , start_RY);   { move pen back to origin }
 
     mainwindow.image1.Canvas.LineTo(stop_RX,start_RY);        { erase the old line }
@@ -13581,7 +13553,7 @@ procedure draw_rectangle(x_sized,y_sized:integer);
 begin
   mainwindow.image1.Canvas.Pen.color:=clblack;
   mainwindow.image1.Canvas.Pen.Mode := pmNotXor;       { use XOR mode to draw/erase }
-  mainwindow.image1.Canvas.Pen.width := round(1+width2/mainwindow.image1.width);{thick lines because image is stretched smaller and otherwise line can't been seen}
+  mainwindow.image1.Canvas.Pen.width := round(1+head.width/mainwindow.image1.width);{thick lines because image is stretched smaller and otherwise line can't been seen}
   mainwindow.image1.Canvas.LineTo(X_sized, start_RY);    { draw the new line }
   mainwindow.image1.Canvas.LineTo(X_sized, Y_sized);   { draw the new line }
   mainwindow.image1.Canvas.LineTo(start_RX, Y_sized);    { draw the new line }
@@ -13595,8 +13567,8 @@ procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
 
 var
   hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance,sd,dummy,conv_factor : double;
-  s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str             : string;
-  x_sized,y_sized,factor,flipH,flipV,iterations                           : integer;
+  s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str                  : string;
+  width5,height5,x_sized,y_sized,factor,flipH,flipV,iterations                 : integer;
   color1:tcolor;
   r,b :single;
 begin
@@ -13644,6 +13616,8 @@ begin
    else
    down_xy_valid := False; {every move without ssleft will invalidate down_xy}
 
+   width5:=Length(img_loaded[0]);    {width}
+   height5:=Length(img_loaded[0][0]); {height}
 
    if flip_horizontal1.Checked then flipH:=-1 else flipH:=1;
    if flip_vertical1.Checked then  flipV:=-1 else flipV:=1;
@@ -13651,13 +13625,13 @@ begin
    if flipH=-1 then xf:=image1.width-1-x else xf:=x;;
    if flipV=-1 then yf:=image1.height-1-y else yf:=y;
 
-   mouse_fitsx:=0.5+(0.5+xf)/(image1.width/width2);{starts at +0.5 and  middle pixels is 1}
-   mouse_fitsy:=0.5+height2-(0.5+yf)/(image1.height/height2); {from bottom to top, starts at +0.5 and 1 at middle first pixel}
+   mouse_fitsx:=0.5+(0.5+xf)/(image1.width/width5);{starts at +0.5 and  middle pixels is 1}
+   mouse_fitsy:=0.5+height5-(0.5+yf)/(image1.height/height5); {from bottom to top, starts at +0.5 and 1 at middle first pixel}
 
 
 //  rubber rectangle
-   x_sized:=trunc(x*width2/image1.width);
-   y_sized:=trunc(y*height2/image1.height);
+   x_sized:=trunc(x*width5/image1.width);
+   y_sized:=trunc(y*height5/image1.height);
 
    if ssright in shift then {for crop function}
    begin
@@ -13674,7 +13648,7 @@ begin
    mouse_enter:=0;
 
 
-   factor:=round(1+width2/image1.width);
+   factor:=round(1+width5/image1.width);
    if ((abs(stop_RX -x)>factor) and (abs(stop_RY -y)>factor))then
    begin
      if ssright in shift then {rubber rectangle}
@@ -13685,9 +13659,9 @@ begin
        stopX:=round(-1+mouse_fitsX); {starts at -0.5 and  middle pixels is 0}
        stopY:=round(-1+mouse_fitsY); {from bottom to top, starts at -0.5 and 0 at middle first pixel}
 
-       if cdelt2<>0 then
+       if head.cdelt2<>0 then
        begin
-         pixel_distance:= 3600*sqrt (sqr((X_sized-start_RX)*cdelt1)+sqr((start_RY-Y_sized)*cdelt2));{pixel distance in arcsec}
+         pixel_distance:= 3600*sqrt (sqr((X_sized-start_RX)*head.cdelt1)+sqr((start_RY-Y_sized)*head.cdelt2));{pixel distance in arcsec}
          if pixel_distance<60 then dist_str:=inttostr(round(pixel_distance))+'"'
          else
          if pixel_distance<3600 then dist_str:=floattostrF(pixel_distance/60,ffgeneral,3,2)+#39
@@ -13695,7 +13669,7 @@ begin
          dist_str:=floattostrF(pixel_distance/3600,ffgeneral,3,2)+'°';
        end
        else dist_str:='';
-       if cdelt2<>0 then angle_str:='∠='+inttostr(round(fnmodulo (arctan2(flipH*(X_sized-start_RX),flipV*(start_RY-Y_sized))*180/pi + crota2,360)) )+'°' else  angle_str:=''; ;
+       if head.cdelt2<>0 then angle_str:='∠='+inttostr(round(fnmodulo (arctan2(flipH*(X_sized-start_RX),flipV*(start_RY-Y_sized))*180/pi + head.crota2,360)) )+'°' else  angle_str:=''; ;
        mainwindow.statusbar1.panels[7].text:=inttostr(abs(X_sized-start_RX)-1)+' x '+inttostr(abs(start_RY-Y_sized)-1)+'    '+dist_str+'    '+angle_str;{indicate rectangl size}
      end
      else
@@ -13718,16 +13692,16 @@ begin
    {prevent some rounding errors just outside the dimensions}
    if mouse_fitsY<1 then mouse_fitsY:=1;
    if mouse_fitsX<1 then mouse_fitsX:=1;
-   if mouse_fitsY>height2 then mouse_fitsY:=height2;
-   if mouse_fitsX>width2 then mouse_fitsX:=width2;
+   if mouse_fitsY>height5 then mouse_fitsY:=height5;
+   if mouse_fitsX>width5 then mouse_fitsX:=width5;
 
    if copy_paste then
    begin
       show_marker_shape(mainwindow.shape_paste1,0 {rectangle},copy_paste_w,copy_paste_h,0{minimum}, mouse_fitsx, mouse_fitsy);{show the paste shape}
    end;
-   try color1:=ColorToRGB(mainwindow.image1.canvas.pixels[trunc(x*width2/image1.width),trunc(y*height2/image1.height)]); ;except;end;  {note  getpixel(image1.canvas.handle,x,y) doesn't work well since X,Y follows zoom  factor !!!}
+   try color1:=ColorToRGB(mainwindow.image1.canvas.pixels[trunc(x*width5/image1.width),trunc(y*height5/image1.height)]); ;except;end;  {note  getpixel(image1.canvas.handle,x,y) doesn't work well since X,Y follows zoom  factor !!!}
 
-   if naxis3=3 then {for star temperature}
+   if head.naxis3=3 then {for star temperature}
    begin
      try
        r:=img_loaded[0,round(mouse_fitsx)-1,round(mouse_fitsy)-1]-cblack;
@@ -13747,8 +13721,8 @@ begin
                                        + floattostrF(GetBValue(color1),ffgeneral,5,0)+
                                        '  '+rgb_kelvin(r,b) ;
    try
-     if naxis3=1 then mainwindow.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsX)-1,round(mouse_fitsY)-1],ffgeneral,5,0)+']' else
-     if naxis3=3 then mainwindow.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsX)-1,round(mouse_fitsY)-1],ffgeneral,5,0)+'/'+ {color}
+     if head.naxis3=1 then mainwindow.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsX)-1,round(mouse_fitsY)-1],ffgeneral,5,0)+']' else
+     if head.naxis3=3 then mainwindow.statusbar1.panels[3].text:=s1+', '+s2+' = ['+floattostrF(img_loaded[0,round(mouse_fitsX)-1,round(mouse_fitsY)-1],ffgeneral,5,0)+'/'+ {color}
                                                                               floattostrF(img_loaded[1,round(mouse_fitsX)-1,round(mouse_fitsY)-1],ffgeneral,5,0)+'/'+
                                                                               floattostrF(img_loaded[2,round(mouse_fitsX)-1,round(mouse_fitsY)-1],ffgeneral,5,0)+' '+']'
      else mainwindow.statusbar1.panels[3].text:='';
@@ -13764,10 +13738,10 @@ begin
    //mainwindow.caption:=floattostr(mouse_fitsX)+',   '+floattostr(mouse_fitsy)+',         '+floattostr(object_xc)+',   '+floattostr(object_yc);
    if ((hfd2<99) and (hfd2>0)) then
    begin
-     if ((hfd_arcseconds) and (cd1_1<>0)) then conv_factor:=abs(cdelt2)*3600{arc seconds} else conv_factor:=1;{pixels}
+     if ((hfd_arcseconds) and (head.cd1_1<>0)) then conv_factor:=abs(head.cdelt2)*3600{arc seconds} else conv_factor:=1;{pixels}
      if hfd2*conv_factor>1 then str(hfd2*conv_factor:0:1,hfd_str) else str(hfd2*conv_factor:0:2,hfd_str);
      str(fwhm_star2*conv_factor:0:1,fwhm_str);
-     if ((hfd_arcseconds) and (cd1_1<>0)) then begin hfd_str:=hfd_str+'"';fwhm_str:=fwhm_str+'"';end;
+     if ((hfd_arcseconds) and (head.cd1_1<>0)) then begin hfd_str:=hfd_str+'"';fwhm_str:=fwhm_str+'"';end;
 
      str(snr:0:0,snr_str);
      if flux_magn_offset<>0 then {offset calculated in star annotation call}
@@ -13917,22 +13891,27 @@ begin
 end;
 
 
-function stretch_img(img1: image_array):image_array;{stretch image, three colour or mono}
+function stretch_img(img: image_array):image_array;{stretch image, three colour or mono}
 var
  colrr,colgg,colbb,col_r,col_g,col_b, largest,luminance,luminance_stretched,factor,sat_factor,h,s,v : single;
- fitsX,fitsY :integer;
+ width5,height5,naxis3_local,fitsX,fitsY :integer;
 begin
-  setlength(result,naxis3,width2,height2);
+  naxis3_local:=length(img);{nr colours}
+  width5:=length(img[0]);{width}
+  height5:=length(img[0,0]);{length}
+
+
+  setlength(result,naxis3_local,width5,height5);
   sat_factor:=1-mainwindow.saturation_factor_plot1.position/10;
 
-  for fitsY:=0 to height2-1 do
-    for fitsX:=0 to width2-1 do
+  for fitsY:=0 to height5-1 do
+    for fitsX:=0 to width5-1 do
     begin
-      if naxis3=3 then
+      if naxis3_local=3 then
       begin
-        col_r:=img1[0,fitsx,fitsy];
-        col_g:=img1[1,fitsx,fitsy];
-        col_b:=img1[2,fitsx,fitsy];
+        col_r:=img[0,fitsx,fitsy];
+        col_g:=img[1,fitsx,fitsy];
+        col_b:=img[2,fitsx,fitsy];
 
         colrr:=(col_r-cblack)/(cwhite-cblack);{scale to 0..1}
         colgg:=(col_g-cblack)/(cwhite-cblack);{scale to 0..1}
@@ -13983,7 +13962,7 @@ begin
       end {RGB fits with naxis3=3}
       else
       begin {mono, naxis3=1}
-        col_r:=img1[0,fitsx,fitsy];
+        col_r:=img[0,fitsx,fitsy];
         colrr:=(col_r-cblack)/(cwhite-cblack);{scale to 1}
         if colrr<=0.00000000001 then colrr:=0.00000000001;
         if colrr>1 then colrr:=1;
@@ -14017,16 +13996,16 @@ var
 begin
   result:=false;
   if colourdepth=48 then {colour}
-    header:=pansichar('P6'+#10+inttostr(width2)+#10+inttostr(height2)+#10+'65535'+#10) {colour 48 bit}
+    header:=pansichar('P6'+#10+inttostr(head.width)+#10+inttostr(height2)+#10+'65535'+#10) {colour 48 bit}
   else
   if colourdepth=16 then {gray}
-    header:=pansichar('P5'+#10+inttostr(width2)+#10+inttostr(height2)+#10+'65535'+#10) {mono 16 bit}
+    header:=pansichar('P5'+#10+inttostr(head.width)+#10+inttostr(height2)+#10+'65535'+#10) {mono 16 bit}
   else
   if colourdepth=96 then {colour}
-    header:=pansichar('PF'+#10+inttostr(width2)+#10+inttostr(height2)+#10+'-1.0'+#10) {mono 32 bit}
+    header:=pansichar('PF'+#10+inttostr(head.width)+#10+inttostr(height2)+#10+'-1.0'+#10) {mono 32 bit}
   else
   if colourdepth=32 then {gray}
-    header:=pansichar('Pf'+#10+inttostr(width2)+#10+inttostr(height2)+#10+'-1.0'+#10); {colour 32 bit, little-endian=-1, big-endian=+1}
+    header:=pansichar('Pf'+#10+inttostr(head.width)+#10+inttostr(height2)+#10+'-1.0'+#10); {colour 32 bit, little-endian=-1, big-endian=+1}
 
   if fileexists(filen2)=true then
     if MessageDlg('Existing file ' +filen2+ ' Overwrite?', mtConfirmation, [mbYes, mbNo], 0) <> 6 {mbYes} then
@@ -14126,7 +14105,7 @@ var
   writer: TFPCustomImageWriter;
   thecolor  :Tfpcolor;
 begin
-  Image := TFPMemoryImage.Create(width2, height2);
+  Image := TFPMemoryImage.Create(head.width, height2);
   Writer := TFPWriterPNG.Create;
 
   with TFPWriterPNG(Writer) do
@@ -14139,7 +14118,7 @@ begin
   For i:=0 to height2-1 do
   begin
     if flip_V=false then k:=height2-1-i else k:=i;{reverse fits down to counting}
-    for j:=0 to width2-1 do
+    for j:=0 to head.width-1 do
     begin
       if flip_H=true then m:=wide2-1-j else m:=j;
       thecolor.red:=min(round(img[0,m,k]), $FFFF);
@@ -14159,24 +14138,24 @@ begin
   writer.Free;
 end;
 
-//function save_PNM16(img: image_array; colors,wide2,height2:integer; filen2:string;flip_H,flip_V:boolean): boolean;{save to PNM file }
+//function save_PNM16(img: image_array; colors,wide2,head.height:integer; filen2:string;flip_H,flip_V:boolean): boolean;{save to PNM file }
 //var
 //  i, j, k,m      :integer;
 //  image: TFPCustomImage;
 //  writer: TFPCustomImageWriter;
 //  thecolor  :Tfpcolor;
 //begin
-//  Image := TFPMemoryImage.Create(width2, height2);
+//  Image := TFPMemoryImage.Create(head.width, head.height);
 //  Writer := TFPWriterPNM.Create;
 
 //  with TFPWriterPNM(Writer) do
 //  begin
 //    FullWidth:=true;{16 bit}
 //  end;
-//  For i:=0 to height2-1 do
+//  For i:=0 to head.height-1 do
 //  begin
-//    if flip_V=false then k:=height2-1-i else k:=i;{reverse fits down to counting}
-//    for j:=0 to width2-1 do
+//    if flip_V=false then k:=head.height-1-i else k:=i;{reverse fits down to counting}
+//    for j:=0 to head.width-1 do
 //    begin
 //      if flip_H=true then m:=wide2-1-j else m:=j;
 //      thecolor.red:=min(round(img[0,m,k]), $FFFF);
@@ -14204,7 +14183,7 @@ var
   writer: TFPCustomImageWriter;
   thecolor  :Tfpcolor;
 begin
-  Image := TFPMemoryImage.Create(width2, height2);
+  Image := TFPMemoryImage.Create(head.width, height2);
   Writer := TFPWriterTIFF.Create;
 
 
@@ -14230,7 +14209,7 @@ begin
   For i:=0 to height2-1 do
   begin
     if flip_V=false then k:=height2-1-i else k:=i;{reverse fits down to counting}
-    for j:=0 to width2-1 do
+    for j:=0 to head.width-1 do
     begin
       if flip_H=true then m:=wide2-1-j else m:=j;
       thecolor.red:=min(round(img[0,m,k]), $FFFF);
@@ -14291,14 +14270,14 @@ begin
           filename2:=ChangeFileExt(filename2,'.tif');
           if abs(nrbits)<=16 then
           begin
-            save_tiff16(img_loaded,naxis3,width2,height2,filename2,false {flip H},false {flip V});
+            save_tiff16(img_loaded,head.naxis3,head.width,head.height,filename2,false {flip H},false {flip V});
           end
           else
           begin {32 bit files}
-            if naxis3<>1 then {color}
-              save_tiff_96(img_loaded,width2,height2,filename2,false {flip H},false {flip V}) {old uncompressed routine in unit_tiff}
+            if head.naxis3<>1 then {color}
+              save_tiff_96(img_loaded,head.width,head.height,filename2,false {flip H},false {flip V}) {old uncompressed routine in unit_tiff}
             else
-             save_tiff_32(img_loaded,width2,height2,filenamE2,false {flip H},false {flip V});{old uncompressed routine in unit_tiff}
+             save_tiff_32(img_loaded,head.width,head.height,filenamE2,false {flip H},false {flip V});{old uncompressed routine in unit_tiff}
           end;
         end
         else err:=true;
@@ -14354,17 +14333,17 @@ begin
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
         if load_image(false {recenter},false {plot}) then
         begin
-          if naxis3=1 then {monochrome}
+          if head.naxis3=1 then {monochrome}
           begin
             if abs(nrbits)<=16 then
             begin
               filename2:=ChangeFileExt(filename2,'.pgm');
-              save_PPM_PGM_PFM(img_loaded,width2,height2,16 {colour depth},filename2,false {flip H},false {flip V});
+              save_PPM_PGM_PFM(img_loaded,head.width,head.height,16 {colour depth},filename2,false {flip H},false {flip V});
             end
             else
             begin
               filename2:=ChangeFileExt(filename2,'.pfm');
-              save_PPM_PGM_PFM(img_loaded,width2,height2,32 {colour depth},filename2,false,false);
+              save_PPM_PGM_PFM(img_loaded,head.width,head.height,32 {colour depth},filename2,false,false);
             end;
           end
           else
@@ -14372,12 +14351,12 @@ begin
             if abs(nrbits)<=16 then
             begin
               filename2:=ChangeFileExt(filename2,'.ppm');
-              save_PPM_PGM_PFM(img_loaded,width2,height2,48 {colour depth},filename2,false,false);
+              save_PPM_PGM_PFM(img_loaded,head.width,head.height,48 {colour depth},filename2,false,false);
             end
             else
             begin
               filename2:=ChangeFileExt(filename2,'.pfm');
-              save_PPM_PGM_PFM(img_loaded,width2,height2,96 {colour depth},filename2,false,false);
+              save_PPM_PGM_PFM(img_loaded,head.width,head.height,96 {colour depth},filename2,false,false);
             end;
 
           end;{colour}
@@ -14434,7 +14413,7 @@ begin
         filename2:=Strings[I];
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
         if load_image(false {recenter},false {plot}) then
-          save_png16(img_loaded,naxis3,width2,height2,ChangeFileExt(filename2,'.png'),false {flip H},false {flip V})
+          save_png16(img_loaded,head.naxis3,head.width,head.height,ChangeFileExt(filename2,'.png'),false {flip H},false {flip V})
         else err:=true;
       end;
       if err=false then mainwindow.caption:='Completed, all files converted.'
@@ -14473,7 +14452,7 @@ begin
   savedialog1.filename:=filename3;
   savedialog1.initialdir:=ExtractFilePath(filename3);
 
-  if naxis3>1 then savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit float|*.tif|PPM 16 bit stretched|*.ppm;|PPM 16 bit|*.ppm|PFM 32 bit float|*.pfm'
+  if head.naxis3>1 then savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit float|*.tif|PPM 16 bit stretched|*.ppm;|PPM 16 bit|*.ppm|PFM 32 bit float|*.pfm'
               else savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit float|*.tif|PGM 16 bit stretched|*.pgm;|PGM 16 bit|*.pgm|PFM 32 bit float|*.pfm';
   savedialog1.filterindex:=SaveasTIFF1filterindex; {default 1}
   if savedialog1.execute then
@@ -14481,75 +14460,75 @@ begin
     OldCursor := Screen.Cursor;
     Screen.Cursor:= crHourGlass;
 
-    if naxis3>1 then {color}
+    if head.naxis3>1 then {color}
     begin
       if savedialog1.filterindex=1 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_png16(img_temp,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked);  {Change extension is only required due to bug in macOS only. 2021-10-9 See https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39423}
+        save_png16(img_temp,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked);  {Change extension is only required due to bug in macOS only. 2021-10-9 See https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39423}
       end
       else
       if savedialog1.filterindex=2 then
-        save_png16(img_loaded,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked)
+        save_png16(img_loaded,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=3 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_tiff16(img_temp,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
+        save_tiff16(img_temp,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=4 then
-        save_tiff16(img_loaded,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
+        save_tiff16(img_loaded,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=5 then
-      save_tiff_96(img_loaded,width2,height2,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked) {old uncompressed routine in unit_tiff}
+      save_tiff_96(img_loaded,head.width,head.height,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked) {old uncompressed routine in unit_tiff}
       else
       if savedialog1.filterindex=6 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_PPM_PGM_PFM(img_temp,width2,height2,48 {colour depth},ChangeFileExt(savedialog1.filename,'.ppm'),flip_horizontal1.checked,flip_vertical1.checked);
+        save_PPM_PGM_PFM(img_temp,head.width,head.height,48 {colour depth},ChangeFileExt(savedialog1.filename,'.ppm'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=7 then
-          save_PPM_PGM_PFM(img_loaded,width2,height2,48 {colour depth},ChangeFileExt(savedialog1.filename,'.ppm'),flip_horizontal1.checked,flip_vertical1.checked)
+          save_PPM_PGM_PFM(img_loaded,head.width,head.height,48 {colour depth},ChangeFileExt(savedialog1.filename,'.ppm'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=8 then
-          save_PPM_PGM_PFM(img_loaded,width2,height2,96 {colour depth},ChangeFileExt(savedialog1.filename,'.pfm'),flip_horizontal1.checked,flip_vertical1.checked);
+          save_PPM_PGM_PFM(img_loaded,head.width,head.height,96 {colour depth},ChangeFileExt(savedialog1.filename,'.pfm'),flip_horizontal1.checked,flip_vertical1.checked);
     end {color}
     else
     begin {gray}
       if savedialog1.filterindex=1 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_png16(img_temp,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked);
+        save_png16(img_temp,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=2 then
-        save_png16(img_loaded,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked)
+        save_png16(img_loaded,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=3 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_tiff16(img_temp,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
+        save_tiff16(img_temp,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=4 then
-      save_tiff16(img_loaded,naxis3,width2,height2,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
+      save_tiff16(img_loaded,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=5 then
-        save_tiff_32(img_loaded,width2,height2,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked){old uncompressed routine in unit_tiff}
+        save_tiff_32(img_loaded,head.width,head.height,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked){old uncompressed routine in unit_tiff}
       else
       if savedialog1.filterindex=6 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_PPM_PGM_PFM(img_temp,width2,height2,16{colour depth}, ChangeFileExt(savedialog1.filename,'.pgm'), flip_horizontal1.checked,flip_vertical1.checked);
+        save_PPM_PGM_PFM(img_temp,head.width,head.height,16{colour depth}, ChangeFileExt(savedialog1.filename,'.pgm'), flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=7 then
-          save_PPM_PGM_PFM(img_loaded,width2,height2,16{colour depth},ChangeFileExt(savedialog1.filename,'.pgm'),flip_horizontal1.checked,flip_vertical1.checked)
+          save_PPM_PGM_PFM(img_loaded,head.width,head.height,16{colour depth},ChangeFileExt(savedialog1.filename,'.pgm'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=8 then
-          save_PPM_PGM_PFM(img_loaded,width2,height2,32 {colour depth},ChangeFileExt(savedialog1.filename,'.pfm'),flip_horizontal1.checked,flip_vertical1.checked);
+          save_PPM_PGM_PFM(img_loaded,head.width,head.height,32 {colour depth},ChangeFileExt(savedialog1.filename,'.pfm'),flip_horizontal1.checked,flip_vertical1.checked);
 
     end;
 
@@ -14681,8 +14660,8 @@ begin
     update_integer('BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
     if type1<>8 then
     begin
-      update_integer('DATAMIN =',' / Minimum data value                             ' ,round(datamin_org));
-      update_integer('DATAMAX =',' / Maximum data value                             ' ,round(datamax_org));
+      update_integer('DATAMIN =',' / Minimum data value                             ' ,round(head.datamin_org));
+      update_integer('DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
       update_integer('CBLACK  =',' / Indicates the black point used when displaying the image.' ,round(cblack) ); {2019-4-9}
       update_integer('CWHITE  =',' / indicates the white point used when displaying the image.' ,round(cwhite) );
     end
@@ -15055,6 +15034,19 @@ end;
 
 {#######################################}
 begin
+
+  head.height:=100;
+  head.width:=100;
+//  head.naxis:=2; {numer of dimensions}
+//  head.naxis3:=3;{number of colors}
+  head.crpix1:=0;{reference pixel}
+  head.crpix2:=0;
+  head.cdelt1:=0;{deg/pixel for x}
+  head.cdelt2:=0;
+  head.ra0 :=0;
+  head.dec0:=0; {plate center values}
+
+
   {$ifdef CPUARM}
   size_backup:= 0; {0, one backup images for ctrl-z}
   index_backup:=size_backup;

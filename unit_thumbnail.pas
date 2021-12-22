@@ -108,8 +108,8 @@ begin
 
         filename2:= chosenDirectory+PathDelim+searchResult.Name;
         thumbnails1.caption:=filename2;{show whats happening}
-        load_fits(filename2,false {light},true,true {update memo},0,img_loaded);
-        if naxis<2 then exit; {WCS file}
+        load_fits(filename2,false {light},true,true {update memo},0,head,img_loaded);
+        if head.naxis<2 then exit; {WCS file}
         use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
         plot_fits(newimage,false,true);     {mainwindow.image1.Visible:=true; is done in plot_fits}
 

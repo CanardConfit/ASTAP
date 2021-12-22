@@ -459,7 +459,7 @@ begin
 
   name_check1.text:=name_check;
 
-  if filter_name<>'' then filter1.text:=filter_name else  filter1.itemindex:=0 {TC};
+  if head.filter_name<>'' then filter1.text:=head.filter_name else  filter1.itemindex:=0 {TC};
 
   delimiter1.itemindex:=delim_pos;
   Comparison1.Text:=stackmenu1.star_database1.text;

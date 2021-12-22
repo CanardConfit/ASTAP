@@ -137,9 +137,11 @@ begin
 
           if monitor_applydarkflat1.checked then
           begin
-            apply_dark_and_flat(filter_name,{round(exposure),set_temperature,width2,}{var} dark_count,flat_count,flatdark_count,img_loaded);{apply dark, flat if required, renew if different exposure or ccd temp}
+            apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
             {these global variables are passed-on in procedure to protect against overwriting}
-            update_text('CALSTAT =',#39+calstat+#39);
+            update_text('CALSTAT =',#39+head.calstat+#39);
+            if ((pos('D',head.calstat)>0) or (pos('F',head.calstat)>0))  then {status of dark application}
+              memo2_message('Calibration status '+head.calstat+'. Used '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
           end;
 
 

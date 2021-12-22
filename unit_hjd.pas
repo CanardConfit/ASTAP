@@ -229,7 +229,7 @@ begin
   wtime2actual:=fnmodulo(+long+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi);{Local sidereal time. As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
   RA_AZ(ra3,dec3,lat,0,wtime2actual,{var} azimuth2,altitude2);{conversion ra & dec to altitude,azimuth}
 
- {correct for temperature and correct ra0, dec0 for refraction}
+ {correct for temperature and correct head.ra0, head.dec0 for refraction}
   if temperature>=100 {999} then temperature:=10 {default temperature celsius};
   result:=atmospheric_refraction(altitude2,1010 {mbar},temperature {celsius});{apparant altitude}
   if calc_mode=2 then result:=altitude2+result {astrometric to apparent}
@@ -264,7 +264,7 @@ begin
   {calc_mode 4: calculate it, apply refration apparent to astrometric!!}
   result:=strtofloat2(centalt);
 
-  if (((result=0) or (calc_mode>1)) and (cd1_1<>0)) then {calculate from observation location, image center and time the altitude}
+  if (((result=0) or (calc_mode>1)) and (head.cd1_1<>0)) then {calculate from observation location, image center and time the altitude}
   begin
     if sitelat='' then
     begin
@@ -285,7 +285,7 @@ begin
         dec_text_to_radians(sitelong,site_long_radians,errordecode);
       if errordecode=false then
       begin
-        if jd_start=0 then date_to_jd(date_obs,exposure);{convert date-obs to jd_start, jd_mid}
+        if jd_start=0 then date_to_jd(head.date_obs,head.exposure);{convert date-obs to jd_start, jd_mid}
         if jd_mid>2400000 then {valid JD}
         begin
           precession3(2451545 {J2000},jd_mid,ra3,dec3); {precession, from J2000 to Jnow}

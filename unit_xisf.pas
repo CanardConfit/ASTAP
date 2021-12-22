@@ -29,13 +29,13 @@ uses
   unit_dss, {only to reset some variables}
   unit_annotation {only to reset some variables};
 
-function load_xisf(filen:string;var img_loaded2: image_array) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
+function load_xisf(filen:string;var head : theader ; var img_loaded2: image_array) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
 
 
 implementation
 
 
-function load_xisf(filen:string;var img_loaded2: image_array) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
+function load_xisf(filen:string;var head : theader; var img_loaded2: image_array) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
 var
    i,j,k, reader_position,a,b,c,d,e : integer;
    aline,message1,message_key,message_value,message_comment    : ansistring;
@@ -96,7 +96,7 @@ begin
   end;
   mainwindow.error_label1.visible:=false;
 
-  reset_fits_global_variables(true{light});  {Reset variables for case they are not specified in the file}
+  reset_fits_global_variables(true{light},head);  {Reset variables for case they are not specified in the file}
 
 //  ccd_temperature:=999;
   extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
@@ -145,27 +145,27 @@ begin
     b:=posex('"',aline,a);inc(b,1); {find begin};
     c:=posex(':',aline,b); {find end};
     message1:=trim(copy(aline,b,c-b)); {remove spaces and crlf}
-    width2:=strtoint(message1);
+    head.width:=strtoint(message1);
     b:=c+1;                {find begin};
     c:=posex(':',aline,b); {find end};
     message1:=trim(copy(aline,b,c-b)); {remove spaces and crlf}
-    height2:=strtoint(message1);
+    head.height:=strtoint(message1);
     b:=c+1;                {find begin};
     c:=posex('"',aline,b); {find end};
     message1:=trim(copy(aline,b,c-b)); {remove spaces and crlf}
-    naxis3:=strtoint(message1);;
+    head.naxis3:=strtoint(message1);;
   end;
 
   for j:=0 to 10 do {create an header with fixed sequence}
-    if ((j<>5) or  (naxis3<>1)) then {skip naxis3 for mono images}
+    if ((j<>5) or  (head.naxis3<>1)) then {skip head.naxis3 for mono images}
         mainwindow.memo1.lines.add(head1[j]); {add lines to empthy memo1}
   mainwindow.memo1.lines.add(head1[27]); {add end}
-  if naxis3>1 then
+  if head.naxis3>1 then
   begin
-    naxis:=3; {3 dimensions, one is colours}
+    head.naxis:=3; {3 dimensions, one is colours}
     update_integer('NAXIS   =',' / Number of dimensions                           ' ,3);{2 for mono, 3 for color}
   end
-  else naxis:=2;{mono}
+  else head.naxis:=2;{mono}
 
   a:=posex('location="attachment',aline,start_image);{find begin included data block}
   if a>0 then
@@ -195,21 +195,21 @@ begin
   if ((a=0) or (error2<>0)) then begin close_fits_file;mainwindow.error_label1.enabled:=true;
      mainwindow.statusbar1.panels[7].text:=('Can not read this format.'); mainwindow.Memo1.visible:=true;  fits_file:=false; exit; end;
 
-  if nrbits=8 then  begin datamin_org:=0;datamax_org:=255; {8 bits files} end
-    else {16, -32 files} begin datamin_org:=0;datamax_org:=$FFFF;end;{not always specified. For example in skyview. So refresh here for case brightness is adjusted}
+  if nrbits=8 then  begin head.datamin_org:=0;head.datamax_org:=255; {8 bits files} end
+    else {16, -32 files} begin head.datamin_org:=0;head.datamax_org:=$FFFF;end;{not always specified. For example in skyview. So refresh here for case brightness is adjusted}
 
   {update memo keywords}
   update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,width2);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,height2);
-  if naxis3=1 then  remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
+  if head.naxis3=1 then  remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 
 
 
-  date_obs:=extract_string_keyword('DATE-OBS');
-  if date_obs='' then date_obs:=extract_string_keyword('DATE');
+  head.date_obs:=extract_string_keyword('DATE-OBS');
+  if head.date_obs='' then head.date_obs:=extract_string_keyword('DATE');
 
-  filter_name:=extract_string_keyword('FILTER');
+  head.filter_name:=extract_string_keyword('FILTER');
   bayerpat:=extract_string_keyword('BAYERPAT');
 
   sitelong:=extract_string_keyword('SITELONG');
@@ -227,50 +227,50 @@ begin
   roworder:=extract_string_keyword('ROWORDER');
 
   {update memo keywords and variables for floats}
-  extract_double_keyword('CD1_1',cd1_1);{extract float value from XML header and add keyword to FITS memo header, ignoring comments.}
-  extract_double_keyword('CD1_2',cd1_2);
-  extract_double_keyword('CD2_1',cd2_1);
-  extract_double_keyword('CD2_2',cd2_2);
+  extract_double_keyword('CD1_1',head.cd1_1);{extract float value from XML header and add keyword to FITS memo header, ignoring comments.}
+  extract_double_keyword('CD1_2',head.cd1_2);
+  extract_double_keyword('CD2_1',head.cd2_1);
+  extract_double_keyword('CD2_2',head.cd2_2);
 
 //  Not required since XISF is not used for stacking}
 //  extract_double_keyword('CCD-TEMP',ccd_temperature);
 //  extract_double_keyword('SET-TEMP',ccd_temperature);
-//  extract_double_keyword('EXPTIME ',exposure);
-//  extract_double_keyword('EXPOSURE',exposure);
+//  extract_double_keyword('EXPTIME ',head.exposure);
+//  extract_double_keyword('EXPOSURE',head.exposure);
 
-  extract_double_keyword('CROTA1',crota1);
-  extract_double_keyword('CROTA2',crota2);
-  extract_double_keyword('CDELT1',cdelt1);
-  extract_double_keyword('CDELT2',cdelt2);
+  extract_double_keyword('CROTA1',head.crota1);
+  extract_double_keyword('CROTA2',head.crota2);
+  extract_double_keyword('CDELT1',head.cdelt1);
+  extract_double_keyword('CDELT2',head.cdelt2);
 
   extract_double_keyword('FOCALLEN',focallen);
   extract_double_keyword('XPIXSZ',xpixsz);
 
-  if cd1_1=0  then {try to retrieve pixel scale CDELT2. Else will be calculated in new_to_old_WCS procedure from the CD matrix}
+  if head.cd1_1=0  then {try to retrieve pixel scale head.cdelt2. Else will be calculated in new_to_old_WCS procedure from the CD matrix}
   begin
-    if ((focallen<>0) and (xpixsz<>0)) then cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word}
+    if ((focallen<>0) and (xpixsz<>0)) then head.cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word}
 
-    if cdelt2=0 then begin extract_double_keyword('SCALE',cdelt2); cdelt2:=cdelt2/3600 {scale is in arcsec/pixel }  end;{use sgp file keyword}
+    if head.cdelt2=0 then begin extract_double_keyword('SCALE',head.cdelt2); head.cdelt2:=head.cdelt2/3600 {scale is in arcsec/pixel }  end;{use sgp file keyword}
 
-    if cdelt2=0 then begin extract_double_keyword('SECPIX1',cdelt1);cdelt1:=cdelt1/3600;end;
-    if cdelt2=0 then begin extract_double_keyword('SECPIX2',cdelt2);cdelt2:=cdelt2/3600; end;
+    if head.cdelt2=0 then begin extract_double_keyword('SECPIX1',head.cdelt1);head.cdelt1:=head.cdelt1/3600;end;
+    if head.cdelt2=0 then begin extract_double_keyword('SECPIX2',head.cdelt2);head.cdelt2:=head.cdelt2/3600; end;
   end;
 
-  extract_double_keyword('CRVAL1',ra0);
-  extract_double_keyword('CRVAL2',dec0);
+  extract_double_keyword('CRVAL1',head.ra0);
+  extract_double_keyword('CRVAL2',head.dec0);
   extract_double_keyword('RA',ra_mount);
   extract_double_keyword('DEC',dec_mount);
   if ra_mount<999 then
   begin
-    if ra0=0 then ra0:=ra_mount;
-    if dec0=0 then dec0:=dec_mount;
+    if head.ra0=0 then head.ra0:=ra_mount;
+    if head.dec0=0 then head.dec0:=dec_mount;
   end;
 
-  ra0:=ra0*pi/180; {degrees -> radians}
-  dec0:=dec0*pi/180;
+  head.ra0:=head.ra0*pi/180; {degrees -> radians}
+  head.dec0:=head.dec0*pi/180;
 
-  cblack:=datamin_org;{for case histogram is not called}
-  cwhite:=datamax_org;
+  cblack:=head.datamin_org;{for case histogram is not called}
+  cwhite:=head.datamax_org;
 
 
   //Samples of keywords stored in header:
@@ -316,26 +316,26 @@ begin
   {add own history}
   add_text   ('HISTORY ','Imported from XISF file by the ASTAP program');{update memo}
 
-  if ( ((cdelt1=0) or (crota2>=999)) and (cd1_1<>0)) then
+  if ( ((head.cdelt1=0) or (head.crota2>=999)) and (head.cd1_1<>0)) then
   begin
     new_to_old_WCS;{ convert old WCS to new}
   end
   else
-  if ((crota2<999) and (cd1_1=0) and(cdelt1<>0)) then {valid crota2 value}
+  if ((head.crota2<999) and (head.cd1_1=0) and(head.cdelt1<>0)) then {valid head.crota2 value}
   begin
     old_to_new_WCS;{ convert old WCS to new}
   end;
 
 // not required since xisf are not used for stacking
-//  if set_temperature=999 then set_temperature:=round(ccd_temperature); {temperature}
+//  if head.set_temperature=999 then head.set_temperature:=round(ccd_temperature); {temperature}
 
-  if crota2>999 then crota2:=0;{not defined, set at 0}
-  if crota1>999 then crota1:=crota2; {for case crota1 is not used}
+  if head.crota2>999 then head.crota2:=0;{not defined, set at 0}
+  if head.crota1>999 then head.crota1:=head.crota2; {for case head.crota1 is not used}
 
-  if ra0<>0 then
+  if head.ra0<>0 then
   begin
-    mainwindow.ra1.text:=prepare_ra(ra0,' ');
-    mainwindow.dec1.text:=prepare_dec(dec0,' ');
+    mainwindow.ra1.text:=prepare_ra(head.ra0,' ');
+    mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
    {$IfDef Darwin}// {MacOS}
     //mainwindow.ra1change(nil);{OSX doesn't trigger an event}
     //mainwindow.dec1change(nil);
@@ -357,7 +357,7 @@ begin
 
   {check if buffer is wide enough for one image line}
   i:=round(bufwide/(abs(nrbits/8)));
-  if width2>i then
+  if head.width>i then
   begin
     sysutils.beep;
      mainwindow.statusbar1.panels[7].text:='Too wide XISF file !!!!!';
@@ -367,14 +367,14 @@ begin
   end
   else
   begin {buffer wide enough, read image data block}
-    setlength(img_loaded2,naxis3,width2,height2);
-    for k:=1 to naxis3 do {do all colors}
+    setlength(img_loaded2,head.naxis3,head.width,head.height);
+    for k:=1 to head.naxis3 do {do all colors}
     begin
-      For i:=0 to height2-1 do
+      For i:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,width2*round(abs(nrbits/8)));except; end; {read file info}
+        try reader.read(fitsbuffer,head.width*round(abs(nrbits/8)));except; end; {read file info}
 
-        for j:=0 to width2-1 do
+        for j:=0 to head.width-1 do
         begin
           if nrbits=16 then {16 bit FITS}
            img_loaded2[k-1,j,i]:=fitsbuffer2[j]
@@ -392,7 +392,7 @@ begin
             img_loaded2[k-1,j,i]:=fitsbuffer4[j]/65535;{scale to 0..64535 float}
         end;
       end;
-    end; {colors naxis3 times}
+    end; {colors head.naxis3 times}
   end;
   close_fits_file;
   unsaved_import:=true;{file is not available for astrometry.net}

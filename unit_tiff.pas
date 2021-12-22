@@ -155,7 +155,7 @@ const
 
 
  {following routine is no longer used}
-//function save_tiff_48(img: image_array; wide2,height2:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 48=3x16 color TIFF file
+//function save_tiff_48(img: image_array; wide2,head.height:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 48=3x16 color TIFF file
 
 //var
 //  OffsetXRes     : LongInt;
@@ -186,9 +186,9 @@ const
 
 
 // Directoryrgb48[1]._Value := LongInt(Wide2);        { Image Width }
-// Directoryrgb48[2]._Value := LongInt(Height2);      { Image Height }
-// Directoryrgb48[8]._Value := LongInt(Height2);      { Image Height }
-// Directoryrgb48[9]._Value := LongInt(2*3*Wide2*Height2);{ Strip Byte Counts }
+// Directoryrgb48[2]._Value := LongInt(head.height);      { Image Height }
+// Directoryrgb48[8]._Value := LongInt(head.height);      { Image Height }
+// Directoryrgb48[9]._Value := LongInt(2*3*Wide2*head.height);{ Strip Byte Counts }
 
 
  { Write TIFF - File for Image with RGB-Values }
@@ -227,9 +227,9 @@ const
 //   thefile.writebuffer ( NullString, sizeof(NullString));
 
   { Write Image Data }
-//  for i:=0 to Height2-1 do
+//  for i:=0 to head.height-1 do
 //  begin
-//    if flip_V=false then k:=height2-1-i else k:=i;{reverse fits down to counting}
+//    if flip_V=false then k:=head.height-1-i else k:=i;{reverse fits down to counting}
 //    for j:=0 to wide2-1 do
 //      begin
 //       if flip_H=true then m:=wide2-1-j else m:=j;
@@ -370,7 +370,7 @@ end;
 
 
 {following routine is no longer used}
-//function save_tiff_16(img: image_array; wide2,height2:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 16 bit grascale TIFF file }
+//function save_tiff_16(img: image_array; wide2,head.height:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 16 bit grascale TIFF file }
 
 //var
 //  OffsetXRes     : LongInt;
@@ -399,10 +399,10 @@ end;
 
 
 // Directorybw16[1]._Value := LongInt(Wide2);        { Image Width }
-// Directorybw16[2]._Value := LongInt(Height2);      { Image Height }
+// Directorybw16[2]._Value := LongInt(head.height);      { Image Height }
 
-// Directorybw16[8]._Value := LongInt(Height2);      { Image Height }
-// Directorybw16[9]._Value := LongInt(2*Wide2*Height2);{ Strip Byte Counts }
+// Directorybw16[8]._Value := LongInt(head.height);      { Image Height }
+// Directorybw16[9]._Value := LongInt(2*Wide2*head.height);{ Strip Byte Counts }
 
  { Write TIFF - File for Image with RGB-Values }
  { ------------------------------------------- }
@@ -437,9 +437,9 @@ end;
 
 
   { Write Image Data }
-//  for i:=0 to Height2-1 do
+//  for i:=0 to head.height-1 do
 //  begin
-//    if flip_V=false then k:=height2-1-i else k:=i;{reverse fits down to counting}
+//    if flip_V=false then k:=head.height-1-i else k:=i;{reverse fits down to counting}
 //    for j:=0 to wide2-1 do
 //      begin
 //        if flip_H=true then m:=wide2-1-j else m:=j;

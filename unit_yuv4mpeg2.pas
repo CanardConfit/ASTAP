@@ -44,10 +44,10 @@ begin
    exit;
   end;
   {'YUV4MPEG2 W0384 H0288 F01:1 Ip A0:0 C444'+#10}    {See https://wiki.multimedia.cx/index.php/YUV4MPEG2}
-  {width2:=mainwindow.image1.Picture.Bitmap.width; Note use external width2 and height since loading an image could be outstanding}
-  {height2:=mainwindow.image1.Picture.Bitmap.height;}
-  if colour then header:=pansichar('YUV4MPEG2 W'+inttostr(width2)+' H'+inttostr(height2)+' F'+trim(framerate)+':1 Ip A0:0 C444'+#10)
-            else header:=pansichar('YUV4MPEG2 W'+inttostr(width2)+' H'+inttostr(height2)+' F'+trim(framerate)+':1 Ip A0:0 Cmono'+#10);{width, height,frame rate, interlace progressive, unknown aspect, color space}
+  {head.width:=mainwindow.image1.Picture.Bitmap.width; Note use external head.width and height since loading an image could be outstanding}
+  {head.height:=mainwindow.image1.Picture.Bitmap.height;}
+  if colour then header:=pansichar('YUV4MPEG2 W'+inttostr(head.width)+' H'+inttostr(head.height)+' F'+trim(framerate)+':1 Ip A0:0 C444'+#10)
+            else header:=pansichar('YUV4MPEG2 W'+inttostr(head.width)+' H'+inttostr(head.height)+' F'+trim(framerate)+':1 Ip A0:0 Cmono'+#10);{width, height,frame rate, interlace progressive, unknown aspect, color space}
   { Write header }
   thefile.writebuffer ( header, strlen(Header));
 end;
@@ -66,17 +66,17 @@ var
   pixelrow1   : PRGBTripleArray;{for fast pixel routine}
   row         : array of byte;
 const
-  head: array[0..5] of ansichar=(('F'),('R'),('A'),('M'),('E'),(#10));
+  header: array[0..5] of ansichar=(('F'),('R'),('A'),('M'),('E'),(#10));
 
 begin
   result:=true;
   try
-    thefile.writebuffer ( head, strlen(Head)); {write FRAME+#10}
+    thefile.writebuffer ( header, strlen(header)); {write FRAME+#10}
 
-    {width2:=mainwindow.image1.Picture.Bitmap.width; Note already set}
-    {height2:=mainwindow.image1.Picture.Bitmap.height;}
+    {head.width:=mainwindow.image1.Picture.Bitmap.width; Note already set}
+    {head.height:=mainwindow.image1.Picture.Bitmap.height;}
 
-    setlength(row, width2);
+    setlength(row, head.width);
 
     {444 frames:   Y0 (full frame), U0,V0 Y1 U1 V1 Y2 U2 V2                 422 frames:  Y0 (U0+U1)/2 Y1 (V0+V1)/2 Y2 (U2+U3)/2 Y3 (V2+V3)/2}
     // write full Y frame
@@ -100,10 +100,10 @@ begin
     if colour then steps:=2 {colour} else steps:=0;{mono}    {for colour write Y, U, V frame else only Y}
 
     for k:=0 to steps {0 or 2} do {do Y,U, V frame, so scan image line 3 times}
-    for yy := 0 to height2-1 do
+    for yy := 0 to head.height-1 do
     begin // scan each timage line
       pixelrow1:=mainwindow.image1.Picture.Bitmap.ScanLine[yy];
-      for xx := 0 to width2-1 do
+      for xx := 0 to head.width-1 do
       begin
        {$ifdef mswindows}
         R :=pixelrow1[xx].rgbtRed;
