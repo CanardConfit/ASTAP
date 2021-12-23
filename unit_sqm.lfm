@@ -138,8 +138,8 @@ object form_sqm1: Tform_sqm1
     Left = 16
     Height = 150
     Top = 376
-    Width = 404
-    Caption = 'Pre-conditions'#13#10'1) Image is astrometrical solved for flux-calibration against the star database.'#13#10'2) The background value is larger then pedestal value. If not expose longer.'#13#10'3) Entering a pedestal value increases the accuracy. (mean value of a dark)'#13#10'4) Apply on single unprocessed raw images only'#13#10'    or calibrate single images and apply zero for the pedestal value.'#13#10'5) DSLR/OSC raw images require 2x2 binning.'#13#10'6) No large bright nebula should be visible.'#13#10'7) Calculated altitude is correct. The altitude will be used for an atmospheric'#13#10'    extinction correction the star light.'
+    Width = 471
+    Caption = 'Pre-conditions'#13#10'1) Image is astrometrical solved for flux-calibration against the star database.'#13#10'2) The background value is larger then pedestal value. If not expose longer.'#13#10'3) Entering a pedestal value increases the accuracy. (mean value of a dark)'#13#10'4) Apply on single unprocessed raw images only'#13#10'    or calibrate single images and apply zero for the pedestal value.'#13#10'5) DSLR/OSC raw images require 2x2 binning. For DSLR images this is done automatically.'#13#10'6) No large bright nebula is visible.'#13#10'7) Calculated altitude is correct. The altitude will be used for an atmospheric'#13#10'    extinction correction of the star light.'
     ParentColor = False
   end
   object Label4: TLabel

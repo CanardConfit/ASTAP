@@ -36,6 +36,7 @@ Listview event OnCustomDrawItem is never triggered/fired in Mac, widget Cocoa
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39500
 }
 
+
 interface
 uses
  {$ifdef mswindows}
@@ -515,33 +516,33 @@ type
   image_array = array of array of array of Single;
   star_list   = array of array of double;
 
-  Theader =record
-    height : integer; {image height}
+  Theader =record    {contains the most important header info}
+    height : integer;{image height}
     width  : integer;
-    naxis  : integer; {number of dimensions}
-    naxis3 : integer; {number of colors}
-    crpix1 : double;  {reference point X}
+    naxis  : integer;{number of dimensions}
+    naxis3 : integer;{number of colors}
+    crpix1 : double; {reference point X}
     crpix2 : double;
-    cdelt1 : double;  {X pixel size (deg)}
-    cdelt2 : double;  {Y pixel size (deg)}
-    ra0    : double;  {mount position}
+    cdelt1 : double; {X pixel size (deg)}
+    cdelt2 : double; {Y pixel size (deg)}
+    ra0    : double; {mount position}
     dec0   : double;
     crota1 : double; {image rotation at center in degrees}
     crota2 : double; {image rotation at center in degrees}
     cd1_1  : double; {solution matrix}
     cd1_2  : double;
     cd2_1  : double;
-    cd2_2  : double;
-    exposure: double;
-    datamin_org,
-    datamax_org: double;{for update histogram}
-    set_temperature,
-    dark_count,
-    light_count,
-    flat_count,
-    flatdark_count : integer;
-    date_obs,
-    calstat,
+    cd2_2         : double;
+    exposure      : double;
+    datamin_org   : double;
+    datamax_org   : double;{for update histogram}
+    set_temperature : integer;
+    dark_count      : integer;
+    light_count     : integer;
+    flat_count      : integer;
+    flatdark_count  : integer;
+    date_obs   : string;
+    calstat    : string;
     filter_name: string;
   end;
 
@@ -549,7 +550,7 @@ type
    timgbackup  = record
      head_val: Theader;{most important header values}
      header  : string; {full header text}
-     filen   : string;{filename}
+     filen   : string; {filename}
      xbinning: double; {for binning routine. If twice binned or SQM routine}
      ybinning: double;
      XPIXSZ  : double;
@@ -561,7 +562,10 @@ type
 var
   img_backup      : array of timgbackup;{dynamic so memory can be freed}
   img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_buffer,img_final : image_array;
-  head,head_2,head_ref   : Theader;{contains the most important header info}
+  head,    {for lights}
+  head_2,  {for analysing lights and dark, flats}
+  head_ref {for reference light in stacking}
+    : Theader;{contains the most important header info}
 
   settingstring :tstrings; {settings for save and loading}
   user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
@@ -683,12 +687,10 @@ procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small:double
 procedure backup_img;
 procedure restore_img;
 function load_image(re_center, plot:boolean) : boolean; {load fits or PNG, BMP, TIF}
-
 procedure demosaic_bayer(var img: image_array); {convert OSC image to colour}
 
 Function INT_IEEE4_reverse(x: double):longword;{adapt intel floating point to non-intel float}
 function save_fits(img: image_array;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
-
 procedure update_text(inpt,comment1:string);{update or insert text in header}
 procedure add_text(inpt,comment1:string);{add text to header memo}
 procedure update_longstr(inpt,thestr:string);{update or insert long str including single quotes}
@@ -2594,6 +2596,23 @@ begin
 end;
 
 
+procedure DeleteFiles(lpath,FileSpec: string);{delete files such  *.wcs}
+var
+  lSearchRec:TSearchRec;
+begin
+  if FindFirst(lpath+FileSpec,faAnyFile,lSearchRec) = 0 then
+  begin
+    try
+      repeat
+        SysUtils.DeleteFile(lPath+lSearchRec.Name);
+      until SysUtils.FindNext(lSearchRec) <> 0;
+    finally
+      SysUtils.FindClose(lSearchRec);  // Free resources on successful find
+    end;
+  end;
+end;
+
+
 procedure update_float(inpt,comment1:string;x:double);{update keyword of fits header in memo}
  var
    s,aline  : string;
@@ -2620,23 +2639,6 @@ begin
   end;
   {not found, add to the end}
   mainwindow.memo1.lines.insert(mainwindow.Memo1.Lines.Count-1,inpt+' '+s+comment1);
-end;
-
-
-procedure DeleteFiles(lpath,FileSpec: string);{delete files such  *.wcs}
-var
-  lSearchRec:TSearchRec;
-begin
-  if FindFirst(lpath+FileSpec,faAnyFile,lSearchRec) = 0 then
-  begin
-    try
-      repeat
-        SysUtils.DeleteFile(lPath+lSearchRec.Name);
-      until SysUtils.FindNext(lSearchRec) <> 0;
-    finally
-      SysUtils.FindClose(lSearchRec);  // Free resources on successful find
-    end;
-  end;
 end;
 
 
@@ -2801,7 +2803,6 @@ end;
 
 procedure progress_indicator(i:double; info:string);{0..100 is 0 to 100% indication of progress}
 begin
-//  mainwindow.caption:=inttostr(round(i))+'%'+info;
   if i<=-1 then
   begin
     if i=-101 then application.title:='🗙'
@@ -3021,7 +3022,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 1.0.0RC9_early2, '+about_message4+', dated 2021-12-22';
+  #13+#10+'ASTAP version 1.0.0RC9, '+about_message4+', dated 2021-12-23';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3535,6 +3536,7 @@ begin
 
 end;
 
+
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
 var RdivG :single;                                  {excel polynom fit based on data from http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html}
 begin                                               {range 2000 till 20000k}
@@ -3993,6 +3995,7 @@ begin
   plot_mount;
 end;
 
+
 procedure plot_text;
 var
   fontsize: double;
@@ -4013,7 +4016,6 @@ begin
   begin
     if head.cd1_1<>0 then  mainwindow.image1.Canvas.textout(round(0.5*fontsize),head.height-round(4*fontsize),'Position[α,δ]:  '+mainwindow.ra1.text+'    '+mainwindow.dec1.text);{}
 
-
     if date_avg<>'' then
       date_to_jd(date_avg,0 {head.exposure}){convert date-AVG to jd_mid be using head.exposure=0}
     else
@@ -4024,6 +4026,7 @@ begin
   if ((freet) and (freetext<>'')) then
     mainwindow.image1.Canvas.textout(head.width -round(fontsize) -mainwindow.image1.canvas.textwidth(freetext),head.height-round(2*fontsize),freetext);{right bottom corner, right aligned}
 end;
+
 
 procedure plot_constellations;
 var
@@ -4455,7 +4458,6 @@ begin
 end;
 
 
-
 procedure zoom(mousewheelfactor:double;MousePos: TPoint);
 var
   maxw  : double;
@@ -4550,7 +4552,6 @@ procedure Tmainwindow.Panel1MouseWheelUp(Sender: TObject; Shift: TShiftState;
 var
   P: TPoint;
 begin
-//  P:=Panel1.Screentoclient(mousepos);
   GetCursorPos(p);  {use this since in Lazarus the mousepos varies depending control under the mouse}
   p:=panel1.Screentoclient(p);
   if p.y<0 then exit; {not in image range}
@@ -4695,6 +4696,7 @@ begin
   end
   else mainwindow.statusbar1.panels[6].text:='';
 end;
+
 
 function fits_file_name(inp : string): boolean; {fits file name?}
 begin
@@ -5086,7 +5088,6 @@ begin
 end;
 
 
-
 procedure split_raw(xp,yp : integer; filtern: string);{extract one of the Bayer matrix pixels}
 var
   Save_Cursor : TCursor;
@@ -5126,7 +5127,6 @@ begin
     end;
   end;
 end;
-
 
 
 procedure Tmainwindow.OpenDialog1SelectionChange(Sender: TObject);
@@ -6702,10 +6702,6 @@ begin
      exit;
   end;
 
-//  histogram[0,266]:=34000;
-//  histogram[0,1000]:=34000;
-//  histogram[0,18000]:=34000;
-
   for col:=0 to number_colors-1 do {shrink histogram. Note many values could be zero due to 14,12 or 8 byte nature data. So take peak value}
   begin
     stopXpos:=0;
@@ -6746,7 +6742,6 @@ begin
   histogram2:=nil;
   Screen.Cursor:=Save_Cursor;
 end;
-
 
 
 function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
@@ -12723,8 +12718,9 @@ end;
 
 procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
 var
-  col,fitsX,fitsY,maxsize,i,j,progress_value,progressC,xx,yy,resolution        : integer;
-  cosA,sinA,factor, centerx,centery,centerxs,centerys,angle,value              : double;
+  col,fitsX,fitsY,maxsize,i,j,progress_value,progressC,xx,yy,resolution,colours2,width2,height2   : integer;
+  cosA,sinA,factor, centerx,centery,centerxs,centerys,angle,factX,factY,Cos_div_res,Sin_div_res  : double;
+  value0,value1,value2 :single;
   valueI : string;
   Save_Cursor:TCursor;
 begin
@@ -12741,13 +12737,17 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
 
-  memo2_message('Start rotation. This takes some time.');
+  memo2_message('Start rotation. This takes some time due to subsampling 10x10.');
   backup_img;
+
+  colours2:=head.naxis3;
+  width2:=head.width;
+  height2:=head.height;
 
   if flip_horizontal1.checked then angle:=-angle;{change rotation if flipped}
   if flip_vertical1.checked then   angle:=-angle;{change rotation if flipped}
 
-  if head.width<>head.height then {fresh image}
+  if ((width2<>height2) or (img_loaded[0,0,0]<>0)  or (img_loaded[0,head.width-1,0]<>0) or (img_loaded[0,0,head.height-1]<>0) or (img_loaded[0,head.width-1,head.height-1]<>0))  then {fresh image}
     maxsize:=round(1+sqrt(sqr(head.height)+sqr(head.width))) {add one pixel otherwise not enough resulting in runtime errors}
   else {assume this image is already rotated. Enough space to rotate}
     maxsize:=head.width;
@@ -12760,7 +12760,7 @@ begin
   setlength(img_temp,head.naxis3, maxsize,maxsize);{set length of new image}
 
   {clear array}
-  for col:=0 to head.naxis3-1 do {do all colours}
+  for col:=0 to colours2-1 do {do all colours}
   begin
     For fitsY:=0 to (maxsize-1) do
       for fitsX:=0 to (maxsize-1) do
@@ -12770,10 +12770,14 @@ begin
   sincos(angle*pi/180,sinA,cosA);
   if ((sinA=0) or (cosA=0)) then resolution:=1 else resolution:=10;{for angle 0,90,180,270 degrees no need to sub sample}
   factor:=1/sqr(resolution);{1/(number of subpixels), typical 1/(10x10)}
+  //one_div_res:=1/resolution;
+
+  Cos_div_res:=cosA/resolution;
+  Sin_div_res:=sinA/resolution;
 
 
   progressC:=0;
-  For fitsY:=0 to (head.height-1) do
+  For fitsY:=0 to height2-1 do
   begin
     inc(progressC);{counter}
     if frac(fitsY/100)=0 then
@@ -12785,20 +12789,34 @@ begin
         progress_indicator(progress_value,'');{report progress}
       end;
 
-    for fitsX:=0 to (head.width-1) do
+    for fitsX:=0 to width2-1 do
     begin
-      value:=img_loaded[0,fitsX,fitsY];
-      if value>=0.01 then {do only data. Use red for detection}
-      for i:=0 to resolution-1 do {divide the pixel in resolution x resolution subpixels}
-      for j:=0 to resolution-1 do {divide the pixel in resolution x resolution subpixels}
+      value0:=img_loaded[0,fitsX,fitsY];
+
+      if value0>=0.01 then {do only data. Use red for detection}
       begin
-        {new position of subpixel}
-        xx:=trunc(centerX +(fitsX-centerxs-0.5+i/resolution)*cosA - (fitsY-centerys-0.5+j/resolution)*sinA);
-        yy:=trunc(centerY +(fitsX-centerxs-0.5+i/resolution)*sinA + (fitsY-centerys-0.5+j/resolution)*cosA);
-        {do all colours}
-        img_temp[0,xx,yy ]:=img_temp[0,xx,yy] + value*factor;{factor is typical 1/100 due to 10x10 subpixel}
-        if head.naxis3>=2 then img_temp[1,xx,yy]:=img_temp[1,xx,yy] + img_loaded[1,fitsX,fitsY]*factor; {this is the fastest way rather then for col:=0 to head.naxis3-1 loop}
-        if head.naxis3>=3 then img_temp[2,xx,yy]:=img_temp[2,xx,yy] + img_loaded[2,fitsX,fitsY]*factor;
+        if colours2>1 then value1:=img_loaded[1,fitsX,fitsY];{>=2 colour image}
+        if colours2>2 then value2:=img_loaded[2,fitsX,fitsY];{>=3 colour image}
+        begin
+          factX:=centerX+(fitsX-centerxs-0.5)*cosA - (fitsY-centerys-0.5)*sinA;
+          factY:=centerY+(fitsX-centerxs-0.5)*sinA + (fitsY-centerys-0.5)*cosA;
+
+          for i:=0 to resolution-1 do {divide the pixel in resolution x resolution subpixels}
+          for j:=0 to resolution-1 do {divide the pixel in resolution x resolution subpixels}
+          begin
+            {new position of subpixel}
+            xx:=trunc(factX+ i*Cos_div_res - j*Sin_div_res); // xx:=trunc(centerX +(fitsX-centerxs-0.5+i/resolution)*cosA - (fitsY-centerys-0.5+j/resolution)*sinA);
+            yy:=trunc(FactY +i*Sin_div_res + j*Cos_div_res); // yy:=trunc(centerY +(fitsX-centerxs-0.5+i/resolution)*sinA + (fitsY-centerys-0.5+j/resolution)*cosA);
+
+            {do all colours}
+            if ((xx>=0) and (xx<maxsize) and (yy>=0) and (yy<maxsize)) then {check required for small square images}
+            begin
+              img_temp[0,xx,yy ]:=img_temp[0,xx,yy] + value0*factor;{factor is typical 1/100 due to 10x10 subpixel}
+              if colours2>1 then img_temp[1,xx,yy]:=img_temp[1,xx,yy] + value1*factor; {this is the fastest way rather then for col:=0 to head.naxis3-1 loop}
+              if colours2>2 then img_temp[2,xx,yy]:=img_temp[2,xx,yy] + value2*factor;
+            end;
+          end;
+        end;
       end;
     end;
   end;
@@ -13894,20 +13912,20 @@ end;
 function stretch_img(img: image_array):image_array;{stretch image, three colour or mono}
 var
  colrr,colgg,colbb,col_r,col_g,col_b, largest,luminance,luminance_stretched,factor,sat_factor,h,s,v : single;
- width5,height5,naxis3_local,fitsX,fitsY :integer;
+ width5,height5,colours5,fitsX,fitsY :integer;
 begin
-  naxis3_local:=length(img);{nr colours}
+  colours5:=length(img);{nr colours}
   width5:=length(img[0]);{width}
   height5:=length(img[0,0]);{length}
 
 
-  setlength(result,naxis3_local,width5,height5);
+  setlength(result,colours5,width5,height5);
   sat_factor:=1-mainwindow.saturation_factor_plot1.position/10;
 
   for fitsY:=0 to height5-1 do
     for fitsX:=0 to width5-1 do
     begin
-      if naxis3_local=3 then
+      if colours5=3 then
       begin
         col_r:=img[0,fitsx,fitsy];
         col_g:=img[1,fitsx,fitsy];
@@ -13980,14 +13998,14 @@ begin
 end;
 
 
-function save_PPM_PGM_PFM(img: image_array; wide2,height2,colourdepth:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 16 bit portable pixmap/graymap file (PPM/PGM) or 32 bit PFM file}
+function save_PPM_PGM_PFM(img: image_array; colourdepth:integer; filen2:ansistring;flip_H,flip_V:boolean): boolean;{save to 16 bit portable pixmap/graymap file (PPM/PGM) or 32 bit PFM file}
 var
   ppmbuffer32: array[0..trunc(bufwide/4)] of Dword; {bufwide is set in astap_main and is 120000}
   ppmbuffer: array[0..bufwide] of byte absolute ppmbuffer32;
 
   header: array[0..26] of ansichar;
   thefile : tfilestream;
-  i,j,k,m : integer;
+  i,j,k,m,width2,height2 : integer;
   dum: double;
   dummy : word;
 
@@ -13995,17 +14013,23 @@ var
   lw       : longword absolute value1;
 begin
   result:=false;
+
+//  colours5:=length(img);{nr colours}
+  width2:=length(img[0]);{width}
+  height2:=length(img[0,0]);{length}
+
+
   if colourdepth=48 then {colour}
-    header:=pansichar('P6'+#10+inttostr(head.width)+#10+inttostr(height2)+#10+'65535'+#10) {colour 48 bit}
+    header:=pansichar('P6'+#10+inttostr(width2)+#10+inttostr(height2)+#10+'65535'+#10) {colour 48 bit}
   else
   if colourdepth=16 then {gray}
-    header:=pansichar('P5'+#10+inttostr(head.width)+#10+inttostr(height2)+#10+'65535'+#10) {mono 16 bit}
+    header:=pansichar('P5'+#10+inttostr(width2)+#10+inttostr(height2)+#10+'65535'+#10) {mono 16 bit}
   else
   if colourdepth=96 then {colour}
-    header:=pansichar('PF'+#10+inttostr(head.width)+#10+inttostr(height2)+#10+'-1.0'+#10) {mono 32 bit}
+    header:=pansichar('PF'+#10+inttostr(width2)+#10+inttostr(height2)+#10+'-1.0'+#10) {mono 32 bit}
   else
   if colourdepth=32 then {gray}
-    header:=pansichar('Pf'+#10+inttostr(head.width)+#10+inttostr(height2)+#10+'-1.0'+#10); {colour 32 bit, little-endian=-1, big-endian=+1}
+    header:=pansichar('Pf'+#10+inttostr(width2)+#10+inttostr(height2)+#10+'-1.0'+#10); {colour 32 bit, little-endian=-1, big-endian=+1}
 
   if fileexists(filen2)=true then
     if MessageDlg('Existing file ' +filen2+ ' Overwrite?', mtConfirmation, [mbYes, mbNo], 0) <> 6 {mbYes} then
@@ -14027,9 +14051,9 @@ begin
     for i:=0 to Height2-1 do
     begin
       if flip_V=false then k:=height2-1-i else k:=i;{reverse fits down to counting}
-      for j:=0 to wide2-1 do
+      for j:=0 to width2-1 do
       begin
-        if flip_H=true then m:=wide2-1-j else m:=j;
+        if flip_H=true then m:=width2-1-j else m:=j;
         dum:=img[0,m,k]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
         ppmbuffer[m*6  ]  :=hi(dummy);
         ppmbuffer[m*6+1]  :=lo(dummy);
@@ -14040,7 +14064,7 @@ begin
         ppmbuffer[m*6+4]  :=hi(dummy);
         ppmbuffer[m*6+5]  :=lo(dummy);
       end;
-      thefile.writebuffer(ppmbuffer,wide2*6 {2 or 2*3}) ;{works only for byte arrays}
+      thefile.writebuffer(ppmbuffer,width2*6 {2 or 2*3}) ;{works only for byte arrays}
     end;
   end
   else
@@ -14049,14 +14073,14 @@ begin
     for i:=0 to Height2-1 do
     begin
       if flip_V=false then k:=height2-1-i else k:=i;{reverse fits down to counting}
-      for j:=0 to wide2-1 do
+      for j:=0 to width2-1 do
       begin
-        if flip_H=true then m:=wide2-1-j else m:=j;
+        if flip_H=true then m:=width2-1-j else m:=j;
         dum:=img[0,m,k]; if dum>$FFFF then dum:=$FFFF;if dum<0 then dum:=$0;dummy:=round(dum);
         ppmbuffer[m*2  ]  :=hi(dummy);
         ppmbuffer[m*2+1]  :=lo(dummy);
       end;
-      thefile.writebuffer(ppmbuffer,wide2*2 {}) ;{works only for byte arrays}
+      thefile.writebuffer(ppmbuffer,width2*2 {}) ;{works only for byte arrays}
     end;
   end;
   if colourdepth=96 then {PFM 32 bit float colour files, little endian}
@@ -14064,9 +14088,9 @@ begin
      for i:=0 to Height2-1 do
      begin
        if flip_V=false then k:=height2-1-i else k:=i;{reverse fits down to counting}
-       for j:=0 to wide2-1 do
+       for j:=0 to width2-1 do
        begin
-         if flip_H=true then m:=wide2-1-j else m:=j;
+         if flip_H=true then m:=width2-1-j else m:=j;
          value1:=img[0,m,k]/65535;
          ppmbuffer32[m*3]:=lw;
          value1:=img[1,m,k]/65535;
@@ -14074,7 +14098,7 @@ begin
          value1:=img[2,m,k]/65535;
          ppmbuffer32[m*3+2]:=lw;
        end;
-       thefile.writebuffer(ppmbuffer,wide2*4*3{}) ;{works only for byte arrays}
+       thefile.writebuffer(ppmbuffer,width2*4*3{}) ;{works only for byte arrays}
      end;
    end
    else
@@ -14083,14 +14107,14 @@ begin
      for i:=0 to Height2-1 do
      begin
        if flip_V=false then k:=height2-1-i else k:=i;{reverse fits down to counting}
-       for j:=0 to wide2-1 do
+       for j:=0 to width2-1 do
        begin
-         if flip_H=true then m:=wide2-1-j else m:=j;
+         if flip_H=true then m:=width2-1-j else m:=j;
 
          value1:=img[0,m,k]/65535;
          ppmbuffer32[m]:=lw;
        end;
-       thefile.writebuffer(ppmbuffer,wide2*4 {}) ;{works only for byte arrays}
+       thefile.writebuffer(ppmbuffer,width2*4 {}) ;{works only for byte arrays}
      end;
    end;
 
@@ -14098,14 +14122,19 @@ begin
   result:=true;
 end;
 
-function save_PNG16(img: image_array; colors,wide2,height2:integer; filen2:string;flip_H,flip_V:boolean): boolean;{save to PNG file }
+function save_PNG16(img: image_array; filen2:string;flip_H,flip_V:boolean): boolean;{save to PNG file }
 var
-  i, j, k,m      :integer;
+  i, j, k,m,colours5,width5,height5      :integer;
   image: TFPCustomImage;
   writer: TFPCustomImageWriter;
   thecolor  :Tfpcolor;
 begin
-  Image := TFPMemoryImage.Create(head.width, height2);
+  colours5:=length(img);{nr colours}
+  width5:=length(img[0]);{width}
+  height5:=length(img[0,0]);{length}
+
+
+  Image := TFPMemoryImage.Create(width5, height5);
   Writer := TFPWriterPNG.Create;
 
   with TFPWriterPNG(Writer) do
@@ -14113,17 +14142,17 @@ begin
     indexed := false;
     wordsized := true;
     UseAlpha := false;
-    GrayScale := (colors=1);
+    GrayScale := (colours5=1);
   end;
-  For i:=0 to height2-1 do
+  For i:=0 to height5-1 do
   begin
-    if flip_V=false then k:=height2-1-i else k:=i;{reverse fits down to counting}
-    for j:=0 to head.width-1 do
+    if flip_V=false then k:=height5-1-i else k:=i;{reverse fits down to counting}
+    for j:=0 to width5-1 do
     begin
-      if flip_H=true then m:=wide2-1-j else m:=j;
+      if flip_H=true then m:=width5-1-j else m:=j;
       thecolor.red:=min(round(img[0,m,k]), $FFFF);
-      if colors>1 then thecolor.green:=min(round(img[1,m,k]), $FFFF)  else thecolor.green:=thecolor.red;
-      if colors>2 then thecolor.blue:=min(round(img[2,m,k]), $FFFF)   else thecolor.blue:=thecolor.red;
+      if colours5>1 then thecolor.green:=min(round(img[1,m,k]), $FFFF)  else thecolor.green:=thecolor.red;
+      if colours5>2 then thecolor.blue:=min(round(img[2,m,k]), $FFFF)   else thecolor.blue:=thecolor.red;
       thecolor.alpha:=65535;
       image.Colors[j,i]:=thecolor;
     end;
@@ -14176,14 +14205,18 @@ end;
 //end;
 
 
-function save_tiff16(img: image_array; colors,wide2,height2:integer; filen2:string;flip_H,flip_V:boolean): boolean;{save to 48=3x16 color TIFF file }
+function save_tiff16(img: image_array; filen2:string;flip_H,flip_V:boolean): boolean;{save to 48=3x16 color TIFF file }
 var
-  i, j, k,m      :integer;
+  i, j, k,m,colours5,width5,height5      :integer;
   image: TFPCustomImage;
   writer: TFPCustomImageWriter;
   thecolor  :Tfpcolor;
 begin
-  Image := TFPMemoryImage.Create(head.width, height2);
+  colours5:=length(img);{nr colours}
+  width5:=length(img[0]);{width}
+  height5:=length(img[0,0]);{length}
+
+  Image := TFPMemoryImage.Create(width5, height5);
   Writer := TFPWriterTIFF.Create;
 
 
@@ -14196,7 +14229,7 @@ begin
     Image.Extra[TiffGrayBits]:='16';
    end;
   {grayscale}
-  if colors=1 then
+  if colours5=1 then
   begin
     Image.Extra[TiffGrayBits]:='16';   {add unit fptiffcmn to make this work. see https://bugs.freepascal.org/view.php?id=35081}
     Image.Extra[TiffPhotoMetric]:='0'; {This is the same as Image.Extra['TiffPhotoMetricInterpretation']:='0';}
@@ -14206,15 +14239,15 @@ begin
   image.Extra[TiffImageDescription]:=mainwindow.memo1.text; {store full header in TIFF !!!}
   Image.Extra[TiffCompression]:= '5'; // compression LZW
 
-  For i:=0 to height2-1 do
+  For i:=0 to height5-1 do
   begin
-    if flip_V=false then k:=height2-1-i else k:=i;{reverse fits down to counting}
-    for j:=0 to head.width-1 do
+    if flip_V=false then k:=height5-1-i else k:=i;{reverse fits down to counting}
+    for j:=0 to width5-1 do
     begin
-      if flip_H=true then m:=wide2-1-j else m:=j;
+      if flip_H=true then m:=width5-1-j else m:=j;
       thecolor.red:=min(round(img[0,m,k]), $FFFF);
-      if colors>1 then thecolor.green:=min(round(img[1,m,k]), $FFFF)  else thecolor.green:=thecolor.red;
-      if colors>2 then thecolor.blue:=min(round(img[2,m,k]), $FFFF)   else thecolor.blue:=thecolor.red;
+      if colours5>1 then thecolor.green:=min(round(img[1,m,k]), $FFFF)  else thecolor.green:=thecolor.red;
+      if colours5>2 then thecolor.blue:=min(round(img[2,m,k]), $FFFF)   else thecolor.blue:=thecolor.red;
       thecolor.alpha:=65535;
       image.Colors[j,i]:=thecolor;
     end;
@@ -14270,14 +14303,14 @@ begin
           filename2:=ChangeFileExt(filename2,'.tif');
           if abs(nrbits)<=16 then
           begin
-            save_tiff16(img_loaded,head.naxis3,head.width,head.height,filename2,false {flip H},false {flip V});
+            save_tiff16(img_loaded,filename2,false {flip H},false {flip V});
           end
           else
           begin {32 bit files}
             if head.naxis3<>1 then {color}
-              save_tiff_96(img_loaded,head.width,head.height,filename2,false {flip H},false {flip V}) {old uncompressed routine in unit_tiff}
+              save_tiff_96(img_loaded,filename2,false {flip H},false {flip V}) {old uncompressed routine in unit_tiff}
             else
-             save_tiff_32(img_loaded,head.width,head.height,filenamE2,false {flip H},false {flip V});{old uncompressed routine in unit_tiff}
+             save_tiff_32(img_loaded,filenamE2,false {flip H},false {flip V});{old uncompressed routine in unit_tiff}
           end;
         end
         else err:=true;
@@ -14338,12 +14371,12 @@ begin
             if abs(nrbits)<=16 then
             begin
               filename2:=ChangeFileExt(filename2,'.pgm');
-              save_PPM_PGM_PFM(img_loaded,head.width,head.height,16 {colour depth},filename2,false {flip H},false {flip V});
+              save_PPM_PGM_PFM(img_loaded,16 {colour depth},filename2,false {flip H},false {flip V});
             end
             else
             begin
               filename2:=ChangeFileExt(filename2,'.pfm');
-              save_PPM_PGM_PFM(img_loaded,head.width,head.height,32 {colour depth},filename2,false,false);
+              save_PPM_PGM_PFM(img_loaded,32 {colour depth},filename2,false,false);
             end;
           end
           else
@@ -14351,12 +14384,12 @@ begin
             if abs(nrbits)<=16 then
             begin
               filename2:=ChangeFileExt(filename2,'.ppm');
-              save_PPM_PGM_PFM(img_loaded,head.width,head.height,48 {colour depth},filename2,false,false);
+              save_PPM_PGM_PFM(img_loaded,48 {colour depth},filename2,false,false);
             end
             else
             begin
               filename2:=ChangeFileExt(filename2,'.pfm');
-              save_PPM_PGM_PFM(img_loaded,head.width,head.height,96 {colour depth},filename2,false,false);
+              save_PPM_PGM_PFM(img_loaded,96 {colour depth},filename2,false,false);
             end;
 
           end;{colour}
@@ -14413,7 +14446,7 @@ begin
         filename2:=Strings[I];
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
         if load_image(false {recenter},false {plot}) then
-          save_png16(img_loaded,head.naxis3,head.width,head.height,ChangeFileExt(filename2,'.png'),false {flip H},false {flip V})
+          save_png16(img_loaded,ChangeFileExt(filename2,'.png'),false {flip H},false {flip V})
         else err:=true;
       end;
       if err=false then mainwindow.caption:='Completed, all files converted.'
@@ -14452,8 +14485,8 @@ begin
   savedialog1.filename:=filename3;
   savedialog1.initialdir:=ExtractFilePath(filename3);
 
-  if head.naxis3>1 then savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit float|*.tif|PPM 16 bit stretched|*.ppm;|PPM 16 bit|*.ppm|PFM 32 bit float|*.pfm'
-              else savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit float|*.tif|PGM 16 bit stretched|*.pgm;|PGM 16 bit|*.pgm|PFM 32 bit float|*.pfm';
+  if head.naxis3>1 then savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit|*.tif|PPM 16 bit stretched|*.ppm;|PPM 16 bit|*.ppm|PFM 32 bit float|*.pfm'
+                   else savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit|*.tif|PGM 16 bit stretched|*.pgm;|PGM 16 bit|*.pgm|PFM 32 bit float|*.pfm';
   savedialog1.filterindex:=SaveasTIFF1filterindex; {default 1}
   if savedialog1.execute then
   begin
@@ -14465,70 +14498,70 @@ begin
       if savedialog1.filterindex=1 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_png16(img_temp,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked);  {Change extension is only required due to bug in macOS only. 2021-10-9 See https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39423}
+        save_png16(img_temp,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked);  {Change extension is only required due to bug in macOS only. 2021-10-9 See https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39423}
       end
       else
       if savedialog1.filterindex=2 then
-        save_png16(img_loaded,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked)
+        save_png16(img_loaded,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=3 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_tiff16(img_temp,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
+        save_tiff16(img_temp,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=4 then
-        save_tiff16(img_loaded,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
+        save_tiff16(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=5 then
-      save_tiff_96(img_loaded,head.width,head.height,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked) {old uncompressed routine in unit_tiff}
+      save_tiff_96(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked) {old uncompressed routine in unit_tiff}
       else
       if savedialog1.filterindex=6 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_PPM_PGM_PFM(img_temp,head.width,head.height,48 {colour depth},ChangeFileExt(savedialog1.filename,'.ppm'),flip_horizontal1.checked,flip_vertical1.checked);
+        save_PPM_PGM_PFM(img_temp,48 {colour depth},ChangeFileExt(savedialog1.filename,'.ppm'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=7 then
-          save_PPM_PGM_PFM(img_loaded,head.width,head.height,48 {colour depth},ChangeFileExt(savedialog1.filename,'.ppm'),flip_horizontal1.checked,flip_vertical1.checked)
+          save_PPM_PGM_PFM(img_loaded,48 {colour depth},ChangeFileExt(savedialog1.filename,'.ppm'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=8 then
-          save_PPM_PGM_PFM(img_loaded,head.width,head.height,96 {colour depth},ChangeFileExt(savedialog1.filename,'.pfm'),flip_horizontal1.checked,flip_vertical1.checked);
+          save_PPM_PGM_PFM(img_loaded,96 {colour depth},ChangeFileExt(savedialog1.filename,'.pfm'),flip_horizontal1.checked,flip_vertical1.checked);
     end {color}
     else
     begin {gray}
       if savedialog1.filterindex=1 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_png16(img_temp,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked);
+        save_png16(img_temp,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=2 then
-        save_png16(img_loaded,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked)
+        save_png16(img_loaded,ChangeFileExt(savedialog1.filename,'.png'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=3 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_tiff16(img_temp,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
+        save_tiff16(img_temp,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=4 then
-      save_tiff16(img_loaded,head.naxis3,head.width,head.height,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
+      save_tiff16(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=5 then
-        save_tiff_32(img_loaded,head.width,head.height,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked){old uncompressed routine in unit_tiff}
+        save_tiff_32(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked){old uncompressed routine in unit_tiff}
       else
       if savedialog1.filterindex=6 then
       begin
         img_temp:=stretch_img(img_loaded);
-        save_PPM_PGM_PFM(img_temp,head.width,head.height,16{colour depth}, ChangeFileExt(savedialog1.filename,'.pgm'), flip_horizontal1.checked,flip_vertical1.checked);
+        save_PPM_PGM_PFM(img_temp,16{colour depth}, ChangeFileExt(savedialog1.filename,'.pgm'), flip_horizontal1.checked,flip_vertical1.checked);
       end
       else
       if savedialog1.filterindex=7 then
-          save_PPM_PGM_PFM(img_loaded,head.width,head.height,16{colour depth},ChangeFileExt(savedialog1.filename,'.pgm'),flip_horizontal1.checked,flip_vertical1.checked)
+          save_PPM_PGM_PFM(img_loaded,16{colour depth},ChangeFileExt(savedialog1.filename,'.pgm'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=8 then
-          save_PPM_PGM_PFM(img_loaded,head.width,head.height,32 {colour depth},ChangeFileExt(savedialog1.filename,'.pfm'),flip_horizontal1.checked,flip_vertical1.checked);
+          save_PPM_PGM_PFM(img_loaded,32 {colour depth},ChangeFileExt(savedialog1.filename,'.pfm'),flip_horizontal1.checked,flip_vertical1.checked);
 
     end;
 
@@ -14585,7 +14618,7 @@ end;
 function save_fits(img: image_array;filen2:ansistring;type1:integer;override2:boolean): boolean;{save to 8, 16 OR -32 BIT fits file}
 var
   TheFile4 : tfilestream;
-  I,j,k,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, naxis3_local,height5,width5 : integer;
+  I,j,k,bzero2, progressC,progress_value,dum, remain,minimum,maximum,dimensions, colours5,height5,width5 : integer;
   dd : single;
   line0                : ansistring;
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
@@ -14597,12 +14630,12 @@ begin
   result:=false;
 
   {get dimensions directly from array}
-  naxis3_local:=length(img);{nr colours}
+  colours5:=length(img);{nr colours}
   width5:=length(img[0]);{width}
   height5:=length(img[0,0]);{length}
-  if naxis3_local=1 then dimensions:=2 else dimensions:=3; {number of dimensions or colours}
+  if colours5=1 then dimensions:=2 else dimensions:=3; {number of dimensions or colours}
 
-  if ((type1=24) and (naxis3_local<3)) then
+  if ((type1=24) and (colours5<3)) then
   begin
     application.messagebox(pchar('Abort, can not save grayscale image as colour image!!'),pchar('Error'),MB_OK);
     exit;
@@ -14649,8 +14682,8 @@ begin
     update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number of dimensions, 2 for mono, 3 for colour}
     update_integer('NAXIS1  =',' / length of x axis                               ' ,width5);
     update_integer('NAXIS2  =',' / length of y axis                               ' ,height5);
-    if naxis3_local<>1 then {color image}
-      update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,naxis3_local)
+    if colours5<>1 then {color image}
+      update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,colours5)
       else
       remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
 
@@ -14706,11 +14739,11 @@ begin
   begin
     minimum:=min(0,mainwindow.minimum1.position); {stretch later if required}
     maximum:=max(255,mainwindow.maximum1.position);
-    for k:=0 to naxis3_local-1 do {do all colors}
+    for k:=0 to colours5-1 do {do all colors}
     for i:=0 to height5-1 do
     begin
       inc(progressC);
-      progress_value:=round(progressC*100/(naxis3_local*height5));{progress in %}
+      progress_value:=round(progressC*100/(colours5*height5));{progress in %}
       {$IFDEF fpc}
       if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
       {$else} {delphi}
@@ -14737,7 +14770,7 @@ begin
     for i:=0 to height5-1 do
     begin
       inc(progressC);
-      progress_value:=round(progressC*100/(naxis3_local*height5));{progress in %}
+      progress_value:=round(progressC*100/(colours5*height5));{progress in %}
       {$IFDEF fpc}
       if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
       {$else} {delphi}
@@ -14763,12 +14796,12 @@ begin
 
   if type1=16 then
   begin
-    for k:=0 to naxis3_local-1 do {do all colors}
+    for k:=0 to colours5-1 do {do all colors}
     for i:=0 to height5-1 do
     begin
 
       inc(progressC);
-      progress_value:=round(progressC*100/(naxis3_local*height5));{progress in %}
+      progress_value:=round(progressC*100/(colours5*height5));{progress in %}
       {$IFDEF fpc}
       if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
       {$else} {delphi}
@@ -14797,11 +14830,11 @@ begin
   else
   if type1=-32 then
   begin
-    for k:=0 to naxis3_local-1 do {do all colors}
+    for k:=0 to colours5-1 do {do all colors}
     for i:=0 to height5-1 do
     begin
       inc(progressC);
-      progress_value:=round(progressC*100/(naxis3_local*height5));{progress in %}
+      progress_value:=round(progressC*100/(colours5*height5));{progress in %}
       {$IFDEF fpc}
       if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase in steps of 5%}
       {$else} {delphi}
