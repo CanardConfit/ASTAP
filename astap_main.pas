@@ -3022,7 +3022,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 1.0.0RC9, '+about_message4+', dated 2021-12-23';
+  #13+#10+'ASTAP version 1.0.0RC9a, '+about_message4+', dated 2021-12-24';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;

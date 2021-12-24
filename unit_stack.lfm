@@ -4335,7 +4335,7 @@ object stackmenu1: Tstackmenu1
         TabOrder = 5
       end
     end
-    object TabSheet2: TTabSheet
+    object tab_monitoring1: TTabSheet
       Caption = 'Monitoring'
       ClientHeight = 470
       ClientWidth = 1702
@@ -4414,6 +4414,7 @@ object stackmenu1: Tstackmenu1
           'Tilt, 4 point measurement & HFD'
           'Tilt, 3 point measurement & HFD'
           'Aberration view'
+          'Solve image'
         )
         OnChange = resize_factor1Change
         ParentFont = False
@@ -4453,6 +4454,28 @@ object stackmenu1: Tstackmenu1
         Width = 120
         Caption = 'Apply dark and flat'
         TabOrder = 4
+      end
+      object RAposition1: TLabel
+        Left = 16
+        Height = 71
+        Top = 256
+        Width = 21
+        Caption = '-'
+        Font.Height = -53
+        ParentColor = False
+        ParentFont = False
+        Visible = False
+      end
+      object DECposition1: TLabel
+        Left = 16
+        Height = 71
+        Top = 344
+        Width = 21
+        Caption = '-'
+        Font.Height = -53
+        ParentColor = False
+        ParentFont = False
+        Visible = False
       end
     end
     object tab_Pixelmath1: TTabSheet

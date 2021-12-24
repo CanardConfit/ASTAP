@@ -1,4 +1,4 @@
-unit unit_live_monitoring;
+unit unit_monitoring;
 {Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
@@ -94,13 +94,9 @@ End;
 
 procedure monitoring(path :string);{monitoring a directory}
 var
-     counter:  integer;
-//    init, solution, vector_based,waiting,transition_image,colour_correction :boolean;
-//    file_ext,filen                    :  string;
-//    multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}
-//    warning  : string;
+     counter :  integer;
+     solver  :   boolean;
 begin
-
   with stackmenu1 do
   begin
 
@@ -157,10 +153,25 @@ begin
 
           monitor_date1.caption:= DateTimeToStr(FileDateToDateTime(latest_time));
 
+          solver:=false;
           case stackmenu1.monitor_action1.itemindex of 1: CCDinspector(30,false,strtofloat(measuring_angle));
                                                        2: CCDinspector(30,true,strtofloat(measuring_angle));
                                                        3: form_inspection1.aberration_inspector1Click(nil);
+                                                       4: solver:=true;
           end;{case}
+          if solver then
+          begin
+            raposition1.visible:=true;
+            decposition1.visible:=true;
+            mainwindow.astrometric_solve_image1Click(nil);
+            raposition1.caption:='  '+prepare_ra(head.ra0,': ');{show center of image}
+            decposition1.caption:=prepare_dec(head.dec0,'° ');
+          end
+          else
+          begin
+            raposition1.visible:=false;
+            decposition1.visible:=false;
+          end;
 
 
         finally

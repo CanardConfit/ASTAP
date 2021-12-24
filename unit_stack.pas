@@ -47,6 +47,7 @@ type
     browse_monitoring1: TBitBtn;
     browse_mount1: TBitBtn;
     browse_live_stacking1: TBitBtn;
+    RAposition1: TLabel;
     monitor_applydarkflat1: TCheckBox;
     help_monitoring1: TLabel;
     monitor_date1: TLabel;
@@ -67,6 +68,7 @@ type
     live_monitoring1: TButton;
     monitoring_path1: TLabel;
     monitoring_stop1: TButton;
+    DECposition1: TLabel;
     removeselected5: TMenuItem;
     menukeywordchange1: TMenuItem;
     MenuItem32: TMenuItem;
@@ -133,7 +135,7 @@ type
     SpeedButton2: TSpeedButton;
     mount1: TTabSheet;
     apply_box_filter2: TButton;
-    TabSheet2: TTabSheet;
+    tab_monitoring1: TTabSheet;
     test_osc_normalise_filter1: TButton;
     undo_button6: TBitBtn;
     unselect9: TMenuItem;
@@ -1018,7 +1020,7 @@ implementation
 
 uses
   unit_image_sharpness, unit_ephemerides, unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd,
-  unit_live_stacking, unit_live_monitoring, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_aavso;
+  unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_aavso;
 
 
 type
