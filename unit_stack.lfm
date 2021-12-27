@@ -2,14 +2,14 @@ object stackmenu1: Tstackmenu1
   Left = 112
   Height = 712
   Top = 203
-  Width = 1710
-  HorzScrollBar.Page = 1701
+  Width = 1604
+  HorzScrollBar.Page = 1604
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
-  ClientHeight = 712
-  ClientWidth = 1710
+  ClientHeight = 695
+  ClientWidth = 1604
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -53,9 +53,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.12.0'
   object Memo2: TMemo
     Left = 0
-    Height = 152
+    Height = 135
     Top = 560
-    Width = 1710
+    Width = 1701
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     DoubleBuffered = True
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 13700
+    Left = 13691
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -226,7 +226,7 @@ object stackmenu1: Tstackmenu1
     Height = 498
     Hint = 'Stack menu'
     Top = 0
-    Width = 1710
+    Width = 1701
     ActivePage = lights
     Align = alClient
     Constraints.MaxHeight = 498
@@ -243,7 +243,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 470
-      ClientWidth = 1702
+      ClientWidth = 1693
       ImageIndex = 22
       ParentFont = False
       object nr_selected1: TLabel
@@ -307,7 +307,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1702
+        Width = 1693
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -1250,7 +1250,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 470
-      ClientWidth = 1702
+      ClientWidth = 1596
       ImageIndex = 5
       ParentFont = False
       object stack_method1: TComboBox
@@ -2270,7 +2270,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the frame alignment and solver options.'
       Caption = 'Alignment'
       ClientHeight = 470
-      ClientWidth = 1840
+      ClientWidth = 1596
       ImageIndex = 7
       ParentFont = False
       object use_star_alignment1: TRadioButton

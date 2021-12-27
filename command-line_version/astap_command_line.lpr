@@ -55,7 +55,7 @@ begin
   begin
     writeln(
     'ASTAP astrometric solver, '+version+#10+
-    '(C) 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+#10+
+    '(C) 2018, 2021 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+#10+
     'Usage:'+#10+
     '-f  filename  {fits, tiff, png, jpg files}'+#10+
     '-f  stdin     {read raw image from stdin}'+#10+
@@ -247,7 +247,6 @@ var
   Application: Tastap;
 begin
   Application:=Tastap.Create(nil);
-  Application.Title:='astap';
   Application.Run;
   Application.Free;
 end.

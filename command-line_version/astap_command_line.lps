@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <PathDelim Value="\"/>
+    <Version Value="11"/>
+    <BuildModes Active="Default"/>
+    <Units Count="14">
+      <Unit0>
+        <Filename Value="astap_command_line.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="27"/>
+        <CursorPos X="29" Y="42"/>
+        <UsageCount Value="106"/>
+        <Loaded Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="1283"/>
+        <CursorPos Y="1316"/>
+        <UsageCount Value="106"/>
+        <Loaded Value="True"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="unit_command_line_general.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="1857"/>
+        <CursorPos X="85" Y="1880"/>
+        <UsageCount Value="106"/>
+        <Loaded Value="True"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="astap_main.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="13704"/>
+        <CursorPos Y="13731"/>
+        <UsageCount Value="4"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="..\astap_main.pas"/>
+        <ComponentName Value="mainwindow"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="4"/>
+        <CursorPos Y="8"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="..\unit_stack.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="5775"/>
+        <CursorPos Y="5816"/>
+        <UsageCount Value="9"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="..\unit_astrometric_solving.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="124"/>
+        <CursorPos X="30" Y="3"/>
+        <UsageCount Value="6"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="unit_astrometric_solving.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="779"/>
+        <CursorPos X="6" Y="804"/>
+        <UsageCount Value="4"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="..\unit_star_align.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="663"/>
+        <CursorPos X="10" Y="667"/>
+        <UsageCount Value="13"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="..\unit_star_database.pas"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="11" Y="43"/>
+        <UsageCount Value="4"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="unit_star_database.pas"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos Y="44"/>
+        <UsageCount Value="12"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="C:\Users\h\AppData\Local\Temp\Rar$DI02.518\unit_command_line_general.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="446"/>
+        <CursorPos Y="467"/>
+        <UsageCount Value="8"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="unit_command_line_star_database.pas"/>
+        <EditorIndex Value="3"/>
+        <CursorPos X="46" Y="2"/>
+        <UsageCount Value="44"/>
+        <Loaded Value="True"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="..\unit_annotation.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1693"/>
+        <CursorPos X="11" Y="1715"/>
+        <UsageCount Value="5"/>
+      </Unit13>
+    </Units>
+    <JumpHistory Count="29" HistoryIndex="28">
+      <Position1>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="452" Column="43" TopLine="431"/>
+      </Position1>
+      <Position2>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="6"/>
+      </Position2>
+      <Position3>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="41" TopLine="28"/>
+      </Position3>
+      <Position4>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="43" Column="5" TopLine="13"/>
+      </Position4>
+      <Position5>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="38" TopLine="21"/>
+      </Position5>
+      <Position6>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="726" Column="22" TopLine="713"/>
+      </Position6>
+      <Position7>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="742" Column="34" TopLine="713"/>
+      </Position7>
+      <Position8>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="746" Column="29" TopLine="716"/>
+      </Position8>
+      <Position9>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="757" Column="29" TopLine="727"/>
+      </Position9>
+      <Position10>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1287" Column="70"/>
+      </Position10>
+      <Position11>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1291" Column="82" TopLine="1260"/>
+      </Position11>
+      <Position12>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1296" Column="53" TopLine="1266"/>
+      </Position12>
+      <Position13>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1707" Column="67" TopLine="1677"/>
+      </Position13>
+      <Position14>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1708" Column="54" TopLine="1678"/>
+      </Position14>
+      <Position15>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="17" Column="146" TopLine="9"/>
+      </Position15>
+      <Position16>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="125" Column="43" TopLine="94"/>
+      </Position16>
+      <Position17>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="126" Column="43" TopLine="95"/>
+      </Position17>
+      <Position18>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="127" Column="43" TopLine="96"/>
+      </Position18>
+      <Position19>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="742" Column="34" TopLine="712"/>
+      </Position19>
+      <Position20>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="746" Column="29" TopLine="716"/>
+      </Position20>
+      <Position21>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="757" Column="29" TopLine="727"/>
+      </Position21>
+      <Position22>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1270" Column="57" TopLine="1256"/>
+      </Position22>
+      <Position23>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="20" Column="50"/>
+      </Position23>
+      <Position24>
+        <Filename Value="..\astap_main.pas"/>
+        <Caret Line="8"/>
+      </Position24>
+      <Position25>
+        <Filename Value="unit_command_line_star_database.pas"/>
+        <Caret Line="12" Column="2"/>
+      </Position25>
+      <Position26>
+        <Filename Value="unit_command_line_star_database.pas"/>
+        <Caret Line="9"/>
+      </Position26>
+      <Position27>
+        <Filename Value="unit_command_line_star_database.pas"/>
+        <Caret Line="24" Column="21"/>
+      </Position27>
+      <Position28>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="275" Column="48" TopLine="238"/>
+      </Position28>
+      <Position29>
+        <Filename Value="unit_command_line_star_database.pas"/>
+        <Caret Line="2" Column="46"/>
+      </Position29>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes Count="1" ActiveMode="default">
+        <Mode0 Name="default">
+          <local>
+            <CommandLineParams Value="-f  D:\temp\astrometry-astap-wcs\1.fit -d c:\astap.fpc -update"/>
+          </local>
+        </Mode0>
+      </Modes>
+    </RunParams>
+  </ProjectSession>
+  <Debugging>
+    <BreakPoints Count="3">
+      <Item1>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="astap_command_line.lpr"/>
+        <Line Value="226"/>
+      </Item1>
+      <Item2>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="..\unit_astrometric_solving.pas"/>
+        <Line Value="557"/>
+      </Item2>
+      <Item3>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="unit_command_line_solving.pas"/>
+        <Line Value="977"/>
+      </Item3>
+    </BreakPoints>
+    <Watches Count="2">
+      <Item1>
+        <Expression Value="naxis"/>
+      </Item1>
+      <Item2>
+        <Expression Value="line0"/>
+      </Item2>
+    </Watches>
+  </Debugging>
+</CONFIG>

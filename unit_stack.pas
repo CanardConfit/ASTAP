@@ -2,13 +2,9 @@ unit unit_stack;
 {Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License (LGPL) as published
-by the Free Software Foundation, either version 3 of the License, or(at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License (LGPL) along with this program. If not, see <http://www.gnu.org/licenses/>.}
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
 interface
 uses
@@ -1020,7 +1016,7 @@ implementation
 
 uses
   unit_image_sharpness, unit_ephemerides, unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd,
-  unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_aavso;
+  unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_aavso,unit_raster_rotate;
 
 
 type
@@ -6106,7 +6102,7 @@ end;
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   Save_Cursor          : TCursor;
-  magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,backgr,hfd_med,apert,annul,rax,decx,
+  magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,backgr,hfd_med,apert,annul,
   rax1,decx1,rax2,decx2,rax3,decx3,xn,yn                                                     : double;
   saturation_level                                                                           : single;
   c,i,x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr,countVar, countCheck,countThree : integer;
@@ -8949,8 +8945,9 @@ begin
         if ((head.crota2>=90) and (head.crota2<270)) then
         begin
           memo2_message('Rotating '+filename2+' 180°');
-          mainwindow.imageflipv1Click(nil);      {horizontal flip}
-          mainwindow.imageflipv1Click(sender);{vertical flip}
+          //mainwindow.imageflipv1Click(nil);      {horizontal flip}
+          //mainwindow.imageflipv1Click(sender);{vertical flip}
+           raster_rotate(180,head.width/2,head.height/2 ,img_loaded);{fast rotation 180 degrees}
           if nrbits=16 then
           save_fits(img_loaded,filename2,16,true)
            else

@@ -1174,11 +1174,6 @@ object mainwindow: Tmainwindow
           Hint = 'Convert the selected images to the 16 bit or 32 bit TIFF format.'
           OnClick = save_to_tiff1Click
         end
-        object convert_to_png1: TMenuItem
-          Caption = 'Batch convert to PNG'
-          Hint = 'Convert the selected images to the 16 bit PNG'
-          OnClick = convert_to_png1Click
-        end
         object convert_to_ppm1: TMenuItem
           Caption = 'Batch convert to PBM/PFM'
           Hint = 'Convert the selected images to the 16 bit PBM (Portable Bit Map) or 32 bit PFM (Portable Float Map) format.'
@@ -1388,58 +1383,13 @@ object mainwindow: Tmainwindow
       object MenuItem19: TMenuItem
         Caption = '-'
       end
-      object submenurotate1: TMenuItem
-        Caption = 'Rotate, extend'
-        Hint = 'Rotate the FITS image'
+      object rotate_arbitrary1: TMenuItem
+        Caption = 'Rotate arbitrary'
+        Enabled = False
+        Hint = 'Rotate the image with the angle specified. Accurate algorithm but image quality will be reduced unless 90,180 or 270 degrees rotation.'
         ImageIndex = 31
-        object rotateleft1: TMenuItem
-          Caption = 'Rotate image 90° left'
-          Enabled = False
-          Hint = 'Rotate left.  Saving will apply the changes the original image.'
-          ImageIndex = 27
-          ShortCut = 49228
-          OnClick = rotateleft1Click
-        end
-        object rotateright1: TMenuItem
-          Caption = 'Rotate image 90° right'
-          Enabled = False
-          Hint = 'Rotate image. right. Saving will apply the changes the original image.'
-          ImageIndex = 28
-          ShortCut = 49234
-          OnClick = rotateleft1Click
-        end
-        object imageflipv1: TMenuItem
-          Caption = 'Flip vertical'
-          Enabled = False
-          Hint = 'Flip image vertical. Saving will apply the changes the original image.'
-          ImageIndex = 29
-          ShortCut = 49238
-          OnClick = imageflipv1Click
-        end
-        object imagefliph1: TMenuItem
-          Caption = 'Flip horizontal'
-          Enabled = False
-          Hint = 'Flip image horizontal. Saving will apply the changes the original image.'
-          ImageIndex = 30
-          ShortCut = 49224
-          OnClick = imageflipv1Click
-        end
-        object rotate_arbitrary1: TMenuItem
-          Caption = 'Rotate arbitrary'
-          Enabled = False
-          Hint = 'Rotate the image with the angle specified. Image quality will be reduced. Slow but accurate algorithm.'
-          ImageIndex = 31
-          OnClick = rotate_arbitrary1Click
-        end
-        object MenuItem26: TMenuItem
-          Caption = '-'
-        end
-        object extend1: TMenuItem
-          Caption = 'Extend canvas'
-          Enabled = False
-          Hint = 'This will extend the image with black space. Use the popup menu option "crop" to trim the black area if required.'
-          OnClick = rotate_arbitrary1Click
-        end
+        ShortCut = 49234
+        OnClick = rotate_arbitrary1Click
       end
       object MenuItem10: TMenuItem
         Caption = '-'

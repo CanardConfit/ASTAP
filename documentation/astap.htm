@@ -42,7 +42,7 @@ FOV of more then ten degrees</span><br style="font-family: Calibri;"><br style="
             &nbsp;Only required if you have files with the .fz
             &nbsp;extension.</td><td style="background-color: rgb(220, 220, 220); font-family: Calibri; font-weight: bold;">Barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
 renamed. No pop-up notifier. Will not accept raw files and&nbsp;will not
-work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="astap_setup.exe">ASTAP_installer</a>_(1.0.0RC9 dated 2021-12-23), <br><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"></a><a href="astap.zip">ASTAP
+work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="astap_setup.exe">ASTAP_installer</a>_(1.0.0RC9a dated 2021-12-24), <br><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"></a><a href="astap.zip">ASTAP
               executable only</a></td><td colspan="1" rowspan="2" style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing">H18 installer</a><br><a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing"> </a><a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing">H17 installer</a>,<br><a href="https://drive.google.com/file/d/1_MYyXn3ZjAGcrhSsKoo6gb7XUKz_-3ji/view?usp=sharing">G17 installer</a> (obsolete <a href="h18.htm">1)</a>).<br><br><a href="https://drive.google.com/file/d/1qaf23oFmPpnDZbLO30IB42kC8-qBEynJ/view?usp=sharing">H18 zipped</a>,  <br><a href="https://drive.google.com/file/d/1kbaDcxjIKMcHwd3KSvNyIsB5m6ztVi9z/view?usp=sharing">H17 zipped</a>,<br><a href="https://sourceforge.net/projects/astap-program/files/star_databases/w08_star_database_mag08_astap.zip/download">W08 zipped</a>,&nbsp;<br><a href="http://www.poyntsource.com/hnsky/h18_star_database_mag18.rar">G18 rar</a> ((obsolete <a href="h18.htm">1)</a>),<br>for manual install at&nbsp; \programs files\astap or program directory<br><a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing"></a><br></td><td colspan="1" rowspan="2" style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/fpack_funpack.exe/download">Fpack
               &amp; Funpack</a></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_command-line_version_win64.zip/download">astap_cli</a>
 (v0.9.587</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 32 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_command-line_version_win32.zip/download">astap_cli</a>
@@ -109,7 +109,7 @@ work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family:
                     stiching</a></big></li><li><big><a href="astap.htm#osc_menu">OSC menu</a></big></li>
             </ul>
             <li><big><a href="#blink">Blink tab</a></big></li>
-            <li><big><a href="#photometry">Photometry tab</a></big></li><ul><li><big><a href="astap.htm#dslr_photometry">DSLR photometry</a></big></li></ul><li><big><a href="#inspector_tab">Inspector tab</a></big></li><li><big><a href="astap.htm#mount_tab">Mount analyse tab</a></big></li><li><big><a href="#live_stacking">Live stacking</a></big></li><li><big><a href="#Monitoring">Monitoring</a><br></big></li>
+            <li><big><a href="#photometry">Photometry tab</a></big></li><ul><li><big><a href="astap.htm#dslr_photometry">DSLR photometry</a></big></li></ul><li><big><a href="#inspector_tab">Inspector tab</a></big></li><li><big><a href="astap.htm#mount_tab">Mount analyse tab</a></big></li><li><big><a href="#live_stacking">Live stacking</a></big></li><li><big><a href="#monitoring">Monitoring</a><br></big></li>
             <li><big><a href="#pixel_math">Pixel math
                   tab</a></big></li>
             <li><big><a href="astap.htm#background">Background
@@ -1427,10 +1427,17 @@ automatically. You can save the stack results from the viewer menu .<br>
 <br>To identify  files which are processed , they are renamed to the 
 extension *.fts. You can rename them back with the button at the bottom.<br><br><big><span style="text-decoration: underline;"><img style="width: 1499px; height: 723px;" alt="" src="astap_live_stacking1.png"><br><br></span>Note there is no rejection of poor images. All images are added with equal influence:<br><br>Assuming the images are A,B,C,D, E... then<br><br>Simple serial stacking:<br><br>result1:=A<br>result2:=(result1+B )/2<br>result3:=(result2*2+C)/3<br>result4:=(result3*3+D)/4<br>result5:=(result4*4+E)/5<span style="text-decoration: underline;"><br><br><br></span></big><a href="astap.htm#index">Back
           to index</a><br><big><span style="text-decoration: underline;"></span></big></div>
-      <p align="left"></p><p align="left"><big><a name="Monitoring"></a><span style="text-decoration: underline;">Monitoring</span></big></p><p align="left"><big>This tab is setup to monitor a specific directory for any new file.&nbsp;Any
+      <p align="left"></p><p align="left"><big><a name="monitoring"></a><span style="text-decoration: underline;">Monitoring</span> &nbsp; (from version 1.0.0RC9a)</big></p><p align="left"><big>With this tab it is possible&nbsp;to monitor a specific directory for any new file.&nbsp;Any
 new file will be loaded in the viewer. After loading an optional action
-like Tilt &amp; HFD measurement can be executed. You could use this tab
-for monitoring:the tilt adjustment&nbsp;progress or focus drift while taking images. </big></p><br><p align="left"><a href="astap.htm#index">Back
+like "Tilt &amp; HFD measurement" and "Solve image" can be executed. You could use this tab
+for monitoring&nbsp;the tilt adjustment&nbsp;progress or focus drift while taking images.&nbsp;</big></p><p align="left"><big>The
+action "Solve image" could be a useful option for users with a basic
+mount without encoders and a camera mounted on the&nbsp;telescope. An
+acquisition program like CCDCiel, Nina or APT can take continuous
+images with an exposure time of a few seconds. The saved images will be
+automatically loaded in the ASTAP viewer and solved. The position will
+be reported in the tab as seen below. In the ASTAP viewer the user
+could select under menu View an additional &#945;,&nbsp;&#948; grid or constellations overlay.</big></p><p align="left"><big>Directory monitoring with action "Solve image":</big></p><p align="left"><img style="width: 1102px; height: 703px;" alt="" src="astap_monitoring.png"></p><p align="left"><big> </big></p><br><p align="left"><a href="astap.htm#index">Back
           to index</a><br><big><span style="text-decoration: underline;"></span></big>
       </p><p align="left"></p><p align="left"><big><a name="pixel_math"></a><span style="text-decoration: underline;">Pixel math1 tab.</span><br>
         </big><big><span style="text-decoration: underline;"><span style="font-weight: bold;"></span></span></big></p>

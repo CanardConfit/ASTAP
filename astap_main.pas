@@ -2,13 +2,9 @@
 {Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU Lesser General Public License (LGPL) as published
-by the Free Software Foundation, either version 3 of the License, or(at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License (LGPL) along with this program. If not, see <http://www.gnu.org/licenses/>.}
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
 {Notes on MacOS pkg making:
@@ -112,13 +108,11 @@ type
     copy_to_clipboard1: TMenuItem;
     grid1: TMenuItem;
     freetext1: TMenuItem;
-    extend1: TMenuItem;
     MenuItem21: TMenuItem;
     bin_2x2menu1: TMenuItem;
     bin_3x3menu1: TMenuItem;
     imageinspection1: TMenuItem;
     inspector1: TMenuItem;
-    convert_to_png1: TMenuItem;
     MenuItem22: TMenuItem;
     roundness1: TMenuItem;
     MenuItem28: TMenuItem;
@@ -141,7 +135,6 @@ type
     simbad_query1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
-    MenuItem26: TMenuItem;
     Shape1: TShape;
     sip1: TMenuItem;
     zoomfactorone1: TMenuItem;
@@ -206,10 +199,6 @@ type
     shape_histogram1: TShape;
     shape_paste1: TShape;
     submenurotate1: TMenuItem;
-    imageflipv1: TMenuItem;
-    imagefliph1: TMenuItem;
-    rotateright1: TMenuItem;
-    rotateleft1: TMenuItem;
     MenuItem19: TMenuItem;
     shape_marker2: TShape;
     shape_marker3: TShape;
@@ -834,7 +823,7 @@ var
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
-     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations;
+     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -3020,9 +3009,9 @@ begin
   #13+#10+
   #13+#10+'Send an e-mail if you like this free program. Feel free to distribute!'+
   #13+#10+
-  #13+#10+'© 2018, 2021 by Han Kleijn. License LGPL3+, Webpage: www.hnsky.org'+
+  #13+#10+'© 2018, 2021 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 1.0.0RC9a, '+about_message4+', dated 2021-12-24';
+  #13+#10+'ASTAP version 1.0.0RC10, '+about_message4+', dated 2021-12-27';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3642,6 +3631,11 @@ begin
     end
     else beep;
   end;
+end;
+
+procedure Tmainwindow.rotateleft1Click(Sender: TObject);
+begin
+
 end;
 
 
@@ -4279,85 +4273,6 @@ begin
 end;
 
 
-procedure Tmainwindow.rotateleft1Click(Sender: TObject); {rotate left or right 90 degrees}
-var
-  dum, col,fitsX,fitsY : integer;
-  dummy                : double;
-  right :boolean;
-  Save_Cursor:TCursor;
-begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
-  if ((sender=batch_rotate_right1) or (sender=batch_rotate_left1))=false then
-    backup_img;
-
-  right:= ((sender=rotateright1) or (sender=batch_rotate_right1)); {rotate right?}
-
-  if flip_horizontal1.checked then right:= (right=false);{change rotation if flipped}
-  if flip_vertical1.checked then   right:= (right=false);{change rotation if flipped}
-
-  setlength(img_temp,head.naxis3, head.height,head.width);{set length of image with swapped width and height}
-
-  for col:=0 to head.naxis3-1 do {do all colours}
-  begin
-    For fitsY:=0 to (head.height-1) do
-      for fitsX:=0 to (head.width-1) do
-      begin
-        if right=false then img_temp[col,(head.height-1)-fitsY,fitsX]:=img_loaded[col,fitsX,fitsY]
-                       else img_temp[col, fitsY,(head.width-1)-fitsX]:=img_loaded[col,fitsX,fitsY];
-      end;
-  end;
-  {swap width and height}
-  dum:=head.width;
-  head.width:=head.height;
-  head.height:=dum;
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
-
-  img_loaded:=nil;
-  img_loaded:=img_temp;
-
-  if head.cd1_1<>0 then {update solution for rotation}
-  begin
-    if right then {rotate right}
-    begin
-      dummy:=head.cd1_1; head.cd1_1:=head.cd1_2; head.cd1_2:=-dummy;
-      dummy:=head.cd2_1; head.cd2_1:=head.cd2_2; head.cd2_2:=-dummy;
-
-      dummy:=head.crpix1; head.crpix1:=head.crpix2; head.crpix2:=head.height-dummy;
-    end
-    else
-    begin {rotate left}
-      dummy:=head.cd1_1; head.cd1_1:=-head.cd1_2; head.cd1_2:=dummy;
-      dummy:=head.cd2_1; head.cd2_1:=-head.cd2_2; head.cd2_2:=dummy;
-      dummy:=head.crpix1; head.crpix1:=head.width-head.crpix2; head.crpix2:=dummy;
-    end;
-    new_to_old_WCS;{convert new style FITS to old style, calculate head.crota1,head.crota2,head.cdelt1,head.cdelt2}
-
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
-
-
-    update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);
-    update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
-
-    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);
-    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
-
-    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
-    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
-
-    remove_key('ROWORDER',false{all});{just remove to prevent debayer confusion}
-    add_text   ('HISTORY   ','Rotated 90 degrees.');
-  end;
-  plot_fits(mainwindow.image1,false,true);
-  Screen.Cursor := Save_Cursor;  { Always restore to normal }
-end;
-
-
 procedure Tmainwindow.saturation_factor_plot1KeyUp(Sender: TObject;
   var Key: Word; Shift: TShiftState);
 begin
@@ -4779,13 +4694,8 @@ begin
     mainwindow.CropFITSimage1.Enabled:=fits;
 
     mainwindow.stretch1.enabled:=fits;
-    mainwindow.rotateleft1.enabled:=fits;
-    mainwindow.rotateright1.enabled:=fits;
     mainwindow.inversimage1.enabled:=fits;
-    mainwindow.imageflipH1.enabled:=fits;
-    mainwindow.imageflipV1.enabled:=fits;
     mainwindow.rotate_arbitrary1.enabled:=fits;
-    mainwindow.extend1.enabled:=fits;
 
     mainwindow.minimum1.enabled:=fits;
     mainwindow.maximum1.enabled:=fits;
@@ -8920,6 +8830,11 @@ begin
   end;
 end;
 
+procedure Tmainwindow.convert_to_png1Click(Sender: TObject);
+begin
+
+end;
+
 
 procedure Tmainwindow.positionanddate1Click(Sender: TObject);
 begin
@@ -8942,6 +8857,8 @@ procedure Tmainwindow.removegreenpurple1Click(Sender: TObject);
 begin
   green_purple_filter(img_loaded);
 end;
+
+
 
 procedure Tmainwindow.roundness1Click(Sender: TObject);
 begin
@@ -9213,67 +9130,9 @@ begin
    mainwindow.statusbar1.panels[8].text:=inttostr(round(100*mainwindow.image1.width/ (mainwindow.image1.picture.width)))+'%'; {zoom factor}
 end;
 
-
 procedure Tmainwindow.imageflipv1Click(Sender: TObject);
-var
-  col,fitsX,fitsY : integer;
-  vertical             :boolean;
-  Save_Cursor:TCursor;
 begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-  backup_img;
-
-  vertical:= ((sender=imageflipv1) or (sender=stackmenu1.stack_button1));
-
-  setlength(img_temp,head.naxis3, head.width,head.height);
-
-  for col:=0 to head.naxis3-1 do {do all colours}
-  begin
-    For fitsY:=0 to (head.height-1) do
-      for fitsX:=0 to (head.width-1) do
-      begin
-        if vertical then img_temp[col, fitsX,(head.height-1)-fitsY]:=img_loaded[col,fitsX,fitsY]
-        else
-        img_temp[col,(head.width-1)-fitsX,fitsY]:=img_loaded[col,fitsX,fitsY];
-      end;
-  end;
-
-  img_loaded:=nil;
-  img_loaded:=img_temp;
-
-  if head.cd1_1<>0 then {update solution for rotation}
-  begin
-    if vertical then {rotate right}
-    begin
-      head.cd1_2:=-head.cd1_2;
-      head.cd2_2:=-head.cd2_2;
-    end
-    else
-    begin {rotate horizontal}
-      head.cd1_1:=-head.cd1_1;
-      head.cd2_1:=-head.cd2_1;
-    end;
-    new_to_old_WCS;{convert new style FITS to old style, calculate head.crota1,head.crota2,head.cdelt1,head.cdelt2}
-
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
-
-    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);
-    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
-
-    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
-    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
-
-    remove_key('ROWORDER',false{all});{just remove to be sure no debayer confusion}
-    add_text     ('HISTORY   ','Flipped.                                                           ');
-  end;
-  plot_fits(mainwindow.image1,false,true);
-
-  Screen.Cursor := Save_Cursor;  { Always restore to normal }
 end;
 
 
@@ -12718,20 +12577,17 @@ end;
 
 procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
 var
-  col,fitsX,fitsY,maxsize,i,j,progress_value,progressC,xx,yy,resolution,colours2,width2,height2   : integer;
-  cosA,sinA,factor, centerx,centery,centerxs,centerys,angle,factX,factY,Cos_div_res,Sin_div_res  : double;
-  value0,value1,value2 :single;
+  centerxs,centerys,angle  : double;
   valueI : string;
   Save_Cursor:TCursor;
+
 begin
-  if sender<>extend1 then
-  begin
-    valueI:=InputBox('Rotation angle CCW in degrees:','','' );
-    if valueI=''  then exit;
-    angle:=strtofloat2(valueI);
-  end
+  valueI:=InputBox('Arbitrary rotation','Enter angle CCW in degrees:              (If solved, enter N for north up)','' );
+  if valueI=''  then exit;
+  if ((valueI='n') or (valueI='N')) then
+    angle:=-head.crota2
   else
-  angle:=0;{this will effectively extend the canvas}
+    angle:=strtofloat2(valueI);
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -12740,94 +12596,21 @@ begin
   memo2_message('Start rotation. This takes some time due to subsampling 10x10.');
   backup_img;
 
-  colours2:=head.naxis3;
-  width2:=head.width;
-  height2:=head.height;
+ if flip_horizontal1.checked then angle:=-angle;{change rotation if flipped}
+ if flip_vertical1.checked then   angle:=-angle;{change rotation if flipped}
 
-  if flip_horizontal1.checked then angle:=-angle;{change rotation if flipped}
-  if flip_vertical1.checked then   angle:=-angle;{change rotation if flipped}
+ centerxs:=head.width/2;
+ centerys:=head.height/2;
 
-  if ((width2<>height2) or (img_loaded[0,0,0]<>0)  or (img_loaded[0,head.width-1,0]<>0) or (img_loaded[0,0,head.height-1]<>0) or (img_loaded[0,head.width-1,head.height-1]<>0))  then {fresh image}
-    maxsize:=round(1+sqrt(sqr(head.height)+sqr(head.width))) {add one pixel otherwise not enough resulting in runtime errors}
-  else {assume this image is already rotated. Enough space to rotate}
-    maxsize:=head.width;
+  raster_rotate(angle,centerxs,centerys ,img_loaded);
+//  rotate_arbitraryold(angle,img_loaded);
 
-  centerX:=maxsize/2;
-  centerY:=maxsize/2;
-  centerxs:=head.width/2;
-  centerys:=head.height/2;
+  head.width:=length(img_loaded[0]);{update width}  ;
+  head.height:=length(img_loaded[0,0]);{update length};
 
-  setlength(img_temp,head.naxis3, maxsize,maxsize);{set length of new image}
-
-  {clear array}
-  for col:=0 to colours2-1 do {do all colours}
-  begin
-    For fitsY:=0 to (maxsize-1) do
-      for fitsX:=0 to (maxsize-1) do
-        img_temp[col,fitsX,fitsY]:=0
-  end;
-
-  sincos(angle*pi/180,sinA,cosA);
-  if ((sinA=0) or (cosA=0)) then resolution:=1 else resolution:=10;{for angle 0,90,180,270 degrees no need to sub sample}
-  factor:=1/sqr(resolution);{1/(number of subpixels), typical 1/(10x10)}
-  //one_div_res:=1/resolution;
-
-  Cos_div_res:=cosA/resolution;
-  Sin_div_res:=sinA/resolution;
-
-
-  progressC:=0;
-  For fitsY:=0 to height2-1 do
-  begin
-    inc(progressC);{counter}
-    if frac(fitsY/100)=0 then
-      begin
-        Application.ProcessMessages;{this could change startX, startY}
-        if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-
-        progress_value:=round(progressC*100/(head.height));{progress in %}
-        progress_indicator(progress_value,'');{report progress}
-      end;
-
-    for fitsX:=0 to width2-1 do
-    begin
-      value0:=img_loaded[0,fitsX,fitsY];
-
-      if value0>=0.01 then {do only data. Use red for detection}
-      begin
-        if colours2>1 then value1:=img_loaded[1,fitsX,fitsY];{>=2 colour image}
-        if colours2>2 then value2:=img_loaded[2,fitsX,fitsY];{>=3 colour image}
-        begin
-          factX:=centerX+(fitsX-centerxs-0.5)*cosA - (fitsY-centerys-0.5)*sinA;
-          factY:=centerY+(fitsX-centerxs-0.5)*sinA + (fitsY-centerys-0.5)*cosA;
-
-          for i:=0 to resolution-1 do {divide the pixel in resolution x resolution subpixels}
-          for j:=0 to resolution-1 do {divide the pixel in resolution x resolution subpixels}
-          begin
-            {new position of subpixel}
-            xx:=trunc(factX+ i*Cos_div_res - j*Sin_div_res); // xx:=trunc(centerX +(fitsX-centerxs-0.5+i/resolution)*cosA - (fitsY-centerys-0.5+j/resolution)*sinA);
-            yy:=trunc(FactY +i*Sin_div_res + j*Cos_div_res); // yy:=trunc(centerY +(fitsX-centerxs-0.5+i/resolution)*sinA + (fitsY-centerys-0.5+j/resolution)*cosA);
-
-            {do all colours}
-            if ((xx>=0) and (xx<maxsize) and (yy>=0) and (yy<maxsize)) then {check required for small square images}
-            begin
-              img_temp[0,xx,yy ]:=img_temp[0,xx,yy] + value0*factor;{factor is typical 1/100 due to 10x10 subpixel}
-              if colours2>1 then img_temp[1,xx,yy]:=img_temp[1,xx,yy] + value1*factor; {this is the fastest way rather then for col:=0 to head.naxis3-1 loop}
-              if colours2>2 then img_temp[2,xx,yy]:=img_temp[2,xx,yy] + value2*factor;
-            end;
-          end;
-        end;
-      end;
-    end;
-  end;
-
-  head.width:=maxsize;
-  head.height:=maxsize;
   update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
   update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
 
-  img_loaded:=img_temp;
-  img_temp:=nil;
 
   if head.cd1_1<>0 then {update solution for rotation}
   begin
@@ -12840,8 +12623,8 @@ begin
      end;
      head.crota2:=fnmodulo(head.crota2+angle,360);
      head.crota1:=fnmodulo(head.crota1+angle,360);
-     head.crpix1:=centerX;
-     head.crpix2:=centerY;
+     head.crpix1:= head.width/2;
+     head.crpix2:=head.height/2;
      old_to_new_WCS;{convert old style FITS to newd style}
 
      update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
@@ -12856,6 +12639,7 @@ begin
      update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
      update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
 
+
      add_text   ('HISTORY   ','Rotated CCW by angle '+valueI);
   end;
   remove_key('ANNOTATE',true{all});{this all will be invalid}
@@ -12867,6 +12651,7 @@ begin
 
   memo2_message('Rotation done.');
 end;
+
 
 
 procedure Tmainwindow.histogram1MouseMove(Sender: TObject; Shift: TShiftState;
@@ -14409,64 +14194,11 @@ begin
   end;
 end;
 
-procedure Tmainwindow.convert_to_png1Click(Sender: TObject);
-var
-  I: integer;
-  Save_Cursor:TCursor;
-  err   : boolean;
-  dobackup : boolean;
-begin
-  OpenDialog1.Title := 'Select multiple  files to convert';
-  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter :=  'All formats except PPM |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.xisf;*.fz;'+
-                                       '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;'+
-                         '|FITS files (*.fit*,*.xisf)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.new;*.xisf;*.fz'+
-                         '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;'+
-                         '|PNG, TIFF, JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
-                         '|Compressed FITS files|*.fz';
-
-  opendialog1.initialdir:=ExtractFileDir(filename2);
-  fits_file:=false;
-  esc_pressed:=false;
-  err:=false;
-  if OpenDialog1.Execute then
-  begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
-    dobackup:=img_loaded<>nil;
-    if dobackup then backup_img;{preserve img array and fits header of the viewer}
-
-    try { Do some lengthy operation }
-      with OpenDialog1.Files do
-      for I := 0 to Count - 1 do
-      begin
-        progress_indicator(100*i/(count),' Converting');{show progress}
-        Application.ProcessMessages;
-        if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
-        filename2:=Strings[I];
-        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
-        if load_image(false {recenter},false {plot}) then
-          save_png16(img_loaded,ChangeFileExt(filename2,'.png'),false {flip H},false {flip V})
-        else err:=true;
-      end;
-      if err=false then mainwindow.caption:='Completed, all files converted.'
-      else
-      mainwindow.caption:='Finished, files converted but with errors!';
-
-      finally
-      if dobackup then restore_img;{for the viewer}
-      Screen.Cursor := Save_Cursor;  { Always restore to normal }
-      progress_indicator(-100,'');{progresss done}
-    end;
-  end;
-end;
 
 procedure Tmainwindow.MenuItem22Click(Sender: TObject);
 begin
   form_inspection1.aberration_inspector1Click(nil);
 end;
-
-
 
 
 procedure Tmainwindow.FormClose(Sender: TObject; var CloseAction: TCloseAction);
