@@ -1,5 +1,12 @@
 unit unit_inspector_plot;
 
+{Copyright (C) 2018, 2021 by Han Kleijn, www.hnsky.org
+ email: han.k.. at...hnsky.org
+
+This Source Code Form is subject to the terms of the Mozilla Public
+License, v. 2.0. If a copy of the MPL was not distributed with this
+file, You can obtain one at https://mozilla.org/MPL/2.0/. }
+
 {$mode Delphi}
 
 interface
