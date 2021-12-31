@@ -1383,13 +1383,32 @@ object mainwindow: Tmainwindow
       object MenuItem19: TMenuItem
         Caption = '-'
       end
-      object rotate_arbitrary1: TMenuItem
-        Caption = 'Rotate arbitrary'
+      object rotate1: TMenuItem
+        Caption = 'Rotate image'
         Enabled = False
-        Hint = 'Rotate the image with the angle specified. Accurate algorithm but image quality will be reduced unless 90,180 or 270 degrees rotation.'
+        Hint = 'Rotate the image.'
         ImageIndex = 31
-        ShortCut = 49234
-        OnClick = rotate_arbitrary1Click
+        object flip_H1: TMenuItem
+          Caption = 'Flip horizontal'
+          Hint = 'Flip the image horizontal. Saving will apply the change to the original image.'
+          ImageIndex = 30
+          ShortCut = 49224
+          OnClick = flip_H1Click
+        end
+        object flip_v1: TMenuItem
+          Caption = 'Flip vertical'
+          Hint = 'Flip the image vertical. Saving will apply the change to the original image.'
+          ImageIndex = 29
+          ShortCut = 49238
+          OnClick = flip_H1Click
+        end
+        object rotate_arbitrary1: TMenuItem
+          Caption = 'Rotate arbitrary'
+          Hint = 'Rotate the image with the angle specified. Accurate algorithm but image quality will be reduced unless 90,180 or 270 degrees rotation.'
+          ImageIndex = 31
+          ShortCut = 49234
+          OnClick = rotate_arbitrary1Click
+        end
       end
       object MenuItem10: TMenuItem
         Caption = '-'

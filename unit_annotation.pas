@@ -1945,7 +1945,7 @@ var
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,scale,count    : integer;
   flip_horizontal, flip_vertical,sip   : boolean;
   error_array                          : array of double;
-  Save_Cursor                      : TCursor;
+  Save_Cursor                          : TCursor;
 
     procedure plot_star;
     begin
@@ -2185,6 +2185,7 @@ begin
 
       error_array:=nil;
     end;
+
 
     Screen.Cursor:= Save_Cursor;
   end;{fits file}

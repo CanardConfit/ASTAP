@@ -1824,7 +1824,9 @@ begin
                 if focus_pos<>0 then ListView1.Items.item[c].subitems.Strings[L_focpos]:=inttostr(focus_pos);
                 if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[L_foctemp]:=floattostrF(focus_temp,ffFixed,0,1);
 
-                if gain<>'' then ListView1.Items.item[c].subitems.Strings[L_gain]:=gain;
+                if head_2.egain<>'' then ListView1.Items.item[c].subitems.Strings[L_gain]:=copy(head_2.egain,1,5) {e-/adu}
+                else
+                if head_2.gain<>'' then ListView1.Items.item[c].subitems.Strings[L_gain]:=head_2.gain;
 
                 alt:=calculate_altitude(0 {can use header. Astrometric_to_apparent},head_2.ra0,head_2.dec0);{convert centalt string to double or calculate altitude from observer location}
 
@@ -3212,7 +3214,10 @@ begin
               lv.Items.item[c].subitems.Strings[D_background]:=inttostr5(round(backgr));
               if ((lv.name=stackmenu1.listview2.name) or (lv.name=stackmenu1.listview3.name) or (lv.name=stackmenu1.listview4.name)) then
                      lv.Items.item[c].subitems.Strings[D_sigma]:=inttostr(noise_level[0]); {noise level}
-              lv.Items.item[c].subitems.Strings[D_gain]:=gain; {camera gain}
+
+              if head_2.egain<>'' then lv.Items.item[c].subitems.Strings[D_gain]:=copy(head_2.egain,1,5) {e-/adu}
+              else
+              if head_2.gain<>'' then lv.Items.item[c].subitems.Strings[D_gain]:=head_2.gain;
             end;
 
             if lv.name=stackmenu1.listview2.name then {dark tab}
@@ -6480,10 +6485,10 @@ begin
         head.crpix1:=solution_vectorX[0]*(head.crpix1-1)+solution_vectorX[1]*(head.crpix2-1)+solution_vectorX[2];{correct for marker_position at ra_dec position}
         head.crpix2:=solution_vectorY[0]*(head.crpix1-1)+solution_vectorY[1]*(head.crpix2-1)+solution_vectorY[2];
 
-        head.cd1_1:=abs(head.cd1_1)*sign(cd1_1_ref);
-        head.cd1_2:=abs(head.cd1_2)*sign(cd1_2_ref);
-        head.cd2_1:=abs(head.cd2_1)*sign(cd2_1_ref);
-        head.cd2_2:=abs(head.cd2_2)*sign(cd2_2_ref);
+        head.cd1_1:=abs(head.cd1_1)*sign(head_ref.CD1_1);
+        head.cd1_2:=abs(head.cd1_2)*sign(head_ref.CD1_2);
+        head.cd2_1:=abs(head.cd2_1)*sign(head_ref.CD2_1);
+        head.cd2_2:=abs(head.cd2_2)*sign(head_ref.CD2_2);
 
         store_annotated:=annotated;{store temporary annotated}
         annotated:=false;{prevent annotations are plotted in plot_fits}
@@ -8054,7 +8059,7 @@ begin
   else
   begin
     memo2_message('█ █ █ █ █ █ Warning, could not find a suitable dark for temperature "'+inttostr(head.set_temperature)+'"and exposure "'+inttostr(round(head.exposure))+'"! De-classify temperature or exposure time or add correct darks. █ █ █ █ █ █ ');
-    head_ref.dark_count:=0;{set back to zero}
+    head_2.dark_count:=0;{set back to zero}
   end;
 end;
 
@@ -8120,7 +8125,8 @@ begin
   else
   begin
      memo2_message('█ █ █ █ █ █ Warning, could not find a suitable flat for "'+head.filter_name+'"! De-classify flat filter or add correct flat. █ █ █ █ █ █ ');
-     head_ref.flat_count:=0;{set back to zero}
+     head_2.flat_count:=0;{set back to zero}
+//     head_ref.flat_count:=0;{set back to zero}
   end;
 end;
 
@@ -8453,17 +8459,6 @@ var
   value,flat_factor,dark_norm_value,flat11,flat12,flat21,flat22 : double;
 
 begin
-
-//  datamax_light:=head.datamax_org;
-
-//  calstat_local:=head.calstat;{Note load darks or flats will overwrite head.calstat}
-//  light_naxis3:=head.naxis3; {preserve so it is not overriden by load dark_flat which will reset variable in load_fits}
-//  light_exposure:=head.exposure;{preserve so it is not overriden by apply dark_flat}
-//  light_set_temperature:=round(head.set_temperature);
-//  light_width:=head.width;
-//  light_height:=head.height;
-//  light_date_obs:=head.date_obs;{preserve light head.date_obs}
-
   date_to_jd(head.date_obs,head.exposure {light}); {convert date-obs to global variables jd_start, jd_mid. Use this to find the dark with the best match for the light}
 
   if pos('D',head.calstat)<>0 then {is the light already calibrated}
@@ -8471,7 +8466,6 @@ begin
   else
   begin
     load_master_dark({round(head.exposure),round(head.set_temperature),head.width,} round(jd_start)); {will only be renewed if different head.exposure or head.set_temperature.}
-//    dcount:=head_2.dark_count;{protect this global head.dark_count in dcount for next load_master_flat}
 
     if head_2.dark_count>0 then   {dark and flat use head_2 for status}
     begin
@@ -8499,7 +8493,6 @@ begin
       head.calstat:='D'; {dark applied, store in header of reference file}
       head.dark_count:=head_2.dark_count;
       head.datamax_org:=head.datamax_org-dark_norm_value;{adapt light datamax_org}
-
     end;
   end;{apply dark}
 
@@ -8508,9 +8501,6 @@ begin
   else
   begin
     load_master_flat({head.filter_name,head.width,}round(jd_start));{will only be renewed if different filter name.  Note load will overwrite head.calstat}
-
-//    fcount:=head.flat_count;{from master flat loaded}
-//    fdcount:=head.flatdark_count;
     last_light_jd:=round(jd_start);
 
     if head_2.flat_count<>0 then
@@ -8559,16 +8549,6 @@ begin
 
     end;{flat correction}
   end;{do flat & flat dark}
-
-//  head.calstat:=calstat_local;{report light calibration}
-//  head.datamax_org:=datamax_light;{restore. will be overwitten by previouse reads}
-//  head.naxis3:=light_naxis3;{return old value}
-//  head.exposure:=light_exposure;{restore }
-//  head.set_temperature:=light_set_temperature;{restore old value}
-//  head.width:=light_width;{restore old value}
-//  head.height:=light_height;{restore old value}
-//  head.date_obs:=light_date_obs;{restore old value}
-
 end;
 
 

@@ -13,7 +13,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, LCLintf, StdCtrls,
-  Buttons, math, astap_main, unit_stack, unit_annotation;
+  Buttons, math, astap_main, unit_stack, unit_annotation,
+  clipbrd; {for copy to clipboard}
 
 type
 
@@ -21,6 +22,7 @@ type
 
   Tform_inspection1 = class(TForm)
     bayer_label1: TLabel;
+    to_clipboard1: TCheckBox;
     normalise_mode1: TComboBox;
     show_distortion1: TBitBtn;
     aberration_inspector1: TBitBtn;
@@ -1100,13 +1102,23 @@ end;
 
 procedure Tform_inspection1.show_distortion1Click(Sender: TObject);
 var
-  stars_measured :integer;
+  stars_measured,i :integer;
+  report : string;
 begin
   form_inspection1.undo_button1Click(nil);{undo if required}
   executed:=1;{only refresh required to undo}
 
   if calculate_undisturbed_image_scale then
     measure_distortion(true {plot},stars_measured);{measure or plot distortion}
+
+  if to_clipboard1.checked then
+  begin
+    report:='x database'+#9+'y database'+#9+'x measured'#9+'y measured'+#10;
+    for i:=0 to length(distortion_data[0])-1 do
+    report:=report+floattostr(distortion_data[0,i])+#9+floattostr(distortion_data[1,i])+#9+floattostr(distortion_data[2,i])+#9+floattostr(distortion_data[3,i])+#10;
+    Clipboard.AsText:=report;
+  end;
+  distortion_data:=nil;
 end;
 
 

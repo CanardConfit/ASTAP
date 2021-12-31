@@ -327,4 +327,14 @@ object form_inspection1: Tform_inspection1
       ParentColor = False
     end
   end
+  object to_clipboard1: TCheckBox
+    Left = 646
+    Height = 19
+    Hint = 'Data to clipboard'
+    Top = 96
+    Width = 20
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 5
+  end
 end

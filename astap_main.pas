@@ -114,6 +114,9 @@ type
     imageinspection1: TMenuItem;
     inspector1: TMenuItem;
     MenuItem22: TMenuItem;
+    flip_v1: TMenuItem;
+    flip_H1: TMenuItem;
+    rotate_arbitrary1: TMenuItem;
     roundness1: TMenuItem;
     MenuItem28: TMenuItem;
     MenuItem29: TMenuItem;
@@ -195,7 +198,7 @@ type
     MenuItem18: TMenuItem;
     select_all2: TMenuItem;
     set_area1: TMenuItem;
-    rotate_arbitrary1: TMenuItem;
+    rotate1: TMenuItem;
     shape_histogram1: TShape;
     shape_paste1: TShape;
     submenurotate1: TMenuItem;
@@ -331,6 +334,7 @@ type
     procedure calibrate_photometry1Click(Sender: TObject);
     procedure Constellations1Click(Sender: TObject);
     procedure convert_to_ppm1Click(Sender: TObject);
+    procedure flip_H1Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure freetext1Click(Sender: TObject);
     procedure hfd_arcseconds1Click(Sender: TObject);
@@ -530,6 +534,9 @@ type
     light_count     : integer;
     flat_count      : integer;
     flatdark_count  : integer;
+
+    egain      : string; {gain in e-/adu}
+     gain      : string; {gain in 0.1dB or else}
     date_obs   : string;
     calstat    : string;
     filter_name: string;
@@ -582,7 +589,7 @@ var
   imagetype ,sitelat, sitelong,centalt,centaz: string;
   focus_temp,cblack,cwhite,sqmfloat   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
-  date_avg,ut,pltlabel,plateid,telescop,instrum,origin,sqm_value,gain:string;
+  date_avg,ut,pltlabel,plateid,telescop,instrum,origin,sqm_value   : string;
 
   old_crpix1,old_crpix2,old_crota1,old_crota2,old_cdelt1,old_cdelt2,old_cd1_1,old_cd1_2,old_cd2_1,old_cd2_2 : double;{for backup}
 
@@ -690,6 +697,7 @@ procedure add_integer(inpt,comment1:string;x:integer);{add integer variable to h
 procedure update_float(inpt,comment1:string;x:double);{update keyword of fits header in memo}
 procedure remove_key(inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
 
+function strtofloat1(s:string): double;{string to float, error tolerant}
 function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
 function TextfileSize(const name: string): LongInt;
 function floattostr6(x:double):string;
@@ -933,7 +941,8 @@ begin
   imagetype:='';
   head.exposure:=0;
   head.set_temperature:=999;
-  gain:='';{assume no data available}
+  head.gain:='';
+  head.egain:='';{assume no data available}
 end;{reset global variables}
 
 
@@ -1181,9 +1190,11 @@ begin
                  ybinning:=validate_double;{binning}
 
         if ((header[i]='G') and (header[i+1]='A')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]=' ')) then
-               gain:=get_as_string; {gain CCD}
+             head.gain:=trim(get_as_string); {head.gain CCD}
         if ((header[i]='I') and (header[i+1]='S')  and (header[i+2]='O') and (header[i+3]='S') and (header[i+4]='P')) then
-               if gain='' then gain:=get_as_string;{isospeed, do not override gain}
+             if head.gain='' then head.gain:=trim(get_as_string);{isospeed, do not override head.gain}
+        if ((header[i]='E') and (header[i+1]='G')  and (header[i+2]='A') and (header[i+3]='I') and (header[i+4]='N')) then  {egain}
+             head.egain:=trim(get_as_string);{e-/adu gain}
 
 
         {following variable are not set at zero Set at zero somewhere in the code}
@@ -2077,7 +2088,7 @@ begin
           else
           begin
             if expdet then begin head.exposure:=strtofloat2(comm);expdet:=false; end;{get head.exposure time from comments,special dcraw 0.9.28dev1}
-            if isodet then begin gain:=comm;isodet:=false; end;{get iso speed as gain}
+            if isodet then begin head.gain:=comm;isodet:=false; end;{get iso speed as head.gain}
             if instdet then begin instrum:=comm;instdet:=false;end;{camera}
             if ccdtempdet then begin head.set_temperature:=round(strtofloat2(comm));ccdtempdet:=false;end;{sensor temperature}
             if timedet then
@@ -2261,7 +2272,7 @@ begin
   update_integer('DATAMAX =',' / Maximum data value                           ' ,round(head.datamax_org));
 
   if head.exposure<>0 then   update_float('EXPTIME =',' / duration of exposure in seconds                ' ,head.exposure);
-  if gain<>'' then    update_integer('GAIN    =',' / iso speed                                      ' ,strtoint(gain));
+  if head.gain<>'' then    update_integer('GAIN    =',' / iso speed                                      ' ,strtoint(head.gain));
 
   if head.date_obs<>'' then update_text   ('DATE-OBS=',#39+head.date_obs+#39);
   if instrum<>''  then update_text   ('INSTRUME=',#39+INSTRUM+#39);
@@ -3011,7 +3022,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2021 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 1.0.0RC10, '+about_message4+', dated 2021-12-27';
+  #13+#10+'ASTAP version 1.0.0RC11, '+about_message4+', dated 2021-12-31';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4480,7 +4491,7 @@ procedure Tmainwindow.show_statistics1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations,i : integer;
    value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4,
-   sd,mean,median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range     : double;
+   sd,mean,median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range,total_flux  : double;
    Save_Cursor              : TCursor;
    info_message             : string;
    median_array             : array of double;
@@ -4528,11 +4539,13 @@ begin
     maximum:=0;
     counter:=0;
     counter_median:=0;
+    total_flux:=0;
     for fitsY:=startY+1 to stopY-1 do {within rectangle}
     for fitsX:=startX+1 to stopX-1 do
     begin
       value:=img_loaded[col,fitsX+1,fitsY+1];
       median_position:=counter*stepsize;
+      total_flux:=total_flux+value; {total flux}
       if  trunc(median_position)>counter_median then {pixels will be skippped. Limit sampling to median_max_size}
       begin
         inc(counter_median);
@@ -4550,9 +4563,11 @@ begin
       end;
     end;{filter outliers}
     median:=smedian(median_array,counter_median);
+    total_flux:=total_flux-counter*median; {total flux above background}
 
     for i:=0 to counter_median do median_array[i]:=abs(median_array[i] - median);{fill median_array with offsets}
     mad:=smedian(median_array,counter_median); //median absolute deviation (MAD)
+
 
     if col=0 then range:=maximum-minimum;
 
@@ -4568,6 +4583,7 @@ begin
                                  'mad:   '+floattostrf(mad,ffgeneral, 4, 4)+#10+
                                  'm :   '+floattostrf(minimum,ffgeneral, 5, 5)+#10+
                                  'M :   '+floattostrf(maximum,ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter))+' x)'+#10+
+                                 'Flux: '+floattostrf(total_flux,ffExponent, 3, 2)+#10+
                                  '≥64E3 :  '+inttostr(round(saturated));
   end;
   if ((abs(stopX-startx)>=head.width-1) and (most_common<>0){prevent division by zero}) then
@@ -4589,7 +4605,9 @@ begin
                                             'σ =  standard deviation background using mean and sigma clipping| ' +
                                             'σ_2 = standard deviation background using values below Mo only | '+
                                             'mad = median absolute deviation | '+
-                                            'm = minimum value image | M = maximum value image | ≥64E3 = number of values equal or above 64000';
+                                            'm = minimum value image | M = maximum value image | '+
+                                            'Flux = total flux above median background | '+
+                                            '≥64E3 = number of values equal or above 64000';
 
   case  QuestionDlg (pchar('Statistics within rectangle '+inttostr(stopX-1-startX)+' x '+inttostr(stopY-1-startY) ),pchar(info_message),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
            mrYes: Clipboard.AsText:=info_message;
@@ -4695,7 +4713,7 @@ begin
 
     mainwindow.stretch1.enabled:=fits;
     mainwindow.inversimage1.enabled:=fits;
-    mainwindow.rotate_arbitrary1.enabled:=fits;
+    mainwindow.rotate1.enabled:=fits;
 
     mainwindow.minimum1.enabled:=fits;
     mainwindow.maximum1.enabled:=fits;
@@ -5178,6 +5196,16 @@ begin
   val(s,result,error1);
   if error1<>0 then result:=0;
 end;
+
+
+function strtofloat1(s:string): double;{string to float, error tolerant}
+var
+  error1:integer;
+begin
+  val(s,result,error1);
+  if error1<>0 then result:=0;
+end;
+
 
 
 Function  deg_and_minutes_tofloat(s:string):double;
@@ -13186,7 +13214,7 @@ begin
 
        r is the diameter used for star flux measurement. Flux is the total star flux detected above 3* sd.
 
-       Assuming unity gain ADU/e-=1
+       Assuming unity head.gain ADU/e-=1
        See https://en.wikipedia.org/wiki/Signal-to-noise_ratio_(imaging)
        https://www1.phys.vt.edu/~jhs/phys3154/snr20040108.pdf
        http://spiff.rit.edu/classes/phys373/lectures/signal/signal_illus.html}
@@ -14194,6 +14222,69 @@ begin
   end;
 end;
 
+procedure Tmainwindow.flip_H1Click(Sender: TObject);
+var
+  col,fitsX,fitsY : integer;
+  vertical             :boolean;
+  Save_Cursor:TCursor;
+begin
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  backup_img;
+
+  vertical:= (sender=flip_V1);
+
+  setlength(img_temp,head.naxis3, head.width,head.height);
+
+  for col:=0 to head.naxis3-1 do {do all colours}
+  begin
+    For fitsY:=0 to (head.height-1) do
+      for fitsX:=0 to (head.width-1) do
+      begin
+        if vertical then img_temp[col, fitsX,(head.height-1)-fitsY]:=img_loaded[col,fitsX,fitsY]
+        else
+        img_temp[col,(head.width-1)-fitsX,fitsY]:=img_loaded[col,fitsX,fitsY];
+      end;
+  end;
+
+  img_loaded:=nil;
+  img_loaded:=img_temp;
+
+  if head.cd1_1<>0 then {update solution for rotation}
+  begin
+    if vertical then {rotate right}
+    begin
+      head.cd1_2:=-head.cd1_2;
+      head.cd2_2:=-head.cd2_2;
+    end
+    else
+    begin {rotate horizontal}
+      head.cd1_1:=-head.cd1_1;
+      head.cd2_1:=-head.cd2_1;
+    end;
+    new_to_old_WCS;{convert new style FITS to old style, calculate crota1,crota2,cdelt1,cdelt2}
+
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
+
+    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);
+    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
+
+    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
+    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
+
+    remove_key('ROWORDER',false{all});{just remove to be sure no debayer confusion}
+    add_text     ('HISTORY   ','Flipped.                                                           ');
+  end;
+  plot_fits(mainwindow.image1,false,true);
+
+  Screen.Cursor := Save_Cursor;  { Always restore to normal }
+end;
+
+
 
 procedure Tmainwindow.MenuItem22Click(Sender: TObject);
 begin
@@ -14811,8 +14902,7 @@ begin
   head.ra0 :=0;
   head.dec0:=0; {plate center values}
 
-
-  {$ifdef CPUARM}
+ {$ifdef CPUARM}
   size_backup:= 0; {0, one backup images for ctrl-z}
   index_backup:=size_backup;
   {$else}

@@ -9,7 +9,7 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 {$mode delphi}
 interface
 uses
-  Classes, SysUtils,forms, math, unit_stack, astap_main, unit_star_align,unit_gaussian_blur;
+  Classes, SysUtils,forms, math, unit_stack, astap_main, unit_star_align;
 
 procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
@@ -28,8 +28,9 @@ var
   pedestal_s : double;{target background value}
 
 var
-  SIN_dec0,COS_dec0,x_new_float,y_new_float,ra_ref,dec_ref,SIN_dec_ref,COS_dec_ref,crpix1_ref, crpix2_ref, CD1_1_ref, CD1_2_ref,CD2_1_ref,CD2_2_ref,exposure_ref,
+  SIN_dec0,COS_dec0,x_new_float,y_new_float,SIN_dec_ref,COS_dec_ref,
   ap_0_1_ref,ap_0_2_ref,ap_0_3_ref,ap_1_0_ref,ap_1_1_ref, ap_1_2_ref,ap_2_0_ref,ap_2_1_ref,ap_3_0_ref, bp_0_1_ref,bp_0_2_ref,bp_0_3_ref,bp_1_0_ref,bp_1_1_ref,bp_1_2_ref,bp_2_0_ref,bp_2_1_ref,bp_3_0_ref   : double;
+  gain_refxxx: string;
 
 
 implementation
@@ -74,27 +75,27 @@ Begin
 
    {5. Conversion (RA,DEC) -> (x,y) of reference image}
     sincos(dec_new,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
-    delta_ra:=RA_new-ra_ref;
+    delta_ra:=RA_new-head_ref.ra0;
     sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
 
     H := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
     dRA := (COS_dec_new*SIN_delta_ra / H)*180/pi;
     dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / H)*180/pi;
 
-    det:=CD2_2_ref*CD1_1_ref - CD1_2_ref*CD2_1_ref;
+    det:=head_ref.CD2_2*head_ref.CD1_1 - head_ref.CD1_2*head_ref.CD2_1;
 
-    u0:= - (CD1_2_ref*dDEC - CD2_2_ref*dRA) / det;
-    v0:= + (CD1_1_ref*dDEC - CD2_1_ref*dRA) / det;
+    u0:= - (head_ref.CD1_2*dDEC - head_ref.CD2_2*dRA) / det;
+    v0:= + (head_ref.CD1_1*dDEC - head_ref.CD2_1*dRA) / det;
 
     if ap_order>=2 then {apply SIP correction up to second order}
     begin
-      x_new_float:=(CRPIX1_ref + u0+ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1;{3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-      y_new_float:=(CRPIX2_ref + v0+bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1;{3th order SIP correction}
+      x_new_float:=(head_ref.crpix1 + u0+ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1;{3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+      y_new_float:=(head_ref.crpix2 + v0+bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1;{3th order SIP correction}
     end
     else
     begin
-      x_new_float:=(CRPIX1_ref + u0)-1; {in image array range 0..width-1}
-      y_new_float:=(CRPIX2_ref + v0)-1;
+      x_new_float:=(head_ref.crpix1 + u0)-1; {in image array range 0..width-1}
+      y_new_float:=(head_ref.crpix2 + v0)-1;
     end;
   end;{astrometric}
 end;{calc_newx_newy}
@@ -120,7 +121,7 @@ begin
   solution_vectorY[1]:=+(y_new_float- solution_vectorY[2]);
 
   flipped:=(head.cd1_1/head.cd2_2)>0; {flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
-  flipped_reference:=(cd1_1_ref/cd2_2_ref)>0; {flipped reference image}
+  flipped_reference:=(head_ref.CD1_1/head_ref.CD2_2)>0; {flipped reference image}
   if flipped<>flipped_reference then {this can happen is user try to add images from a diffent camera/setup}
   begin
     solution_vectorX[1]:=-solution_vectorX[1];
@@ -130,17 +131,7 @@ end;
 
 procedure initialise_var1;{set variables correct}
 begin
-  ra_ref:=head.ra0;
-  dec_ref:=head.dec0;
-  sincos(dec_ref,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
-  crpix1_ref:=head.crpix1;
-  crpix2_ref:=head.crpix2;
-  CD1_1_ref:=head.cd1_1;
-  CD1_2_ref:=head.cd1_2;
-  CD2_1_ref:=head.cd2_1;
-  CD2_2_ref:=head.cd2_2;
-
-  exposure_ref:=head.exposure;
+  sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 end;
 
 procedure initialise_var2;{set variables correct}
@@ -419,12 +410,7 @@ begin
                   end;
                   if c=2 {green} then
                   begin
- //                   if fitsx=1583 then
-//                       if fitsy=1474 then
-//                    beep;
-
-
-                    value:=img_loaded[0,fitsX-1,fitsY-1];
+                     value:=img_loaded[0,fitsX-1,fitsY-1];
                     if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
                     begin
                       img_average[0,x_new,y_new]:=0;//saturation marker, process later as black spot
@@ -555,6 +541,28 @@ begin
 end;
 
 
+function calc_weightF: double; {calculate weighting factor for different exposure duration and gain}
+var
+  gain1,gain2 : double;
+begin
+  if head.exposure<>0 then result:=head.exposure/head_ref.exposure else result:=1;{influence of each image depending on the exposure_time}
+
+  if head.egain<>head_ref.egain then {rare}
+  begin  {check egain}
+    gain1:=strtofloat1(head_ref.egain);
+    gain2:=strtofloat1(head.egain);
+    if gain1<>0 then
+        result:=result*gain2/gain1; {-e/adu}
+    memo2_message('Warning different egain used!! '+copy(head.egain,1,5)+' ínstead of '+copy(head_ref.egain,1,5)+' [e-/ADU]. Will compensate accordingly.');
+  end
+  else
+  begin  {check gain/iso}
+    if head.gain<>head_ref.gain then {rare}
+      memo2_message('Warning different gain used!! '+head.gain+' ínstead of '+head_ref.gain+'. Can not compensate unless egain [e-/ADU] is added manually to header.');
+  end;
+end;
+
+
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
   fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,oversizeV    : integer;
@@ -608,7 +616,6 @@ begin
             binning:=report_binning(head.height);{select binning based on the height of the first light}
 
             head_ref:=head;{backup solution}
-
             initialise_var1;{set variables correct. Do this before apply dark}
             initialise_var2;{set variables correct}
             if ((bayerpat='') and (make_osc_color1.checked)) then
@@ -728,7 +735,8 @@ begin
           begin
             inc(counter);
             sum_exp:=sum_exp+head.exposure;
-            if head.exposure<>0 then weightF:=head.exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
+
+            weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
 
             date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
             if jd_start>jd_stop then jd_stop:=jd_start;{find latest start time}
@@ -750,7 +758,7 @@ begin
               if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
               begin
                 for col:=0 to head.naxis3-1 do {all colors}
-                img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1] +background_correction;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
+                img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ (img_loaded[col,fitsX-1,fitsY-1] +background_correction)*weightf;{image loaded is already corrected with dark and flat}{NOTE: fits count from 1, image from zero}
                 img_temp[0,x_new,y_new]:=img_temp[0,x_new,y_new]+weightF{typical 1};{count the number of image pixels added=samples.}
               end;
             end;
@@ -849,6 +857,7 @@ begin
 
           if init=false then
           begin
+            head_ref:=head;{backup solution}
             initialise_var1;{set variables correct}
             initialise_var2;{set variables correct}
           end;
@@ -1010,6 +1019,7 @@ begin
 
       if counter<>0 then
       begin
+        head:=head_ref;{restore solution variable of reference image for annotation and mount pointer. Works only if not resized}
         head.height:=height_max;
         head.width:=width_max;
         setlength(img_loaded,head.naxis3,head.width,head.height);{new size}
@@ -1232,7 +1242,8 @@ begin
         begin
           inc(counter);
           sum_exp:=sum_exp+head.exposure;
-          if head.exposure<>0 then weightF:=head.exposure/exposure_ref else weightF:=1;{influence of each image depending on the exposure_time}
+
+          weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
 
           date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
           if jd_start>jd_stop then jd_stop:=jd_start;{find latest start time}
@@ -1255,7 +1266,7 @@ begin
             begin
               for col:=0 to head.naxis3-1 do
               begin
-                img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ img_loaded[col,fitsX-1,fitsY-1]+background_correction;{Note fits count from 1, image from zero}
+                img_average[col,x_new,y_new]:=img_average[col,x_new,y_new]+ (img_loaded[col,fitsX-1,fitsY-1]+background_correction)*weightF;{Note fits count from 1, image from zero}
                 img_temp[col,x_new,y_new]:=img_temp[col,x_new,y_new]+weightF {norm 1};{count the number of image pixels added=samples}
               end;
             end;
@@ -1358,6 +1369,8 @@ begin
           end;
           init:=true;{initialize for first image done}
 
+          weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
+
           vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
           begin
@@ -1372,7 +1385,7 @@ begin
             x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
             if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
             begin
-              for col:=0 to head.naxis3-1 do img_variance[col,x_new,y_new]:=img_variance[col,x_new,y_new] +  sqr( img_loaded[col,fitsX-1,fitsY-1]+ background_correction - img_average[col,x_new,y_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
+              for col:=0 to head.naxis3-1 do img_variance[col,x_new,y_new]:=img_variance[col,x_new,y_new] +  sqr( (img_loaded[col,fitsX-1,fitsY-1]+ background_correction)*weightF - img_average[col,x_new,y_new]); {Without flats, sd in sqr, work with sqr factors to avoid sqrt functions for speed}
             end;
           end;
           progress_indicator(10+30+round(0.33333*90*(counter)/length(files_to_process){(ListView1.items.count)}),' ■■□');{show progress}
@@ -1465,6 +1478,8 @@ begin
           end;
           init:=true;{initialize for first image done}
 
+          weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
+
           vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
           if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
           begin
@@ -1481,7 +1496,7 @@ begin
             begin
               for col:=0 to head.naxis3-1 do {do all colors}
               begin
-                value:=img_loaded[col,fitsX-1,fitsY-1]+ background_correction;
+                value:=(img_loaded[col,fitsX-1,fitsY-1]+ background_correction)*weightF;
                 if sqr (value - img_average[col,x_new,y_new])< variance_factor*{sd sqr}( img_variance[col,x_new,y_new])  then {not an outlier}
                 begin
                   img_final[col,x_new,y_new]:=img_final[col,x_new,y_new]+ value;{dark and flat, flat dark already applied}
@@ -1583,6 +1598,7 @@ begin
         if init=false then
         begin
           binning:=report_binning(head.height);{select binning based on the height of the light}
+          head_ref:=head;{backup solution}
           initialise_var1;{set variables correct}
           initialise_var2;{set variables correct}
           if ((bayerpat='') and (make_osc_color1.checked)) then
