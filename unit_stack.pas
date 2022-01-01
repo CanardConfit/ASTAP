@@ -3173,8 +3173,6 @@ begin
      inc(c);
   until c>counts;
 
-
-
   for c:=0 to lv.items.count-1 do
   begin
     if ((lv.Items.item[c].checked) and ((refresh) or (length(lv.Items.item[c].subitems.Strings[4])<=1){height}) ) then {column empthy, only update blank rows}
