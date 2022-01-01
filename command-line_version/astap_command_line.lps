@@ -2,15 +2,13 @@
 <CONFIG>
   <ProjectSession>
     <PathDelim Value="\"/>
-    <Version Value="11"/>
+    <Version Value="12"/>
     <BuildModes Active="Default"/>
     <Units Count="14">
       <Unit0>
         <Filename Value="astap_command_line.lpr"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
-        <TopLine Value="27"/>
-        <CursorPos X="29" Y="42"/>
+        <CursorPos X="20" Y="58"/>
         <UsageCount Value="106"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -26,9 +24,9 @@
       <Unit2>
         <Filename Value="unit_command_line_general.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="1857"/>
-        <CursorPos X="85" Y="1880"/>
+        <CursorPos X="33" Y="20"/>
         <UsageCount Value="106"/>
         <Loaded Value="True"/>
       </Unit2>
@@ -241,36 +239,36 @@
     </RunParams>
   </ProjectSession>
   <Debugging>
-    <BreakPoints Count="3">
-      <Item1>
+    <BreakPoints>
+      <Item>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="astap_command_line.lpr"/>
         <Line Value="226"/>
-      </Item1>
-      <Item2>
+      </Item>
+      <Item>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="..\unit_astrometric_solving.pas"/>
         <Line Value="557"/>
-      </Item2>
-      <Item3>
+      </Item>
+      <Item>
         <Kind Value="bpkSource"/>
         <WatchScope Value="wpsLocal"/>
         <WatchKind Value="wpkWrite"/>
         <Source Value="unit_command_line_solving.pas"/>
         <Line Value="977"/>
-      </Item3>
+      </Item>
     </BreakPoints>
-    <Watches Count="2">
-      <Item1>
+    <Watches>
+      <Item>
         <Expression Value="naxis"/>
-      </Item1>
-      <Item2>
+      </Item>
+      <Item>
         <Expression Value="line0"/>
-      </Item2>
+      </Item>
     </Watches>
   </Debugging>
 </CONFIG>
