@@ -689,7 +689,7 @@ begin
 end;
 
 
-function load_fits(filen:string;var img_loaded2: image_array): boolean;{load fits file}
+function load_fits(filen:string;out img_loaded2: image_array): boolean;{load fits file}
 var
   header    : array[0..2880] of ansichar;
   i,j,k,error3,naxis1, reader_position              : integer;
@@ -1456,36 +1456,20 @@ begin
   xpixsz:=0;
   ypixsz:=0;
   focallen:=0;
-//  subsamp:=1;{just for the case it is not available}
   cd1_1:=0;
   cd1_2:=0;
   cd2_1:=0;
   cd2_2:=0;
   date_obs:='';
-//  date_avg:='';date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
-//  sitelat:='';{Observatory latitude}
-//  sitelong:='';{Observatory longitude}
 
   naxis:=1;
   naxis3:=1;
 
-//  filter_name:='';
-//  calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. Example value DFB}
-//  imagetype:='';
   xbinning:=1;{default}
   ybinning:=1;
-//  exposure:=0;
-//  set_temperature:=999;
+  exposure:=0;
 
-//  bayerpat:='T';{assume image is from Raw DSLR image}
-//  xbayroff:=0;{offset to used to correct BAYERPAT due to flipping}
-//  ybayroff:=0;{offset to used to correct BAYERPAT due to flipping}
-//  roworder:='';{'BOTTOM-UP'= lower-left corner first in the file.  or 'TOP-DOWN'= top-left corner first in the file.}
-
-//  annotated:=false; {any annotation in the file}
     gain:=999;{assume no data available}
-//  sqm:=0;{assume no data available}
-
 
   I:=0;
   reader_position:=0;
