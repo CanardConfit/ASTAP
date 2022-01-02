@@ -3022,7 +3022,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.01.01, '+about_message4;
+  #13+#10+'ASTAP version 2022.01.02, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -6197,7 +6197,7 @@ end;
 
 procedure demosaic_bayer(var img: image_array); {convert OSC image to colour}
 begin
-  if stackmenu1.bayer_pattern1.Text='' then memo2_message('█ █ █ █ █ █ Update required. Please test and set Bayer pattern in tab "Stack method"! █ █ █ █ █ █ ');
+  if stackmenu1.bayer_pattern1.Text='' then memo2_message('█ █ █ █ █ █ Setting required. Please test and set Bayer pattern in tab "Stack method"! █ █ █ █ █ █ ');
   if pos('AstroC',stackmenu1.demosaic_method1.text)<>0  then
   begin
     if head.datamax_org>16384 then demosaic_astroC_bilinear_interpolation(img,65535 div 2,get_demosaic_pattern){16 bit image. Make from sensor bayer pattern the three colors}
