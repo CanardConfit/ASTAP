@@ -5527,8 +5527,9 @@ begin
 
        end;
 
-  head.naxis3:=3; {confirm colour set before}
-  update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,head.naxis3);
+  head.naxis3:=3;
+  head.naxis:=3;
+  update_header_for_colour; {update header naxis and naxis3 keywords}
   update_text   ('HISTORY 77','  Artificial colour applied.');
 
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
@@ -8195,8 +8196,9 @@ begin
       { interim files can contain keywords: EXPOSURE, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
       { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
+      head.naxis3:=1; {any color is made mono in the routine. Keywords are updated in the save routine}
+      head.naxis:=2;  {any color is made mono in the routine. Keywords are updated in the save routine}
 
-      update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1);{for the rare case the darks are coloured. Should normally be not the case since it expects raw mono FITS files without bayer matrix applied !!}
       update_text   ('COMMENT 1','  Written by ASTAP. www.hnsky.org');
       head.naxis3:=1; {any color is made mono in the routine}
 
@@ -8389,8 +8391,8 @@ begin
           { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
           update_text   ('COMMENT 1','  Created by ASTAP www.hnsky.org');
-          update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,1); {for the rare case the darks are coloured. Should normally be not the case since it expects raw mono FITS files without bayer matrix applied !!}
-          head.naxis3:=1; {any color is made mono in the routine}
+          head.naxis3:=1; {any color is made mono in the routine. Keywords are updated in the save routine}
+          head.naxis:=2;  {any color is made mono in the routine. Keywords are updated in the save routine}
 
           if save_fits(img_flat,path1,-32,false) then {saved}
           begin
@@ -9384,8 +9386,8 @@ begin
         end
         else;{keep head.exposure and head.date_obs from reference image for accurate asteroid annotation}
 
-        if pos('D',head.calstat)>0 then add_text   ('COMMENT ',' D='+ExtractFileName( last_dark_loaded ));
-        if pos('F',head.calstat)>0 then add_text   ('COMMENT ',' F='+ExtractFileName( last_flat_loaded ));
+        if pos('D',head.calstat)>0 then add_text   ('COMMENT ','   D='+ExtractFileName( last_dark_loaded ));
+        if pos('F',head.calstat)>0 then add_text   ('COMMENT ','   F='+ExtractFileName( last_flat_loaded ));
 
         if sigma_mode then
           update_text   ('HISTORY 1','  Stacking method SIGMA CLIP AVERAGE') else

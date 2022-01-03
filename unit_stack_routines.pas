@@ -483,15 +483,13 @@ begin
       begin
         head:=head_ref; {restore solution. Works only if no oversize is used}
 
-        head.naxis3:=3;
+        head.naxis3:=3;{three colours}
+        head.naxis :=3;{three dimensions. Header will be updated in the save routine}
         img_loaded:=img_average;
         head.width:=width_max;
         head.height:=height_max;
       end;
     end;{LRGB}
-
-//    restore_solution(true);{restore solution variable of reference image for annotation and mount pointer}
-
   end;{with stackmenu1}
 end;
 
@@ -637,11 +635,6 @@ begin
             else
             demosaic_bayer(img_loaded); {convert OSC image to colour}
            {head.naxis3 is now 3}
-            if init=false then
-            begin
-              head_ref.naxis3:= head.naxis3; {store colour info in reference header}
-              head_ref.naxis:=  head.naxis;  {store colour info in reference header}
-            end;
           end;
 
           if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
@@ -775,6 +768,8 @@ begin
 
       if counter<>0 then
       begin
+        head_ref.naxis3:= head.naxis3; {store colour info in reference header}
+        head_ref.naxis:=  head.naxis;  {store colour info in reference header}
         head:=head_ref;{restore solution variable of reference image for annotation and mount pointer. Works only if not resized}
         head.height:=height_max;
         head.width:=width_max;
@@ -1141,11 +1136,6 @@ begin
           else
           demosaic_bayer(img_loaded); {convert OSC image to colour}
          {head.naxis3 is now 3}
-          if init=false then
-          begin
-            head_ref.naxis3:= head.naxis3; {store colour info in reference header}
-            head_ref.naxis:=  head.naxis;  {store colour info in reference header}
-          end;
         end;
 
         if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
@@ -1337,11 +1327,6 @@ begin
             else
             demosaic_bayer(img_loaded); {convert OSC image to colour}
            {head.naxis3 is now 3}
-            if init=false then
-            begin
-              head_ref.naxis3:= head.naxis3; {store colour info in reference header}
-              head_ref.naxis:=  head.naxis;  {store colour info in reference header}
-            end;
           end;
 
           if init=false then {init (2) for standard deviation step}
@@ -1446,11 +1431,6 @@ begin
             else
             demosaic_bayer(img_loaded); {convert OSC image to colour}
            {head.naxis3 is now 3}
-            if init=false then
-            begin
-              head_ref.naxis3:= head.naxis3; {store colour info in reference header}
-              head_ref.naxis:=  head.naxis;  {store colour info in reference header}
-            end;
           end;
 
           if init=false then {init, (3) step throw outliers out}
@@ -1534,6 +1514,8 @@ begin
      {scale to number of pixels}
       if counter<>0 then
       begin
+        head_ref.naxis3:= head.naxis3; {store colour info in reference header. could be modified by OSC conversion}
+        head_ref.naxis:=  head.naxis;  {store colour info in reference header}
         head:=head_ref;{restore solution variable of reference image for annotation and mount pointer. Works only if not oversized}
         head.height:=height_max;
         head.width:=width_max;
@@ -1640,12 +1622,6 @@ begin
           else
           demosaic_bayer(img_loaded); {convert OSC image to colour}
          {head.naxis3 is now 3}
-          if init=false then
-          begin
-            head_ref.naxis3:= head.naxis3; {store colour info in reference header}
-            head_ref.naxis:=  head.naxis;  {store colour info in reference header}
-          end;
-
         end
         else
         if bayerpat<>'' then memo2_message('█ █ █ █ █ █ Warning, alignment (shifting, rotating) will ruin Bayer pattern!! Select calibrate only for photometry or checkmark "Convert OSC image to colour" █ █ █ █ █ █');

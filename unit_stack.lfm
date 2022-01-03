@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 197
+  Left = 671
   Height = 712
-  Top = 129
+  Top = 156
   Width = 1604
   HorzScrollBar.Page = 1604
   VertScrollBar.Page = 558
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 13982
+    Left = 14079
     Height = 15
     Hint = 'Click to widen.'
     Top = 446

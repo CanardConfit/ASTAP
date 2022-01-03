@@ -772,6 +772,7 @@ function convert_to_fits(var filen: string): boolean; {convert to fits}
 procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
 procedure convert_mono(var img: image_array);
 procedure Wait(wt:single=500);  {smart sleep}
+procedure update_header_for_colour; {update naxis and naxis3 keywords}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -3022,7 +3023,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.01.02, '+about_message4;
+  #13+#10+'ASTAP version 2022.01.03, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -5453,8 +5454,8 @@ begin
 
   img:=img_temp2;
   img_temp2:=nil;{free temp memory}
-  head.naxis3:=3;{now three colors}
-  head.naxis:=3; {from 2 to 3 dimensions}
+  head.naxis3:=3;{now three colors. Header string will be updated by saving or calling procedure update_header_for_colour}
+  head.naxis:=3; {from 2 to 3 dimensions. Header string will be updated by saving or calling procedure update_header_for_colour}
 end;
 
 
@@ -5540,8 +5541,8 @@ begin
 
   img:=img_temp2;
   img_temp2:=nil;{free temp memory}
-  head.naxis3:=3;{now three colors}
-  head.naxis:=3; {from 2 to 3 dimensions}
+  head.naxis3:=3;{now three colors. Header string will be updated by saving or calling procedure update_header_for_colour}
+  head.naxis:=3; {from 2 to 3 dimensions. Header string will be updated by saving or calling procedure update_header_for_colour}
 end;
 
 procedure demosaic_astrosimple(var img:image_array;pattern: integer);{Spread each colour pixel to 2x2. Works well for astro oversampled images. Idea by Han.k}
@@ -5610,8 +5611,8 @@ begin
   end;{y loop}
   img:=img_temp2;
   img_temp2:=nil;{free temp memory}
-  head.naxis3:=3;{now three colors}
-  head.naxis:=3; {from 2 to 3 dimensions}
+  head.naxis3:=3;{now three colors. Header string will be updated by saving or calling procedure update_header_for_colour}
+  head.naxis:=3; {from 2 to 3 dimensions. Header string will be updated by saving or calling procedure update_header_for_colour}
 end;
 
 {not used}
@@ -5691,8 +5692,8 @@ begin
   end;{y loop}
   img:=img_temp2;
   img_temp2:=nil;{free temp memory}
-  head.naxis3:=3;{now three colors}
-  head.naxis:=3; {from 2 to 3 dimensions}
+  head.naxis3:=3;{now three colors. Header string will be updated by saving or calling procedure update_header_for_colour}
+  head.naxis:=3; {from 2 to 3 dimensions. Header string will be updated by saving or calling procedure update_header_for_colour}
 end;
 
 
@@ -5872,8 +5873,8 @@ begin
 
   img:=img_temp2;
   img_temp2:=nil;{free temp memory}
-  head.naxis3:=3;{now three colors}
-  head.naxis:=3; {from 2 to 3 dimensions}
+  head.naxis3:=3;{now three colors. Header string will be updated by saving or calling procedure update_header_for_colour}
+  head.naxis:=3; {from 2 to 3 dimensions. Header string will be updated by saving or calling procedure update_header_for_colour}
 end;
 
 
@@ -6114,8 +6115,8 @@ begin
   end;
   if sat_counter/(head.width*head.height)>0.1 then memo2_message('█ █ █ █ █ █  More than 10% of the image is saturated and will give poor results!! Try demosaic method AstroSimple and exposure shorter next time. █ █ █ █ █ █ ');
   img_temp2:=nil;{free temp memory}
-  head.naxis3:=3;{now three colors}
-  head.naxis:=3; {from 2 to 3 dimensions}
+  head.naxis3:=3;{now three colors. Header string will be updated by saving or calling procedure update_header_for_colour}
+  head.naxis:=3; {from 2 to 3 dimensions. Header string will be updated by saving or calling procedure update_header_for_colour}
 end;
 
 
@@ -8715,9 +8716,7 @@ begin
 
   convert_mono(img_loaded);
 
-  update_integer('NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
-  remove_key('NAXIS3  =',false{all});{some programs don't like NAXIS3=1 like maxim DL}
-
+  update_header_for_colour; {update header naxis and naxis3 keywords}
   add_text('HISTORY   ','Converted to mono');
 
   {colours are now mixed, redraw histogram}
@@ -8725,8 +8724,6 @@ begin
   plot_fits(mainwindow.image1,false,true);{plot}
   Screen.cursor:=Save_Cursor;
 end;
-
-
 
 
 procedure Tmainwindow.compress_fpack1Click(Sender: TObject);
@@ -11610,8 +11607,6 @@ begin
     else
     exit;
 
-    head.naxis3:=1;
-
     Count := InputStream.Read(head.width, 4);
     Count := InputStream.Read(head.height, 4);
 
@@ -11640,7 +11635,6 @@ begin
              img_loaded[1,i,h]:=rgbdummy[1];{store in memory array}
              img_loaded[2,i,h]:=rgbdummy[2];{store in memory array}
            end;
-           head.naxis3:=3;
         end
         else
         if nrbits=-32 then {floats}
@@ -12120,6 +12114,14 @@ begin
   list2:=nil;
 end;
 
+procedure update_header_for_colour; {update naxis and naxis3 keywords}
+begin
+  update_integer('NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{number of dimensions, 2 for mono, 3 for colour}
+  if head.naxis3<>1 then {color image}
+    update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,head.naxis3)
+  else
+    remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+end;
 
 procedure Tmainwindow.demosaic_bayermatrix1Click(Sender: TObject);
 var
@@ -12148,6 +12150,8 @@ begin
 
   plot_fits(mainwindow.image1,false,true);
   stackmenu1.test_pattern1.Enabled:=false;{do no longer allow debayer}
+
+  update_header_for_colour; {update naxis and naxis3 keywords}
 
   Screen.Cursor:=OldCursor;
  {$IFDEF fpc}
