@@ -2,7 +2,7 @@
 <CONFIG>
   <ProjectSession>
     <PathDelim Value="\"/>
-    <Version Value="11"/>
+    <Version Value="12"/>
     <BuildModes Active="Default"/>
     <Units Count="14">
       <Unit0>
@@ -26,8 +26,7 @@
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="2341"/>
-        <CursorPos X="21" Y="2365"/>
+        <CursorPos X="33" Y="20"/>
         <UsageCount Value="106"/>
         <Loaded Value="True"/>
       </Unit2>

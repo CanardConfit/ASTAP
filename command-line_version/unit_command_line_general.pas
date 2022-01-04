@@ -17,7 +17,7 @@ uses
 
 var {################# initialised variables #########################}
   stdin_mode            : boolean=false;{file send via stdin}
-  version: string=' CLI-2022-1-1';
+  version: string=' CLI-2022-1-3';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -1909,7 +1909,7 @@ var
   rgbdummy          : byteX3;
   x_longword  : longword;
   x_single    : single absolute x_longword;{for conversion 32 bit float}
-  InputStream: TIOStream;
+  InputStream : TIOStream;
 begin
   result:=false;{assume failure}
   cd1_1:=0;{no solution}
@@ -1933,9 +1933,7 @@ begin
     else
     exit;
 
-    naxis3:=1;
-
-    Count := InputStream.Read(width2, 4);
+     Count := InputStream.Read(width2, 4);
     Count := InputStream.Read(height2, 4);
 
     {read image data}
@@ -1963,7 +1961,6 @@ begin
              img_loaded[1,i,h]:=rgbdummy[1];{store in memory array}
              img_loaded[2,i,h]:=rgbdummy[2];{store in memory array}
            end;
-           naxis3:=3;
         end
         else
         if nrbits=-32 then {floats}
