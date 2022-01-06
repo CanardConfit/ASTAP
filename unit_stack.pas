@@ -1,5 +1,5 @@
 unit unit_stack;
-{Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2022 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -844,13 +844,15 @@ var
   jd_stop                  : double;{end observation in julian days}
   files_to_process, files_to_process_LRGB : array of  TfileToDo;{contains names to process and index to listview1}
   flat_norm_value{,dark_average,dark_sigma } : double;
-  areax1,areax2,areay1,areay2 : integer;
+  areay1,areay2 : integer;
   hue1,hue2: single;{for colour disk}
   asteroidlist : array of array of array of double;
   solve_show_log  : boolean;
 
 
 var  {################# initialised variables #########################}
+  areaX1:integer=0; {for set area}
+  areaX2:integer=0;
   dark_exposure : integer=987654321;{not done indication}
   dark_temperature: integer=987654321;
   flat_filter : string='987654321';{not done indication}
@@ -2372,7 +2374,7 @@ begin
   w:=Length(img[0]); {width}
   h:=Length(img[0,0]); {height}
 
-    areax1:=startX;
+  areax1:=startX;
   areay1:=startY;
   areax2:=stopX;
   areay2:=stopY;
@@ -4193,7 +4195,7 @@ procedure Tstackmenu1.blink_button1Click(Sender: TObject);
 var
   Save_Cursor          : TCursor;
   hfd_min              : double;
-  c, x_new,y_new,fitsX,fitsY,col,first_image,stepnr,nrrows, cycle,step,ps: integer;
+  c, x_new,y_new,fitsX,fitsY,col,first_image,stepnr,nrrows, cycle,step,ps,bottom,top,left,w,h: integer;
   reference_done, init{,solut},astro_solved,store_annotated           : boolean;
   st                                                                  : string;
 begin
@@ -4214,6 +4216,7 @@ begin
   first_image:=-1;
   cycle:=0;
   if sender=blink_button_contB1 then step:=-1 else step:=1;{forward/ backwards}
+
 
   nrrows:=listview6.items.count;
   setlength(bsolutions,nrrows);{for the solutions in memory. bsolutions is destroyed in formdestroy}
@@ -4370,11 +4373,20 @@ begin
 
         if timestamp1.checked then
         begin
+          left:=0;
+          bottom:=0;
+          if ((sender=write_video1) and (areax1<>areaX2)) then {cropped video}
+          begin {crop video, convert array coordinates to screen coordinates}
+            if mainwindow.flip_horizontal1.checked then left:=head.width-1-areaX2 {left} else  left:=areaX1;{left}
+            if mainwindow.flip_vertical1.checked then  bottom:=head.height-1-areaY2 {bottom} else bottom:=areaY1;{bottom}
+          end;
+
           if date_avg='' then
-            annotation_to_array('date_obs: '+head.date_obs,false,65535,1{size},1,10,img_loaded) {head.date_obs to image array as font. Flicker free method}
+            annotation_to_array('date_obs: '+head.date_obs,false,65535,1{size},left+1,bottom+10,img_loaded) {head.date_obs to image array as font. Flicker free method}
           else
-          annotation_to_array('date_avg: '+date_avg,false,65535,1{size},1,10,img_loaded);{head.date_obs to image array as font}
+          annotation_to_array('date_avg: '+date_avg,false,65535,1{size},left+1,bottom+10,img_loaded);{head.date_obs to image array as font}
         end;
+
 
         store_annotated:=annotated;{store temporary annotated}
         annotated:=false;{prevent annotations are plotted in plot_fits}
@@ -4385,7 +4397,16 @@ begin
 
         if sender=write_video1 then {write video frame}
         begin
-          if write_yuv4mpeg2_frame(head.naxis3>1)=false then
+          w:=head.width;
+          h:=head.height;
+          if areax1<>areaX2 then {crop active, convert array screen coordinates}
+          begin
+            if mainwindow.flip_vertical1.checked=false then  top:=head.height-1-areaY2 {top} else top:=areaY1;{top}
+            w:=areaX2-areaX1+1;
+            h:=areaY2-areaY1+1 {convert to screen coordinates}
+          end;
+
+          if write_yuv4mpeg2_frame(head.naxis3>1,left,top,w,h)=false then
           begin
              memo2_message('Error writing video'); ;
              c:=999999; {stop}
@@ -9752,21 +9773,41 @@ end;
 procedure Tstackmenu1.write_video1click(Sender: TObject);
 var
   framerate: string;
+  crop     : boolean;
+  w,h      : integer;
 begin
+  crop:=false;
+  case QuestionDlg('Crop', 'Crop of full size video?', mtCustom, [ 20, 'Crop', 21, 'Cancel',22, 'Full size', 'IsDefault'], '') of
+      20: crop:=true;
+      21: exit;
+  end;
+
+  framerate:='1';
+  if InputQuery('Frame rate', 'Video frame rate in [frames/second]:', framerate)=false then exit;
+
   mainwindow.savedialog1.filename:=ChangeFileExt(FileName2,'.y4m');
   mainwindow.savedialog1.initialdir:=ExtractFilePath(filename2);
 
   mainwindow.savedialog1.Filter := ' *.y4m|*.y4m';
   if mainwindow.savedialog1.execute then
   begin
+    stackmenu1.analyseblink1Click(nil);  {analyse and secure the dimension values head_2.width, head_2.height from lights}
+    if crop=false then
+    begin
+      areax1:=0;{for crop activation areaX1<>areaX2}
+      areax2:=0;
+      write_YUV4MPEG2_header(mainwindow.savedialog1.filename,framerate,((head_2.naxis3>1) or (mainwindow.preview_demosaic1.checked)),head_2.width,head_2.height);
+    end
+    else {crop is set by the mouse}
+    begin
+      if areaX1=areaX2 then
+      begin
+         application.messagebox(pchar('Set first the area with the mouse and mouse popup menu "Set area" !'), pchar('Missing crop area'),MB_OK);
+         exit;
+      end;
+      write_YUV4MPEG2_header(mainwindow.savedialog1.filename,framerate,((head.naxis3>1) or (mainwindow.preview_demosaic1.checked)),areax2-areax1+1,areay2-areay1+1 );
+    end;
 
-    framerate:=InputBox('Video frame rate in [frames/second]:','','6' );
-    if framerate=''  then exit;
-
-    if listview6.Items.item[listview6.items.count-1].subitems.Strings[B_exposure]='' {head.exposure} then
-      stackmenu1.analyseblink1Click(nil);  {analyse and secure the dimension values head.width, head.height from lights}
-
-    write_YUV4MPEG2_header(mainwindow.savedialog1.filename,framerate,((head.naxis3>1) or (mainwindow.preview_demosaic1.checked)) );
     stackmenu1.blink_button1Click(Sender);{blink and write video frames}
     close_YUV4MPEG2;
     memo2_message('Ready!. See tab results. The video written as '+mainwindow.savedialog1.filename);

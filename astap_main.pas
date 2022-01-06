@@ -1,5 +1,5 @@
 ﻿unit astap_main;
-{Copyright (C) 2017, 2021 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017, 2022 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -773,6 +773,7 @@ procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sor
 procedure convert_mono(var img: image_array);
 procedure Wait(wt:single=500);  {smart sleep}
 procedure update_header_for_colour; {update naxis and naxis3 keywords}
+procedure flip(x1,y1 : integer; out x2,y2 :integer);{array to screen or screen to array coordinates}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -3023,7 +3024,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.01.03, '+about_message4;
+  #13+#10+'ASTAP version 2022.01.06, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -10758,6 +10759,23 @@ begin
 
 end;
 
+procedure flip(x1,y1 : integer; out x2,y2 :integer);{array to screen or screen to array}
+begin
+  if mainwindow.Flip_horizontal1.Checked then
+  begin
+    x2:=(head.width-1)-x1;{flip for screen coordinates, 0...head.width-1}
+  end
+  else
+    x2:=x1;
+
+  if mainwindow.flip_vertical1.Checked=false then
+  begin
+    y2:=(head.height-1)-y1;
+  end
+  else
+  y2:=y1;
+end;
+
 
 procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string);{plot annotation from header in ASTAP format}
 var                                                                               {typ >0 line, value defines thickness line}
@@ -12602,6 +12620,7 @@ begin
   areay1:=startY;
   areax2:=stopX;
   areay2:=stopY;
+  set_area1.checked:=(areaX1<>areaX2);
   stackmenu1.area_set1.caption:='✓';
   stackmenu1.center_position1.caption:='Center: '+inttostr((startX+stopX) div 2)+', '+inttostr((startY+stopY) div 2);
 end;
