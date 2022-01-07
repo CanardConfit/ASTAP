@@ -1173,19 +1173,11 @@ procedure memo2_message(s: string);{message to memo2. Is also used for log to fi
 begin
   {$IFDEF unix}  {linux and mac}
   if commandline_execution then
-  begin
-    if filename2='stdin' then s:='COMMENT='+s;
     writeln(s); {linux command line can write unicode}
-  end;
   {$ELSE }
-  if ((commandline_execution) and (isConsole)){isconsole, is console available, prevent run time error if compiler option -WH is checked}
-  then
-  begin
-    if stdin_mode then s:='COMMENT='+s;
+  if ((commandline_execution) and (isConsole)) then {isconsole, is console available, prevent run time error if compiler option -WH is checked}
     writeln(ansi_only(s)); {log to console for Windows when compiler WIN32 gui is off}
-  end;
   {$ENDIF}
-
 
   if ((commandline_execution=false) or (commandline_log=true)) then {no commandline or option -log is used}
   begin

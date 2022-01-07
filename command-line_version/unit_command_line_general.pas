@@ -17,7 +17,7 @@ uses
 
 var {################# initialised variables #########################}
   stdin_mode            : boolean=false;{file send via stdin}
-  version: string=' CLI-2022-1-3';
+  version: string=' CLI-2022-1-7';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -243,10 +243,8 @@ end;
 procedure memo2_message(s: string);{message to memo2. Is also used for log to file in commandline mode}
 begin
   {$IFDEF UNIX or ANDROID}  {linux and mac}
-  if filename2='stdin' then s:='COMMENT='+s;
   writeln(s); {linux command line can write unicode}
   {$ELSE }
-  if stdin_mode then s:='COMMENT='+s;
   writeln(ansi_only(s)); {log to console for Windows when compiler WIN32 gui is off}
   {$ENDIF}
 
@@ -457,6 +455,7 @@ begin
   rewrite(f);
   if solution then
   begin
+    flush(output); {Required in Linux and Mac. Otherwise writeln(f,'  ') mixes with writeln('   ') in redirected output}
     writeln(f,'PLTSOLVD=T');
     writeln(f,'CRPIX1='+floattostrE(crpix1));// X of reference pixel
     writeln(f,'CRPIX2='+floattostrE(crpix2));// Y of reference pixel
@@ -474,6 +473,8 @@ begin
   end
   else
   begin
+    flush(output); {Required in Linux and Mac. Otherwise writeln(f,'  ') mixes with writeln('   ') in redirected output}
+    writeln(f,'');
     writeln(f,'PLTSOLVD=F');
   end;
   writeln(f,'CMDLINE='+cmdline);{write the original commmand line}
