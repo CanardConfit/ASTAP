@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 307
+  Left = 84
   Height = 712
-  Top = 156
+  Top = 180
   Width = 1604
   HorzScrollBar.Page = 1604
   VertScrollBar.Page = 558
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 14421
+    Left = 14615
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -2445,7 +2445,8 @@ object stackmenu1: Tstackmenu1
             Left = 656
             Height = 15
             Top = 36
-            Width = 11
+            Width = 50
+            AutoSize = False
             BorderSpacing.Around = 5
             Caption = '0°'
             Color = clBtnFace
@@ -2504,7 +2505,8 @@ object stackmenu1: Tstackmenu1
             Left = 656
             Height = 15
             Top = 8
-            Width = 23
+            Width = 50
+            AutoSize = False
             BorderSpacing.Around = 5
             Caption = '[0,0]'
             Color = clBtnFace

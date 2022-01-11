@@ -1348,7 +1348,7 @@ begin
     cos_telescope_dec:=cos(telescope_dec);
     fov:=1.5*sqrt(sqr(0.5*head.width*head.cdelt1)+sqr(0.5*head.height*head.cdelt2))*pi/180; {field of view with 50% extra}
     linepos:=2;{Set pointer to the beginning. First two lines are comments}
-    if head.cdelt1*head.cdelt2>0 then flipped:=-1 {n-s or e-w flipped} else flipped:=1;
+    if ((head.cdelt1>0) = (head.cdelt2>0)) then flipped:=-1 {n-s or e-w flipped} else flipped:=1;  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
 
     {$ifdef mswindows}
      mainwindow.image1.Canvas.Font.Name :='default';

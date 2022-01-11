@@ -17,7 +17,7 @@ uses
 
 var {################# initialised variables #########################}
   stdin_mode            : boolean=false;{file send via stdin}
-  version: string=' CLI-2022-1-7';
+  version: string=' CLI-2022-1-11';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -2052,7 +2052,7 @@ begin
     end;
 
   {check alternative mean value}
-  if his_mean[colour]>2*background {2* most common} then
+  if his_mean[colour]>1.5*background {1.5* most common} then  {changed from 2 to 1.5 on 2021-5-29}
   begin
     memo2_message('Will use mean value '+inttostr(round(his_mean[colour]))+' as background rather then most common value '+inttostr(round(background)));
     background:=his_mean[colour];{strange peak at low value, ignore histogram and use mean}

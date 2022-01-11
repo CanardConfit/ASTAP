@@ -2833,8 +2833,7 @@ var sin_dec1,cos_dec1,sin_dec2,cos_dec2,cos_sep:double;
 begin
   sincos(dec1,sin_dec1,cos_dec1);{use sincos function for speed}
   sincos(dec2,sin_dec2,cos_dec2);
-
-  cos_sep:=sin_dec1*sin_dec2+ cos_dec1*cos_dec2*cos(ra1-ra2);
+  cos_sep:=min(1,sin_dec1*sin_dec2+ cos_dec1*cos_dec2*cos(ra1-ra2));{min function to prevent run time errors for 1.000000000002}
   sep:=arccos(cos_sep);
 end;
 
@@ -3024,7 +3023,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.01.07, '+about_message4;
+  #13+#10+'ASTAP version 2022.01.11, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -10329,6 +10328,47 @@ begin
   form_astrometry_net1.release;
 end;
 
+
+
+
+
+
+procedure give_spiral_position(position : integer; var x,y : integer); {give x,y position of square spiral as function of input value}
+var i,dx,dy,t,count: integer;
+begin
+  x :=0;{star position}
+  y :=0;
+  dx := 0;{first step size x}
+  dy := -1;{first step size y}
+  count:=0;
+
+  for i:=0 to 10000*10000  {maximum width*height} do
+  begin
+    if  count>=position then exit; {exit and give x and y position}
+    inc(count);
+    if ( (x = y) or ((x < 0) and (x = -y)) or ((x > 0) and (x = 1-y))) then {turning point}
+    begin {swap dx by negative dy and dy by negative dx}
+       t:=dx;
+      dx := -dy;
+      dy := t;
+    end;
+     x :=x+ dx;{walk through square}
+     y :=y+ dy;{walk through square}
+  end;{for loop}
+end;
+
+procedure standard_equatorial2(ra0,dec0,x,y,cdelt: double; var ra,dec : double); inline;{transformation from CCD coordinates into equatorial coordinates}
+var sin_dec0 ,cos_dec0 : double;
+begin
+  sincos(dec0  ,sin_dec0 ,cos_dec0);
+  x:=x *cdelt/ (3600*180/pi);{scale CCD pixels to standard coordinates (tang angle)}
+  y:=y *cdelt/ (3600*180/pi);
+
+  ra  := ra0 + arctan2 (-x, cos_DEC0- y*sin_DEC0);{atan2 is required for images containing celestial pole}
+  if ra>pi*2 then ra:=ra-pi*2; {prevent values above 2*pi which confuses the direction detection later}
+  if ra<0 then ra:=ra+pi*2;
+  dec := arcsin ( (sin_dec0+y*cos_dec0)/sqrt(1.0+x*x+y*y) );
+end;
 
 procedure Tmainwindow.calibrate_photometry1Click(Sender: TObject);
 var

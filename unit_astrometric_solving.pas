@@ -521,9 +521,9 @@ function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{
 var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,distance,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t                                                                  : integer;
-  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,sep,
-  ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,
-  quad_tolerance,dummy, extrastars                                                                                   : double;
+  search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,
+  extra_size,sep,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,
+  current_dist, quad_tolerance,dummy, extrastars,flip, extra                                                         : double;
   solution, go_ahead ,autoFOV      : boolean;
   Save_Cursor                      : TCursor;
   startTick  : qword;{for timing/speed purposes}
@@ -712,22 +712,23 @@ begin
     if go_ahead then
     begin
       search_field:=fov2*(pi/180);
-      STEP_SIZE:=search_field;{fixed step size search spiral. Prior to version 0.9.211 this was reduced for small star counts}
+      if ((dec_radians+radius*pi/180>+pi/2) or (dec_radians-radius*pi/180<-pi/2)) then extra_size:=1.4 else extra_size:=1; {near poles more x,y steps are required to achieve full circle. Else the area looks like an eight. Tested with supplement in HNSKY supplement}
+      STEP_SIZE:=search_field;{fixed step size search spiral}
       if database_type=1 then
-      begin {make smal steps for wide field images. Much more reliable}
+      begin {make small steps for wide field images. Much more reliable}
         step_size:=step_size*0.25;
-        max_distance:=round(radius/(0.25*fov2+0.00001)); {expressed in steps}
+        max_distance:=round(extra_size*radius/(0.25*fov2+0.00001)); {expressed in steps}
         memo2_message('Wide field, making small steps for reliable solving.');
       end
       else
-      max_distance:=round(radius/(fov2+0.00001));{expressed in steps}
+      max_distance:=round(extra_size*radius/(fov2+0.00001));{expressed in steps}
 
       stackmenu1.Memo2.Lines.BeginUpdate;{do not update tmemo, very very slow and slows down program}
       stackmenu1.Memo2.disablealign;{prevent paint messages from other controls to update tmemo and make it grey. Mod 2021-06-26}
 
       match_nr:=0;
-      repeat {Maximum accuracy loop. In case math is found on a corner, do a second solve. Result will be more accurate using all stars of the image}
 
+      repeat {Maximum accuracy loop. In case math is found on a corner, do a second solve. Result will be more accurate using all stars of the image}
         count:=0;{search field counter}
         distance:=0; {required for reporting no too often}
         {spiral variables}
@@ -737,7 +738,6 @@ begin
         spiral_dy := -1;{first step size y}
 
         repeat {search in squared spiral}
-
           {begin spiral routine, find a new squared spiral position position}
           if count<>0 then {first do nothing, start with [0 0] then start with [1 0],[1 1],[0 1],[-1 1],[-1 0],[-1 -1],[0 -1],[1 -1],[2 -1].[2 0] ..............}
           begin {start spiral around [0 0]}
@@ -751,22 +751,31 @@ begin
             spiral_y :=spiral_y+ spiral_dy;{walk through square}
           end;{end spiral around [0 0]}
           {adapt search field to matrix position, +0+0/+1+0,+1+1,+0+1,-1+1,-1+0,-1-1,+0-1,+1-1..}
+
+
           telescope_dec:=STEP_SIZE*spiral_y+dec_radians;
+          flip:=0;
+          if telescope_dec>+pi/2 then  begin telescope_dec:=pi-telescope_dec; flip:=pi; end {crossed the pole}
+          else
+          if telescope_dec<-pi/2 then  begin telescope_dec:=-pi-telescope_dec; flip:=pi; end;
 
-          if ((telescope_dec<=pi/2+search_field) and (telescope_dec>=-pi/2-search_field)) then {within dec range}
-          begin {dec withing range}
-            telescope_ra_offset:= (STEP_SIZE*spiral_x/cos(telescope_dec));{step larger near pole. This telescope_ra is an offsett from zero}
+          if telescope_dec>0 then extra:=step_size/2 else extra:=-step_size/2;{use the distance furthest away from the pole}
 
-            if ((telescope_ra_offset<=pi+search_field*2 {required for 180 degrees coverage}) and (telescope_ra_offset>=-pi-search_field*2) ) then {ra and dec within in range, near poles ra goes  much faster}
+          telescope_ra_offset:= (STEP_SIZE*spiral_x/cos(telescope_dec-extra));{step larger near pole. This telescope_ra is an offsett from zero}
+          if ((telescope_ra_offset<=+pi/2+step_size/2) and (telescope_ra_offset>=-pi/2)) then  {step_size for overlap}
+          begin
+            telescope_ra:=fnmodulo(flip+ra_radians+telescope_ra_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
+
+            ang_sep(telescope_ra,telescope_dec,ra_radians,dec_radians, {out}sep);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
+            if sep<=radius*pi/180+step_size/2 then {Use only the circular area withing the square area}
             begin
-              telescope_ra:=fnmodulo(ra_radians+telescope_ra_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
-
               {info reporting}
               stackmenu1.field1.caption:= '['+inttostr(spiral_x)+','+inttostr(spiral_y)+']';{show on stackmenu what's happening}
               if ((spiral_x>distance) or (spiral_y>distance)) then {new distance reached. Update once in the square spiral, so not too often since it cost CPU time}
               begin
                 distance:=max(spiral_x,spiral_y);{update status}
-                distancestr:=inttostr(  round(distance*STEP_SIZE*180/pi))+'°';{show on stackmenu what's happening}
+                distancestr:=inttostr(  round(sep*180/pi))+'°';{show on stackmenu what's happening}
+
                 stackmenu1.actual_search_distance1.caption:=distancestr;
                 stackmenu1.caption:= 'Search distance:  '+distancestr;
                 mainwindow.caption:= 'Search distance:  '+distancestr;
@@ -811,8 +820,9 @@ begin
               end;
 
               // for testing purposes
-              // create supplement lines for sky coverage testing
-              // stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
+              // for testing create supplement hnksy planetarium program
+              //supplstring2.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(i)+',,-8,'+floattostr( step_size*600*180/pi)+',' +floattostr(step_size*600*180/pi));
+              //supplstring2.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(i)+',,-99');
 
               solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance);{find an solution}
 
@@ -824,8 +834,9 @@ begin
                 Screen.Cursor :=Save_Cursor;    { back to normal }
                 exit;
               end;
-            end;{ra in range}
-          end;{dec within range}
+            end;{within search circle. Otherwise the search is within a kind of square}
+          end;{within RA range}
+
           inc(count);{step further in spiral}
 
         until ((solution) or (spiral_x>max_distance));{squared spiral search}
@@ -906,7 +917,7 @@ begin
       ra_offset:=distance_to_string(sep, fnmodulo(ra_mount-head.ra0,pi)*cos((head.dec0+dec_mount)*0.5 {average dec}));
       dec_offset:=distance_to_string(sep,dec_mount-head.dec0);
       mount_offset:=' Mount offset RA='+ra_offset+', DEC='+dec_offset;{ascii}
-      mount_info:=' Mount offset Δα='+ra_offset+ ',  Δδ='+dec_offset+'. '+#9;
+      mount_info:=' Mount Δα='+ra_offset+ ',  Δδ='+dec_offset+'. '+#9;
     end
     else
     mount_info:='';{no mount info}
