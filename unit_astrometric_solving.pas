@@ -522,7 +522,7 @@ var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,distance,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t                                                                  : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,
-  extra_size,sep,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,
+  extra_size,sep,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,
   current_dist, quad_tolerance,dummy, extrastars,flip, extra                                                         : double;
   solution, go_ahead ,autoFOV      : boolean;
   Save_Cursor                      : TCursor;
@@ -766,15 +766,15 @@ begin
           begin
             telescope_ra:=fnmodulo(flip+ra_radians+telescope_ra_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
 
-            ang_sep(telescope_ra,telescope_dec,ra_radians,dec_radians, {out}sep);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
-            if sep<=radius*pi/180+step_size/2 then {Use only the circular area withing the square area}
+            ang_sep(telescope_ra,telescope_dec,ra_radians,dec_radians, {out}seperation);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
+            if seperation<=radius*pi/180+step_size/2 then {Use only the circular area withing the square area}
             begin
               {info reporting}
               stackmenu1.field1.caption:= '['+inttostr(spiral_x)+','+inttostr(spiral_y)+']';{show on stackmenu what's happening}
               if ((spiral_x>distance) or (spiral_y>distance)) then {new distance reached. Update once in the square spiral, so not too often since it cost CPU time}
               begin
                 distance:=max(spiral_x,spiral_y);{update status}
-                distancestr:=inttostr(  round(sep*180/pi))+'°';{show on stackmenu what's happening}
+                distancestr:=inttostr(round(seperation*180/pi))+'°';{show on stackmenu what's happening}
 
                 stackmenu1.actual_search_distance1.caption:=distancestr;
                 stackmenu1.caption:= 'Search distance:  '+distancestr;
