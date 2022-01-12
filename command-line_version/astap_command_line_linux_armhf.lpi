@@ -1,25 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="11"/>
+    <Version Value="12"/>
     <PathDelim Value="\"/>
     <General>
       <Flags>
         <MainUnitHasCreateFormStatements Value="False"/>
         <MainUnitHasTitleStatement Value="False"/>
         <MainUnitHasScaledStatement Value="False"/>
+        <CompatibilityMode Value="True"/>
       </Flags>
       <SessionStorage Value="InProjectDir"/>
-      <MainUnit Value="0"/>
       <Title Value="astap"/>
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
     </General>
-    <VersionInfo>
-      <UseVersionInfo Value="True"/>
-      <MajorVersionNr Value="1"/>
-      <StringTable CompanyName="www.hnsky.org" FileDescription="astap command line astrometric solver." LegalCopyright="Han Kleijn" OriginalFilename="astap_cli" ProductName="astap_cli"/>
-    </VersionInfo>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
     </BuildModes>
@@ -29,7 +24,6 @@
     </PublishOptions>
     <RunParams>
       <FormatVersion Value="2"/>
-      <Modes Count="0"/>
     </RunParams>
     <Units Count="3">
       <Unit0>
@@ -56,6 +50,10 @@
       <IncludeFiles Value="$(ProjOutDir)"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
+    <CodeGeneration>
+      <TargetCPU Value="arm"/>
+      <TargetOS Value="linux"/>
+    </CodeGeneration>
     <Linking>
       <Debugging>
         <GenerateDebugInfo Value="False"/>
@@ -64,13 +62,7 @@
     <Other>
       <CustomOptions Value="-XX
 -Si
--vh
-
-// compiler settings for  a
-// PIE executable that you can run only via a terminal or a symlink.
--Cg
--k-pie
--k-znow"/>
+-vh"/>
     </Other>
   </CompilerOptions>
   <Debugging>

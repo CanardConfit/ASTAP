@@ -1094,7 +1094,7 @@ var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,distance,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t                                                                  : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,
-  oversize,sep,ra7,dec7,centerX,centerY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,extra_size,
+  oversize,sep,seperation,ra7,dec7,centerX,centerY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,extra_size,
   quad_tolerance,dummy, extrastars,flip,extra                                                                        : double;
   solution, go_ahead ,autoFOV      : boolean;
   startTick  : qword;{for timing/speed purposes}
@@ -1289,8 +1289,8 @@ begin
           begin
             telescope_ra:=fnmodulo(flip+ra_radians+telescope_ra_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
 
-            ang_sep(telescope_ra,telescope_dec,ra_radians,dec_radians, {out}sep);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
-            if sep<=radius*pi/180+step_size/2 then {Use only the circular area withing the square area}
+            ang_sep(telescope_ra,telescope_dec,ra_radians,dec_radians, {out}seperation);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
+            if seperation<=radius*pi/180+step_size/2 then {Use only the circular area withing the square area}
             begin
 
               {info reporting}
@@ -1298,7 +1298,7 @@ begin
               if ((spiral_x>distance) or (spiral_y>distance)) then {new distance reached. Update once in the square spiral, so not too often since it cost CPU time}
               begin
                 distance:=max(spiral_x,spiral_y);{update status}
-                distancestr:=inttostr(round(sep*180/pi))+'d,';{show on stackmenu what's happening}
+                distancestr:=inttostr(round(seperation*180/pi))+'d,';{show on stackmenu what's happening}
                 write(distancestr);
               end; {info reporting}
 
@@ -1326,8 +1326,8 @@ begin
                 memo2_message('Search '+ inttostr(count)+', ['+inttostr(spiral_x)+','+inttostr(spiral_y)+'], position: '+ prepare_ra(telescope_ra,': ')+prepare_dec(telescope_dec,'d ')+#9+' Down to magn '+ floattostrF2(mag2/10,0,1) +#9+' '+inttostr(database_stars)+' database stars' +#9+' '+inttostr(length(quad_star_distances1[0]))+' database quads to compare.');
 
               // for testing purposes
-              // create supplement lines for sky coverage testing
-              // stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
+              // create supplement lines for sky coverage testing and write to log using -log
+              // memo2.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99'); {create hnsky supplement to test sky coverage}
 
                solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance);{find an solution}
             end; {within search circle. Otherwise the search is within a kind of square}

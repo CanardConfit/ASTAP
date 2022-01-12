@@ -183,8 +183,6 @@ begin
         write_astronomy_wcs  {write WCS astronomy.net style}
       else
         try Memo1.SavetoFile(ChangeFileExt(filename2,'.wcs'));{save header as wcs file} except {sometimes error using APT, locked?} end;
-
-      //histogram_done:=false;
     end {solution}
     else
     begin {no solution}
@@ -195,7 +193,7 @@ begin
     esc_pressed:=true;{kill any running activity. This for APT}
 
     if commandline_log then
-             Memo2.SavetoFile(ChangeFileExt(filename2,'.log'));{save Memo3 log to log file}
+             Memo2.SavetoFile(ChangeFileExt(filename2,'.log'));{save Memo2 log to log file}
 
     halt(errorlevel); {don't save only do mainwindow.destroy. Note  mainwindow.close causes a window flash briefly, so don't use}
 
@@ -245,6 +243,9 @@ end;
 
 var
   Application: Tastap;
+
+{$R *.res}
+
 begin
   Application:=Tastap.Create(nil);
   Application.Run;

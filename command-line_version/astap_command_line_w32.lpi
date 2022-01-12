@@ -18,7 +18,7 @@
     <VersionInfo>
       <UseVersionInfo Value="True"/>
       <MajorVersionNr Value="1"/>
-      <StringTable CompanyName="www.hnsky.org" FileDescription="astap command line astrometric solver." LegalCopyright="Han Kleijn" OriginalFilename="astap_cli" ProductName="astap_cli"/>
+      <StringTable CompanyName="www.hnsky.org" FileDescription="astap command line astrometric solver" LegalCopyright="Han Kleijn" OriginalFilename="astap_cli.exe" ProductName="astap_cli"/>
     </VersionInfo>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
@@ -56,6 +56,9 @@
       <IncludeFiles Value="$(ProjOutDir)"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
+    <CodeGeneration>
+      <TargetCPU Value="i386"/>
+    </CodeGeneration>
     <Linking>
       <Debugging>
         <GenerateDebugInfo Value="False"/>
@@ -64,13 +67,7 @@
     <Other>
       <CustomOptions Value="-XX
 -Si
--vh
-
-// compiler settings for  a
-// PIE executable that you can run only via a terminal or a symlink.
--Cg
--k-pie
--k-znow"/>
+-vh"/>
     </Other>
   </CompilerOptions>
   <Debugging>

@@ -15,6 +15,11 @@
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
     </General>
+    <VersionInfo>
+      <UseVersionInfo Value="True"/>
+      <MajorVersionNr Value="1"/>
+      <StringTable CompanyName="www.hnsky.org" FileDescription="astap command line astrometric solver" LegalCopyright="Han Kleijn" OriginalFilename="astap_cli" ProductName="astap_cli"/>
+    </VersionInfo>
     <BuildModes Count="1">
       <Item1 Name="Default" Default="True"/>
     </BuildModes>
