@@ -13524,7 +13524,7 @@ begin
    mouse_fitsy:=0.5+height5-(0.5+yf)/(image1.height/height5); {from bottom to top, starts at +0.5 and 1 at middle first pixel}
 
 
-//  rubber rectangle
+   //rubber rectangle
    x_sized:=trunc(x*width5/image1.width);
    y_sized:=trunc(y*height5/image1.height);
 

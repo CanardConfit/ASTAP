@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 14956
+    Left = 15053
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -4171,7 +4171,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Stack live images'
       Caption = 'Live stacking'
       ClientHeight = 470
-      ClientWidth = 1702
+      ClientWidth = 1596
       ParentFont = False
       object live_stacking1: TButton
         Left = 16

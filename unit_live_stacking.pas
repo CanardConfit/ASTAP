@@ -230,10 +230,6 @@ begin
             if init=false then
             begin
               binning:=report_binning(head.height);{select binning based on the height of the first light}
-
-              initialise_var1;{set variables correct. Do this before apply dark}
-              initialise_var2;{set variables correct}
-
               memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
               if ((bayerpat='') and (make_osc_color1.checked)) then
                 if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
@@ -264,7 +260,6 @@ begin
             if init=false then {init}
             begin
               memo2_message('Reference image is: '+filename2);
-//              image_path:=ExtractFilePath(filename2); {for saving later}
               width_max:=head.width+oversize*2;
               height_max:=head.height+oversize*2;
 
@@ -307,7 +302,7 @@ begin
 
             {align using star match}
             if init=true then {second image}
-            begin{internal alignment}
+            begin{internal alignment only}
               bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
               find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
@@ -336,7 +331,7 @@ begin
               if jd_mid>jd_stop then jd_stop:=jd_mid;
               jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint head.exposure.}
 
-              vector_based:=true;
+              vector_based:=true;{no astrometric alignment}
 
               if colour_correction=false then {no colour correction}
               begin
