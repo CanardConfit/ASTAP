@@ -17,7 +17,7 @@ procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileTo
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 procedure calibration_and_alignment(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 
-{$inline off}  {!!! Set this off for debugging}
+{$inline on}  {!!! Set this off for debugging}
 procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
 procedure astrometric_to_vector; {convert astrometric solution to vector solution}
 procedure initialise_var1;{set variables correct}
