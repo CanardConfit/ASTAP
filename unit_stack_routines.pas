@@ -17,7 +17,7 @@ procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileTo
 procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 procedure calibration_and_alignment(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 
-{$inline on}  {!!! Set this off for debugging}
+{$inline off}  {!!! Set this off for debugging}
 procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
 procedure astrometric_to_vector; {convert astrometric solution to vector solution}
 procedure initialise_var1;{set variables correct}
@@ -131,7 +131,7 @@ end;
 
 procedure initialise_var1;{set variables correct}
 begin
-  sincos(head_ref.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
+  sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same. For blink header "head" is used instead of "head_ref"}
 end;
 
 procedure initialise_var2;{set variables correct}

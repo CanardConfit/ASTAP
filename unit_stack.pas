@@ -6004,7 +6004,7 @@ begin
       begin {read solution}
         {load file, and convert astrometric solution to vector solution}
         filename2:=stackmenu1.listview7.items[c].caption;
-        if load_fits(filename2,true {light},false {only read header},false {update memo},0,head,img_loaded)=false then begin esc_pressed:=true; exit;end;
+        if load_fits(filename2,true {light},false {only read header},false {update memo},0,head,img_temp)=false then begin esc_pressed:=true; exit;end;
         {calculate vectors from astrometric solution to speed up}
         sincos(head.dec0,SIN_dec0,COS_dec0); {do this in advance since it is for each pixel the same}
         astrometric_to_vector;{convert astrometric solution to vectors}
@@ -6199,7 +6199,7 @@ var
 
   procedure nil_all;
   begin
-    img_temp:=nil;{free memory}
+    //img_temp:=nil;{free memory}
     starlistx:=nil;{free memory}
     starlistpack:=nil; {release memory}
     outliers:=nil;
@@ -6399,7 +6399,7 @@ begin
         {standard alligned blink}
         if init=false then {init}
         begin
-          initialise_var1;{set variables correct for astrometric solution calculation. Use first files as reference}
+          initialise_var1;{set variables correct for astrometric solution calculation. Use first file as reference and header "head"}
           init:=true;
         end;
 
@@ -6490,6 +6490,7 @@ begin
              for col:=0 to head.naxis3-1 do {all colors} img_temp[col,x_new,y_new]:=img_loaded[col,fitsX-1,fitsY-1] ;
         end;
 
+        img_loaded:=nil;
         img_loaded:=img_temp;
 
 

@@ -3023,7 +3023,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.01.12, '+about_message4;
+  #13+#10+'ASTAP version 2022.01.13, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -13510,6 +13510,7 @@ begin
    else
    down_xy_valid := False; {every move without ssleft will invalidate down_xy}
 
+   if img_loaded=nil then exit; {image load has failed, prevent runtime error}
    width5:=Length(img_loaded[0]);    {width}
    height5:=Length(img_loaded[0][0]); {height}
 
