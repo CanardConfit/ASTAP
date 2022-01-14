@@ -3677,7 +3677,7 @@ begin
               begin
                 x1:=fitsX+i;
                 y1:=fitsY+j;
-                if ((fitsX>=left) and (fitsX<=right) and (fitsY>=bottom) and (fitsY<=top)) then {not the incomplete borders}
+                if ((x1>=left) and (x1<=right) and (Y1>=bottom) and (y1<=top)) then {not the incomplete borders}
                 begin
                   value2:=img[k,x1,  y1];
                   if value2>0 then begin value:=value+value2; inc(counter);end;{ignore zeros or -99999 saturation markers}
@@ -6122,7 +6122,7 @@ var
   magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,backgr,hfd_med,apert,annul,
   rax1,decx1,rax2,decx2,rax3,decx3,xn,yn                                                     : double;
   saturation_level                                                                           : single;
-  c,i,x_new,y_new,fitsX,fitsY,col,first_image,size,starX,starY,stepnr,countVar, countCheck,countThree : integer;
+  c,i,x_new,y_new,fitsX,fitsY,col,{first_image,}size,starX,starY,stepnr,countVar, countCheck,countThree : integer;
   flipvertical,fliphorizontal,init,refresh_solutions,analysedP,store_annotated, warned  :boolean;
   starlistx : star_list;
   starVar, starCheck,starThree : array of double;
@@ -6293,7 +6293,7 @@ begin
     exit;
   end;
 
-  first_image:=-1;
+//  first_image:=-1;
   outliers:=nil;
   stepnr:=0;
   init:=false;
@@ -6314,7 +6314,7 @@ begin
     begin
       if ((esc_pressed=false) and (listview7.Items.item[c].checked) )  then
       begin
-        if first_image=-1 then first_image:=c;
+//        if first_image=-1 then first_image:=c;
         listview7.Selected :=nil; {remove any selection}
         listview7.ItemIndex := c;{mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
         listview7.Items[c].MakeVisible(False);{scroll to selected item}
@@ -6400,18 +6400,28 @@ begin
         if init=false then {init}
         begin
           initialise_var1;{set variables correct for astrometric solution calculation. Use first file as reference and header "head"}
-          init:=true;
-        end;
 
-        if first_image=c then
-        begin
           head_ref:=head;{backup solution for deepsky annotation}
+
           sensor_coordinates_to_celestial(shape_fitsX2,shape_fitsY2,{var}   rax2,decx2 {position});
           name_check_iau:=prepare_IAU_designation(rax2,decx2);
 
           sensor_coordinates_to_celestial(shape_fitsX,shape_fitsY,rax1,decx1 {fitsX, Y to ra,dec});
           sensor_coordinates_to_celestial(shape_fitsX3,shape_fitsY3,rax3,decx3 {fitsX, Y to ra,dec});
+
+          init:=true;
         end;
+
+//        if first_image=c then
+//        begin
+//          head_ref:=head;{backup solution for deepsky annotation}
+
+  //        sensor_coordinates_to_celestial(shape_fitsX2,shape_fitsY2,{var}   rax2,decx2 {position});
+    //      name_check_iau:=prepare_IAU_designation(rax2,decx2);
+
+      //    sensor_coordinates_to_celestial(shape_fitsX,shape_fitsY,rax1,decx1 {fitsX, Y to ra,dec});
+//          sensor_coordinates_to_celestial(shape_fitsX3,shape_fitsY3,rax3,decx3 {fitsX, Y to ra,dec});
+//        end;
 
 
 
