@@ -43,6 +43,10 @@ type
     browse_monitoring1: TBitBtn;
     browse_mount1: TBitBtn;
     browse_live_stacking1: TBitBtn;
+    Button1: TButton;
+    target_group1: TGroupBox;
+    delta_ra1: TLabel;
+    delta_dec1: TLabel;
     RAposition1: TLabel;
     monitor_applydarkflat1: TCheckBox;
     help_monitoring1: TLabel;
@@ -132,6 +136,7 @@ type
     mount1: TTabSheet;
     apply_box_filter2: TButton;
     tab_monitoring1: TTabSheet;
+    target1: TLabel;
     test_osc_normalise_filter1: TButton;
     undo_button6: TBitBtn;
     unselect9: TMenuItem;
@@ -604,6 +609,7 @@ type
     procedure align_blink1Change(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
     procedure browse_monitoring1Click(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
     procedure equinox1Change(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure help_monitoring1Click(Sender: TObject);
@@ -614,6 +620,7 @@ type
     procedure keywordchangelast1Click(Sender: TObject);
     procedure keywordchangesecondtolast1Click(Sender: TObject);
     procedure calc_polar_alignment_error1Click(Sender: TObject);
+    procedure monitor_action1Change(Sender: TObject);
     procedure mount_analyse1Click(Sender: TObject);
     procedure analysephotometry1Click(Sender: TObject);
     procedure analyse_inspector1Click(Sender: TObject);
@@ -703,6 +710,7 @@ type
     procedure SpeedButton2Click(Sender: TObject);
     procedure star_database1DropDown(Sender: TObject);
     procedure apply_box_filter2Click(Sender: TObject);
+    procedure tab_monitoring1Show(Sender: TObject);
     procedure test_osc_normalise_filter1Click(Sender: TObject);
 
     procedure test_pattern1Click(Sender: TObject);
@@ -864,6 +872,9 @@ var  {################# initialised variables #########################}
   new_analyse_required3: boolean=false;{if changed then reanalyse tab 3}
   quads_displayed:boolean=false;{no quads visible, so no refresh required}
   equalise_background_step: integer=1;
+  ra_target : double=999;
+  dec_target : double=999;
+
 const
   dialog_filter='FITS files and DSLR RAW files |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                 '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;'+
@@ -1018,7 +1029,7 @@ implementation
 
 uses
   unit_image_sharpness, unit_ephemerides, unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd,
-  unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_aavso,unit_raster_rotate;
+  unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_aavso,unit_raster_rotate, unit_listbox;
 
 
 type
@@ -7229,6 +7240,11 @@ begin
   Screen.Cursor:=Save_Cursor;
 end;
 
+procedure Tstackmenu1.tab_monitoring1Show(Sender: TObject);
+begin
+  target_group1.enabled:=stackmenu1.monitor_action1.itemindex=5;
+end;
+
 
 procedure Tstackmenu1.test_osc_normalise_filter1Click(Sender: TObject);
 var    Save_Cursor:TCursor;
@@ -7265,6 +7281,21 @@ begin
   begin
     monitoring_path1.caption:=live_monitor_directory;{show path}
   end;
+end;
+
+procedure Tstackmenu1.Button1Click(Sender: TObject);
+begin
+  form_listbox1:=TForm_listbox1.Create(self); {in project option not loaded automatic}
+  form_listbox1.ShowModal;
+
+  if object_found then
+  begin
+    target1.caption:=keyboard_text;
+    ra_target:=ra_data;{target for manual mount}
+    dec_target:=dec_data;
+  end;
+  form_listbox1.release;
+
 end;
 
 
@@ -7553,6 +7584,11 @@ begin
   Screen.Cursor :=Save_Cursor;{back to normal }
 
   stackmenu1.mount_analyse1Click(nil);{update}
+end;
+
+procedure Tstackmenu1.monitor_action1Change(Sender: TObject);
+begin
+  target_group1.enabled:=stackmenu1.monitor_action1.itemindex=5;
 end;
 
 

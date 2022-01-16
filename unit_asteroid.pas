@@ -447,6 +447,8 @@ var
         dra,ddec, delta_ra,det,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh : double;
         x,y,x2,y2                                                                               : integer;
       begin
+        //memo2_message('Asteroid position at :'+head.date_obs+',  '+#9+floattostr(ra2*180/pi)+','+floattostr(dec2*180/pi));
+
 
        {5. Conversion (RA,DEC) -> (x,y)}
         sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}

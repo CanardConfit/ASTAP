@@ -91,7 +91,8 @@ End;
 procedure monitoring(path :string);{monitoring a directory}
 var
      counter :  integer;
-     solver  :   boolean;
+     solver,target  :   boolean;
+     distance_ra,distance_dec : double;
 begin
   with stackmenu1 do
   begin
@@ -150,23 +151,37 @@ begin
           monitor_date1.caption:= DateTimeToStr(FileDateToDateTime(latest_time));
 
           solver:=false;
+          target:=false;
           case stackmenu1.monitor_action1.itemindex of 1: CCDinspector(30,false,strtofloat(measuring_angle));
                                                        2: CCDinspector(30,true,strtofloat(measuring_angle));
                                                        3: form_inspection1.aberration_inspector1Click(nil);
                                                        4: solver:=true;
+                                                       5: target:=true;
           end;{case}
-          if solver then
+          if ((solver) or (target)) then
           begin
             raposition1.visible:=true;
             decposition1.visible:=true;
             mainwindow.astrometric_solve_image1Click(nil);
             raposition1.caption:='  '+prepare_ra(head.ra0,': ');{show center of image}
             decposition1.caption:=prepare_dec(head.dec0,'° ');
+
+            if ((target) and (copy(target1.caption,1,1)<>'-')) then {target option and object is set}
+            begin
+              delta_ra1.visible:=true;
+              delta_dec1.visible:=true;
+              ang_sep(head.ra0,dec_target,ra_target,dec_target ,distance_ra);{calculate distance in radians}
+              ang_sep(ra_target,head.dec0,ra_target,dec_target ,distance_dec);{calculate distance in radians}
+              delta_ra1.caption :='Δα   '+floattostrF(distance_ra*180/pi,ffFixed,0,3)+'°';
+              delta_dec1.caption:='Δδ   '+floattostrF(distance_dec*180/pi,ffFixed,0,3)+'°';
+            end
           end
           else
           begin
             raposition1.visible:=false;
             decposition1.visible:=false;
+            delta_ra1.visible:=false;
+            delta_dec1.visible:=false;
           end;
 
 
