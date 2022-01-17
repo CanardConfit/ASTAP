@@ -44,6 +44,7 @@ type
     browse_mount1: TBitBtn;
     browse_live_stacking1: TBitBtn;
     Button1: TButton;
+    target_distance1: TLabel;
     target_group1: TGroupBox;
     delta_ra1: TLabel;
     delta_dec1: TLabel;
@@ -7242,7 +7243,7 @@ end;
 
 procedure Tstackmenu1.tab_monitoring1Show(Sender: TObject);
 begin
-  target_group1.enabled:=stackmenu1.monitor_action1.itemindex=5;
+  target_group1.enabled:=stackmenu1.monitor_action1.itemindex=4;
 end;
 
 
@@ -7295,7 +7296,7 @@ begin
     dec_target:=dec_data;
   end;
   form_listbox1.release;
-
+  report_delta;{update delta position of target}
 end;
 
 
@@ -7588,7 +7589,7 @@ end;
 
 procedure Tstackmenu1.monitor_action1Change(Sender: TObject);
 begin
-  target_group1.enabled:=stackmenu1.monitor_action1.itemindex=5;
+  target_group1.enabled:=stackmenu1.monitor_action1.itemindex=4;
 end;
 
 

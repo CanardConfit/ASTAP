@@ -328,7 +328,7 @@ begin
           begin
             x_centered:=starX- (head.width div 2); {array coordinates}
             y_centered:=starY- (head.height div 2);
-            theangle:=arctan2(y_centered,x_centered)*180/pi;{angle in array}
+            theangle:=arctan2(x_centered,y_centered)*180/pi;{angle in array from Y axis. So swap x, y}
             theradius:=sqrt(sqr(x_centered)+sqr(x_centered));
 
 
@@ -355,22 +355,23 @@ begin
 
       if ((triangle=true) and (nhfd_top_right>0)  and (nhfd_bottom_left>0) and (nhfd_bottom_right>0)) then  {enough information for tilt calculation}
       begin
-        median_top_right:=SMedian(hfdList_top_right,nhfd_top_right);
-        median_bottom_left:=SMedian(hfdList_bottom_left,nhfd_bottom_left);
-        median_bottom_right:=SMedian(hfdList_bottom_right,nhfd_bottom_right);
+        median_bottom_left:=SMedian(hfdList_bottom_left,nhfd_bottom_left);{screw 1}
+        median_bottom_right:=SMedian(hfdList_bottom_right,nhfd_bottom_right);{screw 2}
+        median_top_right:=SMedian(hfdList_top_right,nhfd_top_right);{screw 3}
+
         median_best:=min(median_top_right,min(median_bottom_left,median_bottom_right));{find best corner}
         median_worst:=max(median_top_right,max(median_bottom_left,median_bottom_right));{find worst corner}
 
         scale_factor:=head.width*0.35/median_worst;
-        x1:=round(-median_bottom_left*scale_factor*sin(screw1*pi/180)+head.width/2);
-        y1:=round(-median_bottom_left*scale_factor*cos(screw1*pi/180)+head.height/2);{calculate coordinates}
+        x1:=round(median_bottom_left*scale_factor*sin(screw1*pi/180)+head.width/2); {screw 1}
+        y1:=round(median_bottom_left*scale_factor*cos(screw1*pi/180)+head.height/2);{calculate coordinates, based on rotation distance from Y axis}
 
 
-        x2:=round(-median_bottom_right*scale_factor*sin(screw2*pi/180)+head.width/2);
-        y2:=round(-median_bottom_right*scale_factor*cos(screw2*pi/180)+head.height/2);
+        x2:=round(median_bottom_right*scale_factor*sin(screw2*pi/180)+head.width/2); {screw 2}
+        y2:=round(median_bottom_right*scale_factor*cos(screw2*pi/180)+head.height/2);{calculate coordinates, based on rotation distance from Y axis}
 
-        x3:=round(-median_top_right*scale_factor*sin(screw3*pi/180)+head.width/2);
-        y3:=round(-median_top_right*scale_factor*cos(screw3*pi/180)+head.height/2);
+        x3:=round(median_top_right*scale_factor*sin(screw3*pi/180)+head.width/2);{screw 3}
+        y3:=round(median_top_right*scale_factor*cos(screw3*pi/180)+head.height/2);{calculate coordinates, based on rotation distance from Y axis}
 
         flip_xy(fliph,flipv,x1,y1); {from array to image coordinates}
         flip_xy(fliph,flipv,x2,y2);

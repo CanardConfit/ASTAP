@@ -43,8 +43,8 @@ object form_listbox1: Tform_listbox1
     Left = 7
     Height = 15
     Top = 5
-    Width = 131
-    Caption = 'Enter object designation:'
+    Width = 191
+    Caption = 'Enter object designation or position:'
     ParentColor = False
     ParentFont = False
     WordWrap = True

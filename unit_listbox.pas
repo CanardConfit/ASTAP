@@ -65,8 +65,10 @@ var
 implementation
 
 {$R *.lfm}
-
 { Tform_listbox1 }
+uses
+   astap_main;
+
 
 
 procedure Tform_listbox1.FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -156,6 +158,11 @@ begin
   end
   else
   begin {keyboard_text with length less then 2 or not found}
+    if decode_string(keyboard_text,ra_data,dec_data) {convert a string to position succesfull} then
+    begin
+      object_found:=true;
+      form_listbox1.close;
+    end;
     keyboard_text:=StringReplace(uppercase(keyboard_text), ' ', '',[rfReplaceAll]);{replace all space and make upcase}
     keyboard_text:=StringReplace(keyboard_text, '*', '',[rfReplaceAll]);{remove wildchard}
     fill_listbox(keyboard_text);{fill listbox with suggestions}

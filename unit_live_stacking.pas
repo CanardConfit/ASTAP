@@ -136,8 +136,8 @@ end;
 
 procedure stack_live(oversize:integer; path :string);{stack live average}
 var
-    fitsX,fitsY,c,width_max, height_max,x, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter :  integer;
-    flat_factor, distance,hfd_min      : double;
+    fitsX,fitsY,width_max, height_max, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter :  integer;
+    distance,hfd_min      : double;
     init, solution, vector_based,waiting,transition_image,colour_correction :boolean;
     file_ext,filen                    :  string;
     multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}

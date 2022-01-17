@@ -12,10 +12,11 @@ interface
 
 uses
   Classes, SysUtils,forms,fileutil,
-  graphics,
-  math;
+  graphics;
+
 
 procedure monitoring(path :string);{stack live average}
+procedure report_delta; {report delta error}
 
 const
   live_monitoring: boolean=false; {used to inhibit solving while live_stacking}
@@ -87,18 +88,48 @@ Begin
   end;
 End;
 
+procedure report_delta; {report delta error}
+var
+   distance,deltaRA,deltaDEC : double;
+   direction : string;
+begin
+  if fits_file=false then exit;
+  with stackmenu1 do
+  begin
+    raposition1.visible:=true;
+    decposition1.visible:=true;
+    raposition1.caption:='  '+prepare_ra(head.ra0,': ');{show center of image}
+    decposition1.caption:=prepare_dec(head.dec0,'° ');
+
+    if copy(target1.caption,1,1)<>'-' then {target option and object is set}
+    begin
+      target_distance1.visible:=true;
+      delta_ra1.visible:=true;
+      delta_dec1.visible:=true;
+      ang_sep(head.ra0,head.dec0,ra_target,dec_target ,distance);{calculate distance in radians}
+      target_distance1.caption :='Distance: '+floattostrF(distance*180/pi,ffFixed,0,3)+'°';
+
+      deltaRA:=fnmodulo((ra_target-head.ra0)*12/pi,24);
+      if deltaRA>12 then begin direction:='W'; deltaRa:=24-deltaRA;end else begin direction:='E'; end;
+      delta_ra1.caption :='Δα   '+floattostrF(deltaRA,ffFixed,0,3)+'h '+direction;
+
+      deltaDec:=(dec_target-head.dec0)*180/pi;
+      if deltaDec>0 then begin direction:='N' end else begin direction:='S'; end;
+      delta_dec1.caption:='Δδ   '+floattostrF(deltaDec,ffFixed,0,3)+'° '+direction;
+    end;
+  end;
+
+end;
 
 procedure monitoring(path :string);{monitoring a directory}
 var
      counter :  integer;
-     solver,target  :   boolean;
-     distance_ra,distance_dec : double;
+     solver  :   boolean;
 begin
   with stackmenu1 do
   begin
 
     esc_pressed:=false;
-//    total_counter:=0;
     latest_time:=0;{for finding files}
 
     if monitor_applydarkflat1.checked then   {Prepare for dark and flats}
@@ -113,8 +144,6 @@ begin
       if file_available(path,filename2 {file found}) then
       begin
         try { Do some lengthy operation }
-//          waiting:=false;
-
           Application.ProcessMessages;
           {load image}
 
@@ -151,33 +180,19 @@ begin
           monitor_date1.caption:= DateTimeToStr(FileDateToDateTime(latest_time));
 
           solver:=false;
-          target:=false;
           case stackmenu1.monitor_action1.itemindex of 1: CCDinspector(30,false,strtofloat(measuring_angle));
                                                        2: CCDinspector(30,true,strtofloat(measuring_angle));
                                                        3: form_inspection1.aberration_inspector1Click(nil);
                                                        4: solver:=true;
-                                                       5: target:=true;
           end;{case}
-          if ((solver) or (target)) then
+          if solver then
           begin
-            raposition1.visible:=true;
-            decposition1.visible:=true;
             mainwindow.astrometric_solve_image1Click(nil);
-            raposition1.caption:='  '+prepare_ra(head.ra0,': ');{show center of image}
-            decposition1.caption:=prepare_dec(head.dec0,'° ');
-
-            if ((target) and (copy(target1.caption,1,1)<>'-')) then {target option and object is set}
-            begin
-              delta_ra1.visible:=true;
-              delta_dec1.visible:=true;
-              ang_sep(head.ra0,dec_target,ra_target,dec_target ,distance_ra);{calculate distance in radians}
-              ang_sep(ra_target,head.dec0,ra_target,dec_target ,distance_dec);{calculate distance in radians}
-              delta_ra1.caption :='Δα   '+floattostrF(distance_ra*180/pi,ffFixed,0,3)+'°';
-              delta_dec1.caption:='Δδ   '+floattostrF(distance_dec*180/pi,ffFixed,0,3)+'°';
-            end
+            report_delta;
           end
           else
           begin
+            target_distance1.visible:=false;
             raposition1.visible:=false;
             decposition1.visible:=false;
             delta_ra1.visible:=false;

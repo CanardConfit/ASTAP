@@ -3,12 +3,12 @@ object stackmenu1: Tstackmenu1
   Height = 712
   Top = 186
   Width = 1604
-  HorzScrollBar.Page = 1241
+  HorzScrollBar.Page = 1604
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
-  ClientHeight = 712
+  ClientHeight = 695
   ClientWidth = 1604
   Color = clForm
   Icon.Data = {
@@ -53,9 +53,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.12.0'
   object Memo2: TMemo
     Left = 0
-    Height = 152
+    Height = 135
     Top = 560
-    Width = 1604
+    Width = 1701
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     DoubleBuffered = True
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 15638
+    Left = 15735
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -226,8 +226,8 @@ object stackmenu1: Tstackmenu1
     Height = 498
     Hint = 'Stack menu'
     Top = 0
-    Width = 1604
-    ActivePage = tab_monitoring1
+    Width = 1701
+    ActivePage = lights
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 12
+    TabIndex = 0
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -4418,7 +4418,6 @@ object stackmenu1: Tstackmenu1
           'Tilt, 3 point measurement & HFD'
           'Aberration view'
           'Solve image'
-          'Solve image and distance to target'
         )
         OnChange = monitor_action1Change
         ParentFont = False
@@ -4462,6 +4461,7 @@ object stackmenu1: Tstackmenu1
       object RAposition1: TLabel
         Left = 16
         Height = 71
+        Hint = 'Image center position (right ascension of the solution)'
         Top = 256
         Width = 21
         Caption = '-'
@@ -4473,6 +4473,7 @@ object stackmenu1: Tstackmenu1
       object DECposition1: TLabel
         Left = 16
         Height = 71
+        Hint = 'Image center position (declination of the solution)'
         Top = 344
         Width = 21
         Caption = '-'
@@ -4482,38 +4483,39 @@ object stackmenu1: Tstackmenu1
         Visible = False
       end
       object target_group1: TGroupBox
-        Left = 736
-        Height = 232
-        Top = 96
-        Width = 328
+        Left = 560
+        Height = 360
+        Top = 72
+        Width = 531
         Caption = 'Target box'
-        ClientHeight = 212
-        ClientWidth = 324
+        ClientHeight = 340
+        ClientWidth = 527
         Enabled = False
         TabOrder = 5
         object target1: TLabel
-          Left = 136
+          Left = 112
           Height = 15
           Hint = 'Target object'
-          Top = 16
+          Top = 0
           Width = 15
           Caption = '---'
           ParentColor = False
         end
         object Button1: TButton
-          Left = 24
+          Left = 0
           Height = 25
-          Hint = 'Set an object target and let the program calculate the distance'
-          Top = 16
+          Hint = 'Set an object target or position and let the program calculate the distance. '
+          Top = 0
           Width = 75
           Caption = 'Set target'
           OnClick = Button1Click
           TabOrder = 0
         end
         object delta_ra1: TLabel
-          Left = 24
+          Left = 0
           Height = 71
-          Top = 56
+          Hint = 'Target right ascension'
+          Top = 168
           Width = 67
           Caption = 'Δα'
           Font.Height = -53
@@ -4522,11 +4524,24 @@ object stackmenu1: Tstackmenu1
           Visible = False
         end
         object delta_dec1: TLabel
-          Left = 24
+          Left = 0
           Height = 71
-          Top = 128
+          Hint = 'Target declination'
+          Top = 256
           Width = 65
           Caption = 'Δδ'
+          Font.Height = -53
+          ParentColor = False
+          ParentFont = False
+          Visible = False
+        end
+        object target_distance1: TLabel
+          Left = 0
+          Height = 71
+          Hint = 'Target distance'
+          Top = 48
+          Width = 21
+          Caption = '-'
           Font.Height = -53
           ParentColor = False
           ParentFont = False

@@ -774,6 +774,7 @@ procedure convert_mono(var img: image_array);
 procedure Wait(wt:single=500);  {smart sleep}
 procedure update_header_for_colour; {update naxis and naxis3 keywords}
 procedure flip(x1,y1 : integer; out x2,y2 :integer);{array to screen or screen to array coordinates}
+function decode_string(data0: string; out ra4,dec4 : double):boolean;{convert a string to position}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -3023,7 +3024,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.01.16, '+about_message4;
+  #13+#10+'ASTAP version 2022.01.17, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3685,22 +3686,18 @@ begin
   end;
 end;
 
-
-function place_marker_radec(data0: string): boolean;{place ra,dec marker in image}
+function decode_string(data0: string; out ra4,dec4 : double):boolean;{convert a string to position}
 var
-  ra_new,dec_new, fitsx,fitsy : double;
   error1,error2,degrees   : boolean;
-  data1,ra_text,dec_text,sipwcs  : string;
+  data1,ra_text,dec_text  : string;
   pos1,pos2,pos3,pos4,pos5,pos6,i :integer;
-
 begin
-  if ((fits_file=false) or (head.cd1_1=0) or (mainwindow.shape_marker3.visible=false)) then exit;{no solution to place marker}
-
   {Simbad sirius    06 45 08.917 -16 42 58.02      }
   {Orion   5h 35.4m; Declination_symbol1: 5o 27′ south    }
   {http://www.rochesterastronomy.org/supernova.html#2020ue
   R.A. = 00h52m33s.814, Decl. = +80°39'37".93 }
 
+  result:=false; {assume failure}
   data0:=uppercase(data0);
   degrees:=pos('D',data0)>0;{degrees ?}
   data0:=StringReplace(data0,'S.','.',[]); {for 00h52m33s.814}
@@ -3708,9 +3705,9 @@ begin
   data0:=StringReplace(data0,'R.A.','',[]); {remove dots from ra}
   data0:=StringReplace(data0,'DECL.','',[]);{remove dots from decl}
 
-  if pos('C',data0)>0 then {place marker in middle}
+  if ((data0='c') or (data0='C')) then {place marker in middle}
   begin
-    sensor_coordinates_to_celestial(head.width/2,head.height/2,ra_new,dec_new);{calculate the center position also for solutions with the reference pixel somewhere else}
+    sensor_coordinates_to_celestial(head.width/2,head.height/2,ra4,dec4);{calculate the center position also for solutions with the reference pixel somewhere else}
     error1:=false;
     error2:=false;
     data1:='Center image '; {for hint}
@@ -3757,11 +3754,21 @@ begin
       dec_text:=copy(data1,pos1+1,99);
     end;
 
-    ra_text_to_radians ( ra_text ,ra_new,error1); {convert ra text to head.ra0 in radians}
-    dec_text_to_radians( dec_text ,dec_new,error2); {convert dec text to head.dec0 in radians}
+    ra_text_to_radians ( ra_text ,ra4,error1); {convert ra text to head.ra0 in radians}
+    dec_text_to_radians( dec_text ,dec4,error2); {convert dec text to head.dec0 in radians}
   end;
+  result:=((error1=false) and (error2=false));
+end;
 
-  if ((error1=false) and (error2=false)) then
+
+function place_marker_radec(data0: string): boolean;{place ra,dec marker in image}
+var
+  ra_new,dec_new, fitsx,fitsy : double;
+  data1,sipwcs  : string;
+begin
+  if ((fits_file=false) or (head.cd1_1=0) or (mainwindow.shape_marker3.visible=false)) then exit;{no solution to place marker}
+
+  if decode_string(data0,ra_new,dec_new) then
   begin
     result:=true;
     celestial_to_pixel(ra_new,dec_new, fitsX,fitsY); {ra,dec to fitsX,fitsY}
@@ -4753,12 +4760,13 @@ procedure Tmainwindow.astrometric_solve_image1Click(Sender: TObject);
 var
    OldCursor : TCursor;
 begin
+  if fits_file=false then exit;
+
   if live_stacking {ongoing}  then
   begin
     stackmenu1.Memo2.lines.add('█ █ █ █ █ █  Can'+#39+'t solve while live stacking!!');
     exit;
   end;
-
   save_settings2;
 
   OldCursor := Screen.Cursor;
