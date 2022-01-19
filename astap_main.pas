@@ -4,7 +4,7 @@
 
 This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0. If a copy of the MPL was not distributed with this
-file, You can obtain one at https://mozilla.org/MPL/2.0/.
+file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 
 
 {Notes on MacOS pkg making:
@@ -18,7 +18,7 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.
    LCL widegetset: cocoa
 }
 
-{open compiler isssues:
+{open compiler issues:
 MacOS
 Listview smallimages are not displayed.
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39193
@@ -135,11 +135,13 @@ type
     import_auid1: TMenuItem;
     N4: TMenuItem;
     MenuItem38: TMenuItem;
+    save1: TButton;
     simbad_query1: TMenuItem;
     positionanddate1: TMenuItem;
     removegreenpurple1: TMenuItem;
     Shape1: TShape;
     sip1: TMenuItem;
+    solve_button1: TButton;
     zoomfactorone1: TMenuItem;
     extractred1: TMenuItem;
     extractblue1: TMenuItem;
@@ -280,9 +282,6 @@ type
     inversemousewheel1: TCheckBox;
     LoadFITSPNGBMPJPEG1: TMenuItem;
     SaveasJPGPNGBMP1: TMenuItem;
-    GroupBox1: TGroupBox;
-    save1: TButton;
-    solve_button1: TButton;
     batch_add_solution1: TMenuItem;
 
     tools1: TMenuItem;
@@ -4604,7 +4603,8 @@ begin
     info_message:=info_message+#10+#10+'Vignetting [Mo corners/Mo]: '+inttostr(round(100*(1-(mc_1+mc_2+mc_3+mc_4)/(most_common*4))))+'%';
   end;
 
-  info_message:=info_message+#10+#10+'Bit depth data: '+inttostr(round(ln(range/minstep)/ln(2)));{bit range}
+  info_message:=info_message+#10+#10+'Bit depth data: '+inttostr(round(ln(range/minstep)/ln(2)));{bit range, calculate 2log}
+  if Xbinning<>1 then  info_message:=info_message+'  Binning '+ floattostrf(Xbinning,ffgeneral,0,0)+'x'+floattostrf(Ybinning,ffgeneral,0,0);
 
 
   info_message:=info_message+#10+#10+#10+'Legend: '+#10+

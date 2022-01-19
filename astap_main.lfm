@@ -435,64 +435,6 @@ object mainwindow: Tmainwindow
       Visible = False
     end
   end
-  object GroupBox1: TGroupBox
-    Left = 304
-    Height = 51
-    Hint = ' '
-    Top = 0
-    Width = 288
-    Caption = 'Astrometric solution'
-    ClientHeight = 31
-    ClientWidth = 284
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'Segoe UI'
-    Font.Pitch = fpVariable
-    Font.Quality = fqDraft
-    ParentFont = False
-    TabOrder = 4
-    object save1: TButton
-      Left = 150
-      Height = 30
-      Hint = 'Save FITS file with plate solution'
-      Top = 0
-      Width = 128
-      Caption = 'Save new header'
-      Enabled = False
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clBlack
-      Font.Height = -12
-      Font.Name = 'Segoe UI'
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
-      OnClick = SaveFITSwithupdatedheader1Click
-      ParentFont = False
-      ParentShowHint = False
-      ShowHint = True
-      TabOrder = 0
-    end
-    object solve_button1: TButton
-      Left = 8
-      Height = 30
-      Hint = 'Find an astrometric solution for the image in the viewer.'#13#10#13#10'Checklist for successful solving:'#13#10#13#10'- At least 30 stars are visible.'#13#10'- Reasonable round stars.'#13#10'- Image dimensions at least 1280x960 pixels.'#13#10'- An approximate position is available for a spiral search'#13#10'- Correct image height in degrees specified. See stack menu tab alignment.'#13#10'- Image is not stretched or heavily photo-shopped.'
-      Top = 0
-      Width = 121
-      Caption = 'Solve'
-      Enabled = False
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clBlack
-      Font.Height = -12
-      Font.Name = 'Segoe UI'
-      Font.Pitch = fpVariable
-      Font.Quality = fqDraft
-      OnClick = solve_button1Click
-      ParentFont = False
-      ParentShowHint = False
-      ShowHint = True
-      TabOrder = 1
-    end
-  end
   object data_range_groupBox1: TGroupBox
     Left = 8
     Height = 120
@@ -511,7 +453,7 @@ object mainwindow: Tmainwindow
     Font.Pitch = fpVariable
     Font.Quality = fqDraft
     ParentFont = False
-    TabOrder = 5
+    TabOrder = 4
     object Label12: TLabel
       Left = 0
       Height = 15
@@ -760,7 +702,7 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 6
+    TabOrder = 5
     Text = 'WCS'
   end
   object StatusBar1: TStatusBar
@@ -815,7 +757,7 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabOrder = 8
+    TabOrder = 7
   end
   object SpeedButton1: TSpeedButton
     Left = 8
@@ -886,7 +828,7 @@ object mainwindow: Tmainwindow
     ActivePage = TabSheet1
     Anchors = [akTop, akLeft, akRight]
     TabIndex = 0
-    TabOrder = 9
+    TabOrder = 8
     object TabSheet1: TTabSheet
       Caption = 'Header'
       ClientHeight = 149
@@ -948,8 +890,48 @@ object mainwindow: Tmainwindow
     ParentShowHint = False
     Position = 0
     ShowHint = True
-    TabOrder = 10
+    TabOrder = 9
     Visible = False
+  end
+  object solve_button1: TButton
+    Left = 312
+    Height = 30
+    Hint = 'Find an astrometric solution for the image in the viewer.'#13#10#13#10'Checklist for successful solving:'#13#10#13#10'- At least 30 stars are visible.'#13#10'- Reasonable round stars.'#13#10'- Image dimensions at least 1280x960 pixels.'#13#10'- An approximate position is available for a spiral search'#13#10'- Correct image height in degrees specified. See stack menu tab alignment.'#13#10'- Image is not stretched or heavily photo-shopped.'
+    Top = 8
+    Width = 121
+    Caption = 'Solve'
+    Enabled = False
+    Font.CharSet = ANSI_CHARSET
+    Font.Color = clBlack
+    Font.Height = -12
+    Font.Name = 'Segoe UI'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    OnClick = solve_button1Click
+    ParentFont = False
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 10
+  end
+  object save1: TButton
+    Left = 453
+    Height = 30
+    Hint = 'Save FITS file with plate solution'
+    Top = 8
+    Width = 128
+    Caption = 'Save new header'
+    Enabled = False
+    Font.CharSet = ANSI_CHARSET
+    Font.Color = clBlack
+    Font.Height = -12
+    Font.Name = 'Segoe UI'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    OnClick = SaveFITSwithupdatedheader1Click
+    ParentFont = False
+    ParentShowHint = False
+    ShowHint = True
+    TabOrder = 11
   end
   object MainMenu1: TMainMenu
     Images = ImageList1
