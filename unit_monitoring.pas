@@ -150,7 +150,12 @@ begin
 
           if ((esc_pressed) or (load_image(false,false {plot})=false)) then
           begin
-            if esc_pressed=false then memo2_message('Error loading file'); {can't load}
+
+            if esc_pressed=false then
+            begin
+              memo2_message('Error loading file'); {can't load}
+              continue; {repeat loop}
+            end;
             live_monitoring1.font.style:=[];
             live_monitoring:=false;
             exit;
@@ -170,10 +175,10 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if make_osc_color1.checked then
-             demosaic_bayer(img_loaded); {convert OSC image to colour}
-
-          use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+          if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then
+             demosaic_advanced(img_loaded) {demosaic and set levels}
+          else
+            use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
 
           plot_fits(mainwindow.image1,false,true{do not show header in memo1});{plot real}
 

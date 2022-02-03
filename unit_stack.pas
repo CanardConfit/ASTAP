@@ -864,6 +864,7 @@ var  {################# initialised variables #########################}
   areaX2:integer=0;
   dark_exposure : integer=987654321;{not done indication}
   dark_temperature: integer=987654321;
+  dark_gain       : string='987654321';
   flat_filter : string='987654321';{not done indication}
   last_light_jd: integer=987654321;
   last_flat_loaded : string='';
@@ -1830,7 +1831,7 @@ begin
                 if focus_pos<>0 then ListView1.Items.item[c].subitems.Strings[L_focpos]:=inttostr(focus_pos);
                 if focus_temp<>999 then ListView1.Items.item[c].subitems.Strings[L_foctemp]:=floattostrF(focus_temp,ffFixed,0,1);
 
-                if head_2.egain<>'' then ListView1.Items.item[c].subitems.Strings[L_gain]:=copy(head_2.egain,1,5) {e-/adu}
+                if head_2.egain<>'' then ListView1.Items.item[c].subitems.Strings[L_gain]:=head_2.egain {e-/adu}
                 else
                 if head_2.gain<>'' then ListView1.Items.item[c].subitems.Strings[L_gain]:=head_2.gain;
 
@@ -3206,6 +3207,10 @@ begin
             lv.Items.item[c].subitems.Strings[D_width]:=inttostr(head_2.width); {image width}
             lv.Items.item[c].subitems.Strings[D_height]:=inttostr(head_2.height);{image height}
             lv.Items.item[c].subitems.Strings[D_type]:=imagetype;{image type}
+            if head_2.egain<>'' then lv.Items.item[c].subitems.Strings[D_gain]:=head_2.egain {e-/adu}
+            else
+            if head_2.gain<>'' then lv.Items.item[c].subitems.Strings[D_gain]:=head_2.gain;
+
 
             if ((light=false) and (full=true)) {amode=2} then {dark/flats}
             begin {analyse background and noise}
@@ -3218,10 +3223,6 @@ begin
               lv.Items.item[c].subitems.Strings[D_background]:=inttostr5(round(backgr));
               if ((lv.name=stackmenu1.listview2.name) or (lv.name=stackmenu1.listview3.name) or (lv.name=stackmenu1.listview4.name)) then
                      lv.Items.item[c].subitems.Strings[D_sigma]:=inttostr(noise_level[0]); {noise level}
-
-              if head_2.egain<>'' then lv.Items.item[c].subitems.Strings[D_gain]:=copy(head_2.egain,1,5) {e-/adu}
-              else
-              if head_2.gain<>'' then lv.Items.item[c].subitems.Strings[D_gain]:=head_2.gain;
             end;
 
             if lv.name=stackmenu1.listview2.name then {dark tab}
@@ -8063,10 +8064,10 @@ begin
 end;
 
 
-procedure load_master_dark({exposure2,temperature2,width1,}jd_int: integer);
+procedure load_master_dark(jd_int: integer);
 var
   c,{roundexposure,}dummy            : integer;
-  d,day_offset               : double;
+  d,day_offset,test          : double;
   filen                      : string;
 
 begin
@@ -8075,26 +8076,33 @@ begin
   day_offset:=99999999;
   filen:='';
 
+  dark_exposure:=round(head.exposure);{remember the requested head.exposure time}
+  dark_temperature:=head.set_temperature;
+  if head.egain<>'' then  dark_gain:=head.egain else dark_gain:=head.gain;
+
+
   while c<stackmenu1.listview2.items.count do
   begin
+ //   if stackmenu1.listview2.items[c].checked=true then
+  //     test:=head.set_temperature - strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]);
+
     if stackmenu1.listview2.items[c].checked=true then
-      if ( (stackmenu1.classify_dark_exposure1.checked=false) or (round(head.exposure)=round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure])))) then {head_2.exposure correct}
-        if ( (stackmenu1.classify_dark_temperature1.checked=false) or (abs(head.set_temperature-strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]))<=1 )) then {temperature correct within one degree}
-          if  head.width=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
-          begin
-            d:=strtofloat(stackmenu1.listview2.Items.item[c].subitems.Strings[D_jd]);
-            if abs(d-jd_int)<day_offset then {find flat with closest date}
+      if ( (stackmenu1.classify_dark_exposure1.checked=false) or (dark_exposure=round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure])))) then {head_2.exposure correct}
+        if ( (stackmenu1.classify_dark_temperature1.checked=false) or (abs(dark_temperature - strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]))<=1 )) then {temperature correct within one degree}
+          if ( (stackmenu1.classify_dark_temperature1.checked=false) or (dark_gain =  stackmenu1.listview2.Items.item[c].subitems.Strings[D_gain])) then {gain correct}
+            if  head.width=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
             begin
-              filen:=stackmenu1.ListView2.items[c].caption;
-              day_offset:=abs(d-jd_int);
-            //  roundexposure:=round(head.exposure);
+              d:=strtofloat(stackmenu1.listview2.Items.item[c].subitems.Strings[D_jd]);
+              if abs(d-jd_int)<day_offset then {find flat with closest date}
+              begin
+                filen:=stackmenu1.ListView2.items[c].caption;
+                day_offset:=abs(d-jd_int);
+              //  roundexposure:=round(head.exposure);
+              end;
             end;
-          end;
     inc(c);
   end;
 
-  dark_exposure:=round(head.exposure);{remember the requested head_2.exposure time}
-  dark_temperature:=head.set_temperature;
 
   if (filen<>'') then {new file}
   begin
@@ -8102,7 +8110,7 @@ begin
     begin
 
       memo2_message('Loading master dark file '+filen);
- //     head_ref.dark_count:=0;{set back to zero, store in header of reference}
+
       if load_fits(filen,false {light},true,false {update memo},0,head_2,img_dark)=false then begin memo2_message('Error'); head_ref.dark_count:=0; exit; end;
       {load master in memory img_dark}
 
@@ -8111,6 +8119,8 @@ begin
          memo2_message('█ █ █ █ █ █ Warning above dark exposure time ('+floattostrF(head_2.exposure,ffFixed,0,0)+') is different then the light exposure time ('+floattostrF(head.exposure,ffFixed,0,0) +')! █ █ █ █ █ █ ');
       if ((head_2.set_temperature<>999 {dark temperature is measured}) and (head.set_temperature{request}<>head_2.set_temperature)) then
          memo2_message('█ █ █ █ █ █ Warning above dark sensor temperature ('+floattostrF(head_2.set_temperature,ffFixed,0,0)+') is different then the light sensor temperature ('+floattostrF(head.set_temperature,ffFixed,0,0) +')! █ █ █ █ █ █ ');
+      if ((head_2.gain<>'' {gain in header}) and (head.gain{request}<>head_2.gain)) then
+         memo2_message('█ █ █ █ █ █ Warning above dark gain ('+head_2.gain+') is different then the light gain ('+head.gain+')! █ █ █ █ █ █ ');
 
 
       last_dark_loaded:=filen; {required for for change in light_jd}
@@ -8119,7 +8129,7 @@ begin
   end
   else
   begin
-    memo2_message('█ █ █ █ █ █ Warning, could not find a suitable dark for temperature "'+inttostr(head.set_temperature)+'"and exposure "'+inttostr(round(head.exposure))+'"! De-classify temperature or exposure time or add correct darks. █ █ █ █ █ █ ');
+    memo2_message('█ █ █ █ █ █ Warning, could not find a suitable dark for exposure "'+inttostr(round(head.exposure))+' and temperature '+inttostr(head.set_temperature)+' and gain '+head.gain + '"! De-classify temperature or exposure time or add correct darks. █ █ █ █ █ █ ');
     head_2.dark_count:=0;{set back to zero}
   end;
 end;
@@ -8194,7 +8204,7 @@ end;
 
 procedure replace_by_master_dark;
 var
-   path1,filen :string;
+   path1,filen,gain :string;
    c,counter,i,file_count : integer;
    specified: boolean;
    exposure,temperature,width1: integer;
@@ -8222,18 +8232,20 @@ begin
           begin
             exposure:=round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure]));
             temperature:=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]);
+            gain:=stackmenu1.listview2.Items.item[c].subitems.Strings[D_gain];
             width1:=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]);
             day:=strtofloat(stackmenu1.listview2.Items.item[c].subitems.Strings[D_jd]);
             specified:=true;
           end;
           if ( (stackmenu1.classify_dark_exposure1.checked=false) or (exposure=round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure])))) then {exposure correct}
             if ( (stackmenu1.classify_dark_temperature1.checked=false) or (temperature=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]))) then {temperature correct}
-              if  width1=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
-                if ((classify_dark_date1.Checked=false) or (abs(day-strtofloat(stackmenu1.listview2.Items.item[c].subitems.Strings[D_jd]))<=0.5)) then {within 12 hours made}
-                begin
-                  file_list[file_count]:=filen;
-                  inc(file_count);
-                end;
+              if ( (stackmenu1.classify_dark_temperature1.checked=false) or (gain=stackmenu1.listview2.Items.item[c].subitems.Strings[D_gain])) then {gain correct}
+                if  width1=strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_width]) then {width correct}
+                  if ((classify_dark_date1.Checked=false) or (abs(day-strtofloat(stackmenu1.listview2.Items.item[c].subitems.Strings[D_jd]))<=0.5)) then {within 12 hours made}
+                  begin
+                    file_list[file_count]:=filen;
+                    inc(file_count);
+                  end;
         end;
       end;{checked}
 
@@ -8527,7 +8539,7 @@ begin
              memo2_message('Skipping dark calibration, already applied. See header keyword CALSTAT')
   else
   begin
-    load_master_dark({round(head.exposure),round(head.set_temperature),head.width,} round(jd_start)); {will only be renewed if different head.exposure or head.set_temperature.}
+    load_master_dark(round(jd_start)); {will only be renewed if different head.exposure or head.set_temperature.}
 
     if head_2.dark_count>0 then   {dark and flat use head_2 for status}
     begin
@@ -8870,6 +8882,7 @@ begin
 
   dark_exposure:=987654321;{not done indication}
   dark_temperature:=987654321;
+  dark_gain:='987654321';
   flat_filter:='987654321';{not done indication}
 
   min_background:=65535;

@@ -3,7 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 712
   Top = 172
   Width = 1884
-  HorzScrollBar.Page = 1437
+  HorzScrollBar.Page = 1241
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
@@ -118,7 +118,7 @@ object stackmenu1: Tstackmenu1
       TabOrder = 1
     end
     object classify_flat_filter1: TCheckBox
-      Left = 368
+      Left = 384
       Height = 19
       Hint = 'Activate this option if you want link the flats based on filter name.'
       Top = -2
@@ -146,8 +146,8 @@ object stackmenu1: Tstackmenu1
       Height = 19
       Hint = 'Activate this option if you want link the darks based on sensor temperature.'
       Top = 16
-      Width = 112
-      Caption = 'Dark temperature'
+      Width = 151
+      Caption = 'Dark temperature && gain'
       ParentFont = False
       ParentShowHint = False
       ShowHint = True
@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1884
-    ActivePage = alignment1
+    ActivePage = Darks
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 6
+    TabIndex = 1
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -1250,7 +1250,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 470
-      ClientWidth = 1596
+      ClientWidth = 1876
       ImageIndex = 5
       ParentFont = False
       object stack_method1: TComboBox
@@ -4345,7 +4345,7 @@ object stackmenu1: Tstackmenu1
     object tab_monitoring1: TTabSheet
       Caption = 'Monitoring'
       ClientHeight = 470
-      ClientWidth = 1596
+      ClientWidth = 1876
       OnShow = tab_monitoring1Show
       object Label3: TLabel
         Left = 128

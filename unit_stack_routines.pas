@@ -551,12 +551,12 @@ begin
     gain2:=strtofloat1(head.egain);
     if gain1<>0 then
         result:=result*gain2/gain1; {-e/adu}
-    memo2_message('Warning different egain used!! '+copy(head.egain,1,5)+' ínstead of '+copy(head_ref.egain,1,5)+' [e-/ADU]. Will compensate accordingly.');
+    memo2_message('Warning light with different EGAIN!! '+copy(head.egain,1,5)+' ínstead of '+copy(head_ref.egain,1,5)+' [e-/ADU]. Will compensate accordingly.');
   end
   else
   begin  {check gain/iso}
     if head.gain<>head_ref.gain then {rare}
-      memo2_message('Warning different gain used!! '+head.gain+' ínstead of '+head_ref.gain+'. Can not compensate unless egain [e-/ADU] is added manually to header.');
+      memo2_message('Warning light with different GAIN!! '+head.gain+' ínstead of '+head_ref.gain+'. Can not compensate unless EGAIN [e-/ADU] is added manually to header.');
   end;
 end;
 

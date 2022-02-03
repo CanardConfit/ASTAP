@@ -1196,7 +1196,7 @@ begin
         if ((header[i]='I') and (header[i+1]='S')  and (header[i+2]='O') and (header[i+3]='S') and (header[i+4]='P')) then
              if head.gain='' then head.gain:=trim(get_as_string);{isospeed, do not override head.gain}
         if ((header[i]='E') and (header[i+1]='G')  and (header[i+2]='A') and (header[i+3]='I') and (header[i+4]='N')) then  {egain}
-             head.egain:=trim(get_as_string);{e-/adu gain}
+             head.egain:=copy(trim(get_as_string),1,5);{e-/adu gain, use 4 digits only}
 
 
         {following variable are not set at zero Set at zero somewhere in the code}
@@ -10587,8 +10587,10 @@ begin
   end;
   if load_fits(filename2,true,true,true {update memo},updown1.position,head,img_loaded){load fits file } then
   begin
-    if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then demosaic_advanced(img_loaded);{demosaic and set levels}
-    use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+    if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then
+       demosaic_advanced(img_loaded) {demosaic and set levels}
+    else
+      use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainwindow.image1,false {re_center},true);
   end;
 end;
