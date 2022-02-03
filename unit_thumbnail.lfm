@@ -50,7 +50,7 @@ object thumbnails1: Tthumbnails1
   OnResize = FormResize
   OnShow = FormShow
   Position = poScreenCenter
-  LCLVersion = '2.0.6.0'
+  LCLVersion = '2.0.12.0'
   object Panel1: TPanel
     Left = 0
     Height = 500
@@ -60,8 +60,8 @@ object thumbnails1: Tthumbnails1
   end
   object PopupMenu1: TPopupMenu
     AutoPopup = False
-    left = 768
-    top = 24
+    Left = 768
+    Top = 24
     object MenuItem1: TMenuItem
       Caption = 'View image'
       Hint = 'Open in the viewer'

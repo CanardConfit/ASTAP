@@ -48,7 +48,7 @@ const
 Begin
   result:=false;
   Count:=0;
-  If FindFirst (monitor_directory+ {$ifdef mswindows}'\' {$else} {unix} '/' {$endif}+'*', faAnyFile-faDirectory,Info)=0 then
+  If SysUtils.FindFirst (monitor_directory+ {$ifdef mswindows}'\' {$else} {unix} '/' {$endif}+'*', faAnyFile-faDirectory,Info)=0 then
   begin
     Repeat
       Inc(Count);
@@ -69,8 +69,8 @@ Begin
           latest_time:=time;
         end;
       end;
-    Until FindNext(info)<>0;
-    FindClose(Info);
+    Until SysUtils.FindNext(info)<>0;
+    SysUtils.FindClose(Info);
   end;
 
 

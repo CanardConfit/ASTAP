@@ -1609,7 +1609,7 @@ begin
     if head.crota2>999 then head.crota2:=0;{not defined, set at 0}
     if head.crota1>999 then head.crota1:=head.crota2; {for case head.crota1 is not used}
 
-    if ((light) and (head.ra0<>0) and (head.dec0<>0)) then
+    if ((light) and ((head.ra0<>0) or (head.dec0<>0))) then
     begin
        mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
        mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
@@ -3023,7 +3023,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.01.17, '+about_message4;
+  #13+#10+'ASTAP version 2022.02.03, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -13071,7 +13071,7 @@ begin
   begin
     screen.Cursor := crhandpoint;
 
-    if ((head.naxis3=3) and (stackmenu1.pagecontrol1.tabindex=12) {pixelmath 1}) then {for colour replace function}
+    if ((head.naxis3=3) and (stackmenu1.pagecontrol1.tabindex=13) {pixelmath 1}) then {for colour replace function}
     begin
       sample(startX,startY);
     end;

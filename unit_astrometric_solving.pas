@@ -522,7 +522,7 @@ var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,distance,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t                                                                  : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,
-  extra_size,sep,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,
+  sep,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,
   current_dist, quad_tolerance,dummy, extrastars,flip, extra                                                         : double;
   solution, go_ahead ,autoFOV      : boolean;
   Save_Cursor                      : TCursor;
@@ -648,8 +648,6 @@ begin
       fov2:=fov_org;
     end;
 
-
-
     binning:=report_binning(head.height*cropping); {select binning on dimensions of cropped image}
     hfd_min:=max(0.8,min_star_size_arcsec/(binning*fov_org*3600/head.height) );{to ignore hot pixels which are too small}
     bin_and_find_stars(img,binning,cropping,hfd_min,get_hist{update hist}, starlist2, warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
@@ -712,16 +710,16 @@ begin
     if go_ahead then
     begin
       search_field:=fov2*(pi/180);
-      if ((dec_radians+radius*pi/180>+pi/2) or (dec_radians-radius*pi/180<-pi/2)) then extra_size:=1.4 else extra_size:=1; {near poles more x,y steps are required to achieve full circle. Else the area looks like an eight. Tested with supplement in HNSKY supplement}
+
       STEP_SIZE:=search_field;{fixed step size search spiral}
       if database_type=1 then
       begin {make small steps for wide field images. Much more reliable}
         step_size:=step_size*0.25;
-        max_distance:=round(extra_size*radius/(0.25*fov2+0.00001)); {expressed in steps}
+        max_distance:=round(radius/(0.25*fov2+0.00001)); {expressed in steps}
         memo2_message('Wide field, making small steps for reliable solving.');
       end
       else
-      max_distance:=round(extra_size*radius/(fov2+0.00001));{expressed in steps}
+      max_distance:=round(radius/(fov2+0.00001));{expressed in steps}
 
       stackmenu1.Memo2.Lines.BeginUpdate;{do not update tmemo, very very slow and slows down program}
       stackmenu1.Memo2.disablealign;{prevent paint messages from other controls to update tmemo and make it grey. Mod 2021-06-26}
@@ -759,14 +757,16 @@ begin
           else
           if telescope_dec<-pi/2 then  begin telescope_dec:=-pi-telescope_dec; flip:=pi; end;
 
+
           if telescope_dec>0 then extra:=step_size/2 else extra:=-step_size/2;{use the distance furthest away from the pole}
 
           telescope_ra_offset:= (STEP_SIZE*spiral_x/cos(telescope_dec-extra));{step larger near pole. This telescope_ra is an offsett from zero}
           if ((telescope_ra_offset<=+pi/2+step_size/2) and (telescope_ra_offset>=-pi/2)) then  {step_size for overlap}
           begin
-            telescope_ra:=fnmodulo(flip+ra_radians+telescope_ra_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
+              telescope_ra:=fnmodulo(flip+ra_radians+telescope_ra_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
 
             ang_sep(telescope_ra,telescope_dec,ra_radians,dec_radians, {out}seperation);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
+
             if seperation<=radius*pi/180+step_size/2 then {Use only the circular area withing the square area}
             begin
               {info reporting}
@@ -821,8 +821,8 @@ begin
 
               // for testing purposes
               // for testing create supplement hnksy planetarium program
-              //supplstring2.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(i)+',,-8,'+floattostr( step_size*600*180/pi)+',' +floattostr(step_size*600*180/pi));
-              //supplstring2.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(i)+',,-99');
+              stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-8,'+floattostr( step_size*600*180/pi)+',' +floattostr(step_size*600*180/pi));
+              stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99');
 
               solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance);{find an solution}
 

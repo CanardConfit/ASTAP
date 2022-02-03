@@ -5470,23 +5470,24 @@ var
 begin
   counter:=0;
   esc_pressed:=true; {stop all stacking}
-  If FindFirst (live_stacking_path1.caption+PathDelim+'*.*_',faAnyFile,searchResult)=0 then
-    begin
-    Repeat
-      With searchResult do
+  If SysUtils.FindFirst (live_stacking_path1.caption+PathDelim+'*.*_',faAnyFile,searchResult)=0 then
+  begin
+  Repeat
+    With searchResult do
+      begin
+        filen:=live_stacking_path1.caption+PathDelim+searchResult.Name;
+        if copy(filen,length(filen),1)='_' then
         begin
-          filen:=live_stacking_path1.caption+PathDelim+searchResult.Name;
-          if copy(filen,length(filen),1)='_' then
-          begin
-            if RenameFile(filen,copy(filen,1,length(filen)-1))=false then {remove *.*_}
-            beep
-            else
-            inc(counter);
-          end;
+          if RenameFile(filen,copy(filen,1,length(filen)-1))=false then {remove *.*_}
+          beep
+          else
+          inc(counter);
         end;
-    Until FindNext(searchResult)<>0;
-    end;
-  FindClose(searchResult);
+      end;
+  Until SysUtils.FindNext(searchResult)<>0;
+  SysUtils.FindClose(searchResult);
+  end;
+
 
   live_stacking_pause1.font.style:=[];
   live_stacking1.font.style:=[];
@@ -7206,14 +7207,14 @@ begin
   with stackmenu1 do
   begin
     star_database1.items.clear;
-    if FindFirst(database_path+'*0101.*', faAnyFile, SearchRec)=0 then
+    if SysUtils.FindFirst(database_path+'*0101.*', faAnyFile, SearchRec)=0 then
     begin
       repeat
         s:=uppercase(copy(searchrec.name,1,3));
         star_database1.items.add(s);
-      until FindNext(SearchRec) <> 0;
+      until SysUtils.FindNext(SearchRec) <> 0;
     end;
-    FindClose(SearchRec);
+    SysUtils.FindClose(SearchRec);
     star_database1.items.add('auto');
   end;
   flux_magn_offset:=0;{reset flux calibration. Required if V17 is selected instead of H17}

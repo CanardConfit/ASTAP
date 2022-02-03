@@ -1,9 +1,9 @@
 object stackmenu1: Tstackmenu1
-  Left = -18
+  Left = 65
   Height = 712
-  Top = 183
+  Top = 172
   Width = 1884
-  HorzScrollBar.Page = 1701
+  HorzScrollBar.Page = 1437
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1884
-    ActivePage = lights
+    ActivePage = alignment1
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 6
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -4558,7 +4558,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 1'
       Caption = 'Pixel math 1'
       ClientHeight = 470
-      ClientWidth = 1596
+      ClientWidth = 1876
       Enabled = False
       ImageIndex = 4
       ParentFont = False
@@ -5914,7 +5914,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 2'
       Caption = 'Pixel math 2'
       ClientHeight = 470
-      ClientWidth = 1596
+      ClientWidth = 1876
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox

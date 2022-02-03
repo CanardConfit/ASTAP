@@ -82,7 +82,7 @@ begin
   thumbnails1.panel1.width:=thumbnails1.width-25;
   thumbnails1.panel1.height:=thumbnails1.height*2;
   max_height:=0;
-  if findfirst(chosenDirectory+PathDelim+'*.fit*', faAnyFile, searchResult) = 0 then
+  if SysUtils.findfirst(chosenDirectory+PathDelim+'*.fit*', faAnyFile, searchResult) = 0 then
   begin
     repeat
       newImage := TImage.Create(thumbnails1.panel1);
@@ -129,10 +129,10 @@ begin
         myimages[imageIndex-1]:=newimage;{store the timage}
         application.processmessages;
       end;
-    until ((FindNext(searchResult) <> 0) or (esc_pressed));
+    until ((SysUtils.FindNext(searchResult) <> 0) or (esc_pressed));
 
     // Must free up resources used by these successful finds
-    FindClose(searchResult);
+    SysUtils.FindClose(searchResult);
   end;
   thumbnails1.panel1.height:=y+max_height; {causes a repaint}
 
