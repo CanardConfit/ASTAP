@@ -8277,7 +8277,7 @@ begin
   result:=true;
 end;
 
-
+{$ifdef mswindows}
 function GetShortPath(const LongPath: UnicodeString): UnicodeString;
 var
   Len: DWORD;
@@ -8287,7 +8287,7 @@ begin
   Len := GetShortPathNameW(PWideChar(LongPath), PWideChar(Result), Len);
   SetLength(Result, Len);
 end;
-
+{$endif}
 
 function convert_raw(loadfile,savefile :boolean;var filename3: string;var img: image_array): boolean; {convert raw to fits file using DCRAW or LibRaw. filename3 will be update with the new file extension e.g. .CR2.fits}
 var
