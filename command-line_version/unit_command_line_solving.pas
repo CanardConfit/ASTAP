@@ -1094,7 +1094,7 @@ var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,distance,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t                                                                  : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,
-  oversize,sep,seperation,ra7,dec7,centerX,centerY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,extra_size,
+  oversize,sep,seperation,ra7,dec7,centerX,centerY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,
   quad_tolerance,dummy, extrastars,flip,extra                                                                        : double;
   solution, go_ahead ,autoFOV      : boolean;
   startTick  : qword;{for timing/speed purposes}
@@ -1240,16 +1240,15 @@ begin
     if go_ahead then
     begin
       search_field:=fov2*(pi/180);
-      if ((dec_radians+radius*pi/180>+pi/2) or (dec_radians-radius*pi/180<-pi/2)) then extra_size:=1.4 else extra_size:=1; {near poles more x,y steps are required to achieve full circle. Else the area looks like an eight. Tested with supplement in HNSKY supplement}
       STEP_SIZE:=search_field;{fixed step size search spiral. Prior to version 0.9.211 this was reduced for small star counts}
       if database_type=1 then
       begin {make smal steps for wide field images. Much more reliable}
         step_size:=step_size*0.25;
-        max_distance:=round(extra_size*radius/(0.25*fov2+0.00001)); {expressed in steps}
+        max_distance:=round(radius/(0.25*fov2+0.00001)); {expressed in steps}
         memo2_message('Wide field, making small steps for reliable solving.');
       end
       else
-      max_distance:=round(extra_size*radius/(fov2+0.00001));{expressed in steps}
+      max_distance:=round(radius/(fov2+0.00001));{expressed in steps}
 
       match_nr:=0;
       repeat {Maximum accuracy loop. In case math is found on a corner, do a second solve. Result will be more accurate using all stars of the image}

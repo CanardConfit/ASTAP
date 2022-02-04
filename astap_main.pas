@@ -3023,7 +3023,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.02.03, '+about_message4;
+  #13+#10+'ASTAP version 2022.02.04, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -6128,6 +6128,91 @@ begin
 end;
 
 
+procedure demosaic_superpixel(var img:image_array; pattern: integer);{make from sensor bayer pattern the three colors}
+var
+    x,y,x2,y2,w,h: integer;
+    img_temp2 : image_array;
+begin
+  w:=head.width div 2;
+  h:=head.height div 2;
+  setlength(img_temp2,3,w,h);{set length of image array color}
+
+  if pattern=0 then {GRBG}
+  for y := 0 to h-1 do
+  begin
+    for x:=0 to w-1 do
+    begin
+      try
+      x2:=x+x;
+      y2:=y+y;
+      img_temp2[0,x,y]:= img[0,x2+1,y2  ];
+      img_temp2[1,x,y]:=(img[0,x2  ,y2  ] + img[0,x2+1,y2+1  ])/2;
+      img_temp2[2,x,y]:= img[0,x2  ,y2+1];
+      except
+      end;
+    end;{x loop}
+  end {y loop}
+  else
+  if pattern=1 then {BGGR}
+  for y := 0 to h-1 do
+  begin
+    for x:=0 to w-1 do
+    begin
+      try
+      x2:=x+x;
+      y2:=y+y;
+      img_temp2[0,x,y]:= img[0,x2+1,y2+1];
+      img_temp2[1,x,y]:=(img[0,x2+1,y2  ] + img[0,x2,y2+1  ])/2;
+      img_temp2[2,x,y]:= img[0,x2  ,y2  ];
+      except
+      end;
+    end;{x loop}
+  end {y loop}
+  else
+
+  if pattern=2 then {RGGB}
+  for y := 0 to h-1 do
+  begin
+    for x:=0 to w-1 do
+    begin
+      try
+      x2:=x+x;
+      y2:=y+y;
+      img_temp2[0,x,y]:= img[0,x2,  y2  ];
+      img_temp2[1,x,y]:=(img[0,x2+1,y2  ] + img[0,x2,y2+1  ])/2;
+      img_temp2[2,x,y]:= img[0,x2+1,y2+1];
+      except
+      end;
+    end;{x loop}
+  end {y loop}
+  else
+
+  if pattern=3 then {GBRG}
+  for y := 0 to h-1 do
+  begin
+    for x:=0 to w-1 do
+    begin
+      try
+      x2:=x+x;
+      y2:=y+y;
+      img_temp2[0,x,y]:= img[0,x2,  y2+1];
+      img_temp2[1,x,y]:=(img[0,x2  ,y2  ] + img[0,x2+1,y2+1  ])/2;
+      img_temp2[2,x,y]:= img[0,x2+1,y2  ];
+      except
+      end;
+    end;{x loop}
+  end;{y loop}
+
+  img:=img_temp2;
+  head.width:=w;
+  head.height:=h;
+
+  img_temp2:=nil;{free temp memory}
+  head.naxis3:=3;{now three colors. Header string will be updated by saving or calling procedure update_header_for_colour}
+  head.naxis:=3; {from 2 to 3 dimensions. Header string will be updated by saving or calling procedure update_header_for_colour}
+end;
+
+
 procedure preserve_colour_saturated_bayer(img: image_array);{for bayer matrix}
 var
     fitsX,fitsY,w,h : integer;
@@ -6221,6 +6306,9 @@ begin
   else
   if pos('AstroM',stackmenu1.demosaic_method1.text)<>0  then {}
     demosaic_astroM_bilinear_interpolation(img,get_demosaic_pattern){make from sensor bayer pattern the three colors}
+  else
+  if pos('Super',stackmenu1.demosaic_method1.text)<>0  then {}
+    demosaic_superpixel(img,get_demosaic_pattern){make from sensor bayer pattern the three colors}
   else
   if pos('X-',stackmenu1.bayer_pattern1.Text)<>0  then {}
     demosaic_x_trans(img){make from Fuji X-trans three colors}
@@ -7415,8 +7503,8 @@ begin
       show_console:=Sett.ReadBool('main','show_console',true);
       dum:=Sett.ReadString('main','cygwin_path',''); if dum<>'' then cygwin_path:=dum;
 
-      dum:=Sett.ReadString('main','sqm_key',''); if dum<>'' then sqm_key:=dum;
-      dum:=Sett.ReadString('main','centaz_key',''); if dum<>'' then centaz_key:=dum;
+      dum:=Sett.ReadString('main','sqm_key',''); if dum<>'' then sqm_key:=copy(dum,1,8);{remove * character used for protection spaces}
+      dum:=Sett.ReadString('main','centaz_key',''); if dum<>'' then centaz_key:=copy(dum,1,8);{remove * character used for protection spaces}
 
       c:=0;
       recent_files.clear;

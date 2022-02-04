@@ -17,7 +17,7 @@ uses
 
 var {################# initialised variables #########################}
   stdin_mode            : boolean=false;{file send via stdin}
-  version: string=' CLI-2022-1-12';
+  version: string=' CLI-2022-2-04';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -1000,7 +1000,7 @@ begin
     if crota2>999 then crota2:=0;{not defined, set at 0}
     if crota1>999 then crota1:=crota2; {for case crota1 is not used}
 
-    if ((ra0<>0) and (dec0<>0)) then
+    if ((ra0<>0) or (dec0<>0)) then
     begin
       ra1:=prepare_ra(ra0,' ');
       dec1:=prepare_dec(dec0,' ');
