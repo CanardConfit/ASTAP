@@ -3023,7 +3023,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.02.04, '+about_message4;
+  #13+#10+'ASTAP version 2022.02.04a, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -8278,15 +8278,23 @@ begin
 end;
 
 
+function GetShortPath(const LongPath: UnicodeString): UnicodeString;
+var
+  Len: DWORD;
+begin
+  Len := GetShortPathNameW(PWideChar(LongPath), nil, 0);
+  SetLength(Result, Len);
+  Len := GetShortPathNameW(PWideChar(LongPath), PWideChar(Result), Len);
+  SetLength(Result, Len);
+end;
 
 
 function convert_raw(loadfile,savefile :boolean;var filename3: string;var img: image_array): boolean; {convert raw to fits file using DCRAW or LibRaw. filename3 will be update with the new file extension e.g. .CR2.fits}
 var
   filename4 :string;
   JD2                               : double;
-  conv_index                        : integer;
-  commando,param  :string;
-
+  conv_index,x,a,b                  : integer;
+  commando,param,pp,ff              : string;
 begin
   result:=true; {assume success}
   conv_index:=stackmenu1.raw_conversion_program1.itemindex; {DCRaw or libraw}
@@ -8301,7 +8309,9 @@ begin
       result:=false {failure}
     else
     begin
-       ExecuteAndWait(application_path+'unprocessed_raw.exe '+param+' "'+filename3+'"',false);{execute command and wait}
+       pp:=GetShortPath(ExtractFilePath(filename3)); //For path containing japaneseスカイメモ   or  ßÔÒõÕ   or   führ
+       ff:=ExtractFileName(filename3);
+       ExecuteAndWait(application_path+'unprocessed_raw.exe '+param+' "'+ pp+ff {filename3}+'"',false);{execute command and wait}
        filename4:=FileName3+'.fits';{direct to fits using modified version of unprocessed_raw}
      end;
     {$endif}
