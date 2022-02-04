@@ -605,13 +605,15 @@ begin
 
           if init=true then {first file done}
           begin
-             if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
+             if ((old_width<>head.width) or (old_height<>head.height)) then
+                                           memo2_message('█ █ █ █ █ █  Warning different size image!');
              if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine colour to mono files.'); exit;end;
           end;
 
           if init=false then
           begin
-            binning:=report_binning(head.height);{select binning based on the height of the first light}
+            old_width:=head.width;
+            old_height:=head.height;
 
             head_ref:=head;{backup solution}
             initialise_var1;{set variables correct. Do this before apply dark}
@@ -633,10 +635,9 @@ begin
           begin
             if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
             else
-            demosaic_bayer(img_loaded); {convert OSC image to colour}
-           {head.naxis3 is now 3}
+              demosaic_bayer(img_loaded); {convert OSC image to colour}
           end;
-
+          if init=false then binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
           if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
           begin
             if ((use_manual_align) or (use_ephemeris_alignment)) then
@@ -679,8 +680,6 @@ begin
                   img_average[col,fitsX,fitsY]:=0; {clear img_average}
                 img_temp[0,fitsX,fitsY]:=0; {clear img_temp}
               end;
-            old_width:=head.width;
-            old_height:=head.height;
 
             if ((use_manual_align) or (use_ephemeris_alignment)) then
             begin
@@ -1113,7 +1112,9 @@ begin
 
         if init=false then {phase (1) average}
         begin
-          binning:=report_binning(head.height);{select binning based on the height of the light}
+          old_width:=head.width;
+          old_height:=head.height;
+
           head_ref:=head;{backup solution}
           initialise_var1;{set variables correct}
           initialise_var2;{set variables correct}
@@ -1134,10 +1135,10 @@ begin
         begin
           if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
           else
-          demosaic_bayer(img_loaded); {convert OSC image to colour}
-         {head.naxis3 is now 3}
+             demosaic_bayer(img_loaded); {convert OSC image to colour}
+            {head.naxis3 is now 3}
         end;
-
+        if init=false then binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
         if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
         begin
           if ((use_manual_align) or (use_ephemeris_alignment)) then
@@ -1181,8 +1182,6 @@ begin
                  img_average[col,fitsX,fitsY]:=0; {clear img_average}
                  img_temp[col,fitsX,fitsY]:=0; {clear img_temp}
                end;
-          old_width:=head.width;
-          old_height:=head.height;
         end;{init, c=0}
 
         solution:=true;
@@ -1325,10 +1324,9 @@ begin
           begin
             if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
             else
-            demosaic_bayer(img_loaded); {convert OSC image to colour}
-           {head.naxis3 is now 3}
+               demosaic_bayer(img_loaded); {convert OSC image to colour}
+              {head.naxis3 is now 3}
           end;
-
           if init=false then {init (2) for standard deviation step}
           begin
             setlength(img_variance,head.naxis3,width_max,height_max);{mono}
@@ -1337,8 +1335,6 @@ begin
             begin
               for col:=0 to head.naxis3-1 do img_variance[col,fitsX,fitsY]:=0; {clear img_average}
             end;
-            old_width:=head.width;
-            old_height:=head.height;
           end;{c=0}
 
           inc(counter);
@@ -1429,9 +1425,9 @@ begin
           begin
             if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
             else
-            demosaic_bayer(img_loaded); {convert OSC image to colour}
-           {head.naxis3 is now 3}
-          end;
+              demosaic_bayer(img_loaded); {convert OSC image to colour}
+              {head.naxis3 is now 3}
+           end;
 
           if init=false then {init, (3) step throw outliers out}
           begin
@@ -1446,8 +1442,8 @@ begin
                 img_final[col,fitsX,fitsY]:=0; {clear img_temp}
               end;
             end;
-            old_width:=head.width;
-            old_height:=head.height;
+            //old_width:=head.width;
+            //old_height:=head.height;
           end;{init}
 
           inc(counter);
@@ -1599,7 +1595,9 @@ begin
 
         if init=false then
         begin
-          binning:=report_binning(head.height);{select binning based on the height of the light}
+          old_width:=head.width;
+          old_height:=head.height;
+
           head_ref:=head;{backup solution}
           initialise_var1;{set variables correct}
           initialise_var2;{set variables correct}
@@ -1620,12 +1618,13 @@ begin
         begin
           if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
           else
-          demosaic_bayer(img_loaded); {convert OSC image to colour}
-         {head.naxis3 is now 3}
+            demosaic_bayer(img_loaded); {convert OSC image to colour}
+            {head.naxis3 is now 3}
         end
         else
         if bayerpat<>'' then memo2_message('█ █ █ █ █ █ Warning, alignment (shifting, rotating) will ruin Bayer pattern!! Select calibrate only for photometry or checkmark "Convert OSC image to colour" █ █ █ █ █ █');
 
+        if init=false then binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
         if ((init=false ) and (use_astrometry_internal=false)) then {first image and not astrometry_internal}
         begin
           if ((use_manual_align) or (use_ephemeris_alignment)) then
@@ -1665,8 +1664,6 @@ begin
           setlength(img_temp,head.naxis3,width_max,height_max);
           {clearing image_average and img_temp is done for each image. See below}
 
-          old_width:=head.width;
-          old_height:=head.height;
 
           if ((use_manual_align) or (use_ephemeris_alignment)) then
           begin
