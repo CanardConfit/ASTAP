@@ -244,16 +244,18 @@ begin
             Application.ProcessMessages;
             if esc_pressed then exit;
 
-            if make_osc_color1.checked then
-              demosaic_bayer(img_loaded); {convert OSC image to colour}
-
-            if init=true then   if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-
             if init=false then {first image}
             begin
               old_width:=head.width;
               old_height:=head.height;
+            end
+            else {init is true, second or third image ....}
+            if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
 
+            if make_osc_color1.checked then  demosaic_bayer(img_loaded); {convert OSC image to colour}
+
+            if init=false then {first image}
+            begin
               binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
               bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1,warning);{bin, measure background, find stars}
               find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}

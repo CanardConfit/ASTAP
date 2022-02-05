@@ -603,15 +603,8 @@ begin
           {load image}
           if ((esc_pressed) or (load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
 
-          if init=true then {first file done}
-          begin
-             if ((old_width<>head.width) or (old_height<>head.height)) then
-                                           memo2_message('█ █ █ █ █ █  Warning different size image!');
-             if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine colour to mono files.'); exit;end;
-          end;
-
           if init=false then
-          begin
+          begin {init is false, first image}
             old_width:=head.width;
             old_height:=head.height;
 
@@ -622,6 +615,11 @@ begin
                if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
                else
                if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, grayscale image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
+          end
+          else
+          begin {second, third .... image}
+            if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
+            if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine colour to mono files.'); exit;end;
           end;
 
           apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
@@ -1103,14 +1101,7 @@ begin
         Application.ProcessMessages;
         if ((esc_pressed) or (load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
 
-        if init=true then
-        begin
-           if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-           if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
-        end;
-
-
-        if init=false then {phase (1) average}
+        if init=false then {first image}
         begin
           old_width:=head.width;
           old_height:=head.height;
@@ -1122,6 +1113,11 @@ begin
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
              else
              if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, grayscale image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
+        end
+        else
+        begin {second, third, ... image}
+          if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
+          if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
         end;
 
         apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
@@ -1584,16 +1580,7 @@ begin
         Application.ProcessMessages;
         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo for saving},0,head,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
 
-
-
-        if init=true then
-        begin
-           if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
-           if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
-        end;
-
-
-        if init=false then
+        if init=false then {first image}
         begin
           old_width:=head.width;
           old_height:=head.height;
@@ -1605,6 +1592,11 @@ begin
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
              else
              if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, grayscale image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
+        end
+        else
+        begin {second, third ... image}
+          if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
+          if head.naxis3>length(img_average) {head.naxis3} then begin memo2_message('█ █ █ █ █ █  Abort!! Can'+#39+'t combine mono and colour files.'); exit;end;
         end;
 
         apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
