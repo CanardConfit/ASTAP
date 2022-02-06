@@ -116,6 +116,9 @@ type
     MenuItem22: TMenuItem;
     flip_v1: TMenuItem;
     flip_H1: TMenuItem;
+    noise_in_electron1: TMenuItem;
+    electron_to_adu_factors1: TMenuItem;
+    MenuItem35: TMenuItem;
     rotate_arbitrary1: TMenuItem;
     roundness1: TMenuItem;
     MenuItem28: TMenuItem;
@@ -372,6 +375,7 @@ type
     procedure bin_2x2menu1Click(Sender: TObject);
     procedure convert_to_png1Click(Sender: TObject);
     procedure MenuItem22Click(Sender: TObject);
+    procedure electron_to_adu_factors1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
     procedure inspection1click(Sender: TObject);
     procedure removegreenpurple1Click(Sender: TObject);
@@ -601,7 +605,7 @@ var
 
   position_find: Integer; {for fits header memo1 popup menu}
 
-  var {################# initialised variables #########################}
+var {################# initialised variables #########################}
   PatternToFind : string=''; {for fits header memo1 popup menu }
   hist_range  {range histogram 255 or 65535 or streched} : integer=255;
   fits_file: boolean=false;
@@ -672,6 +676,7 @@ var
   annotation_color: tcolor=clyellow;
   annotation_diameter : integer=20;
   pedestal            : integer=0;
+  electron_to_adu     : string='16';
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
@@ -774,6 +779,7 @@ procedure Wait(wt:single=500);  {smart sleep}
 procedure update_header_for_colour; {update naxis and naxis3 keywords}
 procedure flip(x1,y1 : integer; out x2,y2 :integer);{array to screen or screen to array coordinates}
 function decode_string(data0: string; out ra4,dec4 : double):boolean;{convert a string to position}
+function noise_to_electrons(adu_s : double): string; {noise from adu_s to electrons per pixel}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -3023,7 +3029,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.02.05, '+about_message4;
+  #13+#10+'ASTAP version 2022.02.06, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4585,8 +4591,8 @@ begin
     info_message:=info_message+  'x̄ :    '+floattostrf(mean,ffgeneral, 5, 5)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+             {mean}
                                  'x̃  :   '+floattostrf(median,ffgeneral, 5, 5)+#10+ {median}
                                  'Mo :  '+floattostrf(most_common,ffgeneral, 5, 5)+#10+
-                                 'σ :   '+floattostrf(sd,ffgeneral, 4, 4)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+               {standard deviation}
-                                 'σ_2:   '+floattostrf(get_negative_noise_level(img_loaded,col,startx,stopX,starty,stopY,most_common),ffgeneral, 4, 4)+#10+
+                                 'σ :   '+noise_to_electrons(sd)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+               {standard deviation}
+                                 'σ_2:   '+noise_to_electrons(get_negative_noise_level(img_loaded,col,startx,stopX,starty,stopY,most_common))+#10+
                                  'mad:   '+floattostrf(mad,ffgeneral, 4, 4)+#10+
                                  'm :   '+floattostrf(minimum,ffgeneral, 5, 5)+#10+
                                  'M :   '+floattostrf(maximum,ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter))+' x)'+#10+
@@ -4607,7 +4613,9 @@ begin
   if Xbinning<>1 then  info_message:=info_message+'  Binning '+ floattostrf(Xbinning,ffgeneral,0,0)+'x'+floattostrf(Ybinning,ffgeneral,0,0);
 
 
-  info_message:=info_message+#10+#10+#10+'Legend: '+#10+
+  info_message:=info_message+#10+#10+#10+'Noise in electrons can be set with the popup menu of the status bar.'+
+                                            #10+#10+
+                                            'Legend: '+#10+
                                             'x̄ = mean background | x̃  = median background | '+
                                             'Mo = mode or most common pixel value or peak histogram, so the best estimate for the background mean value | '+
                                             'σ =  standard deviation background using mean and sigma clipping| ' +
@@ -6412,22 +6420,12 @@ begin
 end;
 
 procedure plot_fits(img:timage; center_image,show_header:boolean);
-type
-
-  PRGBTripleArray = ^TRGBTripleArray; {for fast pixel routine}
-  {$ifdef mswindows}
-  TRGBTripleArray = array[0..trunc(bufwide/3)] of TRGBTriple; {for fast pixel routine}
-  {$else} {unix}
-  TRGBTripleArray = array[0..trunc(bufwide/3)] of tagRGBQUAD; {for fast pixel routine}
-  {$endif}
-
 var
    i,j,col,col_r,col_g,col_b :integer;
    colrr,colgg,colbb,luminance, luminance_stretched,factor, largest, sat_factor,h,s,v: single;
-    pixelrow: PRGBTripleArray;{for fast pixel routine}
    Bitmap  : TBitmap;{for fast pixel routine}
    Save_Cursor:TCursor;
-
+   xLine :  PByteArray;{for fast pixel routine}
 begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -6458,7 +6456,7 @@ begin
 
   for i:=0 to head.height-1 do
   begin
-    pixelrow := Bitmap.ScanLine[(head.height-1)-i];{head.height-1)-i, FITS count from bottom, windows from top}
+    xLine := Bitmap.ScanLine[(head.height-1)-i];{head.height-1)-i, FITS count from bottom, windows from top}
     for j:=0 to head.width-1 do
     begin
 
@@ -6522,20 +6520,19 @@ begin
       end;
 
      {$ifdef mswindows}
-        pixelrow[j].rgbtRed  := col_r;
-        pixelrow[j].rgbtGreen:= col_g;
-        pixelrow[j].rgbtBlue := col_b;{fast pixel write routine }
+        xLine^[j*3]  :=col_b; {3*8=24 bit}
+        xLine^[j*3+1]:=col_g; {fast pixel write routine }
+        xLine^[j*3+2]:=col_r;
      {$endif}
      {$ifdef darwin} {MacOS}
-      pixelrow[j].rgbreserved:= col_b; {different color arrangment in Macos !!!!!}
-      pixelrow[j].rgbRed  := col_g;
-      pixelrow[j].rgbGreen:= col_r;
-     {$else}
+        xLine^[j*4+1]:=col_r; {4*8=32 bit}
+        xLine^[j*4+2]:=col_g; {fast pixel write routine }
+        xLine^[j*4+3]:=col_b;
+     {$endif}
      {$ifdef linux}
-        pixelrow[j].rgbRed  := col_r;
-        pixelrow[j].rgbGreen:= col_g;
-        pixelrow[j].rgbBlue := col_b;
-      {$endif}
+        xLine^[j*4]  :=col_b; {4*8=32 bit}
+        xLine^[j*4+1]:=col_g; {fast pixel write routine }
+        xLine^[j*4+2]:=col_r;
       {$endif}
     end;{j}
   end; {i}
@@ -7462,6 +7459,10 @@ begin
       freetext1.checked:=Sett.ReadBool('main','freetxt',false);
       freetext:=Sett.ReadString('main','f_text','');
 
+      noise_in_electron1.checked:=Sett.ReadBool('main','noise_e',false);{status bar menu}
+      electron_to_adu:=Sett.ReadString('main','e_to_adu','16');
+
+
       add_marker_position1.checked:=Sett.ReadBool('main','add_marker',false);{popup marker selected?}
 
       mainwindow.preview_demosaic1.Checked:=Sett.ReadBool('main','preview_demosaic',false);
@@ -7505,6 +7506,8 @@ begin
 
       dum:=Sett.ReadString('main','sqm_key',''); if dum<>'' then sqm_key:=copy(dum,1,8);{remove * character used for protection spaces}
       dum:=Sett.ReadString('main','centaz_key',''); if dum<>'' then centaz_key:=copy(dum,1,8);{remove * character used for protection spaces}
+
+
 
       c:=0;
       recent_files.clear;
@@ -7809,7 +7812,8 @@ begin
       sett.writeBool('main','pos_date',positionanddate1.checked);
       sett.writeBool('main','freetxt',freetext1.checked);
       sett.writestring('main','f_text',freetext);
-
+      sett.writeBool('main','noise_e',noise_in_electron1.checked);
+      sett.writestring('main','e_to_adu',electron_to_adu);
 
       sett.writeBool('main','add_marker',add_marker_position1.checked);
 
@@ -8100,29 +8104,87 @@ end;
 
 procedure Tmainwindow.flip_horizontal1Click(Sender: TObject);
 var bmp: TBitmap;
-    w, h, x, y: integer;
+    w, h, x, y,i: integer;
 type
   PRGBTripleArray = ^TRGBTripleArray; {for fast pixel routine}
   {$ifdef mswindows}
   TRGBTripleArray = array[0..trunc(bufwide/3)] of TRGBTriple; {for fast pixel routine}
   {$else} {unix}
-  TRGBTripleArray = array[0..trunc(bufwide/3)] of tagRGBQUAD; {for fast pixel routine}
+  TRGBTripleArray = array[0..trunc(bufwide/4)] of tagRGBQUAD; {for fast pixel routine}
   {$endif}
 var
-   pixelrow1 : PRGBTripleArray;{for fast pixel routine}
-   pixelrow2 : PRGBTripleArray;{for fast pixel routine}
+  pixelrow1 : PRGBTripleArray;{for fast pixel routine}
+  pixelrow2 : PRGBTripleArray;{for fast pixel routine}
 begin
-  w:=image1.Picture.Width; h:=image1.Picture.Height;
+  w:=image1.Picture.Width;
+  h:=image1.Picture.Height;
   bmp:=TBitmap.Create;
   bmp.PixelFormat:=pf24bit;
 
   bmp.SetSize(w, h);
   for y := 0 to h -1 do
   begin // scan each line
-    pixelrow1:=image1.Picture.Bitmap.ScanLine[y];
+  pixelrow1:=image1.Picture.Bitmap.ScanLine[y];
     pixelrow2:=bmp.ScanLine[y];
     for x := 0 to w-1 do {swap left and right}
-       pixelrow2[x] := pixelrow1[w-1 -x];
+      pixelrow2[x] := pixelrow1[w-1 -x];  {faster solution then using pbytearray as in vertical flip}
+  end;
+  image1.Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to source
+  bmp.Free;
+
+  if sender<>nil then {not from plot_fits, redraw required}
+  begin
+    plot_north; {draw arrow or clear indication position north depending on value head.cd1_1}
+  end;
+end;
+
+
+
+//procedure Tmainwindow.flip_vertical1Click(Sender: TObject);
+//var src, dest: TRect;
+//    bmp: TBitmap;
+//    w, h: integer;
+//begin
+//  w:=image1.Picture.Width; h:=image1.Picture.Height;
+//
+//  {$ifdef mswindows}
+//  src:=rect(0, h, w, 0); // Vertical flip, works for windows but not Linux
+//  dest:=rect(0, 0, w, h);
+//  {$else} {unix}
+//  src:=rect(0, 0, w, h);
+//  dest:=rect(0,h, w, 0);//vertical flip, works for Linux but give in Windows one pixel drift
+//  {$endif}
+
+//  bmp:=TBitmap.Create;
+//  bmp.PixelFormat:=pf24bit;
+//  bmp.SetSize(w, h);
+//  bmp.Canvas.Draw(0, 0, image1.Picture.Bitmap);
+//  image1.Picture.Bitmap.Canvas.CopyRect(dest, bmp.Canvas, src);
+//  bmp.Free;
+//  plot_north;
+//end;
+
+
+procedure Tmainwindow.flip_vertical1Click(Sender: TObject);
+var bmp: TBitmap;
+    w, h, y  : integer;
+    xLine1,xline2 :  PByteArray;
+begin
+  w:=image1.Picture.Width; h:=image1.Picture.Height;
+  bmp:=TBitmap.Create;
+
+  bmp.PixelFormat:=pf24bit;{This must be pf24 bit both for Windows and Linux! Doesn't work in Linux with pf32?}
+
+  bmp.SetSize(w, h);
+  for y := 0 to h -1 do
+  begin // scan each line and swap top and bottom}
+    xline1:=image1.Picture.Bitmap.ScanLine[h-1-y];
+    xline2:=bmp.ScanLine[y];
+    {$ifdef mswindows}
+    Move(xline1[0], xline2[0],w*3);
+    {$else} {unix, Darwin}
+    Move(xline1[0], xline2[0],w*4); {4 bytes per pixel}
+    {$endif}
   end;
   image1.Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to source
   bmp.Free;
@@ -8643,7 +8705,7 @@ begin
   if ((ext1='.FIT') or (ext1='.FITS') or (ext1='.FTS') or (ext1='.NEW')or (ext1='.WCS') or (ext1='.AXY') or (ext1='.XYLS') or (ext1='.GSC') or (ext1='.BAK')) then {FITS}
   begin
     result:=load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded);
-    if ((result=false) or (head.naxis<2))  then {{no image or failure.}
+    if ((result=false) or (head.naxis<2))  then {no image or failure.}
     begin
        update_menu(false);
        exit; {WCS file}
@@ -8713,64 +8775,6 @@ begin
   end;
 end;
 
-//procedure Tmainwindow.flip_vertical1Click(Sender: TObject);
-//var src, dest: TRect;
-//    bmp: TBitmap;
-//    w, h: integer;
-//begin
-//  w:=image1.Picture.Width; h:=image1.Picture.Height;
-//
-//  {$ifdef mswindows}
-//  src:=rect(0, h, w, 0); // Vertical flip, works for windows but not Linux
-//  dest:=rect(0, 0, w, h);
-//  {$else} {unix}
-//  src:=rect(0, 0, w, h);
-//  dest:=rect(0,h, w, 0);//vertical flip, works for Linux but give in Windows one pixel drift
-//  {$endif}
-
-//  bmp:=TBitmap.Create;
-//  bmp.PixelFormat:=pf24bit;
-//  bmp.SetSize(w, h);
-//  bmp.Canvas.Draw(0, 0, image1.Picture.Bitmap);
-//  image1.Picture.Bitmap.Canvas.CopyRect(dest, bmp.Canvas, src);
-//  bmp.Free;
-//  plot_north;
-//end;
-
-
-procedure Tmainwindow.flip_vertical1Click(Sender: TObject);
-var bmp: TBitmap;
-    w, h, x, y: integer;
-type
-  PRGBTripleArray = ^TRGBTripleArray; {for fast pixel routine}
-  {$ifdef mswindows}
-  TRGBTripleArray = array[0..trunc(bufwide/3)] of TRGBTriple; {for fast pixel routine}
-  {$else} {unix}
-  TRGBTripleArray = array[0..trunc(bufwide/3)] of tagRGBQUAD; {for fast pixel routine}
-  {$endif}
-var
-   pixelrow1 : PRGBTripleArray;{for fast pixel routine}
-   pixelrow2 : PRGBTripleArray;{for fast pixel routine}
-begin
-  w:=image1.Picture.Width; h:=image1.Picture.Height;
-  bmp:=TBitmap.Create;
-  bmp.PixelFormat:=pf24bit;
-
-  bmp.SetSize(w, h);
-  for y := 0 to h -1 do
-  begin // scan each line and swap top and bottom}
-    pixelrow1:=image1.Picture.Bitmap.ScanLine[h-1-y];
-    pixelrow2:=bmp.ScanLine[y];
-    for x := 0 to w-1 do pixelrow2[x] := pixelrow1[x];
-  end;
-  image1.Picture.Bitmap.Canvas.Draw(0,0, bmp);// move bmp to source
-  bmp.Free;
-
-  if sender<>nil then {not from plot_fits, redraw required}
-  begin
-    plot_north; {draw arrow or clear indication position north depending on value head.cd1_1}
-  end;
-end;
 
 
 //procedure Tmainwindow.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -13564,6 +13568,25 @@ begin
 end;
 
 
+function noise_to_electrons(adu_s : double): string; {noise from adu_s to electrons per pixel}
+var
+  egain,e_to_adu: double;
+
+begin
+  result:=floattostrF(adu_s,ffgeneral, 4, 4); {result in adu}
+  if mainwindow.noise_in_electron1.checked then
+  begin
+    egain:=strtofloat2(head.egain);
+    if egain<>0 then
+    begin
+      e_to_adu:=strtofloat2(electron_to_adu);
+      if e_to_adu<>0 then
+        result:=floattostrF(egain*adu_s*xbinning/e_to_adu,ffFixed,0,1)+' e-';{result in electrons}
+    end;
+  end;
+end;
+
+
 procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
   Y: Integer);
 
@@ -13747,6 +13770,7 @@ begin
      if ((hfd_arcseconds) and (head.cd1_1<>0)) then begin hfd_str:=hfd_str+'"';fwhm_str:=fwhm_str+'"';end;
 
      str(snr:0:0,snr_str);
+
      if flux_magn_offset<>0 then {offset calculated in star annotation call}
      begin
         str(flux_magn_offset-ln(flux)*2.511886432/ln(10):0:2,mag_str);
@@ -13770,7 +13794,8 @@ begin
      mainwindow.statusbar1.panels[1].text:='';
 
      local_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-     mainwindow.statusbar1.panels[2].text:='σ = '+ floattostrf( sd,ffFixed{ ffgeneral}, 4, 1);
+
+     mainwindow.statusbar1.panels[2].text:='σ = '+ noise_to_electrons(sd);
    end;
 end;
 
@@ -14462,6 +14487,16 @@ procedure Tmainwindow.MenuItem22Click(Sender: TObject);
 begin
   form_inspection1.aberration_inspector1Click(nil);
 end;
+
+procedure Tmainwindow.electron_to_adu_factors1Click(Sender: TObject);
+var
+  inp : string;
+begin
+  head.egain:=InputBox('factor e-/ADU, unbinned?',head.egain,head.egain);
+  if head.egain='' then exit;
+  electron_to_adu:=InputBox('Additional conversion factor from 12 to 16 bit(16) or 14 bit to 16 bit (4) without binning','',electron_to_adu);
+end;
+
 
 
 procedure Tmainwindow.FormClose(Sender: TObject; var CloseAction: TCloseAction);

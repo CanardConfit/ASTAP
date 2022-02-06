@@ -3218,11 +3218,10 @@ begin
 
               {analyse centre only. Suitable for flats and dark with amp glow}
               local_sd((head_2.width div 2)-50,(head_2.height div 2)-50, (head_2.width div 2)+50,(head_2.height div 2)+50{regio of interest},0,img, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-               noise_level[0]:=round(sd);
 
               lv.Items.item[c].subitems.Strings[D_background]:=inttostr5(round(backgr));
               if ((lv.name=stackmenu1.listview2.name) or (lv.name=stackmenu1.listview3.name) or (lv.name=stackmenu1.listview4.name)) then
-                     lv.Items.item[c].subitems.Strings[D_sigma]:=inttostr(noise_level[0]); {noise level}
+                     lv.Items.item[c].subitems.Strings[D_sigma]:=noise_to_electrons(sd); {noise level either in ADU or e-}
             end;
 
             if lv.name=stackmenu1.listview2.name then {dark tab}

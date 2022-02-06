@@ -3406,6 +3406,19 @@ object mainwindow: Tmainwindow
       Hint = 'Display the HFD and FWHM in arc seconds rather then pixels.'
       OnClick = hfd_arcseconds1Click
     end
+    object MenuItem35: TMenuItem
+      Caption = '-'
+    end
+    object noise_in_electron1: TMenuItem
+      AutoCheck = True
+      Caption = 'Noise in e-'
+      Hint = 'Noise in electrons'
+    end
+    object electron_to_adu_factors1: TMenuItem
+      Caption = 'Set ADU=>e- factors'
+      Hint = 'Set the conversion factors'
+      OnClick = electron_to_adu_factors1Click
+    end
   end
   object FontDialog1: TFontDialog
     Font.CharSet = ANSI_CHARSET

@@ -46,18 +46,11 @@ begin
 end;
 
 function write_yuv4mpeg2_frame(colour: boolean;x,y,w,h: integer): boolean; {reads pixels from Timage and writes YUV frames in 444p style, colour or mono. Call this procedure for each image}
-type
-  PRGBTripleArray = ^TRGBTripleArray; {for fast pixel routine}
-  {$ifdef mswindows}
-  TRGBTripleArray = array[0..trunc(bufwide/3)] of TRGBTriple; {for fast pixel routine}
-  {$else} {unix}
-  TRGBTripleArray = array[0..trunc(bufwide/3)] of tagRGBQUAD; {for fast pixel routine}
-  {$endif}
 var
   k,xx,yy,steps  : integer;
   r,g,b              : byte;
-  pixelrow1   : PRGBTripleArray;{for fast pixel routine}
   row         : array of byte;
+  xLine       :  PByteArray;
 const
   header: array[0..5] of ansichar=(('F'),('R'),('A'),('M'),('E'),(#10));
 
@@ -92,25 +85,24 @@ begin
     for k:=0 to steps {0 or 2} do {do Y,U, V frame, so scan image line 3 times}
     for yy := y to y+h-1 {height} do
     begin // scan each timage line
-      pixelrow1:=mainwindow.image1.Picture.Bitmap.ScanLine[yy];
+      xLine:=mainwindow.image1.Picture.Bitmap.ScanLine[yy];
       for xx := x to x+w-1 {width} do
       begin
        {$ifdef mswindows}
-        R :=pixelrow1[xx].rgbtRed;
-        G :=pixelrow1[xx].rgbtGreen;
-        B :=pixelrow1[xx].rgbtBlue;
-       {$endif}
-       {$ifdef linux}
-        R :=pixelrow1[xx].rgbRed;
-        G :=pixelrow1[xx].rgbGreen;
-        B :=pixelrow1[xx].rgbBlue;
-
+          B:=xLine^[xx*3]; {3*8=24 bit}
+          G:=xLine^[xx*3+1]; {fast pixel write routine }
+          R:=xLine^[xx*3+2];
        {$endif}
        {$ifdef darwin} {MacOS}
-        R :=pixelrow1[xx].rgbGreen; {different color arrangment in Macos !!!!!}
-        G :=pixelrow1[xx].rgbRed;
-        B :=pixelrow1[xx].rgbreserved;
+          R:=xLine^[xx*4+1]; {4*8=32 bit}
+          G:=xLine^[xx*4+2]; {fast pixel write routine }
+          B:=xLine^[xx*4+3];
        {$endif}
+       {$ifdef linux}
+          B:=xLine^[xx*4]; {4*8=32 bit}
+          G:=xLine^[xx*4+1]; {fast pixel write routine }
+          R:=xLine^[xx*4+2];
+        {$endif}
 
         if k=0 then
           row[xx-x]:=trunc(R*77/256 + G*150/256 + B*29/256)        {Y frame, Full swing for BT.601}
