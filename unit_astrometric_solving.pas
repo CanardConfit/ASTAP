@@ -930,24 +930,26 @@ begin
     update_text ('CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
     update_text ('CUNIT1  =',#39+'deg     '+#39+'           / Unit of coordinates                            ');
 
-    update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);
-    update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
+    update_text ('EQUINOX =','              2000.0 / Equinox of coordinates                         ');{the equinox is 2000 since the database is in 2000}
 
-    update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,head.ra0*180/pi);
-    update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,head.dec0*180/pi);
+    update_float('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);
+    update_float('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
 
-    update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);
-    update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
+    update_float('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,head.ra0*180/pi);
+    update_float('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,head.dec0*180/pi);
 
-    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
-    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
+    update_float('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);
+    update_float('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
 
-    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
-    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
-    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
-    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
-    update_text   ('PLTSOLVD=','                   T / ASTAP internal solver      ');
-    update_text   ('COMMENT 7', solved_in+' Offset was '+offset_found+mount_offset);
+    update_float('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
+    update_float('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
+
+    update_float('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
+    update_float('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
+    update_float('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
+    update_float('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
+    update_text ('PLTSOLVD=','                   T / ASTAP internal solver                          ');
+    update_text ('COMMENT 7', solved_in+' Offset was '+offset_found+mount_offset);
 
     if solve_show_log then {global variable set in find stars}
     begin

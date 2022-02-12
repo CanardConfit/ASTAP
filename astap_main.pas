@@ -738,7 +738,7 @@ function convert_raw(loadfile,savefile :boolean;var filename3: string; var img: 
 function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
-function load_TIFFPNGJPEG(filen:string; var head :theader; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+function load_TIFFPNGJPEG(filen:string; out head :theader; out img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, starlevel: double); {get background and star level from peek histogram}
 
 function extract_exposure_from_filename(filename8: string):integer; {try to extract exposure from filename}
@@ -764,6 +764,8 @@ procedure bin_X2X3X4(binfactor:integer);{bin img_loaded 2x or 3x or 4x}
 procedure local_sd(x1,y1, x2,y2{regio of interest},col : integer; img : image_array; out sd,mean :double; out iterations :integer);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 function extract_raw_colour_to_file(filename7,filtern: string; xp,yp : integer) : string;{extract raw colours and write to file}
 function fits_file_name(inp : string): boolean; {fits file name?}
+function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
+function tiff_file_name(inp : string): boolean; {tiff file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
 procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; out  ram,decm  : double {fitsX, Y to ra,dec});
 procedure celestial_to_pixel(ra_t,dec_t: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
@@ -886,16 +888,17 @@ var {################# initialised variables #########################}
 const
   crMyCursor = 5;
 
+
 procedure reset_fits_global_variables(light :boolean;out head:theader); {reset the global variable}
 begin
   if light then
   begin
-    head.crota2:=99999;{just for the case it is not available, make it later zero}
-    head.crota1:=99999;
+    head.crota2:=999;{just for the case it is not available, make it later zero}
+    head.crota1:=999;
     head.ra0:=0;
     head.dec0:=0;
-    ra_mount:=99999;
-    dec_mount:=99999;
+    ra_mount:=999;
+    dec_mount:=999;
     head.cdelt1:=0;
     head.cdelt2:=0;
     xpixsz:=0;
@@ -954,6 +957,7 @@ begin
 end;{reset global variables}
 
 
+
 function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;out head: Theader; out img_loaded2: image_array): boolean;{load fits file}
 {if light=true then read also head.ra0, head.dec0 ....., else load as dark, flat}
 {if load_data then read all else header only}
@@ -982,7 +986,7 @@ var
   tfields,tform_counter,header_count,pointer,let  : integer;
   ttype,tform,tunit : array of string;
   tbcol,tform_nr    : array of integer;
-  simple,image,bintable,asciitable    : boolean;
+  simple,image,bintable,asciitable,compressed    : boolean;
   abyte                               : byte;
 
 var {################# initialised variables #########################}
@@ -1039,6 +1043,12 @@ begin
   if load_data then mainwindow.caption:=ExtractFileName(filen);
   {house keeping done}
 
+  if tiff_file_name(filen) then  {experimental}
+  begin
+    result:=load_TIFFPNGJPEG(filen, head,img_loaded2);{load TIFF image}
+    exit;
+  end;
+
   try
     TheFile3:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
   except
@@ -1073,6 +1083,7 @@ begin
   header_count:=0;
   bintable:=false;
   asciitable:=false;
+  compressed:=false;
 
   reader_position:=0;
   repeat {header, 2880 bytes loop}
@@ -1544,20 +1555,33 @@ begin
            setlength(tbcol,tfields);
            setlength(tunit,tfields);
         end;
+        if ((header[i]='Z') and (header[i+1]='C')  and (header[i+2]='M') and (header[i+3]='P') and (header[i+4]='T')) then  { ZCMPTYPE, compressed image in table Rice and others format}
+        begin
+          compressed:=true;
+          last_extension:=true;{give up}
+        end;
+
         if ((header[i]='T') and (header[i+1]='F')  and (header[i+2]='O') and (header[i+3]='R') and (header[i+4]='M')) then
         begin
           number:=trim(header[i+5]+header[i+6]+header[i+7]);
           tform_counter:=strtoint(number)-1;
           tform[tform_counter]:=get_string;
+          try
           let:=pos('E',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='E';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{single e.g. E, 1E or 4E}
           let:=pos('D',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='D';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{double e.g. D, 1D or 5D (sub table 5*D) or D25.17}
           let:=pos('L',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='L';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{logical}
           let:=pos('X',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='X';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{bit}
-          let:=pos('B',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='B';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{byte}
+          let:=pos('B',tform[tform_counter]);
+          if let>0 then begin aline:=trim(tform[tform_counter]);
+            tform[tform_counter]:='B';aline:=copy(aline,1,let-1);
+            tform_nr[tform_counter]:=max(1,strtoint('0'+aline));
+          end;{byte}
           let:=pos('I',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='I';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{16 bit integer}
           let:=pos('J',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='J';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{32 bit integer}
           let:=pos('K',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='K';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{64 bit integer}
           let:=pos('A',tform[tform_counter]); if let>0 then begin aline:=trim(tform[tform_counter]); tform[tform_counter]:='A';aline:=copy(aline,1,let-1); tform_nr[tform_counter]:=max(1,strtoint('0'+aline)); end;{char e.g. 12A for astrometry.net first index table}
+          except
+          end;
         end;
         if ((header[i]='T') and (header[i+1]='B')  and (header[i+2]='C') and (header[i+3]='O') and (header[i+4]='L')) then
         begin
@@ -1898,8 +1922,9 @@ begin
     if update_memo then mainwindow.memo1.visible:=true;{show header}
     mainwindow.pagecontrol1.showtabs:=true;{show tabs}
     reader_position:=reader_position+head.width*head.height;
-  end;{read table}
+  end; {read table}
 
+ // if last_extension:=true; {unreadable compressed? }
 
 
   if last_extension=false then {test if extension is possible}
@@ -1909,6 +1934,8 @@ begin
       if get_ext=0 then
          mainwindow.Memo3.lines.text:='File contains extension image(s) or table(s).';
       mainwindow.pagecontrol1.showtabs:=true;{show tabs}
+
+     // mainwindow.tabsheet1.caption:=ttype[strtoint(number)-1];
 
       last_extension:=false;
       if head.naxis<2 then
@@ -1940,8 +1967,41 @@ begin
   end;
 end;
 
+function fits_file_name(inp : string): boolean; {fits file name?}
+begin
+  inp:=uppercase(extractfileext(inp));
+  result:=((inp='.FIT') or (inp='.FITS') or (inp='.FTS') or (inp='.WCS') or (inp='.WCSS'));{wcs for telescope tab}
+end;
 
-procedure read_keys_memo;
+function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
+begin
+  inp:=uppercase(extractfileext(inp));
+  result:=((inp='.FIT') or (inp='.FITS') or (inp='.FTS') or (inp='.TIF') or (inp='.TIFF'));{fits or tiff file name}
+end;
+
+
+function tiff_file_name(inp : string): boolean; {tiff file name?}
+begin
+  inp:=uppercase(extractfileext(inp));
+  result:=((inp='.TIF') or (inp='.TIFF'));{tiff file name}
+end;
+
+
+function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
+begin
+  result:=((ext='.RAW') or (ext='.CRW') or (ext='.CR2') or (ext='.CR3')or (ext='.KDC') or (ext='.DCR') or (ext='.MRW') or (ext='.ARW') or (ext='.NEF') or (ext='.NRW') or (ext='.DNG') or (ext='.ORF') or (ext='.PTX') or (ext='.PEF') or (ext='.RW2') or (ext='.SRW') or (ext='.RAF') or (ext='.KDC')); {raw format extension?}
+end;
+
+
+function image_file_name(inp : string): boolean; {readable image name?}
+begin
+  inp:=uppercase(extractfileext(inp));
+  result:=( (inp='.FIT') or (inp='.FITS') or (inp='.FTS') or (inp='.JPG') or (inp='.JPEG') or (inp='.TIF') or (inp='.PNG') );
+  if result=false then result:=check_raw_file_extension(inp);
+end;
+
+
+procedure read_keys_memo(out head : theader);{for tiff, header in the describtion decoding}
 var
   key      : string;
   count1   : integer;
@@ -1953,12 +2013,12 @@ var
        val(aline,result,err);
      end;
 begin
-  head.crota2:=99999;{just for the case it is not available, make it later zero}
-  head.crota1:=99999;
+  head.crota2:=999;{just for the case it is not available, make it later zero}
+  head.crota1:=999;
   head.ra0:=0;
   head.dec0:=0;
-  ra_mount:=99999;
-  dec_mount:=99999;
+  ra_mount:=999;
+  dec_mount:=999;
   head.cdelt1:=0;
   head.cdelt2:=0;
   xpixsz:=0;
@@ -1997,6 +2057,13 @@ begin
     if key='CRVAL2  =' then dec2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
     if key='RA      =' then ra2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
     if key='DEC     =' then dec2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
+    if key='EXPOSURE=' then head.exposure:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
+    if key='CCD-TEMP=' then
+              head.set_temperature:=round(read_float(copy(mainwindow.Memo1.Lines[count1],11,20)));
+
+    if key='DATE-OBS=' then
+              head.date_obs:=StringReplace(trim(copy(mainwindow.Memo1.Lines[count1],11,20)),char(39),'',[rfReplaceAll]);{remove all spaces and char (39)}
+
     count1:=count1-1;
   end;
   if ((ra2<>999) and (dec2<>999)) then {data available}
@@ -2291,7 +2358,7 @@ begin
 end;
 
 
-function load_TIFFPNGJPEG(filen:string; var head : theader;var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+function load_TIFFPNGJPEG(filen:string; out head : theader;out img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
   i,j   : integer;
   jd2   : double;
@@ -2419,11 +2486,19 @@ begin
   if tiff then
   begin
     descrip:=image.Extra['TiffImageDescription']; {restore full header in TIFF !!!}
+
+//    descrip:=image.Extra['TiffArtist']; {restore full header in TIFF !!!}
+
+    //  image.Extra[TiffCopyright]:=mainwindow.memo1.text; {store full header in TIFF !!!}
+    //  image.Extra[TiffModel_Scanner]:=mainwindow.memo1.text; {store full header in TIFF !!!}
+    //  image.Extra[TiffArtist]:=mainwindow.memo1.text; {store full header in TIFF !!!}
+   //TiffMake_ScannerManufacturer
+
   end;
   if pos('SIMPLE  =',descrip)>0 then
   begin
     mainwindow.memo1.text:=descrip;
-    read_keys_memo;
+    read_keys_memo(head);
     saved_header:=true;
   end
   else {no fits header in tiff file available}
@@ -3029,7 +3104,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.02.06, '+about_message4;
+  #13+#10+'ASTAP version 2022.02.12, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4647,25 +4722,6 @@ begin
 end;
 
 
-function fits_file_name(inp : string): boolean; {fits file name?}
-begin
-  inp:=uppercase(extractfileext(inp));
-  result:=((inp='.FIT') or (inp='.FITS') or (inp='.FTS') or (inp='.WCS') or (inp='.WCSS'));{wcs for telescope tab}
-end;
-
-
-function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
-begin
-  result:=((ext='.RAW') or (ext='.CRW') or (ext='.CR2') or (ext='.CR3')or (ext='.KDC') or (ext='.DCR') or (ext='.MRW') or (ext='.ARW') or (ext='.NEF') or (ext='.NRW') or (ext='.DNG') or (ext='.ORF') or (ext='.PTX') or (ext='.PEF') or (ext='.RW2') or (ext='.SRW') or (ext='.RAF') or (ext='.KDC')); {raw format extension?}
-end;
-
-
-function image_file_name(inp : string): boolean; {readable image name?}
-begin
-  inp:=uppercase(extractfileext(inp));
-  result:=( (inp='.FIT') or (inp='.FITS') or (inp='.FTS') or (inp='.JPG') or (inp='.JPEG') or (inp='.TIF') or (inp='.PNG') );
-  if result=false then result:=check_raw_file_extension(inp);
-end;
 
 procedure update_menu_related_to_solver(yes :boolean); {update menu section related to solver succesfull}
 begin
@@ -10689,11 +10745,14 @@ begin
   end;
   if load_fits(filename2,true,true,true {update memo},updown1.position,head,img_loaded){load fits file } then
   begin
-    if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then
-       demosaic_advanced(img_loaded) {demosaic and set levels}
-    else
-      use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-    plot_fits(mainwindow.image1,false {re_center},true);
+    if fits_file then {not a bintable, compressed}
+    begin
+      if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then
+         demosaic_advanced(img_loaded) {demosaic and set levels}
+      else
+        use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
+      plot_fits(mainwindow.image1,false {re_center},true);
+    end;
   end;
 end;
 
@@ -14247,6 +14306,13 @@ begin
 
   image.Extra[TiffSoftware]:='ASTAP';
   image.Extra[TiffImageDescription]:=mainwindow.memo1.text; {store full header in TIFF !!!}
+
+//  image.Extra[TiffCopyright]:=mainwindow.memo1.text; {store full header in TIFF !!!}
+//  image.Extra[TiffModel_Scanner]:=mainwindow.memo1.text; {store full header in TIFF !!!}
+//  image.Extra[TiffArtist]:=mainwindow.memo1.text; {store full header in TIFF !!!}
+//  image.Extra[TiffMake_ScannerManufacturer]:=mainwindow.memo1.text; {store full header in TIFF !!!}
+
+
   Image.Extra[TiffCompression]:= '5'; // compression LZW
 
   For i:=0 to height5-1 do
@@ -14482,7 +14548,6 @@ begin
 end;
 
 
-
 procedure Tmainwindow.MenuItem22Click(Sender: TObject);
 begin
   form_inspection1.aberration_inspector1Click(nil);
@@ -14492,9 +14557,19 @@ procedure Tmainwindow.electron_to_adu_factors1Click(Sender: TObject);
 var
   inp : string;
 begin
-  head.egain:=InputBox('factor e-/ADU, unbinned?',head.egain,head.egain);
+  head.egain:=InputBox('factor e-/ADU, unbinned?',
+  'At unity gain this factor shall be 1'+#10
+  ,head.egain);
   if head.egain='' then exit;
-  electron_to_adu:=InputBox('Additional conversion factor from 12 to 16 bit(16) or 14 bit to 16 bit (4) without binning','',electron_to_adu);
+  electron_to_adu:=InputBox('Additional conversion factor for an unbinned sensor',
+  'For a 12 bit sensor with an output range [0..65535] enter 16'+#10+
+  'For a 12 bit sensor with an output range [0. . 4096] enter 1'+#10+
+  'For a 14 bit sensor with an output range [0..65535] enter 4'+#10+
+  'For a 14 bit sensor with an output range [0..16384] enter 1'+#10+
+  'For a 16 bit sensor with an output range [0..65535] enter 1'+#10+
+  #10+
+  'The bit depth of the sensor can be measured from a light using popup menu "Show statistics"'+#10
+  ,electron_to_adu);
 end;
 
 

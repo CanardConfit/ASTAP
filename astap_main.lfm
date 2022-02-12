@@ -3379,7 +3379,7 @@ object mainwindow: Tmainwindow
     end
   end
   object popupmenu_statusbar1: TPopupMenu
-    Left = 1096
+    Left = 1072
     Top = 472
     object j2000_1: TMenuItem
       AutoCheck = True
@@ -3412,7 +3412,7 @@ object mainwindow: Tmainwindow
     object noise_in_electron1: TMenuItem
       AutoCheck = True
       Caption = 'Noise in e-'
-      Hint = 'Noise in electrons'
+      Hint = 'Noise in electrons uneffected by binning. For raw OSC images apply first binning 2x2.'
     end
     object electron_to_adu_factors1: TMenuItem
       Caption = 'Set ADU=>e- factors'

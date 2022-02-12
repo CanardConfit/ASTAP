@@ -878,7 +878,7 @@ var  {################# initialised variables #########################}
   dec_target : double=999;
 
 const
-  dialog_filter='FITS files and DSLR RAW files |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
+  dialog_filter='FITS files and DSLR RAW files |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;*.tif;*.tiff;*.TIF;'+
                 '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;'+
                 '|FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;'+
                 '|JPEG, TIFF, PNG PPM files|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;'+
@@ -1683,7 +1683,7 @@ begin
       begin
         filename1:=ListView1.items[c].caption;
 
-        if fits_file_name(filename1)=false  {fits file name?}    then
+        if fits_tiff_file_name(filename1)=false  {fits or tiff file name?}    then
         begin
           memo2_message('Converting '+filename1+' to FITS file format');
           Application.ProcessMessages;
@@ -3144,7 +3144,7 @@ begin
     if lv.Items.item[c].checked then
     begin
       filename1:=lv.items[c].caption;
-      if fits_file_name(filename1)=false  {fits file name?}    then
+      if fits_tiff_file_name(filename1)=false  {fits file name?} then {not fits or tiff file}
       begin
         memo2_message('Converting '+filename1+' to FITS file format');
         Application.ProcessMessages;
@@ -8600,6 +8600,7 @@ begin
          end;
       flat_norm_value:=round(flat_norm_value/100);{scale factor to apply flat. The norm value will result in a factor one for the center.}
 
+      if stackmenu1.make_osc_color1.checked then {give only warning when converting to colour. Not when calibrating for green channel and used for photometry}
       if max(max(flat11,flat12),max(flat21,flat22))/min(min(flat11,flat12),min(flat21,flat22))>2.0 then memo2_message('█ █ █ █ █ █ Warning flat pixels differ too much. Use white light for OSC flats or consider using option "Normalise OSC flat" █ █ █ █ █ █ ');
 
       for fitsY:=1 to head.height do  {apply the flat}
@@ -8856,7 +8857,7 @@ begin
   if ListView1.items.count<>0 then
   begin
     memo2_message('Analysing images.');
-    analyse_tab_lights(calibration_mode=false); {analyse any image not done yet. For calibration mode skip hfd and background measurments}
+    analyse_tab_lights(calibration_mode=false); {analyse any image not done yet. For calibration mode skip hfd and background measurements}
     if esc_pressed then exit;
     memo2_message('Stacking ('+stack_method1.text+'), HOLD ESC key to abort.');
   end
