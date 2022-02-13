@@ -2013,37 +2013,7 @@ var
        val(aline,result,err);
      end;
 begin
-  head.crota2:=999;{just for the case it is not available, make it later zero}
-  head.crota1:=999;
-  head.ra0:=0;
-  head.dec0:=0;
-  ra_mount:=999;
-  dec_mount:=999;
-  head.cdelt1:=0;
-  head.cdelt2:=0;
-  xpixsz:=0;
-  ypixsz:=0;
-  focallen:=0;
-  subsamp:=1;{just for the case it is not available}
-  head.cd1_1:=0;{just for the case it is not available}
-  head.cd1_2:=0;{just for the case it is not available}
-  head.cd2_1:=0;{just for the case it is not available}
-  head.cd2_2:=0;{just for the case it is not available}
-  head.date_obs:='';date_avg:=''; ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
-  sitelat:=''; sitelong:='';
-  head.filter_name:='';
-  head.calstat:='';{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected, S stacked. Example value DFB}
-  imagetype:='';
-  xbinning:=1;{normal}
-  ybinning:=1;
-  head.exposure:=0;
-  head.set_temperature:=999;
-  x_coeff[0]:=0; {reset DSS_polynomial, use for check if there is data}
-  y_coeff[0]:=0;
-  a_order:=0; {reset SIP_polynomial, use for check if there is data}
-  ap_order:=0; {reset SIP_polynomial, use for check if there is data}
-
-
+  {variables are already reset}
   count1:=mainwindow.Memo1.Lines.Count-1-1;
   while count1>1 do {read bare minimum keys since TIFF is not required for stacking}
   begin
@@ -2052,11 +2022,13 @@ begin
     if key='CD1_2   =' then head.cd1_2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
     if key='CD2_1   =' then head.cd2_1:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
     if key='CD2_2   =' then head.cd2_2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
+    if key='CRPIX1  =' then head.crpix1:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
+    if key='CRPIX2  =' then head.crpix2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
 
-    if key='CRVAL1  =' then ra2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
-    if key='CRVAL2  =' then dec2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
-    if key='RA      =' then ra2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
-    if key='DEC     =' then dec2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
+    if key='CRVAL1  =' then head.ra0:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20))*pi/180; {degrees -> radians}
+    if key='CRVAL2  =' then head.dec0:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20))*pi/180;
+    if key='RA      =' then ra_mount:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20))*pi/180;{degrees -> radians}
+    if key='DEC     =' then dec_mount:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20))*pi/180;
     if key='EXPOSURE=' then head.exposure:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
     if key='CCD-TEMP=' then
               head.set_temperature:=round(read_float(copy(mainwindow.Memo1.Lines[count1],11,20)));
@@ -2066,14 +2038,17 @@ begin
 
     count1:=count1-1;
   end;
-  if ((ra2<>999) and (dec2<>999)) then {data available}
+  if ((head.ra0>=999) and (head.ra0>=999)) then {no solution position available. Use mount position}
   begin
-    head.ra0:=ra2*pi/180; {degrees -> radians}
-    head.dec0:=dec2*pi/180;
-    mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{show center of image}
-    mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
+    head.ra0:=ra_mount;
+    head.dec0:=dec_mount;
   end;
-  if head.cd1_1<>0 then new_to_old_WCS;
+
+  mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{show center of image}
+  mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
+
+  if head.cd1_1<>0 then
+                     new_to_old_WCS;
 end;
 
 
@@ -3104,7 +3079,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.02.12, '+about_message4;
+  #13+#10+'ASTAP version 2022.02.13, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -14301,17 +14276,11 @@ begin
   if colours5=1 then
   begin
     Image.Extra[TiffGrayBits]:='16';   {add unit fptiffcmn to make this work. see https://bugs.freepascal.org/view.php?id=35081}
-    Image.Extra[TiffPhotoMetric]:='0'; {This is the same as Image.Extra['TiffPhotoMetricInterpretation']:='0';}
+    Image.Extra[TiffPhotoMetric]:='1'; {Black is $0000, White is $FFFF. This is the same as Image.Extra['TiffPhotoMetricInterpretation']:='1';}
   end;
 
   image.Extra[TiffSoftware]:='ASTAP';
   image.Extra[TiffImageDescription]:=mainwindow.memo1.text; {store full header in TIFF !!!}
-
-//  image.Extra[TiffCopyright]:=mainwindow.memo1.text; {store full header in TIFF !!!}
-//  image.Extra[TiffModel_Scanner]:=mainwindow.memo1.text; {store full header in TIFF !!!}
-//  image.Extra[TiffArtist]:=mainwindow.memo1.text; {store full header in TIFF !!!}
-//  image.Extra[TiffMake_ScannerManufacturer]:=mainwindow.memo1.text; {store full header in TIFF !!!}
-
 
   Image.Extra[TiffCompression]:= '5'; // compression LZW
 
