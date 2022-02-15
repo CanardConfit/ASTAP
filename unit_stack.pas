@@ -2173,7 +2173,7 @@ begin
    Save_Cursor := Screen.Cursor;
    Screen.Cursor := crHourglass;    { Show hourglass cursor }
    backup_img;
-   gaussian_blur2(img_loaded,2*strtofloat2(most_common_filter_radius1.text));
+   gaussian_blur2(img_loaded,4*strtofloat2(most_common_filter_radius1.text));
    plot_fits(mainwindow.image1,false,true);{plot}
    Screen.Cursor:=Save_Cursor;
    update_equalise_background_step(equalise_background_step+1);{update menu}

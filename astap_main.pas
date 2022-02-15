@@ -2461,14 +2461,6 @@ begin
   if tiff then
   begin
     descrip:=image.Extra['TiffImageDescription']; {restore full header in TIFF !!!}
-
-//    descrip:=image.Extra['TiffArtist']; {restore full header in TIFF !!!}
-
-    //  image.Extra[TiffCopyright]:=mainwindow.memo1.text; {store full header in TIFF !!!}
-    //  image.Extra[TiffModel_Scanner]:=mainwindow.memo1.text; {store full header in TIFF !!!}
-    //  image.Extra[TiffArtist]:=mainwindow.memo1.text; {store full header in TIFF !!!}
-   //TiffMake_ScannerManufacturer
-
   end;
   if pos('SIMPLE  =',descrip)>0 then
   begin
@@ -8884,17 +8876,19 @@ begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
     try { Do some lengthy operation }
-        with OpenDialog1.Files do
-        for I := 0 to Count - 1 do
-        begin
-          filename1:=Strings[I];
-          Application.ProcessMessages;
-          if ((esc_pressed) or (pack_cfitsio(filename1)=false)) then begin beep; mainwindow.caption:='Exit with error!!'; Screen.Cursor := Save_Cursor;  exit;end;
-       end;
-       finally
-
-       mainwindow.caption:='Finished, all files compressed with extension .fz.';
+       with OpenDialog1.Files do
+       for I := 0 to Count - 1 do
+       begin
+         progress_indicator(100*i/(count),' Converting');{show progress}
+         filename1:=Strings[I];
+         memo2_message(filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count));
+         Application.ProcessMessages;
+         if ((esc_pressed) or (pack_cfitsio(filename1)=false)) then begin beep; mainwindow.caption:='Exit with error!!'; Screen.Cursor := Save_Cursor;  exit;end;
+      end;
+      finally
+      mainwindow.caption:='Finished, all files compressed with extension .fz.';
       Screen.Cursor := Save_Cursor;  { Always restore to normal }
+      progress_indicator(-100,'');{progresss done}
     end;
   end;
 end;
@@ -14276,13 +14270,13 @@ begin
   if colours5=1 then
   begin
     Image.Extra[TiffGrayBits]:='16';   {add unit fptiffcmn to make this work. see https://bugs.freepascal.org/view.php?id=35081}
-    Image.Extra[TiffPhotoMetric]:='1'; {Black is $0000, White is $FFFF. This is the same as Image.Extra['TiffPhotoMetricInterpretation']:='1';}
+    Image.Extra[TiffPhotoMetric]:='1'; {PhotometricInterpretation = 0 (Min-is-White), 1 (Min-is-Black),  so for 1  black is $0000, White is $FFFF}
   end;
 
   image.Extra[TiffSoftware]:='ASTAP';
   image.Extra[TiffImageDescription]:=mainwindow.memo1.text; {store full header in TIFF !!!}
 
-  Image.Extra[TiffCompression]:= '5'; // compression LZW
+  Image.Extra[TiffCompression]:= '8'; {FPWriteTiff only support only writing Deflate compression. Any other compression setting is silently replaced in FPWriteTiff at line 465 for Deflate. FPReadTiff that can read other compressed files including LZW.}
 
   For i:=0 to height5-1 do
   begin
@@ -14342,7 +14336,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
         filename2:=Strings[I];
-        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
+        memo2_message(filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count));
         if load_image(false {recenter},false {plot}) then
         begin
           filename2:=ChangeFileExt(filename2,'.tif');
