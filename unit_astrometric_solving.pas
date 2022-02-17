@@ -821,8 +821,8 @@ begin
 
               // for testing purposes
               // for testing create supplement hnksy planetarium program
-              stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-8,'+floattostr( step_size*600*180/pi)+',' +floattostr(step_size*600*180/pi));
-              stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99');
+              //stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-8,'+floattostr( step_size*600*180/pi)+',' +floattostr(step_size*600*180/pi));
+              //stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99');
 
               solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance);{find an solution}
 
