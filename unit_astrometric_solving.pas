@@ -872,7 +872,7 @@ begin
 
     until ((autoFOV=false) or (solution) or (fov2<=fov_min)); {loop for autoFOV from 9.5 to 0.37 degrees. Will lock between 9.5*1.25 downto  0.37/1.25  or 11.9 downto 0.3 degrees}
     max_stars:=max_stars*2;{try with 60, 120, 240, 480 stars max}
-  until ((autoMaxstars=false) or (solution) or (max_stars>400));{auto max star loop}
+  until ((autoMaxstars=false) or (solution) or (max_stars>500));{auto max star loop}
 
   if solution then
   begin
