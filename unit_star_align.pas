@@ -27,7 +27,7 @@ var
 
    Savefile: file of solution_vector;{to save solution if required for second and third step stacking}
 
-procedure find_stars(img :image_array;hfd_min:double;out starlist1: star_list);{find stars and put them in a list}
+procedure find_stars(img :image_array;hfd_min:double;max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
 procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2020-9-28}
 procedure find_quads_xy(starlist :star_list; out starlistquads :star_list);  {FOR DISPLAY ONLY, build quads using closest stars, revised 2020-9-28}
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
@@ -606,9 +606,9 @@ begin
 end;
 
 
-procedure find_stars(img :image_array;hfd_min:double;out starlist1: star_list);{find stars and put them in a list}
+procedure find_stars(img :image_array;hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,radius,i,j,max_stars,retries,m,n,xci,yci,sqr_radius : integer;
+   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level               : double;
    img_sa     : image_array;
    snr_list        : array of double;
@@ -632,7 +632,6 @@ begin
  // hfd_min:=4;
 
 
-  max_stars:=strtoint(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
   solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details, global variable}
   if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
 
@@ -760,7 +759,6 @@ begin
 
   xy_sqr_ratio:=(sqr(solution_vectorX[0])+sqr(solution_vectorX[1]) ) / (0.00000001+ sqr(solution_vectorY[0])+sqr(solution_vectorY[1]) );
 
-//  if ((xy_sqr_ratio<0.98) or (xy_sqr_ratio>1.02)) then {dimensions x, y are not the same, something wrong. Mod 2021-6-26, changed it from 0.99 to 0.98 because of problem solving some images like M20 }
   if ((xy_sqr_ratio<0.9) or (xy_sqr_ratio>1.1)) then {dimensions x, y are not the same, something wrong.}
   begin
     result:=false;

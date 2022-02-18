@@ -159,7 +159,7 @@ end;
 
 procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
 var
-  fitsX,fitsY,c,width_max, height_max, x_new,y_new, binning,oversizeV  : integer;
+  fitsX,fitsY,c,width_max, height_max, x_new,y_new, binning,oversizeV,max_stars  : integer;
   background_r, background_g, background_b, background_l ,
   rgbsum,red_f,green_f,blue_f, value ,colr, colg,colb, red_add,green_add,blue_add,
   rr_factor, rg_factor, rb_factor,
@@ -180,6 +180,8 @@ begin
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+    max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
+    if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
 
     counter:=0;
     jd_sum:=0;{sum of Julian midpoints}
@@ -304,7 +306,7 @@ begin
               else
               begin
                 binning:=report_binning(head.height);{select binning based on the height of the light}
-                bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1,warning);{bin, measure background, find stars}
+                bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
                 find_quads(starlist1,0, quad_smallest,quad_star_distances1);{find quads for reference image/database}
               end;
             end;
@@ -348,7 +350,7 @@ begin
                 end
                 else
                 begin{internal alignment}
-                  bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2,warning);{bin, measure background, find stars}
+                  bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
                   find_quads(starlist2,0, quad_smallest,quad_star_distances2);{find star quads for new image}
                   if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
@@ -563,8 +565,8 @@ end;
 
 procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
-  fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,oversizeV    : integer;
-  background_correction, weightF,hfd_min                                                         : double;
+  fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,oversizeV,max_stars    : integer;
+  background_correction, weightF,hfd_min                                                                   : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
   tempval   : single;
   warning  : string;
@@ -577,6 +579,8 @@ begin
     use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
     use_astrometry_internal:=use_astrometry_internal1.checked;
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+    max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
+    if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
 
     counter:=0;
     sum_exp:=0;
@@ -645,7 +649,7 @@ begin
             end
             else
             begin
-              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1,warning);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
               find_quads(starlist1,0, quad_smallest,quad_star_distances1);{find quads for reference image}
               pedestal_s:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
               if pedestal_s<500 then pedestal_s:=500;{prevent image noise could go below zero}
@@ -700,7 +704,7 @@ begin
               end
               else
               begin{internal alignment}
-                bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2,warning);{bin, measure background, find stars}
+                bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
                 background_correction:=pedestal_s-cblack;
                 head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
@@ -1055,8 +1059,8 @@ type
    end;
 var
     solutions      : array of tsolution;
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,oversizeV         : integer;
-    background_correction, variance_factor, value,weightF,hfd_min                                         : double;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col ,binning,oversizeV,max_stars         : integer;
+    background_correction, variance_factor, value,weightF,hfd_min                                                   : double;
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
     warning  : string;
 
@@ -1068,6 +1072,8 @@ begin
     variance_factor:=sqr(strtofloat2(stackmenu1.sd_factor1.text));
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+    max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
+    if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
 
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
@@ -1144,7 +1150,7 @@ begin
           end
           else
           begin
-            bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1,warning);{bin, measure background, find stars}
+            bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
 
             find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
             pedestal_s:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
@@ -1194,7 +1200,7 @@ begin
                 end
                 else
                 begin{internal alignment}
-                  bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2,warning);{bin, measure background, find stars}
+                  bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
                   background_correction:=pedestal_s-cblack;{correct later for difference in background}
                   head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}
@@ -1543,7 +1549,7 @@ end;   {stack using sigma clip average}
 
 procedure calibration_and_alignment(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 var
-    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, binning, oversizeV   : integer;
+    fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, binning, oversizeV,max_stars   : integer;
     background_correction, hfd_min      : double;
     init, solution, use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based :boolean;
     warning  : string;
@@ -1552,6 +1558,8 @@ begin
   begin
     {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+    max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
+    if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
 
     use_star_alignment:=stackmenu1.use_star_alignment1.checked;
     use_manual_align:=stackmenu1.use_manual_alignment1.checked;
@@ -1626,7 +1634,7 @@ begin
           end
           else
           begin
-            bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1,warning);{bin, measure background, find stars}
+            bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
             find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
             pedestal_s:=cblack;{correct for difference in background, use cblack from first image as reference. Some images have very high background values up to 32000 with 6000 noise, so fixed pedestal_s of 1000 is not possible}
             if pedestal_s<500 then pedestal_s:=500;{prevent image noise could go below zero}
@@ -1688,7 +1696,7 @@ begin
             end
             else
             begin{internal alignment}
-              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2,warning);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
               background_correction:=pedestal_s-cblack;
               head.datamax_org:=head.datamax_org+background_correction; if head.datamax_org>$FFFF then  head.datamax_org:=$FFFF; {note head.datamax_org is already corrected in apply dark}

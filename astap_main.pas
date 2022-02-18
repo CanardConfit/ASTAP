@@ -701,6 +701,7 @@ procedure add_integer(inpt,comment1:string;x:integer);{add integer variable to h
 procedure update_float(inpt,comment1:string;x:double);{update keyword of fits header in memo}
 procedure remove_key(inpt:string; all:boolean);{remove key word in header. If all=true then remove multiple of the same keyword}
 
+function strtoint2(s: string):integer; {str to integer, fault tolerant}
 function strtofloat1(s:string): double;{string to float, error tolerant}
 function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
 function TextfileSize(const name: string): LongInt;
@@ -3071,7 +3072,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.02.17, '+about_message4;
+  #13+#10+'ASTAP version 2022.02.18, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -5226,6 +5227,18 @@ begin
   str(x:5,result);
 end;
 
+
+function strtoint2(s: string):integer; {str to integer, fault tolerant}
+var
+  error1 : integer;
+  value    : double;
+begin
+  val(s,value,error1);
+  if error1<>0 then
+    result:=0
+  else
+    result:=round(value);
+end;
 
 function strtofloat2(s:string): double;{works with either dot or komma as decimal separator}
 var

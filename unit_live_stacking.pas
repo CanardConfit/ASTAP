@@ -136,8 +136,8 @@ end;
 
 procedure stack_live(oversize:integer; path :string);{stack live average}
 var
-    fitsX,fitsY,width_max, height_max, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter :  integer;
-    distance,hfd_min      : double;
+    fitsX,fitsY,width_max, height_max, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter,max_stars :  integer;
+    distance,hfd_min                                                                                                              : double;
     init, solution, vector_based,waiting,transition_image,colour_correction :boolean;
     file_ext,filen                    :  string;
     multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}
@@ -176,6 +176,8 @@ begin
 
     colour_correction:=((stackmenu1.make_osc_color1.checked) and (stackmenu1.osc_auto_level1.checked));
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+    max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
+    if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
 
     {Prepare for dark and flats}
     analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
@@ -257,7 +259,7 @@ begin
             if init=false then {first image}
             begin
               binning:=report_binning(head.height);{select binning based on the height of the first light. Do this after demosaic since SuperPixel also bins}
-              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist1,warning);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
               find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
             end;
 
@@ -306,7 +308,7 @@ begin
             {align using star match}
             if init=true then {second image}
             begin{internal alignment only}
-              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,true{update hist},starlist2,warning);{bin, measure background, find stars}
+              bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
 
               find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}

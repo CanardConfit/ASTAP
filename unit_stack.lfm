@@ -3,7 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 712
   Top = 296
   Width = 1884
-  HorzScrollBar.Page = 1560
+  HorzScrollBar.Page = 1437
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1884
-    ActivePage = tab_Pixelmath1
+    ActivePage = alignment1
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 13
+    TabIndex = 6
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -2541,14 +2541,15 @@ object stackmenu1: Tstackmenu1
               object max_stars1: TComboBox
                 Left = 263
                 Height = 23
-                Hint = 'Number of star takens from the image for alignment. Typical value 200 to 500. For crowded star fields reduce to 100 to 200.'
+                Hint = 'Number of star takens from the image for alignment. Typical value 200 to 500. For crowded star fields reduce to 100 to 200 or use auto mode.'
                 Top = 37
                 Width = 88
                 BorderSpacing.Around = 5
                 DropDownCount = 20
                 ItemHeight = 15
-                ItemIndex = 3
+                ItemIndex = 4
                 Items.Strings = (
+                  'auto'
                   '200'
                   '300'
                   '400'

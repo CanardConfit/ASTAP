@@ -1504,7 +1504,7 @@ begin
   width5:=Length(img[0]);    {width}
   height5:=Length(img[0][0]); {height}
 
-  max_stars:=500; //strtoint(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
+  max_stars:=500; //fixed value
   SetLength(hfdlist,len*4);{set array length on a starting value}
 
   SetLength(hfdlist_center,len);
@@ -2053,6 +2053,7 @@ procedure Tstackmenu1.show_quads1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
    hfd_min   : double;
+   max_stars : integer;
    starlistquads : star_list;
 begin
   if fits_file=false then application.messagebox( pchar('First load an image in the viewer!'), pchar('No action'),MB_OK)
@@ -2060,6 +2061,9 @@ begin
   begin
     Save_Cursor := Screen.Cursor;
     screen.Cursor := crHourglass;    { Show hourglass cursor }
+    max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
+    if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
+
 
     if  quads_displayed then
       plot_fits(mainwindow.image1,false,true); {remove quads}
@@ -2072,7 +2076,7 @@ begin
     end
     else hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
-    find_stars(img_loaded,hfd_min,starlist1);{find stars and put them in a list}
+    find_stars(img_loaded,hfd_min,max_stars,starlist1);{find stars and put them in a list}
     find_quads_xy(starlist1,starlistquads);{find quads}
     display_quads(starlistquads);
     quads_displayed:=true;
@@ -4199,7 +4203,7 @@ procedure Tstackmenu1.blink_button1Click(Sender: TObject);
 var
   Save_Cursor          : TCursor;
   hfd_min              : double;
-  c, x_new,y_new,fitsX,fitsY,col,first_image,stepnr,nrrows, cycle,step,ps,bottom,top,left,w,h: integer;
+  c, x_new,y_new,fitsX,fitsY,col,first_image,stepnr,nrrows, cycle,step,ps,bottom,top,left,w,h,max_stars: integer;
   reference_done, init{,solut},astro_solved,store_annotated           : boolean;
   st                                                                  : string;
 begin
@@ -4212,6 +4216,8 @@ begin
     stackmenu1.analyseblink1Click(nil);
 
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+  max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
+  if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
 
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   mainwindow.image1.canvas.font.color:=$00B0FF ;{orange}
@@ -4303,7 +4309,7 @@ begin
             begin
               memo2_message('Working on star alignment solutions. Blink frequency will increase after completion.');
               get_background(0,img_loaded,false {no histogram already done},true {unknown, calculate also datamax}, {var} cblack,star_level);
-              find_stars(img_loaded,hfd_min,starlist1);{find stars and put them in a list}
+              find_stars(img_loaded,hfd_min,max_stars,starlist1);{find stars and put them in a list}
               find_quads(starlist1,0,quad_smallest,quad_star_distances1);{find quads for reference image}
 
               reset_solution_vectors(1);{no influence on the first image since reference}
@@ -4319,7 +4325,7 @@ begin
             begin
               mainwindow.caption:=filename2+' Working on star solutions, be patient.';
               get_background(0,img_loaded,false {no histogram already done} ,true {unknown, calculate also noise_level} , {var} cblack,star_level);
-              find_stars(img_loaded,hfd_min,starlist2);{find stars and put them in a list}
+              find_stars(img_loaded,hfd_min,max_stars,starlist2);{find stars and put them in a list}
               find_quads(starlist2,0,quad_smallest,quad_star_distances2);{find star quads for new image}
               if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
               begin
