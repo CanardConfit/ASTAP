@@ -2005,7 +2005,7 @@ end;
 procedure read_keys_memo(out head : theader);{for tiff, header in the describtion decoding}
 var
   key      : string;
-  count1   : integer;
+  count1,index   : integer;
   ra2,dec2 : double;
      function read_float(aline :string): double;
      var
@@ -2016,33 +2016,38 @@ var
 begin
   {variables are already reset}
   count1:=mainwindow.Memo1.Lines.Count-1-1;
-  while count1>1 do {read bare minimum keys since TIFF is not required for stacking}
+
+  index:=1;
+  while index<=count1 do {read keys}
   begin
-    key:=copy(mainwindow.Memo1.Lines[count1],1,9);
-    if key='CD1_1   =' then head.cd1_1:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
-    if key='CD1_2   =' then head.cd1_2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
-    if key='CD2_1   =' then head.cd2_1:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
-    if key='CD2_2   =' then head.cd2_2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
-    if key='CRPIX1  =' then head.crpix1:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
-    if key='CRPIX2  =' then head.crpix2:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
+    key:=copy(mainwindow.Memo1.Lines[index],1,9);
+    if key='CD1_1   =' then
+             head.cd1_1:=read_float(copy(mainwindow.Memo1.Lines[index],11,20));
+    if key='CD1_2   =' then head.cd1_2:=read_float(copy(mainwindow.Memo1.Lines[index],11,20));
+    if key='CD2_1   =' then head.cd2_1:=read_float(copy(mainwindow.Memo1.Lines[index],11,20));
+    if key='CD2_2   =' then head.cd2_2:=read_float(copy(mainwindow.Memo1.Lines[index],11,20));
+    if key='CRPIX1  =' then head.crpix1:=read_float(copy(mainwindow.Memo1.Lines[index],11,20));
+    if key='CRPIX2  =' then head.crpix2:=read_float(copy(mainwindow.Memo1.Lines[index],11,20));
 
-    if key='CRVAL1  =' then head.ra0:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20))*pi/180; {degrees -> radians}
-    if key='CRVAL2  =' then head.dec0:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20))*pi/180;
-    if key='RA      =' then ra_mount:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20))*pi/180;{degrees -> radians}
-    if key='DEC     =' then dec_mount:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20))*pi/180;
-    if key='EXPOSURE=' then head.exposure:=read_float(copy(mainwindow.Memo1.Lines[count1],11,20));
+    if key='CRVAL1  =' then head.ra0:=read_float(copy(mainwindow.Memo1.Lines[index],11,20))*pi/180; {degrees -> radians}
+    if key='CRVAL2  =' then head.dec0:=read_float(copy(mainwindow.Memo1.Lines[index],11,20))*pi/180;
+    if key='RA      =' then ra_mount:=read_float(copy(mainwindow.Memo1.Lines[index],11,20))*pi/180;{degrees -> radians}
+    if key='DEC     =' then dec_mount:=read_float(copy(mainwindow.Memo1.Lines[index],11,20))*pi/180;
+    if key='EXPOSURE=' then head.exposure:=read_float(copy(mainwindow.Memo1.Lines[index],11,20));
     if key='CCD-TEMP=' then
-              head.set_temperature:=round(read_float(copy(mainwindow.Memo1.Lines[count1],11,20)));
+              head.set_temperature:=round(read_float(copy(mainwindow.Memo1.Lines[index],11,20)));
 
-    if key='DATE-OBS=' then
-              head.date_obs:=StringReplace(trim(copy(mainwindow.Memo1.Lines[count1],11,20)),char(39),'',[rfReplaceAll]);{remove all spaces and char (39)}
+    if key='DATE-OBS=' then head.date_obs:=StringReplace(trim(copy(mainwindow.Memo1.Lines[index],11,20)),char(39),'',[rfReplaceAll]);{remove all spaces and char (39)}
 
-    if key='BAYERPAT=' then
-              bayerpat:=StringReplace(trim(copy(mainwindow.Memo1.Lines[count1],11,20)),char(39),'',[rfReplaceAll]);{remove all spaces and char (39)}
+    if key='BAYERPAT=' then bayerpat:=StringReplace(trim(copy(mainwindow.Memo1.Lines[index],11,20)),char(39),'',[rfReplaceAll]);{remove all spaces and char (39)}
 
-
-
-    count1:=count1-1;
+    if index=1 then if key<>'BITPIX  =' then begin mainwindow.Memo1.Lines.insert(index,'BITPIX  = '); inc(count1); end;{data will be added later}
+    if index=2 then if key<>'NAXIS   =' then begin  mainwindow.Memo1.Lines.insert(index,'NAXIS   = ');inc(count1); end;
+    if index=3 then if key<>'NAXIS1  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS1  = ');inc(count1); end;
+    if index=4 then if key<>'NAXIS2  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS2  = ');inc(count1); end;
+    if ((index=5) and (head.naxis>1)) then if key<>'NAXIS3  =' then
+               begin mainwindow.Memo1.Lines.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
+    index:=index+1;
   end;
   if ((head.ra0>=999) and (head.ra0>=999)) then {no solution position available. Use mount position}
   begin
@@ -2487,6 +2492,7 @@ begin
   update_integer('NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{2 for mono, 3 for colour}
   update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
   update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
+
   update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
   update_integer('DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
 
