@@ -860,7 +860,7 @@ var
 var {################# initialised variables #########################}
   bandpass: double=0;{from fits file}
   equinox:double=0;{from fits file}
-  SaveasTIFF1filterindex : integer=1;
+  SaveasTIFF1filterindex : integer=3;//tiff stretched
   SaveasJPGPNGBMP1filterindex : integer=4;
   LoadFITSPNGBMPJPEG1filterindex: integer=1;
   marker_position : string='';
@@ -2041,10 +2041,10 @@ begin
 
     if key='BAYERPAT=' then bayerpat:=StringReplace(trim(copy(mainwindow.Memo1.Lines[index],11,20)),char(39),'',[rfReplaceAll]);{remove all spaces and char (39)}
 
-    if index=1 then if key<>'BITPIX  =' then begin mainwindow.Memo1.Lines.insert(index,'BITPIX  = '); inc(count1); end;{data will be added later}
-    if index=2 then if key<>'NAXIS   =' then begin  mainwindow.Memo1.Lines.insert(index,'NAXIS   = ');inc(count1); end;
-    if index=3 then if key<>'NAXIS1  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS1  = ');inc(count1); end;
-    if index=4 then if key<>'NAXIS2  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS2  = ');inc(count1); end;
+    if index=1 then if key<>'BITPIX  =' then begin mainwindow.Memo1.Lines.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
+    if index=2 then if key<>'NAXIS   =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
+    if index=3 then if key<>'NAXIS1  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
+    if index=4 then if key<>'NAXIS2  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS2  =                  100 / length of y axis                               ');inc(count1); end;{data will be added later}
     if ((index=5) and (head.naxis>1)) then if key<>'NAXIS3  =' then
                begin mainwindow.Memo1.Lines.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
     index:=index+1;
@@ -3083,7 +3083,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.02.18, '+about_message4;
+  #13+#10+'ASTAP version 2022.02.19, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -14579,7 +14579,7 @@ begin
 
   if head.naxis3>1 then savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit|*.tif|PPM 16 bit stretched|*.ppm;|PPM 16 bit|*.ppm|PFM 32 bit float|*.pfm'
                    else savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit|*.tif|PGM 16 bit stretched|*.pgm;|PGM 16 bit|*.pgm|PFM 32 bit float|*.pfm';
-  savedialog1.filterindex:=SaveasTIFF1filterindex; {default 1}
+  savedialog1.filterindex:=SaveasTIFF1filterindex; {default 3 tiff stretched}
   if savedialog1.execute then
   begin
     OldCursor := Screen.Cursor;
