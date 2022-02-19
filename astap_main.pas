@@ -2037,6 +2037,11 @@ begin
     if key='DATE-OBS=' then
               head.date_obs:=StringReplace(trim(copy(mainwindow.Memo1.Lines[count1],11,20)),char(39),'',[rfReplaceAll]);{remove all spaces and char (39)}
 
+    if key='BAYERPAT=' then
+              bayerpat:=StringReplace(trim(copy(mainwindow.Memo1.Lines[count1],11,20)),char(39),'',[rfReplaceAll]);{remove all spaces and char (39)}
+
+
+
     count1:=count1-1;
   end;
   if ((head.ra0>=999) and (head.ra0>=999)) then {no solution position available. Use mount position}
