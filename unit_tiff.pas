@@ -43,7 +43,7 @@ var
   tiffbuffer: array[0..bufwide] of byte absolute tiffbuffer32;
 
 const
-  SoftwareName='ASTAP';
+  SoftwareName='ASTAP'+#0;{GIMP like to have this #0}
 
   { TIFF File Header: }
   TifHeader : array[0..7] of Byte = (
@@ -170,6 +170,7 @@ begin
 
   width2:=length(img[0]);{width}
   height2:=length(img[0,0]);{length}
+  description:=description+#0;{GIMP is complaining about this #0}
 
   try
    thefile:=tfilestream.Create(filen2, fmcreate );
@@ -264,6 +265,8 @@ begin
   //colours2:=length(img);{nr colours}
   width2:=length(img[0]);{width}
   height2:=length(img[0,0]);{length}
+  description:=description+#0;{GIMP is complaining about this #0}
+
 
   try
    thefile:=tfilestream.Create(filen2, fmcreate );
@@ -365,6 +368,7 @@ begin
 
   width2:=length(img[0]);{width}
   height2:=length(img[0,0]);{length}
+  description:=description+#0;{GIMP is complaining about this}
 
   Directoryrgb48[1]._Value := LongInt(width2);       { Image Width }
   Directoryrgb48[2]._Value := LongInt(height2);      { Image Height }
@@ -488,7 +492,7 @@ begin
   width2:=length(img[0]);{width}
   height2:=length(img[0,0]);{length}
 
-//  description:=description+#0;
+  description:=description+#0;{GIMP is complaining about this}
 
   Directoryrgb96[1]._Value := LongInt(width2);       { Image Width }
   Directoryrgb96[2]._Value := LongInt(Height2);      { Image Height }
