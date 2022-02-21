@@ -3083,7 +3083,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.02.19, '+about_message4;
+  #13+#10+'ASTAP version 2022.02.21, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -14272,7 +14272,8 @@ var
   i, j, k,m,colours5,width5,height5      :integer;
   image: TFPCustomImage;
   writer: TFPCustomImageWriter;
-  thecolor  :Tfpcolor;
+  thecolor  : Tfpcolor;
+  format    : string;
 begin
   colours5:=length(img);{nr colours}
   width5:=length(img[0]);{width}
@@ -14283,21 +14284,19 @@ begin
 
 
   Image.Extra[TiffAlphaBits]:='0';
-  if nrbits<>8 then
-  begin
-    Image.Extra[TiffRedBits]:='16';
-    Image.Extra[TiffGreenBits]:='16';
-    Image.Extra[TiffBlueBits]:='16';
-    Image.Extra[TiffGrayBits]:='16';
-   end;
-  {grayscale}
-  if colours5=1 then
-  begin
-    Image.Extra[TiffGrayBits]:='16';   {add unit fptiffcmn to make this work. see https://bugs.freepascal.org/view.php?id=35081}
-    Image.Extra[TiffPhotoMetric]:='1'; {PhotometricInterpretation = 0 (Min-is-White), 1 (Min-is-Black),  so for 1  black is $0000, White is $FFFF}
-  end;
+  if nrbits=8 then format:='8' else format:='16'; {32 bit is not available}
+  Image.Extra[TiffRedBits]:=format;
+  Image.Extra[TiffGreenBits]:=format;
+  Image.Extra[TiffBlueBits]:=format;
+  Image.Extra[TiffGrayBits]:=format;   {add unit fptiffcmn to make this work. see https://bugs.freepascal.org/view.php?id=35081}
+
+  if colours5=1 then {grayscale}
+    Image.Extra[TiffPhotoMetric]:='1' {PhotometricInterpretation = 0 (Min-is-White), 1 (Min-is-Black),  so for 1  black is $0000, White is $FFFF}
+  else
+    Image.Extra[TiffPhotoMetric]:='2';{RGB colour}
 
   image.Extra[TiffSoftware]:='ASTAP';
+
   image.Extra[TiffImageDescription]:=mainwindow.memo1.text; {store full header in TIFF !!!}
 
   Image.Extra[TiffCompression]:= '8'; {FPWriteTiff only support only writing Deflate compression. Any other compression setting is silently replaced in FPWriteTiff at line 465 for Deflate. FPReadTiff that can read other compressed files including LZW.}
@@ -14371,9 +14370,9 @@ begin
           else
           begin {32 bit files}
             if head.naxis3<>1 then {color}
-              save_tiff_96(img_loaded,filename2,false {flip H},false {flip V}) {old uncompressed routine in unit_tiff}
+              save_tiff_96(img_loaded,filename2,mainwindow.memo1.text {store full header in TIFF},false {flip H},false {flip V}) {old uncompressed routine in unit_tiff}
             else
-             save_tiff_32(img_loaded,filenamE2,false {flip H},false {flip V});{old uncompressed routine in unit_tiff}
+             save_tiff_32(img_loaded,filename2,mainwindow.memo1.text {store full header in TIFF},false {flip H},false {flip V});{old uncompressed routine in unit_tiff}
           end;
         end
         else err:=true;
@@ -14606,7 +14605,7 @@ begin
         save_tiff16(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=5 then
-      save_tiff_96(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked) {old uncompressed routine in unit_tiff}
+      save_tiff_96(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),mainwindow.memo1.text {store full header in TIFF description} ,flip_horizontal1.checked,flip_vertical1.checked) {old uncompressed routine in unit_tiff}
       else
       if savedialog1.filterindex=6 then
       begin
@@ -14641,7 +14640,7 @@ begin
       save_tiff16(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked)
       else
       if savedialog1.filterindex=5 then
-        save_tiff_32(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),flip_horizontal1.checked,flip_vertical1.checked){old uncompressed routine in unit_tiff}
+        save_tiff_32(img_loaded,ChangeFileExt(savedialog1.filename,'.tif'),mainwindow.memo1.text {store full header in TIFF desciption} ,flip_horizontal1.checked,flip_vertical1.checked){old uncompressed routine in unit_tiff}
       else
       if savedialog1.filterindex=6 then
       begin
