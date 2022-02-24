@@ -220,6 +220,7 @@ object mainwindow: Tmainwindow
     ParentFont = False
     ParentShowHint = False
     TabOrder = 3
+    OnClick = Panel1Click
     OnMouseMove = Panel1MouseMove
     OnMouseWheelDown = Panel1MouseWheelDown
     OnMouseWheelUp = Panel1MouseWheelUp
@@ -1148,12 +1149,16 @@ object mainwindow: Tmainwindow
         object convert_to_fits1: TMenuItem
           Caption = 'Batch convert to FITS'
           Hint = 'Convert the selected images to the FITS format.'
-          ShortCut = 16452
           OnClick = convert_to_fits1click
         end
         object save_to_tiff1: TMenuItem
           Caption = 'Batch convert to TIFF'
           Hint = 'Convert the selected images to the 16 bit or 32 bit TIFF format.'
+          OnClick = save_to_tiff1Click
+        end
+        object save_to_tiff2: TMenuItem
+          Caption = 'Batch convert to TIFF, preserve file date'
+          ShortCut = 16452
           OnClick = save_to_tiff1Click
         end
         object convert_to_ppm1: TMenuItem

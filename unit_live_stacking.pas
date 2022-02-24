@@ -100,7 +100,7 @@ begin
   if check_raw_file_extension(ext1) then {check if extension is from raw file}
     result:=convert_raw(true{load},false{save},filen,img_loaded)
   else
-    result:=load_tiffpngJPEG(filen,head,img_loaded);
+    result:=load_tiffpngJPEG(filen,true {light},head,img_loaded);
 end;
 
 

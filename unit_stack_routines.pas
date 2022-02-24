@@ -157,7 +157,7 @@ begin
   bp_3_0_ref:=bp_3_0;
 end;
 
-procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
+procedure stack_LRGB_old(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
 var
   fitsX,fitsY,c,width_max, height_max, x_new,y_new, binning,oversizeV,max_stars  : integer;
   background_r, background_g, background_b, background_l ,
@@ -249,37 +249,37 @@ begin
             if c=1 then
             begin
                get_background(0,img_loaded,true,false, {var} background_r,star_level);{unknown, do not calculate noise_level}
-               background_r:=background_r-500;{pedestal 500}
+               background_r:=background_r{-500};{pedestal 500}
                cblack:=round(background_r);
                counterR:=head.light_count ;counterRdark:=head.dark_count; counterRflat:=head.flat_count; counterRbias:=head.flatdark_count; exposureR:=round(head.exposure);temperatureR:=head.set_temperature;{for historical reasons}
             end;
             if c=2 then
             begin
               get_background(0,img_loaded,true,false, {var} background_g,star_level);{unknown, do not calculate noise_level}
-              background_g:=background_g-500; {pedestal +500}
+              background_g:=background_g{-500}; {pedestal +500}
               cblack:=round(background_g);
               counterG:=head.light_count;counterGdark:=head.dark_count; counterGflat:=head.flat_count; counterGbias:=head.flatdark_count; exposureG:=round(head.exposure);temperatureG:=head.set_temperature;
             end;
             if c=3 then
             begin
               get_background(0,img_loaded,true,false, {var} background_b,star_level);{unknown, do not calculate noise_level}
-              background_b:=background_b-500; {pedestal +500}
+              background_b:=background_b{-500}; {pedestal +500}
               cblack:=round( background_b);
               counterB:=head.light_count; counterBdark:=head.dark_count; counterBflat:=head.flat_count; counterBbias:=head.flatdark_count; exposureB:=round(head.exposure);temperatureB:=head.set_temperature;
             end;
             if c=4 then
             begin
               get_background(0,img_loaded,true,false, {var} background_r,star_level);{unknown, do not calculate noise_level}
-              background_r:=background_r-500; {pedestal +500}
-              background_g:=background_r-500;
-              background_b:=background_r-500;
+              background_r:=background_r{-500}; {pedestal +500}
+              background_g:=background_r{-500};
+              background_b:=background_r{-500};
               cblack:=round( background_r);
               counterRGB:=head.light_count; counterRGBdark:=head.dark_count; counterRGBflat:=head.flat_count; counterRGBbias:=head.flatdark_count; exposureRGB:=round(head.exposure);;temperatureRGB:=head.set_temperature;
             end;
             if c=5 then {Luminance}
             begin
               get_background(0,img_loaded,true,false, {var} background_L,star_level);{unknown, do not calculate noise_level}
-              background_L:=background_L-500;
+              background_L:=background_L{-500};
               cblack:=round( background_L);
               counterL:=head.light_count; counterLdark:=head.dark_count; counterLflat:=head.flat_count; counterLbias:=head.flatdark_count; exposureL:=round(head.exposure);temperatureL:=head.set_temperature;
             end;
@@ -449,6 +449,340 @@ begin
                     begin img_average[0,x_new,y_new]:=img_loaded[0,fitsX-1,fitsY-1]-background_r; end;
                     begin img_average[1,x_new,y_new]:=img_loaded[1,fitsX-1,fitsY-1]-background_g; end;
                     begin img_average[2,x_new,y_new]:=img_loaded[2,fitsX-1,fitsY-1]-background_b; end;
+                  end;
+                  if c=5 {Luminance} then
+                  begin
+                    {rgb is already blurred}
+                    {r:=l*(0.33+r)/(r+g+b)}
+                    colr:=img_average[0,x_new,y_new] - 475 + red_add; {lowest_most_common is around 450 to 500}
+                    colg:=img_average[1,x_new,y_new] - 475 + green_add;
+                    colb:=img_average[2,x_new,y_new] - 475 + blue_add;
+
+
+                    rgbsum:=colr+colg+colb;
+                    if rgbsum<0.1 then begin rgbsum:=0.1; red_f:=rgbsum/3; green_f:=red_f; blue_f:=red_f;end
+                    else
+                    begin
+                      red_f:=colr/rgbsum;   if red_f<0   then red_f:=0;  if red_f>1 then   red_f:=1;
+                      green_f:=colg/rgbsum; if green_f<0 then green_f:=0;if green_f>1 then green_f:=1;
+                      blue_f:=colb/rgbsum;  if blue_f<0  then blue_f:=0; if blue_f>1 then  blue_f:=1;
+                    end;
+
+                    img_average[0,x_new,y_new]:=1000+(img_loaded[0,fitsX-1,fitsY-1] - background_l)*(red_f);
+                    img_average[1,x_new,y_new]:=1000+(img_loaded[0,fitsX-1,fitsY-1] - background_l)*(green_f);
+                    img_average[2,x_new,y_new]:=1000+(img_loaded[0,fitsX-1,fitsY-1] - background_l)*(blue_f);
+                  end;
+                end;
+              end;
+            end;
+            progress_indicator(94+c,' LRGB');{show progress, 95..99}
+            except
+              beep;
+          end;{try}
+        end;
+      end;
+      if counter<>0 then
+      begin
+        head:=head_ref; {restore solution. Works only if no oversize is used}
+
+        head.naxis3:=3;{three colours}
+        head.naxis :=3;{three dimensions. Header will be updated in the save routine}
+        img_loaded:=img_average;
+        head.width:=width_max;
+        head.height:=height_max;
+      end;
+    end;{LRGB}
+  end;{with stackmenu1}
+end;
+
+
+procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
+var
+  fitsX,fitsY,c,width_max, height_max, x_new,y_new, binning,oversizeV,max_stars  : integer;
+  background_r, background_g, background_b, background_l ,
+  rgbsum,red_f,green_f,blue_f, value ,colr, colg,colb, red_add,green_add,blue_add,
+  rr_factor, rg_factor, rb_factor,
+  gr_factor, gg_factor, gb_factor,
+  br_factor, bg_factor, bb_factor,
+  saturated_level,hfd_min                         : double;
+  init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment,
+  use_astrometry_internal,vector_based :boolean;
+  warning  : string;
+
+begin
+  with stackmenu1 do
+  begin
+
+    {move often uses setting to booleans. Great speed improved if use in a loop and read many times}
+    use_star_alignment:=stackmenu1.use_star_alignment1.checked;
+    use_manual_align:=stackmenu1.use_manual_alignment1.checked;
+    use_ephemeris_alignment:=stackmenu1.use_ephemeris_alignment1.checked;
+    use_astrometry_internal:=use_astrometry_internal1.checked;
+    hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
+    max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
+    if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
+
+    counter:=0;
+    jd_sum:=0;{sum of Julian midpoints}
+    jd_stop:=0;{end observations in Julian day}
+
+    init:=false;
+
+    {LRGB method}
+    begin
+      memo2_message('Combining colours.');
+      rr_factor:=strtofloat2(rr1.text);
+      rg_factor:=strtofloat2(rg1.text);
+      rb_factor:=strtofloat2(rb1.text);
+
+      gr_factor:=strtofloat2(gr1.text);
+      gg_factor:=strtofloat2(gg1.text);
+      gb_factor:=strtofloat2(gb1.text);
+
+      br_factor:=strtofloat2(br1.text);
+      bg_factor:=strtofloat2(bg1.text);
+      bb_factor:=strtofloat2(bb1.text);
+
+
+      background_r:=0;
+      background_g:=0;
+      background_b:=0;
+      background_l:=0;
+      red_add:=strtofloat2(red_filter_add1.text);
+      green_add:=strtofloat2(green_filter_add1.text);
+      blue_add:=strtofloat2(blue_filter_add1.text);
+
+
+      for c:=0 to length(files_to_process)-1 do  {should contain reference,r,g,b,rgb,l}
+      begin
+        if c=5 then {all colour files added, correct for the number of pixel values added at one pixel. This can also happen if one colour has an angle and two pixel fit in one!!}
+        begin {fix RGB stack}
+          memo2_message('Applying black spot filter on interim RGB image.');
+          black_spot_filter(img_average);
+        end;{c=5, all colour files added}
+
+        if length(files_to_process[c].name)>0 then
+        begin
+          try { Do some lengthy operation }
+            filename2:=files_to_process[c].name;
+            if c=0 then memo2_message('Loading reference image: "'+filename2+'".');
+            if c=1 then memo2_message('Adding red file: "'+filename2+'"  to final image.');
+            if c=2 then memo2_message('Adding green file: "'+filename2+'"  to final image.');
+            if c=3 then memo2_message('Adding blue file: "'+filename2+'"  to final image.');
+            if c=4 then memo2_message('Adding RGB file: "'+filename2+'"  to final image.');
+            if c=5 then memo2_message('Using luminance file: "'+filename2+'"  for final image.');
+
+            {load image}
+            Application.ProcessMessages;
+            if ((esc_pressed) or (load_fits(filename2,true {light}, true,init=false{update memo1} ,0,head,img_loaded)=false)) then begin memo2_message('Error');exit;end;{update memo for case esc is pressed}
+
+            if init=false then
+            begin
+              head_ref:=head;{backup solution}
+              initialise_var1;{set variables correct, do this before apply dark}
+              initialise_var2;{set variables correct}
+            end;
+
+            saturated_level:=head.datamax_org*0.97;{130}
+
+            if c=1 then
+            begin
+               get_background(0,img_loaded,true,false, {var} background_r,star_level);{unknown, do not calculate noise_level}
+               cblack:=round( background_r);
+               counterR:=head.light_count ;counterRdark:=head.dark_count; counterRflat:=head.flat_count; counterRbias:=head.flatdark_count; exposureR:=round(head.exposure);temperatureR:=head.set_temperature;{for historical reasons}
+            end;
+            if c=2 then
+            begin
+              get_background(0,img_loaded,true,false, {var} background_g,star_level);{unknown, do not calculate noise_level}
+              cblack:=round( background_g);
+              counterG:=head.light_count;counterGdark:=head.dark_count; counterGflat:=head.flat_count; counterGbias:=head.flatdark_count; exposureG:=round(head.exposure);temperatureG:=head.set_temperature;
+            end;
+            if c=3 then
+            begin
+              get_background(0,img_loaded,true,false, {var} background_b,star_level);{unknown, do not calculate noise_level}
+              cblack:=round( background_b);
+              counterB:=head.light_count; counterBdark:=head.dark_count; counterBflat:=head.flat_count; counterBbias:=head.flatdark_count; exposureB:=round(head.exposure);temperatureB:=head.set_temperature;
+            end;
+            if c=4 then
+            begin
+              get_background(0,img_loaded,true,false, {var} background_r,star_level);{unknown, do not calculate noise_level}
+              cblack:=round( background_r);
+              background_g:=background_r;
+              background_b:=background_r;
+              counterRGB:=head.light_count; counterRGBdark:=head.dark_count; counterRGBflat:=head.flat_count; counterRGBbias:=head.flatdark_count; exposureRGB:=round(head.exposure);;temperatureRGB:=head.set_temperature;
+            end;
+            if c=5 then {Luminance}
+            begin
+              get_background(0,img_loaded,true,false, {var} background_L,star_level);{unknown, do not calculate noise_level}
+              cblack:=round( background_L);
+              counterL:=head.light_count; counterLdark:=head.dark_count; counterLflat:=head.flat_count; counterLbias:=head.flatdark_count; exposureL:=round(head.exposure);temperatureL:=head.set_temperature;
+            end;
+
+            if use_astrometry_internal then {internal solver, create new solutions for the R, G, B and L stacked images if required}
+            begin
+              memo2_message('Preparing astrometric solution for interim file: '+filename2);
+              if head.cd1_1=0 then solution:= create_internal_solution(img_loaded) else solution:=true;
+              if solution=false {load astrometry.net solution succesfull} then begin memo2_message('Abort, No astrometric solution for '+filename2); exit;end;{no solution found}
+              //if c=0 then cdelt2_lum:=cdelt2;
+              //if ((c=1) or (c=2)  or (c=3) or (c=4)) then
+              //begin
+              //  if cdelt2>cdelt2_lum*1.01 then memo2_message('█ █ █ █ █ █  Warning!! RGB images have a larger pixel size ('+floattostrF(cdelt2*3600,ffgeneral,3,2)+'arcsec) then the luminance image ('+floattostrF(cdelt2_lum*3600,ffgeneral,3,2)+'arcsec). If the stack result is poor, select in tab "stack method" the 3x3 mean or 5x5 mean filter for smoothing interim RGB.');
+              //end;
+            end
+            else
+            if init=false then {first image}
+            begin
+              if ((use_manual_align) or (use_ephemeris_alignment)) then
+              begin
+                referenceX:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {reference offset}
+                referenceY:=strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]); {reference offset}
+              end
+              else
+              begin
+                binning:=report_binning(head.height);{select binning based on the height of the light}
+                bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist1,warning);{bin, measure background, find stars}
+                find_quads(starlist1,0, quad_smallest,quad_star_distances1);{find quads for reference image/database}
+              end;
+            end;
+
+            if init=false then {init}
+            begin
+              if oversize<0 then {shrink a lot, adapt in ratio}
+              begin
+                oversize:=max(oversize,-round((head.width-100)/2) );{minimum image width is 100}
+                oversizeV:=round(oversize*head.height/head.width);{vertical shrinkage in pixels}
+                height_max:=head.height+oversizeV*2;
+              end
+              else
+              begin
+                oversizeV:=oversize;
+                height_max:=head.height+oversize*2;
+              end;
+              width_max:=head.width+oversize*2;
+
+              setlength(img_average,3,width_max,height_max);{will be color}
+              for fitsY:=0 to height_max-1 do
+                for fitsX:=0 to width_max-1 do
+                begin
+                  img_average[0,fitsX,fitsY]:=500; {clear img_average. Set default at 500}
+                  img_average[1,fitsX,fitsY]:=500; {clear img_average}
+                  img_average[2,fitsX,fitsY]:=500; {clear img_average}
+                end;
+            end;{init, c=0}
+
+            solution:=true;{assume solution is found}
+            if use_astrometry_internal then sincos(head.dec0,SIN_dec0,COS_dec0) {do this in advance since it is for each pixel the same}
+            else
+            begin {align using star match}
+              if init=true then {second image}
+              begin
+                if ((use_manual_align) or (use_ephemeris_alignment)) then
+                begin {manual alignment}
+                  solution_vectorX[2]:=referenceX-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_X]); {calculate correction}
+                  solution_vectorY[2]:=referenceY-strtofloat2(ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_Y]);
+                  memo2_message('Solution x:=x+'+floattostr6(solution_vectorX[2])+',  y:=y+'+floattostr6(solution_vectorY[2]));
+                end
+                else
+                begin{internal alignment}
+                bin_and_find_stars(img_loaded, binning,1  {cropping},hfd_min,max_stars,true{update hist},starlist2,warning);{bin, measure background, find stars}
+
+                  find_quads(starlist2,0, quad_smallest,quad_star_distances2);{find star quads for new image}
+                  if find_offset_and_rotation(3,strtofloat2(stackmenu1.quad_tolerance1.text)) then {find difference between ref image and new image}
+                  memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
+                       +'  Solution x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
+                       +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) )
+
+                    else
+                    begin
+                      memo2_message('Not enough quad matches <3 or inconsistent solution, skipping this image.');
+                      files_to_process[c].name:=''; {remove file from list}
+                     solution:=false;
+                      ListView1.Items.item[files_to_process[c].listviewindex].SubitemImages[L_result]:=6;{mark 3th column with exclaimation}
+                      ListView1.Items.item[files_to_process[c].listviewindex].subitems.Strings[L_result]:='no solution';{no stack result}
+                    end;
+                 end;{internal alignment}
+              end
+              else
+              reset_solution_vectors(1);{no influence on the first image}
+            end;{using star match}
+            init:=true;{initialize for first image done}
+            if ((c<>0) and (solution)) then  {do not add reference channel c=0, in most case luminance file.}
+            begin
+              inc(counter);{count number of colour files involved}
+              date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
+              if jd_start>jd_stop then jd_stop:=jd_start;{find latest start time}
+              jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint exposure}
+
+              vector_based:=((use_star_alignment) or (use_manual_align) or (use_ephemeris_alignment));
+              if ((vector_based=false) and (a_order=0)) then {no SIP from astronomy.net}
+              begin
+                astrometric_to_vector;{convert astrometric solution to vector solution}
+                vector_based:=true;
+              end;
+
+              for fitsY:=1 to head.height do {skip outside pixels if color}
+              for fitsX:=1 to head.width do
+              begin
+                calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
+                x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
+                if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
+                begin
+                  if c=1 {red} then
+                  begin
+                    value:=img_loaded[0,fitsX-1,fitsY-1];
+                    if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
+                    begin
+                      img_average[0,x_new,y_new]:=0; {saturation marker, process later as black spot}
+                      img_average[1,x_new,y_new]:=0;
+                      img_average[2,x_new,y_new]:=0;
+                    end
+                    else
+                    begin
+                      value:=(value-background_r);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
+                      if rr_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + rr_factor*value;{execute only if greater then zero for speed} end;
+                      if rg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + rg_factor*value; end;
+                      if rb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + rb_factor*value; end;
+                    end;
+                  end;
+                  if c=2 {green} then
+                  begin
+                    value:=img_loaded[0,fitsX-1,fitsY-1];
+                    if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
+                    begin
+                      img_average[0,x_new,y_new]:=0; {saturation marker, process later as black spot}
+                      img_average[1,x_new,y_new]:=0;
+                      img_average[2,x_new,y_new]:=0;
+                    end
+                    else
+                    begin
+                      value:=(value-background_g);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
+                      if gr_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + gr_factor*value;{execute only if greater then zero for speed} end;
+                      if gg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + gg_factor*value; end;
+                      if gb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + gb_factor*value;  end;
+                    end;
+                  end;
+                  if c=3 {blue}  then
+                  begin
+                    value:=img_loaded[0,fitsX-1,fitsY-1];
+                    if value>saturated_level then {saturation, mark all three colors as black spot (<=0) to maintain star colour}
+                    begin
+                      img_average[0,x_new,y_new]:=0; {saturation marker, process later as black spot}
+                      img_average[1,x_new,y_new]:=0;
+                      img_average[2,x_new,y_new]:=0;
+                    end
+                    else
+                    begin
+                      value:=(value-background_b);{image loaded is already corrected with dark and flat. Normalize background to level 500}{NOTE: fits count from 1, image from zero}
+                      if br_factor>0.00001 then begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + br_factor*value;{execute only if greater then zero for speed} end;
+                      if bg_factor>0.00001 then begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + bg_factor*value; end;
+                      if bb_factor>0.00001 then begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + bb_factor*value; end;
+                    end;
+                  end;
+                  if c=4 {RGB image, naxis3=3}   then
+                  begin
+                    begin img_average[0,x_new,y_new]:=img_average[0,x_new,y_new] + img_loaded[0,fitsX-1,fitsY-1]-background_r; end;
+                    begin img_average[1,x_new,y_new]:=img_average[1,x_new,y_new] + img_loaded[1,fitsX-1,fitsY-1]-background_g; end;
+                    begin img_average[2,x_new,y_new]:=img_average[2,x_new,y_new] + img_loaded[2,fitsX-1,fitsY-1]-background_b; end;
                   end;
                   if c=5 {Luminance} then
                   begin

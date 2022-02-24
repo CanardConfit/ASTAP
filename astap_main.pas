@@ -116,6 +116,7 @@ type
     MenuItem22: TMenuItem;
     flip_v1: TMenuItem;
     flip_H1: TMenuItem;
+    save_to_tiff2: TMenuItem;
     noise_in_electron1: TMenuItem;
     electron_to_adu_factors1: TMenuItem;
     MenuItem35: TMenuItem;
@@ -376,6 +377,7 @@ type
     procedure convert_to_png1Click(Sender: TObject);
     procedure MenuItem22Click(Sender: TObject);
     procedure electron_to_adu_factors1Click(Sender: TObject);
+    procedure Panel1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
     procedure inspection1click(Sender: TObject);
     procedure removegreenpurple1Click(Sender: TObject);
@@ -739,7 +741,7 @@ function convert_raw(loadfile,savefile :boolean;var filename3: string; var img: 
 function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 
-function load_TIFFPNGJPEG(filen:string; out head :theader; out img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head :theader; out img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise_level: boolean; out background, starlevel: double); {get background and star level from peek histogram}
 
 function extract_exposure_from_filename(filename8: string):integer; {try to extract exposure from filename}
@@ -1046,7 +1048,7 @@ begin
 
   if tiff_file_name(filen) then  {experimental}
   begin
-    result:=load_TIFFPNGJPEG(filen, head,img_loaded2);{load TIFF image}
+    result:=load_TIFFPNGJPEG(filen,light, head,img_loaded2);{load TIFF image}
     exit;
   end;
 
@@ -1187,10 +1189,13 @@ begin
            end;
         end;
 
-        if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='P') and (header[i+3]='O') and (header[i+4]='S') and (header[i+5]='U') and (header[i+6]='R')) then
+        if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='P')) then
+        begin
+          if ((header[i+3]='O') and (header[i+4]='S') and (header[i+5]='U') and (header[i+6]='R')) then
               head.exposure:=validate_double;{read double value}
-        if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='P') and (header[i+3]='T') and (header[i+4]='I') and (header[i+5]='M') and (header[i+6]='E') and (header[i+7]=' ')) then {exptime and not exptimer}
+          if ((header[i+3]='T') and (header[i+4]='I') and (header[i+5]='M') and (header[i+6]='E') and (header[i+7]=' ')) then {exptime and not exptimer}
               head.exposure:=validate_double;{read double value}
+        end;
 
         if ((header[i]='C') and (header[i+1]='C')  and (header[i+2]='D') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
              ccd_temperature:=validate_double;{read double value}
@@ -1920,7 +1925,8 @@ begin
     end;
     mainwindow.Memo3.lines.text:=aline;
     aline:=''; {release memory}
-    if update_memo then mainwindow.memo1.visible:=true;{show header}
+    if update_memo then
+         mainwindow.memo1.visible:=true;{show header}
     mainwindow.pagecontrol1.showtabs:=true;{show tabs}
     reader_position:=reader_position+head.width*head.height;
   end; {read table}
@@ -2002,44 +2008,86 @@ begin
 end;
 
 
-procedure read_keys_memo(out head : theader);{for tiff, header in the describtion decoding}
+procedure read_keys_memo(light: boolean; out head : theader);{for tiff, header in the describtion decoding}
 var
-  key      : string;
-  count1,index   : integer;
-  ra2,dec2 : double;
-     function read_float(aline :string): double;
-     var
-       err: integer;
-     begin
-       val(aline,result,err);
-     end;
+  key                      : string;
+  count1,index             : integer;
+  ra2,dec2,ccd_temperature : double;
+
+  function read_float: double;
+  var
+    err: integer;
+  begin
+    val(copy(mainwindow.Memo1.Lines[index],11,20),result,err);
+  end;
+  function read_integer: integer;
+  var
+    err: integer;
+  begin
+    val(copy(mainwindow.Memo1.Lines[index],11,20),result,err);
+  end;
+  function read_string: string;
+  begin
+    result:=StringReplace(trim(copy(mainwindow.Memo1.Lines[index],11,20)),char(39),'',[rfReplaceAll]);{remove all spaces and char (39)}
+  end;
+
 begin
   {variables are already reset}
   count1:=mainwindow.Memo1.Lines.Count-1-1;
+  ccd_temperature:=999;
 
   index:=1;
   while index<=count1 do {read keys}
   begin
     key:=copy(mainwindow.Memo1.Lines[index],1,9);
-    if key='CD1_1   =' then
-             head.cd1_1:=read_float(copy(mainwindow.Memo1.Lines[index],11,20));
-    if key='CD1_2   =' then head.cd1_2:=read_float(copy(mainwindow.Memo1.Lines[index],11,20));
-    if key='CD2_1   =' then head.cd2_1:=read_float(copy(mainwindow.Memo1.Lines[index],11,20));
-    if key='CD2_2   =' then head.cd2_2:=read_float(copy(mainwindow.Memo1.Lines[index],11,20));
-    if key='CRPIX1  =' then head.crpix1:=read_float(copy(mainwindow.Memo1.Lines[index],11,20));
-    if key='CRPIX2  =' then head.crpix2:=read_float(copy(mainwindow.Memo1.Lines[index],11,20));
+    if key='CD1_1   =' then head.cd1_1:=read_float else
+    if key='CD1_2   =' then head.cd1_2:=read_float else
+    if key='CD2_1   =' then head.cd2_1:=read_float else
+    if key='CD2_2   =' then head.cd2_2:=read_float else
+    if key='CRPIX1  =' then head.crpix1:=read_float else
+    if key='CRPIX2  =' then head.crpix2:=read_float else
 
-    if key='CRVAL1  =' then head.ra0:=read_float(copy(mainwindow.Memo1.Lines[index],11,20))*pi/180; {degrees -> radians}
-    if key='CRVAL2  =' then head.dec0:=read_float(copy(mainwindow.Memo1.Lines[index],11,20))*pi/180;
-    if key='RA      =' then ra_mount:=read_float(copy(mainwindow.Memo1.Lines[index],11,20))*pi/180;{degrees -> radians}
-    if key='DEC     =' then dec_mount:=read_float(copy(mainwindow.Memo1.Lines[index],11,20))*pi/180;
-    if key='EXPOSURE=' then head.exposure:=read_float(copy(mainwindow.Memo1.Lines[index],11,20));
-    if key='CCD-TEMP=' then
-              head.set_temperature:=round(read_float(copy(mainwindow.Memo1.Lines[index],11,20)));
+    if key='CRVAL1  =' then head.ra0:=read_float*pi/180 {degrees -> radians}  else
+    if key='CRVAL2  =' then head.dec0:=read_float*pi/180 else
+    if key='RA      =' then
+    begin
+      ra_mount:=read_float*pi/180;{degrees -> radians}
+      if head.ra0=0 then head.ra0:=ra_mount; {ra telescope, read double value only if crval is not available}
+    end else
+    if key='DEC     =' then
+    begin
+      dec_mount:=read_float*pi/180;
+      if head.dec0=0 then head.dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
+    end else
+    if ((key='OBJCTRA =') and (ra_mount>=999)) {ra_mount value is unfilled, preference for keyword RA} then
+    begin
+      mainwindow.ra1.text:=read_string;{triggers an onchange event which will convert the string to ra_radians}
+      ra_mount:=ra_radians;{preference for keyword RA}
+    end  else
+    if ((key='OBJCTDEC=') and (dec_mount>=999)) {dec_mount value is unfilled, preference for keyword DEC} then
+    begin
+      mainwindow.dec1.text:=read_string;{triggers an onchange event which will convert the string to dec_radians}
+      dec_mount:=dec_radians;
+    end else
+    if ((key='EXPOSURE=') or ( key='EXPTIME =')) then head.exposure:=read_float else
+    if (key='XBINNING=') then xbinning:=read_integer else
+    if (key='YBINNING=') then ybinning:=read_integer else
 
-    if key='DATE-OBS=' then head.date_obs:=StringReplace(trim(copy(mainwindow.Memo1.Lines[index],11,20)),char(39),'',[rfReplaceAll]);{remove all spaces and char (39)}
+    if key='GAIN    =' then head.gain:=read_string else
 
-    if key='BAYERPAT=' then bayerpat:=StringReplace(trim(copy(mainwindow.Memo1.Lines[index],11,20)),char(39),'',[rfReplaceAll]);{remove all spaces and char (39)}
+    if key='CCD-TEMP=' then ccd_temperature:=round(read_float) else
+    if key='SET-TEMP=' then head.set_temperature:=round(read_float) else
+    if key='LIGH_CNT=' then head.light_count:=read_integer else {will not be used unless there is a tiff 32 bit reader}
+    if key='DARK_CNT=' then head.dark_count:=read_integer else {will not be used unless there is a tiff 32 bit reader}
+    if key='FLAT_CNT=' then head.flat_count:=read_integer else {will not be used unless there is a tiff 32 bit reader}
+    if key='BIAS_CNT=' then head.flatdark_count:=read_integer else {will not be used unless there is a tiff 32 bit reader}
+
+    if key='CALSTAT =' then head.calstat:=read_string else {will not be used unless there is a tiff 32 bit reader}
+
+    if key='DATE-OBS=' then head.date_obs:=read_string else
+
+    if key='BAYERPAT=' then bayerpat:=read_string;
+
 
     if index=1 then if key<>'BITPIX  =' then begin mainwindow.Memo1.Lines.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
     if index=2 then if key<>'NAXIS   =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
@@ -2049,14 +2097,25 @@ begin
                begin mainwindow.Memo1.Lines.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
     index:=index+1;
   end;
-  if ((head.ra0>=999) and (head.ra0>=999)) then {no solution position available. Use mount position}
+
+  if ((light) and ((head.ra0<>0) or (head.dec0<>0))) then
   begin
-    head.ra0:=ra_mount;
-    head.dec0:=dec_mount;
+     mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
+     mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
   end;
+  { condition           keyword    to
+   if ra_mount>999 then objctra--->ra1.text--------------->ra_radians--->ra_mount
+                             ra--->ra_mount  if head.ra0=0 then   ra_mount--->head.ra0
+                         crval1--->head.ra0
+
+   if head.ra0<>0 then           head.ra0--->ra1.text------------------->ra_radians}
+
+
 
   mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{show center of image}
   mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
+
+  if head.set_temperature=999 then head.set_temperature:=round(ccd_temperature); {temperature}
 
   if head.cd1_1<>0 then
                      new_to_old_WCS;
@@ -2344,7 +2403,7 @@ begin
 end;
 
 
-function load_TIFFPNGJPEG(filen:string; out head : theader;out img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
+function load_TIFFPNGJPEG(filen:string;light {load as light or dark/flat}: boolean; out head : theader;out img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
   i,j   : integer;
   jd2   : double;
@@ -2476,7 +2535,7 @@ begin
   if pos('SIMPLE  =',descrip)>0 then
   begin
     mainwindow.memo1.text:=descrip;
-    read_keys_memo(head);
+    read_keys_memo(light, head);
     saved_header:=true;
   end
   else {no fits header in tiff file available}
@@ -3083,7 +3142,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.02.21, '+about_message4;
+  #13+#10+'ASTAP version 2022.02.24, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -7515,6 +7574,8 @@ begin
       mainwindow.preview_demosaic1.Checked:=Sett.ReadBool('main','preview_demosaic',false);
       mainwindow.batch_overwrite1.checked:=Sett.ReadBool('main','s_overwrite',false);
       mainwindow.add_sip_check1.Checked:=Sett.ReadBool('main','add_sip',false);
+
+
       mainwindow.add_limiting_magn_check1.Checked:=Sett.ReadBool('main','add_lim_magn',false);
 
       marker_position :=Sett.ReadString('main','marker_position','');{ra, dec marker}
@@ -7867,6 +7928,7 @@ begin
       sett.writeBool('main','preview_demosaic',mainwindow.preview_demosaic1.Checked);
       sett.writeBool('main','s_overwrite',mainwindow.batch_overwrite1.checked);
       sett.writeBool('main','add_sip',mainwindow.add_sip_check1.Checked);
+
       sett.writeBool('main','add_lim_magn',mainwindow.add_limiting_magn_check1.Checked);
 
       sett.writestring('main','ra',ra1.text);
@@ -8655,7 +8717,7 @@ begin
       result:=load_xisf(filen,head,img_loaded)
     else
     if ((ext='.JPG') or (ext='.JPEG') or (ext='.PNG') or (ext='.TIF') or (ext='.TIFF')) then
-      result:=load_tiffpngJPEG(filen,head,img_loaded);
+      result:=load_tiffpngJPEG(filen,true,head,img_loaded);
 
     if result then
     begin
@@ -8677,7 +8739,7 @@ var
   ext : string;
   err, dobackup : boolean;
 begin
-  OpenDialog1.Title := 'Select multiple  files to convert';
+  OpenDialog1.Title := 'Select multiple  files to convert to FITS.';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter :=  'All formats |*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;*.fz;'+
                                        '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;'+
@@ -8798,7 +8860,7 @@ begin
 
   else
   {tif, png, bmp, jpeg}
-  if load_tiffpngJPEG(filename2,head,img_loaded)=false then
+  if load_tiffpngJPEG(filename2,true {light},head,img_loaded)=false then
         begin update_menu(false);exit; end  {load tif, exit on failure}
   else
     result:=true;
@@ -14219,6 +14281,8 @@ begin
       image.Colors[j,i]:=thecolor;
     end;
   end;
+
+  result:=true;
   try
   Image.SaveToFile(filen2, Writer);
   except
@@ -14256,6 +14320,7 @@ end;
 //      image.Colors[j,i]:=thecolor;
 //    end;
 //  end;
+//  result:=true;
 //  try
 //  Image.SaveToFile(filen2, Writer);
 //  except
@@ -14315,6 +14380,7 @@ begin
     end;
   end;
 
+  result:=true;
   try
     Image.SaveToFile(filen2, Writer);
   except
@@ -14329,11 +14395,12 @@ end;
 procedure Tmainwindow.save_to_tiff1Click(Sender: TObject);
 var
   I: integer;
+  fileDate    : Integer;
   Save_Cursor:TCursor;
-  err   : boolean;
+  err,written   : boolean;
   dobackup : boolean;
 begin
-  OpenDialog1.Title := 'Select multiple  files to convert';
+  OpenDialog1.Title := 'Select multiple  files to convert to TIFF. Date will preserved.';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter :=  'All formats except TIF|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.new;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;*.fz;'+
                                                 '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;'+
@@ -14360,20 +14427,30 @@ begin
         if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
         filename2:=Strings[I];
         memo2_message(filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count));
+        if sender=save_to_tiff2 then
+          fileDate := FileAge(fileName2);
         if load_image(false {recenter},false {plot}) then
         begin
           filename2:=ChangeFileExt(filename2,'.tif');
           if abs(nrbits)<=16 then
           begin
-            save_tiff16(img_loaded,filename2,false {flip H},false {flip V});
+            written:=save_tiff16(img_loaded,filename2,false {flip H},false {flip V});
           end
           else
           begin {32 bit files}
+            memo2_message('This file is 32 bit. Only export to TIFF 32 bit possible. No import!!' );
             if head.naxis3<>1 then {color}
-              save_tiff_96(img_loaded,filename2,mainwindow.memo1.text {store full header in TIFF},false {flip H},false {flip V}) {old uncompressed routine in unit_tiff}
+              written:=save_tiff_96(img_loaded,filename2,mainwindow.memo1.text {store full header in TIFF},false {flip H},false {flip V}) {old uncompressed routine in unit_tiff}
             else
-             save_tiff_32(img_loaded,filename2,mainwindow.memo1.text {store full header in TIFF},false {flip H},false {flip V});{old uncompressed routine in unit_tiff}
+             written:=save_tiff_32(img_loaded,filename2,mainwindow.memo1.text {store full header in TIFF},false {flip H},false {flip V});{old uncompressed routine in unit_tiff}
           end;
+          if written then
+          begin
+            if sender=save_to_tiff2 then
+               FileSetDate(filename2,filedate) {function}
+          end
+          else
+           err:=true
         end
         else err:=true;
       end;
@@ -14558,6 +14635,10 @@ begin
   ,electron_to_adu);
 end;
 
+procedure Tmainwindow.Panel1Click(Sender: TObject);
+begin
+
+end;
 
 
 procedure Tmainwindow.FormClose(Sender: TObject; var CloseAction: TCloseAction);
