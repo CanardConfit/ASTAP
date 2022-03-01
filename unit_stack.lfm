@@ -413,6 +413,11 @@ object stackmenu1: Tstackmenu1
             Width = 58
           end        
           item
+            Caption = 'Gain'
+            MinWidth = 60
+            Width = 60
+          end        
+          item
             Alignment = taRightJustify
             Caption = 'Solution'
             MinWidth = 80
@@ -443,11 +448,6 @@ object stackmenu1: Tstackmenu1
             Caption = 'FocTemp'
             MinWidth = 70
             Width = 70
-          end        
-          item
-            Caption = 'Gain'
-            MinWidth = 60
-            Width = 60
           end        
           item
             Caption = 'CentAlt'
@@ -603,7 +603,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 470
-      ClientWidth = 1335
+      ClientWidth = 1713
       ImageIndex = 1
       ParentFont = False
       object replace_by_master_dark1: TButton
@@ -637,7 +637,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1335
+        Width = 1713
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36

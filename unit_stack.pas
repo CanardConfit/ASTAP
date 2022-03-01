@@ -932,13 +932,15 @@ const
   L_type=13;
   L_datetime=14;
   L_position=15;
-  L_solution=16;
-  L_x=17;
-  L_y=18;
-  L_calibration=19;
-  L_focpos=20;
-  L_foctemp=21;
-  L_gain=22;
+
+  L_gain=16;
+  L_solution=17;
+  L_x=18;
+  L_y=19;
+  L_calibration=20;
+  L_focpos=21;
+  L_foctemp=22;
+
   L_centalt=23;
   L_centaz=24;
   L_sqm=25;
@@ -1664,8 +1666,8 @@ begin
       exit;
     end;
 
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Save_Cursor:=Screen.Cursor;
+    Screen.Cursor:=crHourglass;    { Show hourglass cursor }
 
     esc_pressed:=false;
 

@@ -92,7 +92,6 @@ type
     MenuItem13: TMenuItem;
     MenuItem14: TMenuItem;
     loadsettings1: TMenuItem;
-    localbackgroundequalise1: TMenuItem;
     menufindnext1: TMenuItem;
     Menufind1: TMenuItem;
     annotate_minor_planets1: TMenuItem;
@@ -116,6 +115,7 @@ type
     MenuItem22: TMenuItem;
     flip_v1: TMenuItem;
     flip_H1: TMenuItem;
+    halo_removal1: TMenuItem;
     save_to_tiff2: TMenuItem;
     noise_in_electron1: TMenuItem;
     electron_to_adu_factors1: TMenuItem;
@@ -256,7 +256,6 @@ type
     helponline1: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem5: TMenuItem;
-    brighten_area1: TMenuItem;
     convert_to_fits1: TMenuItem;
     convertmono1: TMenuItem;
     MenuItem6: TMenuItem;
@@ -358,7 +357,6 @@ type
     procedure j2000d1Click(Sender: TObject);
     procedure measuretotalmagnitude1Click(Sender: TObject);
     procedure loadsettings1Click(Sender: TObject);
-    procedure localbackgroundequalise1Click(Sender: TObject);
     procedure menucopy1Click(Sender: TObject);
     procedure Menufind1Click(Sender: TObject);
     procedure menufindnext1Click(Sender: TObject);
@@ -377,7 +375,7 @@ type
     procedure convert_to_png1Click(Sender: TObject);
     procedure MenuItem22Click(Sender: TObject);
     procedure electron_to_adu_factors1Click(Sender: TObject);
-    procedure Panel1Click(Sender: TObject);
+    procedure halo_removal1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
     procedure inspection1click(Sender: TObject);
     procedure removegreenpurple1Click(Sender: TObject);
@@ -419,7 +417,6 @@ type
     procedure Image1MouseEnter(Sender: TObject);
     procedure image_cleanup1Click(Sender: TObject);
     procedure deepsky_overlay1Click(Sender: TObject);
-    procedure brighten_area1Click(Sender: TObject);
     procedure convert_to_fits1click(Sender: TObject);
     procedure bin2x2Click(Sender: TObject);
     procedure max2EditingDone(Sender: TObject);
@@ -2069,11 +2066,14 @@ begin
       mainwindow.dec1.text:=read_string;{triggers an onchange event which will convert the string to dec_radians}
       dec_mount:=dec_radians;
     end else
+    if (key='OBJECT  =') then object_name:=read_string else
+
     if ((key='EXPOSURE=') or ( key='EXPTIME =')) then head.exposure:=read_float else
     if (key='XBINNING=') then xbinning:=read_integer else
     if (key='YBINNING=') then ybinning:=read_integer else
 
-    if key='GAIN    =' then head.gain:=read_string else
+    if key='GAIN    =' then head.gain:=copy(read_string,1,5) else   {limit to 5 digits}
+    if key='EGAIN   =' then head.egain:=copy(read_string,1,5) else
 
     if key='CCD-TEMP=' then ccd_temperature:=round(read_float) else
     if key='SET-TEMP=' then head.set_temperature:=round(read_float) else
@@ -2088,6 +2088,8 @@ begin
 
     if key='BAYERPAT=' then bayerpat:=read_string;
 
+    if key='TELESCOP=' then telescop:=read_string;
+    if key='INSTRUME=' then instrum:=read_string;
 
     if index=1 then if key<>'BITPIX  =' then begin mainwindow.Memo1.Lines.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
     if index=2 then if key<>'NAXIS   =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
@@ -3142,7 +3144,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.02.24, '+about_message4;
+  #13+#10+'ASTAP version 2022.03.01, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3217,64 +3219,6 @@ procedure Tmainwindow.deepsky_overlay1Click(Sender: TObject);
 begin
   load_deep;{load the deepsky database once. If loaded no action}
   plot_deepsky;
-end;
-
-
-procedure Tmainwindow.brighten_area1Click(Sender: TObject);
-var
-  fitsX,fitsY,dum,k,startX2,startY2,stopX2,stopY2,progress_value : integer;
-  mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,
-  line_bottom, line_top,required_bg,{difference,}most_common : double;
-  Save_Cursor:TCursor;
-begin
-  if fits_file=false then exit;
-  if  ((abs(stopX-startX)>10)and (abs(stopY-starty)>10)) then
-  begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
-    startX2:=startX;{save for Application.ProcessMessages;this could change startX, startY}
-    startY2:=startY;
-    stopX2:=stopX;
-    stopY2:=stopY;
-    backup_img;
-    if startX2>stopX2 then begin dum:=stopX2; stopX2:=startX2; startX2:=dum; end;{swap}
-    if startY2>stopY2 then begin dum:=stopY2; stopY2:=startY2; startY2:=dum; end;
-
-    for k:=0 to head.naxis3-1 do {do all colors}
-    begin
-      mode_left_bottom:=mode(img_loaded,k,startX2-10,startX2+10,startY2-10,startY2+10,32000);{for this area get most common value equals peak in histogram}
-      mode_left_top:=   mode(img_loaded,k,startX2-10,startX2+10,stopY2-10,stopY2+10,32000);{for this area get most common value equals peak in histogram}
-
-      mode_right_bottom:=mode(img_loaded,k,stopX2-10,stopX2+10,startY2-10,startY2+10,32000);{for this area get most common value equals peak in histogram}
-      mode_right_top:=   mode(img_loaded,k,stopX2-10,stopX2+10,stopY2-10,stopY2+10,32000);{for this area get most common value equals peak in histogram}
-      for fitsY:=startY2 to stopY2-1 do
-      begin
-        if frac(fitsY/50)=0 then
-        begin
-          Application.ProcessMessages;{this could change startX, startY}
-          if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-          progress_value:=round(100*( k/head.naxis3 +  0.3333*(fitsY-startY2)/(stopY2-startY2)));
-          progress_indicator(progress_value,'');{report progress}
-        end;
-        for fitsX:=startX2 to stopX2-1 do
-        begin
-            line_bottom:=mode_left_bottom*(stopX2-fitsx)/(stopX2-startX2)+ mode_right_bottom *(fitsx-startX2)/(stopX2-startX2);{median value at bottom line}
-            line_top:=  mode_left_top *   (stopX2-fitsx)/(stopX2-startX2)+ mode_right_top*(fitsx-startX2)/(stopX2-startX2);{median value at top line}
-            required_bg:=line_bottom*(stopY2-fitsY)/(stopY2-startY2)+line_top*(fitsY-startY2)/(stopY2-startY2);{median value at position FitsX, fitsY}
-
-            most_common:=mode(img_loaded,k,fitsX,fitsX+5,fitsY,fitsY+5,32000 );
-            if most_common<0.99*required_bg then
-              img_loaded[k,fitsX,fitsY]:=img_loaded[k,fitsX,fitsY]-(most_common-required_bg)*0.5;
-        end;
-      end;
-    end;{k color}
-    plot_fits(mainwindow.image1,false,true);
-    progress_indicator(-100,'');{back to normal}
-    Screen.Cursor:=Save_Cursor;
-  end {fits file}
-  else
-  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
 
@@ -5210,11 +5154,11 @@ end;
 
 procedure Tmainwindow.Remove_deep_sky_object1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,k,bsize  : integer;
+   fitsX,fitsY,dum,k,c,bsize  : integer;
    mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,
    noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,noise_level,
-   center_x,center_y,a,b,angle_from_center,new_value,old_value : double;
-   line_bottom, line_top : double;
+   center_x,center_y,a,b,angle_from_center,new_value,new_value_noise,old_value : double;
+   line_bottom, line_top,line_bottom_noise, line_top_noise : double;
 
    Save_Cursor:TCursor;
 begin
@@ -5236,6 +5180,8 @@ begin
     center_y:=(startY+stopY-1)/2;
     a:=(stopX-1-startx)/2;
     b:=(stopY-1-startY)/2;
+
+    Randomize;
 
     for k:=0 to head.naxis3-1 do {do all colors}
     begin
@@ -5260,9 +5206,18 @@ begin
         begin
           line_bottom:=mode_left_bottom*(stopX-fitsx)/(stopX-startx)+ mode_right_bottom *(fitsx-startX)/(stopX-startx);{median value at bottom line}
           line_top:=  mode_left_top *   (stopX-fitsx)/(stopX-startx)+ mode_right_top*(fitsx-startX)/(stopX-startx);{median value at top line}
-          new_value:=line_bottom*(stopY-fitsY)/(stopY-startY)+line_top*(fitsY-startY)/(stopY-startY);{median value at position FitsX, fitsY}
+
+          line_bottom_noise:=noise_left_bottom*(stopX-fitsx)/(stopX-startx)+ noise_right_bottom *(fitsx-startX)/(stopX-startx);{median noise value at bottom line}
+          line_top_noise:=  noise_left_top *   (stopX-fitsx)/(stopX-startx)+ noise_right_top*(fitsx-startX)/(stopX-startx);{median noise value at top line}
+
+          new_value:=line_bottom*(stopY-fitsY)/(stopY-startY)+line_top*(fitsY-startY)/(stopY-startY);{median noise value at position FitsX, fitsY}
+          new_value_noise:=line_bottom_noise*(stopY-fitsY)/(stopY-startY)+line_top_noise*(fitsY-startY)/(stopY-startY);{median noise value at position FitsX, fitsY}
+
+
           old_value:=img_loaded[k,fitsX,fitsY];
-          if ((old_value-3*noise_level>new_value) or (old_value+3*noise_level<new_value)) then img_loaded[k,fitsX,fitsY]:=new_value;{adapt only if pixel value is 3*noise level different}
+          if ((old_value-2.0*new_value_noise>new_value) or (old_value+2.0*new_value_noise<new_value)) then {adapt only if pixel value is 2*noise level different}
+            img_loaded[k,fitsX,fitsY]:=randg(new_value,new_value_noise);
+
         end;
       end;
     end;{k color}
@@ -9498,90 +9453,6 @@ begin
 end;
 
 
-procedure Tmainwindow.localbackgroundequalise1Click(Sender: TObject);
-var
-   fitsX,fitsY,dum,k,bsize,startX2,startY2,stopX2,stopY2,progress_value  : integer;
-   mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,
-   center_x,center_y,a,b,angle_from_center,new_value : double;
-   line_bottom, line_top : double;
-
-   Save_Cursor:TCursor;
-begin
-  if fits_file=false then exit;
-  if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
-  begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
-    backup_img;
-    bsize:=min(15,abs(stopX-startX));{15 or smaller}
-
-    startX2:=startX;{save for Application.ProcessMessages;this could change startX, startY}
-    startY2:=startY;
-    stopX2:=stopX;
-    stopY2:=stopY;
-
-    if startX2>stopX2 then begin dum:=stopX2; stopX2:=startX2; startX2:=dum; end;{swap}
-    if startY2>stopY2 then begin dum:=stopY2; stopY2:=startY2; startY2:=dum; end;
-
-    {ellipse parameters}
-    center_x:=(startX2+stopX2-1)/2;
-    center_y:=(startY2+stopY2-1)/2;
-    a:=(stopX2-1-startX2)/2;
-    b:=(stopY2-1-startY2)/2;
-
-    {prepare a smooth background image}
-    setlength(img_buffer,head.naxis3,stopX2-startX2,stopY2-startY2);{new size}
-    setlength(img_temp,head.naxis3,stopX2-startX2,stopY2-startY2);{new size}
-    for k:=0 to head.naxis3-1 do
-    for fitsY:=startY2 to stopY2-1 do
-    for fitsX:=startX2 to stopX2-1 do img_buffer[k,fitsX-startX2,fitsY-startY2]:=img_loaded[k,fitsX,fitsY];{copy section of interest}
-    apply_most_common(img_buffer,img_temp,bsize); {apply most common filter on first array and place result in second array}
-    gaussian_blur2(img_temp,bsize+bsize);
-
-    {correct image}
-    for k:=0 to head.naxis3-1 do {do all colors}
-    begin
-      mode_left_bottom:=mode(img_loaded,k,startX2-bsize,startX2+bsize,startY2-bsize,startY2+bsize,32000);{for this area get most common value equals peak in histogram}
-      mode_left_top:=   mode(img_loaded,k,startX2-bsize,startX2+bsize,stopY2-bsize,stopY2+bsize,32000);{for this area get most common value equals peak in histogram}
-
-      mode_right_bottom:=mode(img_loaded,k,stopX2-bsize,stopX2+bsize,startY2-bsize,startY2+bsize,32000);{for this area get most common value equals peak in histogram}
-      mode_right_top:=   mode(img_loaded,k,stopX2-bsize,stopX2+bsize,stopY2-bsize,stopY2+bsize,32000);{for this area get most common value equals peak in histogram}
-
-      {apply correction}
-      for fitsY:=startY2 to stopY2-1 do
-      begin
-        if frac(fitsY/50)=0 then
-        begin
-          Application.ProcessMessages;{this could change startX, startY}
-          if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
-          progress_value:=round(100*( k/head.naxis3 +  0.3333*(fitsY-startY2)/(stopY2-startY2)));
-          progress_indicator(progress_value,'');{report progress}
-        end;
-
-        for fitsX:=startX2 to stopX2-1 do
-        begin
-          angle_from_center:=arctan(abs(fitsY-center_Y)/max(1,abs(fitsX-center_X)));
-          if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
-          begin
-            line_bottom:=mode_left_bottom*(stopX2-fitsx)/(stopX2-startX2)+ mode_right_bottom *(fitsx-startX2)/(stopX2-startX2);{median value at bottom line}
-            line_top:=  mode_left_top *   (stopX2-fitsx)/(stopX2-startX2)+ mode_right_top*(fitsx-startX2)/(stopX2-startX2);{median value at top line}
-            new_value:=line_bottom*(stopY2-fitsY)/(stopY2-startY2)+line_top*(fitsY-startY2)/(stopY2-startY2);{median value at position FitsX, fitsY}
-
-            img_loaded[k,fitsX,fitsY]:=img_loaded[k,fitsX,fitsY] +(new_value-img_temp[k,fitsX-startX2,fitsY-startY2]);
-          end;
-        end;
-      end;
-    end;{k color}
-
-    plot_fits(mainwindow.image1,false,true);
-    progress_indicator(-100,'');{back to normal}
-    Screen.Cursor:=Save_Cursor;
-  end {fits file}
-  else
-  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
-end;
-
 procedure Tmainwindow.menucopy1Click(Sender: TObject);{for fits header memo1 popup menu}
 begin
   Clipboard.AsText:=copy(Memo1.Text,Memo1.SelStart+1, Memo1.SelLength);
@@ -10204,6 +10075,7 @@ const
               j:=n+yci;
               i:=m+xci;
               if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
+              img_sa[0,i,j]:=+1;{mark as star area}
             end;
 
           if ((img_loaded[0,round(xc),round(yc)]<head.datamax_org-1) and
@@ -14635,9 +14507,87 @@ begin
   ,electron_to_adu);
 end;
 
-procedure Tmainwindow.Panel1Click(Sender: TObject);
-begin
+procedure Tmainwindow.halo_removal1Click(Sender: TObject);
+var
+  fitsX,fitsY,dum,k,startX2,startY2,stopX2,stopY2,progress_value : integer;
+  line_bottom, line_top,centerX, centerY,distance_center,range,factor : double;
 
+  mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,mode_halo,noise_level,
+  noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,required_bg,
+  {difference,}most_common                  : array[0..2] of double;
+  red_halo,green_halo,blue_halo : boolean;
+
+  Save_Cursor:TCursor;
+begin
+  if fits_file=false then exit;
+
+  if  ((abs(stopX-startX)>10)and (abs(stopY-starty)>10)) then
+  begin
+    Save_Cursor := Screen.Cursor;
+
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Randomize; {initialise}
+
+    startX2:=startX;{save for Application.ProcessMessages;this could change startX, startY}
+    startY2:=startY;
+    stopX2:=stopX;
+    stopY2:=stopY;
+    backup_img;
+    if startX2>stopX2 then begin dum:=stopX2; stopX2:=startX2; startX2:=dum; end;{swap}
+    if startY2>stopY2 then begin dum:=stopY2; stopY2:=startY2; startY2:=dum; end;
+
+    for k:=0 to head.naxis3-1 do {do all colors}
+    begin
+      mode_left_bottom[k]:=mode(img_loaded,k,startX2-10,startX2+10,startY2-10,startY2+10,32000);{for this area get most common value equals peak in histogram}
+      mode_left_top[k]:=   mode(img_loaded,k,startX2-10,startX2+10,stopY2-10,stopY2+10,32000);{for this area get most common value equals peak in histogram}
+
+      mode_right_bottom[k]:=mode(img_loaded,k,stopX2-10,stopX2+10,startY2-10,startY2+10,32000);{for this area get most common value equals peak in histogram}
+      mode_right_top[k]:=   mode(img_loaded,k,stopX2-10,stopX2+10,stopY2-10,stopY2+10,32000);{for this area get most common value equals peak in histogram}
+
+      mode_halo[k]:=mode(img_loaded,k,startX2,stopX2,startY2,stopY2,32000);{for this area get most common value equals peak in histogram}
+
+      required_bg[k]:=(mode_left_bottom[k] + mode_left_top[k] + mode_right_bottom[k] +mode_right_top[k])/4;
+
+      noise_left_bottom[k]:=get_negative_noise_level(img_loaded,k,startx-10,startx+10,starty-10,starty+10, mode_left_bottom[k]);{find the negative noise level below most_common_level of a local area}
+      noise_left_top[k]:=get_negative_noise_level(img_loaded,k,startx-10,startx+10,stopY-10,stopY+10, mode_left_top[k]);{find the negative noise level below most_common_level of a local area}
+      noise_right_bottom[k]:=get_negative_noise_level(img_loaded,k,stopX-10,stopX+10,starty-10,starty+10, mode_right_bottom[k]);{find the negative noise level below most_common_level of a local area}
+      noise_right_top[k]:=get_negative_noise_level(img_loaded,k,stopX-10,stopX+10,stopY-10,stopY+10, mode_right_top[k]);{find the negative noise level below most_common_level of a local area}
+      noise_level[k]:=(noise_left_bottom[k] + noise_left_top[k] + noise_right_top[k] + noise_right_bottom[k])/4;
+    end;
+
+  centerX:=(startX2+stopX2-1)/2;
+  centerY:=(startY2+stopY2-1)/2;
+  range:=(stopX2-startX2)/2;
+
+  for fitsY:=startY2 to stopY2-1 do
+  begin
+    if frac(fitsY/50)=0 then
+    begin
+      Application.ProcessMessages;{this could change startX, startY}
+      if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+    end;
+
+    for fitsX:=startX2 to stopX2-1 do
+    begin
+      distance_center:=sqrt(sqr(fitsX-centerX)+sqr(fitsY-centerY));
+      factor:=100*(range-distance_center)/range;
+      red_halo:=((img_loaded[0,fitsX,fitsY]<mode_halo[0]+ noise_level[0]*factor) and (img_loaded[0,fitsX,fitsY]>required_bg[0] + noise_level[0]*2));
+      if head.naxis3-1>=1 then green_halo:=((img_loaded[1,fitsX,fitsY]<mode_halo[1]+ noise_level[1]*factor) and (img_loaded[1,fitsX,fitsY]>required_bg[1] + noise_level[1]*2)) else green_halo:=false;
+      if head.naxis3-1>=2 then blue_halo :=((img_loaded[2,fitsX,fitsY]<mode_halo[2]+ noise_level[2]*factor) and (img_loaded[2,fitsX,fitsY]>required_bg[2] + noise_level[2]*2)) else blue_halo:=false;
+
+      if ((red_halo) or (green_halo) or (blue_halo))  then
+       begin
+         img_loaded[0,fitsX,fitsY]:= randg(required_bg[0],noise_level[0]);
+         if head.naxis3-1>=1 then img_loaded[1,fitsX,fitsY]:= randg(required_bg[1],noise_level[1]);
+         if head.naxis3-1>=2 then img_loaded[2,fitsX,fitsY]:= randg(required_bg[2],noise_level[2]);
+       end;
+    end;
+  end;{fits loop}
+  plot_fits(mainwindow.image1,false,true);
+  Screen.Cursor:=Save_Cursor;
+  end {fits file}
+  else
+  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
 
