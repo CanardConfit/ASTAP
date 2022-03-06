@@ -116,6 +116,7 @@ type
     flip_v1: TMenuItem;
     flip_H1: TMenuItem;
     halo_removal1: TMenuItem;
+    MenuItem26: TMenuItem;
     save_to_tiff2: TMenuItem;
     noise_in_electron1: TMenuItem;
     electron_to_adu_factors1: TMenuItem;
@@ -1022,6 +1023,7 @@ var {################# initialised variables #########################}
          result:=result+header[r];
          inc(r);
        until ((header[r]=#39){last quote} or (r>=I+79));{read string up to position 80 equals 79}
+       result:=trim(result);
      end;
 
      Function get_as_string:string;{read float as string values. Universal e.g. for latitude and longitude which could be either string or float}
@@ -1116,7 +1118,7 @@ begin
           begin
             if pos('BINTABLE',get_string)>0 then extend_type:=3 { 'BINTABLE' or 'TABLE'}
             else
-            if pos('TABLE ',get_string)>0 then extend_type:=2 {ascii_table identifier}
+            if 'TABLE'=get_string then extend_type:=2 {ascii_table identifier}
             else
             begin
               extend_type:=1; {image in the extension}
@@ -1201,10 +1203,10 @@ begin
 
 
         if ((header[i]='I') and (header[i+1]='M')  and (header[i+2]='A') and (header[i+3]='G') and (header[i+4]='E') and (header[i+5]='T') and (header[i+6]='Y')) then
-           imagetype:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
+           imagetype:=get_string;{trim is already applied}
 
         if ((header[i]='F') and (header[i+1]='I')  and (header[i+2]='L') and (header[i+3]='T') and (header[i+4]='E') and (header[i+5]='R') and (header[i+6]=' ')) then
-           head.filter_name:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
+           head.filter_name:=get_string;{trim is already applied}
 
         if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
                  xbinning:=validate_double;{binning}
@@ -1325,8 +1327,7 @@ begin
             end;
 
             if ((header[i+3]='E') and (header[i+4]='C') and (header[i+5]='T')) then {OBJECT}
-          //    object_name:=StringReplace(get_string,' ','',[rfReplaceAll]);{remove all spaces}
-              object_name:=trim(get_string);{remove all spaces}
+              object_name:=get_string;{trim is already applied}
           end;
 
           if ((header[i]='C') and (header[i+1]='E')  and (header[i+2]='N') and (header[i+3]='T') and (header[i+4]='A') and (header[i+5]='L') and (header[i+6]='T')) then  {SBIG 1.0 standard}
@@ -2024,8 +2025,14 @@ var
     val(copy(mainwindow.Memo1.Lines[index],11,20),result,err);
   end;
   function read_string: string;
+  var
+    p1,p2 :integer;
   begin
-    result:=StringReplace(trim(copy(mainwindow.Memo1.Lines[index],11,20)),char(39),'',[rfReplaceAll]);{remove all spaces and char (39)}
+    result:=copy(mainwindow.Memo1.Lines[index],11,80-11);
+    p1:=pos(char(39),result);
+    p2:=posex(char(39),result,p1+1);
+    if p2=0 then p2:=20;
+    result:=trim(copy(result,p1+1,p2-p1-1));{remove all spaces}
   end;
 
 begin
@@ -2066,7 +2073,7 @@ begin
       mainwindow.dec1.text:=read_string;{triggers an onchange event which will convert the string to dec_radians}
       dec_mount:=dec_radians;
     end else
-    if (key='OBJECT  =') then object_name:=read_string else
+    if key='OBJECT  =' then object_name:=read_string else
 
     if ((key='EXPOSURE=') or ( key='EXPTIME =')) then head.exposure:=read_float else
     if (key='XBINNING=') then xbinning:=read_integer else
@@ -2083,6 +2090,7 @@ begin
     if key='BIAS_CNT=' then head.flatdark_count:=read_integer else {will not be used unless there is a tiff 32 bit reader}
 
     if key='CALSTAT =' then head.calstat:=read_string else {will not be used unless there is a tiff 32 bit reader}
+    if key='FILTER  =' then head.filter_name:=read_string else
 
     if key='DATE-OBS=' then head.date_obs:=read_string else
 
@@ -3144,7 +3152,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.03.01, '+about_message4;
+  #13+#10+'ASTAP version 2022.03.06, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -9050,7 +9058,10 @@ end;
 
 procedure Tmainwindow.inspection1click(Sender: TObject);
 begin
-  CCDinspector(30,three_corners,strtofloat2(measuring_angle))
+  if extra_stars=false then
+    CCDinspector(30,three_corners,strtofloat(measuring_angle))
+  else
+    CCDinspector(10,three_corners,strtofloat(measuring_angle));
 end;
 
 
@@ -11256,7 +11267,9 @@ begin
 
   form_sqm1:=TForm_sqm1.Create(self); {in project option not loaded automatic}
   form_sqm1.ShowModal;
-  form_sqm1.release;
+
+  {released in the close action}
+ // form_sqm1.release;
  end;
 
 
@@ -12029,7 +12042,7 @@ begin
             if hasoption('sqm') then {sky quality}
             begin
               pedestal:=round(strtofloat2(GetOptionValue('sqm')));
-              if calculate_sqm(false {get backgr},false{get histogr}) then {sqm found}
+              if calculate_sqm(false {get backgr},false{get histogr},pedestal) then {sqm found}
                 update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqmfloat);
             end;
 
@@ -12221,6 +12234,16 @@ begin
             begin
               mainwindow.calibrate_photometry1Click(nil);{calibrate}
               update_float('LIM_MAGN=',' / estimated limiting magnitude for point sources' ,magn_limit);
+
+              if pedestal<>0 then
+              begin
+                jd_start:=0; { if altitude missing then force an date to jd conversion'}
+                if calculate_sqm(true {get backgr},true {get histogr},pedestal) then
+                   update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqmfloat);
+
+              end
+              else
+              memo2_message('Can not measure SQM. Add fixed pedestal value in SQM menu. De pedestal value is the median dark or bias value');
             end;
 
             if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
@@ -13179,8 +13202,11 @@ begin
         end;
       end;{k color}
       plot_fits(mainwindow.image1,false,true);
-      copy_paste:=false;
-      shape_paste1.visible:=false;
+      if ((ssCtrl in shift) or (ssAlt in shift) or (ssShift in shift))=false then
+      begin
+        copy_paste:=false;
+        shape_paste1.visible:=false;
+      end;
     end;
   end;{left button pressed}
 end;
@@ -14570,7 +14596,7 @@ begin
     for fitsX:=startX2 to stopX2-1 do
     begin
       distance_center:=sqrt(sqr(fitsX-centerX)+sqr(fitsY-centerY));
-      factor:=100*(range-distance_center)/range;
+      factor:=30*(range-distance_center)/range;
       red_halo:=((img_loaded[0,fitsX,fitsY]<mode_halo[0]+ noise_level[0]*factor) and (img_loaded[0,fitsX,fitsY]>required_bg[0] + noise_level[0]*2));
       if head.naxis3-1>=1 then green_halo:=((img_loaded[1,fitsX,fitsY]<mode_halo[1]+ noise_level[1]*factor) and (img_loaded[1,fitsX,fitsY]>required_bg[1] + noise_level[1]*2)) else green_halo:=false;
       if head.naxis3-1>=2 then blue_halo :=((img_loaded[2,fitsX,fitsY]<mode_halo[2]+ noise_level[2]*factor) and (img_loaded[2,fitsX,fitsY]>required_bg[2] + noise_level[2]*2)) else blue_halo:=false;

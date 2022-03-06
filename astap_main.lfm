@@ -1124,8 +1124,8 @@ object mainwindow: Tmainwindow
         end
         object add_limiting_magn_check1: TMenuItem
           AutoCheck = True
-          Caption = '          ☑ option "Add limiting magnitude"'
-          Hint = 'Add estimated limiting magnitude to the file header. The keyword LIM_MAGN can be configured in tab lights.'
+          Caption = '          ☑ option "Add limiting magnitude and SQM"'
+          Hint = 'Add estimated limiting magnitude and SQM to the file header. The keyword LIM_MAGN and SQM can be configured in tab lights. For SQM enter a fixed pedestal value in viewer menu SQM report.'
           ShowAlwaysCheckable = True
         end
         object add_sip_check1: TMenuItem
@@ -1783,6 +1783,9 @@ object mainwindow: Tmainwindow
         Hint = 'Removes halos from stars. Select the halo while holding the right mouse down.'
         OnClick = halo_removal1Click
       end
+      object MenuItem26: TMenuItem
+        Caption = '-'
+      end
     end
     object gradient_removal1: TMenuItem
       Caption = 'Gradient removal tool'
@@ -1792,7 +1795,7 @@ object mainwindow: Tmainwindow
     end
     object copy_paste_tool1: TMenuItem
       Caption = 'Copy paste tool'
-      Hint = 'Copy the selected area to the next mouse click. Use this for small corrections in the background.'
+      Hint = 'Copy the selected area to the next mouse click. Use this for small corrections in the background. Hold alt, ctrl, shift key for multi paste'
       ImageIndex = 32
       OnClick = copy_paste_tool1Click
     end

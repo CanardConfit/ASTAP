@@ -847,7 +847,6 @@ var
   sum_exp,photometry_stdev                                        : double;
   referenceX,referenceY    : double;{reference position used stacking}
   ref_X, ref_Y             : double;{reference position from FITS header, used for manual stacking of colour lights, second stage}
-  jd_start                 : double;{julian day of date-obs}
   jd_mid                   : double;{julian day of mid head.exposure}
   jd_sum                   : double;{sum of julian days}
   jd_stop                  : double;{end observation in julian days}
@@ -876,6 +875,8 @@ var  {################# initialised variables #########################}
   equalise_background_step: integer=1;
   ra_target : double=999;
   dec_target : double=999;
+  jd_start   : double=0;{julian day of date-obs}
+
 
 const
   dialog_filter='FITS files and DSLR RAW files |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.fz;*.tif;*.tiff;*.TIF;'+

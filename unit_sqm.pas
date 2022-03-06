@@ -65,7 +65,7 @@ var
 
   sqm_applyDF: boolean;
 
-function calculate_sqm(get_bk,get_his : boolean) : boolean; {calculate sqky background value}
+function calculate_sqm(get_bk,get_his : boolean; pedestal2 : integer) : boolean; {calculate sky background value}
 
 
 implementation
@@ -78,26 +78,32 @@ var
 
 
 
-function calculate_sqm(get_bk,get_his : boolean) : boolean; {calculate sky background value}
+function calculate_sqm(get_bk,get_his : boolean; pedestal2 : integer) : boolean; {calculate sky background value}
 var
   airm, correction,alt : double;
-   bayer  : boolean;
+  bayer,form_exist  : boolean;
 begin
 //  if ((bayerpat<>'') or (head.naxis3>1)) then {can not process colour or OSC images}
 //  begin
 //    result:=false;
 //    exit;
 //  end;
+  form_exist:=form_sqm1<>nil;   {see form_sqm1.FormClose action to make this working reliable}
+
   bayer:=((bayerpat<>'') and (Xbinning=1));
-  if bayer then
+
+  if form_exist then
   begin
-    form_sqm1.green_message1.caption:='This OSC image is automatically binned 2x2.'+#10;
-    application.processmessages;
-    backup_img; {move viewer data to img_backup}
-    bin_X2X3X4(2);
-  end
-  else
-  form_sqm1.green_message1.caption:='';
+    if bayer then
+    begin
+      form_sqm1.green_message1.caption:='This OSC image is automatically binned 2x2.'+#10;
+      application.processmessages;
+      backup_img; {move viewer data to img_backup}
+      bin_X2X3X4(2);
+    end
+    else
+    form_sqm1.green_message1.caption:='';
+  end;
 
   if ((flux_magn_offset=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
   begin
@@ -112,24 +118,33 @@ begin
 
     if (pos('D',head.calstat)>0) then
     begin
-      if pedestal>0 then
+      if pedestal2>0 then
       begin
-        form_sqm1.green_message1.caption:=form_sqm1.error_message1.caption+'Dark already applied! Pedestal should be zero.'+#10;
-        pedestal:=0; {prevent wrong values}
+        if form_exist then form_sqm1.green_message1.caption:=form_sqm1.error_message1.caption+'Dark already applied! Pedestal should be zero.'+#10 else memo2_message('Dark already applied! Pedestal should be zero.');
+        pedestal2:=0; {prevent wrong values}
       end;
     end
     else
-    if pedestal=0 then
-      form_sqm1.error_message1.caption:=form_sqm1.error_message1.caption+'Pedestal value missing!'+#10;
+    if pedestal2=0 then
+       if form_exist then form_sqm1.error_message1.caption:=form_sqm1.error_message1.caption+'Pedestal value missing!'+#10
+       else
+       begin
+         memo2_message('Pedestal value missing!');
+         warning_str:=warning_str+'Pedestal value missing!';
+       end;
 
-    if pedestal>=cblack then
+    if pedestal2>=cblack then
     begin
-      form_sqm1.error_message1.caption:=form_sqm1.error_message1.caption+'Too high pedestal value!'+#10;
+      if form_exist then form_sqm1.error_message1.caption:=form_sqm1.error_message1.caption+'Too high pedestal value!'+#10 else
+      begin
+        memo2_message('Too high pedestal value!');
+        warning_str:=warning_str+'Too high pedestal value!';
+      end;
       beep;
-      pedestal:=0; {prevent errors}
+      pedestal2:=0; {prevent errors}
     end;
 
-    sqmfloat:=flux_magn_offset-ln((cblack-pedestal)/sqr(head.cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
+    sqmfloat:=flux_magn_offset-ln((cblack-pedestal2)/sqr(head.cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
     alt:=calculate_altitude(1 {astrometric_to_apparent_or_reverse},{var} head.ra0,head.dec0);{convert centalt string to double or calculate altitude from observer location}
 
     centalt:=inttostr(round(alt));{for reporting in menu sqm1}
@@ -193,7 +208,7 @@ begin
     end;
 
     {calc}
-    if calculate_sqm(true {get backgr},update_hist{get histogr})=false then {failure in calculating sqm value}
+    if calculate_sqm(true {get backgr},update_hist{get histogr},pedestal)=false then {failure in calculating sqm value}
     begin
       if centalt='0' then error_message1.caption:=error_message1.caption+'Could not retrieve or calculate altitude. Enter the default geographic location'+#10;
       sqm1.caption:='?';
@@ -248,6 +263,7 @@ end;
 procedure Tform_sqm1.ok1Click(Sender: TObject);
 begin
   form_sqm1.close;   {normally this form is not loaded}
+
   mainwindow.setfocus;
 
   mainwindow.save_settings1Click(nil);{save pedestal value}
@@ -302,6 +318,9 @@ end;
 procedure Tform_sqm1.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
   set_some_defaults;
+
+  CloseAction := caFree; {required for later testing if form exists, https://wiki.freepascal.org/Testing,_if_form_exists}
+  Form_sqm1 := nil;
 end;
 
 
