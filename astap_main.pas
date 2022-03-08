@@ -116,7 +116,10 @@ type
     flip_v1: TMenuItem;
     flip_H1: TMenuItem;
     halo_removal1: TMenuItem;
+    maintain_date1: TMenuItem;
+    set_modified_date1: TMenuItem;
     MenuItem26: TMenuItem;
+    MenuItem27: TMenuItem;
     save_to_tiff2: TMenuItem;
     noise_in_electron1: TMenuItem;
     electron_to_adu_factors1: TMenuItem;
@@ -377,6 +380,7 @@ type
     procedure MenuItem22Click(Sender: TObject);
     procedure electron_to_adu_factors1Click(Sender: TObject);
     procedure halo_removal1Click(Sender: TObject);
+    procedure set_modified_date1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
     procedure inspection1click(Sender: TObject);
     procedure removegreenpurple1Click(Sender: TObject);
@@ -2098,6 +2102,7 @@ begin
 
     if key='TELESCOP=' then telescop:=read_string;
     if key='INSTRUME=' then instrum:=read_string;
+    if key='CENTALT =' then centalt:=read_string;{could be used for SQM}
 
     if index=1 then if key<>'BITPIX  =' then begin mainwindow.Memo1.Lines.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
     if index=2 then if key<>'NAXIS   =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
@@ -3144,7 +3149,7 @@ begin
   #13+#10+
   #13+#10+'This program can view, measure, "astrometric solve" and stack deep sky images.'+
   #13+#10+
-  #13+#10+'It uses an internal star matching routine, internal astrometric solving routine or a local version of astrometry.net for alignment.'+' For RAW file conversion it uses the external programs Dcraw or LibRaw.'+
+  #13+#10+'It uses an internal star matching routine or an internal astrometric solving routine for image alignment.'+' For RAW file conversion it uses the external programs Dcraw or LibRaw.'+
   #13+#10+
   #13+#10+about_message5+
   #13+#10+
@@ -3152,7 +3157,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.03.06, '+about_message4;
+  #13+#10+'ASTAP version 2022.03.08, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -4243,7 +4248,7 @@ begin
   flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
   mainwindow.image1.Canvas.Pen.Mode:= pmXor;
-  mainwindow.image1.Canvas.Pen.width :=max(1,trunc(head.height/2000));
+  mainwindow.image1.Canvas.Pen.width :=max(1,round(head.height/mainwindow.image1.height));
   mainwindow.image1.Canvas.Pen.color:= $909000;
 
   mainwindow.image1.Canvas.brush.Style:=bsClear;
@@ -7537,6 +7542,7 @@ begin
       mainwindow.preview_demosaic1.Checked:=Sett.ReadBool('main','preview_demosaic',false);
       mainwindow.batch_overwrite1.checked:=Sett.ReadBool('main','s_overwrite',false);
       mainwindow.add_sip_check1.Checked:=Sett.ReadBool('main','add_sip',false);
+      mainwindow.maintain_date1.Checked:=Sett.ReadBool('main','maintain_date',false);
 
 
       mainwindow.add_limiting_magn_check1.Checked:=Sett.ReadBool('main','add_lim_magn',false);
@@ -7891,6 +7897,8 @@ begin
       sett.writeBool('main','preview_demosaic',mainwindow.preview_demosaic1.Checked);
       sett.writeBool('main','s_overwrite',mainwindow.batch_overwrite1.checked);
       sett.writeBool('main','add_sip',mainwindow.add_sip_check1.Checked);
+      sett.writeBool('main','maintain_date',mainwindow.maintain_date1.Checked);
+
 
       sett.writeBool('main','add_lim_magn',mainwindow.add_limiting_magn_check1.Checked);
 
@@ -12043,7 +12051,10 @@ begin
             begin
               pedestal:=round(strtofloat2(GetOptionValue('sqm')));
               if calculate_sqm(false {get backgr},false{get histogr},pedestal) then {sqm found}
+              begin
                 update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqmfloat);
+                update_text('COMMENT SQM',', used '+inttostr(pedestal)+' as pedestal value');
+              end;
             end;
 
             if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
@@ -12166,8 +12177,8 @@ procedure Tmainwindow.batch_add_solution1Click(
   Sender: TObject);
 var
   Save_Cursor:TCursor;
-  i,nrskipped, nrsolved,nrfailed        : integer;
-  dobackup,add_sip,add_lim_magn,solution_overwrite,solved : boolean;
+  i,nrskipped, nrsolved,nrfailed,file_age        : integer;
+  dobackup,add_sip,add_lim_magn,solution_overwrite,solved,maintaindate : boolean;
   failed,skipped                        : string;
   startTick  : qword;{for timing/speed purposes}
 begin
@@ -12178,6 +12189,7 @@ begin
   add_sip:=add_sip_check1.Checked;
   add_lim_magn:=add_limiting_magn_check1.Checked;
   solution_overwrite:=batch_overwrite1.checked;
+  maintaindate:=maintain_date1.checked;
 
   if OpenDialog1.Execute then
   begin
@@ -12226,8 +12238,6 @@ begin
 
           if ((head.cd1_1<>0) and ((solved) or (add_sip) or (add_lim_magn)) )  then {time to save}
           begin
-//            if ((add_sqm) and (calculate_sqm(false {get backgr},false{get histogr}))) then
-//                update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqmfloat);
             if add_sip then
                mainwindow.sip1Click(nil);{add sip coefficients}
             if add_lim_magn then
@@ -12239,14 +12249,19 @@ begin
               begin
                 jd_start:=0; { if altitude missing then force an date to jd conversion'}
                 if calculate_sqm(true {get backgr},true {get histogr},pedestal) then
-                   update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqmfloat);
-
+                begin
+                  update_float('SQM     =',' / Sky background [magn/arcsec^2]',sqmfloat);
+                  update_text('COMMENT SQM',', used '+inttostr(pedestal)+' as pedestal value');
+                end;
               end
               else
               memo2_message('Can not measure SQM. Add fixed pedestal value in SQM menu. De pedestal value is the median dark or bias value');
             end;
 
+            if maintaindate then file_age:=Fileage(filename2);
             if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
+            memo2_message('Added keywords LIM_MAGN and SQM');
+            if ((maintaindate) and (file_age>-1)) then FileSetDate(filename2,file_age);
           end
           else
           begin
@@ -14298,7 +14313,7 @@ var
   err,written   : boolean;
   dobackup : boolean;
 begin
-  OpenDialog1.Title := 'Select multiple  files to convert to TIFF. Date will preserved.';
+  OpenDialog1.Title := 'Select multiple  files to convert to (Astro) TIFF. Date will preserved.';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter :=  'All formats except TIF|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.new;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;*.fz;'+
                                                 '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;'+
@@ -14614,6 +14629,61 @@ begin
   end {fits file}
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
+end;
+
+
+procedure Tmainwindow.set_modified_date1Click(Sender: TObject);
+var
+  I : integer;
+  Save_Cursor:TCursor;
+  err : boolean;
+begin
+  OpenDialog1.Title := 'Select multiple FITS files to set "modified date" to DATE-OBS';
+  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
+  esc_pressed:=false;
+  opendialog1.initialdir:=ExtractFileDir(filename2);
+  esc_pressed:=false;
+  err:=false;
+  if OpenDialog1.Execute then
+  begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+    try { Do some lengthy operation }
+      with OpenDialog1.Files do
+      for I := 0 to Count - 1 do
+      begin
+        progress_indicator(100*i/(count),' Solving');{show progress}
+        Application.ProcessMessages;
+        if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+        filename2:=Strings[I];
+        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
+        if load_fits(filename2,true{light},false {data},false {update memo},0,head_2,img_temp) then {load image success}
+        begin
+          date_to_jd(head_2.date_obs,head_2.exposure);{convert date-obs to jd_start, jd_mid}
+          if jd_start>2400000 then {valid JD}
+          begin
+            if FileSetDate(filename2,DateTimeToFileDate(jd_start-2415018.5))<0 then  { filedatatodatetime counts from 30 dec 1899.}
+               err:=true;
+          end
+          else
+          begin
+            memo2_message('Error decoding Julian day!');
+            err:=true;
+          end;
+        end;
+      end;
+
+      if err=false then mainwindow.caption:='Completed, all files dates set.'
+      else
+      mainwindow.caption:='Finished, files date set but with errors!';
+    except
+    end;
+    Screen.Cursor := Save_Cursor;  { Always restore to normal }
+    progress_indicator(-100,'');{progresss done}
+  end;
 end;
 
 

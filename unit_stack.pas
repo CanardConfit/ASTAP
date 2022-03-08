@@ -9837,7 +9837,6 @@ procedure Tstackmenu1.write_video1click(Sender: TObject);
 var
   framerate: string;
   crop     : boolean;
-  w,h      : integer;
 begin
   crop:=false;
   case QuestionDlg('Crop', 'Crop of full size video?', mtCustom, [ 20, 'Crop', 21, 'Cancel',22, 'Full size', 'IsDefault'], '') of

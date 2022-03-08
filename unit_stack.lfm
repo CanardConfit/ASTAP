@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 16210
+    Left = 16345
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -3690,7 +3690,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Measure the best focus position for several areas of the image.'
       Caption = 'Inspector'
       ClientHeight = 470
-      ClientWidth = 1335
+      ClientWidth = 1713
       ImageIndex = 17
       object analyse_inspector1: TButton
         Left = 136
@@ -3708,7 +3708,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1335
+        Width = 1713
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3922,14 +3922,14 @@ object stackmenu1: Tstackmenu1
       Hint = 'Measure the mount celestial position offsets.'
       Caption = 'Mount analyse'
       ClientHeight = 470
-      ClientWidth = 1525
+      ClientWidth = 1713
       ImageIndex = 21
       object listview9: TListView
         Left = 0
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1525
+        Width = 1713
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -4178,7 +4178,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Stack live images'
       Caption = 'Live stacking'
       ClientHeight = 470
-      ClientWidth = 1335
+      ClientWidth = 1713
       ParentFont = False
       object live_stacking1: TButton
         Left = 16
