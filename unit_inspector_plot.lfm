@@ -163,9 +163,10 @@ object form_inspection1: Tform_inspection1
       object rectangle1: TRadioButton
         Left = 17
         Height = 19
+        Hint = 'Octagon shape. For perfect optic the octagon will form a square'
         Top = 40
-        Width = 68
-        Caption = '4 corners'
+        Width = 66
+        Caption = 'Octagon'
         Checked = True
         ParentShowHint = False
         ShowHint = True
@@ -175,9 +176,10 @@ object form_inspection1: Tform_inspection1
       object triangle1: TRadioButton
         Left = 16
         Height = 19
+        Hint = 'A round area is taken from the image and divided in three slices.'
         Top = 72
-        Width = 68
-        Caption = '3 corners'
+        Width = 62
+        Caption = 'Triangle'
         OnChange = triangle1Change
         ParentShowHint = False
         ShowHint = True

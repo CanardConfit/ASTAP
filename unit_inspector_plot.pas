@@ -116,18 +116,31 @@ end;
 procedure CCDinspector(snr_min: double; triangle : boolean; measuring_angle: double);
 var
  fitsX,fitsY,size,radius, i,j,starX,starY, retries,max_stars,x_centered,y_centered,starX2,starY2,
- nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right,
- x1,x2,x3,x4,y1,y2,y3,y4,fontsize,text_height,text_width,n,m,xci,yci,sqr_radius,left_margin                         : integer;
+ nhfd,nhfd_outer_ring,fontsize,text_height,text_width,n,m,xci,yci,sqr_radius,left_margin,
+ nhfd_11,nhfd_21,nhfd_31,
+ nhfd_12,nhfd_22,nhfd_32,
+ nhfd_13,nhfd_23,nhfd_33,
+ x_11,x_21,x_31,y_11,y_21,y_31,
+ x_12,x_22,x_32,y_12,y_22,y_32,
+ x_13,x_23,x_33,y_13,y_23,y_33         : integer;
 
  hfd1,star_fwhm,snr,flux,xc,yc, median_worst,median_best,scale_factor, detection_level,
- hfd_median, median_center, median_outer_ring, median_bottom_left, median_bottom_right,
- median_top_left, median_top_right,hfd_min,tilt_value, aspect,theangle,theradius,screw1,screw2,screw3                       : double;
- hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring  : array of double;
+ hfd_min,tilt_value, aspect,theangle,theradius,screw1,screw2,screw3,sqrradius,
+ hfd_median, median_outer_ring,
+ median_11, median_21, median_31,
+ median_12, median_22, median_32,
+ median_13, median_23, median_33      : double;
+ hfdlist, hfdlist_outer_ring,
+ hfdlist_11,hfdlist_21,hfdlist_31,
+ hfdlist_12,hfdlist_22,hfdlist_32,
+ hfdlist_13,hfdlist_23,hfdlist_33     : array of double;
+
+ hfd_list_all : array of array of double;
  starlistXY    :array of array of integer;
  mess1,mess2,hfd_value,hfd_arcsec      : string;
  Save_Cursor:TCursor;
  Fliph, Flipv,restore_req  : boolean;
- img_bk,img_sa                             : image_array;
+ img_bk,img_sa                         : image_array;
 
 var {################# initialised variables #########################}
  len : integer=1000;
@@ -172,24 +185,37 @@ begin
     image1.Canvas.font.size:=fontsize;
 
     hfd_median:=0;
-    median_center:=0;
     median_outer_ring:=0;
-    median_bottom_left:=0;
-    median_bottom_right:=0;
-    median_top_left:=0;
-    median_top_right:=0;
 
+    median_11:=0;
+    median_21:=0;
+    median_31:=0;
+
+    median_12:=0;
+    median_22:=0;
+    median_32:=0;
+
+    median_13:=0;
+    median_23:=0;
+    median_33:=0;
 
     SetLength(hfdlist,len*4);{set array length on a starting value}
     SetLength(starlistXY,2,len*4);{x,y positions}
 
-    SetLength(hfdlist_center,len);
     SetLength(hfdlist_outer_ring,len*2);
 
-    SetLength(hfdlist_top_left,len);
-    SetLength(hfdlist_top_right,len);
-    SetLength(hfdlist_bottom_left,len);
-    SetLength(hfdlist_bottom_right,len);
+    SetLength(hfdlist_11,len);
+    SetLength(hfdlist_21,len);
+    SetLength(hfdlist_31,len);
+
+    SetLength(hfdlist_12,len);
+    SetLength(hfdlist_22,len);
+    SetLength(hfdlist_32,len);
+
+    SetLength(hfdlist_13,len);
+    SetLength(hfdlist_23,len);
+    SetLength(hfdlist_33,len);
+
     setlength(img_sa,1,head.width,head.height);{set length of image array}
 
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
@@ -199,11 +225,19 @@ begin
     retries:=2; {try up to three times to get enough stars from the image}
     repeat
       nhfd:=0;{set counters at zero}
-      nhfd_top_left:=0;
-      nhfd_top_right:=0;
-      nhfd_bottom_left:=0;
-      nhfd_bottom_right:=0;
-      nhfd_center:=0;
+
+      nhfd_11:=0;
+      nhfd_21:=0;
+      nhfd_31:=0;
+
+      nhfd_12:=0;
+      nhfd_22:=0;{center}
+      nhfd_32:=0;
+
+      nhfd_13:=0;
+      nhfd_23:=0;
+      nhfd_33:=0;
+
       nhfd_outer_ring:=0;
 
 
@@ -313,39 +347,54 @@ begin
         mainwindow.image1.Canvas.Rectangle(starX2-size,starY2-size, starX2+size, starY2+size);{indicate hfd with rectangle}
         mainwindow.image1.Canvas.textout(starX2+size,starY2+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
-        if  sqr(starX - (head.width div 2) )+sqr(starY - (head.height div 2))<sqr(0.25)*(sqr(head.width div 2)+sqr(head.height div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
+
+        //the nine areas:
+        //13     23   33
+        //12     22   32
+        //11     21   31
+
+        if  sqr(starX - (head.width div 2) )+sqr(starY - (head.height div 2))>sqr(0.75)*(sqr(head.width div 2)+sqr(head.height div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
+        if triangle=false then
+        begin
+          if ( (starX<(head.width*1/3)) and (starY<(head.height*1/3)) ) then begin  hfdlist_11[nhfd_11]:=hfd1;  inc(nhfd_11); if nhfd_11>=length(hfdlist_11) then SetLength(hfdlist_11,nhfd_11+500);end;{store corner HFD values}
+          if ( (starX>(head.width*2/3)) and (starY<(head.height*1/3)) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31); if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+500);end;
+          if ( (starX>(head.width*2/3)) and (starY>(head.height*2/3)) ) then begin  hfdlist_33[nhfd_33]:=hfd1;  inc(nhfd_33); if nhfd_33>=length(hfdlist_33) then SetLength(hfdlist_33,nhfd_33+500);end;
+          if ( (starX<(head.width*1/3)) and (starY>(head.height*2/3)) ) then begin  hfdlist_13[nhfd_13]:=hfd1;  inc(nhfd_13); if nhfd_13>=length(hfdlist_13) then SetLength(hfdlist_13,nhfd_13+500);end;
+
+          if ( (starX>(head.width*1/3)) and (starX<(head.width*2/3)) and (starY>(head.height*2/3))                              ) then begin  hfdlist_23[nhfd_23]:=hfd1;  inc(nhfd_23); if nhfd_23>=length(hfdlist_23) then SetLength(hfdlist_23,nhfd_23+500);end;{store corner HFD values}
+          if (                              (starX<(head.width*1/3)) and (starY>(head.height*1/3)) and (starY<(head.height*2/3))) then begin  hfdlist_12[nhfd_12]:=hfd1;  inc(nhfd_12); if nhfd_12>=length(hfdlist_12) then SetLength(hfdlist_12,nhfd_12+500);end;{store corner HFD values}
+          if ( (starX>(head.width*1/3)) and (starX<(head.width*2/3)) and (starY>(head.height*1/3)) and (starY<(head.height*2/3))) then begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22); if nhfd_22>=length(hfdlist_22) then SetLength(hfdlist_22,nhfd_22+500);end;{square center}
+          if ( (starX>(head.width*2/3))                              and (starY>(head.height*1/3)) and (starY<(head.height*2/3))) then begin  hfdlist_32[nhfd_32]:=hfd1;  inc(nhfd_32); if nhfd_32>=length(hfdlist_32) then SetLength(hfdlist_32,nhfd_32+500);end;{store corner HFD values}
+          if ( (starX>(head.width*1/3)) and (starX<(head.width*2/3)) and                               (starY<(head.height*1/3))) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21); if nhfd_21>=length(hfdlist_21) then SetLength(hfdlist_21,nhfd_21+500);end;{store corner HFD values}
+
+        end
         else
         begin
-          if  sqr(starX - (head.width div 2) )+sqr(starY - (head.height div 2))>sqr(0.75)*(sqr(head.width div 2)+sqr(head.height div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
-          if triangle=false then
+          x_centered:=starX- (head.width div 2); {array coordinates}
+          y_centered:=starY- (head.height div 2);
+          theangle:=arctan2(x_centered,y_centered)*180/pi;{angle in array from Y axis. So swap x, y}
+          sqrradius:=sqr(x_centered)+sqr(x_centered);
+          theradius:=sqrt(sqrradius);
+
+          if  sqrradius<=sqr(0.75)*(sqr(head.width div 2)+sqr(head.height div 2))  then
           begin
-            if ( (starX<(head.width div 2)) and (starY<(head.height div 2)) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
-            if ( (starX>(head.width div 2)) and (starY<(head.height div 2)) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
-            if ( (starX>(head.width div 2)) and (starY>(head.height div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
-            if ( (starX<(head.width div 2)) and (starY>(head.height div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+100);        end;
-          end
-          else
-          begin
-            x_centered:=starX- (head.width div 2); {array coordinates}
-            y_centered:=starY- (head.height div 2);
-            theangle:=arctan2(x_centered,y_centered)*180/pi;{angle in array from Y axis. So swap x, y}
-            theradius:=sqrt(sqr(x_centered)+sqr(x_centered));
-
-
-            if ( (abs(fnmodulo2(theangle-screw1,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+100);  end;{store corner HFD values}
-            if ( (abs(fnmodulo2(theangle-screw2,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+100);end;
-            if ( (abs(fnmodulo2(theangle-screw3,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+100);      end;
-          end
-
-        end;
-
+            if  sqrradius>=sqr(0.25)*(sqr(head.width div 2)+sqr(head.height div 2))  then
+            begin
+              if ( (abs(fnmodulo2(theangle-screw1,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_11[nhfd_11] :=hfd1; inc(nhfd_11);if nhfd_11>=length(hfdlist_11) then SetLength(hfdlist_11,nhfd_11+100);end;{store corner HFD values}
+              if ( (abs(fnmodulo2(theangle-screw2,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21);if nhfd_21>=length(hfdlist_21) then SetLength(hfdlist_21,nhfd_21+100);end;
+              if ( (abs(fnmodulo2(theangle-screw3,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31);if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+100);end;
+            end
+            else
+            begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22);if nhfd_22>=length(hfdlist_22) then SetLength(hfdlist_22,nhfd_22+100);end;{round center}
+          end;
+        end
       end;
 
-      if ((nhfd_center>0) and (nhfd_outer_ring>0)) then  {enough information for curvature calculation}
+      if ((nhfd_22>0) and (nhfd_outer_ring>0)) then  {enough information for curvature calculation}
       begin
-        median_center:=SMedian(hfdlist_center,nhfd_center);
+        median_22:=SMedian(hfdlist_22,nhfd_22);
         median_outer_ring:=SMedian(hfdlist_outer_ring,nhfd_outer_ring);
-        mess1:='  Off-axis aberration[HFD]='+floattostrF(median_outer_ring-(median_center),ffFixed,0,2);{}
+        mess1:='  Off-axis aberration[HFD]='+floattostrF(median_outer_ring-(median_22),ffFixed,0,2);{}
       end
       else
       mess1:='';
@@ -353,43 +402,43 @@ begin
       hfd_median:=SMedian(hfdList,nhfd {use length});
 
 
-      if ((triangle=true) and (nhfd_top_right>0)  and (nhfd_bottom_left>0) and (nhfd_bottom_right>0)) then  {enough information for tilt calculation}
+      if ((triangle=true) and (nhfd_11>0)  and (nhfd_21>0) and (nhfd_31>0)) then  {enough information for tilt calculation}
       begin
-        median_bottom_left:=SMedian(hfdList_bottom_left,nhfd_bottom_left);{screw 1}
-        median_bottom_right:=SMedian(hfdList_bottom_right,nhfd_bottom_right);{screw 2}
-        median_top_right:=SMedian(hfdList_top_right,nhfd_top_right);{screw 3}
+        median_11:=SMedian(hfdlist_11,nhfd_11);{screw 1}
+        median_21:=SMedian(hfdlist_21,nhfd_21);{screw 2}
+        median_31:=SMedian(hfdlist_31,nhfd_31);{screw 3}
 
-        median_best:=min(median_top_right,min(median_bottom_left,median_bottom_right));{find best corner}
-        median_worst:=max(median_top_right,max(median_bottom_left,median_bottom_right));{find worst corner}
+        median_best:=min(median_11,min(median_21,median_31));{find best corner}
+        median_worst:=max(median_11,max(median_21,median_31));{find worst corner}
 
-        scale_factor:=head.width*0.35/median_worst;
-        x1:=round(median_bottom_left*scale_factor*sin(screw1*pi/180)+head.width/2); {screw 1}
-        y1:=round(median_bottom_left*scale_factor*cos(screw1*pi/180)+head.height/2);{calculate coordinates, based on rotation distance from Y axis}
+        scale_factor:=head.width*0.3/median_worst;
+        x_11:=round(median_11*scale_factor*sin(screw1*pi/180)+head.width/2); {screw 1}
+        y_11:=round(median_11*scale_factor*cos(screw1*pi/180)+head.height/2);{calculate coordinates, based on rotation distance from Y axis}
 
 
-        x2:=round(median_bottom_right*scale_factor*sin(screw2*pi/180)+head.width/2); {screw 2}
-        y2:=round(median_bottom_right*scale_factor*cos(screw2*pi/180)+head.height/2);{calculate coordinates, based on rotation distance from Y axis}
+        x_21:=round(median_21*scale_factor*sin(screw2*pi/180)+head.width/2); {screw 2}
+        y_21:=round(median_21*scale_factor*cos(screw2*pi/180)+head.height/2);{calculate coordinates, based on rotation distance from Y axis}
 
-        x3:=round(median_top_right*scale_factor*sin(screw3*pi/180)+head.width/2);{screw 3}
-        y3:=round(median_top_right*scale_factor*cos(screw3*pi/180)+head.height/2);{calculate coordinates, based on rotation distance from Y axis}
+        x_31:=round(median_31*scale_factor*sin(screw3*pi/180)+head.width/2);{screw 3}
+        y_31:=round(median_31*scale_factor*cos(screw3*pi/180)+head.height/2);{calculate coordinates, based on rotation distance from Y axis}
 
-        flip_xy(fliph,flipv,x1,y1); {from array to image coordinates}
-        flip_xy(fliph,flipv,x2,y2);
-        flip_xy(fliph,flipv,x3,y3);
+        flip_xy(fliph,flipv,x_11,y_11); {from array to image coordinates}
+        flip_xy(fliph,flipv,x_21,y_21);
+        flip_xy(fliph,flipv,x_31,y_31);
 
         image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
 
         image1.Canvas.pen.color:=clyellow;
 
-        image1.Canvas.moveto(x1,y1);{draw triangle}
-        image1.Canvas.lineto(x2,y2);{draw triangle}
-        image1.Canvas.lineto(x3,y3);{draw triangle}
-        image1.Canvas.lineto(x1,y1);{draw triangle}
+        image1.Canvas.moveto(x_11,y_11);{draw triangle}
+        image1.Canvas.lineto(x_21,y_21);{draw triangle}
+        image1.Canvas.lineto(x_31,y_31);{draw triangle}
+        image1.Canvas.lineto(x_11,y_11);{draw triangle}
 
         image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
-        image1.Canvas.lineto(x2,y2);{draw diagonal}
+        image1.Canvas.lineto(x_21,y_21);{draw diagonal}
         image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
-        image1.Canvas.lineto(x3,y3);{draw diagonal}
+        image1.Canvas.lineto(x_31,y_31);{draw diagonal}
 
         tilt_value:=100*(median_worst-median_best)/hfd_median;
         mess2:='  Tilt[HFD]='+floattostrF(median_worst-median_best,ffFixed,0,2)+' ('+floattostrF(tilt_value,ffFixed,0,0)+'%';{estimate tilt value}
@@ -408,49 +457,76 @@ begin
 
         fontsize:=fontsize*4;
         image1.Canvas.font.size:=fontsize;
-        image1.Canvas.textout(x3,y3,floattostrF(median_top_right,ffFixed,0,2));
-        image1.Canvas.textout(x1,y1,floattostrF(median_bottom_left,ffFixed,0,2));
-        image1.Canvas.textout(x2,y2,floattostrF(median_bottom_right,ffFixed,0,2));
-        image1.Canvas.textout(head.width div 2,head.height div 2,floattostrF(median_center,ffFixed,0,2));
+        image1.Canvas.textout(x_11,y_11,floattostrF(median_11,ffFixed,0,2));
+        image1.Canvas.textout(x_21,y_21,floattostrF(median_21,ffFixed,0,2));
+        image1.Canvas.textout(x_31,y_31,floattostrF(median_31,ffFixed,0,2));
+        image1.Canvas.textout(head.width div 2,head.height div 2,floattostrF(median_22,ffFixed,0,2));
+
       end
       else
-      if ((triangle=false) and (nhfd_top_left>0) and (nhfd_top_right>0) and (nhfd_bottom_left>0) and (nhfd_bottom_right>0)) then  {enough information for tilt calculation}
+      if ((triangle=false) and (nhfd_11>0) and (nhfd_21>0) and (nhfd_31>0) and (nhfd_12>0) and (nhfd_32>0) and (nhfd_13>0) and (nhfd_22>0) and (nhfd_33>0)) then  {enough information for tilt calculation}
       begin
-        median_top_left:=SMedian(hfdList_top_left,nhfd_top_left);
-        median_top_right:=SMedian(hfdList_top_right,nhfd_top_right);
-        median_bottom_left:=SMedian(hfdList_bottom_left,nhfd_bottom_left);
-        median_bottom_right:=SMedian(hfdList_bottom_right,nhfd_bottom_right);
-        median_best:=min(min(median_top_left, median_top_right),min(median_bottom_left,median_bottom_right));{find best corner}
-        median_worst:=max(max(median_top_left, median_top_right),max(median_bottom_left,median_bottom_right));{find worst corner}
+        median_11:=SMedian(hfdlist_11,nhfd_11);
+        median_21:=SMedian(hfdlist_21,nhfd_21);
+        median_31:=SMedian(hfdlist_31,nhfd_31);
+
+        median_12:=SMedian(hfdlist_12,nhfd_12);
+        {22 is already done}
+        median_32:=SMedian(hfdlist_32,nhfd_32);
+
+        median_13:=SMedian(hfdlist_13,nhfd_13);
+        median_23:=SMedian(hfdlist_23,nhfd_23);
+        median_33:=SMedian(hfdlist_33,nhfd_33);
+
+        median_best:=min(min(median_13, median_33),min(median_11,median_31));{find best corner}
+        median_worst:=max(max(median_13, median_33),max(median_11,median_31));{find worst corner}
 
         scale_factor:=head.width*0.25/median_worst;
-        x1:=round(-median_bottom_left*scale_factor+head.width/2);y1:=round(-median_bottom_left*scale_factor+head.height/2);{calculate coordinates counter clockwise}
-        x2:=round(+median_bottom_right*scale_factor+head.width/2);y2:=round(-median_bottom_right*scale_factor+head.height/2);
-        x3:=round(+median_top_right*scale_factor+head.width/2);y3:=round(+median_top_right*scale_factor+head.height/2);
-        x4:=round(-median_top_left*scale_factor+head.width/2);y4:=round(+median_top_left*scale_factor+head.height/2);
 
-        flip_xy(fliph,flipv,x1,y1); {from array to image coordinates}
-        flip_xy(fliph,flipv,x2,y2);
-        flip_xy(fliph,flipv,x3,y3);
-        flip_xy(fliph,flipv,x4,y4);
+        x_11:=round(-median_11*scale_factor+head.width/2);  y_11:=round(-median_11*scale_factor+head.height/2);{calculate coordinates counter clockwise}
+        x_21:=round( head.width/2);                         y_21:=round(-median_21*scale_factor+head.height/2);
+        x_31:=round(+median_31*scale_factor+head.width/2);  y_31:=round(-median_31*scale_factor+head.height/2);
+
+        x_12:=round(-median_12*scale_factor+head.width/2);  y_12:=round(+head.height/2);
+        x_32:=round(+median_32*scale_factor+head.width/2);  y_32:=round(+head.height/2);
+
+        x_13:=round(-median_13*scale_factor+head.width/2);  y_13:=round(+median_13*scale_factor+head.height/2);
+        x_23:=round(head.width/2);                          y_23:=round(+median_23*scale_factor+head.height/2);
+        x_33:=round(+median_33*scale_factor+head.width/2);  y_33:=round(+median_33*scale_factor+head.height/2);
+
+
+        flip_xy(fliph,flipv,x_11,y_11); {from array to image coordinates}
+        flip_xy(fliph,flipv,x_21,y_21);
+        flip_xy(fliph,flipv,x_31,y_31);
+
+        flip_xy(fliph,flipv,x_12,y_12); {from array to image coordinates}
+        flip_xy(fliph,flipv,x_22,y_22); {from array to image coordinates}
+        flip_xy(fliph,flipv,x_32,y_32); {from array to image coordinates}
+
+        flip_xy(fliph,flipv,x_13,y_13); {from array to image coordinates}
+        flip_xy(fliph,flipv,x_23,y_23); {from array to image coordinates}
+        flip_xy(fliph,flipv,x_33,y_33); {from array to image coordinates}
 
 
         image1.Canvas.Pen.width :=image1.Canvas.Pen.width*2;{thickness lines}
-
         image1.Canvas.pen.color:=clyellow;
 
-        image1.Canvas.moveto(x1,y1);{draw trapezium}
-        image1.Canvas.lineto(x2,y2);{draw trapezium}
-        image1.Canvas.lineto(x3,y3);{draw trapezium}
-        image1.Canvas.lineto(x4,y4);{draw trapezium}
-        image1.Canvas.lineto(x1,y1);{draw trapezium}
+        image1.Canvas.moveto(x_11,y_11);{draw trapezium}
+        image1.Canvas.lineto(x_21,y_21);{draw trapezium}
+        image1.Canvas.lineto(x_31,y_31);{draw trapezium}
+        image1.Canvas.lineto(x_32,y_32);{draw trapezium}
+        image1.Canvas.lineto(x_33,y_33);{draw trapezium}
+        image1.Canvas.lineto(x_23,y_23);{draw trapezium}
+        image1.Canvas.lineto(x_13,y_13);{draw trapezium}
+        image1.Canvas.lineto(x_12,y_12);{draw trapezium}
+        image1.Canvas.lineto(x_11,y_11);{draw trapezium}
 
         image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
-        image1.Canvas.lineto(x2,y2);{draw diagonal}
+        image1.Canvas.lineto(x_31,y_31);{draw diagonal}
         image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
-        image1.Canvas.lineto(x3,y3);{draw diagonal}
+        image1.Canvas.lineto(x_33,y_33);{draw diagonal}
         image1.Canvas.lineto(head.width div 2,head.height div 2);{draw diagonal}
-        image1.Canvas.lineto(x4,y4);{draw diagonal}
+        image1.Canvas.lineto(x_13,y_13);{draw diagonal}
 
         tilt_value:=100*(median_worst-median_best)/hfd_median;
         mess2:='  Tilt[HFD]='+floattostrF(median_worst-median_best,ffFixed,0,2)+' ('+floattostrF(tilt_value,ffFixed,0,0)+'%';{estimate tilt value}
@@ -468,11 +544,20 @@ begin
 
         fontsize:=fontsize*4;
         image1.Canvas.font.size:=fontsize;
-        image1.Canvas.textout(x4,y4,floattostrF(median_top_left,ffFixed,0,2));
-        image1.Canvas.textout(x3,y3,floattostrF(median_top_right,ffFixed,0,2));
-        image1.Canvas.textout(x1,y1,floattostrF(median_bottom_left,ffFixed,0,2));
-        image1.Canvas.textout(x2,y2,floattostrF(median_bottom_right,ffFixed,0,2));
-        image1.Canvas.textout(head.width div 2,head.height div 2,floattostrF(median_center,ffFixed,0,2));
+
+        image1.Canvas.textout(x_11,y_11,floattostrF(median_11,ffFixed,0,2));
+        image1.Canvas.textout(x_21,y_21,floattostrF(median_21,ffFixed,0,2));
+        image1.Canvas.textout(x_31,y_31,floattostrF(median_31,ffFixed,0,2));
+
+        image1.Canvas.textout(x_12,y_12,floattostrF(median_12,ffFixed,0,2));
+        image1.Canvas.textout(x_22,y_22,floattostrF(median_22,ffFixed,0,2));
+        image1.Canvas.textout(x_32,y_32,floattostrF(median_32,ffFixed,0,2));
+
+        image1.Canvas.textout(x_13,y_13,floattostrF(median_13,ffFixed,0,2));
+        image1.Canvas.textout(x_23,y_23,floattostrF(median_23,ffFixed,0,2));
+        image1.Canvas.textout(x_33,y_33,floattostrF(median_33,ffFixed,0,2));
+
+        image1.Canvas.textout(head.width div 2,head.height div 2,floattostrF(median_22,ffFixed,0,2));
       end
       else
       begin
@@ -500,13 +585,16 @@ begin
 
   hfdlist:=nil;{release memory}
 
-  hfdlist_center:=nil;
   hfdlist_outer_ring:=nil;
-
-  hfdlist_top_left:=nil;
-  hfdlist_top_right:=nil;
-  hfdlist_bottom_left:=nil;
-  hfdlist_bottom_right:=nil;
+  hfdlist_13:=nil;
+  hfdlist_23:=nil;
+  hfdlist_33:=nil;
+  hfdlist_12:=nil;
+  hfdlist_22:=nil;
+  hfdlist_32:=nil;
+  hfdlist_11:=nil;
+  hfdlist_21:=nil;
+  hfdlist_31:=nil;
 
   starlistXY:=nil;
 

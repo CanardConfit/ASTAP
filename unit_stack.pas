@@ -1025,7 +1025,7 @@ const
 
 
   icon_thumb_down=8; {image index for outlier}
-  icon_king=16;{image index for best image}
+  icon_king=9 {16};{image index for best image}
 
   insp_focus_pos=8;
   insp_nr_stars=7;
@@ -1493,13 +1493,20 @@ begin
   img_sa:=nil;{free mem}
 end;
 
-procedure analyse_image_extended(img : image_array;var nr_stars, hfd_median,median_center, median_outer_ring, median_bottom_left,median_bottom_right,median_top_left,median_top_right : double); {analyse several areas}
+procedure analyse_image_extended(img : image_array;out nr_stars, hfd_median, median_outer_ring,  median_11,median_21,median_31,   median_12,median_22,median_32,   median_13,median_23,median_33 : double); {analyse several areas}
 var
    width5,height5,fitsX,fitsY,radius,i, j, retries,max_stars,n,m,xci,yci,sqr_radius,
-   nhfd,nhfd_center,nhfd_outer_ring,nhfd_top_left,nhfd_top_right,nhfd_bottom_left,nhfd_bottom_right : integer;
+   nhfd,  nhfd_outer_ring,
+   nhfd_11,nhfd_21,nhfd_31,
+   nhfd_12,nhfd_22,nhfd_32,
+   nhfd_13,nhfd_23,nhfd_33   : integer;
    hfd1,star_fwhm,snr,flux,xc,yc,backgr,detection_level                                             : double;
    img_sa                                                                                           : image_array;
-   hfdlist, hfdlist_top_left,hfdlist_top_right,hfdlist_bottom_left,hfdlist_bottom_right,  hfdlist_center,hfdlist_outer_ring   :array of double;
+   hfdlist,
+   hfdlist_11,hfdlist_21,hfdlist_31,
+   hfdlist_12,hfdlist_22,hfdlist_32,
+   hfdlist_13,hfdlist_23,hfdlist_33,
+   hfdlist_outer_ring   :array of double;
 var  {################# initialised variables #########################}
    len: integer=1000;
 
@@ -1510,13 +1517,20 @@ begin
   max_stars:=500; //fixed value
   SetLength(hfdlist,len*4);{set array length on a starting value}
 
-  SetLength(hfdlist_center,len);
   SetLength(hfdlist_outer_ring,len*2);
 
-  SetLength(hfdlist_top_left,len);
-  SetLength(hfdlist_top_right,len);
-  SetLength(hfdlist_bottom_left,len);
-  SetLength(hfdlist_bottom_right,len);
+  SetLength(hfdlist_11,len);
+  SetLength(hfdlist_21,len);
+  SetLength(hfdlist_31,len);
+
+  SetLength(hfdlist_12,len);
+  SetLength(hfdlist_22,len);
+  SetLength(hfdlist_32,len);
+
+  SetLength(hfdlist_13,len);
+  SetLength(hfdlist_23,len);
+  SetLength(hfdlist_33,len);
+
 
   setlength(img_sa,1,width5,height5);{set length of image array}
 
@@ -1526,18 +1540,31 @@ begin
   retries:=2; {try three times to get enough stars from the image}
   repeat
     nhfd:=0;{set counters at zero}
-    nhfd_top_left:=0;
-    nhfd_top_right:=0;
-    nhfd_bottom_left:=0;
-    nhfd_bottom_right:=0;
-    nhfd_center:=0;
+    nhfd_11:=0;
+    nhfd_21:=0;
+    nhfd_31:=0;
+    nhfd_12:=0;
+    nhfd_22:=0;
+    nhfd_32:=0;
+    nhfd_13:=0;
+    nhfd_23:=0;
+    nhfd_33:=0;
     nhfd_outer_ring:=0;
+
+
 
     if backgr>8 then
     begin
       for fitsY:=0 to height5-1 do
         for fitsX:=0 to width5-1  do
           img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
+
+
+      //the nine areas:
+      //13     23   33
+      //12     22   32
+      //11     21   31
+
 
       for fitsY:=0 to height5-1 do
       begin
@@ -1551,16 +1578,18 @@ begin
               {store values}
               hfdlist[nhfd]:=hfd1; inc(nhfd); if nhfd>=length(hfdlist) then SetLength(hfdlist,nhfd+500); {adapt length if required and store hfd value}
 
-              if  sqr(xc - (width5 div 2) )+sqr(yc - (height5 div 2))<sqr(0.25)*(sqr(width5 div 2)+sqr(height5 div 2))  then begin hfdlist_center[nhfd_center]:=hfd1; inc(nhfd_center); if nhfd_center>=length( hfdlist_center) then  SetLength( hfdlist_center,nhfd_center+100);end {store center(<25% diameter) HFD values}
-              else
-              begin
-                if  sqr(xc - (width5 div 2) )+sqr(yc - (height5 div 2))>sqr(0.75)*(sqr(width5 div 2)+sqr(height5 div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
+              if  sqr(xc - (width5 div 2) )+sqr(yc - (height5 div 2))>sqr(0.75)*(sqr(width5 div 2)+sqr(height5 div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
 
-                if ( (xc<(width5 div 2)) and (yc<(height5 div 2)) ) then begin  hfdlist_bottom_left [nhfd_bottom_left] :=hfd1; inc(nhfd_bottom_left); if nhfd_bottom_left>=length(hfdlist_bottom_left)   then SetLength(hfdlist_bottom_left,nhfd_bottom_left+500);  end;{store corner HFD values}
-                if ( (xc>(width5 div 2)) and (yc<(height5 div 2)) ) then begin  hfdlist_bottom_right[nhfd_bottom_right]:=hfd1; inc(nhfd_bottom_right);if nhfd_bottom_right>=length(hfdlist_bottom_right) then SetLength(hfdlist_bottom_right,nhfd_bottom_right+500);end;
-                if ( (xc<(width5 div 2)) and (yc>(height5 div 2)) ) then begin  hfdlist_top_left[nhfd_top_left]:=hfd1;         inc(nhfd_top_left);    if nhfd_top_left>=length(hfdlist_top_left)         then SetLength(hfdlist_top_left,nhfd_top_left+500);        end;
-                if ( (xc>(width5 div 2)) and (yc>(height5 div 2)) ) then begin  hfdlist_top_right[nhfd_top_right]:=hfd1;       inc(nhfd_top_right);   if nhfd_top_right>=length(hfdlist_top_right)       then SetLength(hfdlist_top_right,nhfd_top_right+500);      end;
-              end;
+              if ( (xc<(width5*1/3)) and (yc<(height5*1/3)) ) then begin  hfdlist_11[nhfd_11]:=hfd1;  inc(nhfd_11); if nhfd_11>=length(hfdlist_11) then SetLength(hfdlist_11,nhfd_11+500);end;{store corner HFD values}
+              if ( (xc>(width5*2/3)) and (yc<(height5*1/3)) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31); if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+500);end;
+              if ( (xc>(width5*2/3)) and (yc>(height5*2/3)) ) then begin  hfdlist_33[nhfd_33]:=hfd1;  inc(nhfd_33); if nhfd_33>=length(hfdlist_33) then SetLength(hfdlist_33,nhfd_33+500);end;
+              if ( (xc<(width5*1/3)) and (yc>(height5*2/3)) ) then begin  hfdlist_13[nhfd_13]:=hfd1;  inc(nhfd_13); if nhfd_13>=length(hfdlist_13) then SetLength(hfdlist_13,nhfd_13+500);end;
+
+              if ( (xc>(width5*1/3)) and (xc<(width5*2/3)) and (yc>(height5*2/3))                       ) then begin  hfdlist_23[nhfd_23]:=hfd1;  inc(nhfd_23); if nhfd_23>=length(hfdlist_23) then SetLength(hfdlist_23,nhfd_23+500);end;{store corner HFD values}
+              if (                       (xc<(width5*1/3)) and (yc>(height5*1/3)) and (yc<(height5*2/3))) then begin  hfdlist_12[nhfd_12]:=hfd1;  inc(nhfd_12); if nhfd_12>=length(hfdlist_12) then SetLength(hfdlist_12,nhfd_12+500);end;{store corner HFD values}
+              if ( (xc>(width5*1/3)) and (xc<(width5*2/3)) and (yc>(height5*1/3)) and (yc<(height5*2/3))) then begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22); if nhfd_22>=length(hfdlist_22) then SetLength(hfdlist_22,nhfd_22+500);end;{square center}
+              if ( (xc>(width5*2/3))                       and (yc>(height5*1/3)) and (yc<(height5*2/3))) then begin  hfdlist_32[nhfd_32]:=hfd1;  inc(nhfd_32); if nhfd_32>=length(hfdlist_32) then SetLength(hfdlist_32,nhfd_32+500);end;{store corner HFD values}
+              if ( (xc>(width5*1/3)) and (xc<(width5*2/3)) and                        (yc<(height5*1/3))) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21); if nhfd_21>=length(hfdlist_21) then SetLength(hfdlist_21,nhfd_21+500);end;{store corner HFD values}
 
               radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
               sqr_radius:=sqr(radius);
@@ -1591,20 +1620,30 @@ begin
 
   nr_stars:=nhfd;
   if nhfd>0 then  hfd_median:=SMedian(hfdList,nhfd) else  hfd_median:=99;
-  if nhfd_center>0 then median_center:=SMedian(hfdlist_center,nhfd_center) else median_center:=99;
   if nhfd_outer_ring>0 then  median_outer_ring:=SMedian(hfdlist_outer_ring,nhfd_outer_ring) else median_outer_ring:=99;
-  if nhfd_bottom_left>0 then median_bottom_left:=SMedian(hfdlist_bottom_left,nhfd_bottom_left) else median_bottom_left:=99;
-  if nhfd_bottom_right>0 then   median_bottom_right:=SMedian(hfdList_bottom_right,nhfd_bottom_right) else median_bottom_right:=99;
-  if nhfd_top_left>0 then  median_top_left:=SMedian(hfdList_top_left,nhfd_top_left) else median_top_left:=99;
-  if nhfd_top_right>0 then median_top_right:=SMedian(hfdList_top_right,nhfd_top_right) else median_top_right:=99;
+  if nhfd_11>0 then median_11:=SMedian(hfdlist_11,nhfd_11) else median_11:=99;
+  if nhfd_21>0 then median_21:=SMedian(hfdlist_21,nhfd_21) else median_21:=99;
+  if nhfd_31>0 then median_31:=SMedian(hfdlist_31,nhfd_31) else median_31:=99;
+
+  if nhfd_12>0 then median_12:=SMedian(hfdlist_12,nhfd_12) else median_12:=99;
+  if nhfd_22>0 then median_22:=SMedian(hfdlist_22,nhfd_22) else median_22:=99;
+  if nhfd_32>0 then median_32:=SMedian(hfdlist_32,nhfd_32) else median_32:=99;
+
+  if nhfd_13>0 then median_13:=SMedian(hfdlist_13,nhfd_13) else median_13:=99;
+  if nhfd_23>0 then median_23:=SMedian(hfdlist_23,nhfd_23) else median_23:=99;
+  if nhfd_33>0 then median_33:=SMedian(hfdlist_33,nhfd_33) else median_33:=99;
 
   hfdlist:=nil;{release memory}
-  hfdlist_center:=nil;
   hfdlist_outer_ring:=nil;
-  hfdlist_top_left:=nil;
-  hfdlist_top_right:=nil;
-  hfdlist_bottom_left:=nil;
-  hfdlist_bottom_right:=nil;
+  hfdlist_11:=nil;
+  hfdlist_21:=nil;
+  hfdlist_31:=nil;
+  hfdlist_12:=nil;
+  hfdlist_22:=nil;
+  hfdlist_32:=nil;
+  hfdlist_13:=nil;
+  hfdlist_23:=nil;
+  hfdlist_33:=nil;
 
   img_sa:=nil;{free mem}
 end;
@@ -3129,7 +3168,8 @@ var
   loaded, green,blue               : boolean;
   img                              : image_array;
 
-  nr_stars, hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right : double;
+  nr_stars, hfd_outer_ring,
+  median_11,median_21,median_31,   median_12,median_22,median_32,   median_13,median_23,median_33 : double;
 begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -3312,9 +3352,10 @@ begin
             begin
               lv.Items.item[c].subitems.Strings[insp_focus_pos]:=inttostr(focus_pos);
 
-              analyse_image_extended(img, nr_stars, hfd_median,hfd_center, hfd_outer_ring, hfd_bottom_left,hfd_bottom_right,hfd_top_left,hfd_top_right); {analyse several areas}
+              analyse_image_extended(img, nr_stars, hfd_median, hfd_outer_ring,  median_11,median_21,median_31,   median_12,median_22,median_32,   median_13,median_23,median_33); {analyse several areas}
 
-              if ((hfd_median>25) or (hfd_center>25) or (hfd_outer_ring>25) or (hfd_bottom_left>25) or (hfd_bottom_right>25) or (hfd_top_left>25) or (hfd_top_right>25)) then
+
+              if ((hfd_median>25) or (median_22>25) or (hfd_outer_ring>25) or (median_11>25) or (median_31>25) or (median_13>25) or (median_33>25)) then
               begin
                 lv.Items.item[c].checked:=false; {uncheck}
                 lv.Items.item[c].subitems.Strings[insp_nr_stars]:='❌'    ;
@@ -3323,12 +3364,19 @@ begin
               lv.Items.item[c].subitems.Strings[insp_nr_stars]:=floattostrF(nr_stars,ffFixed,0,0);
 
               lv.Items.item[c].subitems.Strings[insp_nr_stars+2]:=floattostrF(hfd_median,ffFixed,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+3]:=floattostrF(hfd_center,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+3]:=floattostrF(median_22,ffFixed,0,3);
               lv.Items.item[c].subitems.Strings[insp_nr_stars+4]:=floattostrF(hfd_outer_ring,ffFixed,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+5]:=floattostrF(hfd_bottom_left,ffFixed,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+6]:=floattostrF(hfd_bottom_right,ffFixed,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+7]:=floattostrF(hfd_top_left,ffFixed,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+8]:=floattostrF(hfd_top_right,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+5]:=floattostrF(median_11,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+6]:=floattostrF(median_21,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+7]:=floattostrF(median_31,ffFixed,0,3);
+
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+8]:=floattostrF(median_12,ffFixed,0,3);
+
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+9]:=floattostrF(median_32,ffFixed,0,3);
+
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+10]:=floattostrF(median_13,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+11]:=floattostrF(median_23,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[insp_nr_stars+12]:=floattostrF(median_33,ffFixed,0,3);
             end
             else
 
@@ -4815,12 +4863,13 @@ var {################# initialised variables #########################}
   len: integer= 200;
 begin
   memo2_message('Finding the best focus position for each area using hyperbola curve fitting');
-  memo2_message('Positions are for an image with pixel position 1,1 at left bottom. So bl=bottom left is at corner of pixel position 1,1.');
+  memo2_message('Positions are for an image with pixel position 1,1 at left bottom. Area 1,1 is bottom left, area 3,3 is top right. Center area is area 2,2');
+  memo2_message('Offset in focuser steps relative to center area (area 2,2).');
   {do first or second time}
   analyse_listview(listview8,true{light},true{full fits},false{refresh});
 
   setlength(array_hfd,len);
-  if sender<>nil then fields:=7 else fields:=1;
+  if sender<>nil then fields:=11 else fields:=1;
   for i:=1 to fields do {do all hfd areas}
   begin
     img_counter:=0;
@@ -4849,13 +4898,17 @@ begin
     begin
       find_best_hyperbola_fit(array_hfd, img_counter, p,a,b); {input data[n,1]=position,data[n,2]=hfd, output: bestfocusposition=p, a, b of hyperbola}
 
-      if i=1 then       memo2_message('full image'+#9+#9+ 'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'_____________'            +#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
-      if i=2 then begin memo2_message('center'+#9+#9+     'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'_____________'            +#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));center:=p;end;
-      if i=3 then       memo2_message('outer ring'+#9+#9+ 'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,5,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
-      if i=4 then       memo2_message('bottom left'+#9+#9+'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,5,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
-      if i=5 then       memo2_message('bottom right'+#9+  'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,5,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
-      if i=6 then       memo2_message('top left'+#9+#9+   'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,5,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
-      if i=7 then       memo2_message('top right'+#9+#9+  'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,5,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
+      if i=1 then       memo2_message('full image'+#9+ 'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'_____________'            +#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
+      if i=2 then begin memo2_message('center'+#9+     'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'_____________'            +#9+#9+'error='+floattostrf(lowest_error,ffFixed,0,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));center:=p;end;
+      if i=3 then       memo2_message('outer ring'+#9+ 'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,0,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,5,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
+      if i=4 then       memo2_message('area 1,1'+#9+   'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,0,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,5,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
+      if i=5 then       memo2_message('area 2,1'+#9+   'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,0,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,5,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
+      if i=6 then       memo2_message('area 3,1'+#9+   'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,0,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,5,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
+      if i=7 then       memo2_message('area 1,2'+#9+   'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,0,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,5,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
+      if i=8 then       memo2_message('area 3,2'+#9+   'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,0,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,5,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
+      if i=9 then       memo2_message('area 1,3'+#9+   'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,0,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,5,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
+      if i=10 then      memo2_message('area 2,3'+#9+   'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,0,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,5,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
+      if i=11 then      memo2_message('area 3,3'+#9+   'Focus='+floattostrf(p,ffFixed,0,0)+#9+'a='+floattostrf(a,ffFixed,0,5)+#9+' b='+floattostrf(b,ffFixed,9,5) +#9+'offset='+floattostrf(p-center,ffFixed,0,0)+#9+#9+'error='+floattostrf(lowest_error,ffFixed,5,5)+#9+' iteration cycles='+floattostrf(iteration_cycles,ffFixed,0,0));
     end
     else
     if i=1 then memo2_message('█ █ █ █ █ █  Error, four or more images are required at different focus positions! █ █ █ █ █ █ ');
@@ -7627,7 +7680,7 @@ end;
 procedure Tstackmenu1.analyse_inspector1Click(Sender: TObject);
 begin
   stackmenu1.memo2.lines.add('Inspector routine using multiple images at different focus positions. This routine will calculate the best focus position of several areas by extrapolation. Usage:');
-  stackmenu1.memo2.lines.add('- Browse for a number of short exposure images made at different focuser positions around focus. Use a fixed focuser step size and avoid backlash.');
+  stackmenu1.memo2.lines.add('- Browse for a number of short exposure images made at different focuser positions around best focus. Use a fixed focuser step size and avoid backlash by going one way through the focuser positions.');
   stackmenu1.memo2.lines.add('- Press analyse to measure the area hfd values of each image.');
   stackmenu1.memo2.lines.add('- Press curve fitting. The curve fit routine will calculate the best focuser position for each area using the hfd values. The focuser differences from center will indicate tilt & curvature of the image.');
   stackmenu1.memo2.lines.add('');
