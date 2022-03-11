@@ -569,6 +569,13 @@ begin
     apply_dark_and_flat(img);{apply dark, flat if required, renew if different head.exposure or ccd temp. This will clear the header in load_fits}
     mainwindow.Memo1.Text:=memo1_backup;{restore header}
     update_text ('CALSTAT =',#39+head.calstat+#39); {calibration status}
+    get_hist:=true; {update required}
+  end
+  else
+  if stackmenu1.check_pattern_filter1.checked then {for OSC images with low dimensions only}
+  begin
+    normalise_OSC_filter(img);
+    get_hist:=true; {update required}
   end;
 
   quad_tolerance:=strtofloat2(stackmenu1.quad_tolerance1.text);

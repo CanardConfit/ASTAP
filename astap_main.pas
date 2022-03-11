@@ -3157,7 +3157,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.03.10a, '+about_message4;
+  #13+#10+'ASTAP version 2022.03.11, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -7665,6 +7665,7 @@ begin
 
       stackmenu1.force_oversize1.Checked:=Sett.ReadBool('stack','force_slow',false);
       stackmenu1.calibrate_prior_solving1.Checked:=Sett.ReadBool('stack','calibrate_prior_solving',false);
+      stackmenu1.check_pattern_filter1.Checked:=Sett.ReadBool('stack','check_pattern_filter',false);
 
       dum:=Sett.ReadString('stack','star_database',''); if dum<>'' then stackmenu1.star_database1.text:=dum;
       dum:=Sett.ReadString('stack','solve_search_field',''); if dum<>'' then stackmenu1.search_fov1.text:=dum;
@@ -8002,6 +8003,7 @@ begin
 
       sett.writeBool('stack','force_slow',stackmenu1.force_oversize1.checked);
       sett.writeBool('stack','calibrate_prior_solving',stackmenu1.calibrate_prior_solving1.checked);
+      sett.writeBool('stack','check_pattern_filter',stackmenu1.check_pattern_filter1.checked);
 
 
       if  stackmenu1.use_manual_alignment1.checked then sett.writestring('stack','align_method','4')
@@ -11878,6 +11880,7 @@ begin
         '-t  tolerance'+#10+
         '-m  minimum_star_size["]'+#10+
         '-speed mode[auto/slow] {Slow is forcing small search steps to improve detection.}'+#10+
+        '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-d  path {specify a path to the star database}'+#10+
         '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
@@ -11969,7 +11972,9 @@ begin
                  stackmenu1.max_stars1.text:=GetOptionValue('s');
         if hasoption('t') then stackmenu1.quad_tolerance1.text:=GetOptionValue('t');
         if hasoption('m') then stackmenu1.min_star_size1.text:=GetOptionValue('m');
-        if hasoption('speed') then stackmenu1.force_oversize1.checked:=pos('slow',GetOptionValue('speed'))<>0;
+        if hasoption('speed') then stackmenu1.force_oversize1.checked:=('slow'=GetOptionValue('speed'));
+        if hasoption('check') then
+                            stackmenu1.check_pattern_filter1.checked:=('y'=GetOptionValue('check'));
 
         if focusrequest then {find best focus using curve fitting}
         begin

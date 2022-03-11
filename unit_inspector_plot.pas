@@ -163,7 +163,7 @@ begin
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
     setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication}
-    normalize_OSC_flat(img_loaded);
+    normalise_OSC_filter(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
     restore_req:=true;
   end;
@@ -1115,7 +1115,7 @@ begin
   else
   if bayer_image then {raw Bayer image}
   begin
-    normalize_OSC_flat(img_loaded);
+    normalise_OSC_filter(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
   end;
 
@@ -1317,7 +1317,7 @@ begin
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
     setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication to a backup image}
-    normalize_OSC_flat(img_loaded);
+    normalise_OSC_filter(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
     restore_req:=true; {restore original image later}
   end;

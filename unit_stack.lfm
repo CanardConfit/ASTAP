@@ -3,7 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 712
   Top = 176
   Width = 1721
-  HorzScrollBar.Page = 1301
+  HorzScrollBar.Page = 1437
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1721
-    ActivePage = TabSheet1
+    ActivePage = alignment1
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 9
+    TabIndex = 6
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -2270,7 +2270,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the frame alignment and solver options.'
       Caption = 'Alignment'
       ClientHeight = 470
-      ClientWidth = 1429
+      ClientWidth = 1713
       ImageIndex = 7
       ParentFont = False
       object use_star_alignment1: TRadioButton
@@ -2700,11 +2700,12 @@ object stackmenu1: Tstackmenu1
             Left = 673
             Height = 19
             Hint = 'Calibrate the images prior to solving. Use this for noisy images.'
-            Top = 125
+            Top = 104
             Width = 136
             BorderSpacing.Around = 5
             Caption = 'Calibrate prior solving'
             Color = clBtnFace
+            OnChange = calibrate_prior_solving1Change
             ParentColor = False
             ParentFont = False
             TabOrder = 5
@@ -2713,7 +2714,7 @@ object stackmenu1: Tstackmenu1
             Left = 673
             Height = 19
             Hint = 'Check-mark  this to improve solving reliability in some cases. Search window will be always large with overlap but it will slow down solving.  Default this is off.  If off  the search window size will be automatically reduced if sufficient stars are found. This option is equivalent to command line option -speed'
-            Top = 102
+            Top = 80
             Width = 45
             BorderSpacing.Around = 5
             Caption = 'Slow'
@@ -2781,6 +2782,20 @@ object stackmenu1: Tstackmenu1
             OnClick = save_settings_extra_button1Click
             TabOrder = 8
             Visible = False
+          end
+          object check_pattern_filter1: TCheckBox
+            Left = 673
+            Height = 19
+            Hint = 'Intended for OSC cameras in bin 1x1 mode only. It will remove the check pattern prior to solving. '
+            Top = 128
+            Width = 121
+            BorderSpacing.Around = 5
+            Caption = 'Check pattern filter'
+            Color = clBtnFace
+            OnChange = check_pattern_filter1Change
+            ParentColor = False
+            ParentFont = False
+            TabOrder = 9
           end
         end
       end

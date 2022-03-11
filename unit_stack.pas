@@ -44,6 +44,7 @@ type
     browse_mount1: TBitBtn;
     browse_live_stacking1: TBitBtn;
     Button1: TButton;
+    check_pattern_filter1: TCheckBox;
     target_distance1: TLabel;
     target_group1: TGroupBox;
     delta_ra1: TLabel;
@@ -611,6 +612,7 @@ type
     procedure analyseblink1Click(Sender: TObject);
     procedure browse_monitoring1Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
+    procedure calibrate_prior_solving1Change(Sender: TObject);
     procedure equinox1Change(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure help_monitoring1Click(Sender: TObject);
@@ -663,6 +665,7 @@ type
     procedure most_common_mono1Click(Sender: TObject);
     procedure mount_add_solutions1Click(Sender: TObject);
     procedure new_saturation1Change(Sender: TObject);
+    procedure check_pattern_filter1Change(Sender: TObject);
     procedure pagecontrol1Change(Sender: TObject);
     procedure pagecontrol1MouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
@@ -891,7 +894,7 @@ procedure update_equalise_background_step(pos1: integer);{update equalise backgr
 procedure memo2_message(s: string);{message to memo2}
 procedure update_stackmenu;{update stackmenu1 menus}
 procedure box_blur(colors,range: integer;var img: image_array);{combine values of pixels, ignore zeros}
-procedure normalize_OSC_flat(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
+procedure normalise_OSC_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
 procedure black_spot_filter(var img: image_array);{remove black spots with value zero}
 
 function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
@@ -3630,7 +3633,7 @@ begin
 end;
 
 
-procedure normalize_OSC_flat(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
+procedure normalise_OSC_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
 var
   fitsX,fitsY,col,h,w,counter1,counter2, counter3,counter4 : integer;
   value1,value2,value3,value4,maxval : double;
@@ -3646,13 +3649,12 @@ begin
     exit;
   end
   else
-    memo2_message('Normalising '+filename2);
-
+    memo2_message('Normalising raw OSC image.');
 
   value1:=0; value2:=0; value3:=0; value4:=0;
   counter1:=0; counter2:=0; counter3:=0; counter4:=0;
 
-  for fitsY:=(h div 4) to (h*3) div 4 do {use one quarter of the image to find factors. Works also a little better if no dark-flat is subtracted. It also wokrs better if boarder is black}
+  for fitsY:=(h div 4) to (h*3) div 4 do {use one quarter of the image to find factors. Works also a little better if no dark-flat is subtracted. It also works better if boarder is black}
     for fitsX:=(w div 4) to (w*3) div 4 do
     begin
       oddX:=odd(fitsX);
@@ -5342,6 +5344,11 @@ end;
 procedure Tstackmenu1.new_saturation1Change(Sender: TObject);
 begin
   update_replacement_colour;
+end;
+
+procedure Tstackmenu1.check_pattern_filter1Change(Sender: TObject);
+begin
+  if check_pattern_filter1.checked then calibrate_prior_solving1.checked:=false;
 end;
 
 
@@ -7322,7 +7329,7 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   backup_img;
 
-  normalize_OSC_flat(img_loaded);
+  normalise_OSC_filter(img_loaded);
 
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);{plot real}
@@ -7360,6 +7367,11 @@ begin
   end;
   form_listbox1.release;
   report_delta;{update delta position of target}
+end;
+
+procedure Tstackmenu1.calibrate_prior_solving1Change(Sender: TObject);
+begin
+  if calibrate_prior_solving1.checked then check_pattern_filter1.checked:=false;
 end;
 
 
@@ -8249,7 +8261,7 @@ begin
       if  ((stackmenu1.make_osc_color1.checked) and (stackmenu1.apply_normalise_filter1.checked)) then
       begin
         memo2_message('Applying normalise filter on master (OSC) flat.');
-        normalize_OSC_flat(img_flat);
+        normalise_OSC_filter(img_flat);
       end
 
     end;
