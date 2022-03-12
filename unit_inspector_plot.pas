@@ -348,12 +348,12 @@ begin
         mainwindow.image1.Canvas.textout(starX2+size,starY2+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
 
 
-        //the nine areas:
-        //13     23   33
-        //12     22   32
-        //11     21   31
+        //the nine areas. FITS 1,1 is left bottom:
+        //13   23   33
+        //12   22   32
+        //11   21   31
 
-        if  sqr(starX - (head.width div 2) )+sqr(starY - (head.height div 2))>sqr(0.75)*(sqr(head.width div 2)+sqr(head.height div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
+        if  sqr(starX - (head.width div 2) )+sqr(starY - (head.height div 2))>sqr(0.75)*(sqr(head.width div 2)+sqr(head.height div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+500); end;{store out ring (>75% diameter) HFD values}
         if triangle=false then
         begin
           if ( (starX<(head.width*1/3)) and (starY<(head.height*1/3)) ) then begin  hfdlist_11[nhfd_11]:=hfd1;  inc(nhfd_11); if nhfd_11>=length(hfdlist_11) then SetLength(hfdlist_11,nhfd_11+500);end;{store corner HFD values}
@@ -369,20 +369,20 @@ begin
 
         end
         else
-        begin
+        begin  {triangle. Measured in a circle divided by three sectors of 120 degrees except for the circular center}
           x_centered:=starX- (head.width div 2); {array coordinates}
           y_centered:=starY- (head.height div 2);
           theangle:=arctan2(x_centered,y_centered)*180/pi;{angle in array from Y axis. So swap x, y}
           sqrradius:=sqr(x_centered)+sqr(x_centered);
           theradius:=sqrt(sqrradius);
 
-          if  sqrradius<=sqr(0.75)*(sqr(head.width div 2)+sqr(head.height div 2))  then
+          if  sqrradius<=sqr(0.75)*(sqr(head.width div 2)+sqr(head.height div 2)) then {within circle}
           begin
-            if  sqrradius>=sqr(0.25)*(sqr(head.width div 2)+sqr(head.height div 2))  then
+            if  sqrradius>=sqr(0.25)*(sqr(head.width div 2)+sqr(head.height div 2))  then {outside center}
             begin
-              if ( (abs(fnmodulo2(theangle-screw1,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_11[nhfd_11] :=hfd1; inc(nhfd_11);if nhfd_11>=length(hfdlist_11) then SetLength(hfdlist_11,nhfd_11+100);end;{store corner HFD values}
-              if ( (abs(fnmodulo2(theangle-screw2,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21);if nhfd_21>=length(hfdlist_21) then SetLength(hfdlist_21,nhfd_21+100);end;
-              if ( (abs(fnmodulo2(theangle-screw3,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31);if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+100);end;
+              if ( (abs(fnmodulo2(theangle-screw1,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_11[nhfd_11] :=hfd1; inc(nhfd_11);if nhfd_11>=length(hfdlist_11) then SetLength(hfdlist_11,nhfd_11+100);end;{sector 1}
+              if ( (abs(fnmodulo2(theangle-screw2,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21);if nhfd_21>=length(hfdlist_21) then SetLength(hfdlist_21,nhfd_21+100);end;{sector 2}
+              if ( (abs(fnmodulo2(theangle-screw3,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31);if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+100);end;{sector 3}
             end
             else
             begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22);if nhfd_22>=length(hfdlist_22) then SetLength(hfdlist_22,nhfd_22+100);end;{round center}
