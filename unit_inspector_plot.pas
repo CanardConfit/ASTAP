@@ -115,7 +115,7 @@ end;
 
 procedure CCDinspector(snr_min: double; triangle : boolean; measuring_angle: double);
 var
- fitsX,fitsY,size,radius, i,j,starX,starY, retries,max_stars,x_centered,y_centered,starX2,starY2,
+ fitsX,fitsY,size,radius, i,j,starX,starY, retries,max_stars,x_centered,y_centered,starX2,starY2,len,
  nhfd,nhfd_outer_ring,fontsize,text_height,text_width,n,m,xci,yci,sqr_radius,left_margin,
  nhfd_11,nhfd_21,nhfd_31,
  nhfd_12,nhfd_22,nhfd_32,
@@ -135,15 +135,12 @@ var
  hfdlist_12,hfdlist_22,hfdlist_32,
  hfdlist_13,hfdlist_23,hfdlist_33     : array of double;
 
- hfd_list_all : array of array of double;
  starlistXY    :array of array of integer;
  mess1,mess2,hfd_value,hfd_arcsec      : string;
  Save_Cursor:TCursor;
  Fliph, Flipv,restore_req  : boolean;
  img_bk,img_sa                         : image_array;
 
-var {################# initialised variables #########################}
- len : integer=1000;
 begin
   if fits_file=false then exit; {file loaded?}
   Save_Cursor := Screen.Cursor;
@@ -169,6 +166,7 @@ begin
   end;
 
   max_stars:=500;
+  len:=4*max_stars; {should be enough, if not size is adapted}
 
   with mainwindow do
   begin
@@ -199,22 +197,8 @@ begin
     median_23:=0;
     median_33:=0;
 
-    SetLength(hfdlist,len*4);{set array length on a starting value}
-    SetLength(starlistXY,2,len*4);{x,y positions}
-
-    SetLength(hfdlist_outer_ring,len*2);
-
-    SetLength(hfdlist_11,len);
-    SetLength(hfdlist_21,len);
-    SetLength(hfdlist_31,len);
-
-    SetLength(hfdlist_12,len);
-    SetLength(hfdlist_22,len);
-    SetLength(hfdlist_32,len);
-
-    SetLength(hfdlist_13,len);
-    SetLength(hfdlist_23,len);
-    SetLength(hfdlist_33,len);
+    SetLength(hfdlist,len);{set array length on a starting value}
+    SetLength(starlistXY,2,len);{x,y positions}
 
     setlength(img_sa,1,head.width,head.height);{set length of image array}
 
@@ -225,21 +209,6 @@ begin
     retries:=2; {try up to three times to get enough stars from the image}
     repeat
       nhfd:=0;{set counters at zero}
-
-      nhfd_11:=0;
-      nhfd_21:=0;
-      nhfd_31:=0;
-
-      nhfd_12:=0;
-      nhfd_22:=0;{center}
-      nhfd_32:=0;
-
-      nhfd_13:=0;
-      nhfd_23:=0;
-      nhfd_33:=0;
-
-      nhfd_outer_ring:=0;
-
 
       for fitsY:=0 to head.height-1 do
         for fitsX:=0 to head.width-1  do
@@ -262,43 +231,33 @@ begin
               yci:=round(yc);
 
               for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
-                for m:=-radius to +radius do
-                begin
-                  j:=n+yci;
-                  i:=m+xci;
-                  if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                    img_sa[0,i,j]:=1;
-                end;
-
-              if ((img_loaded[0,round(xc),round(yc)]<head.datamax_org-1) and
-                  (img_loaded[0,round(xc-1),round(yc)]<head.datamax_org-1) and
-                  (img_loaded[0,round(xc+1),round(yc)]<head.datamax_org-1) and
-                  (img_loaded[0,round(xc),round(yc-1)]<head.datamax_org-1) and
-                  (img_loaded[0,round(xc),round(yc+1)]<head.datamax_org-1) and
-
-                  (img_loaded[0,round(xc-1),round(yc-1)]<head.datamax_org-1) and
-                  (img_loaded[0,round(xc-1),round(yc+1)]<head.datamax_org-1) and
-                  (img_loaded[0,round(xc+1),round(yc-1)]<head.datamax_org-1) and
-                  (img_loaded[0,round(xc+1),round(yc+1)]<head.datamax_org-1)  ) then {not saturated}
+              for m:=-radius to +radius do
               begin
+                j:=n+yci;
+                i:=m+xci;
+                if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
+                  img_sa[0,i,j]:=1;
+              end;
 
-                starX:=round(xc);
-                starY:=round(yc);
-    //            if Fliphorizontal     then starX:=round(head.width-xc)   else starX:=round(xc);
-    //            if Flipvertical=false then  starY:=round(head.height-yc) else starY:=round(yc);
+              if ((img_loaded[0,xci  ,yci]<head.datamax_org-1) and
+                  (img_loaded[0,xci-1,yci]<head.datamax_org-1) and
+                  (img_loaded[0,xci+1,yci]<head.datamax_org-1) and
+                  (img_loaded[0,xci  ,yci-1]<head.datamax_org-1) and
+                  (img_loaded[0,xci  ,yci+1]<head.datamax_org-1) and
 
-    //            mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-    //            mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
-
+                  (img_loaded[0,xci-1,yci-1]<head.datamax_org-1) and
+                  (img_loaded[0,xci-1,yci+1]<head.datamax_org-1) and
+                  (img_loaded[0,xci+1,yci-1]<head.datamax_org-1) and
+                  (img_loaded[0,xci+1,yci+1]<head.datamax_org-1)  ) then {not saturated}
+              begin
                 {store values}
                 hfdlist[nhfd]:=hfd1;
-
-                starlistXY[0,nhfd]:=starX; {store star position in image coordinates, not FITS coordinates}
-                starlistXY[1,nhfd]:=starY;
+                starlistXY[0,nhfd]:=xci; {store star position in image coordinates, not FITS coordinates}
+                starlistXY[1,nhfd]:=yci;
                 inc(nhfd); if nhfd>=length(hfdlist) then
                 begin
-                  SetLength(hfdlist,nhfd+100); {adapt length if required and store hfd value}
-                  SetLength(starlistXY,2,nhfd+100);{adapt array size if required}
+                  SetLength(hfdlist,nhfd+max_stars); {adapt length if required and store hfd value}
+                  SetLength(starlistXY,2,nhfd+max_stars);{adapt array size if required}
                 end;
 
               end;
@@ -322,16 +281,44 @@ begin
       get_hist(0,img_loaded);{get histogram of img_loaded and his_total}
     end;
 
-    if triangle then
-    begin
-      screw1:=fnmodulo2(measuring_angle,360); {make -180 to 180 range}
-      screw2:=fnmodulo2(measuring_angle+120,360);
-      screw3:=fnmodulo2(measuring_angle-120,360);
-    end;
 
 
-    if nhfd>0 then
+    if nhfd>0 then  {count the stars for each area}
     begin
+      SetLength(hfdlist_outer_ring,nhfd);{space for all stars}
+      SetLength(hfdlist_11,nhfd);{space for all stars}
+      SetLength(hfdlist_21,nhfd);{space for all stars}
+      SetLength(hfdlist_31,nhfd);
+
+      SetLength(hfdlist_12,nhfd);
+      SetLength(hfdlist_22,nhfd);
+      SetLength(hfdlist_32,nhfd);
+
+      SetLength(hfdlist_13,nhfd);
+      SetLength(hfdlist_23,nhfd);
+      SetLength(hfdlist_33,nhfd);
+
+      nhfd_11:=0;
+      nhfd_21:=0;
+      nhfd_31:=0;
+
+      nhfd_12:=0;
+      nhfd_22:=0;{center}
+      nhfd_32:=0;
+
+      nhfd_13:=0;
+      nhfd_23:=0;
+      nhfd_33:=0;
+
+      nhfd_outer_ring:=0;
+
+      if triangle then
+      begin
+        screw1:=fnmodulo2(measuring_angle,360); {make -180 to 180 range}
+        screw2:=fnmodulo2(measuring_angle+120,360);
+        screw3:=fnmodulo2(measuring_angle-120,360);
+      end;
+
       for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
       begin
         hfd1:=hfdlist[i];
@@ -353,19 +340,19 @@ begin
         //12   22   32
         //11   21   31
 
-        if  sqr(starX - (head.width div 2) )+sqr(starY - (head.height div 2))>sqr(0.75)*(sqr(head.width div 2)+sqr(head.height div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+500); end;{store out ring (>75% diameter) HFD values}
+        if  sqr(starX - (head.width div 2) )+sqr(starY - (head.height div 2))>sqr(0.75)*(sqr(head.width div 2)+sqr(head.height div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); end;{store out ring (>75% diameter) HFD values}
         if triangle=false then
         begin
-          if ( (starX<(head.width*1/3)) and (starY<(head.height*1/3)) ) then begin  hfdlist_11[nhfd_11]:=hfd1;  inc(nhfd_11); if nhfd_11>=length(hfdlist_11) then SetLength(hfdlist_11,nhfd_11+500);end;{store corner HFD values}
+          if ( (starX<(head.width*1/3)) and (starY<(head.height*1/3)) ) then begin  hfdlist_11[nhfd_11]:=hfd1;  inc(nhfd_11); end;{store corner HFD values}
           if ( (starX>(head.width*2/3)) and (starY<(head.height*1/3)) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31); if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+500);end;
           if ( (starX>(head.width*2/3)) and (starY>(head.height*2/3)) ) then begin  hfdlist_33[nhfd_33]:=hfd1;  inc(nhfd_33); if nhfd_33>=length(hfdlist_33) then SetLength(hfdlist_33,nhfd_33+500);end;
           if ( (starX<(head.width*1/3)) and (starY>(head.height*2/3)) ) then begin  hfdlist_13[nhfd_13]:=hfd1;  inc(nhfd_13); if nhfd_13>=length(hfdlist_13) then SetLength(hfdlist_13,nhfd_13+500);end;
 
-          if ( (starX>(head.width*1/3)) and (starX<(head.width*2/3)) and (starY>(head.height*2/3))                              ) then begin  hfdlist_23[nhfd_23]:=hfd1;  inc(nhfd_23); if nhfd_23>=length(hfdlist_23) then SetLength(hfdlist_23,nhfd_23+500);end;{store corner HFD values}
-          if (                              (starX<(head.width*1/3)) and (starY>(head.height*1/3)) and (starY<(head.height*2/3))) then begin  hfdlist_12[nhfd_12]:=hfd1;  inc(nhfd_12); if nhfd_12>=length(hfdlist_12) then SetLength(hfdlist_12,nhfd_12+500);end;{store corner HFD values}
-          if ( (starX>(head.width*1/3)) and (starX<(head.width*2/3)) and (starY>(head.height*1/3)) and (starY<(head.height*2/3))) then begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22); if nhfd_22>=length(hfdlist_22) then SetLength(hfdlist_22,nhfd_22+500);end;{square center}
-          if ( (starX>(head.width*2/3))                              and (starY>(head.height*1/3)) and (starY<(head.height*2/3))) then begin  hfdlist_32[nhfd_32]:=hfd1;  inc(nhfd_32); if nhfd_32>=length(hfdlist_32) then SetLength(hfdlist_32,nhfd_32+500);end;{store corner HFD values}
-          if ( (starX>(head.width*1/3)) and (starX<(head.width*2/3)) and                               (starY<(head.height*1/3))) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21); if nhfd_21>=length(hfdlist_21) then SetLength(hfdlist_21,nhfd_21+500);end;{store corner HFD values}
+          if ( (starX>(head.width*1/3)) and (starX<(head.width*2/3)) and (starY>(head.height*2/3))                              ) then begin  hfdlist_23[nhfd_23]:=hfd1;  inc(nhfd_23); end;{store corner HFD values}
+          if (                              (starX<(head.width*1/3)) and (starY>(head.height*1/3)) and (starY<(head.height*2/3))) then begin  hfdlist_12[nhfd_12]:=hfd1;  inc(nhfd_12); end;{store corner HFD values}
+          if ( (starX>(head.width*1/3)) and (starX<(head.width*2/3)) and (starY>(head.height*1/3)) and (starY<(head.height*2/3))) then begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22); end;{square center}
+          if ( (starX>(head.width*2/3))                              and (starY>(head.height*1/3)) and (starY<(head.height*2/3))) then begin  hfdlist_32[nhfd_32]:=hfd1;  inc(nhfd_32); end;{store corner HFD values}
+          if ( (starX>(head.width*1/3)) and (starX<(head.width*2/3)) and                               (starY<(head.height*1/3))) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21); end;{store corner HFD values}
 
         end
         else
@@ -385,7 +372,7 @@ begin
               if ( (abs(fnmodulo2(theangle-screw3,360))<30) and (theradius<head.height div 2) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31);if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+100);end;{sector 3}
             end
             else
-            begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22);if nhfd_22>=length(hfdlist_22) then SetLength(hfdlist_22,nhfd_22+100);end;{round center}
+            begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22);end;{round center}
           end;
         end
       end;
@@ -987,12 +974,11 @@ begin
                   or ((aspect))  )
                   then
             begin
-
               if nhfd>=length(hfd_values)-1 then
-                  SetLength(hfd_values,4,nhfd+100);{adapt length if required}
+                  SetLength(hfd_values,4,nhfd+500);{adapt length if required}
               hfd_values[0,nhfd]:=round(xc);
               hfd_values[1,nhfd]:=round(yc);
-              hfd_values[2,nhfd]:=round(hfd1*100);
+              hfd_values[2,nhfd]:=round(hfd1*500);
               hfd_values[3,nhfd]:=orientation;
               inc(nhfd);
 

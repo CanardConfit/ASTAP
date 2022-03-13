@@ -1496,44 +1496,33 @@ begin
   img_sa:=nil;{free mem}
 end;
 
-procedure analyse_image_extended(img : image_array;out nr_stars, hfd_median, median_outer_ring,  median_11,median_21,median_31,   median_12,median_22,median_32,   median_13,median_23,median_33 : double); {analyse several areas}
+
+procedure analyse_image_extended(img : image_array; datamax:double; out nr_stars, hfd_median, median_outer_ring,  median_11,median_21,median_31,   median_12,median_22,median_32,   median_13,median_23,median_33 : double); {analyse several areas}
 var
    width5,height5,fitsX,fitsY,radius,i, j, retries,max_stars,n,m,xci,yci,sqr_radius,
    nhfd,  nhfd_outer_ring,
    nhfd_11,nhfd_21,nhfd_31,
    nhfd_12,nhfd_22,nhfd_32,
    nhfd_13,nhfd_23,nhfd_33   : integer;
-   hfd1,star_fwhm,snr,flux,xc,yc,backgr,detection_level                                             : double;
-   img_sa                                                                                           : image_array;
+   hfd1,star_fwhm,snr,flux,xc,yc,backgr,detection_level      : double;
+   img_sa                                                    : image_array;
    hfdlist,
    hfdlist_11,hfdlist_21,hfdlist_31,
    hfdlist_12,hfdlist_22,hfdlist_32,
    hfdlist_13,hfdlist_23,hfdlist_33,
    hfdlist_outer_ring   :array of double;
-var  {################# initialised variables #########################}
-   len: integer=1000;
+   starlistXY    : array of array of integer;
+   len,starX,starY           : integer;
 
 begin
   width5:=Length(img[0]);    {width}
   height5:=Length(img[0][0]); {height}
 
   max_stars:=500; //fixed value
+  len:=max_stars*4; {should be enough. If not increase size arrays}
+
   SetLength(hfdlist,len*4);{set array length on a starting value}
-
-  SetLength(hfdlist_outer_ring,len*2);
-
-  SetLength(hfdlist_11,len);
-  SetLength(hfdlist_21,len);
-  SetLength(hfdlist_31,len);
-
-  SetLength(hfdlist_12,len);
-  SetLength(hfdlist_22,len);
-  SetLength(hfdlist_32,len);
-
-  SetLength(hfdlist_13,len);
-  SetLength(hfdlist_23,len);
-  SetLength(hfdlist_33,len);
-
+  SetLength(starlistXY,2,len*4);{x,y positions}
 
   setlength(img_sa,1,width5,height5);{set length of image array}
 
@@ -1542,19 +1531,7 @@ begin
   detection_level:=max(3.5*noise_level[0],star_level); {level above background. Start with a high value}
   retries:=2; {try three times to get enough stars from the image}
   repeat
-    nhfd:=0;{set counters at zero}
-    nhfd_11:=0;
-    nhfd_21:=0;
-    nhfd_31:=0;
-    nhfd_12:=0;
-    nhfd_22:=0;
-    nhfd_32:=0;
-    nhfd_13:=0;
-    nhfd_23:=0;
-    nhfd_33:=0;
-    nhfd_outer_ring:=0;
-
-
+    nhfd:=0;{set counter at zero}
 
     if backgr>8 then
     begin
@@ -1562,12 +1539,10 @@ begin
         for fitsX:=0 to width5-1  do
           img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
-
       //the nine areas:
       //13     23   33
       //12     22   32
       //11     21   31
-
 
       for fitsY:=0 to height5-1 do
       begin
@@ -1579,34 +1554,42 @@ begin
             if ((hfd1<=35) and (snr>30) and (hfd1>0.8) {two pixels minimum} ) then
             begin
               {store values}
-              hfdlist[nhfd]:=hfd1; inc(nhfd); if nhfd>=length(hfdlist) then SetLength(hfdlist,nhfd+500); {adapt length if required and store hfd value}
-
-              if  sqr(xc - (width5 div 2) )+sqr(yc - (height5 div 2))>sqr(0.75)*(sqr(width5 div 2)+sqr(height5 div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); if nhfd_outer_ring>=length(hfdlist_outer_ring) then  SetLength(hfdlist_outer_ring,nhfd_outer_ring+100); end;{store out ring (>75% diameter) HFD values}
-
-              if ( (xc<(width5*1/3)) and (yc<(height5*1/3)) ) then begin  hfdlist_11[nhfd_11]:=hfd1;  inc(nhfd_11); if nhfd_11>=length(hfdlist_11) then SetLength(hfdlist_11,nhfd_11+500);end;{store corner HFD values}
-              if ( (xc>(width5*2/3)) and (yc<(height5*1/3)) ) then begin  hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31); if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+500);end;
-              if ( (xc>(width5*2/3)) and (yc>(height5*2/3)) ) then begin  hfdlist_33[nhfd_33]:=hfd1;  inc(nhfd_33); if nhfd_33>=length(hfdlist_33) then SetLength(hfdlist_33,nhfd_33+500);end;
-              if ( (xc<(width5*1/3)) and (yc>(height5*2/3)) ) then begin  hfdlist_13[nhfd_13]:=hfd1;  inc(nhfd_13); if nhfd_13>=length(hfdlist_13) then SetLength(hfdlist_13,nhfd_13+500);end;
-
-              if ( (xc>(width5*1/3)) and (xc<(width5*2/3)) and (yc>(height5*2/3))                       ) then begin  hfdlist_23[nhfd_23]:=hfd1;  inc(nhfd_23); if nhfd_23>=length(hfdlist_23) then SetLength(hfdlist_23,nhfd_23+500);end;{store corner HFD values}
-              if (                       (xc<(width5*1/3)) and (yc>(height5*1/3)) and (yc<(height5*2/3))) then begin  hfdlist_12[nhfd_12]:=hfd1;  inc(nhfd_12); if nhfd_12>=length(hfdlist_12) then SetLength(hfdlist_12,nhfd_12+500);end;{store corner HFD values}
-              if ( (xc>(width5*1/3)) and (xc<(width5*2/3)) and (yc>(height5*1/3)) and (yc<(height5*2/3))) then begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22); if nhfd_22>=length(hfdlist_22) then SetLength(hfdlist_22,nhfd_22+500);end;{square center}
-              if ( (xc>(width5*2/3))                       and (yc>(height5*1/3)) and (yc<(height5*2/3))) then begin  hfdlist_32[nhfd_32]:=hfd1;  inc(nhfd_32); if nhfd_32>=length(hfdlist_32) then SetLength(hfdlist_32,nhfd_32+500);end;{store corner HFD values}
-              if ( (xc>(width5*1/3)) and (xc<(width5*2/3)) and                        (yc<(height5*1/3))) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21); if nhfd_21>=length(hfdlist_21) then SetLength(hfdlist_21,nhfd_21+500);end;{store corner HFD values}
-
               radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
               sqr_radius:=sqr(radius);
               xci:=round(xc);{star center as integer}
               yci:=round(yc);
               for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
-                for m:=-radius to +radius do
+              for m:=-radius to +radius do
+              begin
+                j:=n+yci;
+                i:=m+xci;
+                if ((j>=0) and (i>=0) and (j<height5) and (i<width5) and (sqr(m)+sqr(n)<=sqr_radius)) then
+                  img_sa[0,i,j]:=1;
+              end;
+
+              if ((img[0,xci  ,yci]<datamax-1) and
+                  (img[0,xci-1,yci]<datamax-1) and
+                  (img[0,xci+1,yci]<datamax-1) and
+                  (img[0,xci  ,yci-1]<datamax-1) and
+                  (img[0,xci  ,yci+1]<datamax-1) and
+
+                  (img[0,xci-1,yci-1]<datamax-1) and
+                  (img[0,xci-1,yci+1]<datamax-1) and
+                  (img[0,xci+1,yci-1]<datamax-1) and
+                  (img[0,xci+1,yci+1]<datamax-1)  ) then {not saturated}
+              begin
+                {store values}
+                hfdlist[nhfd]:=hfd1;
+
+                starlistXY[0,nhfd]:=xci; {store star position in image coordinates, not FITS coordinates}
+                starlistXY[1,nhfd]:=yci;
+                inc(nhfd); if nhfd>=length(hfdlist) then
                 begin
-                  j:=n+yci;
-                  i:=m+xci;
-                  if ((j>=0) and (i>=0) and (j<height5) and (i<width5) and (sqr(m)+sqr(n)<=sqr_radius)) then
-                    img_sa[0,i,j]:=1;
+                  SetLength(hfdlist,nhfd+max_stars); {adapt length if required and store hfd value}
+                  SetLength(starlistXY,2,nhfd+max_stars);{adapt array size if required}
                 end;
 
+            end;
             end;
           end;
         end;
@@ -1620,6 +1603,60 @@ begin
     detection_level:=max(6.999*noise_level[0],min(30*noise_level[0],detection_level*6.999/30)); {very high -> 30 -> 7 -> stop.  Or  60 -> 14 -> 7.0. Or for very short exposures 3.5 -> stop}
 
   until ((nhfd>=max_stars) or (retries<0));{reduce dection level till enough stars are found. Note that faint stars have less positional accuracy}
+
+  nhfd_11:=0;
+  nhfd_21:=0;
+  nhfd_31:=0;
+  nhfd_12:=0;
+  nhfd_22:=0;
+  nhfd_32:=0;
+  nhfd_13:=0;
+  nhfd_23:=0;
+  nhfd_33:=0;
+  nhfd_outer_ring:=0;
+
+  if nhfd>0 then {count the stars for each area}
+  begin
+    SetLength(hfdlist_outer_ring,nhfd);{space for all stars}
+    SetLength(hfdlist_11,nhfd);{space for all stars}
+    SetLength(hfdlist_21,nhfd);{space for all stars}
+    SetLength(hfdlist_31,nhfd);
+
+    SetLength(hfdlist_12,nhfd);
+    SetLength(hfdlist_22,nhfd);
+    SetLength(hfdlist_32,nhfd);
+
+    SetLength(hfdlist_13,nhfd);
+    SetLength(hfdlist_23,nhfd);
+    SetLength(hfdlist_33,nhfd);
+
+    {sort the stars}
+    for i:=0 to nhfd-1 do
+    begin
+      hfd1:=hfdlist[i];
+      starX:=starlistXY[0,i];
+      starY:=starlistXY[1,i];
+
+      //the nine areas. FITS 1,1 is left bottom:
+      //13   23   33
+      //12   22   32
+      //11   21   31
+
+      if  sqr(starX - (width5 div 2) )+sqr(starY - (height5 div 2))>sqr(0.75)*(sqr(width5 div 2)+sqr(height5 div 2)) then begin hfdlist_outer_ring[nhfd_outer_ring]:=hfd1; inc(nhfd_outer_ring); end;{store out ring (>75% diameter) HFD values}
+
+      if ( (starX<(width5*1/3)) and (starY<(height5*1/3)) ) then begin hfdlist_11[nhfd_11]:=hfd1;  inc(nhfd_11);  end;{store corner HFD values}
+      if ( (starX>(width5*2/3)) and (starY<(height5*1/3)) ) then begin hfdlist_31[nhfd_31]:=hfd1;  inc(nhfd_31); if nhfd_31>=length(hfdlist_31) then SetLength(hfdlist_31,nhfd_31+500); end;
+      if ( (starX>(width5*2/3)) and (starY>(height5*2/3)) ) then begin  hfdlist_33[nhfd_33]:=hfd1;  inc(nhfd_33); if nhfd_33>=length(hfdlist_33) then SetLength(hfdlist_33,nhfd_33+500);end;
+      if ( (starX<(width5*1/3)) and (starY>(height5*2/3)) ) then begin  hfdlist_13[nhfd_13]:=hfd1;  inc(nhfd_13); if nhfd_13>=length(hfdlist_13) then SetLength(hfdlist_13,nhfd_13+500);end;
+
+      if ( (starX>(width5*1/3)) and (starX<(width5*2/3)) and (starY>(height5*2/3))                          ) then begin  hfdlist_23[nhfd_23]:=hfd1;  inc(nhfd_23); end;{store corner HFD values}
+      if (                          (starX<(width5*1/3)) and (starY>(height5*1/3)) and (starY<(height5*2/3))) then begin  hfdlist_12[nhfd_12]:=hfd1;  inc(nhfd_12); end;{store corner HFD values}
+      if ( (starX>(width5*1/3)) and (starX<(width5*2/3)) and (starY>(height5*1/3)) and (starY<(height5*2/3))) then begin  hfdlist_22[nhfd_22]:=hfd1;  inc(nhfd_22); end;{square center}
+      if ( (starX>(width5*2/3)) and                          (starY>(height5*1/3)) and (starY<(height5*2/3))) then begin  hfdlist_32[nhfd_32]:=hfd1;  inc(nhfd_32); end;{store corner HFD values}
+      if ( (starX>(width5*1/3)) and (starX<(width5*2/3)) and                           (starY<(height5*1/3))) then begin  hfdlist_21[nhfd_21]:=hfd1;  inc(nhfd_21); end;{store corner HFD values}
+
+    end;
+  end;
 
   nr_stars:=nhfd;
   if nhfd>0 then  hfd_median:=SMedian(hfdList,nhfd) else  hfd_median:=99;
@@ -1650,6 +1687,7 @@ begin
 
   img_sa:=nil;{free mem}
 end;
+
 
 
 procedure get_annotation_position;{find the position of the specified asteroid annotation}
@@ -1696,7 +1734,7 @@ var
   c,hfd_counter  ,i,counts          : integer;
   backgr, hfd_median,alt            : double;
   Save_Cursor                       : TCursor;
-  green,blue,success,planetary      : boolean;
+  green,blue,planetary              : boolean;
   key,filename1,rawstr              : string;
   img                               : image_array;
 begin
@@ -3355,8 +3393,7 @@ begin
             begin
               lv.Items.item[c].subitems.Strings[insp_focus_pos]:=inttostr(focus_pos);
 
-              analyse_image_extended(img, nr_stars, hfd_median, hfd_outer_ring,  median_11,median_21,median_31,   median_12,median_22,median_32,   median_13,median_23,median_33); {analyse several areas}
-
+              analyse_image_extended(img,head_2.datamax_org, nr_stars, hfd_median, hfd_outer_ring,  median_11,median_21,median_31,   median_12,median_22,median_32,   median_13,median_23,median_33); {analyse several areas}
 
               if ((hfd_median>25) or (median_22>25) or (hfd_outer_ring>25) or (median_11>25) or (median_31>25) or (median_13>25) or (median_33>25)) then
               begin
