@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <PathDelim Value="\"/>
+    <Version Value="11"/>
+    <BuildModes Active="Default"/>
+    <Units Count="4">
+      <Unit0>
+        <Filename Value="astap_command_line.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="55"/>
+        <CursorPos X="7" Y="76"/>
+        <UsageCount Value="24"/>
+        <Loaded Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="34"/>
+        <CursorPos X="53" Y="43"/>
+        <UsageCount Value="24"/>
+        <Loaded Value="True"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="unit_command_line_general.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="2"/>
+        <CursorPos X="34" Y="20"/>
+        <UsageCount Value="24"/>
+        <Loaded Value="True"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="C:\sky_simulator.fpc\sky_annotation.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="39"/>
+        <CursorPos X="3" Y="61"/>
+        <UsageCount Value="10"/>
+      </Unit3>
+    </Units>
+    <JumpHistory Count="30" HistoryIndex="29">
+      <Position1>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1343" TopLine="1327"/>
+      </Position1>
+      <Position2>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1344" TopLine="1327"/>
+      </Position2>
+      <Position3>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1345" TopLine="1327"/>
+      </Position3>
+      <Position4>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1347" TopLine="1327"/>
+      </Position4>
+      <Position5>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1349" TopLine="1327"/>
+      </Position5>
+      <Position6>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1348" TopLine="1327"/>
+      </Position6>
+      <Position7>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1347" TopLine="1327"/>
+      </Position7>
+      <Position8>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1352" TopLine="1327"/>
+      </Position8>
+      <Position9>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="671" TopLine="644"/>
+      </Position9>
+      <Position10>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="644" TopLine="622"/>
+      </Position10>
+      <Position11>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="671" TopLine="650"/>
+      </Position11>
+      <Position12>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1353" TopLine="1324"/>
+      </Position12>
+      <Position13>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1352" TopLine="1324"/>
+      </Position13>
+      <Position14>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="52" TopLine="30"/>
+      </Position14>
+      <Position15>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="53" TopLine="30"/>
+      </Position15>
+      <Position16>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="55" TopLine="30"/>
+      </Position16>
+      <Position17>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="56" TopLine="30"/>
+      </Position17>
+      <Position18>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="671" TopLine="650"/>
+      </Position18>
+      <Position19>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1352" TopLine="1331"/>
+      </Position19>
+      <Position20>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="55" Column="25" TopLine="34"/>
+      </Position20>
+      <Position21>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1345" Column="32" TopLine="1331"/>
+      </Position21>
+      <Position22>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="46" Column="49" TopLine="30"/>
+      </Position22>
+      <Position23>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="54" Column="34" TopLine="30"/>
+      </Position23>
+      <Position24>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1353" Column="24" TopLine="1331"/>
+      </Position24>
+      <Position25>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="52" TopLine="30"/>
+      </Position25>
+      <Position26>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="55" Column="68" TopLine="30"/>
+      </Position26>
+      <Position27>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1352" TopLine="1331"/>
+      </Position27>
+      <Position28>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="56" TopLine="34"/>
+      </Position28>
+      <Position29>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="12" Column="90"/>
+      </Position29>
+      <Position30>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="20" Column="34"/>
+      </Position30>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes Count="1" ActiveMode="default">
+        <Mode0 Name="default">
+          <local>
+            <CommandLineParams Value="-ra 5.589037934  -spd 84.69119048 -r 180.000 -z 0 -fov 1.14 -s 200 -log -speed auto -f  &quot;d:\temp\robin\m42_dim.png&quot; -5.589037934  -spd 84.69119048 -r 180.000 -z 0 -fov 1.14 -s 200 -log -speed auto -f  &quot;d:\temp\robin\m42_dim.png&quot;"/>
+          </local>
+        </Mode0>
+      </Modes>
+    </RunParams>
+  </ProjectSession>
+  <Debugging>
+    <BreakPoints Count="1">
+      <Item1>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="unit_command_line_solving.pas"/>
+        <Line Value="1352"/>
+      </Item1>
+    </BreakPoints>
+  </Debugging>
+</CONFIG>

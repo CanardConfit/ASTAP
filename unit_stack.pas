@@ -894,7 +894,7 @@ procedure update_equalise_background_step(pos1: integer);{update equalise backgr
 procedure memo2_message(s: string);{message to memo2}
 procedure update_stackmenu;{update stackmenu1 menus}
 procedure box_blur(colors,range: integer;var img: image_array);{combine values of pixels, ignore zeros}
-procedure normalise_OSC_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
+procedure check_pattern_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
 procedure black_spot_filter(var img: image_array);{remove black spots with value zero}
 
 function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
@@ -3670,7 +3670,7 @@ begin
 end;
 
 
-procedure normalise_OSC_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
+procedure check_pattern_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
 var
   fitsX,fitsY,col,h,w,counter1,counter2, counter3,counter4 : integer;
   value1,value2,value3,value4,maxval : double;
@@ -3686,7 +3686,7 @@ begin
     exit;
   end
   else
-    memo2_message('Normalising raw OSC image.');
+  memo2_message('Normalise raw OSC image by applying check pattern filter.');
 
   value1:=0; value2:=0; value3:=0; value4:=0;
   counter1:=0; counter2:=0; counter3:=0; counter4:=0;
@@ -7366,7 +7366,7 @@ begin
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
   backup_img;
 
-  normalise_OSC_filter(img_loaded);
+  check_pattern_filter(img_loaded);
 
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);{plot real}
@@ -8298,7 +8298,7 @@ begin
       if  ((stackmenu1.make_osc_color1.checked) and (stackmenu1.apply_normalise_filter1.checked)) then
       begin
         memo2_message('Applying normalise filter on master (OSC) flat.');
-        normalise_OSC_filter(img_flat);
+        check_pattern_filter(img_flat);
       end
 
     end;

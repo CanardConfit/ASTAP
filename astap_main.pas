@@ -3157,7 +3157,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.03.11, '+about_message4;
+  #13+#10+'ASTAP version 2022.03.13, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -11876,11 +11876,11 @@ begin
         '-fov height_field[degrees]'+#10+
         '-ra  center_right ascension[hours]'+#10+
         '-spd center_south_pole_distance[degrees]'+#10+
-        '-s  max_number_of_stars'+#10+
+        '-s  max_number_of_stars {typical 500, 0 is auto}'+#10+
         '-t  tolerance'+#10+
         '-m  minimum_star_size["]'+#10+
-        '-speed mode[auto/slow] {Slow is forcing small search steps to improve detection.}'+#10+
         '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
+        '-speed mode[auto/slow] {Slow is forcing reading a larger area from the star database (more overlap) to improve detection}'+#10+
         '-o  file {Name the output files with this base path & file name}'+#10+
         '-d  path {specify a path to the star database}'+#10+
         '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
@@ -11973,8 +11973,7 @@ begin
         if hasoption('t') then stackmenu1.quad_tolerance1.text:=GetOptionValue('t');
         if hasoption('m') then stackmenu1.min_star_size1.text:=GetOptionValue('m');
         if hasoption('speed') then stackmenu1.force_oversize1.checked:=('slow'=GetOptionValue('speed'));
-        if hasoption('check') then
-                            stackmenu1.check_pattern_filter1.checked:=('y'=GetOptionValue('check'));
+        if hasoption('check') then stackmenu1.check_pattern_filter1.checked:=('y'=GetOptionValue('check'));
 
         if focusrequest then {find best focus using curve fitting}
         begin

@@ -574,7 +574,7 @@ begin
   else
   if stackmenu1.check_pattern_filter1.checked then {for OSC images with low dimensions only}
   begin
-    normalise_OSC_filter(img);
+    check_pattern_filter(img);
     get_hist:=true; {update required}
   end;
 
@@ -620,14 +620,20 @@ begin
 
   min_star_size_arcsec:=strtofloat2(stackmenu1.min_star_size1.text); {arc sec};
   autoFOV:=(fov_org=0);{specified auto FOV}
+
   if max_stars=0 then
   begin
-    autoMaxstars:=true;{try several value of max stars}
-    max_stars:=60;
-  end;
+    autoMaxstars:=true;{try several values of max stars}
+    max_stars:=30; {will be doubled to 60 in the beginning}
+  end
+  else autoMaxstars:=false;
 
   repeat {auto max star loop}
-    if autoMaxstars then memo2_message('Solving with '+inttostr(max_stars)+' stars maximum.');
+    if autoMaxstars then
+    begin
+      max_stars:=max_stars*2;{try with 60, 120, 240, 480 stars max}
+      memo2_message('Solving with '+inttostr(max_stars)+' stars maximum.');
+    end;
     repeat {autoFOV loop}
       if autoFOV then
       begin
@@ -878,8 +884,7 @@ begin
       end; {enough quads in image}
 
     until ((autoFOV=false) or (solution) or (fov2<=fov_min)); {loop for autoFOV from 9.5 to 0.37 degrees. Will lock between 9.5*1.25 downto  0.37/1.25  or 11.9 downto 0.3 degrees}
-    max_stars:=max_stars*2;{try with 60, 120, 240, 480 stars max}
-  until ((autoMaxstars=false) or (solution) or (max_stars>500));{auto max star loop}
+  until ((autoMaxstars=false) or (solution) or (max_stars>=480) or (max_stars-5>nrstars){no more stars to find});{auto max star loop}
 
   if solution then
   begin

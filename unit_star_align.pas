@@ -153,38 +153,37 @@ begin
 end;
 
 
-procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2020-9-28}
+procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-3-13}
 var
-   i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrquads,buffersize         : integer;
+   i,j,k,nrstars,j_used1,j_used2,j_used3,nrquads                    : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
    dist1,dist2,dist3,dist4,dist5,dist6,dummy,distx                          : double;
    identical_quad : boolean;
 begin
 
-  buffersize:=Length(starlist[0]);{number of quads will be equal (super rare) or lower}
-  nrstars_min_one:=buffersize-1;
+  nrstars:=Length(starlist[0]);{number of quads will be equal (super rare) or lower}
   quad_smallest:=9999999;
 
-  if nrstars_min_one<3 then
+  if nrstars<4 then
   begin {not enough stars for quads}
     SetLength(quad_star_distances,8,0);
     exit;
   end;
 
   nrquads:=0;
-  SetLength(quad_star_distances,8,buffersize);{will contain the six distances and the central position}
+  SetLength(quad_star_distances,8,nrstars);{will contain the six distances and the central position}
 
   j_used1:=0;{give it a default value}
   j_used2:=0;
   j_used3:=0;
 
-  for i:=0 to nrstars_min_one do
+  for i:=0 to nrstars-1 do
   begin
     distance1:=1E99;{distance closest star}
     distance2:=1E99;{distance second closest star}
     distance3:=1E99;{distance third closest star}
 
-    for j:=0 to nrstars_min_one do {find closest stars}
+    for j:=0 to nrstars-1 do {find closest stars}
     begin
       if j<>i{not the first star} then
       begin
@@ -289,7 +288,7 @@ begin
      except
        On E :Exception do
        begin
-         memo2_message(E.Message+ ' exception in procedure calc_quad_distances');{bug in fpc 3.20? Sets in once case the last elements of array to zero for file 4254816 new_image.fit'}
+         memo2_message(E.Message+ ' exception in procedure calc_quad_distances');
          stackmenu1.Memo2.enablealign;{allow paint messages from other controls to update tmemo. Mod 2021-06-26}
          stackmenu1.Memo2.Lines.EndUpdate; {update memo2}
        end;

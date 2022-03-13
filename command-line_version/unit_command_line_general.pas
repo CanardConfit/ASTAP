@@ -17,15 +17,16 @@ uses
 
 var {################# initialised variables #########################}
   stdin_mode            : boolean=false;{file send via stdin}
-  version: string=' CLI-2022-2-04';
+  version: string=' CLI-2022-3-13';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
   radius_search1 : string='180';
-  max_stars1: string='500';
+  max_stars: integer=500;
   quad_tolerance1: string='0.007';
   min_star_size1: string='1.5'{arcsec};
-  force_oversize1 : boolean=false;
+  force_oversize1       : boolean=false;
+  check_pattern_filter1 : boolean=false;
   commandline_log : boolean=false;{file log request in command line}
   solve_show_log  : boolean=false;{log all progress steps}
   errorlevel      : integer=0;{report errors when shutdown}
@@ -740,7 +741,6 @@ const
      begin
        result:='';
        r:=I+11;{pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
-   //    while ((header[r-1]<>#39) and (r<=I+20)) do inc(r);
        repeat
          result:=result+header[r];
          inc(r);
@@ -915,10 +915,10 @@ begin
         if ((header[i]='X') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {xpixsz}
                xpixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
         if ((header[i]='Y') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {xpixsz}
-               ypixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
+             ypixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
 
-//          if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') and (header[i+5]='L')) then  {focall}
-//                  focallen:=validate_double;{Focal length of telescope in mm, maxim DL keyword}
+       if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') and (header[i+5]='L')) then  {focall}
+            focallen:=validate_double;{Focal length of telescope in mm, maxim DL keyword}
 
         if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='V') and (header[i+3]='A') and (header[i+4]='L')) then {crval1/2}
         begin

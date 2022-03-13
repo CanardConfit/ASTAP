@@ -64,10 +64,11 @@ begin
     '-fov diameter_field[degrees]'+#10+   {changed}
     '-ra  center_right ascension[hours]'+#10+
     '-spd center_south_pole_distance[degrees]'+#10+
-    '-s  max_number_of_stars  {default 500}'+#10+
+    '-s  max_number_of_stars  {default 500, 0 is auto}'+#10+
     '-t  tolerance  {default 0.007}'+#10+
     '-m  minimum_star_size["]  {default 1.5}'+#10+
-    '-speed mode[auto/slow] {Slow is forcing small search steps to improve detection.}'+#10+
+    '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
+    '-speed mode[auto/slow] {Slow is forcing reading a larger area from the star database (more overlap) to improve detection}'+#10+
     '-o  file {Name the output files with this base path & file name}'+#10+
     '-d  path {specify a path to the star database}'+#10+
     '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
@@ -131,10 +132,11 @@ begin
     {else dec from fits header}
 
     if hasoption('z') then downsample_for_solving1:=strtoint(GetOptionValue('z'));
-    if hasoption('s') then max_stars1:=GetOptionValue('s');
+    if hasoption('s') then max_stars:=strtoint(GetOptionValue('s'));
     if hasoption('t') then quad_tolerance1:=GetOptionValue('t');
     if hasoption('m') then min_star_size1:=GetOptionValue('m');
     if hasoption('speed') then force_oversize1:=pos('slow',GetOptionValue('speed'))<>0;
+    if hasoption('check') then check_pattern_filter1:=('y'=GetOptionValue('check'));
 
     extractspecified:=hasoption('extract');
     analysespecified:=hasoption('analyse');
@@ -159,7 +161,7 @@ begin
     if hasoption('d') then
          database_path:=GetOptionValue('d')+DirectorySeparator; {specify a different database path}
 
-    if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
+    if ((file_loaded) and (solve_image(img_loaded ))) then {find plate solution, filename2 extension will change to .fit}
     begin
       if hasoption('o') then filename2:=GetOptionValue('o');{change file name for .ini file}
       write_ini(true);{write solution to ini file}
