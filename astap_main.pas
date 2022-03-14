@@ -56,7 +56,6 @@ uses
   clipbrd, {for copy to clipboard}
   Buttons, PopupNotifier, simpleipc,
   CustApp, Types,
-  iostream, {for using stdin for data}
   IniFiles;{for saving and loading settings}
 
 type
@@ -667,7 +666,6 @@ var {################# initialised variables #########################}
 
   commandline_execution : boolean=false;{program executed in command line}
   commandline_log       : boolean=false;{file log request in command line}
-  stdin_mode            : boolean=false;{file send via stdin}
   errorlevel        : integer=0;{report errors when shutdown}
 
   mouse_positionRADEC1 : string='';{For manual reference solving}
@@ -970,7 +968,7 @@ function load_fits(filen:string;light {load as light or dark/flat},load_data,upd
 var
   header    : array[0..2880] of ansichar;
   i,j,k,nr,error3,naxis1, reader_position,n,file_size  : integer;
-  dummy,scale,ccd_temperature, jd2                     : double;
+  dummy,{scale,}ccd_temperature, jd2                     : double;
   col_float,bscale,measured_max,scalefactor  : single;
   s                  : string[3];
   bzero              : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
@@ -1079,7 +1077,7 @@ begin
   reset_fits_global_variables(light,head);
 
   if get_ext=0 then extend_type:=0; {always an image in main data block}
-  scale:=0; {SGP files}
+//  scale:=0; {SGP files}
   naxis1:=0;
   bzero:=0;{just for the case it is not available. 0.0 is the default according https://heasarc.gsfc.nasa.gov/docs/fcg/standard_dict.html}
   bscale:=1;
@@ -1277,7 +1275,8 @@ begin
             if header[i+5]='1' then head.cdelt1:=validate_double else{deg/pixel for RA}
             if header[i+5]='2' then head.cdelt2:=validate_double;    {deg/pixel for DEC}
           end;
-          if ( ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) or     {secpix1/2}
+          if ( ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) or     {secpi  x1/2}
+               ((header[i]='S') and (header[i+1]='C')  and (header[i+2]='A') and (header[i+3]='L') and (header[i+4]='E') and (header[i+5]=' ')) or     {SCALE value for SGP files}
                ((header[i]='P') and (header[i+1]='I')  and (header[i+2]='X') and (header[i+3]='S') and (header[i+4]='C') and (header[i+5]='A')) ) then {pixscale}
           begin
             if head.cdelt2=0 then
@@ -1361,9 +1360,6 @@ begin
                            ( (header[i+3]='P') and (header[i+4]='O') and (header[i+5]='S') and (header[i+6]=' ')) )  ) then
                  try focus_pos:=round(validate_double);{focus position} except;end;
 
-
-
-          if ((header[i]='S') and (header[i+1]='C')  and (header[i+2]='A') and (header[i+3]='L') and (header[i+4]='E')) then  scale:=validate_double; {SCALE value for SGP files}
 
           if ((header[i]='R') and (header[i+1]='E')  and (header[i+2]='F') and (header[i+3]='_') and             (header[i+5]=' ')) then  {for manual alignment stacking, second phase}
           begin
@@ -1632,20 +1628,29 @@ begin
        nrbits:=24; {threat RGB fits as 2 dimensional with 24 bits data}
        head.naxis3:=3; {will be converted while reading}
     end;
-    if ( ((head.cdelt1=0) or (head.crota2>=999)) and (head.cd1_1<>0)) then
+
+    if ((head.cd1_1<>0) and ((head.cdelt1=0) or (head.crota2>=999))) then
     begin
       new_to_old_WCS;{ convert old WCS to new}
     end
     else
-    if ((head.crota2<999) and (head.cd1_1=0) and(head.cdelt1<>0)) then {valid head.crota2 value}
+    if ((head.cd1_1=0) and (head.crota2<999) and (head.cdelt1<>0)) then {valid head.crota2 value}
     begin
       old_to_new_WCS;{ convert old WCS to new}
     end;
 
-    if head.set_temperature=999 then head.set_temperature:=round(ccd_temperature); {temperature}
-
     if head.crota2>999 then head.crota2:=0;{not defined, set at 0}
     if head.crota1>999 then head.crota1:=head.crota2; {for case head.crota1 is not used}
+
+    if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
+    begin
+     if ((focallen<>0) and (xpixsz<>0)) then
+        head.cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
+    end;
+
+
+    if head.set_temperature=999 then head.set_temperature:=round(ccd_temperature); {temperature}
+
 
     if ((light) and ((head.ra0<>0) or (head.dec0<>0))) then
     begin
@@ -1659,16 +1664,6 @@ begin
 
      if head.ra0<>0 then           head.ra0--->ra1.text------------------->ra_radians}
 
-
-
-    if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
-    begin
-       if scale<>0 then {sgp file, use scale to find image dimensions}
-         head.cdelt2:=scale/3600 {scale is in arcsec/pixel }
-       else
-       if ((focallen<>0) and (xpixsz<>0)) then
-         head.cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
-    end;
     unsaved_import:=false;{file is available for astrometry.net}
 
     if load_data=false then begin
@@ -2083,6 +2078,16 @@ begin
     if (key='XBINNING=') then xbinning:=read_integer else
     if (key='YBINNING=') then ybinning:=read_integer else
 
+    if (key='FOCALLEN=') then focallen:=read_float else
+    if (key='XPIXSZ  =') then xpixsz:=read_float else  {pixelscale in microns}
+    if (key='YPIXSZ  =') then ypixsz:=read_float else
+    if (key='CDELT2  =') then head.cdelt2:=read_float else   {deg/pixel}
+
+    if ((key='SECPIX2 =') or
+        (key='PIXSCALE=') or
+        (key='SCALE   =')) then begin if head.cdelt2=0 then head.cdelt2:=read_float/3600; end {no head.cdelt1/2 found yet, use alternative, image scale arcseconds per pixel}
+    else
+
     if key='GAIN    =' then head.gain:=copy(read_string,1,5) else   {limit to 5 digits}
     if key='EGAIN   =' then head.egain:=copy(read_string,1,5) else
 
@@ -2119,21 +2124,25 @@ begin
      mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
   end;
   { condition           keyword    to
-   if ra_mount>999 then objctra--->ra1.text--------------->ra_radians--->ra_mount
-                             ra--->ra_mount  if head.ra0=0 then   ra_mount--->head.ra0
+   if ra_mount>999 then objctra--->ra1.text--------------->  ra_radians--->ra_mount
+                             ra--->ra_mount  if ra0=0 then   ra_mount--->ra0
                          crval1--->head.ra0
 
-   if head.ra0<>0 then           head.ra0--->ra1.text------------------->ra_radians}
+   if ra0<>0 then           ra0--->ra1.text------------------->ra_radians}
 
 
+  if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it, simple solution for astap-cli only}
+  begin
+   if ((focallen<>0) and (xpixsz<>0)) then
+      head.cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
+  end
+  else
+  head.cdelt2:=sqrt(sqr(head.cd1_2)+sqr(head.cd2_2));
 
-  mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{show center of image}
-  mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
 
   if head.set_temperature=999 then head.set_temperature:=round(ccd_temperature); {temperature}
 
-  if head.cd1_1<>0 then
-                     new_to_old_WCS;
+  //if head.cd1_1<>0 then new_to_old_WCS;
 end;
 
 
@@ -2547,7 +2556,8 @@ begin
   begin
     descrip:=image.Extra['TiffImageDescription']; {restore full header in TIFF !!!}
   end;
-  if pos('SIMPLE  =',descrip)>0 then
+
+  if copy(descrip,1,6)='SIMPLE' then {fits header included}
   begin
     mainwindow.memo1.text:=descrip;
     read_keys_memo(light, head);
@@ -3157,7 +3167,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.03.13, '+about_message4;
+  #13+#10+'ASTAP version 2022.03.14, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -11401,19 +11411,7 @@ procedure write_ini(solution:boolean);{write solution to ini file}
 var
    f: text;
 begin
-  if stdin_mode then {raw file send via stdin}
-  begin
-    {$IFDEF MSWINDOWS}
-     if isConsole then {console available}
-       AssignFile(f,'')
-     else {no console available, compiler option -WH is checked}
-       assignfile(f,filename2+'.ini'); {filename2 could be long due to -o option}
-    {$ELSE}
-     AssignFile(f,''); {write to console, unix and Darwin}
-    {$ENDIF}
-  end
-  else
-    assignfile(f,ChangeFileExt(filename2,'.ini'));
+  assignfile(f,ChangeFileExt(filename2,'.ini'));
   rewrite(f);
   if solution then
   begin
@@ -11756,91 +11754,13 @@ end;
 
 //end;
 
-function read_stdin_data: boolean;  {reads via stdin a raw image based on the INDI standard}
-var
- count,format_type,i,h,bufferlength: Integer;
-  rgbdummy          : byteX3;
-  x_longword  : longword;
-  x_single    : single absolute x_longword;{for conversion 32 bit float}
-  InputStream: TIOStream;
-begin
-  result:=false;{assume failure}
-  head.cd1_1:=0;{no solution}
-
-  try
-
-    InputStream := TIOStream.Create(iosInput);
-    {read header}
-    Count := InputStream.Read(format_type, 4);
-
-    head.naxis3:=1; {assume mono}
-    if format_type=$32574152 then nrbits:=16 {RAW2, 16 bit mono identifier}
-    else
-    if format_type=$31574152 then nrbits:=8 {RAW1, 8 bit mono}
-    else
-    if format_type=$33574152 then begin nrbits:=24; {24bit RGB = RAW3 = 0x33574152, rgb,rgb,rgb} head.naxis3:=3;end
-    else
-    if format_type=$34574152 then nrbits:=32 {RAW4, 32 bit mono}
-    else
-    if format_type=$66574152 then nrbits:=-32 {RAWf, -32 bit float mono}
-    else
-    exit;
-
-    Count := InputStream.Read(head.width, 4);
-    Count := InputStream.Read(head.height, 4);
-
-    {read image data}
-    setlength(img_loaded,head.naxis3,head.width,head.height);
-    h:=0;
-    bufferlength:=head.width*(nrbits div 8);
-    repeat
-      count:=0;
-      repeat {adapt reading to one image line}
-         Count :=count + InputStream.Read(fitsBuffer[count],bufferlength-count );
-      until count>=bufferlength;
-      begin
-        if nrbits=16 then
-          for i:=0 to head.width-1 do {fill array} img_loaded[0,i,h]:=fitsbuffer2[i]
-        else
-        if nrbits=8 then
-           for i:=0 to head.width-1 do {fill array} img_loaded[0,i,h]:=fitsbuffer[i]
-        else
-        if nrbits=24 then
-        begin
-           for i:=0 to head.width-1 do {fill array}
-           begin
-             rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
-             img_loaded[0,i,h]:=rgbdummy[0];{store in memory array}
-             img_loaded[1,i,h]:=rgbdummy[1];{store in memory array}
-             img_loaded[2,i,h]:=rgbdummy[2];{store in memory array}
-           end;
-        end
-        else
-        if nrbits=-32 then {floats}
-           for i:=0 to head.width-1 do {fill array}
-           begin
-             x_longword:=fitsbuffer4[i];
-             img_loaded[0,i,h]:= x_single;{for conversion 32 bit float}
-           end
-        else
-        if nrbits=32 then
-           for i:=0 to head.width-1 do {fill array} img_loaded[0,i,h]:= fitsbuffer4[i];
-      end;
-      inc(h)
-    until ((h>=head.height-1) or (count=0));
-    result:=true;
-    head.datamin_org:=0;
-    head.datamax_org:=65535;
-  except
-  end;
-end;
 
 procedure Tmainwindow.FormShow(Sender: TObject);
 var
-    s      : string;
-    histogram_done,file_loaded,debug,filespecified,analysespecified,analysespecified2,extractspecified,focusrequest : boolean;
-    backgr,snr_min           : double;
-    binning,focus_count      : integer;
+  s      : string;
+  histogram_done,file_loaded,debug,filespecified,analysespecified,analysespecified2,extractspecified,focusrequest : boolean;
+  backgr,snr_min           : double;
+  binning,focus_count      : integer;
 begin
   user_path:=GetAppConfigDir(false);{get user path for app config}
 
@@ -11849,6 +11769,7 @@ begin
     if DirectoryExists(user_path)=false then ForceDirectories(user_path);{create c:\users\yourname\appdata\local\astap   or /users/../.config/astap
                    Force directories will make also .config if missing. Using createdir doesn't work if both a directory and subdirectory are to be made in Linux and Mac}
   end;
+
 
   fov_specified:=false;{assume no FOV specification in commandline}
   screen.Cursor:=0;
@@ -11870,7 +11791,6 @@ begin
         application.messagebox( pchar(
         'Command-line usage:'+#10+
         '-f  filename'+#10+
-        '-f  stdin     {read raw image from stdin}'+#10+
         '-r  radius_area_to_search[degrees]'+#10+      {changed}
         '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto}'+#10+
         '-fov height_field[degrees]'+#10+
@@ -11918,28 +11838,11 @@ begin
         if filespecified then
         begin
           filename2:=GetOptionValue('f');
-          stdin_mode:=filename2='stdin';
-          if stdin_mode=false then {file mode}
-          begin
           if debug=false then
             file_loaded:=load_image(false,false {plot}) {load file first to give commandline parameters later priority}
           else
-            load_image(true,true {plot});{load and show image}
-          end
-          else
-          begin {stdin receive file}
-            memo1.clear;{prepare for some info wcs file}
-            memo1.lines.add(head1[0]);{add SIMPLE for case option -update is used}
-            memo1.lines.add(head1[27]);{add the END to memo1 for stdin and prevent runtime error since all data is inserted for END}
-            file_loaded:=read_stdin_data;
-            if debug then
-            begin
-              use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
-              plot_fits(mainwindow.image1,true,true);{plot test image}
-            end;
-          end;
+            file_loaded:=load_image(true,true {plot});{load and show image}
           if file_loaded=false then errorlevel:=16;{error file loading}
-          //file_loaded:=((file_loaded) or (extend_type>0));{axy}
         end
         else
         file_loaded:=false;
@@ -14256,6 +14159,7 @@ var
   writer: TFPCustomImageWriter;
   thecolor  : Tfpcolor;
   format    : string;
+  factor    : single;
 begin
   colours5:=length(img);{nr colours}
   width5:=length(img[0]);{width}
@@ -14266,7 +14170,13 @@ begin
 
 
   Image.Extra[TiffAlphaBits]:='0';
-  if nrbits=8 then format:='8' else format:='16'; {32 bit is not available}
+  if nrbits=8 then
+  begin
+    format:='8';
+    if head.datamax_org<256 then factor:=256 else factor:=1; {rare 8 bit fits, range 0..255, stretch to 16 bit first}
+  end;
+    else format:='16'; {32 bit is not available}
+
   Image.Extra[TiffRedBits]:=format;
   Image.Extra[TiffGreenBits]:=format;
   Image.Extra[TiffBlueBits]:=format;
@@ -14283,15 +14193,16 @@ begin
 
   Image.Extra[TiffCompression]:= '8'; {FPWriteTiff only support only writing Deflate compression. Any other compression setting is silently replaced in FPWriteTiff at line 465 for Deflate. FPReadTiff that can read other compressed files including LZW.}
 
+
   For i:=0 to height5-1 do
   begin
     if flip_V=false then k:=height5-1-i else k:=i;{reverse fits down to counting}
     for j:=0 to width5-1 do
     begin
       if flip_H=true then m:=width5-1-j else m:=j;
-      thecolor.red:=min(round(img[0,m,k]), $FFFF);
-      if colours5>1 then thecolor.green:=min(round(img[1,m,k]), $FFFF)  else thecolor.green:=thecolor.red;
-      if colours5>2 then thecolor.blue:=min(round(img[2,m,k]), $FFFF)   else thecolor.blue:=thecolor.red;
+      thecolor.red:=min(round(img[0,m,k]*factor), $FFFF);
+      if colours5>1 then thecolor.green:=min(round(img[1,m,k]*factor), $FFFF)  else thecolor.green:=thecolor.red;
+      if colours5>2 then thecolor.blue:=min(round(img[2,m,k]*factor), $FFFF)   else thecolor.blue:=thecolor.red;
       thecolor.alpha:=65535;
       image.Colors[j,i]:=thecolor;
     end;
@@ -14554,8 +14465,8 @@ end;
 
 procedure Tmainwindow.halo_removal1Click(Sender: TObject);
 var
-  fitsX,fitsY,dum,k,startX2,startY2,stopX2,stopY2,progress_value : integer;
-  line_bottom, line_top,centerX, centerY,distance_center,range,factor : double;
+  fitsX,fitsY,dum,k,startX2,startY2,stopX2,stopY2 : integer;
+  centerX, centerY,distance_center,range,factor   : double;
 
   mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,mode_halo,noise_level,
   noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,required_bg,

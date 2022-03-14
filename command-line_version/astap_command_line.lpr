@@ -58,7 +58,6 @@ begin
     '(C) 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+#10+
     'Usage:'+#10+
     '-f  filename  {fits, tiff, png, jpg files}'+#10+
-    '-f  stdin     {read raw image from stdin}'+#10+
     '-r  radius_area_to_search[degrees]'+#10+      {changed}
     '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto}'+#10+
     '-fov diameter_field[degrees]'+#10+   {changed}
@@ -97,16 +96,7 @@ begin
     if filespecified then
     begin
       filename2:=GetOptionValue('f');
-      stdin_mode:=filename2='stdin';
-      if stdin_mode=false then {file mode}
-        file_loaded:=load_image2 {load file first to give commandline parameters later priority}
-      else
-      begin
-        memo1.clear;{prepare for some info wcs file}
-        memo1.add(head1[0]);{add SIMPLE for case option -update is used}
-        memo1.add(head1[27]);{add the END to memo1 for stdin and prevent runtime error since all data is inserted for END}
-        file_loaded:=read_stdin_data;
-      end;
+      file_loaded:=load_image2; {load file first to give commandline parameters later priority}
       if file_loaded=false then errorlevel:=16;{error file loading}
     end
     else

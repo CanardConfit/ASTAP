@@ -268,7 +268,6 @@ type
     Edit_width1: TEdit;
     export_aligned_files1: TButton;
     extract_background_box_size1: TComboBox;
-    field1: TLabel;
     files_live_stacked1: TLabel;
     filter_artificial_colouring1: TComboBox;
     filter_groupbox1: TGroupBox;
@@ -4969,7 +4968,7 @@ begin
  if sender=pixelsize1 then {manual entered}
       xpixsz:=strtofloat2(stackmenu1.pixelsize1.text);{manual entered micrometer, update xpixsz}
 
-  if head.cd1_1<>0 then {solved image}
+  if ((head.cd1_1<>0) and (head.cdelt2<>0)) then {solved image}
   begin
     calc_scale:=3600*abs(head.cdelt2);
     if sender=focallength1 then {calculate pixelsize from head.cdelt2 and manual entered focallen}

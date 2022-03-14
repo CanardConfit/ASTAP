@@ -1142,11 +1142,11 @@ end;
 
 function solve_image(img :image_array) : boolean;{find match between image and star database}
 var
-  nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,distance,binning,match_nr,
+  nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t                                                                  : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,
   oversize,sep,seperation,ra7,dec7,centerX,centerY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,
-  quad_tolerance,dummy, extrastars,flip,extra                                                                        : double;
+  quad_tolerance,dummy, extrastars,flip,extra,distance                                                               : double;
   solution, go_ahead ,autoFOV,autoMaxstars                                                                           : boolean;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,suggest_str, warning_downsample, solved_in, offset_found,ra_offset,dec_offset,mount_info,mount_offset : string;
@@ -1361,13 +1361,12 @@ begin
 
                 {info reporting}
                 //stackmenu1.field1.caption:= '['+inttostr(spiral_x)+','+inttostr(spiral_y)+']';{show on stackmenu what's happening}
-                if ((spiral_x>distance) or (spiral_y>distance)) then {new distance reached. Update once in the square spiral, so not too often since it cost CPU time}
+                if seperation*180/pi>distance+fov_org then {new distance reached. Update once in the square spiral, so not too often since it cost CPU time}
                 begin
-                  distance:=max(spiral_x,spiral_y);{update status}
+                  distance:=seperation*180/pi;
                   distancestr:=inttostr(round(seperation*180/pi))+'d,';{show on stackmenu what's happening}
                   write(distancestr);
                 end; {info reporting}
-
 
                 {If a low amount of  quads are detected, the search window (so the database read area) is increased up to 200% guaranteeing that all quads of the image are compared with the database quads while stepping through the sky}
                 {read nrstars_required stars from database. If search field is oversized, number of required stars increases with the power of the oversize factor. So the star density will be the same as in the image to solve}

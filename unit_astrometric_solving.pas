@@ -519,11 +519,11 @@ end;
 
 function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
-  nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,distance,binning,match_nr,
+  nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars,  light_naxis3, light_width,light_height : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,
   sep,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,
-  current_dist, quad_tolerance,dummy, extrastars,flip, extra,datamax_light                                                : double;
+  current_dist, quad_tolerance,dummy, extrastars,flip, extra,datamax_light,distance                                           : double;
   solution, go_ahead,fitsfile ,autoFOV,autoMaxstars     : boolean;
   Save_Cursor                                           : TCursor;
   startTick  : qword;{for timing/speed purposes}
@@ -780,17 +780,15 @@ begin
             telescope_ra_offset:= (STEP_SIZE*spiral_x/cos(telescope_dec-extra));{step larger near pole. This telescope_ra is an offsett from zero}
             if ((telescope_ra_offset<=+pi/2+step_size/2) and (telescope_ra_offset>=-pi/2)) then  {step_size for overlap}
             begin
-                telescope_ra:=fnmodulo(flip+ra_radians+telescope_ra_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
-
+              telescope_ra:=fnmodulo(flip+ra_radians+telescope_ra_offset,2*pi);{add offset to ra after the if statement! Otherwise no symmetrical search}
               ang_sep(telescope_ra,telescope_dec,ra_radians,dec_radians, {out}seperation);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
 
               if seperation<=radius*pi/180+step_size/2 then {Use only the circular area withing the square area}
               begin
                 {info reporting}
-                stackmenu1.field1.caption:= '['+inttostr(spiral_x)+','+inttostr(spiral_y)+']';{show on stackmenu what's happening}
-                if ((spiral_x>distance) or (spiral_y>distance)) then {new distance reached. Update once in the square spiral, so not too often since it cost CPU time}
+                if seperation*180/pi>distance+fov_org then {new distance reached. Update once in the square spiral, so not too often since it cost CPU time}
                 begin
-                  distance:=max(spiral_x,spiral_y);{update status}
+                  distance:=seperation*180/pi;
                   distancestr:=inttostr(round(seperation*180/pi))+'°';{show on stackmenu what's happening}
 
                   stackmenu1.actual_search_distance1.caption:=distancestr;
@@ -805,7 +803,7 @@ begin
                      mainwindow.TrayIcon1.hint:=distancestr+info_message;
                      {$endif}
 
-                     if distance>2 then {prevent flash for short distance solving}
+                     if distance>2*fov_org then {prevent flash for short distance solving}
                      begin
                        if popupnotifier_visible=false then begin mainwindow.popupnotifier1.visible:=true; popupnotifier_visible:=true; end; {activate only once}
                        mainwindow.popupnotifier1.text:=distancestr+info_message;

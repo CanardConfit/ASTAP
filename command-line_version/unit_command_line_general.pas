@@ -7,7 +7,6 @@ interface
 uses
   Classes, SysUtils,
   math,
-  iostream, {for using stdin for data}
   FPImage,
   strutils,
   fpreadTIFF, {all part of fcl-image}
@@ -16,8 +15,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  stdin_mode            : boolean=false;{file send via stdin}
-  version: string=' CLI-2022-3-13';
+  version: string=' CLI-2022-3-14';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -42,27 +40,6 @@ type
 
   var
     memo1,memo2 :tstrings; {settings for save and loading}
-
-  type
-     timgbackup  = record
-       crpix1 : double;{could be modified by crop}
-       crpix2 : double;
-       crval1 : double;
-       crval2 : double;
-       crota1 : double;{for 90 degrees rotate}
-       crota2 : double;
-       cdelt1 : double;
-       cdelt2 : double;
-       cd1_1  : double;
-       cd1_2  : double;
-       cd2_1  : double;
-       cd2_2  : double;
-       header : string;
-       img    : array of array of array of single;
-     end;
-
-  var
-    img_backup      : array of timgbackup;{dynamic so memory can be freed}
 
     user_path    : string;{c:\users\name\appdata\local\astap   or ~/home/.config/astap}
     img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_buffer,img_final : image_array;
@@ -173,11 +150,9 @@ procedure get_background(colour: integer; img :image_array;calc_hist, calc_noise
 function prepare_ra(rax:double; sep:string):string; {radialen to text, format 24: 00 00.0 }
 function prepare_dec(decx:double; sep:string):string; {radialen to text, format 90d 00 00}
 procedure new_to_old_WCS;{convert new style FITsS to old style}
-procedure old_to_new_WCS;{ convert old WCS to new}
 procedure write_astronomy_wcs;
 procedure write_ini(solution:boolean);{write solution to ini file}
 function load_image2 : boolean; {load fits or PNG, BMP, TIF}
-function read_stdin_data: boolean;  {reads via stdin a raw image based on the INDI standard}
 procedure SaveFITSwithupdatedheader1;
 function save_fits16bit(img: image_array;filen2:ansistring): boolean;{save to 16 fits file}
 
@@ -373,19 +348,6 @@ begin
 end;
 
 
-procedure old_to_new_WCS;{ convert old WCS to new}
-var
-   sign  : integer;
-begin
-  cd1_1:=cdelt1*cos(crota2*pi/180); {note 2013 should be crota1 if skewed}
-  if cdelt1>=0 then sign:=+1 else sign:=-1;
-  cd1_2:=abs(cdelt2)*sign*sin(crota2*pi/180);{note 2013 should be crota1 if skewed}
-  if cdelt2>=0 then sign:=+1 else sign:=-1;
-  cd2_1:=-abs(cdelt1)*sign*sin(crota2*pi/180);
-  cd2_2:= cdelt2*cos(crota2*pi/180);
-end;
-
-
 procedure new_to_old_WCS;{convert new style FITsS to old style}
 var
    sign  : integer;
@@ -440,19 +402,7 @@ procedure write_ini(solution:boolean);{write solution to ini file}
 var
    f: text;
 begin
-  if stdin_mode then {raw file send via stdin}
-  begin
-    {$IFDEF MSWINDOWS}
-     if isConsole then {console available}
-       AssignFile(f,'')
-     else {no console available, compiler option -WH is checked}
-       assignfile(f,filename2+'.ini'); {filename2 could be long due to -o option}
-    {$ELSE}
-     AssignFile(f,''); {write to console, unix and Darwin}
-    {$ENDIF}
-  end
-  else
-    assignfile(f,ChangeFileExt(filename2,'.ini'));
+  assignfile(f,ChangeFileExt(filename2,'.ini'));
   rewrite(f);
   if solution then
   begin
@@ -695,7 +645,7 @@ function load_fits(filen:string;out img_loaded2: image_array): boolean;{load fit
 var
   header    : array[0..2880] of ansichar;
   i,j,k,error3,naxis1, reader_position              : integer;
-  dummy,scale                                          : double;
+  dummy                                             : double;
   col_float,bscale,measured_max,scalefactor  : single;
   bzero                       : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
   aline                       : ansistring;
@@ -778,15 +728,14 @@ begin
   {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   {Reset variables for case they are not specified in the file}
-  crota2:=99999;{just for the case it is not available, make it later zero}
-  crota1:=99999;
+//  crota2:=99999;{just for the case it is not available, make it later zero}
+//  crota1:=99999;
   ra0:=0;
   dec0:=0;
   ra_mount:=99999;
   dec_mount:=99999;
   cdelt1:=0;
   cdelt2:=0;
-  scale:=0; {SGP files}
   xpixsz:=0;
   ypixsz:=0;
   focallen:=0;
@@ -890,22 +839,23 @@ begin
         if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
                  ybinning:=round(validate_double);{binning}
 
-        if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='O') and (header[i+3]='T') and (header[i+4]='A')) then  {crota2}
-        begin
-           if (header[i+5]='2') then  crota2:=validate_double else {read double value}
-           if (header[i+5]='1') then  crota1:=validate_double;{read double value}
-        end;
-        if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='P') and (header[i+3]='I') and (header[i+4]='X')) then {crpix1}
-        begin
-          if header[i+5]='1' then crpix1:=validate_double else{ref pixel for x}
-          if header[i+5]='2' then crpix2:=validate_double;    {ref pixel for y}
-        end;
+//        if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='O') and (header[i+3]='T') and (header[i+4]='A')) then  {crota2}
+//        begin
+//           if (header[i+5]='2') then  crota2:=validate_double else {read double value}
+//           if (header[i+5]='1') then  crota1:=validate_double;{read double value}
+//        end;
+//        if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='P') and (header[i+3]='I') and (header[i+4]='X')) then {crpix1}
+//        begin
+//          if header[i+5]='1' then crpix1:=validate_double else{ref pixel for x}
+//          if header[i+5]='2' then crpix2:=validate_double;    {ref pixel for y}
+//        end;
         if ((header[i]='C') and (header[i+1]='D')  and (header[i+2]='E') and (header[i+3]='L') and (header[i+4]='T')) then {cdelt1}
         begin
           if header[i+5]='1' then cdelt1:=validate_double else{deg/pixel for RA}
           if header[i+5]='2' then cdelt2:=validate_double;    {deg/pixel for DEC}
         end;
         if ( ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) or     {secpix1/2}
+             ((header[i]='S') and (header[i+1]='C')  and (header[i+2]='A') and (header[i+3]='L') and (header[i+4]='E') and (header[i+5]=' ')) or     {SCALE value for SGP files}
              ((header[i]='P') and (header[i+1]='I')  and (header[i+2]='X') and (header[i+3]='S') and (header[i+4]='C') and (header[i+5]='A')) ) then {pixscale}
         begin
           if cdelt2=0 then
@@ -961,7 +911,6 @@ begin
           if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='2')) then   cd2_2:=validate_double;
         end;
 
-        if ((header[i]='S') and (header[i+1]='C')  and (header[i+2]='A') and (header[i+3]='L') and (header[i+4]='E')) then  scale:=validate_double; {SCALE value for SGP files}
 
       end; {image header}
 
@@ -987,18 +936,6 @@ begin
        nrbits:=24; {threat RGB fits as 2 dimensional with 24 bits data}
        naxis3:=3; {will be converted while reading}
     end;
-    if ( ((cdelt1=0) or (crota2>=999)) and (cd1_1<>0)) then
-    begin
-      new_to_old_WCS;{ convert old WCS to new}
-    end
-    else
-    if ((crota2<999) and (cd1_1=0) and(cdelt1<>0)) then {valid crota2 value}
-    begin
-      old_to_new_WCS;{ convert old WCS to new}
-    end;
-
-    if crota2>999 then crota2:=0;{not defined, set at 0}
-    if crota1>999 then crota1:=crota2; {for case crota1 is not used}
 
     if ((ra0<>0) or (dec0<>0)) then
     begin
@@ -1012,16 +949,16 @@ begin
       dec_text_to_radians( dec1,dec0,error1); {convert dec text to dec0 in radians}
     end;
 
-
-    if ((cd1_1=0) and (cdelt2=0)) then  {no scale, try to fix it}
+    if cdelt2=0 then {simple code for astap-cli only}
     begin
-       if scale<>0 then {sgp file, use scale to find image dimensions}
-         cdelt2:=scale/3600 {scale is in arcsec/pixel }
-       else
+      if cd1_1=0 then  {no scale, try to fix it}
+      begin
        if ((focallen<>0) and (xpixsz<>0)) then
-         cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
+          cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
+      end
+      else
+      cdelt2:=sqrt(sqr(cd1_2)+sqr(cd2_2));
     end;
-
 
     {############################## read image}
     i:=round(bufwide/(abs(nrbits/8)));{check if buffer is wide enough for one image line}
@@ -1406,6 +1343,133 @@ begin
 end;
 
 
+procedure read_keys_memo;{for tiff, header in the describtion decoding}
+var
+  key                      : string;
+  count1,index             : integer;
+  ra2,dec2,ccd_temperature : double;
+  error1                   : boolean;
+
+  function read_float: double;
+  var
+    err: integer;
+  begin
+    val(copy(Memo1[index],11,20),result,err);
+  end;
+  function read_integer: integer;
+  var
+    err: integer;
+  begin
+    val(copy(Memo1[index],11,20),result,err);
+  end;
+  function read_string: string;
+  var
+    p1,p2 :integer;
+  begin
+    result:=copy(Memo1[index],11,80-11);
+    p1:=pos(char(39),result);
+    p2:=posex(char(39),result,p1+1);
+    if p2=0 then p2:=20;
+    result:=trim(copy(result,p1+1,p2-p1-1));{remove all spaces}
+  end;
+
+begin
+  {variables are already reset}
+  count1:=Memo1.Count-1-1;
+  ccd_temperature:=999;
+
+  index:=1;
+  while index<=count1 do {read keys}
+  begin
+    key:=copy(Memo1[index],1,9);
+    if key='CD1_1   =' then cd1_1:=read_float else
+    if key='CD1_2   =' then cd1_2:=read_float else
+    if key='CD2_1   =' then cd2_1:=read_float else
+    if key='CD2_2   =' then cd2_2:=read_float else
+
+    if key='CRVAL1  =' then ra0:=read_float*pi/180 {degrees -> radians}  else
+    if key='CRVAL2  =' then dec0:=read_float*pi/180 else
+    if key='RA      =' then
+    begin
+      ra_mount:=read_float*pi/180;{degrees -> radians}
+      if ra0=0 then ra0:=ra_mount; {ra telescope, read double value only if crval is not available}
+    end else
+    if key='DEC     =' then
+    begin
+      dec_mount:=read_float*pi/180;
+      if dec0=0 then dec0:=dec_mount; {ra telescope, read double value only if crval is not available}
+    end else
+    if ((key='OBJCTRA =') and (ra_mount>=999)) {ra_mount value is unfilled, preference for keyword RA} then
+    begin
+      ra1:=read_string;{triggers an onchange event which will convert the string to ra_radians}
+      ra_mount:=ra_radians;{preference for keyword RA}
+    end  else
+    if ((key='OBJCTDEC=') and (dec_mount>=999)) {dec_mount value is unfilled, preference for keyword DEC} then
+    begin
+      dec1:=read_string;{triggers an onchange event which will convert the string to dec_radians}
+      dec_mount:=dec_radians;
+    end else
+
+    if (key='XBINNING=') then xbinning:=read_integer else
+    if (key='YBINNING=') then ybinning:=read_integer else
+
+    if (key='FOCALLEN=') then focallen:=read_float else
+    if (key='XPIXSZ  =') then xpixsz:=read_float else  {pixelscale in microns}
+    if (key='YPIXSZ  =') then ypixsz:=read_float else
+    if (key='CDELT2  =') then cdelt2:=read_float else   {deg/pixel}
+
+    if ((key='SECPIX2 =') or
+        (key='PIXSCALE=') or
+        (key='SCALE   =')) then begin if cdelt2=0 then cdelt2:=read_float/3600; end {no head.cdelt1/2 found yet, use alternative, image scale arcseconds per pixel}
+    else
+
+
+    if key='DATE-OBS=' then date_obs:=read_string else
+
+
+    if index=1 then if key<>'BITPIX  =' then begin Memo1.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
+    if index=2 then if key<>'NAXIS   =' then begin Memo1.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
+    if index=3 then if key<>'NAXIS1  =' then begin Memo1.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
+    if index=4 then if key<>'NAXIS2  =' then begin Memo1.insert(index,'NAXIS2  =                  100 / length of y axis                               ');inc(count1); end;{data will be added later}
+    if ((index=5) and (naxis>1)) then if key<>'NAXIS3  =' then
+               begin Memo1.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
+    index:=index+1;
+  end;
+
+  if ((ra0<>0) or (dec0<>0)) then
+  begin
+    ra1:=prepare_ra(ra0,' ');{this will create Ra_radians for solving}
+    dec1:=prepare_dec(dec0,' ');
+  end
+  else
+  if ra1<>'' then
+  begin
+    ra_text_to_radians ( ra1 ,ra0,error1); {convert ra text to ra0 in radians}
+    dec_text_to_radians( dec1,dec0,error1); {convert dec text to dec0 in radians}
+  end;
+
+
+  { condition           keyword    to
+   if ra_mount>999 then objctra--->ra1.text--------------->ra_radians--->ra_mount
+                             ra--->ra_mount  if ra0=0 then   ra_mount--->ra0
+                         crval1--->ra0
+
+   if ra0<>0 then           ra0--->ra1.text------------------->ra_radians}
+
+
+
+  if cdelt2=0 then {simple code for astap-cli only}
+  begin
+    if cd1_1=0 then  {no scale, try to fix it}
+    begin
+     if ((focallen<>0) and (xpixsz<>0)) then
+        cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
+    end
+    else
+    cdelt2:=sqrt(sqr(cd1_2)+sqr(cd2_2));
+  end;
+end;
+
 
 function load_PPM_PGM_PFM(filen:string; var img_loaded2: image_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
@@ -1698,7 +1762,6 @@ begin
 end;
 
 
-
 function load_TIFFPNGJPEG(filen:string; var img_loaded2: image_array) : boolean;{load 8 or 16 bit TIFF, PNG, JPEG, BMP image}
 var
   i,j   : integer;
@@ -1842,11 +1905,27 @@ begin
   begin
     descrip:=image.Extra['TiffImageDescription']; {restore full header in TIFF !!!}
   end;
+
   for j:=0 to 10 do {create an header with fixed sequence}
     if ((j<>5) or  (naxis3<>1)) then {skip naxis3 for mono images}
       memo1.add(head1[j]); {add lines to empthy memo1}
   memo1.add(head1[27]); {add end}
   if descrip<>'' then add_long_comment(descrip);{add TIFF describtion}
+
+  if copy(descrip,1,6)='SIMPLE' then {fits header included}
+  begin
+    memo1.text:=descrip;
+    read_keys_memo;
+    saved_header:=true;
+  end
+  else {no fits header in tiff file available}
+  begin
+    for j:=0 to 10 do {create an header with fixed sequence}
+      if ((j<>5) or  (naxis3<>1)) then {skip naxis3 for mono images}
+       memo1.add(head1[j]); {add lines to empthy memo1}
+    memo1.add(head1[27]); {add end}
+    if descrip<>'' then add_long_comment(descrip);{add TIFF describtion}
+  end;
 
   update_integer('BITPIX  =',' / Bits per entry                                 ' ,nrbits);
   update_integer('NAXIS   =',' / Number of dimensions                           ' ,naxis);{2 for mono, 3 for colour}
@@ -1901,86 +1980,6 @@ begin
   else
     result:=true;
 
-end;
-
-
-function read_stdin_data: boolean;  {reads via stdin a raw image based on the INDI standard}
-var
- count,format_type,i,h,bufferlength: Integer;
-  rgbdummy          : byteX3;
-  x_longword  : longword;
-  x_single    : single absolute x_longword;{for conversion 32 bit float}
-  InputStream : TIOStream;
-begin
-  result:=false;{assume failure}
-  cd1_1:=0;{no solution}
-
-  try
-
-    InputStream := TIOStream.Create(iosInput);
-    {read header}
-    Count := InputStream.Read(format_type, 4);
-
-    naxis3:=1; {assume mono}
-    if format_type=$32574152 then nrbits:=16 {RAW2, 16 bit mono identifier}
-    else
-    if format_type=$31574152 then nrbits:=8 {RAW1, 8 bit mono}
-    else
-    if format_type=$33574152 then begin nrbits:=24; {24bit RGB = RAW3 = 0x33574152, rgb,rgb,rgb} naxis3:=3;end
-    else
-    if format_type=$34574152 then nrbits:=32 {RAW4, 32 bit mono}
-    else
-    if format_type=$66574152 then nrbits:=-32 {RAWf, -32 bit float mono}
-    else
-    exit;
-
-     Count := InputStream.Read(width2, 4);
-    Count := InputStream.Read(height2, 4);
-
-    {read image data}
-    setlength(img_loaded,naxis3,width2,height2);
-    h:=0;
-    bufferlength:=width2*(nrbits div 8);
-    repeat
-      count:=0;
-      repeat {adapt reading to one image line}
-         Count :=count + InputStream.Read(fitsBuffer[count],bufferlength-count );
-      until count>=bufferlength;
-      begin
-        if nrbits=16 then
-          for i:=0 to width2-1 do {fill array} img_loaded[0,i,h]:=fitsbuffer2[i]
-        else
-        if nrbits=8 then
-           for i:=0 to width2-1 do {fill array} img_loaded[0,i,h]:=fitsbuffer[i]
-        else
-        if nrbits=24 then
-        begin
-           for i:=0 to width2-1 do {fill array}
-           begin
-             rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
-             img_loaded[0,i,h]:=rgbdummy[0];{store in memory array}
-             img_loaded[1,i,h]:=rgbdummy[1];{store in memory array}
-             img_loaded[2,i,h]:=rgbdummy[2];{store in memory array}
-           end;
-        end
-        else
-        if nrbits=-32 then {floats}
-           for i:=0 to width2-1 do {fill array}
-           begin
-             x_longword:=fitsbuffer4[i];
-             img_loaded[0,i,h]:= x_single;{for conversion 32 bit float}
-           end
-        else
-        if nrbits=32 then
-           for i:=0 to width2-1 do {fill array} img_loaded[0,i,h]:= fitsbuffer4[i];
-      end;
-      inc(h)
-    until ((h>=height2-1) or (count=0));
-    result:=true;
-    datamin_org:=0;
-    datamax_org:=65535;
-  except
-  end;
 end;
 
 
