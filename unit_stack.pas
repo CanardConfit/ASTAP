@@ -8629,8 +8629,14 @@ function create_internal_solution(img: image_array) : boolean; {plate solving, i
 begin
   if solve_image(img,true) then {match between loaded image and star database}
   begin
-    if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2); exit;end;
-    result:=true;{new solution}
+    if fits_file_name(filename2) then
+    begin
+      result:=savefits_update_header(filename2)
+    end
+    else
+      result:=save_tiff16(img,filename2,false {flip H},false {flip V});
+
+    if result=false then ShowMessage('Write error !!' + filename2);
   end
   else result:=false;
 end;

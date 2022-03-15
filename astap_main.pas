@@ -785,6 +785,7 @@ procedure update_header_for_colour; {update naxis and naxis3 keywords}
 procedure flip(x1,y1 : integer; out x2,y2 :integer);{array to screen or screen to array coordinates}
 function decode_string(data0: string; out ra4,dec4 : double):boolean;{convert a string to position}
 function noise_to_electrons(adu_s : double): string; {noise from adu_s to electrons per pixel}
+function save_tiff16(img: image_array; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -2028,9 +2029,10 @@ var
     p1,p2 :integer;
   begin
     result:=copy(mainwindow.Memo1.Lines[index],11,80-11);
+
     p1:=pos(char(39),result);
     p2:=posex(char(39),result,p1+1);
-    if p2=0 then p2:=20;
+    if p2=0 then p2:=21;{allow reading floats and integers as string}
     result:=trim(copy(result,p1+1,p2-p1-1));{remove all spaces}
   end;
 
@@ -2081,6 +2083,7 @@ begin
     if (key='FOCALLEN=') then focallen:=read_float else
     if (key='XPIXSZ  =') then xpixsz:=read_float else  {pixelscale in microns}
     if (key='YPIXSZ  =') then ypixsz:=read_float else
+    if (key='CDELT1  =') then head.cdelt1:=read_float else   {deg/pixel}
     if (key='CDELT2  =') then head.cdelt2:=read_float else   {deg/pixel}
 
     if ((key='SECPIX2 =') or
@@ -2088,7 +2091,7 @@ begin
         (key='SCALE   =')) then begin if head.cdelt2=0 then head.cdelt2:=read_float/3600; end {no head.cdelt1/2 found yet, use alternative, image scale arcseconds per pixel}
     else
 
-    if key='GAIN    =' then head.gain:=copy(read_string,1,5) else   {limit to 5 digits}
+    if key='GAIN    =' then head.gain:=copy(read_string,1,5);  {limit to 5 digits}
     if key='EGAIN   =' then head.egain:=copy(read_string,1,5) else
 
     if key='CCD-TEMP=' then ccd_temperature:=round(read_float) else
@@ -2140,9 +2143,8 @@ begin
   head.cdelt2:=sqrt(sqr(head.cd1_2)+sqr(head.cd2_2));
 
 
+  if head.cdelt1=0 then head.cdelt1:=head.cdelt2;
   if head.set_temperature=999 then head.set_temperature:=round(ccd_temperature); {temperature}
-
-  //if head.cd1_1<>0 then new_to_old_WCS;
 end;
 
 
@@ -3167,7 +3169,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.03.14, '+about_message4;
+  #13+#10+'ASTAP version 2022.03.15, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -3895,7 +3897,6 @@ begin
   end;
 
   mainwindow.rotation1.caption:=floattostrf(head.crota2, FFfixed, 0, 2)+'°';{show rotation}
-
 
   mainwindow.image_north_arrow1.Canvas.Pen.Color := clred;
 
@@ -10185,7 +10186,7 @@ end;
 
 procedure Tmainwindow.import_auid1Click(Sender: TObject);
 var
-  s,name,mag,t,regel: string;
+  s,name,t,regel: string;
   x1,x2,n1,n2 : integer;
   rad,decd    : double;
 var
@@ -14152,7 +14153,7 @@ end;
 //end;
 
 
-function save_tiff16(img: image_array; filen2:string;flip_H,flip_V:boolean): boolean;{save to 48=3x16 color TIFF file }
+function save_tiff16(img: image_array; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
 var
   i, j, k,m,colours5,width5,height5      :integer;
   image: TFPCustomImage;
@@ -14170,12 +14171,17 @@ begin
 
 
   Image.Extra[TiffAlphaBits]:='0';
-  if nrbits=8 then
+
+  if nrbits=8 then  {8 bit fits}
   begin
     format:='8';
-    if head.datamax_org<256 then factor:=256 else factor:=1; {rare 8 bit fits, range 0..255, stretch to 16 bit first}
+    factor:=256; {the tiff writer will divide by 256 again}
+  end
+  else
+  begin
+    format:='16'; {32 bit is not available}
+    factor:=1;{default}
   end;
-    else format:='16'; {32 bit is not available}
 
   Image.Extra[TiffRedBits]:=format;
   Image.Extra[TiffGreenBits]:=format;
