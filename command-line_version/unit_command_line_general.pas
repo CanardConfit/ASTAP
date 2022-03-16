@@ -839,16 +839,6 @@ begin
         if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
                  ybinning:=round(validate_double);{binning}
 
-//        if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='O') and (header[i+3]='T') and (header[i+4]='A')) then  {crota2}
-//        begin
-//           if (header[i+5]='2') then  crota2:=validate_double else {read double value}
-//           if (header[i+5]='1') then  crota1:=validate_double;{read double value}
-//        end;
-//        if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='P') and (header[i+3]='I') and (header[i+4]='X')) then {crpix1}
-//        begin
-//          if header[i+5]='1' then crpix1:=validate_double else{ref pixel for x}
-//          if header[i+5]='2' then crpix2:=validate_double;    {ref pixel for y}
-//        end;
         if ((header[i]='C') and (header[i+1]='D')  and (header[i+2]='E') and (header[i+3]='L') and (header[i+4]='T')) then {cdelt1}
         begin
           if header[i+5]='1' then cdelt1:=validate_double else{deg/pixel for RA}

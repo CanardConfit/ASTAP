@@ -1630,18 +1630,15 @@ begin
        head.naxis3:=3; {will be converted while reading}
     end;
 
-    if ((head.cd1_1<>0) and ((head.cdelt1=0) or (head.crota2>=999))) then
+    if ((head.cd1_1<>0) and ((head.cdelt1=0) or (head.crota2>=999))) then {old style missing but valid new style solution}
     begin
       new_to_old_WCS;{ convert old WCS to new}
     end
     else
-    if ((head.cd1_1=0) and (head.crota2<999) and (head.cdelt1<>0)) then {valid head.crota2 value}
+    if ((head.cd1_1=0) and (head.crota2<999) and (head.cdelt2<>0)) then {new style missing but valid old style solution}
     begin
       old_to_new_WCS;{ convert old WCS to new}
     end;
-
-    if head.crota2>999 then head.crota2:=0;{not defined, set at 0}
-    if head.crota1>999 then head.crota1:=head.crota2; {for case head.crota1 is not used}
 
     if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
     begin
@@ -1649,9 +1646,11 @@ begin
         head.cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
     end;
 
+    if head.crota2>999 then head.crota2:=0;{not defined, set at 0}
+    if head.crota1>999 then head.crota1:=head.crota2; {for case head.crota1 is not specified}
+
 
     if head.set_temperature=999 then head.set_temperature:=round(ccd_temperature); {temperature}
-
 
     if ((light) and ((head.ra0<>0) or (head.dec0<>0))) then
     begin
@@ -2134,16 +2133,27 @@ begin
    if ra0<>0 then           ra0--->ra1.text------------------->ra_radians}
 
 
-  if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it, simple solution for astap-cli only}
+
+  if ((head.cd1_1<>0) and ((head.cdelt1=0) or (head.crota2>=999))) then {old style missing but valid new style solution}
+  begin
+    new_to_old_WCS;{ convert old WCS to new}
+  end
+  else
+  if ((head.cd1_1=0) and (head.crota2<999) and (head.cdelt2<>0)) then {new style missing but valid old style solution}
+  begin
+    old_to_new_WCS;{ convert old WCS to new}
+  end;
+
+  if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
   begin
    if ((focallen<>0) and (xpixsz<>0)) then
       head.cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
-  end
-  else
-  head.cdelt2:=sqrt(sqr(head.cd1_2)+sqr(head.cd2_2));
+  end;
+
+  if head.crota2>999 then head.crota2:=0;{not defined, set at 0}
+  if head.crota1>999 then head.crota1:=head.crota2; {for case head.crota1 is not specified}
 
 
-  if head.cdelt1=0 then head.cdelt1:=head.cdelt2;
   if head.set_temperature=999 then head.set_temperature:=round(ccd_temperature); {temperature}
 end;
 
@@ -3169,7 +3179,7 @@ begin
   #13+#10+
   #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
   #13+#10+
-  #13+#10+'ASTAP version 2022.03.15, '+about_message4;
+  #13+#10+'ASTAP version 2022.03.16, '+about_message4;
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
