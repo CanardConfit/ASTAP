@@ -516,8 +516,8 @@ type
   star_list   = array of array of double;
 
   Theader =record    {contains the most important header info}
+    width  : integer;{image width}
     height : integer;{image height}
-    width  : integer;
     naxis  : integer;{number of dimensions}
     naxis3 : integer;{number of colors}
     crpix1 : double; {reference point X}
@@ -779,13 +779,14 @@ procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string
 procedure reset_fits_global_variables(light :boolean; out head:theader ); {reset the global variable}
 function convert_to_fits(var filen: string): boolean; {convert to fits}
 procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
-procedure convert_mono(var img: image_array);
+procedure convert_mono(var img: image_array; head: Theader);
 procedure Wait(wt:single=500);  {smart sleep}
 procedure update_header_for_colour; {update naxis and naxis3 keywords}
 procedure flip(x1,y1 : integer; out x2,y2 :integer);{array to screen or screen to array coordinates}
 function decode_string(data0: string; out ra4,dec4 : double):boolean;{convert a string to position}
 function noise_to_electrons(adu_s : double): string; {noise from adu_s to electrons per pixel}
 function save_tiff16(img: image_array; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
+function save_tiff16_secure(img : image_array;filen2:string) : boolean;{guarantee no file is lost}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -830,7 +831,6 @@ type  byteX3  = array[0..2] of byte;
       byteXXXX3 = array[0..2] of single;
 
 var
-  TheFile3  : tfilestream;
   Reader    : TReader;
   fitsbuffer : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
   fitsbuffer2: array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
@@ -857,13 +857,13 @@ uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, 
 
 var
   recent_files : tstringlist;
-  stop_RX, stop_RY, start_RX,start_RY :integer; {for rubber rectangle. These values are the same startX,.... except if image is flipped}
+  stop_RX, stop_RY, start_RX,start_RY,
+  export_index                                 : integer; {for rubber rectangle. These values are the same startX,.... except if image is flipped}
   object_xc,object_yc, object_raM,object_decM  : double; {near mouse auto centered object position}
 
 var {################# initialised variables #########################}
   bandpass: double=0;{from fits file}
   equinox:double=0;{from fits file}
-  SaveasTIFF1filterindex : integer=3;//tiff stretched
   SaveasJPGPNGBMP1filterindex : integer=4;
   LoadFITSPNGBMPJPEG1filterindex: integer=1;
   marker_position : string='';
@@ -967,6 +967,7 @@ function load_fits(filen:string;light {load as light or dark/flat},load_data,upd
 {if load_data then read all else header only}
 {if reset_var=true, reset variables to zero}
 var
+  TheFile  : tfilestream;
   header    : array[0..2880] of ansichar;
   i,j,k,nr,error3,naxis1, reader_position,n,file_size  : integer;
   dummy,{scale,}ccd_temperature, jd2                     : double;
@@ -999,7 +1000,7 @@ var {################# initialised variables #########################}
      procedure close_fits_file; inline;
      begin
         Reader.free;
-        TheFile3.free;
+        TheFile.free;
      end;
 
      Function validate_double:double;{read floating point or integer values}
@@ -1055,7 +1056,7 @@ begin
   end;
 
   try
-    TheFile3:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
+    TheFile:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
   except
      beep;
      mainwindow.statusbar1.panels[7].text:='Error accessing file!';
@@ -1063,7 +1064,7 @@ begin
      mainwindow.error_label1.visible:=true;
      exit;
   end;
-  file_size:=thefile3.size;
+  file_size:=TheFile.size;
 
   if update_memo then
   begin
@@ -1071,8 +1072,8 @@ begin
     mainwindow.memo1.clear;{clear memo for new header}
   end;
 
-  Reader := TReader.Create (theFile3,500*2880);{number of records. Buffer but not speed difference between 6*2880 and 1000*2880}
-  {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
+  Reader := TReader.Create (TheFile,500*2880);{number of records. Buffer but not speed difference between 6*2880 and 1000*2880}
+  {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   {Reset GLOBAL variables for case they are not specified in the file}
   reset_fits_global_variables(light,head);
@@ -1974,13 +1975,13 @@ end;
 function fits_file_name(inp : string): boolean; {fits file name?}
 begin
   inp:=uppercase(extractfileext(inp));
-  result:=((inp='.FIT') or (inp='.FITS') or (inp='.FTS') or (inp='.WCS') or (inp='.WCSS'));{wcs for telescope tab}
+  result:=((inp='.FIT') or (inp='.FITS') or (inp='.FTS') or (inp='.WCS'));{wcs for telescope tab}
 end;
 
 function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
 begin
   inp:=uppercase(extractfileext(inp));
-  result:=((inp='.FIT') or (inp='.FITS') or (inp='.FTS') or (inp='.TIF') or (inp='.TIFF'));{fits or tiff file name}
+  result:=((inp='.FIT') or (inp='.FITS') or (inp='.FTS') or (inp='.TIF') or (inp='.TIFF') or (inp='.WCS'));{fits or tiff file name, wcs for mount analyse tab}
 end;
 
 
@@ -2160,16 +2161,16 @@ end;
 
 function load_PPM_PGM_PFM(filen:string; var load :theader; var img_loaded2: image_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
-   i,j, reader_position  : integer;
-   aline,w1,h1,bits,comm  : ansistring;
-   ch                : ansichar;
-   rgb32dummy        : byteXXXX3;
-   rgb16dummy        : byteXX3;
-   rgbdummy          : byteX3;
-   err,err2,err3,package  : integer;
-   comment,color7,pfm,expdet,timedet,isodet,instdet,ccdtempdet  : boolean;
-   range, jd2        : double;
-
+  TheFile  : tfilestream;
+  i,j, reader_position  : integer;
+  aline,w1,h1,bits,comm  : ansistring;
+  ch                : ansichar;
+  rgb32dummy        : byteXXXX3;
+  rgb16dummy        : byteXX3;
+  rgbdummy          : byteX3;
+  err,err2,err3,package  : integer;
+  comment,color7,pfm,expdet,timedet,isodet,instdet,ccdtempdet  : boolean;
+  range, jd2        : double;
 var
    x_longword  : longword;
    x_single    : single absolute x_longword;{for conversion 32 bit "big-endian" data}
@@ -2177,7 +2178,7 @@ var
      procedure close_fits_file; inline;
      begin
         Reader.free;
-        TheFile3.free;
+        TheFile.free;
      end;
 
 begin
@@ -2185,7 +2186,7 @@ begin
   result:=false; {assume failure}
 
   try
-    TheFile3:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
+    TheFile:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
   except
      beep;
      mainwindow.statusbar1.panels[7].text:=('Error, accessing the file!');
@@ -2196,8 +2197,8 @@ begin
   mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
   mainwindow.memo1.clear;{clear memo for new header}
 
-  Reader := TReader.Create (theFile3,$4000);{number of hnsky records}
-  {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
+  Reader := TReader.Create (TheFile,$4000);{number of hnsky records}
+  {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   reset_fits_global_variables(true{light},head); {reset the global variable}
 
@@ -3167,19 +3168,20 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'Astrometric Stacking Program, astrometric solver and FITS image viewer'+
+  'ASTAP version 2022.03.22, '+about_message4+
   #13+#10+
-  #13+#10+'This program can view, measure, "astrometric solve" and stack deep sky images.'+
   #13+#10+
-  #13+#10+'It uses an internal star matching routine or an internal astrometric solving routine for image alignment.'+' For RAW file conversion it uses the external programs Dcraw or LibRaw.'+
+  #13+#10+
+  'Astrometric Stacking Program, astrometric solver and FITS image viewer.'+
+  ' This program can view, measure, "astrometric solve" and stack deep sky images.'+
+  ' It uses an internal star matching routine or an internal astrometric solving routine for image alignment.'+
+  ' For RAW file conversion it uses the external programs Dcraw or LibRaw.'+
   #13+#10+
   #13+#10+about_message5+
   #13+#10+
   #13+#10+'Send an e-mail if you like this free program. Feel free to distribute!'+
   #13+#10+
-  #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+
-  #13+#10+
-  #13+#10+'ASTAP version 2022.03.16, '+about_message4;
+  #13+#10+'© 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org';
 
    application.messagebox(pchar(about_message), pchar(about_title),MB_OK);
 end;
@@ -5188,7 +5190,7 @@ end;
 
 procedure Tmainwindow.Remove_deep_sky_object1Click(Sender: TObject);
 var
-   fitsX,fitsY,dum,k,c,bsize  : integer;
+   fitsX,fitsY,dum,k,bsize  : integer;
    mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,
    noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,noise_level,
    center_x,center_y,a,b,angle_from_center,new_value,new_value_noise,old_value : double;
@@ -6871,22 +6873,38 @@ begin
 end;
 
 
+function save_tiff16_secure(img : image_array;filen2:string) : boolean;{guarantee no file is lost}
+var
+  filename_tmp: string;
+begin
+  result:=false;{assume failure}
+  filename_tmp:=changeFileExt(filen2,'.tmp');{new file will be first written to this file}
+  if  save_tiff16(img,filename_tmp,false {flip H},false {flip V}) then
+  begin
+    if deletefile(filename2) then
+      result:=renamefile(filename_tmp,filename2);
+  end;
+end;
+
+
+
 function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
 var
+  TheFile  : tfilestream;
   reader_position,I,readsize  : integer;
-  TheFile4  : tfilestream;
-  fract     : double;
+  TheFile_new : tfilestream;
+  fract       : double;
   line0       : ansistring;
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
   header    : array[0..2880] of ansichar;
   endfound  : boolean;
-  filename_bak: string;
+  filename_tmp: string;
 
      procedure close_fits_files;
      begin
         Reader.free;
-        TheFile3.free;
-        TheFile4.free;
+        TheFile.free;
+        TheFile_new.free;
      end;
 
      Function validate_double:double;{read values}
@@ -6901,74 +6919,68 @@ var
        validate_double:=x;
      end;
 begin
-  result:=false;
-  filename_bak:=changeFileExt(filen2,'.bak');
-  if fileexists(filename_bak) then deletefile(filename_bak);
+  result:=false;{assume failure}
+  filename_tmp:=changeFileExt(filen2,'.tmp');{new file will be first written to this file}
 
-  if renamefile(filen2,filename_bak) then
-  begin //save with update header
+  try
+    TheFile_new:=tfilestream.Create(filename_tmp, fmcreate );
+    TheFile:=tfilestream.Create(filen2, fmOpenRead or fmShareDenyWrite);
+    Reader := TReader.Create (TheFile,$4000);{number of hnsky records}
+    {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
+    I:=0;
+    reader_position:=0;
+    repeat
+      reader.read(header[i],80); {read file info, 80 bytes only}
+      inc(reader_position,80);
+      endfound:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D') and (header[i+3]=' '));
+    until ((endfound) or (I>=sizeof(header)-16 ));
+    if endfound=false then begin close_fits_files; exit;end;
 
-    try
-      TheFile3:=tfilestream.Create(filename_bak, fmOpenRead or fmShareDenyWrite);
-      TheFile4:=tfilestream.Create(filen2, fmcreate );
+    fract:=frac(reader_position/2880);
 
-      Reader := TReader.Create (theFile3,$4000);{number of hnsky records}
-      {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
-      I:=0;
-      reader_position:=0;
-      repeat
-        reader.read(header[i],80); {read file info, 80 bytes only}
-        inc(reader_position,80);
-        endfound:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D') and (header[i+3]=' '));
-      until ((endfound) or (I>=sizeof(header)-16 ));
-      if endfound=false then begin close_fits_files; exit;end;
-
-      fract:=frac(reader_position/2880);
-
-      if fract<>0 then
-      begin
-        i:=round((1-fract)*2880);{left part of next 2880 bytes block}
-        reader.read(header[0],i); {skip empty part and go to image data}
-        inc(reader_position,i);
-      end;
-      {reader is now at begin of data}
-
-      {write updated header}
-      for i:=0 to 79 do empthy_line[i]:=#32;{space}
-      i:=0;
-      repeat
-         if i<mainwindow.memo1.lines.count then
-         begin
-           line0:=mainwindow.memo1.lines[i];
-           while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
-           strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
-           thefile4.writebuffer(aline,80);{write updated header from memo1.}
-         end
-         else
-         begin
-            thefile4.writebuffer(empthy_line,80);{write empthy line}
-         end;
-         inc(i);
-      until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
-
-      readsize:=2880;
-      repeat
-         reader.read(fitsbuffer,readsize); {read file info IN STEPS OF 2880}
-         inc(reader_position,readsize);
-         thefile4.writebuffer(fitsbuffer,readsize); {write as bytes. Do not use write size last record is forgotten !!!}
-       until (reader_position>=thefile3.size);
-
-      Reader.free;
-      TheFile3.free;
-      TheFile4.free;
-
-      if deletefile(filename_bak) then result:=true;
-    except
-      close_fits_files;
-      beep;
-      exit;
+    if fract<>0 then
+    begin
+      i:=round((1-fract)*2880);{left part of next 2880 bytes block}
+      reader.read(header[0],i); {skip empty part and go to image data}
+      inc(reader_position,i);
     end;
+    {reader is now at begin of data}
 
+    {write updated header}
+    for i:=0 to 79 do empthy_line[i]:=#32;{space}
+    i:=0;
+    repeat
+       if i<mainwindow.memo1.lines.count then
+       begin
+         line0:=mainwindow.memo1.lines[i];
+         while length(line0)<80 do line0:=line0+' ';{guarantee length is 80}
+         strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
+         thefile_new.writebuffer(aline,80);{write updated header from memo1.}
+       end
+       else
+       begin
+          thefile_new.writebuffer(empthy_line,80);{write empthy line}
+       end;
+       inc(i);
+    until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
+
+    readsize:=2880;
+    repeat
+       reader.read(fitsbuffer,readsize); {read file info IN STEPS OF 2880}
+       inc(reader_position,readsize);
+       thefile_new.writebuffer(fitsbuffer,readsize); {write as bytes. Do not use write size last record is forgotten !!!}
+     until (reader_position>=TheFile.size);
+
+    Reader.free;
+    TheFile.free;
+    TheFile_new.free;
+
+    if deletefile(filename2) then
+      result:=renamefile(filename_tmp,filename2);
+  except
+    close_fits_files;
+    beep;
+    exit;
   end;
 end;
 
@@ -7175,7 +7187,6 @@ begin
   {old routine}	    mainwindow.height:=get_int2(mainwindow.height,'window_height');
   {old routine}	    mainwindow.width:=get_int2(mainwindow.width,'window_width');;
   {old routine}
-  {old routine}	    bayer_image:=get_boolean('raw_bayer',false);
   {old routine}
   {old routine}	    stackmenu1.left:=get_int2(stackmenu1.left,'stackmenu_left');
   {old routine}	    stackmenu1.top:=get_int2(stackmenu1.top,'stackmenu_top');
@@ -7605,7 +7616,7 @@ begin
       dum:=Sett.ReadString('main','sqm_key',''); if dum<>'' then sqm_key:=copy(dum,1,8);{remove * character used for protection spaces}
       dum:=Sett.ReadString('main','centaz_key',''); if dum<>'' then centaz_key:=copy(dum,1,8);{remove * character used for protection spaces}
 
-
+      export_index:=Sett.ReadInteger('main','export_index',3);{tiff stretched}
 
       c:=0;
       recent_files.clear;
@@ -7798,7 +7809,6 @@ begin
       voronoi_check:=Sett.ReadBool('insp','voronoi',false);
       values_check:=Sett.ReadBool('insp','values',true);
       vectors_check:=Sett.ReadBool('insp','vectors',true);
-      normalise_mode:=Sett.ReadInteger('insp','rawbayer',0);
       three_corners:=Sett.ReadBool('insp','3corners',false);
       extra_stars:=Sett.ReadBool('insp','extra_stars',false);
 
@@ -7958,6 +7968,10 @@ begin
 
       sett.writestring('main','sqm_key',sqm_key+'*' );{add a * to prevent the spaces are removed.Should be at least 8 char}
       sett.writestring('main','centaz_key',centaz_key+'*');{add a * to prevent the spaces are removed}
+
+      sett.writeInteger('main','export_index',export_index);
+
+
 
       for c:=0 to recent_files.count-1  do {add recent files}
         sett.writestring('main','recent'+inttostr(c),recent_files[c]);
@@ -8141,7 +8155,6 @@ begin
       sett.writeBool('insp','voronoi',voronoi_check);
       sett.writeBool('insp','values',values_check);
       sett.writeBool('insp','vectors',vectors_check);
-      sett.writeInteger('insp','rawbayer',normalise_mode);
       sett.writebool('insp','3corners',three_corners);
       sett.writebool('insp','extra_stars',extra_stars);
 
@@ -8207,7 +8220,7 @@ end;
 
 procedure Tmainwindow.flip_horizontal1Click(Sender: TObject);
 var bmp: TBitmap;
-    w, h, x, y,i: integer;
+    w, h, x, y : integer;
 type
   PRGBTripleArray = ^TRGBTripleArray; {for fast pixel routine}
   {$ifdef mswindows}
@@ -8458,7 +8471,7 @@ function convert_raw(loadfile,savefile :boolean;var filename3: string;var img: i
 var
   filename4 :string;
   JD2                               : double;
-  conv_index,x,a,b                  : integer;
+  conv_index                        : integer;
   commando,param,pp,ff              : string;
 begin
   result:=true; {assume success}
@@ -8715,22 +8728,24 @@ begin
 
     if result then
     begin
-      head.exposure:=extract_exposure_from_filename(filen); {try to extract head.exposure time from filename. Will be added to the header}
-      head.set_temperature:=extract_temperature_from_filename(filen);
-      update_text('OBJECT  =',#39+extract_objectname_from_filename(filen)+#39); {spaces will be added/corrected later}
+      if head.exposure=0 then {not an Astro-TIFF file with an header}
+      begin
+        head.exposure:=extract_exposure_from_filename(filen); {try to extract head.exposure time from filename. Will be added to the header}
+        update_text('OBJECT  =',#39+extract_objectname_from_filename(filen)+#39); {spaces will be added/corrected later}
+        head.set_temperature:=extract_temperature_from_filename(filen);
+      end;
 
-      filen:=ChangeFileExt(filen,'.fit');
+      filen:=ChangeFileExt(filen,'.fits');
       result:=save_fits(img_loaded,filen,nrbits,false);
     end;
   end;
-
 end;
+
 
 procedure Tmainwindow.convert_to_fits1click(Sender: TObject);
 var
   I: integer;
   Save_Cursor:TCursor;
-  ext : string;
   err, dobackup : boolean;
 begin
   OpenDialog1.Title := 'Select multiple  files to convert to FITS.';
@@ -8742,7 +8757,6 @@ begin
                          '|Compressed FITS files|*.fz';
   opendialog1.initialdir:=ExtractFileDir(filename2);
   fits_file:=false;
- // data_range_groupBox1.Enabled:=true;
   esc_pressed:=false;
   err:=false;
   if OpenDialog1.Execute then
@@ -8897,7 +8911,7 @@ begin
   end;
 end;
 
-procedure convert_mono(var img: image_array);
+procedure convert_mono(var img: image_array; head: Theader);
 var
    fitsX,fitsY: integer;
    img_temp : image_array;
@@ -8927,7 +8941,7 @@ begin
 
   backup_img;
 
-  convert_mono(img_loaded);
+  convert_mono(img_loaded,head);
 
   update_header_for_colour; {update header naxis and naxis3 keywords}
   add_text('HISTORY   ','Converted to mono');
@@ -9800,16 +9814,13 @@ procedure Tmainwindow.remove_longitude_latitude1Click(Sender: TObject);
 var
   I: integer;
   Save_Cursor:TCursor;
-  err   : boolean;
+  err,success   : boolean;
   dobackup : boolean;
 begin
   OpenDialog1.Title := 'Select multiple  files to remove the observation location from';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter :=  'All formats except TIF|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.new;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;*.fz;'+
-                                                '*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;'+
-                         '|RAW files|*.RAW;*.raw;*.CRW;*.crw;*.CR2;*.cr2;*.CR3;*.cr3;*.KDC;*.kdc;*.DCR;*.dcr;*.MRW;*.mrw;*.ARW;*.arw;*.NEF;*.nef;*.NRW;.nrw;*.DNG;*.dng;*.ORF;*.orf;*.PTX;*.ptx;*.PEF;*.pef;*.RW2;*.rw2;*.SRW;*.srw;*.RAF;*.raf;'+
-                         '|24 bits PNG, JPEG, BMP(*.png, *.jpg,*.bmp)|*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP'+
-                         '|Compressed FITS files|*.fz';
+  opendialog1.Filter := 'FITS and TIFF files (*.fit*)|*.fit*;*.FIT*;*.fts;*.FTS;*.tif*;*.TIF*';
+
   opendialog1.initialdir:=ExtractFileDir(filename2);
   fits_file:=false;
   esc_pressed:=false;
@@ -9833,7 +9844,11 @@ begin
         begin
           remove_key('SITELAT =',true{all});
           remove_key('SITELONG=',true{all});
-          if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2); Screen.Cursor := Save_Cursor; exit;end;
+          if fits_file_name(filename2) then
+            success:=savefits_update_header(filename2)
+          else
+            success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
+          if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
         end
         else err:=true;
       end;
@@ -10405,11 +10420,11 @@ var
   I: integer;
   Save_Cursor:TCursor;
   skipped, nrannotated :integer;
-  dobackup : boolean;
+  dobackup,success : boolean;
 begin
   OpenDialog1.Title := 'Select multiple  files to add asteroid annotation to the header';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
+  opendialog1.Filter := 'FITS and TIFF files (*.fit*)|*.fit*;*.FIT*;*.fts;*.FTS;*.tif*;*.TIF*';
   esc_pressed:=false;
 
   if OpenDialog1.Execute then
@@ -10442,7 +10457,11 @@ begin
             else
             begin
               plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations});
-              if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2); Screen.Cursor := Save_Cursor; exit;end;
+              if fits_file_name(filename2) then
+                success:=savefits_update_header(filename2)
+              else
+                success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
+              if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
               nrannotated :=nrannotated +1;
             end;
           end;
@@ -11823,7 +11842,7 @@ begin
         '-debug  {Show GUI and stop prior to solving}' +#10+
         '-log   {Write the solver log to file}'+#10+
         '-tofits  binning[1,2,3,4]  {Make new fits file from PNG/JPG file input}'+#10+
-        '-update  {update the FITS header with the found solution}' +#10+
+        '-update  {update the FITS/TIFF header with the found solution.  Jpeg, png will be written as fits}' +#10+
         '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
         #10+
         'Preference will be given to the command line values.' +#10+
@@ -11984,6 +12003,8 @@ begin
             begin
               if fits_file_name(filename2) then savefits_update_header(filename2) {update the fits file header}
               else
+              if tiff_file_name(filename2) then save_tiff16_secure(img_loaded,filename2){guarantee no file is lost}
+              else
               save_fits(img_loaded,ChangeFileExt(filename2,'.fits'),16, true {override});{save original png,tiff jpg to 16 fits file}
             end;
 
@@ -12096,18 +12117,18 @@ procedure Tmainwindow.batch_add_solution1Click(
 var
   Save_Cursor:TCursor;
   i,nrskipped, nrsolved,nrfailed,file_age        : integer;
-  dobackup,add_sip,add_lim_magn,solution_overwrite,solved,maintaindate : boolean;
-  failed,skipped                        : string;
+  dobackup,add_sip,add_lim_magn,solution_overwrite,solved,maintain_date,success : boolean;
+  failed,skipped,mess                           : string;
   startTick  : qword;{for timing/speed purposes}
 begin
   OpenDialog1.Title := 'Select multiple files to add astrometric solution';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
+  opendialog1.Filter := 'FITS and TIFF files (*.fit*)|*.fit*;*.FIT*;*.fts;*.FTS;*.tif*;*.TIF*';
   esc_pressed:=false;
   add_sip:=add_sip_check1.Checked;
   add_lim_magn:=add_limiting_magn_check1.Checked;
   solution_overwrite:=batch_overwrite1.checked;
-  maintaindate:=maintain_date1.checked;
+  maintain_date:=maintain_date1.checked;
 
   if OpenDialog1.Execute then
   begin
@@ -12163,6 +12184,7 @@ begin
               mainwindow.calibrate_photometry1Click(nil);{calibrate}
               update_float('LIM_MAGN=',' / estimated limiting magnitude for point sources' ,magn_limit);
 
+              mess:='';
               if pedestal<>0 then
               begin
                 jd_start:=0; { if altitude missing then force an date to jd conversion'}
@@ -12170,16 +12192,22 @@ begin
                 begin
                   update_float('SQM     =',' / Sky background [magn/arcsec^2]',sqmfloat);
                   update_text('COMMENT SQM',', used '+inttostr(pedestal)+' as pedestal value');
+                  mess:='and SQM'
                 end;
               end
               else
               memo2_message('Can not measure SQM. Add fixed pedestal value in SQM menu. De pedestal value is the median dark or bias value');
+              memo2_message('Added keyword(s) LIM_MAGN'+mess);
             end;
 
-            if maintaindate then file_age:=Fileage(filename2);
-            if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
-            memo2_message('Added keywords LIM_MAGN and SQM');
-            if ((maintaindate) and (file_age>-1)) then FileSetDate(filename2,file_age);
+            if maintain_date then file_age:=Fileage(filename2);
+            if fits_file_name(filename2) then
+              success:=savefits_update_header(filename2)
+            else
+              success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
+            if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
+
+            if ((maintain_date) and (file_age>-1)) then FileSetDate(filename2,file_age);
           end
           else
           begin
@@ -14636,7 +14664,7 @@ begin
 
   if head.naxis3>1 then savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit|*.tif|PPM 16 bit stretched|*.ppm;|PPM 16 bit|*.ppm|PFM 32 bit float|*.pfm'
                    else savedialog1.Filter := 'PNG 16 bit stretched|*.png|PNG 16 bit|*.png|TIFF 16 bit stretched|*.tif|TIFF 16 bit|*.tif|TIFF 32 bit|*.tif|PGM 16 bit stretched|*.pgm;|PGM 16 bit|*.pgm|PFM 32 bit float|*.pfm';
-  savedialog1.filterindex:=SaveasTIFF1filterindex; {default 3 tiff stretched}
+  savedialog1.filterindex:=export_index; {default 3 tiff stretched}
   if savedialog1.execute then
   begin
     OldCursor := Screen.Cursor;
@@ -14714,7 +14742,7 @@ begin
 
     end;
 
-    SaveasTIFF1filterindex:=savedialog1.filterindex;{remember}
+    export_index:=savedialog1.filterindex;{remember}
     Screen.Cursor:= OldCursor;
   end;
 end;

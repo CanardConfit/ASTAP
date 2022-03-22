@@ -301,27 +301,8 @@ object form_inspection1: Tform_inspection1
         TabOrder = 5
       end
     end
-    object normalise_mode1: TComboBox
-      Left = 112
-      Height = 23
-      Hint = 'A normalise filter could be applied. The raw OSC RGGB pixels are normalised to the same mean value. This is better option for raw OSC images.'
-      Top = 0
-      Width = 73
-      ItemHeight = 15
-      ItemIndex = 0
-      Items.Strings = (
-        'auto'
-        '✔'
-        ''
-      )
-      OnChange = normalise_mode1Change
-      ParentFont = False
-      Style = csDropDownList
-      TabOrder = 2
-      Text = 'auto'
-    end
     object bayer_label1: TLabel
-      Left = 208
+      Left = 8
       Height = 15
       Top = 0
       Width = 102

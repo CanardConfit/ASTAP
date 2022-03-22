@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 487
+  Left = 40
   Height = 712
-  Top = 158
+  Top = 116
   Width = 1721
   HorzScrollBar.Page = 1701
   VertScrollBar.Page = 558
@@ -2918,8 +2918,8 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Apply this if you change the annotation setting.'
           Top = 6
-          Width = 169
-          Caption = 'Refresh existing annotations'
+          Width = 214
+          Caption = 'Refresh existing asteroid annotations'
           ParentFont = False
           TabOrder = 3
         end

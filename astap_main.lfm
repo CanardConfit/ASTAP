@@ -1112,7 +1112,7 @@ object mainwindow: Tmainwindow
         Caption = 'Batch processing'
         Hint = 'Batch processes'
         object batch_add_solution1: TMenuItem
-          Caption = 'Batch solve images'
+          Caption = 'Batch solve images FITS && TIFF'
           Hint = 'Find an astrometric (plate) solution for selected files and add to the FITS file header.'
           ShortCut = 32848
           OnClick = batch_add_solution1Click

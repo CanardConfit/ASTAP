@@ -1323,7 +1323,7 @@ var
   name: string;
   flip_horizontal, flip_vertical: boolean;
   text_dimensions  : array of textarea;
-  i,text_counter,th,tw,x1,y1,x2,y2,hf,x,y,fontsi : integer;
+  i,text_counter,th,tw,x1,y1,x2,y2,hf,x,y : integer;
   overlap,sip  :boolean;
   Save_Cursor:TCursor;
 
@@ -1552,7 +1552,7 @@ end;
 procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
   fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
-  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,delta_dec,sep,det,SIN_dec_ref,COS_dec_ref,cv,fov_org,
+  mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,sep,det,SIN_dec_ref,COS_dec_ref,cv,fov_org,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,xx,yy : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count                          : integer;
   flip_horizontal, flip_vertical        : boolean;

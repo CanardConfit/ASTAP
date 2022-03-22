@@ -33,16 +33,18 @@ implementation
 
 function load_xisf(filen:string;var head : theader; var img_loaded2: image_array) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
 var
-   i,j,k, reader_position,a,b,c,d,e : integer;
-   aline,message1,message_key,message_value,message_comment    : ansistring;
-   attachment,start_image  : integer;
-   error2                  : integer;
-   header_length           : longword;
-   header2                 :     array of ansichar;
+  TheFile  : tfilestream;
+  i,j,k, reader_position,a,b,c,d,e : integer;
+  aline,message1,message_key,message_value,message_comment    : ansistring;
+  attachment,start_image  : integer;
+  error2                  : integer;
+  header_length           : longword;
+  header2                 :     array of ansichar;
+  set_temp                : double;
      procedure close_fits_file; inline;
      begin
         Reader.free;
-        TheFile3.free;
+        TheFile.free;
         result:=false;
      end;
 
@@ -83,7 +85,7 @@ begin
   mainwindow.memo1.clear;{clear memo for new header}
 
   try
-    TheFile3:=tfilestream.Create( filen, fmOpenRead );
+    TheFile:=tfilestream.Create( filen, fmOpenRead );
   except
     sysutils.beep;
     mainwindow.statusbar1.panels[5].text:=('Error loading file!');
@@ -94,12 +96,11 @@ begin
 
   reset_fits_global_variables(true{light},head);  {Reset variables for case they are not specified in the file}
 
-//  ccd_temperature:=999;
   extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
 
   setlength(header2,16);
-  Reader := TReader.Create (theFile3,$4000);{number of hnsky records}
-  {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
+  Reader := TReader.Create (TheFile,$4000);{number of hnsky records}
+  {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   reader_position:=0;
   try
@@ -228,11 +229,12 @@ begin
   extract_double_keyword('CD2_1',head.cd2_1);
   extract_double_keyword('CD2_2',head.cd2_2);
 
-//  Not required since XISF is not used for stacking}
-//  extract_double_keyword('CCD-TEMP',ccd_temperature);
-//  extract_double_keyword('SET-TEMP',ccd_temperature);
-//  extract_double_keyword('EXPTIME ',head.exposure);
-//  extract_double_keyword('EXPOSURE',head.exposure);
+  extract_double_keyword('CCD-TEMP',set_temp);
+  extract_double_keyword('SET-TEMP',set_temp);
+  head.set_temperature:=round(set_temp);
+
+  extract_double_keyword('EXPTIME ',head.exposure);
+  extract_double_keyword('EXPOSURE',head.exposure);
 
   extract_double_keyword('CROTA1',head.crota1);
   extract_double_keyword('CROTA2',head.crota2);

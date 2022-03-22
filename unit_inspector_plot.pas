@@ -1,6 +1,6 @@
 unit unit_inspector_plot;
 
-{Copyright (C) 2018, 2021 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2018, 2022 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 This Source Code Form is subject to the terms of the Mozilla Public
@@ -23,7 +23,6 @@ type
   Tform_inspection1 = class(TForm)
     bayer_label1: TLabel;
     to_clipboard1: TCheckBox;
-    normalise_mode1: TComboBox;
     show_distortion1: TBitBtn;
     aberration_inspector1: TBitBtn;
     tilt1: TBitBtn;
@@ -54,7 +53,6 @@ type
     procedure help_uncheck_outliers1Click(Sender: TObject);
     procedure hfd_button1Click(Sender: TObject);
     procedure measuring_angle1Change(Sender: TObject);
-    procedure normalise_mode1Change(Sender: TObject);
     procedure show_distortion1Click(Sender: TObject);
     procedure tilt1Click(Sender: TObject);
     procedure triangle1Change(Sender: TObject);
@@ -80,11 +78,9 @@ var
   voronoi_check: boolean=false;
   values_check: boolean=true;
   vectors_check: boolean=true;
-  bayer_image  : boolean=false;
   extra_stars  : boolean=false;
   three_corners: boolean=false;
   measuring_angle : string='0';
-  normalise_mode: integer=0; {auto}
   insp_left: integer=100;
   insp_top: integer=100;
 
@@ -151,12 +147,12 @@ begin
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
     setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication}
-    convert_mono(img_loaded);
+    convert_mono(img_loaded,head);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
     restore_req:=true;
   end
   else
-  if bayer_image then {raw Bayer image}
+  if (bayerpat<>'') then {raw Bayer image}
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
     setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication}
@@ -1095,11 +1091,11 @@ begin
 
   if head.naxis3>1 then
   begin
-    convert_mono(img_loaded);
+    convert_mono(img_loaded,head);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
   end
   else
-  if bayer_image then {raw Bayer image}
+  if bayerpat<>'' then {raw Bayer image}
   begin
     check_pattern_filter(img_loaded);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required after box blur to get correct background value}
@@ -1135,43 +1131,6 @@ end;
 procedure Tform_inspection1.measuring_angle1Change(Sender: TObject);
 begin
   measuring_angle:=measuring_angle1.text;
-end;
-
-procedure check_bayer;
-begin
-  with form_inspection1 do
-  begin
-    if normalise_mode=2 then
-    begin
-      bayer_label1.caption:='Normal image';
-      bayer_image:=false;
-    end
-    else
-    if normalise_mode=1 then
-    begin
-      bayer_label1.caption:='Bayer matrix image';
-      bayer_image:=true;
-    end
-    else {auto}
-    begin
-      if ((head.naxis3=1) and (bayerpat<>'')) then
-      begin
-        bayer_label1.caption:='Bayer matrix image';
-        bayer_image:=true;
-      end
-      else
-      begin
-        bayer_label1.caption:='Normal image';
-        bayer_image:=false;
-      end;
-    end;
-  end;
-end;
-
-procedure Tform_inspection1.normalise_mode1Change(Sender: TObject);
-begin
-  normalise_mode:=normalise_mode1.ItemIndex;
-  check_bayer;
 end;
 
 
@@ -1294,12 +1253,12 @@ begin
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
     setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication to a backup image}
-    convert_mono(img_loaded);
+    convert_mono(img_loaded,head);
     get_hist(0,img_loaded);{get histogram of img_loaded and his_total. Required to get correct background value}
     restore_req:=true;{restore original image later}
   end
   else
-  if bayer_image then {raw Bayer image}
+  if bayerpat<>'' then {raw Bayer image}
   begin
     img_bk:=img_loaded; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
     setlength(img_bk,head.naxis3,head.width,head.height);{force a duplication to a backup image}
@@ -1515,9 +1474,17 @@ begin
   values1.checked:=values_check;
   vectors1.checked:=vectors_check;
   show_distortion1.enabled:=head.cd1_1<>0;
-//  bayer_image1.checked:=bayer_image;
-  normalise_mode1.ItemIndex:=normalise_mode;
-  check_bayer;
+
+  if head.naxis3>1 then
+    bayer_label1.caption:='Colour image'
+  else
+  begin
+    if bayerpat<>'' then
+      bayer_label1.caption:='Bayer matrix image'
+    else
+      bayer_label1.caption:='Mono sensor image';
+  end;
+
   triangle1.checked:=three_corners;
   extra_stars1.checked:=extra_stars;
   measuring_angle1.text:=measuring_angle;
