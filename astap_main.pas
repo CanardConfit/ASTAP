@@ -779,7 +779,7 @@ procedure plot_the_annotation(x1,y1,x2,y2:integer; typ:double; name,magn :string
 procedure reset_fits_global_variables(light :boolean; out head:theader ); {reset the global variable}
 function convert_to_fits(var filen: string): boolean; {convert to fits}
 procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
-procedure convert_mono(var img: image_array; head: Theader);
+procedure convert_mono(var img: image_array; var head: Theader);
 procedure Wait(wt:single=500);  {smart sleep}
 procedure update_header_for_colour; {update naxis and naxis3 keywords}
 procedure flip(x1,y1 : integer; out x2,y2 :integer);{array to screen or screen to array coordinates}
@@ -3168,7 +3168,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.03.22, '+about_message4+
+  'ASTAP version 2022.03.22a, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -8911,7 +8911,7 @@ begin
   end;
 end;
 
-procedure convert_mono(var img: image_array; head: Theader);
+procedure convert_mono(var img: image_array; var head: Theader);
 var
    fitsX,fitsY: integer;
    img_temp : image_array;

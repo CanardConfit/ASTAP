@@ -4431,7 +4431,7 @@ begin
                 bsolutions[c].solution_vectorX:=solution_vectorX;
                 bsolutions[c].solution_vectorY:=solution_vectorY;
                 listview6.Items.item[c].subitems.Strings[B_solution]:='✓ '+inttostr(c);{store location in listview for case list is sorted/modified}
-                ListView6.Items.item[c].SubitemImages[B_solution]:=-1; {{remove any older icon_king}
+                ListView6.Items.item[c].SubitemImages[B_solution]:=-1; {remove any older icon_king}
 
                 memo2_message(inttostr(nr_references)+' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'
                    +'  Solution x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
@@ -4901,6 +4901,7 @@ begin
   end;
   listview7.Items.endUpdate;
 end;
+
 
 procedure Tstackmenu1.curve_fitting1Click(Sender: TObject);
 var
