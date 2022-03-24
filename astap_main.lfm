@@ -1199,12 +1199,17 @@ object mainwindow: Tmainwindow
           ImageIndex = 22
           object batch_rotate_left1: TMenuItem
             Caption = 'Rotate 90 degrees left'
-            Hint = 'Rotate the FITS image 90 degrees left'
+            Hint = 'Rotate the selected FITS images 90 degrees left'
             OnClick = batch_rotate_left1Click
           end
           object batch_rotate_right1: TMenuItem
             Caption = 'Rotate 90 degrees right'
-            Hint = 'Rotate the FITS image 90 degrees right'
+            Hint = 'Rotate the selected FITS images 90 degrees right'
+            OnClick = batch_rotate_left1Click
+          end
+          object batch_rotate_1801: TMenuItem
+            Caption = 'Rotate 180 degrees'
+            Hint = 'Rotate the selected FITS images 180 degrees.'
             OnClick = batch_rotate_left1Click
           end
         end

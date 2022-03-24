@@ -45,6 +45,8 @@ type
     browse_live_stacking1: TBitBtn;
     Button1: TButton;
     check_pattern_filter1: TCheckBox;
+    auto_select1: TMenuItem;
+    MenuItem33: TMenuItem;
     target_distance1: TLabel;
     target_group1: TGroupBox;
     delta_ra1: TLabel;
@@ -617,6 +619,7 @@ type
     procedure help_monitoring1Click(Sender: TObject);
     procedure help_mount_tab1Click(Sender: TObject);
     procedure live_monitoring1Click(Sender: TObject);
+    procedure auto_select1Click(Sender: TObject);
     procedure monitoring_stop1Click(Sender: TObject);
     procedure lrgb_auto_level1Change(Sender: TObject);
     procedure keywordchangelast1Click(Sender: TObject);
@@ -668,6 +671,7 @@ type
     procedure pagecontrol1Change(Sender: TObject);
     procedure pagecontrol1MouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
+    procedure PopupMenu1Popup(Sender: TObject);
     procedure press_esc_to_abort1Click(Sender: TObject);
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
       Shift: TShiftState; X, Y: Integer);
@@ -5431,6 +5435,13 @@ begin
   FLastHintTabIndex := TabIndex;
 end;
 
+
+procedure Tstackmenu1.PopupMenu1Popup(Sender: TObject);
+begin
+  auto_select1.enabled:=stackmenu1.use_manual_alignment1.checked;
+end;
+
+
 procedure Tstackmenu1.press_esc_to_abort1Click(Sender: TObject);
 begin
   esc_pressed:=true;
@@ -7464,6 +7475,53 @@ begin
   Application.ProcessMessages; {process font changes}
 
   monitoring(monitoring_path1.caption){monitor a directory}
+end;
+
+procedure Tstackmenu1.auto_select1Click(Sender: TObject);
+var index,total: integer;
+    psx,psy    : string;
+    someresult : boolean;
+begin
+  total:=listview1.Items.Count-1;
+  esc_pressed:=false;
+  someresult:=false;
+  index:=0;
+  shape_fitsX:=-99;
+  while index<=total do
+  begin
+    if  listview1.Items[index].Selected then
+    begin
+      filename2:=listview1.items[index].caption;
+
+      psx:=ListView1.Items.item[index].subitems.Strings[L_X];
+      if psx<>'' then
+      begin
+        shape_fitsX:=-1+ strtofloat2(psx);{keep updating each image}
+        psy:=ListView1.Items.item[index].subitems.Strings[L_Y];
+        shape_fitsY:=-1+ round(strtofloat2(psy));{keep updating each image}
+      end
+      else
+      if shape_fitsX>0 {at least one reference found} then
+        if load_image(true,false {plot}) then {load}
+        begin
+          if find_reference_star(img_loaded) then
+          begin
+            ListView1.Items.item[index].subitems.Strings[L_X]:=floattostrF(shape_fitsX,ffFixed,0,2);
+            ListView1.Items.item[index].subitems.Strings[L_Y]:=floattostrF(shape_fitsY,ffFixed,0,2);
+            {$ifdef darwin} {MacOS}
+            {bugfix darwin green red colouring}
+            stackmenu1.ListView1.Items.item[index].Subitems.strings[L_result]:='✓ star';
+            {$endif}
+            memo2_message(filename2+ ' lock');{for manual alignment}
+            someresult:=true;
+          end;
+          application.processmessages;
+          if esc_pressed then break;
+        end;
+    end;
+    inc(index); {go to next file}
+  end;
+  if someresult=false then memo2_message('Select first one star in the first image for alignment. Then select all images for automatic selection the same star.');
 end;
 
 procedure Tstackmenu1.monitoring_stop1Click(Sender: TObject);

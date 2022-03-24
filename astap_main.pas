@@ -116,6 +116,7 @@ type
     flip_H1: TMenuItem;
     halo_removal1: TMenuItem;
     maintain_date1: TMenuItem;
+    batch_rotate_1801: TMenuItem;
     set_modified_date1: TMenuItem;
     MenuItem26: TMenuItem;
     MenuItem27: TMenuItem;
@@ -431,7 +432,6 @@ type
     procedure clean_up1Click(Sender: TObject);
     procedure remove_colour1Click(Sender: TObject);
     procedure Returntodefaultsettings1Click(Sender: TObject);
-    procedure rotateleft1Click(Sender: TObject);
     procedure saturation_factor_plot1KeyUp(Sender: TObject; var Key: Word;
       Shift: TShiftState);
     procedure saturation_factor_plot1MouseUp(Sender: TObject;
@@ -787,6 +787,7 @@ function decode_string(data0: string; out ra4,dec4 : double):boolean;{convert a 
 function noise_to_electrons(adu_s : double): string; {noise from adu_s to electrons per pixel}
 function save_tiff16(img: image_array; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
 function save_tiff16_secure(img : image_array;filen2:string) : boolean;{guarantee no file is lost}
+function find_reference_star(img : image_array) : boolean;{for manual alignment}
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -3168,7 +3169,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.03.22a, '+about_message4+
+  'ASTAP version 2022.03.24, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -3743,11 +3744,6 @@ begin
     end
     else beep;
   end;
-end;
-
-procedure Tmainwindow.rotateleft1Click(Sender: TObject);
-begin
-
 end;
 
 
@@ -9562,43 +9558,6 @@ begin
 end;
 
 
-procedure Tmainwindow.batch_rotate_left1Click(Sender: TObject);
-var
-  i         : integer;
-  dobackup  : boolean;
-begin
-
-  OpenDialog1.Title := 'Select multiple  files to rotate 90 degrees.';
-  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
-
-  //data_range_groupBox1.Enabled:=true;
-  esc_pressed:=false;
-
-
-  if OpenDialog1.Execute then
-  begin
-    dobackup:=img_loaded<>nil;
-    if dobackup then backup_img;{preserve img array and fits header of the viewer}
-
-    try { Do some lengthy operation }
-       with OpenDialog1.Files do
-       for i := 0 to Count - 1 do
-       begin
-         filename2:=Strings[i];
-         {load fits}
-         Application.ProcessMessages;
-         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded)=false)) then begin exit;end;
-
-         rotateleft1Click(Sender);{rotate left or right will be defined by the sender in next procedure}
-         save_fits(img_loaded,FileName2,16,true);{overwrite}
-      end;
-      finally
-      if dobackup then restore_img;{for the viewer}
-    end;
-  end;
-end;
-
 procedure Tmainwindow.angular_distance1Click(Sender: TObject);
 var
    shapetype                               : integer;
@@ -10481,10 +10440,6 @@ begin
   form_astrometry_net1.ShowModal;
   form_astrometry_net1.release;
 end;
-
-
-
-
 
 
 procedure give_spiral_position(position : integer; var x,y : integer); {give x,y position of square spiral as function of input value}
@@ -12747,10 +12702,60 @@ begin
   stackmenu1.center_position1.caption:='Center: '+inttostr((startX+stopX) div 2)+', '+inttostr((startY+stopY) div 2);
 end;
 
+procedure rotate_arbitrary(angle: double);
+var centerxs,centerys  : double;
+begin
+  if mainwindow.flip_horizontal1.checked then angle:=-angle;{change rotation if flipped}
+  if mainwindow.flip_vertical1.checked then   angle:=-angle;{change rotation if flipped}
+
+  centerxs:=head.width/2;
+  centerys:=head.height/2;
+
+  raster_rotate(angle,centerxs,centerys ,img_loaded);
+
+  head.width:=length(img_loaded[0]);{update width}  ;
+  head.height:=length(img_loaded[0,0]);{update length};
+
+  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
+  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
+
+
+  if head.cd1_1<>0 then {update solution for rotation}
+  begin
+    if ((head.crpix1<>0.5+centerxs) or (head.crpix2<>0.5+centerys)) then {reference is not center}
+    begin  {to much hassle to fix. Just remove the solution}
+      remove_key('CD1_1   ',false);
+      remove_key('CD1_2   ',false);
+      remove_key('CD2_1   ',false);
+      remove_key('CD2_2   ',false);
+    end;
+    head.crota2:=fnmodulo(head.crota2+angle,360);
+    head.crota1:=fnmodulo(head.crota1+angle,360);
+    head.crpix1:= head.width/2;
+    head.crpix2:=head.height/2;
+    old_to_new_WCS;{convert old style FITS to newd style}
+
+    update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
+    update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
+    update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
+    update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
+
+
+    update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);
+    update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
+
+    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
+    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
+
+
+    add_text   ('HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 0));
+  end;
+  remove_key('ANNOTATE',true{all});{this all will be invalid}
+end;
 
 procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
 var
-  centerxs,centerys,angle  : double;
+  angle  : double;
   valueI : string;
   Save_Cursor:TCursor;
 
@@ -12769,53 +12774,7 @@ begin
   memo2_message('Start rotation. This takes some time due to subsampling 10x10.');
   backup_img;
 
- if flip_horizontal1.checked then angle:=-angle;{change rotation if flipped}
- if flip_vertical1.checked then   angle:=-angle;{change rotation if flipped}
-
- centerxs:=head.width/2;
- centerys:=head.height/2;
-
-  raster_rotate(angle,centerxs,centerys ,img_loaded);
-//  rotate_arbitraryold(angle,img_loaded);
-
-  head.width:=length(img_loaded[0]);{update width}  ;
-  head.height:=length(img_loaded[0,0]);{update length};
-
-  update_integer('NAXIS1  =',' / length of x axis                               ' ,head.width);
-  update_integer('NAXIS2  =',' / length of y axis                               ' ,head.height);
-
-
-  if head.cd1_1<>0 then {update solution for rotation}
-  begin
-     if ((head.crpix1<>0.5+centerxs) or (head.crpix2<>0.5+centerys)) then {reference is not center}
-     begin  {to much hassle to fix. Just remove the solution}
-       remove_key('CD1_1   ',false);
-       remove_key('CD1_2   ',false);
-       remove_key('CD2_1   ',false);
-       remove_key('CD2_2   ',false);
-     end;
-     head.crota2:=fnmodulo(head.crota2+angle,360);
-     head.crota1:=fnmodulo(head.crota1+angle,360);
-     head.crpix1:= head.width/2;
-     head.crpix2:=head.height/2;
-     old_to_new_WCS;{convert old style FITS to newd style}
-
-     update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
-     update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
-     update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
-     update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
-
-
-     update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);
-     update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
-
-     update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
-     update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
-
-
-     add_text   ('HISTORY   ','Rotated CCW by angle '+valueI);
-  end;
-  remove_key('ANNOTATE',true{all});{this all will be invalid}
+  rotate_arbitrary(angle);
 
   plot_fits(mainwindow.image1,false,true);
 
@@ -12825,6 +12784,58 @@ begin
   memo2_message('Rotation done.');
 end;
 
+
+procedure Tmainwindow.batch_rotate_left1Click(Sender: TObject);
+var
+  i                        : integer;
+  dobackup,success         : boolean;
+  Save_Cursor              : TCursor;
+
+begin
+  OpenDialog1.Title := 'Select multiple  files to rotate 90 degrees.';
+  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
+
+  esc_pressed:=false;
+
+  if OpenDialog1.Execute then
+  begin
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+    dobackup:=img_loaded<>nil;
+    if dobackup then backup_img;{preserve img array and fits header of the viewer}
+
+    try { Do some lengthy operation }
+       with OpenDialog1.Files do
+       for i := 0 to Count - 1 do
+       begin
+         filename2:=Strings[i];
+         {load fits}
+         Application.ProcessMessages;
+         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded)=false)) then begin break;end;
+
+         if sender=mainwindow.batch_rotate_left1 then
+            rotate_arbitrary(90) else
+         if sender=mainwindow.batch_rotate_right1 then
+            rotate_arbitrary(-90) else
+         if sender=mainwindow.batch_rotate_1801   then
+            rotate_arbitrary(180);
+
+         if fits_file_name(filename2) then
+           success:=save_fits(img_loaded,filename2,nrbits,true)
+         else
+           success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
+         if success=false then begin ShowMessage('Write error !!' + filename2);break; end;
+
+      end;
+      finally
+      if dobackup then restore_img;{for the viewer}
+
+      Screen.Cursor := Save_Cursor; exit;
+    end;
+  end;
+end;
 
 
 procedure Tmainwindow.histogram1MouseMove(Sender: TObject; Shift: TShiftState;
@@ -13035,6 +13046,46 @@ begin
 end;
 
 
+function find_reference_star(img : image_array) : boolean;{for manual alignment}
+var
+  xc,yc,hfd2,fwhm_star2,snr,flux : double;
+  shapetype                      : integer;
+begin
+  result:=false; {assume failure}
+  if pos('small',stackmenu1.manual_centering1.text)<>0 then {comet}
+  begin
+    find_highest_pixel_value(img_loaded,10,startX,startY,xc,yc);
+  end
+  else
+  if pos('medium',stackmenu1.manual_centering1.text)<>0 then {comet}
+  begin
+    find_highest_pixel_value(img_loaded,20,startX,startY,xc,yc);
+  end
+  else
+  if pos('large',stackmenu1.manual_centering1.text)<>0 then {comet}
+  begin
+    find_highest_pixel_value(img_loaded,30,startX,startY,xc,yc);
+  end
+
+  else
+  if pos('No',stackmenu1.manual_centering1.text)<>0 then {no centering}
+  begin
+    xc:=startX;{0..head.width-1}
+    yc:=startY;
+  end
+  else {star alignment}
+  HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
+
+
+  if hfd2<90 then {detected something}
+  begin
+    shape_fitsX:=xc+1;{calculate fits positions}
+    shape_fitsY:=yc+1;
+    result:=true;
+  end;
+end;
+
+
 procedure Tmainwindow.Image1MouseDown(Sender: TObject; Button: TMouseButton;
   Shift: TShiftState; X, Y: Integer);
 var
@@ -13057,35 +13108,8 @@ begin
   {for manual alignment and photometry}
   if  ((stackmenu1.pagecontrol1.tabindex=0) and (stackmenu1.use_manual_alignment1.checked) and (pos('S',head.calstat)=0 {ignore stacked images unless callled from listview1. See doubleclick listview1} )) then
   begin
-    if pos('small',stackmenu1.manual_centering1.text)<>0 then {comet}
+    if find_reference_star(img_loaded) then
     begin
-      find_highest_pixel_value(img_loaded,10,startX,startY,xc,yc);
-    end
-    else
-    if pos('medium',stackmenu1.manual_centering1.text)<>0 then {comet}
-    begin
-      find_highest_pixel_value(img_loaded,20,startX,startY,xc,yc);
-    end
-    else
-    if pos('large',stackmenu1.manual_centering1.text)<>0 then {comet}
-    begin
-      find_highest_pixel_value(img_loaded,30,startX,startY,xc,yc);
-    end
-
-    else
-    if pos('No',stackmenu1.manual_centering1.text)<>0 then {no centering}
-    begin
-      xc:=startX;{0..head.width-1}
-      yc:=startY;
-    end
-    else {star alignment}
-    HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
-
-
-    if hfd2<90 then {detected something}
-    begin
-      shape_fitsX:=xc+1;{calculate fits positions}
-      shape_fitsY:=yc+1;
       if snr>5 then shapetype:=1 {circle} else shapetype:=0;{square}
       listview_add_xy(shape_fitsX,shape_fitsY);{add to list of listview1}
       show_marker_shape(mainwindow.shape_manual_alignment1,shapetype,20,20,10{minimum},shape_fitsX, shape_fitsY);
@@ -14589,6 +14613,8 @@ begin
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
+
+
 
 
 procedure Tmainwindow.set_modified_date1Click(Sender: TObject);

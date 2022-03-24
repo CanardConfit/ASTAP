@@ -1,5 +1,5 @@
 object stackmenu1: Tstackmenu1
-  Left = 40
+  Left = 654
   Height = 712
   Top = 116
   Width = 1721
@@ -7119,8 +7119,8 @@ object stackmenu1: Tstackmenu1
   end
   object OpenDialog1: TOpenDialog
     Title = 'Open an existing file'
-    Left = 392
-    Top = 592
+    Left = 96
+    Top = 600
   end
   object ImageList2: TImageList
     Left = 1336
@@ -7931,6 +7931,7 @@ object stackmenu1: Tstackmenu1
   end
   object PopupMenu1: TPopupMenu
     Images = ImageList2
+    OnPopup = PopupMenu1Popup
     Left = 464
     Top = 592
     object Viewimage1: TMenuItem
@@ -8002,6 +8003,14 @@ object stackmenu1: Tstackmenu1
         Hint = 'This allows to split an image series in groups of similar observation time.'
         OnClick = extend_object_name_with_time_observation1Click
       end
+    end
+    object MenuItem33: TMenuItem
+      Caption = '-'
+    end
+    object auto_select1: TMenuItem
+      Caption = 'Auto alignment star for selected images'
+      Hint = 'For manual alignment, This will auto select automatic the alignment star in all selected images based on the star selected in the first image '
+      OnClick = auto_select1Click
     end
     object MenuItem2: TMenuItem
       Caption = '-'
