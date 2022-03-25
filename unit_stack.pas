@@ -7514,6 +7514,9 @@ begin
             {$endif}
             memo2_message(filename2+ ' lock');{for manual alignment}
             someresult:=true;
+
+            startX:=round(shape_fitsx-1);{follow star movement for next image}
+            startY:=round(shape_fitsY-1);
           end;
           application.processmessages;
           if esc_pressed then break;

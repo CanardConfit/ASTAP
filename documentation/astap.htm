@@ -982,10 +982,9 @@ images have poor borders, set option crop images larger then 0%.</big></li><li><
               <br>
             </span></span>For
           alignment there are four options, internal star alignment,
-          &nbsp;native astrometric solver, <a href="manual_alignment">manual alignment</a> or <a href="ephemeris_alignment">ephemeris alignment</a>. For mosaic building you have to use
+          &nbsp;native astrometric solver, <a href="#manual_alignment">manual alignment</a> or <a href="#ephemeris_alignment">ephemeris alignment</a>. For mosaic building you have to use
           the
-          internal astrometric solver.<br>
-          <br>
+          internal astrometric solver.<br><br><br>
         </big><big><br>
         </big><big><span style="text-decoration: underline; font-weight: bold;">&nbsp;<a name="internal_alignment"></a></span><span style="text-decoration: underline;">Internal star alignment</span><span style="text-decoration: underline; font-weight: bold;"><br>
             <br>
@@ -1146,7 +1145,13 @@ does
           <br><br>
           For objects which are moving in the sky, select the stack
           option
-          "average" and not option "sigma clip".<br><br></big><big><img style="width: 1036px; height: 591px;" alt="" src="astap_manual_alignment.png"><br><br><span style="text-decoration: underline;"><a name="ephemeris_alignment"></a>Ephemeris alignment<br><br></span>Rather
+          "average" and not option "sigma clip".<br><br></big><big>For manual alignment there is a option in the popup menu of tab light to select the next alignment stars automatically:<br><br></big><ul><li>Select an alignment star in the first image.</li><li>Select all images in tab lights.</li><li>Select in the popup menu of tab lights "Auto alignment star for selected images"</li><li>If
+it stops halfway, then is doesn't lock on that image star halfway.
+Select manually in that image the same star and try again or continue
+with next images.</li></ul>
+    
+    
+    <div style="margin-left: 40px;"><br></div><big><br></big><big><img style="width: 1036px; height: 591px;" alt="" src="astap_manual_alignment.png"><br><br><span style="text-decoration: underline;"><a name="ephemeris_alignment"></a>Ephemeris alignment<br><br></span>Rather
 then manual selecting the reference point&nbsp;it is also possible to use the
 ephemeris of an asteroid or comet. </big><big>To align by ephemerides go through the follow steps:<br><br>Preperation:&nbsp; &nbsp;<br></big><ul><li><big>Configure and test the viewer&nbsp;<a href="#asteroid_annotation">asteroid annotation menu</a> shortcut CTRL+Q</big></li></ul><big>Stacking:<br></big><ul><li><big>Select&nbsp;ephemeris alignment</big></li><li><big>Browse for all the images in the image tab and add if available the dark, flats.</big></li><li><big>Press the button </big><span style="background-color: rgb(153, 153, 153);"><big> &nbsp; Analyse the selected file in tab images</big> &nbsp;</span>.</li><li><big>Select from the&nbsp;combobox the asteroid or comet to align on. See screenshot below.</big></li><li><big>Hit the </big><span style="background-color: rgb(153, 153, 153);"><big> &nbsp;Stack check marked images</big>&nbsp;&nbsp;</span><big> button.&nbsp;</big></li><li><big>After the stacking is finished, it is possible to annotate the result. &nbsp;</big></li></ul><br><big>Only the solar object&nbsp;selected will be sharp. The stars will form trails <br><br></big><img style="width: 1505px; height: 615px;" alt="" src="astap_ephemeris_alignment.png"><br>
       </div>
