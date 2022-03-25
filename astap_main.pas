@@ -12806,34 +12806,29 @@ begin
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
-    try { Do some lengthy operation }
-       with OpenDialog1.Files do
-       for i := 0 to Count - 1 do
-       begin
-         filename2:=Strings[i];
-         {load fits}
-         Application.ProcessMessages;
-         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded)=false)) then begin break;end;
+    with OpenDialog1.Files do
+    for i := 0 to Count - 1 do
+    begin
+      filename2:=Strings[i];
+      {load fits}
+      Application.ProcessMessages;
+      if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded)=false)) then begin break;end;
 
-         if sender=mainwindow.batch_rotate_left1 then
-            rotate_arbitrary(90) else
-         if sender=mainwindow.batch_rotate_right1 then
-            rotate_arbitrary(-90) else
-         if sender=mainwindow.batch_rotate_1801   then
-            rotate_arbitrary(180);
+      if sender=mainwindow.batch_rotate_left1 then
+         rotate_arbitrary(90) else
+      if sender=mainwindow.batch_rotate_right1 then
+         rotate_arbitrary(-90) else
+      if sender=mainwindow.batch_rotate_1801   then
+         rotate_arbitrary(180);
 
-         if fits_file_name(filename2) then
-           success:=save_fits(img_loaded,filename2,nrbits,true)
-         else
-           success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
-         if success=false then begin ShowMessage('Write error !!' + filename2);break; end;
-
-      end;
-      finally
-      if dobackup then restore_img;{for the viewer}
-
-      Screen.Cursor := Save_Cursor; exit;
+      if fits_file_name(filename2) then
+        success:=save_fits(img_loaded,filename2,nrbits,true)
+      else
+        success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
+      if success=false then begin ShowMessage('Write error !!' + filename2);break; end;
     end;
+    if dobackup then restore_img;{for the viewer}
+    Screen.Cursor := Save_Cursor; exit;
   end;
 end;
 
