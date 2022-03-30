@@ -128,6 +128,34 @@ begin
 end;
 
 
+//function calculate_Earth_vector(mjd : double; out PV_earth: PV_array): integer;// PV_earth vector contains X,Y,Z in AU and XV,YV, ZV speeds in AU/day
+//Const
+//  TAU=499.004782;
+//var
+//  R : double;
+//  PH, VH, PB, VB : PH_array;
+//begin
+//  if ((mjd>88070) {>year 2100} or (mjd<15021 {<year 1900})) then {calculate_Earth_Moon_Barycentre_vector outside years 1900 to 2100. This is valid from 1000 to 3000}
+//  begin                                                         //The barycenter is located on average 4,671 km (2,902 mi) from Earth's center. This gives a small error}
+//    sla_PLANET(mjd,3, {out} PV_earth, result {error});
+
+//  end
+//  else
+//  begin {high accuracy routine for year 1900 to 2100}
+//    sla_EPV (mjd, PH, VH{, PB, VB });{high accuracy for years 1900 to 2100}
+//    PV_earth[1]:=PH[1]; {x position}
+//    PV_earth[2]:=PH[2]; {y position}
+//    PV_earth[3]:=PH[3]; {z position}
+//    PV_earth[4]:=VH[1]/(24*3600); {Convert velocity VH to  AU per second}
+//    PV_earth[5]:=VH[2]/(24*3600);
+//    PV_earth[6]:=VH[3]/(24*3600);
+//  end;
+
+//  R:=sqrt(sqr(PV_earth[1])+sqr(PV_earth[2])+sqr(PV_earth[3]));{Earth Sun distance}
+//  if ((R>0.9) and (R<1.1)) then result:=0 else result:=99; {Earth at one AU distance?}
+//end;
+
+
 procedure parallax_xyz(wtime,latitude : double;var x,y,z: double);  {X,Y,Z in AU, parallax can be 8.8 arcsec  per au distance. See new meeus page 78}
 const
   AE=149597870.700; {ae has been fixed to the value 149597870.700 km as adopted by the International Astronomical Union in 2012.  Note average earth distance is 149597870.662 * 1.000001018 see meeus new 379}

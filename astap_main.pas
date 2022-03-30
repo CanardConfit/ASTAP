@@ -770,6 +770,7 @@ function fits_file_name(inp : string): boolean; {fits file name?}
 function fits_tiff_file_name(inp : string): boolean; {fits or tiff file name?}
 function tiff_file_name(inp : string): boolean; {tiff file name?}
 function prepare_IAU_designation(rax,decx :double):string;{radialen to text hhmmss.s+ddmmss  format}
+procedure coordinates_to_celestial(fitsx,fitsy : double; head: Theader; out ram,decm  : double); {fitsX, Y to ra,dec}
 procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; out  ram,decm  : double {fitsX, Y to ra,dec});
 procedure celestial_to_pixel(ra_t,dec_t: double; out fitsX,fitsY: double);{ra,dec to fitsX,fitsY}
 procedure show_shape_manual_alignment(index: integer);{show the marker on the reference star}
@@ -1246,6 +1247,7 @@ begin
           head.date_obs:=JdToDate(jd2);
         end;
 
+
         if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
                 head.date_obs:=get_string;
 
@@ -1329,7 +1331,8 @@ begin
               else {for older MaximDL5}
               if ((header[i+5]='A') and (header[i+6]='L') and (centalt='')) then centalt:=get_as_string {universal for string and floats}
               else {for older MaximDL5}
-              if ((header[i+5]='A') and (header[i+6]='Z')and (centaz='')) then centaz:=get_as_string; {universal for string and floats}
+              if ((header[i+5]='A') and (header[i+6]='Z')and (centaz='')) then
+                                   centaz:=get_as_string; {universal for string and floats}
             end;
 
             if ((header[i+3]='E') and (header[i+4]='C') and (header[i+5]='T')) then {OBJECT}
@@ -3169,7 +3172,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.03.24, '+about_message4+
+  'ASTAP version 2022.03.30, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -3781,6 +3784,7 @@ begin
   end;
 end;
 
+
 function decode_string(data0: string; out ra4,dec4 : double):boolean;{convert a string to position}
 var
   error1,error2,degrees   : boolean;
@@ -3802,7 +3806,7 @@ begin
 
   if ((data0='c') or (data0='C')) then {place marker in middle}
   begin
-    sensor_coordinates_to_celestial(head.width/2,head.height/2,ra4,dec4);{calculate the center position also for solutions with the reference pixel somewhere else}
+    sensor_coordinates_to_celestial((head.width+1)/2,(head.height+1)/2,ra4,dec4);{calculate the center position also for solutions with the reference pixel somewhere else}
     error1:=false;
     error2:=false;
     data1:='Center image '; {for hint}
@@ -4664,6 +4668,7 @@ begin
         if ((delta>0.00000001){not the same} and (delta<minstep)) then minstep:=delta;
       end;
     end;{filter outliers}
+
     median:=smedian(median_array,counter_median);
     total_flux:=total_flux-counter*median; {total flux above background}
 
@@ -7405,7 +7410,6 @@ begin
   {old routine}	    obscode:=initstring.Values['obscode']; {photometry}
   {old routine}	    delim_pos:=get_int2(0,'delim_pos');
   {old routine}
-  {old routine}	    stackmenu1.equinox1.itemindex:=get_int2(stackmenu1.equinox1.itemindex,'equinox');
   {old routine}	    stackmenu1.mount_write_wcs1.Checked:=get_boolean('wcs',true);{use wcs files for mount}
   {old routine}
   {old routine}	    c:=0;
@@ -7782,7 +7786,6 @@ begin
 
       c:=Sett.ReadInteger('stack','sample_size',987654321);if c<>987654321 then stackmenu1.sample_size1.itemindex:=c;
 
-      stackmenu1.equinox1.itemindex:=Sett.ReadInteger('stack','equinox',987654321);if c<>987654321 then stackmenu1.equinox1.itemindex:=c;
       stackmenu1.mount_write_wcs1.Checked:=Sett.ReadBool('stack','wcs',true);{use wcs files for mount}
 
       obscode:=Sett.ReadString('stack','obscode',''); {photometry}
@@ -8132,7 +8135,6 @@ begin
       sett.writestring('stack','obscode',obscode);
       sett.writeInteger('stack','delim_pos',delim_pos);
 
-      sett.writeInteger('stack','equinox',stackmenu1.equinox1.itemindex);
       sett.writeBool('stack','wcs',stackmenu1.mount_write_wcs1.Checked);{uses wcs file for menu mount}
 
       sett.writestring('live','live_stack_dir',stackmenu1.live_stacking_path1.caption);{live stacking}
@@ -10234,7 +10236,7 @@ end;
 procedure QuickSort(var A: array of double; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi}
 var
   Lo, Hi : integer;
-  Pivot, T: double;{ pivot, T, T2 are the same type as the elements of array }
+  Pivot, T: double;{ pivot, T are the same type as the elements of array }
 begin
   Lo := iLo;
   Hi := iHi;
@@ -10256,27 +10258,25 @@ begin
 end;
 
 
-function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
+function SMedian(list: array of double; leng: integer): double;{get median of an array of double}
 var
   mid : integer;
 begin
- if leng=0 then result:=nan
- else
-   if leng=1 then result:=list[0]
-   else
-   begin
-     quickSort(list,0,leng-1);
-     mid := (leng-1) div 2; //(high(list) - low(list)) div 2;
-     if Odd(leng) then
-     begin
-       if leng<=3 then  result:=list[mid]
-       else
-       begin
-         result:=(list[mid-1]+list[mid]+list[mid+1])/3;
-       end;
-     end
-     else
-     result:=(list[mid]+list[mid+1])/2;
+  if leng=0 then result:=nan
+  else
+    if leng=1 then result:=list[0]
+    else
+    begin
+      quickSort(list,0,leng-1);
+      mid := (leng-1) div 2; //(high(list) - low(list)) div 2;
+      if Odd(leng) then
+      begin
+        if leng<=3 then result:=list[mid]
+        else
+        result:=(list[mid-1]+list[mid]+list[mid+1])/3;
+      end
+      else
+      result:=(list[mid]+list[mid+1])/2;
   end;
 end;
 
@@ -12283,7 +12283,20 @@ begin
 end;
 
 
-procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; out ram,decm  : double {fitsX, Y to ra,dec});
+procedure coordinates_to_celestial(fitsx,fitsy : double; head: Theader; out ram,decm  : double) {fitsX, Y to ra,dec};
+var
+  dRa,dDec,delta,gamma  : double;
+begin
+  dRa :=(head.cd1_1*(fitsx-head.crpix1)+head.cd1_2*(fitsy-head.crpix2))*pi/180;
+  dDec:=(head.cd2_1*(fitsx-head.crpix1)+head.cd2_2*(fitsy-head.crpix2))*pi/180;
+  delta:=cos(head.dec0)-dDec*sin(head.dec0);
+  gamma:=sqrt(dRa*dRa+delta*delta);
+  ram:=head.ra0+arctan2(Dra,delta); {arctan2 is required for images containing celestial pole}
+  decm:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
+end;
+
+
+procedure sensor_coordinates_to_celestial(fitsx,fitsy : double; out ram,decm  : double) {fitsX, Y to ra,dec};
 var
    fits_unsampledX, fits_unsampledY :double;
    u,v,u2,v2             : double;
@@ -12316,25 +12329,18 @@ begin
      dDec:=(head.cd2_1*(u2)+head.cd2_2*(v2))*pi/180;
      delta:=cos(head.dec0)-dDec*sin(head.dec0);
      gamma:=sqrt(dRa*dRa+delta*delta);
-
+     decm:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
      ram:=head.ra0+arctan2(Dra,delta); {atan2 is required for images containing celestial pole}
      if ram<0 then ram:=ram+2*pi;
      if ram>pi*2 then ram:=ram-pi*2;
-     decm:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
    end
    else
    begin  {mainwindow.Polynomial1.itemindex=0}
      if head.cd1_1<>0 then
      begin
-       dRa :=(head.cd1_1*(fitsx-head.crpix1)+head.cd1_2*(fitsy-head.crpix2))*pi/180;
-       dDec:=(head.cd2_1*(fitsx-head.crpix1)+head.cd2_2*(fitsy-head.crpix2))*pi/180;
-       delta:=cos(head.dec0)-dDec*sin(head.dec0);
-       gamma:=sqrt(dRa*dRa+delta*delta);
-
-       ram:=head.ra0+arctan2(Dra,delta); {arctan2 is required for images containing celestial pole}
+       coordinates_to_celestial(fitsx,fitsy, head, ram,decm) {fitsX, Y to ra,dec};
        if ram<0 then ram:=ram+2*pi;
        if ram>pi*2 then ram:=ram-pi*2;
-       decm:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
      end;
    end;
  end;{WCS solution}

@@ -92,7 +92,6 @@ type
     lrgb_smart_smooth_width1: TComboBox;
     lrgb_preserve_r_nebula1: TCheckBox;
     preserve_red_nebula1: TCheckBox;
-    equinox1: TComboBox;
     add_valueB1: TEdit;
     add_valueG1: TEdit;
     add_valueR1: TEdit;
@@ -614,7 +613,6 @@ type
     procedure browse_monitoring1Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure calibrate_prior_solving1Change(Sender: TObject);
-    procedure equinox1Change(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure help_monitoring1Click(Sender: TObject);
     procedure help_mount_tab1Click(Sender: TObject);
@@ -1011,7 +1009,7 @@ const
   P_airmass=21;
   P_nr=22;{number of fields}
 
-  M_exposure=0;  {blink}
+  M_exposure=0;  {mount analyse}
   M_temperature=1;
   M_binning=2;
   M_width=3;
@@ -1019,15 +1017,27 @@ const
   M_type=5;
   M_date=6;
   M_jd_mid=7;
+
   M_ra=8;
   M_dec=9;
+
   M_ra_m=10;
   M_dec_m=11;
+
   M_ra_e=12;
   M_dec_e=13;
-  M_centalt=14;
-  M_foctemp=15;
-  M_nr=16;{number of fields}
+
+  M_ra_jnow=14;
+  M_dec_jnow=15;
+
+  M_ra_m_jnow=16;
+  M_dec_m_jnow=17;
+
+  M_centalt=18;
+  M_centaz=19;
+  M_crota_jnow=20;
+  M_foctemp=21;
+  M_nr=22;{number of fields}
 
 
   icon_thumb_down=8; {image index for outlier}
@@ -1040,7 +1050,7 @@ implementation
 
 uses
   unit_image_sharpness, unit_ephemerides, unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd,
-  unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_aavso,unit_raster_rotate, unit_listbox;
+  unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_aavso,unit_raster_rotate, unit_listbox,unit_aberration;
 
 
 type
@@ -1744,7 +1754,7 @@ end;
 procedure analyse_tab_lights(full : boolean);
 var
   c,hfd_counter  ,i,counts          : integer;
-  backgr, hfd_median,alt            : double;
+  backgr, hfd_median,alt,az         : double;
   Save_Cursor                       : TCursor;
   green,blue,planetary              : boolean;
   key,filename1,rawstr              : string;
@@ -1930,11 +1940,18 @@ begin
                 else
                 if head_2.gain<>'' then ListView1.Items.item[c].subitems.Strings[L_gain]:=head_2.gain;
 
-                alt:=calculate_altitude(0 {can use header. Astrometric_to_apparent},head_2.ra0,head_2.dec0);{convert centalt string to double or calculate altitude from observer location}
 
-                if alt<>0 then
-                           ListView1.Items.item[c].subitems.Strings[L_centalt]:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
+                if centalt='' then
+                begin
+                  calculate_az_alt(0 {try to use header values} ,head_2,{out}az,alt);
+                  if alt<>0 then
+                  begin
+                    centalt:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
+                    centaz:=floattostrf(az,ffgeneral, 3, 1); {azimuth}
+                  end;
+                end;
 
+                ListView1.Items.item[c].subitems.Strings[L_centalt]:=centalt;
                 ListView1.Items.item[c].subitems.Strings[L_centaz]:=centaz;
                 ListView1.Items.item[c].subitems.Strings[L_sqm]:=sqm_value;
 
@@ -3214,8 +3231,8 @@ procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse
 // amode=3 ==> full header. load image  force reanalyse
 // amode=4 ==> full header. load image
 var
-  c,counts,i,iterations, hfd_counter,theindex : integer;
-  backgr, hfd_median, hjd,sd, dummy,alt,ra_image,dec_image : double;
+  c,counts,i,iterations, hfd_counter                          : integer;
+  backgr, hfd_median, hjd,sd, dummy,alt,az,ra_jnow,dec_jnow,ra_mount_jnow, dec_mount_jnow,ram,decm: double;
   filename1                        : string;
   Save_Cursor                      : TCursor;
   loaded, green,blue               : boolean;
@@ -3376,12 +3393,13 @@ begin
               hjd:=JD_to_HJD(jd_mid,head_2.ra0,head_2.dec0);{conversion JD to HJD}
               lv.Items.item[c].subitems.Strings[P_jd_helio]:=floattostrF(Hjd,ffFixed,0,5);{helio julian day}
 
-              alt:=calculate_altitude(0 {can use header CENT_ALT. Astrometric_to_apparent},head_2.ra0,head_2.dec0);{convert centalt string to double or calculate altitude from observer location}
-              if alt<>0 then
-              begin
-                lv.Items.item[c].subitems.Strings[P_centalt]:=floattostrf(alt,ffFixed, 0, 1); {altitude}
-                lv.Items.item[c].subitems.Strings[P_airmass]:=floattostrf(AirMass_calc(alt),ffFixed, 0,3); {airmass}
-              end;
+
+              calculate_az_alt(0 {try to use header values} ,head_2,{out}az,alt); {try to get  a value for alt}
+              if ((centalt='') and (alt<>0)) then
+                  centalt:=floattostrf(alt,ffGeneral, 3, 1); {altitude}
+
+              lv.Items.item[c].subitems.Strings[P_centalt]:=centalt; {altitude}
+              if alt<>0 then lv.Items.item[c].subitems.Strings[P_airmass]:=floattostrf(AirMass_calc(alt),ffFixed, 0,3); {airmass}
 
               {magn is column 9 will be added separately}
               {solution is column 12 will be added separately}
@@ -3462,11 +3480,8 @@ begin
 
               lv.Items.item[c].subitems.Strings[M_jd_mid]:=floattostrF(jd_mid,ffFixed,0,7);{julian day}
 
-              theindex:=stackmenu1.equinox1.itemindex;
               if ra_mount<99 then {mount position known and specified}
               begin
-                if theindex>=1 then
-                  precession3(2451545 {J2000}, jd_mid,ra_mount,dec_mount); {precession}
                 if stackmenu1.hours_and_minutes1.checked then
                 begin
                   lv.Items.item[c].subitems.Strings[M_ra_m]:=prepare_ra8(ra_mount,':'); {radialen to text, format 24: 00 00.00 }
@@ -3477,42 +3492,38 @@ begin
                   lv.Items.item[c].subitems.Strings[M_ra_m]:=floattostrf(ra_mount*180/pi,ffFixed, 9, 6);
                   lv.Items.item[c].subitems.Strings[M_dec_m]:=floattostrf(dec_mount*180/pi,ffFixed, 9, 6);
                   end;
+
+                if jd_mid>2400000 then {valid JD}
+                begin
+                  ra_mount_jnow:=ra_mount;
+                  dec_mount_jnow:=dec_mount;
+                  precession3(2451545 {J2000},jd_mid,ra_mount_jnow,dec_mount_jnow); {precession, from J2000 to Jnow}
+                  nutation_aberration_correction_equatorial_classic(jd_mid,ra_mount_jnow,dec_mount_jnow);{Input mean equinox. M&P page 208}
+
+                  lv.Items.item[c].subitems.Strings[M_ra_m_jnow]:=floattostrf(ra_mount_jnow*180/pi,ffFixed, 9, 6);
+                  lv.Items.item[c].subitems.Strings[M_dec_m_jnow]:=floattostrf(dec_mount_jnow*180/pi,ffFixed, 9, 6);
+                end;
               end;
 
               if head_2.cd1_1<>0 then
               begin
-                ra_image:=head_2.ra0;{J2000 apparent from image solution}
-                dec_image:=head_2.dec0;
-                if theindex=1 then
-                begin
-                  alt:=calculate_altitude(3 {no refraction correction},head_2.ra0,head_2.dec0);{convert centalt string to double or calculate altitude from observer location}
-                  ra_image:=ra_mean;{precession was applied by calculate altitude routine}
-                  dec_image:=dec_mean;
-                end;
-                if theindex=2 then
-                begin
-                  alt:=calculate_altitude(4 {apparent to astrometric !!!!},head_2.ra0,head_2.dec0);{convert centalt string to double or calculate altitude from observer location}
-                  ra_image:=ra_mean;{precession was applied by calculate altitude routine}
-                  dec_image:=dec_mean;
-                end;
-                if alt<>0 then
-                  lv.Items.item[c].subitems.Strings[M_centalt]:=floattostrf(alt,ffFixed, 3, 1); {altitude}
 
                 if stackmenu1.hours_and_minutes1.checked then
                 begin
-                  lv.Items.item[c].subitems.Strings[M_ra]:=prepare_ra8(ra_image,':'); {radialen to text, format 24: 00 00.00 }
-                  lv.Items.item[c].subitems.Strings[M_dec]:=prepare_dec2(dec_image,':');{radialen to text, format 90d 00 00.1}
+                  lv.Items.item[c].subitems.Strings[M_ra]:=prepare_ra8(head_2.ra0,':'); {radialen to text, format 24: 00 00.00 }
+                  lv.Items.item[c].subitems.Strings[M_dec]:=prepare_dec2(head_2.dec0,':');{radialen to text, format 90d 00 00.1}
                 end
                 else
                 begin
-                  lv.Items.item[c].subitems.Strings[M_ra]:=floattostrf(ra_image*180/pi,ffFixed, 9, 6);
-                  lv.Items.item[c].subitems.Strings[M_dec]:=floattostrf(dec_image*180/pi,ffFixed, 9, 6);
+                  lv.Items.item[c].subitems.Strings[M_ra]:=floattostrf(head_2.ra0*180/pi,ffFixed, 9, 6);
+                  lv.Items.item[c].subitems.Strings[M_dec]:=floattostrf(head_2.dec0*180/pi,ffFixed, 9, 6);
                 end;
+
 
                 if ra_mount<99 then {mount position known and specified}
                 begin
-                  lv.Items.item[c].subitems.Strings[M_ra_e]:=floattostrf((ra_image-ra_mount)*cos(dec_image)*3600*180/pi,ffFixed, 6,1);
-                  lv.Items.item[c].subitems.Strings[M_dec_e]:=floattostrf((dec_image-dec_mount)*3600*180/pi,ffFixed, 6,1);
+                  lv.Items.item[c].subitems.Strings[M_ra_e]:=floattostrf((head_2.ra0-ra_mount)*cos(head_2.dec0)*3600*180/pi,ffFixed, 6,1);
+                  lv.Items.item[c].subitems.Strings[M_dec_e]:=floattostrf((head_2.dec0-dec_mount)*3600*180/pi,ffFixed, 6,1);
                 end
                 else
                 begin
@@ -3520,7 +3531,32 @@ begin
                  lv.Items.item[c].subitems.Strings[M_dec_e]:='?';
                 end;
 
+                ra_jnow:=head_2.ra0;{J2000 apparent from image solution}
+                dec_jnow:=head_2.dec0;
+                if jd_mid>2400000 then {valid JD}
+                begin
+                  precession3(2451545 {J2000},jd_mid,ra_jnow,dec_jnow); {precession, from J2000 to Jnow}
+                  nutation_aberration_correction_equatorial_classic(jd_mid,ra_jnow,dec_jnow);{Input mean equinox.  M&P page 208}
+
+                  lv.Items.item[c].subitems.Strings[M_ra_jnow]:=floattostrf(ra_jnow*180/pi,ffFixed, 9, 6);
+                  lv.Items.item[c].subitems.Strings[M_dec_jnow]:=floattostrf(dec_jnow*180/pi,ffFixed, 9, 6);
+
+                  calculate_az_alt(1 {force calculation from ra, dec},head_2,{out}az,alt); {call it with J2000 values. Precession will be applied in the routine}
+                  if alt<>0 then
+                  begin
+                    centalt:=floattostrf(alt,ffFixed, 9, 6); {altitude}
+                    centaz:=floattostrf(az,ffFixed, 9, 6); {azimuth}
+                  end;
+                  lv.Items.item[c].subitems.Strings[M_centalt]:=centalt;
+                  lv.Items.item[c].subitems.Strings[M_centaz]:=centaz;
+                end;
+
                 if focus_temp<>999 then Lv.Items.item[c].subitems.Strings[M_foctemp]:=floattostrF(focus_temp,ffFixed,0,1);
+
+                coordinates_to_celestial(head_2.crpix1,head_2.crpix2+1, head_2, ram,decm) {fitsX, Y to ra,dec};
+                precession3(2451545 {J2000},jd_mid,ram,decm); {precession, from J2000 to Jnow}
+                nutation_aberration_correction_equatorial_classic(jd_mid,ram,decm);{Input mean equinox.  M&P page 208}
+                lv.Items.item[c].subitems.Strings[M_crota_jnow]:=floattostrf(arctan2( (ram-ra_jnow)*cos(dec_jnow),decm-dec_jnow)*180/pi,ffFixed, 7, 4);
 
               end;
 
@@ -7442,15 +7478,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.equinox1Change(Sender: TObject);
-begin
-  case equinox1.itemindex of
-    0 : listview9.column[9].caption:='α [°] J2000';
-    1 : listview9.column[9].caption:='α [°] mean';
-  end;
-end;
-
-
 procedure Tstackmenu1.FormDestroy(Sender: TObject);
 begin
   bsolutions:=nil;{just to be sure to clean up}
@@ -7698,11 +7725,6 @@ begin
 
   esc_pressed:=false;
 
-  if stackmenu1.equinox1.itemindex=0 then
-  begin
-    stackmenu1.equinox1.itemindex:=1;{jnow}
-    memo2_message('Switched to "Mean equinox of date (in air)" mode. You could switch to "Mean equinox of date (in vacuum)"');
-  end;
   stackmenu1.mount_add_solutions1Click(nil);{add any missing solutions and analyse after that}
 
   counter:=0;
@@ -7710,7 +7732,7 @@ begin
   with stackmenu1 do
   for c:=0 to listview9.items.count-1 do {check for astrometric solutions}
   begin
-    if ((esc_pressed=false) and (listview9.Items.item[c].checked) and (listview9.Items.item[c].subitems.Strings[M_ra]<>''))  then
+    if ((esc_pressed=false) and (listview9.Items.item[c].checked) and (listview9.Items.item[c].subitems.Strings[M_ra_jnow]<>''))  then
     begin
       filename2:=listview9.items[c].caption;
 
@@ -7725,20 +7747,20 @@ begin
 
       if counter=0 then
       begin
-        ra1:=strtofloat(listview9.Items.item[c].subitems.Strings[M_ra])*pi/180;
-        dec1:=strtofloat(listview9.Items.item[c].subitems.Strings[M_dec])*pi/180;
-        ra1_mount:=strtofloat(listview9.Items.item[c].subitems.Strings[M_ra_m])*pi/180;
-        dec1_mount:=strtofloat(listview9.Items.item[c].subitems.Strings[M_dec_m])*pi/180;
+        ra1:=strtofloat(listview9.Items.item[c].subitems.Strings[M_ra_jnow])*pi/180;
+        dec1:=strtofloat(listview9.Items.item[c].subitems.Strings[M_dec_jnow])*pi/180;
+        ra1_mount:=strtofloat(listview9.Items.item[c].subitems.Strings[M_ra_m_jnow])*pi/180;
+        dec1_mount:=strtofloat(listview9.Items.item[c].subitems.Strings[M_dec_m_jnow])*pi/180;
         jd1:=strtofloat(listview9.Items.item[c].subitems.Strings[M_jd_mid]);
         memo2_message('Image 1: '+filename2);
         inc(counter);
       end
       else
       begin
-        ra2:=strtofloat(listview9.Items.item[c].subitems.Strings[M_ra])*pi/180;
-        dec2:=strtofloat(listview9.Items.item[c].subitems.Strings[M_dec])*pi/180;
-        ra2_mount:=strtofloat(listview9.Items.item[c].subitems.Strings[M_ra_m])*pi/180;
-        dec2_mount:=strtofloat(listview9.Items.item[c].subitems.Strings[M_dec_m])*pi/180;
+        ra2:=strtofloat(listview9.Items.item[c].subitems.Strings[M_ra_jnow])*pi/180;
+        dec2:=strtofloat(listview9.Items.item[c].subitems.Strings[M_dec_jnow])*pi/180;
+        ra2_mount:=strtofloat(listview9.Items.item[c].subitems.Strings[M_ra_m_jnow])*pi/180;
+        dec2_mount:=strtofloat(listview9.Items.item[c].subitems.Strings[M_dec_m_jnow])*pi/180;
         jd2:=strtofloat(listview9.Items.item[c].subitems.Strings[M_jd_mid]);
         ang_sep(ra1,dec1,ra2,dec2, {out}sep);{calculates angular separation. according formula 9.1 old Meeus or 16.1 new Meeus, version 2018-5-23}
         if sep>5*pi/180 then
@@ -7779,6 +7801,7 @@ begin
   stackmenu1.mount_analyse1Click(nil);{update}
 end;
 
+
 procedure Tstackmenu1.monitor_action1Change(Sender: TObject);
 begin
   target_group1.enabled:=stackmenu1.monitor_action1.itemindex=4;
@@ -7789,7 +7812,6 @@ procedure Tstackmenu1.mount_analyse1Click(Sender: TObject);
 begin
   save_settings2;{too many lost selected files . so first save settings}
   analyse_listview(listview9,true {light},false {full fits},true{refresh});
-  stackmenu1.equinox1Change(nil);{update column}
 end;
 
 

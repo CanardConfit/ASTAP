@@ -80,8 +80,8 @@ var
 
 function calculate_sqm(get_bk,get_his : boolean; pedestal2 : integer) : boolean; {calculate sky background value}
 var
-  airm, correction,alt : double;
-  bayer,form_exist  : boolean;
+  airm, correction,alt,az : double;
+  bayer,form_exist        : boolean;
 begin
 //  if ((bayerpat<>'') or (head.naxis3>1)) then {can not process colour or OSC images}
 //  begin
@@ -145,7 +145,7 @@ begin
     end;
 
     sqmfloat:=flux_magn_offset-ln((cblack-pedestal2)/sqr(head.cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
-    alt:=calculate_altitude(1 {astrometric_to_apparent_or_reverse},{var} head.ra0,head.dec0);{convert centalt string to double or calculate altitude from observer location}
+    calculate_az_alt(0 {try to use header values} ,head,{out}az,alt);
 
     centalt:=inttostr(round(alt));{for reporting in menu sqm1}
     if alt<>0 then

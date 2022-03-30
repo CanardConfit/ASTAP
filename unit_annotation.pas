@@ -1318,7 +1318,7 @@ type
      x1,y1,x2,y2 : integer;
   end;
 var
-  {fitsX,fitsY,}dra,ddec,delta,gamma, telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,length1,width1,pa,len,flipped,
+  dra,ddec, telescope_ra,telescope_dec,cos_telescope_dec,fov,ra2,dec2,length1,width1,pa,len,flipped,
   gx_orientation, delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,u0,v0 : double;
   name: string;
   flip_horizontal, flip_vertical: boolean;
@@ -1338,12 +1338,9 @@ begin
 
 
     {6. Passage (x,y) -> (RA,DEC) to find head.ra0,head.dec0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
-    dRa :=(head.cd1_1*((head.width/2)-head.crpix1)+head.cd1_2*((head.height/2)-head.crpix2))*pi/180; {also valid for case head.crpix1,head.crpix2 is not in the middle}
-    dDec:=(head.cd2_1*((head.width/2)-head.crpix1)+head.cd2_2*((head.height/2)-head.crpix2))*pi/180;
-    delta:=cos(head.dec0)-dDec*sin(head.dec0);
-    gamma:=sqrt(dRa*dRa+delta*delta);
-    telescope_ra:=head.ra0+arctan(Dra/delta);
-    telescope_dec:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
+    {find RA, DEC position of the middle of the image}
+    {FITS range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
+    coordinates_to_celestial((head.width+1)/2,(head.height+1)/2,head,telescope_ra,telescope_dec); {fitsX, Y to ra,dec} {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
     cos_telescope_dec:=cos(telescope_dec);
     fov:=1.5*sqrt(sqr(0.5*head.width*head.cdelt1)+sqr(0.5*head.height*head.cdelt2))*pi/180; {field of view with 50% extra}
@@ -1551,7 +1548,7 @@ end;
 
 procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 var
-  fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,ra2,dec2,
+  dra,ddec, telescope_ra,telescope_dec,fov,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,sep,det,SIN_dec_ref,COS_dec_ref,cv,fov_org,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,x,y,x2,y2,flux_snr_7,apert,xx,yy : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,count                          : integer;
@@ -1664,15 +1661,8 @@ begin
 
     bp_rp:=999;{not defined in mono versions of the database}
 
-    fitsX_middle:=(head.width+1)/2;{range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
-    fitsY_middle:=(head.height+1)/2;
-
-    dRa :=(head.cd1_1*(fitsx_middle-head.crpix1)+head.cd1_2*(fitsy_middle-head.crpix2))*pi/180;
-    dDec:=(head.cd2_1*(fitsx_middle-head.crpix1)+head.cd2_2*(fitsy_middle-head.crpix2))*pi/180;
-    delta:=cos(head.dec0)-dDec*sin(head.dec0);
-    gamma:=sqrt(dRa*dRa+delta*delta);
-    telescope_ra:=head.ra0+arctan(Dra/delta);
-    telescope_dec:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
+    {Fits range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
+    coordinates_to_celestial((head.width+1)/2,(head.height+1)/2,head,telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
     mainwindow.image1.Canvas.Pen.width :=1; // round(1+head.height/mainwindow.image1.height);{thickness lines}
     mainwindow.image1.canvas.pen.color:=$00B0FF ;{orange}
@@ -1939,7 +1929,7 @@ end;
 
 procedure measure_distortion(plot: boolean; out stars_measured : integer);{measure or plot distortion}
 var
-  fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
+  dra,ddec, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
   mag2,Bp_Rp, hfd1,star_fwhm,snr, flux, xc,yc,magn, delta_ra,det,SIN_dec_ref,COS_dec_ref,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,u0,v0,snr_min,x,y,x2,y2,astrometric_error,sep   : double;
   star_total_counter,len, max_nr_stars, area1,area2,area3,area4,nrstars_required2,i,sub_counter,scale,count    : integer;
@@ -2020,15 +2010,8 @@ begin
 
     bp_rp:=999;{not defined in mono versions of the database}
 
-    fitsX_middle:=(head.width+1)/2;{range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
-    fitsY_middle:=(head.height+1)/2;
-
-    dRa :=(head.cd1_1*(fitsx_middle-head.crpix1)+head.cd1_2*(fitsy_middle-head.crpix2))*pi/180;
-    dDec:=(head.cd2_1*(fitsx_middle-head.crpix1)+head.cd2_2*(fitsy_middle-head.crpix2))*pi/180;
-    delta:=cos(head.dec0)-dDec*sin(head.dec0);
-    gamma:=sqrt(dRa*dRa+delta*delta);
-    telescope_ra:=head.ra0+arctan(Dra/delta);
-    telescope_dec:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
+    {Fits range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
+    coordinates_to_celestial((head.width+1)/2,(head.height+1)/2,head,telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
     mainwindow.image1.Canvas.Pen.width :=1; // round(1+head.height/mainwindow.image1.height);{thickness lines}
     if sip=false then mainwindow.image1.canvas.pen.color:=$00B0FF {orange}
@@ -2194,7 +2177,7 @@ end;{measure distortion}
 
 procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the magnitude. For super nova and minor planet search}
 var
-  fitsX,fitsY, fitsX_middle, fitsY_middle, dra,ddec,delta,gamma, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
+  fitsX,fitsY, dra,ddec, telescope_ra,telescope_dec,fov,fov_org,ra2,dec2,
   mag2,Bp_Rp, delta_ra,det,SIN_dec_ref,COS_dec_ref,
   SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,frac1,frac2,frac3,frac4,sep      : double;
   x,y, max_nr_stars, area1,area2,area3,area4,count                                  : integer;
@@ -2232,15 +2215,9 @@ begin
 
     bp_rp:=999;{not defined in mono versions}
 
-    fitsX_middle:=(head.width+1)/2;{range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
-    fitsY_middle:=(head.height+1)/2;
-
-    dRa :=(head.cd1_1*(fitsx_middle-head.crpix1)+head.cd1_2*(fitsy_middle-head.crpix2))*pi/180;
-    dDec:=(head.cd2_1*(fitsx_middle-head.crpix1)+head.cd2_2*(fitsy_middle-head.crpix2))*pi/180;
-    delta:=cos(head.dec0)-dDec*sin(head.dec0);
-    gamma:=sqrt(dRa*dRa+delta*delta);
-    telescope_ra:=head.ra0+arctan(Dra/delta);
-    telescope_dec:=arctan((sin(head.dec0)+dDec*cos(head.dec0))/gamma);
+    {find middle of the image}
+    {Fits range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
+    coordinates_to_celestial((head.width+1)/2,(head.height+1)/2,head,telescope_ra,telescope_dec); {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
 
     if select_star_database(stackmenu1.star_database1.text,15 {neutral})=false then {sets file290 so do before fov selection}
     begin

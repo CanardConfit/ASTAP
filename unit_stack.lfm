@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 654
+  Left = 28
   Height = 712
-  Top = 116
+  Top = 123
   Width = 1721
   HorzScrollBar.Page = 1701
   VertScrollBar.Page = 558
@@ -4016,12 +4016,12 @@ object stackmenu1: Tstackmenu1
             Width = 100
           end        
           item
-            Caption = 'α [°]'
+            Caption = 'α 2000 [°]'
             MinWidth = 80
             Width = 80
           end        
           item
-            Caption = 'δ [°]'
+            Caption = 'δ 2000 [°]'
             MinWidth = 80
             Width = 80
           end        
@@ -4036,22 +4036,52 @@ object stackmenu1: Tstackmenu1
             Width = 80
           end        
           item
-            Caption = 'Δα ["] '
+            Caption = 'Δα 2000 ["] '
             MinWidth = 80
             Width = 80
           end        
           item
-            Caption = 'Δδ ["]'
+            Caption = 'Δδ 2000 ["]'
             MinWidth = 80
             Width = 80
           end        
           item
-            Caption = 'h [°]'
+            Caption = 'α Jnow [°]'
             MinWidth = 65
             Width = 65
           end        
           item
-            Caption = 'Foctemp'
+            Caption = 'δ Jnow [°]'
+            MinWidth = 65
+            Width = 65
+          end        
+          item
+            Caption = 'α mount jnow [°]'
+            MinWidth = 120
+            Width = 120
+          end        
+          item
+            Caption = 'δ mount jnow [°]'
+            MinWidth = 120
+            Width = 120
+          end        
+          item
+            Caption = 'h Jnow [°]'
+            MinWidth = 80
+            Width = 80
+          end        
+          item
+            Caption = 'A Jnow [°]'
+            MinWidth = 80
+            Width = 80
+          end        
+          item
+            Caption = 'crota_jnow [°]'
+            MinWidth = 100
+            Width = 100
+          end        
+          item
+            Caption = 'Foc_Temp'
             MinWidth = 65
             Width = 65
           end>
@@ -4122,24 +4152,6 @@ object stackmenu1: Tstackmenu1
         ShowHint = True
         TabOrder = 4
       end
-      object equinox1: TComboBox
-        Left = 968
-        Height = 23
-        Hint = 'Select the desired equinox'
-        Top = 5
-        Width = 240
-        ItemHeight = 15
-        ItemIndex = 1
-        Items.Strings = (
-          'J2000 apparent (unmodified)'
-          'Mean equinox of date (in air)'
-          'Mean equinox of date (in vacuum)'
-        )
-        OnChange = equinox1Change
-        ParentFont = False
-        TabOrder = 5
-        Text = 'Mean equinox of date (in air)'
-      end
       object mount_write_wcs1: TCheckBox
         Left = 616
         Height = 19
@@ -4149,7 +4161,7 @@ object stackmenu1: Tstackmenu1
         Caption = 'Do not modify the lights'
         Checked = True
         State = cbChecked
-        TabOrder = 6
+        TabOrder = 5
       end
       object help_mount_tab1: TLabel
         Cursor = crHandPoint
@@ -4177,7 +4189,7 @@ object stackmenu1: Tstackmenu1
         Images = ImageList2
         ImageIndex = 23
         OnClick = browse_mount1Click
-        TabOrder = 7
+        TabOrder = 6
       end
       object calc_polar_alignment_error1: TButton
         Left = 392
@@ -4191,7 +4203,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabOrder = 8
+        TabOrder = 7
       end
       object hours_and_minutes1: TCheckBox
         Left = 832
@@ -4200,7 +4212,7 @@ object stackmenu1: Tstackmenu1
         Top = 0
         Width = 78
         Caption = 'HH:MM:SS'
-        TabOrder = 9
+        TabOrder = 8
       end
     end
     object tab_live_stacking1: TTabSheet

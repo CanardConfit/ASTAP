@@ -13,7 +13,8 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 interface
 
 uses
-  Classes, SysUtils, math;
+  Classes, SysUtils, math,
+  astap_main {for theader};
 
 var
   ra_mean : double=0;
@@ -23,12 +24,13 @@ function JD_to_HJD(jd,ra_object,dec_object: double): double;{conversion JD to HJ
 procedure equ_gal(ra,dec:double;out l,b: double);{equatorial to galactic coordinates}
 function airmass_calc(h: double): double; // where h is apparent altitude in degrees.
 function atmospheric_absorption(airmass: double):double;{magnitudes}
-function calculate_altitude(calc_mode : integer;ra3,dec3 : double): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
+procedure calculate_az_alt(calc_mode : integer;head: Theader; out az,alt : double);{calculate az, alt. Move try to use header values else force calculation. Unit degrees}
+
 procedure polar2(x,y,z:double;out r,theta,phi:double);
 
 implementation
 uses
-  astap_main, unit_stack, unit_ephemerides,unit_asteroid;
+  unit_stack, unit_ephemerides,unit_asteroid, unit_aberration;
 
 
 { sun:      low precision solar coordinates (approx. 1')               }
@@ -204,38 +206,35 @@ begin
 end;
 
 
-function atmospheric_refraction(altitude_real,p {mbar},t {celsius} :double):double;  {atmospheric refraction}
+function atmospheric_refraction(altitude_real {degrees},p {mbar},t {celsius} :double):double;  {atmospheric refraction correction, input output in degrees}
 var  hn  :real;
 begin
-  hn:=(altitude_real*(180/pi)+10.3/(altitude_real*(180/pi)+5.11))*pi/180;
-                 {watch out with radians and degrees!!!!!!  carefully with factors}
-  result:=((p/1010)*283/(273+t))*(pi/180)* (1.02/60)/(sin(hn)/cos(hn) ); {note: tan(x) = sin(x)/cos(x)}
+  hn:=(altitude_real + 10.3/(altitude_real +5.11))*pi/180; {radians}
+  result:=((p/1010)*283/(273+t)) * (1.02/60)/(sin(hn)/cos(hn) ); {note: tan(x) = sin(x)/cos(x)}
  {bases on meeus 1991 page 102, formula 15.4}
 end;
 
 
-function altitude_and_refraction(lat,long,julian,temperature:double;calc_mode: integer; ra3,dec3: double):double;{altitude calculation and correction ra, dec for refraction}
+procedure altitude_and_refraction(lat,long,julian,temperature,ra3,dec3: double; out az,alt  : double);{altitude calculation and correction ra, dec for refraction}
 {input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-pi/2..pi/2], long[-pi..pi] West NEGATIVE, East POSTIVE !!,time[0..2*pi]}
-var wtime2actual,azimuth2,altitude2: double;
+var wtime2actual   : double;
 const
   siderealtime2000=(280.46061837)*pi/180;{[radians],sidereal time at 2000 jan 1.5 UT (12 hours) =Jd 2451545 at meridian greenwich, see new meeus 11.4}
   earth_angular_velocity = pi*2*1.00273790935; {about(365.25+1)/365.25) or better (365.2421874+1)/365.2421874 velocity dailly. See new Meeus page 83}
 
 begin
   wtime2actual:=fnmodulo(+long+siderealtime2000 +(julian-2451545 )* earth_angular_velocity,2*pi);{Local sidereal time. As in the FITS header in ASTAP the site longitude is positive if east and has to be added to the time}
-  RA_AZ(ra3,dec3,lat,0,wtime2actual,{var} azimuth2,altitude2);{conversion ra & dec to altitude,azimuth}
+  RA_AZ(ra3,dec3,lat,0,wtime2actual,{var} az,alt);{conversion ra & dec to altitude,azimuth}
+
 
  {correct for temperature and correct head.ra0, head.dec0 for refraction}
   if temperature>=100 {999} then temperature:=10 {default temperature celsius};
-  result:=atmospheric_refraction(altitude2,1010 {mbar},temperature {celsius});{apparant altitude}
-  if calc_mode=2 then result:=altitude2+result {astrometric to apparent}
-  else
-  begin {calc_mode=3, apparent to astrometric}
-    if calc_mode=3 then result:=altitude2 {no refaction compensation}
-    else
-    result:=altitude2-result; {apparent to astrometric !!!!}
+  az:=az*180/pi;{in degrees}
+  alt:=alt*180/pi;
+  alt:=alt+atmospheric_refraction(alt,1010 {mbar},temperature {celsius});{astrometric to apparant altitude}
 
-    AZ_RA(azimuth2,result,LAT,0,wtime2actual, {var} ra_mean,dec_mean);{conversion az,alt to ra_mean,dec_mean reverse corrected for refraction}
+
+//    AZ_RA(azimuth2,result,LAT,0,wtime2actual, {var} ra_mean,dec_mean);{conversion az,alt to ra_mean,dec_mean reverse corrected for refraction}
 
 //    RA_AZ((23+9/60)*pi/12,(-6-43/60)*pi/180,(38+55/60)*pi/180,-(5+8/60)*pi/12,(8+(34)/60)*pi/12,{var} azimuth2,altitude2);{conversion ra & dec to altitude,azimuth}
 //    RA_AZ2((23+9/60)*pi/12,(-6-43/60)*pi/180,(38+55/60)*pi/180,0,(8-5+(34-8)/60)*pi/12,{var} azimuth2,altitude2);{conversion ra & dec to altitude,azimuth}
@@ -244,23 +243,21 @@ begin
 //    AZ_RA2(AZIMUTH2,ALTITUDE2,39*pi/180,0,(8-5+(34-8)/60)*pi/12, {var} ra_mean,dec_mean);{conversion az,alt to ra_mean,dec_mean reverse corrected for refraction}
 //    AZ_RA2(AZIMUTH2,ALTITUDE2,39*pi/180,+(5+8/60)*pi/12,(8+(34)/60)*pi/12, {var} ra_mean,dec_mean);{conversion az,alt to ra_mean,dec_mean reverse corrected for refraction}
 //    beep;
-  end;
 end;
 
 
-function calculate_altitude(calc_mode : integer;ra3,dec3 : double): double;{convert centalt string to double or calculate altitude from observer location. Unit degrees}
+procedure calculate_az_alt(calc_mode : integer;head: Theader; out az,alt : double);{calculate az, alt. Move try to use header values else force calculation. Unit degrees}
 var
-  site_lat_radians,site_long_radians : double;
+  site_lat_radians,site_long_radians,ra,dec : double;
   errordecode  : boolean;
   err          : integer;
 begin
-  {calc_mode 1: use CENTALT from header or if not available calculate it}
-  {calc_mode 2: calculate it, apply refration astrometric to apparent}
-  {calc_mode 3: calculate it, no refaction compensation}
-  {calc_mode 4: calculate it, apply refration apparent to astrometric!!}
-  result:=strtofloat2(centalt);
+  {calc_mode 0: use or calculate from position}
+  {calc_mode 1: force calculation from prosition}
+  az:=strtofloat2(centaz);
+  alt:=strtofloat2(centalt);
 
-  if (((result=0) or (calc_mode>1)) and (head.cd1_1<>0)) then {calculate from observation location, image center and time the altitude}
+  if (((alt=0) or (calc_mode>0)) and (head.cd1_1<>0)) then {calculate from observation location, image center and time the altitude}
   begin
     if sitelat='' then
     begin
@@ -284,8 +281,12 @@ begin
         if jd_start=0 then date_to_jd(head.date_obs,head.exposure);{convert date-obs to jd_start, jd_mid}
         if jd_mid>2400000 then {valid JD}
         begin
-          precession3(2451545 {J2000},jd_mid,ra3,dec3); {precession, from J2000 to Jnow}
-          result:=(180/pi)*altitude_and_refraction(site_lat_radians,site_long_radians,jd_mid,focus_temp, calc_mode, ra3,dec3);{In formulas the longitude is positive to west!!!. }
+          ra:=head.ra0;
+          dec:=head.dec0;
+          precession3(2451545 {J2000},jd_mid,ra,dec); {precession, from J2000 to Jnow}
+          nutation_aberration_correction_equatorial_classic(jd_mid,ra,dec);{Input mean equinox, result apparent.  M&P page 208}
+
+          altitude_and_refraction(site_lat_radians,site_long_radians,jd_mid,focus_temp,ra,dec,az,alt);{In formulas the longitude is positive to west!!!. }
         end
         else memo2_message('Error decoding Julian day!');
       end;
@@ -317,6 +318,10 @@ begin
   a_aer:=airmass*0.120; {Extinction due to aerosol scattering is due to particulates including dust, water droplets and manmade pollutants. Expressed in magnitudes}
   result:=a_ozon+a_ray+a_aer;{Total extinction, scattering, absorption due to the atmosphere expressed in magnitudes}
 end;
+
+
+
+
 
 
 end.
