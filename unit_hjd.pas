@@ -215,7 +215,7 @@ begin
 end;
 
 
-procedure altitude_and_refraction(lat,long,julian,temperature,ra3,dec3: double; out az,alt  : double);{altitude calculation and correction ra, dec for refraction}
+procedure altitude_and_refraction(lat,long,julian,temperature,pressure,ra3,dec3: double; out az,alt  : double);{altitude calculation and correction ra, dec for refraction}
 {input RA [0..2pi], DEC [-pi/2..+pi/2],lat[-pi/2..pi/2], long[-pi..pi] West NEGATIVE, East POSTIVE !!,time[0..2*pi]}
 var wtime2actual   : double;
 const
@@ -231,7 +231,7 @@ begin
   if temperature>=100 {999} then temperature:=10 {default temperature celsius};
   az:=az*180/pi;{in degrees}
   alt:=alt*180/pi;
-  alt:=alt+atmospheric_refraction(alt,1010 {mbar},temperature {celsius});{astrometric to apparant altitude}
+  alt:=alt+atmospheric_refraction(alt,pressure {mbar},temperature {celsius});{astrometric to apparant altitude}
 
 
 //    AZ_RA(azimuth2,result,LAT,0,wtime2actual, {var} ra_mean,dec_mean);{conversion az,alt to ra_mean,dec_mean reverse corrected for refraction}
@@ -284,7 +284,7 @@ begin
           ra:=head.ra0;
           dec:=head.dec0;
           J2000_to_apparent(jd_mid,ra,dec);{without refraction}
-          altitude_and_refraction(site_lat_radians,site_long_radians,jd_mid,focus_temp,ra,dec,az,alt);{In formulas the longitude is positive to west!!!. }
+          altitude_and_refraction(site_lat_radians,site_long_radians,jd_mid,focus_temp,pressure,ra,dec,az,alt);{In formulas the longitude is positive to west!!!. }
         end
         else memo2_message('Error decoding Julian day!');
       end;

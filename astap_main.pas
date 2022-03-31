@@ -593,7 +593,7 @@ var
   star_level,star_bg,sd_bg, magn_limit  : double;
   object_name,
   imagetype ,sitelat, sitelong,centalt,centaz: string;
-  focus_temp,cblack,cwhite,sqmfloat   :double; {from FITS}
+  focus_temp,cblack,cwhite,sqmfloat,pressure   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
   date_avg,ut,pltlabel,plateid,telescop,instrum,origin,sqm_value   : string;
 
@@ -942,7 +942,7 @@ begin
 
     focus_temp:=999;{assume no data available}
     focus_pos:=0;{assume no data available}
-
+    pressure:=1010; {mbar/hPa}
     annotated:=false; {any annotation in the file}
 
     flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
@@ -1207,6 +1207,9 @@ begin
         if ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
                try head.set_temperature:=round(validate_double);{read double value} except; end; {some programs give huge values}
 
+        if ((header[i]='P') and (header[i+1]='R')  and (header[i+2]='E') and (header[i+3]='S') and (header[i+4]='S') and (header[i+5]='U') and (header[i+6]='R')) then
+             pressure:=validate_double;{read double value}
+
 
         if ((header[i]='I') and (header[i+1]='M')  and (header[i+2]='A') and (header[i+3]='G') and (header[i+4]='E') and (header[i+5]='T') and (header[i+6]='Y')) then
            imagetype:=get_string;{trim is already applied}
@@ -1246,6 +1249,16 @@ begin
           jd2:=validate_double;
           head.date_obs:=JdToDate(jd2);
         end;
+
+       // if ((header[i]='U') and (header[i+1]='T')  and (header[i+2]='C') and (header[i+3]=' ') and (header[i+4]=' ')) then
+       // if head.date_obs='' then {DATE-OBS overrules any JD value}
+       // begin
+       //   jd2:=validate_double+2415020-2+0.5;
+        //  head.date_obs:=JdToDate(jd2);
+        //end;
+        //if ((header[i]='P') and (header[i+1]='R')  and (header[i+2]='E') and (header[i+3]='S') and (header[i+4]='S') and (header[i+5]=' ') and (header[i+6]=' ')) then
+         //    pressure:=validate_double;{read double value}
+
 
 
         if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then

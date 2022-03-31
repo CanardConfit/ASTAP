@@ -17,7 +17,7 @@ uses unit_hjd, unit_ephemerides;
 
 
 
-function deltaT_calc(jd: double) : double; {Difference between dynamic time and UTC in days}
+function deltaT_calc(jd: double) : double; {Difference between dynamic time and UTC in days. Simplied version for future only }
 var
    year   : integer;
    y,u,t  : double;
@@ -44,12 +44,10 @@ begin
     result:=(-20+32*u*u-0.5788*t);{seconds}
   end
   else
-  result:=0;
+  result:=60;{for before 2021}
 
   result:=result/(24*3600);{convert results to days}
 end;
-
-
 
 
 

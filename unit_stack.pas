@@ -1037,7 +1037,8 @@ const
   M_centaz=19;
   M_crota_jnow=20;
   M_foctemp=21;
-  M_nr=22;{number of fields}
+  M_pressure=22;
+  M_nr=23;{number of fields}
 
 
   icon_thumb_down=8; {image index for outlier}
@@ -3554,13 +3555,13 @@ begin
                   lv.Items.item[c].subitems.Strings[M_centaz]:=centaz;
                 end;
 
-                if focus_temp<>999 then Lv.Items.item[c].subitems.Strings[M_foctemp]:=floattostrF(focus_temp,ffFixed,0,1);
-
                 {calculate crota_jnow}
                 coordinates_to_celestial(head_2.crpix1,head_2.crpix2+1, head_2, ram,decm); {fitsX, Y to ra,dec} {Step one pixel in Y}
                 J2000_to_apparent(jd_mid,ram,decm);{without refraction}
                 lv.Items.item[c].subitems.Strings[M_crota_jnow]:=floattostrf(arctan2( (ram-ra_jnow)*cos(dec_jnow),decm-dec_jnow)*180/pi,ffFixed, 7, 4);
               end;
+              if focus_temp<>999 then Lv.Items.item[c].subitems.Strings[M_foctemp]:=floattostrF(focus_temp,ffFixed,0,1);
+              Lv.Items.item[c].subitems.Strings[M_pressure]:=floattostrF(pressure,ffFixed,0,1);
 
             end;
           end;
