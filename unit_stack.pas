@@ -3230,14 +3230,14 @@ procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse
 // amode=2 ==> reduced header. load image, get background
 // amode=3 ==> full header. load image  force reanalyse
 // amode=4 ==> full header. load image
+ // difference between dynamic time and UTC in days
 var
   c,counts,i,iterations, hfd_counter                          : integer;
-  backgr, hfd_median, hjd,sd, dummy,alt,az,ra_jnow,dec_jnow,ra_mount_jnow, dec_mount_jnow,ram,decm: double;
+  backgr, hfd_median, hjd,sd, dummy,alt,az,ra_jnow,dec_jnow,ra_mount_jnow, dec_mount_jnow,ram,decm,rax,decx  : double;
   filename1                        : string;
   Save_Cursor                      : TCursor;
   loaded, green,blue               : boolean;
   img                              : image_array;
-
   nr_stars, hfd_outer_ring,
   median_11,median_21,median_31,   median_12,median_22,median_32,   median_13,median_23,median_33 : double;
 begin
@@ -3497,9 +3497,7 @@ begin
                 begin
                   ra_mount_jnow:=ra_mount;
                   dec_mount_jnow:=dec_mount;
-                  precession3(2451545 {J2000},jd_mid,ra_mount_jnow,dec_mount_jnow); {precession, from J2000 to Jnow}
-                  nutation_aberration_correction_equatorial_classic(jd_mid,ra_mount_jnow,dec_mount_jnow);{Input mean equinox. M&P page 208}
-
+                  J2000_to_apparent(jd_mid, ra_mount_jnow,dec_mount_jnow);{without refraction}
                   lv.Items.item[c].subitems.Strings[M_ra_m_jnow]:=floattostrf(ra_mount_jnow*180/pi,ffFixed, 9, 6);
                   lv.Items.item[c].subitems.Strings[M_dec_m_jnow]:=floattostrf(dec_mount_jnow*180/pi,ffFixed, 9, 6);
                 end;
@@ -3535,8 +3533,13 @@ begin
                 dec_jnow:=head_2.dec0;
                 if jd_mid>2400000 then {valid JD}
                 begin
-                  precession3(2451545 {J2000},jd_mid,ra_jnow,dec_jnow); {precession, from J2000 to Jnow}
-                  nutation_aberration_correction_equatorial_classic(jd_mid,ra_jnow,dec_jnow);{Input mean equinox.  M&P page 208}
+                  J2000_to_apparent(jd_mid, ra_jnow,dec_jnow);{without refraction}
+
+               //   rax:=ra_jnow;
+               //   decx:=dec_jnow;
+               //   nutation_aberration_correction_equatorial_classic(jd_mid,ra_jnow,dec_jnow);{Input mean equinox.  M&P page 208}
+               //   memo2_message(#9+filename2+#9+floattostr(jd_mid)+#9+floattostr((ra_jnow-rax)*180/pi)+#9+floattostr((dec_jnow-decx)*180/pi));
+
 
                   lv.Items.item[c].subitems.Strings[M_ra_jnow]:=floattostrf(ra_jnow*180/pi,ffFixed, 9, 6);
                   lv.Items.item[c].subitems.Strings[M_dec_jnow]:=floattostrf(dec_jnow*180/pi,ffFixed, 9, 6);
@@ -3553,11 +3556,10 @@ begin
 
                 if focus_temp<>999 then Lv.Items.item[c].subitems.Strings[M_foctemp]:=floattostrF(focus_temp,ffFixed,0,1);
 
-                coordinates_to_celestial(head_2.crpix1,head_2.crpix2+1, head_2, ram,decm) {fitsX, Y to ra,dec};
-                precession3(2451545 {J2000},jd_mid,ram,decm); {precession, from J2000 to Jnow}
-                nutation_aberration_correction_equatorial_classic(jd_mid,ram,decm);{Input mean equinox.  M&P page 208}
+                {calculate crota_jnow}
+                coordinates_to_celestial(head_2.crpix1,head_2.crpix2+1, head_2, ram,decm); {fitsX, Y to ra,dec} {Step one pixel in Y}
+                J2000_to_apparent(jd_mid,ram,decm);{without refraction}
                 lv.Items.item[c].subitems.Strings[M_crota_jnow]:=floattostrf(arctan2( (ram-ra_jnow)*cos(dec_jnow),decm-dec_jnow)*180/pi,ffFixed, 7, 4);
-
               end;
 
             end;

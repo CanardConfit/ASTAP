@@ -283,9 +283,7 @@ begin
         begin
           ra:=head.ra0;
           dec:=head.dec0;
-          precession3(2451545 {J2000},jd_mid,ra,dec); {precession, from J2000 to Jnow}
-          nutation_aberration_correction_equatorial_classic(jd_mid,ra,dec);{Input mean equinox, result apparent.  M&P page 208}
-
+          J2000_to_apparent(jd_mid,ra,dec);{without refraction}
           altitude_and_refraction(site_lat_radians,site_long_radians,jd_mid,focus_temp,ra,dec,az,alt);{In formulas the longitude is positive to west!!!. }
         end
         else memo2_message('Error decoding Julian day!');

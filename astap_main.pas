@@ -3172,7 +3172,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.03.30, '+about_message4+
+  'ASTAP version 2022.03.31, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+

@@ -7,11 +7,51 @@ interface
 uses
   Classes, SysUtils,math;
 
-procedure nutation_aberration_correction_equatorial_classic(julian_et: double;var ra,dec : double);{Input mean equinox, add nutation, aberration result apparent M&P page 208}
+procedure aberration_correction_equatorial(julian_et: double;var ra,dec : double);{J2000 equinox}
+procedure nutation_correction_equatorial(julian_et: double;var ra,dec : double);{mean equinox, add nutation M&P page 125}
+procedure J2000_to_apparent(jd: double;var ra,dec : double);{without refraction}
 
 implementation
 
 uses unit_hjd, unit_ephemerides;
+
+
+
+function deltaT_calc(jd: double) : double; {Difference between dynamic time and UTC in days}
+var
+   year   : integer;
+   y,u,t  : double;
+begin
+  y:=(2000 +(JD-2451544.5)/365.25);
+  year:=round(y);
+
+  if ((year>=2021) and (year<=2024)) then
+  begin
+    t:=y-2021;
+    result:=(71+t*0.5);{seconds}  // (73-71)/4 = 0.5
+  end
+  else
+  if ((year>=2025) and (year<=2049)) then
+  begin
+    t:=y-2000;
+    result:=(61.46+t*(0.32217+t*(0.005589)));{seconds}
+  end
+  else
+  if ((year>=2050) and (year<=2149)) then
+  begin
+    u:=(y-1820)/100;
+    t:=2150-y;
+    result:=(-20+32*u*u-0.5788*t);{seconds}
+  end
+  else
+  result:=0;
+
+  result:=result/(24*3600);{convert results to days}
+end;
+
+
+
+
 
 (*-----------------------------------------------------------------------*)
 (* NUTEQU: transformation of mean to true coordinates                    *)
@@ -65,22 +105,22 @@ end;
 (* ABERRAT: velocity vector of the Earth in equatorial coordinates       *)
 (*          (in units of the velocity of light)                          *)
 (*-----------------------------------------------------------------------*)
-//PROCEDURE ABERRAT(T: double; out VX,VY,VZ: double);{velocity vector of the Earth in equatorial coordinates, and units of the velocity of light}
-//  CONST P2=6.283185307;
-//  VAR L,CL: double;
-//  FUNCTION FRAC(X:double):double;
-//    BEGIN
-//      X:=X-TRUNC(X);
-//      IF (X<0) THEN X:=X+1;
-//      FRAC:=X;
-//    END;
-//BEGIN
-//  L := P2*FRAC(0.27908+100.00214*T);
-//  CL:=COS(L);
-//  VX := -0.994E-4*SIN(L);
-//  VY := +0.912E-4*CL;
-//  VZ := +0.395E-4*CL;
-//END;
+PROCEDURE ABERRAT(T: double; out VX,VY,VZ: double);{velocity vector of the Earth in equatorial coordinates, and units of the velocity of light}
+  CONST P2=6.283185307;
+  VAR L,CL: double;
+  FUNCTION FRAC(X:double):double;
+    BEGIN
+      X:=X-TRUNC(X);
+      IF (X<0) THEN X:=X+1;
+      FRAC:=X;
+    END;
+BEGIN
+  L := P2*FRAC(0.27908+100.00214*T);
+  CL:=COS(L);
+  VX := -0.994E-4*SIN(L);
+  VY := +0.912E-4*CL;
+  VZ := +0.395E-4*CL;
+END;
 
 
 (*----------------------------------------------------------------*)
@@ -104,9 +144,23 @@ BEGIN
 END;
 
 
-procedure nutation_aberration_correction_equatorial_classic(julian_et: double;var ra,dec : double);{Input mean equinox, add nutation, aberration result apparent M&P page 208}
+procedure nutation_correction_equatorial(julian_et: double;var ra,dec : double);{mean equinox, add nutation M&P page 125}
 var r,x0,y0,z0,vx,vy,vz,dum1,dum2 : double;
     ph_earth, vh_earth : r3_array;{helio centric earth vector}
+
+begin
+  cart2(1,dec,ra,x0,y0,z0); {make cartesian coordinates}
+
+  NUTEQU((julian_et-2451545.0)/36525.0 ,x0,y0,z0);{add nutation}
+
+  polar2(x0,y0,z0,r,dec,ra);
+end;
+
+
+procedure aberration_correction_equatorial(julian_et: double;var ra,dec : double);{J2000 equinox}
+var r,x0,y0,z0,vx,vy,vz,dum1,dum2 : double;
+    pb_earth, vb_earth : r3_array;{barycentric earth vector}
+    ph_earth, vh_earth : r3_array;{heliocentric earth vector}
 
 begin
   //http://www.bbastrodesigns.com/coordErrors.html  Gives same value within a fraction of arcsec.
@@ -122,24 +176,32 @@ begin
 //  Nutation ["]   RA 15.843, DEC	6.218
 //  Aberration["]  RA 30.047, DEC	6.696
 
-
   cart2(1,dec,ra,x0,y0,z0); {make cartesian coordinates}
 
-  NUTEQU((julian_et-2451545.0)/36525.0 ,x0,y0,z0);{add nutation}
-
-//  ABERRAT((julian_et-2451545.0)/36525.0,vx,vy,vz);{ABERRAT: velocity vector of the Earth in equatorial coordinates and units of the velocity of light}
+  ABERRAT((julian_et-2451545.0)/36525.0,vx,vy,vz);{ABERRAT: velocity vector of the Earth in equatorial coordinates and units of the velocity of light}
 //  x0:=x0+VX;{apply aberration,(v_earth/speed_light)*180/pi=20.5"}
 //  y0:=y0+VY;
 //  z0:=z0+VZ;
 
-  sla_EPV (julian_et-2400000.5{mjd}, ph_earth,vh_earth {AU/day});{heliocentric position earth including light time correction, high accuracy for years 1900 to 2100}
-
-  x0:=x0+vh_earth[1]*0.00577552; {conversion from AU/day to speed of light, about 1/173} {apply aberration,(v_earth/speed_light)*180/pi=20.5"}
-  y0:=y0+vh_earth[2]*0.00577552; {conversion from AU/day to speed of light, about 1/173}
-  z0:=z0+vh_earth[3]*0.00577552; {conversion from AU/day to speed of light, about 1/173}
+  sla_EPV (julian_et-2400000.5{mjd}, ph_earth,vh_earth , pb_earth,vb_earth {AU/day});{barycentric position earth including light time correction, high accuracy for years 1900 to 2100}
+  x0:=x0+vb_earth[1]*0.00577552; {conversion from AU/day to speed of light, about 1/173} {apply aberration,(v_earth/speed_light)*180/pi=20.5"}
+  y0:=y0+vb_earth[2]*0.00577552; {conversion from AU/day to speed of light, about 1/173}
+  z0:=z0+vb_earth[3]*0.00577552; {conversion from AU/day to speed of light, about 1/173}
 
   polar2(x0,y0,z0,r,dec,ra);
 end;
+
+
+procedure J2000_to_apparent(jd: double;var ra,dec : double);{without refraction}
+var
+  jde : double; {Julian day based on dynamic time}
+begin
+  jde:=jd+deltaT_calc(jd);// difference between dynamic time and UTC in days
+  aberration_correction_equatorial(jde,ra,dec);{aberration correction in J2000 equinox, See ook meeus pagine 148. De Earth velocity terms are for J2000 and not Jnow}
+  precession3(2451545 {J2000},jde,ra,dec); {precession, from J2000 to Jnow}
+  nutation_correction_equatorial(jde,ra,dec);{mean equinox.  M&P page 125}
+end;
+
 
 end.
 

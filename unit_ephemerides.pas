@@ -38,7 +38,7 @@ type
   r3x3_array = array[1..3,1..3] of double;
 
 
-procedure sla_EPV (DATE : double; out PH, VH{, PB, VB} : r3_array); //  J2000 heliocentric and barycentric Earth position and velocity. Light speed corrected.
+procedure sla_EPV(DATE : double; out PH, VH, PB, VB : r3_array); //  J2000 heliocentric and barycentric Earth position and velocity. Light speed corrected.
 procedure sla_PLANET(DATE : double;  NP: integer; out PV: r6_array; out JSTAT: integer); // J2000 heliocentric position and velocity of planets 1..8 based on original Simon et al Fortran code. Pluto removed.
 procedure orbit(DATE : double; JFORM : integer; EPOCH : double; ORBINC, ANODE,PERIH, AORQ, E, AORL, DM : double; out PV :r6_array; out JSTAT : integer) ;//Heliocentric position and velocity of a planet, asteroid or comet
 procedure precession3(JD0, JD1: double; var RA, DC : double); {precession}
@@ -1402,7 +1402,7 @@ begin
   THETA := ((2004.3109+(-0.85330-0.000217*T0)*T0)+((-0.42665-0.000217*T0)-0.041833*T)*T)*TAS2R;{result in radians}
   //  Rotation matrix;
   sla_DEULER('ZYZ',-ZETA,THETA,-Z,RMATP);
-end;//
+end;
 
 //-----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1900,7 +1900,7 @@ end;
 *-----------------------------------------------------------------------;}
 
 
-procedure sla_EPV (DATE : double; out PH, VH {, PB, VB }: r3_array);
+procedure sla_EPV (DATE : double; out PH, VH , PB, VB : r3_array);
 
 {*  ----------------------
 *  Ephemeris Coefficients
@@ -3877,7 +3877,7 @@ const
 
   //*  SSB-to-Sun, T^0, X	),
   //DATA ((S0(I,J,1),I=1,3),J=  1, 10)),
-{  S0 : array[1..3,1..MS0,1..3] of double=
+  S0 : array[1..3,1..MS0,1..3] of double=
   (((  0.4956757536410E-02, 0.3741073751789E+01, 0.5296909721118E+00),
   (  0.2718490072522E-02, 0.4016011511425E+01, 0.2132990797783E+00),
   (  0.1546493974344E-02, 0.2170528330642E+01, 0.3813291813120E-01),
@@ -4782,7 +4782,7 @@ const
   (                0    ,               0    ,               0    ),
   (                0    ,               0    ,               0    ),
   (                0    ,               0    ,               0    ),
-  (                0    ,               0    ,               0    )));   }
+  (                0    ,               0    ,               0    )));
 
   //*  Days per Julian year;
   DJY = 365.25 ;
@@ -4829,10 +4829,10 @@ begin
     //     Initialize position and velocity component.
     XYZ := 0;
     XYZD := 0;
-    {*     ------------------------------------------------;
-    *     Obtain component of Sun to Earth ecliptic vector;
-    *     ------------------------------------------------;
-    *     Sun to Earth, T^0 terms.}
+    //*     ------------------------------------------------;
+    //*     Obtain component of Sun to Earth ecliptic vector;
+    //*     ------------------------------------------------;
+    //*     Sun to Earth, T^0 terms.
     for  J := 1 to NE0[K]  do
     begin
       A := E0[K,J,1];//for Pascal swap the three terms. Was in Fortran A := E0[1,J,K];
@@ -4873,11 +4873,11 @@ begin
 
 
 
-    {*     ------------------------------------------------;
-    *     Obtain component of SSB to Earth ecliptic vector;
-    *     ------------------------------------------------;
-    *     SSB to Sun, T^0 terms.}
-{   for  J := 1 to NS0[K]  do
+    //*     ------------------------------------------------;
+    //*     Obtain component of SSB to Earth ecliptic vector;
+    //*     ------------------------------------------------;
+    //*     SSB to Sun, T^0 terms.
+    for  J := 1 to NS0[K]  do
     begin
       A := S0[K,J,1];
       B := S0[K,J,2];
@@ -4915,7 +4915,7 @@ begin
     end;
     //     Barycentric Earth position and velocity component.
     BP[K] := XYZ;
-    BV[K] := XYZD / DJY;}
+    BV[K] := XYZD / DJY;
     //     Next Cartesian component.
   end; {loop for X, Y,Z}
 
@@ -4936,7 +4936,7 @@ begin
   VH[3] :=          AM32*Y + AM33*Z;
 
   // Barycentric Earth position
-{ X := BP[1];
+  X := BP[1];
   Y := BP[2];
   Z := BP[3];
   PB[1] :=      X + AM12*Y + AM13*Z;
@@ -4947,7 +4947,7 @@ begin
   Z := BV[3];
   VB[1] :=      X + AM12*Y + AM13*Z;
   VB[2] := AM21*X + AM22*Y + AM23*Z;
-  VB[3] :=          AM32*Y + AM33*Z;}
+  VB[3] :=          AM32*Y + AM33*Z;
   end;
 
 end.

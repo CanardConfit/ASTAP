@@ -103,7 +103,8 @@ const
    sun200_calculated : boolean=false; {sun200 calculated for comets}
 
 VAR TEQX    : double;
-    ph_earth, vh_earth : r3_array;{helio centric earth vector}
+    pb_earth, vb_earth : r3_array;{heliocentric earth vector}
+    ph_earth, vh_earth : r3_array;{Barycentric earth vector}
     ph_pln             : r3_array;{helio centric planet vector}
 
 procedure Tform_asteroids1.help_asteroid_annotation1Click(Sender: TObject); {han.k}
@@ -201,7 +202,7 @@ var
 begin
   if sun_earth_vector=false then
   begin
-    sla_EPV (julian-2400000.5{mjd}, ph_earth,vh_earth);{helocentric position earth including light time correction, high accuracy for years 1900 to 2100}
+    sla_EPV (julian-2400000.5{mjd}, ph_earth,vh_earth, pb_earth,vb_earth);{Barycentric position earth including light time correction, high accuracy for years 1900 to 2100. ph,vh are not used but are required in sla_epv for calc pb vb}
     sun200_calculated:=true;
   end;
   epoch:= julian_calc(year,month,day,0,0,0)-2400000.5; {MJD}
@@ -235,11 +236,11 @@ begin
   *       AORQ   := perihelion distance, q (AU);
   *       E      := eccentricity, e (range 0 to 10);}
 
-  R:=sqrt(sqr(pv[1]-ph_earth[1])+sqr(pv[2]-ph_earth[2])+sqr(pv[3]-ph_earth[3]));{geometric distance minor planet and Earth in AU}
+  R:=sqrt(sqr(pv[1]-pb_earth[1])+sqr(pv[2]-pb_earth[2])+sqr(pv[3]-pb_earth[3]));{geometric distance minor planet and Earth in AU}
   TL:=TAU*R;//  Light time (sec);
-  x_pln:=pv[1]-ph_earth[1]-TL*(pv[4]);{ Correct position for planetary aberration. Use the speed values to correct for light traveling time. The PV_earth is already corrected for aberration!!}
-  y_pln:=pv[2]-ph_earth[2]-TL*(pv[5]);
-  z_pln:=pv[3]-ph_earth[3]-TL*(pv[6]);
+  x_pln:=pv[1]-pb_earth[1]-TL*(pv[4]);{ Correct position for planetary aberration. Use the speed values to correct for light traveling time. The PV_earth is already corrected for aberration!!}
+  y_pln:=pv[2]-pb_earth[2]-TL*(pv[5]);
+  z_pln:=pv[3]-pb_earth[3]-TL*(pv[6]);
 
   PARALLAX_XYZ(wtime2actual,site_lat_radians,X_pln,Y_pln,Z_pln);{correct parallax  X, Y, Z in AE. This should be done in Jnow so there is a small error in J2000 }
   polar2(x_pln,y_pln,z_pln,delta,dec3,ra3) ;
@@ -273,7 +274,7 @@ function illum_planet : double; { Get phase angle comet. Only valid is comet rou
 var
   r_sp,r_ep,elong,phi1,phase1 :double;
 begin
-  illum2(ph_pln[1],ph_pln[2],ph_pln[3],ph_earth[1],ph_earth[2],ph_earth[3],r_sp,r_ep,elong,phi1, phase1 );{ heliocentric positions minor planet and earth}
+  illum2(ph_pln[1],ph_pln[2],ph_pln[3],pb_earth[1],pb_earth[2],pb_earth[3],r_sp,r_ep,elong,phi1, phase1 );{ heliocentric positions minor planet and earth}
   result:=phi1*pi/180;
 end;
 
