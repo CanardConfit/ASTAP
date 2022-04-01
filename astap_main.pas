@@ -2124,6 +2124,10 @@ begin
     if key='DATE-OBS=' then head.date_obs:=read_string else
 
     if key='BAYERPAT=' then bayerpat:=read_string;
+    if key='PRESSURE=' then pressure:=round(read_float) else
+    if key='FOCUSTEM=' then focus_temp:=round(read_float) else
+    if key='FOCTEMP =' then focus_temp:=round(read_float) else
+    if key='AMB-TEMP=' then focus_temp:=round(read_float) else
 
     if key='TELESCOP=' then telescop:=read_string;
     if key='INSTRUME=' then instrum:=read_string;
@@ -3185,7 +3189,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.03.31, '+about_message4+
+  'ASTAP version 2022.04.1, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+

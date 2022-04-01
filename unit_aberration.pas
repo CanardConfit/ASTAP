@@ -13,42 +13,7 @@ procedure J2000_to_apparent(jd: double;var ra,dec : double);{without refraction}
 
 implementation
 
-uses unit_hjd, unit_ephemerides;
-
-
-
-function deltaT_calc(jd: double) : double; {Difference between dynamic time and UTC in days. Simplied version for future only }
-var
-   year   : integer;
-   y,u,t  : double;
-begin
-  y:=(2000 +(JD-2451544.5)/365.25);
-  year:=round(y);
-
-  if ((year>=2021) and (year<=2024)) then
-  begin
-    t:=y-2021;
-    result:=(71+t*0.5);{seconds}  // (73-71)/4 = 0.5
-  end
-  else
-  if ((year>=2025) and (year<=2049)) then
-  begin
-    t:=y-2000;
-    result:=(61.46+t*(0.32217+t*(0.005589)));{seconds}
-  end
-  else
-  if ((year>=2050) and (year<=2149)) then
-  begin
-    u:=(y-1820)/100;
-    t:=2150-y;
-    result:=(-20+32*u*u-0.5788*t);{seconds}
-  end
-  else
-  result:=60;{for before 2021}
-
-  result:=result/(24*3600);{convert results to days}
-end;
-
+uses unit_hjd, unit_ephemerides,unit_asteroid;
 
 
 (*-----------------------------------------------------------------------*)

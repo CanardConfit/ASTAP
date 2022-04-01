@@ -1050,33 +1050,8 @@ const
 implementation
 
 uses
-  unit_image_sharpness, unit_ephemerides, unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd,
+  unit_image_sharpness, unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd,
   unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_aavso,unit_raster_rotate, unit_listbox,unit_aberration;
-
-
-type
-   theaderbackup  = record
-//     head.naxis   : integer;
-//     naxis1  : integer;
-//     naxis2  : integer;
-//     head.naxis3  : integer;
-     crpix1 : double;{could be modified by crop}
-     crpix2 : double;
-     crval1 : double;
-     crval2 : double;
-     crota1 : double;{for 90 degrees rotate}
-     crota2 : double;
-     cdelt1 : double;
-     cdelt2 : double;
-     cd1_1  : double;
-     cd1_2  : double;
-     cd2_1  : double;
-     cd2_2  : double;
-     date_obs: string; {for accurate asteroid plotting after manual stack}
-//     header : string;
-   end;
-var
-   header_backup : array of theaderbackup;{dynamic so memory can be freed}
 
 type
   blink_solution  = record
@@ -3540,7 +3515,6 @@ begin
                //   decx:=dec_jnow;
                //   nutation_aberration_correction_equatorial_classic(jd_mid,ra_jnow,dec_jnow);{Input mean equinox.  M&P page 208}
                //   memo2_message(#9+filename2+#9+floattostr(jd_mid)+#9+floattostr((ra_jnow-rax)*180/pi)+#9+floattostr((dec_jnow-decx)*180/pi));
-
 
                   lv.Items.item[c].subitems.Strings[M_ra_jnow]:=floattostrf(ra_jnow*180/pi,ffFixed, 9, 6);
                   lv.Items.item[c].subitems.Strings[M_dec_jnow]:=floattostrf(dec_jnow*180/pi,ffFixed, 9, 6);
@@ -6388,7 +6362,6 @@ var
     outliers:=nil;
     starCheck:=nil;
     starThree:=nil;
-    header_backup:=nil;
     Screen.Cursor :=Save_Cursor;{back to normal }
   end;
 

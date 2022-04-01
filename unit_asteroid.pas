@@ -85,6 +85,7 @@ const
    add_date: boolean=true;
 
 procedure plot_mpcorb(maxcount : integer;maxmag:double;add_annot :boolean) ;{read MPCORB.dat}{han.k}
+function deltaT_calc(jd: double) : double; {delta_T in days}
 
 implementation
 
@@ -182,7 +183,7 @@ begin
 end;
 
 
-procedure minor_planet(sun_earth_vector:boolean;julian:double;year,month:integer;day,a_e, a_or_q,a_i,a_ohm,a_w,a_M :double;var RA3,DEC3,DELTA,sun_delta:double);
+procedure minor_planet(sun_earth_vector:boolean;julian {dynamic time}:double;year,month:integer;day,a_e, a_or_q,a_i,a_ohm,a_w,a_M :double;var RA3,DEC3,DELTA,sun_delta:double);
 { Comet hale bopp
   YEAR:=1997;
   MONTH:=03;
@@ -200,13 +201,13 @@ var
   U : U_array;
   pv : r6_array;
 begin
+  mjd:=julian-2400000.5;  {convert to mjd}
   if sun_earth_vector=false then
   begin
-    sla_EPV (julian-2400000.5{mjd}, ph_earth,vh_earth, pb_earth,vb_earth);{Barycentric position earth including light time correction, high accuracy for years 1900 to 2100. ph,vh are not used but are required in sla_epv for calc pb vb}
+    sla_EPV (mjd, ph_earth,vh_earth, pb_earth,vb_earth);{Barycentric position earth including light time correction, high accuracy for years 1900 to 2100. ph,vh are not used but are required in sla_epv for calc pb vb}
     sun200_calculated:=true;
   end;
   epoch:= julian_calc(year,month,day,0,0,0)-2400000.5; {MJD}
-  mjd:=julian-2400000.5;
 
   if a_M<1E98 then {asteroid. Use a_M, mean anomoly as an indicator for minor planet or comet, The mean anomoly of a comet is in princple zero and at perihelion}
   orbit (mjd, 2 {minor planet}, epoch, a_i*pi/180, a_ohm*pi/180,a_w*pi/180, a_or_q,a_e,a_M*pi/180, 0, PV, JSTAT) //Determine the position and velocity.
@@ -236,11 +237,12 @@ begin
   *       AORQ   := perihelion distance, q (AU);
   *       E      := eccentricity, e (range 0 to 10);}
 
-  R:=sqrt(sqr(pv[1]-pb_earth[1])+sqr(pv[2]-pb_earth[2])+sqr(pv[3]-pb_earth[3]));{geometric distance minor planet and Earth in AU}
+  R:=sqrt(sqr(pv[1]-ph_earth[1])+sqr(pv[2]-ph_earth[2])+sqr(pv[3]-ph_earth[3]));{geometric distance minor planet and Earth in AU}
   TL:=TAU*R;//  Light time (sec);
-  x_pln:=pv[1]-pb_earth[1]-TL*(pv[4]);{ Correct position for planetary aberration. Use the speed values to correct for light traveling time. The PV_earth is already corrected for aberration!!}
-  y_pln:=pv[2]-pb_earth[2]-TL*(pv[5]);
-  z_pln:=pv[3]-pb_earth[3]-TL*(pv[6]);
+  {note with PB_earth, so distance to Barycentric position there is a big error. Use PH_earth}
+  x_pln:=pv[1]-ph_earth[1]-TL*(pv[4]);{ Correct position for planetary aberration. Use the speed values to correct for light traveling time. The PV_earth is already corrected for aberration!!}
+  y_pln:=pv[2]-ph_earth[2]-TL*(pv[5]);
+  z_pln:=pv[3]-ph_earth[3]-TL*(pv[6]);
 
   PARALLAX_XYZ(wtime2actual,site_lat_radians,X_pln,Y_pln,Z_pln);{correct parallax  X, Y, Z in AE. This should be done in Jnow so there is a small error in J2000 }
   polar2(x_pln,y_pln,z_pln,delta,dec3,ra3) ;
@@ -320,7 +322,7 @@ begin
   if result<0 then result:=result+range;   {do not like negative numbers}
 end;
 
-function deltaT_calc(jd: double) : double; {in seconds} {han.k}
+function deltaT_calc(jd: double) : double; {delta_T in days}
 var
    year   : integer;
    y,u,t  : double;
@@ -351,7 +353,6 @@ begin
     u:=(y-1820)/100;
     t:=2150-y;
     result:=(-20+32*u*u-0.5788*t);{seconds}
-    //result:=(-20+32*u*u-0.5628*t);{seconds}
   end
   else
   if ((year>=2150) and (year<=2999)) then
@@ -360,7 +361,7 @@ begin
     result:=(-20+32*u*u);{seconds}
   end
   else
-  result:=0;
+  result:=60;
 
   result:=result/(24*3600);{convert results to days}
 end;
