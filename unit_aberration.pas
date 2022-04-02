@@ -64,28 +64,6 @@ begin
 end;
 
 
-(*-----------------------------------------------------------------------*)
-(* ABERRAT: velocity vector of the Earth in equatorial coordinates       *)
-(*          (in units of the velocity of light)                          *)
-(*-----------------------------------------------------------------------*)
-PROCEDURE ABERRAT(T: double; out VX,VY,VZ: double);{velocity vector of the Earth in equatorial coordinates, and units of the velocity of light}
-  CONST P2=6.283185307;
-  VAR L,CL: double;
-  FUNCTION FRAC(X:double):double;
-    BEGIN
-      X:=X-TRUNC(X);
-      IF (X<0) THEN X:=X+1;
-      FRAC:=X;
-    END;
-BEGIN
-  L := P2*FRAC(0.27908+100.00214*T);
-  CL:=COS(L);
-  VX := -0.994E-4*SIN(L);
-  VY := +0.912E-4*CL;
-  VZ := +0.395E-4*CL;
-END;
-
-
 (*----------------------------------------------------------------*)
 (* EQUHOR: conversion of equatorial into horizontal coordinates   *)
 (*   DEC  : declination (-pi/2 .. +pi/2)                          *)
@@ -113,9 +91,7 @@ var r,x0,y0,z0,vx,vy,vz,dum1,dum2 : double;
 
 begin
   cart2(1,dec,ra,x0,y0,z0); {make cartesian coordinates}
-
   NUTEQU((julian_et-2451545.0)/36525.0 ,x0,y0,z0);{add nutation}
-
   polar2(x0,y0,z0,r,dec,ra);
 end;
 
@@ -140,11 +116,6 @@ begin
 //  Aberration["]  RA 30.047, DEC	6.696
 
   cart2(1,dec,ra,x0,y0,z0); {make cartesian coordinates}
-
-  ABERRAT((julian_et-2451545.0)/36525.0,vx,vy,vz);{ABERRAT: velocity vector of the Earth in equatorial coordinates and units of the velocity of light}
-//  x0:=x0+VX;{apply aberration,(v_earth/speed_light)*180/pi=20.5"}
-//  y0:=y0+VY;
-//  z0:=z0+VZ;
 
   sla_EPV (julian_et-2400000.5{mjd}, ph_earth,vh_earth , pb_earth,vb_earth {AU/day});{barycentric position earth including light time correction, high accuracy for years 1900 to 2100}
   x0:=x0+vb_earth[1]*0.00577552; {conversion from AU/day to speed of light, about 1/173} {apply aberration,(v_earth/speed_light)*180/pi=20.5"}

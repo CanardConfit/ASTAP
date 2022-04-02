@@ -1260,16 +1260,6 @@ begin
           head.date_obs:=JdToDate(jd2);
         end;
 
-       // if ((header[i]='U') and (header[i+1]='T')  and (header[i+2]='C') and (header[i+3]=' ') and (header[i+4]=' ')) then
-       // if head.date_obs='' then {DATE-OBS overrules any JD value}
-       // begin
-       //   jd2:=validate_double+2415020-2+0.5;
-        //  head.date_obs:=JdToDate(jd2);
-        //end;
-        //if ((header[i]='P') and (header[i+1]='R')  and (header[i+2]='E') and (header[i+3]='S') and (header[i+4]='S') and (header[i+5]=' ') and (header[i+6]=' ')) then
-         //    pressure:=validate_double;{read double value}
-
-
         if ((header[i]='D') and (header[i+1]='A')) then {DA}
         begin
           if ((header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-')) then {DATE-}
@@ -1283,7 +1273,6 @@ begin
           else
           if ((header[i+2]='R') and (header[i+3]='K') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then {DARK_CNT}
                head.dark_count:=round(validate_double);{read integer as double value}
-
         end;
 
 
