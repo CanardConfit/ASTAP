@@ -1410,9 +1410,7 @@ procedure precession3(JD0, JD1: double; var RA, DC : double); {precession}
 var
   RMATP: r3x3_array;
   V1,V2: r3_array;
-  x,y,z : double;
 begin
-
   //  Generate appropriate precession matrix;
   sla_PREC(2000+(jd0 - 2451545) / 365.25,2000+(jd1 - 2451545) / 365.25,RMATP);             // EP1=2000D0 + (DATE-51544.5D0)/365.25D0
 
@@ -1949,8 +1947,6 @@ procedure sla_EPV2 (DATE : double; bary :boolean; out PE, VE : r3_array);//  J20
   Furthermore in the Fortran orginal version Heliocentric and Barycentric where always both calculated. In the Pascal version barycentric is only calculated when specified.
   }
 
-var
-  PH, VH , PB, VB : r3_array;
 
 const
   {specify useful range of data the arrays. The remainder of the arrays is filled with zero's}
