@@ -1173,11 +1173,12 @@ begin
 
       if image then {image specific header}
       begin {read image header}
-        if ((header[i]='B') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) then
-          nrbits:=round(validate_double);{BITPIX, read integer using double routine}
 
-        if (header[i]='B') then
+         if (header[i]='B') then {B}
         begin
+          if ((header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) then
+            nrbits:=round(validate_double) {BITPIX, read integer using double routine}
+          else
           if ( (header[i+1]='Z')  and (header[i+2]='E') and (header[i+3]='R') and (header[i+4]='O') ) then
           begin
              dummy:=validate_double;
@@ -1189,33 +1190,50 @@ begin
           end
           else
           if ( (header[i+1]='S')  and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') ) then
-           begin
-              bscale:=validate_double; {rarely used. Normally 1}
-           end;
-        end;
+             bscale:=validate_double {rarely used. Normally 1}
+          else
+          if ((header[i+1]='I')  and (header[i+2]='A') and (header[i+3]='S') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
+               head.flatdark_count:=round(validate_double);{read integer as double value}
+        end;{B}
 
-        if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='P')) then
+        if (header[i]='E') then
         begin
-          if ((header[i+3]='O') and (header[i+4]='S') and (header[i+5]='U') and (header[i+6]='R')) then
-              head.exposure:=validate_double;{read double value}
-          if ((header[i+3]='T') and (header[i+4]='I') and (header[i+5]='M') and (header[i+6]='E') and (header[i+7]=' ')) then {exptime and not exptimer}
-              head.exposure:=validate_double;{read double value}
+          if ((header[i+1]='G')  and (header[i+2]='A') and (header[i+3]='I') and (header[i+4]='N')) then  {egain}
+               head.egain:=copy(trim(get_as_string),1,5) {e-/adu gain, use 4 digits only}
+          else
+          if ((header[i+1]='X')  and (header[i+2]='P')) then
+          begin
+            if ((header[i+3]='O') and (header[i+4]='S') and (header[i+5]='U') and (header[i+6]='R')) then
+                head.exposure:=validate_double;{read double value}
+            if ((header[i+3]='T') and (header[i+4]='I') and (header[i+5]='M') and (header[i+6]='E') and (header[i+7]=' ')) then {exptime and not exptimer}
+                head.exposure:=validate_double;{read double value}
+          end;
         end;
 
-        if ((header[i]='C') and (header[i+1]='C')  and (header[i+2]='D') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
+        if (header[i]='C') then {C}
+        begin
+          if ((header[i+1]='A')  and (header[i+2]='L') and (header[i+3]='S') and (header[i+4]='T') and (header[i+5]='A')) then  {head.calstat is also for flats}
+              head.calstat:=get_string {indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. M could indicate master}
+          else
+          if ((header[i+1]='C')  and (header[i+2]='D') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
              ccd_temperature:=validate_double;{read double value}
+        end;{C}
+
         if ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='T') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
                try head.set_temperature:=round(validate_double);{read double value} except; end; {some programs give huge values}
-
-        if ((header[i]='P') and (header[i+1]='R')  and (header[i+2]='E') and (header[i+3]='S') and (header[i+4]='S') and (header[i+5]='U') and (header[i+6]='R')) then
-             pressure:=validate_double;{read double value}
 
 
         if ((header[i]='I') and (header[i+1]='M')  and (header[i+2]='A') and (header[i+3]='G') and (header[i+4]='E') and (header[i+5]='T') and (header[i+6]='Y')) then
            imagetype:=get_string;{trim is already applied}
 
-        if ((header[i]='F') and (header[i+1]='I')  and (header[i+2]='L') and (header[i+3]='T') and (header[i+4]='E') and (header[i+5]='R') and (header[i+6]=' ')) then
-           head.filter_name:=get_string;{trim is already applied}
+        if (header[i]='F') then {F}
+        begin
+          if ((header[i+1]='I')  and (header[i+2]='L') and (header[i+3]='T') and (header[i+4]='E') and (header[i+5]='R') and (header[i+6]=' ')) then
+             head.filter_name:=get_string {trim is already applied}
+          else
+          if ((header[i+1]='L')  and (header[i+2]='A') and (header[i+3]='T') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
+               head.flat_count:=round(validate_double);{read integer as double value}
+        end; {F}
 
         if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
                  xbinning:=validate_double;{binning}
@@ -1226,19 +1244,11 @@ begin
              head.gain:=trim(get_as_string); {head.gain CCD}
         if ((header[i]='I') and (header[i+1]='S')  and (header[i+2]='O') and (header[i+3]='S') and (header[i+4]='P')) then
              if head.gain='' then head.gain:=trim(get_as_string);{isospeed, do not override head.gain}
-        if ((header[i]='E') and (header[i+1]='G')  and (header[i+2]='A') and (header[i+3]='I') and (header[i+4]='N')) then  {egain}
-             head.egain:=copy(trim(get_as_string),1,5);{e-/adu gain, use 4 digits only}
 
 
         {following variable are not set at zero Set at zero somewhere in the code}
         if ((header[i]='L') and (header[i+1]='I')  and (header[i+2]='G') and (header[i+3]='H') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
              head.light_count:=round(validate_double);{read integer as double value}
-        if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='R') and (header[i+3]='K') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
-             head.dark_count:=round(validate_double);{read integer as double value}
-        if ((header[i]='F') and (header[i+1]='L')  and (header[i+2]='A') and (header[i+3]='T') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
-             head.flat_count:=round(validate_double);{read integer as double value}
-        if ((header[i]='B') and (header[i+1]='I')  and (header[i+2]='A') and (header[i+3]='S') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then
-             head.flatdark_count:=round(validate_double);{read integer as double value}
 
         if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
                 if head.date_obs='' then head.date_obs:=get_string;
@@ -1260,17 +1270,21 @@ begin
          //    pressure:=validate_double;{read double value}
 
 
+        if ((header[i]='D') and (header[i+1]='A')) then {DA}
+        begin
+          if ((header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-')) then {DATE-}
+          begin
+            if ((header[i+5]='O') and (header[i+6]='B')) then
+                  head.date_obs:=get_string
+            else
+            if ((header[i+5]='A') and (header[i+6]='V')) then
+                  date_avg:=get_string;
+          end
+          else
+          if ((header[i+2]='R') and (header[i+3]='K') and (header[i+4]='_') and (header[i+5]='C') and (header[i+6]='N')and (header[i+7]='T')) then {DARK_CNT}
+               head.dark_count:=round(validate_double);{read integer as double value}
 
-        if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
-                head.date_obs:=get_string;
-
-
-        if ((header[i]='D') and (header[i+1]='A')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='A') and (header[i+6]='V')) then
-                date_avg:=get_string;
-
-
-        if ((header[i]='C') and (header[i+1]='A')  and (header[i+2]='L') and (header[i+3]='S') and (header[i+4]='T') and (header[i+5]='A')) then  {head.calstat is also for flats}
-            head.calstat:=get_string;{indicates calibration state of the image; B indicates bias corrected, D indicates dark corrected, F indicates flat corrected. M could indicate master}
+        end;
 
 
         if light then {read as light ##############################################################################################################################################################}
@@ -1278,21 +1292,30 @@ begin
           if ((header[i]='E') and (header[i+1]='Q')  and (header[i+2]='U') and (header[i+3]='I') and (header[i+4]='N') and (header[i+5]='O') and (header[i+6]='X')) then
                equinox:=validate_double;
 
-          if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='O') and (header[i+3]='T') and (header[i+4]='A')) then  {head.crota2}
+          if (header[i]='C') then {C}
           begin
-             if (header[i+5]='2') then  head.crota2:=validate_double else {read double value}
-             if (header[i+5]='1') then  head.crota1:=validate_double;{read double value}
-          end;
-          if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='P') and (header[i+3]='I') and (header[i+4]='X')) then {head.crpix1}
-          begin
-            if header[i+5]='1' then head.crpix1:=validate_double else{ref pixel for x}
-            if header[i+5]='2' then head.crpix2:=validate_double;    {ref pixel for y}
-          end;
-          if ((header[i]='C') and (header[i+1]='D')  and (header[i+2]='E') and (header[i+3]='L') and (header[i+4]='T')) then {head.cdelt1}
-          begin
-            if header[i+5]='1' then head.cdelt1:=validate_double else{deg/pixel for RA}
-            if header[i+5]='2' then head.cdelt2:=validate_double;    {deg/pixel for DEC}
-          end;
+            if (header[i+1]='R') then {CR}
+            begin
+              if ((header[i+2]='O') and (header[i+3]='T') and (header[i+4]='A')) then  {head.crota2}
+              begin
+                 if (header[i+5]='2') then  head.crota2:=validate_double else {read double value}
+                 if (header[i+5]='1') then  head.crota1:=validate_double;{read double value}
+              end
+              else
+              if ((header[i+2]='P') and (header[i+3]='I') and (header[i+4]='X')) then {head.crpix1}
+              begin
+                if header[i+5]='1' then head.crpix1:=validate_double else{ref pixel for x}
+                if header[i+5]='2' then head.crpix2:=validate_double;    {ref pixel for y}
+              end;
+            end {CR}
+            else
+            if ((header[i+1]='D')  and (header[i+2]='E') and (header[i+3]='L') and (header[i+4]='T')) then {head.cdelt1}
+            begin
+              if header[i+5]='1' then head.cdelt1:=validate_double else{deg/pixel for RA}
+              if header[i+5]='2' then head.cdelt2:=validate_double;    {deg/pixel for DEC}
+            end;
+          end; {C}
+
           if ( ((header[i]='S') and (header[i+1]='E')  and (header[i+2]='C') and (header[i+3]='P') and (header[i+4]='I') and (header[i+5]='X')) or     {secpi  x1/2}
                ((header[i]='S') and (header[i+1]='C')  and (header[i+2]='A') and (header[i+3]='L') and (header[i+4]='E') and (header[i+5]=' ')) or     {SCALE value for SGP files}
                ((header[i]='P') and (header[i+1]='I')  and (header[i+2]='X') and (header[i+3]='S') and (header[i+4]='C') and (header[i+5]='A')) ) then {pixscale}
@@ -1306,14 +1329,6 @@ begin
           if ((header[i]='Y') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {Ypixsz}
                  ypixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
 
-          if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and (header[i+3]='A') and (header[i+4]='L') and (header[i+5]='L')) then  {focall}
-                  focallen:=validate_double;{Focal length of telescope in mm, maxim DL keyword}
-
-          if ((header[i]='C') and (header[i+1]='R')  and (header[i+2]='V') and (header[i+3]='A') and (header[i+4]='L')) then {crval1/2}
-          begin
-            if (header[i+5]='1') then  head.ra0:=validate_double*pi/180; {ra center, read double value}
-            if (header[i+5]='2') then  head.dec0:=validate_double*pi/180; {dec center, read double value}
-          end;
           if ((header[i]='R') and (header[i+1]='A')  and (header[i+2]=' ')) then  {ra}
           begin
             ra_mount:=validate_double*pi/180;
@@ -1326,10 +1341,10 @@ begin
           end;
 
 
-          if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='J')) then
+          if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='J')) then {OBJ}
           begin
             if  ((header[i+3]='C') and (header[i+4]='T')) then {objctra, objctdec}
-            begin
+            begin {OBJCT}
               if ((header[i+5]='R') and (header[i+6]='A') and (ra_mount>=999) {ra_mount value is unfilled, preference for keyword RA}) then
               begin
                 mainwindow.ra1.text:=get_string;{triggers an onchange event which will convert the string to ra_radians}
@@ -1346,49 +1361,68 @@ begin
               else {for older MaximDL5}
               if ((header[i+5]='A') and (header[i+6]='Z')and (centaz='')) then
                                    centaz:=get_as_string; {universal for string and floats}
-            end;
-
+            end {OBJCT}
+            else
             if ((header[i+3]='E') and (header[i+4]='C') and (header[i+5]='T')) then {OBJECT}
               object_name:=get_string;{trim is already applied}
-          end;
+          end;{OBJ}
 
-          if ((header[i]='C') and (header[i+1]='E')  and (header[i+2]='N') and (header[i+3]='T') and (header[i+4]='A') and (header[i+5]='L') and (header[i+6]='T')) then  {SBIG 1.0 standard}
+          if (header[i]='C') then {C}
           begin
-            centalt:=get_as_string; {universal for string and floats}
-          end;
-
-
-          if ((header[i]='C') and (header[i+1]='D')) then
-          begin
-            if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then   head.cd1_1:=validate_double;
-            if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then   head.cd1_2:=validate_double;
-            if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then   head.cd2_1:=validate_double;
-            if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='2')) then   head.cd2_2:=validate_double;
-          end;
-
-          if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and
-                          (( (header[i+3]='U') and (header[i+4]='S') and (header[i+5]='T') and (header[i+6]='E')) or
-                           ( (header[i+3]='T') and (header[i+4]='E') and (header[i+5]='M') and (header[i+6]='P')) )  ) then
-                 focus_temp:=validate_double;{focus temperature}
-          if ((header[i]='A') and (header[i+1]='M')  and (header[i+2]='B') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
-                 focus_temp:=validate_double;{ambient temperature}
-
-
-          if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C') and
-                          (( (header[i+3]='U') and (header[i+4]='S') and (header[i+5]='P') and (header[i+6]='O')) or
-                           ( (header[i+3]='P') and (header[i+4]='O') and (header[i+5]='S') and (header[i+6]=' ')) )  ) then
-                 try focus_pos:=round(validate_double);{focus position} except;end;
-
-
-          if ((header[i]='R') and (header[i+1]='E')  and (header[i+2]='F') and (header[i+3]='_') and             (header[i+5]=' ')) then  {for manual alignment stacking, second phase}
-          begin
-            if (header[i+4]='X') then   ref_X:=validate_double {for manual alignment stacking}
+            if ((header[i+1]='R')  and (header[i+2]='V') and (header[i+3]='A') and (header[i+4]='L')) then {crval1/2}
+            begin
+              if (header[i+5]='1') then  head.ra0:=validate_double*pi/180; {ra center, read double value}
+              if (header[i+5]='2') then  head.dec0:=validate_double*pi/180; {dec center, read double value}
+            end
             else
-            if (header[i+4]='Y') then   ref_Y:=validate_double;
+            if (header[i+1]='D') then {CD}
+            begin
+              if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then   head.cd1_1:=validate_double;
+              if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then   head.cd1_2:=validate_double;
+              if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then   head.cd2_1:=validate_double;
+              if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='2')) then   head.cd2_2:=validate_double;
+            end
+            else
+            if ((header[i+1]='E')  and (header[i+2]='N') and (header[i+3]='T') and (header[i+4]='A') and (header[i+5]='L') and (header[i+6]='T')) then  {CENTALT, SBIG 1.0 standard}
+            begin
+              centalt:=get_as_string; {universal for string and floats}
+            end;
           end;
 
-          if ((header[i]='B') and (header[i+1]='A')  and (header[i+2]='Y') and (header[i+3]='E') and (header[i+4]='R') and (header[i+5]='P') and (header[i+6]='A')) then
-             bayerpat:=get_string;{BAYERPAT, bayer pattern such as RGGB}
+          if ((header[i]='P') and (header[i+1]='R')  and (header[i+2]='E') and (header[i+3]='S') and (header[i+4]='S') and (header[i+5]='U') and (header[i+6]='R')) then
+               pressure:=validate_double;{read double value}
+
+          if (header[i]='A') then {A}
+          begin
+            if ((header[i+1]='M')  and (header[i+2]='B') and (header[i+3]='-') and (header[i+4]='T') and (header[i+5]='E') and (header[i+6]='M')) then
+                focus_temp:=validate_double {ambient temperature}
+            else
+            if ((header[i+1]='O')  and (header[i+2]='C')) then {AOC}
+            begin {ASCOM Observatory Conditions}
+              if ((header[i+3]='B') and (header[i+4]='A') and (header[i+5]='R') and (header[i+6]='O')) then { AOCBAROM}
+                 pressure:=validate_double {read double value}
+              else
+              if ((header[i+3]='A') and (header[i+4]='M') and (header[i+5]='B') and (header[i+6]='T')) then { AOCAMBT}
+                 focus_temp:=validate_double;{read double value}
+            end {AOC}
+            else
+            if ((header[i+1]='N')  and (header[i+2]='N') and (header[i+3]='O') and (header[i+4]='T') and (header[i+5]='A') and (header[i+6]='T')) then
+               annotated:=true; {contains annotations}
+          end;
+
+          if ((header[i]='F') and (header[i+1]='O')  and (header[i+2]='C')) then  {FOC}
+          begin
+            if ((header[i+3]='A') and (header[i+4]='L') and (header[i+5]='L')) then  {FOCALLEN}
+                    focallen:=validate_double {Focal length of telescope in mm, maxim DL keyword}
+            else
+            if      (  ((header[i+3]='U') and (header[i+4]='S') and (header[i+5]='P') and (header[i+6]='O')) or
+                       ((header[i+3]='P') and (header[i+4]='O') and (header[i+5]='S') and (header[i+6]=' '))  ) then
+                 try focus_pos:=round(validate_double);{focus position} except;end
+            else
+            if      (  ((header[i+3]='U') and (header[i+4]='S') and (header[i+5]='T') and (header[i+6]='E')) or
+                       ((header[i+3]='T') and (header[i+4]='E') and (header[i+5]='M') and (header[i+6]='P')) )  then
+                   focus_temp:=validate_double;{focus temperature}
+          end;
 
           if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='A') and (header[i+3]='Y') and (header[i+4]='R') and (header[i+5]='O') and (header[i+6]='F')) then
              xbayroff:=validate_double;{offset to used to correct BAYERPAT due to flipping}
@@ -1406,7 +1440,8 @@ begin
             if ((header[i+5]='O') and (header[i+6]='N')) then
                sitelong:=get_as_string;{universal, site longitude as string}
           end;
-          if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='S'))  then  {site latitude, longitude}
+
+          if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='S'))  then  {OBS    site latitude, longitude}
           begin
             if ( ((header[i+3]='L') and (header[i+4]='A') and (header[i+5]='T')) or ((header[i+3]='-') and (header[i+4]='L') and(header[i+5]='A')) ) then  {OBSLAT or OBS-LAT}
               sitelat:=get_as_string;{universal, site latitude as string}
@@ -1432,20 +1467,23 @@ begin
           if ((header[i]='I') and (header[i+1]='N')  and (header[i+2]='S') and (header[i+3]='T') and (header[i+4]='R') and (header[i+5]='U') and (header[i+6]='M')) then
                    INSTRUM:=get_string;
 
-          if ((header[i]='B') and (header[i+1]='A')  and (header[i+2]='N') and (header[i+3]='D') and (header[i+4]='P') and (header[i+5]='A') and (header[i+6]='S')) then
+          if (header[i]='B') then {B}
           begin
-             BANDPASS:=validate_double;{read integer as double value. Deep sky survey keyword}
-             if ((bandpass=35) or (bandpass=8)) then head.filter_name:='red'{ 37 possII IR,  35=possII red, 18=possII blue, 8=POSSI red, 7=POSSI blue}
-             else
-             if ((bandpass=18) or (bandpass=7)) then head.filter_name:='blue'
-             else
-             head.filter_name:=floattostr(bandpass);
+            if ((header[i+1]='A')  and (header[i+2]='Y') and (header[i+3]='E') and (header[i+4]='R') and (header[i+5]='P') and (header[i+6]='A')) then {BAYERPAT}
+               bayerpat:=get_string {BAYERPAT, bayer pattern such as RGGB}
+            else
+            if ((header[i+1]='A')  and (header[i+2]='N') and (header[i+3]='D') and (header[i+4]='P') and (header[i+5]='A') and (header[i+6]='S')) then
+            begin
+               BANDPASS:=validate_double;{read integer as double value. Deep sky survey keyword}
+               if ((bandpass=35) or (bandpass=8)) then head.filter_name:='red'{ 37 possII IR,  35=possII red, 18=possII blue, 8=POSSI red, 7=POSSI blue}
+               else
+               if ((bandpass=18) or (bandpass=7)) then head.filter_name:='blue'
+               else
+               head.filter_name:=floattostr(bandpass);
+            end;
           end;
 
-          if ((header[i]='A') and (header[i+1]='N')  and (header[i+2]='N') and (header[i+3]='O') and (header[i+4]='T') and (header[i+5]='A') and (header[i+6]='T')) then
-             annotated:=true; {contains annotations}
-
-
+          {adjustable keywords}
           if ((header[i]=sqm_key[1]{S}) and (header[i+1]=sqm_key[2]{Q}) and (header[i+2]=sqm_key[3]{M})and (header[i+3]=sqm_key[4])and (header[i+4]=sqm_key[5])and (header[i+5]=sqm_key[6])and (header[i+6]=sqm_key[7]) and (header[i+7]=sqm_key[8])) then {adjustable keyword}
           begin
             sqm_value:=get_as_string; {universal for string and floats}{SQM, accept strings (standard) and floats}
@@ -1456,42 +1494,48 @@ begin
             centaz:=get_as_string; {universal for string and floats} {SGP, older CCDCIEL}
           end;
 
-
           if ((header[i]='E') and (header[i+1]='X')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='N') and (header[i+5]='D')) then {EXTEND}
             if pos('T',get_as_string)>0 then last_extension:=false;{could be extensions, will be updated later }
 
 
           {following is only required when using DSS polynome plate fit}
-          if ((header[i]='A') and (header[i+1]='M')  and (header[i+2]='D') and (header[i+3]='X')) then
-          begin
-            if header[i+5]=' ' then s:=(header[i+4]) else s:=(header[i+4])+(header[i+5]);
-            val(s,nr,error3);{1 to 20}
-            x_coeff[nr-1]:=validate_double;
-          end;
-          if ((header[i]='A') and (header[i+1]='M')  and (header[i+2]='D') and (header[i+3]='Y')) then
-          begin
-            if header[i+5]=' ' then s:=(header[i+4]) else s:=(header[i+4])+(header[i+5]);
-            val(s,nr,error3);{1 to 20}
-            y_coeff[nr-1]:=validate_double;
-          end;
           if ((header[i]='P') and (header[i+1]='P')  and (header[i+2]='O')) then
           begin
             if (header[i+3]='3') then   ppo_coeff[2]:=validate_double;
             if (header[i+3]='6') then   ppo_coeff[5]:=validate_double;
           end;
-          if ((header[i]='A') and (header[i+1]='_')) then
-          begin {pixel to sky coefficient}
-            if ((header[i+2]='O') and (header[i+3]='R') and (header[i+4]='D')) then a_order:=round(validate_double);{should be >=2 if TAN-SIP convention available}
-            if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='0')) then a_0_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-            if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='1')) then a_0_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-            if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='2')) then a_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-            if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='3')) then a_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-            if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='0')) then a_1_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-            if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then a_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-            if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then a_1_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-            if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='0')) then a_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-            if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then a_2_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
-            if ((header[i+2]='3') and (header[i+3]='_') and (header[i+4]='0')) then a_3_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+
+          if (header[i]='A') then
+          begin
+            if ((header[i+1]='M')  and (header[i+2]='D') and (header[i+3]='X')) then  {AMDX}
+            begin
+              if header[i+5]=' ' then s:=(header[i+4]) else s:=(header[i+4])+(header[i+5]);
+              val(s,nr,error3);{1 to 20}
+              x_coeff[nr-1]:=validate_double;
+            end
+            else
+            if ((header[i+1]='M')  and (header[i+2]='D') and (header[i+3]='Y')) then  {AMDY}
+            begin
+              if header[i+5]=' ' then s:=(header[i+4]) else s:=(header[i+4])+(header[i+5]);
+              val(s,nr,error3);{1 to 20}
+              y_coeff[nr-1]:=validate_double;
+            end
+            else
+            if (header[i+1]='_') then
+            begin {pixel to sky coefficient}
+              if ((header[i+2]='O') and (header[i+3]='R') and (header[i+4]='D')) then a_order:=round(validate_double);{should be >=2 if TAN-SIP convention available}
+              if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='0')) then a_0_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='1')) then a_0_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='2')) then a_0_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='0') and (header[i+3]='_') and (header[i+4]='3')) then a_0_3:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='0')) then a_1_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='1')) then a_1_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='1') and (header[i+3]='_') and (header[i+4]='2')) then a_1_2:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='0')) then a_2_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='2') and (header[i+3]='_') and (header[i+4]='1')) then a_2_1:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+              if ((header[i+2]='3') and (header[i+3]='_') and (header[i+4]='0')) then a_3_0:=validate_double;{TAN-SIP convention, where ’SIP’ stands for Simple Imaging Polynomial}
+            end;
+
           end;
           if ((header[i]='B') and (header[i+1]='_')) then
           begin {pixel to sky coefficient}
@@ -2124,10 +2168,16 @@ begin
     if key='DATE-OBS=' then head.date_obs:=read_string else
 
     if key='BAYERPAT=' then bayerpat:=read_string;
+
     if key='PRESSURE=' then pressure:=round(read_float) else
+    if key='AOCBAROM=' then pressure:=round(read_float) else
+
+
+
     if key='FOCUSTEM=' then focus_temp:=round(read_float) else
     if key='FOCTEMP =' then focus_temp:=round(read_float) else
     if key='AMB-TEMP=' then focus_temp:=round(read_float) else
+    if key='AOCAMBT =' then focus_temp:=round(read_float) else
 
     if key='TELESCOP=' then telescop:=read_string;
     if key='INSTRUME=' then instrum:=read_string;
@@ -3189,7 +3239,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.04.1, '+about_message4+
+  'ASTAP version 2022.04.2, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -14631,8 +14681,6 @@ begin
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
-
-
 
 
 procedure Tmainwindow.set_modified_date1Click(Sender: TObject);

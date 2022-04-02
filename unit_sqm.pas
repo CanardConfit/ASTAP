@@ -83,11 +83,6 @@ var
   airm, correction,alt,az : double;
   bayer,form_exist        : boolean;
 begin
-//  if ((bayerpat<>'') or (head.naxis3>1)) then {can not process colour or OSC images}
-//  begin
-//    result:=false;
-//    exit;
-//  end;
   form_exist:=form_sqm1<>nil;   {see form_sqm1.FormClose action to make this working reliable}
 
   bayer:=((bayerpat<>'') and (Xbinning=1));

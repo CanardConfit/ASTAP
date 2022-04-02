@@ -2,7 +2,7 @@
  * File: unprocessed_raw.cpp
  * Copyright 2009-2021 LibRaw LLC (info@libraw.org)
  * Created: Fri Jan 02, 2009
- * Modified for adding meta data to PPM file and FITS export. By Han Kleijn. Version 2021-11-21
+ * Modified for adding meta data to PPM file and FITS export. By Han Kleijn. Version see message
  *
  * LibRaw sample
  * Generates unprocessed raw image: with masked pixels and without black
@@ -65,7 +65,7 @@ int main(int ac, char *av[])
   if (ac < 2)
   {
   usage:
-    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2021-11-21\n"
+    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2022-04-01\n"
            "Usage: %s [-q] [-A] [-g] [-s N] raw-files....\n"
            "\t-q - be quiet\n"
            "\t-s N - select Nth image in file (default=0)\n"

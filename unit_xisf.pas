@@ -243,9 +243,13 @@ begin
 
   extract_double_keyword('FOCALLEN',focallen);
   extract_double_keyword('PRESSURE',pressure);
+  extract_double_keyword('AOCBAROM',pressure);
+
   extract_double_keyword('FOCUSTEM',focus_temp);
   extract_double_keyword('FOCTEMP',focus_temp);
   extract_double_keyword('AMB-TEMP',focus_temp);
+  extract_double_keyword('AOCAMBT',focus_temp);
+
 
   extract_double_keyword('XPIXSZ',xpixsz);
 

@@ -850,7 +850,7 @@ var
   exposureR, exposureG,exposureB,exposureRGB,exposureL            : integer;
   sum_exp,photometry_stdev                                        : double;
   referenceX,referenceY    : double;{reference position used stacking}
-  ref_X, ref_Y             : double;{reference position from FITS header, used for manual stacking of colour lights, second stage}
+//  ref_X, ref_Y             : double;{reference position from FITS header, used for manual stacking of colour lights, second stage}
   jd_mid                   : double;{julian day of mid head.exposure}
   jd_sum                   : double;{sum of julian days}
   jd_stop                  : double;{end observation in julian days}
@@ -9483,11 +9483,11 @@ begin
             { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
             { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
-            if stackmenu1.use_manual_alignment1.checked then
-            begin
-              update_float('REF_X   =',' / Reference position for manual stacking. ' ,                      referenceX);{will be used later for alignment in mode 'L'}
-              update_float('REF_Y   =',' / Reference position for manual stacking. ' ,referenceY);
-            end;
+//            if stackmenu1.use_manual_alignment1.checked then
+//            begin
+//              update_float('REF_X   =',' / Reference position for manual stacking. ' ,                      referenceX);{will be used later for alignment in mode 'L'}
+//              update_float('REF_Y   =',' / Reference position for manual stacking. ' ,referenceY);
+//            end;
 
             stack_info:=' '+inttostr(head.flatdark_count)+'x'+'FD  '+
                             inttostr(head.flat_count)+'x'+'F  '+
