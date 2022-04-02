@@ -94,7 +94,7 @@ uses unit_hjd; {for polar2}
 {$R *.lfm}
 
 var
-   X_pln,Y_pln,Z_pln : double; {of planet}
+//   X_pln,Y_pln,Z_pln : double; {of planet}
 
    wtime2actual: double;
    midpoint    : boolean;
@@ -103,8 +103,9 @@ var
 const
    sun200_calculated : boolean=false; {sun200 calculated for comets}
 
-VAR TEQX    : double;
-    pb_earth, vb_earth : r3_array;{heliocentric earth vector}
+VAR
+//    TEQX    : double;
+//    pb_earth, vb_earth : r3_array;{heliocentric earth vector}
     ph_earth, vh_earth : r3_array;{Barycentric earth vector}
     ph_pln             : r3_array;{helio centric planet vector}
 
@@ -204,7 +205,7 @@ begin
   mjd:=julian-2400000.5;  {convert to mjd}
   if sun_earth_vector=false then
   begin
-    sla_EPV (mjd, ph_earth,vh_earth, pb_earth,vb_earth);{Barycentric position earth including light time correction, high accuracy for years 1900 to 2100. ph,vh are not used but are required in sla_epv for calc pb vb}
+    sla_EPV2(mjd,false {heliocentric}, ph_earth,vh_earth);{Heliocentric position earth including light time correction, high accuracy for years 1900 to 2100}
     sun200_calculated:=true;
   end;
   epoch:= julian_calc(year,month,day,0,0,0)-2400000.5; {MJD}
@@ -276,7 +277,7 @@ function illum_planet : double; { Get phase angle comet. Only valid is comet rou
 var
   r_sp,r_ep,elong,phi1,phase1 :double;
 begin
-  illum2(ph_pln[1],ph_pln[2],ph_pln[3],pb_earth[1],pb_earth[2],pb_earth[3],r_sp,r_ep,elong,phi1, phase1 );{ heliocentric positions minor planet and earth}
+  illum2(ph_pln[1],ph_pln[2],ph_pln[3],ph_earth[1],ph_earth[2],ph_earth[3],r_sp,r_ep,elong,phi1, phase1 );{ heliocentric positions minor planet and earth}
   result:=phi1*pi/180;
 end;
 
@@ -370,11 +371,11 @@ end;
 procedure convert_MPCORB_line(txt : string; var desn,name: string; var yy,mm,dd,a_e,a_a,a_i,a_ohm,a_w,a_M,h,g: double);{read asteroid, han.k}
 var
   code2           : integer;
-  degrees_to_perihelion,c_epochdelta           : double;
+//  degrees_to_perihelion,c_epochdelta           : double;
   date_regel                                             : STRING[5];
   centuryA,monthA,dayA                                   :string[2];
-const
-   Gauss_gravitational_constant: double=0.01720209895*180/pi;
+//const
+//   Gauss_gravitational_constant: double=0.01720209895*180/pi;
 begin
   desn:='';{assume failure}
 
@@ -468,14 +469,14 @@ var
   txtf : textfile;
   count,fontsize           : integer;
   yy,mm,dd,h,a_or_q, DELTA,sun_delta,ra2,dec2,mag,phase,delta_t,
-  SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec,u0,v0 ,a_e,a_a,a_i,a_ohm,a_w,a_M   : double;
+  SIN_dec_ref,COS_dec_ref,c_k,fov,cos_telescope_dec,u0,v0 ,a_e,a_i,a_ohm,a_w,a_M   : double;
   desn,name,s, thetext1,thetext2,fontsize_str:string;
-  flip_horizontal, flip_vertical,form_existing, errordecode,sip : boolean;
+  flip_horizontal, flip_vertical,form_existing, errordecode : boolean;
 
       procedure plot_asteroid(sizebox :integer);
       var
         dra,ddec, delta_ra,det,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh : double;
-        x,y,x2,y2                                                                               : integer;
+        x,y                                                                         : integer;
       begin
         //memo2_message('Asteroid position at :'+head.date_obs+',  '+#9+floattostr(ra2*180/pi)+','+floattostr(dec2*180/pi));
 
@@ -506,9 +507,6 @@ var
         if ((x>-50) and (x<=head.width+50) and (y>-50) and (y<=head.height+50)) then {within image1 with some overlap}
         begin
           {annotate}
-           if flip_horizontal then x2:=(head.width)-x else x2:=x;
-           if flip_vertical   then y2:=y         else y2:=(head.height)-y;
-
            if showfullnames then thetext1:=trim(name) else thetext1:=trim(desn)+'('+floattostrF(mag,ffgeneral,3,1)+')';
            if showmagnitude then thetext2:='{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext2:='';
 

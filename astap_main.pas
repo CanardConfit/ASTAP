@@ -13106,22 +13106,21 @@ end;
 function find_reference_star(img : image_array) : boolean;{for manual alignment}
 var
   xc,yc,hfd2,fwhm_star2,snr,flux : double;
-  shapetype                      : integer;
 begin
   result:=false; {assume failure}
   if pos('small',stackmenu1.manual_centering1.text)<>0 then {comet}
   begin
-    find_highest_pixel_value(img_loaded,10,startX,startY,xc,yc);
+    find_highest_pixel_value(img,10,startX,startY,xc,yc);
   end
   else
   if pos('medium',stackmenu1.manual_centering1.text)<>0 then {comet}
   begin
-    find_highest_pixel_value(img_loaded,20,startX,startY,xc,yc);
+    find_highest_pixel_value(img,20,startX,startY,xc,yc);
   end
   else
   if pos('large',stackmenu1.manual_centering1.text)<>0 then {comet}
   begin
-    find_highest_pixel_value(img_loaded,30,startX,startY,xc,yc);
+    find_highest_pixel_value(img,30,startX,startY,xc,yc);
   end
 
   else
@@ -13131,7 +13130,7 @@ begin
     yc:=startY;
   end
   else {star alignment}
-  HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
+  HFD(img,startX,startY,14{annulus radius},99 {flux aperture restriction},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
 
 
   if hfd2<90 then {detected something}
@@ -14570,8 +14569,6 @@ begin
 end;
 
 procedure Tmainwindow.electron_to_adu_factors1Click(Sender: TObject);
-var
-  inp : string;
 begin
   head.egain:=InputBox('factor e-/ADU, unbinned?',
   'At unity gain this factor shall be 1'+#10
@@ -14594,8 +14591,7 @@ var
   centerX, centerY,distance_center,range,factor   : double;
 
   mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,mode_halo,noise_level,
-  noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,required_bg,
-  {difference,}most_common                  : array[0..2] of double;
+  noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,required_bg     : array[0..2] of double;
   red_halo,green_halo,blue_halo : boolean;
 
   Save_Cursor:TCursor;

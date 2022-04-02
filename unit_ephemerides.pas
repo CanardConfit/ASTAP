@@ -38,7 +38,7 @@ type
   r3x3_array = array[1..3,1..3] of double;
 
 
-procedure sla_EPV(DATE : double; out PH, VH, PB, VB : r3_array); //  J2000 heliocentric and barycentric Earth position and velocity. Light speed corrected.
+procedure sla_EPV2(DATE : double; bary :boolean; out PE, VE : r3_array); //  J2000 heliocentric or barycentric Earth position and velocity. Light speed corrected. If bary is false, heliocentric, if true barycentric
 procedure sla_PLANET(DATE : double;  NP: integer; out PV: r6_array; out JSTAT: integer); // J2000 heliocentric position and velocity of planets 1..8 based on original Simon et al Fortran code. Pluto removed.
 procedure orbit(DATE : double; JFORM : integer; EPOCH : double; ORBINC, ANODE,PERIH, AORQ, E, AORL, DM : double; out PV :r6_array; out JSTAT : integer) ;//Heliocentric position and velocity of a planet, asteroid or comet
 procedure precession3(JD0, JD1: double; var RA, DC : double); {precession}
@@ -1900,7 +1900,7 @@ end;
 *-----------------------------------------------------------------------;}
 
 
-procedure sla_EPV (DATE : double; out PH, VH , PB, VB : r3_array);
+procedure sla_EPV2 (DATE : double; bary :boolean; out PE, VE : r3_array);//  J2000 heliocentric or barycentric Earth position and velocity. Light speed corrected. If bary is false, heliocentric, if true barycentric
 
 {*  ----------------------
 *  Ephemeris Coefficients
@@ -1945,7 +1945,12 @@ procedure sla_EPV (DATE : double; out PH, VH , PB, VB : r3_array);
   {Notes on the Pascal version:
   In $mode objfpc it is possible to write the coeffcients arrays without zeros so without the unused areas.
   But the resulting executable is about 20k larger. So the current setup using simple rectangle arrays is
-  more efficient.}
+  more efficient.
+  Furthermore in the Fortran orginal version Heliocentric and Barycentric where always both calculated. In the Pascal version barycentric is only calculated when specified.
+  }
+
+var
+  PH, VH , PB, VB : r3_array;
 
 const
   {specify useful range of data the arrays. The remainder of the arrays is filled with zero's}
@@ -4877,78 +4882,85 @@ begin
     //*     Obtain component of SSB to Earth ecliptic vector;
     //*     ------------------------------------------------;
     //*     SSB to Sun, T^0 terms.
-    for  J := 1 to NS0[K]  do
-    begin
-      A := S0[K,J,1];
-      B := S0[K,J,2];
-      C := S0[K,J,3];
+    if bary then {mod for pascal, calculateBary centric only if requested}
+    begin {Barycentric}
+      for  J := 1 to NS0[K]  do
+      begin
+        A := S0[K,J,1];
+        B := S0[K,J,2];
+        C := S0[K,J,3];
 
-      P := B + C*T;
-      XYZ  := XYZ  + A*COS(P);
-      XYZD := XYZD - A*C*SIN(P);
-    end;
-    //     SSB to Sun, T^1 terms.
-    for  J := 1 to NS1[K]  do
-    begin
-      A := S1[K,J,1];
-      B := S1[K,J,2];
-      C := S1[K,J,3];
+        P := B + C*T;  {factors from heliocentric. so that part has always be calculated}
+        XYZ  := XYZ  + A*COS(P);
+        XYZD := XYZD - A*C*SIN(P);
+      end;
+      //     SSB to Sun, T^1 terms.
+      for  J := 1 to NS1[K]  do
+      begin
+        A := S1[K,J,1];
+        B := S1[K,J,2];
+        C := S1[K,J,3];
 
-      CT := C*T;
-      P := B + CT;
-      CP := COS(P);
-      XYZ  := XYZ  + A*T*CP;
-      XYZD := XYZD + A*(CP-CT*SIN(P));
-    end;
-    //     SSB to Sun, T^2 terms.
-    for  J := 1 to NS2[K]  do
-    begin
-      A := S2[K,J,1];
-      B := S2[K,J,2];
-      C := S2[K,J,3];
+        CT := C*T;
+        P := B + CT;
+        CP := COS(P);
+        XYZ  := XYZ  + A*T*CP;
+        XYZD := XYZD + A*(CP-CT*SIN(P));
+      end;
+      //     SSB to Sun, T^2 terms.
+      for  J := 1 to NS2[K]  do
+      begin
+        A := S2[K,J,1];
+        B := S2[K,J,2];
+        C := S2[K,J,3];
 
-      CT := C*T;
-      P := B + CT;
-      CP := COS(P);
-      XYZ  := XYZ  + A*T2*CP;
-      XYZD := XYZD + A*T*(2*CP-CT*SIN(P));
-    end;
-    //     Barycentric Earth position and velocity component.
-    BP[K] := XYZ;
-    BV[K] := XYZD / DJY;
-    //     Next Cartesian component.
+        CT := C*T;
+        P := B + CT;
+        CP := COS(P);
+        XYZ  := XYZ  + A*T2*CP;
+        XYZD := XYZD + A*T*(2*CP-CT*SIN(P));
+      end;
+      //     Barycentric Earth position and velocity component.
+      BP[K] := XYZ;
+      BV[K] := XYZD / DJY;
+      //     Next Cartesian component.
+    end;{Barycentric}
   end; {loop for X, Y,Z}
 
 
   //  Rotate from ecliptic to ICRS coordinates and  the results.
-  {heliocentric}
-  X := HP[1];
-  Y := HP[2];
-  Z := HP[3];
-  PH[1] :=      X + AM12*Y + AM13*Z;
-  PH[2] := AM21*X + AM22*Y + AM23*Z;
-  PH[3] :=          AM32*Y + AM33*Z;
-  X := HV[1];
-  Y := HV[2];
-  Z := HV[3];
-  VH[1] :=      X + AM12*Y + AM13*Z;
-  VH[2] := AM21*X + AM22*Y + AM23*Z;
-  VH[3] :=          AM32*Y + AM33*Z;
 
-  // Barycentric Earth position
-  X := BP[1];
-  Y := BP[2];
-  Z := BP[3];
-  PB[1] :=      X + AM12*Y + AM13*Z;
-  PB[2] := AM21*X + AM22*Y + AM23*Z;
-  PB[3] :=          AM32*Y + AM33*Z;
-  X := BV[1];
-  Y := BV[2];
-  Z := BV[3];
-  VB[1] :=      X + AM12*Y + AM13*Z;
-  VB[2] := AM21*X + AM22*Y + AM23*Z;
-  VB[3] :=          AM32*Y + AM33*Z;
-  end;
+  if bary=false then {mod for Pascal. Calculate heliocentric or bary centric if requested, not both}
+  begin {heliocentric}
+    X := HP[1];
+    Y := HP[2];
+    Z := HP[3];
+    PE[1] :=      X + AM12*Y + AM13*Z;
+    PE[2] := AM21*X + AM22*Y + AM23*Z;
+    PE[3] :=          AM32*Y + AM33*Z;
+    X := HV[1];
+    Y := HV[2];
+    Z := HV[3];
+    VE[1] :=      X + AM12*Y + AM13*Z;
+    VE[2] := AM21*X + AM22*Y + AM23*Z;
+    VE[3] :=          AM32*Y + AM33*Z;
+  end {heliocentric}
+  else
+  begin // Barycentric Earth position
+    X := BP[1];
+    Y := BP[2];
+    Z := BP[3];
+    PE[1] :=      X + AM12*Y + AM13*Z;
+    PE[2] := AM21*X + AM22*Y + AM23*Z;
+    PE[3] :=          AM32*Y + AM33*Z;
+    X := BV[1];
+    Y := BV[2];
+    Z := BV[3];
+    VE[1] :=      X + AM12*Y + AM13*Z;
+    VE[2] := AM21*X + AM22*Y + AM23*Z;
+    VE[3] :=          AM32*Y + AM33*Z;
+  end;{Barycentric}
+end;
 
 end.
 

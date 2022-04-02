@@ -117,7 +117,7 @@ begin
 
   cart2(1,dec,ra,x0,y0,z0); {make cartesian coordinates}
 
-  sla_EPV (julian_et-2400000.5{mjd}, ph_earth,vh_earth , pb_earth,vb_earth {AU/day});{barycentric position earth including light time correction, high accuracy for years 1900 to 2100}
+  sla_EPV2(julian_et-2400000.5{mjd}, true {barycentric}, pb_earth,vb_earth {AU/day});{barycentric position earth including light time correction, high accuracy for years 1900 to 2100}
   x0:=x0+vb_earth[1]*0.00577552; {conversion from AU/day to speed of light, about 1/173} {apply aberration,(v_earth/speed_light)*180/pi=20.5"}
   y0:=y0+vb_earth[2]*0.00577552; {conversion from AU/day to speed of light, about 1/173}
   z0:=z0+vb_earth[3]*0.00577552; {conversion from AU/day to speed of light, about 1/173}
