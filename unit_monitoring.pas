@@ -93,7 +93,7 @@ var
    distance,deltaRA,deltaDEC : double;
    direction : string;
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
   with stackmenu1 do
   begin
     raposition1.visible:=true;

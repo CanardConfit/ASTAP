@@ -65,7 +65,7 @@ var
 
   sqm_applyDF: boolean;
 
-function calculate_sqm(get_bk,get_his : boolean; pedestal2 : integer) : boolean; {calculate sky background value}
+function calculate_sqm(get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
 
 
 implementation
@@ -78,7 +78,7 @@ var
 
 
 
-function calculate_sqm(get_bk,get_his : boolean; pedestal2 : integer) : boolean; {calculate sky background value}
+function calculate_sqm(get_bk,get_his : boolean; var pedestal2 : integer) : boolean; {calculate sky background value}
 var
   airm, correction,alt,az : double;
   bayer,form_exist        : boolean;
@@ -115,7 +115,7 @@ begin
     begin
       if pedestal2>0 then
       begin
-        if form_exist then form_sqm1.green_message1.caption:=form_sqm1.error_message1.caption+'Dark already applied! Pedestal should be zero.'+#10 else memo2_message('Dark already applied! Pedestal should be zero.');
+        if form_exist then form_sqm1.green_message1.caption:=form_sqm1.error_message1.caption+'Dark already applied! Pedestal value ignored.'+#10 else memo2_message('Dark already applied! Pedestal value ignored.');
         pedestal2:=0; {prevent wrong values}
       end;
     end
@@ -140,7 +140,7 @@ begin
     end;
 
     sqmfloat:=flux_magn_offset-ln((cblack-pedestal2)/sqr(head.cdelt2*3600){flux per arc sec})*2.511886432/ln(10);
-    calculate_az_alt(0 {try to use header values} ,head,{out}az,alt);
+    calculate_az_alt(1 {force calculation from ra, dec} ,head,{out}az,alt);
 
     centalt:=inttostr(round(alt));{for reporting in menu sqm1}
     if alt<>0 then
@@ -162,6 +162,7 @@ end;
 procedure display_sqm;
 var
   update_hist : boolean;
+  pedestal2   : integer;
 begin
   with form_sqm1 do
   begin
@@ -184,6 +185,7 @@ begin
       exit;
     end;
 
+    pedestal2:=pedestal;{protect pedestal setting}
     if sqm_applydf1.checked then
     begin
       analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
@@ -195,7 +197,7 @@ begin
         memo2_message('Calibration status '+head.calstat+'. Used '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
 
         update_text('CALSTAT =',#39+head.calstat+#39);
-        pedestal:=0;{pedestal no longer required}
+        pedestal2:=0;{pedestal no longer required}
         update_hist:=true; {dark is applied, update histogram for background measurement}
       end
       else
@@ -203,7 +205,7 @@ begin
     end;
 
     {calc}
-    if calculate_sqm(true {get backgr},update_hist{get histogr},pedestal)=false then {failure in calculating sqm value}
+    if calculate_sqm(true {get backgr},update_hist{get histogr},pedestal2)=false then {failure in calculating sqm value}
     begin
       if centalt='0' then error_message1.caption:=error_message1.caption+'Could not retrieve or calculate altitude. Enter the default geographic location'+#10;
       sqm1.caption:='?';
@@ -211,7 +213,6 @@ begin
     end;
 
     {report}
-    pedestal1.caption:=inttostr(pedestal);
     background1.caption:=inttostr(round(cblack));
     altitude1.caption:=centalt;
     sqm1.caption:=floattostrF(sqmfloat,ffFixed,0,2)
@@ -226,34 +227,34 @@ end;
 
 
 procedure Tform_sqm1.latitude1Change(Sender: TObject);{han.k}
+begin
+end;
+
+procedure Tform_sqm1.latitude1Exit(Sender: TObject);
 var
   errordecode:boolean;
 begin
   sitelat:=latitude1.Text;
   dec_text_to_radians(sitelat,site_lat_radians,errordecode);
   if errordecode then latitude1.color:=clred else latitude1.color:=clwindow;
-end;
-
-procedure Tform_sqm1.latitude1Exit(Sender: TObject);
-begin
   display_sqm;
 end;
 
 
 procedure Tform_sqm1.longitude1Change(Sender: TObject);{han.k}
+begin
+end;
+
+procedure Tform_sqm1.longitude1Exit(Sender: TObject);
 var
-  errordecode:boolean;
+    errordecode:boolean;
 begin
   sitelong:=longitude1.Text;
   dec_text_to_radians(sitelong,site_long_radians,errordecode);
   if errordecode then longitude1.color:=clred else longitude1.color:=clwindow;
-
-end;
-
-procedure Tform_sqm1.longitude1Exit(Sender: TObject);
-begin
   display_sqm;
 end;
+
 
 procedure Tform_sqm1.ok1Click(Sender: TObject);
 begin
@@ -335,6 +336,7 @@ begin
 
   latitude1.Text:=trim(sitelat); {copy the string to tedit}
   longitude1.Text:=trim(sitelong);
+  pedestal1.Text:=inttostr(pedestal);
 
   display_sqm;
 end;

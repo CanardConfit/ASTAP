@@ -138,7 +138,7 @@ var
  img_bk,img_sa                         : image_array;
 
 begin
-  if fits_file=false then exit; {file loaded?}
+  if head.naxis=0 then exit; {file loaded?}
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
@@ -909,7 +909,7 @@ var
  img_sa : image_array;
 
 begin
-  if fits_file=false then exit; {file loaded?}
+  if head.naxis=0 then exit; {file loaded?}
 
   max_stars:=1000;
 
@@ -1240,7 +1240,7 @@ var
  Flipvertical, Fliphorizontal, restore_req  : boolean;
  detext  : string;
 begin
-  if fits_file=false then exit; {file loaded?}
+  if head.naxis=0 then exit; {file loaded?}
 
   form_inspection1.undo_button1Click(nil);{undo if required}
   executed:=1;{only refresh required to undo}
@@ -1341,7 +1341,7 @@ var  {################# initialised variables #########################}
 const
    gap=4;
 begin
-  if fits_file then
+  if head.naxis<>0 then
   begin
    Save_Cursor := Screen.Cursor;
    Screen.Cursor := crHourglass;    { Show hourglass cursor }

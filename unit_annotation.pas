@@ -1328,7 +1328,7 @@ var
   Save_Cursor:TCursor;
 
 begin
-  if ((fits_file) and (head.cd1_1<>0)) then
+  if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
      Save_Cursor := Screen.Cursor;
      Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -1648,7 +1648,7 @@ var
       end;
     end;
 begin
-  if ((fits_file) and (head.cd1_1<>0)) then
+  if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -2000,7 +2000,7 @@ var
       end;
     end;{sub procedure}
 begin
-  if ((fits_file) and (head.cd1_1<>0)) then
+  if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -2206,7 +2206,7 @@ var
 
 
 begin
-  if ((fits_file) and (head.cd1_1<>0)) then
+  if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }

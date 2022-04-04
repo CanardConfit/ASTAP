@@ -611,7 +611,6 @@ var
 var {################# initialised variables #########################}
   PatternToFind : string=''; {for fits header memo1 popup menu }
   hist_range  {range histogram 255 or 65535 or streched} : integer=255;
-  fits_file: boolean=false;
   image_move_to_center : boolean=false;
   xpixsz: double=0;//Pixel Width in microns (after binning)
   ypixsz: double=0;//Pixel height in microns (after binning)
@@ -1046,7 +1045,6 @@ var {################# initialised variables #########################}
 begin
   {some house keeping}
   result:=false; {assume failure}
-  fits_file:=false; {assume failure}
 
   if load_data then mainwindow.caption:=ExtractFileName(filen);
   {house keeping done}
@@ -1669,7 +1667,6 @@ begin
     if head.naxis=0 then result:=true {wcs file}
                else result:=false; {no image}
     mainwindow.image1.visible:=false;
-//    fits_file:=false;
     image:=false;
   end;
 
@@ -1739,7 +1736,7 @@ begin
     begin
       For j:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,head.width*2);except; end; {read file info}
+        try reader.read(fitsbuffer,head.width*2);except; head.naxis:=0;{failure} end; {read file info}
         for i:=0 to head.width-1 do
         begin
           word16:=swap(fitsbuffer2[i]);{move data to wo and therefore sign_int}
@@ -1755,7 +1752,7 @@ begin
     begin
       For j:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,head.width*4);except; end; {read file info}
+        try reader.read(fitsbuffer,head.width*4);except; head.naxis:=0;{failure} end; {read file info}
         for i:=0 to head.width-1 do
         begin
           x_longword:=swapendian(fitsbuffer4[i]);{conversion 32 bit "big-endian" data, x_single  : single absolute x_longword; }
@@ -1772,7 +1769,7 @@ begin
     begin
       For j:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,head.width);except; end; {read file info}
+        try reader.read(fitsbuffer,head.width);except; head.naxis:=0;{failure} end; {read file info}
         for i:=0 to head.width-1 do
         begin
           img_loaded2[k,i,j]:=(fitsbuffer[i]*bscale + bzero);
@@ -1783,7 +1780,7 @@ begin
     if nrbits=24 then
     For j:=0 to head.height-1 do
     begin
-      try reader.read(fitsbuffer,head.width*3);except; end; {read file info}
+      try reader.read(fitsbuffer,head.width*3);except; head.naxis:=0;{failure} end; {read file info}
       for i:=0 to head.width-1 do
       begin
         rgbdummy:=fitsbufferRGB[i];{RGB fits with naxis1=3, treated as 24 bits coded pixels in 2 dimensions}
@@ -1798,7 +1795,7 @@ begin
     begin
       For j:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,head.width*4);except; end; {read file info}
+        try reader.read(fitsbuffer,head.width*4);except; head.naxis:=0;{failure} end; {read file info}
         for i:=0 to head.width-1 do
         begin
           col_float:=(swapendian(fitsbuffer4[i])*bscale+bzero)/(65535);{scale to 0..64535 or 0..1 float}
@@ -1856,8 +1853,7 @@ begin
     cblack:=head.datamin_org;{for case histogram is not called}
     cwhite:=head.datamax_org;
 
-    result:=true;
-    fits_file:=true;{succes}
+    result:=head.naxis<>0;{success};
     reader_position:=reader_position+head.width*head.height*(abs(nrbits) div 8)
   end{image block}
 
@@ -2170,7 +2166,14 @@ begin
 
     if key='TELESCOP=' then telescop:=read_string;
     if key='INSTRUME=' then instrum:=read_string;
-    if key='CENTALT =' then centalt:=read_string;{could be used for SQM}
+    if key='CENTALT =' then centalt:=read_string;
+    if key='SITELAT =' then sitelat:=read_string;
+    if key='SITELONG=' then sitelong:=read_string;
+
+    {adjustable keywords}
+    if key=sqm_key+'='    then sqm_value:=read_string;
+    if key=centaz_key+'=' then
+                  centaz:=read_string;
 
     if index=1 then if key<>'BITPIX  =' then begin mainwindow.Memo1.Lines.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
     if index=2 then if key<>'NAXIS   =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
@@ -2275,7 +2278,6 @@ begin
       mainwindow.statusbar1.panels[7].text:=('Error loading PGM/PPM/PFM file!! Keyword P5, P6, PF, Pf not found.');
       mainwindow.error_label1.caption:=('Error loading PGM/PPM/PFM file!! Keyword P5, P6, PF. Pf not found.');
       mainwindow.error_label1.visible:=true;
-      fits_file:=false;
       exit;
     end ;{should start with P6}
 
@@ -2361,12 +2363,11 @@ begin
       mainwindow.error_label1.caption:=('Incompatible PPM/PGM/PFM file !!');
       mainwindow.error_label1.visible:=true;
       close_fits_file;
-      fits_file:=false;
+      head.naxis:=0;
       exit;
     end; {should contain 255 or 65535}
 
     head.datamin_org:=0;
-    fits_file:=true;
 
     cblack:=head.datamin_org;{for case histogram is not called}
     cwhite:=head.datamax_org;
@@ -2596,7 +2597,6 @@ begin
 
   {set data}
   extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
-  fits_file:=true;
   nrbits:=16;
   head.datamin_org:=0;
   head.datamax_org:=$FFFF;
@@ -3123,7 +3123,7 @@ end;
 
 procedure backup_img;
 begin
-  if fits_file=true then
+  if head.naxis<>0 then
   begin
     if img_backup=nil then setlength(img_backup,size_backup+1);{create memory for size_backup backup images}
     inc(index_backup,1);
@@ -3185,7 +3185,7 @@ begin
     stackmenu1.apply_dpp_button1.Enabled:=true;
     update_equalise_background_step(equalise_background_step-1);{update equalize menu}
 
-    if fits_file=false {due to stretch draw} then update_menu(true); {update menu and set fits_file:=true;}
+    if head.naxis=0 {due to stretch draw} then update_menu(true); {update menu and set fits_file:=true;}
 
     dec(index_backup,1);{update index}
     if index_backup<0 then index_backup:=size_backup;
@@ -3228,7 +3228,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.04.2, '+about_message4+
+  'ASTAP version 2022.04.4, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -3521,7 +3521,7 @@ var
    fitsX,fitsY,dum,k : integer;
    Save_Cursor:TCursor;
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
     Save_Cursor := Screen.Cursor;
@@ -3588,7 +3588,7 @@ var
      checkX:=x;
    end;
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
     Save_Cursor := Screen.Cursor;
@@ -3767,7 +3767,7 @@ var
    val  : single;
    Save_Cursor:TCursor;
 begin
-  if ((head.naxis3<>3) or (fits_file=false)) then exit;
+  if ((head.naxis3<>3) or (head.naxis=0)) then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
     Save_Cursor := Screen.Cursor;
@@ -3921,7 +3921,7 @@ var
   ra_new,dec_new, fitsx,fitsy : double;
   data1,sipwcs  : string;
 begin
-  if ((fits_file=false) or (head.cd1_1=0) or (mainwindow.shape_marker3.visible=false)) then exit;{no solution to place marker}
+  if ((head.naxis=0) or (head.cd1_1=0) or (mainwindow.shape_marker3.visible=false)) then exit;{no solution to place marker}
 
   if decode_string(data0,ra_new,dec_new) then
   begin
@@ -3958,7 +3958,7 @@ begin
   mainwindow.image_north_arrow1.canvas.brush.color:=clmenu;
   mainwindow.image_north_arrow1.canvas.rectangle(-1,-1, mainwindow.image_north_arrow1.width+1, mainwindow.image_north_arrow1.height+1);
 
-  if ((fits_file=false) or (head.cd1_1=0)) then {remove rotation indication and exit}
+  if ((head.naxis=0) or (head.cd1_1=0)) then {remove rotation indication and exit}
   begin
      mainwindow.rotation1.caption:='';
      exit;
@@ -4014,7 +4014,7 @@ var
       wd,
       flipV, flipH : integer;
 begin
-  if ((fits_file=false) or (head.cd1_1=0) or (mainwindow.northeast1.checked=false)) then exit;
+  if ((head.naxis=0) or (head.cd1_1=0) or (mainwindow.northeast1.checked=false)) then exit;
 
   xpos:=head.height div 50;
   ypos:=head.height div 50;
@@ -4093,7 +4093,7 @@ var
 begin
   {clear}
 
-  if ((fits_file=false) or (head.cd1_1=0) or (mainwindow.mountposition1.checked=false)) then
+  if ((head.naxis=0) or (head.cd1_1=0) or (mainwindow.mountposition1.checked=false)) then
   begin
     mainwindow.shape_marker4.visible:=false;{could be visible from previous image}
     exit;
@@ -4170,7 +4170,7 @@ var
 begin
   posanddate:=mainwindow.positionanddate1.checked;
   freet:=mainwindow.freetext1.checked;
-  if ((fits_file=false) or ((posanddate=false) and (freet=false))) then exit;
+  if ((head.naxis=0) or ((posanddate=false) and (freet=false))) then exit;
 
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   mainwindow.image1.Canvas.font.name:='default';
@@ -4202,7 +4202,7 @@ var
   flip_horizontal, flip_vertical,outside: boolean;
   Save_Cursor:TCursor;
 begin
-  if ((fits_file=false) or (head.cd1_1=0) or (mainwindow.constellations1.checked=false)) then exit;
+  if ((head.naxis=0) or (head.cd1_1=0) or (mainwindow.constellations1.checked=false)) then exit;
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -4308,7 +4308,7 @@ var ra_values  : array[0..20] of double =  {nice rounded RA steps in 24 hr syste
      (1/48));{step RA 00:00:05}
 
 begin
-  if ((fits_file=false) or (head.cd1_1=0) or (mainwindow.grid1.checked=false)) then exit;
+  if ((head.naxis=0) or (head.cd1_1=0) or (mainwindow.grid1.checked=false)) then exit;
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -4487,7 +4487,7 @@ var
    ll,tt,hh,ww     : integer;
 begin
 
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
   if ((shape_type=9{no change})
      and
      (shape.visible=false)) then
@@ -4877,7 +4877,6 @@ begin
     stackmenu1.tab_Pixelmath2.enabled:=fits;
   end;{menu change}
 
-  fits_file:=fits;{update}
   mainwindow.error_label1.visible:=(fits=false);
 
   mainwindow.SaveFITSwithupdatedheader1.Enabled:=((fits) and (fits_file_name(filename2)) and (fileexists(filename2)));{menu disable, no file available to update header}
@@ -4899,7 +4898,7 @@ procedure Tmainwindow.astrometric_solve_image1Click(Sender: TObject);
 var
    OldCursor : TCursor;
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
 
   if live_stacking {ongoing}  then
   begin
@@ -5177,7 +5176,7 @@ begin
     OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
     opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
 
-    fits_file:=true;
+//    fits_file:=true;
     esc_pressed:=false;
 
     if OpenDialog1.Execute then
@@ -5201,6 +5200,7 @@ begin
         Screen.Cursor := Save_Cursor;  { Always restore to normal }
       end;
     end;
+    head.naxis:=0;{not the food fits loaded}
   end;
 end;
 
@@ -5249,13 +5249,13 @@ procedure Tmainwindow.Remove_deep_sky_object1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,k,bsize  : integer;
    mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,
-   noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,noise_level,
-   center_x,center_y,a,b,angle_from_center,new_value,new_value_noise,old_value : double;
+   noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,
+   center_x,center_y,a,b,angle_from_center,new_value,new_value_noise      : double;
    line_bottom, line_top,line_bottom_noise, line_top_noise : double;
 
    Save_Cursor:TCursor;
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
     Save_Cursor := Screen.Cursor;
@@ -5289,7 +5289,6 @@ begin
       noise_left_top:=get_negative_noise_level(img_loaded,k,startx-bsize,startx+bsize,stopY-bsize,stopY+bsize, mode_left_top);{find the negative noise level below most_common_level of a local area}
       noise_right_bottom:=get_negative_noise_level(img_loaded,k,stopX-bsize,stopX+bsize,starty-bsize,starty+bsize, mode_right_bottom);{find the negative noise level below most_common_level of a local area}
       noise_right_top:=get_negative_noise_level(img_loaded,k,stopX-bsize,stopX+bsize,stopY-bsize,stopY+bsize, mode_right_top);{find the negative noise level below most_common_level of a local area}
-      noise_level:=(noise_left_bottom + noise_left_top + noise_right_top + noise_right_bottom)/4;
 
       for fitsY:=startY to stopY-1 do
       for fitsX:=startX to stopX-1 do
@@ -5306,10 +5305,7 @@ begin
           new_value:=line_bottom*(stopY-fitsY)/(stopY-startY)+line_top*(fitsY-startY)/(stopY-startY);{median noise value at position FitsX, fitsY}
           new_value_noise:=line_bottom_noise*(stopY-fitsY)/(stopY-startY)+line_top_noise*(fitsY-startY)/(stopY-startY);{median noise value at position FitsX, fitsY}
 
-
-          old_value:=img_loaded[k,fitsX,fitsY];
-          if ((old_value-2.0*new_value_noise>new_value) or (old_value+2.0*new_value_noise<new_value)) then {adapt only if pixel value is 2*noise level different}
-            img_loaded[k,fitsX,fitsY]:=randg(new_value,new_value_noise);
+          img_loaded[k,fitsX,fitsY]:=randg(new_value,new_value_noise);
 
         end;
       end;
@@ -7645,34 +7641,34 @@ begin
 
 
       if paramcount=0 then filename2:=Sett.ReadString('main','last_file','');{if used as viewer don't override paramstr1}
-
-
-      dum:=Sett.ReadString('main','mpcorb_path','');if dum<>'' then mpcorb_path:=dum;{asteroids}
-      dum:=Sett.ReadString('main','cometels_path','');if dum<>'' then cometels_path:=dum;{asteroids}
-
-      dum:=Sett.ReadString('main','maxcount','');if dum<>'' then maxcount_asteroid:=dum;{asteroids}
-      dum:=Sett.ReadString('main','maxmag','');if dum<>'' then maxmag_asteroid:=dum;{asteroids}
-
-      font_follows_diameter:=Sett.ReadBool('main','font_follows',false);{asteroids}
-      showfullnames:=Sett.ReadBool('main','showfullnames',true);{asteroids}
-      showmagnitude:=Sett.ReadBool('main','showmagnitude',false);{asteroids}
-      add_date:=Sett.ReadBool('main','add_date',true);{asteroids}
-      lat_default:=decrypt(Sett.ReadString('main','p1',''));{lat default}
-      long_default:=decrypt(Sett.ReadString('main','p2',''));{longitude default}
-
-      annotation_color:=Sett.ReadInteger('main','annotation_color',annotation_color);
-      annotation_diameter:=Sett.ReadInteger('main','annotation_diameter',annotation_diameter);
-
-      add_annotations:=Sett.ReadBool('main','add_annotations',false);{asteroids as annotations}
-
-      dum:=Sett.ReadString('main','astrometry_extra_options',''); if dum<>'' then astrometry_extra_options:=dum;
-      show_console:=Sett.ReadBool('main','show_console',true);
-      dum:=Sett.ReadString('main','cygwin_path',''); if dum<>'' then cygwin_path:=dum;
-
-      dum:=Sett.ReadString('main','sqm_key',''); if dum<>'' then sqm_key:=copy(dum,1,8);{remove * character used for protection spaces}
-      dum:=Sett.ReadString('main','centaz_key',''); if dum<>'' then centaz_key:=copy(dum,1,8);{remove * character used for protection spaces}
-
       export_index:=Sett.ReadInteger('main','export_index',3);{tiff stretched}
+
+
+      dum:=Sett.ReadString('ast','mpcorb_path','');if dum<>'' then mpcorb_path:=dum;{asteroids}
+      dum:=Sett.ReadString('ast','cometels_path','');if dum<>'' then cometels_path:=dum;{asteroids}
+
+      dum:=Sett.ReadString('ast','maxcount','');if dum<>'' then maxcount_asteroid:=dum;{asteroids}
+      dum:=Sett.ReadString('ast','maxmag','');if dum<>'' then maxmag_asteroid:=dum;{asteroids}
+
+
+      font_follows_diameter:=Sett.ReadBool('ast','font_follows',false);{asteroids}
+      showfullnames:=Sett.ReadBool('ast','showfullnames',true);{asteroids}
+      showmagnitude:=Sett.ReadBool('ast','showmagnitude',false);{asteroids}
+      add_date:=Sett.ReadBool('ast','add_date',true);{asteroids}
+      lat_default:=decrypt(Sett.ReadString('ast','p1',''));{lat default}
+      long_default:=decrypt(Sett.ReadString('ast','p2',''));{longitude default}
+
+      annotation_color:=Sett.ReadInteger('ast','annotation_color',annotation_color);
+      annotation_diameter:=Sett.ReadInteger('ast','annotation_diameter',annotation_diameter);
+
+      add_annotations:=Sett.ReadBool('ast','add_annotations',false);{asteroids as annotations}
+
+      dum:=Sett.ReadString('anet','astrometry_extra_options',''); if dum<>'' then astrometry_extra_options:=dum;{astrometry.net options}
+      show_console:=Sett.ReadBool('anet','show_console',true);
+      dum:=Sett.ReadString('anet','cygwin_path',''); if dum<>'' then cygwin_path:=dum;
+
+      sqm_applyDF:=Sett.ReadBool('sqm','apply_df',false);{sqm menu}
+
 
       c:=0;
       recent_files.clear;
@@ -7705,6 +7701,8 @@ begin
                  end
                  else
                  {end remove}
+
+
       c:=Sett.ReadInteger('stack','conv_progr',987654321);if c<>987654321 then stackmenu1.raw_conversion_program1.itemindex:=c;
 
 
@@ -7714,6 +7712,8 @@ begin
       stackmenu1.osc_preserve_r_nebula1.checked:=Sett.ReadBool('stack','osc_pr',true);
       dum:=Sett.ReadString('stack','osc_cw','');if dum<>'' then   stackmenu1.osc_smart_smooth_width1.text:=dum;
       dum:=Sett.ReadString('stack','osc_sd','');  if dum<>'' then stackmenu1.osc_smart_colour_sd1.text:=dum;
+      dum:=Sett.ReadString('stack','sqm_key',''); if dum<>'' then sqm_key:=copy(dum,1,8);{remove * character used for protection spaces}
+      dum:=Sett.ReadString('stack','centaz_key',''); if dum<>'' then centaz_key:=copy(dum,1,8);{remove * character used for protection spaces}
 
       stackmenu1.lrgb_auto_level1.checked:=Sett.ReadBool('stack','lrgb_al',true);
       stackmenu1.green_purple_filter1.checked:=Sett.ReadBool('stack','green_fl',false);
@@ -7996,36 +7996,33 @@ begin
 
 
       sett.writestring('main','last_file',filename2);
-
-
-      sett.writestring('main','mpcorb_path',mpcorb_path);{asteroids}
-      sett.writestring('main','cometels_path',cometels_path);{comets}
-
-      sett.writeString('main','maxcount',maxcount_asteroid);{asteroids}
-      sett.writeString('main','maxmag',maxmag_asteroid);{asteroids}
-
-      sett.writeBool('main','font_follows',font_follows_diameter);{asteroids}
-      sett.writeBool('main','showfullnames',showfullnames);{asteroids}
-      sett.writeBool('main','showmagnitude',showmagnitude);{asteroids}
-      sett.writeBool('main','add_date',add_date);{asteroids}
-      sett.writeString('main','p1',encrypt(lat_default));{default latitude}
-      sett.writeString('main','p2',encrypt(long_default));{default longitude}
-
-
-      sett.writeInteger('main','annotation_color',annotation_color);
-      sett.writeInteger('main','annotation_diameter',annotation_diameter);
-
-      sett.writeBool('main','add_annotations',add_annotations);{for asteroids}
-
-      sett.writestring('main','cygwin_path',cygwin_path);
-      sett.writeBool('main','show_console',show_console);
-      sett.writestring('main','astrometry_extra_options',astrometry_extra_options);
-
-      sett.writestring('main','sqm_key',sqm_key+'*' );{add a * to prevent the spaces are removed.Should be at least 8 char}
-      sett.writestring('main','centaz_key',centaz_key+'*');{add a * to prevent the spaces are removed}
-
       sett.writeInteger('main','export_index',export_index);
 
+
+      sett.writestring('ast','mpcorb_path',mpcorb_path);{asteroids}
+      sett.writestring('ast','cometels_path',cometels_path);{comets}
+
+      sett.writeString('ast','maxcount',maxcount_asteroid);{asteroids}
+      sett.writeString('ast','maxmag',maxmag_asteroid);{asteroids}
+
+      sett.writeBool('ast','font_follows',font_follows_diameter);{asteroids}
+      sett.writeBool('ast','showfullnames',showfullnames);{asteroids}
+      sett.writeBool('ast','showmagnitude',showmagnitude);{asteroids}
+      sett.writeBool('ast','add_date',add_date);{asteroids}
+      sett.writeString('ast','p1',encrypt(lat_default));{default latitude}
+      sett.writeString('ast','p2',encrypt(long_default));{default longitude}
+
+
+      sett.writeInteger('ast','annotation_color',annotation_color);
+      sett.writeInteger('ast','annotation_diameter',annotation_diameter);
+
+      sett.writeBool('ast','add_annotations',add_annotations);{for asteroids}
+
+      sett.writestring('anet','cygwin_path',cygwin_path);
+      sett.writeBool('anet','show_console',show_console);
+      sett.writestring('anet','astrometry_extra_options',astrometry_extra_options);
+
+      sett.writeBool('sqm','apply_df',sqm_applyDF);
 
 
       for c:=0 to recent_files.count-1  do {add recent files}
@@ -8058,6 +8055,10 @@ begin
       sett.writeBool('stack','osc_pr',stackmenu1.osc_preserve_r_nebula1.checked);
       sett.writeString('stack','osc_sw',stackmenu1.osc_smart_smooth_width1.text);
       sett.writestring('stack','osc_sd',stackmenu1.osc_smart_colour_sd1.text);
+
+      sett.writestring('stack','sqm_key',sqm_key+'*' );{add a * to prevent the spaces are removed.Should be at least 8 char}
+      sett.writestring('stack','centaz_key',centaz_key+'*');{add a * to prevent the spaces are removed}
+
 
       sett.writeBool('stack','lrgb_al',stackmenu1.lrgb_auto_level1.checked);
       sett.writeBool('stack','green_fl',stackmenu1.green_purple_filter1.checked);
@@ -8810,7 +8811,7 @@ begin
                          '|PNG, TIFF, JPEG, BMP(*.png,*.tif*, *.jpg,*.bmp)|*.png;*.PNG;*.tif;*.tiff;*.TIF;*.jpg;*.JPG;*.bmp;*.BMP'+
                          '|Compressed FITS files|*.fz';
   opendialog1.initialdir:=ExtractFileDir(filename2);
-  fits_file:=false;
+//  fits_file:=false;
   esc_pressed:=false;
   err:=false;
   if OpenDialog1.Execute then
@@ -9102,7 +9103,7 @@ end;
 
 procedure Tmainwindow.grid1Click(Sender: TObject);
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
   if grid1.checked=false then  {clear screen}
   begin
     plot_fits(mainwindow.image1,false,true);
@@ -9116,7 +9117,7 @@ procedure Tmainwindow.bin_2x2menu1Click(Sender: TObject);
 var
   Save_Cursor:TCursor;
 begin
-  if fits_file=true then
+  if head.naxis<>0 then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -9146,7 +9147,7 @@ end;
 
 procedure Tmainwindow.positionanddate1Click(Sender: TObject);
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
   if positionanddate1.checked=false then  {clear screen}
   begin
     plot_fits(mainwindow.image1,false,true);
@@ -9455,7 +9456,7 @@ var
    mag_str               : string;
    bg_array              : array of double;
 begin
-  if ((head.cd1_1=0) or (fits_file=false)) then exit;
+  if ((head.cd1_1=0) or (head.naxis=0)) then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
     if ((flux_magn_offset=0) or (flux_aperture<>99){calibration was for point sources})  then {calibrate and ready for extendend sources}
@@ -9595,7 +9596,7 @@ procedure Tmainwindow.copy_paste_tool1Click(Sender: TObject);
 var
   dum,stopX2,stopY2, startX2, startY2 : integer;
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>1)and (abs(stopY-starty)>1)) then
   begin
     Screen.Cursor := crDrag;
@@ -9624,7 +9625,7 @@ var
    info_message,info_message2 : string;
    Save_Cursor              : TCursor;
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
 
   if  ((abs(stopX-startX)>2) or (abs(stopY-starty)>2)) then
   begin
@@ -9719,7 +9720,7 @@ end;
 
 procedure Tmainwindow.northeast1Click(Sender: TObject);
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
   if northeast1.checked then
   begin
     plot_north_on_image;
@@ -9784,7 +9785,7 @@ var
 
    Save_Cursor:TCursor;
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>100) OR (abs(stopY-starty)>100)) then {or function since it could be parallel to x or y axis}
   begin
     Save_Cursor := Screen.Cursor;
@@ -9839,7 +9840,7 @@ begin
   opendialog1.Filter := 'FITS and TIFF files (*.fit*)|*.fit*;*.FIT*;*.fts;*.FTS;*.tif*;*.TIF*';
 
   opendialog1.initialdir:=ExtractFileDir(filename2);
-  fits_file:=false;
+//  fits_file:=false;
   esc_pressed:=false;
   err:=false;
   if OpenDialog1.Execute then
@@ -10077,7 +10078,7 @@ const
    default=1000;
 
  begin
-  if fits_file=false then exit; {file loaded?}
+  if head.naxis=0 then exit; {file loaded?}
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -10344,7 +10345,7 @@ var
  Fliphorizontal, Flipvertical  : boolean;
  stars  : star_list;
 begin
-  if fits_file=false then exit; {file loaded?}
+  if head.naxis=0 then exit; {file loaded?}
 
 
   Save_Cursor := Screen.Cursor;
@@ -10415,7 +10416,7 @@ end;
 procedure Tmainwindow.annotations_visible1Click(Sender: TObject);
 begin
   stackmenu1.annotations_visible1.enabled:=annotations_visible1.checked; {follow in stack menu}
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
   if annotations_visible1.checked=false then  {clear screen}
     plot_fits(mainwindow.image1,false,true)
   else
@@ -10540,7 +10541,7 @@ var
   apert,annul,backgr,hfd_med : double;
   hfd_counter                : integer;
 begin
-  if ((fits_file=false) or (head.cd1_1=0)) then exit;
+  if ((head.naxis=0) or (head.cd1_1=0)) then exit;
 
   apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
   if ((flux_magn_offset=0) or (aperture_ratio<>apert){new calibration required})  then
@@ -10569,7 +10570,7 @@ end;
 
 procedure Tmainwindow.Constellations1Click(Sender: TObject);
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
   if Constellations1.checked=false then  {clear screen}
   begin
     plot_fits(mainwindow.image1,false,true);
@@ -10625,7 +10626,7 @@ end;
 
 procedure Tmainwindow.StatusBar1MouseEnter(Sender: TObject);
 begin
-  if fits_file then
+  if head.naxis<>0 then
   begin
     Statusbar1.Panels[0].text:='α, δ';
     Statusbar1.Panels[1].text:='α, δ centered';
@@ -10744,7 +10745,7 @@ begin
   end;
   if load_fits(filename2,true,true,true {update memo},updown1.position,head,img_loaded){load fits file } then
   begin
-    if fits_file then {not a bintable, compressed}
+    if head.naxis<>0 then {not a bintable, compressed}
     begin
       if ((head.naxis3=1) and (mainwindow.preview_demosaic1.checked)) then
          demosaic_advanced(img_loaded) {demosaic and set levels}
@@ -10862,6 +10863,8 @@ begin
 
   deepstring := Tstringlist.Create;{for deepsky overlay}
   recent_files:= Tstringlist.Create;
+
+  head.naxis:=0; {not fits files available}
 
 end;
 
@@ -11048,7 +11051,7 @@ var
   List: TStrings;
   name,magn : string;
 begin
-  if fits_file=false then exit; {file loaded?}
+  if head.naxis=0 then exit; {file loaded?}
 
   List := TStringList.Create;
   list.StrictDelimiter:=true;
@@ -11322,9 +11325,7 @@ end;
 
 procedure Tmainwindow.sqm1Click(Sender: TObject);
 begin
-  if fits_file=false then exit; {file loaded?}
-
-
+  if head.naxis=0 then exit; {file loaded?}
 
   form_sqm1:=TForm_sqm1.Create(self); {in project option not loaded automatic}
   form_sqm1.ShowModal;
@@ -11998,7 +11999,7 @@ begin
             if hasoption('sqm') then {sky quality}
             begin
               pedestal:=round(strtofloat2(GetOptionValue('sqm')));
-              if calculate_sqm(false {get backgr},false{get histogr},pedestal) then {sqm found}
+              if calculate_sqm(false {get backgr},false{get histogr},{var} pedestal) then {sqm found}
               begin
                 update_float('SQM     =',' / Sky background [magn/arcsec^2]' ,sqmfloat);
                 update_text('COMMENT SQM',', used '+inttostr(pedestal)+' as pedestal value');
@@ -12127,7 +12128,7 @@ procedure Tmainwindow.batch_add_solution1Click(
   Sender: TObject);
 var
   Save_Cursor:TCursor;
-  i,nrskipped, nrsolved,nrfailed,file_age        : integer;
+  i,nrskipped, nrsolved,nrfailed,file_age,pedestal2                             : integer;
   dobackup,add_sip,add_lim_magn,solution_overwrite,solved,maintain_date,success : boolean;
   failed,skipped,mess                           : string;
   startTick  : qword;{for timing/speed purposes}
@@ -12199,11 +12200,12 @@ begin
               if pedestal<>0 then
               begin
                 jd_start:=0; { if altitude missing then force an date to jd conversion'}
-                if calculate_sqm(true {get backgr},true {get histogr},pedestal) then
+                pedestal2:=pedestal; {protect pedestal setting}
+                if calculate_sqm(true {get backgr},true {get histogr},{var}pedestal2) then
                 begin
                   update_float('SQM     =',' / Sky background [magn/arcsec^2]',sqmfloat);
-                  update_text('COMMENT SQM',', used '+inttostr(pedestal)+' as pedestal value');
-                  mess:='and SQM'
+                  update_text('COMMENT SQM',', used '+inttostr(pedestal2)+' as pedestal value');
+                  mess:=' and SQM'
                 end;
               end
               else
@@ -12408,7 +12410,7 @@ var fitsX,fitsY,col,dum       : integer;
     ra_c,dec_c, ra_n,dec_n,ra_m, dec_m, delta_ra   : double;
     Save_Cursor:TCursor;
 begin
-  if ((fits_file=true) and (abs(stopX-startX)>10)and (abs(stopY-starty)>10)) then
+  if ((head.naxis<>0) and (abs(stopX-startX)>10)and (abs(stopY-starty)>10)) then
   begin
    Save_Cursor := Screen.Cursor;
    Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -13092,7 +13094,7 @@ end;
 
 procedure Tmainwindow.mountposition1Click(Sender: TObject);
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
   if mountposition1.checked then
   begin
     plot_large_north_indicator;
@@ -14360,7 +14362,7 @@ begin
                          '|PNG, JPEG, BMP(*.png, *.jpg,*.bmp)|*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP'+
                          '|Compressed FITS files|*.fz';
   opendialog1.initialdir:=ExtractFileDir(filename2);
-  fits_file:=false;
+//  fits_file:=false;
   esc_pressed:=false;
   err:=false;
   if OpenDialog1.Execute then
@@ -14436,7 +14438,7 @@ begin
                          '|Compressed FITS files|*.fz';
 
     opendialog1.initialdir:=ExtractFileDir(filename2);
-  fits_file:=false;
+//  fits_file:=false;
   esc_pressed:=false;
   err:=false;
   if OpenDialog1.Execute then
@@ -14596,7 +14598,7 @@ var
 
   Save_Cursor:TCursor;
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
 
   if  ((abs(stopX-startX)>10)and (abs(stopY-starty)>10)) then
   begin
@@ -15301,7 +15303,7 @@ end;
 procedure Tmainwindow.maximum1Scroll(Sender: TObject; ScrollCode: TScrollCode;
   var ScrollPos: Integer);
 begin
-  if fits_file then
+  if head.naxis<>0 then
   begin
     {$IfDef Darwin}// for OS X,
      if true then {temporary fix. scendscroll doesnt work. See bug report https://bugs.freepascal.org/view.php?id=37454}

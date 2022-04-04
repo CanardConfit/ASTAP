@@ -3,7 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 712
   Top = 124
   Width = 1721
-  HorzScrollBar.Page = 1533
+  HorzScrollBar.Page = 1701
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1721
-    ActivePage = mount1
+    ActivePage = lights
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 10
+    TabIndex = 0
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -4606,7 +4606,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 1'
       Caption = 'Pixel math 1'
       ClientHeight = 470
-      ClientWidth = 1552
+      ClientWidth = 1713
       Enabled = False
       ImageIndex = 4
       ParentFont = False
@@ -5121,7 +5121,7 @@ object stackmenu1: Tstackmenu1
           Width = 278
           Caption = 'Save result'
           Enabled = False
-          OnClick = save_as_new_file1Click
+          OnClick = save_result1Click
           ParentFont = False
           TabOrder = 5
         end

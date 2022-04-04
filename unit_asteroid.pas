@@ -581,7 +581,7 @@ var
       end;
 
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
   if head.cd1_1=0 then begin memo2_message('Abort, first solve the image!');exit;end;
   cos_telescope_dec:=cos(head.dec0);
   fov:=1.5*sqrt(sqr(0.5*head.width*head.cdelt1)+sqr(0.5*head.height*head.cdelt2))*pi/180; {field of view with 50% extra}

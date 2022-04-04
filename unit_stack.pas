@@ -697,6 +697,7 @@ type
     procedure photometry_binx2Click(Sender: TObject);
     procedure photometry_button1Click(Sender: TObject);
     procedure saturation_tolerance1Change(Sender: TObject);
+    procedure save_result1Click(Sender: TObject);
     procedure save_settings_extra_button1Click(Sender: TObject);
     procedure smart_colour_smooth_button1Click(Sender: TObject);
     procedure classify_filter1Click(Sender: TObject);
@@ -1916,10 +1917,12 @@ begin
                 else
                 if head_2.gain<>'' then ListView1.Items.item[c].subitems.Strings[L_gain]:=head_2.gain;
 
+                //centalt:='';
 
                 if centalt='' then
                 begin
                   calculate_az_alt(0 {try to use header values} ,head_2,{out}az,alt);
+                //  calculate_az_alt(1 {try to use header values} ,head_2,{out}az,alt);
                   if alt<>0 then
                   begin
                     centalt:=floattostrf(alt,ffgeneral, 3, 1); {altitude}
@@ -2077,31 +2080,22 @@ begin
     exit;
   end;
   if pos('.fit',filename2)=0 then filename2:=changeFileExt(filename2,'.fits'); {rename png, XISF file to fits}
-  if pos(' equalised',filename2)=0 then
-  begin
-    dot_pos:=length(filename2);
-    repeat
-      dec(dot_pos);
-    until ((filename2[dot_pos]='.') or (dot_pos<=1));
-    insert(' equalised',filename2,dot_pos);
-  end;
-  save_fits(img_loaded,filename2 ,-32, false);
+
+  dot_pos:=length(filename2);
+  repeat
+    dec(dot_pos);
+  until ((filename2[dot_pos]='.') or (dot_pos<=1));
+  insert(' original',filename2,dot_pos);
+
+  save_fits(img_loaded,filename2 ,-32, true);
   if fileexists(filename2) then
   begin
      saved1.caption:='Saved';
      report_results(object_name,'',0,-1{no icon});{report result in tab results}
   end
   else saved1.caption:='';
-  if sender<>save_result1 then {<> step 6, save, step 1}
-  begin
-    update_equalise_background_step(equalise_background_step+1); {update menu}
-  end
-  else {save result, step 6}
-  begin
-    undo_button_equalise_background1.enabled:=false;
-    undo_button_equalise_background1.caption:='';
-    go_step_two1.enabled:=false;
-  end;
+
+  update_equalise_background_step(equalise_background_step+1); {update menu}
 end;
 
 
@@ -2109,7 +2103,7 @@ procedure Tstackmenu1.subtract_background1Click(Sender: TObject);
 var fitsX, fitsY,col,col2,nrcolours :integer;
    Save_Cursor:TCursor;
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -2144,7 +2138,7 @@ var
    max_stars : integer;
    starlistquads : star_list;
 begin
-  if fits_file=false then application.messagebox( pchar('First load an image in the viewer!'), pchar('No action'),MB_OK)
+  if head.naxis=0 then application.messagebox( pchar('First load an image in the viewer!'), pchar('No action'),MB_OK)
   else
   begin
     Save_Cursor := Screen.Cursor;
@@ -2261,7 +2255,7 @@ procedure Tstackmenu1.apply_gaussian_filter1Click(Sender: TObject);
 var
    Save_Cursor          : TCursor;
 begin
-   if fits_file=false then exit;
+   if head.naxis=0 then exit;
    Save_Cursor := Screen.Cursor;
    Screen.Cursor := crHourglass;    { Show hourglass cursor }
    backup_img;
@@ -2306,7 +2300,7 @@ begin
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.filename:='';
   opendialog1.Filter :=dialog_filter;
-  fits_file:=true;
+  //fits_file:=true;
   if opendialog1.execute then
   begin
     listview4.Items.beginupdate;
@@ -2326,7 +2320,7 @@ begin
   OpenDialog1.Title := 'Select images to add';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter :=dialog_filter;
-  fits_file:=true;
+  //fits_file:=true;
   if opendialog1.execute then
   begin
     listview6.items.beginupdate;
@@ -2345,7 +2339,7 @@ begin
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.filename:='';
   opendialog1.Filter :=dialog_filter;
-  fits_file:=true;
+  //fits_file:=true;
   if opendialog1.execute then
   begin
     listview3.items.beginupdate;
@@ -2559,7 +2553,7 @@ var
    Save_Cursor : TCursor;
    box_size  :integer;
 begin
-  if fits_file=true then
+  if head.naxis<>0 then
   begin
      Save_Cursor := Screen.Cursor;
      Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -2647,7 +2641,7 @@ procedure Tstackmenu1.apply_factor1Click(Sender: TObject);
 var
     Save_Cursor:TCursor;
 begin
- if fits_file=true then
+ if head.naxis<>0 then
  begin
    backup_img; {move viewer data to img_backup}
 
@@ -2668,7 +2662,7 @@ var fitsX, fitsY, col               : integer;
    idx,old_naxis3 : integer;
    Save_Cursor:TCursor;
 begin
-  if fits_file=true then
+  if head.naxis<>0 then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -2759,7 +2753,7 @@ var
    a_factor,k_factor,bf,min,colr : single;
    bg                            : double;
 begin
-  if fits_file=true then
+  if head.naxis<>0 then
   begin
      Save_Cursor := Screen.Cursor;
      Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -3090,7 +3084,7 @@ procedure Tstackmenu1.apply_gaussian_blur_button1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
 begin
-   if fits_file=false then exit;
+   if head.naxis=0 then exit;
    Save_Cursor := Screen.Cursor;
    Screen.Cursor := crHourglass;    { Show hourglass cursor }
    backup_img;
@@ -3519,7 +3513,7 @@ begin
                   lv.Items.item[c].subitems.Strings[M_ra_jnow]:=floattostrf(ra_jnow*180/pi,ffFixed, 9, 6);
                   lv.Items.item[c].subitems.Strings[M_dec_jnow]:=floattostrf(dec_jnow*180/pi,ffFixed, 9, 6);
 
-                  calculate_az_alt(1 {force calculation from ra, dec},head_2,{out}az,alt); {call it with J2000 values. Precession will be applied in the routine}
+                  calculate_az_alt(2 {force accurate calculation from ra, dec},head_2,{out}az,alt); {call it with J2000 values. Precession will be applied in the routine}
                   if alt<>0 then
                   begin
                     centalt:=floattostrf(alt,ffFixed, 9, 6); {altitude}
@@ -3872,7 +3866,7 @@ var
    fitsx,fitsy,i,j,k,x2,y2,radius,most_common,progress_value : integer;
    neg_noise_level,bg  : double;
 begin
-  if fits_file=true then
+  if head.naxis<>0 then
   begin
      Save_Cursor := Screen.Cursor;
      Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -4045,7 +4039,7 @@ procedure Tstackmenu1.free_resize_fits1Click(Sender: TObject);{free resize FITS 
 var
   Save_Cursor:TCursor;
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
   Save_Cursor := Screen.Cursor;
   backup_img;
   resize_img_loaded(width_UpDown1.position/head.width {ratio});
@@ -4120,7 +4114,7 @@ var
    fitsx, fitsY : integer;
    filename1,memo2_text: string;
 begin
-  if ((fits_file=false) or (head.naxis3<>3)) then begin memo2_message('Not a three colour image!');  exit;end;
+  if ((head.naxis=0) or (head.naxis3<>3)) then begin memo2_message('Not a three colour image!');  exit;end;
 
   memo2_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
 
@@ -4293,7 +4287,7 @@ end;
 
 procedure Tstackmenu1.test_pattern1Click(Sender: TObject);
 begin
-  if fits_file then
+  if head.naxis<>0 then
     mainwindow.demosaic_bayermatrix1Click(nil);{including back and wait cursor}
 end;
 
@@ -4724,7 +4718,7 @@ begin
   OpenDialog1.Title := 'Select images to add';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter :=dialog_filter;
-  fits_file:=true;
+  //fits_file:=true;
   if opendialog1.execute then
   begin
     listview8.items.beginupdate;
@@ -4800,7 +4794,7 @@ begin
   OpenDialog1.Title := 'Select images to add';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter :=dialog_filter;
-  fits_file:=true;
+  //fits_file:=true;
   if opendialog1.execute then
   begin
     listview7.items.beginupdate;
@@ -5823,7 +5817,7 @@ begin
   end;
   img_temp:=nil;
 
-  if fits_file=true then
+  if head.naxis<>0 then
     plot_fits(mainwindow.image1,false {re_center},true);{the last displayed image doesn't match with header. Just plot last image to fix}
   Screen.Cursor :=Save_Cursor;{back to normal }
 end;
@@ -6161,9 +6155,9 @@ begin
       begin {read solution}
         {load file, and convert astrometric solution to vector solution}
         filename2:=stackmenu1.listview7.items[c].caption;
-        if load_fits(filename2,true {light},false {only read header},false {update memo},0,head,img_temp)=false then begin esc_pressed:=true; exit;end;
+        if load_fits(filename2,true {light},false {only read header},false {update memo},0,head_2,img_temp)=false then begin esc_pressed:=true; exit;end;
         {calculate vectors from astrometric solution to speed up}
-        sincos(head.dec0,SIN_dec0,COS_dec0); {do this in advance since it is for each pixel the same}
+        sincos(head_2.dec0,SIN_dec0,COS_dec0); {do this in advance since it is for each pixel the same}
         astrometric_to_vector;{convert astrometric solution to vectors}
 
         w:=(starlistpack[c].width div factor);
@@ -6746,7 +6740,7 @@ begin
     if ((stepnr=1) and (countvar>4)) then {do it once after one cycle finished}
     begin
       find_star_outliers(strtofloat2(mark_outliers_upto1.text), outliers);
-      fits_file:=true;{Previous instruction will set fits:=false while it only loads header. Set back to true to allow to set the three measure markers. The displayed image array and header will be compatible}
+      //fits_file:=true;{Previous instruction will set fits:=false while it only loads header. Set back to true to allow to set the three measure markers. The displayed image array and header will be compatible}
       if outliers<>nil then plot_outliers;
     end;
 
@@ -6787,13 +6781,37 @@ begin
   stackmenu1.rainbow_panel1.refresh;{plot colour disk in on paint event. Onpaint is required for MacOS}
 end;
 
+procedure Tstackmenu1.save_result1Click(Sender: TObject);
+var
+  dot_pos :integer;
+begin
+//  if pos(' original',filename2)=0 then
+  begin
+    dot_pos:=length(filename2);
+    repeat
+      dec(dot_pos);
+    until ((filename2[dot_pos]='.') or (dot_pos<=1));
+    insert(' equalised',filename2,dot_pos);
+  end;
+  save_fits(img_loaded,filename2 ,-32, false);
+  if fileexists(filename2) then
+  begin
+     saved1.caption:='Saved';
+     report_results(object_name,'',0,-1{no icon});{report result in tab results}
+  end
+  else saved1.caption:='';
+
+  {save result, step 6}
+  undo_button_equalise_background1.enabled:=false;
+  undo_button_equalise_background1.caption:='';
+  go_step_two1.enabled:=false;
+end;
+
 
 procedure Tstackmenu1.save_settings_extra_button1Click(Sender: TObject);
 begin
   save_settings2;{too many lost selected files . so first save settings}
 end;
-
-
 
 
 procedure star_smooth(img: image_array;x1,y1: integer);
@@ -7146,7 +7164,7 @@ var
    Save_Cursor : TCursor;
    radius      : integer;
 begin
-  if fits_file=true then
+  if head.naxis<>0 then
   begin
      Save_Cursor := Screen.Cursor;
      Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -7273,7 +7291,7 @@ var
    background_r,background_g,background_b, red,green,blue,signal_R,signal_G,signal_B,sigma,lumn : double;
 begin
   if head.naxis3<3 then exit;{prevent run time error mono lights}
-//  if fits_file=false then exit;
+//  if head.naxis=0 then exit;
   Save_Cursor := Screen.Cursor;
   Screen.Cursor:= crHourGlass;
 
@@ -7835,7 +7853,7 @@ var fitsX, fitsY,fuzziness :integer;
     colour: tcolor;
     remove_lum : boolean;
 begin
-  if ((fits_file=false) and (head.naxis3<>3)) then exit;
+  if ((head.naxis=0) and (head.naxis3<>3)) then exit;
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -8056,7 +8074,7 @@ procedure Tstackmenu1.bin_image1Click(Sender: TObject);
 var
   Save_Cursor:TCursor;
 begin
-  if fits_file=true then
+  if head.naxis<>0 then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -8083,7 +8101,7 @@ var
   noise,mean     : double;
   Save_Cursor:TCursor;
 begin
-  if fits_file=true then
+  if head.naxis<>0 then
   begin
     backup_img; {move viewer data to img_backup}
 
@@ -8173,7 +8191,7 @@ begin
   OpenDialog1.Title := 'Select images to analyse';    {including WCS files !!!}
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter :=dialog_filter;
-  fits_file:=true;
+  //fits_file:=true;
   if opendialog1.execute then
   begin
     listview9.items.beginupdate;
@@ -9483,12 +9501,6 @@ begin
             { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
             { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
-//            if stackmenu1.use_manual_alignment1.checked then
-//            begin
-//              update_float('REF_X   =',' / Reference position for manual stacking. ' ,                      referenceX);{will be used later for alignment in mode 'L'}
-//              update_float('REF_Y   =',' / Reference position for manual stacking. ' ,referenceY);
-//            end;
-
             stack_info:=' '+inttostr(head.flatdark_count)+'x'+'FD  '+
                             inttostr(head.flat_count)+'x'+'F  '+
                             inttostr(head.dark_count)+'x'+'D  '+
@@ -9564,7 +9576,7 @@ begin
 
     if ((cal_and_align=false) and (skip_combine=false)) then {do not do this for calibration and alignment only, and skip combine}
     begin
-      fits_file:=true;
+      //fits_file:=true;
       nrbits:=-32; {by definition. Required for stacking 8 bit files. Otherwise in the histogram calculation stacked data could be all above data_max=255}
 
       if ((monofile){success none lrgb loop} or (counter_colours<>0{length(extra2)>=2} {lrgb loop})) then
@@ -9927,7 +9939,7 @@ var
    Save_Cursor:TCursor;
    mean  : double;
 begin
-  if fits_file=false then exit;
+  if head.naxis=0 then exit;
 
   memo2_message('Remove gradient started.');
   Save_Cursor := Screen.Cursor;

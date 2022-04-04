@@ -110,13 +110,12 @@ begin
     mainwindow.error_label1.caption:='Error';
     mainwindow.statusbar1.panels[5].text:='Error';
     mainwindow.error_label1.visible:=true;
-    fits_file:=false;
     exit;
   end;
   mainwindow.error_label1.visible:=false;
   inc(reader_position,16);
   if ((header2[0]='X') and (header2[1]='I')  and (header2[2]='S') and (header2[3]='F') and (header2[4]='0') and (header2[5]='1') and (header2[6]='0') and (header2[7]='0'))=false then
-        begin close_fits_file;mainwindow.error_label1.visible:=true; mainwindow.statusbar1.panels[5].text:=('Error loading XISF file!! Keyword XSIF100 not found.');fits_file:=false; exit; end;
+        begin close_fits_file;mainwindow.error_label1.visible:=true; mainwindow.statusbar1.panels[5].text:=('Error loading XISF file!! Keyword XSIF100 not found.'); exit; end;
   header_length:=ord(header2[8])+(ord(header2[9]) shl 8) + (ord(header2[10]) shl 16)+(ord(header2[11]) shl 24); {signature length}
 
   setlength(header2,header_length);{could be very large}
@@ -134,7 +133,7 @@ begin
   SetString(aline, Pansichar(@header2[0]),header_length);{convert header to string starting <Image}
   start_image:=pos('<Image ',aline);{find range <image..../image>}
 
-  if posex('compression=',aline,start_image)>0 then begin close_fits_file;mainwindow.error_label1.caption:='Error, can not read compressed XISF files!!'; mainwindow.error_label1.visible:=true; fits_file:=false; exit; end;
+  if posex('compression=',aline,start_image)>0 then begin close_fits_file;mainwindow.error_label1.caption:='Error, can not read compressed XISF files!!'; mainwindow.error_label1.visible:=true; exit; end;
 
   a:=posex('geometry=',aline,start_image);
   if a>0 then
@@ -173,7 +172,7 @@ begin
     val(message1,attachment,error2);{get data block}
   end;
   if ((a=0) or (error2<>0)) then begin close_fits_file; mainwindow.error_label1.caption:='Error'; mainwindow.error_label1.visible:=true;
-     mainwindow.statusbar1.panels[7].text:='Can not read this format, no attachment'; fits_file:=false; exit; end;
+     mainwindow.statusbar1.panels[7].text:='Can not read this format, no attachment'; head.naxis:=0; exit; end;
 
   a:=posex('sampleFormat=',aline,start_image);
   if a>0 then
@@ -190,7 +189,7 @@ begin
     error2:=1;
   end;
   if ((a=0) or (error2<>0)) then begin close_fits_file;mainwindow.error_label1.enabled:=true;
-     mainwindow.statusbar1.panels[7].text:=('Can not read this format.'); mainwindow.Memo1.visible:=true;  fits_file:=false; exit; end;
+     mainwindow.statusbar1.panels[7].text:=('Can not read this format.'); mainwindow.Memo1.visible:=true;  head.naxis:=0; exit; end;
 
   if nrbits=8 then  begin head.datamin_org:=0;head.datamax_org:=255; {8 bits files} end
     else {16, -32 files} begin head.datamin_org:=0;head.datamax_org:=$FFFF;end;{not always specified. For example in skyview. So refresh here for case brightness is adjusted}
@@ -353,7 +352,7 @@ begin
   if attachment-reader_position>0 then {header contains zero's}
   repeat
     i:=min(attachment-reader_position,length(header2));
-    try reader.read(header2[0],i);except;close_fits_file; exit;end; {skip empty part and go to image data}
+    try reader.read(header2[0],i);except;close_fits_file; head.naxis:=0;{failure} exit;end; {skip empty part and go to image data}
     inc(reader_position,i);
   until reader_position>=attachment;
 
@@ -370,6 +369,7 @@ begin
      mainwindow.statusbar1.panels[7].text:='Too wide XISF file !!!!!';
     mainwindow.error_label1.visible:=true;
     close_fits_file;
+    head.naxis:=0;{failure}
     exit;
   end
   else
@@ -379,7 +379,7 @@ begin
     begin
       For i:=0 to head.height-1 do
       begin
-        try reader.read(fitsbuffer,head.width*round(abs(nrbits/8)));except; end; {read file info}
+        try reader.read(fitsbuffer,head.width*round(abs(nrbits/8)));except; head.naxis:=0;{failure} end; {read file info}
 
         for j:=0 to head.width-1 do
         begin
@@ -403,7 +403,7 @@ begin
   end;
   close_fits_file;
   unsaved_import:=true;{file is not available for astrometry.net}
-  result:=true;
+  result:=head.naxis<>0;{success};
 end;
 
 

@@ -107,7 +107,7 @@ procedure display_quads(starlistquads :star_list);{display quads in the viewer}
 var
    i, nrquads,x,y, flipx,flipy: integer;
 begin
-  if fits_file=false then exit; {file loaded?}
+  if head.naxis=0 then exit; {file loaded?}
   mainwindow.image1.Canvas.Pen.Mode := pmMerge;
   mainwindow.image1.Canvas.Pen.width := round(1+head.height/mainwindow.image1.height);{thickness lines}
   mainwindow.image1.Canvas.brush.Style:=bsClear;

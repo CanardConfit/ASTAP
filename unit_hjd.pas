@@ -252,8 +252,9 @@ var
   errordecode  : boolean;
   err          : integer;
 begin
-  {calc_mode 0: use or calculate from position}
-  {calc_mode 1: force calculation from prosition}
+  {calc_mode 0: use from header or calculate from position. If not available  calculate}
+  {calc_mode 1: force calculation from time, location and position without nutation and aberration}
+  {calc_mode 2: force high accuracy calculation including nutation and aberration) from time, location and position}
   az:=strtofloat2(centaz);
   alt:=strtofloat2(centalt);
 
@@ -281,9 +282,13 @@ begin
         if jd_start=0 then date_to_jd(head.date_obs,head.exposure);{convert date-obs to jd_start, jd_mid}
         if jd_mid>2400000 then {valid JD}
         begin
-          ra:=head.ra0;
+          ra:=head.ra0; {duplicate to protect J2000 position}
           dec:=head.dec0;
-          J2000_to_apparent(jd_mid,ra,dec);{without refraction}
+          if calc_mode=2 then {high accuracy including nutation and aberration}
+            J2000_to_apparent(jd_mid,ra,dec)  {from J2000 to Jnow apparent, aberrration, precession nutation without refraction}
+          else
+            precession3(2451545 {J2000},jd_mid,ra,dec); {from J2000 to Jnow mean, precession only. without refraction}
+
           altitude_and_refraction(site_lat_radians,site_long_radians,jd_mid,focus_temp,pressure,ra,dec,az,alt);{In formulas the longitude is positive to west!!!. }
         end
         else memo2_message('Error decoding Julian day!');

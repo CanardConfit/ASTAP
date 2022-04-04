@@ -271,7 +271,7 @@ const
      end;
   end;
 begin
-  if ((fits_file=false) or (form_aavso1=nil))  then exit;
+  if ((head.naxis=0) or (form_aavso1=nil))  then exit;
 
   jd_min:=+9999999;
   jd_max:=-9999999 ;
