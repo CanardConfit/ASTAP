@@ -1917,12 +1917,9 @@ begin
                 else
                 if head_2.gain<>'' then ListView1.Items.item[c].subitems.Strings[L_gain]:=head_2.gain;
 
-                //centalt:='';
-
                 if centalt='' then
                 begin
                   calculate_az_alt(0 {try to use header values} ,head_2,{out}az,alt);
-                //  calculate_az_alt(1 {try to use header values} ,head_2,{out}az,alt);
                   if alt<>0 then
                   begin
                     centalt:=floattostrf(alt,ffgeneral, 3, 1); {altitude}

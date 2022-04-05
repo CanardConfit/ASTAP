@@ -3228,7 +3228,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.04.4, '+about_message4+
+  'ASTAP version 2022.04.5, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -4568,7 +4568,7 @@ begin
     mousepos.x:=max(MousePos.X,mainwindow.Image1.Left);
     mousepos.y:=max(MousePos.Y,mainwindow.Image1.top);
     mousepos.x:=min(MousePos.X,mainwindow.Image1.Left+mainwindow.image1.width);
-    mousepos.y:=min(MousePos.Y,mainwindow.Image1.top++mainwindow.image1.height);
+    mousepos.y:=min(MousePos.Y,mainwindow.Image1.top+mainwindow.image1.height);
 
     {scroll to compensate zoom}
     mainwindow.image1.Left := Round((1 - mousewheelfactor) * MousePos.X + mousewheelfactor * mainwindow.Image1.Left);
@@ -11310,16 +11310,17 @@ end;
 
 procedure Tmainwindow.FormPaint(Sender: TObject);
 begin
-   if image_move_to_center then
-   begin
-     mainwindow.image1.top:=0;
-     mainwindow.image1.left:=(mainwindow.panel1.Width - mainwindow.image1.width) div 2;
+  if image_move_to_center then
+  begin
+    mainwindow.image1.top:=0;
+    mainwindow.image1.left:=(mainwindow.panel1.Width - mainwindow.image1.width) div 2;
 
-     {update shapes to new position}
+    image_move_to_center:=false;{mark as job done}
 
-      show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
-      show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
-   end;
+    {update shapes to new position}
+    show_marker_shape(mainwindow.shape_marker3,9 {no change in shape and hint},20,20,10{minimum},shape_marker3_fitsX, shape_marker3_fitsY);
+    show_marker_shape(mainwindow.shape_marker4,9 {no change in shape and hint},60,60,30{minimum},shape_marker4_fitsX, shape_marker4_fitsY);
+  end;
 end;
 
 
@@ -11363,6 +11364,7 @@ begin
   mainwindow.image1.width:=w;
 
   mainwindow.image1.top:=0;
+
   mainwindow.image1.left:=(mw-w) div 2;
 
   {update shape positions}
@@ -13659,6 +13661,7 @@ begin
        if abs(y-down_y)>2 then
        begin
          mainwindow.image1.Top:= mainwindow.image1.Top+(y-down_y);
+
        //   timage(sender).Top:= timage(sender).Top+(y-down_y);{could be used for second image}
 
          mainwindow.shape_marker1.Top:= mainwindow.shape_marker1.Top+(y-down_y);{normal marker}
