@@ -309,7 +309,7 @@ begin
 end;
 
 
-function atmospheric_absorption(airmass: double):double;{magnitudes}
+function atmospheric_absorption(airmass: double):double;{magnitudes relative to vacuum}
 {The Extinction, Scattering, Absorption due to the atmosphere expressed in magnitudes.
  Reference http://www.icq.eps.harvard.edu/ICQExtinct.html
  see also https://www.skyandtelescope.com/astronomy-resources/transparency-and-atmospheric-extinction/}
@@ -319,7 +319,7 @@ begin
   a_ozon:=airmass*0.016; {Schaefer's (1992) value Aoz =0.016 magnitudes per air mass for the small ozone component contributing to atmospheric extinction.}
   a_ray:=airmass*0.1451; {Rayleigh scattering by air molecules. Expressed in magnitudes}
   a_aer:=airmass*0.120; {Extinction due to aerosol scattering is due to particulates including dust, water droplets and manmade pollutants. Expressed in magnitudes}
-  result:=a_ozon+a_ray+a_aer;{Total extinction, scattering, absorption due to the atmosphere expressed in magnitudes}
+  result:=a_ozon+a_ray+a_aer;{Total extinction, scattering, absorption due to the atmosphere expressed in magnitudes. 0.2811*airmass}
 end;
 
 

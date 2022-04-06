@@ -146,7 +146,7 @@ begin
     if alt<>0 then
     begin
       airm:=airmass_calc(alt);
-      correction:= atmospheric_absorption(airm)- 0.28 {absorption at zenith};
+      correction:= atmospheric_absorption(airm)- 0.28 {correction at zenith is defined as zero by subtracting 0.28};
       sqmfloat:=sqmfloat+correction;
       result:=true;
     end;
