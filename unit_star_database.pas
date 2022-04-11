@@ -2897,71 +2897,73 @@ begin
    {$I-}
   readdatabase290:=true;
   repeat
-    if cache_position>=cache_size then {should be end of file}
-    begin
-      readdatabase290:=false; {no more data in this file}
-      exit;
-    end;
+    repeat
+      if cache_position>=cache_size then {should be end of file}
+      begin
+        readdatabase290:=false; {no more data in this file}
+        exit;
+      end;
 
-    if cache_position>=cache_valid_pos then {add more data to cache. This cache works  about 35 % faster then Treader for files with FOV of 0.5 degrees. This due to re-use cache. No difference for FOV 1.3 degrees. At FOV=0.25 the improvement is 40%}
-    begin
-      block_to_read:=min(cache_size, blocksize);{for small files, don't read more than cache size=file size!}
-      block_to_read:=min(block_to_read,cache_size - cache_valid_pos);{don't read more than file size!}
-      thefile_stars.read(cache_array[cache_valid_pos],block_to_read); {fill cache more. In most cases it can be re-used. Especially for small field of view}
-      cache_valid_pos:=cache_valid_pos+block_to_read;{increase postion where cache buffer is valid.}
-    end;
-    move(cache_array[cache_position],buf2,record_size);{move one record for reading}
-    cache_position:=cache_position + record_size;{update cache position}
+      if cache_position>=cache_valid_pos then {add more data to cache. This cache works  about 35 % faster then Treader for files with FOV of 0.5 degrees. This due to re-use cache. No difference for FOV 1.3 degrees. At FOV=0.25 the improvement is 40%}
+      begin
+        block_to_read:=min(cache_size, blocksize);{for small files, don't read more than cache size=file size!}
+        block_to_read:=min(block_to_read,cache_size - cache_valid_pos);{don't read more than file size!}
+        thefile_stars.read(cache_array[cache_valid_pos],block_to_read); {fill cache more. In most cases it can be re-used. Especially for small field of view}
+        cache_valid_pos:=cache_valid_pos+block_to_read;{increase postion where cache buffer is valid.}
+      end;
+      move(cache_array[cache_position],buf2,record_size);{move one record for reading}
+      cache_position:=cache_position + record_size;{update cache position}
 
-    header_record:=false;
+      header_record:=false;
 
-    case record_size of
-    5: begin {record size 5}
-         with p5^ do
-         begin
-           ra_raw:=(ra7 + ra8 shl 8 +ra9 shl 16);{always required, fasted method}
-           if ra_raw=$FFFFFF  then  {special magnitude record is found}
+      case record_size of
+      5: begin {record size 5}
+           with p5^ do
            begin
-             mag2:=dec8-16;{new magn shifted 16 to make sirius and other positive}
-             {magnitude is stored in mag2 till new magnitude record is found}
-             dec9_storage:=dec7-128;{recover dec9 shortint and put it in storage}
-             header_record:=true;
-           end
-           else
-           begin {normal record without magnitude}
-             ra2:= ra_raw*(pi*2  /((256*256*256)-1));
-             dec2:=((dec9_storage shl 16)+(dec8 shl 8)+dec7)*(pi*0.5/((128*256*256)-1));// dec2:=(dec7+(dec8 shl 8)+(dec9 shl 16))*(pi*0.5/((128*256*256)-1)); {FPC compiler makes mistake, but dec7 behind}
-             {The RA is stored as a 3 bytes word. The DEC position is stored as a two's complement (=standard), three bytes integer. The resolution of this three byte storage will be for RA: 360*60*60/((256*256*256)-1) = 0.077 arc seconds. For the DEC value it will be: 90*60*60/((128*256*256)-1) = 0.039 arc seconds.}
-             delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;{Here because ra2 is not defined in case header_record}
+             ra_raw:=(ra7 + ra8 shl 8 +ra9 shl 16);{always required, fasted method}
+             if ra_raw=$FFFFFF  then  {special magnitude record is found}
+             begin
+               mag2:=dec8-16;{new magn shifted 16 to make sirius and other positive}
+               {magnitude is stored in mag2 till new magnitude record is found}
+               dec9_storage:=dec7-128;{recover dec9 shortint and put it in storage}
+               header_record:=true;
+             end
+             else
+             begin {normal record without magnitude}
+               ra2:= ra_raw*(pi*2  /((256*256*256)-1));
+               dec2:=((dec9_storage shl 16)+(dec8 shl 8)+dec7)*(pi*0.5/((128*256*256)-1));// dec2:=(dec7+(dec8 shl 8)+(dec9 shl 16))*(pi*0.5/((128*256*256)-1)); {FPC compiler makes mistake, but dec7 behind}
+               {The RA is stored as a 3 bytes word. The DEC position is stored as a two's complement (=standard), three bytes integer. The resolution of this three byte storage will be for RA: 360*60*60/((256*256*256)-1) = 0.077 arc seconds. For the DEC value it will be: 90*60*60/((128*256*256)-1) = 0.039 arc seconds.}
+             end;
            end;
-         end;
-       end;{record size 5}
-    6: begin {record size 6}
-          with p6^ do
-          begin
-            ra_raw:=(ra7 + ra8 shl 8 +ra9 shl 16);{always required, fasted method}
-            if ra_raw=$FFFFFF  then  {special magnitude record is found}
+         end;{record size 5}
+      6: begin {record size 6}
+            with p6^ do
             begin
-              mag2:=dec8-16;{new magn shifted 16 to make sirius and other positive}
-              {magnitude is stored in mag2 till new magnitude record is found}
-              dec9_storage:=dec7-128;{recover dec9 shortint and put it in storage}
-              header_record:=true;
-            end
-            else
-            begin {normal record without magnitude}
-              ra2:= ra_raw*(pi*2  /((256*256*256)-1));
-              dec2:=((dec9_storage shl 16)+(dec8 shl 8)+dec7)*(pi*0.5/((128*256*256)-1));// dec2:=(dec7+(dec8 shl 8)+(dec9 shl 16))*(pi*0.5/((128*256*256)-1)); {FPC compiler makes mistake, but dec7 behind}
-              delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;{Here because ra2 is not defined in case header_record}
-              Bp_Rp:=b_r;{gaia (Bp-Rp)*10}    {color information}
+              ra_raw:=(ra7 + ra8 shl 8 +ra9 shl 16);{always required, fasted method}
+              if ra_raw=$FFFFFF  then  {special magnitude record is found}
+              begin
+                mag2:=dec8-16;{new magn shifted 16 to make sirius and other positive}
+                {magnitude is stored in mag2 till new magnitude record is found}
+                dec9_storage:=dec7-128;{recover dec9 shortint and put it in storage}
+                header_record:=true;
+              end
+              else
+              begin {normal record without magnitude}
+                ra2:= ra_raw*(pi*2  /((256*256*256)-1));
+                dec2:=((dec9_storage shl 16)+(dec8 shl 8)+dec7)*(pi*0.5/((128*256*256)-1));// dec2:=(dec7+(dec8 shl 8)+(dec9 shl 16))*(pi*0.5/((128*256*256)-1)); {FPC compiler makes mistake, but dec7 behind}
+                Bp_Rp:=b_r;{gaia (Bp-Rp)*10}    {color information}
+              end;
             end;
-          end;
-        end;{record size 6}
-    end;{case}
-  until
-    (header_record=false) and
-    (  (delta_ra*cos_telescope_dec<field_diameter/2) and (abs(dec2-telescope_dec)<field_diameter/2)  );
+          end;{record size 6}
+      end;{case}
+    until header_record=false;
+    delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;{Here because ra2 is not defined in case header_record}
+  until  (  (delta_ra*cos_telescope_dec<field_diameter/2) and (abs(dec2-telescope_dec)<field_diameter/2)  );
                            {calculate distance and skip when too far from center screen, {if false then outside screen,go to next line}
 end;
+
+
+
 
 begin
   p6:= @buf2[1];	{ set pointer }

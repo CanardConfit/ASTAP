@@ -5892,13 +5892,13 @@ begin
 end;
 
 
-function UTdecimal(date : string): string; {UT date in decimal notation}
-var dayfract : string;
-begin
-  {'2021-03-08T17:55:23'}
-  str(strtoint(copy(date,12,2))/24 +strtoint(copy(date,15,2))/(24*60) + strtoint(copy(date,18,2))/(24*60*60):0:4,dayfract);{convert time to fraction of a day}
-  result:=copy(date,1,4)+copy(date,6,2)+copy(date,9,2)+copy(dayfract,2,5);
-end;
+//function UTdecimal(date : string): string; {UT date in decimal notation}
+//var dayfract : string;
+//begin
+//  {'2021-03-08T17:55:23'}
+//  str(strtoint(copy(date,12,2))/24 +strtoint(copy(date,15,2))/(24*60) + strtoint(copy(date,18,2))/(24*60*60):0:4,dayfract);{convert time to fraction of a day}
+//  result:=copy(date,1,4)+copy(date,6,2)+copy(date,9,2)+copy(dayfract,2,5);
+//end;
 
 
 procedure date_to_jd(date_time:string; exp: double);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
@@ -9665,7 +9665,7 @@ begin
             update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ', jd_sum/counterL);{give midpoint of exposures}
             date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
             update_text ('DATE-AVG=',#39+date_avg+#39);{give midpoint of exposures}
-            add_text   ('COMMENT ',' UT midpoint in decimal notation: '+ UTdecimal(date_avg));
+            //add_text   ('COMMENT ',' UT midpoint in decimal notation: '+ UTdecimal(date_avg));
           end;
         end
         else;{keep head.exposure and head.date_obs from reference image for accurate asteroid annotation}

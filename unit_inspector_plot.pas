@@ -772,7 +772,7 @@ begin
 end;
 
 
-procedure measure_star_aspect(img: image_array;x1,y1: double; rs:integer;  out aspect : double; out orientation : integer); {measures the aspect of a single star}
+procedure measure_star_aspect(img: image_array;x1,y1: double; rs:integer;  out aspect : double; out orientation : integer); {measures the aspect and orientation [0..179] of a single star }
 var
   i, j,angle,pixel_counter,a,bk ,orientationMin, orientationMax : integer;
   val,r,themax,themin,g,delta_angle,val2,mean_angle,distance : double;
@@ -861,6 +861,7 @@ begin
     aspect:=themax/(themin+0.00001);
 
     if aspect>5 then aspect:=999; {failure}
+
   //  memo2_message(#9+floattostr(aspect)+#9+ inttostr(round(orientationMax))+#9+ inttostr(orientationMin));
 
   end;
@@ -871,7 +872,7 @@ procedure plot_vector(x,y,r,orientation : double);
 var sinO,cosO,xstep,ystep              : double;
     wd                                 : integer;
 begin
-  wd:=max(1,head.height div 1000);
+ wd:=max(1,head.height div 1000);
   mainwindow.image1.canvas.Pen.Color := clred;
   mainwindow.image1.canvas.Pen.width := wd;
 
@@ -899,8 +900,8 @@ end;
 
 procedure CCDinspector_analyse(detype: char; aspect,values,vectors: boolean);
 var
- fitsX,fitsY,size,radius, i, j,nhfd,retries,max_stars,starX,starY,font_luminance,n,m,xci,yci,sqr_radius,orientation    : integer;
- hfd1,star_fwhm,snr,flux,xc,yc,detection_level,med                                                                     : double;
+ fitsX,fitsY,size,radius, i, j,nhfd,retries,max_stars,n,m,xci,yci,sqr_radius,orientation,starX,starY,x2,y2,font_luminance     : integer;
+ hfd1,star_fwhm,snr,flux,xc,yc,detection_level,med                                                                : double;
  mean, min_value,max_value : single;
  hfd_values  : hfd_array; {array of integers}
  hfds        : array of double;
@@ -953,7 +954,6 @@ begin
               end;
 
             if aspect then measure_star_aspect(img_loaded,xc,yc,round(hfd1*1.5),{out} hfd1 {aspect},orientation);{store the star aspect in hfd1}
-//            if aspect then measure_star_aspect(img_loaded,xc,yc,round(hfd1*2),{out} hfd1,orientation);{store the star aspect in hfd1}
 
             {store values}
             if hfd1<>999 then
@@ -974,8 +974,8 @@ begin
                   SetLength(hfd_values,4,nhfd+500);{adapt length if required}
               hfd_values[0,nhfd]:=round(xc);
               hfd_values[1,nhfd]:=round(yc);
-              hfd_values[2,nhfd]:=round(hfd1*500);
-              hfd_values[3,nhfd]:=orientation;
+              hfd_values[2,nhfd]:=trunc(hfd1*100);{star aspect}
+              hfd_values[3,nhfd]:=orientation;    {star orientation 0..179}
               inc(nhfd);
 
             end;
@@ -1005,7 +1005,7 @@ begin
      font_luminance:=100;
   end
   else
-  font_luminance:=500;
+  font_luminance:=round((cwhite-cblack)/4+cblack);
 
 
   if detype='V' then voronoi_plot(min_value,max_value,nhfd,hfd_values)
@@ -1016,7 +1016,6 @@ begin
   Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
   size:=max(1,head.height div 1000);{font size, 1 is 9x5 pixels}
 
-
   setlength(hfds,nhfd);
 
   for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
@@ -1025,7 +1024,7 @@ begin
      begin
        if Fliphorizontal     then starX:=head.width-hfd_values[0,i]   else starX:=hfd_values[0,i];
        if Flipvertical       then starY:=head.height-hfd_values[1,i] else starY:=hfd_values[1,i];
-       annotation_to_array(floattostrf(hfd_values[2,i]/100 , ffgeneral, 2,1){text},true{transparent},round(img_loaded[0,starX,starY]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurment.}
+       annotation_to_array(floattostrf(hfd_values[2,i]/100 {aspect}, ffgeneral, 2,1){text},true{transparent},round(img_loaded[0,starX,starY]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurement.}
      end;
      hfds[i]:=hfd_values[2,i];
   end;
@@ -1037,10 +1036,12 @@ begin
   hfds:=nil;{free memory}
 
   if aspect then
-     mess:='10% of the aspect ratio measurements is worse or equal then '
+     mess:='Values indicate aspect ratio of the star shape.'
   else
+  begin
      mess:='10% of the HFD measurements is worse or equal then ';
-  mess:=mess+floattostrf(med/100 , ffgeneral, 2,1);
+     mess:=mess+floattostrf(med/100 , ffgeneral, 2,1);
+  end;
   memo2_message(mess);
   annotation_to_array(mess,true {transparent},65535,size*2 {size},5,10+size*2*9,img_loaded); {report median value}
 
@@ -1049,12 +1050,9 @@ begin
   if ((aspect) and (vectors)) then
   for i:=0 to nhfd-1 do {plot rectangles later since the routine can be run three times to find the correct detection_level and overlapping rectangle could occur}
   begin
-      plot_vector(hfd_values[0,i],hfd_values[1,i],20*(hfd_values[2,i]/100-1) {aspect},hfd_values[3,i]*pi/180);
+    plot_vector(hfd_values[0,i],hfd_values[1,i],50*(hfd_values[2,i]/100-1) {aspect},hfd_values[3,i]*pi/180);
   end;
-
   hfd_values:=nil;
-
-
 end;
 
 
