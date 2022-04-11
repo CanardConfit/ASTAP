@@ -2925,13 +2925,14 @@ begin
              mag2:=dec8-16;{new magn shifted 16 to make sirius and other positive}
              {magnitude is stored in mag2 till new magnitude record is found}
              dec9_storage:=dec7-128;{recover dec9 shortint and put it in storage}
-            header_record:=true;
+             header_record:=true;
            end
            else
            begin {normal record without magnitude}
              ra2:= ra_raw*(pi*2  /((256*256*256)-1));
              dec2:=((dec9_storage shl 16)+(dec8 shl 8)+dec7)*(pi*0.5/((128*256*256)-1));// dec2:=(dec7+(dec8 shl 8)+(dec9 shl 16))*(pi*0.5/((128*256*256)-1)); {FPC compiler makes mistake, but dec7 behind}
              {The RA is stored as a 3 bytes word. The DEC position is stored as a two's complement (=standard), three bytes integer. The resolution of this three byte storage will be for RA: 360*60*60/((256*256*256)-1) = 0.077 arc seconds. For the DEC value it will be: 90*60*60/((128*256*256)-1) = 0.039 arc seconds.}
+             delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;{Here because ra2 is not defined in case header_record}
            end;
          end;
        end;{record size 5}
@@ -2944,19 +2945,18 @@ begin
               mag2:=dec8-16;{new magn shifted 16 to make sirius and other positive}
               {magnitude is stored in mag2 till new magnitude record is found}
               dec9_storage:=dec7-128;{recover dec9 shortint and put it in storage}
-             header_record:=true;
+              header_record:=true;
             end
             else
             begin {normal record without magnitude}
               ra2:= ra_raw*(pi*2  /((256*256*256)-1));
               dec2:=((dec9_storage shl 16)+(dec8 shl 8)+dec7)*(pi*0.5/((128*256*256)-1));// dec2:=(dec7+(dec8 shl 8)+(dec9 shl 16))*(pi*0.5/((128*256*256)-1)); {FPC compiler makes mistake, but dec7 behind}
+              delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;{Here because ra2 is not defined in case header_record}
+              Bp_Rp:=b_r;{gaia (Bp-Rp)*10}    {color information}
             end;
-            Bp_Rp:=b_r;{gaia (Bp-Rp)*10}    {color information not used in ASTAP}
           end;
         end;{record size 6}
     end;{case}
-
-    delta_ra:=abs(ra2-telescope_ra); if delta_ra>pi then delta_ra:=pi*2-delta_ra;
   until
     (header_record=false) and
     (  (delta_ra*cos_telescope_dec<field_diameter/2) and (abs(dec2-telescope_dec)<field_diameter/2)  );

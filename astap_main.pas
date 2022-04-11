@@ -106,7 +106,7 @@ type
     copy_to_clipboard1: TMenuItem;
     grid1: TMenuItem;
     freetext1: TMenuItem;
-    MenuItem21: TMenuItem;
+    online_query1: TMenuItem;
     bin_2x2menu1: TMenuItem;
     bin_3x3menu1: TMenuItem;
     imageinspection1: TMenuItem;
@@ -117,6 +117,8 @@ type
     halo_removal1: TMenuItem;
     maintain_date1: TMenuItem;
     batch_rotate_1801: TMenuItem;
+    hyperleda_guery1: TMenuItem;
+    ned_query1: TMenuItem;
     set_modified_date1: TMenuItem;
     MenuItem26: TMenuItem;
     MenuItem27: TMenuItem;
@@ -3228,7 +3230,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.04.5, '+about_message4+
+  'ASTAP version 2022.04.11, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -4819,12 +4821,9 @@ begin
   mainwindow.writepositionshort1.enabled:=yes;{enable popup menu}
   mainwindow.Copyposition1.enabled:=yes;{enable popup menu}
   mainwindow.Copypositionindeg1.enabled:=yes;{enable popup menu}
-  mainwindow.simbad_query1.enabled:=yes;{enable popup menu}
-  mainwindow.aavso_chart1.enabled:=yes;{enable popup menu}
-  mainwindow.gaia_star_position1.enabled:=yes;{enable popup menu}
-  mainwindow.import_auid1.enabled:=yes;{enable popup menu}
-  mainwindow.sip1.enabled:=yes; {allow adding sip coefficients}
+  mainwindow.online_query1.enabled:=yes;{enable popup menu}
 
+  mainwindow.sip1.enabled:=yes; {allow adding sip coefficients}
   stackmenu1.focallength1Exit(nil); {update output calculator}
 end;
 
@@ -13074,6 +13073,25 @@ begin
     //  url:='http://simbad.u-strasbg.fr/simbad/sim-coo?Radius.unit=arcsec&Radius=0.4692&Coord=195.1060d28.1998d
   end
   else
+  if sender=mainwindow.hyperleda_guery1 then
+  begin {sender hyperleda_guery1}
+    plot_the_annotation(stopX+1,startY+1,startX+1,startY+ (startX-stopX)+1,0,'','');{rectangle, +1 to fits coordinates}
+    url:='http://leda.univ-lyon1.fr/fG.cgi?n=a000&ob=ra&c=o&p=J'+ra8+'d%2C'+sgn+dec8+'d&f='+floattostr6(max(ang_w,ang_h)/(60));  //350.1000D%2C50.50000D    &f=50
+    // http://leda.univ-lyon1.fr/fG.cgi?n=a000&c=o&p=J350.1000D%2C50.50000D&f=50&ob=ra
+  end
+  else
+  if sender=mainwindow.ned_query1 then
+  begin {sender ned_query1}
+    radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert elipse to circle}
+    x1:=(stopX+startX) div 2;
+    y1:=(stopY+startY) div 2;
+    plot_the_circle(x1-radius,y1-radius,x1+radius,y1+radius);
+    url:='http://ned.ipac.caltech.edu/conesearch?in_csys=Equatorial&in_equinox=J2000&coordinates='+ra8+'d%20%2B'+sgn+dec8+'d&radius=' +floattostr6(max(ang_w,ang_h)/(60*2))+'&corr_z=1&z_constraint=Unconstrained&z_unit=z&ot_include=ANY&nmp_op=ANY&search_type=Near%20Position%20Search&out_csys=Equatorial&out_equinox=Same%20as%20Input&obj_sort=Distance%20to%20search%20center'+'&in_objtypes1[Galaxies]=Galaxies&in_objtypes1[GPairs]=GPairs&in_objtypes1[GTriples]=GTriples&in_objtypes1[GGroups]=GGroups&in_objtypes1[GClusters]=GClusters&in_objtypes1[QSO]=QSO&in_objtypes1[QSOGroups]=QSOGroups&in_objtypes1[GravLens]=GravLens&in_objtypes1[AbsLineSys]=AbsLineSys&in_objtypes1[EmissnLine]=EmissnLine';
+    //http://ned.ipac.caltech.edu/conesearch?in_csys=Equatorial&in_equinox=J2000&coordinates=12.000d%20%2B45.0000d&radius=2&corr_z=1&z_constraint=Unconstrained&z_unit=z&ot_include=ANY&nmp_op=ANY&search_type=Near%20Position%20Search&out_csys=Equatorial&out_equinox=Same%20as%20Input&obj_sort=Distance%20to%20search%20center
+  end
+  else
+
+
   begin {sender aavso_chart1}
     magn:=inputbox('Chart request','Limiting magnitude chart:' ,'15');
 

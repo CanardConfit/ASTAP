@@ -199,7 +199,7 @@ begin
     exit;
   end;
 
-  if nrstars>=1500 then
+  if nrstars>=150 then
   begin
     quickSort_starlist(starlist,0,nrstars-1); {sort in X only}
     tolerance:=round(0.5*sqrt(nrstars));{tolerance band is about twice the every star distance}
