@@ -74,7 +74,7 @@ begin
     '-extract snr_min {As -analyse but additionally write a .csv file with the detected stars info}'+#10+
     '-log   {Write the solver log to file}'+#10+
     '-progress   {Log all progress steps and messages}'+#10+
-    '-update  {update the FITS header with the found solution. Jpg, png, tiff will be written as fits}' +#10+
+    '-update  {update the FITS header with the found solution. Jpeg, png, tiff will be written as fits}' +#10+
     '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
     'Preference will be given to the command line values.'
     );
@@ -160,8 +160,7 @@ begin
 
       if hasoption('update') then
       begin
-        if fits_file_name(filename2) then
-           SaveFITSwithupdatedheader1
+        if fits_file_name(filename2) then SaveFITSwithupdatedheader1
         else
         save_fits16bit(img_loaded,ChangeFileExt(filename2,'.fits'));{save original png,tiff jpg to 16 bits fits file}
       end;

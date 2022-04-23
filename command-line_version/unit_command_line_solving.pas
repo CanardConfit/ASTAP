@@ -172,21 +172,60 @@ begin
 end; {lsq_fit}
 
 
-procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-3-13}
+
+procedure QuickSort_starlist(var A: star_list; iLo, iHi: Integer) ;{ Fast quick sort. Sorts elements in the array list with indices between lo and hi, sort in X only}
 var
-   i,j,k,nrstars,j_used1,j_used2,j_used3,nrquads              : integer;
+  Lo, Hi : integer;
+  Pivot, Tx,Ty: double;{ pivot, T are the same type as the elements of array }
+begin
+  Lo := iLo;
+  Hi := iHi;
+  Pivot := A[0,(Lo + Hi) div 2];
+  repeat
+    while A[0,Lo] < Pivot do Inc(Lo) ; {sort in X only}
+    while A[0,Hi] > Pivot do Dec(Hi) ;
+    if Lo <= Hi then
+    begin {swap}
+      Tx := A[0,Lo];
+      Ty := A[1,Lo];
+      A[0,Lo] := A[0,Hi];
+      A[1,Lo] := A[1,Hi];
+      A[0,Hi] := Tx;
+      A[1,Hi] := Ty;
+      Inc(Lo) ;
+      Dec(Hi) ;
+    end;
+  until Lo > Hi;
+  if Hi > iLo then QuickSort_starlist(A, iLo, Hi) ;  {executes itself recursively}
+  if Lo < iHi then QuickSort_starlist(A, Lo, iHi) ;  {executes itself recursively}
+end;
+
+
+procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-4-10}
+var
+   i,j,k,nrstars,j_used1,j_used2,j_used3,nrquads,Sstart,Send,tolerance  : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
-   dist1,dist2,dist3,dist4,dist5,dist6,distx, dummy  :double;
+   dist1,dist2,dist3,dist4,dist5,dist6,dummy,disty                          : double;
    identical_quad : boolean;
 begin
-  nrstars:=Length(starlist[0]);
+
+  nrstars:=Length(starlist[0]);{number of quads will be equal (super rare) or lower}
   quad_smallest:=9999999;
+
 
   if nrstars<4 then
   begin {not enough stars for quads}
     SetLength(quad_star_distances,8,0);
     exit;
   end;
+
+  if nrstars>=150 then
+  begin
+    quickSort_starlist(starlist,0,nrstars-1); {sort in X only}
+    tolerance:=round(0.5*sqrt(nrstars));{tolerance band is about twice the every star distance}
+  end
+  else
+  tolerance:=1;{switch pre-filtering in X off}
 
   nrquads:=0;
   SetLength(quad_star_distances,8,nrstars);{will contain the six distances and the central position}
@@ -201,23 +240,27 @@ begin
     distance2:=1E99;{distance second closest star}
     distance3:=1E99;{distance third closest star}
 
-    for j:=0 to nrstars-1 do {find closest stars}
+
+    Sstart:=max(0,i-(nrstars div tolerance));
+    Send:=min(nrstars-1,i+(nrstars div tolerance)); {search in a limited X band only. The stars list is sorted in X. Search speed increases with about 30%}
+
+    for j:=Sstart to Send do {find closest stars}
     begin
       if j<>i{not the first star} then
       begin
-        distx:=sqr(starlist[0,j]-starlist[0,i]);
-        if distx<distance3 then {pre-check to increase processing speed with a small amount}
+        disty:=sqr(starlist[1,j]-starlist[1,i]);
+        if disty<distance3 then {pre-check to increase processing speed with a small amount}
         begin
-          distance:=distx + sqr(starlist[1,j]-starlist[1,i]);
+          distance:=sqr(starlist[0,j]-starlist[0,i])+distY ;{square distances are used}
           if distance>1 then {not an identical star. Mod 2021-6-25}
           begin
             if distance<distance1 then
             begin
               distance3:=distance2;{distance third closest star}
-              j_used3:=j_used2;
+              j_used3:=j_used2;{remember the star position in the list}
 
               distance2:=distance1;{distance second closest star}
-              j_used2:=j_used1;
+              j_used2:=j_used1;{remember the star position in the list}
 
               distance1:=distance;{distance closest star}
               j_used1:=j;{mark later as used}
@@ -226,7 +269,7 @@ begin
             if distance<distance2 then
             begin
               distance3:=distance2;{distance third closest star}
-              j_used3:=j_used2;
+              j_used3:=j_used2;{remember the star position in the list}
 
               distance2:=distance;{distance second closest star}
               j_used2:=j;
@@ -235,7 +278,7 @@ begin
             if distance<distance3 then
             begin
               distance3:=distance;{third closest star}
-              j_used3:=j;
+              j_used3:=j;{remember the star position in the list}
             end;
           end;{not an identical star. Mod 2021-6-25}
 
@@ -284,7 +327,6 @@ begin
           dist4:=sqrt(sqr(x2-x3)+ sqr(y2-y3));{distance star2-star3}
           dist5:=sqrt(sqr(x2-x4)+ sqr(y2-y4));{distance star2-star4}
           dist6:=sqrt(sqr(x3-x4)+ sqr(y3-y4));{distance star3-star4}
-
           {sort six distances on size in five steps}
           for j:=1 to 5 do {sort on distance}
           begin
@@ -303,8 +345,8 @@ begin
 
           if dist1<quad_smallest then quad_smallest:=dist1;{measure the smallest}
         end;
-      except
-      end;
+     except
+     end;
       if dist1>min_leng then {large enough for earth based telescope}
       begin
         quad_star_distances[6,nrquads]:=xt;{store mean x position}
