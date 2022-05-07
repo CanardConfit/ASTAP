@@ -1048,11 +1048,15 @@ const
   insp_focus_pos=8;
   insp_nr_stars=7;
 
+  avi_video       : boolean=false;
+  frame_rate      : string ='1';
+
+
 implementation
 
 uses
   unit_image_sharpness, unit_gaussian_blur, unit_star_align, unit_astrometric_solving,unit_stack_routines,unit_annotation,unit_hjd,
-  unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_aavso,unit_raster_rotate, unit_listbox,unit_aberration;
+  unit_live_stacking, unit_monitoring, unit_hyperbola, unit_asteroid,unit_yuv4mpeg2, unit_avi,unit_aavso,unit_raster_rotate, unit_listbox,unit_aberration;
 
 type
   blink_solution  = record
@@ -4311,8 +4315,8 @@ var
   Save_Cursor          : TCursor;
   hfd_min              : double;
   c, x_new,y_new,fitsX,fitsY,col,first_image,stepnr,nrrows, cycle,step,ps,bottom,top,left,w,h,max_stars: integer;
-  reference_done, init{,solut},astro_solved,store_annotated           : boolean;
-  st                                                                  : string;
+  reference_done, init{,solut},astro_solved,store_annotated,success,res   : boolean;
+  st                                                                      : string;
 begin
   if listview6.items.count<=1 then exit; {no files}
   Save_Cursor := Screen.Cursor;
@@ -4401,8 +4405,14 @@ begin
                plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add annotations});
                listview6.Items.item[c].subitems.Strings[B_annotated ]:='✓';
             end;
-            if ((astro_solved) or (stackmenu1.update_annotation1.checked)) then
-               if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;{save solution and annotation}
+            if ((astro_solved) or (stackmenu1.update_annotation1.checked)) then  {save solution}
+            begin
+              if fits_file_name(filename2) then
+                success:=savefits_update_header(filename2)
+              else
+                success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
+              if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
+            end;
           end;
         end;{astrometric solve and annotate}
 
@@ -4488,16 +4498,16 @@ begin
           {nothing to do}
         end;
 
+        left:=0;
+        bottom:=0;
+        if ((sender=write_video1) and (areax1<>areaX2)) then {cropped video}
+        begin {crop video, convert array coordinates to screen coordinates}
+          if mainwindow.flip_horizontal1.checked then left:=head.width-1-areaX2 {left} else  left:=areaX1;{left}
+          if mainwindow.flip_vertical1.checked then  bottom:=head.height-1-areaY2 {bottom} else bottom:=areaY1;{bottom}
+        end;
+
         if timestamp1.checked then
         begin
-          left:=0;
-          bottom:=0;
-          if ((sender=write_video1) and (areax1<>areaX2)) then {cropped video}
-          begin {crop video, convert array coordinates to screen coordinates}
-            if mainwindow.flip_horizontal1.checked then left:=head.width-1-areaX2 {left} else  left:=areaX1;{left}
-            if mainwindow.flip_vertical1.checked then  bottom:=head.height-1-areaY2 {bottom} else bottom:=areaY1;{bottom}
-          end;
-
           if date_avg='' then
             annotation_to_array('date_obs: '+head.date_obs,false,65535,1{size},left+1,bottom+10,img_loaded) {head.date_obs to image array as font. Flicker free method}
           else
@@ -4516,6 +4526,8 @@ begin
         begin
           w:=head.width;
           h:=head.height;
+          top:=0;
+          {left is already calculated}
           if areax1<>areaX2 then {crop active, convert array screen coordinates}
           begin
             if mainwindow.flip_vertical1.checked=false then  top:=head.height-1-areaY2 {top} else top:=areaY1;{top}
@@ -4523,7 +4535,12 @@ begin
             h:=areaY2-areaY1+1 {convert to screen coordinates}
           end;
 
-          if write_yuv4mpeg2_frame(head.naxis3>1,left,top,w,h)=false then
+          if avi_video then
+            res:=write_avi_frame(left,top,w,h)
+          else
+            res:=write_yuv4mpeg2_frame(head.naxis3>1,left,top,w,h);
+
+          if res=false then
           begin
              memo2_message('Error writing video'); ;
              c:=999999; {stop}
@@ -6278,8 +6295,8 @@ var
   astr  : string;
 
   function measure_star(deX,deY :double): string;{measure position and flux}
-  var
-    starX,starY :double;
+  //var
+    //starX,starY :double;
   begin
     HFD(img_loaded,round(deX-1),round(deY-1),annulus_radius {14, annulus radius},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
     if ((hfd1<50) and (hfd1>0) and (snr>6)) then {star detected in img_loaded}
@@ -6414,7 +6431,6 @@ begin
 
         if solve_image(img_loaded,true  {get hist}) then
         begin{match between loaded image and star database}
-          if savefits_update_header(filename2)=false then begin ShowMessage('Write error !!' + filename2); Screen.Cursor := Save_Cursor; exit;end;
           if fits_file_name(filename2) then
             success:=savefits_update_header(filename2)
           else
@@ -9560,7 +9576,7 @@ begin
         else
         if length(extra2)=1 then
         begin
-           memo2.lines.add('Error! One color only. For LRGB stacking a minimum of two colors is required. Removed the check mark classify on "image filter" or add images made with a different color filter.');
+           memo2.lines.add('Error! One colour only. For LRGB stacking a minimum of two colours is required. Remove the check mark for classify on "Light filter" or add images made with a different optical filter.');
            //filters_used[5]:=filters_used[i];
            lrgb:=false;{prevent runtime errors with head.naxis3=3}
         end;
@@ -10035,8 +10051,9 @@ end;
 
 procedure Tstackmenu1.write_video1click(Sender: TObject);
 var
-  framerate: string;
-  crop     : boolean;
+  filen              : string;
+  crop,res           : boolean;
+  nrframes,c         : integer;
 begin
   crop:=false;
   case QuestionDlg('Crop', 'Crop of full size video?', mtCustom, [ 20, 'Crop', 21, 'Cancel',22, 'Full size', 'IsDefault'], '') of
@@ -10044,21 +10061,49 @@ begin
       21: exit;
   end;
 
-  framerate:='1';
-  if InputQuery('Frame rate', 'Video frame rate in [frames/second]:', framerate)=false then exit;
+  if InputQuery('Set video frame rate menu',
+                'Video can be saved as uncompressed in Y4M or AVI container.'+#10+
+                'For monochrome images Y4M video files will be smaller.'+#10+
+                'To crop set the area first with the right mouse button.'+#10+
+                #10+#10+
+                'Enter video frame rate in [frames/second]:', frame_rate)=false then exit;
 
-  mainwindow.savedialog1.filename:=ChangeFileExt(FileName2,'.y4m');
   mainwindow.savedialog1.initialdir:=ExtractFilePath(filename2);
+  mainwindow.savedialog1.Filter := ' Currently selected Y4M|*.y4m|AVI uncompressed| *.avi';
+  if avi_video then
+  begin
+    mainwindow.savedialog1.filename:=ChangeFileExt(FileName2,'.avi');
+    mainwindow.savedialog1.filterindex:=2; {avi}
+  end
+  else
+  begin
+    mainwindow.savedialog1.filename:=ChangeFileExt(FileName2,'.y4m');
+    mainwindow.savedialog1.filterindex:=1;
+  end;
 
-  mainwindow.savedialog1.Filter := ' *.y4m|*.y4m';
   if mainwindow.savedialog1.execute then
   begin
+    filen:=mainwindow.savedialog1.filename;
+    avi_video:=pos('.avi',filen)>0;
+
     stackmenu1.analyseblink1Click(nil);  {analyse and secure the dimension values head_2.width, head_2.height from lights}
+    if avi_video then {count frames}
+    begin
+      nrframes:=0;
+      for c:=0 to listview6.items.count-1 do {count frames}
+      begin
+        if listview6.Items.item[c].checked then inc(nrframes);
+      end
+    end;
+
     if crop=false then
     begin
       areax1:=0;{for crop activation areaX1<>areaX2}
       areax2:=0;
-      write_YUV4MPEG2_header(mainwindow.savedialog1.filename,framerate,((head_2.naxis3>1) or (mainwindow.preview_demosaic1.checked)),head_2.width,head_2.height);
+      if avi_video then
+        res:=write_avi_head(filen,frame_rate,nrframes,head_2.width,head_2.height){open/create file. Result is false if failure}
+      else
+        res:=write_YUV4MPEG2_header(filen,frame_rate,((head_2.naxis3>1) or (mainwindow.preview_demosaic1.checked)),head_2.width,head_2.height);
     end
     else {crop is set by the mouse}
     begin
@@ -10067,11 +10112,23 @@ begin
          application.messagebox(pchar('Set first the area with the mouse and mouse popup menu "Set area" !'), pchar('Missing crop area'),MB_OK);
          exit;
       end;
-      write_YUV4MPEG2_header(mainwindow.savedialog1.filename,framerate,((head.naxis3>1) or (mainwindow.preview_demosaic1.checked)),areax2-areax1+1,areay2-areay1+1 );
+      if avi_video then
+        res:=write_avi_head(filen,frame_rate,nrframes,areax2-areax1+1,areay2-areay1+1 ){open/create file. Result is false if failure}
+      else
+        res:=write_YUV4MPEG2_header(filen,frame_rate,((head.naxis3>1) or (mainwindow.preview_demosaic1.checked)),areax2-areax1+1,areay2-areay1+1 );
+    end;
+
+    if res=false then
+    begin
+       memo2_message('Video file creation error!');
+       exit;
     end;
 
     stackmenu1.blink_button1Click(Sender);{blink and write video frames}
-    close_YUV4MPEG2;
+    if avi_video then
+      close_the_avi(nrframes)
+    else
+      close_YUV4MPEG2;
     memo2_message('Ready!. See tab results. The video written as '+mainwindow.savedialog1.filename);
 
     filename2:=mainwindow.savedialog1.filename;

@@ -1459,7 +1459,8 @@ object mainwindow: Tmainwindow
       object annotate_unknown_stars1: TMenuItem
         Caption = 'Unknown star annotation'
         Enabled = False
-        Hint = 'Annotate nova and minor planets using the star database. It will annotate any star like object one magnitude brighter or missing from the star database. For the G18 it will detect object up to magnitude 17.'
+        Hint = 'Annotate nova and minor planets using the star database. It will annotate any star like object one magnitude brighter or missing from the star database. For the H18 star database it will detect object up to magnitude 17.'
+        ShortCut = 16575
         OnClick = annotate_unknown_stars1Click
       end
       object variable_star_annotation1: TMenuItem
@@ -1535,6 +1536,7 @@ object mainwindow: Tmainwindow
       object annotations_visible1: TMenuItem
         AutoCheck = True
         Caption = 'Annotations header visible'
+        Checked = True
         Hint = 'Switches the annotations on/off. The annotations are stored in the FITS files header with keyword ANNOTATE'
         OnClick = annotations_visible1Click
       end

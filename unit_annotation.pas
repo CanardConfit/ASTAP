@@ -1498,6 +1498,8 @@ begin
 
     text_dimensions:=nil;{remove used memory}
 
+    memo2_message('Added '+inttostr(text_counter)+ ' annotations.');
+
     Screen.Cursor:=Save_Cursor;
   end;
 

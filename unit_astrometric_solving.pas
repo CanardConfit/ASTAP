@@ -967,7 +967,7 @@ begin
     update_float('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
     update_float('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
     update_text ('PLTSOLVD=','                   T / ASTAP internal solver                          ');
-    update_text ('COMMENT 7', solved_in+' Offset was '+offset_found+mount_offset);
+    update_longstr('COMMENT 7', solved_in+' Offset was '+offset_found+mount_offset);
 
     if solve_show_log then {global variable set in find stars}
     begin

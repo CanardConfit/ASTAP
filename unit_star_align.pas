@@ -181,7 +181,7 @@ begin
 end;
 
 
-procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-3-13}
+procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2022-4-10}
 var
    i,j,k,nrstars,j_used1,j_used2,j_used3,nrquads,Sstart,Send,tolerance  : integer;
    distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,

@@ -43,6 +43,7 @@ begin
             else header:=pansichar('YUV4MPEG2 W'+inttostr(w)+' H'+inttostr(h)+' F'+trim(framerate)+':1 Ip A0:0 Cmono'+#10);{width, height,frame rate, interlace progressive, unknown aspect, color space}
   { Write header }
   thefile.writebuffer ( header, strlen(Header));
+  result:=true;
 end;
 
 function write_yuv4mpeg2_frame(colour: boolean;x,y,w,h: integer): boolean; {reads pixels from Timage and writes YUV frames in 444p style, colour or mono. Call this procedure for each image}

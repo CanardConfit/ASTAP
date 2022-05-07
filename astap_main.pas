@@ -3230,7 +3230,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.04.11a, '+about_message4+
+  'ASTAP version 2022.05.07, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -7845,6 +7845,13 @@ begin
 
       obscode:=Sett.ReadString('stack','obscode',''); {photometry}
       c:=Sett.ReadInteger('stack','delim_pos',987654321);if c<>987654321 then delim_pos:=c;
+      baa_style:=Sett.ReadBool('stack','baa_style',false);{aavso report}
+
+
+      avi_video:=Sett.ReadBool('stack','avi_video',false);{blink menu, video}
+      dum:=Sett.ReadString('stack','frame_rate',''); if dum<>'' then frame_rate:=dum;
+
+
 
       stackmenu1.live_stacking_path1.caption:=Sett.ReadString('live','live_stack_dir','');
       stackmenu1.monitoring_path1.caption:=Sett.ReadString('live','monitor_dir','');
@@ -8190,8 +8197,14 @@ begin
 
       sett.writestring('stack','obscode',obscode);
       sett.writeInteger('stack','delim_pos',delim_pos);
+      sett.writeBool('stack','baa_style',baa_style);{AAVSO report}
+
 
       sett.writeBool('stack','wcs',stackmenu1.mount_write_wcs1.Checked);{uses wcs file for menu mount}
+
+      sett.writeBool('stack','avi_video',avi_video);
+      sett.writestring('stack','frame_rate',frame_rate);
+
 
       sett.writestring('live','live_stack_dir',stackmenu1.live_stacking_path1.caption);{live stacking}
       sett.writestring('live','monitor_dir',stackmenu1.monitoring_path1.caption);
@@ -10067,12 +10080,14 @@ end;
 
 procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
-  size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci     : integer;
+  size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci,hfd_counter      : integer;
   Save_Cursor:TCursor;
-  Fliphorizontal, Flipvertical,astar                                                                        : boolean;
-  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit,sqr_radius,hfd_min : double;
+  Fliphorizontal, Flipvertical,astar,saturated                                                                     : boolean;
+  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit,sqr_radius,hfd_min,
+   hfd_median,backgr: double;
   messg : string;
   img_temp3,img_sa :image_array;
+
 const
    default=1000;
 
@@ -10116,33 +10131,55 @@ const
 //  plot_fits(mainwindow.image1,true,true);
 //  exit;
 
-  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
+//  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
+
+  analyse_image(img_loaded,10 {snr_min},false,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
+
 
   setlength(img_sa,1,head.width,head.height);{set length of image array}
    for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
       img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
-  for fitsY:=0 to head.height-1-1 do
+  for fitsY:=0 to head.height-1 do
   begin
-    for fitsX:=0 to head.width-1-1  do
+    for fitsX:=0 to head.width-1  do
     begin
       if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- cblack>5*noise_level[0] {star_level} ){star}) then {new star}
       begin
-        HFD(img_loaded,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-        if ((hfd1<10) and (hfd1>=hfd_min) and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
+
+        HFD(img_loaded,fitsX,fitsY,round(1.5* hfd_median){annulus radius},3.0*hfd_median {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+
+        //memo2_message(floattostr(xc)+',  ' +floattostr(yc));
+
+        xci:=round(xc);{star center as integer}
+        yci:=round(yc);
+        if ((xci>0) and (xci<head.width-1) and (yci>0) and (yci<head.height-1)) then
+        saturated:=not ((img_loaded[0,xci,yci]<head.datamax_org-1) and
+                        (img_loaded[0,xci-1,yci]<head.datamax_org-1) and
+                        (img_loaded[0,xci+1,yci]<head.datamax_org-1) and
+                        (img_loaded[0,xci,  yci-1]<head.datamax_org-1) and
+                        (img_loaded[0,xci,  yci+1]<head.datamax_org-1) and
+
+                        (img_loaded[0,xci-1,yci-1]<head.datamax_org-1) and
+                        (img_loaded[0,xci-1,yci+1]<head.datamax_org-1) and
+                        (img_loaded[0,xci+1,yci-1]<head.datamax_org-1) and
+                        (img_loaded[0,xci+1,yci+1]<head.datamax_org-1)  )
+        else saturated:=false;
+
+        if (((hfd1<hfd_median*1.3) or (saturated){larger then normal}) and (hfd1>=hfd_median*0.75) and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
         begin
           {for testing}
-          //if flipvertical=false  then  starY:=round(head.height-yc) else starY:=round(yc);
-          //if fliphorizontal=true then starX:=round(head.width-xc)  else starX:=round(xc);
-          //  size:=round(5*hfd1);
-          //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-          //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+  //        if flipvertical=false  then  starY:=round(head.height-yc) else starY:=round(yc);
+    //      if fliphorizontal=true then starX:=round(head.width-xc)  else starX:=round(xc);
+//            size:=round(5*hfd1);
+  //          mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+    //        mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+       //   if ((abs(xc-2294)<4) and  (abs(yc-274)<4)) then
+      //    beep;
 
-          radius:=round(3.0*hfd1);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
+          radius:=round(3.0*hfd_median);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
           sqr_radius:=sqr(radius);
-          xci:=round(xc);{star center as integer}
-          yci:=round(yc);
           for n:=-radius to +radius do {mark the whole circular star area as occupied to prevent double detection's}
             for m:=-radius to +radius do
             begin
@@ -10152,67 +10189,32 @@ const
               img_sa[0,i,j]:=+1;{mark as star area}
             end;
 
-          if ((img_loaded[0,round(xc),round(yc)]<head.datamax_org-1) and
-              (img_loaded[0,round(xc-1),round(yc)]<head.datamax_org-1) and
-              (img_loaded[0,round(xc+1),round(yc)]<head.datamax_org-1) and
-              (img_loaded[0,round(xc),round(yc-1)]<head.datamax_org-1) and
-              (img_loaded[0,round(xc),round(yc+1)]<head.datamax_org-1) and
+           measured_magn:=(flux_magn_offset-ln(flux)*2.511886432/ln(10))*10; {magnitude x 10}
 
-              (img_loaded[0,round(xc-1),round(yc-1)]<head.datamax_org-1) and
-              (img_loaded[0,round(xc-1),round(yc+1)]<head.datamax_org-1) and
-              (img_loaded[0,round(xc+1),round(yc-1)]<head.datamax_org-1) and
-              (img_loaded[0,round(xc+1),round(yc+1)]<head.datamax_org-1)  ) then {not saturated}
+           if measured_magn<magn_limit-10 then {bright enough to be in the database}
            begin
-             measured_magn:=(flux_magn_offset-ln(flux)*2.511886432/ln(10))*10; {magnitude x 10}
-
-             if measured_magn<magn_limit-10 then {bright enough to be in the database}
-             begin
-               magn_database:=default;{1000}
-               for i:=-3 to 3 do
-                 for j:=-3 to 3 do
-                 begin {database star available?}
-                   magnd:=img_temp3[0,round(xc)+i,round(yc)+j];
-                   if magnd<default then {a star from the database}
-                     magn_database:=min(magnd,magn_database);{take brightest}
-                 end;
-
-               delta_magn:=measured_magn - magn_database; {delta magnitude time 10}
-               if  delta_magn<-10 then {unknown star, 1 magnitude brighter then database}
-               begin {mark}
-                 if Flipvertical=false then  starY:=round(head.height-yc) else starY:=round(yc);
-                 if Fliphorizontal     then starX:=round(head.width-xc)  else starX:=round(xc);
-
-                 if delta_magn<-500 then
-                 begin
-                   delta_magn:=delta_magn+1000;
-                   messg:='';{unknown star in the database}
-                 end
-                 else
-                 begin
-                   messg:=' Δ'+inttostr(round(delta_magn)); {star but wrong magnitude}
-                  end;
-                 size:=round(5*hfd1); {for rectangle annotation}
-                 image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-                 image1.Canvas.textout(starX+size,starY,inttostr(round(measured_magn))  +messg );{add magnitude as text}
+             magn_database:=default;{1000}
+             for i:=-3 to 3 do
+               for j:=-3 to 3 do
+               begin {database star available?}
+                 magnd:=img_temp3[0,round(xc)+i,round(yc)+j];
+                 if magnd<default then {a star from the database}
+                   magn_database:=min(magnd,magn_database);{take brightest}
                end;
+
+             delta_magn:=measured_magn - magn_database; {delta magnitude time 10}
+             if  delta_magn<-10 then {unknown star, 1 magnitude brighter then database}
+             begin {mark}
+               if Flipvertical=false then  starY:=round(head.height-yc) else starY:=round(yc);
+               if Fliphorizontal     then starX:=round(head.width-xc)  else starX:=round(xc);
+               if magn_database=1000 then messg:='' {unknown star}
+               else
+               messg:=' Δ'+inttostr(round(delta_magn)); {star but wrong magnitude}
+               size:=round(5*hfd1); {for rectangle annotation}
+               image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+               image1.Canvas.textout(starX+size,starY,inttostr(round(measured_magn))  +messg );{add magnitude as text}
              end;
-          end {not saturated}
-          else
-          begin {saturated, cannot compare magnitudes}
-            astar:=false;
-            for i:=-2 to 2 do
-              for j:=-2 to 2 do
-              begin {database star available?}
-                 if img_temp3[0,round(xc)+i,round(yc)+j]>0 then  astar:=true;
-               end;
-            if astar=false then
-            begin
-              size:=round(5*hfd1); {for rectangle annotation}
-              if Flipvertical=false then  starY:=round(head.height-yc) else starY:=round(yc);
-              if Fliphorizontal     then starX:=round(head.width-xc)  else starX:=round(xc);
-              image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate unknown star with rectangle}
-            end;
-          end;
+           end;
 
         end;{HFD good}
       end;
@@ -14972,8 +14974,8 @@ begin
     begin
       update_integer('DATAMIN =',' / Minimum data value                             ' ,round(head.datamin_org));
       update_integer('DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
-      update_integer('CBLACK  =',' / Indicates the black point used when displaying the image.' ,round(cblack) ); {2019-4-9}
-      update_integer('CWHITE  =',' / indicates the white point used when displaying the image.' ,round(cwhite) );
+      update_integer('CBLACK  =',' / Black point used for displaying image.         ' ,round(cblack) ); {2019-4-9}
+      update_integer('CWHITE  =',' / White point used for displaying the image.     ' ,round(cwhite) );
     end
     else
     begin {in most case reducing from 16 or flat to 8 bit}

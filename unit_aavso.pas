@@ -14,7 +14,11 @@ uses
   clipbrd, ExtCtrls, Menus;
 
 type
+
+  { Tform_aavso1 }
+
   Tform_aavso1 = class(TForm)
+    baa_style1: TCheckBox;
     Image_photometry1: TImage;
     MenuItem1: TMenuItem;
     name_check1: TComboBox;
@@ -59,6 +63,7 @@ const
   name_var   : string='';
   delim_pos  : integer=0;
   to_clipboard  : boolean=true;
+  baa_style  : boolean=true;
 
 var
   aavso_report : string;
@@ -91,6 +96,7 @@ begin
     name_var:=name_variable1.text;
     name_check:=name_check1.text;
     delim_pos:=delimiter1.itemindex;
+    baa_style:=baa_style1.checked;
   end;
 end;
 
@@ -98,7 +104,7 @@ end;
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
     c  : integer;
-    err,err_message,snr_str,airmass_str, delim,fn,fnG: string;
+    err,err_message,snr_str,airmass_str, delim,fn,fnG,detype,baa_extra: string;
     stdev_valid : boolean;
     snr_value,err_by_snr   : double;
     PNG: TPortableNetworkGraphic;{FPC}
@@ -115,12 +121,25 @@ begin
   delim:=delimiter1.text;
   if delim='tab' then delim:=#9;
 
-  aavso_report:= '#TYPE=Extended'+#13+#10+
+  if baa_style1.checked then
+  begin
+    detype:='AAVSO EXT BAA V1.00';
+    baa_extra:='#LOCATION='+sitelat+' '+sitelong+#13+#10+
+               '#TELESCOPE='+TELESCOP+#13+#10+
+               '#CAMERA='+instrum+#13+#10;
+  end
+  else
+  begin
+    detype:='Extended';
+    baa_extra:='';
+  end;
+  aavso_report:= '#TYPE='+detype+#13+#10+
                  '#OBSCODE='+obscode+#13+#10+
-                 '#SOFTWARE=ASTAP, photometry version ß0.9'+#13+#10+
+                 '#SOFTWARE=ASTAP, photometry version 1.0'+#13+#10+
                  '#DELIM='+delimiter1.text+#13+#10+
                  '#DATE=JD'+#13+#10+
                  '#OBSTYPE=CCD'+#13+#10+
+                  baa_extra+
                  '#'+#13+#10+
                  '#NAME'+delim+'DATE'+delim+'MAG'+delim+'MERR'+delim+'FILT'+delim+'TRANS'+delim+'MTYPE'+delim+'CNAME'+delim+'CMAG'+delim+'KNAME'+delim+'KMAG'+delim+'AIRMASS'+delim+'GROUP'+delim+'CHART'+delim+'NOTES'+#13+#10;
 
@@ -204,6 +223,7 @@ procedure Tform_aavso1.Image_photometry1MouseMove(Sender: TObject;
 var
   w2,h2 :integer;
 begin
+  if jd_min=0 then exit;
   w2:=image_photometry1.width;
   h2:=image_photometry1.height;
   form_aavso1.caption:= floattostrf(jd_min+(jd_max-jd_min)*((x*w/w2)-bspace)/(w-bspace*2),ffFixed,12,5)+', '+floattostrf(magn_min+(magn_max-magn_min)*(((y*h/h2))-bspace)/(h-bspace*2),ffFixed,5,3);
@@ -458,6 +478,7 @@ begin
   if head.filter_name<>'' then filter1.text:=head.filter_name else  filter1.itemindex:=0 {TC};
 
   delimiter1.itemindex:=delim_pos;
+  baa_style1.checked:=baa_style;
   Comparison1.Text:=stackmenu1.star_database1.text;
 
   aavso_report:='';
