@@ -284,9 +284,7 @@ begin
   result:=true;
   try
     thefile.writebuffer(frame_start,sizeof(frame_start)); {write 00db header}
-
-    setlength(row, 3*w {width});
-
+    setlength(row, nrcolors*w {width});
     for yy := y+h-1 downto y {height} do
     begin // scan each timage line
       xLine:=mainwindow.image1.Picture.Bitmap.ScanLine[yy];
@@ -308,13 +306,13 @@ begin
           R:=xLine^[xx*4+2];
         {$endif}
 
-        row[3*(xx-x)]:=B;
-        row[3*(xx-x)+1]:=G;
-        row[3*(xx-x)+2]:=R;
+        row[nrcolors *(xx-x)]  :=B;
+        row[nrcolors *(xx-x)+1]:=G;
+        row[nrcolors *(xx-x)+2]:=R;
       end;
       s:=length(row);
       thefile.writebuffer(row[0],length(row));
-      thefile.writebuffer(zero_dword,extra); //add extra zeros 0,1,2,3 depending on width. Found by reverse enegineering. Weird, length extra zeros is not logical
+      thefile.writebuffer(zero_dword,extra); //add extra zeros 0,1,2,3 depending on width. Found by reverse engineering. Weird, length extra zeros is not logical
     end;
   except
     result:=false;
