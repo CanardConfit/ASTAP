@@ -10,7 +10,7 @@ interface
 
 uses
   Classes, SysUtils,dialogs,graphics,
-  LCLType,      // for RGBtriple
+  LCLType,      // For RGBtriple
   IntfGraphics, // TLazIntfImage type
   fpImage,      // TFPColor type;
   lclintf,
@@ -30,7 +30,7 @@ var
   extra      : integer; // number of extra zero's behind each line
 
 const
-  nrcolors=3;
+  nrcolors=3; // should be fixed at colour. Mono is not standarised in AVI
 
 type
   header = record
@@ -42,13 +42,13 @@ type
         lsize : dword;   // listsize
         hdrL  : dword;   //
         fcc   : dword;   // avih
-        cb: dword;       //Specifies the size of the structure, not including the initial 8 bytes.
+        cb: dword;       // Specifies the size of the structure, not including the initial 8 bytes.
         {===================}
           dwMicroSecPerFrame: dword; // frame display rate (or 0)
-          dwMaxBytesPerSec : dword; // max. transfer rate
+          dwMaxBytesPerSec : dword;  // max. transfer rate
           dwPaddingGranularity : dword; // pad to multiples of this size
-          dwFlags : dword; // the ever-present flags
-          dwTotalFrames : dword; // # frames in file
+          dwFlags : dword; // Flags
+          dwTotalFrames : dword; // Number frames in file
           dwInitialFrames : dword;
           dwStreams : dword;  // Number of streams in the file
           dwSuggestedBufferSize : dword;
@@ -59,19 +59,16 @@ type
           dwReserved3 : dword;
           dwReserved4 : dword;
      end;
-
-
 var
   head : header=
-
             (riff     :$46464952; // 'RIFF'
              riffsize :0;
              avi  :$20495641; // AVI
-             list :$5453494C; //LIST
+             list :$5453494C; // LIST
              lsize:$000000C0; //
-             hdrL :$6C726468; //hdrL
-              fcc :$68697661; //avih
-               cb :$00000038; //14*4=56 Specifies the size of the structure, not including the initial 8 bytes.
+             hdrL :$6C726468; // hdrL
+              fcc :$68697661; // avih
+               cb :$00000038; // 14*4=56 Specifies the size of the structure, not including the initial 8 bytes.
              {===================}
                dwMicroSecPerFrame: $000F4240; // 1 sec, MicroSecPerFrame, frame display rate (or 0)
                dwMaxBytesPerSec : $0; // max. transfer rate
@@ -90,17 +87,16 @@ var
 
 
 type
-  streamheader = record  //AVIStreamHeader;
+  streamheader = record  // AVIStreamHeader;
       list : dword;  // A list has the following form:   'LIST' listSize listType listData
-       size: dword;
-       strl : dword; //length chunk
+      size: dword;
+      strl : dword; // length chunk
       {===================}
+      strh : dword; // stream header
+      hsize: dword;    // length 56
 
-      strh : dword; {Stream header}
-      hsize: dword;    //length 56
-
-        fccType: dword;//vids
-        fccHandler : dword;   //codec to be used.
+        fccType: dword;// vids
+        fccHandler : dword; // codec to be used.
         dwFlags : dword;
         wPriority : word;
         wLanguage : word;
@@ -117,31 +113,30 @@ type
         rcframew2: word;
         rcframeh2: word;
 
-        strf : dword; //stream format
+        strf : dword;   // stream format
         Ssize: dword;
-        fsize: dword;    //length 40
-          width: dword;   //480
-          height: dword;   //270
-          planes: word;   //number of planes , 1
-          bitcount: word; //number of bits per pixel
+        fsize: dword;   // length 40
+          width: dword;
+          height: dword;
+          planes: word;   // number of planes , 1
+          bitcount: word; // number of bits per pixel
           compression: dword;
-          sizeimage  : dword; //uncompressed in bytes.
-          pixels_per_meterH: dword;//0
-          pixels_per_meterV: dword;//0
-          nr_colours_used: dword;//0 is maximum
-          nr_important_colours: dword;//0 is all
+          sizeimage  : dword; // uncompressed size in bytes.
+          pixels_per_meterH: dword;// 0
+          pixels_per_meterV: dword;// 0
+          nr_colours_used: dword;  // 0 is maximum
+          nr_important_colours: dword;// 0 is all
    end;
-
 var
   streamhead : streamheader=
-       (  list :$5453494C; //'LIST'
+       (  list :$5453494C; // 'LIST'
           size :$74;
-          strl :$6C727473; //'strl'
+          strl :$6C727473; // 'strl'
 
-          strh :$68727473; //'strh'
-          hsize:$00000038; //56
-            fcctype:$73646976; //'vids'
-            fccHandler: $0 ;   //codex
+          strh :$68727473; // 'strh'
+          hsize:$00000038; // 56
+            fcctype:$73646976; // 'vids'
+            fccHandler: $0 ;   // codex
             dwFlags : 0;
             wPriority : 0;
             wLanguage : 0;
@@ -153,19 +148,19 @@ var
             dwSuggestedBufferSize: 0; // to be set later
             dwQuality: 0;
             dwSampleSize: 0;
-            rcframew1: 0;   //rect, four words
+            rcframew1: 0;   // rect, specified in four words
             rcframeh1: 0;
-            rcframew2: 200; //width
-            rcframeh2: 100; //height
+            rcframew2: 200; // width
+            rcframeh2: 100; // height
 
             strf : $66727473; //stream format
               ssize: 40;
-              fsize: 40;    //length 40
+              fsize: 40;    // length 40
 
-              width: 200;   //480
-              height:100;   //270
-              planes: 1;    //number of planes , 1
-              bitcount: 24; //number of bits per pixel
+              width: 200;
+              height:100;
+              planes: 1;    // number of planes , 1
+              bitcount: 24; // number of bits per pixel
               compression:0;
               sizeimage  : 200*100+200;// uncompressed in bytes plus extra zeros defind by extra.
               pixels_per_meterH: $0EC4;// 0
@@ -181,7 +176,6 @@ type
       size: dword;
       movi: dword;
   end;
-
 var
   movihead: moviheader=
        (  list :$5453494C; //'LIST'
@@ -193,7 +187,6 @@ type
         db : dword;
          x : dword;
    end;
-
 var
   frame_start:framestart=
      (db : $62643030;//'00db'
@@ -205,7 +198,6 @@ type
        idx1 : dword;
         size: dword; // length of index, nrrecords*$10
    end;
-
 var
   index_start:indexstart=
      (idx1 : $31786469;//'idx1'
@@ -218,7 +210,6 @@ type
          x  : dword;
    position : dword;
        size : dword;
-
    end;
 var
   indx: index=
@@ -231,14 +222,14 @@ var
 
 
 function write_avi_head(filen, frame_rate: string; nrframes, w,h: integer): boolean;{open/create file and writes head. Result is false if failure}
-var k: integer;
 begin
   result:=false; // assume failure
   head.dwwidth:= w;
   head.dwheight:= h;
 
-  extra:= w-4*(w div 4); // for very weird Microsoft logic. Extend image line with 0, 1 ,2 ,3  zero bytes. width 4=> none, width 5 => add one zero,  width 6 => add two zeros, width 7 => add three zeros, width 8 => add none. By reverse engineering.
-                         // Suspect this was introduced by a mistake.
+  extra:=(w*nrcolors mod 4);// Each written image line should be a multiple of 4 bytes. Add extra $0 bytes to achieve that. w*nrcolors is 15 => add one zero,  16 => add two zeros, 17 => add three zeros, 18 => add none. Found by reverse engineering.
+  if extra<>0 then extra:=4-extra;
+
   head.dwTotalFrames:=nrframes;
 
   head.dwMicroSecPerFrame:=round(1000000/max(strtofloat(frame_rate),0.00001));
@@ -276,7 +267,7 @@ end;
 
 function write_avi_frame(x,y,w,h: integer): boolean; {reads pixels from Timage and writes AVI frame. Call this procedure for each image. Result is false if failure}
 var
-  xx,yy,s     : integer;
+  xx,yy       : integer;
   r,g,b       : byte;
   row         : array of byte;
   xLine       :  PByteArray;
@@ -309,10 +300,12 @@ begin
         row[nrcolors *(xx-x)]  :=B;
         row[nrcolors *(xx-x)+1]:=G;
         row[nrcolors *(xx-x)+2]:=R;
+
+    //    row[(xx-x)]  :=trunc((R+G+B)/3);  // Mono seams not a valid option with .avi
+
       end;
-      s:=length(row);
       thefile.writebuffer(row[0],length(row));
-      thefile.writebuffer(zero_dword,extra); //add extra zeros 0,1,2,3 depending on width. Found by reverse engineering. Weird, length extra zeros is not logical
+      thefile.writebuffer(zero_dword,extra); // Add extra zeros 0,1,2,3 depending on width to make it a mulitiply of 4 bytes. Found by reverse engineering.
     end;
   except
     result:=false;
@@ -327,7 +320,7 @@ procedure close_the_avi(nrframes: integer);
 var
    i: integer;
 begin
-  index_start.size:=nrframes*$10;//index length in bytes
+  index_start.size:=nrframes*$10;// index length in bytes
   thefile.writebuffer(index_start,sizeof(index_start));
   indx.position:=$4;
   indx.size:=streamhead.sizeimage;

@@ -1048,7 +1048,7 @@ const
   insp_focus_pos=8;
   insp_nr_stars=7;
 
-  avi_video       : boolean=false;
+  video_index     : integer=1;
   frame_rate      : string ='1';
 
 
@@ -4535,7 +4535,7 @@ begin
             h:=areaY2-areaY1+1 {convert to screen coordinates}
           end;
 
-          if avi_video then
+          if video_index=2 then
             res:=write_avi_frame(left,top,w,h)
           else
             res:=write_yuv4mpeg2_frame(head.naxis3>1,left,top,w,h);
@@ -10070,7 +10070,7 @@ begin
 
   mainwindow.savedialog1.initialdir:=ExtractFilePath(filename2);
   mainwindow.savedialog1.Filter := ' Currently selected Y4M|*.y4m|AVI uncompressed| *.avi';
-  if avi_video then
+  if video_index=2 then
   begin
     mainwindow.savedialog1.filename:=ChangeFileExt(FileName2,'.avi');
     mainwindow.savedialog1.filterindex:=2; {avi}
@@ -10084,10 +10084,10 @@ begin
   if mainwindow.savedialog1.execute then
   begin
     filen:=mainwindow.savedialog1.filename;
-    avi_video:=pos('.avi',filen)>0;
+    if pos('.avi',filen)>0 then video_index:=2 {avi} else video_index:=1; {y4m}
 
     stackmenu1.analyseblink1Click(nil);  {analyse and secure the dimension values head_2.width, head_2.height from lights}
-    if avi_video then {count frames}
+    if video_index=2 then {AVI, count frames}
     begin
       nrframes:=0;
       for c:=0 to listview6.items.count-1 do {count frames}
@@ -10100,7 +10100,7 @@ begin
     begin
       areax1:=0;{for crop activation areaX1<>areaX2}
       areax2:=0;
-      if avi_video then
+      if video_index=2 then
         res:=write_avi_head(filen,frame_rate,nrframes,head_2.width,head_2.height){open/create file. Result is false if failure}
       else
         res:=write_YUV4MPEG2_header(filen,frame_rate,((head_2.naxis3>1) or (mainwindow.preview_demosaic1.checked)),head_2.width,head_2.height);
@@ -10112,7 +10112,7 @@ begin
          application.messagebox(pchar('Set first the area with the mouse and mouse popup menu "Set area" !'), pchar('Missing crop area'),MB_OK);
          exit;
       end;
-      if avi_video then
+      if video_index=2 then
         res:=write_avi_head(filen,frame_rate,nrframes,areax2-areax1+1,areay2-areay1+1 ){open/create file. Result is false if failure}
       else
         res:=write_YUV4MPEG2_header(filen,frame_rate,((head.naxis3>1) or (mainwindow.preview_demosaic1.checked)),areax2-areax1+1,areay2-areay1+1 );
@@ -10125,7 +10125,7 @@ begin
     end;
 
     stackmenu1.blink_button1Click(Sender);{blink and write video frames}
-    if avi_video then
+    if video_index=2 then
       close_the_avi(nrframes)
     else
       close_YUV4MPEG2;

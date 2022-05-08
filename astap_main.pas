@@ -3230,7 +3230,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.05.07, '+about_message4+
+  'ASTAP version 2022.05.08, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -7848,7 +7848,7 @@ begin
       baa_style:=Sett.ReadBool('stack','baa_style',false);{aavso report}
 
 
-      avi_video:=Sett.ReadBool('stack','avi_video',false);{blink menu, video}
+      c:=Sett.ReadInteger('stack','video_index',987654321);if c<>987654321 then video_index:=c;{blink menu, video}
       dum:=Sett.ReadString('stack','frame_rate',''); if dum<>'' then frame_rate:=dum;
 
 
@@ -8202,7 +8202,7 @@ begin
 
       sett.writeBool('stack','wcs',stackmenu1.mount_write_wcs1.Checked);{uses wcs file for menu mount}
 
-      sett.writeBool('stack','avi_video',avi_video);
+      sett.writeInteger('stack','video_index',video_index);
       sett.writestring('stack','frame_rate',frame_rate);
 
 
