@@ -185,7 +185,7 @@ begin
                      airmass_str+delim+
                      'na'+delim+
                      'na'+delim+
-                     'Ensemble of Gaia eDR3 stars '+name_database{+star_database1.text}+'. '+err_message+#13+#10;
+                     'Ensemble of Gaia eDR3 stars '+name_database+'. '+err_message+#13+#10;
      end;
    end;
 
@@ -479,7 +479,7 @@ begin
 
   delimiter1.itemindex:=delim_pos;
   baa_style1.checked:=baa_style;
-  Comparison1.Text:=stackmenu1.star_database1.text;
+  Comparison1.Text:=name_database;
 
   aavso_report:='';
 

@@ -3230,7 +3230,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.05.08, '+about_message4+
+  'ASTAP version 2022.05.09, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -5550,7 +5550,7 @@ begin
   head.cdelt2:=sqrt(sqr(head.cd1_2)+sqr(head.cd2_2));{if no old wcs header use head.cd2_2 of new WCS style for pixel size}
 
   head.crota1:= +arctan2(sign*head.cd1_2,head.cd2_2)*180/pi;
-  head.crota2:= -arctan2(head.cd2_1,sign*head.cd1_1)*180/pi;  //  crota2old := (atn_2(sign*head.cd1_1,head.cd2_1)-pi/2)*180/pi;
+  head.crota2:= -arctan2(head.cd2_1,sign*head.cd1_1)*180/pi;
 end;
 
 
@@ -10099,6 +10099,7 @@ const
 
   mainwindow.calibrate_photometry1Click(nil);{measure hfd and calibrate for point or extended sources depending on the setting}
 
+
   if flux_magn_offset=0 then
   begin
     beep;
@@ -10110,7 +10111,8 @@ const
 
   Flipvertical:=mainwindow.flip_vertical1.Checked;
   Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
-  magn_limit:=10*strtoint(copy(stackmenu1.star_database1.text,2,2)); {g18 => 180}
+  magn_limit:=10*strtoint(copy(name_database,2,2)); {g18 => 180}
+
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
   image1.Canvas.Pen.Mode := pmMerge;
@@ -10130,16 +10132,16 @@ const
 //  img_loaded:=img_temp3;
 //  plot_fits(mainwindow.image1,true,true);
 //  exit;
-
 //  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
   analyse_image(img_loaded,10 {snr_min},false,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
-
 
   setlength(img_sa,1,head.width,head.height);{set length of image array}
    for fitsY:=0 to head.height-1 do
     for fitsX:=0 to head.width-1  do
       img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
+
+
 
   for fitsY:=0 to head.height-1 do
   begin
