@@ -594,7 +594,7 @@ var
   stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
   star_level,star_bg,sd_bg, magn_limit  : double;
   object_name,
-  imagetype ,sitelat, sitelong,centalt,centaz: string;
+  imagetype ,sitelat, sitelong,siteelev , centalt,centaz: string;
   focus_temp,cblack,cwhite,sqmfloat,pressure   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
   date_avg,ut,pltlabel,plateid,telescop,instrum,origin,sqm_value   : string;
@@ -939,7 +939,7 @@ begin
     ybinning:=1;
 
     date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
-    sitelat:=''; sitelong:='';
+    sitelat:=''; sitelong:='';siteelev:='';
 
     focus_temp:=999;{assume no data available}
     focus_pos:=0;{assume no data available}
@@ -1422,12 +1422,14 @@ begin
           if ((header[i]='R') and (header[i+1]='O')  and (header[i+2]='W') and (header[i+3]='O') and (header[i+4]='R') and (header[i+5]='D') and (header[i+6]='E')) then
                      roworder:=get_string;
 
-          if ((header[i]='S') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='E') and (header[i+4]='L')) then  {site latitude, longitude}
+          if ((header[i]='S') and (header[i+1]='I')  and (header[i+2]='T') and (header[i+3]='E') ) then  {site latitude, longitude}
           begin
-            if ((header[i+5]='A') and (header[i+6]='T')) then
+            if ((header[i+4]='L') and (header[i+5]='A') and (header[i+6]='T')) then
               sitelat:=get_as_string;{universal, site latitude as string}
-            if ((header[i+5]='O') and (header[i+6]='N')) then
+            if ((header[i+4]='L') and (header[i+5]='O') and (header[i+6]='N')) then
                sitelong:=get_as_string;{universal, site longitude as string}
+            if ((header[i+4]='E') and (header[i+5]='L') and (header[i+6]='E')) then
+               siteelev:=get_as_string;{universal, site elevation as string}
           end;
 
           if ((header[i]='O') and (header[i+1]='B')  and (header[i+2]='S'))  then  {OBS    site latitude, longitude}
@@ -3230,7 +3232,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.05.09, '+about_message4+
+  'ASTAP version 2022.05.09a, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+

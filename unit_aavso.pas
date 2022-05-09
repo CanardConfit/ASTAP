@@ -58,8 +58,9 @@ var
 
 const
   obscode       : string='';
-  name_check : string='';
+  abbreviation_check : string='';
   name_check_IAU : string='';
+  abbreviation_var_IAU   : string='';
   name_var   : string='';
   delim_pos  : integer=0;
   to_clipboard  : boolean=true;
@@ -94,7 +95,7 @@ begin
   begin
     obscode:=obscode1.text;
     name_var:=name_variable1.text;
-    name_check:=name_check1.text;
+    abbreviation_check:=name_check1.text;
     delim_pos:=delimiter1.itemindex;
     baa_style:=baa_style1.checked;
   end;
@@ -104,7 +105,7 @@ end;
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
     c  : integer;
-    err,err_message,snr_str,airmass_str, delim,fn,fnG,detype,baa_extra: string;
+    err,err_message,snr_str,airmass_str, delim,fn,fnG,detype,baa_extra,magn_type: string;
     stdev_valid : boolean;
     snr_value,err_by_snr   : double;
     PNG: TPortableNetworkGraphic;{FPC}
@@ -124,7 +125,7 @@ begin
   if baa_style1.checked then
   begin
     detype:='AAVSO EXT BAA V1.00';
-    baa_extra:='#LOCATION='+sitelat+' '+sitelong+#13+#10+
+    baa_extra:='#LOCATION='+sitelat+' '+sitelong+' '+siteelev+#13+#10+
                '#TELESCOPE='+TELESCOP+#13+#10+
                '#CAMERA='+instrum+#13+#10;
   end
@@ -168,7 +169,7 @@ begin
        airmass_str:=listview7.Items.item[c].subitems.Strings[P_airmass];
        if airmass_str='' then  airmass_str:='na' else airmass_str:=stringreplace(airmass_str,',','.',[]);
 
-
+       if pos('v',name_database)>0 then magn_type:=', photometry transformed to Johnson-V. ' else magn_type:=' using BM magnitude. ';
 
        if snr_str<>'' then
        aavso_report:= aavso_report+ name_var+delim+
@@ -180,12 +181,12 @@ begin
                      'STD'+delim+
                      'ENSEMBLE'+delim+
                      'na'+delim+
-                     name_check+delim+
+                     abbreviation_check+delim+
                      stringreplace(listview7.Items.item[c].subitems.Strings[P_magn2],',','.',[])+delim+
                      airmass_str+delim+
-                     'na'+delim+
-                     'na'+delim+
-                     'Ensemble of Gaia eDR3 stars '+name_database+'. '+err_message+#13+#10;
+                     'na'+delim+ {group}
+                     abbreviation_var_IAU+delim+
+                     'Ensemble of Gaia eDR3 stars'+magn_type+err_message+#13+#10;
      end;
    end;
 
@@ -241,7 +242,7 @@ end;
 
 procedure Tform_aavso1.name_check1DropDown(Sender: TObject);
 begin
-  name_check1.items.add(name_check);
+  name_check1.items.add(abbreviation_check);
   name_check1.items.add(name_check_IAU);
 end;
 
@@ -473,7 +474,7 @@ begin
     else
     name_variable1.text:=name_var;
 
-  name_check1.text:=name_check;
+  name_check1.text:=abbreviation_check;
 
   if head.filter_name<>'' then filter1.text:=head.filter_name else  filter1.itemindex:=0 {TC};
 

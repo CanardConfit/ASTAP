@@ -6571,10 +6571,12 @@ begin
 
           head_ref:=head;{backup solution for deepsky annotation}
 
+          sensor_coordinates_to_celestial(shape_fitsX,shape_fitsY,rax1,decx1 {fitsX, Y to ra,dec});
+          abbreviation_var_IAU:=prepare_IAU_designation(rax1,decx1);
+
           sensor_coordinates_to_celestial(shape_fitsX2,shape_fitsY2,{var}   rax2,decx2 {position});
           name_check_iau:=prepare_IAU_designation(rax2,decx2);
 
-          sensor_coordinates_to_celestial(shape_fitsX,shape_fitsY,rax1,decx1 {fitsX, Y to ra,dec});
           sensor_coordinates_to_celestial(shape_fitsX3,shape_fitsY3,rax3,decx3 {fitsX, Y to ra,dec});
 
           init:=true;
