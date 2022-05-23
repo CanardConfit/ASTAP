@@ -3232,7 +3232,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.05.09a, '+about_message4+
+  'ASTAP version 2022.05.23, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -14700,7 +14700,7 @@ end;
 
 procedure Tmainwindow.set_modified_date1Click(Sender: TObject);
 var
-  I : integer;
+  I,td : integer;
   Save_Cursor:TCursor;
   err : boolean;
 begin
@@ -14731,8 +14731,12 @@ begin
           date_to_jd(head_2.date_obs,head_2.exposure);{convert date-obs to jd_start, jd_mid}
           if jd_start>2400000 then {valid JD}
           begin
+            {$ifdef mswindows}
+            {$else} {unix}
+            jd_start:=jd_start-(GetLocalTimeOffset/(24*60));//correct for timezone
+            {$endif}
             if FileSetDate(filename2,DateTimeToFileDate(jd_start-2415018.5))<0 then  { filedatatodatetime counts from 30 dec 1899.}
-               err:=true;
+              err:=true;
           end
           else
           begin
