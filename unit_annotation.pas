@@ -1526,7 +1526,7 @@ begin
 end;
 
 
-procedure get_best_mean(list: array of double; leng : integer; out mean,cv : double);{Remove outliers from polulation using MAD. }
+procedure get_best_meanold(list: array of double; leng : integer; out mean,cv : double);{Remove outliers from polulation using MAD. }
 var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
   i,count         : integer;
   median, mad     : double;
@@ -1534,6 +1534,35 @@ var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation
 begin
  mad_median(list,leng,mad,median);{{calculate mad and median without modifying the data}
  if median>0 then cv:=mad*1.4826/median else cv:=0;  {Coefficient of variation,  defined as the ratio of the standard deviation to the mean}
+
+ count:=0;
+ mean:=0;
+
+ for i:=0 to leng-1 do
+   if abs(list[i]-median)<1.50*1.4826*mad then {offset less the 1.5*sigma.}
+   begin
+     mean:=mean+list[i];{Calculate mean. This gives a little less noise then calculating median again. Note weighted mean gives poorer result and is not applied.}
+     inc(count);
+   end;
+ if count>0 then  mean:=mean/count;  {mean without using outliers}
+end;
+
+
+procedure get_best_mean(list: array of double; leng : integer; out mean, cv : double);{Remove outliers from polulation using MAD. }
+var  {idea from https://eurekastatistics.com/using-the-median-absolute-deviation-to-find-outliers/}
+  i,count         : integer;
+  median, mad     : double;
+
+begin
+ cv:=0;
+
+ if leng=1 then begin mean:=list[0];exit end
+ else
+ if leng=2 then begin mean:=(list[0]+list[1])/2;exit end;
+
+ mad_median(list,leng,mad,median);{calculate mad and median without modifying the data}
+
+ if median>0 then cv:=mad*1.4826/median;  {Coefficient of variation,  defined as the ratio of the standard deviation to the mean}
 
  count:=0;
  mean:=0;

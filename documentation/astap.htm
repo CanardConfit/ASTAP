@@ -161,7 +161,7 @@ work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family:
                 line options</a></big></li>
           <ul>
             <li><big><a href="astap.htm#conditions">Conditions
-                  required for solving</a></big></li>
+                  required for solving</a></big></li><li><big><a href="astap.htm#solvable">Test if an image is solvable</a></big></li>
             <li><big><a href="astap.htm#astap_command_line">ASTAP
                   native command line&nbsp;</a></big></li>
             <ul>
@@ -2104,21 +2104,21 @@ viewer menu. (unless you do a 180 degrees search)</big></li><li><big>
 Correct image height in degrees specified within preferable 5% accuracy. This
 height (width x height) should be displayed in the status bar of the viewer and in tab
 alignment under "Field of view (height)" (Check focal length, sensor
-size settings or try FOV=auto once)" You can set/force a </big><big>"Field of view (height)" in tab Alignment.</big></li><li><big>At least 30
+size settings or try FOV=auto once)" You can set/force a "Field of view (height)" in tab Alignment.</big></li><li><big>At least 30
 stars are visible. For small field-of-view (&lt;1°) and away from
 the Milky-Way-plane expose longer about 30 to 300 seconds and use the H18
 star database.</big></li><li><big>
 Reasonable round stars and camera in focus.</big></li><li><big>
 Image dimensions at least 1280x960 pixels. For smaller dimensions solving is still possible if the image&nbsp;quality is good.
 </big></li><li><big>
-Image is not stretched, very saturated or heavily photo-shopped.<br></big><big></big></li></ol></div>If
+Image is not stretched, very saturated or heavily photo-shopped.</big></li><li><big>Try&nbsp;<a href="astap.htm#solvable">test if an image is solvable.</a></big></li></ol></div>If
 you still have problems with solving, you could send me a link to
 the&nbsp;file involved (FITS is preferred) and if I have time I
 could&nbsp;have a look. Upload it e.g. to <a href="http://nova.astrometry.net/">http://nova.astrometry.net</a> or <a href="https://ufile.io/">https://ufile.io/</a> and
 give me the link. For privacy reasons, prior to uploading you
 could&nbsp;remove your latitude/longitude information from the header
 using the viewer "Tools", "Batch processing", "Remove longitude
-latitude information" menu.<br><br><big><span style="text-decoration: underline;"><span style="font-weight: bold;"></span></span>
+latitude information" menu.<a href="astap.htm#solvable"></a><br><br><big><span style="text-decoration: underline;"><span style="font-weight: bold;"></span></span>
           The
           internal
           astrometric solver works best with raw unstretched and
@@ -2227,7 +2227,20 @@ a increased number of quad matches.</li><li>For a&nbsp;field of view&nbsp;less t
 remove the H17 (or force use of the H18 in tab alignment).&nbsp;</li><li>If a global cluster fills the whole field,&nbsp;ASTAP could
 struggle to solve.&nbsp;Forcing option "slow" could
 &nbsp;help.</li><li>Best input format is FITS, RAW or 16 bit PNG, TIFF.&nbsp;JPEG compression or 8 bit PNG, TIFF files are a disadvantage.</li>
-        </ol><br><a name="database_usability"></a><br><big>Warnings:</big><br><ul><li>In case you get regular a warning "Star database limit reached" replace
+        </ol><br><big><span style="text-decoration: underline;"><a name="solvable"></a><span style="font-weight: bold;">Test if an image is solvable:<br></span></span></big><p><big>To test if an image is solvable, follow this procedure:</big></p>
+
+<p style="margin-left: 40px;"><big>A) Load an image in ASTAP</big></p>
+<p style="margin-left: 40px;"><big>B) Check star detection by hitting button F4. Only stars should be 
+annotated and not the hot pixels. If hot pixels are annotated see <span style="font-weight: bold;">E) Hot pixels seen as stars</span></big></p>
+<p style="margin-left: 40px;"><big>C) Go to ASTAP settings by CTRL+A or &#931; button. Select tab Alignment. Set ASTAP to blind solving by 1) in screen shot</big></p><div style="margin-left: 40px;"><big>D) Hit the ASTAP solve button<br></big></div><div style="text-align: left;"><big>This 
+should solve any image in a few minutes max. After solving the image 
+height in degrees is reported.&nbsp;Further field of view (FOV) calculations can be done in tab
+ <a href="astap.htm#fov_calculator">Pixelmath, FOV calculator</a>.<br><br></big><big>E) Hot pixels seen as stars</big></div><p><big>If
+too many hot pixels are detected as stars then increase "Ignore stars
+less then ["]" value marked by 2) in the screen shot. The star
+annotation values shown after hitting F4 are indicating which value is
+you should use. More then the hot pixels HFD values but less then the
+star HFD values. Save settings by hitting the solve button.</big></p><img style="width: 1450px; height: 621px;" alt="" src="astap_blind.png"><br><br><a name="fov_calculator"></a> &nbsp;The FOV calculator in tab Pixel math 2<br><p><img style="width: 1452px; height: 621px;" alt="" src="astap_fov_calculator.png"></p><br><br><a name="database_usability"></a><br><big>Warnings:</big><br><ul><li>In case you get regular a warning "Star database limit reached" replace
 the G17 database by the H18.&nbsp; This could happen if your field of view
 is small (&lt;30 arcmin).&nbsp;Remove the G17 files to force the use of the H18.</li></ul>In the plane of the Milky-way plane it is easy to image enough stars for solving as shown in this <a href="https://sci.esa.int/web/gaia/-/60170-gaia-s-new-map-of-star-density" class="bbc_url" title="External link" rel="nofollow external">ESA image</a>
 showing the sky star density. If you look outside the Milky-Way plane
@@ -2244,7 +2257,7 @@ minimum or&nbsp;till the solver gives a warning
 18. <br><br><div style="text-align: center;"><div style="text-align: left;"><img style="width: 834px; height: 244px;" alt="" src="astap_database_range.png"><br></div><br><br><div style="text-align: left;">The maximum number of stars is set at 500. For
 very long exposures and a FOV below one degree a reduction of the
 maximum number of stars used could be required. Otherwise stars too
-faint for the database&nbsp;could result in a solving failure. </div><br><div style="text-align: left;"><img style="width: 384px; height: 247px;" alt="" src="astap_database_range2.png"><br><br><br>Database usability:<br><img style="width: 1110px; height: 195px;" alt="" src="astap_database_range3.png"><br><br>The first letter indicates the type of database. G indicates 10x10 
+faint for the database&nbsp;could result in a solving failure. </div><br><div style="text-align: left;"><img style="width: 384px; height: 247px;" alt="" src="astap_database_range2.png"><br><br><br>Database usability:<br><img style="width: 1409px; height: 238px;" alt="" src="astap_database_range3.png"><br><br>The first letter indicates the type of database. G indicates 10x10 
 degrees tiles and a single magnitude Gaia blue. V indicates 10x10 
 degrees tiles but Johnson-V magnitude and additional the magnitude 
 difference of Gaia Blue and Gaia red.&nbsp; The H indicates 5x5 degrees tiles
@@ -2642,7 +2655,7 @@ an error code / errorlevel&nbsp;{%errorlevel%}. This is the same error as report
         <li>Speed normal (&#9654;&#9654;) &nbsp;or small steps (&#9654;)</li>
       </ol><br><br><div style="text-align: left;"><big>See&nbsp;<a href="astap.htm#conditions">conditions required for solving
           </a>to
-          fix solve failures.</big></div>
+          fix solve failures. Or </big><a href="astap.htm#solvable"><big><span style="text-decoration: underline;">test if an image is solvable.</span></big></a></div>
       <p align="left"><big>Tray
           icons are default off&nbsp;in the latest Win10 version. To set
           the

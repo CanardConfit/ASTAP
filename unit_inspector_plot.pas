@@ -649,7 +649,7 @@ end;
 
 procedure voronoi_plot(min_value,max_value : single; nr:integer;hfd_values: hfd_array);
 var
-    i,j,size,fitsx,fitsY,col,x,y,x2,y2,w,h,scaledown:  integer;
+    i,size,fitsx,fitsY,col,x,y,x2,y2,w,h,scaledown:  integer;
     img_hfd: image_array;
     zeros_left : boolean;
 
@@ -774,8 +774,8 @@ end;
 
 procedure measure_star_aspect(img: image_array;x1,y1: double; rs:integer;  out aspect : double; out orientation : integer); {measures the aspect and orientation [0..179] of a single star }
 var
-  i, j,angle,pixel_counter,a,bk ,orientationMin, orientationMax : integer;
-  val,r,themax,themin,g,delta_angle,val2,mean_angle,distance : double;
+  i, j,angle,pixel_counter,orientationMin : integer;
+  val,r,themax,themin,g,delta_angle,distance : double;
   data : array[-51..51,-51..51] of double;
   function value_subpixel(x1,y1:double):double; {calculate image pixel value on subpixel level}
   var
@@ -829,7 +829,6 @@ begin
     themin:=1E99;
     for angle:=0 to 179 do {rotate 180 degr}
     begin
-      val2:=0;
       distance:=0;
       for i:=-rs to rs do
       for j:=-rs to rs do
@@ -844,11 +843,11 @@ begin
           //  img_loaded[0,round(x1+i),round(y1+j)]:=50000;
         end;
       end;
-      if distance>themax then
-      begin
-        themax:=distance;
-        orientationMax:=angle;
-      end;
+      //if distance>themax then
+      //begin
+      //  themax:=distance;
+      //  orientationMax:=angle;
+      //end;
       if distance<themin then
       begin
         themin:=distance;

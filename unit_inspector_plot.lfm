@@ -218,12 +218,12 @@ object form_inspection1: Tform_inspection1
       end
     end
     object GroupBox1: TGroupBox
-      Left = 216
+      Left = 200
       Height = 200
       Top = 24
-      Width = 197
+      Width = 224
       ClientHeight = 180
-      ClientWidth = 193
+      ClientWidth = 220
       TabOrder = 1
       object vectors1: TCheckBox
         Left = 16

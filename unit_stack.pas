@@ -9059,8 +9059,8 @@ begin
   if make_osc_color1.checked then
               memo2_message('OSC, demosaic method '+demosaic_method1.text)
               else
-              if classify_filter1.checked then memo2_message('LRGB colour stack (classify by image filter checked)')
-              else memo2_message('Grayscale stack (classify by image filter unchecked)');
+              if classify_filter1.checked then memo2_message('LRGB colour stack (classify by light filter checked)')
+              else memo2_message('Grayscale stack (classify by light filter unchecked)');
   memo2_message('Stack method '+stack_method1.text);
   memo2_message('Oversize '+oversize1.text+ ' pixels');
   mosaic_mode:=pos('stich',stackmenu1.stack_method1.text)>0;
@@ -9839,11 +9839,11 @@ begin
   until ((counterL=0){none lrgb loop} and (extra1=''){lrgb loop} );{do all names}
 
 
-  if total_counter=0 then {somehow nothing was stacked}
+  if ((total_counter=0) and (image_counter=0)) then {somehow nothing was stacked}
   begin
     memo2.lines.add('No images to stack.');
-    if classify_filter1.checked then memo2.lines.add('Hint: remove check mark from classify by "image filter" if required.');
-    if classify_object1.checked then memo2.lines.add('Hint: remove check mark from classify by "image object" if required.');
+    if classify_filter1.checked then memo2.lines.add('Hint: remove check mark from classify by "light filter" if required.');
+    if classify_object1.checked then memo2.lines.add('Hint: remove check mark from classify by "light object" if required.');
     if use_astrometry_internal1.checked then memo2.lines.add('Hint: check field of view camera in tab alignment.');
   end
   else
@@ -9920,7 +9920,7 @@ begin
 
   stack_button1.caption:='STACK  ('+stack_method1.text+')';
 
-  if ((method>=5) and (classify_filter1.Checked=false)) then  memo2_message('█ █ █ █ █ █ Warning, classify on Image Filter is not check marked !!! █ █ █ █ █ █ ')
+  if ((method>=5) and (classify_filter1.Checked=false)) then  memo2_message('█ █ █ █ █ █ Warning, classify on Light Filter is not check marked !!! █ █ █ █ █ █ ')
 end;
 
 

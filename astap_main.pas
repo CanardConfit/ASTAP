@@ -12274,6 +12274,7 @@ begin
   list2:=nil;
 end;
 
+
 procedure update_header_for_colour; {update naxis and naxis3 keywords}
 begin
   update_integer('NAXIS   =',' / Number of dimensions                           ' ,head.naxis);{number of dimensions, 2 for mono, 3 for colour}
