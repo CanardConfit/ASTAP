@@ -1687,7 +1687,7 @@ begin
 
     text_dimensions:=nil;{remove used memory}
 
-    memo2_message('Added '+inttostr(text_counter)+ ' annotations.');
+    //memo2_message('Added '+inttostr(text_counter)+ ' annotations.');
   end;
 
 end;{plot vsp stars}

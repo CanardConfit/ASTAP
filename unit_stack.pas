@@ -6739,28 +6739,8 @@ begin
         {plot outliers (variable stars)}
         if outliers<>nil then plot_outliers;
 
-        if annotate_mode1.itemindex=1 then
-        begin
-          load_variable; { Load the database once. If loaded no action}
-          head:=head_ref;{restore solution from reference image}
-         // restore_solution(false {keep solution});{restore solution from reference image}
-          plot_deepsky;  {plot the deep sky object on the image}
-        end
-        else
-        if annotate_mode1.itemindex>1 then
-        begin
-          if aavso_update_required then //update of downloaded database required?
-          begin
-            case annotate_mode1.itemindex of
-                 2: lim_magn:=13;
-                 3: lim_magn:=15;
-                else lim_magn:=99;
-            end; //case
-            download_vsx(lim_magn);
-            download_vsp(lim_magn);
-          end;
-          plot_vsx_vsp;//plot annotations
-        end;
+        if annotate_mode1.itemindex>0 then
+           mainwindow.variable_star_annotation1Click(nil);
       end;{find star magnitudes}
     end;
     if ((stepnr=1) and (countvar>4)) then {do it once after one cycle finished}
