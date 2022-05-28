@@ -12,6 +12,7 @@ uses
    forms,Classes, SysUtils,strutils, math,graphics, Controls {for tcursor},astap_main,  unit_stars_wide_field;
 
 procedure plot_deepsky;{plot the deep sky object on the image}
+procedure plot_vsx_vsp;{plot downloaded variable and comp stars}
 procedure load_deep;{load the deepsky database once. If loaded no action}
 procedure load_hyperleda;{load the HyperLeda database once. If loaded no action}
 procedure load_variable;{load variable stars. If loaded no action}
@@ -1504,6 +1505,193 @@ begin
   end;
 
 end;{plot deep_sky}
+
+
+procedure plot_vsx_vsp;{plot downloaded variable and comp stars}
+type
+  textarea = record
+     x1,y1,x2,y2 : integer;
+  end;
+var
+  dra,ddec, telescope_ra,telescope_dec,length1,width1,pa,flipped,
+  delta_ra,det,SIN_dec_ref,COS_dec_ref,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh,u0,v0,ra,dec : double;
+  name: string;
+  flip_horizontal, flip_vertical: boolean;
+  text_dimensions  : array of textarea;
+  i,text_counter,th,tw,x1,y1,x2,y2,hf,x,y,count,counts,mode : integer;
+  overlap,sip  :boolean;
+
+
+begin
+  if ((head.naxis<>0) and (head.cd1_1<>0)) then
+  begin
+
+    flip_vertical:=mainwindow.flip_vertical1.Checked;
+    flip_horizontal:=mainwindow.flip_horizontal1.Checked;
+
+
+    {6. Passage (x,y) -> (RA,DEC) to find head.ra0,head.dec0 for middle of the image. See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
+    {find RA, DEC position of the middle of the image}
+    {FITS range 1..width, if range 1,2,3,4  then middle is 2.5=(4+1)/2 }
+    coordinates_to_celestial((head.width+1)/2,(head.height+1)/2,head,telescope_ra,telescope_dec); {fitsX, Y to ra,dec} {RA,DEC position of the middle of the image. Works also for case head.crpix1,head.crpix2 are not in the middle}
+
+    cos_telescope_dec:=cos(telescope_dec);
+    if ((head.cdelt1>0) = (head.cdelt2>0)) then flipped:=-1 {n-s or e-w flipped} else flipped:=1;  {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+
+    {$ifdef mswindows}
+     mainwindow.image1.Canvas.Font.Name :='default';
+    {$endif}
+    {$ifdef linux}
+    mainwindow.image1.Canvas.Font.Name :='DejaVu Sans';
+    {$endif}
+    {$ifdef darwin} {MacOS}
+    mainwindow.image1.Canvas.Font.Name :='Helvetica';
+    {$endif}
+
+
+    mainwindow.image1.canvas.pen.color:=annotation_color;
+    mainwindow.image1.Canvas.brush.Style:=bsClear;
+    mainwindow.image1.Canvas.font.size:=8;//round(min(20,max(8,len /2)));
+
+
+    text_counter:=0;
+    setlength(text_dimensions,200);
+
+
+    sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
+
+    for mode:=1 to 2 do //do both vsx and vsp
+    begin
+      if mode=1 then
+        mainwindow.image1.Canvas.font.color:=annotation_color{variable}
+      else
+        mainwindow.image1.Canvas.font.color:=cllime;{AAVSO reference star}
+
+      if mode=1 then counts:=length(vsx) else counts:=length(vsp);
+      count:=0;
+      repeat
+        {5. Conversion (RA,DEC) -> (x,y). See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
+
+        if mode=1 then begin ra:=vsx[count].ra; dec:=vsx[count].dec;end else begin ra:=vsp[count].ra; dec:=vsp[count].dec;end;
+
+        sincos(dec,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
+        delta_ra:=ra-head.ra0;
+        sincos(delta_ra,SIN_delta_ra,COS_delta_ra);
+        HH := SIN_dec_new*sin_dec_ref + COS_dec_new*COS_dec_ref*COS_delta_ra;
+        dRA := (COS_dec_new*SIN_delta_ra / HH)*180/pi;
+        dDEC:= ((SIN_dec_new*COS_dec_ref - COS_dec_new*SIN_dec_ref*COS_delta_ra ) / HH)*180/pi;
+        det:=head.cd2_2*head.cd1_1 - head.cd1_2*head.cd2_1;
+
+        u0:= - (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+        v0:= + (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
+
+        if sip then {apply SIP correction}
+        begin
+           x:=round(head.crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0)-1; {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+           y:=round(head.crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0)-1; {3th order SIP correction}
+        end
+        else
+        begin
+          x:=round(head.crpix1 + u0)-1; {in image array range 0..width-1}
+          y:=round(head.crpix2 + v0)-1;
+        end;
+
+        if ((x>0) and (x<head.width-1) and (y>0) and (y<head.height-1)) then {within image1}
+        begin
+          if flip_horizontal then begin x:=(head.width-1)-x;  end;
+          if flip_vertical then  else y:=(head.height-1)-y;
+
+          {Plot deepsky text labels on an empthy text space.}
+          { 1) If the center of the deepsky object is outside the image then don't plot text}
+          { 2) If the text space is occupied, then move the text down. If the text crosses the bottom then use the original text position.}
+          { 3) If the text crosses the right side of the image then move the text to the left.}
+          { 4) If the text is moved in y then connect the text to the deepsky object with a vertical line.}
+
+          if mode=1 then
+          begin
+            name:=vsx[count].name+'_'+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
+          end
+          else
+          begin
+            name:=vsp[count].auid;
+            if vsp[count].Vmag<>'?' then name:=name+'_V='+vsp[count].Vmag+'('+vsp[count].Verr+')';
+            if vsp[count].Bmag<>'?' then name:=name+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
+          end;
+
+          {get text dimensions}
+          th:=mainwindow.image1.Canvas.textheight(name);
+          tw:=mainwindow.image1.Canvas.textwidth(name);
+          x1:=x;
+          y1:=y;
+          x2:=x+ tw;
+          y2:=y+ th ;
+
+          if ((x1<=head.width) and (x2>head.width)) then begin x1:=x1-(x2-head.width);x2:=head.width;end; {if text is beyond right side, move left}
+
+          if text_counter>0 then {find free space in y for text}
+          begin
+            repeat {find free text area}
+              overlap:=false;
+              i:=0;
+              repeat {test overlap}
+                if ( ((x1>=text_dimensions[i].x1) and (x1<=text_dimensions[i].x2) and (y1>=text_dimensions[i].y1) and (y1<=text_dimensions[i].y2)) {left top overlap} or
+                     ((x2>=text_dimensions[i].x1) and (x2<=text_dimensions[i].x2) and (y1>=text_dimensions[i].y1) and (y1<=text_dimensions[i].y2)) {right top overlap} or
+                     ((x1>=text_dimensions[i].x1) and (x1<=text_dimensions[i].x2) and (y2>=text_dimensions[i].y1) and (y2<=text_dimensions[i].y2)) {left bottom overlap} or
+                     ((x2>=text_dimensions[i].x1) and (x2<=text_dimensions[i].x2) and (y2>=text_dimensions[i].y1) and (y2<=text_dimensions[i].y2)) {right bottom overlap} or
+
+                     ((text_dimensions[i].x1>=x1) and (text_dimensions[i].x1<=x2) and (text_dimensions[i].y1>=y1) and (text_dimensions[i].y1<=y2)) {two corners of text_dimensions[i] within text} or
+                     ((text_dimensions[i].x2>=x1) and (text_dimensions[i].x2<=x2) and (text_dimensions[i].y2>=y1) and (text_dimensions[i].y2<=y2)) {two corners of text_dimensions[i] within text}
+                   ) then
+                begin
+                  overlap:=true; {text overlaps an existing text}
+                  y1:=y1+(th div 3);{try to shift text one third of the text height down}
+                  y2:=y2+(th div 3);
+                  if y2>=head.height then {no space left, use original position}
+                  begin
+                    y1:=y;
+                    y2:=y+th ;
+                    overlap:=false;{stop searching}
+                    i:=$FFFFFFF;{stop searching}
+                  end;
+                end;
+                inc(i);
+              until ((i>=text_counter) or (overlap) );{until all tested or found overlap}
+            until overlap=false;{continue till no overlap}
+          end;
+
+          text_dimensions[text_counter].x1:=x1;{store text dimensions in array}
+          text_dimensions[text_counter].y1:=y1;
+          text_dimensions[text_counter].x2:=x2;
+          text_dimensions[text_counter].y2:=y2;
+
+          if y1<>y then {there was textual overlap}
+          begin
+            mainwindow.image1.Canvas.moveto(x,round(y+th/4));
+            mainwindow.image1.Canvas.lineto(x,y1);
+          end;
+          mainwindow.image1.Canvas.textout(x1,y1,name);
+          inc(text_counter);
+          if text_counter>=length(text_dimensions) then setlength(text_dimensions,text_counter+200);{increase size dynamic array}
+
+          {plot deepsky object}
+          mainwindow.image1.Canvas.Pen.width :=1;//min(4,max(1,round(len/70)));
+
+          mainwindow.image1.canvas.pixels[x-2,y+2]:=annotation_color;
+          mainwindow.image1.canvas.pixels[x+2,y+2]:=annotation_color;
+          mainwindow.image1.canvas.pixels[x-2,y-2]:=annotation_color;
+          mainwindow.image1.canvas.pixels[x+2,y-2]:=annotation_color;
+        end;
+        inc(count);
+      until count>=counts;{end of database}
+    end;//plot vsx and vsp
+
+    text_dimensions:=nil;{remove used memory}
+
+    memo2_message('Added '+inttostr(text_counter)+ ' annotations.');
+  end;
+
+end;{plot vsp stars}
+
 
 
 function Gaia_star_color(Bp_Rp: integer):integer;

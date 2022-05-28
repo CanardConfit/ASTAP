@@ -1,15 +1,15 @@
 object stackmenu1: Tstackmenu1
-  Left = 88
+  Left = -13
   Height = 712
-  Top = 121
-  Width = 1721
-  HorzScrollBar.Page = 1701
+  Top = 118
+  Width = 1813
+  HorzScrollBar.Page = 1813
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
-  ClientHeight = 712
-  ClientWidth = 1721
+  ClientHeight = 695
+  ClientWidth = 1813
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -53,9 +53,9 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.0.12.0'
   object Memo2: TMemo
     Left = 0
-    Height = 152
+    Height = 135
     Top = 560
-    Width = 1721
+    Width = 1856
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     DoubleBuffered = True
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 16345
+    Left = 16480
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -226,8 +226,8 @@ object stackmenu1: Tstackmenu1
     Height = 498
     Hint = 'Stack menu'
     Top = 0
-    Width = 1721
-    ActivePage = lights
+    Width = 1856
+    ActivePage = tab_photometry1
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 8
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -2939,7 +2939,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 470
-      ClientWidth = 1713
+      ClientWidth = 1805
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
@@ -2947,7 +2947,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1713
+        Width = 1805
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3512,7 +3512,7 @@ object stackmenu1: Tstackmenu1
       object mark_outliers_upto1: TComboBox
         Left = 1800
         Height = 23
-        Hint = 'Limiting magnitude value'
+        Hint = 'Mark outliers up to this magnitude'
         Top = 9
         Width = 48
         ItemHeight = 15
@@ -3531,15 +3531,6 @@ object stackmenu1: Tstackmenu1
         TabOrder = 7
         Text = '14'
       end
-      object Label19: TLabel
-        Left = 1680
-        Height = 15
-        Top = 10
-        Width = 103
-        Caption = 'Mark outliers up to:'
-        ParentColor = False
-        ParentFont = False
-      end
       object refresh_astrometric_solutions1: TButton
         Left = 1040
         Height = 25
@@ -3554,15 +3545,6 @@ object stackmenu1: Tstackmenu1
         ShowHint = True
         TabOrder = 8
       end
-      object checkBox_annotate1: TCheckBox
-        Left = 1552
-        Height = 19
-        Hint = 'Annotate from variable database. This will slow down the process.'
-        Top = 6
-        Width = 118
-        Caption = 'Annotate variables'
-        TabOrder = 9
-      end
       object aavso_button1: TButton
         Left = 1248
         Height = 25
@@ -3572,7 +3554,7 @@ object stackmenu1: Tstackmenu1
         AutoSize = True
         Caption = 'AAVSO report'
         OnClick = aavso_button1Click
-        TabOrder = 10
+        TabOrder = 9
       end
       object extract_green1: TButton
         Left = 888
@@ -3583,7 +3565,7 @@ object stackmenu1: Tstackmenu1
         AutoSize = True
         Caption = 'RAW RGB extraction'
         OnClick = extract_green1Click
-        TabOrder = 11
+        TabOrder = 10
       end
       object flux_aperture1: TComboBox
         Left = 648
@@ -3610,7 +3592,7 @@ object stackmenu1: Tstackmenu1
         ParentFont = False
         ParentShowHint = False
         ShowHint = True
-        TabOrder = 12
+        TabOrder = 11
         Text = '3.0'
       end
       object Label26: TLabel
@@ -3631,7 +3613,7 @@ object stackmenu1: Tstackmenu1
         Caption = '+'
         OnClick = analysephotometry1Click
         ParentFont = False
-        TabOrder = 13
+        TabOrder = 12
       end
       object annulus_radius1: TComboBox
         Left = 800
@@ -3653,7 +3635,7 @@ object stackmenu1: Tstackmenu1
         )
         OnChange = flux_aperture1change
         ParentFont = False
-        TabOrder = 14
+        TabOrder = 13
         Text = '6'
       end
       object Label27: TLabel
@@ -3685,7 +3667,28 @@ object stackmenu1: Tstackmenu1
         Images = ImageList2
         ImageIndex = 23
         OnClick = browse_photometry1Click
+        TabOrder = 14
+      end
+      object annotate_mode1: TComboBox
+        Left = 1568
+        Height = 23
+        Hint = 'Annotate variable and comparison stars'
+        Top = 8
+        Width = 208
+        DropDownCount = 17
+        ItemHeight = 15
+        ItemIndex = 1
+        Items.Strings = (
+          'No annotation'
+          'Annotation local DB'
+          'Annotation online DB mag 13'
+          'Annotation online DB mag 15'
+          'Annotation online DB mag 99'
+        )
+        OnChange = annotate_mode1Change
+        ParentFont = False
         TabOrder = 15
+        Text = 'Annotation local DB'
       end
     end
     object TabSheet1: TTabSheet

@@ -1466,7 +1466,7 @@ object mainwindow: Tmainwindow
       object variable_star_annotation1: TMenuItem
         Caption = 'Variable star annotation'
         Enabled = False
-        Hint = 'Annotate all variable stars'
+        Hint = 'Annotate all variable stars and comparison stars from the local database'
         ShortCut = 16459
         OnClick = variable_star_annotation1Click
       end
@@ -1779,11 +1779,6 @@ object mainwindow: Tmainwindow
         Caption = 'AAVSO, browser chart request'
         Hint = 'Retrieve an AAVSO chart'
         OnClick = gaia_star_position1Click
-      end
-      object import_auid1: TMenuItem
-        Caption = 'AAVSO,  import AUID from clipboard'
-        Hint = 'Import AUID stars from clipboard. Copy first the AUID lines from the AAVSO webpage table into the clipboard.'
-        OnClick = import_auid1Click
       end
     end
     object N9: TMenuItem

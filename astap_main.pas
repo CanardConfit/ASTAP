@@ -142,7 +142,6 @@ type
     MenuItem34: TMenuItem;
     Constellations1: TMenuItem;
     aavso_chart1: TMenuItem;
-    import_auid1: TMenuItem;
     N4: TMenuItem;
     MenuItem38: TMenuItem;
     save1: TButton;
@@ -378,7 +377,6 @@ type
     procedure extractgreen1Click(Sender: TObject);
     procedure grid1Click(Sender: TObject);
     procedure bin_2x2menu1Click(Sender: TObject);
-    procedure convert_to_png1Click(Sender: TObject);
     procedure MenuItem22Click(Sender: TObject);
     procedure electron_to_adu_factors1Click(Sender: TObject);
     procedure halo_removal1Click(Sender: TObject);
@@ -562,8 +560,30 @@ type
      img     : image_array;
    end;
 
+  theauid = record
+              auid: string;
+              ra  : double;
+              dec : double;
+              Vmag: string;
+              Verr: string;
+              Bmag: string;
+              Berr: string;
+            end;
+
+  theVar = record
+              name: string;
+              ra  : double;
+              dec : double;
+              maxmag: string;
+              minmag: string;
+              period: string;
+              category: string;
+            end;
+
 
 var
+  vsp : array of theauid;//for comparison stars AUID
+  vsx : array of thevar;//for variable stars AUID
   img_backup      : array of timgbackup;{dynamic so memory can be freed}
   img_loaded,img_temp,img_dark,img_flat,img_bias,img_average,img_variance,img_buffer,img_final : image_array;
   head,    {for lights}
@@ -790,6 +810,9 @@ function noise_to_electrons(adu_s : double): string; {noise from adu_s to electr
 function save_tiff16(img: image_array; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
 function save_tiff16_secure(img : image_array;filen2:string) : boolean;{guarantee no file is lost}
 function find_reference_star(img : image_array) : boolean;{for manual alignment}
+procedure download_vsx(limiting_mag: double);//AAVSO API access
+procedure download_vsp(limiting_mag: double);//AAVSO API access
+function aavso_update_required : boolean; //update of downloaded database required?
 
 
 const   bufwide=1024*120;{buffer size in bytes}
@@ -848,7 +871,7 @@ var
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
-     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate;
+     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -3232,7 +3255,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.05.23, '+about_message4+
+  'ASTAP version 2022.05.28, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -4799,7 +4822,6 @@ begin
   end
   else mainwindow.statusbar1.panels[6].text:='';
 end;
-
 
 
 procedure update_menu_related_to_solver(yes :boolean); {update menu section related to solver succesfull}
@@ -7418,7 +7440,7 @@ begin
   {old routine}	    dum:=initstring.Values['mark_outliers_upto']; if dum<>'' then stackmenu1.mark_outliers_upto1.text:=dum;
   {old routine}	    dum:=initstring.Values['flux_aperture']; if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
   {old routine}	    dum:=initstring.Values['annulus_radius']; if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
-  {old routine}	    stackmenu1.checkBox_annotate1.checked:= get_boolean('ph_annotate',true);
+  {old routine}	   // stackmenu1.checkBox_annotate1.checked:= get_boolean('ph_annotate',true);
   {old routine}
   {old routine}
   {old routine}	    dum:=initstring.Values['sigma_decolour']; if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
@@ -7827,7 +7849,7 @@ begin
       dum:=Sett.ReadString('stack','mark_outliers_upto',''); if dum<>'' then stackmenu1.mark_outliers_upto1.text:=dum;
       dum:=Sett.ReadString('stack','flux_aperture',''); if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
       dum:=Sett.ReadString('stack','annulus_radius',''); if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
-      stackmenu1.checkBox_annotate1.checked:= Sett.ReadBool('stack','ph_annotate',true);
+      c:=Sett.ReadInteger('stack','annotate_m',987654321);if c<>987654321 then stackmenu1.annotate_mode1.itemindex:=c;
 
 
       dum:=Sett.ReadString('stack','sigma_decolour',''); if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
@@ -8181,9 +8203,7 @@ begin
       sett.writestring('stack','mark_outliers_upto',stackmenu1.mark_outliers_upto1.text);
       sett.writestring('stack','flux_aperture',stackmenu1.flux_aperture1.text);
       sett.writestring('stack','annulus_radius',stackmenu1.annulus_radius1.text);
-
-      sett.writeBool('stack','ph_annotate',stackmenu1.checkBox_annotate1.checked);
-
+      sett.writeInteger('stack','annotate_m',stackmenu1.annotate_mode1.itemindex);
 
       sett.writestring('stack','sigma_decolour',stackmenu1.sigma_decolour1.text);
 
@@ -9153,10 +9173,151 @@ begin
   end;
 end;
 
-procedure Tmainwindow.convert_to_png1Click(Sender: TObject);
-begin
 
+procedure download_vsp(limiting_mag: double);//AAVSO API access
+var
+  s   : string;
+  val : char;
+  count,i,j,m,er,fov,dummy : integer;
+  errorRA,errorDEC :boolean;
+begin
+  fov:=round(sqrt(sqr(head.width)+sqr(head.height))*head.cdelt2*60); //arcmin
+  setlength(vsp,1000);
+  s:=get_http('https://www.aavso.org/apps/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag));{get webpage}
+  count:=0;
+  j:=150;//skip some header stuff
+
+  repeat
+    i:=posex('"auid":"',s,j); //AUID will be always available
+    if i=0 then
+            break;//no more data
+    i:=i+length('"auid":"');
+    j:=posex('"',s,i);
+    vsp[count].auid:=copy(s,i,j-i);
+
+    i:=posex('"ra":"',s,j);//RA will be always available
+    i:=i+length('"ra":"');
+    j:=posex('"',s,i);
+    ra_text_to_radians(copy(s,i,j-i),vsp[count].ra,errorRA); {convert ra text to double in radians}
+
+    i:=posex('"dec":"',s,j);//dec will be always available
+    i:=i+length('"dec":"');
+    j:=posex('"',s,i);
+    dec_text_to_radians(copy(s,i,j-i),vsp[count].dec,errorDEC); {convert dec text to double in radians}
+
+    vsp[count].Vmag:='?';
+    vsp[count].Bmag:='?';
+    repeat //read optional "bands"
+      inc(j);
+      val:=s[j];
+      if val='V' then //V mag found, could be missing
+      begin
+        i:=posex('"mag":',s,j);
+        i:=i+length('"mag":');
+         j:=posex(',',s,i);
+         vsp[count].Vmag:=copy(s,i,j-i);
+
+         i:=posex('error":',s,j);
+         i:=i+length('error":');
+         j:=posex('}',s,i);
+         vsp[count].Verr:=copy(s,i,j-i);
+      end
+      else
+      if val='B' then //B mag found, could be missing
+      begin
+        i:=posex('"mag":',s,j);
+        i:=i+length('"mag":');
+         j:=posex(',',s,i);
+         vsp[count].Bmag:=copy(s,i,j-i);
+
+         i:=posex('error":',s,j);
+         i:=i+length('error":');
+         j:=posex('}',s,i);
+         vsp[count].Berr:=copy(s,i,j-i);
+      end;
+     until ((val=']') or (j>=length(s)));
+    inc(count);//number of entries/stars
+  until count>=length(vsp);//normally will stop at above break
+  setlength(vsp,count);
 end;
+
+
+
+procedure download_vsx(limiting_mag: double);//AAVSO API access
+var
+  s,dummy   : string;
+  count,i,j,m,er,errorRA,errorDEC : integer;
+  radius,ra,dec : double;
+begin
+  radius:=sqrt(sqr(head.width)+sqr(head.height))*head.cdelt2/2; //radius in degrees
+  setlength(vsx,1000);
+  s:=get_http('https://www.aavso.org/vsx/index.php?view=api.list&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&radius='+floattostr6(radius)+'&tomag='+floattostr4(limiting_mag)+'&format=json');
+  count:=0;
+  j:=25;//skip some header stuff
+
+  repeat
+    i:=posex('"Name":"',s,j); //Name will be always available
+    if i=0 then
+            break;//no more data
+    i:=i+length('"Name":"');
+    j:=posex('"',s,i);
+    vsx[count].name:=copy(s,i,j-i);
+
+    i:=posex('"RA2000":"',s,j);//RA will be always available
+    i:=i+length('"RA2000":"');
+    j:=posex('"',s,i);
+    dummy:=copy(s,i,j-i);
+    val(dummy,ra,errorRA); {convert ra text to double in radians}
+    vsx[count].ra:=ra*pi/180;
+
+    i:=posex('"Declination2000":"',s,j);//dec will be always available
+    i:=i+length('"Declination2000":"');
+    j:=posex('"',s,i);
+    dummy:=copy(s,i,j-i);
+    val(dummy,dec,errorDec); {convert ra text to double in radians}
+    vsx[count].dec:=dec*pi/180;
+
+    vsx[count].maxmag:='?';
+    vsx[count].minmag:='?';
+    vsx[count].period:='?';
+    vsx[count].category:='?';
+
+    repeat //read optional field
+      inc(j);
+      if ((s[j]='M') and (s[j+1]='a') and (s[j+2]='x')) then //MaxMag found, could be missing
+      begin
+        i:=j+length('MaxMag":"');
+        j:=posex('"',s,i);
+        vsx[count].maxmag:=copy(s,i,j-i);
+      end
+      else
+      if ((s[j]='M') and (s[j+1]='i') and (s[j+2]='n')) then //MaxMag found, could be missing
+      begin
+        i:=j+length('MinMag":"');
+        j:=posex('"',s,i);
+        vsx[count].minmag:=copy(s,i,j-i);
+      end
+      else
+      if ((s[j]='C') and (s[j+1]='a') and (s[j+2]='t')) then
+      begin
+        i:=j+length('Category":"');
+        j:=posex('"',s,i);
+        vsx[count].category:=copy(s,i,3);
+      end
+      else
+      if ((s[j]='P') and (s[j+1]='e') and (s[j+2]='r')) then
+      begin
+        i:=j+length('Period":"');
+        j:=posex('"',s,i);
+        vsx[count].period:=copy(s,i,j-i);
+      end;
+
+     until ((s[j]='}') or (j>=length(s)));
+    inc(count);//number of entries/stars
+  until count>=length(vsx);//normally will stop at above break
+  setlength(vsx,count);
+end;
+
 
 
 procedure Tmainwindow.positionanddate1Click(Sender: TObject);
@@ -10233,57 +10394,10 @@ const
 end;
 
 procedure Tmainwindow.import_auid1Click(Sender: TObject);
-var
-  s,name,t,regel: string;
-  x1,x2,n1,n2 : integer;
-  rad,decd    : double;
-var
-  Save_Cursor:TCursor;
 begin
-  Save_Cursor := Screen.Cursor;
-//  AUID 	RA 	Dec 	Label 	V 	B-V 	Comments
-//  000-BBN-792 	07:51:41.99 [117.92495728°] 	01:46:00.7 [1.7668609599999998°] 	51 	5.140 (0.100)22 	-0.120 (0.173)
-//  000-BBN-799 	07:52:11.35 [118.04729462000002°] 	01:34:38.3 [1.57730603°] 	98 	9.834 (0.069)16 	1.002 (0.137)
 
-  database_nr:=0; {clear}
-  load_variable;{load the variable star database once. If loaded no action}
-
-  x2:=1;
-  s:=Clipboard.AsText;
-  repeat
-    x1:=posex('000-',s,x2);
-
-    if x1>0 then
-    begin
-      name:=copy(s,x1,11);
-      n1:=posex('[',s,x2+1);
-      n2:=posex(']',s,x2+1);
-      t:=copy(s,n1+1,n2-n1-3);
-      rad:=strtofloat2(t);
-      n1:=posex('[',s,n2+1);
-      n2:=posex(']',s,n2+1);
-      t:=copy(s,n1+1,n2-n1-3);
-      decd:=strtofloat2(t);
-
-      n1:=posex(#9,s,n2+1);{skip label}
-      n1:=posex(#9,s,n1+1);{star V magnitude}
-      n2:=posex(#10,s,n1+1);{end line}
-      if n2=0 then n2:=n1+30;{if no end line at least 30 characters}
-
-      t:=trim(copy(s,n1+1,n2-n1));
-      t:=stringreplace(t,#9,';',[rfReplaceAll]);{}
-
-      //RA[0..864000], DEC[-324000..324000], label
-      regel:=inttostr(round(rad*864000/360))+','+inttostr(round(decd*324000/90))+','+name+';'+t;
-      deepstring.add(regel);
-      x2:=max(n2,x2+50);{move to next line}
-    end;
-  until x1=0;
-
-  deepstring.add('');
-  plot_deepsky;{plot the deep sky object on the image}
-  Screen.Cursor:=Save_Cursor;
 end;
+
 
 procedure Tmainwindow.inspector1Click(Sender: TObject);
 begin
@@ -10762,15 +10876,49 @@ begin
 end;
 
 
+function aavso_update_required : boolean; //update of downloaded database required?
+var sep : double;
+begin
+  result:=true;
+  if vsx=nil then exit;
+  if length(vsx)>0 then
+    ang_sep(vsx[0].ra,vsx[0].dec,head.ra0,head.dec0,sep);
+  if sep<head.width*head.cdelt2*2*pi/180 then result:=false;// first entry near to center position image then no update required
+end;
+
+
 procedure Tmainwindow.variable_star_annotation1Click(Sender: TObject);
 var
-  Save_Cursor:TCursor;
+  Save_Cursor         : TCursor;
+  lim_magn            : double;
 begin
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass; { Show hourglass cursor }
-//  backup_img;
-  load_variable;  { Load the database once. If loaded no action}
-  plot_deepsky;{plot the deep sky object on the image}
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  case stackmenu1.annotate_mode1.itemindex of
+       0,1: lim_magn:=-99;//use local database
+       2:   lim_magn:=13;
+       3:   lim_magn:=15;
+       else
+             lim_magn:=99;
+     end; //case
+
+  if lim_magn>0 then //online version
+  begin
+    if aavso_update_required then
+    begin
+      memo2_message('Downloading data from AAVSO.');
+      download_vsx(lim_magn);
+      download_vsp(lim_magn);
+    end;
+    plot_vsx_vsp;
+  end
+  else
+  begin //local version
+    load_variable;{Load the database once. If loaded no action}
+    plot_deepsky; {Plot the deep sky object on the image}
+  end;
+
   Screen.Cursor:=Save_Cursor;
 end;
 
@@ -10932,6 +11080,7 @@ begin
   deepstring.free;{free deepsky}
   wide_field_stars:=nil; {free wide_field_database}
   recent_files.free;
+  vsp:=nil;
 end;
 
 

@@ -37,6 +37,7 @@ type
     add_noise1: TButton;
     add_substract1: TComboBox;
     add_time1: TCheckBox;
+    annotate_mode1: TComboBox;
     apply_normalise_filter1: TCheckBox;
     browse1: TBitBtn;
     browse_blink1: TBitBtn;
@@ -113,7 +114,6 @@ type
     extract_green1: TButton;
     changekeyword6: TMenuItem;
     changekeyword7: TMenuItem;
-    checkBox_annotate1: TCheckBox;
     annulus_radius1: TComboBox;
     keyword8: TMenuItem;
     changekeyword8: TMenuItem;
@@ -327,7 +327,6 @@ type
     Label16: TLabel;
     Label17: TLabel;
     Label18: TLabel;
-    Label19: TLabel;
     Label2: TLabel;
     Label20: TLabel;
     Label21: TLabel;
@@ -610,6 +609,7 @@ type
     procedure add_noise1Click(Sender: TObject);
     procedure align_blink1Change(Sender: TObject);
     procedure analyseblink1Click(Sender: TObject);
+    procedure annotate_mode1Change(Sender: TObject);
     procedure browse_monitoring1Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure calibrate_prior_solving1Change(Sender: TObject);
@@ -3180,13 +3180,9 @@ end;
 procedure Tstackmenu1.listview1DblClick(Sender: TObject);
 begin
   listview_view(TListView(Sender));
-  if ((checkBox_annotate1.checked) and (pagecontrol1.tabindex=8 {photometry} )) then
-  begin
-    load_variable; {Load the database once. If loaded no action}
-    plot_deepsky;  {plot the variable annotations image}
-  end;
+  if  ((pagecontrol1.tabindex=8) {photometry} and (annotate_mode1.itemindex>0))  then
+    mainwindow.variable_star_annotation1Click(nil);//plot variable stars and comp star annotations
 end;
-
 
 function date_obs_regional(thedate : string):string;{fits date but remote T and replace . by comma if that is the regional separator}
 begin
@@ -6285,7 +6281,7 @@ procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   Save_Cursor          : TCursor;
   magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,backgr,hfd_med,apert,annul,
-  rax1,decx1,rax2,decx2,rax3,decx3,xn,yn                                                        : double;
+  rax1,decx1,rax2,decx2,rax3,decx3,xn,yn,lim_magn                                               : double;
   saturation_level                                                                              : single;
   c,i,x_new,y_new,fitsX,fitsY,col,{first_image,}size,starX,starY,stepnr,countVar, countCheck,countThree : integer;
   flipvertical,fliphorizontal,init,refresh_solutions,analysedP,store_annotated, warned,success  : boolean;
@@ -6687,7 +6683,7 @@ begin
         annotated:=false;{prevent annotations are plotted in plot_fits}
         plot_fits(mainwindow.image1,false {re_center},true);
         annotated:=store_annotated;{restore anotated value}
-        if ((annotated) and (mainwindow.annotations_visible1.checked)) then
+        if ((annotated) and (mainwindow.annotations_visible1.checked)) then //header annotations
           plot_annotations(true {use solution vectors!!!!},false); {corrected annotations in case a part of the lights are flipped in the alignment routien}
 
         mainwindow.image1.Canvas.Pen.Mode := pmMerge;
@@ -6743,12 +6739,27 @@ begin
         {plot outliers (variable stars)}
         if outliers<>nil then plot_outliers;
 
-        if checkBox_annotate1.checked then
+        if annotate_mode1.itemindex=1 then
         begin
           load_variable; { Load the database once. If loaded no action}
           head:=head_ref;{restore solution from reference image}
          // restore_solution(false {keep solution});{restore solution from reference image}
           plot_deepsky;  {plot the deep sky object on the image}
+        end
+        else
+        if annotate_mode1.itemindex>1 then
+        begin
+          if aavso_update_required then //update of downloaded database required?
+          begin
+            case annotate_mode1.itemindex of
+                 2: lim_magn:=13;
+                 3: lim_magn:=15;
+                else lim_magn:=99;
+            end; //case
+            download_vsx(lim_magn);
+            download_vsp(lim_magn);
+          end;
+          plot_vsx_vsp;//plot annotations
         end;
       end;{find star magnitudes}
     end;
@@ -7454,6 +7465,12 @@ procedure Tstackmenu1.analyseblink1Click(Sender: TObject);
 begin
   analyse_listview(listview6,true {light},false {full fits},false{refresh});
   listview6.alphasort; {sort on time}
+end;
+
+procedure Tstackmenu1.annotate_mode1Change(Sender: TObject);
+begin
+  vsx:=nil;//clear downloaded database
+  vsp:=nil;
 end;
 
 procedure Tstackmenu1.browse_monitoring1Click(Sender: TObject);
@@ -10038,13 +10055,9 @@ begin
   if sender=Viewimage6 then listview_view(listview6);{popup menu blink}
   if sender=Viewimage7 then
   begin
-     listview_view(listview7);
-    if ((checkBox_annotate1.checked) and (pagecontrol1.tabindex=8 {photometry} )) then
-     begin
-       load_variable; { Load the database once. If loaded no action}
-       plot_deepsky;  {plot the variable annotations image}
-     end;
-
+    listview_view(listview7);
+    if annotate_mode1.itemindex>0 then //not disabled
+       mainwindow.variable_star_annotation1Click(nil);//show variable star annotations
   end;
   if sender=Viewimage8 then listview_view(listview8);{inspector}
   if sender=Viewimage9 then listview_view(listview9);{mount}
