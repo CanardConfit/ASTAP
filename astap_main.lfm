@@ -242,7 +242,6 @@ object mainwindow: Tmainwindow
     object Shape_alignment_marker1: TShape
       Left = 32
       Height = 11
-      Hint = 'Lock unreliable, check position'
       Top = 112
       Width = 11
       Brush.Style = bsClear
@@ -344,7 +343,6 @@ object mainwindow: Tmainwindow
     object Shape_alignment_marker2: TShape
       Left = 32
       Height = 11
-      Hint = 'Lock unreliable, check position'
       Top = 144
       Width = 11
       Brush.Style = bsClear
@@ -360,7 +358,7 @@ object mainwindow: Tmainwindow
     object Shape_alignment_marker3: TShape
       Left = 32
       Height = 11
-      Hint = 'Lock unreliable, check position'
+      Hint = '3'
       Top = 176
       Width = 11
       Brush.Style = bsClear

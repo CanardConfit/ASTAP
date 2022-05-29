@@ -1396,6 +1396,16 @@ begin
 
       if ((x>-0.25*head.width) and (x<=1.25*head.width) and (y>-0.25*head.height) and (y<=1.25*head.height)) then {within image1 with some overlap}
       begin
+
+        if database_nr=3 then //variables
+        begin
+          if ((abs(x-shape_fitsX)<5) and  (abs(y-shape_fitsy)<5)) then // note shape_fitsX/Y are in sensor coordinates
+                mainwindow.Shape_alignment_marker1.HINT:=copy(naam2,1,posex('_',naam2,4)-1);
+
+          if ((abs(x-shape_fitsX2)<5) and  (abs(y-shape_fitsy2)<5)) then  // note shape_fitsX/Y are in sensor coordinates
+                    mainwindow.Shape_alignment_marker2.HINT:=copy(naam2,1,posex('_',naam2,4)-1);
+        end;
+
         gx_orientation:=pa*flipped+head.crota2;
         if flip_horizontal then begin x:=(head.width-1)-x; gx_orientation:=-gx_orientation; end;
         if flip_vertical then gx_orientation:=-gx_orientation else y:=(head.height-1)-y;
@@ -1598,8 +1608,7 @@ begin
 
         if ((x>0) and (x<head.width-1) and (y>0) and (y<head.height-1)) then {within image1}
         begin
-          if flip_horizontal then begin x:=(head.width-1)-x;  end;
-          if flip_vertical then  else y:=(head.height-1)-y;
+
 
           {Plot deepsky text labels on an empthy text space.}
           { 1) If the center of the deepsky object is outside the image then don't plot text}
@@ -1610,13 +1619,21 @@ begin
           if mode=1 then
           begin
             name:=vsx[count].name+'_'+vsx[count].maxmag+'-'+vsx[count].minmag+'_'+vsx[count].category+'_Period_'+vsx[count].period;
+            if ((abs(x-shape_fitsX)<5) and  (abs(y-shape_fitsy)<5)) then // note shape_fitsX/Y are in sensor coordinates
+              mainwindow.Shape_alignment_marker1.HINT:=vsx[count].name;
           end
           else
           begin
             name:=vsp[count].auid;
+            if ((abs(x-shape_fitsX2)<5) and  (abs(y-shape_fitsy2)<5)) then  // note shape_fitsX/Y are in sensor coordinates
+                  mainwindow.Shape_alignment_marker2.HINT:=name;
             if vsp[count].Vmag<>'?' then name:=name+'_V='+vsp[count].Vmag+'('+vsp[count].Verr+')';
             if vsp[count].Bmag<>'?' then name:=name+'_B='+vsp[count].Bmag+'('+vsp[count].Berr+')';
           end;
+
+          if flip_horizontal then begin x:=(head.width-1)-x;  end;
+          if flip_vertical then  else y:=(head.height-1)-y;
+
 
           {get text dimensions}
           th:=mainwindow.image1.Canvas.textheight(name);

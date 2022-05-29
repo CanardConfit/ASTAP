@@ -242,8 +242,11 @@ end;
 
 procedure Tform_aavso1.name_check1DropDown(Sender: TObject);
 begin
-  name_check1.items.add(abbreviation_check);
-  name_check1.items.add(name_check_IAU);
+  if name_check1.items.count=0 then
+  begin
+    name_check1.items.add(abbreviation_check);
+    name_check1.items.add(name_check_IAU);
+  end;
 end;
 
 procedure Tform_aavso1.name_variable1Change(Sender: TObject);
@@ -470,10 +473,13 @@ end;
 procedure Tform_aavso1.FormShow(Sender: TObject);
 begin
   obscode1.text:=obscode;
+  if length(mainwindow.Shape_alignment_marker1.HINT)>2 then name_variable1.text:=mainwindow.Shape_alignment_marker1.HINT
+  else
   if object_name<>'' then name_variable1.text:=object_name
-    else
-    name_variable1.text:=name_var;
+  else
+  name_variable1.text:=name_var;
 
+  if length(mainwindow.Shape_alignment_marker2.HINT)>2 then abbreviation_check:=mainwindow.Shape_alignment_marker2.HINT;
   name_check1.text:=abbreviation_check;
 
   if head.filter_name<>'' then filter1.text:=head.filter_name else  filter1.itemindex:=0 {TC};

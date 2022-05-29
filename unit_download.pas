@@ -3,7 +3,7 @@ unit unit_download; {download file. See example https://wiki.lazarus.freepascal.
 interface
 
 uses
-  classes,
+  classes, forms,
   fphttpclient,
   openssl,
   opensslsockets; {in case of compile problems, temporary copy from fpc source the opensslsockets.pp and fpopenssl.pp from /home/h/fpc/packages/openssl/src to hnsky directory}
@@ -13,13 +13,13 @@ function get_http(url: string): string;//get webpage in string
 
 implementation
 
-{$mode delphi}
+
 function get_http(url:string): string;
 var
   Client: TFPHttpClient;
 begin
-  InitSSLInterface;
-  Client := TFPHttpClient.Create(nil);
+  result:=''; //for early exit
+  if InitSSLInterface=false then begin application.messagebox(pchar('Install OpenSSL. Required for https conections to AAVSO'), pchar('Missing library'),0);exit;end;;  Client := TFPHttpClient.Create(nil);
   try
     { Allow redirections }
     Client.AllowRedirect := true;

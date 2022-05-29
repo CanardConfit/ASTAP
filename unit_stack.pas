@@ -3169,6 +3169,11 @@ begin
           show_shape_manual_alignment(index){show the marker on the reference star}
         else
         mainwindow.shape_manual_alignment1.visible:=false;
+        if ((tl=stackmenu1.listview7) and (stackmenu1.annotate_mode1.itemindex>0)) then {show variable stars}
+        begin
+           application.processmessages;
+           mainwindow.variable_star_annotation1Click(nil);//show variable star annotations
+        end;
       end
       else beep;{image not found}
       exit;{done, can display only one image}
@@ -10033,12 +10038,7 @@ begin
   if sender=Viewimage4 then listview_view(listview4);
   if sender=Viewimage5 then listview_view(listview5);
   if sender=Viewimage6 then listview_view(listview6);{popup menu blink}
-  if sender=Viewimage7 then
-  begin
-    listview_view(listview7);
-    if annotate_mode1.itemindex>0 then //not disabled
-       mainwindow.variable_star_annotation1Click(nil);//show variable star annotations
-  end;
+  if sender=Viewimage7 then listview_view(listview7);//photometry
   if sender=Viewimage8 then listview_view(listview8);{inspector}
   if sender=Viewimage9 then listview_view(listview9);{mount}
 end;

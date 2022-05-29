@@ -810,8 +810,6 @@ function noise_to_electrons(adu_s : double): string; {noise from adu_s to electr
 function save_tiff16(img: image_array; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
 function save_tiff16_secure(img : image_array;filen2:string) : boolean;{guarantee no file is lost}
 function find_reference_star(img : image_array) : boolean;{for manual alignment}
-procedure download_vsx(limiting_mag: double);//AAVSO API access
-procedure download_vsp(limiting_mag: double);//AAVSO API access
 function aavso_update_required : boolean; //update of downloaded database required?
 
 
@@ -3255,7 +3253,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.05.28, '+about_message4+
+  'ASTAP version 2022.05.29a, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -4544,14 +4542,12 @@ begin
      if shape_type=0 then {rectangle}
      begin
        shape:=stRectangle;
-       hint:='no lock';
        visible:=true;
      end
      else
      if shape_type=1 then {circle}
      begin {good lock on object}
        shape:=stcircle;
-       hint:='locked';
        visible:=true;
      end
      else
@@ -9174,19 +9170,21 @@ begin
 end;
 
 
-procedure download_vsp(limiting_mag: double);//AAVSO API access
+function download_vsp(limiting_mag: double) : boolean;//AAVSO API access
 var
   s   : string;
   val : char;
   count,i,j,m,er,fov,dummy : integer;
   errorRA,errorDEC :boolean;
 begin
+  result:=false;
   fov:=round(sqrt(sqr(head.width)+sqr(head.height))*head.cdelt2*60); //arcmin
-  setlength(vsp,1000);
   s:=get_http('https://www.aavso.org/apps/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag));{get webpage}
+  if length(s)<50 then begin beep; exit end;;
+
+  setlength(vsp,1000);
   count:=0;
   j:=150;//skip some header stuff
-
   repeat
     i:=posex('"auid":"',s,j); //AUID will be always available
     if i=0 then
@@ -9239,19 +9237,23 @@ begin
     inc(count);//number of entries/stars
   until count>=length(vsp);//normally will stop at above break
   setlength(vsp,count);
+  result:=true;
 end;
 
 
-
-procedure download_vsx(limiting_mag: double);//AAVSO API access
+function download_vsx(limiting_mag: double): boolean;//AAVSO API access
 var
   s,dummy   : string;
   count,i,j,m,er,errorRA,errorDEC : integer;
   radius,ra,dec : double;
 begin
+  result:=false;
   radius:=sqrt(sqr(head.width)+sqr(head.height))*head.cdelt2/2; //radius in degrees
-  setlength(vsx,1000);
   s:=get_http('https://www.aavso.org/vsx/index.php?view=api.list&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&radius='+floattostr6(radius)+'&tomag='+floattostr4(limiting_mag)+'&format=json');
+  if length(s)<25 then begin beep; exit end;;
+
+
+  setlength(vsx,1000);
   count:=0;
   j:=25;//skip some header stuff
 
@@ -9316,6 +9318,56 @@ begin
     inc(count);//number of entries/stars
   until count>=length(vsx);//normally will stop at above break
   setlength(vsx,count);
+  result:=true;
+end;
+
+
+function aavso_update_required : boolean; //update of downloaded database required?
+var sep : double;
+begin
+  result:=true;
+  if vsx=nil then exit;
+  if length(vsx)>0 then
+    ang_sep(vsx[0].ra,vsx[0].dec,head.ra0,head.dec0,sep);
+  if sep<head.width*head.cdelt2*2*pi/180 then result:=false;// first entry near to center position image then no update required
+end;
+
+
+procedure Tmainwindow.variable_star_annotation1Click(Sender: TObject);
+var
+  Save_Cursor         : TCursor;
+  lim_magn            : double;
+begin
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+  case stackmenu1.annotate_mode1.itemindex of
+       0,1: lim_magn:=-99;//use local database
+       2:   lim_magn:=13;
+       3:   lim_magn:=15;
+       else
+             lim_magn:=99;
+     end; //case
+
+  if lim_magn>0 then //online version
+  begin
+    repeat
+      if aavso_update_required then
+      begin
+        memo2_message('Downloading data from AAVSO.');
+        if download_vsx(lim_magn)=false then begin memo2_message('Error!');break; end;
+        if download_vsp(lim_magn)=false then begin memo2_message('Error!');break; end;
+      end;
+      plot_vsx_vsp;
+    until true;
+  end
+  else
+  begin //local version
+    load_variable;{Load the database once. If loaded no action}
+    plot_deepsky; {Plot the deep sky object on the image}
+  end;
+
+  Screen.Cursor:=Save_Cursor;
 end;
 
 
@@ -10875,52 +10927,6 @@ begin
   end;
 end;
 
-
-function aavso_update_required : boolean; //update of downloaded database required?
-var sep : double;
-begin
-  result:=true;
-  if vsx=nil then exit;
-  if length(vsx)>0 then
-    ang_sep(vsx[0].ra,vsx[0].dec,head.ra0,head.dec0,sep);
-  if sep<head.width*head.cdelt2*2*pi/180 then result:=false;// first entry near to center position image then no update required
-end;
-
-
-procedure Tmainwindow.variable_star_annotation1Click(Sender: TObject);
-var
-  Save_Cursor         : TCursor;
-  lim_magn            : double;
-begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
-  case stackmenu1.annotate_mode1.itemindex of
-       0,1: lim_magn:=-99;//use local database
-       2:   lim_magn:=13;
-       3:   lim_magn:=15;
-       else
-             lim_magn:=99;
-     end; //case
-
-  if lim_magn>0 then //online version
-  begin
-    if aavso_update_required then
-    begin
-      memo2_message('Downloading data from AAVSO.');
-      download_vsx(lim_magn);
-      download_vsp(lim_magn);
-    end;
-    plot_vsx_vsp;
-  end
-  else
-  begin //local version
-    load_variable;{Load the database once. If loaded no action}
-    plot_deepsky; {Plot the deep sky object on the image}
-  end;
-
-  Screen.Cursor:=Save_Cursor;
-end;
 
 procedure Tmainwindow.zoomfactorone1Click(Sender: TObject);
 begin
@@ -13382,6 +13388,8 @@ begin
         if ((abs(shape_fitsX2-xcf)<=3) and (abs(shape_fitsY2-ycf)<=3)) then begin shape_fitsX2:=shape_fitsX3;shape_fitsY2:=shape_fitsY3;end;
         shape_fitsX3:=xcf; shape_fitsY3:=ycf;
       end;
+      Shape_alignment_marker1.HINT:='? Refresh plotting';//reset any labels
+      Shape_alignment_marker2.HINT:='?';
       show_marker_shape(mainwindow.shape_alignment_marker1,shapetype,20,20,10{minimum},shape_fitsX, shape_fitsY);
       show_marker_shape(mainwindow.shape_alignment_marker2,shapetype,20,20,10{minimum},shape_fitsX2, shape_fitsY2);
       show_marker_shape(mainwindow.shape_alignment_marker3,shapetype,20,20,10{minimum},shape_fitsX3, shape_fitsY3);
@@ -14849,7 +14857,7 @@ end;
 
 procedure Tmainwindow.set_modified_date1Click(Sender: TObject);
 var
-  I,td : integer;
+  I    : integer;
   Save_Cursor:TCursor;
   err : boolean;
 begin
