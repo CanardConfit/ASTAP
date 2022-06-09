@@ -42,7 +42,7 @@ FOV of more then ten degrees</span><br style="font-family: Calibri;"><br style="
             &nbsp;Only required if you have files with the .fz
             &nbsp;extension.</td><td style="background-color: rgb(220, 220, 220); font-family: Calibri; font-weight: bold;">Barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
 renamed. No pop-up notifier. Will not accept raw files and&nbsp;will not
-work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="astap_setup.exe">ASTAP_installer</a>_(v2022.05.29), <br><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"></a><a href="astap.zip">ASTAP
+work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="astap_setup.exe">ASTAP_installer</a>_(v2022.06.01), <br><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"></a><a href="astap.zip">ASTAP
               executable only</a></td><td colspan="1" rowspan="2" style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing">H18 installer</a><br><a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing"> </a><a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing">H17 installer</a>,<br><a href="https://drive.google.com/file/d/1_MYyXn3ZjAGcrhSsKoo6gb7XUKz_-3ji/view?usp=sharing">G17 installer</a> (obsolete <a href="h18.htm">1)</a>).<br><br><a href="https://drive.google.com/file/d/1qaf23oFmPpnDZbLO30IB42kC8-qBEynJ/view?usp=sharing">H18 zipped</a>,  <br><a href="https://drive.google.com/file/d/1kbaDcxjIKMcHwd3KSvNyIsB5m6ztVi9z/view?usp=sharing">H17 zipped</a>,<br><a href="https://sourceforge.net/projects/astap-program/files/star_databases/w08_star_database_mag08_astap.zip/download">W08 zipped</a>,&nbsp;<br><a href="http://www.poyntsource.com/hnsky/h18_star_database_mag18.rar">G18 rar</a> ((obsolete <a href="h18.htm">1)</a>),<br>for manual install at&nbsp; \programs files\astap or program directory<br><a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing"></a><br></td><td colspan="1" rowspan="2" style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/fpack_funpack.exe/download">Fpack
               &amp; Funpack</a></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_command-line_version_win64.zip/download">astap_cli</a>
 (v2022.04.10)</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 32 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_command-line_version_win32.zip/download">astap_cli</a>
@@ -176,7 +176,7 @@ work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family:
             <ul>
               
               <li><big><a href="#apt">Using with APT,
-                    &nbsp;Astro Photography Tool</a></big></li><li><big><a href="astap.htm#ccdciel">Using with
+                    &nbsp;Astro Photography Tool</a></big></li><li><a href="astap.htm#backyard"><big>Using with </big></a><a href="astap.htm#backyard"><big><span style="text-decoration: underline;">BackyardNikon, BackYardEos</span></big></a></li><li><big><a href="astap.htm#ccdciel">Using with
                     CCDCIEL</a></big></li><li><big><a href="astap.htm#modelcreator">Using
                     with ModelCreator</a></big></li>
               <li><big><a href="#nina">Using with
@@ -1286,8 +1286,8 @@ are averaged and used for flux calibration&nbsp;of the
 variable and check star.. So it is a different setup then usual but there is never lack of calibration stars. <br><p>Calculation:<br>VMAG = ( VMAGINS - CMAGINS) + CREFMAG<br>equals<br>VMAG =&nbsp; VMAGINS&nbsp; + (CREFMAG- CMAGINS)</p>
     
     
-    <p>For a 200 Gaia stars ensemble:<br>VMAG =&nbsp; VMAGINS&nbsp; + mean[ (CREFMAG1- CMAGINS1)+(CREFMAG2-
-      CMAGINS2)+(CREFMAG2- CMAGINS2). . . . . . (CREFMAG200-
+    <p>For a 200 Gaia stars ensemble:<br>VMAG =&nbsp; VMAGINS&nbsp; + mean[ (CREFMAG1- CMAGINS1), (CREFMAG2-
+      CMAGINS2),&nbsp;(CREFMAG2- CMAGINS2). . . . . . (CREFMAG200-
       CMAGINS200)]&nbsp;&nbsp;<br>Prior to the mean calculation the outliers of (CREFMAGx-
       CMAGINSx) values are removed above 1.5 sigma. Sigma is calculated
       from the "median absolute deviation"<span style="text-decoration: underline;">.</span><br>
@@ -1295,8 +1295,8 @@ variable and check star.. So it is a different setup then usual but there is nev
     
     
     
-    <p>Same for the reported KMAG:<br>KMAG=&nbsp; KMAGINS&nbsp; + mean[ (CREFMAG1- CMAGINS1)+(CREFMAG2-
-      CMAGINS2)+(CREFMAG2- CMAGINS2)......(CREFMAG200- CMAGINS200)]<br></p></div>
+    <p>Same for the reported KMAG:<br>KMAG=&nbsp; KMAGINS&nbsp; + mean[ (CREFMAG1- CMAGINS1),&nbsp;(CREFMAG2-
+      CMAGINS2), (CREFMAG2- CMAGINS2)......(CREFMAG200- CMAGINS200)]<br></p></div>
         <big><br>Alignment
         of the images is done using the astrometric (plate) solution.&nbsp;The
         astrometric
@@ -2750,7 +2750,7 @@ solving
 a
           solver with other programs or as PlateSolve2 substitute</big></p>
       <ul style="text-align: left;"><li><big><a href="astap.htm#apt">Using with APT,
-                    &nbsp;Astro Photography Tool</a></big></li><li><big><a href="astap.htm#ccdciel">Using with
+                    &nbsp;Astro Photography Tool</a></big></li><li><a href="astap.htm#backyard"><big>Using with </big></a><a href="astap.htm#backyard"><big><span style="text-decoration: underline;">BackyardNikon, BackYardEos</span></big></a></li><li><a href="astap.htm#ccdciel"><big><span style="font-weight: bold;"><span style="text-decoration: underline;"></span></span></big></a><big><a href="astap.htm#ccdciel">Using with
                     CCDCIEL</a></big></li><li><big><a href="astap.htm#modelcreator">Using
                     with ModelCreator</a></big></li><li><big><a href="astap.htm#nina">Using with
                     NINA,&nbsp;Nighttime Imaging ‘N’ Astronomy</a></big></li><li><big><a href="astap.htm#sgp">Using with SGP,
@@ -2786,6 +2786,9 @@ the release of APT version&nbsp;3.85.1&nbsp;</big></p><div style="text-align: le
           Platesolve2.exe. and select it as PlateSolve2:</big></p><p align="left"><big><span style="font-weight: bold;"><img style="width: 1024px; height: 768px;" alt="" src="apt_astap_screenshot.jpg"></span></big></p>
       <p align="left"><br></p><p align="left"></p>
       <p align="left"><big><span style="font-weight: bold;"></span></big><a href="astap.htm#index">Back
+          to index</a></p><p align="left"></p><p align="left"></p><hr style="width: 100%; height: 2px;"><a href="astap.htm#index"></a><p align="left"><big><span style="font-weight: bold;"><a name="backyard"></a><span style="text-decoration: underline;">BackyardNikon, BackYardEos:</span></span></big></p><p align="left"><big><span style="font-weight: bold;"><span style="text-decoration: underline;"></span></span></big></p><p align="left"><big>Michael A. Covington has described it nicely <a href="http://www.covingtoninnovations.com/michael/blog/2206/ASTAP%20BackyardNikon%20BackyardEOS.pdf">here</a></big></p><p align="left"><big>Solving should be reliable. In
+            case of failure, have a look to&nbsp;<a href="astap.htm#conditions">conditions required for
+              solving.</a></big></p><p align="left"></p><p align="left"><a href="astap.htm#index">Back
           to index</a></p>
       <hr style="width: 100%; height: 2px;">
       <p align="left"><big><span style="font-weight: bold;"><a name="modelcreator"></a><span style="text-decoration: underline;">ModelCreator:</span></span></big></p>

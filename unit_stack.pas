@@ -849,7 +849,7 @@ var
   counterRbias,counterGbias, counterBbias,  counterRGBbias,counterLbias,
   temperatureL,temperatureR,temperatureG,temperatureB,temperatureRGB,
   exposureR, exposureG,exposureB,exposureRGB,exposureL            : integer;
-  sum_exp,photometry_stdev                                        : double;
+  sum_exp,sum_temp,photometry_stdev                               : double;
   referenceX,referenceY    : double;{reference position used stacking}
 //  ref_X, ref_Y             : double;{reference position from FITS header, used for manual stacking of colour lights, second stage}
   jd_mid                   : double;{julian day of mid head.exposure}
@@ -1734,12 +1734,12 @@ end;
 
 procedure analyse_tab_lights(full : boolean);
 var
-  c,hfd_counter  ,i,counts          : integer;
-  backgr, hfd_median,alt,az         : double;
-  Save_Cursor                       : TCursor;
-  green,blue,planetary              : boolean;
-  key,filename1,rawstr              : string;
-  img                               : image_array;
+  c,hfd_counter  ,i,counts                              : integer;
+  backgr, hfd_median,alt,az                             : double;
+  Save_Cursor                                           : TCursor;
+  green,blue,planetary                                  : boolean;
+  key,filename1,rawstr                                  : string;
+  img                                                   : image_array;
 begin
   with stackmenu1 do
   begin
@@ -1760,6 +1760,8 @@ begin
 
     green:=false;
     blue:=false;
+//    minbackgr:=65000;
+//    maxbackgr:=0;
 
     c:=0;
     {convert any non FITS file}
@@ -1866,6 +1868,9 @@ begin
             ListView1.Items.BeginUpdate;
             try
               begin
+//                maxbackgr:=max(maxbackgr,backgr);
+//                minbackgr:=min(minbackgr,backgr);
+
                 ListView1.Items.item[c].subitems.Strings[L_object]:=object_name; {object name, without spaces}
 
 
@@ -1986,6 +1991,11 @@ begin
     count_selected; {report the number of lights selected in images_selected and update menu indication}
     new_analyse_required:=false; {back to normal, head_2.filter_name is not changed, so no re-analyse required}
     img:=nil; {free mem}
+
+//    if ((minbackgr<>0) and (pos('Sigma',stackmenu1.stack_method1.text)>0)) then
+//     if maxbackgr/(minbackgr)>1.3 then memo2_message('█ █ █ █ █ █ Warning, some images have a significant higher background value. Method sigma clip average will not be effective in removing satellite tracks. Suggest to unselect/remove images with a high background value!! █ █ █ █ █ █ ');
+
+
     Screen.Cursor :=Save_Cursor;    { back to normal }
     progress_indicator(-100,'');{progresss done}
   end;
@@ -9402,6 +9412,7 @@ begin
         if counterL>0 then
         begin
           exposureL:=round(sum_exp/counterL); {average head.exposure}
+          temperatureL:=round(sum_temp/counterL); {average head.exposure}
           monofile:=true;{success}
         end;
 
@@ -9659,8 +9670,8 @@ begin
         remove_key('DATE    ',false{all});{no purpose anymore for the original date written}
         remove_key('EXPTIME',false{all}); {remove, will be added later in the header}
         remove_key('EXPOSURE',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
-        remove_key('CCD-TEMP',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
-        remove_key('SET-TEMP',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
+        remove_key('CCD-TEMP',false{all});{remove, will be replaced by SET-TEMP.....}
+        remove_key('SET-TEMP',false{all});{remove, will be added later in mono or for colour as LUM_TEMP, RED_TEMP.....}
         remove_key('LIGH_CNT',false{all});{remove, will be replaced by LUM_CNT, RED_CNT.....}
         remove_key('DARK_CNT',false{all});{remove, will be replaced by LUM_DARK, RED_DARK.....}
         remove_key('FLAT_CNT',false{all});{remove, will be replaced by LUM_FLAT, RED_FLAT.....}
@@ -9677,7 +9688,6 @@ begin
 
         if use_manual_alignment1.checked=false then {don't do this for manual stacking and moving object. Keep the date of the reference image for correct annotation of asteroids}
         begin
-          remove_key('EXPOSURE',false{all});{remove, will be replaced by LUM_EXP, RED_EXP.....}
           head.date_obs:=jdToDate(jd_stop);
           update_text ('DATE-OBS=',#39+head.date_obs+#39);{give start point exposures}
           if ((head.naxis3=1) and (counterL>0)) then {works only for mono}
@@ -9688,7 +9698,7 @@ begin
             //add_text   ('COMMENT ',' UT midpoint in decimal notation: '+ UTdecimal(date_avg));
           end;
         end
-        else;{keep head.exposure and head.date_obs from reference image for accurate asteroid annotation}
+        else;{keep head.date_obs from reference image for accurate asteroid annotation}
 
         if pos('D',head.calstat)>0 then add_text   ('COMMENT ','   D='+ExtractFileName( last_dark_loaded ));
         if pos('F',head.calstat)>0 then add_text   ('COMMENT ','   F='+ExtractFileName( last_flat_loaded ));
@@ -9729,12 +9739,12 @@ begin
 
           head.exposure:=sum_exp;{for annotation asteroid}
           update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(head.exposure));
+          update_integer('SET-TEMP=',' / Set temperature used for luminance.            ' ,temperatureL);
           add_integer('LUM_EXP =',' / Average luminance exposure time.               ' ,exposureL);
           add_integer('LUM_CNT =',' / Luminance images combined.                     ' ,counterL);
           add_integer('LUM_DARK=',' / Darks used for luminance.                      ' ,head.dark_count);
           add_integer('LUM_FLAT=',' / Flats used for luminance.                      ' ,head.flat_count);
           add_integer('LUM_BIAS=',' / Flat-darks used for luminance.                 ' ,head.flatdark_count);
-          add_integer('LUM_TEMP=',' / Set temperature used for luminance.            ' ,head.set_temperature);
 
           thefilters:=head.filter_name; {used later for file name}
           stack_info:=' '+inttostr(head.flatdark_count)+'x'+'FD  '+

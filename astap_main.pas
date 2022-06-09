@@ -3253,7 +3253,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.05.29a, '+about_message4+
+  'ASTAP version 2022.06.09, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -10298,7 +10298,7 @@ var
   size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci,hfd_counter      : integer;
   Save_Cursor:TCursor;
   Fliphorizontal, Flipvertical,astar,saturated                                                                     : boolean;
-  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit,sqr_radius,hfd_min,
+  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit,sqr_radius,
    hfd_median,backgr: double;
   messg : string;
   img_temp3,img_sa :image_array;
@@ -10328,9 +10328,7 @@ const
   Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
   magn_limit:=10*strtoint(copy(name_database,2,2)); {g18 => 180}
 
-  hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
-
-  image1.Canvas.Pen.Mode := pmMerge;
+   image1.Canvas.Pen.Mode := pmMerge;
   image1.Canvas.Pen.width :=1; // round(1+head.height/image1.height);{thickness lines}
   image1.Canvas.brush.Style:=bsClear;
   image1.Canvas.font.color:=clyellow;
@@ -13137,17 +13135,17 @@ begin
   for k:=1 to 2 do {repeat for maximum accuracy}
   begin
 
-    value:=-99999;
-    {find highest pixel}
-    for i:=round(xc)-box to round(xc)+box do
-    for j:=round(yc)-box to round(yc)+box do
-    begin
-        val:=img[0,i,j];
-        if val>value then
-        begin
-          value:=val;
-        end;
-    end;
+//    value:=-99999;
+//    {find highest pixel}
+//    for i:=round(xc)-box to round(xc)+box do
+//    for j:=round(yc)-box to round(yc)+box do
+//    begin
+//        val:=img[0,i,j];
+//        if val>value then
+//        begin
+//          value:=val;
+//        end;
+//    end;
 
     {find center of gravity}
     SumVal:=0;
@@ -13157,7 +13155,7 @@ begin
     for i:=-box to +box do
     for j:=-box to +box do
     begin
-      val:=value_subpixel(xc+i,yc+j) - value/2;{use only the brightets parts above half max}
+      val:=value_subpixel(xc+i,yc+j) - value/2;{use only the brightest parts above half max}
       if val>0 then val:=sqr(val);{sqr highest pixels}
       SumVal:=SumVal+val;
       SumValX:=SumValX+val*(i);

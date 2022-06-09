@@ -843,11 +843,11 @@ begin
           //  img_loaded[0,round(x1+i),round(y1+j)]:=50000;
         end;
       end;
-      //if distance>themax then
-      //begin
-      //  themax:=distance;
-      //  orientationMax:=angle;
-      //end;
+      if distance>themax then
+      begin
+        themax:=distance;
+//        orientationMax:=angle;
+      end;
       if distance<themin then
       begin
         themin:=distance;

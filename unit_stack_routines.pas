@@ -918,6 +918,7 @@ begin
 
     counter:=0;
     sum_exp:=0;
+    sum_temp:=0;
     jd_sum:=0;{sum of Julian midpoints}
     jd_stop:=0;{end observations in Julian day}
 
@@ -1068,6 +1069,7 @@ begin
           begin
             inc(counter);
             sum_exp:=sum_exp+head.exposure;
+            sum_temp:=sum_temp+head.set_temperature;
 
             weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
 
@@ -1160,6 +1162,7 @@ begin
     Equalise_background:=Equalise_background1.checked;
     counter:=0;
     sum_exp:=0;
+    sum_temp:=0;
     jd_sum:=0;{sum of Julian midpoints}
     jd_stop:=0;{end observations in Julian day}
     init:=false;
@@ -1241,6 +1244,7 @@ begin
           begin
             inc(counter);
             sum_exp:=sum_exp+head.exposure;
+            sum_temp:=sum_temp+head.set_temperature;
 
             date_to_jd(head.date_obs,head.exposure);{convert head.date_obs string and head.exposure time to global variables jd_start (julian day start head.exposure) and jd_mid (julian day middle of the head.exposure)}
             if jd_start>jd_stop then jd_stop:=jd_start;{find latest start time}
@@ -1416,6 +1420,7 @@ begin
 
     counter:=0;
     sum_exp:=0;
+    sum_temp:=0;
     jd_sum:=0;{sum of Julian midpoints}
     jd_stop:=0;{end observations in Julian day}
 
@@ -1423,8 +1428,6 @@ begin
     background_correction:=0;{required for astrometric alignment}
     {light average}
     begin
-      counter:=0;
-      sum_exp:=0;
       setlength(solutions,length(files_to_process));
       init:=false;
       for c:=0 to length(files_to_process)-1 do
@@ -1577,6 +1580,7 @@ begin
         begin
           inc(counter);
           sum_exp:=sum_exp+head.exposure;
+          sum_temp:=sum_temp+head.set_temperature;
 
           weightF:=calc_weightF;{calculate weighting factor for different exposure duration and gain}
 

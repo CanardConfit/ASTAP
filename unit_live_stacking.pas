@@ -151,6 +151,7 @@ var
       counter:=0;
       bad_counter:=0;
       sum_exp:=0;
+      sum_temp:=0;
       jd_sum:=0;{sum of Julian midpoints}
       jd_stop:=0;{end observations in Julian day}
 
@@ -332,6 +333,8 @@ begin
               inc(counter);
               inc(total_counter);
               sum_exp:=sum_exp+head.exposure;
+              sum_temp:=sum_temp+head.set_temperature;
+
               date_to_jd(head.date_obs,head.exposure);{convert date-obs to jd}
               if jd_mid>jd_stop then jd_stop:=jd_mid;
               jd_sum:=jd_sum+jd_mid;{sum julian days of images at midpoint head.exposure.}

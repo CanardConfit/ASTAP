@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 16566
+    Left = 16652
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -603,7 +603,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 470
-      ClientWidth = 1713
+      ClientWidth = 1805
       ImageIndex = 1
       ParentFont = False
       object replace_by_master_dark1: TButton
@@ -637,7 +637,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1713
+        Width = 1805
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -1250,7 +1250,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 470
-      ClientWidth = 1713
+      ClientWidth = 1805
       ImageIndex = 5
       ParentFont = False
       object stack_method1: TComboBox
@@ -1284,14 +1284,14 @@ object stackmenu1: Tstackmenu1
         Width = 68
         DropDownCount = 20
         ItemHeight = 15
-        ItemIndex = 0
+        ItemIndex = 2
         Items.Strings = (
+          '1.6'
+          '1.8'
           '2.0'
           '2.2'
           '2.5'
           '3.0'
-          '3.5'
-          '4.0'
         )
         ParentFont = False
         TabOrder = 1
