@@ -528,7 +528,7 @@ var
   solution, go_ahead,fitsfile ,autoFOV,autoMaxstars     : boolean;
   Save_Cursor                                           : TCursor;
   startTick  : qword;{for timing/speed purposes}
-  distancestr,oversize_mess,mess,info_message,popup_warningV17,popup_warningSample,suggest_str,memo1_backup, solved_in,
+  distancestr,oversize_mess,mess,info_message,popup_warningV17,popup_warningSample,suggest_str, solved_in,
   offset_found,ra_offset,dec_offset,mount_info,mount_offset,warning_downsample, light_date_obs                         : string;
 const
    popupnotifier_visible : boolean=false;
@@ -546,29 +546,10 @@ begin
   begin
     {preserve header and some important variable}
     memo2_message('Calibrating image prior to solving.');
-    memo1_backup:=mainwindow.Memo1.Text;{save header text prior to apply dark, flats}
-//    datamax_light:=head.datamax_org;
-//    light_naxis3:=head.naxis3; {preserve so it is not overriden by load dark_flat which will reset variable in load_fits}
-//    light_width:=head.width;
-//    light_height:=head.height;
-//    light_date_obs:=head.date_obs;
-
-//    fitsfile:=fits_file;
-
     analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
     analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{analyse flat tab, by loading=false the loaded img will not be effected}
 
-    {restore some important variable}
-
-//    head.datamax_org:=datamax_light;{restore. will be overwitten by previouse reads}
-//    head.naxis3:=light_naxis3;{return old value}
-//    head.width:=light_width;{restore old value}
-//    head.height:=light_height;{restore old value}
-//    head.date_obs:=light_date_obs;{restore old value}
-//    fits_file:=fitsfile;
-
     apply_dark_and_flat(img);{apply dark, flat if required, renew if different head.exposure or ccd temp. This will clear the header in load_fits}
-    mainwindow.Memo1.Text:=memo1_backup;{restore header}
     update_text ('CALSTAT =',#39+head.calstat+#39); {calibration status}
     get_hist:=true; {update required}
   end

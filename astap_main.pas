@@ -613,7 +613,7 @@ var
   stretch_c : array[0..32768] of single;{stretch curve}
   stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
   star_level,star_bg,sd_bg, magn_limit  : double;
-  object_name,
+  object_name,old_calstat,
   imagetype ,sitelat, sitelong,siteelev , centalt,centaz: string;
   focus_temp,cblack,cwhite,sqmfloat,pressure   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
@@ -2029,6 +2029,7 @@ begin
   if ((last_extension=false) or (extend_type>0)) then
      mainwindow.tabsheet1.caption:='Header '+inttostr(get_ext);
 
+  if light then old_calstat:=head.calstat; //keep this for procedure savefits_update_header
   close_fits_file;
 end;
 
@@ -3253,7 +3254,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.06.09, '+about_message4+
+  'ASTAP version 2022.06.14, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -6998,6 +6999,8 @@ begin
     TheFile_new:=tfilestream.Create(filename_tmp, fmcreate );
     TheFile:=tfilestream.Create(filen2, fmOpenRead or fmShareDenyWrite);
     Reader := TReader.Create (TheFile,$4000);{number of hnsky records}
+
+    if head.calstat<>'' then update_text('CALSTAT =',#39+old_calstat+#39); {calibration status has not change because the image is original}
     {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
     I:=0;
     reader_position:=0;
@@ -15161,6 +15164,8 @@ begin
     update_integer('BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
     {update existing header}
   end;
+
+//  update_text ('CALSTAT =',#39+head.calstat+#39); {calibration status}
 
   {write memo1 header to file}
   for i:=0 to 79 do empthy_line[i]:=#32;{space}
