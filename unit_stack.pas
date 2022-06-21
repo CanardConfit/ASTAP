@@ -1327,7 +1327,12 @@ begin
           if strtofloat(ListView1.Items.item[c].subitems.Strings[L_hfd])>90 {hfd} then ListView1.Items.item[c].checked:=false {no quality, can't process this image}
           else
           begin {normal HFD value}
-            quality:=strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]);
+            {$ifdef darwin} {MacOS}
+               quality:=strtoint(stringreplace(stackmenu1.ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[]));
+            {$else}
+               quality:=strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]);
+            {$endif}
+
             quality_mean:=quality_mean+quality;
             inc(nr_good_images);
 
@@ -1349,7 +1354,12 @@ begin
         repeat {check all files, remove darks, bias}
           if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[L_result]))then
           begin {checked}
-            quality_sd:=quality_sd+sqr(quality_mean - strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]) );
+            {$ifdef darwin} {MacOS}
+            quality:=strtoint(stringreplace(ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[]));
+            {$else}
+            quality:=strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]);
+           {$endif}
+            quality_sd:=quality_sd+sqr(quality_mean -quality);
           end;
           inc(c); {go to next file}
         until c>counts;
@@ -1369,7 +1379,12 @@ begin
           if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[L_result])) then
           begin {checked}
             ListView1.Items.item[c].subitems.Strings[L_result]:='';{remove key, job done}
-            if (quality_mean- strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]))>sd_factor*quality_sd  then
+            {$ifdef darwin} {MacOS}
+            quality:=strtoint(stringreplace(ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[]));
+            {$else}
+            quality:=strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]);
+           {$endif}
+            if (quality_mean- quality)>sd_factor*quality_sd  then
             begin {remove low quality outliers}
               ListView1.Items.item[c].checked:=false;
               ListView1.Items.item[c].SubitemImages[L_quality]:=icon_thumb_down; {mark as outlier using imageindex}
@@ -8971,7 +8986,12 @@ begin
       if first=-1 then begin first:=i; largest_width:=width1  end;
 
       quality_str:=stackmenu1.ListView1.Items.item[i].subitems.Strings[L_quality];{number of stars detected}
-      if length(quality_str)>1 then quality:=strtofloat2(quality_str) else quality:=0;{quality equals nr stars /hfd}
+      {$ifdef darwin} {MacOS}
+      quality_str:=:=stringreplace(ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[]);
+      {$else}
+      {$endif}
+
+      if length(quality_str)>1 then quality:=strtoint(quality_str) else quality:=0;{quality equals nr stars /hfd}
 
       if width1>largest_width then {larger image found, give this one preference}
       begin

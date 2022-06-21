@@ -5,7 +5,7 @@ For the Mac use the astap_mac.lpi project file.
 For Linux use the astap_linux.lpi project file.
 For the command-line version use /command-line_version/astap_command_line.lpi
 
-{Copyright (C) 2017-2021 by Han Kleijn, www.hnsky.org
+{Copyright (C) 2017 by Han Kleijn, www.hnsky.org
  email: han.k.. at...hnsky.org
 
 {This program is free software: you can redistribute it and/or modify
