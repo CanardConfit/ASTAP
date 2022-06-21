@@ -8976,18 +8976,12 @@ begin
     begin
       stackmenu1.ListView1.Items.item[i].SubitemImages[L_quality]:=-1;{remove any older icon_king}
 
-      {$ifdef darwin} {MacOS}
-      {bugfix darwin icons}
-       stackmenu1.ListView1.Items.item[i].Subitems.strings[L_quality]:=stringreplace(stackmenu1.ListView1.Items.item[i].Subitems.strings[L_quality],'♛','',[]);
-      {$endif}
-
-
       width1:=strtoint(stackmenu1.ListView1.Items.item[i].subitems.Strings[L_width]);
       if first=-1 then begin first:=i; largest_width:=width1  end;
 
       quality_str:=stackmenu1.ListView1.Items.item[i].subitems.Strings[L_quality];{number of stars detected}
       {$ifdef darwin} {MacOS}
-      quality_str:=:=stringreplace(ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[]);
+      quality_str:=stringreplace(quality_str,'♛','',[]);
       {$else}
       {$endif}
 
