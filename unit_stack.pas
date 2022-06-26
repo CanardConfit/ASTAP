@@ -1328,7 +1328,7 @@ begin
           else
           begin {normal HFD value}
             {$ifdef darwin} {MacOS}
-               quality:=strtoint(stringreplace(stackmenu1.ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[]));
+               quality:=strtoint(stringreplace(stackmenu1.ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[rfReplaceAll]));//remove all crowns
             {$else}
                quality:=strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]);
             {$endif}
@@ -1355,7 +1355,7 @@ begin
           if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[L_result]))then
           begin {checked}
             {$ifdef darwin} {MacOS}
-            quality:=strtoint(stringreplace(ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[]));
+            quality:=strtoint(stringreplace(ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[rfReplaceAll]));//add crown
             {$else}
             quality:=strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]);
            {$endif}
@@ -1380,7 +1380,7 @@ begin
           begin {checked}
             ListView1.Items.item[c].subitems.Strings[L_result]:='';{remove key, job done}
             {$ifdef darwin} {MacOS}
-            quality:=strtoint(stringreplace(ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[]));
+            quality:=strtoint(stringreplace(ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[rfReplaceAll]));//remove all crowns
             {$else}
             quality:=strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]);
            {$endif}
@@ -8981,7 +8981,7 @@ begin
 
       quality_str:=stackmenu1.ListView1.Items.item[i].subitems.Strings[L_quality];{number of stars detected}
       {$ifdef darwin} {MacOS}
-      quality_str:=stringreplace(quality_str,'♛','',[]);
+      quality_str:=stringreplace(quality_str,'♛','',[rfReplaceAll]);//remove all crowns
       {$else}
       {$endif}
 
@@ -9016,7 +9016,7 @@ begin
     stackmenu1.ListView1.Items.item[best_index].SubitemImages[L_quality]:=icon_king; {mark as best quality image}
    {$ifdef darwin} {MacOS}
     {bugfix darwin icons}
-    stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality]:='♛'+ stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality];
+    stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality]:='♛'+ stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality];//crown
    {$endif}
 
 
