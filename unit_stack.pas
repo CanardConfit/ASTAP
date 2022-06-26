@@ -908,11 +908,11 @@ procedure date_to_jd(date_time:string;exp :double);{convert date_obs string and 
 function JdToDate(jd:double):string;{Returns Date from Julian Date}
 procedure resize_img_loaded(ratio :double); {resize img_loaded in free ratio}
 function median_background(var img :image_array;color,sizeX,sizeY,x,y:integer): double;{find median value of an area at position x,y with sizeX,sizeY}
-procedure analyse_image(img : image_array;snr_min:double;report:boolean;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
+procedure analyse_image(img : image_array;head: Theader; snr_min:double;report:boolean;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
+
 procedure sample(sx,sy : integer);{sampe local colour and fill shape with colour}
 procedure apply_most_common(sourc,dest: image_array; radius: integer);  {apply most common filter on first array and place result in second array}
 
-//function  restore_solution(clear :boolean): boolean;{restore solution}
 procedure report_results(object_to_process,stack_info :string;object_counter,colorinfo:integer);{report on tab results}
 procedure apply_factors;{apply r,g,b factors to image}
 procedure listviews_begin_update; {speed up making stackmenu visible having a many items}
@@ -1407,7 +1407,7 @@ begin
 end;
 
 
-procedure analyse_image(img : image_array;snr_min:double;report:boolean;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
+procedure analyse_image(img : image_array;head: Theader; snr_min:double;report:boolean;out star_counter : integer; out backgr, hfd_median : double); {find background, number of stars, median HFD}
 var
    width5,height5,fitsX,fitsY,size,radius,i,j,retries,max_stars,n,m,xci,yci,sqr_radius         : integer;
    hfd1,star_fwhm,snr,flux,xc,yc,detection_level,hfd_min, min_background                       : double;
@@ -1431,7 +1431,7 @@ begin
 
   hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
-  if nrbits=8 then min_background:=0 else min_background:=8;
+  if ((nrbits=8) or (head.datamax_org<=255)) then min_background:=0 else min_background:=8;
   if ((backgr<60000) and (backgr>min_background) ) then {not an abnormal file}
   begin
     repeat {try three time to find enough stars}
@@ -1876,7 +1876,7 @@ begin
           else
           begin {light frame}
             if ((planetary=false) and (full=true))  then
-              analyse_image(img,10 {snr_min},false,hfd_counter,backgr, hfd_median) {find background, number of stars, median HFD}
+              analyse_image(img,head_2,10 {snr_min},false,hfd_counter,backgr, hfd_median) {find background, number of stars, median HFD}
             else
               begin hfd_counter:=0; backgr:=0;star_level:=0; backgr:=0; hfd_median:=-1; end;
 
@@ -3409,7 +3409,7 @@ begin
               if full {amode=3} then {listview7 photometry plus mode}
               begin
 
-                analyse_image(img,10 {snr_min},false,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
+                analyse_image(img,head_2,10 {snr_min},false,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
                 lv.Items.item[c].subitems.Strings[P_background]:=inttostr5(round(backgr));
                 lv.Items.item[c].subitems.Strings[P_hfd]:=floattostrF(hfd_median,ffFixed,0,1);
                 lv.Items.item[c].subitems.Strings[P_stars]:=inttostr5(hfd_counter); {number of stars}
@@ -6558,7 +6558,7 @@ begin
         begin
           if apert<>0 then {aperture<>auto}
           begin
-            analyse_image(img_loaded,30,false {report}, hfd_counter,backgr,hfd_med); {find background, number of stars, median HFD}
+            analyse_image(img_loaded,head,30,false {report}, hfd_counter,backgr,hfd_med); {find background, number of stars, median HFD}
             if hfd_med<>0 then
             begin
               flux_aperture:=hfd_med*apert/2;{radius}

@@ -1107,6 +1107,7 @@ begin
       begin
         head_ref.naxis3:= head.naxis3; {store colour info in reference header}
         head_ref.naxis:=  head.naxis;  {store colour info in reference header}
+        head_ref.datamax_org:= head.datamax_org;  {for 8 bit files, they are now 500 minimum}
         head:=head_ref;{restore solution variable of reference image for annotation and mount pointer. Works only if not resized}
         head.height:=height_max;
         head.width:=width_max;
@@ -1852,6 +1853,7 @@ begin
       begin
         head_ref.naxis3:= head.naxis3; {store colour info in reference header. could be modified by OSC conversion}
         head_ref.naxis:=  head.naxis;  {store colour info in reference header}
+        head_ref.datamax_org:= head.datamax_org;  {for 8 bit files, they are now 500 minimum}
         head:=head_ref;{restore solution variable of reference image for annotation and mount pointer. Works only if not oversized}
         head.height:=height_max;
         head.width:=width_max;

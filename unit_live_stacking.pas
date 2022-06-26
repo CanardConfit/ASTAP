@@ -98,7 +98,7 @@ begin
     result:= load_fits(filen,true {light},true,true {update memo},0,head,img_loaded)
   else
   if check_raw_file_extension(ext1) then {check if extension is from raw file}
-    result:=convert_raw(true{load},false{save},filen,img_loaded)
+    result:=convert_raw(true{load},false{save},filen,head,img_loaded)
   else
     result:=load_tiffpngJPEG(filen,true {light},head,img_loaded);
 end;

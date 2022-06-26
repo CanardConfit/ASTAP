@@ -25,13 +25,13 @@ uses
   unit_dss, {only to reset some variables}
   unit_annotation {only to reset some variables};
 
-function load_xisf(filen:string;var head : theader ; var img_loaded2: image_array) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
+function load_xisf(filen:string;out head : theader ; out img_loaded2: image_array) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
 
 
 implementation
 
 
-function load_xisf(filen:string;var head : theader; var img_loaded2: image_array) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
+function load_xisf(filen:string;out head : theader; out img_loaded2: image_array) : boolean;{load uncompressed xisf file, add basic FITS header and retrieve included FITS keywords if available}
 var
   TheFile  : tfilestream;
   i,j,k, reader_position,a,b,c,d,e : integer;

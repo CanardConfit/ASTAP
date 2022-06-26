@@ -757,7 +757,7 @@ procedure new_to_old_WCS;{convert new style FITsS to old style}
 procedure old_to_new_WCS;{ convert old WCS to new}
 procedure show_marker_shape(shape: TShape; shape_type,w,h,minimum:integer; fitsX,fitsY: double);{show manual alignment shape}
 function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
-function convert_raw(loadfile,savefile :boolean;var filename3: string; var img: image_array): boolean; {convert raw to fits file using DCRAW or LibRaw}
+function convert_raw(loadfile,savefile :boolean;var filename3: string;out head: Theader; out img: image_array ): boolean; {convert raw to fits file using DCRAW or LibRaw. filename3 will be update with the new file extension e.g. .CR2.fits}
 
 function unpack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
 function pack_cfitsio(filename3: string): boolean; {convert .fz to .fits using funpack}
@@ -2248,7 +2248,7 @@ begin
 end;
 
 
-function load_PPM_PGM_PFM(filen:string; var load :theader; var img_loaded2: image_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
+function load_PPM_PGM_PFM(filen:string; out head :theader; out img_loaded2: image_array) : boolean;{load PPM (color),PGM (gray scale)file or PFM color}
 var
   TheFile  : tfilestream;
   i,j, reader_position  : integer;
@@ -3254,7 +3254,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.06.21, '+about_message4+
+  'ASTAP version 2022.06.26, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -7192,379 +7192,6 @@ begin
      result:=result+char(ord(inp[i])-i+11+1);
 end;
 
-function loadsettingsold(lpath: string)  : boolean; {old !!!!!!!!!!!!!!!!}
-var
-  dum : string;
-  c                : integer;
-  initstring :tstrings; {settings for save and loading}
-
-    procedure get_int(var i: integer;s1 : string);
-    var
-      r, err : integer;
-    begin
-      val(initstring.Values[s1],r,err);
-      if err=0 then i:=r;
-    end;
-
-    function get_int2(const i: integer;s1 : string): integer;
-    var
-      r, err : integer;
-    begin
-      val(initstring.Values[s1],r,err);
-      if err=0 then
-        result:=r
-      else
-        result:=i;
-    end;
-
-   function get_boolean(s1:string;the_default:boolean): boolean;
-   var
-     err, r:integer;
-   begin
-     val(initstring.Values[s1],r,err);
-     if err<>0 then result:=the_default {if no data, result is the_default}
-     else
-     begin
-       if r<=0 then result:=false
-       else result:=true;
-     end;
-   end;
-
-   procedure get_str(var inp : string; s1 : string);
-   var
-     s2     : string;
-   begin
-     s2:=initstring.Values[s1];
-     if s2<>'' then inp:=s2;
-   end;
-
-begin
-
-  {old routine}	  result:=false;{assume failure}
-  {old routine}	  initstring := Tstringlist.Create;
-  {old routine}	  with initstring do
-  {old routine}	  begin
-  {old routine}	    try
-  {old routine}	     loadfromFile(lpath); { load from file}
-  {old routine}	    except
-  {old routine}	      initstring.Free;
-  {old routine}	      exit; {no cfg file}
-  {old routine}	    end;
-  {old routine}	  end;
-  {old routine}
-  {old routine}	 // t1:=GetTickCount;
-  {old routine}
-  {old routine}	  result:=true;
-  {old routine}	  with mainwindow do
-  {old routine}	  begin
-  {old routine}	    mainwindow.left:=get_int2(mainwindow.left,'window_left');
-  {old routine}	    mainwindow.top:=get_int2(mainwindow.top,'window_top'); ;
-  {old routine}	    mainwindow.height:=get_int2(mainwindow.height,'window_height');
-  {old routine}	    mainwindow.width:=get_int2(mainwindow.width,'window_width');;
-  {old routine}
-  {old routine}
-  {old routine}	    stackmenu1.left:=get_int2(stackmenu1.left,'stackmenu_left');
-  {old routine}	    stackmenu1.top:=get_int2(stackmenu1.top,'stackmenu_top');
-  {old routine}	    stackmenu1.height:=get_int2(stackmenu1.height,'stackmenu_height');
-  {old routine}	    stackmenu1.width:=get_int2(stackmenu1.width,'stackmenu_width');
-  {old routine}
-  {old routine}	    get_int(font_color,'font_color');
-  {old routine}	    get_int(font_size,'font_size');
-  {old routine}	    dum:=initstring.Values['font_name2'];if dum<>'' then font_name:= dum;
-  {old routine}	    dum:=initstring.Values['font_style'];if dum<>'' then font_style:= strtostyle(dum);
-  {old routine}	    get_int(font_charset,'font_charset');
-  {old routine}	    get_int(pedestal,'pedestal');
-  {old routine}
-  {old routine}
-  {old routine}	    stackmenu1.mosaic_width1.position:=get_int2(stackmenu1.mosaic_width1.position,'mosaic_width');
-  {old routine}	    stackmenu1.mosaic_crop1.position:=get_int2(stackmenu1.mosaic_crop1.position,'mosaic_crop');
-  {old routine}
-  {old routine}	    minimum1.position:=get_int2(minimum1.position,'minimum_position');
-  {old routine}	    maximum1.position:=get_int2(maximum1.position,'maximum_position');
-  {old routine}	    range1.itemindex:=get_int2(range1.itemindex,'range');
-  {old routine}
-  {old routine}	    saturation_factor_plot1.position:=get_int2(saturation_factor_plot1.position,'saturation_factor');
-  {old routine}
-  {old routine}	    stackmenu1.stack_method1.itemindex:=get_int2(stackmenu1.stack_method1.itemindex,'stack_method');
-  {old routine}	    stackmenu1.flat_combine_method1.itemindex:=get_int2(stackmenu1.flat_combine_method1.itemindex,'flat_combine_method');
-  {old routine}	    stackmenu1.pagecontrol1.tabindex:=get_int2(stackmenu1.pagecontrol1.tabindex,'stack_tab');
-  {old routine}
-  {old routine}	    stackmenu1.demosaic_method1.itemindex:=get_int2(stackmenu1.demosaic_method1.itemindex,'demosaic_method2');
-  {old routine}	    stackmenu1.raw_conversion_program1.itemindex:=get_int2(stackmenu1.raw_conversion_program1.itemindex,'conv_program');
-  {old routine}
-  {old routine}	    Polynomial1.itemindex:=get_int2(Polynomial1.itemindex,'polynomial');
-  {old routine}
-  {old routine}	    get_int(thumbnails1_width,'thumbnails_width');
-  {old routine}	    get_int(thumbnails1_height,'thumbnails_height');
-  {old routine}
-  {old routine}	    inversemousewheel1.checked:=get_boolean('inversemousewheel',false);
-  {old routine}	    flip_horizontal1.checked:=get_boolean('fliphorizontal',false);
-  {old routine}	    flip_vertical1.checked:=get_boolean('flipvertical',false);
-  {old routine}
-  {old routine}	    annotations_visible1.checked:=get_boolean('annotations',false);
-  {old routine}	    northeast1.checked:=get_boolean('north_east',false);
-  {old routine}	    mountposition1.checked:=get_boolean('mount_position',false);
-  {old routine}	    grid1.checked:=get_boolean('grid',false);
-  {old routine}	    positionanddate1.checked:=get_boolean('pos_date',false);
-  {old routine}	    freetext1.checked:=get_boolean('freetxt',false);
-  {old routine}	    freetext:=initstring.Values['f_text'];
-  {old routine}
-  {old routine}	    add_marker_position1.checked:=get_boolean('add_marker',false);{popup marker selected?}
-  {old routine}
-  {old routine}	    stackmenu1.make_osc_color1.checked:=get_boolean('osc_color_convert',false);
-  {old routine}	    stackmenu1.osc_auto_level1.checked:=get_boolean('osc_al',true);
-  {old routine}	    stackmenu1.osc_colour_smooth1.checked:=get_boolean('osc_cs',true);
-  {old routine}	    stackmenu1.osc_preserve_r_nebula1.checked:=get_boolean('osc_pr',true);
-  {old routine}	    dum:=initstring.Values['osc_cw'];if dum<>'' then stackmenu1.osc_smart_smooth_width1.text:= dum;
-  {old routine}	    dum:=initstring.Values['osc_sd'];if dum<>'' then stackmenu1.osc_smart_colour_sd1.text:= dum;
-  {old routine}
-  {old routine}
-  {old routine}	    stackmenu1.lrgb_auto_level1.checked:=get_boolean('lrgb_al',true);
-  {old routine}	    stackmenu1.green_purple_filter1.checked:=get_boolean('green_fl',false);
-  {old routine}	    stackmenu1.lrgb_colour_smooth1.checked:=get_boolean('lrgb_cs',true);
-  {old routine}	    stackmenu1.lrgb_preserve_r_nebula1.checked:=get_boolean('lrgb_pr',true);
-  {old routine}	    dum:=initstring.Values['lrgb_sw'];if dum<>'' then stackmenu1.lrgb_smart_smooth_width1.text:= dum;
-  {old routine}	    dum:=initstring.Values['lrgb_sd'];if dum<>'' then stackmenu1.lrgb_smart_colour_sd1.text:= dum;
-  {old routine}
-  {old routine}
-  {old routine}	    stackmenu1.ignore_header_solution1.Checked:= get_boolean('ignore_header_solution',true);
-  {old routine}	    stackmenu1.Equalise_background1.checked:= get_boolean('equalise_background',true);{for mosaic mode}
-  {old routine}	    stackmenu1.merge_overlap1.checked:= get_boolean('merge_overlap',true);{for mosaic mode}
-  {old routine}
-  {old routine}
-  {old routine}	    mainwindow.preview_demosaic1.Checked:=get_boolean('preview_demosaic',false);
-  {old routine}
-  {old routine}	    stackmenu1.classify_object1.checked:= get_boolean('classify_object',false);
-  {old routine}	    stackmenu1.classify_filter1.checked:= get_boolean('classify_filter',false);
-  {old routine}
-  {old routine}	    stackmenu1.classify_dark_temperature1.checked:= get_boolean('classify_dark_temperature',false);
-  {old routine}	    stackmenu1.classify_dark_exposure1.checked:= get_boolean('classify_dark_exposure',false);
-  {old routine}	    stackmenu1.classify_flat_filter1.checked:= get_boolean('classify_flat_filter',false);
-  {old routine}	    stackmenu1.classify_dark_date1.checked:= get_boolean('classify_dark_date',false);
-  {old routine}	    stackmenu1.classify_flat_date1.checked:= get_boolean('classify_flat_date',false);
-  {old routine}	    stackmenu1.add_time1.checked:= get_boolean('add_time',false); {add time to resulting stack file name}
-  {old routine}
-  {old routine}	    stackmenu1.uncheck_outliers1.checked:= get_boolean('uncheck_outliers',false);
-  {old routine}
-  {old routine}	    marker_position :=initstring.Values['marker_position'];{ra, dec marker}
-  {old routine}	    mainwindow.shape_marker3.hint:=marker_position;
-  {old routine}
-  {old routine}	    ra1.text:= initstring.Values['ra'];
-  {old routine}	    dec1.text:= initstring.Values['dec'];
-  {old routine}
-  {old routine}	    stretch1.text:= initstring.Values['gamma'];
-  {old routine}
-  {old routine}	    stackmenu1.blur_factor1.text:= initstring.Values['blur_factor'];
-  {old routine}
-  {old routine}	    stackmenu1.use_manual_alignment1.checked:=initstring.Values['align_method']='4';
-  {old routine}	    stackmenu1.use_astrometry_internal1.checked:=initstring.Values['align_method']='3';
-  {old routine}	    stackmenu1.use_star_alignment1.checked:=initstring.Values['align_method']='2';
-  {old routine}	    stackmenu1.use_ephemeris_alignment1.checked:=initstring.Values['align_method']='1';
-  {old routine}
-  {old routine}	    stackmenu1.write_log1.Checked:=get_boolean('write_log',true);{write to log file}
-  {old routine}	    stackmenu1.align_blink1.Checked:=get_boolean('align_blink',true);{blink}
-  {old routine}	    stackmenu1.timestamp1.Checked:=get_boolean('time_stamp',true);{blink}
-  {old routine}
-  {old routine}	    stackmenu1.force_oversize1.Checked:=get_boolean('force_slow',false);
-  {old routine}	    stackmenu1.calibrate_prior_solving1.Checked:=get_boolean('calibrate_prior_solving',false);
-  {old routine}
-  {old routine}	    dum:=initstring.Values['star_database']; if dum<>'' then stackmenu1.star_database1.text:=dum;
-  {old routine}	    dum:=initstring.Values['solve_search_field']; if dum<>'' then stackmenu1.search_fov1.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['radius_search']; if dum<>'' then stackmenu1.radius_search1.text:=dum;
-  {old routine}	    dum:=initstring.Values['quad_tolerance']; if dum<>'' then stackmenu1.quad_tolerance1.text:=dum;
-  {old routine}	    dum:=initstring.Values['maximum_stars']; if dum<>'' then stackmenu1.max_stars1.text:=dum;
-  {old routine}	    dum:=initstring.Values['min_star_size']; if dum<>'' then stackmenu1.min_star_size1.text:=dum;
-  {old routine}	    dum:=initstring.Values['min_star_size_stacking']; if dum<>'' then stackmenu1.min_star_size_stacking1.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['manual_centering']; if dum<>'' then stackmenu1.manual_centering1.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['downsample']; if dum<>'' then stackmenu1.downsample_for_solving1.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['oversize'];if dum<>'' then stackmenu1.oversize1.text:=dum;
-  {old routine}	    dum:=initstring.Values['sd_factor']; if dum<>'' then stackmenu1.sd_factor1.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['most_common_filter_radius']; if dum<>'' then stackmenu1.most_common_filter_radius1.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['extract_background_box_size']; if dum<>'' then stackmenu1.extract_background_box_size1.text:=dum;
-  {old routine}	    dum:=initstring.Values['dark_areas_box_size']; if dum<>'' then stackmenu1.dark_areas_box_size1.text:=dum;
-  {old routine}	    dum:=initstring.Values['ring_equalise_factor']; if dum<>'' then stackmenu1.ring_equalise_factor1.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['gradient_filter_factor']; if dum<>'' then stackmenu1.gradient_filter_factor1.text:=dum;
-  {old routine}
-  {old routine}	    if paramcount=0 then filename2:=initstring.Values['last_file'];{if used as viewer don't override paramstr1}
-  {old routine}
-  {old routine}	    dum:=initstring.Values['bayer_pat']; if dum<>'' then stackmenu1.bayer_pattern1.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['red_filter1']; if dum<>'' then stackmenu1.red_filter1.text:=dum;
-  {old routine}	    dum:=initstring.Values['red_filter2']; if dum<>'' then stackmenu1.red_filter2.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['green_filter1']; if dum<>'' then stackmenu1.green_filter1.text:=dum;
-  {old routine}	    dum:=initstring.Values['green_filter2']; if dum<>'' then stackmenu1.green_filter2.text:=dum;
-  {old routine}	    dum:=initstring.Values['blue_filter1']; if dum<>'' then stackmenu1.blue_filter1.text:=dum;
-  {old routine}	    dum:=initstring.Values['blue_filter2']; if dum<>'' then stackmenu1.blue_filter2.text:=dum;
-  {old routine}	    dum:=initstring.Values['luminance_filter1']; if dum<>'' then stackmenu1.luminance_filter1.text:=dum;
-  {old routine}	    dum:=initstring.Values['luminance_filter2']; if dum<>'' then stackmenu1.luminance_filter2.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['rr_factor']; if dum<>'' then stackmenu1.rr1.text:=dum;
-  {old routine}	    dum:=initstring.Values['rg_factor']; if dum<>'' then stackmenu1.rg1.text:=dum;
-  {old routine}	    dum:=initstring.Values['rb_factor']; if dum<>'' then stackmenu1.rb1.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['gr_factor']; if dum<>'' then stackmenu1.gr1.text:=dum;
-  {old routine}	    dum:=initstring.Values['gg_factor']; if dum<>'' then stackmenu1.gg1.text:=dum;
-  {old routine}	    dum:=initstring.Values['gb_factor']; if dum<>'' then stackmenu1.gb1.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['br_factor']; if dum<>'' then stackmenu1.br1.text:=dum;
-  {old routine}	    dum:=initstring.Values['bg_factor']; if dum<>'' then stackmenu1.bg1.text:=dum;
-  {old routine}	    dum:=initstring.Values['bb_factor']; if dum<>'' then stackmenu1.bb1.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['red_filter_add']; if dum<>'' then stackmenu1.red_filter_add1.text:=dum;
-  {old routine}	    dum:=initstring.Values['green_filter_add']; if dum<>'' then stackmenu1.green_filter_add1.text:=dum;
-  {old routine}	    dum:=initstring.Values['blue_filter_add']; if dum<>'' then stackmenu1.blue_filter_add1.text:=dum;
-  {old routine}
-  {old routine}
-  {old routine}	   {Six colour correction factors}
-  {old routine}	    dum:=initstring.Values['add_value_R']; if dum<>'' then stackmenu1.add_valueR1.text:=dum;
-  {old routine}	    dum:=initstring.Values['add_value_G']; if dum<>'' then stackmenu1.add_valueG1.text:=dum;
-  {old routine}	    dum:=initstring.Values['add_value_B']; if dum<>'' then stackmenu1.add_valueB1.text:=dum;
-  {old routine}	    dum:=initstring.Values['multiply_R']; if dum<>'' then stackmenu1.multiply_red1.text:=dum;
-  {old routine}	    dum:=initstring.Values['multiply_G']; if dum<>'' then stackmenu1.multiply_green1.text:=dum;
-  {old routine}	    dum:=initstring.Values['multiply_B']; if dum<>'' then stackmenu1.multiply_blue1.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['smart_smooth_width']; if dum<>'' then stackmenu1.smart_smooth_width1.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['star_level_colouring']; if dum<>'' then stackmenu1.star_level_colouring1.text:=dum;
-  {old routine}	    dum:=initstring.Values['filter_artificial_colouring']; if dum<>'' then stackmenu1.filter_artificial_colouring1.text:=dum;
-  {old routine}	    dum:=initstring.Values['resize_factor']; if dum<>'' then stackmenu1.resize_factor1.text:=dum;
-  {old routine}	    dum:=initstring.Values['mark_outliers_upto']; if dum<>'' then stackmenu1.mark_outliers_upto1.text:=dum;
-  {old routine}	    dum:=initstring.Values['flux_aperture']; if dum<>'' then stackmenu1.flux_aperture1.text:=dum;
-  {old routine}	    dum:=initstring.Values['annulus_radius']; if dum<>'' then stackmenu1.annulus_radius1.text:=dum;
-  {old routine}	   // stackmenu1.checkBox_annotate1.checked:= get_boolean('ph_annotate',true);
-  {old routine}
-  {old routine}
-  {old routine}	    dum:=initstring.Values['sigma_decolour']; if dum<>'' then stackmenu1.sigma_decolour1.text:=dum;
-  {old routine}	    dum:=initstring.Values['sd_factor_list']; if dum<>'' then stackmenu1.sd_factor_list1.text:=dum;
-  {old routine}
-  {old routine}	    dum:=initstring.Values['noisefilter_blur']; if dum<>'' then stackmenu1.noisefilter_blur1.text:=dum;
-  {old routine}	    dum:=initstring.Values['noisefilter_sd']; if dum<>'' then stackmenu1.noisefilter_sd1.text:=dum;
-  {old routine}
-  {old routine}	    stackmenu1.hue_fuzziness1.position:=get_int2(stackmenu1.hue_fuzziness1.position,'hue_fuzziness');
-  {old routine}	    stackmenu1.saturation_tolerance1.position:=get_int2(stackmenu1.saturation_tolerance1.position,'saturation_tolerance');
-  {old routine}	    stackmenu1.remove_luminance1.checked:= get_boolean('remove_luminance',false);
-  {old routine}
-  {old routine}	    stackmenu1.sample_size1.itemindex:=get_int2(stackmenu1.sample_size1.itemindex,'sample_size');
-  {old routine}	    stackmenu1.live_stacking_path1.caption:=initstring.Values['live_stack_dir'];
-  {old routine}
-  {old routine}	    dum:=initstring.Values['mpcorb_path'];if dum<>'' then mpcorb_path:=dum;{asteroids}
-  {old routine}	    dum:=initstring.Values['cometels_path'];if dum<>'' then cometels_path:=dum;{asteroids}
-  {old routine}
-  {old routine}	    dum:=initstring.Values['maxcount'];if dum<>'' then maxcount_asteroid:=dum;{asteroids}
-  {old routine}	    dum:=initstring.Values['maxmag'];if dum<>'' then maxmag_asteroid:=dum;{asteroids}
-  {old routine}
-  {old routine}	    font_follows_diameter:=get_boolean('font_follows',false);{asteroids}
-  {old routine}	    showfullnames:=get_boolean('showfullnames',true);{asteroids}
-  {old routine}	    showmagnitude:=get_boolean('showmagnitude',false);{asteroids}
-  {old routine}	    add_date:=get_boolean('add_date',true);{asteroids}
-  {old routine}	    lat_default:=decrypt(initstring.Values['p1']);{lat default}
-  {old routine}	    long_default:=decrypt(initstring.Values['p2']);{longitude default}
-  {old routine}
-  {old routine}	    get_int(annotation_color,'annotation_color');
-  {old routine}	    get_int(annotation_diameter,'annotation_diameter');
-  {old routine}
-  {old routine}	    add_annotations:=get_boolean('add_annotations',false);{asteroids as annotations}
-  {old routine}
-  {old routine}	    dum:=initstring.Values['astrometry_extra_options']; if dum<>'' then astrometry_extra_options:=dum;
-  {old routine}	    show_console:=get_boolean('show_console',true);
-  {old routine}	    dum:=initstring.Values['cygwin_path']; if dum<>'' then cygwin_path:=dum;
-  {old routine}
-  {old routine}	    stackmenu1.write_jpeg1.Checked:=get_boolean('write_jpeg',false);{live stacking}
-  {old routine}	    stackmenu1.interim_to_clipboard1.Checked:=get_boolean('to_clipboard',false);{live stacking}
-  {old routine}
-  {old routine}
-  {old routine}	    obscode:=initstring.Values['obscode']; {photometry}
-  {old routine}	    delim_pos:=get_int2(0,'delim_pos');
-  {old routine}
-  {old routine}	    stackmenu1.mount_write_wcs1.Checked:=get_boolean('wcs',true);{use wcs files for mount}
-  {old routine}
-  {old routine}	    c:=0;
-  {old routine}	    recent_files.clear;
-  {old routine}	    repeat {read recent files}
-  {old routine}	      dum:=initstring.Values['recent'+inttostr(c)];
-  {old routine}	      if dum<>'' then
-  {old routine}	       recent_files.add(dum);
-  {old routine}	      inc(c);
-  {old routine}	    until (dum='');
-  {old routine}	    update_recent_file_menu;
-  {old routine}
-  {old routine}
-  {old routine}
-  {old routine}	    listviews_begin_update; {stop updating listviews}
-  {old routine}
-  {old routine}	    c:=0;
-  {old routine}	    repeat {add images}
-  {old routine}	       dum:=initstring.Values['image'+inttostr(c)];
-  {old routine}	       if ((dum<>'') and (fileexists(dum))) then
-  {old routine}	         listview_add(stackmenu1.listview1,dum,get_boolean('image'+inttostr(c)+'_check',true),L_nr);
-  {old routine}	       inc(c);
-  {old routine}	    until (dum='');
-  {old routine}
-  {old routine}	    c:=0;
-  {old routine}	    repeat {add  darks}
-  {old routine}	      dum:=initstring.Values['dark'+inttostr(c)];
-  {old routine}	      if ((dum<>'') and (fileexists(dum))) then
-  {old routine}	         listview_add(stackmenu1.listview2,dum,get_boolean('dark'+inttostr(c)+'_check',true),D_nr);
-  {old routine}	      inc(c);
-  {old routine}	    until (dum='');
-  {old routine}
-  {old routine}	    c:=0;
-  {old routine}	    repeat {add  flats}
-  {old routine}	      dum:=initstring.Values['flat'+inttostr(c)];
-  {old routine}	      if ((dum<>'') and (fileexists(dum))) then
-  {old routine}	        listview_add(stackmenu1.listview3,dum,get_boolean('flat'+inttostr(c)+'_check',true),F_nr);
-  {old routine}	      inc(c);
-  {old routine}	    until (dum='');
-  {old routine}
-  {old routine}	    c:=0;
-  {old routine}	    repeat {add flat darks}
-  {old routine}	      dum:=initstring.Values['flat_dark'+inttostr(c)];
-  {old routine}	      if ((dum<>'') and (fileexists(dum))) then
-  {old routine}	        listview_add(stackmenu1.listview4,dum,get_boolean('flat_dark'+inttostr(c)+'_check',true),D_nr);
-  {old routine}	      inc(c);
-  {old routine}	    until (dum='');
-  {old routine}
-  {old routine}	    c:=0;
-  {old routine}	    repeat {add blink files}
-  {old routine}	      dum:=initstring.Values['blink'+inttostr(c)];
-  {old routine}	      if ((dum<>'') and (fileexists(dum))) then
-  {old routine}	        listview_add(stackmenu1.listview6,dum,get_boolean('blink'+inttostr(c)+'_check',true),B_nr);
-  {old routine}	      inc(c);
-  {old routine}	    until (dum='');
-  {old routine}
-  {old routine}	    c:=0;
-  {old routine}	    repeat {add photometry files}
-  {old routine}	      dum:=initstring.Values['photometry'+inttostr(c)];
-  {old routine}	      if ((dum<>'') and (fileexists(dum))) then
-  {old routine}	        listview_add(stackmenu1.listview7,dum,get_boolean('photometry'+inttostr(c)+'_check',true),P_nr);
-  {old routine}	      inc(c);
-  {old routine}	    until (dum='');
-  {old routine}
-  {old routine}	    c:=0;
-  {old routine}	    repeat {add inspector files}
-  {old routine}	      dum:=initstring.Values['inspector'+inttostr(c)];
-  {old routine}	      if ((dum<>'') and (fileexists(dum))) then
-  {old routine}	        listview_add(stackmenu1.listview8,dum,get_boolean('inspector'+inttostr(c)+'_check',true),L_nr);
-  {old routine}	      inc(c);
-  {old routine}	    until (dum='');
-  {old routine}
-  {old routine}	    stackmenu1.visible:=((paramcount=0) and (get_boolean('stackmenu_visible',false) ) );{do this last, so stackmenu.onshow updates the setting correctly}
-  {old routine}	    listviews_end_update; {start updating listviews. Do this after setting stack menus visible. This is faster.}
-  {old routine}
-  {old routine}	//    mainwindow.Caption := floattostr((GetTickCount-t1)/1000);
-  {old routine}
-  {old routine}	  end;
-  {old routine}	  initstring.free;
-end;
-
 
 function load_settings(lpath: string)  : boolean;
 var
@@ -7590,9 +7217,6 @@ begin
       begin
         mainwindow.top:=0;{for case the form was not set at the main screen}
         mainwindow.left:=0;
-
-         result:=loadsettingsold(lpath);{old format}  {remove this line after 2022-5-7}
-
         exit;
       end;
 
@@ -7714,16 +7338,6 @@ begin
       c:=Sett.ReadInteger('stack','stack_tab',987654321); if c<>987654321 then stackmenu1.pagecontrol1.tabindex:=c;
 
       c:=Sett.ReadInteger('stack','demosaic_method2',987654321); if c<>987654321 then stackmenu1.demosaic_method1.itemindex:=c;
-
-                 {remove this code in 2022-6}
-                 c:=Sett.ReadInteger('stack','conv_program',987654321);if c<>987654321 then
-                 begin
-                   if c=1 {dcraw} then c:=2;
-                   stackmenu1.raw_conversion_program1.itemindex:=c;
-                 end
-                 else
-                 {end remove}
-
 
       c:=Sett.ReadInteger('stack','conv_progr',987654321);if c<>987654321 then stackmenu1.raw_conversion_program1.itemindex:=c;
 
@@ -8555,7 +8169,7 @@ begin
 end;
 {$endif}
 
-function convert_raw(loadfile,savefile :boolean;var filename3: string;var img: image_array): boolean; {convert raw to fits file using DCRAW or LibRaw. filename3 will be update with the new file extension e.g. .CR2.fits}
+function convert_raw(loadfile,savefile :boolean;var filename3: string;out head: Theader; out img: image_array ): boolean; {convert raw to fits file using DCRAW or LibRaw. filename3 will be update with the new file extension e.g. .CR2.fits}
 var
   filename4 :string;
   JD2                               : double;
@@ -8795,7 +8409,7 @@ begin
 
   if check_raw_file_extension(ext) then {raw format}
   begin
-    result:=convert_raw(false{load},true{save},filen,img_buffer);
+    result:=convert_raw(false{load},true{save},filen,head,img_loaded);
   end
   else
   if (ext='.FZ') then {CFITSIO format}
@@ -8930,7 +8544,7 @@ begin
   else
   if check_raw_file_extension(ext1) then {raw format}
   begin
-    if convert_raw(true{load},false{save},filename2,img_loaded)=false then
+    if convert_raw(true{load},false{save},filename2,head,img_loaded)=false then
       begin update_menu(false);beep; exit; end
     else
     result:=true;
@@ -10350,7 +9964,7 @@ const
 //  exit;
 //  get_background(0,img_loaded,false{histogram is already available},true {calculate noise level},{var}cblack,star_level);{calculate background level from peek histogram}
 
-  analyse_image(img_loaded,10 {snr_min},false,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
+  analyse_image(img_loaded,head,10 {snr_min},false,hfd_counter,backgr, hfd_median); {find background, number of stars, median HFD}
 
   setlength(img_sa,1,head.width,head.height);{set length of image array}
    for fitsY:=0 to head.height-1 do
@@ -10724,7 +10338,7 @@ begin
     aperture_ratio:=apert;{remember setting}
     if apert<>0 then {smaller aperture for photometry. Setting <> max}
     begin
-      analyse_image(img_loaded,30,false {report}, hfd_counter,backgr,hfd_med); {find background, number of stars, median HFD}
+      analyse_image(img_loaded,head,30,false {report}, hfd_counter,backgr,hfd_med); {find background, number of stars, median HFD}
       if hfd_med<>0 then
       begin
         memo2_message('Median HFD is '+floattostrf(hfd_med, ffgeneral, 2,2)+'. Aperture and annulus will be adapted accordingly.');;
@@ -12120,7 +11734,7 @@ begin
             if ((analysespecified) or (analysespecified2)) then snr_min:=strtofloat2(getoptionvalue('analyse'));
             if extractspecified then snr_min:=strtofloat2(getoptionvalue('extract'));
             if snr_min=0 then snr_min:=30;
-            analyse_image(img_loaded,snr_min,extractspecified, hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
+            analyse_image(img_loaded,head,snr_min,extractspecified, hfd_counter,backgr,hfd_median); {find background, number of stars, median HFD}
             if isConsole then {stdout available, compile targe option -wh used}
             begin
               writeln('HFD_MEDIAN='+floattostrF(hfd_median,ffFixed,0,1));
@@ -14912,6 +14526,7 @@ begin
     Screen.Cursor := Save_Cursor;  { Always restore to normal }
     progress_indicator(-100,'');{progresss done}
   end;
+  img_temp:=nil;
 end;
 
 
