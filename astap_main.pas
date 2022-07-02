@@ -597,7 +597,7 @@ var
   filename2: string;
   nrbits,size_backup,index_backup    : integer;{number of backup images for ctrl-z, numbered 0,1,2,3}
   ra_mount,dec_mount,{telescope ra,dec}
-  Xbinning,Ybinning,
+  Xbinning,Ybinning,equinox, bandpass,
   ra_radians,dec_radians, pixel_size     : double;
 
 var
@@ -869,7 +869,7 @@ var
 implementation
 
 uses unit_dss, unit_stack, unit_tiff,unit_star_align, unit_astrometric_solving, unit_star_database, unit_annotation, unit_thumbnail, unit_xisf,unit_gaussian_blur,unit_inspector_plot,unit_asteroid,
-     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download;
+     unit_astrometry_net, unit_live_stacking, unit_hjd,unit_hyperbola, unit_aavso, unit_listbox, unit_sqm, unit_stars_wide_field,unit_constellations,unit_raster_rotate,unit_download,unit_ephemerides;
 
 {$R astap_cursor.res}   {FOR CURSORS}
 
@@ -886,8 +886,6 @@ var
   object_xc,object_yc, object_raM,object_decM  : double; {near mouse auto centered object position}
 
 var {################# initialised variables #########################}
-  bandpass: double=0;{from fits file}
-  equinox:double=0;{from fits file}
   SaveasJPGPNGBMP1filterindex : integer=4;
   LoadFITSPNGBMPJPEG1filterindex: integer=1;
   marker_position : string='';
@@ -969,6 +967,8 @@ begin
 
     flux_magn_offset:=0;{factor to calculate magnitude from flux, new file so set to zero}
     sqm_value:='';
+    equinox:=2000;
+    bandpass:=0;
   end;
 
   head.date_obs:='';
@@ -985,6 +985,20 @@ begin
 end;{reset global variables}
 
 
+//procedure precession_jnow_to_J2000(equinox : double; var ra1,dec1 : double); {simple precession correction,  new Meeus chapter precession formula 20.1}
+//var
+//  t,dra,ddec,m,n,n2  : double;
+//begin
+//  t:=(equinox-2000)/100;{time in julian centuries since j2000 }
+//  m:=3.07496+0.00186*t;{seconds}
+//  n:=1.33621-0.00057*t; {seconds}
+//  n2:=20.0431-0.0085*t;{arcsec}
+//  dra:=(m + n *sin(ra1)*tan(dec1))*pi/(3600*12);{yearly ra drift in radians}
+//  ddec:=n2*cos(ra1)*pi/(3600*180); {yearly dec drift in radians}
+//  ra1:=ra1-(dra*t*100);{multiply with number of years is t*100. Subtract because we go back to J2000}
+//  dec1:=dec1-(ddec*t*100);
+//end;
+
 
 function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;out head: Theader; out img_loaded2: image_array): boolean;{load fits file}
 {if light=true then read also head.ra0, head.dec0 ....., else load as dark, flat}
@@ -994,7 +1008,7 @@ var
   TheFile  : tfilestream;
   header    : array[0..2880] of ansichar;
   i,j,k,nr,error3,naxis1, reader_position,n,file_size  : integer;
-  dummy,{scale,}ccd_temperature, jd2                     : double;
+  dummy, ccd_temperature, jd2,jd_obs                   : double;
   col_float,bscale,measured_max,scalefactor  : single;
   s                  : string[3];
   bzero              : integer;{zero shift. For example used in AMT, Tricky do not use int64,  maxim DL writes BZERO value -2147483647 as +2147483648 !! }
@@ -1102,7 +1116,6 @@ begin
   reset_fits_global_variables(light,head);
 
   if get_ext=0 then extend_type:=0; {always an image in main data block}
-//  scale:=0; {SGP files}
   naxis1:=0;
   bzero:=0;{just for the case it is not available. 0.0 is the default according https://heasarc.gsfc.nasa.gov/docs/fcg/standard_dict.html}
   bscale:=1;
@@ -1725,10 +1738,17 @@ begin
 
     if head.set_temperature=999 then head.set_temperature:=round(ccd_temperature); {temperature}
 
-    if ((light) and ((head.ra0<>0) or (head.dec0<>0))) then
+    if ((light) and ((head.ra0<>0) or (head.dec0<>0) or (equinox<>2000)) ) then
     begin
-       mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
-       mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
+      if equinox<>2000 then //e.g. in SharpCap
+      begin
+        jd_obs:=(equinox-2000)*365.25+2451545;
+        precession3(jd_obs, 2451545 {J2000},head.ra0,head.dec0); {precession, from unknown equinox to J2000}
+        if dec_mount<999 then precession3(jd_obs, 2451545 {J2000},ra_mount,dec_mount); {precession, from unknown equinox to J2000}
+      end;
+
+      mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
+      mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
     end;
     { condition           keyword    to
      if ra_mount>999 then objctra--->ra1.text--------------->ra_radians--->ra_mount
@@ -1736,6 +1756,8 @@ begin
                            crval1--->head.ra0
 
      if head.ra0<>0 then           head.ra0--->ra1.text------------------->ra_radians}
+
+    if light then old_calstat:=head.calstat; //keep this for procedure savefits_update_header
 
     unsaved_import:=false;{file is available for astrometry.net}
 
@@ -2000,8 +2022,6 @@ begin
     reader_position:=reader_position+head.width*head.height;
   end; {read table}
 
- // if last_extension:=true; {unreadable compressed? }
-
 
   if last_extension=false then {test if extension is possible}
   begin
@@ -2010,8 +2030,6 @@ begin
       if get_ext=0 then
          mainwindow.Memo3.lines.text:='File contains extension image(s) or table(s).';
       mainwindow.pagecontrol1.showtabs:=true;{show tabs}
-
-     // mainwindow.tabsheet1.caption:=ttype[strtoint(number)-1];
 
       last_extension:=false;
       if head.naxis<2 then
@@ -2029,7 +2047,6 @@ begin
   if ((last_extension=false) or (extend_type>0)) then
      mainwindow.tabsheet1.caption:='Header '+inttostr(get_ext);
 
-  if light then old_calstat:=head.calstat; //keep this for procedure savefits_update_header
   close_fits_file;
 end;
 
@@ -2080,9 +2097,9 @@ end;
 
 procedure read_keys_memo(light: boolean; out head : theader);{for tiff, header in the describtion decoding}
 var
-  key                      : string;
-  count1,index             : integer;
-  ra2,dec2,ccd_temperature : double;
+  key                             : string;
+  count1,index                    : integer;
+  ra2,dec2,ccd_temperature,jd_obs : double;
 
   function read_float: double;
   var
@@ -2157,6 +2174,7 @@ begin
     if (key='YPIXSZ  =') then ypixsz:=read_float else
     if (key='CDELT1  =') then head.cdelt1:=read_float else   {deg/pixel}
     if (key='CDELT2  =') then head.cdelt2:=read_float else   {deg/pixel}
+    if (key='EQUINOX =') then equinox:=read_float else
 
     if ((key='SECPIX2 =') or
         (key='PIXSCALE=') or
@@ -2206,14 +2224,20 @@ begin
     if index=3 then if key<>'NAXIS1  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS1  =                  100 / length of x axis                               ');inc(count1); end;{data will be added later}
     if index=4 then if key<>'NAXIS2  =' then begin mainwindow.Memo1.Lines.insert(index,'NAXIS2  =                  100 / length of y axis                               ');inc(count1); end;{data will be added later}
     if ((index=5) and (head.naxis>1)) then if key<>'NAXIS3  =' then
-               begin mainwindow.Memo1.Lines.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
+                                             begin mainwindow.Memo1.Lines.insert(index,'NAXIS3  =                    3 / length of z axis (mostly colors)               ');inc(count1); end;
     index:=index+1;
   end;
 
   if ((light) and ((head.ra0<>0) or (head.dec0<>0))) then
   begin
-     mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
-     mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
+    if equinox<>2000 then //e.g. in SharpCap
+    begin
+      jd_obs:=(equinox-2000)*365.25+2451545;
+      precession3(jd_obs, 2451545 {J2000},head.ra0,head.dec0); {precession, from unknown equinox to J2000}
+      if dec_mount<999 then precession3(jd_obs, 2451545 {J2000},ra_mount,dec_mount); {precession, from unknown equinox to J2000}
+    end;
+    mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{this will create Ra_radians for solving}
+    mainwindow.dec1.text:=prepare_dec(head.dec0,' ');
   end;
   { condition           keyword    to
    if ra_mount>999 then objctra--->ra1.text--------------->  ra_radians--->ra_mount
@@ -3254,7 +3278,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.06.26, '+about_message4+
+  'ASTAP version 2022.07.02, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+

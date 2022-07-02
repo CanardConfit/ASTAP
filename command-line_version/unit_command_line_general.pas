@@ -15,7 +15,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  version: string=' CLI-2022-4-10';
+  version: string=' CLI-2022-07-02';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -59,7 +59,7 @@ type
      his_mean,noise_level : array[0..2] of integer;
      esc_pressed, fov_specified {, last_extension }: boolean;
      star_level  : double;
-     exposure : double;
+     exposure,focallen,equinox : double;
      cblack, cwhite,
      gain   :double; {from FITS}
      date_obs : string;
@@ -67,23 +67,20 @@ type
 
      datamin_org, datamax_org :double;
      warning_str : string;{for solver}
+     xpixsz,ypixsz: double;//Pixel Width in microns (after binning)
+     ra0,dec0 : double; {plate center values}
+     cdelt1,cdelt2: double;{deg/pixel for x}
+     naxis  : integer;{number of dimensions}
+     naxis3 : integer;{number of colors}
 
   const
     hist_range  {range histogram 255 or 65535 or streched} : integer=255;
     width2  : integer=100;
     height2: integer=100;{do not use reserved word height}
-    naxis  : integer=2;{number of dimensions}
-    naxis3 : integer=1;{number of colors}
     fits_file: boolean=false;
-    ra0 : double=0;
-    dec0: double=0; {plate center values}
     crpix1: double=0;{reference pixel}
     crpix2: double=0;
-    cdelt1: double=0;{deg/pixel for x}
-    cdelt2: double=0;
-    xpixsz: double=0;//Pixel Width in microns (after binning)
-    ypixsz: double=0;//Pixel height in microns (after binning)
-    focallen: double=0;
+
 
   const   bufwide=1024*120;{buffer size in bytes}
 
@@ -641,6 +638,53 @@ begin
 end;
 
 
+procedure precession_jnow_to_J2000(equinox : double; var ra1,dec1 : double); {simple precession correction,  new Meeus chapter precession formula 20.1}
+var
+  t,dra,ddec,m,n,n2  : double;
+begin
+  t:=(equinox-2000)/100;{time in julian centuries since j2000 }
+  m:=3.07496+0.00186*t;{seconds}
+  n:=1.33621-0.00057*t; {seconds}
+  n2:=20.0431-0.0085*t;{arcsec}
+  dra:=(m + n *sin(ra1)*tan(dec1))*pi/(3600*12);{yearly ra drift in radians}
+  ddec:=n2*cos(ra1)*pi/(3600*180); {yearly dec drift in radians}
+  ra1:=ra1-(dra*t*100);{multiply with number of years is t*100. Subtract because we go back to J2000}
+  dec1:=dec1-(ddec*t*100);
+end;
+
+
+procedure reset_fits_global_variables; {reset the global variable}
+begin
+  ra0:=0;
+  dec0:=0;
+  ra_mount:=99999;
+  dec_mount:=99999;
+  cdelt1:=0;
+  cdelt2:=0;
+  xpixsz:=0;
+  ypixsz:=0;
+  focallen:=0;
+  cd1_1:=0;{just for the case it is not available}
+  cd1_2:=0;{just for the case it is not available}
+  cd2_1:=0;{just for the case it is not available}
+  cd2_2:=0;{just for the case it is not available}
+  xbinning:=1;{normal}
+  ybinning:=1;
+  ra1:='';
+  dec1:='';
+  equinox:=2000;
+
+  naxis:=1;
+  naxis3:=1;
+  datamin_org:=0;
+  datamax_org:=$FFFF;
+
+  date_obs:='';
+  exposure:=0;
+  gain:=999;{assume no data available}
+end;
+
+
 function load_fits(filen:string;out img_loaded2: image_array): boolean;{load fits file}
 var
   header    : array[0..2880] of ansichar;
@@ -728,33 +772,11 @@ begin
   {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   {Reset variables for case they are not specified in the file}
-//  crota2:=99999;{just for the case it is not available, make it later zero}
-//  crota1:=99999;
-  ra0:=0;
-  dec0:=0;
-  ra_mount:=99999;
-  dec_mount:=99999;
-  cdelt1:=0;
-  cdelt2:=0;
-  xpixsz:=0;
-  ypixsz:=0;
-  focallen:=0;
-  cd1_1:=0;{just for the case it is not available}
-  cd1_2:=0;{just for the case it is not available}
-  cd2_1:=0;{just for the case it is not available}
-  cd2_2:=0;{just for the case it is not available}
-  xbinning:=1;{normal}
-  ybinning:=1;
-  ra1:='';
-  dec1:='';
+  reset_fits_global_variables; {reset the global variable}
 
-  naxis:=-1;
-  naxis1:=0;
-  naxis3:=1;
   bzero:=0;{just for the case it is not available. 0.0 is the default according https://heasarc.gsfc.nasa.gov/docs/fcg/standard_dict.html}
   bscale:=1;
-  datamin_org:=0;
-
+  naxis1:=0;
   measured_max:=0;
 
   reader_position:=0;
@@ -852,6 +874,9 @@ begin
               begin cdelt2:=validate_double/3600; {deg/pixel for RA} cdelt1:=cdelt2; end; {no CDELT1/2 found yet, use alternative}
         end;
 
+        if ((header[i]='E') and (header[i+1]='Q')  and (header[i+2]='U') and (header[i+3]='I') and (header[i+4]='N') and (header[i+5]='O') and (header[i+6]='X')) then
+             equinox:=validate_double;
+
         if ((header[i]='X') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {xpixsz}
                xpixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
         if ((header[i]='Y') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {xpixsz}
@@ -929,6 +954,11 @@ begin
 
     if ((ra0<>0) or (dec0<>0)) then
     begin
+      if equinox<>2000 then //e.g. in SharpCap
+      begin
+        precession_Jnow_to_J2000(equinox,ra0,dec0); {precession, from unknown equinox to J2000}
+        if dec_mount<999 then precession_Jnow_to_J2000(equinox,ra_mount,dec_mount); {precession, from unknown equinox to J2000}
+      end;
       ra1:=prepare_ra(ra0,' ');
       dec1:=prepare_dec(dec0,' ');
     end
@@ -1335,9 +1365,8 @@ end;
 
 procedure read_keys_memo;{for tiff, header in the describtion decoding}
 var
-  key                      : string;
-  count1,index             : integer;
-  ra2,dec2,ccd_temperature : double;
+  key                                      : string;
+  count1,index                             : integer;
   error1                   : boolean;
 
   function read_float: double;
@@ -1366,7 +1395,7 @@ var
 begin
   {variables are already reset}
   count1:=Memo1.Count-1-1;
-  ccd_temperature:=999;
+//  ccd_temperature:=999;
 
   index:=1;
   while index<=count1 do {read keys}
@@ -1407,15 +1436,15 @@ begin
     if (key='XPIXSZ  =') then xpixsz:=read_float else  {pixelscale in microns}
     if (key='YPIXSZ  =') then ypixsz:=read_float else
     if (key='CDELT2  =') then cdelt2:=read_float else   {deg/pixel}
+    if (key='EQUINOX =') then equinox:=read_float else
+
 
     if ((key='SECPIX2 =') or
         (key='PIXSCALE=') or
         (key='SCALE   =')) then begin if cdelt2=0 then cdelt2:=read_float/3600; end {no head.cdelt1/2 found yet, use alternative, image scale arcseconds per pixel}
     else
 
-
     if key='DATE-OBS=' then date_obs:=read_string else
-
 
     if index=1 then if key<>'BITPIX  =' then begin Memo1.insert(index,'BITPIX  =                   16 / Bits per entry                                 '); inc(count1); end;{data will be added later}
     if index=2 then if key<>'NAXIS   =' then begin Memo1.insert(index,'NAXIS   =                    2 / Number of dimensions                           ');inc(count1); end;{data will be added later}
@@ -1428,6 +1457,11 @@ begin
 
   if ((ra0<>0) or (dec0<>0)) then
   begin
+    if equinox<>2000 then //e.g. in SharpCap
+    begin
+      precession_Jnow_to_J2000(equinox,ra0,dec0); {precession, from unknown equinox to J2000}
+      if dec_mount<999 then precession_Jnow_to_J2000(equinox,ra_mount,dec_mount); {precession, from unknown equinox to J2000}
+    end;
     ra1:=prepare_ra(ra0,' ');{this will create Ra_radians for solving}
     dec1:=prepare_dec(dec0,' ');
   end
@@ -1500,36 +1534,10 @@ begin
   {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   {Reset variables}
-  crota2:=99999;{just for the case it is not available, make it later zero}
-  crota1:=99999;
-  ra0:=0;
-  dec0:=0;
-  ra_mount:=99999;
-  dec_mount:=99999;
-  cdelt1:=0;
-  cdelt2:=0;
-  xpixsz:=0;
-  ypixsz:=0;
-  focallen:=0;
-  cd1_1:=0;
-  cd1_2:=0;
-  cd2_1:=0;
-  cd2_2:=0;
-  date_obs:='';
-
-  naxis:=1;
-  naxis3:=1;
-
-  xbinning:=1;{default}
-  ybinning:=1;
-  exposure:=0;
-
-    gain:=999;{assume no data available}
+  reset_fits_global_variables; {reset the global variable}
 
   I:=0;
   reader_position:=0;
-
-
   aline:='';
   try
     for i:=0 to 2 do begin reader.read(ch,1); aline:=aline+ch; inc(reader_position,1);end;
@@ -1621,9 +1629,7 @@ begin
       exit;
     end; {should contain 255 or 65535}
 
-    datamin_org:=0;
     fits_file:=true;
-
     cblack:=datamin_org;{for case histogram is not called}
     cwhite:=datamax_org;
 
@@ -1761,7 +1767,7 @@ var
   tiff, png,jpeg,colour,saved_header  : boolean;
   ext,descrip   : string;
 begin
-  naxis:=0; {0 dimensions}
+  naxis:=0; {0 dimensions for case failure}
   result:=false; {assume failure}
   tiff:=false;
   jpeg:=false;
@@ -1828,6 +1834,9 @@ begin
   end;
   {$ENDIF}
 
+  {Reset variables}
+  reset_fits_global_variables; {reset the global variable}
+
   if colour=false then
   begin
      naxis:=2;
@@ -1841,31 +1850,10 @@ begin
 
   memo1.clear;{clear memo for new header}
 
-  {Reset variables}
-  crota2:=99999;{just for the case it is not available, make it later zero}
-  crota1:=99999;
-  ra0:=0;
-  dec0:=0;
-  ra_mount:=99999;
-  dec_mount:=99999;
-  cdelt1:=0;
-  cdelt2:=0;
-  xpixsz:=0;
-  ypixsz:=0;
-  focallen:=0;
-  cd1_1:=0;
-  cd1_2:=0;
-  cd2_1:=0;
-  cd2_2:=0;
-  date_obs:='';
-  xbinning:=1;{default}
-  ybinning:=1;
-
   {set data}
   fits_file:=true;
   nrbits:=16;
-  datamin_org:=0;
-  datamax_org:=$FFFF;
+
   cblack:=datamin_org;{for case histogram is not called}
   cwhite:=datamax_org;
 
