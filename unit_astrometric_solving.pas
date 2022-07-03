@@ -524,7 +524,7 @@ var
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars,  light_naxis3, light_width,light_height : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,
   sep_search,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,
-  current_dist, quad_tolerance,dummy, extrastars,flip, extra,datamax_light,distance,ra_radians_org,dec_radians_org     : double;
+  current_dist, quad_tolerance,dummy, extrastars,flip, extra,datamax_light,distance                                    : double;
   solution, go_ahead,fitsfile ,autoFOV,autoMaxstars     : boolean;
   Save_Cursor                                           : TCursor;
   startTick  : qword;{for timing/speed purposes}
@@ -562,8 +562,6 @@ begin
 
   quad_tolerance:=strtofloat2(stackmenu1.quad_tolerance1.text);
   max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
-  ra_radians_org:=ra_radians;//store the original position. ra_radians will be changed by max accuracy loop
-  dec_radians_org:=dec_radians;
 
   if ((fov_specified=false) and (head.cdelt2<>0)) then {no fov in native command line and head.cdelt2 in header}
     fov_org:=min(180,head.height*abs(head.cdelt2)) {calculate FOV. PI can give negative head.cdelt2}
@@ -850,9 +848,7 @@ begin
                 (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x}
                 (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
                 1, {CCD scale}
-                head.ra0 ,head.dec0{center equatorial position});
-            ra_radians:=head.ra0;
-            dec_radians:=head.dec0;
+                ra_radians ,dec_radians {center equatorial position});
             current_dist:=sqrt(sqr(solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]) + sqr(solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]))/3600; {current distance telescope and image center in degrees}
             inc(match_nr);
           end;
@@ -868,6 +864,10 @@ begin
 
   if solution then
   begin
+    ang_sep(ra_radians,dec_radians,head.ra0,head.dec0, sep_search);{calculate search offset}
+    head.ra0:=ra_radians;//store solution
+    head.dec0:=dec_radians;
+
     memo2_message(inttostr(nr_references)+ ' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'  {2 quads are required giving 8 star references or 3 quads giving 3 center quad references}
                    +'  Solution["] x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
                    +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) );
@@ -909,12 +909,7 @@ begin
     new_to_old_WCS;
     solved_in:=' Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}
 
-    ang_sep(ra_radians_org,dec_radians_org,head.ra0,head.dec0, sep_search);{calculate search offset}
     offset_found:={' Δ was '}distance_to_string(sep_search {scale selection},sep_search)+'.';
-
-//    memo2_message('Start position J2000 [radians], '+floattostr(ra_radians_org)+'  ,'+floattostr(dec_radians_org));
-//    memo2_message('Solution J2000  [radians], '+floattostr(head.ra0)+'  ,'+floattostr(head.dec0));
-//    memo2_message('Mount J2000  [radians], '+floattostr(ra_mount)+'  ,'+floattostr(dec_mount));
 
     if ra_mount<99 then {mount position known and specified. Calculate mount offset}
     begin

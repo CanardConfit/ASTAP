@@ -1188,21 +1188,17 @@ var
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t                                                                  : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,
   oversize,sep_search,seperation,ra7,dec7,centerX,centerY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,
-  quad_tolerance,dummy, extrastars,flip,extra,distance,ra_radians_org,dec_radians_org                                : double;
+  quad_tolerance,dummy, extrastars,flip,extra,distance                                                               : double;
   solution, go_ahead ,autoFOV,autoMaxstars                                                                           : boolean;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,suggest_str, warning_downsample, solved_in, offset_found,ra_offset,dec_offset,mount_info,mount_offset : string;
-
 
 begin
   result:=false;
   esc_pressed:=false;
   warning_str:='';{for header}
   startTick := GetTickCount64;
-
   quad_tolerance:=strtofloat2(quad_tolerance1);
-  ra_radians_org:=ra_radians;//store the original position. ra_radians will be changed by max accuracy loop
-  dec_radians_org:=dec_radians;
 
   if ((fov_specified=false) and (cdelt2<>0)) then {no FOV in native command line and cdelt2 in header}
     fov_org:=min(180,height2*abs(cdelt2)) {calculate FOV. PI can give negative CDELT2}
@@ -1302,9 +1298,9 @@ begin
                     'Start position: '+prepare_ra(ra0,': ')+', '+prepare_dec(dec0,'d ')+#10+
                     'Image height: '+floattostrf2(fov_org,0,2)+' degrees'+#10+
                     'Binning: '+inttostr(binning)+'x'+inttostr(binning)+#10+
-                    'Image dimensions:'+inttostr(width2)+'x'+inttostr(height2)+#10+
-                    'Quad tolerance:'+quad_tolerance1+#10+
-                    'Minimum star size:'+min_star_size1+'"' +#10+
+                    'Image dimensions: '+inttostr(width2)+'x'+inttostr(height2)+#10+
+                    'Quad tolerance: '+quad_tolerance1+#10+
+                    'Minimum star size: '+min_star_size1+'"' +#10+
                     'Speed:'+mess);
 
       nrstars_required:=round(nrstars*(height2/width2));{square search field based on height.}
@@ -1455,9 +1451,7 @@ begin
                 (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x}
                 (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
                 1, {CCD scale}
-                ra0 ,dec0{center equatorial position});
-            ra_radians:=ra0;
-            dec_radians:=dec0;
+                ra_radians ,dec_radians {center equatorial position});
             current_dist:=sqrt(sqr(solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]) + sqr(solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]))/3600; {current distance telescope and image center in degrees}
             inc(match_nr);
           end;
@@ -1471,6 +1465,10 @@ begin
 
   if solution then
   begin
+    ang_sep(ra_radians,dec_radians,ra0,dec0, sep_search);{calculate search offset}
+    ra0:=ra_radians;//store solution
+    dec0:=dec_radians;
+
     memo2_message(#10+inttostr(nr_references)+ ' of '+ inttostr(nr_references2)+' quads selected matching within '+quad_tolerance1+' tolerance.'  {2 quads are required giving 8 star references or 3 quads giving 3 center quad references}
                  +#10+'Solution["] x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
                    +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) );
@@ -1510,7 +1508,6 @@ begin
     new_to_old_WCS;
     solved_in:='Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec';{make string to report in FITS header.}
 
-    ang_sep(ra_radians_org,dec_radians_org,ra0,dec0, sep_search);{calculate search offset}
     offset_found:=distance_to_string(sep_search ,sep_search)+'.';
     if ra_mount<99 then {mount position known and specified}
     begin
