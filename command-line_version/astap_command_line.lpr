@@ -235,7 +235,7 @@ end;
 var
   Application: Tastap;
 
-{$R *.res}
+//{$R *.res}
 
 begin
   Application:=Tastap.Create(nil);
