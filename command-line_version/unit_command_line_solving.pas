@@ -1187,8 +1187,8 @@ var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
   spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t                                                                  : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,
-  oversize,sep,seperation,ra7,dec7,centerX,centerY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,
-  quad_tolerance,dummy, extrastars,flip,extra,distance                                                               : double;
+  oversize,sep_search,seperation,ra7,dec7,centerX,centerY,cropping, min_star_size_arcsec,hfd_min,delta_ra,current_dist,
+  quad_tolerance,dummy, extrastars,flip,extra,distance,ra_radians_org,dec_radians_org                                : double;
   solution, go_ahead ,autoFOV,autoMaxstars                                                                           : boolean;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,suggest_str, warning_downsample, solved_in, offset_found,ra_offset,dec_offset,mount_info,mount_offset : string;
@@ -1201,6 +1201,8 @@ begin
   startTick := GetTickCount64;
 
   quad_tolerance:=strtofloat2(quad_tolerance1);
+  ra_radians_org:=ra_radians;//store the original position. ra_radians will be changed by max accuracy loop
+  dec_radians_org:=dec_radians;
 
   if ((fov_specified=false) and (cdelt2<>0)) then {no FOV in native command line and cdelt2 in header}
     fov_org:=min(180,height2*abs(cdelt2)) {calculate FOV. PI can give negative CDELT2}
@@ -1454,7 +1456,6 @@ begin
                 (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
                 1, {CCD scale}
                 ra0 ,dec0{center equatorial position});
-            if match_nr=0 then ang_sep(ra_radians,dec_radians,ra0,dec0, sep);{offset found}
             ra_radians:=ra0;
             dec_radians:=dec0;
             current_dist:=sqrt(sqr(solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]) + sqr(solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]))/3600; {current distance telescope and image center in degrees}
@@ -1509,12 +1510,12 @@ begin
     new_to_old_WCS;
     solved_in:='Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec';{make string to report in FITS header.}
 
-    offset_found:=distance_to_string(sep ,sep)+'.';
-
+    ang_sep(ra_radians_org,dec_radians_org,ra0,dec0, sep_search);{calculate search offset}
+    offset_found:=distance_to_string(sep_search ,sep_search)+'.';
     if ra_mount<99 then {mount position known and specified}
     begin
-      ra_offset:=distance_to_string(sep, fnmodulo(ra_mount-ra0,pi)*cos((dec0+dec_mount)*0.5 {average dec}));
-      dec_offset:=distance_to_string(sep,dec_mount-dec0);
+      ra_offset:=distance_to_string(sep_search, pi*frac((ra_mount-ra0)/pi) * cos((dec0+dec_mount)*0.5 {average dec}));
+      dec_offset:=distance_to_string(sep_search,dec_mount-dec0);
 
       mount_offset:=' Mount offset RA='+ra_offset+', DEC='+dec_offset;{ascii}
       mount_info:=' Mount Δα='+ra_offset+ ',  Δδ='+dec_offset+'. ';
