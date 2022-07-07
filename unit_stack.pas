@@ -2919,7 +2919,12 @@ procedure listview_update_keyword(tl : tlistview; keyw,value :string );{update k
 var index,counter,error2: integer;
     waarde              : double;
     filename_old        : string;
+    success             : boolean;
+    Save_Cursor:TCursor;
+
 begin
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
   index:=0;
   esc_pressed:=false;
   counter:=tl.Items.Count;
@@ -2959,21 +2964,24 @@ begin
 
         end;
 
-        if nrbits=16 then
-        save_fits(img_loaded,filename2,16,true)
-         else
-        save_fits(img_loaded,filename2,-32,true);
+        if fits_file_name(filename2) then
+          success:=savefits_update_header(filename2)
+        else
+          success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
+        if success=false then begin ShowMessage('Write error !!' + filename2);break;end;
+
 
         tl.ItemIndex := index;{mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
         tl.Items[index].MakeVisible(False);{scroll to selected item}
         application.processmessages;
-        if esc_pressed then exit;
+        if esc_pressed then break;
       end
       else
       beep;{image not found}
     end;
     inc(index); {go to next file}
   end;
+  Screen.Cursor := Save_Cursor;
 end;
 
 
@@ -4821,7 +4829,7 @@ begin
     stackmenu1.ephemeris_centering1.itemindex:=stackmenu1.ephemeris_centering1.items.count-1;{show first found in the list}
   end
   else
-  memo2_message('No object locations found in image. Modify limiting count and limiting magnitude in annotation menu CTRL+Q');
+  memo2_message('No object locations found in image. Modify limiting count and limiting magnitude in Asteroid & Comet annotation menu, CTRL+R');
   memo2_message('Ready. Select the object to align on.');
   Screen.Cursor :=Save_Cursor;    { back to normal }
 end;

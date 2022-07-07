@@ -476,7 +476,7 @@ var
       procedure plot_asteroid(sizebox :integer);
       var
         dra,ddec, delta_ra,det,SIN_dec_new,COS_dec_new,SIN_delta_ra,COS_delta_ra,hh : double;
-        x,y                                                                         : integer;
+        x,y                                                                         : double;
       begin
         //memo2_message('Asteroid position at :'+head.date_obs+',  '+#9+floattostr(ra2*180/pi)+','+floattostr(dec2*180/pi));
 
@@ -495,13 +495,13 @@ var
 
         if sip then {apply SIP correction}
         begin
-           x:=round(head.crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0); {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
-           y:=round(head.crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0); {3th order SIP correction}
+           x:=(head.crpix1 + u0 + ap_0_0 + ap_0_1*v0+ ap_0_2*v0*v0+ ap_0_3*v0*v0*v0 +ap_1_0*u0 + ap_1_1*u0*v0+  ap_1_2*u0*v0*v0+ ap_2_0*u0*u0 + ap_2_1*u0*u0*v0+  ap_3_0*u0*u0*u0); {3th order SIP correction, fits count from 1, image from zero therefore subtract 1}
+           y:=(head.crpix2 + v0 + bp_0_0 + bp_0_1*v0+ bp_0_2*v0*v0+ bp_0_3*v0*v0*v0 +bp_1_0*u0 + bp_1_1*u0*v0+  bp_1_2*u0*v0*v0+ bp_2_0*u0*u0 + bp_2_1*u0*u0*v0+  bp_3_0*u0*u0*u0); {3th order SIP correction}
         end
         else
         begin
-          x:=round(head.crpix1 + u0); {in FITS range 1..width}
-          y:=round(head.crpix2 + v0);
+          x:=(head.crpix1 + u0); {in FITS range 1..width}
+          y:=(head.crpix2 + v0);
         end;
 
         if ((x>-50) and (x<=head.width+50) and (y>-50) and (y<=head.height+50)) then {within image1 with some overlap}
@@ -511,11 +511,12 @@ var
            if showmagnitude then thetext2:='{'+inttostr(round(mag*10))+'}' {add magnitude in next field} else thetext2:='';
 
            if add_annot then
-           begin                         //floattostrF2(median_bottom_right,0,2)
-              add_text ('ANNOTATE=',#39+inttostr(x+1-sizebox)+';'+inttostr(y+1-sizebox)+';'+inttostr(x+1+sizebox)+';'+inttostr(y+1+sizebox)+';-'+fontsize_str {-1 or larger}+';'{boldness}+thetext1+';'+thetext2+';'+#39); {store in FITS coordinates 1..}
+           begin
+              {store annotation. Fractions are for ephemeride alignment stacking}
+              add_text ('ANNOTATE=',#39+copy(floattostrF(x+1-sizebox,FFFixed,0,2)+';'+floattostrF(y+1-sizebox,FFFixed,0,2)+';'+floattostrF(x+1+sizebox,fffixed,0,2)+';'+floattostrF(y+1+sizebox,FFFixed,0,2)+';-'+fontsize_str {-1 or larger}+';'{boldness}+thetext1+';'+thetext2+';',1,68)+#39); {store in FITS coordinates 1..}
               annotated:=true;{header contains annotations}
            end;
-           plot_the_annotation(x+1-sizebox {x1},y+1-sizebox {y1},x+1+sizebox{x2},y+1+sizebox{y2},-max(1,round(fontsize*10/12)/10){typ},thetext1,thetext2); {plot annotation}
+           plot_the_annotation(round(x+1-sizebox) {x1},round(y+1-sizebox) {y1},round(x+1+sizebox){x2},round(y+1+sizebox){y2},-max(1,round(fontsize*10/12)/10){typ},thetext1,thetext2); {plot annotation}
         end;
       end;
       procedure read_and_plot(asteroid: boolean; path :string);
@@ -651,7 +652,7 @@ begin
     if  fileexists(mpcorb_path) then
       read_and_plot(true,mpcorb_path)
     else
-      memo2_message('MPCORB.DAT file not found: '+ mpcorb_path+'   Set path in menu CTRL+Q' );
+      memo2_message('MPCORB.DAT file not found: '+ mpcorb_path+'   Set path in Asteroid & Comet annotation menu, CTRL+R' );
   end;
 
   count:=0;
@@ -661,7 +662,7 @@ begin
     if fileexists(cometels_path) then
       read_and_plot(false,cometels_path)
     else
-      memo2_message('CometEls.txt file not found: '+ cometels_path+'   Set path in menu CTRL+Q' );
+      memo2_message('CometEls.txt file not found: '+ cometels_path+'   Set path in Asteroid & Comet annotation menu, CTRL+R' );
   end;
 
   {write some info at bottom screen}

@@ -3278,7 +3278,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.07.03, '+about_message4+
+  'ASTAP version 2022.07.07, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -5235,7 +5235,7 @@ begin
         for I := 0 to Count - 1 do
         begin
           Application.ProcessMessages;
-          if esc_pressed then begin Screen.Cursor := Save_Cursor;  { Always restore to normal } exit; end;
+          if esc_pressed then break;
 
           if extract_raw_colour_to_file(Strings[I] {filename}, filtern,xp,yp )=''{new file name} then beep;
         end;
@@ -8499,7 +8499,7 @@ begin
       begin
         progress_indicator(100*i/(count),' Solving');{show progress}
         Application.ProcessMessages;
-        if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+        if esc_pressed then begin err:=true; break;end;
         filename2:=Strings[I];
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
 
@@ -8512,7 +8512,7 @@ begin
 
       if err=false then mainwindow.caption:='Completed, all files converted.'
       else
-      mainwindow.caption:='Finished, files converted but with errors!';
+      mainwindow.caption:='Finished, files converted but with errors or stopped!';
 
       finally
       if dobackup then restore_img;{for the viewer}
@@ -9723,7 +9723,7 @@ begin
       for I := 0 to Count - 1 do
       begin
         Application.ProcessMessages;
-        if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+        if esc_pressed then begin err:=true;break; end;
         filename2:=Strings[I];
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
         if load_image(false {recenter},false {plot}) then
@@ -9742,7 +9742,7 @@ begin
       else
       begin
         beep;
-        ShowMessage('Errors!! Files modified but with errors!!');
+        ShowMessage('Errors!! Files modified but with errors or stopped!!');
       end;
       finally
       if dobackup then restore_img;{for the viewer}
@@ -9938,9 +9938,9 @@ procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
   size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci,hfd_counter      : integer;
   Save_Cursor:TCursor;
-  Fliphorizontal, Flipvertical,astar,saturated                                                                     : boolean;
-  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit,sqr_radius,
-   hfd_median,backgr: double;
+  Fliphorizontal, Flipvertical,saturated : boolean;
+  hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit,
+  sqr_radius, hfd_median,backgr : double;
   messg : string;
   img_temp3,img_sa :image_array;
 
@@ -10271,7 +10271,7 @@ begin
           filename2:=Strings[I];
           memo2_message('Annotating: '+filename2);
           Application.ProcessMessages;
-          if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+          if esc_pressed then begin break; end;
 
           if load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded) then {load image success}
           begin
@@ -10876,7 +10876,6 @@ begin
       begin
         List.Clear;
         ExtractStrings([';'], [], PChar(copy(mainwindow.Memo1.Lines[count1],12,posex(#39,mainwindow.Memo1.Lines[count1],20)-12)),List);
-
         if list.count>=6  then {correct annotation}
         begin
           x1:=round(strtofloat2(list[0]));
@@ -10998,7 +10997,7 @@ begin
   if sender<>Enter_rectangle_with_label1 then boldness:=head.width/image1.width else boldness:=-head.width/image1.width;
 
   plot_the_annotation(startX,startY,text_X,text_Y,boldness,value,'');
-  add_text ('ANNOTATE=',#39+inttostr(startX)+';'+inttostr(startY)+';'+inttostr(text_X)+';'+inttostr(text_Y)+';'+floattostr6(boldness)+';'+value+';'+#39);
+  add_text ('ANNOTATE=',#39+copy(inttostr(startX)+';'+inttostr(startY)+';'+inttostr(text_X)+';'+inttostr(text_Y)+';'+floattostr6(boldness)+';'+value+';',1,68)+#39);
   annotated:=true; {header contains annotations}
 end;
 
@@ -11965,8 +11964,7 @@ begin
         solved:=false;
 
         Application.ProcessMessages;
-        if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
-
+        if esc_pressed then  break;
         {load image and solve image}
         if load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded) then {load image success}
         begin
@@ -14202,7 +14200,7 @@ begin
       begin
         progress_indicator(100*i/(count),' Converting');{show progress}
         Application.ProcessMessages;
-        if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+        if esc_pressed then begin err:=true; break; end;
         filename2:=Strings[I];
         memo2_message(filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count));
         if sender=save_to_tiff2 then
@@ -14234,7 +14232,7 @@ begin
       end;
       if err=false then mainwindow.caption:='Completed, all files converted.'
       else
-      mainwindow.caption:='Finished, files converted but with errors!';
+      mainwindow.caption:='Finished, files converted but with errors or stopped!';
 
       finally
       if dobackup then restore_img;{for the viewer}
@@ -14278,7 +14276,7 @@ begin
       begin
         progress_indicator(100*i/(count),' Converting');{show progress}
         Application.ProcessMessages;
-        if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+        if esc_pressed then begin err:=true; break;end;
         filename2:=Strings[I];
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);;
         if load_image(false {recenter},false {plot}) then
@@ -14315,7 +14313,7 @@ begin
       end;
       if err=false then mainwindow.caption:='Completed, all files converted.'
       else
-      mainwindow.caption:='Finished, files converted but with errors!';
+      mainwindow.caption:='Finished, files converted but with errors or stopped!';
 
       finally
       if dobackup then restore_img;{for the viewer}
@@ -14519,7 +14517,7 @@ begin
       begin
         progress_indicator(100*i/(count),' Solving');{show progress}
         Application.ProcessMessages;
-        if esc_pressed then begin Screen.Cursor := Save_Cursor;  exit;end;
+        if esc_pressed then begin err:=true; break; end;
         filename2:=Strings[I];
         mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
         if load_fits(filename2,true{light},false {data},false {update memo},0,head_2,img_temp) then {load image success}
@@ -14544,7 +14542,7 @@ begin
 
       if err=false then mainwindow.caption:='Completed, all files dates set.'
       else
-      mainwindow.caption:='Finished, files date set but with errors!';
+      mainwindow.caption:='Finished, files date set but with errors or stopped!';
     except
     end;
     Screen.Cursor := Save_Cursor;  { Always restore to normal }
