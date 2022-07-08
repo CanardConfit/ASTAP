@@ -3007,9 +3007,9 @@ end;
 
 procedure Tstackmenu1.file_to_add1Click(Sender: TObject);
 begin
-  OpenDialog1.Title := 'Select image';
-  OpenDialog1.Options := [ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
+  OpenDialog1.Title:= 'Select image';
+  OpenDialog1.Options:= [ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter:= '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
 //  fits_file:=true;
   if opendialog1.execute then
   begin

@@ -848,7 +848,8 @@ const   bufwide=1024*120;{buffer size in bytes}
     {28}('                                                                                ')); {should be empthy !!}
 
 
-    pi_=pi; {for evaluate in debugging}
+  pi_=pi; {for evaluate in debugging}
+  dialog_filter_fits_tif='FITS and TIFF files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.tif;*.tiff;*.TIF.TIFF';
 
 type  byteX3  = array[0..2] of byte;
       byteXX3 = array[0..2] of word;
@@ -3278,7 +3279,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.07.07, '+about_message4+
+  'ASTAP version 2022.07.08, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -3484,9 +3485,18 @@ begin
 
   bin_X2X3X4(binfactor);{bin img_loaded 2x or 3x}
 
-  if binfactor=2 then filename2:=ChangeFileExt(Filename2,'_bin2x2.fit')
-                 else filename2:=ChangeFileExt(Filename2,'_bin3x3.fit');
-  result:=save_fits(img_loaded,filename2,nrbits,true);{overwrite}
+  if fits_file_name(filename2) then
+  begin
+    if binfactor=2 then filename2:=ChangeFileExt(Filename2,'_bin2x2.fit')
+                   else filename2:=ChangeFileExt(Filename2,'_bin3x3.fit');
+    result:=save_fits(img_loaded,filename2,nrbits,true)
+  end
+  else
+  begin
+    if binfactor=2 then filename2:=ChangeFileExt(Filename2,'_bin2x2.tif')
+                   else filename2:=ChangeFileExt(Filename2,'_bin3x3.tif');
+    result:=save_tiff16(img_loaded,filename2,false {flip H},false {flip V});
+  end;
 end;
 
 
@@ -3506,9 +3516,8 @@ begin
     OpenDialog1.Title := 'Select multiple  files to reduce in size (bin3x3)';
     binfactor:=3;
   end;
-  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
-
+  OpenDialog1.Options:= [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter:=dialog_filter_fits_tif;
   esc_pressed:=false;
 
   if OpenDialog1.Execute then
@@ -3525,7 +3534,7 @@ begin
         {load fits}
         Application.ProcessMessages;
         if ((esc_pressed) or
-            (binX2X3_file(binfactor)=false) {do the binning}) then begin Screen.Cursor := Save_Cursor;  exit;end;
+            (binX2X3_file(binfactor)=false) {do the binning}) then break;
       end;
       finally
       if dobackup then restore_img;{for the viewer}
@@ -9703,9 +9712,9 @@ var
   err,success   : boolean;
   dobackup : boolean;
 begin
-  OpenDialog1.Title := 'Select multiple  files to remove the observation location from';
-  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := 'FITS and TIFF files (*.fit*)|*.fit*;*.FIT*;*.fts;*.FTS;*.tif*;*.TIF*';
+  OpenDialog1.Title:='Select multiple  files to remove the observation location from';
+  OpenDialog1.Options:=[ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter:=dialog_filter_fits_tif;
 
   opendialog1.initialdir:=ExtractFileDir(filename2);
 //  fits_file:=false;
@@ -10248,9 +10257,9 @@ var
   skipped, nrannotated :integer;
   dobackup,success : boolean;
 begin
-  OpenDialog1.Title := 'Select multiple  files to add asteroid annotation to the header';
-  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := 'FITS and TIFF files (*.fit*)|*.fit*;*.FIT*;*.fts;*.FTS;*.tif*;*.TIF*';
+  OpenDialog1.Title:= 'Select multiple  files to add asteroid annotation to the header';
+  OpenDialog1.Options:= [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter:=dialog_filter_fits_tif;
   esc_pressed:=false;
 
   if OpenDialog1.Execute then
@@ -11933,9 +11942,9 @@ var
   failed,skipped,mess                           : string;
   startTick  : qword;{for timing/speed purposes}
 begin
-  OpenDialog1.Title := 'Select multiple files to add astrometric solution';
-  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := 'FITS and TIFF files (*.fit*)|*.fit*;*.FIT*;*.fts;*.FTS;*.tif*;*.TIF*';
+  OpenDialog1.Title :='Select multiple files to add astrometric solution';
+  OpenDialog1.Options :=[ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter :=dialog_filter_fits_tif;
   esc_pressed:=false;
   add_sip:=add_sip_check1.Checked;
   add_lim_magn:=add_limiting_magn_check1.Checked;
@@ -12658,7 +12667,7 @@ var
 begin
   OpenDialog1.Title := 'Select multiple  files to rotate 90 degrees.';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
+  opendialog1.Filter := dialog_filter_fits_tif;
 
   esc_pressed:=false;
 
