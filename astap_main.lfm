@@ -1746,8 +1746,18 @@ object mainwindow: Tmainwindow
       Caption = 'Online query'
       Enabled = False
       ImageIndex = 37
+      object simbad_annotation_deepsky1: TMenuItem
+        Caption = 'Simbad, deepsky annotation'
+        Hint = 'Annotate the selected area with deepsky object info from Simbad'
+        OnClick = gaia_star_position1Click
+      end
+      object simbad_annotation_star1: TMenuItem
+        Caption = 'Simbad, star annotation'
+        Hint = 'Annotate the selected area with star info from Simbad'
+        OnClick = gaia_star_position1Click
+      end
       object simbad_query1: TMenuItem
-        Caption = 'Simbad online query'
+        Caption = 'Simbad, browser query'
         Hint = 'Retrieve online info of the select area in the default browser.  To select an area, first hold the right mouse down and pull a rectangle.'
         ImageIndex = 38
         OnClick = gaia_star_position1Click

@@ -127,15 +127,15 @@ begin
     if length(filterstr)>1 then
     begin
       listbox1.Clear; { empty the list of any old values }
-      repeat
-        read_deepsky('T' {full database search} ,0 {ra},0 {dec},1 {cos(telescope_dec)},2*pi{fov},{var} ra0,dec0,length0,width0,pa);{Deepsky database search}
+      while read_deepsky('T' {full database search} ,0 {ra},0 {dec},1 {cos(telescope_dec)},2*pi{fov},{var} ra0,dec0,length0,width0,pa) {Deepsky database search} do
+      begin
         if ((length(filterstr)=0) or (pos(filterstr,uppercase(naam2))>0)) then
           listbox1.Items.Add(naam2);
         if ((length(naam3)>0)  and (((length(filterstr)=0) or (pos(filterstr,uppercase(naam3))>0)))) then
           listbox1.Items.Add(naam3);
         if ((length(naam4)>0)  and (((length(filterstr)=0) or (pos(filterstr,uppercase(naam4))>0)))) then
           listbox1.Items.Add(naam4);
-      until (linepos>=$FFFFFF);{Found object or end of database} ;
+      end;{while loop}
       edit1.text:='';{clear filtering}
 
       ActiveControl:=listbox1;{set focus on listbox1 text window}

@@ -20,7 +20,7 @@ procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: b
 procedure measure_distortion(plot: boolean; out stars_measured: integer);{measure or plot distortion}
 procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the mangitude. For super nova search}
 procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot image stars and database stars used for the solution}
-procedure read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double);{deepsky database search}
+function read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double): boolean;{deepsky database search}
 procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 function find_object(var objname : string; var ra0,dec0,length0,width0,pa : double): boolean; {find object in database}
 function calculate_undisturbed_image_scale : boolean;{calculate and correct the image scale as if the optical system is undisturbed. The distance between the stars in the center are measured and compared between detection and database. It is assumed that the center of the image is undisturbed optically }
@@ -35,7 +35,7 @@ var  {################# initialised variables #########################}
   flux_magn_offset       : double=0;{offset between star magnitude and flux. Will be calculated in stars are annotated}
   limiting_magnitude     : double=0;{magnitude where snr is 5}
   counter_flux_measured  : integer=0;{how many stars used for flux calibration}
-  database_nr            : integer=0; {1 is deepsky, 2 is hyperleda, 3 is variable loaded}
+  database_nr            : integer=0; {1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
 
 implementation
 
@@ -1036,7 +1036,7 @@ begin
     begin
        try
        LoadFromFile(database_path+'deep_sky.csv');{load deep sky data from file }
-       database_nr:=1;{1 is deepsky, 2 is hyperleda, 3 is variable loaded}
+       database_nr:=1;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
        except;
          clear;
          beep;
@@ -1170,7 +1170,7 @@ begin
     Code := P-@S+1;
 end;
 
-procedure read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double);{deepsky database search}
+function read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double): boolean;{deepsky database search}
 var
   x,z,y      : integer;
   fout,fout2, backsl1, backsl2,length_regel : integer;
@@ -1179,12 +1179,12 @@ var
   p2,p1: pchar;
 begin
   repeat {until fout is 0}
-
     if linepos>=deepstring.count then
-      begin
-        linepos:=$FFFFFF;{mark as finished}
-        exit;
-      end;
+    begin
+//      linepos:=$FFFFFF;{mark as finished}
+      result:=false;
+      exit;
+    end;
     regel:=deepstring.strings[linepos]; {using regel,is faster then deepstring.strings[linepos]}
     inc(linepos);
     x:=1; z:=0; y:=0;
@@ -1260,6 +1260,7 @@ begin
        inc(x);
     until ((z>=6) or (fout<>0));
   until fout=0;  {repeat until no errors }
+  result:=true;
 end;
 
 
@@ -1368,9 +1369,8 @@ begin
 
     sincos(head.dec0,SIN_dec_ref,COS_dec_ref);{do this in advance since it is for each pixel the same}
 
-    repeat
-      read_deepsky('S',telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov,{var} ra2,dec2,length1,width1,pa);{deepsky database search}
-
+    while read_deepsky('S',telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov,{var} ra2,dec2,length1,width1,pa) {deepsky database search} do
+    begin
       {5. Conversion (RA,DEC) -> (x,y). See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
       sincos(dec2,SIN_dec_new,COS_dec_new);{sincos is faster then separate sin and cos functions}
       delta_ra:=ra2-head.ra0;
@@ -1505,7 +1505,7 @@ begin
          mainwindow.image1.canvas.ellipse(round(x-len),round(y-len),round(x+1+len),round(y+1+len));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
        end;
      end;
-    until linepos>=$FFFFFF;{end of database}
+    end; {while loop};
 
     text_dimensions:=nil;{remove used memory}
 
@@ -2585,17 +2585,17 @@ begin
     objname:=uppercase(objname);
     load_deep;{Load the deepsky database once. If already loaded, no action}
     linepos:=2;{Set pointer to the beginning}
-    repeat
-      read_deepsky('T' {full database search} ,0 {ra},0 {dec},1 {cos(telescope_dec)},2*pi{fov},{var} ra0,dec0,length0,width0,pa);{Deepsky database search}
+    while  read_deepsky('T' {full database search} ,0 {ra},0 {dec},1 {cos(telescope_dec)},2*pi{fov},{var} ra0,dec0,length0,width0,pa) {Deepsky database search} do
+    begin
       if ((objname=uppercase(naam2)) or (objname=uppercase(naam3)) or (objname=uppercase(naam4))) then
       begin
         result:=true;
         if naam3='' then objname:=naam2 {Add one object name only}
-         else
-         objname:=naam2+'_'+naam3;{Add two object names}
-        linepos:=$FFFFFF; {Stop searching}
+        else
+          objname:=naam2+'_'+naam3;{Add two object names}
+        break; {Stop searching}
      end;
-    until linepos>=$FFFFFF;{Found object or end of database}
+    end;{while loop}
   end;
 end;
 

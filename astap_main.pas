@@ -106,6 +106,8 @@ type
     copy_to_clipboard1: TMenuItem;
     grid1: TMenuItem;
     freetext1: TMenuItem;
+    simbad_annotation_star1: TMenuItem;
+    simbad_annotation_deepsky1: TMenuItem;
     online_query1: TMenuItem;
     bin_2x2menu1: TMenuItem;
     bin_3x3menu1: TMenuItem;
@@ -3279,7 +3281,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.07.08, '+about_message4+
+  'ASTAP version 2022.07.12, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -12818,6 +12820,128 @@ begin
  {center of gravity found}
 end;
 
+procedure plot_simbad(info:string);
+var
+  name,regel,simobject,typ,mag,colour,sizestr : string;
+  m :double;
+  err,i,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,ra1,ra2,ra3,dec1,dec2,dec3,count,minnen1,minnen2 : integer;
+  ra,dec,rah,ram,ras,decd,decm,decs,sign,size : double;
+  slist: TStringList;
+
+  procedure read_position(start,stop:integer);
+  begin
+    ra1:=posex(' ',regel,start+1);
+    ra2:=posex(' ',regel,ra1+1);
+    ra3:=posex(' ',regel,ra2+1);
+    dec1:=posex(' ',regel,ra3+3);//skip some more for double spaces
+    dec2:=posex(' ',regel,dec1+1);
+    if stop=0 then
+      stop:=posex(' ',regel,dec2+2);
+
+    rah:=strtofloat1(copy(regel,start+1,ra1-start-1));
+    ram:=strtofloat1(copy(regel,ra1+1,ra2-ra1-1));
+    ras:=strtofloat1(copy(regel,ra2+1,ra3-ra2-1));
+
+    decd:=strtofloat1(trim(copy(regel,ra3+1,dec1-ra3-1)));
+    decm:=strtofloat1(copy(regel,dec1+1,dec2-dec1-1));
+    decs:=strtofloat1(trim(copy(regel,dec2+1,stop-dec2-1)));
+    if pos('-',copy(regel,ra3+1,3))>0 then sign:=-1 else sign:=+1;
+  end;
+
+begin
+  m:=0;//default unknown magnitude;
+  slist := TStringList.Create;
+  deepstring.clear;
+  deepstring.add('');//add two lines blank comments
+  deepstring.add('');
+
+  try
+    slist.Text := info;
+
+    count:=5;{skip first part}
+    while count+1<=slist.count do
+    begin
+      regel:=ansistring(slist[count]);
+      inc(count);
+
+      //single object
+      if copy(regel,1,6)='Object' then //single object
+      begin
+        minnen1:=pos('---',regel);
+        minnen2:=posex('---',regel,minnen1+4);
+        name:=StringReplace(trim( copy(regel,8,minnen1-2-8)), ' ', '_',[rfReplaceAll]); {name}
+        typ:=trim(copy(regel,minnen1+4,minnen2-(minnen1+5)));
+      end
+      else
+      if copy(regel,1,16)='Coordinates(ICRS' then //single object
+      begin
+        read_position(36,0);//read ra and dec from 36
+      end
+      else
+      if copy(regel,1,4)='Flux' then //magnitude
+      begin
+        colour:=copy(regel,6,1);
+        if ((colour='B') or (colour='V')) then
+          val((copy(regel,10,posex(' ',regel,11)-10)),m,err);{B or V magnitude}
+      end
+      else
+      if copy(regel,1,7)='Angular' then
+      begin
+        val((copy(regel,15,posex(' ',regel,11)-10)),size,err);//angular size
+        if size<>0 then sizestr:=','+inttostr(round(size*10)) else sizestr:='';
+
+        if m=0 then mag:='' {unknown magnitude, e.g ngc1988}
+        else
+        mag:='/'+inttostr(round(m*10));{magn}
+
+        simobject:=inttostr(round((rah+ram/60+ras/3600)*864000/24))+','+inttostr(round(sign*(abs(decd)+decm/60+decs/3600)*324000/90))+','+name+'['+typ+mag+']'+sizestr;
+        deepstring.add(simobject);
+        break //ready for single object
+      end;
+
+
+
+      //more then one, list of object
+      if ((length(regel)>=130) and (count>=10)) then
+      begin
+        {magnitude}
+        p1:=pos('|',regel);{first column changes in width}
+        p2:=posex('|',regel,p1+1);
+        p3:=posex('|',regel,p2+1);
+        p4:=posex('|',regel,p3+1);
+        p5:=posex('|',regel,p4+1);
+        p6:=posex('|',regel,p5+1);
+        p7:=posex('|',regel,p6+1);
+
+        if p7>0 then
+        begin
+          read_position(p3,p4);//read ra and dec within start and stop
+          val(trim(copy(regel,p6+1,p7-p6-1)),m,err);{V magnitude}
+          if m=0 then val(trim(copy(regel,p5+1,p6-p5-1)),m,err);{try B magnitude}
+
+          if m=0 then mag:='' {unknown magnitude, e.g ngc1988}
+          else
+          mag:='/'+inttostr(round(m*10));{magn}
+
+          typ:=trim(copy(regel,p2+1,p3-p2-1));
+          name:=StringReplace(trim(copy(regel,p1+1,p2-p1-1)), ' ', '_',[rfReplaceAll]);{name}
+
+          simobject:=inttostr(round((rah+ram/60+ras/3600)*864000/24))+','+inttostr(round(sign*(abs(decd)+decm/60+decs/3600)*324000/90))+','+name+'['+typ+mag+']';
+
+          //RA[0..864000], DEC[-324000..324000], name(s), length [0.1 min], width[0.1 min], orientation[degrees]
+          //659250,-49674,M16/NGC6611/Eagle_Nebula,80
+          deepstring.add(simobject);
+        end;
+      end; {length regel okay}
+    end;
+
+  finally
+    slist.Free;
+  end;
+
+  database_nr:=4;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
+  plot_deepsky;
+end;
 
 procedure Tmainwindow.gaia_star_position1Click(Sender: TObject);
 var
@@ -12861,14 +12985,36 @@ begin
 
   str(abs(object_decM*180/pi) :3:10,dec8);
   if object_decM>=0 then sgn:='+'  else sgn:='-';
+  if object_decM>=0 then sgn:='%2B'{+}  else sgn:='%2D'{-} ;
+
   str(abs(object_raM*180/pi) :3:10,ra8);
+
+  if sender=simbad_annotation_deepsky1 then
+  begin
+    x1:=(stopX+startX) div 2;
+    y1:=(stopY+startY) div 2;
+    url:='http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(maintype!=*)'+'%26+region(box,'+ra8+sgn+dec8+',+'+floattostr4(ang_w)+'s+'+floattostr4(ang_h)+'s)&OutputMode=LIST&output.format=ASCII';
+//    http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(Vmag<15+|+Bmag<15+)%26+region(box,60.2175d%2B25.5763d,+32.3592m+38.5229m)&OutputMode=LIST&output.format=ASCII'
+    plot_simbad(get_http(url));
+    exit;
+  end
+  else
+  if sender=simbad_annotation_star1 then
+  begin
+    x1:=(stopX+startX) div 2;
+    y1:=(stopY+startY) div 2;
+    url:='http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(maintype=*)'+'%26+region(box,'+ra8+sgn+dec8+',+'+floattostr4(ang_w)+'s+'+floattostr4(ang_h)+'s)&OutputMode=LIST&output.format=ASCII';
+//    http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(Vmag<15+|+Bmag<15+)%26+region(box,60.2175d%2B25.5763d,+32.3592m+38.5229m)&OutputMode=LIST&output.format=ASCII'
+    plot_simbad(get_http(url));
+    exit;
+  end
+  else
 
   if sender=mainwindow.gaia_star_position1 then
   begin
     plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,'','');{rectangle, +1 to fits coordinates}
     url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size;
     //http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,pmRA,pmDE,Gmag,BPmag,RPmag&-c=86.5812345-10.3456,bm=1x1&-out.max=1000000&BPmag=%3C21.5
-
   end
   else
   if sender=mainwindow.simbad_query1 then
@@ -12877,7 +13023,7 @@ begin
     x1:=(stopX+startX) div 2;
     y1:=(stopY+startY) div 2;
     plot_the_circle(x1-radius,y1-radius,x1+radius,y1+radius);
-    url:='http://simbad.u-strasbg.fr/simbad/sim-coo?Radius.unit=arcsec&Radius='+floattostr6(max(ang_w,ang_h)/2)+'&Coord='+ra8+'d'+sgn+dec8+'d';
+    url:='http://simbad.u-strasbg.fr/simbad/sim-coo?Radius.unit=arcsec&Radius='+floattostr6(max(ang_w,ang_h)/2)+'&Coord='+ra8+'d'+sgn+dec8+'d&OutputMode=LIST&output.format=HTML';
     //  url:='http://simbad.u-strasbg.fr/simbad/sim-coo?Radius.unit=arcsec&Radius=0.4692&Coord=195.1060d28.1998d
   end
   else
@@ -14499,6 +14645,7 @@ begin
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
+
 
 
 procedure Tmainwindow.set_modified_date1Click(Sender: TObject);
