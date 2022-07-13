@@ -1054,7 +1054,7 @@ begin
     begin
        try
        LoadFromFile(database_path+'variable_stars.csv');{load deep sky data from file }
-       database_nr:=3;{1 is deepsky, 2 is hyperleda, 3 is variable loaded}
+       database_nr:=3;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
        except;
          clear;
          beep;
@@ -1072,7 +1072,7 @@ begin
     begin
        try
        LoadFromFile(database_path+'hyperleda.csv');{load deep sky data from file }
-       database_nr:=2;{1 is deepsky, 2 is hyperleda, 3 is variable loaded}
+       database_nr:=2;{1 is deepsky, 2 is hyperleda, 3 is variable loaded, 4=simbad}
        except;
          clear;
          beep;

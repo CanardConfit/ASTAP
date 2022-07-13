@@ -1749,12 +1749,17 @@ object mainwindow: Tmainwindow
       object simbad_annotation_deepsky1: TMenuItem
         Caption = 'Simbad, deepsky annotation'
         Hint = 'Annotate the selected area with deepsky object info from Simbad'
+        ImageIndex = 38
         OnClick = gaia_star_position1Click
       end
       object simbad_annotation_star1: TMenuItem
         Caption = 'Simbad, star annotation'
         Hint = 'Annotate the selected area with star info from Simbad'
+        ImageIndex = 38
         OnClick = gaia_star_position1Click
+      end
+      object MenuItem21: TMenuItem
+        Caption = '-'
       end
       object simbad_query1: TMenuItem
         Caption = 'Simbad, browser query'
@@ -1763,17 +1768,17 @@ object mainwindow: Tmainwindow
         OnClick = gaia_star_position1Click
       end
       object hyperleda_guery1: TMenuItem
-        Caption = 'HyperLeda'
+        Caption = 'HyperLeda, browser query'
         Hint = 'Retrieve online info of the select area in the default browser. To select an area, first hold the right mouse down and pull a rectangle.'
         OnClick = gaia_star_position1Click
       end
       object ned_query1: TMenuItem
-        Caption = 'NED'
+        Caption = 'NED, browser query'
         Hint = 'Retrieve online info of the select area in the default browser.  To select an area, first hold the right mouse down and pull a rectangle.'
         OnClick = gaia_star_position1Click
       end
       object gaia_star_position1: TMenuItem
-        Caption = 'Gaia online query'
+        Caption = 'Gaia, browser query'
         Hint = 'Will display the online information for any star within 5 arc seconds of the centroid. The Gaia BP (blue) magnitude matches the best with visual.'
         ImageIndex = 36
         OnClick = gaia_star_position1Click

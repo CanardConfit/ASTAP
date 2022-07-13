@@ -106,6 +106,7 @@ type
     copy_to_clipboard1: TMenuItem;
     grid1: TMenuItem;
     freetext1: TMenuItem;
+    MenuItem21: TMenuItem;
     simbad_annotation_star1: TMenuItem;
     simbad_annotation_deepsky1: TMenuItem;
     online_query1: TMenuItem;
@@ -3281,7 +3282,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.07.12, '+about_message4+
+  'ASTAP version 2022.07.13, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -10832,7 +10833,7 @@ begin
   else
   begin {rectangle or two indicating lines}
      size:=abs(x2-x1);
-     if abs(x2-x1)>5 then
+     if ((size>5) and (abs(y2-y1)>5)) then
        plot_rectangle(x1,y1,x2,y2) {accurate positioned rectangle on screen coordinates}
      else
      begin {two lines}
@@ -12823,31 +12824,29 @@ end;
 procedure plot_simbad(info:string);
 var
   name,regel,simobject,typ,mag,colour,sizestr : string;
-  m :double;
-  err,i,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,ra1,ra2,ra3,dec1,dec2,dec3,count,minnen1,minnen2 : integer;
-  ra,dec,rah,ram,ras,decd,decm,decs,sign,size : double;
+  err,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,ra1,ra2,ra3,dec1,dec2,count,minnen1,minnen2 : integer;
+  m,rah,ram,ras,decd,decm,decs,sign,size : double;
   slist: TStringList;
+      procedure read_position(start,stop:integer);
+      begin
+        ra1:=posex(' ',regel,start+1);
 
-  procedure read_position(start,stop:integer);
-  begin
-    ra1:=posex(' ',regel,start+1);
-    ra2:=posex(' ',regel,ra1+1);
-    ra3:=posex(' ',regel,ra2+1);
-    dec1:=posex(' ',regel,ra3+3);//skip some more for double spaces
-    dec2:=posex(' ',regel,dec1+1);
-    if stop=0 then
-      stop:=posex(' ',regel,dec2+2);
+        ra2:=posex(' ',regel,ra1+1);
+        ra3:=posex(' ',regel,ra2+1);
+        dec1:=posex(' ',regel,ra3+3);//skip some more for double spaces
+        dec2:=posex(' ',regel,dec1+1);
+        if stop=0 then
+          stop:=posex(' ',regel,dec2+2);
 
-    rah:=strtofloat1(copy(regel,start+1,ra1-start-1));
-    ram:=strtofloat1(copy(regel,ra1+1,ra2-ra1-1));
-    ras:=strtofloat1(copy(regel,ra2+1,ra3-ra2-1));
+        rah:=strtofloat1(copy(regel,start+1,ra1-start-1));
+        ram:=strtofloat1(copy(regel,ra1+1,ra2-ra1-1));
+        ras:=strtofloat1(copy(regel,ra2+1,ra3-ra2-1));
 
-    decd:=strtofloat1(trim(copy(regel,ra3+1,dec1-ra3-1)));
-    decm:=strtofloat1(copy(regel,dec1+1,dec2-dec1-1));
-    decs:=strtofloat1(trim(copy(regel,dec2+1,stop-dec2-1)));
-    if pos('-',copy(regel,ra3+1,3))>0 then sign:=-1 else sign:=+1;
-  end;
-
+        decd:=strtofloat1(trim(copy(regel,ra3+1,dec1-ra3-1)));
+        decm:=strtofloat1(copy(regel,dec1+1,dec2-dec1-1));
+        decs:=strtofloat1(trim(copy(regel,dec2+1,stop-dec2-1)));
+        if pos('-',copy(regel,ra3+1,3))>0 then sign:=-1 else sign:=+1;
+      end;
 begin
   m:=0;//default unknown magnitude;
   slist := TStringList.Create;
@@ -12864,7 +12863,7 @@ begin
       regel:=ansistring(slist[count]);
       inc(count);
 
-      //single object
+      //single object is reported by Simbad
       if copy(regel,1,6)='Object' then //single object
       begin
         minnen1:=pos('---',regel);
@@ -12901,7 +12900,7 @@ begin
 
 
 
-      //more then one, list of object
+      //Simbad report a list of objects
       if ((length(regel)>=130) and (count>=10)) then
       begin
         {magnitude}
@@ -12912,8 +12911,8 @@ begin
         p5:=posex('|',regel,p4+1);
         p6:=posex('|',regel,p5+1);
         p7:=posex('|',regel,p6+1);
-
-        if p7>0 then
+        //there are more | but are not required
+        if p7>0 then //this is a real line of the object list
         begin
           read_position(p3,p4);//read ra and dec within start and stop
           val(trim(copy(regel,p6+1,p7-p6-1)),m,err);{V magnitude}
@@ -12932,7 +12931,7 @@ begin
           //659250,-49674,M16/NGC6611/Eagle_Nebula,80
           deepstring.add(simobject);
         end;
-      end; {length regel okay}
+      end; {correct line of object list}
     end;
 
   finally
@@ -12943,12 +12942,14 @@ begin
   plot_deepsky;
 end;
 
+
 procedure Tmainwindow.gaia_star_position1Click(Sender: TObject);
 var
    url,ra8,dec8,sgn,window_size,magn,dec_degrees  : string;
    ang_h,ang_w,ra1,ra2,dec1,dec2 : double;
    radius,x1,y1                  : integer;
-begin
+   oldcursor: tcursor;
+ begin
   if ((abs(stopX-startX)<2) and (abs(stopY-startY)<2))then
   begin
     if object_xc>0 then {object sync}
@@ -12960,7 +12961,7 @@ begin
     end
     else
     begin
-      application.messagebox(pchar('No star lock or No area selected! Place mouse on a star or hold the right mouse button down while selecting an area.'),'',MB_OK);
+      application.messagebox(pchar('No star lock or no area selected!'+#10+#10+'Place mouse on a star or hold the right mouse button down while selecting an area.'),'',MB_OK);
       exit;
     end;
   end
@@ -12978,6 +12979,9 @@ begin
     object_decM:=(dec1+dec2)/2;
   end;
 
+  OldCursor := Screen.Cursor;
+  Screen.Cursor:= crHourGlass;
+
   image1.Canvas.Pen.Mode := pmMerge;
   image1.Canvas.Pen.width :=1;
   mainwindow.image1.Canvas.Pen.Color:= annotation_color;{clyellow}
@@ -12989,34 +12993,38 @@ begin
 
   str(abs(object_raM*180/pi) :3:10,ra8);
 
-  if sender=simbad_annotation_deepsky1 then
+  if sender=simbad_annotation_deepsky1 then //Simbad deepsky
   begin
     x1:=(stopX+startX) div 2;
     y1:=(stopY+startY) div 2;
     url:='http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(maintype!=*)'+'%26+region(box,'+ra8+sgn+dec8+',+'+floattostr4(ang_w)+'s+'+floattostr4(ang_h)+'s)&OutputMode=LIST&output.format=ASCII';
 //    http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(Vmag<15+|+Bmag<15+)%26+region(box,60.2175d%2B25.5763d,+32.3592m+38.5229m)&OutputMode=LIST&output.format=ASCII'
     plot_simbad(get_http(url));
+    Screen.Cursor:=OldCursor;
     exit;
   end
   else
-  if sender=simbad_annotation_star1 then
+
+  if sender=simbad_annotation_star1 then //Simbad stars
   begin
     x1:=(stopX+startX) div 2;
     y1:=(stopY+startY) div 2;
     url:='http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(maintype=*)'+'%26+region(box,'+ra8+sgn+dec8+',+'+floattostr4(ang_w)+'s+'+floattostr4(ang_h)+'s)&OutputMode=LIST&output.format=ASCII';
 //    http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(Vmag<15+|+Bmag<15+)%26+region(box,60.2175d%2B25.5763d,+32.3592m+38.5229m)&OutputMode=LIST&output.format=ASCII'
     plot_simbad(get_http(url));
+    Screen.Cursor:=OldCursor;
     exit;
   end
   else
 
-  if sender=mainwindow.gaia_star_position1 then
+  if sender=mainwindow.gaia_star_position1 then //Gaia stars
   begin
     plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,'','');{rectangle, +1 to fits coordinates}
-    url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size;
-    //http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/350/Gaiaedr3&-out=Source,RA_ICRS,DE_ICRS,pmRA,pmDE,Gmag,BPmag,RPmag&-c=86.5812345-10.3456,bm=1x1&-out.max=1000000&BPmag=%3C21.5
+    url:='http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag,BPmag,RPmag&-c='+ra8+sgn+dec8+window_size;
+    //http://vizier.u-strasbg.fr/viz-bin/asu-txt?-source=I/355/Gaiadr3&-out=Source,RA_ICRS,DE_ICRS,pmRA,pmDE,Gmag,BPmag,RPmag&-c=86.5812345-10.3456,bm=1x1&-out.max=1000000&BPmag=%3C21.5
   end
   else
+
   if sender=mainwindow.simbad_query1 then
   begin {sender simbad_query1}
     radius:=max(abs(stopX-startX),abs(stopY-startY)) div 2; {convert elipse to circle}
@@ -13027,12 +13035,14 @@ begin
     //  url:='http://simbad.u-strasbg.fr/simbad/sim-coo?Radius.unit=arcsec&Radius=0.4692&Coord=195.1060d28.1998d
   end
   else
+
   if sender=mainwindow.hyperleda_guery1 then
   begin {sender hyperleda_guery1}
-    plot_the_annotation(stopX+1,startY+1,startX+1,startY+ (startX-stopX)+1,0,'','');{rectangle, +1 to fits coordinates}
+    plot_the_annotation(stopX+1,stopY+1,startX+1,startY+1,0,'','');{rectangle, +1 to fits coordinates}
     url:='http://leda.univ-lyon1.fr/fG.cgi?n=a000&ob=ra&c=o&p=J'+ra8+'d%2C'+sgn+dec8+'d&f='+floattostr6(max(ang_w,ang_h)/(60));  //350.1000D%2C50.50000D    &f=50
     // http://leda.univ-lyon1.fr/fG.cgi?n=a000&c=o&p=J350.1000D%2C50.50000D&f=50&ob=ra
   end
+
   else
   if sender=mainwindow.ned_query1 then
   begin {sender ned_query1}
@@ -13040,7 +13050,7 @@ begin
     x1:=(stopX+startX) div 2;
     y1:=(stopY+startY) div 2;
     plot_the_circle(x1-radius,y1-radius,x1+radius,y1+radius);
-    url:='http://ned.ipac.caltech.edu/conesearch?in_csys=Equatorial&in_equinox=J2000&coordinates='+ra8+'d%20%2B'+sgn+dec8+'d&radius=' +floattostr6(max(ang_w,ang_h)/(60*2))+'&corr_z=1&z_constraint=Unconstrained&z_unit=z&ot_include=ANY&nmp_op=ANY&search_type=Near%20Position%20Search&out_csys=Equatorial&out_equinox=Same%20as%20Input&obj_sort=Distance%20to%20search%20center'+'&in_objtypes1[Galaxies]=Galaxies&in_objtypes1[GPairs]=GPairs&in_objtypes1[GTriples]=GTriples&in_objtypes1[GGroups]=GGroups&in_objtypes1[GClusters]=GClusters&in_objtypes1[QSO]=QSO&in_objtypes1[QSOGroups]=QSOGroups&in_objtypes1[GravLens]=GravLens&in_objtypes1[AbsLineSys]=AbsLineSys&in_objtypes1[EmissnLine]=EmissnLine';
+    url:='http://ned.ipac.caltech.edu/conesearch?in_csys=Equatorial&in_equinox=J2000&coordinates='+ra8+'d%20'+sgn+dec8+'d&radius=' +floattostr6(max(ang_w,ang_h)/(60*2))+'&corr_z=1&z_constraint=Unconstrained&z_unit=z&ot_include=ANY&nmp_op=ANY&search_type=Near%20Position%20Search&out_csys=Equatorial&out_equinox=Same%20as%20Input&obj_sort=Distance%20to%20search%20center'+'&in_objtypes1[Galaxies]=Galaxies&in_objtypes1[GPairs]=GPairs&in_objtypes1[GTriples]=GTriples&in_objtypes1[GGroups]=GGroups&in_objtypes1[GClusters]=GClusters&in_objtypes1[QSO]=QSO&in_objtypes1[QSOGroups]=QSOGroups&in_objtypes1[GravLens]=GravLens&in_objtypes1[AbsLineSys]=AbsLineSys&in_objtypes1[EmissnLine]=EmissnLine';
     //http://ned.ipac.caltech.edu/conesearch?in_csys=Equatorial&in_equinox=J2000&coordinates=12.000d%20%2B45.0000d&radius=2&corr_z=1&z_constraint=Unconstrained&z_unit=z&ot_include=ANY&nmp_op=ANY&search_type=Near%20Position%20Search&out_csys=Equatorial&out_equinox=Same%20as%20Input&obj_sort=Distance%20to%20search%20center
   end
   else
@@ -13063,6 +13073,7 @@ begin
     //  https://app.aavso.org/vsp/chart/?ra=08%3A40%3A29.63&dec=40%3A07%3A24.4&scale=C&orientation=visual&type=chart&fov=120.0&maglimit=12.0&resolution=150&north=up&east=left
   end;
   openurl(url);
+  Screen.Cursor:=OldCursor;
 end;
 
 
