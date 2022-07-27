@@ -3282,7 +3282,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.07.13, '+about_message4+
+  'ASTAP version 2022.07.27, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -10013,7 +10013,7 @@ const
   begin
     for fitsX:=0 to head.width-1  do
     begin
-      if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- cblack>5*noise_level[0] {star_level} ){star}) then {new star}
+      if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- {cblack}backgr>5*noise_level[0] {star_level} ){star}) then {new star}
       begin
 
         HFD(img_loaded,fitsX,fitsY,round(1.5* hfd_median){annulus radius},3.0*hfd_median {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
@@ -10037,14 +10037,14 @@ const
 
         if (((hfd1<hfd_median*1.3) or (saturated){larger then normal}) and (hfd1>=hfd_median*0.75) and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
         begin
-          {for testing}
-  //        if flipvertical=false  then  starY:=round(head.height-yc) else starY:=round(yc);
-    //      if fliphorizontal=true then starX:=round(head.width-xc)  else starX:=round(xc);
-//            size:=round(5*hfd1);
-  //          mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
-    //        mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
-       //   if ((abs(xc-2294)<4) and  (abs(yc-274)<4)) then
-      //    beep;
+                      {for testing}
+              //      if flipvertical=false  then  starY:=round(head.height-yc) else starY:=round(yc);
+              //      if fliphorizontal=true then starX:=round(head.width-xc)  else starX:=round(xc);
+              //      size:=round(5*hfd1);
+              //      mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
+              //      mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
+              //      if ((abs(xc-2294)<4) and  (abs(yc-274)<4)) then
+              //      beep;
 
           radius:=round(3.0*hfd_median);{for marking star area. A value between 2.5*hfd and 3.5*hfd gives same performance. Note in practice a star PSF has larger wings then predicted by a Gaussian function}
           sqr_radius:=sqr(radius);
