@@ -7903,7 +7903,7 @@ var fitsX, fitsY,fuzziness :integer;
     colour: tcolor;
     remove_lum : boolean;
 begin
-  if ((head.naxis=0) and (head.naxis3<>3)) then exit;
+  if ((head.naxis=0) or (head.naxis3<>3)) then exit;
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
