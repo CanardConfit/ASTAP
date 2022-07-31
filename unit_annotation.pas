@@ -1579,7 +1579,9 @@ begin
 
       if mode=1 then counts:=length(vsx) else counts:=length(vsp);
       count:=0;
-      repeat
+
+      while count<counts do //go through data
+      begin
         {5. Conversion (RA,DEC) -> (x,y). See http://alain.klotz.free.fr/audela/libtt/astm1-fr.htm}
 
         if mode=1 then begin ra:=vsx[count].ra; dec:=vsx[count].dec;end else begin ra:=vsp[count].ra; dec:=vsp[count].dec;end;
@@ -1699,7 +1701,7 @@ begin
           mainwindow.image1.canvas.pixels[x+2,y-2]:=annotation_color;
         end;
         inc(count);
-      until count>=counts;{end of database}
+      end;//while loop
     end;//plot vsx and vsp
 
     text_dimensions:=nil;{remove used memory}

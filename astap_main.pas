@@ -3282,7 +3282,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.07.27, '+about_message4+
+  'ASTAP version 2022.07.31, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -12824,7 +12824,7 @@ end;
 procedure plot_simbad(info:string);
 var
   name,regel,simobject,typ,mag,colour,sizestr : string;
-  err,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10,ra1,ra2,ra3,dec1,dec2,count,minnen1,minnen2 : integer;
+  err,p1,p2,p3,p4,p5,p6,p7,ra1,ra2,ra3,dec1,dec2,count,minnen1,minnen2 : integer;
   m,rah,ram,ras,decd,decm,decs,sign,size : double;
   slist: TStringList;
       procedure read_position(start,stop:integer);
