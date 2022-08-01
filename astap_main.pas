@@ -616,7 +616,7 @@ var
   stretch_c : array[0..32768] of single;{stretch curve}
   stretch_on, esc_pressed, fov_specified,unsaved_import, last_extension : boolean;
   star_level,star_bg,sd_bg, magn_limit  : double;
-  object_name,old_calstat,
+  object_name,
   imagetype ,sitelat, sitelong,siteelev , centalt,centaz: string;
   focus_temp,cblack,cwhite,sqmfloat,pressure   :double; {from FITS}
   subsamp, focus_pos  : integer;{not always available. For normal DSS =1}
@@ -1761,7 +1761,7 @@ begin
 
      if head.ra0<>0 then           head.ra0--->ra1.text------------------->ra_radians}
 
-    if light then old_calstat:=head.calstat; //keep this for procedure savefits_update_header
+//    if light then old_calstat:=head.calstat; //keep this for procedure savefits_update_header
 
     unsaved_import:=false;{file is available for astrometry.net}
 
@@ -3282,7 +3282,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.07.31, '+about_message4+
+  'ASTAP version 2022.08.01a, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -4933,7 +4933,8 @@ begin
     stackmenu1.tab_Pixelmath2.enabled:=fits;
   end;{menu change}
 
-  mainwindow.error_label1.visible:=(fits=false);
+  //mainwindow.error_label1.visible:=(fits=false);
+  if fits then mainwindow.error_label1.visible:=false;;
 
   mainwindow.SaveFITSwithupdatedheader1.Enabled:=((fits) and (fits_file_name(filename2)) and (fileexists(filename2)));{menu disable, no file available to update header}
   mainwindow.saturation_factor_plot1.enabled:=head.naxis3=3;{colour};
@@ -7036,7 +7037,7 @@ begin
     TheFile:=tfilestream.Create(filen2, fmOpenRead or fmShareDenyWrite);
     Reader := TReader.Create (TheFile,$4000);{number of hnsky records}
 
-    if head.calstat<>'' then update_text('CALSTAT =',#39+old_calstat+#39); {calibration status has not change because the image is original}
+   // if head.calstat<>'' then update_text('CALSTAT =',#39+old_calstat+#39); {calibration status has not change because the image is original}
     {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
     I:=0;
     reader_position:=0;

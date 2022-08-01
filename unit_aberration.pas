@@ -86,8 +86,7 @@ END;
 
 
 procedure nutation_correction_equatorial(julian_et: double;var ra,dec : double);{mean equinox, add nutation M&P page 125}
-var r,x0,y0,z0,vx,vy,vz,dum1,dum2 : double;
-    ph_earth, vh_earth : r3_array;{helio centric earth vector}
+var r,x0,y0,z0 : double;
 
 begin
   cart2(1,dec,ra,x0,y0,z0); {make cartesian coordinates}
@@ -97,9 +96,8 @@ end;
 
 
 procedure aberration_correction_equatorial(julian_et: double;var ra,dec : double);{J2000 equinox}
-var r,x0,y0,z0,vx,vy,vz,dum1,dum2 : double;
+var r,x0,y0,z0 : double;
     pb_earth, vb_earth : r3_array;{barycentric earth vector}
-    ph_earth, vh_earth : r3_array;{heliocentric earth vector}
 
 begin
   //http://www.bbastrodesigns.com/coordErrors.html  Gives same value within a fraction of arcsec.

@@ -1008,7 +1008,8 @@ const
   P_calibration=19;
   P_centalt=20;
   P_airmass=21;
-  P_nr=22;{number of fields}
+  P_limmagn=22;
+  P_nr=23;{number of fields}
 
   M_exposure=0;  {mount analyse}
   M_temperature=1;
@@ -3130,9 +3131,6 @@ end;
 
 
 procedure Tstackmenu1.listview1ColumnClick(Sender: TObject; Column: TListColumn);
-var c,thecount: integer;
-    lc : array of boolean;
-
 begin
   SortedColumn:= Column.Index;
 end;
@@ -6431,13 +6429,13 @@ begin
   aperture_ratio:=apert;{remember apert setting}
   annul:=strtofloat2(annulus_radius1.text);
 
-
   esc_pressed:=false;
   warned:=false;
 
   memo2_message('Checking for astrometric solutions in FITS header required for star flux calibration against star database.');
 
   refresh_solutions:=(sender=stackmenu1.refresh_astrometric_solutions1); {refresh astrometric solutions}
+
 
   {solve lights first to allow flux to magnitude calibration}
   for c:=0 to listview7.items.count-1 do {check for astrometric solutions}
@@ -6455,6 +6453,7 @@ begin
         nil_all;{nil all arrays and restore cursor}
         exit;
       end;
+
       if ((head.cd1_1=0) or (refresh_solutions)) then
       begin
         listview7.Selected :=nil; {remove any selection}
@@ -6484,8 +6483,10 @@ begin
         listview7.Items.item[c].subitems.Strings[P_astrometric]:='✓';
       end;
     end;{check for astrometric solutions}
+    update_menu(false);//can't save the current file since timage doesn't match with img_loaded
   end;{for loop for astrometric solving }
   {astrometric calibration}
+
 
   if ((refresh_solutions) or (esc_pressed{stop} )) then
   begin
@@ -6495,7 +6496,6 @@ begin
     exit;
   end;
 
-//  first_image:=-1;
   outliers:=nil;
   stepnr:=0;
   init:=false;
@@ -6581,7 +6581,8 @@ begin
           end;
 
           {calibrate using POINT SOURCE calibration using hfd_med found earlier!!!}
-          plot_and_measure_stars(true {calibration},false {plot stars},false{report lim magnitude}); {get flux_magn_offset}
+          plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude}); {get flux_magn_offset}
+          listview7.Items.item[c].subitems.Strings[p_limmagn]:=floattostrF(magn_limit,FFgeneral,4,2);
 
           if flux_magn_offset<>0 then
           begin

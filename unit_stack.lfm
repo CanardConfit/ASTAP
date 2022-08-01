@@ -1,15 +1,15 @@
 object stackmenu1: Tstackmenu1
-  Left = 86
+  Left = 37
   Height = 712
-  Top = 126
-  Width = 1813
+  Top = 202
+  Width = 1877
   HorzScrollBar.Page = 1701
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
   ClientHeight = 712
-  ClientWidth = 1813
+  ClientWidth = 1877
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -55,7 +55,7 @@ object stackmenu1: Tstackmenu1
     Left = 0
     Height = 152
     Top = 560
-    Width = 1813
+    Width = 1877
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     DoubleBuffered = True
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 16652
+    Left = 16716
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -226,7 +226,7 @@ object stackmenu1: Tstackmenu1
     Height = 498
     Hint = 'Stack menu'
     Top = 0
-    Width = 1813
+    Width = 1877
     ActivePage = lights
     Align = alClient
     Constraints.MaxHeight = 498
@@ -243,7 +243,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 470
-      ClientWidth = 1805
+      ClientWidth = 1869
       ImageIndex = 22
       ParentFont = False
       object nr_selected1: TLabel
@@ -307,7 +307,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1805
+        Width = 1869
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3251,7 +3251,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Photometry of variable stars.'
       Caption = 'Photometry'
       ClientHeight = 470
-      ClientWidth = 1848
+      ClientWidth = 1869
       ImageIndex = 19
       ParentFont = False
       object analysephotometry1: TButton
@@ -3326,7 +3326,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1848
+        Width = 1869
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3461,6 +3461,11 @@ object stackmenu1: Tstackmenu1
           end        
           item
             Caption = 'Airmass'
+            MinWidth = 70
+            Width = 70
+          end        
+          item
+            Caption = 'Lim-magn'
             MinWidth = 70
             Width = 70
           end>
