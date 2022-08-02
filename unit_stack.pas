@@ -899,7 +899,7 @@ procedure box_blur(colors,range: integer;var img: image_array);{combine values o
 procedure check_pattern_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
 procedure black_spot_filter(var img: image_array);{remove black spots with value zero}
 
-function create_internal_solution(img :image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
+function create_internal_solution(img :image_array;hd: theader) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 procedure apply_dark_and_flat(var img : image_array) ; inline; {apply dark and flat if required, renew if different head.exposure or ccd temp}
 
 procedure smart_colour_smooth( var img: image_array; wide, sd:double; preserve_r_nebula,measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
@@ -2834,7 +2834,7 @@ var
 begin
   diameter:=radius*2;
   colors3:=length(sourc);{nr colours}
-  height3:=length(sourc[0,0]);{length}
+  height3:=length(sourc[0,0]);{height}
   width3:=length(sourc[0]);{width}
 
   for k:=0 to colors3-1 do {do all colors}
@@ -3258,6 +3258,7 @@ begin
   loaded:=false;
   c:=0;
 
+
   {convert any non FITS file}
   while c<=counts {check all} do
   begin
@@ -3300,6 +3301,7 @@ begin
      inc(c);
   until c>counts;
 
+
   for c:=0 to lv.items.count-1 do
   begin
     if ((lv.Items.item[c].checked) and ((refresh) or (length(lv.Items.item[c].subitems.Strings[4])<=1){height}) ) then {column empthy, only update blank rows}
@@ -3314,7 +3316,6 @@ begin
       Application.ProcessMessages; if esc_pressed then begin break;{leave loop}end;
 
       loaded:=load_fits(filename1,light {light or dark/flat},full {full fits},false {update memo},0,head_2,img); {for background or background+hfd+star}
-
       if loaded then
       begin {success loading header only}
         try
@@ -3456,6 +3457,7 @@ begin
 
             if lv.name=stackmenu1.listview9.name then {mount analyse tab}
             begin
+
               lv.Items.item[c].subitems.Strings[M_date]:=date_obs_regional(head_2.date_obs);
               date_to_jd(head_2.date_obs,head_2.exposure);{convert head_2.date_obs string and head_2.exposure time to global variables jd_start (julian day start head_2.exposure) and jd_mid (julian day middle of the head_2.exposure)}
 
@@ -4421,7 +4423,7 @@ begin
             listview6.Items[c].MakeVisible(False);{scroll to selected item}
             memo2_message(filename2+ ' Adding astrometric solution to files.');
 
-            if solve_image(img_loaded,true  {get hist}) then
+            if solve_image(img_loaded,head,true  {get hist}) then
             begin{match between loaded image and star database}
               astro_solved:=true;{saving will be done later}
               memo2_message(filename2+ ' astrometric solved.');
@@ -4810,7 +4812,7 @@ begin
   if ((head.cd1_1=0) or (stackmenu1.ignore_header_solution1.checked)) then {no solution or ignore solution}
   begin
     memo2_message('Solving file: '+ filename2);
-    if create_internal_solution(img_loaded)= false then
+    if create_internal_solution(img_loaded,head)= false then
     begin
       memo2_message('Abort, can'+#39+'t solve '+ filename2);
       Screen.Cursor :=Save_Cursor;    { back to normal }
@@ -5383,7 +5385,7 @@ var
    c: integer;
    Save_Cursor                  : TCursor;
    refresh_solutions,success    : boolean;
-   thefile                      : string;
+   thefile,filename1            : string;
 begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -5397,13 +5399,13 @@ begin
   begin
     if ((esc_pressed=false) and (listview9.Items.item[c].checked) and (listview9.Items.item[c].subitems.Strings[M_ra]=''))  then
     begin
-      filename2:=listview9.items[c].caption;
-      mainwindow.caption:=filename2;
+      filename1:=listview9.items[c].caption;
+      mainwindow.caption:=filename1;
 
       Application.ProcessMessages;
 
       {load image}
-      if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded)=false)) then
+      if ((esc_pressed) or (load_fits(filename1,true {light},true,true {update memo},0,head_2,img_temp)=false)) then
       begin
         Screen.Cursor :=Save_Cursor;{back to normal }
         exit;
@@ -5413,24 +5415,24 @@ begin
         listview9.Selected :=nil; {remove any selection}
         listview9.ItemIndex := c;{mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
         listview9.Items[c].MakeVisible(False);{scroll to selected item}
-        memo2_message(filename2+ ' Adding astrometric solution to file.');
+        memo2_message(filename1+ ' Adding astrometric solution to file.');
         Application.ProcessMessages;
 
-        if solve_image(img_loaded,true  {get hist}) then
+        if solve_image(img_temp,head_2,true  {get hist}) then
         begin{match between loaded image and star database}
           if mount_write_wcs1.checked then
           begin
-            thefile:=ChangeFileExt(filename2,'.wcs');{change file extension to .wcs file}
+            thefile:=ChangeFileExt(filename1,'.wcs');{change file extension to .wcs file}
             write_astronomy_wcs(thefile);
             listview9.items[c].caption:=thefile;
           end
           else
           begin
-            if fits_file_name(filename2) then
-              success:=savefits_update_header(filename2)
+            if fits_file_name(filename1) then
+              success:=savefits_update_header(filename1)
             else
-              success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
-            if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
+              success:=save_tiff16_secure(img_temp,filename1);{guarantee no file is lost}
+            if success=false then begin ShowMessage('Write error !!' + filename1);Screen.Cursor := Save_Cursor; exit;end;
           end
         end
         else
@@ -5438,14 +5440,16 @@ begin
           listview9.Items[c].Checked:=false;
           listview9.Items.item[c].subitems.Strings[M_ra]:='?';
           listview9.Items.item[c].subitems.Strings[M_dec]:='?';
-          memo2_message(filename2+ 'No astrometric solution found for this file!!');
+          memo2_message(filename1+ 'No astrometric solution found for this file!!');
         end;
       end
     end;
   end;
+
   Screen.Cursor :=Save_Cursor;{back to normal }
 
-  stackmenu1.mount_analyse1Click(nil);{update}
+  update_menu(false);//do not allow to save fits. img_load is still valid but memo1 is cleared. Could be recovered but is not done
+  stackmenu1.mount_analyse1Click(nil);{update. Since it are WCS files with naxis,2 then image1 will be cleared in load_fits}
 end;
 
 
@@ -6324,7 +6328,7 @@ var
   starlistx : star_list;
   starVar, starCheck,starThree : array of double;
   outliers : array of array of double;
-  astr  : string;
+  astr,memo2_text,filename1,dd  : string;
 
   function measure_star(deX,deY :double): string;{measure position and flux}
   //var
@@ -6438,36 +6442,38 @@ begin
 
 
   {solve lights first to allow flux to magnitude calibration}
+  memo2_text:=mainwindow.Memo1.Text;{backup fits header}
   for c:=0 to listview7.items.count-1 do {check for astrometric solutions}
   begin
+   dd:=listview7.Items.item[c].subitems.Strings[P_astrometric];
     if ((esc_pressed=false) and (listview7.Items.item[c].checked) and (listview7.Items.item[c].subitems.Strings[P_astrometric]=''))  then
     begin
-      filename2:=listview7.items[c].caption;
-      mainwindow.caption:=filename2;
+      filename1:=listview7.items[c].caption;
+      mainwindow.caption:=filename1;
 
       Application.ProcessMessages;
 
       {load image}
-      if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded)=false)) then
+      if ((esc_pressed) or (load_fits(filename1,true {light},true,true {update memo},0,head_2,img_temp)=false)) then
       begin
         nil_all;{nil all arrays and restore cursor}
         exit;
       end;
 
-      if ((head.cd1_1=0) or (refresh_solutions)) then
+      if ((head_2.cd1_1=0) or (refresh_solutions)) then
       begin
         listview7.Selected :=nil; {remove any selection}
         listview7.ItemIndex := c;{mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
         listview7.Items[c].MakeVisible(False);{scroll to selected item}
-        memo2_message(filename2+ ' Adding astrometric solution to files to allow flux to magnitude calibration using the star database.');
+        memo2_message(filename1+ ' Adding astrometric solution to files to allow flux to magnitude calibration using the star database.');
         Application.ProcessMessages;
 
-        if solve_image(img_loaded,true  {get hist}) then
+        if solve_image(img_temp,head_2,true  {get hist}) then
         begin{match between loaded image and star database}
-          if fits_file_name(filename2) then
-            success:=savefits_update_header(filename2)
+          if fits_file_name(filename1) then
+            success:=savefits_update_header(filename1)
           else
-            success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
+            success:=save_tiff16_secure(img_temp,filename1);{guarantee no file is lost}
           if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
           listview7.Items.item[c].subitems.Strings[P_astrometric]:='✓';
         end
@@ -6475,7 +6481,7 @@ begin
         begin
           listview7.Items[c].Checked:=false;
           listview7.Items.item[c].subitems.Strings[P_astrometric]:='';
-          memo2_message(filename2+ 'Uncheck, no astrometric solution found for this file. Can'+#39+'t measure magnitude!');
+          memo2_message(filename1+ 'Uncheck, no astrometric solution found for this file. Can'+#39+'t measure magnitude!');
         end;
       end
       else
@@ -6483,13 +6489,13 @@ begin
         listview7.Items.item[c].subitems.Strings[P_astrometric]:='✓';
       end;
     end;{check for astrometric solutions}
-    update_menu(false);//can't save the current file since timage doesn't match with img_loaded
   end;{for loop for astrometric solving }
   {astrometric calibration}
 
-
   if ((refresh_solutions) or (esc_pressed{stop} )) then
   begin
+    mainwindow.Memo1.Text:= memo2_text;{restore fits header}
+    mainwindow.memo1.visible:=true;{Show old header again}
     Screen.Cursor :=Save_Cursor;{back to normal }
     if refresh_solutions then memo2_message('Ready') else
       memo2_message('Stopped, ESC pressed.');
@@ -8772,9 +8778,9 @@ begin
 end;
 
 
-function create_internal_solution(img: image_array) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
+function create_internal_solution(img: image_array; hd: theader) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 begin
-  if solve_image(img,true) then {match between loaded image and star database}
+  if solve_image(img,hd,true) then {match between loaded image and star database}
   begin
     if fits_file_name(filename2) then
     begin
@@ -9209,7 +9215,7 @@ begin
         {load file}
         if load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded){important required to check head.cd1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
         if ((head.cd1_1=0) or (ignore)) then
-                                  solution:= create_internal_solution(img_loaded) else solution:=true;
+                                  solution:= create_internal_solution(img_loaded,head) else solution:=true;
 
         if solution=false then
         begin {no solution found}

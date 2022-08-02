@@ -97,7 +97,7 @@ interface
 uses   Classes,SysUtils,controls,forms,math,
        unit_star_align, unit_star_database, astap_main, unit_stack, unit_annotation,unit_stars_wide_field;
 
-function solve_image(img :image_array; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
+function solve_image(img :image_array;hd: Theader; get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 function report_binning(height :double) : integer;{select the binning}
 function fnmodulo (x,range: double):double;
@@ -318,7 +318,7 @@ begin
 end;
 
 
-procedure binX2_crop(crop {0..1}:double; img : image_array; var img2: image_array);{combine values of 4 pixels and crop is required, Result is mono}
+procedure binX2_crop(crop {0..1}:double; img : image_array; out img2: image_array);{combine values of 4 pixels and crop is required, Result is mono}
   var fitsX,fitsY,k, w,h,  shiftX,shiftY,nrcolors,width5,height5: integer;
       val       : single;
 begin
@@ -345,13 +345,9 @@ begin
                    img[k,shiftX+fitsx*2 +1,shiftY+fitsY*2+1])/4;
        img2[0,fitsX,fitsY]:=val/nrcolors;
      end;
-
-   head.width:=w;
-   head.height:=h;
-   head.naxis3:=1;
  end;
 
-procedure binX3_crop(crop {0..1}:double; img : image_array; var img2: image_array);{combine values of 9 pixels and crop is required. Result is mono}
+procedure binX3_crop(crop {0..1}:double; img : image_array; out img2: image_array);{combine values of 9 pixels and crop is required. Result is mono}
   var fitsX,fitsY,k, w,h,  shiftX,shiftY,nrcolors,width5,height5: integer;
       val       : single;
 begin
@@ -383,13 +379,10 @@ begin
                                img[k,shiftX+fitsX*3 +2,shiftY+fitsY*3+2])/9;
        img2[0,fitsX,fitsY]:=val/nrcolors;
     end;
-  head.width:=w;
-  head.height:=h;
-  head.naxis3:=1;
 end;
 
 
-procedure binX4_crop(crop {0..1}:double;img : image_array; var img2: image_array);{combine values of 16 pixels and crop is required. Result is mono}
+procedure binX4_crop(crop {0..1}:double;img : image_array; out img2: image_array);{combine values of 16 pixels and crop is required. Result is mono}
   var fitsX,fitsY,k, w,h,  shiftX,shiftY,nrcolors,width5,height5: integer;
       val       : single;
 begin
@@ -428,25 +421,22 @@ begin
                                img[k,shiftX+fitsX*4 +3,shiftY+fitsY*4+3])/16;
          img2[0,fitsX,fitsY]:=val/nrcolors;
     end;
-  head.width:=w;
-  head.height:=h;
-  head.naxis3:=1;
 end;
 
 
 procedure bin_and_find_stars(img :image_array;binning:integer;cropping,hfd_min:double;max_stars:integer;get_hist{update hist}:boolean; out starlist3:star_list; out short_warning : string);{bin, measure background, find stars}
 var
-  old_width,old_height,old_naxis3,nrstars,i : integer;
+  width5,height5,nrstars,i : integer;
   img_binned : image_array;
 
 begin
   short_warning:='';{clear string}
 
+  width5:=length(img[0]);{width}
+  height5:=length(img[0,0]);{height}
+
   if ((binning>1) or (cropping<1)) then
   begin
-    old_width:=head.width;
-    old_height:=head.height;
-    old_naxis3:=head.naxis3;
     if binning>1 then memo2_message('Creating grayscale x '+inttostr(binning)+' binning image for solving/star alignment.');
     if cropping<>1 then memo2_message('Cropping image x '+floattostrF(cropping,ffFixed,0,2));
 
@@ -461,39 +451,37 @@ begin
     {test routine, to show bin result}
     //    img_loaded:=img_binned;
     //    head.naxis3:=1;
+    //    head.width:=length(img_binned[0]);{width} ;
+    //    head.height:=length(img_binned[0,0]);
     //    plot_fits(mainwindow.image1,true);{plot real}
     //    exit;
 
     get_background(0,img_binned,true {load hist},true {calculate also standard deviation background},{var}cblack,star_level );{get back ground}
     find_stars(img_binned,hfd_min,max_stars,starlist3); {find stars of the image and put them in a list}
-    img_binned:=nil;
     nrstars:=Length(starlist3[0]);
 
-    if head.height<960 then
+    if length(img_binned[0,0])<960 then
     begin
       short_warning:='Warning, remaining image dimensions too low! ';  {for FITS header and solution. Dimensions should be equal or better the about 1280x960}
       memo2_message('█ █ █ █ █ █ Warning, remaining image dimensions too low! Try to REDUCE OR REMOVE DOWNSAMPLING. Set this option in stack menu, tab alignment.');
     end;
-
-    head.width:=old_width; {restore to original size}
-    head.height:=old_height;
-    head.naxis3:=old_naxis3;
+    img_binned:=nil;
 
     for i:=0 to nrstars-1 do {correct star positions for cropping. Simplest method}
     begin
-      starlist3[0,i]:=starlist3[0,i]*binning+(head.width*(1-cropping)/2);{correct star positions for binning/ cropping}
-      starlist3[1,i]:=starlist3[1,i]*binning+(head.height*(1-cropping)/2);
+      starlist3[0,i]:=starlist3[0,i]*binning+(width5*(1-cropping)/2);{correct star positions for binning/ cropping}
+      starlist3[1,i]:=starlist3[1,i]*binning+(height5*(1-cropping)/2);
     end;
   end
   else
   begin
-    if head.height>2500 then
+    if height5>2500 then
     begin
       short_warning:='Warning, increase downsampling!! '; {for FITS header and solution}
       memo2_message('Info: DOWNSAMPLING IS RECOMMENDED FOR LARGE IMAGES. Set this option in stack menu, tab alignment.');
     end
     else
-    if head.height<960 then
+    if height5<960 then
     begin
       short_warning:='Warning, small image dimensions! ';  {for FITS header and solution. Dimensions should be equal or better the about 1280x960}
       memo2_message('█ █ █ █ █ █ Warning, small image dimensions!');
@@ -518,14 +506,14 @@ end;
 
 
 
-function solve_image(img :image_array;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
+function solve_image(img :image_array;hd: Theader;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
-  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars,  light_naxis3, light_width,light_height : integer;
+  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars  : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,
   sep_search,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,
-  current_dist, quad_tolerance,dummy, extrastars,flip, extra,datamax_light,distance                                    : double;
-  solution, go_ahead,fitsfile ,autoFOV,autoMaxstars     : boolean;
+  current_dist, quad_tolerance,dummy, extrastars,flip, extra,distance                                                  : double;
+  solution, go_ahead, autoFOV,autoMaxstars              : boolean;
   Save_Cursor                                           : TCursor;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,info_message,popup_warningV17,popup_warningSample,suggest_str, solved_in,
@@ -549,8 +537,8 @@ begin
     analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
     analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{analyse flat tab, by loading=false the loaded img will not be effected}
 
-    apply_dark_and_flat(img);{apply dark, flat if required, renew if different head.exposure or ccd temp. This will clear the header in load_fits}
-    update_text ('CALSTAT =',#39+head.calstat+#39); {calibration status}
+    apply_dark_and_flat(img);{apply dark, flat if required, renew if different hd.exposure or ccd temp. This will clear the header in load_fits}
+    update_text ('CALSTAT =',#39+hd.calstat+#39); {calibration status}
     get_hist:=true; {update required}
   end
   else
@@ -563,8 +551,8 @@ begin
   quad_tolerance:=strtofloat2(stackmenu1.quad_tolerance1.text);
   max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
 
-  if ((fov_specified=false) and (head.cdelt2<>0)) then {no fov in native command line and head.cdelt2 in header}
-    fov_org:=min(180,head.height*abs(head.cdelt2)) {calculate FOV. PI can give negative head.cdelt2}
+  if ((fov_specified=false) and (hd.cdelt2<>0)) then {no fov in native command line and hd.cdelt2 in header}
+    fov_org:=min(180,hd.height*abs(hd.cdelt2)) {calculate FOV. PI can give negative hd.cdelt2}
   else
     fov_org:=min(180,strtofloat2(stackmenu1.search_fov1.text));{use specfied FOV in stackmenu. 180 max to prevent runtime errors later}
 
@@ -645,8 +633,9 @@ begin
         fov2:=fov_org;
       end;
 
-      binning:=report_binning(head.height*cropping); {select binning on dimensions of cropped image}
-      hfd_min:=max(0.8,min_star_size_arcsec/(binning*fov_org*3600/head.height) );{to ignore hot pixels which are too small}
+      binning:=report_binning(hd.height*cropping); {select binning on dimensions of cropped image}
+      hfd_min:=max(0.8,min_star_size_arcsec/(binning*fov_org*3600/hd.height) );{to ignore hot pixels which are too small}
+
       bin_and_find_stars(img,binning,cropping,hfd_min,max_stars,get_hist{update hist}, starlist2, warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
       nrstars:=Length(starlist2[0]);
 
@@ -661,12 +650,12 @@ begin
       {prepare popupnotifier1 text}
       if stackmenu1.force_oversize1.checked=false then info_message:='▶▶' {normal} else info_message:='▶'; {slow}
       info_message:= ' [' +stackmenu1.radius_search1.text+'°]'+#9+info_message+#9+inttostr(nrstars)+' 🟊' +
-                      #10+'↕ '+floattostrf(fov_org,ffFixed,0,2)+'°'+ #9+#9+inttostr(binning)+'x'+inttostr(binning)+' ⇒ '+inttostr(head.width)+'x'+inttostr(head.height)+
+                      #10+'↕ '+floattostrf(fov_org,ffFixed,0,2)+'°'+ #9+#9+inttostr(binning)+'x'+inttostr(binning)+' ⇒ '+inttostr(hd.width)+'x'+inttostr(hd.height)+
                       popup_warningV17+popup_warningSample+
                       #10+mainwindow.ra1.text+'h, '+mainwindow.dec1.text+'° '+#9+{for tray icon} extractfilename(filename2)+
                       #10+extractfileDir(filename2);
 
-      nrstars_required:=round(nrstars*(head.height/head.width));{square search field based on height.}
+      nrstars_required:=round(nrstars*(hd.height/hd.width));{square search field based on height.}
 
       solution:=false; {assume no match is found}
       go_ahead:=(nrstars>=6); {bare minimum for three quads. Should be more but let's try}
@@ -803,7 +792,7 @@ begin
                     errorlevel:=33;{read error star database}
                     exit; {no stars}
                   end;
-                  find_quads(starlist1,quad_smallest*(fov_org*3600/head.height {pixelsize in"})*0.99 {filter value to exclude too small quads, convert pixels to arcsec as in database}, dummy,quad_star_distances1);{find quads for reference image/database. Filter out too small quads for Earth based telescopes}
+                  find_quads(starlist1,quad_smallest*(fov_org*3600/hd.height {pixelsize in"})*0.99 {filter value to exclude too small quads, convert pixels to arcsec as in database}, dummy,quad_star_distances1);{find quads for reference image/database. Filter out too small quads for Earth based telescopes}
                                        {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
                 until ((nrstars_required>database_stars) {No more stars available in the database}
                         or (nr_quads<1.1*Length(quad_star_distances1[0])*nrstars/nrstars_required) {Enough quads found. The amount quads could be too low because due to filtering out too small database quads (center m13, M16)in routine find_quads}
@@ -839,10 +828,10 @@ begin
 
           if solution then
           begin
-            centerX:=(head.width-1)/2 ;{center image in 0..head.width-1 range}
-            centerY:=(head.height-1)/2;{center image in 0..head.height-1 range}
-            head.crpix1:=centerX+1;{center image in fits coordinate range 1..head.width}
-            head.crpix2:=centery+1;
+            centerX:=(hd.width-1)/2 ;{center image in 0..hd.width-1 range}
+            centerY:=(hd.height-1)/2;{center image in 0..hd.height-1 range}
+            hd.crpix1:=centerX+1;{center image in fits coordinate range 1..hd.width}
+            hd.crpix2:=centery+1;
 
             standard_equatorial( telescope_ra,telescope_dec,
                 (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x}
@@ -852,7 +841,7 @@ begin
             current_dist:=sqrt(sqr(solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY) +solution_vectorX[2]) + sqr(solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY) +solution_vectorY[2]))/3600; {current distance telescope and image center in degrees}
             inc(match_nr);
           end;
-        until ((solution=false) or (current_dist<fov2*0.05){within 5% if image height from center}  or (match_nr>=2));{Maximum accurcy loop. After match possible on a corner do a second solve using the found head.ra0,head.dec0 for maximum accuracy USING ALL STARS}
+        until ((solution=false) or (current_dist<fov2*0.05){within 5% if image height from center}  or (match_nr>=2));{Maximum accurcy loop. After match possible on a corner do a second solve using the found hd.ra0,hd.dec0 for maximum accuracy USING ALL STARS}
 
         stackmenu1.Memo2.enablealign;{allow paint messages from other controls to update tmemo. Mod 2021-06-26}
         stackmenu1.Memo2.Lines.EndUpdate;
@@ -864,65 +853,65 @@ begin
 
   if solution then
   begin
-    ang_sep(ra_radians,dec_radians,head.ra0,head.dec0, sep_search);{calculate search offset}
-    head.ra0:=ra_radians;//store solution
-    head.dec0:=dec_radians;
+    ang_sep(ra_radians,dec_radians,hd.ra0,hd.dec0, sep_search);{calculate search offset}
+    hd.ra0:=ra_radians;//store solution
+    hd.dec0:=dec_radians;
 
     memo2_message(inttostr(nr_references)+ ' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'  {2 quads are required giving 8 star references or 3 quads giving 3 center quad references}
                    +'  Solution["] x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
                    +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) );
     //  following doesn't give maximum angle accuracy, so is not used.
-    //    head.cd1_1:= - solution_vectorX[0]/3600;{/3600, arcsec to degrees conversion}
-    //    head.cd1_2:= - solution_vectorX[1]/3600;
-    //    head.cd2_1:= + solution_vectorY[0]/3600;
-    //    head.cd2_2:= + solution_vectorY[1]/3600;
+    //    hd.cd1_1:= - solution_vectorX[0]/3600;{/3600, arcsec to degrees conversion}
+    //    hd.cd1_2:= - solution_vectorX[1]/3600;
+    //    hd.cd2_1:= + solution_vectorY[0]/3600;
+    //    hd.cd2_2:= + solution_vectorY[1]/3600;
 
     // rather then using the solution vector directly, for maximum accuracy find the vector for the center of the image.
-    //make 1 step in direction head.crpix1
+    //make 1 step in direction hd.crpix1
     standard_equatorial( telescope_ra,telescope_dec,
         (solution_vectorX[0]*(centerX+1) + solution_vectorX[1]*(centerY) +solution_vectorX[2]), {x}
         (solution_vectorY[0]*(centerX+1) + solution_vectorY[1]*(centerY) +solution_vectorY[2]), {y}
         1, {CCD scale}
         ra7 ,dec7{center equatorial position});
 
-    delta_ra:=ra7-head.ra0;
+    delta_ra:=ra7-hd.ra0;
     if delta_ra>+pi then delta_ra:=delta_ra-2*pi; {1 -> 359,    -2:=(359-1) -360 }{rev 2021}
     if delta_ra<-pi then delta_ra:=delta_ra+2*pi; {359 -> 1,    +2:=(1-359) +360 }
 
-    head.cd1_1:=(delta_ra)*cos(head.dec0)*(180/pi);
-    head.cd2_1:=(dec7-head.dec0)*(180/pi);
+    hd.cd1_1:=(delta_ra)*cos(hd.dec0)*(180/pi);
+    hd.cd2_1:=(dec7-hd.dec0)*(180/pi);
 
-    //make 1 step in direction head.crpix2
+    //make 1 step in direction hd.crpix2
     standard_equatorial( telescope_ra,telescope_dec,
         (solution_vectorX[0]*(centerX) + solution_vectorX[1]*(centerY+1) +solution_vectorX[2]), {x}
         (solution_vectorY[0]*(centerX) + solution_vectorY[1]*(centerY+1) +solution_vectorY[2]), {y}
          1, {CCD scale}
         ra7 ,dec7{center equatorial position});
 
-    delta_ra:=ra7-head.ra0;
+    delta_ra:=ra7-hd.ra0;
     if delta_ra>+pi then delta_ra:=delta_ra-2*pi; {1 -> 359,    -2:=(359-1) -360 } {rev 2021}
     if delta_ra<-pi then delta_ra:=delta_ra+2*pi; {359 -> 1,    +2:=(1-359) +360 }
 
-    head.cd1_2:=(delta_ra)*cos(head.dec0)*(180/pi);
-    head.cd2_2:=(dec7-head.dec0)*(180/pi);
+    hd.cd1_2:=(delta_ra)*cos(hd.dec0)*(180/pi);
+    hd.cd2_2:=(dec7-hd.dec0)*(180/pi);
 
-    new_to_old_WCS;
+    new_to_old_WCS(hd);
     solved_in:=' Solved in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.';{make string to report in FITS header.}
 
     offset_found:={' Δ was '}distance_to_string(sep_search {scale selection},sep_search)+'.';
 
     if ra_mount<99 then {mount position known and specified. Calculate mount offset}
     begin
-      ra_offset:=distance_to_string(sep_search, pi*frac((ra_mount-head.ra0)/pi) * cos((head.dec0+dec_mount)*0.5 {average dec}));
-      dec_offset:=distance_to_string(sep_search,dec_mount-head.dec0);
+      ra_offset:=distance_to_string(sep_search, pi*frac((ra_mount-hd.ra0)/pi) * cos((hd.dec0+dec_mount)*0.5 {average dec}));
+      dec_offset:=distance_to_string(sep_search,dec_mount-hd.dec0);
       mount_offset:=' Mount offset RA='+ra_offset+', DEC='+dec_offset;{ascii}
       mount_info:=' Mount Δα='+ra_offset+ ',  Δδ='+dec_offset+'. '+#9;
     end
     else
     mount_info:='';{no mount info}
 
-    memo2_message('Solution found: '+  prepare_ra(head.ra0,': ')+#9+prepare_dec(head.dec0,'° ') +#9+ solved_in+#9+' Δ was '+offset_found+#9+ mount_info+' Used stars down to magnitude: '+floattostrF(mag2/10,ffFixed,0,1) );
-    mainwindow.caption:=('Solution found:    '+  prepare_ra(head.ra0,': ')+'     '+prepare_dec(head.dec0,'° ')  );
+    memo2_message('Solution found: '+  prepare_ra(hd.ra0,': ')+#9+prepare_dec(hd.dec0,'° ') +#9+ solved_in+#9+' Δ was '+offset_found+#9+ mount_info+' Used stars down to magnitude: '+floattostrF(mag2/10,ffFixed,0,1) );
+    mainwindow.caption:=('Solution found:    '+  prepare_ra(hd.ra0,': ')+'     '+prepare_dec(hd.dec0,'° ')  );
     result:=true;
 
     update_text ('CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   ');
@@ -931,36 +920,36 @@ begin
 
     update_text ('EQUINOX =','              2000.0 / Equinox of coordinates                         ');{the equinox is 2000 since the database is in 2000}
 
-    update_float('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);
-    update_float('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
+    update_float('CRPIX1  =',' / X of reference pixel                           ' ,hd.crpix1);
+    update_float('CRPIX2  =',' / Y of reference pixel                           ' ,hd.crpix2);
 
-    update_float('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,head.ra0*180/pi);
-    update_float('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,head.dec0*180/pi);
+    update_float('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,hd.ra0*180/pi);
+    update_float('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,hd.dec0*180/pi);
 
-    update_float('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);
-    update_float('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
+    update_float('CDELT1  =',' / X pixel size (deg)                             ' ,hd.cdelt1);
+    update_float('CDELT2  =',' / Y pixel size (deg)                             ' ,hd.cdelt2);
 
-    update_float('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
-    update_float('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
+    update_float('CROTA1  =',' / Image twist of X axis        (deg)             ' ,hd.crota1);
+    update_float('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,hd.crota2);
 
-    update_float('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
-    update_float('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
-    update_float('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
-    update_float('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
+    update_float('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,hd.cd1_1);
+    update_float('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,hd.cd1_2);
+    update_float('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,hd.cd2_1);
+    update_float('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,hd.cd2_2);
     update_text ('PLTSOLVD=','                   T / ASTAP internal solver                          ');
     update_longstr('COMMENT 7', solved_in+' Offset '+offset_found+mount_offset);
 
     if solve_show_log then {global variable set in find stars}
     begin
-      equatorial_standard(telescope_ra,telescope_dec,head.ra0,head.dec0,1,correctionX,correctionY);{calculate correction for x,y position of database center and image center}
+      equatorial_standard(telescope_ra,telescope_dec,hd.ra0,hd.dec0,1,correctionX,correctionY);{calculate correction for x,y position of database center and image center}
       plot_stars_used_for_solving(correctionX,correctionY); {plot image stars and database stars used for the solution}
       memo2_message('See viewer image for image stars used (red) and database star used (yellow)');
     end;
 
-    if ( (fov_org>1.05*(head.height*head.cdelt2) ) or (fov_org<0.95*(head.height*head.cdelt2)) ) then
+    if ( (fov_org>1.05*(hd.height*hd.cdelt2) ) or (fov_org<0.95*(hd.height*hd.cdelt2)) ) then    //in astap hd.cdelt2 is always positive. No need for absolute function
     begin
-      if xpixsz<>0 then suggest_str:='Warning inexact scale! Set FOV='+floattostrF(head.height*head.cdelt2,ffFixed,0,2)+'d or scale='+floattostrF(head.cdelt2*3600,ffFixed,0,1)+'"/pix or FL='+inttostr(round((180/(pi*1000)*xpixsz/head.cdelt2)) )+'mm '
-                   else suggest_str:='Warning inexact scale! Set FOV='+floattostrF(head.height*head.cdelt2,ffFixed,0,2)+'d or scale='+floattostrF(head.cdelt2*3600,ffFixed,0,1)+'"/pix ';
+      if xpixsz<>0 then suggest_str:='Warning inexact scale! Set FOV='+floattostrF(hd.height*hd.cdelt2,ffFixed,0,2)+'d or scale='+floattostrF(hd.cdelt2*3600,ffFixed,0,1)+'"/pix or FL='+inttostr(round((180/(pi*1000)*xpixsz/hd.cdelt2)) )+'mm '
+                   else suggest_str:='Warning inexact scale! Set FOV='+floattostrF(hd.height*hd.cdelt2,ffFixed,0,2)+'d or scale='+floattostrF(hd.cdelt2*3600,ffFixed,0,1)+'"/pix ';
       memo2_message(suggest_str);
       warning_str:=suggest_str+warning_str;
     end;

@@ -324,12 +324,12 @@ begin
 
   if ( ((head.cdelt1=0) or (head.crota2>=999)) and (head.cd1_1<>0)) then
   begin
-    new_to_old_WCS;{ convert old WCS to new}
+    new_to_old_WCS(head);{ convert old WCS to new}
   end
   else
   if ((head.crota2<999) and (head.cd1_1=0) and(head.cdelt1<>0)) then {valid head.crota2 value}
   begin
-    old_to_new_WCS;{ convert old WCS to new}
+    old_to_new_WCS(head);{ convert old WCS to new}
   end;
 
 // not required since xisf are not used for stacking

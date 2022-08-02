@@ -987,7 +987,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
       ClientHeight = 470
-      ClientWidth = 1713
+      ClientWidth = 1869
       ImageIndex = 3
       ParentFont = False
       object clear_selection3: TButton
@@ -1019,7 +1019,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1713
+        Width = 1869
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3702,7 +3702,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Measure the best focus position for several areas of the image.'
       Caption = 'Inspector'
       ClientHeight = 470
-      ClientWidth = 1713
+      ClientWidth = 1869
       ImageIndex = 17
       object analyse_inspector1: TButton
         Left = 136
@@ -3720,7 +3720,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1713
+        Width = 1869
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3961,14 +3961,14 @@ object stackmenu1: Tstackmenu1
       Hint = 'Measure the mount celestial position offsets.'
       Caption = 'Mount analyse'
       ClientHeight = 470
-      ClientWidth = 1713
+      ClientWidth = 1869
       ImageIndex = 21
       object listview9: TListView
         Left = 0
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1713
+        Width = 1869
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36

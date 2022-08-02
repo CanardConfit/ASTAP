@@ -1462,7 +1462,7 @@ object mainwindow: Tmainwindow
       object variable_star_annotation1: TMenuItem
         Caption = 'Variable star annotation'
         Enabled = False
-        Hint = 'Annotate all variable stars and comparison stars from the local database'
+        Hint = 'Annotate all variable stars and comparison stars from the local database or AAVSO online database. Database setting is in tab Photometry.'
         ShortCut = 16459
         OnClick = variable_star_annotation1Click
       end

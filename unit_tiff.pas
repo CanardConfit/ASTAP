@@ -264,7 +264,7 @@ begin
 
   //colours2:=length(img);{nr colours}
   width2:=length(img[0]);{width}
-  height2:=length(img[0,0]);{length}
+  height2:=length(img[0,0]);{height}
   description:=description+#0;{GIMP is complaining about this #0}
 
 
@@ -367,7 +367,7 @@ begin
   end;
 
   width2:=length(img[0]);{width}
-  height2:=length(img[0,0]);{length}
+  height2:=length(img[0,0]);{height}
   description:=description+#0;{GIMP is complaining about this}
 
   Directoryrgb48[1]._Value := LongInt(width2);       { Image Width }
@@ -490,7 +490,7 @@ begin
 
  //colours2:=length(img);{nr colours}
   width2:=length(img[0]);{width}
-  height2:=length(img[0,0]);{length}
+  height2:=length(img[0,0]);{height}
 
   description:=description+#0;{GIMP is complaining about this}
 

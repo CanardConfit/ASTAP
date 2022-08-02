@@ -756,8 +756,8 @@ function inttostr5(x:integer):string;{always 5 digit}
 function SMedian(list: array of double; leng: integer): double;{get median of an array of double. Taken from CCDciel code but slightly modified}
 procedure mad_median(list: array of double; leng :integer;out mad,median :double);{calculate mad and median without modifying the data}
 procedure DeleteFiles(lpath,FileSpec: string);{delete files such  *.wcs}
-procedure new_to_old_WCS;{convert new style FITsS to old style}
-procedure old_to_new_WCS;{ convert old WCS to new}
+procedure new_to_old_WCS(var head:theader);{convert new style FITS to old style}
+procedure old_to_new_WCS(var head:theader);{ convert old WCS to new}
 procedure show_marker_shape(shape: TShape; shape_type,w,h,minimum:integer; fitsX,fitsY: double);{show manual alignment shape}
 function check_raw_file_extension(ext: string): boolean;{check if extension is from raw file}
 function convert_raw(loadfile,savefile :boolean;var filename3: string;out head: Theader; out img: image_array ): boolean; {convert raw to fits file using DCRAW or LibRaw. filename3 will be update with the new file extension e.g. .CR2.fits}
@@ -1722,12 +1722,12 @@ begin
 
     if ((head.cd1_1<>0) and ((head.cdelt1=0) or (head.crota2>=999))) then {old style missing but valid new style solution}
     begin
-      new_to_old_WCS;{ convert old WCS to new}
+      new_to_old_WCS(head);{ convert old WCS to new}
     end
     else
     if ((head.cd1_1=0) and (head.crota2<999) and (head.cdelt2<>0)) then {new style missing but valid old style solution}
     begin
-      old_to_new_WCS;{ convert old WCS to new}
+      old_to_new_WCS(head);{ convert old WCS to new}
     end;
 
     if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
@@ -2254,12 +2254,12 @@ begin
 
   if ((head.cd1_1<>0) and ((head.cdelt1=0) or (head.crota2>=999))) then {old style missing but valid new style solution}
   begin
-    new_to_old_WCS;{ convert old WCS to new}
+    new_to_old_WCS(head);{ convert old WCS to new}
   end
   else
   if ((head.cd1_1=0) and (head.crota2<999) and (head.cdelt2<>0)) then {new style missing but valid old style solution}
   begin
-    old_to_new_WCS;{ convert old WCS to new}
+    old_to_new_WCS(head);{ convert old WCS to new}
   end;
 
   if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
@@ -3114,7 +3114,7 @@ var
    i,j,val,value_count,width3,height3  :integer;
    histogram : array of integer;
 begin
-  height3:=length(img[0,0]);{length}
+  height3:=length(img[0,0]);{height}
   width3:=length(img[0]);{width}
 
   if xmin<0 then xmin:=0;
@@ -3282,7 +3282,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.08.01a, '+about_message4+
+  'ASTAP version 2022.08.02, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -4969,7 +4969,7 @@ begin
 
   {solve internal}
   mainwindow.caption:='Solving.......';
-  save1.Enabled:=solve_image(img_loaded,false {get hist, is already available});{match between loaded image and star database}
+  save1.Enabled:=solve_image(img_loaded,head,false {get hist, is already available});{match between loaded image and star database}
   if head.cd1_1<>0 then
   begin
     mainwindow.ra1.text:=prepare_ra(head.ra0,' ');{show center of image}
@@ -5584,7 +5584,7 @@ begin {make from decx [-pi/2..pi/2] a text in array bericht. Length is 10 long}
 end;
 
 
-procedure old_to_new_WCS;{ convert old WCS to new}
+procedure old_to_new_WCS(var head:theader);{ convert old WCS to new}
 var
    sign  : integer;
 begin
@@ -5597,7 +5597,7 @@ begin
 end;
 
 
-procedure new_to_old_WCS;{convert new style FITsS to old style}
+procedure new_to_old_WCS(var head : theader);{convert new style FITsS to old style}
 var
    sign  : integer;
 begin
@@ -8832,7 +8832,7 @@ var
   errorRA,errorDEC :boolean;
 begin
   result:=false;
-  fov:=round(sqrt(sqr(head.width)+sqr(head.height))*head.cdelt2*60); //arcmin
+  fov:=round(sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2*60)); //arcmin. cdelt2 can be negative for other solvers
   s:=get_http('https://www.aavso.org/apps/vsp/api/chart/?format=json&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&fov='+inttostr(fov)+'&maglimit='+floattostr4(limiting_mag));{get webpage}
   if length(s)<50 then begin beep; exit end;;
 
@@ -8897,13 +8897,14 @@ end;
 
 function download_vsx(limiting_mag: double): boolean;//AAVSO API access
 var
-  s,dummy   : string;
-  count,i,j,m,er,errorRA,errorDEC : integer;
+  s,dummy,url   : string;
+  count,i,j,errorRA,errorDEC : integer;
   radius,ra,dec : double;
 begin
   result:=false;
-  radius:=sqrt(sqr(head.width)+sqr(head.height))*head.cdelt2/2; //radius in degrees
-  s:=get_http('https://www.aavso.org/vsx/index.php?view=api.list&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&radius='+floattostr6(radius)+'&tomag='+floattostr4(limiting_mag)+'&format=json');
+  radius:=sqrt(sqr(head.width)+sqr(head.height))*abs(head.cdelt2/2); //radius in degrees. Some solvers produce files with neagative cdelt2
+  url:='https://www.aavso.org/vsx/index.php?view=api.list&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&radius='+floattostr6(radius)+'&tomag='+floattostr4(limiting_mag)+'&format=json';
+  s:=get_http(url);
   if length(s)<25 then begin beep; exit end;;
 
 
@@ -11212,7 +11213,7 @@ function load_and_solve : boolean; {load image and plate solve}
 begin
   progress_indicator(0,'');
   result:=load_image(false,false {plot});
-  result:=((result {succesfull load?}) and (solve_image(img_loaded,true {get hist}) )); {find plate solution}
+  result:=((result {succesfull load?}) and (solve_image(img_loaded,head,true {get hist}) )); {find plate solution}
 end;
 
 
@@ -11361,7 +11362,7 @@ begin
         search_field:= min(180,sqrt(regions)*0.5*field_size);{regions 1000 is equivalent to 32x32 regions. So distance form center is 0.5*32=16 region heights}
 
         stackmenu1.radius_search1.text:=floattostrF(search_field,ffFixed,0,1);{convert to radius of a square search field}
-        if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
+        if ((file_loaded) and (solve_image(img_loaded,head,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
         begin
           resultstr:='Valid plate solution';
           confidence:='999';
@@ -11800,7 +11801,7 @@ begin
 
           if hasoption('d') then database_path:=GetOptionValue('d')+DirectorySeparator; {specify a different database path}
 
-          if ((file_loaded) and (solve_image(img_loaded,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
+          if ((file_loaded) and (solve_image(img_loaded,head,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
           begin
 //            {$ifdef CPUARM}
 //            {set tray icon visible gives a fatal error in old compiler for armhf}
@@ -11990,7 +11991,7 @@ begin
           else
           begin
             memo2_message('Solving '+inttostr(i+1)+'-'+inttostr(Count)+': '+filename2);
-            solved:=solve_image(img_loaded,true {get hist});
+            solved:=solve_image(img_loaded,head,true {get hist});
             if solved then nrsolved:=nrsolved+1 {solve}
             else
             begin
@@ -12277,7 +12278,7 @@ begin
      head.crpix1:=(head.width+1)/2;
      head.crpix2:=(head.height+1)/2;
 
-      new_to_old_WCS;
+      new_to_old_WCS(head);
 
       update_float  ('CRVAL1  =',' / RA of reference pixel (deg)                    ' ,head.ra0*180/pi);
       update_float  ('CRVAL2  =',' / DEC of reference pixel (deg)                   ' ,head.dec0*180/pi);
@@ -12499,7 +12500,7 @@ begin
     head.crota2:=-angle*180/pi;{head.crota2 is defined north to west, so reverse}
     head.crota1:=head.crota2;
 
-    old_to_new_WCS;{new WCS missing, convert old WCS to new}
+    old_to_new_WCS(head);{new WCS missing, convert old WCS to new}
 
     update_text ('CTYPE1  =',#39+'RA---TAN'+#39+'           / first parameter RA  ,  projection TANgential   ');
     update_text ('CTYPE2  =',#39+'DEC--TAN'+#39+'           / second parameter DEC,  projection TANgential   ');
@@ -12610,7 +12611,7 @@ begin
     head.crota1:=fnmodulo(head.crota1+angle,360);
     head.crpix1:= head.width/2;
     head.crpix2:=head.height/2;
-    old_to_new_WCS;{convert old style FITS to newd style}
+    old_to_new_WCS(head);{convert old style FITS to newd style}
 
     update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
     update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
@@ -13970,7 +13971,7 @@ var
 begin
   colours5:=length(img);{nr colours}
   width5:=length(img[0]);{width}
-  height5:=length(img[0,0]);{length}
+  height5:=length(img[0,0]);{height}
 
 
   setlength(result,colours5,width5,height5);
@@ -14070,7 +14071,7 @@ begin
 
 //  colours5:=length(img);{nr colours}
   width2:=length(img[0]);{width}
-  height2:=length(img[0,0]);{length}
+  height2:=length(img[0,0]);{height}
 
 
   if colourdepth=48 then {colour}
@@ -14185,7 +14186,7 @@ var
 begin
   colours5:=length(img);{nr colours}
   width5:=length(img[0]);{width}
-  height5:=length(img[0,0]);{length}
+  height5:=length(img[0,0]);{height}
 
 
   Image := TFPMemoryImage.Create(width5, height5);
@@ -14273,7 +14274,7 @@ var
 begin
   colours5:=length(img);{nr colours}
   width5:=length(img[0]);{width}
-  height5:=length(img[0,0]);{length}
+  height5:=length(img[0,0]);{height}
 
   Image := TFPMemoryImage.Create(width5, height5);
   Writer := TFPWriterTIFF.Create;
@@ -14532,7 +14533,7 @@ begin
       head.cd1_1:=-head.cd1_1;
       head.cd2_1:=-head.cd2_1;
     end;
-    new_to_old_WCS;{convert new style FITS to old style, calculate crota1,crota2,cdelt1,cdelt2}
+    new_to_old_WCS(head);{convert new style FITS to old style, calculate crota1,crota2,cdelt1,cdelt2}
 
     update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
     update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
@@ -14883,7 +14884,7 @@ begin
   {get dimensions directly from array}
   colours5:=length(img);{nr colours}
   width5:=length(img[0]);{width}
-  height5:=length(img[0,0]);{length}
+  height5:=length(img[0,0]);{height}
   if colours5=1 then dimensions:=2 else dimensions:=3; {number of dimensions or colours}
 
   if ((type1=24) and (colours5<3)) then

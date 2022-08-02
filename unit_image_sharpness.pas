@@ -28,7 +28,7 @@ var
   maxA,maxB,minA,minB,v1,v2,minimum,maximum,average : double;
 begin
 //  nrcolor:=length(img);{nr colours}
-  h:=length(img[0,0]);{length}
+  h:=length(img[0,0]);{height}
   w:=length(img[0]);{width}
 
   result:=0;

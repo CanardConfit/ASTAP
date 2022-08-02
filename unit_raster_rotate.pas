@@ -1119,7 +1119,7 @@ begin
   end;
   scolours := length(img);{nr colours}
   swidth := length(img[0]);{width}
-  sheight := length(img[0, 0]);{length}
+  sheight := length(img[0, 0]);{height}
 
   angle := angle mod 360; {make 0..360}
   if angle < 0 then
@@ -1300,7 +1300,7 @@ begin
   end;
   scolours := length(img);{nr colours}
   swidth := length(img[0]);{width}
-  sheight := length(img[0, 0]);{length}
+  sheight := length(img[0, 0]);{height}
 
   if ((swidth<>sheight) or (img[0,0,0]<>0)  or (img[0,swidth-1,0]<>0) or (img[0,0,sheight-1]<>0) or (img[0,swidth-1,sheight-1]<>0))  then {fresh image}
     maxsize:=round(1+sqrt(sqr(sheight)+sqr(swidth))) {add one pixel otherwise not enough resulting in runtime errors}

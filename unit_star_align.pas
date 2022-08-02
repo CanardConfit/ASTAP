@@ -27,7 +27,7 @@ var
 
    Savefile: file of solution_vector;{to save solution if required for second and third step stacking}
 
-procedure find_stars(img :image_array;hfd_min:double;max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
+procedure find_stars(img :image_array; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
 procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2020-9-28}
 procedure find_quads_xy(starlist :star_list; out starlistquads :star_list);  {FOR DISPLAY ONLY, build quads using closest stars, revised 2020-9-28}
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
@@ -646,9 +646,9 @@ begin
 end;
 
 
-procedure find_stars(img :image_array;hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
+procedure find_stars(img :image_array; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
 var
-   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius : integer;
+   fitsX, fitsY,nrstars,radius,i,j,retries,m,n,xci,yci,sqr_radius,width2,height2 : integer;
    hfd1,star_fwhm,snr,xc,yc,highest_snr,flux, detection_level               : double;
    img_sa     : image_array;
    snr_list        : array of double;
@@ -661,7 +661,7 @@ const
 begin
   {for testing}
 //   mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-//   mainwindow.image1.Canvas.Pen.width := round(1+head.height/mainwindow.image1.height);{thickness lines}
+//   mainwindow.image1.Canvas.Pen.width := round(1+hd.height/mainwindow.image1.height);{thickness lines}
 //   mainwindow.image1.Canvas.brush.Style:=bsClear;
 //   mainwindow.image1.Canvas.font.color:=$FF;
 //   mainwindow.image1.Canvas.font.size:=10;
@@ -670,7 +670,8 @@ begin
 //   flip_horizontal:=mainwindow.Flip_horizontal1.Checked;
 
  // hfd_min:=4;
-
+  width2:=length(img[0]);{width}
+  height2:=length(img[0,0]);{height}
 
   solve_show_log:=stackmenu1.solve_show_log1.Checked;{show details, global variable}
   if solve_show_log then begin memo2_message('Start finding stars');   startTick2 := gettickcount64;end;
@@ -679,7 +680,7 @@ begin
   SetLength(starlist1,2,buffersize);{set array length}
   setlength(snr_list,buffersize);{set array length}
 
-  setlength(img_sa,1,head.width,head.height);{set length of image array}
+  setlength(img_sa,1,width2,height2);{set length of image array}
 
   detection_level:=max(3.5*noise_level[0],star_level); {level above background. Start with a high value}
   retries:=2; {try up to three times to get enough stars from the image}
@@ -687,13 +688,13 @@ begin
     highest_snr:=0;
     nrstars:=0;{set counters at zero}
 
-    for fitsY:=0 to head.height-1 do
-      for fitsX:=0 to head.width-1  do
+    for fitsY:=0 to height2-1 do
+      for fitsX:=0 to width2-1  do
         img_sa[0,fitsX,fitsY]:=-1;{mark as star free area}
 
-    for fitsY:=0 to head.height-1-1 do
+    for fitsY:=0 to height2-1-1 do
     begin
-      for fitsX:=0 to head.width-1-1  do
+      for fitsX:=0 to width2-1-1  do
       begin
         if (( img_sa[0,fitsX,fitsY]<=0){star free area} and (img[0,fitsX,fitsY]-cblack>detection_level){star}) then {new star, at least 3.5 * sigma above noise level}
         begin
@@ -701,8 +702,8 @@ begin
           if ((hfd1<=10) and (snr>10) and (hfd1>hfd_min) {0.8 is two pixels minimum} ) then
           begin
             {for testing}
-          //  if flip_vertical=false  then  starY:=round(head.height-yc) else starY:=round(yc);
-          //  if flip_horizontal=true then starX:=round(head.width-xc)  else starX:=round(xc);
+          //  if flip_vertical=false  then  starY:=round(height2-yc) else starY:=round(yc);
+          //  if flip_horizontal=true then starX:=round(width2-xc)  else starX:=round(xc);
           //  size:=round(5*hfd1);
           //  mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
           //  mainwindow.image1.Canvas.textout(starX+size,starY+size,floattostrf(hfd1, ffgeneral, 2,1));{add hfd as text}
@@ -717,7 +718,7 @@ begin
               begin
                 j:=n+yci;
                 i:=m+xci;
-                if ((j>=0) and (i>=0) and (j<head.height) and (i<head.width) and (sqr(m)+sqr(n)<=sqr_radius)) then
+                if ((j>=0) and (i>=0) and (j<height2) and (i<width2) and (sqr(m)+sqr(n)<=sqr_radius)) then
                   img_sa[0,i,j]:=1;
               end;
 
