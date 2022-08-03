@@ -3228,12 +3228,6 @@ end;
 
 
 procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse list of FITS files}
-// amode=0 ==> reduced header only, keep original head.ra0, dec0 (for dark and flats
-// amode=1 ==> full header only
-// amode=2 ==> reduced header. load image, get background
-// amode=3 ==> full header. load image  force reanalyse
-// amode=4 ==> full header. load image
- // difference between dynamic time and UTC in days
 var
   c,counts,i,iterations, hfd_counter                          : integer;
   backgr, hfd_median, hjd,sd, dummy,alt,az,ra_jnow,dec_jnow,ra_mount_jnow, dec_mount_jnow,ram,decm,rax,decx  : double;
@@ -3330,20 +3324,24 @@ begin
             lv.Items.item[c].subitems.Strings[D_type]:=imagetype;{image type}
 
 
-            if ((light=false) and (full=true)) {amode=2} then {dark/flats}
-            begin {analyse background and noise}
-              get_background(0,img,true {update_hist},false {calculate noise level}, {var} backgr,star_level);
-
-              {analyse centre only. Suitable for flats and dark with amp glow}
-              local_sd((head_2.width div 2)-50,(head_2.height div 2)-50, (head_2.width div 2)+50,(head_2.height div 2)+50{regio of interest},0,img, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-
-              lv.Items.item[c].subitems.Strings[D_background]:=inttostr5(round(backgr));
-              if ((lv.name=stackmenu1.listview2.name) or (lv.name=stackmenu1.listview3.name) or (lv.name=stackmenu1.listview4.name)) then
-                     lv.Items.item[c].subitems.Strings[D_sigma]:=noise_to_electrons(sd); {noise level either in ADU or e-}
-
+            if light=false then
+            begin
               if head_2.egain<>'' then lv.Items.item[c].subitems.Strings[D_gain]:=head_2.egain {e-/adu}
               else
               if head_2.gain<>'' then lv.Items.item[c].subitems.Strings[D_gain]:=head_2.gain;
+
+              if full=true then {dark/flats}
+              begin {analyse background and noise}
+
+                get_background(0,img,true {update_hist},false {calculate noise level}, {var} backgr,star_level);
+
+                {analyse centre only. Suitable for flats and dark with amp glow}
+                local_sd((head_2.width div 2)-50,(head_2.height div 2)-50, (head_2.width div 2)+50,(head_2.height div 2)+50{regio of interest},0,img, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+
+                lv.Items.item[c].subitems.Strings[D_background]:=inttostr5(round(backgr));
+                if ((lv.name=stackmenu1.listview2.name) or (lv.name=stackmenu1.listview3.name) or (lv.name=stackmenu1.listview4.name)) then
+                       lv.Items.item[c].subitems.Strings[D_sigma]:=noise_to_electrons(sd); {noise level either in ADU or e-}
+              end;
             end;
 
             if lv.name=stackmenu1.listview2.name then {dark tab}
