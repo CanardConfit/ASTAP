@@ -4212,7 +4212,7 @@ begin
   {recalibrate}
   if flux_magn_offset<>0 then
   begin
-    memo2_message('Flux calibration cleared. Recalibrate by ctrl-U. See viewer tool menu');
+    memo2_message('Flux calibration cleared. For magnitude measurements in viewer recalibrate by ctrl-U. See viewer tool menu. ');
     flux_magn_offset:=0;
   end;
 end;
@@ -6374,10 +6374,7 @@ var
     if Flipvertical=false then  starY:=(head.height-y) else starY:=(y);
     if Fliphorizontal     then starX:=(head.width-x)  else starX:=(x);
     if flux_aperture<99 {<>max setting}then
-    begin
-      mainwindow.image1.Canvas.Pen.style:=psSolid;
-      mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-    end;
+        mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
     mainwindow.image1.canvas.ellipse(round(starX-annulus_radius),round(starY-annulus_radius),round(starX+annulus_radius),round(starY+annulus_radius));{three pixels, 1,2,3}
     mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-4),round(starY-annulus_radius-4),round(starX+annulus_radius+4),round(starY+annulus_radius+4));
   end;
@@ -6729,9 +6726,9 @@ begin
         if ((annotated) and (mainwindow.annotations_visible1.checked)) then //header annotations
           plot_annotations(true {use solution vectors!!!!},false); {corrected annotations in case a part of the lights are flipped in the alignment routien}
 
-        mainwindow.image1.Canvas.Pen.Mode := pmMerge;
         mainwindow.image1.Canvas.Pen.width :=1;{thickness lines}
         mainwindow.image1.Canvas.Pen.Cosmetic:= false; {gives better dotted lines}
+        mainwindow.image1.Canvas.Pen.style:=psSolid;
 
         mainwindow.image1.Canvas.brush.Style:=bsClear;
         mainwindow.image1.Canvas.font.color:=clyellow;
@@ -6741,6 +6738,8 @@ begin
         {plot the aperture and annulus}
         if starlistpack[c].flux_magn_offset<>0 then {valid flux calibration}
         begin
+          mainwindow.image1.Canvas.Pen.mode:=pmCopy;
+
           if mainwindow.shape_alignment_marker1.visible then
           begin
             mainwindow.image1.Canvas.Pen.Color := clRed;
@@ -6759,7 +6758,7 @@ begin
           end;
         end;
 
-
+        mainwindow.image1.Canvas.Pen.Mode := pmMerge;
         mainwindow.image1.Canvas.Pen.width :=round(1+head.height/mainwindow.image1.height);{thickness lines}
         mainwindow.image1.Canvas.Pen.style:=psSolid;
         mainwindow.image1.Canvas.Pen.Color := $000050; {dark red}
@@ -7869,7 +7868,7 @@ begin
   if sender=analysephotometrymore1 then
     analyse_listview(listview7,true {light},true {full fits},true{refresh})
   else
-    analyse_listview(listview7,true {light},false {full fits},false{refresh});
+    analyse_listview(listview7,true {light},false {full fits},true{refresh});
 
   listview7.items.beginupdate;
   listview7.alphasort;{sort on time}

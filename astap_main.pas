@@ -662,7 +662,7 @@ var {################# initialised variables #########################}
   Ybayroff: double=0;{additional bayer pattern offset to apply}
   annotated : boolean=false;{any annotation in fits file?}
   sqm_key   :  ansistring='SQM     ';
-  centaz_key   :  ansistring='CENTAZ  ';
+  centaz_key   :  ansistring='CentAz  ';
 
   hfd_median : double=0;{median hfd, use in reporting in write_ini}
   hfd_counter: integer=0;{star counter (for hfd_median), use in reporting in write_ini}
@@ -1760,8 +1760,6 @@ begin
                            crval1--->head.ra0
 
      if head.ra0<>0 then           head.ra0--->ra1.text------------------->ra_radians}
-
-//    if light then old_calstat:=head.calstat; //keep this for procedure savefits_update_header
 
     unsaved_import:=false;{file is available for astrometry.net}
 
@@ -3282,7 +3280,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.08.03, '+about_message4+
+  'ASTAP version 2022.08.04, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -6985,7 +6983,7 @@ end;
 
 function save_tiff16_secure(img : image_array;filen2:string) : boolean;{guarantee no file is lost}
 var
-  filename_tmp: string;
+  filename_tmp : string;
 begin
   result:=false;{assume failure}
   filename_tmp:=changeFileExt(filen2,'.tmp');{new file will be first written to this file}
@@ -7010,6 +7008,8 @@ var
   endfound  : boolean;
   filename_tmp: string;
 
+  dummy,DUMMY1: string;
+
      procedure close_fits_files;
      begin
         Reader.free;
@@ -7031,7 +7031,6 @@ var
 begin
   result:=false;{assume failure}
   filename_tmp:=changeFileExt(filen2,'.tmp');{new file will be first written to this file}
-
   try
     TheFile_new:=tfilestream.Create(filename_tmp, fmcreate );
     TheFile:=tfilestream.Create(filen2, fmOpenRead or fmShareDenyWrite);
@@ -7046,7 +7045,13 @@ begin
       inc(reader_position,80);
       endfound:=((header[i]='E') and (header[i+1]='N')  and (header[i+2]='D') and (header[i+3]=' '));
     until ((endfound) or (I>=sizeof(header)-16 ));
-    if endfound=false then begin close_fits_files; exit;end;
+    if endfound=false then
+    begin
+      close_fits_files;
+      beep;
+      memo2_message('Abort, error reading source FITS file!!');
+      exit;
+    end;
 
     fract:=frac(reader_position/2880);
 
@@ -7056,7 +7061,7 @@ begin
       reader.read(header[0],i); {skip empty part and go to image data}
       inc(reader_position,i);
     end;
-    {reader is now at begin of data}
+    {reader is now at begin of image data}
 
     {write updated header}
     for i:=0 to 79 do empthy_line[i]:=#32;{space}
@@ -7087,8 +7092,8 @@ begin
     TheFile.free;
     TheFile_new.free;
 
-    if deletefile(filename2) then
-      result:=renamefile(filename_tmp,filename2);
+    if deletefile(filen2) then
+      result:=renamefile(filename_tmp,filen2);
   except
     close_fits_files;
     beep;
@@ -8906,7 +8911,6 @@ begin
   url:='https://www.aavso.org/vsx/index.php?view=api.list&ra='+floattostr6(head.ra0*180/pi)+'&dec='+floattostr6(head.dec0*180/pi)+'&radius='+floattostr6(radius)+'&tomag='+floattostr4(limiting_mag)+'&format=json';
   s:=get_http(url);
   if length(s)<25 then begin beep; exit end;;
-
 
   setlength(vsx,1000);
   count:=0;
