@@ -695,10 +695,11 @@ var {################# initialised variables #########################}
   mouse_positionRADEC1 : string='';{For manual reference solving}
   mouse_positionRADEC2 : string='';{For manual reference solving}
   flipped_img          : string='';
-  bayer_pattern : array[0..3] of string=('GRBG',
+  bayer_pattern : array[0..4] of string=('GRBG',
                                          'BGGR',
                                          'RGGB',
-                                         'GBRG');
+                                         'GBRG',
+                                         'GGGG');// last pattern is used for Fuji X-trans GGGGBRGGGGRBGGGG'
   annotation_color: tcolor=clyellow;
   annotation_diameter : integer=20;
   pedestal            : integer=0;
@@ -3280,7 +3281,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.08.04, '+about_message4+
+  'ASTAP version 2022.08.05, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -5690,12 +5691,10 @@ begin
   setlength(img_temp2,3,head.width,head.height);{set length of image array color}
 
 
-  for y := 2 to head.height-2 do   {-2 = -1 -1}
+  for y :=2 to  head.height-2 do   {-2 = -1 -1}
   begin
     for x:=2 to head.width-2 do
     begin
-     {http://cilab.knu.ac.kr/English/research/Color/Interpolation.htm ,  Bilinear interpolation}
-
       try
        x2:=x-1;
        y2:=y-1;
@@ -5740,12 +5739,12 @@ begin
 
       if ((xpos=1) and (ypos=2)) then {red}begin
                    red             :=   img[0,x  ,y  ];
-                   img_temp2[1,x,y]:=   img[0,x+1 ,y ];   {near green pixel(s)};
+                   img_temp2[1,x,y]:=   img[0,x+1 ,y ];{near green pixel(s)};
                    blue            :=   img[0,x-1,y ]; {near blue pixel(s)} end else
 
       if ((xpos=3) and (ypos=2)) then {red}begin
                    red             :=   img[0,x  ,y  ];
-                   img_temp2[1,x,y]:=   img[0,x  ,y+1];   {near green pixel(s)};
+                   img_temp2[1,x,y]:=   img[0,x  ,y+1]; {near green pixel(s)};
                    blue            :=   img[0,x+1,y  ]; {near blue pixel(s)} end;
 
       {fix red and green swap}
@@ -5765,6 +5764,7 @@ begin
   head.naxis3:=3;{now three colors. Header string will be updated by saving or calling procedure update_header_for_colour}
   head.naxis:=3; {from 2 to 3 dimensions. Header string will be updated by saving or calling procedure update_header_for_colour}
 end;
+
 
 procedure demosaic_astrosimple(var img:image_array;pattern: integer);{Spread each colour pixel to 2x2. Works well for astro oversampled images. Idea by Han.k}
 var
@@ -6475,6 +6475,8 @@ begin
   else
   if pattern=bayer_pattern[3]{'GBRG'} then begin result:=3; {offsetx:=1; offsety:=1;} end
   else
+  if ((pattern=bayer_pattern[4]{'GGGG'}) or (pattern[1]='X')) then begin result:=4; {FILT-PAT= 'GGGGBRGGGGRBGGGG',   BAYERPAT= 'GGGG'  Fujifilm X-trans} end
+  else
   result:=2;{empthy no bayer pattern, take default RGGB}
 
  {corrections for xbayroff,ybayroff, TOP-DOWN}
@@ -6503,30 +6505,33 @@ end;
 
 
 procedure demosaic_bayer(var img: image_array); {convert OSC image to colour}
+var
+   pattern : integer;
 begin
-  if stackmenu1.bayer_pattern1.Text='' then memo2_message('█ █ █ █ █ █ Setting required. Please test and set Bayer pattern in tab "Stack method"! █ █ █ █ █ █ ');
+  pattern:= get_demosaic_pattern;
+
+  if pattern=4  then {Fuji film X-trans}
+    demosaic_x_trans(img){make from Fuji X-trans three colors}
+  else
   if pos('AstroC',stackmenu1.demosaic_method1.text)<>0  then
   begin
-    if head.datamax_org>16384 then demosaic_astroC_bilinear_interpolation(img,65535 div 2,get_demosaic_pattern){16 bit image. Make from sensor bayer pattern the three colors}
+    if head.datamax_org>16384 then demosaic_astroC_bilinear_interpolation(img,65535 div 2,pattern){16 bit image. Make from sensor bayer pattern the three colors}
     else
-    if head.datamax_org>4096 then demosaic_astroC_bilinear_interpolation(img,16383 div 2,get_demosaic_pattern){14 bit image. Make from sensor bayer pattern the three colors}
+    if head.datamax_org>4096 then demosaic_astroC_bilinear_interpolation(img,16383 div 2,pattern){14 bit image. Make from sensor bayer pattern the three colors}
     else
-    demosaic_astroC_bilinear_interpolation(img,4095 div 2,get_demosaic_pattern){12 bit image. Make from sensor bayer pattern the three colors}
+    demosaic_astroC_bilinear_interpolation(img,4095 div 2,pattern){12 bit image. Make from sensor bayer pattern the three colors}
   end
   else
   if pos('Simple',stackmenu1.demosaic_method1.text)<>0  then {}
-    demosaic_astrosimple(img,get_demosaic_pattern){make from sensor bayer pattern the three colors}
+    demosaic_astrosimple(img,pattern){make from sensor bayer pattern the three colors}
   else
   if pos('AstroM',stackmenu1.demosaic_method1.text)<>0  then {}
-    demosaic_astroM_bilinear_interpolation(img,get_demosaic_pattern){make from sensor bayer pattern the three colors}
+    demosaic_astroM_bilinear_interpolation(img,pattern){make from sensor bayer pattern the three colors}
   else
   if pos('Super',stackmenu1.demosaic_method1.text)<>0  then {}
-    demosaic_superpixel(img,get_demosaic_pattern){make from sensor bayer pattern the three colors}
+    demosaic_superpixel(img,pattern){make from sensor bayer pattern the three colors}
   else
-  if pos('X-',stackmenu1.bayer_pattern1.Text)<>0  then {}
-    demosaic_x_trans(img){make from Fuji X-trans three colors}
-  else
-  demosaic_bilinear_interpolation(img,get_demosaic_pattern);{use Bilinear interpolation. Make from sensor bayer pattern the three colors}
+  demosaic_bilinear_interpolation(img,pattern);{use Bilinear interpolation. Make from sensor bayer pattern the three colors}
 end;
 
 
