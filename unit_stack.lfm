@@ -484,6 +484,7 @@ object stackmenu1: Tstackmenu1
         OnCustomDraw = listview1CustomDraw
         OnCustomDrawItem = listview1CustomDrawItem
         OnDblClick = listview1DblClick
+        OnItemChecked = listview1ItemChecked
         OnKeyDown = listview1KeyDown
       end
       object uncheck_outliers1: TCheckBox

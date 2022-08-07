@@ -616,6 +616,7 @@ type
     procedure FormDestroy(Sender: TObject);
     procedure help_monitoring1Click(Sender: TObject);
     procedure help_mount_tab1Click(Sender: TObject);
+    procedure listview1ItemChecked(Sender: TObject; Item: TListItem);
     procedure live_monitoring1Click(Sender: TObject);
     procedure auto_select1Click(Sender: TObject);
     procedure monitoring_stop1Click(Sender: TObject);
@@ -1346,7 +1347,7 @@ begin
         end;
         inc(c); {go to next file}
       until c>counts;
-      if nr_good_images>0 then quality_mean:=quality_mean/nr_good_images else quality_mean:=0;
+      if nr_good_images>0 then quality_mean:=quality_mean/nr_good_images else exit; //quality_mean:=0;
 
       {calculate standard deviations}
       begin
@@ -1356,7 +1357,7 @@ begin
           if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[L_result]))then
           begin {checked}
             {$ifdef darwin} {MacOS}
-            quality:=strtoint(stringreplace(ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[rfReplaceAll]));//add crown
+            quality:=strtoint(stringreplace(ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[rfReplaceAll]));//remove crown
             {$else}
             quality:=strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]);
            {$endif}
@@ -1374,7 +1375,8 @@ begin
           sd:=StringReplace(sd,'%','',[]);
           sd_factor:=inverse_erf(strtofloat2(sd)/100);{convert percentage to standard deviation}
         end
-        else sd_factor:=strtofloat2(sd);
+        else
+           sd_factor:=strtofloat2(sd);
         c:=0;
         repeat
           if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[L_result])) then
@@ -1975,13 +1977,15 @@ begin
       {give list an indentification key label based on object, filter and head_2.exposure time}
       for c:=0 to ListView1.items.count-1 do
       begin
-        if ListView1.Items.item[c].SubitemImages[L_quality]=icon_thumb_down then {marked at outlier}
+
+      if ListView1.Items.item[c].SubitemImages[L_quality]=icon_thumb_down then {marked at outlier}
         begin
            ListView1.Items.item[c].checked:=true;{recheck outliers from previous session}
-           ListView1.Items.item[c].SubitemImages[L_quality]:=-1;{remove mark}
         end;
+        ListView1.Items.item[c].SubitemImages[L_quality]:=-1;{remove any icon mark}
 
-         if ListView1.items[c].Checked=true then
+
+       if ListView1.items[c].Checked=true then
              ListView1.Items.item[c].subitems.Strings[L_result]:=
                      ListView1.Items.item[c].subitems.Strings[L_object]+'_'+{object name}
                      ListView1.Items.item[c].subitems.Strings[L_filter]+'_'+{filter}
@@ -7542,6 +7546,13 @@ begin
    openurl('http://www.hnsky.org/astap.htm#mount_tab');
 end;
 
+procedure Tstackmenu1.listview1ItemChecked(Sender: TObject; Item: TListItem);
+begin
+  if  item.checked=false then
+    item.SubitemImages[L_quality]:=-1 {no marker. Required for autoselect to remove this item permanent from statistics}
+
+end;
+
 procedure Tstackmenu1.live_monitoring1Click(Sender: TObject);
 begin
   save_settings2;{too many lost selected files . so first save settings}
@@ -8975,7 +8986,7 @@ procedure put_best_quality_on_top(var files_to_process : array of TfileToDo);{fi
 var
    best_quality,quality  : double;
    first, best_index,i, width1, largest_width  : integer;
-   quality_str: string;
+   quality_str,dummy: string;
    file_to_do : Tfiletodo;
 begin
   first:=-1;
@@ -9028,7 +9039,8 @@ begin
     stackmenu1.ListView1.Items.item[best_index].SubitemImages[L_quality]:=icon_king; {mark as best quality image}
    {$ifdef darwin} {MacOS}
     {bugfix darwin icons}
-    stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality]:='♛'+ stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality];//crown
+    dummy:=stringreplace(stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality],'♛','',[rfReplaceAll]);//remove crown, prevent two crowns
+    stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality]:='♛'+ dummy;//crown
    {$endif}
 
 
