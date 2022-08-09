@@ -1926,14 +1926,6 @@ begin
                 if head_2.filter_name<>'' then ListView1.Items.item[c].SubitemImages[L_filter]:=7 {question mark} else
                      ListView1.Items.item[c].SubitemImages[L_filter]:=-1;{blank}
 
-                {$ifdef darwin} {MacOS, fix missing icons}
-                if red then ListView1.Items.item[c].subitems.Strings[L_filter]:='🔴' +ListView1.Items.item[c].subitems.Strings[L_filter]
-                else
-                if green then ListView1.Items.item[c].subitems.Strings[L_filter]:='🍏' +ListView1.Items.item[c].subitems.Strings[L_filter]
-                else
-                if blue then ListView1.Items.item[c].subitems.Strings[L_filter]:='🔵' +ListView1.Items.item[c].subitems.Strings[L_filter];
-                {$endif}
-
                 ListView1.Items.item[c].subitems.Strings[L_bin]:=floattostrf(Xbinning,ffgeneral,0,0)+' x '+floattostrf(Ybinning,ffgeneral,0,0); {Binning CCD}
 
                 ListView1.Items.item[c].subitems.Strings[L_hfd]:=floattostrF(hfd_median,ffFixed,0,1);
@@ -1956,6 +1948,16 @@ begin
 
                 if ((head_2.naxis3=1) and (Xbinning=1) and (bayerpat<>'')) then rawstr:=' raw' else rawstr:='';
                 ListView1.Items.item[c].subitems.Strings[L_type]:=copy(imagetype,1,5)+inttostr(nrbits)+rawstr;{type}
+
+                {$ifdef darwin} {MacOS, fix missing icons}
+                 if red then ListView1.Items.item[c].subitems.Strings[L_type]:='🔴' +ListView1.Items.item[c].subitems.Strings[L_type]
+                 else
+                 if green then ListView1.Items.item[c].subitems.Strings[L_type]:='🍏' +ListView1.Items.item[c].subitems.Strings[L_type]
+                 else
+                 if blue then ListView1.Items.item[c].subitems.Strings[L_type]:='🔵' +ListView1.Items.item[c].subitems.Strings[L_type];
+                {$endif}
+
+
                 ListView1.Items.item[c].subitems.Strings[L_datetime]:=copy(StringReplace(head_2.date_obs,'T',' ',[]),1,23);{date/time up to ms}
                 ListView1.Items.item[c].subitems.Strings[L_position]:=prepare_ra5(head_2.ra0,': ')+', '+ prepare_dec4(head_2.dec0,'° ');{give internal position}
 
@@ -3401,11 +3403,11 @@ begin
                     lv.Items.item[c].SubitemImages[F_filter]:=-1;{blank}
 
               {$ifdef darwin} {MacOS, fix missing icons}
-              if red then Lv.Items.item[c].subitems.Strings[F_filter]:='🔴' +Lv.Items.item[c].subitems.Strings[F_filter]
+              if red then Lv.Items.item[c].subitems.Strings[D_type]:='🔴' +Lv.Items.item[c].subitems.Strings[D_type]
               else
-              if green then Lv.Items.item[c].subitems.Strings[F_filter]:='🍏' +Lv.Items.item[c].subitems.Strings[F_filter]
+              if green then Lv.Items.item[c].subitems.Strings[D_type]:='🍏' +Lv.Items.item[c].subitems.Strings[D_type]
               else
-              if blue then Lv.Items.item[c].subitems.Strings[F_filter]:='🔵' +Lv.Items.item[c].subitems.Strings[F_filter];
+              if blue then Lv.Items.item[c].subitems.Strings[D_type]:='🔵' +Lv.Items.item[c].subitems.Strings[D_type];
               {$endif}
 
               lv.Items.item[c].subitems.Strings[D_date]:=copy(head_2.date_obs,1,10);
