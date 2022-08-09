@@ -1773,7 +1773,7 @@ var
   c,hfd_counter  ,i,counts                              : integer;
   backgr, hfd_median,alt,az                             : double;
   Save_Cursor                                           : TCursor;
-  green,blue,planetary                                  : boolean;
+  red,green,blue,planetary                                  : boolean;
   key,filename1,rawstr                                  : string;
   img                                                   : image_array;
 begin
@@ -1794,6 +1794,7 @@ begin
     jd_sum:=0;{for sigma clip advanced average}
     planetary:=planetary_image1.checked;
 
+    red:=false;
     green:=false;
     blue:=false;
 //    minbackgr:=65000;
@@ -1913,8 +1914,8 @@ begin
                 ListView1.Items.item[c].subitems.Strings[L_filter]:=head_2.filter_name; {filter name, without spaces}
                 if head_2.naxis3=3 then ListView1.Items.item[c].subitems.Strings[L_filter]:='colour'; {give RGB lights filter name colour}
 
-                if AnsiCompareText(red_filter1.text,head_2.filter_name)=0 then  ListView1.Items.item[c].SubitemImages[L_filter]:=0 else
-                if AnsiCompareText(red_filter2.text,head_2.filter_name)=0 then  ListView1.Items.item[c].SubitemImages[L_filter]:=0 else
+                if AnsiCompareText(red_filter1.text,head_2.filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[L_filter]:=0; red:=true; end else
+                if AnsiCompareText(red_filter2.text,head_2.filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[L_filter]:=0 ; red:=true; end else
                 if AnsiCompareText(green_filter1.text,head_2.filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[L_filter]:=1; green:=true; end else
                 if AnsiCompareText(green_filter2.text,head_2.filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[L_filter]:=1; green:=true; end else
                 if AnsiCompareText(blue_filter1.text,head_2.filter_name)=0 then begin ListView1.Items.item[c].SubitemImages[L_filter]:=2; blue:=true; end else
@@ -1922,8 +1923,16 @@ begin
                 if AnsiCompareText(luminance_filter1.text,head_2.filter_name)=0 then  ListView1.Items.item[c].SubitemImages[L_filter]:=4 else
                 if AnsiCompareText(luminance_filter2.text,head_2.filter_name)=0 then  ListView1.Items.item[c].SubitemImages[L_filter]:=4 else
                 if head_2.naxis3=3 then  ListView1.Items.item[c].SubitemImages[L_filter]:=3 else {RGB color}
-                  if head_2.filter_name<>'' then ListView1.Items.item[c].SubitemImages[L_filter]:=7 {question mark} else
+                if head_2.filter_name<>'' then ListView1.Items.item[c].SubitemImages[L_filter]:=7 {question mark} else
                      ListView1.Items.item[c].SubitemImages[L_filter]:=-1;{blank}
+
+                {$ifdef darwin} {MacOS, fix missing icons}
+                if red then ListView1.Items.item[c].subitems.Strings[L_filter]:='🔴' +ListView1.Items.item[c].subitems.Strings[L_filter]
+                else
+                if green then ListView1.Items.item[c].subitems.Strings[L_filter]:='🍏' +ListView1.Items.item[c].subitems.Strings[L_filter]
+                else
+                if blue then ListView1.Items.item[c].subitems.Strings[L_filter]:='🔵' +ListView1.Items.item[c].subitems.Strings[L_filter];
+                {$endif}
 
                 ListView1.Items.item[c].subitems.Strings[L_bin]:=floattostrf(Xbinning,ffgeneral,0,0)+' x '+floattostrf(Ybinning,ffgeneral,0,0); {Binning CCD}
 
@@ -3257,7 +3266,7 @@ var
   backgr, hfd_median, hjd,sd, dummy,alt,az,ra_jnow,dec_jnow,ra_mount_jnow, dec_mount_jnow,ram,decm,rax,decx  : double;
   filename1                        : string;
   Save_Cursor                      : TCursor;
-  loaded, green,blue               : boolean;
+  loaded, red,green,blue               : boolean;
   img                              : image_array;
   nr_stars, hfd_outer_ring,
   median_11,median_21,median_31,   median_12,median_22,median_32,   median_13,median_23,median_33 : double;
@@ -3270,6 +3279,7 @@ begin
   if full=false then  lv.Items.BeginUpdate;{stop updating to prevent flickering till finished}
 
   counts:=lv.items.count-1;
+  red:=false;
   green:=false;
   blue:=false;
 
@@ -3378,8 +3388,8 @@ begin
             if lv.name=stackmenu1.listview3.name then {flat tab}
             begin
               lv.Items.item[c].subitems.Strings[F_filter]:=head_2.filter_name; {filter name, without spaces}
-              if AnsiCompareText(stackmenu1.red_filter1.text,head_2.filter_name)=0 then  Lv.Items.item[c].SubitemImages[F_filter]:=0 else
-              if AnsiCompareText(stackmenu1.red_filter2.text,head_2.filter_name)=0 then  Lv.Items.item[c].SubitemImages[F_filter]:=0 else
+              if AnsiCompareText(stackmenu1.red_filter1.text,head_2.filter_name)=0 then begin Lv.Items.item[c].SubitemImages[F_filter]:=0;red:=true; end else
+              if AnsiCompareText(stackmenu1.red_filter2.text,head_2.filter_name)=0 then begin Lv.Items.item[c].SubitemImages[F_filter]:=0;red:=true; end else
               if AnsiCompareText(stackmenu1.green_filter1.text,head_2.filter_name)=0 then begin lv.Items.item[c].SubitemImages[F_filter]:=1; green:=true; end else
               if AnsiCompareText(stackmenu1.green_filter2.text,head_2.filter_name)=0 then begin lv.Items.item[c].SubitemImages[F_filter]:=1; green:=true; end else
               if AnsiCompareText(stackmenu1.blue_filter1.text,head_2.filter_name)=0 then begin lv.Items.item[c].SubitemImages[F_filter]:=2; blue:=true; end else
@@ -3389,6 +3399,14 @@ begin
               if head_2.naxis3=3 then  lv.Items.item[c].SubitemImages[F_filter]:=3 else {RGB color}
                  if head_2.filter_name<>'' then lv.Items.item[c].SubitemImages[F_filter]:=7 {question mark} else
                     lv.Items.item[c].SubitemImages[F_filter]:=-1;{blank}
+
+              {$ifdef darwin} {MacOS, fix missing icons}
+              if red then Lv.Items.item[c].subitems.Strings[F_filter]:='🔴' +Lv.Items.item[c].subitems.Strings[F_filter]
+              else
+              if green then Lv.Items.item[c].subitems.Strings[F_filter]:='🍏' +Lv.Items.item[c].subitems.Strings[F_filter]
+              else
+              if blue then Lv.Items.item[c].subitems.Strings[F_filter]:='🔵' +Lv.Items.item[c].subitems.Strings[F_filter];
+              {$endif}
 
               lv.Items.item[c].subitems.Strings[D_date]:=copy(head_2.date_obs,1,10);
               date_to_jd(head_2.date_obs,head_2.exposure);{convert head_2.date_obs string and head_2.exposure time to global variables jd_start (julian day start head_2.exposure) and jd_mid (julian day middle of the head_2.exposure)}
