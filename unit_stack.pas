@@ -1306,6 +1306,13 @@ begin
 end;
 
 
+function add_unicode(u,tekst:string): string;
+begin
+  result:=stringreplace(tekst,'♛','',[rfReplaceAll]);//remove crown
+  result:=stringreplace(tekst,'👎','',[rfReplaceAll]);//remove thumb down
+  result:=u+result;
+end;
+
 procedure list_remove_outliers(key:string); {do statistics}
 var
   quality_mean,quality_sd,sd_factor : double;
@@ -1330,7 +1337,7 @@ begin
           else
           begin {normal HFD value}
             {$ifdef darwin} {MacOS}
-               quality:=strtoint(stringreplace(stackmenu1.ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[rfReplaceAll]));//remove all crowns
+               quality:=strtoint(add_unicode('',stackmenu1.ListView1.Items.item[c].Subitems.strings[L_quality]));//remove all crowns
             {$else}
                quality:=strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]);
             {$endif}
@@ -1357,7 +1364,7 @@ begin
           if ((ListView1.Items.item[c].checked) and (key=ListView1.Items.item[c].subitems.Strings[L_result]))then
           begin {checked}
             {$ifdef darwin} {MacOS}
-            quality:=strtoint(stringreplace(ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[rfReplaceAll]));//remove crown
+            quality:=strtoint(add_unicode('',ListView1.Items.item[c].Subitems.strings[L_quality]));//remove crown
             {$else}
             quality:=strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]);
            {$endif}
@@ -1383,7 +1390,7 @@ begin
           begin {checked}
             ListView1.Items.item[c].subitems.Strings[L_result]:='';{remove key, job done}
             {$ifdef darwin} {MacOS}
-            quality:=strtoint(stringreplace(ListView1.Items.item[c].Subitems.strings[L_quality],'♛','',[rfReplaceAll]));//remove all crowns
+            quality:=strtoint(add_unicode('',ListView1.Items.item[c].Subitems.strings[L_quality]));//remove all crowns
             {$else}
             quality:=strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]);
            {$endif}
@@ -1391,17 +1398,20 @@ begin
             begin {remove low quality outliers}
               ListView1.Items.item[c].checked:=false;
               ListView1.Items.item[c].SubitemImages[L_quality]:=icon_thumb_down; {mark as outlier using imageindex}
+              {$ifdef darwin} {MacOS}
+               stackmenu1.ListView1.Items.item[c].Subitems.strings[L_quality]:=add_unicode('👎',stackmenu1.ListView1.Items.item[c].Subitems.strings[L_quality]);//thumb down
+              {$endif}
               memo2_message(ListView1.Items.item[c].caption+ ' unchecked due to low quality = nr stars detected / hfd.' );
+            end;
           end;
-        end;
-        inc(c); {go to next file}
-      until c>counts;
-    end;{throw outliers out}
+          inc(c); {go to next file}
+        until c>counts;
+      end;{throw outliers out}
 
-    if best<>0 then
-    begin
-      ListView1.Items.item[best_index].SubitemImages[L_quality]:=icon_king; {mark best index. Not nessesary but just nice}
-    end;
+      if best<>0 then
+      begin
+        ListView1.Items.item[best_index].SubitemImages[L_quality]:=icon_king; {mark best index. Not nessesary but just nice}
+      end;
 
     finally
       ListView1.Items.EndUpdate;
@@ -6323,14 +6333,14 @@ procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   Save_Cursor          : TCursor;
   magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,backgr,hfd_med,apert,annul,
-  rax1,decx1,rax2,decx2,rax3,decx3,xn,yn,lim_magn                                               : double;
+  rax1,decx1,rax2,decx2,rax3,decx3,xn,yn                                                        : double;
   saturation_level                                                                              : single;
   c,i,x_new,y_new,fitsX,fitsY,col,{first_image,}size,starX,starY,stepnr,countVar, countCheck,countThree : integer;
   flipvertical,fliphorizontal,init,refresh_solutions,analysedP,store_annotated, warned,success  : boolean;
   starlistx : star_list;
   starVar, starCheck,starThree : array of double;
   outliers : array of array of double;
-  astr,memo2_text,filename1,dd  : string;
+  astr,memo2_text,filename1  : string;
 
   function measure_star(deX,deY :double): string;{measure position and flux}
   //var
@@ -6444,7 +6454,6 @@ begin
   memo2_text:=mainwindow.Memo1.Text;{backup fits header}
   for c:=0 to listview7.items.count-1 do {check for astrometric solutions}
   begin
-   dd:=listview7.Items.item[c].subitems.Strings[P_astrometric];
     if ((esc_pressed=false) and (listview7.Items.item[c].checked) and (listview7.Items.item[c].subitems.Strings[P_astrometric]=''))  then
     begin
       filename1:=listview7.items[c].caption;
@@ -8337,8 +8346,8 @@ end;
 
 procedure load_master_dark(jd_int: integer);
 var
-  c,{roundexposure,}dummy            : integer;
-  d,day_offset,test          : double;
+  c                          : integer;
+  d,day_offset               : double;
   filen                      : string;
 
 begin
@@ -8986,7 +8995,7 @@ procedure put_best_quality_on_top(var files_to_process : array of TfileToDo);{fi
 var
    best_quality,quality  : double;
    first, best_index,i, width1, largest_width  : integer;
-   quality_str,dummy: string;
+   quality_str      : string;
    file_to_do : Tfiletodo;
 begin
   first:=-1;
@@ -9004,7 +9013,7 @@ begin
 
       quality_str:=stackmenu1.ListView1.Items.item[i].subitems.Strings[L_quality];{number of stars detected}
       {$ifdef darwin} {MacOS}
-      quality_str:=stringreplace(quality_str,'♛','',[rfReplaceAll]);//remove all crowns
+      quality_str:=add_unicode('',quality_str);//remove all crowns
       {$else}
       {$endif}
 
@@ -9039,8 +9048,7 @@ begin
     stackmenu1.ListView1.Items.item[best_index].SubitemImages[L_quality]:=icon_king; {mark as best quality image}
    {$ifdef darwin} {MacOS}
     {bugfix darwin icons}
-    dummy:=stringreplace(stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality],'♛','',[rfReplaceAll]);//remove crown, prevent two crowns
-    stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality]:='♛'+ dummy;//crown
+    stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality]:=add_unicode('♛',stackmenu1.ListView1.Items.item[best_index].Subitems.strings[L_quality]);//add crown
    {$endif}
 
 
