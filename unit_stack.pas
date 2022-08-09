@@ -1309,7 +1309,7 @@ end;
 function add_unicode(u,tekst:string): string;
 begin
   result:=stringreplace(tekst,'♛','',[rfReplaceAll]);//remove crown
-  result:=stringreplace(tekst,'👎','',[rfReplaceAll]);//remove thumb down
+  result:=stringreplace(result,'👎','',[rfReplaceAll]);//remove thumb down
   result:=u+result;
 end;
 
@@ -1336,6 +1336,9 @@ begin
           if strtofloat(ListView1.Items.item[c].subitems.Strings[L_hfd])>90 {hfd} then ListView1.Items.item[c].checked:=false {no quality, can't process this image}
           else
           begin {normal HFD value}
+
+
+
             {$ifdef darwin} {MacOS}
                quality:=strtoint(add_unicode('',stackmenu1.ListView1.Items.item[c].Subitems.strings[L_quality]));//remove all crowns
             {$else}
@@ -1368,6 +1371,7 @@ begin
             {$else}
             quality:=strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]);
            {$endif}
+
             quality_sd:=quality_sd+sqr(quality_mean -quality);
           end;
           inc(c); {go to next file}
@@ -1394,13 +1398,14 @@ begin
             {$else}
             quality:=strtoint(ListView1.Items.item[c].subitems.Strings[L_quality]);
            {$endif}
+
             if (quality_mean- quality)>sd_factor*quality_sd  then
             begin {remove low quality outliers}
               ListView1.Items.item[c].checked:=false;
               ListView1.Items.item[c].SubitemImages[L_quality]:=icon_thumb_down; {mark as outlier using imageindex}
-              {$ifdef darwin} {MacOS}
-               stackmenu1.ListView1.Items.item[c].Subitems.strings[L_quality]:=add_unicode('👎',stackmenu1.ListView1.Items.item[c].Subitems.strings[L_quality]);//thumb down
-              {$endif}
+             {$ifdef darwin} {MacOS}
+              ListView1.Items.item[c].Subitems.strings[L_quality]:=add_unicode('👎',ListView1.Items.item[c].Subitems.strings[L_quality]);//thumb down
+             {$endif}
               memo2_message(ListView1.Items.item[c].caption+ ' unchecked due to low quality = nr stars detected / hfd.' );
             end;
           end;
@@ -1411,6 +1416,9 @@ begin
       if best<>0 then
       begin
         ListView1.Items.item[best_index].SubitemImages[L_quality]:=icon_king; {mark best index. Not nessesary but just nice}
+        {$ifdef darwin} {MacOS}
+        ListView1.Items.item[best_index].Subitems.strings[L_quality]:=add_unicode('♛',ListView1.Items.item[best_index].Subitems.strings[L_quality]);//add crown
+        {$endif}
       end;
 
     finally
@@ -1993,7 +2001,9 @@ begin
            ListView1.Items.item[c].checked:=true;{recheck outliers from previous session}
         end;
         ListView1.Items.item[c].SubitemImages[L_quality]:=-1;{remove any icon mark}
-
+        {$ifdef darwin} {MacOS}
+        ListView1.Items.item[c].subitems.Strings[L_quality]:=add_unicode('', ListView1.Items.item[c].subitems.Strings[L_quality]);//remove all crowns and thumbs
+        {$endif}
 
        if ListView1.items[c].Checked=true then
              ListView1.Items.item[c].subitems.Strings[L_result]:=
@@ -7557,8 +7567,11 @@ end;
 
 procedure Tstackmenu1.listview1ItemChecked(Sender: TObject; Item: TListItem);
 begin
-  if  item.checked=false then
+  if item.checked=false then
+  begin
     item.SubitemImages[L_quality]:=-1 {no marker. Required for autoselect to remove this item permanent from statistics}
+    item.subitems.Strings[L_quality]:=add_unicode('', item.subitems.Strings[L_quality]);//remove all crowns and thumbs
+  end;
 
 end;
 
@@ -9013,8 +9026,7 @@ begin
 
       quality_str:=stackmenu1.ListView1.Items.item[i].subitems.Strings[L_quality];{number of stars detected}
       {$ifdef darwin} {MacOS}
-      quality_str:=add_unicode('',quality_str);//remove all crowns
-      {$else}
+      quality_str:=add_unicode('',quality_str);//remove all crowns and thumbs
       {$endif}
 
       if length(quality_str)>1 then quality:=strtoint(quality_str) else quality:=0;{quality equals nr stars /hfd}
