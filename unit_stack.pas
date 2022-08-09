@@ -7569,10 +7569,11 @@ procedure Tstackmenu1.listview1ItemChecked(Sender: TObject; Item: TListItem);
 begin
   if item.checked=false then
   begin
-    item.SubitemImages[L_quality]:=-1 {no marker. Required for autoselect to remove this item permanent from statistics}
-    item.subitems.Strings[L_quality]:=add_unicode('', item.subitems.Strings[L_quality]);//remove all crowns and thumbs
+    item.SubitemImages[L_quality]:=-1; {no marker. Required for autoselect to remove this item permanent from statistics}
+    {$ifdef darwin} {MacOS}
+    item.subitems.Strings[L_quality]:=add_unicode('', item.subitems.Strings[L_quality]);//remove crown or thumb down
+    {$endif}
   end;
-
 end;
 
 procedure Tstackmenu1.live_monitoring1Click(Sender: TObject);
