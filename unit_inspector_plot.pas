@@ -14,13 +14,17 @@ interface
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, LCLintf, StdCtrls,
   Buttons, math, astap_main, unit_stack, unit_annotation,
-  clipbrd; {for copy to clipboard}
+  clipbrd, ActnList; {for copy to clipboard}
 
 type
 
   { Tform_inspection1 }
 
   Tform_inspection1 = class(TForm)
+    Action1: TAction;
+    Action2: TAction;
+    Action3: TAction;
+    ActionList1: TActionList;
     bayer_label1: TLabel;
     to_clipboard1: TCheckBox;
     show_distortion1: TBitBtn;
@@ -43,6 +47,7 @@ type
     vectors1: TCheckBox;
     voronoi1: TCheckBox;
     procedure aberration_inspector1Click(Sender: TObject);
+    procedure Action1Execute(Sender: TObject);
     procedure background_values1Click(Sender: TObject);
     procedure close_button1Click(Sender: TObject);
     procedure contour1Change(Sender: TObject);
@@ -51,7 +56,7 @@ type
     procedure FormKeyPress(Sender: TObject; var Key: char);
     procedure FormShow(Sender: TObject);
     procedure help_uncheck_outliers1Click(Sender: TObject);
-    procedure hfd_button1Click(Sender: TObject);
+    procedure roundness1Click(Sender: TObject);
     procedure measuring_angle1Change(Sender: TObject);
     procedure show_distortion1Click(Sender: TObject);
     procedure tilt1Click(Sender: TObject);
@@ -1055,7 +1060,7 @@ begin
 end;
 
 
-procedure Tform_inspection1.hfd_button1Click(Sender: TObject);
+procedure Tform_inspection1.roundness1Click(Sender: TObject);
 var
   j: integer;
   Save_Cursor:TCursor;
@@ -1449,6 +1454,12 @@ begin
    Screen.Cursor:=Save_Cursor;
   end;
 end;
+
+procedure Tform_inspection1.Action1Execute(Sender: TObject);
+begin
+
+end;
+
 
 
 procedure Tform_inspection1.FormKeyPress(Sender: TObject; var Key: char);

@@ -3281,7 +3281,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.08.09, '+about_message4+
+  'ASTAP version 2022.08.18, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -9065,7 +9065,7 @@ end;
 
 procedure Tmainwindow.roundness1Click(Sender: TObject);
 begin
-  form_inspection1.hfd_button1Click(nil);
+  form_inspection1.roundness1Click(nil);
 end;
 
 

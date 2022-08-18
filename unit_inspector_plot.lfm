@@ -282,7 +282,7 @@ object form_inspection1: Tform_inspection1
         Top = 144
         Width = 72
         Caption = 'HFD'
-        OnClick = hfd_button1Click
+        OnClick = roundness1Click
         ParentShowHint = False
         ShowHint = True
         TabOrder = 4
@@ -295,7 +295,7 @@ object form_inspection1: Tform_inspection1
         Width = 105
         AutoSize = True
         Caption = 'Roundness   F3'
-        OnClick = hfd_button1Click
+        OnClick = roundness1Click
         ParentShowHint = False
         ShowHint = True
         TabOrder = 5
@@ -319,5 +319,24 @@ object form_inspection1: Tform_inspection1
     ParentShowHint = False
     ShowHint = True
     TabOrder = 5
+  end
+  object ActionList1: TActionList
+    Left = 384
+    Top = 26
+    object Action1: TAction
+      Caption = 'Action1'
+      OnExecute = roundness1Click
+      ShortCut = 114
+    end
+    object Action2: TAction
+      Caption = 'Action2'
+      OnExecute = tilt1Click
+      ShortCut = 115
+    end
+    object Action3: TAction
+      Caption = 'Action3'
+      OnExecute = aberration_inspector1Click
+      ShortCut = 117
+    end
   end
 end
