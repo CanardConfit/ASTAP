@@ -1196,8 +1196,8 @@ begin
         if (header[i+5]='2') then head.height:=round(validate_double) else   {NAXIS2 pixels}
         if (header[i+5]='3') then
         begin
-           head.naxis3:=round(validate_double); {head.naxis3 number of colors}
-           if ((head.naxis=3) and (naxis1=3)) {naxis1} then  {type head.naxis = 3 / Number of dimensions
+          head.naxis3:=round(validate_double); {head.naxis3 number of colors}
+          if ((head.naxis=3) and (naxis1=3)) {naxis1} then  {type head.naxis = 3 / Number of dimensions
                                      NAXIS1 = 3 / Number of Colors
                                      NAXIS2 = 382 / Row length
                                      head.naxis3 = 255 / Number of rows}
@@ -1206,7 +1206,12 @@ begin
                         head.height:=head.naxis3;
                         head.naxis3:=1;
                       end;
-         end;
+          if head.naxis3>3  then {panic more then three colours}
+          begin
+             head.naxis3:=1; {display only the first colour}
+             memo2_message('Warning more then three colours. Displayed only the first one.');
+          end;
+        end;
       end;
 
 
@@ -3281,7 +3286,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.08.18, '+about_message4+
+  'ASTAP version 2022.09.04, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
