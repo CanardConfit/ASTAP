@@ -1206,7 +1206,7 @@ begin
                         head.height:=head.naxis3;
                         head.naxis3:=1;
                       end;
-          if head.naxis3>3  then {panic more then three colours}
+          if head.naxis3>3  then {panic more then three colours. Program https://github.com/cbassa/stvid is storing the mean, st, max and argmax values of each pixel respectively from multiple files }
           begin
              head.naxis3:=1; {display only the first colour}
              memo2_message('Warning more then three colours. Displayed only the first one.');
@@ -1744,7 +1744,6 @@ begin
 
     if head.crota2>999 then head.crota2:=0;{not defined, set at 0}
     if head.crota1>999 then head.crota1:=head.crota2; {for case head.crota1 is not specified}
-
 
     if head.set_temperature=999 then head.set_temperature:=round(ccd_temperature); {temperature}
 
@@ -3286,7 +3285,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.09.04, '+about_message4+
+  'ASTAP version 2022.09.06, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -5588,31 +5587,47 @@ begin {make from decx [-pi/2..pi/2] a text in array bericht. Length is 10 long}
 end;
 
 
-procedure old_to_new_WCS(var head:theader);{ convert old WCS to new}
+procedure old_to_new_WCS_ooooooooooooooooooooooooooooooooold(var head:theader);{ convert old WCS to new}
 var
    sign  : integer;
 begin
   head.cd1_1:=head.cdelt1*cos(head.crota2*pi/180); {note 2013 should be head.crota1 if skewed}
   if head.cdelt1>=0 then sign:=+1 else sign:=-1;
   head.cd1_2:=abs(head.cdelt2)*sign*sin(head.crota2*pi/180);{note 2013 should be head.crota1 if skewed}
+
   if head.cdelt2>=0 then sign:=+1 else sign:=-1;
   head.cd2_1:=-abs(head.cdelt1)*sign*sin(head.crota2*pi/180);
   head.cd2_2:= head.cdelt2*cos(head.crota2*pi/180);
 end;
 
 
-procedure new_to_old_WCS(var head : theader);{convert new style FITsS to old style}
+procedure old_to_new_WCS(var head:theader);{ convert FITS old WCS to new WCS, version 2022}
 var
-   sign  : integer;
+  sign  : integer;
+begin
+  head.cd1_1:=head.cdelt1*cos(head.crota2*pi/180);
+  if head.cdelt1>=0 then sign:=+1 else sign:=-1;
+  head.cd1_2:=-abs(head.cdelt2)*sign*sin(head.crota1*pi/180);{Should be head.crota1 if skewed}
+
+  if head.cdelt2>=0 then sign:=+1 else sign:=-1;
+  head.cd2_1:=+abs(head.cdelt1)*sign*sin(head.crota2*pi/180);
+  head.cd2_2:=+head.cdelt2*cos(head.crota1*pi/180);{Should be head.crota1 if skewed}
+
+end;
+
+
+procedure new_to_old_WCS(var head : theader);{convert FITS new WCS style to old style, version 2022}
+var
+  sign  : integer;
 begin
   { convert to old WCS. Based on draft 1988 , do not use conversion article Alain Klotz, give sometimes zero CROTA}
   if (head.cd1_1*head.cd2_2-head.cd1_2*head.cd2_1)>=0 then sign:=+1 else sign:=-1;
 
-  head.cdelt1:=sqrt(sqr(head.cd1_1)+sqr(head.cd2_1))*sign;{if no old wcs header use head.cd2_2 of new WCS style for pixel size}
-  head.cdelt2:=sqrt(sqr(head.cd1_2)+sqr(head.cd2_2));{if no old wcs header use head.cd2_2 of new WCS style for pixel size}
+  head.cdelt1:=sqrt(sqr(head.cd1_1)+sqr(head.cd2_1))*sign;
+  head.cdelt2:=sqrt(sqr(head.cd1_2)+sqr(head.cd2_2));
 
-  head.crota1:= +arctan2(sign*head.cd1_2,head.cd2_2)*180/pi;
-  head.crota2:= -arctan2(head.cd2_1,sign*head.cd1_1)*180/pi;
+  head.crota1:= -arctan2(sign*head.cd1_2,head.cd2_2)*180/pi;
+  head.crota2:= +arctan2(head.cd2_1,sign*head.cd1_1)*180/pi;
 end;
 
 
@@ -11421,7 +11436,7 @@ begin
         else
         begin
           if source_fits then flipped:='-1.0000' else flipped:='1.0000';{PlateSolve2 sees a FITS file flipped while not flipped due to the orientation 1,1 at left bottom}
-          head.crota2:=180-head.crota2;{mimic strange Platesolve2 angle calculation.}
+          head.crota2:=180+head.crota2;{mimic strange Platesolve2 angle calculation.}
         end;
 
         head.crota2:=fnmodulo(head.crota2,360); {Platesolve2 reports in 0..360 degrees, mimic this behavior for SGP}
@@ -12511,7 +12526,7 @@ begin
     if angle< -pi then angle:=angle+2*pi;
     if angle>=+pi then angle:=angle-2*pi;
 
-    head.crota2:=-angle*180/pi;{head.crota2 is defined north to west, so reverse}
+    head.crota2:=angle*180/pi;
     head.crota1:=head.crota2;
 
     old_to_new_WCS(head);{new WCS missing, convert old WCS to new}
@@ -12621,11 +12636,11 @@ begin
       remove_key('CD2_1   ',false);
       remove_key('CD2_2   ',false);
     end;
-    head.crota2:=fnmodulo(head.crota2+angle,360);
-    head.crota1:=fnmodulo(head.crota1+angle,360);
+    head.crota2:=fnmodulo(head.crota2-angle,360);
+    head.crota1:=fnmodulo(head.crota1-angle,360);
     head.crpix1:= head.width/2;
     head.crpix2:=head.height/2;
-    old_to_new_WCS(head);{convert old style FITS to newd style}
+    old_to_new_WCS(head);{convert old style FITS to new style}
 
     update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
     update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
@@ -12640,7 +12655,7 @@ begin
     update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
 
 
-    add_text   ('HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 0));
+    add_text   ('HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 2));
   end;
   remove_key('ANNOTATE',true{all});{this all will be invalid}
 end;
@@ -12655,7 +12670,7 @@ begin
   valueI:=InputBox('Arbitrary rotation','Enter angle CCW in degrees:              (If solved, enter N for north up)','' );
   if valueI=''  then exit;
   if ((valueI='n') or (valueI='N')) then
-    angle:=-head.crota2
+    angle:=head.crota2
   else
     angle:=strtofloat2(valueI);
 
@@ -13754,7 +13769,7 @@ begin
          dist_str:=floattostrF(pixel_distance/3600,ffgeneral,3,2)+'°';
        end
        else dist_str:='';
-       if head.cdelt2<>0 then angle_str:='∠='+inttostr(round(fnmodulo (arctan2(flipH*(X_sized-start_RX),flipV*(start_RY-Y_sized))*180/pi + head.crota2,360)) )+'°' else  angle_str:=''; ;
+       if head.cdelt2<>0 then angle_str:='∠='+inttostr(round(fnmodulo (arctan2(flipH*(X_sized-start_RX),flipV*(start_RY-Y_sized))*180/pi - head.crota2,360)) )+'°' else  angle_str:=''; ;
        mainwindow.statusbar1.panels[7].text:=inttostr(abs(X_sized-start_RX)-1)+' x '+inttostr(abs(start_RY-Y_sized)-1)+'    '+dist_str+'    '+angle_str;{indicate rectangl size}
      end
      else
