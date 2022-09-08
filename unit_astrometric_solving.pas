@@ -674,7 +674,7 @@ begin
         else
         oversize:=2*sqrt(25/nr_quads);{calculate between 25 th=2 and 100 th=1, quads are area related so take sqrt to get oversize}
 
-        if stackmenu1.force_oversize1.checked then
+        if ((stackmenu1.force_oversize1.checked) {or (database_type=001)}) then   {for always oversize for wide field database}
         begin
           oversize:=2;
           oversize_mess:='Search window at 200%'

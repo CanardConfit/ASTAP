@@ -15,7 +15,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  version: string=' CLI-2022-07-03';
+  version: string=' CLI-2022-09-04';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -345,19 +345,46 @@ begin
 end;
 
 
-procedure new_to_old_WCS;{convert new style FITsS to old style}
-var
-   sign  : integer;
+procedure new_to_old_WCS;{convert new style FITS to old style, revison 2022}
 begin
-  { convert to old WCS. Based on draft 1988 , do not use conversion article Alain Klotz, give sometimes zero CROTA}
-  if (cd1_1*cd2_2-cd1_2*cd2_1)>=0 then sign:=+1 else sign:=-1;
+  // https://www.aanda.org/articles/aa/full/2002/45/aah3860/aah3860.right.html
+  // Representations of World Coordinates in FITS paper II aah3860
 
-  cdelt1:=sqrt(sqr(cd1_1)+sqr(cd2_1))*sign;{if no old wcs header use cd2_2 of new WCS style for pixel size}
-  cdelt2:=sqrt(sqr(cd1_2)+sqr(cd2_2));{if no old wcs header use cd2_2 of new WCS style for pixel size}
+  // formula 191
+  if cd2_1>0 then crota1:=arctan2(cd2_1,cd1_1)*180/pi
+  else
+  if cd2_1<0 then crota1:=arctan2(-cd2_1,-cd1_1)*180/pi
+  else
+  crota1:=0;
 
-  crota1:= +arctan2(sign*cd1_2,cd2_2)*180/pi;
-  crota2:= -arctan2(cd2_1,sign*cd1_1)*180/pi;  //  crota2old := (atn_2(sign*cd1_1,cd2_1)-pi/2)*180/pi;
+  if cd1_2>0 then crota2:=arctan2(-cd1_2,cd2_2)*180/pi
+  else
+  if cd1_2<0 then crota2:=arctan2(cd1_2,-cd2_2)*180/pi
+  else
+  crota2:=0;
+
+
+  // https://www.aanda.org/articles/aa/full/2002/45/aah3860/aah3860.right.html
+  // Representations of World Coordinates in FITS paper II aah3860
+  // Formula 193 improved for crota close to or equal to +90 or -90 degrees
+  // Calculate cdelt1, cdelt2 values using the longest side of the triangle
+  if abs(cd1_1)>abs(cd2_1) then
+  begin
+    cdelt1:=+cd1_1/cos(crota1*pi/180);
+    cdelt2:=+cd2_2/cos(crota2*pi/180);
+  end
+  else
+  begin
+    cdelt1:=+cd2_1/sin(crota1*pi/180);
+    cdelt2:=-cd1_2/sin(crota2*pi/180);
+  end;
+
+  //bring angles within the same area so that they are about equal
+  if crota2-crota1<-90 then begin crota2:=crota2+180; cdelt2:=-cdelt2;end
+  else
+  if crota2-crota1>+90 then begin crota1:=crota1+180; cdelt1:=-cdelt1;end;
 end;
+
 
 
 procedure write_astronomy_wcs;
@@ -829,6 +856,12 @@ begin
                         height2:=naxis3;
                         naxis3:=1;
                       end;
+           if naxis3>3  then {panic, more then three colours. Program https://github.com/cbassa/stvid is storing the mean, st, max and argmax values of each pixel respectively from multiple files }
+           begin
+             naxis3:=1; {display only the first colour}
+             memo2_message('Warning more then three colours. Will use only the first one.');
+           end;
+
          end;
       end;
 

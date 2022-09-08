@@ -842,7 +842,7 @@ const   bufwide=1024*120;{buffer size in bytes}
     {18}('CDELT1  =                  0.0 / X pixel size (deg)                             '),
     {19}('CDELT2  =                  0.0 / Y pixel size (deg)                             '),
     {20}('CROTA1  =                  0.0 / Image twist of X axis        (deg)             '),
-    {21}('CROTA2  =                  0.0 / Image twist of Y axis W of N (deg)             '),
+    {21}('CROTA2  =                  0.0 / Image twist of Y axis E of N (deg)             '),
     {22}('CD1_1   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
     {23}('CD1_2   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
     {24}('CD2_1   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
@@ -1206,7 +1206,7 @@ begin
                         head.height:=head.naxis3;
                         head.naxis3:=1;
                       end;
-          if head.naxis3>3  then {panic more then three colours. Program https://github.com/cbassa/stvid is storing the mean, st, max and argmax values of each pixel respectively from multiple files }
+          if head.naxis3>3  then {panic more then three colours}
           begin
              head.naxis3:=1; {display only the first colour}
              memo2_message('Warning more then three colours. Displayed only the first one.');
@@ -1744,6 +1744,7 @@ begin
 
     if head.crota2>999 then head.crota2:=0;{not defined, set at 0}
     if head.crota1>999 then head.crota1:=head.crota2; {for case head.crota1 is not specified}
+
 
     if head.set_temperature=999 then head.set_temperature:=round(ccd_temperature); {temperature}
 
@@ -3285,7 +3286,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.09.06, '+about_message4+
+  'ASTAP version 2022.09.08, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -5587,47 +5588,62 @@ begin {make from decx [-pi/2..pi/2] a text in array bericht. Length is 10 long}
 end;
 
 
-procedure old_to_new_WCS_ooooooooooooooooooooooooooooooooold(var head:theader);{ convert old WCS to new}
-var
-   sign  : integer;
-begin
-  head.cd1_1:=head.cdelt1*cos(head.crota2*pi/180); {note 2013 should be head.crota1 if skewed}
-  if head.cdelt1>=0 then sign:=+1 else sign:=-1;
-  head.cd1_2:=abs(head.cdelt2)*sign*sin(head.crota2*pi/180);{note 2013 should be head.crota1 if skewed}
-
-  if head.cdelt2>=0 then sign:=+1 else sign:=-1;
-  head.cd2_1:=-abs(head.cdelt1)*sign*sin(head.crota2*pi/180);
-  head.cd2_2:= head.cdelt2*cos(head.crota2*pi/180);
-end;
-
-
-procedure old_to_new_WCS(var head:theader);{ convert FITS old WCS to new WCS, version 2022}
+procedure old_to_new_WCS(var head:theader);{ convert old WCS to new, revision 2022}
 var
   sign  : integer;
 begin
-  head.cd1_1:=head.cdelt1*cos(head.crota2*pi/180);
-  if head.cdelt1>=0 then sign:=+1 else sign:=-1;
-  head.cd1_2:=-abs(head.cdelt2)*sign*sin(head.crota1*pi/180);{Should be head.crota1 if skewed}
+  // https://www.aanda.org/articles/aa/full/2002/45/aah3860/aah3860.right.html
+  // Representations of World Coordinates in FITS paper II aah3860
+  // formula 189
+  head.cd1_1:=+head.cdelt1 * cos(head.crota1*pi/180);{could be skewed, so use crota1}
+  head.cd2_1:=+head.cdelt1 * sin(head.crota1*pi/180);
 
-  if head.cdelt2>=0 then sign:=+1 else sign:=-1;
-  head.cd2_1:=+abs(head.cdelt1)*sign*sin(head.crota2*pi/180);
-  head.cd2_2:=+head.cdelt2*cos(head.crota1*pi/180);{Should be head.crota1 if skewed}
-
+  head.cd1_2:=-head.cdelt2 * sin(head.crota2*pi/180);
+  head.cd2_2:=+head.cdelt2 * cos(head.crota2*pi/180);
 end;
 
 
-procedure new_to_old_WCS(var head : theader);{convert FITS new WCS style to old style, version 2022}
-var
-  sign  : integer;
+procedure new_to_old_WCS(var head : theader);{convert new style FITS to old style, revison 2022}
 begin
-  { convert to old WCS. Based on draft 1988 , do not use conversion article Alain Klotz, give sometimes zero CROTA}
-  if (head.cd1_1*head.cd2_2-head.cd1_2*head.cd2_1)>=0 then sign:=+1 else sign:=-1;
+  // https://www.aanda.org/articles/aa/full/2002/45/aah3860/aah3860.right.html
+  // Representations of World Coordinates in FITS paper II aah3860
 
-  head.cdelt1:=sqrt(sqr(head.cd1_1)+sqr(head.cd2_1))*sign;
-  head.cdelt2:=sqrt(sqr(head.cd1_2)+sqr(head.cd2_2));
+  // formula 191
+  if head.cd2_1>0 then head.crota1:=arctan2(head.cd2_1,head.cd1_1)*180/pi
+  else
+  if head.cd2_1<0 then head.crota1:=arctan2(-head.cd2_1,-head.cd1_1)*180/pi
+  else
+  head.crota1:=0;
 
-  head.crota1:= -arctan2(sign*head.cd1_2,head.cd2_2)*180/pi;
-  head.crota2:= +arctan2(head.cd2_1,sign*head.cd1_1)*180/pi;
+  if head.cd1_2>0 then head.crota2:=arctan2(-head.cd1_2,head.cd2_2)*180/pi
+  else
+  if head.cd1_2<0 then head.crota2:=arctan2(head.cd1_2,-head.cd2_2)*180/pi
+  else
+  head.crota2:=0;
+
+
+  // https://www.aanda.org/articles/aa/full/2002/45/aah3860/aah3860.right.html
+  // Representations of World Coordinates in FITS paper II aah3860
+  // Formula 193 improved for crota close to or equal to +90 or -90 degrees
+  // Calculate cdelt1, cdelt2 values using the longest side of the triangle
+  if abs(head.cd1_1)>abs(head.cd2_1) then
+  begin
+    head.cdelt1:=+head.cd1_1/cos(head.crota1*pi/180);
+    head.cdelt2:=+head.cd2_2/cos(head.crota2*pi/180);
+  end
+  else
+  begin
+    head.cdelt1:=+head.cd2_1/sin(head.crota1*pi/180);
+    head.cdelt2:=-head.cd1_2/sin(head.crota2*pi/180);
+  end;
+
+  //bring angles within the same area so that they are about equal
+  if head.crota2-head.crota1<-90 then begin head.crota2:=head.crota2+180; head.cdelt2:=-head.cdelt2;end
+  else
+  if head.crota2-head.crota1>+90 then begin head.crota1:=head.crota1+180; head.cdelt1:=-head.cdelt1;end;
+
+//   head.crota2:=(head.crota2+head.crota1)/2;
+//   head.crota1:=head.crota2;
 end;
 
 
@@ -5688,11 +5704,8 @@ begin
                    img_temp2[2,x,y]:=     (img[0,x,  y  ]  ); end;
       except
       end;
-
-
     end;{x loop}
   end;{y loop}
-
 
   img:=img_temp2;
   img_temp2:=nil;{free temp memory}
@@ -5707,9 +5720,7 @@ var
     red,blue  : single;
     img_temp2 : image_array;
 begin
-
   setlength(img_temp2,3,head.width,head.height);{set length of image array color}
-
 
   for y :=2 to  head.height-2 do   {-2 = -1 -1}
   begin
@@ -10393,8 +10404,12 @@ procedure Tmainwindow.calibrate_photometry1Click(Sender: TObject);
 var
   apert,annul,backgr,hfd_med : double;
   hfd_counter                : integer;
+  Save_Cursor                           : TCursor;
 begin
   if ((head.naxis=0) or (head.cd1_1=0)) then exit;
+
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
   apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
   if ((flux_magn_offset=0) or (aperture_ratio<>apert){new calibration required})  then
@@ -10419,6 +10434,8 @@ begin
 
     plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude});
   end;
+
+  Screen.Cursor:= Save_Cursor;
 end;
 
 procedure Tmainwindow.Constellations1Click(Sender: TObject);
@@ -11436,7 +11453,7 @@ begin
         else
         begin
           if source_fits then flipped:='-1.0000' else flipped:='1.0000';{PlateSolve2 sees a FITS file flipped while not flipped due to the orientation 1,1 at left bottom}
-          head.crota2:=180+head.crota2;{mimic strange Platesolve2 angle calculation.}
+          head.crota2:=180-head.crota2;{mimic strange Platesolve2 angle calculation.}
         end;
 
         head.crota2:=fnmodulo(head.crota2,360); {Platesolve2 reports in 0..360 degrees, mimic this behavior for SGP}
@@ -12316,7 +12333,7 @@ begin
       update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
 
       update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
-      update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
+      update_float  ('CROTA2  =',' / Image twist of Y axis E of N (deg)             ' ,head.crota2);
 
       update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
       update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
@@ -12526,7 +12543,7 @@ begin
     if angle< -pi then angle:=angle+2*pi;
     if angle>=+pi then angle:=angle-2*pi;
 
-    head.crota2:=angle*180/pi;
+    head.crota2:=-angle*180/pi;{head.crota2 is defined north to west, so reverse}
     head.crota1:=head.crota2;
 
     old_to_new_WCS(head);{new WCS missing, convert old WCS to new}
@@ -12546,7 +12563,7 @@ begin
     update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
 
     update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
-    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
+    update_float  ('CROTA2  =',' / Image twist of Y axis E of N (deg)             ' ,head.crota2);
 
     update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
     update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
@@ -12612,9 +12629,6 @@ end;
 procedure rotate_arbitrary(angle: double);
 var centerxs,centerys  : double;
 begin
-  if mainwindow.flip_horizontal1.checked then angle:=-angle;{change rotation if flipped}
-  if mainwindow.flip_vertical1.checked then   angle:=-angle;{change rotation if flipped}
-
   centerxs:=head.width/2;
   centerys:=head.height/2;
 
@@ -12636,11 +12650,11 @@ begin
       remove_key('CD2_1   ',false);
       remove_key('CD2_2   ',false);
     end;
-    head.crota2:=fnmodulo(head.crota2-angle,360);
-    head.crota1:=fnmodulo(head.crota1-angle,360);
+    head.crota2:=fnmodulo(head.crota2+angle,360);
+    head.crota1:=fnmodulo(head.crota1+angle,360);
     head.crpix1:= head.width/2;
     head.crpix2:=head.height/2;
-    old_to_new_WCS(head);{convert old style FITS to new style}
+    old_to_new_WCS(head);{convert old style FITS to newd style}
 
     update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
     update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
@@ -12652,10 +12666,10 @@ begin
     update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
 
     update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
-    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
+    update_float  ('CROTA2  =',' / Image twist of Y axis E of N (deg)             ' ,head.crota2);
 
 
-    add_text   ('HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 2));
+    add_text   ('HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 0));
   end;
   remove_key('ANNOTATE',true{all});{this all will be invalid}
 end;
@@ -12670,7 +12684,7 @@ begin
   valueI:=InputBox('Arbitrary rotation','Enter angle CCW in degrees:              (If solved, enter N for north up)','' );
   if valueI=''  then exit;
   if ((valueI='n') or (valueI='N')) then
-    angle:=head.crota2
+    angle:=-head.crota2
   else
     angle:=strtofloat2(valueI);
 
@@ -13769,7 +13783,7 @@ begin
          dist_str:=floattostrF(pixel_distance/3600,ffgeneral,3,2)+'°';
        end
        else dist_str:='';
-       if head.cdelt2<>0 then angle_str:='∠='+inttostr(round(fnmodulo (arctan2(flipH*(X_sized-start_RX),flipV*(start_RY-Y_sized))*180/pi - head.crota2,360)) )+'°' else  angle_str:=''; ;
+       if head.cdelt2<>0 then angle_str:='∠='+inttostr(round(fnmodulo (arctan2(flipH*(X_sized-start_RX),flipV*(start_RY-Y_sized))*180/pi + head.crota2,360)) )+'°' else  angle_str:=''; ;
        mainwindow.statusbar1.panels[7].text:=inttostr(abs(X_sized-start_RX)-1)+' x '+inttostr(abs(start_RY-Y_sized)-1)+'    '+dist_str+'    '+angle_str;{indicate rectangl size}
      end
      else
@@ -14573,7 +14587,7 @@ begin
     update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
 
     update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
-    update_float  ('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,head.crota2);
+    update_float  ('CROTA2  =',' / Image twist of Y axis E of N (deg)             ' ,head.crota2);
 
     remove_key('ROWORDER',false{all});{just remove to be sure no debayer confusion}
     add_text     ('HISTORY   ','Flipped.                                                           ');

@@ -1406,7 +1406,7 @@ begin
                     mainwindow.Shape_alignment_marker2.HINT:=copy(naam2,1,posex('_',naam2,4)-1);
         end;
 
-        gx_orientation:=pa*flipped-head.crota2;
+        gx_orientation:=pa*flipped+head.crota2;
         if flip_horizontal then begin x:=(head.width-1)-x; gx_orientation:=-gx_orientation; end;
         if flip_vertical then gx_orientation:=-gx_orientation else y:=(head.height-1)-y;
         len:=length1/(abs(head.cdelt2)*60*10*2); {Length in pixels}
@@ -2568,7 +2568,7 @@ begin
   begin
     xx:=(starlist1[0,i]-correctionX)/(head.cdelt1*3600);{apply correction for database stars center and image center and convert arc seconds to pixels}
     yy:=(starlist1[1,i]-correctionY)/(head.cdelt2*3600);
-    rotate((90+head.crota2)*pi/180,xx,yy,X,Y);{rotate to screen orientation}
+    rotate((90-head.crota2)*pi/180,xx,yy,X,Y);{rotate to screen orientation}
 
     if flip_horizontal=false then begin starX:=round(head.crpix1-x); end else begin starX:=round(head.crpix1+x); end;
     if flip_vertical=false   then begin starY:=round(head.crpix2-y); end else begin starY:=round(head.crpix2+y); end;
