@@ -42,7 +42,7 @@ FOV of more then ten degrees</span><br style="font-family: Calibri;"><br style="
             &nbsp;Only required if you have files with the .fz
             &nbsp;extension.</td><td style="background-color: rgb(220, 220, 220); font-family: Calibri; font-weight: bold;">Barebone&nbsp;command-line solver&nbsp;compatible with the GUI version if
 renamed. No pop-up notifier. Will not accept raw files and&nbsp;will not
-work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="astap_setup.exe">ASTAP_installer</a>_(v2022.09.06), <br><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"></a><a href="astap.zip">ASTAP
+work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 64 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="astap_setup.exe">ASTAP_installer</a>_(v2022.09.09), <br><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_setup.exe/download"></a><a href="astap.zip">ASTAP
               executable only</a></td><td colspan="1" rowspan="3" style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing">H18 installer</a><br><a href="https://drive.google.com/file/d/1mEZoP5ffvCVBUxB8XNSAT_fSfe2q-aOg/view?usp=sharing"> </a><a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing">H17 installer</a>,<br><a href="https://drive.google.com/file/d/1_MYyXn3ZjAGcrhSsKoo6gb7XUKz_-3ji/view?usp=sharing">G17 installer</a> (obsolete <a href="h18.htm">1)</a>).<br><br><a href="https://drive.google.com/file/d/1qaf23oFmPpnDZbLO30IB42kC8-qBEynJ/view?usp=sharing">H18 zipped</a>,  <br><a href="https://drive.google.com/file/d/1kbaDcxjIKMcHwd3KSvNyIsB5m6ztVi9z/view?usp=sharing">H17 zipped</a>,<br><a href="https://sourceforge.net/projects/astap-program/files/star_databases/w08_star_database_mag08_astap.zip/download">W08 zipped</a>,&nbsp;<br><a href="http://www.poyntsource.com/hnsky/h18_star_database_mag18.rar">G18 rar</a> ((obsolete <a href="h18.htm">1)</a>),<br>for manual install at&nbsp; \programs files\astap or program directory<br><a href="https://drive.google.com/file/d/1_easyleVDalEaVy9Fg8ADPmX9CmW2O0X/view?usp=sharing"></a><br></td><td colspan="1" rowspan="3" style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/fpack_funpack.exe/download">Fpack
               &amp; Funpack</a><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_command-line_version_win64.zip/download">astap_cli</a>
 (v2022.07.02a)</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"></td></tr><tr><td style="font-family: Calibri; background-color: rgb(234, 234, 234);">Window 32 bit</td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"></td><td style="font-family: Calibri; background-color: rgb(234, 234, 234);"><a href="https://sourceforge.net/projects/astap-program/files/windows_installer/astap_command-line_version_win32.zip/download">astap_cli</a>
@@ -161,7 +161,7 @@ work with SharpCap since FOV is not stored.</td></tr><tr><td style="font-family:
                 line options</a></big></li>
           <ul>
             <li><big><a href="astap.htm#conditions">Conditions
-                  required for solving</a></big></li><li><big><a href="astap.htm#solvable">Test if an image is solvable</a></big></li>
+                  required for solving</a></big></li><li><big><a href="astap.htm#solvable">Test if an image is solvable (full blind solving)</a></big></li>
             <li><big><a href="astap.htm#astap_command_line">ASTAP
                   native command line&nbsp;</a></big></li>
             <ul>
@@ -2246,7 +2246,7 @@ a increased number of quad matches.</li><li>For a&nbsp;field of view&nbsp;less t
 remove the H17 (or force use of the H18 in tab alignment).&nbsp;</li><li>If a global cluster fills the whole field,&nbsp;ASTAP could
 struggle to solve.&nbsp;Forcing option "slow" could
 &nbsp;help.</li><li>Best input format is FITS, RAW or 16 bit PNG, TIFF.&nbsp;JPEG compression or 8 bit PNG, TIFF files are a disadvantage.</li>
-        </ol><br><big><span style="text-decoration: underline;"><a name="solvable"></a><span style="font-weight: bold;">Test if an image is solvable:<br></span></span></big><p><big>To test if an image is solvable, follow this procedure:</big></p>
+        </ol><br><big><span style="text-decoration: underline;"><a name="solvable"></a><span style="font-weight: bold;">Test if an image is solvable (full blind solving)</span></span></big><big><span style="text-decoration: underline;"><span style="font-weight: bold;">:<br></span></span></big><p><big>To test if an image is solvable, follow this procedure:</big></p>
 
 <p style="margin-left: 40px;"><big>A) Load an image in ASTAP</big></p>
 <p style="margin-left: 40px;"><big>B) Check star detection by hitting button F4. Only stars should be 

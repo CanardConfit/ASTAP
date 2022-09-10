@@ -1853,7 +1853,7 @@ begin
         try reader.read(fitsbuffer,head.width*4);except; head.naxis:=0;{failure} end; {read file info}
         for i:=0 to head.width-1 do
         begin
-          col_float:=(swapendian(fitsbuffer4[i])*bscale+bzero)/(65535);{scale to 0..64535 or 0..1 float}
+          col_float:=(swapendian(fitsbuffer4[i])*bscale+bzero)/(65535);{scale to 0..65535}
                          {Tricky do not use int64 for BZERO,  maxim DL writes BZERO value -2147483647 as +2147483648 !!}
           img_loaded2[k,i,j]:=col_float;{store in memory array}
           if col_float>measured_max then measured_max:=col_float;{find max value for image. For for images with 0..1 scale or for debayer}
@@ -1881,8 +1881,8 @@ begin
     if ((nrbits<=-32){-32 or -64} or (nrbits=+32)) then
     begin
       scalefactor:=1;
-      if ((measured_max<=2.0) or (measured_max>65535)) then scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
-                                                                                              {or if values are above 65535}
+      if ((measured_max<=1.0*1.5) or (measured_max>65535*1.5)) then scalefactor:=65535/measured_max; {rescale 0..1 range float for GIMP, Astro Pixel Processor, PI files, transfer to 0..65535 float}
+                                                                                                     {or if values are far above 65535. Note due to flat correction even in ASTAP pixels value can be a little 65535}
       if scalefactor<>1 then {not a 0..65535 range, rescale}
       begin
         for k:=0 to head.naxis3-1 do {do all colors}
@@ -3286,7 +3286,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.09.08, '+about_message4+
+  'ASTAP version 2022.09.10, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -4824,7 +4824,9 @@ begin
   end;
 
   info_message:=info_message+#10+#10+'Bit depth data: '+inttostr(round(ln(range/minstep)/ln(2)));{bit range, calculate 2log}
-  if Xbinning<>1 then  info_message:=info_message+'  Binning '+ floattostrf(Xbinning,ffgeneral,0,0)+'x'+floattostrf(Ybinning,ffgeneral,0,0);
+  if Xbinning<>1 then  info_message:=info_message+#10+'Binning: '+ floattostrf(Xbinning,ffgeneral,0,0)+'x'+floattostrf(Ybinning,ffgeneral,0,0);
+  info_message:=info_message+#10+'Rectangle: '+inttostr(startX+1)+', '+inttostr(startY+1)+',    '+inttostr(stopX+1)+', '+inttostr(stopY+1);
+  info_message:=info_message+#10+'Filename: '+extractfilename(filename2);
 
 
   info_message:=info_message+#10+#10+#10+'Noise in electrons can be set with the popup menu of the status bar.'+
@@ -4839,7 +4841,7 @@ begin
                                             'Flux = total flux above median background | '+
                                             '≥64E3 = number of values equal or above 64000';
 
-  case  QuestionDlg (pchar('Statistics within rectangle '+inttostr(stopX-1-startX)+' x '+inttostr(stopY-1-startY) ),pchar(info_message),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
+  case  QuestionDlg (pchar('Statistics within rectangle '+inttostr(stopX-1-startX)+' x '+inttostr(stopY-1-startY)),pchar(info_message),mtCustom,[mrYes,'Copy to clipboard?', mrNo, 'No', 'IsDefault'],'') of
            mrYes: Clipboard.AsText:=info_message;
   end;
 
@@ -5638,9 +5640,15 @@ begin
   end;
 
   //bring angles within the same area so that they are about equal
-  if head.crota2-head.crota1<-90 then begin head.crota2:=head.crota2+180; head.cdelt2:=-head.cdelt2;end
-  else
-  if head.crota2-head.crota1>+90 then begin head.crota1:=head.crota1+180; head.cdelt1:=-head.cdelt1;end;
+//  if head.crota2-head.crota1<-90 then begin head.crota2:=head.crota2+180; head.cdelt2:=-head.cdelt2;end
+//  else
+//  if head.crota2-head.crota1>+90 then begin head.crota1:=head.crota1+180; head.cdelt1:=-head.cdelt1;end;
+
+   //Solutions for CROTA2 come in pairs separated by 180degr. The other solution is obtained by subtracting 180 from CROTA2 and negating CDELT1 and CDELT2.
+   //While each solution is equally valid, if one makes CDELT1 < 0 and CDELT2 > 0 then it would normally be the one chosen.
+//  if head.cdelt1>0 then begin if head.crota1<0 then head.crota1:=head.crota1+180 else head.crota1:=head.crota1-180; head.cdelt1:=-head.cdelt1;end;
+   if head.cdelt2<0 then begin if head.crota2<0 then head.crota2:=head.crota2+180 else head.crota2:=head.crota2-180; head.cdelt2:=-head.cdelt2;end;//make cdelt2 always positive
+   if abs(head.crota2-head.crota1)>+90 then begin if head.crota1<0 then head.crota1:=head.crota1+180 else head.crota1:=head.crota1-180; head.cdelt1:=-head.cdelt1;end;//adapt crota1 to area crota2
 
 //   head.crota2:=(head.crota2+head.crota1)/2;
 //   head.crota1:=head.crota2;
@@ -12626,13 +12634,13 @@ begin
   stackmenu1.center_position1.caption:='Center: '+inttostr((startX+stopX) div 2)+', '+inttostr((startY+stopY) div 2);
 end;
 
-procedure rotate_arbitrary(angle: double);
+procedure rotate_arbitrary(angle,flipped: double);
 var centerxs,centerys  : double;
 begin
   centerxs:=head.width/2;
   centerys:=head.height/2;
 
-  raster_rotate(angle,centerxs,centerys ,img_loaded);
+  raster_rotate(flipped*angle,centerxs,centerys ,img_loaded);
 
   head.width:=length(img_loaded[0]);{update width}  ;
   head.height:=length(img_loaded[0,0]);{update length};
@@ -12669,33 +12677,48 @@ begin
     update_float  ('CROTA2  =',' / Image twist of Y axis E of N (deg)             ' ,head.crota2);
 
 
-    add_text   ('HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 0));
+    add_text   ('HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 2));
   end;
   remove_key('ANNOTATE',true{all});{this all will be invalid}
 end;
 
 procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
 var
-  angle  : double;
+  angle,flipped  : double;
   valueI : string;
   Save_Cursor:TCursor;
-
 begin
+  flipped:=+1;//not flipped
   valueI:=InputBox('Arbitrary rotation','Enter angle CCW in degrees:              (If solved, enter N for north up)','' );
   if valueI=''  then exit;
   if ((valueI='n') or (valueI='N')) then
-    angle:=-head.crota2
+  begin
+    angle:=-head.crota2;
+    if head.cd1_1<>0 then //solved
+    begin
+      if ((head.CD1_1>0)=(head.CD2_2>0)) then {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+      flipped:=-1; //change rotation for flipped image
+    end
+    else
+    begin
+      application.messagebox(pchar('Abort! Can not execute without astrometric solution. Solve image first.'),'',MB_OK);
+      exit;
+    end;
+  end
   else
+  begin
     angle:=strtofloat2(valueI);
+    if mainwindow.flip_horizontal1.checked then flipped:=-flipped;{change rotation if flipped}
+    if mainwindow.flip_vertical1.checked then   flipped:=-flipped;{change rotation if flipped}
+  end;
 
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-
   memo2_message('Start rotation. This takes some time due to subsampling 10x10.');
   backup_img;
 
-  rotate_arbitrary(angle);
+  rotate_arbitrary(angle,flipped);
 
   plot_fits(mainwindow.image1,false,true);
 
@@ -12736,11 +12759,11 @@ begin
       if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded)=false)) then begin break;end;
 
       if sender=mainwindow.batch_rotate_left1 then
-         rotate_arbitrary(90) else
+         rotate_arbitrary(90,1) else
       if sender=mainwindow.batch_rotate_right1 then
-         rotate_arbitrary(-90) else
+         rotate_arbitrary(-90,1) else
       if sender=mainwindow.batch_rotate_1801   then
-         rotate_arbitrary(180);
+         rotate_arbitrary(180,1);
 
       if fits_file_name(filename2) then
         success:=save_fits(img_loaded,filename2,nrbits,true)
@@ -14701,7 +14724,6 @@ begin
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
-
 
 
 procedure Tmainwindow.set_modified_date1Click(Sender: TObject);
