@@ -126,7 +126,7 @@ begin
   if abs(dist)<pi/180 then {unit minutes}
       result:= floattostrF(inp*60*180/pi,ffFixed,0,1)+#39
   else
-  result:= floattostrF(inp*180/pi,ffFixed,0,1)+'°';
+  result:= floattostrF(inp*180/pi,ffFixed,0,1)+'d';  {° symbol is converted to unicode by tmemo}
 end;
 
 {transformation of equatorial coordinates into CCD pixel coordinates for optical projection, rigid method}
@@ -509,7 +509,7 @@ end;
 function solve_image(img :image_array;var hd: Theader;get_hist{update hist}:boolean) : boolean;{find match between image and star database}
 var
   nrstars,nrstars_required,count,max_distance,nr_quads, minimum_quads,database_stars,binning,match_nr,
-  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars  : integer;
+  spiral_x, spiral_y, spiral_dx, spiral_dy,spiral_t,max_stars,i  : integer;
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,
   sep_search,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,
   current_dist, quad_tolerance,dummy, extrastars,flip, extra,distance                                                  : double;

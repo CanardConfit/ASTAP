@@ -3006,7 +3006,7 @@ end;
 procedure update_longstr(inpt,thestr:string);{update or insert long str including single quotes}
 var
    count1,m,k: integer;
-   ampersand : string;
+   ampersand : ansistring;
 begin
 
   count1:=mainwindow.Memo1.Lines.Count-1;
@@ -15044,7 +15044,7 @@ begin
   repeat
      if i<mainwindow.memo1.lines.count then
      begin
-       line0:=mainwindow.memo1.lines[i];{line0 is an ansistring. According the standard the FITS header should only contain ASCII charactors between decimal 32 and 126. However ASTAP can write UTF8 in the comments which is read correctly by DS9 and FV}
+       line0:=mainwindow.memo1.lines[i];{line0 is an ansistring. According the standard the FITS header should only contain ASCII charactors between decimal 32 and 126.}
        while length(line0)<80 do line0:=line0+' ';{extend to length 80 if required}
        strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
        thefile4.writebuffer(aline,80);{write updated header from memo1}
