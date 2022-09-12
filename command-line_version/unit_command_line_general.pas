@@ -15,7 +15,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  version: string=' CLI-2022-09-08';
+  version: string=' CLI-2022-09-12';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}

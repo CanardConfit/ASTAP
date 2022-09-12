@@ -415,10 +415,10 @@ begin
       end;
     end;{j}
 
-    x1:=starlist[0,i]; {copy first star position to the quad array}
+    x1:=starlist[0,i]; {1e star position}
     y1:=starlist[1,i];
 
-    x2:=starlist[0,j_used1]; {copy the second star position to the quad array}
+    x2:=starlist[0,j_used1]; {2e star positio}
     y2:=starlist[1,j_used1];
 
     x3:=starlist[0,j_used2];
@@ -559,41 +559,7 @@ begin
     end;
     result:=true;{3 or more references}
   end;
-//  else
-//  if ((nr_references>=2) and (nrquads1<10) and (nrquads2<10)) then {use 8 stars of 2 quads as reference. Solver requires 3 equations minimum}
-//  begin
-//    {fill equations}
-//    setlength(A_XYpositions,nr_references*4,3);{use 4 stars as reference instead of quads center}
-//    setlength(b_Xrefpositions,nr_references*4);
-//    setlength(b_Yrefpositions,nr_references*4);
-
-//    for k:=0 to (nr_references*4)-1 do {use 2 * 4 stars of 2 quads}
-//    begin
-//      kd4:=k div 4;
-//      A_XYpositions[kd4,0]:=starlistquads2[0,matchlist1[1,kd4]]; {x position of star}
-//      A_XYpositions[kd4,1]:=starlistquads2[1,matchlist1[1,kd4]]; {y position of star}
-//      A_XYpositions[kd4,2]:=1;
-//      A_XYpositions[kd4+1,0]:=starlistquads2[2,matchlist1[1,kd4]]; {x position of star}
-//      A_XYpositions[kd4+1,1]:=starlistquads2[3,matchlist1[1,kd4]]; {y position of star}
-//      A_XYpositions[kd4+1,2]:=1;
-//      A_XYpositions[kd4+2,0]:=starlistquads2[4,matchlist1[1,kd4]]; {x position of star}
-//      A_XYpositions[kd4+2,1]:=starlistquads2[5,matchlist1[1,kd4]]; {y position of star}
-//      A_XYpositions[kd4+2,2]:=1;
-//      A_XYpositions[kd4+3,0]:=starlistquads2[6,matchlist1[1,kd4]]; {x position of star}
-//      A_XYpositions[kd4+3,1]:=starlistquads2[7,matchlist1[1,kd4]]; {y position of star}
-//      A_XYpositions[kd4+3,2]:=1;
-
-//      b_Xrefpositions[kd4]:=starlistquads1[0,matchlist1[0,kd4]]; {x position of ref star}
-//      b_Yrefpositions[kd4]:=starlistquads1[1,matchlist1[0,kd4]]; {Y position of ref star}
-//      b_Xrefpositions[kd4+1]:=starlistquads1[2,matchlist1[0,kd4]]; {x position of ref star}
-//      b_Yrefpositions[kd4+1]:=starlistquads1[3,matchlist1[0,kd4]]; {Y position of ref star}
-//      b_Xrefpositions[kd4+2]:=starlistquads1[4,matchlist1[0,kd4]]; {x position of ref star}
-//      b_Yrefpositions[kd4+2]:=starlistquads1[5,matchlist1[0,kd4]]; {Y position of ref star}
-//      b_Xrefpositions[kd4+3]:=starlistquads1[6,matchlist1[0,kd4]]; {x position of ref star}
-//      b_Yrefpositions[kd4+3]:=starlistquads1[7,matchlist1[0,kd4]]; {Y position of ref star}
-//      result:=true;{8 star references from 2 quads}
-//    end;
-// end;
+  //  else It possible to use one quad and four star positions but it in not reliable
   matchlist2:=nil;
   matchlist1:=nil;
 end;

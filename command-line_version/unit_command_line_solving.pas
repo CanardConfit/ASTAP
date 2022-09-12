@@ -452,41 +452,7 @@ begin
     end;
     result:=true;{3 or more references}
   end;
-//  else
-//  if ((nr_references>=2) and (nrquads1<10) and (nrquads2<10)) then {use 8 stars of 2 quads as reference. Solver requires 3 equations minimum}
-//  begin
-//    {fill equations}
-//    setlength(A_XYpositions,nr_references*4,3);{use 4 stars as reference instead of quads center}
-//    setlength(b_Xrefpositions,nr_references*4);
-//    setlength(b_Yrefpositions,nr_references*4);
-
-//    for k:=0 to (nr_references*4)-1 do {use 2 * 4 stars of 2 quads}
-//    begin
-//      kd4:=k div 4;
-//      A_XYpositions[kd4,0]:=starlistquads2[0,matchlist1[1,kd4]]; {x position of star}
-//      A_XYpositions[kd4,1]:=starlistquads2[1,matchlist1[1,kd4]]; {y position of star}
-//      A_XYpositions[kd4,2]:=1;
-//      A_XYpositions[kd4+1,0]:=starlistquads2[2,matchlist1[1,kd4]]; {x position of star}
-//      A_XYpositions[kd4+1,1]:=starlistquads2[3,matchlist1[1,kd4]]; {y position of star}
-//      A_XYpositions[kd4+1,2]:=1;
-//      A_XYpositions[kd4+2,0]:=starlistquads2[4,matchlist1[1,kd4]]; {x position of star}
-//      A_XYpositions[kd4+2,1]:=starlistquads2[5,matchlist1[1,kd4]]; {y position of star}
-//      A_XYpositions[kd4+2,2]:=1;
-//      A_XYpositions[kd4+3,0]:=starlistquads2[6,matchlist1[1,kd4]]; {x position of star}
-//      A_XYpositions[kd4+3,1]:=starlistquads2[7,matchlist1[1,kd4]]; {y position of star}
-//      A_XYpositions[kd4+3,2]:=1;
-
-//      b_Xrefpositions[kd4]:=starlistquads1[0,matchlist1[0,kd4]]; {x position of ref star}
-//      b_Yrefpositions[kd4]:=starlistquads1[1,matchlist1[0,kd4]]; {Y position of ref star}
-//      b_Xrefpositions[kd4+1]:=starlistquads1[2,matchlist1[0,kd4]]; {x position of ref star}
-//      b_Yrefpositions[kd4+1]:=starlistquads1[3,matchlist1[0,kd4]]; {Y position of ref star}
-//      b_Xrefpositions[kd4+2]:=starlistquads1[4,matchlist1[0,kd4]]; {x position of ref star}
-//      b_Yrefpositions[kd4+2]:=starlistquads1[5,matchlist1[0,kd4]]; {Y position of ref star}
-//      b_Xrefpositions[kd4+3]:=starlistquads1[6,matchlist1[0,kd4]]; {x position of ref star}
-//      b_Yrefpositions[kd4+3]:=starlistquads1[7,matchlist1[0,kd4]]; {Y position of ref star}
-//      result:=true;{8 star references from 2 quads}
-//    end;
-// end;
+  // else It is possible to use one quad and the four star positions but it is not reliable.
   matchlist2:=nil;
   matchlist1:=nil;
 end;
@@ -707,8 +673,6 @@ begin
     if solve_show_log then {global variable set in find stars} memo2_message('Solution skipped on XY ratio: '+ floattostr(xy_sqr_ratio));
   end;
 end;
-
-
 
 
 function floattostrF2(const x:double; width1,decimals1 :word): string;
@@ -1330,13 +1294,9 @@ begin
         oversize_mess:='Search window at '+ inttostr(round((oversize)*100)) +'% based on the number of quads. Step size at 100% of image height';
 
         radius:=strtofloat2(radius_search1);{radius search field}
-
         memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(nrstars_required)+' database stars, '+inttostr(round(nr_quads*nrstars_required/nrstars))+' database quads required for the square search field of '+floattostrF2(fov2,0,1)+'d. '+oversize_mess );
 
-        if nr_quads>500 then minimum_quads:=10 else {prevent false detections for star rich images}
-        if nr_quads>200 then minimum_quads:=6 else  {prevent false detections for star rich images}
-        minimum_quads:=3; {3 quads giving 3 center quad references}
-
+        minimum_quads:=3 + nr_quads div 100; {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum. It possible to use one quad and four star positions but it in not reliable}
       end
       else
       begin
