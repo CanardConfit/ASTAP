@@ -452,7 +452,7 @@ begin
 
       end
       else
-      if ((triangle=false) and (nhfd_11>0) and (nhfd_21>0) and (nhfd_31>0) and (nhfd_12>0) and (nhfd_32>0) and (nhfd_13>0) and (nhfd_22>0) and (nhfd_33>0)) then  {enough information for tilt calculation}
+      if ((triangle=false) and (nhfd_11>0) and (nhfd_21>0) and (nhfd_31>0) and (nhfd_12>0) and (nhfd_32>0) and (nhfd_13>0) and (nhfd_23>0) and (nhfd_33>0)) then  {enough information for tilt calculation}
       begin
         median_11:=SMedian(hfdlist_11,nhfd_11);
         median_21:=SMedian(hfdlist_21,nhfd_21);

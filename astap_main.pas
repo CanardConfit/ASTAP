@@ -1066,10 +1066,11 @@ var {################# initialised variables #########################}
        result:='';
        r:=I+11;{start reading at position pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
        while ((header[r-1]<>#39) and (r<I+77)) do inc(r); {find first quote at pos 11 or later for case it is not at position 11 (free-format strings)}
-       repeat
+       while ((header[r]<>#39){last quote} and (r<I+79)) do {read string up to position 79 equals 78. The while instruction guarantees reading emphty strings with length zero correctly}
+       begin
          result:=result+header[r];
          inc(r);
-       until ((header[r]=#39){last quote} or (r>=I+79));{read string up to position 80 equals 79}
+       end;
        result:=trim(result);
      end;
 
@@ -3286,7 +3287,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.09.10, '+about_message4+
+  'ASTAP version 2022.09.16, '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -7043,7 +7044,7 @@ end;
 function savefits_update_header(filen2:string) : boolean;{save fits file with updated header}
 var
   TheFile  : tfilestream;
-  reader_position,I,readsize  : integer;
+  reader_position,I,readsize,bufsize : integer;
   TheFile_new : tfilestream;
   fract       : double;
   line0       : ansistring;
@@ -7125,11 +7126,12 @@ begin
        inc(i);
     until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
 
-    readsize:=2880;
+    bufsize:=sizeof(fitsbuffer);
     repeat
-       reader.read(fitsbuffer,readsize); {read file info IN STEPS OF 2880}
+       readsize:=min(bufsize,TheFile.size-reader_position);{read flexible in buffersize and not in fixed steps of 2880 bytes. Note some file are not following the FITS standard of blocksize of 2880 bytes causing problem if fixed 2880 bytes are used}
+       reader.read(fitsbuffer,readsize);
        inc(reader_position,readsize);
-       thefile_new.writebuffer(fitsbuffer,readsize); {write as bytes. Do not use write size last record is forgotten !!!}
+       thefile_new.writebuffer(fitsbuffer,readsize); {write buffer}
      until (reader_position>=TheFile.size);
 
     Reader.free;

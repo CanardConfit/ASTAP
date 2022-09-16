@@ -3931,9 +3931,9 @@ begin
   keyw:=InputBox('All selected files will be updated!! Hit cancel to abort. Type keyword:','','' );
   if length(keyw)<2 then exit;
 
-  value:=InputBox('New value keyword (Type DELETE to remove keyword):','','' );
+  value:=InputBox('New value header keyword (Type DELETE to remove keyword):','','' );
   if length(value)<=0 then exit;
-    listview_update_keyword(lv,uppercase(keyw),value);{update key word}
+  listview_update_keyword(lv,uppercase(keyw),value);{update key word}
 end;
 
 

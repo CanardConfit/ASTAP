@@ -8016,7 +8016,7 @@ object stackmenu1: Tstackmenu1
       OnClick = list_to_clipboard1Click
     end
     object keyword1: TMenuItem
-      Caption = 'Change keyword in selected files'
+      Caption = 'Change header keyword in selected files'
       Hint = 'Modify or add a keyword to the header of the selected files'
       object changekeyword1: TMenuItem
         Caption = 'Type keyword and new value'
@@ -8764,7 +8764,7 @@ object stackmenu1: Tstackmenu1
       OnClick = removeselected1Click
     end
     object keyword2: TMenuItem
-      Caption = 'Change keyword in selected files'
+      Caption = 'Change header keyword in selected files'
       Hint = 'Modify or add a keyword to the header of the selected files'
       object changekeyword2: TMenuItem
         Caption = 'Type keyword and new value'
@@ -8817,7 +8817,7 @@ object stackmenu1: Tstackmenu1
       OnClick = removeselected1Click
     end
     object keyword3: TMenuItem
-      Caption = 'Change keyword in selected files'
+      Caption = 'Change header keyword in selected files'
       Hint = 'Modify or add a keyword to the header of the selected files'
       object changekeyword3: TMenuItem
         Caption = 'Type keyword and new value'
@@ -8870,7 +8870,7 @@ object stackmenu1: Tstackmenu1
       OnClick = removeselected1Click
     end
     object keyword4: TMenuItem
-      Caption = 'Change keyword in selected files'
+      Caption = 'Change header keyword in selected files'
       Hint = 'Modify or add a keyword to the header of the selected files'
       object changekeyword4: TMenuItem
         Caption = 'Type keyword and new value'
@@ -9005,7 +9005,7 @@ object stackmenu1: Tstackmenu1
       OnClick = list_to_clipboard1Click
     end
     object keyword6: TMenuItem
-      Caption = 'Change keyword in selected files'
+      Caption = 'Change header keyword in selected files'
       Hint = 'Modify or add a keyword to the header of the selected files'
       object changekeyword6: TMenuItem
         Caption = 'Type keyword and new value'
@@ -9092,7 +9092,7 @@ object stackmenu1: Tstackmenu1
       OnClick = list_to_clipboard1Click
     end
     object keyword7: TMenuItem
-      Caption = 'Change keyword in selected files'
+      Caption = 'Change header keyword in selected files'
       Hint = 'Modify or add a keyword to the header of the selected files'
       object changekeyword7: TMenuItem
         Caption = 'Type keyword and new value'
@@ -9152,7 +9152,7 @@ object stackmenu1: Tstackmenu1
       OnClick = list_to_clipboard1Click
     end
     object keyword8: TMenuItem
-      Caption = 'Change keyword in selected files'
+      Caption = 'Change header keyword in selected files'
       Hint = 'Modify or add a keyword to the header of the selected files'
       object changekeyword8: TMenuItem
         Caption = 'Type keyword and new value'
@@ -9212,7 +9212,7 @@ object stackmenu1: Tstackmenu1
       OnClick = list_to_clipboard1Click
     end
     object keyword9: TMenuItem
-      Caption = 'Change keyword in selected files'
+      Caption = 'Change header keyword in selected files'
       Hint = 'Modify or add a keyword to the header of the selected files'
       object changekeyword9: TMenuItem
         Caption = 'Type keyword and new value'
