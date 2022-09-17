@@ -54,7 +54,7 @@ begin
   if ((paramcount=0) or (hasOption('h','help'))) then
   begin
     writeln(
-    'ASTAP astrometric solver, '+version+#10+
+    'ASTAP astrometric solver version CLI-'+astap_version+#10+
     '(C) 2018, 2022 by Han Kleijn. License MPL 2.0, Webpage: www.hnsky.org'+#10+
     'Usage:'+#10+
     '-f  filename  {fits, tiff, png, jpg files}'+#10+

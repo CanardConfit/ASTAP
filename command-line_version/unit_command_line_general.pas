@@ -15,7 +15,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  version: string=' CLI-2022-09-12';
+  astap_version: string='2022.09.17';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -509,7 +509,7 @@ begin
   end;
 
 
-  Reader := TReader.Create (theFile3,$4000);{number of hnsky records}
+  Reader := TReader.Create (theFile3,$60000);// 393216 byte buffer
   {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
   I:=0;
   reader_position:=0;
@@ -762,21 +762,11 @@ const
      begin
        result:='';
        r:=I+11;{pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
-       repeat
+       while ((header[r]<>#39){last quote} and (r<I+79)) do {read string up to position 79 equals 78. The while instruction guarantees reading emphty strings with length zero correctly}
+       begin
          result:=result+header[r];
          inc(r);
-       until ((header[r]=#39){last quote} or (r>=I+79));{read string up to position 80 equals 79}
-     end;
-
-     Function get_as_string:string;{read float as string values. Universal e.g. for latitude and longitude which could be either string or float}
-     var  r: integer;
-     begin
-       result:='';
-       r:=I+11;{pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
-       repeat
-         result:=result+header[r];
-         inc(r);
-       until ((header[r]=#39){last quote} or (r>=I+30));{read string up to position 30}
+       end;
      end;
 
 begin
@@ -795,8 +785,7 @@ begin
 
   memo1.clear;{clear memo for new header}
 
-  Reader := TReader.Create (theFile3,500*2880);{number of records. Buffer but not speed difference between 6*2880 and 1000*2880}
-  {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
+  Reader := TReader.Create (theFile3,128*2880);{number of records. 128*2880 is 2% faster then 8* 2880}
 
   {Reset variables for case they are not specified in the file}
   reset_fits_global_variables; {reset the global variable}
@@ -812,7 +801,7 @@ begin
     I:=0;
     try
       reader.read(header[I],2880);{read file header, 2880 bytes}
-      inc(reader_position,2880);
+      inc(reader_position,2880);   {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
       if ((reader_position=2880) and (header[0]='S') and (header[1]='I')  and (header[2]='M') and (header[3]='P') and (header[4]='L') and (header[5]='E') and (header[6]=' ')) then
       begin
         simple:=true;
@@ -1563,7 +1552,7 @@ begin
   end;
   memo1.clear;{clear memo for new header}
 
-  Reader := TReader.Create (theFile3,$4000);{number of hnsky records}
+  Reader := TReader.Create (theFile3,$60000);// 393216 byte buffer
   {thefile3.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   {Reset variables}

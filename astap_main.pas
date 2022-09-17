@@ -32,7 +32,6 @@ Listview event OnCustomDrawItem is never triggered/fired in Mac, widget Cocoa
 https://gitlab.com/freepascal.org/lazarus/lazarus/-/issues/39500
 }
 
-
 interface
 uses
  {$ifdef mswindows}
@@ -57,6 +56,9 @@ uses
   Buttons, PopupNotifier, simpleipc,
   CustApp, Types,
   IniFiles;{for saving and loading settings}
+
+const
+  astap_version='2022.09.17';
 
 type
   { Tmainwindow }
@@ -861,6 +863,8 @@ type  byteX3  = array[0..2] of byte;
 
 var
   Reader    : TReader;
+
+
   fitsbuffer : array[0..bufwide] of byte;{buffer for 8 bit FITS file}
   fitsbuffer2: array[0..round(bufwide/2)] of word absolute fitsbuffer;{buffer for 16 bit FITS file}
   fitsbufferRGB: array[0..trunc(bufwide/3)] of byteX3 absolute fitsbuffer;{buffer for 8 bit RGB FITS file}
@@ -1066,7 +1070,7 @@ var {################# initialised variables #########################}
        result:='';
        r:=I+11;{start reading at position pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
        while ((header[r-1]<>#39) and (r<I+77)) do inc(r); {find first quote at pos 11 or later for case it is not at position 11 (free-format strings)}
-       while ((header[r]<>#39){last quote} and (r<I+79)) do {read string up to position 79 equals 78. The while instruction guarantees reading emphty strings with length zero correctly}
+       while ((header[r]<>#39){last quote} and (r<I+79)) do {read string up to position 79 equals 78. The while (rather then repeat) instruction guarantees reading emphty strings with length zero correctly}
        begin
          result:=result+header[r];
          inc(r);
@@ -1079,10 +1083,11 @@ var {################# initialised variables #########################}
      begin
        result:='';
        r:=I+11;{pos12, single quotes should for fix format should be at position 11 according FITS standard 4.0, chapter 4.2.1.1}
-       repeat
+       while ((header[r]<>#39){last quote} and (r<I+30)) do {read string up to position 30}
+       begin
          result:=result+header[r];
          inc(r);
-       until ((header[r]=#39){last quote} or (r>=I+30));{read string up to position 30}
+       end;
      end;
 
 begin
@@ -1092,7 +1097,7 @@ begin
   if load_data then mainwindow.caption:=ExtractFileName(filen);
   {house keeping done}
 
-  if tiff_file_name(filen) then  {experimental}
+  if tiff_file_name(filen) then  {load Astro-TIFF instead of FITS}
   begin
     result:=load_TIFFPNGJPEG(filen,light, head,img_loaded2);{load TIFF image}
     exit;
@@ -1115,8 +1120,7 @@ begin
     mainwindow.memo1.clear;{clear memo for new header}
   end;
 
-  Reader := TReader.Create (TheFile,500*2880);{number of records. Buffer but not speed difference between 6*2880 and 1000*2880}
-  {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
+  Reader := TReader.Create(TheFile,128*2880);{number of records. 128*2880 is 2% faster then 8* 2880}
 
   {Reset GLOBAL variables for case they are not specified in the file}
   reset_fits_global_variables(light,head);
@@ -1140,7 +1144,7 @@ begin
     repeat {loop for reaching image/table}
       try
         reader.read(header[I],2880);{read file header, 2880 bytes}
-        inc(reader_position,2880);
+        inc(reader_position,2880);  {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
         if ((reader_position=2880) and (header[0]='S') and (header[1]='I')  and (header[2]='M') and (header[3]='P') and (header[4]='L') and (header[5]='E') and (header[6]=' ')) then
         begin
           simple:=true;
@@ -2319,7 +2323,7 @@ begin
   mainwindow.memo1.visible:=false;{stop visualising memo1 for speed. Will be activated in plot routine}
   mainwindow.memo1.clear;{clear memo for new header}
 
-  Reader := TReader.Create (TheFile,$4000);{number of hnsky records}
+  Reader := TReader.Create (TheFile,$60000);// 393216 byte buffer
   {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   reset_fits_global_variables(true{light},head); {reset the global variable}
@@ -3287,7 +3291,7 @@ begin
   about_message5:='';
  {$ENDIF}
   about_message:=
-  'ASTAP version 2022.09.16, '+about_message4+
+  'ASTAP version '+astap_version+', '+about_message4+
   #13+#10+
   #13+#10+
   #13+#10+
@@ -7079,7 +7083,7 @@ begin
   try
     TheFile_new:=tfilestream.Create(filename_tmp, fmcreate );
     TheFile:=tfilestream.Create(filen2, fmOpenRead or fmShareDenyWrite);
-    Reader := TReader.Create (TheFile,$4000);{number of hnsky records}
+    Reader := TReader.Create (TheFile,$60000);// 393216 byte buffer
 
    // if head.calstat<>'' then update_text('CALSTAT =',#39+old_calstat+#39); {calibration status has not change because the image is original}
     {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}

@@ -99,7 +99,7 @@ begin
   extend_type:=0;  {no extensions in the file, 1 is image, 2 is ascii_table, 3 bintable}
 
   setlength(header2,16);
-  Reader := TReader.Create (TheFile,$4000);{number of hnsky records}
+  Reader := TReader.Create(TheFile,$60000);// 393216 byte buffer
   {TheFile.size-reader.position>sizeof(hnskyhdr) could also be used but slow down a factor of 2 !!!}
 
   reader_position:=0;

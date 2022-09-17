@@ -1257,7 +1257,7 @@ begin
 
        {prepare popupnotifier1 text}
       if force_oversize1=false then mess:=' normal' else mess:=' slow';
-      memo2_message('ASTAP solver '+version+#10+
+      memo2_message('ASTAP solver version CLI-'+astap_version+#10+
                     'Search radius: '+ radius_search1+' degrees, '+#10+
                     'Start position: '+prepare_ra(ra0,': ')+', '+prepare_dec(dec0,'d ')+#10+
                     'Image height: '+floattostrf2(fov_org,0,2)+' degrees'+#10+
@@ -1506,7 +1506,7 @@ begin
     update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd1_2);
     update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_1);
     update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,cd2_2);
-    update_text   ('PLTSOLVD=','                   T / ASTAP internal solver      ');
+    update_text   ('PLTSOLVD=','                   T / Astrometric solved by ASTAP_CLI v'+astap_version+'.   ');
     update_text   ('COMMENT 7', solved_in+' Offset was '+offset_found+mount_offset);
 
 
