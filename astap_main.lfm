@@ -1177,6 +1177,11 @@ object mainwindow: Tmainwindow
           ImageIndex = 43
           OnClick = set_modified_date1Click
         end
+        object move_images1: TMenuItem
+          Caption = 'Move images to path "object, date"'
+          Hint = 'Move selected images to a new directory based in the header info object name and exposure date.'
+          OnClick = move_images1Click
+        end
         object MenuItem27: TMenuItem
           Caption = '-'
         end
@@ -3568,5 +3573,11 @@ object mainwindow: Tmainwindow
     Options = [fdEffects, fdFixedPitchOnly, fdForceFontExist, fdShowHelp, fdWysiwyg]
     Left = 848
     Top = 89
+  end
+  object SelectDirectoryDialog1: TSelectDirectoryDialog
+    FileName = 'D:\ccdciel_program\ccdciel-master\src'
+    InitialDir = 'D:\ccdciel_program\ccdciel-master\'
+    Left = 1184
+    Top = 440
   end
 end

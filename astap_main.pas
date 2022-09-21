@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.09.17';
+  astap_version='2022.09.21';
 
 type
   { Tmainwindow }
@@ -109,6 +109,8 @@ type
     grid1: TMenuItem;
     freetext1: TMenuItem;
     MenuItem21: TMenuItem;
+    move_images1: TMenuItem;
+    SelectDirectoryDialog1: TSelectDirectoryDialog;
     simbad_annotation_star1: TMenuItem;
     simbad_annotation_deepsky1: TMenuItem;
     online_query1: TMenuItem;
@@ -385,6 +387,7 @@ type
     procedure MenuItem22Click(Sender: TObject);
     procedure electron_to_adu_factors1Click(Sender: TObject);
     procedure halo_removal1Click(Sender: TObject);
+    procedure move_images1Click(Sender: TObject);
     procedure set_modified_date1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
     procedure inspection1click(Sender: TObject);
@@ -706,6 +709,7 @@ var {################# initialised variables #########################}
   annotation_diameter : integer=20;
   pedestal            : integer=0;
   electron_to_adu     : string='16';
+  image_store_path    : string='';
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
@@ -843,8 +847,8 @@ const   bufwide=1024*120;{buffer size in bytes}
     {17}('CRVAL2  =                  0.0 / DEC of reference pixel (deg)                   '),
     {18}('CDELT1  =                  0.0 / X pixel size (deg)                             '),
     {19}('CDELT2  =                  0.0 / Y pixel size (deg)                             '),
-    {20}('CROTA1  =                  0.0 / Image twist of X axis        (deg)             '),
-    {21}('CROTA2  =                  0.0 / Image twist of Y axis E of N (deg)             '),
+    {20}('CROTA1  =                  0.0 / Image twist X axis(deg)                        '),
+    {21}('CROTA2  =                  0.0 / Image twist Y axis deg) E of N if not flipped  '),
     {22}('CD1_1   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
     {23}('CD1_2   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
     {24}('CD2_1   =                  0.0 / CD matrix to convert (x,y) to (Ra, Dec)        '),
@@ -5616,9 +5620,9 @@ begin
   // Representations of World Coordinates in FITS paper II aah3860
 
   // formula 191
-  if head.cd2_1>0 then head.crota1:=arctan2(head.cd2_1,head.cd1_1)*180/pi
+  if head.cd2_1>0 then head.crota1:=arctan2(-head.cd2_1,-head.cd1_1)*180/pi
   else
-  if head.cd2_1<0 then head.crota1:=arctan2(-head.cd2_1,-head.cd1_1)*180/pi
+  if head.cd2_1<0 then head.crota1:=arctan2(+head.cd2_1,+head.cd1_1)*180/pi
   else
   head.crota1:=0;
 
@@ -5627,7 +5631,6 @@ begin
   if head.cd1_2<0 then head.crota2:=arctan2(head.cd1_2,-head.cd2_2)*180/pi
   else
   head.crota2:=0;
-
 
   // https://www.aanda.org/articles/aa/full/2002/45/aah3860/aah3860.right.html
   // Representations of World Coordinates in FITS paper II aah3860
@@ -5644,19 +5647,24 @@ begin
     head.cdelt2:=-head.cd1_2/sin(head.crota2*pi/180);
   end;
 
-  //bring angles within the same area so that they are about equal
-//  if head.crota2-head.crota1<-90 then begin head.crota2:=head.crota2+180; head.cdelt2:=-head.cdelt2;end
-//  else
-//  if head.crota2-head.crota1>+90 then begin head.crota1:=head.crota1+180; head.cdelt1:=-head.cdelt1;end;
+  //Solutions for CROTA2 come in pairs separated by 180degr. The other solution is obtained by subtracting 180 from CROTA2 and negating CDELT1 and CDELT2.
+  //While each solution is equally valid, if one makes CDELT1 < 0 and CDELT2 > 0 then it would normally be the one chosen.
+  if head.cdelt2<0 then  //flip solution, make cdelt2 always positive
+  begin
+    if head.crota2<0 then
+    begin
+      head.crota2:=head.crota2+180;
+      head.crota1:=head.crota1+180;
+    end
+    else
+    begin
+      head.crota2:=head.crota2-180;
+      head.crota1:=head.crota1-180;
+    end;
 
-   //Solutions for CROTA2 come in pairs separated by 180degr. The other solution is obtained by subtracting 180 from CROTA2 and negating CDELT1 and CDELT2.
-   //While each solution is equally valid, if one makes CDELT1 < 0 and CDELT2 > 0 then it would normally be the one chosen.
-//  if head.cdelt1>0 then begin if head.crota1<0 then head.crota1:=head.crota1+180 else head.crota1:=head.crota1-180; head.cdelt1:=-head.cdelt1;end;
-   if head.cdelt2<0 then begin if head.crota2<0 then head.crota2:=head.crota2+180 else head.crota2:=head.crota2-180; head.cdelt2:=-head.cdelt2;end;//make cdelt2 always positive
-   if abs(head.crota2-head.crota1)>+90 then begin if head.crota1<0 then head.crota1:=head.crota1+180 else head.crota1:=head.crota1-180; head.cdelt1:=-head.cdelt1;end;//adapt crota1 to area crota2
-
-//   head.crota2:=(head.crota2+head.crota1)/2;
-//   head.crota1:=head.crota2;
+    head.cdelt2:=-head.cdelt2;
+    head.cdelt1:=-head.cdelt1;
+  end;//make cdelt2 always positive
 end;
 
 
@@ -7379,6 +7387,8 @@ begin
 
 
       if paramcount=0 then filename2:=Sett.ReadString('main','last_file','');{if used as viewer don't override paramstr1}
+      image_store_path:=Sett.ReadString('main','image_store_path','');
+
       export_index:=Sett.ReadInteger('main','export_index',3);{tiff stretched}
 
 
@@ -7731,7 +7741,9 @@ begin
 
 
       sett.writestring('main','last_file',filename2);
+      sett.writestring('main','image_store_path',image_store_path);
       sett.writeInteger('main','export_index',export_index);
+
 
 
       sett.writestring('ast','mpcorb_path',mpcorb_path);{asteroids}
@@ -12346,8 +12358,8 @@ begin
       update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);{adapt reference pixel of plate solution. Is no longer in the middle}
       update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
 
-      update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
-      update_float  ('CROTA2  =',' / Image twist of Y axis E of N (deg)             ' ,head.crota2);
+      update_float  ('CROTA1  =',' / Image twist X axis (deg)                       ' ,head.crota1);
+      update_float  ('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.' ,head.crota2);
 
       update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
       update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
@@ -12576,8 +12588,8 @@ begin
     update_float  ('CDELT1  =',' / X pixel size (deg)                             ' ,head.cdelt1);
     update_float  ('CDELT2  =',' / Y pixel size (deg)                             ' ,head.cdelt2);
 
-    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
-    update_float  ('CROTA2  =',' / Image twist of Y axis E of N (deg)             ' ,head.crota2);
+    update_float  ('CROTA1  =',' / Image twist X axis (deg)                       ' ,head.crota1);
+    update_float  ('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.' ,head.crota2);
 
     update_float  ('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_1);
     update_float  ('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd1_2);
@@ -12679,8 +12691,8 @@ begin
     update_float  ('CRPIX1  =',' / X of reference pixel                           ' ,head.crpix1);
     update_float  ('CRPIX2  =',' / Y of reference pixel                           ' ,head.crpix2);
 
-    update_float  ('CROTA1  =',' / Image twist of X axis        (deg)             ' ,head.crota1);
-    update_float  ('CROTA2  =',' / Image twist of Y axis E of N (deg)             ' ,head.crota2);
+    update_float  ('CROTA1  =',' / Image twist X axis (deg)                       ' ,head.crota1);
+    update_float  ('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.' ,head.crota2);
 
 
     add_text   ('HISTORY   ','Rotated CCW by angle '+floattostrF(angle,fffixed, 0, 2));
@@ -14731,6 +14743,90 @@ begin
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
+procedure Tmainwindow.move_images1Click(Sender: TObject);
+var
+  I    : integer;
+  Save_Cursor:TCursor;
+  err : boolean;
+  thepath:string;
+begin
+  OpenDialog1.Title := 'Select multiple files to move';
+  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
+  opendialog1.Filter :=dialog_filter_fits_tif;
+  opendialog1.initialdir:=ExtractFileDir(filename2);
+  esc_pressed:=false;
+  err:=false;
+  if OpenDialog1.Execute then
+  begin
+    SelectDirectoryDialog1.Title := 'Select destination root directory. Files will be placed in new directory .\name, date';
+    SelectDirectoryDialog1.InitialDir:=image_store_path;
+    esc_pressed:=false;
+    err:=false;
+    if SelectDirectoryDialog1.Execute then
+    begin
+
+
+    Save_Cursor := Screen.Cursor;
+    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+
+    try { Do some lengthy operation }
+      with OpenDialog1.Files do
+      for I := 0 to Count - 1 do
+      begin
+        progress_indicator(100*i/(count),' Solving');{show progress}
+        Application.ProcessMessages;
+        if esc_pressed then begin err:=true; break; end;
+        filename2:=Strings[I];
+        mainwindow.caption:=filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count);
+        if load_fits(filename2,true{light},false {data},false {update memo},0,head_2,img_temp) then {load image success}
+        begin
+          date_to_jd(head_2.date_obs,head_2.exposure);{convert date-obs to jd_start, jd_mid}
+
+          if jd_start>2400000 then {valid JD}
+          begin
+            {$ifdef mswindows}
+            {$else} {unix}
+
+            {$endif}
+//            if FileSetDate(filename2,DateTimeToFileDate(jd_start-2415018.5))<0 then  { filedatatodatetime counts from 30 dec 1899.}
+//              err:=true;
+            jd_start:=jd_start-(GetLocalTimeOffset/(24*60));//convert to local time.
+            jd_start:=jd_start-0.5; //move 12 hour earlier to get date beginning night
+            thepath:=object_name+', '+copy(JDtoDate(jd_start),1,10);
+
+            {$ifdef mswindows}
+            thepath:=SelectDirectoryDialog1.filename+'\'+thepath;
+            if DirectoryExists(thepath)=false then createDir(thePath);
+            err:=movefile(pchar(filename2),pchar(thepath+'\'+extractfilename(filename2)));
+            {$else} {unix, Mac}
+            thepath:=SelectDirectoryDialog1.filename+'/'+thepath;
+            if DirectoryExists(thepath)=false then createDir(thePath);
+            err:=movefile(pchar(filename2),pchar(thepath+'/'+extractfilename(filename2)));
+            {$endif}
+
+          end
+          else
+          begin
+            memo2_message('Error decoding Julian day!');
+            err:=true;
+          end;
+        end;
+      end;
+
+      if err=false then mainwindow.caption:='Completed, all files moved.'
+      else
+      mainwindow.caption:='Finished, files date set but with errors or stopped!';
+    except
+    end;
+
+    end;
+    Screen.Cursor := Save_Cursor;  { Always restore to normal }
+    progress_indicator(-100,'');{progresss done}
+  end;
+  img_temp:=nil;
+
+end;
+
 
 procedure Tmainwindow.set_modified_date1Click(Sender: TObject);
 var
@@ -14739,7 +14835,6 @@ var
   err : boolean;
 begin
   OpenDialog1.Title := 'Select multiple FITS files to set "modified date" to DATE-OBS';
-  OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter := '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
   esc_pressed:=false;

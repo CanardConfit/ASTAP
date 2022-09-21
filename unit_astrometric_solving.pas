@@ -929,8 +929,9 @@ begin
     update_float('CDELT1  =',' / X pixel size (deg)                             ' ,hd.cdelt1);
     update_float('CDELT2  =',' / Y pixel size (deg)                             ' ,hd.cdelt2);
 
-    update_float('CROTA1  =',' / Image twist of X axis        (deg)             ' ,hd.crota1);
-    update_float('CROTA2  =',' / Image twist of Y axis        (deg)             ' ,hd.crota2);
+    update_float('CROTA1  =',' / Image twist X axis (deg)                       ' ,hd.crota1);
+    update_float('CROTA2  =',' / Image twist Y axis (deg) E of N if not flipped.' ,hd.crota2);
+
 
     update_float('CD1_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,hd.cd1_1);
     update_float('CD1_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,hd.cd1_2);

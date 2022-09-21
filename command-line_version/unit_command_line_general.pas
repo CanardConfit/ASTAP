@@ -15,7 +15,7 @@ uses
 
 
 var {################# initialised variables #########################}
-  astap_version: string='2022.09.17';
+  astap_version: string='2022.09.21';
   ra1  : string='0';
   dec1 : string='0';
   search_fov1    : string='0';{search FOV}
@@ -351,9 +351,9 @@ begin
   // Representations of World Coordinates in FITS paper II aah3860
 
   // formula 191
-  if cd2_1>0 then crota1:=arctan2(cd2_1,cd1_1)*180/pi
+  if cd2_1>0 then crota1:=arctan2(-cd2_1,-cd1_1)*180/pi
   else
-  if cd2_1<0 then crota1:=arctan2(-cd2_1,-cd1_1)*180/pi
+  if cd2_1<0 then crota1:=arctan2(+cd2_1,+cd1_1)*180/pi
   else
   crota1:=0;
 
@@ -362,7 +362,6 @@ begin
   if cd1_2<0 then crota2:=arctan2(cd1_2,-cd2_2)*180/pi
   else
   crota2:=0;
-
 
   // https://www.aanda.org/articles/aa/full/2002/45/aah3860/aah3860.right.html
   // Representations of World Coordinates in FITS paper II aah3860
@@ -379,12 +378,25 @@ begin
     cdelt2:=-cd1_2/sin(crota2*pi/180);
   end;
 
-  //bring angles within the same area so that they are about equal
-  if crota2-crota1<-90 then begin crota2:=crota2+180; cdelt2:=-cdelt2;end
-  else
-  if crota2-crota1>+90 then begin crota1:=crota1+180; cdelt1:=-cdelt1;end;
-end;
+  //Solutions for CROTA2 come in pairs separated by 180degr. The other solution is obtained by subtracting 180 from CROTA2 and negating CDELT1 and CDELT2.
+  //While each solution is equally valid, if one makes CDELT1 < 0 and CDELT2 > 0 then it would normally be the one chosen.
+  if cdelt2<0 then  //flip solution, make cdelt2 always positive
+  begin
+    if crota2<0 then
+    begin
+      crota2:=crota2+180;
+      crota1:=crota1+180;
+    end
+    else
+    begin
+      crota2:=crota2-180;
+      crota1:=crota1-180;
+    end;
 
+    cdelt2:=-cdelt2;
+    cdelt1:=-cdelt1;
+  end;//make cdelt2 always positive
+end;
 
 
 procedure write_astronomy_wcs;
@@ -1463,7 +1475,7 @@ begin
 
     if ((key='SECPIX2 =') or
         (key='PIXSCALE=') or
-        (key='SCALE   =')) then begin if cdelt2=0 then cdelt2:=read_float/3600; end {no head.cdelt1/2 found yet, use alternative, image scale arcseconds per pixel}
+        (key='SCALE   =')) then begin if cdelt2=0 then cdelt2:=read_float/3600; end {no cdelt1/2 found yet, use alternative, image scale arcseconds per pixel}
     else
 
     if key='DATE-OBS=' then date_obs:=read_string else
