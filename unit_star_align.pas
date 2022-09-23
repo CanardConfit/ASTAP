@@ -29,6 +29,7 @@ var
 
 procedure find_stars(img :image_array; hfd_min:double; max_stars :integer;out starlist1: star_list);{find stars and put them in a list}
 procedure find_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {build quads using closest stars, revised 2020-9-28}
+procedure find_triples_using_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {Find triples and store as quads. Triples are extracted from quads to maximize the number of triples and cope with low amount of detectable stars. For a low star count (<30) the star patterns can be different between image and database due to small magnitude differences. V 2022-9-23}
 procedure find_quads_xy(starlist :star_list; out starlistquads :star_list);  {FOR DISPLAY ONLY, build quads using closest stars, revised 2020-9-28}
 function find_offset_and_rotation(minimum_quads: integer;tolerance:double) : boolean; {find difference between ref image and new image}
 procedure reset_solution_vectors(factor: double); {reset the solution vectors}
@@ -140,6 +141,8 @@ begin
     mainwindow.image1.Canvas.Pen.Color :=$606060 +random($9F9F9F);
     if odd(i) then mainwindow.image1.Canvas.Pen.Style := pssolid
        else  mainwindow.image1.Canvas.Pen.Style := psdot;
+
+    try
     mainwindow.image1.Canvas.moveto(x+flipx*round(starlistquads[0,i]),y+flipy*round(starlistquads[1,i]));{move to star 1}
     mainwindow.image1.Canvas.lineto(x+flipx*round(starlistquads[2,i]),y+flipy*round(starlistquads[3,i]));{draw line star1-star2}
 
@@ -149,6 +152,9 @@ begin
     mainwindow.image1.Canvas.lineto(x+flipx*round(starlistquads[4,i]),y+flipy*round(starlistquads[5,i]));{draw line star4-star3}
     mainwindow.image1.Canvas.moveto(x+flipx*round(starlistquads[6,i]),y+flipy*round(starlistquads[7,i]));{move to star4}
     mainwindow.image1.Canvas.lineto(x+flipx*round(starlistquads[2,i]),y+flipy*round(starlistquads[3,i]));{draw line star4-star2}
+
+    except
+    end;
   end;
 end;
 
@@ -346,6 +352,341 @@ begin
 
   SetLength(quad_star_distances,8,nrquads);{adapt to the number found}
 end;
+
+
+procedure find_triples_using_quads(starlist :star_list; min_leng:double; out quad_smallest:double; out quad_star_distances :star_list);  {Find triples and store as quads. Triples are extracted from quads to maximize the number of triples and cope with low amount of detectable stars. For a low star count (<30) the star patterns can be different between image and database due to small magnitude differences. V 2022-9-23}
+var
+   i,j,k,nrstars,j_used1,j_used2,j_used3,nrquads,Sstart,Send,tolerance, nrrealquads  : integer;
+   distance,distance1,distance2,distance3,x1,x2,x3,x4,xt,y1,y2,y3,y4,yt,
+   dist1,dist2,dist3,dist4,dist5,dist6,dummy,disty                          : double;
+   identical_quad : boolean;
+   quad_centers :   star_list;
+begin
+
+  nrstars:=Length(starlist[0]);{number of quads will be equal (super rare) or lower}
+  quad_smallest:=9999999;
+
+
+  if nrstars<4 then
+  begin {not enough stars for quads}
+    SetLength(quad_star_distances,8,0);
+    exit;
+  end;
+
+  if nrstars>=150 then
+  begin
+    quickSort_starlist(starlist,0,nrstars-1); {sort in X only}
+    tolerance:=round(0.5*sqrt(nrstars));{tolerance band is about twice the every star distance}
+  end
+  else
+  tolerance:=1;{switch pre-filtering in X off}
+
+  nrquads:=0;//triples as quads
+  nrrealquads:=0;//real quads
+  SetLength(quad_star_distances,8,nrstars*4);{will contain the six distances and the central position of the triples stored as quads}
+  SetLength(quad_centers,2,nrstars);{temporary storage for quad center to check for duplicates
+
+
+  j_used1:=0;{give it a default value}
+  j_used2:=0;
+  j_used3:=0;
+
+  for i:=0 to nrstars-1 do
+  begin
+    distance1:=1E99;{distance closest star}
+    distance2:=1E99;{distance second closest star}
+    distance3:=1E99;{distance third closest star}
+
+
+    Sstart:=max(0,i-(nrstars div tolerance));
+    Send:=min(nrstars-1,i+(nrstars div tolerance)); {search in a limited X band only. The stars list is sorted in X. Search speed increases with about 30%}
+
+    for j:=Sstart to Send do {find closest stars}
+    begin
+      if j<>i{not the first star} then
+      begin
+        disty:=sqr(starlist[1,j]-starlist[1,i]);
+        if disty<distance3 then {pre-check to increase processing speed with a small amount}
+        begin
+          distance:=sqr(starlist[0,j]-starlist[0,i])+distY ;{square distances are used}
+          if distance>1 then {not an identical star. Mod 2021-6-25}
+          begin
+            if distance<distance1 then
+            begin
+              distance3:=distance2;{distance third closest star}
+              j_used3:=j_used2;{remember the star position in the list}
+
+              distance2:=distance1;{distance second closest star}
+              j_used2:=j_used1;{remember the star position in the list}
+
+              distance1:=distance;{distance closest star}
+              j_used1:=j;{mark later as used}
+            end
+            else
+            if distance<distance2 then
+            begin
+              distance3:=distance2;{distance third closest star}
+              j_used3:=j_used2;{remember the star position in the list}
+
+              distance2:=distance;{distance second closest star}
+              j_used2:=j;
+            end
+            else
+            if distance<distance3 then
+            begin
+              distance3:=distance;{third closest star}
+              j_used3:=j;{remember the star position in the list}
+            end;
+          end;{not an identical star. Mod 2021-6-25}
+
+        end; {pre-check}
+      end;
+    end;{j}
+
+    x1:=starlist[0,i]; {copy first star position to the quad array}
+    y1:=starlist[1,i];
+    x2:=starlist[0,j_used1]; {copy the second star position to the quad array}
+    y2:=starlist[1,j_used1];
+    x3:=starlist[0,j_used2];
+    y3:=starlist[1,j_used2];
+    x4:=starlist[0,j_used3];
+    y4:=starlist[1,j_used3];
+
+
+    try
+      xt:=(x1+x2+x3+x4)/4; {mean x position quad with stars 1234}
+      yt:=(y1+y2+y3+y4)/4; {mean y position quad with stars 1234}
+      identical_quad:=false;
+      if nrrealquads>=1 then {already a quad stored}
+      begin
+       k:=0;
+       repeat {check for identical quads}
+         if ( (abs(xt-quad_centers[0,k])<1) and
+              (abs(yt-quad_centers[1,k])<1) ) then {same center position, found identical quad already in the list}
+             begin
+               identical_quad:=true;
+               k:=999999999;{stop}
+             end;
+
+         inc(k);
+       until k>=nrrealquads;
+      end;
+      if identical_quad=false then  {new quad found}
+      begin //quad-triples method. Split the found quad in four triples and store as quad. This will help for below 30 faint stars where due magnitude differences the database show some different stars and therefore patterns}
+
+       quad_centers[0,nrrealquads]:=xt; //store previously found quad center
+       quad_centers[1,nrrealquads]:=yt;
+       inc( nrrealquads);
+
+
+
+        //Extract triple based on stars 123
+        xt:=(x1+x2+x3)/3; {mean x position triple 123}
+        yt:=(y1+y2+y3)/3; {mean y position triple 123}
+        identical_quad:=false;
+        if nrquads>=1 then {already a triple stored}
+        begin
+         k:=0;
+         repeat {check for identical quads}
+           if ( (abs(xt-quad_star_distances[6,k])<1) and
+                (abs(yt-quad_star_distances[7,k])<1) ) then {same center position, found identical quad already in the list}
+               begin
+                 identical_quad:=true;
+                 k:=999999999;{stop}
+               end;
+
+           inc(k);
+         until k>=nrquads;
+        end;
+        //if false then
+        if identical_quad=false then  {new triple found}
+        begin //quad-triples method. sort the distances on length. Largest first and scale the others relative to largest distance}
+            //123
+          dist1:=sqrt(distance1);{distance star1-star2, use previous value already calculated}
+          dist2:=sqrt(distance2);{distance star1-star3}
+          dist3:=sqrt(sqr(x2-x3)+ sqr(y2-y3));{distance star2-star3}
+          {sort six distances on size in five steps}
+          for j:=1 to 2 do {sort on distance}
+          begin
+            if dist3>dist2 then begin dummy:=dist2; dist2:=dist3; dist3:=dummy; end;
+            if dist2>dist1 then begin dummy:=dist1; dist1:=dist2; dist2:=dummy; end;
+          end;
+          //store triple in quad record
+          quad_star_distances[0,nrquads]:=dist1;{largest distance}
+          quad_star_distances[1,nrquads]:=dist2/dist1;{scale relative to largest distance}
+          quad_star_distances[2,nrquads]:=dist3/dist1;
+
+          quad_star_distances[3,nrquads]:=0; //fill the rest of quad record with zeros
+          quad_star_distances[4,nrquads]:=0;
+          quad_star_distances[5,nrquads]:=0;
+          if dist1<quad_smallest then quad_smallest:=dist1;{measure the smallest}
+          if dist1>min_leng then {large enough for earth based telescope}
+          begin
+            quad_star_distances[6,nrquads]:=xt; {mean x position triple} ;{store mean x position}
+            quad_star_distances[7,nrquads]:=yt;{store mean y position}
+            inc(nrquads); {new unique quad found}
+          end;
+        end;//123
+
+
+
+        //Extract triple based on stars 124
+        xt:=(x1+x2+x4)/3; {mean x position triple 124}
+        yt:=(y1+y2+y4)/3; {mean y position triple 124}
+        identical_quad:=false;
+        if nrquads>=1 then {already a quad stored}
+        begin
+         k:=0;
+         repeat {check for identical quads}
+           if ( (abs(xt-quad_star_distances[6,k])<1) and
+                (abs(yt-quad_star_distances[7,k])<1) ) then {same center position, found identical quad already in the list}
+               begin
+                 identical_quad:=true;
+                 k:=999999999;{stop}
+               end;
+
+           inc(k);
+         until k>=nrquads;
+        end;
+        if identical_quad=false then  {new triple found}
+        begin {sort the distances on length. Largest first and scale the others relative to largest distance}
+         //124
+          dist1:=sqrt(distance1);{distance star1-star2, use previous value already calculated}
+          dist2:=sqrt(distance3);{distance star1-star4}
+          dist3:=sqrt(sqr(x2-x4)+ sqr(y2-y4));{distance star2-star4}
+          {sort six distances on size in five steps}
+          for j:=1 to 2 do {sort on distance}
+          begin
+            if dist3>dist2 then begin dummy:=dist2; dist2:=dist3; dist3:=dummy; end;
+            if dist2>dist1 then begin dummy:=dist1; dist1:=dist2; dist2:=dummy; end;
+          end;
+          //store triple in quad record
+          quad_star_distances[0,nrquads]:=dist1;{largest distance}
+          quad_star_distances[1,nrquads]:=dist2/dist1;{scale relative to largest distance}
+          quad_star_distances[2,nrquads]:=dist3/dist1;
+
+          quad_star_distances[3,nrquads]:=0; //fill the rest of quad record with zeros
+          quad_star_distances[4,nrquads]:=0;
+          quad_star_distances[5,nrquads]:=0;
+          if dist1<quad_smallest then quad_smallest:=dist1;{measure the smallest}
+          if dist1>min_leng then {large enough for earth based telescope}
+          begin
+            quad_star_distances[6,nrquads]:=xt; {mean x position triple} ;{store mean x position}
+            quad_star_distances[7,nrquads]:=yt;{store mean y position}
+            inc(nrquads); {new unique quad found}
+          end;
+        end;
+
+
+        //Extract triple based on stars 134
+        xt:=(x1+x3+x4)/3; {mean x position triple 134}
+        yt:=(y1+y3+y4)/3; {mean y position triple 134}
+        identical_quad:=false;
+        if nrquads>=1 then {already a quad stored}
+        begin
+         k:=0;
+         repeat {check for identical quads}
+           if ( (abs(xt-quad_star_distances[6,k])<1) and
+                (abs(yt-quad_star_distances[7,k])<1) ) then {same center position, found identical quad already in the list}
+               begin
+                 identical_quad:=true;
+                 k:=999999999;{stop}
+               end;
+
+           inc(k);
+         until k>=nrquads;
+        end;
+        if identical_quad=false then  {new triple found}
+        begin {sort the distances on length. Largest first and scale the others relative to largest distance}
+           //134
+          dist1:=sqrt(distance2);{distance star1-star3, use previous value already calculated}
+          dist2:=sqrt(distance3);{distance star1-star4}
+          dist3:=sqrt(sqr(x3-x4)+ sqr(y3-y4));{distance star3-star4}
+          {sort six distances on size in five steps}
+          for j:=1 to 2 do {sort on distance}
+          begin
+            if dist3>dist2 then begin dummy:=dist2; dist2:=dist3; dist3:=dummy; end;
+            if dist2>dist1 then begin dummy:=dist1; dist1:=dist2; dist2:=dummy; end;
+          end;
+          //store triple in quad record
+          quad_star_distances[0,nrquads]:=dist1;{largest distance}
+          quad_star_distances[1,nrquads]:=dist2/dist1;{scale relative to largest distance}
+          quad_star_distances[2,nrquads]:=dist3/dist1;
+          quad_star_distances[3,nrquads]:=0; //fill the rest of quad record with zeros
+          quad_star_distances[4,nrquads]:=0;
+          quad_star_distances[5,nrquads]:=0;
+          if dist1<quad_smallest then quad_smallest:=dist1;{measure the smallest}
+          if dist1>min_leng then {large enough for earth based telescope}
+          begin
+            quad_star_distances[6,nrquads]:=xt; {mean x position triple} ;{store mean x position}
+            quad_star_distances[7,nrquads]:=yt;{store mean y position}
+            inc(nrquads); {new unique quad found}
+          end;
+        end;
+
+        //Extract triple based on stars 234
+        xt:=(x2+x3+x4)/3; {mean x position triple 234}
+        yt:=(y2+y3+y4)/3; {mean y position triple 243}
+        identical_quad:=false;
+        if nrquads>=1 then {already a quad stored}
+        begin
+         k:=0;
+         repeat {check for identical quads}
+           if ( (abs(xt-quad_star_distances[6,k])<1) and
+                (abs(yt-quad_star_distances[7,k])<1) ) then {same center position, found identical quad already in the list}
+               begin
+                 identical_quad:=true;
+                 k:=999999999;{stop}
+               end;
+
+           inc(k);
+         until k>=nrquads;
+        end;
+        if identical_quad=false then  {new triple found}
+        begin  {sort the distances on length. Largest first and scale the others relative to largest distance}
+          //234
+          dist1:=sqrt(sqr(x2-x3)+ sqr(y2-y3));{distance star2-star3}
+          dist2:=sqrt(sqr(x3-x4)+ sqr(y3-y4));{distance star3-star4}
+          dist3:=sqrt(sqr(x2-x4)+ sqr(y2-y4));{distance star2-star4}
+
+          {sort six distances on size in five steps}
+          for j:=1 to 2 do {sort on distance}
+          begin
+            if dist3>dist2 then begin dummy:=dist2; dist2:=dist3; dist3:=dummy; end;
+            if dist2>dist1 then begin dummy:=dist1; dist1:=dist2; dist2:=dummy; end;
+          end;
+          //store triple in quad record
+          quad_star_distances[0,nrquads]:=dist1;{largest distance}
+          quad_star_distances[1,nrquads]:=dist2/dist1;{scale relative to largest distance}
+          quad_star_distances[2,nrquads]:=dist3/dist1;
+          quad_star_distances[3,nrquads]:=0; //fill the rest of quad record with zeros
+          quad_star_distances[4,nrquads]:=0;
+          quad_star_distances[5,nrquads]:=0;
+          if dist1<quad_smallest then quad_smallest:=dist1;{measure the smallest}
+          if dist1>min_leng then {large enough for earth based telescope}
+          begin
+            quad_star_distances[6,nrquads]:=xt; {mean x position triple} ;{store mean x position}
+            quad_star_distances[7,nrquads]:=yt;{store mean y position}
+            inc(nrquads); {new unique quad found}
+          end;
+        end;//234
+      end;//new quad search
+
+    except
+      On E :Exception do
+      begin
+        memo2_message(E.Message+ ' exception in procedure calc_quad_distances');
+        stackmenu1.Memo2.enablealign;{allow paint messages from other controls to update tmemo. Mod 2021-06-26}
+        stackmenu1.Memo2.Lines.EndUpdate; {update memo2}
+      end;
+    end;
+  end;{i}
+
+  quad_centers:=nil;//free mem
+
+  SetLength(quad_star_distances,8,nrquads);{adapt to the number found}
+end;
+
 
 
 procedure find_quads_xy(starlist :star_list; out starlistquads :star_list);  {FOR DISPLAY ONLY, build quads using closest stars, revised 2020-9-28}
@@ -559,7 +900,10 @@ begin
     end;
     result:=true;{3 or more references}
   end;
-  //  else It possible to use one quad and four star positions but it in not reliable
+//  else
+//  if solve_show_log then {global variable set in find stars}
+//     memo2_message('Found matches: '+inttostr(nr_references));
+//  else It possible to use one quad and four star positions but it in not reliable
   matchlist2:=nil;
   matchlist1:=nil;
 end;
@@ -635,7 +979,6 @@ begin
 //   flip_vertical:=mainwindow.flip_vertical1.Checked;
 //   flip_horizontal:=mainwindow.Flip_horizontal1.Checked;
 
- // hfd_min:=4;
   width2:=length(img[0]);{width}
   height2:=length(img[0,0]);{height}
 

@@ -20,6 +20,7 @@ type
   Tform_aavso1 = class(TForm)
     baa_style1: TCheckBox;
     Image_photometry1: TImage;
+    report_error1: TLabel;
     MenuItem1: TMenuItem;
     name_check1: TComboBox;
     PopupMenu1: TPopupMenu;
@@ -356,6 +357,15 @@ begin
   magn_min:=trunc(magn_min*100)/100; {add some rounding}
   magn_max:=trunc(magn_max*100)/100;
   range:=magn_max-magn_min;
+
+  if range<-98 then
+  begin
+    form_aavso1.report_error1.visible:=true;
+    exit;
+  end
+  else
+  form_aavso1.report_error1.visible:=false;
+
   magn_max:=magn_max + range*0.05;  {faint star, bottom}
   magn_min:=magn_min - range*0.05; {bright star, top}
 

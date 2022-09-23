@@ -1,15 +1,13 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <html><head>
 <meta content="text/html;charset=ISO-8859-1" http-equiv="Content-Type">
-<meta name="description" content="ASTAP, Astrometric Stacking Program, fits viewer and PlateSolve2 frontend.">
+<meta name="description" content="Describtion of astronomical algorithm for making the night sky searchable.">
 <meta name="keywords" content="ASTAP astronomical plate solving method">
-<meta name="author" content="Han K"><title>ASTAP astronomical plate solving method</title></head>
+<meta name="author" content="Han Kleijn"><title>ASTAP star pattern recognition algorithm and astrometric (plate) solving.</title></head>
 <body style="background-color: rgb(223, 223, 223);">
 <center> <img src="hnsky_b.gif" alt="hnsky_b.gif" height="38" width="360"> <font size="-2"><a href="http://www.hnsky.org/">www.hnsky.org</a><br>
 <br>
-</font><big style="font-family: Arial;"><big><big>ASTAP,
-the Astrometric STAcking Program, astrometric solver and FITS viewer</big></big></big><br>
-<font size="-2"><br>
+</font><big style="font-family: Arial;"><big><big>ASTAP&nbsp;star pattern recognition&nbsp;and astrometric&nbsp;(plate) solving algorithm.<br><br></big></big></big><big style="font-family: Arial;"><big></big></big><font size="-2"><br>
 </font>
 <div style="text-align: left;"><big><span style="text-decoration: underline; font-weight: bold;">1
 Introduction to astrometric solving</span><br>
@@ -341,12 +339,17 @@ cd1_1,cd1_2,cd_2_1, cd2_2.<br>
 <td style="width: 331px;"></td>
 </tr>
 </tbody>
-</table>
+</table><br>For a low faint star count (&lt;30)&nbsp;the star patterns
+can be slightly different between image and database due to small
+magnitude differences. For these cases it can be beneficial to extract
+triples (three stars patterns) from the found quads (four star
+patterns) but stricter tolerances are required to avoid false
+detections.<br><br>
 </div>
 <div style="text-align: left;"><br>
 </div><br></center>
 <p align="left"><img src="hanemail.gif"></p>
-<p align="left">Version: 2022-01-04</p>
+<p align="left">Version: 2022-09-23</p>
 <p align="left"><span class="ILfuVd"><span class="hgKElc">© </span></span>Han Kleijn,
 www.hnsky.org, 2018, 2022.&nbsp;</p><p align="left">&nbsp;<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width: 0pt;" src="https://i.creativecommons.org/l/by/4.0/88x31.png"> </a>This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative
 Commons Attribution 4.0 International License</a>.&nbsp;<em>which

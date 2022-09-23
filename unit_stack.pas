@@ -47,6 +47,7 @@ type
     Button1: TButton;
     check_pattern_filter1: TCheckBox;
     auto_select1: TMenuItem;
+    use_triples1: TCheckBox;
     MenuItem33: TMenuItem;
     target_distance1: TLabel;
     target_group1: TGroupBox;
@@ -2197,8 +2198,9 @@ procedure Tstackmenu1.show_quads1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
    hfd_min   : double;
-   max_stars : integer;
+   max_stars,binning : integer;
    starlistquads : star_list;
+   warning_downsample: string;
 begin
   if head.naxis=0 then application.messagebox( pchar('First load an image in the viewer!'), pchar('No action'),MB_OK)
   else
@@ -2208,19 +2210,19 @@ begin
     max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
     if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
 
-
     if  quads_displayed then
       plot_fits(mainwindow.image1,false,true); {remove quads}
-    get_background(0,img_loaded,false{histogram already available},true {unknown, calculate also noise level} ,{var}cblack,star_level);
 
+    binning:=report_binning(head.height{*cropping}); {select binning on dimensions of cropped image}
     if use_astrometry_internal1.checked then
     begin
-      if head.cdelt2=0 {jpeg} then   head.cdelt2:=strtofloat2(search_fov1.text)/head.height;
+      if head.cdelt2=0 {jpeg} then   head.cdelt2:=binning*strtofloat2(search_fov1.text)/head.height;
       hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size1.text){arc sec}/(head.cdelt2 *3600) );{to ignore hot pixels which are too small}
     end
     else hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
 
-    find_stars(img_loaded,hfd_min,max_stars,starlist1);{find stars and put them in a list}
+    bin_and_find_stars(img_loaded,binning,1 {cropping},hfd_min,max_stars,false{update hist}, starlist1, warning_downsample);{bin, measure background}
+
     find_quads_xy(starlist1,starlistquads);{find quads}
     display_quads(starlistquads);
     quads_displayed:=true;

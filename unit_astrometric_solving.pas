@@ -90,6 +90,10 @@ Below a brief flowchart of the ASTAP astrometric solving process:
 //                           Make from the image center small one pixel steps in x, y and use the differences in α, δ to calculate the image scale and orientation.
 //
 //                           This is the final solution. The solution vector (for position, scale, rotation) can be stored as the FITS keywords crval1, crval2, cd1_1,cd1_2,cd_2_1, cd2_2.
+//
+// Notes:
+// For a low faint star count (<30) the star patterns can be slightly different between image and database due to small magnitude differences.
+// For these cases it can be beneficial to extract triples (three stars patterns) from the found quads (four star patterns) but stricter tolerances are required to avoid false detections.
 
 
 interface
@@ -513,13 +517,16 @@ var
   search_field,step_size,telescope_ra,telescope_dec,telescope_ra_offset,radius,fov2,fov_org, max_fov,fov_min,oversize,
   sep_search,seperation,ra7,dec7,centerX,centerY,correctionX,correctionY,cropping, min_star_size_arcsec,hfd_min,delta_ra,
   current_dist, quad_tolerance,dummy, extrastars,flip, extra,distance                                                  : double;
-  solution, go_ahead, autoFOV,autoMaxstars              : boolean;
-  Save_Cursor                                           : TCursor;
+  solution, go_ahead, autoFOV,autoMaxstars,use_triples         : boolean;
+  Save_Cursor                                                  : TCursor;
   startTick  : qword;{for timing/speed purposes}
   distancestr,oversize_mess,mess,info_message,popup_warningV17,popup_warningSample,suggest_str, solved_in,
   offset_found,ra_offset,dec_offset,mount_info,mount_offset,warning_downsample, light_date_obs                         : string;
+var {with value}
+  quads_str: string=' quads';
 const
    popupnotifier_visible : boolean=false;
+
 
 begin
   Save_Cursor := Screen.Cursor;
@@ -550,6 +557,7 @@ begin
 
   quad_tolerance:=strtofloat2(stackmenu1.quad_tolerance1.text);
   max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
+  use_triples:=stackmenu1.use_triples1.checked;
 
   if ((fov_specified=false) and (hd.cdelt2<>0)) then {no fov in native command line and hd.cdelt2 in header}
     fov_org:=min(180,hd.height*abs(hd.cdelt2)) {calculate FOV. PI can give negative hd.cdelt2}
@@ -663,7 +671,19 @@ begin
 
       if go_ahead then {enough stars, lets find quads}
       begin
-        find_quads(starlist2,0 {min length}, quad_smallest,quad_star_distances2);{find star quads for new image. Quads and quad_smallest are binning independent}
+        if ((nrstars<30) and  (use_triples)) then
+        begin
+          find_triples_using_quads(starlist2,0 {min length}, quad_smallest,quad_star_distances2); {find star triples for new image. Quads and quad_smallest are binning independent}
+          quad_tolerance:=0.003;
+          quads_str:=' triples';
+        end
+        else
+        begin
+          find_quads(starlist2,0 {min length}, quad_smallest,quad_star_distances2);{find star quads for new image. Quads and quad_smallest are binning independent}
+          quads_str:=' quads';
+        end;
+
+
         nr_quads:=Length(quad_star_distances2[0]);
         go_ahead:=nr_quads>=3; {enough quads?}
 
@@ -684,8 +704,12 @@ begin
 
         radius:=strtofloat2(stackmenu1.radius_search1.text);{radius search field}
 
-        memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+' quads selected in the image. '+inttostr(nrstars_required)+' database stars, '
-                               +inttostr(round(nr_quads*nrstars_required/nrstars))+' database quads required for the square search field of '+floattostrF(fov2,ffFixed,0,1)+'°. '+oversize_mess );
+
+        if ((nrstars<30) and  (use_triples)) then  oversize_mess:= oversize_mess+#10+'Hash code tolerance forced to '+floattostr(quad_tolerance);
+        memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+quads_str+' selected in the image. '+inttostr(nrstars_required)+' database stars, '
+                               +inttostr(round(nr_quads*nrstars_required/nrstars))+' database'+quads_str+' required for the square search field of '+floattostrF(fov2,ffFixed,0,1)+'°. '+oversize_mess+#10+'Hash code tolerance forced to '+floattostr(quad_tolerance));
+
+
         minimum_quads:=3 + nr_quads div 100; {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum. It possible to use one quad and four star positions but it in not reliable}
       end
       else
@@ -792,8 +816,16 @@ begin
                     errorlevel:=33;{read error star database}
                     exit; {no stars}
                   end;
+
+                  if ((nrstars<30) and  (use_triples)) then
+                  find_triples_using_quads(starlist1,quad_smallest*(fov_org*3600/hd.height {pixelsize in"})*0.99 {filter value to exclude too small quads, convert pixels to arcsec as in database}, dummy,quad_star_distances1){find quads for reference image/database. Filter out too small quads for Earth based telescopes}
+                                       {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
+                  else
                   find_quads(starlist1,quad_smallest*(fov_org*3600/hd.height {pixelsize in"})*0.99 {filter value to exclude too small quads, convert pixels to arcsec as in database}, dummy,quad_star_distances1);{find quads for reference image/database. Filter out too small quads for Earth based telescopes}
                                        {Note quad_smallest is binning independent value. Don't use cdelt2 for pixelsize calculation since fov_specified could be true making cdelt2 unreliable or fov=auto}
+
+
+
                 until ((nrstars_required>database_stars) {No more stars available in the database}
                         or (nr_quads<1.1*Length(quad_star_distances1[0])*nrstars/nrstars_required) {Enough quads found. The amount quads could be too low because due to filtering out too small database quads (center m13, M16)in routine find_quads}
                         or (extrastars>15)) {Go up this factor maximum};
@@ -810,6 +842,13 @@ begin
                 //stackmenu1.memo2.lines.add(floattostr(telescope_ra*12/pi)+',,,'+floattostr(telescope_dec*180/pi)+',,,,'+inttostr(count)+',,-99');
 
                 solution:=find_offset_and_rotation(minimum_quads {>=3},quad_tolerance);{find an solution}
+
+                // for testing purpose
+                //equatorial_standard(telescope_ra,telescope_dec,hd.ra0,hd.dec0,1,correctionX,correctionY);{calculate correction for x,y position of database center and image center}
+                //head.cdelt1:=-head.cdelt1;
+                //head.cdelt2:=-head.cdelt2;
+                //plot_stars_used_for_solving(correctionX,correctionY); {plot image stars and database stars used for the solution}
+                //exit;
 
                 Application.ProcessMessages;
                 if esc_pressed then
@@ -857,7 +896,7 @@ begin
     hd.ra0:=ra_radians;//store solution
     hd.dec0:=dec_radians;
 
-    memo2_message(inttostr(nr_references)+ ' of '+ inttostr(nr_references2)+' quads selected matching within '+stackmenu1.quad_tolerance1.text+' tolerance.'  {2 quads are required giving 8 star references or 3 quads giving 3 center quad references}
+    memo2_message(inttostr(nr_references)+ ' of '+ inttostr(nr_references2)+quads_str+' selected matching within '+floattostr(quad_tolerance)+' tolerance.'  //  3 quads are required giving 3 center quad references}
                    +'  Solution["] x:='+floattostr6(solution_vectorX[0])+'*x+ '+floattostr6(solution_vectorX[1])+'*y+ '+floattostr6(solution_vectorX[2])
                    +',  y:='+floattostr6(solution_vectorY[0])+'*x+ '+floattostr6(solution_vectorY[1])+'*y+ '+floattostr6(solution_vectorY[2]) );
     //  following doesn't give maximum angle accuracy, so is not used.

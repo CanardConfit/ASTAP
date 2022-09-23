@@ -3,7 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 712
   Top = 202
   Width = 1877
-  HorzScrollBar.Page = 1701
+  HorzScrollBar.Page = 1437
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1877
-    ActivePage = lights
+    ActivePage = alignment1
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 6
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -2787,6 +2787,19 @@ object stackmenu1: Tstackmenu1
             ParentFont = False
             TabOrder = 9
           end
+          object use_triples1: TCheckBox
+            Left = 672
+            Height = 19
+            Hint = 'Use triples (three star) for pattern detection for images with less then 30 stars. In all other case use quads (four star).'
+            Top = 56
+            Width = 74
+            BorderSpacing.Around = 5
+            Caption = 'Use triples'
+            Color = clBtnFace
+            ParentColor = False
+            ParentFont = False
+            TabOrder = 10
+          end
         end
       end
       object show_quads1: TBitBtn
@@ -3290,7 +3303,7 @@ object stackmenu1: Tstackmenu1
       object photometry_button1: TButton
         Left = 440
         Height = 26
-        Hint = 'Scroll through the check-marked images once'
+        Hint = 'Scroll through the check-marked images once and measure the marked stars.'
         Top = 5
         Width = 75
         Caption = '▶|'
@@ -3301,7 +3314,7 @@ object stackmenu1: Tstackmenu1
       object photometry_repeat1: TButton
         Left = 528
         Height = 26
-        Hint = 'Continous scrolling through the check-marked images'
+        Hint = 'Continous scrolling through the check-marked images  and measure the marked stars.'
         Top = 5
         Width = 40
         Caption = '▶'

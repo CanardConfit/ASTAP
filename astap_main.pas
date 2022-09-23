@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.09.21';
+  astap_version='2022.09.23';
 
 type
   { Tmainwindow }
@@ -5649,7 +5649,7 @@ begin
 
   //Solutions for CROTA2 come in pairs separated by 180degr. The other solution is obtained by subtracting 180 from CROTA2 and negating CDELT1 and CDELT2.
   //While each solution is equally valid, if one makes CDELT1 < 0 and CDELT2 > 0 then it would normally be the one chosen.
-  if head.cdelt2<0 then  //flip solution, make cdelt2 always positive
+  if head.cdelt2<0 then //CDELT2 is always kept positive and if not the solution is flipped by negating both CDELT2, CDELT2 and shifting the angle 180 degrees. So if the image is flipped the solution is reporting "flipped horizontal" and not an equivalent "flipped vertical".
   begin
     if head.crota2<0 then
     begin
@@ -7492,6 +7492,7 @@ begin
       stackmenu1.force_oversize1.Checked:=Sett.ReadBool('stack','force_slow',false);
       stackmenu1.calibrate_prior_solving1.Checked:=Sett.ReadBool('stack','calibrate_prior_solving',false);
       stackmenu1.check_pattern_filter1.Checked:=Sett.ReadBool('stack','check_pattern_filter',false);
+      stackmenu1.use_triples1.Checked:=Sett.ReadBool('stack','use_triples',false);
 
       dum:=Sett.ReadString('stack','star_database',''); if dum<>'' then stackmenu1.star_database1.text:=dum;
       dum:=Sett.ReadString('stack','solve_search_field',''); if dum<>'' then stackmenu1.search_fov1.text:=dum;
@@ -7501,6 +7502,7 @@ begin
       dum:=Sett.ReadString('stack','maximum_stars',''); if dum<>'' then stackmenu1.max_stars1.text:=dum;
       dum:=Sett.ReadString('stack','min_star_size',''); if dum<>'' then stackmenu1.min_star_size1.text:=dum;
       dum:=Sett.ReadString('stack','min_star_size_stacking',''); if dum<>'' then stackmenu1.min_star_size_stacking1.text:=dum;
+
 
       dum:=Sett.ReadString('stack','manual_centering',''); if dum<>'' then stackmenu1.manual_centering1.text:=dum;
 
@@ -7842,7 +7844,7 @@ begin
       sett.writeBool('stack','force_slow',stackmenu1.force_oversize1.checked);
       sett.writeBool('stack','calibrate_prior_solving',stackmenu1.calibrate_prior_solving1.checked);
       sett.writeBool('stack','check_pattern_filter',stackmenu1.check_pattern_filter1.checked);
-
+      sett.writeBool('stack','use_triples',stackmenu1.use_triples1.checked);
 
       if  stackmenu1.use_manual_alignment1.checked then sett.writestring('stack','align_method','4')
       else

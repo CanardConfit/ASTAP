@@ -26,6 +26,9 @@ function read_stars_wide_field : boolean;
 var
   FS    : TFileStream;
   iSize : Integer;
+  // For wide field the stars are stored in a single file w08.001 down to magnitude 8. The stars are sorted from bright to faint.
+  // The file starts with a 4 byte integer specifying the number of records=stars and has for the W08 value 41246.
+  // Each star is stored in a record of three singles (4 byte floats). Starting with magnitude [x10] then  RA [radians]  and finally DEC[radians]. First star is Sirius):
 begin
   try
     FS := TFileStream.Create(database_path+name_database+'_0101.001',fmOpenRead or fmShareDenyWrite); {read but do not lock file}
@@ -41314,7 +41317,7 @@ var
 );
 var
   FS : TFileStream;
-  I,iSize,rec_size : Integer;
+  I,iSize : Integer;
 begin
   try
   FS := TFileStream.Create(database_path+'w08_0101.001', fmCreate);
@@ -41322,7 +41325,6 @@ begin
     exit;
   end;
   iSize:= Length(star_array);
-  rec_size:=SizeOf(star_array);
   FS.WriteBuffer(iSize,SizeOf(iSize));//store length of array
 
   For I := 0 To iSize - 1 Do //store array

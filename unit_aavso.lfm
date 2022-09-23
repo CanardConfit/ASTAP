@@ -197,6 +197,20 @@ object form_aavso1: Tform_aavso1
     ShowHint = True
     TabOrder = 8
   end
+  object report_error1: TLabel
+    Left = 376
+    Height = 192
+    Top = 168
+    Width = 700
+    AutoSize = False
+    Caption = 'Invalid report! View the first image in the list and click on the variable and check star to mark them for measurement. Then press the ▶| button to measure the stars.'
+    Font.Color = clRed
+    Font.Height = -24
+    ParentColor = False
+    ParentFont = False
+    Visible = False
+    WordWrap = True
+  end
   object PopupMenu1: TPopupMenu
     Left = 685
     Top = 135
