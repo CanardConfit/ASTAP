@@ -12096,7 +12096,10 @@ begin
                 end;
               end
               else
-              memo2_message('Can not measure SQM. Add fixed pedestal value in SQM menu. De pedestal value is the median dark or bias value');
+              begin
+                update_text('SQM     =',char(39)+'Error! Specify first a fixed pedestal value in the SQM menu (ctrl+Q).'+char(39));
+                memo2_message('Can not measure SQM. Specifiy first a fixed pedestal value in the SQM menu. De pedestal value is the median dark or bias value');
+              end;
               memo2_message('Added keyword(s) LIM_MAGN'+mess);
             end;
 
