@@ -47,6 +47,11 @@ type
     Button1: TButton;
     check_pattern_filter1: TCheckBox;
     auto_select1: TMenuItem;
+    direction_arrow1: TImage;
+    Label19: TLabel;
+    Label40: TLabel;
+    monitor_latitude1: TEdit;
+    monitor_longitude1: TEdit;
     use_triples1: TCheckBox;
     MenuItem33: TMenuItem;
     target_distance1: TLabel;
@@ -626,6 +631,9 @@ type
     procedure keywordchangesecondtolast1Click(Sender: TObject);
     procedure calc_polar_alignment_error1Click(Sender: TObject);
     procedure monitor_action1Change(Sender: TObject);
+    procedure monitor_latitude1Change(Sender: TObject);
+    procedure monitor_latitude1EditingDone(Sender: TObject);
+    procedure monitor_longitude1EditingDone(Sender: TObject);
     procedure mount_analyse1Click(Sender: TObject);
     procedure analysephotometry1Click(Sender: TObject);
     procedure analyse_inspector1Click(Sender: TObject);
@@ -3094,6 +3102,11 @@ begin
   hue_fuzziness1Change(nil);{show position}
 
   annotations_visible1.enabled:= mainwindow.annotations_visible1.checked;
+
+
+  {latitude, longitude}
+  stackmenu1.monitor_latitude1.Text:=lat_default;
+  stackmenu1.monitor_longitude1.Text:=long_default;
 
   update_stackmenu;
 end;
@@ -7910,6 +7923,22 @@ procedure Tstackmenu1.monitor_action1Change(Sender: TObject);
 begin
   target_group1.enabled:=stackmenu1.monitor_action1.itemindex=4;
 end;
+
+procedure Tstackmenu1.monitor_latitude1Change(Sender: TObject);
+begin
+
+end;
+
+procedure Tstackmenu1.monitor_latitude1EditingDone(Sender: TObject);
+begin
+  lat_default:=monitor_latitude1.text;
+end;
+
+procedure Tstackmenu1.monitor_longitude1EditingDone(Sender: TObject);
+begin
+  long_default:=monitor_longitude1.text;
+end;
+
 
 
 procedure Tstackmenu1.mount_analyse1Click(Sender: TObject);

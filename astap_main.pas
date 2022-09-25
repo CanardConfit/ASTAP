@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.09.23';
+  astap_version='2022.09.25';
 
 type
   { Tmainwindow }
@@ -12051,6 +12051,8 @@ begin
         progress_indicator(100*i/(count),' Solving');{show progress}
         solved:=false;
 
+        if fits_tiff_file_name(filename2)=false then continue; //skip wrong file types in case somebody typed *.*
+
         Application.ProcessMessages;
         if esc_pressed then  break;
         {load image and solve image}
@@ -12069,6 +12071,7 @@ begin
             if solved then nrsolved:=nrsolved+1 {solve}
             else
             begin
+              memo2_message('No solution: '+filename2);
               nrfailed:=nrfailed+1;
               failed:=failed+#13+#10+extractfilename(filename2);
             end;
@@ -12097,7 +12100,7 @@ begin
               end
               else
               begin
-                update_text('SQM     =',char(39)+'Error! Specify first a fixed pedestal value in the SQM menu (ctrl+Q).'+char(39));
+                update_text('SQM     =',char(39)+'Error! Specify first fixed pedestal value in the SQM menu (ctrl+Q).'+char(39));
                 memo2_message('Can not measure SQM. Specifiy first a fixed pedestal value in the SQM menu. De pedestal value is the median dark or bias value');
               end;
               memo2_message('Added keyword(s) LIM_MAGN'+mess);
@@ -12111,12 +12114,12 @@ begin
             if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
 
             if ((maintain_date) and (file_age>-1)) then FileSetDate(filename2,file_age);
-          end
-          else
-          begin
-            memo2_message('No solution: '+filename2);
-            failed:=failed+#13+#10+extractfilename(filename2);
           end;
+//          else
+//          begin
+//            memo2_message('No solution: '+filename2);
+//            failed:=failed+#13+#10+extractfilename(filename2);
+//          end;
         end;
       end;{for i:=}
 

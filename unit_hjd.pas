@@ -13,24 +13,42 @@ file, You can obtain one at https://mozilla.org/MPL/2.0/.   }
 interface
 
 uses
-  Classes, SysUtils, math,
+  Classes, SysUtils, math,  LazSysUtils, {nowUtc}
   astap_main {for theader};
 
 var
   ra_mean : double=0;
   dec_mean: double=0;
 
+function calc_jd_now: double;  {get julian day for now}
+
 function JD_to_HJD(jd,ra_object,dec_object: double): double;{conversion JD to HJD}  {see https://en.wikipedia.org/wiki/Heliocentric_Julian_Day}
 procedure equ_gal(ra,dec:double;out l,b: double);{equatorial to galactic coordinates}
 function airmass_calc(h: double): double; // where h is apparent altitude in degrees.
 function atmospheric_absorption(airmass: double):double;{magnitudes}
 procedure calculate_az_alt(calc_mode : integer;head: Theader; out az,alt : double);{calculate az, alt. Move try to use header values else force calculation. Unit degrees}
+procedure altitude_and_refraction(lat,long,julian,temperature,pressure,ra3,dec3: double; out az,alt  : double);{altitude calculation and correction ra, dec for refraction}
 
 procedure polar2(x,y,z:double;out r,theta,phi:double);
 
 implementation
 uses
   unit_stack, unit_ephemerides,unit_asteroid, unit_aberration;
+
+
+function calc_jd_now: double; {get julian day for now}
+var
+  yy,mm,dd :word;
+  hour,min, ss,ms: Word;
+  dt         :tdatetime;
+
+begin
+  dt:=LazSysUtils.NowUTC;
+  DeCodeDate(dt,YY,MM,DD);
+  DecodeTime(dt,hour,min,ss,ms);
+  result:=julian_calc(yy,mm,dd,hour,min,ss+ms/1000);{calculate julian day}
+end;
+
 
 
 { sun:      low precision solar coordinates (approx. 1')               }

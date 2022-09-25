@@ -1,9 +1,9 @@
 object stackmenu1: Tstackmenu1
-  Left = 37
+  Left = 3
   Height = 712
-  Top = 202
+  Top = 191
   Width = 1877
-  HorzScrollBar.Page = 1437
+  HorzScrollBar.Page = 1701
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1877
-    ActivePage = alignment1
+    ActivePage = lights
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 6
+    TabIndex = 0
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -4417,7 +4417,7 @@ object stackmenu1: Tstackmenu1
     object tab_monitoring1: TTabSheet
       Caption = 'Monitoring'
       ClientHeight = 470
-      ClientWidth = 1713
+      ClientWidth = 1869
       OnShow = tab_monitoring1Show
       object Label3: TLabel
         Left = 128
@@ -4563,10 +4563,10 @@ object stackmenu1: Tstackmenu1
         Left = 560
         Height = 360
         Top = 72
-        Width = 531
+        Width = 752
         Caption = 'Target box'
         ClientHeight = 340
-        ClientWidth = 527
+        ClientWidth = 748
         Enabled = False
         TabOrder = 5
         object target1: TLabel
@@ -4623,6 +4623,59 @@ object stackmenu1: Tstackmenu1
           ParentColor = False
           ParentFont = False
           Visible = False
+        end
+        object direction_arrow1: TImage
+          Left = 544
+          Height = 200
+          Hint = 'Move the telescope in this direction'
+          Top = -8
+          Width = 200
+          Anchors = [akTop, akRight]
+          ParentShowHint = False
+          ShowHint = True
+          Transparent = True
+        end
+        object monitor_longitude1: TEdit
+          Left = 624
+          Height = 23
+          Hint = 'The longitude of the observatory in degrees. For east enter positive, for west enter negative values.'
+          Top = 256
+          Width = 113
+          OnEditingDone = monitor_longitude1EditingDone
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 1
+          Text = '0'
+        end
+        object monitor_latitude1: TEdit
+          Left = 625
+          Height = 23
+          Hint = 'The latitude of the observatory in degrees.'
+          Top = 224
+          Width = 113
+          OnEditingDone = monitor_latitude1EditingDone
+          ParentShowHint = False
+          ShowHint = True
+          TabOrder = 2
+          Text = '0'
+        end
+        object Label19: TLabel
+          Left = 571
+          Height = 15
+          Top = 224
+          Width = 46
+          Anchors = [akTop, akRight]
+          Caption = 'Latitude:'
+          ParentColor = False
+        end
+        object Label40: TLabel
+          Left = 543
+          Height = 15
+          Top = 256
+          Width = 74
+          Anchors = [akTop, akRight]
+          Caption = 'Longitude [E]:'
+          ParentColor = False
         end
       end
     end

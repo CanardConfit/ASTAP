@@ -12,7 +12,7 @@ interface
 
 uses
   Classes, SysUtils,forms,fileutil,
-  graphics;
+  graphics, LCLIntf,math;
 
 
 procedure monitoring(path :string);{stack live average}
@@ -23,7 +23,7 @@ const
 
 implementation
 
-uses unit_stack, astap_main,unit_stack_routines,unit_astrometric_solving,unit_star_align,unit_inspector_plot;
+uses unit_stack, astap_main,unit_stack_routines,unit_astrometric_solving,unit_star_align,unit_inspector_plot, unit_hjd;
 
 var
   latest_time : integer=0;
@@ -90,7 +90,8 @@ End;
 
 procedure report_delta; {report delta error}
 var
-   distance,deltaRA,deltaDEC : double;
+   distance,deltaRA,deltaDEC,az_solution,alt_solution,az_target,alt_target,jd_now,lat,long,angle : double;
+   wdiv2,hdiv2 : integer;
    direction : string;
 begin
   if head.naxis=0 then exit;
@@ -116,6 +117,46 @@ begin
       deltaDec:=(dec_target-head.dec0)*180/pi;
       if deltaDec>0 then begin direction:='N' end else begin direction:='S'; end;
       delta_dec1.caption:='Δδ   '+floattostrF(deltaDec,ffFixed,0,3)+'° '+direction;
+
+
+
+  {        sitelat:=lat_default;
+          sitelong:=long_default;
+        end;
+        val(sitelat,site_lat_radians,err); //try to process  3.7E+01
+        if err=0 then
+          begin site_lat_radians:=site_lat_radians*pi/180; errordecode:=false end
+        else  //try to process string 37 00 00
+          dec_text_to_radians(sitelat,site_lat_radians,errordecode);
+        if errordecode=false then
+        begin
+          val(sitelong,site_long_radians,err); //try to process  3.7E+01
+          if err=0 then
+            begin site_long_radians:=site_long_radians*pi/180; errordecode:=false end
+          else  //try to process string  37 00 00
+            dec_text_to_radians(sitelong,site_long_radians,errordecode);
+          if errordecode=false then    }
+
+      jd_now:=calc_jd_now;
+      lat:=strtofloat2(lat_default)*pi/180;
+      long:=strtofloat2(long_default)*pi/180;
+      altitude_and_refraction(lat,long,jd_now,10 {temp},1010 {pressure},head.ra0,head.dec0,az_solution,alt_solution);{In formulas the longitude is positive to west!!!. }
+      altitude_and_refraction(lat,long,jd_now,10 {temp},1010 {pressure},ra_target,dec_target,az_target,alt_target);{In formulas the longitude is positive to west!!!. }
+
+      {clear}
+      with stackmenu1.direction_arrow1 do
+      begin
+        canvas.brush.color:=clmenu;
+        canvas.rectangle(-1,-1, width+1, height+1);
+        Canvas.Pen.Color := clred;
+        canvas.pen.Width:=5;
+        wdiv2:=width div 2;
+        hdiv2:=height div 2;
+        moveToex(Canvas.handle,wdiv2,hdiv2,nil);
+        angle:=arctan2(alt_target-alt_solution, az_target-az_solution);
+        lineTo(Canvas.handle,round(wdiv2+98*cos(angle)),round(hdiv2-98*sin(angle))); {arrow line}
+      end;
+
     end;
   end;
 
