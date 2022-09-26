@@ -31,11 +31,12 @@ var
 
 
 function file_available(monitor_directory:string; out filen: string ) : boolean; {check if fits file is available and report the filename}
-Var Info : TSearchRec;
-    Count : Longint;
-    i     : integer;
-    f     : file;
-    ex    : string;
+Var
+  Info : TSearchRec;
+  Count : Longint;
+  i     : integer;
+  f     : file;
+  ex    : string;
 
 const
   extensions : array[0..44] of string=
@@ -88,11 +89,12 @@ Begin
   end;
 End;
 
+
 procedure report_delta; {report delta error}
 var
-   distance,deltaRA,deltaDEC,az_solution,alt_solution,az_target,alt_target,jd_now,lat,long,angle,angle1,angle2,angle_mid : double;
-   wdiv2,hdiv2,x,y : integer;
-   direction : string;
+  distance,deltaRA,deltaDEC,az_solution,alt_solution,az_target,alt_target,jd_now,lat,long,angle,angle1,angle2,angle_mid : double;
+  wdiv2,hdiv2,x,y : integer;
+  direction : string;
 begin
   if head.naxis=0 then exit;
   with stackmenu1 do
@@ -135,7 +137,7 @@ begin
       with stackmenu1.direction_arrow1 do
       begin
         canvas.brush.color:=clmenu;
-        canvas.rectangle(-1,-1, width+1, height+1);
+        canvas.rectangle(0,0, width, height);
         Canvas.Pen.Color := clred;
         canvas.pen.Width:=5;
         wdiv2:=width div 2;
@@ -144,10 +146,10 @@ begin
         ellipse(canvas.handle,wdiv2-8,hdiv2-8,wdiv2+8+1,hdiv2+8+1);
         moveToex(Canvas.handle,wdiv2,hdiv2,nil);
 
-        angle:=arctan2(alt_target-alt_solution, az_target-az_solution);
+        angle:=arctan2(alt_target-alt_solution, az_target-az_solution);//calculate direction to target
         x:=round(0.95*wdiv2*cos(angle));
-        y:=round(0.95*wdiv2*sin(angle));//y counts from top to bottom
-        lineTo(Canvas.handle,hdiv2+x,wdiv2-y); //arrow line
+        y:=round(0.95*wdiv2*sin(angle));
+        lineTo(Canvas.handle,hdiv2+x,wdiv2-y); // arrow line. Note y counts from top to bottom, so minus sign
 
         angle1:=angle+(180+20)*pi/180;
         angle_mid:=angle+90*pi/180;
@@ -155,26 +157,23 @@ begin
 
         x:=x+round(30*cos(angle1));
         y:=y+round(30*sin(angle1));
-        lineTo(Canvas.handle,hdiv2+x,wdiv2-y); //arrow line
+        lineTo(Canvas.handle,hdiv2+x,wdiv2-y); // arrowhead. Note y counts from top to bottom, so minus sign.
         x:=x+round(21*cos(angle_mid));
-        y:=y+round(21*sin(angle_mid)); //y counts from top to bottom
-        lineTo(Canvas.handle,hdiv2+x,wdiv2-y); //arrow line
+        y:=y+round(21*sin(angle_mid));
+        lineTo(Canvas.handle,hdiv2+x,wdiv2-y); // arrowhead. Note y counts from top to bottom, so minus sign
         x:=x+round(30*cos(angle2));
-        y:=y+round(30*sin(angle2)); //y counts from top to bottom
-        lineTo(Canvas.handle,hdiv2+x,wdiv2-y); //arrow line
-
-
+        y:=y+round(30*sin(angle2));
+        lineTo(Canvas.handle,hdiv2+x,wdiv2-y); // arrowhead. Note y counts from top to bottom, so minus sign
       end;
-
-    end;
+    end;//target specified
   end;
-
 end;
+
 
 procedure monitoring(path :string);{monitoring a directory}
 var
-     counter :  integer;
-     solver  :   boolean;
+  counter :  integer;
+  solver  :   boolean;
 begin
   with stackmenu1 do
   begin

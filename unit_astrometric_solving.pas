@@ -649,7 +649,6 @@ begin
       bin_and_find_stars(img,binning,cropping,hfd_min,max_stars,get_hist{update hist}, starlist2, warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
       nrstars:=Length(starlist2[0]);
 
-
     //   if nrstars<30 then
     //   begin
     //     update_text ('NRSTARS =',' '+inttostr(nrstars)+'                               ');
@@ -657,8 +656,6 @@ begin
     //   end;
     //   result:=false;
     //   exit;
-
-
 
       {report advice}
       if length(warning_downsample)>0  then
@@ -688,7 +685,7 @@ begin
         if yes_use_triples then
         begin
           find_triples_using_quads(starlist2,0 {min length}, quad_smallest,quad_star_distances2); {find star triples for new image. Quads and quad_smallest are binning independent}
-          quad_tolerance:=0.001;
+          quad_tolerance:=0.002;
           quads_str:=' triples';
         end
         else

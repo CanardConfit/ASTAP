@@ -20,9 +20,9 @@ var
    starlist1, starlist2                   :star_list;
    quad_star_distances1, quad_star_distances2: star_list;
    A_XYpositions                          : star_list;
-   b_Xrefpositions,b_Yrefpositions        :  array of double;
+   b_Xrefpositions,b_Yrefpositions        : array of double;
    quad_smallest                          : double;
-   nr_references,nr_references2               : integer;
+   nr_references,nr_references2           : integer;
    solution_vectorX, solution_vectorY,solution_cblack   : solution_vector ;
 
    Savefile: file of solution_vector;{to save solution if required for second and third step stacking}
