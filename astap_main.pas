@@ -14813,13 +14813,13 @@ begin
             thepath:=SelectDirectoryDialog1.filename+'\'+thepath;
             if DirectoryExists(thepath)=false then createDir(thePath);
         //    err:=movefile(pchar(filename2),pchar(thepath+'\'+extractfilename(filename2)));
-            err:=renamefile(pchar(filename2),pchar(thepath+'\'+extractfilename(filename2)));//rename is the same as movefile
+            err:=renamefile(filename2,thepath+'\'+extractfilename(filename2));//rename is the same as movefile
 
             {$endif}
             {$ifdef linux}
             thepath:=SelectDirectoryDialog1.filename+'/'+thepath;
             if DirectoryExists(thepath)=false then createDir(thePath);
-            err:=renamefile(pchar(filename2),pchar(thepath+'/'+extractfilename(filename2)));//rename is the same as movefile
+            err:=renamefile(filename2,thepath+'/'+extractfilename(filename2));//rename is the same as movefile
             {$endif}
             {$ifdef darwin} {MacOS}
             application.messagebox(pchar('Not yet implemented'),pchar('Stop'),MB_OK);
