@@ -4561,11 +4561,11 @@ object stackmenu1: Tstackmenu1
       end
       object target_group1: TGroupBox
         Left = 560
-        Height = 360
-        Top = 72
+        Height = 416
+        Top = 48
         Width = 752
         Caption = 'Target box'
-        ClientHeight = 340
+        ClientHeight = 396
         ClientWidth = 748
         Enabled = False
         TabOrder = 5
@@ -4592,7 +4592,7 @@ object stackmenu1: Tstackmenu1
           Left = 8
           Height = 71
           Hint = 'Target right ascension'
-          Top = 168
+          Top = 248
           Width = 67
           Caption = 'Δα'
           Font.Height = -53
@@ -4604,7 +4604,7 @@ object stackmenu1: Tstackmenu1
           Left = 8
           Height = 71
           Hint = 'Target declination'
-          Top = 256
+          Top = 320
           Width = 65
           Caption = 'Δδ'
           Font.Height = -53
@@ -4616,7 +4616,7 @@ object stackmenu1: Tstackmenu1
           Left = 8
           Height = 71
           Hint = 'Target distance'
-          Top = 48
+          Top = 24
           Width = 21
           Caption = '-'
           Font.Height = -53
@@ -4625,21 +4625,21 @@ object stackmenu1: Tstackmenu1
           Visible = False
         end
         object direction_arrow1: TImage
-          Left = 544
-          Height = 200
+          Left = 420
+          Height = 312
           Hint = 'Move the telescope in this direction'
           Top = -8
-          Width = 200
+          Width = 326
           Anchors = [akTop, akRight]
           ParentShowHint = False
           ShowHint = True
           Transparent = True
         end
         object monitor_longitude1: TEdit
-          Left = 624
+          Left = 625
           Height = 23
           Hint = 'The longitude of the observatory in degrees. For east enter positive, for west enter negative values.'
-          Top = 256
+          Top = 344
           Width = 113
           OnEditingDone = monitor_longitude1EditingDone
           ParentShowHint = False
@@ -4648,10 +4648,10 @@ object stackmenu1: Tstackmenu1
           Text = '0'
         end
         object monitor_latitude1: TEdit
-          Left = 625
+          Left = 626
           Height = 23
           Hint = 'The latitude of the observatory in degrees.'
-          Top = 224
+          Top = 312
           Width = 113
           OnEditingDone = monitor_latitude1EditingDone
           ParentShowHint = False
@@ -4660,22 +4660,46 @@ object stackmenu1: Tstackmenu1
           Text = '0'
         end
         object Label19: TLabel
-          Left = 571
+          Left = 552
           Height = 15
-          Top = 224
-          Width = 46
+          Top = 312
+          Width = 66
           Anchors = [akTop, akRight]
-          Caption = 'Latitude:'
+          Caption = 'Latitude [N]:'
           ParentColor = False
         end
         object Label40: TLabel
-          Left = 543
+          Left = 544
           Height = 15
-          Top = 256
+          Top = 344
           Width = 74
           Anchors = [akTop, akRight]
           Caption = 'Longitude [E]:'
           ParentColor = False
+        end
+        object target_altitude1: TLabel
+          Left = 8
+          Height = 71
+          Hint = 'Target altitude'
+          Top = 96
+          Width = 34
+          Caption = 'A'
+          Font.Height = -53
+          ParentColor = False
+          ParentFont = False
+          Visible = False
+        end
+        object target_azimuth1: TLabel
+          Left = 8
+          Height = 71
+          Hint = 'Target azimuth'
+          Top = 168
+          Width = 38
+          Caption = 'H'
+          Font.Height = -53
+          ParentColor = False
+          ParentFont = False
+          Visible = False
         end
       end
     end

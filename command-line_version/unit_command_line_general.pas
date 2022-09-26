@@ -380,7 +380,7 @@ begin
 
   //Solutions for CROTA2 come in pairs separated by 180degr. The other solution is obtained by subtracting 180 from CROTA2 and negating CDELT1 and CDELT2.
   //While each solution is equally valid, if one makes CDELT1 < 0 and CDELT2 > 0 then it would normally be the one chosen.
-  if cdelt2<0 then  //flip solution, make cdelt2 always positive
+  if cdelt2<0 then //CDELT2 is always kept positive and if not the solution is flipped by negating both CDELT2, CDELT2 and shifting the angle 180 degrees. So if the image is flipped the solution is reporting "flipped horizontal" and not an equivalent "flipped vertical".
   begin
     if crota2<0 then
     begin

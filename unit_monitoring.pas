@@ -90,8 +90,8 @@ End;
 
 procedure report_delta; {report delta error}
 var
-   distance,deltaRA,deltaDEC,az_solution,alt_solution,az_target,alt_target,jd_now,lat,long,angle : double;
-   wdiv2,hdiv2 : integer;
+   distance,deltaRA,deltaDEC,az_solution,alt_solution,az_target,alt_target,jd_now,lat,long,angle,angle1,angle2,angle_mid : double;
+   wdiv2,hdiv2,x,y : integer;
    direction : string;
 begin
   if head.naxis=0 then exit;
@@ -112,30 +112,12 @@ begin
 
       deltaRA:=fnmodulo((ra_target-head.ra0)*12/pi,24);
       if deltaRA>12 then begin direction:='W'; deltaRa:=24-deltaRA;end else begin direction:='E'; end;
-      delta_ra1.caption :='Δα   '+floattostrF(deltaRA,ffFixed,0,3)+'h '+direction;
+      delta_ra1.caption :='Δα:  '+floattostrF(deltaRA,ffFixed,0,3)+'h '+direction;
 
       deltaDec:=(dec_target-head.dec0)*180/pi;
       if deltaDec>0 then begin direction:='N' end else begin direction:='S'; end;
-      delta_dec1.caption:='Δδ   '+floattostrF(deltaDec,ffFixed,0,3)+'° '+direction;
+      delta_dec1.caption:='Δδ:  '+floattostrF(deltaDec,ffFixed,0,3)+'° '+direction;
 
-
-
-  {        sitelat:=lat_default;
-          sitelong:=long_default;
-        end;
-        val(sitelat,site_lat_radians,err); //try to process  3.7E+01
-        if err=0 then
-          begin site_lat_radians:=site_lat_radians*pi/180; errordecode:=false end
-        else  //try to process string 37 00 00
-          dec_text_to_radians(sitelat,site_lat_radians,errordecode);
-        if errordecode=false then
-        begin
-          val(sitelong,site_long_radians,err); //try to process  3.7E+01
-          if err=0 then
-            begin site_long_radians:=site_long_radians*pi/180; errordecode:=false end
-          else  //try to process string  37 00 00
-            dec_text_to_radians(sitelong,site_long_radians,errordecode);
-          if errordecode=false then    }
 
       jd_now:=calc_jd_now;
       lat:=strtofloat2(lat_default)*pi/180;
@@ -143,7 +125,13 @@ begin
       altitude_and_refraction(lat,long,jd_now,10 {temp},1010 {pressure},head.ra0,head.dec0,az_solution,alt_solution);{In formulas the longitude is positive to west!!!. }
       altitude_and_refraction(lat,long,jd_now,10 {temp},1010 {pressure},ra_target,dec_target,az_target,alt_target);{In formulas the longitude is positive to west!!!. }
 
-      {clear}
+      target_altitude1.visible:=true;
+      target_azimuth1.visible:=true;
+      target_altitude1.caption:='A:  '+floattostrF(alt_target,ffFixed,0,1)+'°';
+      target_azimuth1.caption:='H:  '+floattostrF(az_target,ffFixed,0,1)+'°';
+
+
+      {draw arrow}
       with stackmenu1.direction_arrow1 do
       begin
         canvas.brush.color:=clmenu;
@@ -152,9 +140,30 @@ begin
         canvas.pen.Width:=5;
         wdiv2:=width div 2;
         hdiv2:=height div 2;
+
+        ellipse(canvas.handle,wdiv2-8,hdiv2-8,wdiv2+8+1,hdiv2+8+1);
         moveToex(Canvas.handle,wdiv2,hdiv2,nil);
+
         angle:=arctan2(alt_target-alt_solution, az_target-az_solution);
-        lineTo(Canvas.handle,round(wdiv2+98*cos(angle)),round(hdiv2-98*sin(angle))); {arrow line}
+        x:=round(0.95*wdiv2*cos(angle));
+        y:=round(0.95*wdiv2*sin(angle));//y counts from top to bottom
+        lineTo(Canvas.handle,hdiv2+x,wdiv2-y); //arrow line
+
+        angle1:=angle+(180+20)*pi/180;
+        angle_mid:=angle+90*pi/180;
+        angle2:=angle-20*pi/180;
+
+        x:=x+round(30*cos(angle1));
+        y:=y+round(30*sin(angle1));
+        lineTo(Canvas.handle,hdiv2+x,wdiv2-y); //arrow line
+        x:=x+round(21*cos(angle_mid));
+        y:=y+round(21*sin(angle_mid)); //y counts from top to bottom
+        lineTo(Canvas.handle,hdiv2+x,wdiv2-y); //arrow line
+        x:=x+round(30*cos(angle2));
+        y:=y+round(30*sin(angle2)); //y counts from top to bottom
+        lineTo(Canvas.handle,hdiv2+x,wdiv2-y); //arrow line
+
+
       end;
 
     end;
