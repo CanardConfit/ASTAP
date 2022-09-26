@@ -104,10 +104,10 @@ begin
     for k:=i+1 to nr_columns-1 do
             h:=h-temp_matrix[i,k]*x_matrix[k];
 
-    x_matrix[i] := h/temp_matrix[i,i];
-//    if temp_matrix[i,i]<>0 then x_matrix[i] := h/temp_matrix[i,i]
-//    else
-//    x_matrix[i]:=9999999999999999; //force a failure in case
+//    x_matrix[i] := h/temp_matrix[i,i];
+    if temp_matrix[i,i]<>0 then x_matrix[i] := h/temp_matrix[i,i]
+    else
+    x_matrix[i]:=9999999999999999; //force a failure in case
 
 
     {solution vector x:=x_matrix[0]x+x_matrix[1]y+x_matrix[2]}

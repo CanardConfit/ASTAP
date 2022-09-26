@@ -14803,14 +14803,28 @@ begin
             thepath:=object_name+', '+copy(JDtoDate(jd_start),1,10);
 
             {$ifdef mswindows}
-            thepath:=SelectDirectoryDialog1.filename+'\'+thepath;
-            if DirectoryExists(thepath)=false then createDir(thePath);
-            err:=movefile(pchar(filename2),pchar(thepath+'\'+extractfilename(filename2)));
             {$else} {unix, Mac}
             thepath:=SelectDirectoryDialog1.filename+'/'+thepath;
             if DirectoryExists(thepath)=false then createDir(thePath);
-            err:=movefile(pchar(filename2),pchar(thepath+'/'+extractfilename(filename2)));
+            err:=renamefile(pchar(filename2),pchar(thepath+'/'+extractfilename(filename2)));//rename is the same as movefile
             {$endif}
+
+            {$ifdef mswindows}
+            thepath:=SelectDirectoryDialog1.filename+'\'+thepath;
+            if DirectoryExists(thepath)=false then createDir(thePath);
+        //    err:=movefile(pchar(filename2),pchar(thepath+'\'+extractfilename(filename2)));
+            err:=renamefile(pchar(filename2),pchar(thepath+'\'+extractfilename(filename2)));//rename is the same as movefile
+
+            {$endif}
+            {$ifdef linux}
+            thepath:=SelectDirectoryDialog1.filename+'/'+thepath;
+            if DirectoryExists(thepath)=false then createDir(thePath);
+            err:=renamefile(pchar(filename2),pchar(thepath+'/'+extractfilename(filename2)));//rename is the same as movefile
+            {$endif}
+            {$ifdef darwin} {MacOS}
+            application.messagebox(pchar('Not yet implemented'),pchar('Stop'),MB_OK);
+            {$endif}
+
 
           end
           else
