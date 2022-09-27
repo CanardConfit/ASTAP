@@ -103,12 +103,9 @@ begin
     H:=b_matrix[i];
     for k:=i+1 to nr_columns-1 do
             h:=h-temp_matrix[i,k]*x_matrix[k];
-
-//    x_matrix[i] := h/temp_matrix[i,i];
     if temp_matrix[i,i]<>0 then x_matrix[i] := h/temp_matrix[i,i]
     else
-    x_matrix[i]:=9999999999999999; //force a failure in case
-
+    x_matrix[i]:=9999999999999999; //v2022. Prevent runtime error dividing by zero. Should normally not happen. In case of zero due to wrong double star detection by using triples force a failure
 
     {solution vector x:=x_matrix[0]x+x_matrix[1]y+x_matrix[2]}
   end;

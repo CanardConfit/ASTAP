@@ -54,7 +54,7 @@ uses
   LCLVersion, SysUtils, Graphics, Forms, strutils, math,
   clipbrd, {for copy to clipboard}
   Buttons, PopupNotifier, simpleipc,
-  CustApp, Types,
+  CustApp, Types, fileutil,
   IniFiles;{for saving and loading settings}
 
 const
@@ -14755,15 +14755,15 @@ procedure Tmainwindow.move_images1Click(Sender: TObject);
 var
   I    : integer;
   Save_Cursor:TCursor;
-  err : boolean;
+  succ,err : boolean;
   thepath:string;
+
 begin
   OpenDialog1.Title := 'Select multiple files to move';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
   opendialog1.Filter :=dialog_filter_fits_tif;
   opendialog1.initialdir:=ExtractFileDir(filename2);
   esc_pressed:=false;
-  err:=false;
   if OpenDialog1.Execute then
   begin
     SelectDirectoryDialog1.Title := 'Select destination root directory. Files will be placed in new directory .\name, date';
@@ -14802,36 +14802,27 @@ begin
             jd_start:=jd_start-0.5; //move 12 hour earlier to get date beginning night
             thepath:=object_name+', '+copy(JDtoDate(jd_start),1,10);
 
-            {$ifdef mswindows}
-            {$else} {unix, Mac}
-            thepath:=SelectDirectoryDialog1.filename+'/'+thepath;
-            if DirectoryExists(thepath)=false then createDir(thePath);
-            err:=renamefile(pchar(filename2),pchar(thepath+'/'+extractfilename(filename2)));//rename is the same as movefile
-            {$endif}
 
             {$ifdef mswindows}
             thepath:=SelectDirectoryDialog1.filename+'\'+thepath;
             if DirectoryExists(thepath)=false then createDir(thePath);
-        //    err:=movefile(pchar(filename2),pchar(thepath+'\'+extractfilename(filename2)));
-            err:=renamefile(filename2,thepath+'\'+extractfilename(filename2));//rename is the same as movefile
-
-            {$endif}
-            {$ifdef linux}
+        //    succ:=movefile(pchar(filename2),pchar(thepath+'\'+extractfilename(filename2)));
+            succ:=renamefile(filename2,thepath+'\'+extractfilename(filename2));//rename is the same as movefile
+            {$else} {Linux, Darwin}
             thepath:=SelectDirectoryDialog1.filename+'/'+thepath;
-            if DirectoryExists(thepath)=false then createDir(thePath);
-            err:=renamefile(filename2,thepath+'/'+extractfilename(filename2));//rename is the same as movefile
+//          if DirectoryExists(thepath)=false then createDir(thePath);
+            succ:=fileutil.copyfile(filename2,thepath+'/'+extractfilename(filename2), [cffPreserveTime,cffCreateDestDirectory]); //renamefile works only for one partition in Linux
+            if succ then
+               succ:=sysutils.deletefile(filename2);
             {$endif}
-            {$ifdef darwin} {MacOS}
-            application.messagebox(pchar('Not yet implemented'),pchar('Stop'),MB_OK);
-            {$endif}
-
-
           end
           else
           begin
             memo2_message('Error decoding Julian day!');
-            err:=true;
+            succ:=false;
           end;
+
+          if succ=false then err:=true;//set error flag
         end;
       end;
 

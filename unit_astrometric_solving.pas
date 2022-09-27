@@ -649,14 +649,6 @@ begin
       bin_and_find_stars(img,binning,cropping,hfd_min,max_stars,get_hist{update hist}, starlist2, warning_downsample);{bin, measure background, find stars. Do this every repeat since hfd_min is adapted}
       nrstars:=Length(starlist2[0]);
 
-    //   if nrstars<30 then
-    //   begin
-    //     update_text ('NRSTARS =',' '+inttostr(nrstars)+'                               ');
-    //     save_fits(img,filename2+'2',nrbits,true);
-    //   end;
-    //   result:=false;
-    //   exit;
-
       {report advice}
       if length(warning_downsample)>0  then
       begin
@@ -687,6 +679,7 @@ begin
           find_triples_using_quads(starlist2,0 {min length}, quad_smallest,quad_star_distances2); {find star triples for new image. Quads and quad_smallest are binning independent}
           quad_tolerance:=0.002;
           quads_str:=' triples';
+           if solve_show_log then memo2_message('For triples the hash code tolerance is forced to '+floattostr(quad_tolerance)+'.');
         end
         else
         begin
@@ -718,8 +711,6 @@ begin
 
         memo2_message(inttostr(nrstars)+' stars, '+inttostr(nr_quads)+quads_str+' selected in the image. '+inttostr(nrstars_required)+' database stars, '
                                +inttostr(round(nr_quads*nrstars_required/nrstars))+' database'+quads_str+' required for the square search field of '+floattostrF(fov2,ffFixed,0,1)+'°. '+oversize_mess);
-   //     if yes_use_triples then memo2_message('For the triples the hash code tolerance is forced to '+floattostr(quad_tolerance)+'.');
-
 
 
         minimum_quads:=3 + nr_quads div 100; {prevent false detections for star rich images, 3 quads give the 3 center quad references and is the bare minimum. It possible to use one quad and four star positions but it in not reliable}
