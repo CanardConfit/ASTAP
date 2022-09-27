@@ -92,8 +92,8 @@ End;
 
 procedure report_delta; {report delta error}
 var
-  distance,deltaRA,deltaDEC,az_solution,alt_solution,az_target,alt_target,jd_now,lat,long,angle,angle1,angle2,angle_mid : double;
-  wdiv2,hdiv2,x,y : integer;
+  distance,deltaRA,deltaDEC,az_solution,alt_solution,az_target,alt_target,jd_now,lat,long,angle,angle1,angle2,angle_mid,fov : double;
+  wdiv2,hdiv2,x,y,rx,ry : integer;
   direction : string;
 begin
   if head.naxis=0 then exit;
@@ -137,11 +137,28 @@ begin
       with stackmenu1.direction_arrow1 do
       begin
         canvas.brush.color:=clmenu;
-        canvas.rectangle(0,0, width, height);
+        Canvas.FillRect(rect(0,0,width,height));
         Canvas.Pen.Color := clred;
         canvas.pen.Width:=5;
+        Canvas.brush.Style:=bsClear;
         wdiv2:=width div 2;
         hdiv2:=height div 2;
+
+        //show where the image sensor is
+        Canvas.brush.Style:=bsDiagCross;
+        canvas.brush.color:=clred;
+        fov:=head.height*head.cdelt2;
+        rx:=round(wdiv2+wdiv2*(az_target-az_solution)/fov);
+        ry:=round(hdiv2-hdiv2*(alt_target-alt_solution)/fov);
+        rectangle(canvas.handle,rx-wdiv2+10,ry-hdiv2+10,rx+wdiv2-10,ry+hdiv2-10);
+
+
+        //arrow
+        Canvas.brush.Style:=bsclear;
+        fov:=head.height*head.cdelt2;
+        rx:=round(wdiv2+wdiv2*(az_target-az_solution)/fov);
+        ry:=round(hdiv2-hdiv2*(alt_target-alt_solution)/fov);
+        rectangle(canvas.handle,rx-wdiv2+10,ry-hdiv2+10,rx+wdiv2-10,ry+hdiv2-10);
 
         ellipse(canvas.handle,wdiv2-8,hdiv2-8,wdiv2+8+1,hdiv2+8+1);
         moveToex(Canvas.handle,wdiv2,hdiv2,nil);
@@ -164,6 +181,7 @@ begin
         x:=x+round(30*cos(angle2));
         y:=y+round(30*sin(angle2));
         lineTo(Canvas.handle,hdiv2+x,wdiv2-y); // arrowhead. Note y counts from top to bottom, so minus sign
+
       end;
     end;//target specified
   end;

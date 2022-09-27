@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.09.26';
+  astap_version='2022.09.27';
 
 type
   { Tmainwindow }
@@ -4029,55 +4029,59 @@ var
       cdelt1_a, det,x,y :double;
       flipV, flipH : integer;
 begin
-  {clear}
-  mainwindow.image_north_arrow1.canvas.brush.color:=clmenu;
-  mainwindow.image_north_arrow1.canvas.rectangle(-1,-1, mainwindow.image_north_arrow1.width+1, mainwindow.image_north_arrow1.height+1);
-
-  if ((head.naxis=0) or (head.cd1_1=0)) then {remove rotation indication and exit}
+  with mainwindow.image_north_arrow1 do
   begin
-     mainwindow.rotation1.caption:='';
-     exit;
+    {clear}
+    canvas.brush.color:=clmenu;
+    Canvas.FillRect(rect(0,0,width,height));
+
+    if ((head.naxis=0) or (head.cd1_1=0)) then {remove rotation indication and exit}
+    begin
+       mainwindow.rotation1.caption:='';
+       exit;
+    end;
+
+    mainwindow.rotation1.caption:=floattostrf(head.crota2, FFfixed, 0, 2)+'°';{show rotation}
+
+    Canvas.Pen.Color := clred;
+
+    if mainwindow.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
+    if mainwindow.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
+
+    cdelt1_a:=sqrt(head.cd1_1*head.cd1_1+head.cd1_2*head.cd1_2);{length of one pixel step to the north}
+
+    moveToex(Canvas.handle,round(xpos),round(ypos),nil);
+    det:=head.cd2_2*head.cd1_1-head.cd1_2*head.cd2_1;{this result can be negative !!}
+    dRa:=0;
+    dDec:=cdelt1_a*leng;
+    x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+    y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
+    lineTo(Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
+    dRa:=cdelt1_a*-3;
+    dDec:=cdelt1_a*(leng-5);
+    x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+    y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
+    lineTo(Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+    dRa:=cdelt1_a*+3;
+    dDec:=cdelt1_a*(leng-5);
+    x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+    y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
+    lineTo(Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+    dRa:=0;
+    dDec:=cdelt1_a*leng;
+    x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+    y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
+    lineTo(Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
+
+
+    moveToex(Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
+    dRa:= cdelt1_a*leng/3;
+    dDec:=0;
+    x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
+    y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
+    lineTo(Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
+
   end;
-
-  mainwindow.rotation1.caption:=floattostrf(head.crota2, FFfixed, 0, 2)+'°';{show rotation}
-
-  mainwindow.image_north_arrow1.Canvas.Pen.Color := clred;
-
-  if mainwindow.flip_horizontal1.checked then flipH:=-1 else flipH:=+1;
-  if mainwindow.flip_vertical1.checked then flipV:=-1 else flipV:=+1;
-
-  cdelt1_a:=sqrt(head.cd1_1*head.cd1_1+head.cd1_2*head.cd1_2);{length of one pixel step to the north}
-
-  moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);
-  det:=head.cd2_2*head.cd1_1-head.cd1_2*head.cd2_1;{this result can be negative !!}
-  dRa:=0;
-  dDec:=cdelt1_a*leng;
-  x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
-  y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow line}
-  dRa:=cdelt1_a*-3;
-  dDec:=cdelt1_a*(leng-5);
-  x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
-  y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
-  dRa:=cdelt1_a*+3;
-  dDec:=cdelt1_a*(leng-5);
-  x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
-  y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
-  dRa:=0;
-  dDec:=cdelt1_a*leng;
-  x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
-  y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {arrow pointer}
-
-
-  moveToex(mainwindow.image_north_arrow1.Canvas.handle,round(xpos),round(ypos),nil);{east pointer}
-  dRa:= cdelt1_a*leng/3;
-  dDec:=0;
-  x := (head.cd1_2*dDEC - head.cd2_2*dRA) / det;
-  y := (head.cd1_1*dDEC - head.cd2_1*dRA) / det;
-  lineTo(mainwindow.image_north_arrow1.Canvas.handle,round(xpos-x*flipH),round(ypos-y*flipV)); {east pointer}
 end;
 
 procedure plot_north_on_image;{draw arrow north. If head.cd1_1=0 then clear north arrow}
@@ -14751,13 +14755,13 @@ begin
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
+
 procedure Tmainwindow.move_images1Click(Sender: TObject);
 var
   I    : integer;
   Save_Cursor:TCursor;
   succ,err : boolean;
   thepath:string;
-
 begin
   OpenDialog1.Title := 'Select multiple files to move';
   OpenDialog1.Options := [ofAllowMultiSelect, ofFileMustExist,ofHideReadOnly];
@@ -14772,11 +14776,8 @@ begin
     err:=false;
     if SelectDirectoryDialog1.Execute then
     begin
-
-
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
     try { Do some lengthy operation }
       with OpenDialog1.Files do
       for I := 0 to Count - 1 do
@@ -14792,26 +14793,17 @@ begin
 
           if jd_start>2400000 then {valid JD}
           begin
-            {$ifdef mswindows}
-            {$else} {unix}
-
-            {$endif}
-//            if FileSetDate(filename2,DateTimeToFileDate(jd_start-2415018.5))<0 then  { filedatatodatetime counts from 30 dec 1899.}
-//              err:=true;
             jd_start:=jd_start-(GetLocalTimeOffset/(24*60));//convert to local time.
             jd_start:=jd_start-0.5; //move 12 hour earlier to get date beginning night
             thepath:=object_name+', '+copy(JDtoDate(jd_start),1,10);
 
-
             {$ifdef mswindows}
             thepath:=SelectDirectoryDialog1.filename+'\'+thepath;
             if DirectoryExists(thepath)=false then createDir(thePath);
-        //    succ:=movefile(pchar(filename2),pchar(thepath+'\'+extractfilename(filename2)));
-            succ:=renamefile(filename2,thepath+'\'+extractfilename(filename2));//rename is the same as movefile
+            succ:=renamefile(filename2,thepath+'\'+extractfilename(filename2));//rename is the same as movefile other solution would be succ:=movefile(pchar(filename2),pchar(thepath+'\'+extractfilename(filename2)));
             {$else} {Linux, Darwin}
             thepath:=SelectDirectoryDialog1.filename+'/'+thepath;
-//          if DirectoryExists(thepath)=false then createDir(thePath);
-            succ:=fileutil.copyfile(filename2,thepath+'/'+extractfilename(filename2), [cffPreserveTime,cffCreateDestDirectory]); //renamefile works only for one partition in Linux
+            succ:=fileutil.copyfile(filename2,thepath+'/'+extractfilename(filename2), [cffPreserveTime,cffCreateDestDirectory]); //For mulitiple partitions. Renamefile works only for one partition in Linux
             if succ then
                succ:=sysutils.deletefile(filename2);
             {$endif}
@@ -14821,10 +14813,9 @@ begin
             memo2_message('Error decoding Julian day!');
             succ:=false;
           end;
-
           if succ=false then err:=true;//set error flag
         end;
-      end;
+      end; //for loop
 
       if err=false then mainwindow.caption:='Completed, all files moved.'
       else
@@ -14837,7 +14828,6 @@ begin
     progress_indicator(-100,'');{progresss done}
   end;
   img_temp:=nil;
-
 end;
 
 
