@@ -2791,15 +2791,17 @@ begin
     memo2_message('Could not find w08 star database. Will try with an other database.');
   end
   else
+  if ((fov>10) and (fileexists( database_path+'v17_0101.290'))) then begin name_database:='v17'; database_type:=290; end //preference for V17 for large FOV
+  else
   if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18'; end
   else
   if fileexists( database_path+'g18_0101.290') then begin name_database:='g18'; database_type:=290; end
   else
   if fileexists( database_path+'h17_0101.1476') then begin name_database:='h17'; end
   else
-  if fileexists( database_path+'g17_0101.290') then begin name_database:='g17'; database_type:=290; end
-  else
   if fileexists( database_path+'v17_0101.290') then begin name_database:='v17'; database_type:=290; end
+  else
+  if fileexists( database_path+'g17_0101.290') then begin name_database:='g17'; database_type:=290; end
   else
   result:=false;
 end;

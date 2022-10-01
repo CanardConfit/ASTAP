@@ -1028,7 +1028,7 @@ begin
      begin
        if Fliphorizontal     then starX:=head.width-hfd_values[0,i]   else starX:=hfd_values[0,i];
        if Flipvertical       then starY:=head.height-hfd_values[1,i] else starY:=hfd_values[1,i];
-       annotation_to_array(floattostrf(hfd_values[2,i]/100 {aspect}, ffgeneral, 2,1){text},true{transparent},round(img_loaded[0,starX,starY]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurement.}
+       annotation_to_array(floattostrf(hfd_values[2,i]/100 {aspect}, ffgeneral, 3,2){text},true{transparent},round(img_loaded[0,starX,starY]+font_luminance){luminance},size,starX+round(hfd_values[2,i]/30),starY,img_loaded);{string to image array as annotation. Text should be far enough of stars since the text influences the HFD measurement.}
      end;
      hfds[i]:=hfd_values[2,i];
   end;

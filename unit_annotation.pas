@@ -19,7 +19,7 @@ procedure load_variable;{load variable stars. If loaded no action}
 procedure plot_and_measure_stars(flux_calibration,plot_stars, report_lim_magn: boolean);{flux calibration,  annotate, report limiting magnitude}
 procedure measure_distortion(plot: boolean; out stars_measured: integer);{measure or plot distortion}
 procedure plot_artificial_stars(img: image_array);{plot stars as single pixel with a value as the mangitude. For super nova search}
-procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot image stars and database stars used for the solution}
+procedure plot_stars_used_for_solving(hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 function read_deepsky(searchmode:char; telescope_ra,telescope_dec, cos_telescope_dec {cos(telescope_dec},fov : double; out ra2,dec2,length2,width2,pa : double): boolean;{deepsky database search}
 procedure annotation_to_array(thestring : ansistring;transparant:boolean;colour,size, x,y {screen coord}: integer; var img: image_array);{string to image array as annotation, result is flicker free since the annotion is plotted as the rest of the image}
 function find_object(var objname : string; var ra0,dec0,length0,width0,pa : double): boolean; {find object in database}
@@ -1936,11 +1936,12 @@ begin
     end;
 
     {sets file290 so do before fov selection}
-    if select_star_database(stackmenu1.star_database1.text,15 {neutral})=false then
+    if select_star_database(stackmenu1.star_database1.text,head.height*abs(head.cdelt2) {fov})=false then
     begin
       application.messagebox(pchar('No star database found!'+#13+'Download the h18 (or h17 or v17) and extract the files to the program directory'), pchar('No star database!'),0);
       exit;
     end;
+    memo2_message('Using star database '+uppercase(name_database));
 
     fov_org:= sqrt(sqr(head.width*head.cdelt1)+sqr(head.height*head.cdelt2))*pi/180; {field of view circle covering all corners with 0% extra}
 
@@ -2536,11 +2537,11 @@ begin
 end;{plot stars}
 
 
-procedure plot_stars_used_for_solving(correctionX,correctionY: double); {plot image stars and database stars used for the solution}
+procedure plot_stars_used_for_solving(hd: Theader;correctionX,correctionY: double); {plot image stars and database stars used for the solution}
 var
-  nrstars,i, starX, starY,size  : integer;
-  flip_horizontal, flip_vertical: boolean;
-  xx,yy,x,y                     :double;
+  nrstars,i, starX, starY,size,flipped  : integer;
+  flip_horizontal, flip_vertical        : boolean;
+  xx,yy,x,y                             : double;
 begin
   flip_vertical:=mainwindow.flip_vertical1.Checked;
   flip_horizontal:=mainwindow.flip_horizontal1.Checked;
@@ -2548,30 +2549,35 @@ begin
   {do image stars}
   nrstars:=length(starlist2[0]);
   mainwindow.image1.Canvas.Pen.Mode := pmMerge;
-  mainwindow.image1.Canvas.Pen.width := round(1+head.height/mainwindow.image1.height);{thickness lines}
+  mainwindow.image1.Canvas.Pen.width := round(1+hd.height/mainwindow.image1.height);{thickness lines}
   mainwindow.image1.Canvas.brush.Style:=bsClear;
   mainwindow.image1.Canvas.Pen.Color :=clred;
 
   for i:=0 to nrstars-1 do
   begin
 
-    if flip_horizontal=true then starX:=round((head.width-starlist2[0,i]))  else starX:=round(starlist2[0,i]);
-    if flip_vertical=false  then starY:=round((head.height-starlist2[1,i])) else starY:=round(starlist2[1,i]);
+    if flip_horizontal=true then starX:=round((hd.width-starlist2[0,i]))  else starX:=round(starlist2[0,i]);
+    if flip_vertical=false  then starY:=round((hd.height-starlist2[1,i])) else starY:=round(starlist2[1,i]);
     size:=15;
     mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}
  end;
 
   {do database stars}
+  if ((hd.CD1_1>0)=(hd.CD2_2>0)) then {Flipped image. Either flipped vertical or horizontal but not both. Flipped both horizontal and vertical is equal to 180 degrees rotation and is not seen as flipped}
+    flipped:=-1
+  else
+    flipped:=+1; //change rotation for flipped image
+
   nrstars:=length(starlist1[0]);
   mainwindow.image1.Canvas.Pen.Color := annotation_color;
   for i:=0 to nrstars-1 do
   begin
-    xx:=(starlist1[0,i]-correctionX)/(head.cdelt1*3600);{apply correction for database stars center and image center and convert arc seconds to pixels}
-    yy:=(starlist1[1,i]-correctionY)/(head.cdelt2*3600);
-    rotate((90-head.crota2)*pi/180,xx,yy,X,Y);{rotate to screen orientation}
+    xx:=(starlist1[0,i]-correctionX)/(hd.cdelt1*3600);{apply correction for database stars center and image center and convert arc seconds to pixels}
+    yy:=(starlist1[1,i]-correctionY)/(hd.cdelt2*3600);
+    rotate((90-flipped*hd.crota2)*pi/180,xx,yy,X,Y);{rotate to screen orientation}
 
-    if flip_horizontal=false then begin starX:=round(head.crpix1-x); end else begin starX:=round(head.crpix1+x); end;
-    if flip_vertical=false   then begin starY:=round(head.crpix2-y); end else begin starY:=round(head.crpix2+y); end;
+    if flip_horizontal=false then begin starX:=round(hd.crpix1-x); end else begin starX:=round(hd.crpix1+x); end;
+    if flip_vertical=false   then begin starY:=round(hd.crpix2-y); end else begin starY:=round(hd.crpix2+y); end;
 
     size:=20;
     mainwindow.image1.Canvas.Rectangle(starX-size,starY-size, starX+size, starY+size);{indicate hfd with rectangle}

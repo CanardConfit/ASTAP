@@ -109,6 +109,11 @@ begin
       target_distance1.visible:=true;
       delta_ra1.visible:=true;
       delta_dec1.visible:=true;
+      label_latitude1.Visible:=true;
+      label_longitude1.Visible:=true;
+      monitor_latitude1.visible:=true;
+      monitor_longitude1.visible:=true;
+
       ang_sep(head.ra0,head.dec0,ra_target,dec_target ,distance);{calculate distance in radians}
       target_distance1.caption :='Distance: '+floattostrF(distance*180/pi,ffFixed,0,3)+'°';
 
@@ -118,7 +123,7 @@ begin
 
       deltaDec:=(dec_target-head.dec0)*180/pi;
       if deltaDec>0 then begin direction:='N' end else begin direction:='S'; end;
-      delta_dec1.caption:='Δδ:  '+floattostrF(deltaDec,ffFixed,0,3)+'° '+direction;
+      delta_dec1.caption:='Δδ:  '+floattostrF(abs(deltaDec),ffFixed,0,3)+'° '+direction;
 
 
       jd_now:=calc_jd_now;
@@ -143,6 +148,12 @@ begin
         Canvas.brush.Style:=bsClear;
         wdiv2:=width div 2;
         hdiv2:=height div 2;
+
+        if ((lat=0) and (long=0)) then
+        begin
+          canvas.font.size:=14;
+          canvas.textout(10,hdiv2+30,'Set latitude and longitude!!');
+        end;
 
         //show where the image sensor is
         Canvas.brush.Style:=bsDiagCross;
@@ -269,6 +280,10 @@ begin
             decposition1.visible:=false;
             delta_ra1.visible:=false;
             delta_dec1.visible:=false;
+            label_latitude1.Visible:=false;
+            label_longitude1.Visible:=false;
+            monitor_latitude1.visible:=false;
+            monitor_longitude1.visible:=false;
           end;
 
 

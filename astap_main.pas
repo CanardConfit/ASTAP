@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.09.27';
+  astap_version='2022.10.01';
 
 type
   { Tmainwindow }
@@ -4965,7 +4965,7 @@ begin
 
   stackmenu1.focallength1.Text:=floattostrf(focallen,ffgeneral, 4, 4);
   stackmenu1.pixelsize1.text:=floattostrf(xpixsz{*XBINNING},ffgeneral, 4, 4);
-  stackmenu1.binning1.caption:=inttostr(head.width)+'x'+inttostr(head.height)+' pixels, binned '+floattostrf(Xbinning,ffgeneral,0,0)+'x'+floattostrf(Ybinning,ffgeneral,0,0);
+  stackmenu1.calculator_binning1.caption:=inttostr(head.width)+' x '+inttostr(head.height)+' pixels, binned '+floattostrf(Xbinning,ffgeneral,0,0)+'x'+floattostrf(Ybinning,ffgeneral,0,0);
   stackmenu1.focallength1Exit(nil); {update calculator}
 end;
 
@@ -12884,17 +12884,17 @@ begin
   for k:=1 to 2 do {repeat for maximum accuracy}
   begin
 
-//    value:=-99999;
-//    {find highest pixel}
-//    for i:=round(xc)-box to round(xc)+box do
-//    for j:=round(yc)-box to round(yc)+box do
-//    begin
-//        val:=img[0,i,j];
-//        if val>value then
-//        begin
-//          value:=val;
-//        end;
-//    end;
+    value:=-99999;
+    {find highest pixel}
+    for i:=round(xc)-box to round(xc)+box do
+    for j:=round(yc)-box to round(yc)+box do
+    begin
+        val:=img[0,i,j];
+        if val>value then
+        begin
+          value:=val;
+        end;
+    end;
 
     {find center of gravity}
     SumVal:=0;

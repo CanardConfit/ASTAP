@@ -45,13 +45,14 @@ type
     browse_mount1: TBitBtn;
     browse_live_stacking1: TBitBtn;
     Button1: TButton;
+    calculated_sensor_size1: TLabel;
     check_pattern_filter1: TCheckBox;
     auto_select1: TMenuItem;
     target_altitude1: TLabel;
     target_azimuth1: TLabel;
     direction_arrow1: TImage;
-    Label19: TLabel;
-    Label40: TLabel;
+    label_latitude1: TLabel;
+    label_longitude1: TLabel;
     monitor_latitude1: TEdit;
     monitor_longitude1: TEdit;
     use_triples1: TCheckBox;
@@ -75,7 +76,7 @@ type
     classify_flat_exposure1: TCheckBox;
     hours_and_minutes1: TCheckBox;
     center_position1: TLabel;
-    binning1: TLabel;
+    calculator_binning1: TLabel;
     Label3: TLabel;
     Label43: TLabel;
     live_monitoring1: TButton;
@@ -5118,6 +5119,8 @@ begin
 
   if calc_scale<> 0 then calculated_scale1.caption:=floattostrf(calc_scale, ffgeneral, 3, 3)+' "/pixel'
                     else calculated_scale1.caption:='- - -';
+
+  if xpixsz<>0 then calculated_sensor_size1.caption:=floattostrf(head.width*xpixsz*1E-3, fffixed, 3, 1)+' x'+floattostrf(head.height*xpixsz*1E-3, fffixed, 3, 1)+' mm' else calculated_sensor_size1.caption:='- - -';
 
   if ((xpixsz<>0) and (focallen<>0)) then
     scale_calc1.Caption:=floattostrf((head.width*xpixsz/focallen)*(180/1000)/pi,ffgeneral, 3, 3)+'° x '+floattostrf((head.height*xpixsz/focallen)*(180/1000)/pi, ffgeneral, 3, 3)+'°'

@@ -3,7 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 712
   Top = 182
   Width = 1877
-  HorzScrollBar.Page = 1320
+  HorzScrollBar.Page = 1701
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1877
-    ActivePage = tab_monitoring1
+    ActivePage = lights
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 12
+    TabIndex = 0
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -1251,7 +1251,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 470
-      ClientWidth = 1805
+      ClientWidth = 1869
       ImageIndex = 5
       ParentFont = False
       object stack_method1: TComboBox
@@ -4591,7 +4591,7 @@ object stackmenu1: Tstackmenu1
         object delta_ra1: TLabel
           Left = 8
           Height = 71
-          Hint = 'Target right ascension'
+          Hint = 'Right ascension correction required to reach target.'
           Top = 248
           Width = 67
           Caption = 'Δα'
@@ -4603,7 +4603,7 @@ object stackmenu1: Tstackmenu1
         object delta_dec1: TLabel
           Left = 8
           Height = 71
-          Hint = 'Target declination'
+          Hint = 'Declination correction required to reach target.'
           Top = 320
           Width = 65
           Caption = 'Δδ'
@@ -4646,6 +4646,7 @@ object stackmenu1: Tstackmenu1
           ShowHint = True
           TabOrder = 1
           Text = '0'
+          Visible = False
         end
         object monitor_latitude1: TEdit
           Left = 626
@@ -4658,8 +4659,9 @@ object stackmenu1: Tstackmenu1
           ShowHint = True
           TabOrder = 2
           Text = '0'
+          Visible = False
         end
-        object Label19: TLabel
+        object label_latitude1: TLabel
           Left = 552
           Height = 15
           Top = 312
@@ -4667,8 +4669,9 @@ object stackmenu1: Tstackmenu1
           Anchors = [akTop, akRight]
           Caption = 'Latitude [N]:'
           ParentColor = False
+          Visible = False
         end
-        object Label40: TLabel
+        object label_longitude1: TLabel
           Left = 544
           Height = 15
           Top = 344
@@ -4676,6 +4679,7 @@ object stackmenu1: Tstackmenu1
           Anchors = [akTop, akRight]
           Caption = 'Longitude [E]:'
           ParentColor = False
+          Visible = False
         end
         object target_altitude1: TLabel
           Left = 8
@@ -6063,7 +6067,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 2'
       Caption = 'Pixel math 2'
       ClientHeight = 470
-      ClientWidth = 1876
+      ClientWidth = 1869
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox
@@ -6967,10 +6971,10 @@ object stackmenu1: Tstackmenu1
         Left = 1048
         Height = 160
         Top = 8
-        Width = 328
+        Width = 336
         Caption = 'FOV calculator'
         ClientHeight = 140
-        ClientWidth = 324
+        ClientWidth = 332
         TabOrder = 9
         object Label24: TLabel
           Left = 8
@@ -7027,6 +7031,7 @@ object stackmenu1: Tstackmenu1
         object calculated_scale1: TLabel
           Left = 232
           Height = 15
+          Hint = 'Arcseconds per pixel'
           Top = 52
           Width = 15
           BorderSpacing.Around = 5
@@ -7036,6 +7041,7 @@ object stackmenu1: Tstackmenu1
         object scale_calc1: TLabel
           Left = 232
           Height = 15
+          Hint = 'Image dimensions in degrees'
           Top = 24
           Width = 42
           Caption = '0.0 x 0.0'
@@ -7052,12 +7058,22 @@ object stackmenu1: Tstackmenu1
           ParentColor = False
           ParentFont = False
         end
-        object binning1: TLabel
+        object calculator_binning1: TLabel
           Left = 8
           Height = 15
           Top = 96
           Width = 30
           Caption = '------'
+          ParentColor = False
+        end
+        object calculated_sensor_size1: TLabel
+          Left = 232
+          Height = 15
+          Hint = 'Calculated sensor size in mm'
+          Top = 80
+          Width = 15
+          BorderSpacing.Around = 5
+          Caption = '0.0'
           ParentColor = False
         end
       end

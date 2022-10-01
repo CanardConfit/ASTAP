@@ -300,8 +300,8 @@ procedure binX1_crop(crop {0..1}:double; img : image_array; var img2: image_arra
   var fitsX,fitsY,k, w,h,  shiftX,shiftY: integer;
       val       : single;
 begin
-  w:=trunc(crop*head.width);  {cropped}
-  h:=trunc(crop*head.height);
+  w:=trunc(crop*length(img[0]{width}));  {cropped}
+  h:=trunc(crop*length(img[0,0]{height}));
 
   setlength(img2,1,w,h); {set length of image array}
 
@@ -316,9 +316,6 @@ begin
          val:=val + img[k,shiftX+fitsx   ,shiftY+fitsY];
       img2[0,fitsX,fitsY]:=val/head.naxis3;
     end;
-  head.width:=w;
-  head.height:=h;
-  head.naxis3:=1;
 end;
 
 
@@ -576,7 +573,6 @@ begin
   end
   else
   begin
-    //stackmenu1.star_database1.text:=name_database;
     memo2_message('Using star database '+uppercase(name_database));
 
     if ((fov_org>30) and (database_type<>001)) then
@@ -992,7 +988,7 @@ begin
     if solve_show_log then {global variable set in find stars}
     begin
       equatorial_standard(ra_database,dec_database,hd.ra0,hd.dec0,1,correctionX,correctionY);{calculate correction for x,y position of database center and image center}
-      plot_stars_used_for_solving(correctionX,correctionY); {plot image stars and database stars used for the solution}
+      plot_stars_used_for_solving(hd,correctionX,correctionY); {plot image stars and database stars used for the solution}
       memo2_message('See viewer image for image stars used (red) and database star used (yellow)');
     end;
 
