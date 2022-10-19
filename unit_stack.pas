@@ -2982,9 +2982,14 @@ begin
     begin
       filename2:=tl.items[index].caption;
       filename_old:=filename2;
+
       if load_image(false,false {plot}) then {load}
       begin
-        if filename_old<>filename2 then tl.items[index].caption:=filename2; {converted cr2 or other format when loaded. Update list with correct filename}
+//        if uppercase(ExtractFileExt(filename_old))='.XISF' then
+//                           filename2:=changefileExt(filename_old,'.tiff');
+
+//        if filename_old<>filename2 then tl.items[index].caption:=filename2; {converted cr2 or other format when loaded. Update list with correct filename}
+
         while length(keyw)<8 do keyw:=keyw+' ';{increase length to 8}
         keyw:=copy(keyw,1,8);{decrease if longer then 8}
 
@@ -2995,8 +3000,8 @@ begin
           val(value,waarde,error2); {test for number or text}
           if error2<>0 then {text, not a number}
           begin
-            while length(value)<18 do value:=value+' ';{increase length to 18, one space will be added  in front later}
-            update_text(keyw+'=',#39+value+#39+'                                                  ');
+            while length(value)<8 do value:=value+' ';{increase length to minimum 8, one space will be added  in front later. See FITS standard 4.2.1.1 Single-record string keywords}
+            update_text(keyw+'=',#39+value+#39);//spaces will be added later
           end
           else
           update_float  (keyw+'=',' /                                                ' ,waarde);
@@ -3012,10 +3017,17 @@ begin
 
         end;
 
-        if fits_file_name(filename2) then
+        if fits_file_name(filename_old) then
           success:=savefits_update_header(filename2)
         else
-          success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
+        if tiff_file_name(filename_old) then
+           success:=save_tiff16_secure(img_loaded,filename2){guarantee no file is lost}
+        else
+        begin
+          filename2:=changefileExt(filename_old,'.fits');//xisf and raw files
+          tl.items[index].caption:=filename2; {converted cr2 or other format when loaded. Update list with correct filename}
+          success:=save_fits(img_loaded,filename2,nrbits,true); //save as fits file
+        end;
         if success=false then begin ShowMessage('Write error !!' + filename2);break;end;
 
 

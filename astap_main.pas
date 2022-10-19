@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.10.01';
+  astap_version='2022.10.19';
 
 type
   { Tmainwindow }
@@ -2994,7 +2994,7 @@ end;
 
 procedure update_text(inpt,comment1:string);{update or insert text in header}
 var
-   count1: integer;
+   count1,ll: integer;
 begin
 
   count1:=mainwindow.Memo1.Lines.Count-1;
@@ -3003,6 +3003,8 @@ begin
     if pos(inpt,mainwindow.Memo1.Lines[count1])>0 then {found}
     begin
       mainwindow.Memo1.Lines[count1]:=inpt+' '+comment1;{text starting with char(39) should start at position 11 according FITS standard 4.0}
+      ll:=length(inpt+' '+comment1);
+
       exit;
     end;
     count1:=count1-1;

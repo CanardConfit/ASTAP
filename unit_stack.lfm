@@ -760,7 +760,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Combine darks within 12 hour time range to master'
         Top = 8
-        Width = 205
+        Width = 203
         Caption = 'Classify by date for master creation'
         ParentFont = False
         ParentShowHint = False
@@ -784,7 +784,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 470
-      ClientWidth = 1713
+      ClientWidth = 1869
       ImageIndex = 2
       ParentFont = False
       object replace_by_master_flat1: TButton
@@ -830,7 +830,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1713
+        Width = 1869
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -964,7 +964,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Combine flats within 12 hour time range to master'
         Top = 0
-        Width = 205
+        Width = 203
         Caption = 'Classify by date for master creation'
         ParentFont = False
         ParentShowHint = False
@@ -976,7 +976,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Activate this option if you want classify the flats and flat darks based on exposure time.'
         Top = 16
-        Width = 260
+        Width = 258
         Caption = 'Classify by exposure time for master creation.'
         ParentFont = False
         ParentShowHint = False
@@ -1138,7 +1138,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
       ClientHeight = 470
-      ClientWidth = 1335
+      ClientWidth = 1869
       ImageIndex = 6
       ParentFont = False
       object listview5: TListView
@@ -1146,7 +1146,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1335
+        Width = 1869
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -1242,7 +1242,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Add time to stack file name. This allow comparison of different settings.'
         Top = 8
-        Width = 165
+        Width = 163
         Caption = 'Add time to stack file name'
         TabOrder = 1
       end
@@ -1735,7 +1735,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Auto adjust the colour levels after stacking.'
           Top = 144
-          Width = 78
+          Width = 76
           Caption = 'Auto levels'
           Checked = True
           Color = clDefault
@@ -1750,7 +1750,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Apply colour smooth after stacking.'
           Top = 200
-          Width = 100
+          Width = 98
           Caption = 'Colour smooth'
           Checked = True
           Color = clDefault
@@ -1807,7 +1807,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Preserve red nebula around bright stars. The red nebula will come closer to the star.'
           Top = 231
-          Width = 117
+          Width = 115
           Caption = 'preserve_R_nebula'
           Checked = True
           State = cbChecked
@@ -1818,7 +1818,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Balances RGB to remove green and purple.'
           Top = 172
-          Width = 146
+          Width = 144
           Caption = 'Remove green && purple'
           Checked = True
           Color = clDefault
@@ -1900,7 +1900,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'This is for setting the background level of each tile equal based on the histogram. Use this option only if most of the image doesn''t contain nebula.'
           Top = 40
-          Width = 130
+          Width = 128
           Caption = 'Equalise background'
           Checked = True
           ParentFont = False
@@ -1943,7 +1943,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'The overlapping areas  are combined except for stars. This could result in better or worse result. If your image shows distortion uncheck this option.'
           Top = 104
-          Width = 192
+          Width = 190
           Caption = 'Merge overlapping backgrounds'
           ParentFont = False
           TabOrder = 5
@@ -1977,7 +1977,7 @@ object stackmenu1: Tstackmenu1
           Left = 0
           Height = 19
           Top = 18
-          Width = 180
+          Width = 178
           Caption = 'Convert OSC images to colour'
           Color = clDefault
           OnChange = make_osc_color1Change
@@ -2125,7 +2125,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Auto adjust the colour levels after stacking.'
           Top = 44
-          Width = 78
+          Width = 76
           Caption = 'Auto levels'
           Checked = True
           Color = clDefault
@@ -2177,7 +2177,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Apply colour smooth after stacking.'
           Top = 100
-          Width = 100
+          Width = 98
           Caption = 'Colour smooth'
           Checked = True
           Color = clDefault
@@ -2236,7 +2236,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Preserve red nebula around bright stars'
           Top = 100
-          Width = 117
+          Width = 115
           Caption = 'preserve_R_nebula'
           Checked = True
           State = cbChecked
@@ -2247,7 +2247,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Colour shift by not using a white light source for the flat frames is compensated. The flat shall be raw image.'
           Top = 72
-          Width = 120
+          Width = 118
           Caption = 'Normalise OSC flat'
           Color = clDefault
           Enabled = False
@@ -2281,7 +2281,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Program will select four star pyramids to match images.'
         Top = 24
-        Width = 97
+        Width = 95
         Caption = 'Star alignment'
         Checked = True
         OnChange = use_star_alignment1Change
@@ -2310,7 +2310,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Manual alignment:  Double click on each image in the list to display it in the viewer. In the viewer click on the object the be used for alignment. Position is auto centered. '
         Top = 216
-        Width = 117
+        Width = 115
         Caption = 'Manual alignment'
         OnChange = use_manual_alignment1Change
         ParentFont = False
@@ -2352,7 +2352,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Use this for mosaic building.'
         Top = 64
-        Width = 139
+        Width = 137
         Caption = 'Astrometric alignment'
         OnChange = use_astrometry_internal1Change
         ParentFont = False
@@ -2605,7 +2605,7 @@ object stackmenu1: Tstackmenu1
                 Height = 19
                 Hint = 'Show extra information in log for debugging.'
                 Top = 120
-                Width = 155
+                Width = 153
                 Alignment = taLeftJustify
                 BorderSpacing.Around = 5
                 Caption = 'Show extended solver log'
@@ -2691,7 +2691,7 @@ object stackmenu1: Tstackmenu1
             Height = 19
             Hint = 'Calibrate the images prior to solving. Use this for noisy images.'
             Top = 104
-            Width = 136
+            Width = 134
             BorderSpacing.Around = 5
             Caption = 'Calibrate prior solving'
             Color = clBtnFace
@@ -2705,7 +2705,7 @@ object stackmenu1: Tstackmenu1
             Height = 19
             Hint = 'Check-mark  this to improve solving reliability in some cases. Search window will be always large with overlap but it will slow down solving.  Default this is off.  If off  the search window size will be automatically reduced if sufficient stars are found. This option is equivalent to command line option -speed'
             Top = 80
-            Width = 45
+            Width = 43
             BorderSpacing.Around = 5
             Caption = 'Slow'
             Color = clBtnFace
@@ -2757,7 +2757,7 @@ object stackmenu1: Tstackmenu1
             Height = 19
             Hint = 'Apply this if the FITS header contains already a solution which is not accurate. '
             Top = 150
-            Width = 335
+            Width = 333
             Caption = 'Ignore existing FITS header solution for astrometric stacking'
             ParentFont = False
             TabOrder = 7
@@ -2778,7 +2778,7 @@ object stackmenu1: Tstackmenu1
             Height = 19
             Hint = 'Intended for OSC cameras in bin 1x1 mode only. It will remove the check pattern prior to solving. '
             Top = 128
-            Width = 121
+            Width = 119
             BorderSpacing.Around = 5
             Caption = 'Check pattern filter'
             Color = clBtnFace
@@ -2792,7 +2792,7 @@ object stackmenu1: Tstackmenu1
             Height = 19
             Hint = 'Use triples (three star) for pattern detection for images with less then 30 stars. In all other case use quads (four star).'
             Top = 56
-            Width = 74
+            Width = 72
             BorderSpacing.Around = 5
             Caption = 'Use triples'
             Color = clBtnFace
@@ -2867,7 +2867,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Ephemeris alignment: '#13#10#13#10'Preperation:'#13#10'- Batch solve the images in the viewer.'#13#10'- Batch annotate the images in the viewer.'#13#10#13#10'Stacking:'#13#10'- Select manual/ephemeris alignment'#13#10'- Browse for all the images in the image tab and add if available the dark, flats.'#13#10'- Double click on one of the image files to open in the viewer. This will fill in tab alignment the option combobox with all annotations.'#13#10'- Select from the option combobox the asteroid to align on.'#13#10'- Hit the analyse button in the image tab. This fill all the x,y positions in the image list based on the object annotation selected.'#13#10'- If all okay, hit the stack button. '
         Top = 288
-        Width = 143
+        Width = 141
         Caption = 'Emphemeris alignment'
         OnChange = use_ephemeris_alignment1Change
         ParentFont = False
@@ -2924,7 +2924,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Apply this if the FITS header contains already a solution which is not accurate. '
           Top = 6
-          Width = 207
+          Width = 205
           Caption = 'Ignore existing FITS header solution'
           ParentFont = False
           TabOrder = 2
@@ -2934,7 +2934,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Apply this if you change the annotation setting.'
           Top = 6
-          Width = 214
+          Width = 212
           Caption = 'Refresh existing asteroid annotations'
           ParentFont = False
           TabOrder = 3
@@ -2944,7 +2944,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Use this option if part of the images are rotated due to meridian flip'
           Top = 6
-          Width = 80
+          Width = 78
           Caption = 'Auto rotate'
           ParentFont = False
           TabOrder = 4
@@ -2955,7 +2955,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 470
-      ClientWidth = 1805
+      ClientWidth = 1869
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
@@ -2963,7 +2963,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1805
+        Width = 1869
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3117,7 +3117,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Use star alignment to align images. For the first round additional time will be required for calculating solution. Clear alignment if you reuse images.'
         Top = 0
-        Width = 89
+        Width = 87
         Caption = 'Align images'
         Checked = True
         OnChange = align_blink1Change
@@ -3130,7 +3130,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Solve images and annotate with MPCORB database.  For setting see viewer, tools, annotate asteroids.'
         Top = 0
-        Width = 212
+        Width = 210
         Caption = 'Solve images and annotate asteroids'
         OnChange = solve_and_annotate1Change
         ParentFont = False
@@ -3197,7 +3197,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Update existing FITS header annotations.'
         Top = 16
-        Width = 124
+        Width = 122
         Caption = 'Update annotations'
         Enabled = False
         ParentFont = False
@@ -3219,7 +3219,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Write data and time to screen and image array. If the file is saved this annotation in written in the image itself.'
         Top = 16
-        Width = 82
+        Width = 80
         Caption = 'Time stamp'
         Checked = True
         OnChange = align_blink1Change
@@ -4164,7 +4164,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = '(Re)solve image list.'
         Top = 0
-        Width = 149
+        Width = 147
         Caption = 'Ignore existing solutions'
         TabOrder = 3
       end
@@ -4186,7 +4186,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Write solution to a new separate header file only. (.wcs)'
         Top = 17
-        Width = 149
+        Width = 147
         Caption = 'Do not modify the lights'
         Checked = True
         State = cbChecked
@@ -4239,7 +4239,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Format of positions'
         Top = 0
-        Width = 78
+        Width = 76
         Caption = 'HH:MM:SS'
         TabOrder = 8
       end
@@ -4248,7 +4248,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Stack live images'
       Caption = 'Live stacking'
       ClientHeight = 470
-      ClientWidth = 1713
+      ClientWidth = 1869
       ParentFont = False
       object live_stacking1: TButton
         Left = 16
@@ -4531,7 +4531,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Apply dark and flat for each image'
         Top = 80
-        Width = 120
+        Width = 118
         Caption = 'Apply dark and flat'
         TabOrder = 4
       end
@@ -4711,7 +4711,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 1'
       Caption = 'Pixel math 1'
       ClientHeight = 470
-      ClientWidth = 1713
+      ClientWidth = 1869
       Enabled = False
       ImageIndex = 4
       ParentFont = False
@@ -4898,7 +4898,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Do not modifiy values of zero and below'
           Top = 60
-          Width = 137
+          Width = 135
           Caption = 'Ignore zero and below'
           Checked = True
           State = cbChecked
@@ -5598,7 +5598,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Keep this cheched if a red nebula is visible'
           Top = 37
-          Width = 123
+          Width = 121
           Caption = 'Preserve red nebula'
           Checked = True
           State = cbChecked
@@ -5842,7 +5842,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Click on the image in the viewer to select a colour'
           Top = 46
-          Width = 76
+          Width = 74
           Caption = 'Old colour'
           Checked = True
           TabOrder = 1
@@ -5853,7 +5853,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Click on the image in the viewer to select a colour'
           Top = 233
-          Width = 81
+          Width = 79
           Caption = 'New colour'
           TabOrder = 0
         end
@@ -6041,7 +6041,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Use this to remove red, green or blue hot pixels. '
           Top = 259
-          Width = 122
+          Width = 120
           Caption = 'Remove luminance'
           OnChange = remove_luminance1Change
           TabOrder = 9
@@ -6197,7 +6197,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Results in a nonlinear hyperbolic stretch, excellent for galaxies.'
           Top = 48
-          Width = 49
+          Width = 47
           Caption = 'None'
           Checked = True
           ParentFont = False
@@ -6208,7 +6208,7 @@ object stackmenu1: Tstackmenu1
           Left = 71
           Height = 19
           Top = 73
-          Width = 91
+          Width = 89
           Caption = 'Gaussian blur'
           ParentFont = False
           TabOrder = 1
@@ -6217,7 +6217,7 @@ object stackmenu1: Tstackmenu1
           Left = 192
           Height = 19
           Top = 180
-          Width = 46
+          Width = 44
           Caption = 'Auto'
           Checked = True
           ParentFont = False
@@ -6319,7 +6319,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Add a bias to stay positive. Do this for very large noise values.'
           Top = 8
-          Width = 113
+          Width = 111
           Caption = 'Add 3σ bias value'
           ParentFont = False
           TabOrder = 2
@@ -6475,7 +6475,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Add a typical gradient of telescope. The center is more bright then the corners.'
           Top = 40
-          Width = 65
+          Width = 63
           Caption = 'Gradient'
           Checked = True
           ParentFont = False

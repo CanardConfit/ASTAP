@@ -139,7 +139,7 @@ var
     fitsX,fitsY,width_max, height_max, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter,max_stars :  integer;
     distance,hfd_min                                                                                                              : double;
     init, solution, vector_based,waiting,transition_image,colour_correction :boolean;
-    file_ext,filen                    :  string;
+    file_ext,filen,filename_org                 :  string;
     multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}
     warning  : string;
 var
@@ -167,8 +167,6 @@ begin
     live_stacking:=true;{to block other instruction like solve button}
     reset_var; {reset variables  including init:=false}
 
-
-
     pause_pressed:=false;
     esc_pressed:=false;
     total_counter:=0;
@@ -184,8 +182,6 @@ begin
     analyse_listview(stackmenu1.listview2,false {light},false {full fits},false{refresh});{analyse dark tab, by loading=false the loaded img will not be effected. Calstat will not be effected}
     analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{analyse flat tab, by loading=false the loaded img will not be effected}
 
-//   (file_available2(path,filename2 {file found}));
-
     {live stacking}
     repeat
     begin
@@ -197,7 +193,8 @@ begin
 
           Application.ProcessMessages;
           {load image}
-          if ((esc_pressed) or (load_image(false,false {plot})=false)) then
+          filename_org:=filename2;//remember .cr2 file name
+          if ((esc_pressed) or (load_image(false,false {plot})=false)) then //For .cr2 files filename2 will have extension .fits
           begin
             if esc_pressed=false then memo2_message('Error loading file'); {can't load}
             live_stacking_pause1.font.style:=[];
@@ -224,7 +221,7 @@ begin
           begin
             reset_var; {reset variables including init:=false}
             stackmenu1.memo2.clear;{clear memo2}
-            memo2_message('New exposure time. New stack started');
+            memo2_message('Exposure time changed from '+floattostrF(oldexposure,ffGeneral,5,5)+' to '+floattostrF(head.exposure,ffGeneral,5,5)+' sec. New stack started.');
           end;
           oldexposure:=head.exposure;
 
@@ -241,8 +238,7 @@ begin
 
             apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
-            memo2_message('Adding file: '+inttostr(counter+1)+' "'+filename2+'"  to average. Using '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
-
+            memo2_message('Adding file: '+inttostr(counter+1)+' "'+filename_org+'"  to average. Using '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
 
             Application.ProcessMessages;
             if esc_pressed then exit;
@@ -410,14 +406,14 @@ begin
             stackmenu1.files_live_stacked1.caption:=inttostr(counter)+' stacked, '+inttostr(bad_counter)+ ' failures ' ;{Show progress}
             application.hint:=inttostr(counter)+' stacked, '+inttostr(bad_counter)+ ' failures ' ;{Show progress}
           end; {no transition image}
+
+          filename2:=filename_org;// use orginal filename with orgina extension, e.g. with extension .CR2
           file_ext:=ExtractFileExt(filename2);
           if pos('_@',filename2)=0 then filen:=copy(filename2,1,length(filename2)-length(file_ext))+'_@'+ date_string {function} +file_ext+'_' {mark file with date for SGP since the file name will not change if first file is renamed}
                                    else filen:=copy(filename2,1,length(filename2)-length(file_ext))+file_ext+'_'; {already marked with date}
           if RenameFile(filename2,filen)=false then {mark files as done with file extension+'_', beep if failure}
           begin
-           // if RenameFile(filename2,filen)=false then
             beep;
-
           end;
         finally
         end;
