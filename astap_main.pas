@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.10.19';
+  astap_version='2022.10.19a';
 
 type
   { Tmainwindow }
@@ -6521,9 +6521,14 @@ var
 begin
   automatic:=stackmenu1.bayer_pattern1.Text='auto';
   if automatic then
-    pattern:=bayerpat {from fits header or RGGB if not specified}
+  begin
+    pattern:=bayerpat {from fits header}
+  end
   else
     pattern:=stackmenu1.bayer_pattern1.text;
+
+  if length(pattern)<4 then pattern:='RGGB';//not specified, prevent errors in next code
+
 
   if pattern=bayer_pattern[2]{'RGGB'} then begin result:=2; {offsetx:=1; offsety:=0;} end {ASI294, ASI071, most common pattern}
   else
