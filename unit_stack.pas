@@ -348,7 +348,6 @@ type
     Label35: TLabel;
     Label37: TLabel;
     Label38: TLabel;
-    Label39: TLabel;
     Label4: TLabel;
     Label41: TLabel;
     Label42: TLabel;
@@ -368,7 +367,6 @@ type
     Label58: TLabel;
     Label59: TLabel;
     Label6: TLabel;
-    Label60: TLabel;
     Label61: TLabel;
     Label64: TLabel;
     Label65: TLabel;
@@ -628,6 +626,7 @@ type
     procedure listview1ItemChecked(Sender: TObject; Item: TListItem);
     procedure live_monitoring1Click(Sender: TObject);
     procedure auto_select1Click(Sender: TObject);
+    procedure make_osc_color1Click(Sender: TObject);
     procedure monitoring_stop1Click(Sender: TObject);
     procedure lrgb_auto_level1Change(Sender: TObject);
     procedure keywordchangelast1Click(Sender: TObject);
@@ -719,7 +718,6 @@ type
     procedure listview6CustomDrawItem(Sender: TCustomListView; Item: TListItem;
       State: TCustomDrawState; var DefaultDraw: Boolean);
     procedure list_to_clipboard1Click(Sender: TObject);
-    procedure make_osc_color1Click(Sender: TObject);
     procedure selectall1Click(Sender: TObject);
     procedure apply_remove_background_colour1Click(Sender: TObject);
     procedure reset_factors1Click(Sender: TObject);
@@ -757,7 +755,6 @@ type
       State: TCustomDrawState; var DefaultDraw: Boolean);
     procedure listview6CustomDraw(Sender: TCustomListView; const ARect: TRect;
       var DefaultDraw: Boolean);
-    procedure make_osc_color1Change(Sender: TObject);
     procedure copy_to_images1Click(Sender: TObject);
     procedure resize_factor1Change(Sender: TObject);
     procedure analysedarksButton2Click(Sender: TObject);
@@ -873,6 +870,7 @@ var
   hue1,hue2: single;{for colour disk}
   asteroidlist : array of array of array of double;
   solve_show_log  : boolean;
+  process_as_osc  : boolean;// process as OSC image
 
 
 var  {################# initialised variables #########################}
@@ -1117,6 +1115,7 @@ end;
 {$else} {unix}
 {$endif}
 
+
 function inverse_erf(x :double):double; {Inverse of erf function. Inverse of approximation formula by Sergei Winitzki. Error in result is <0.005 for sigma [0..3] Source wikipedia https://en.wikipedia.org/wiki/Error_function}
 const                                   {input part of population [0..1] within, result is the standard deviation required for the input}
    a =0.147;
@@ -1126,6 +1125,7 @@ begin
  else
     result:=99.99;
 end;
+
 
 procedure update_stackmenu;{update stackmenu1 menus, called onshow stackmenu1}
 begin
@@ -1168,22 +1168,6 @@ begin
       panel_ephemeris1.color:=CLWindow;
     end;
   end;{stack menu}
-end;
-
-
-
-function GetFileSize2(p_sFilePath : string) : Int64;
-var
-  oFile : file of Byte;
-begin
-  Result := -1;
-  AssignFile(oFile, p_sFilePath);
-  try
-    Reset(oFile);
-    Result := FileSize(oFile);
-  finally
-    CloseFile(oFile);
-  end;
 end;
 
 
@@ -1808,8 +1792,7 @@ begin
     red:=false;
     green:=false;
     blue:=false;
-//    minbackgr:=65000;
-//    maxbackgr:=0;
+
 
     c:=0;
     {convert any non FITS file}
@@ -1857,6 +1840,7 @@ begin
     repeat {check all files, remove darks, bias}
       if ((ListView1.Items.item[c].checked) and ((length(ListView1.Items.item[c].subitems.Strings[L_hfd])<=1){hfd} or (new_analyse_required)) ) then {hfd unknown, only update blank rows}
       begin {checked}
+
         if counts<>0 then progress_indicator(100*c/counts,' Analysing');
         Listview1.Selected :=nil; {remove any selection}
         ListView1.ItemIndex := c;{mark where we are, set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
@@ -1908,6 +1892,7 @@ begin
           end
           else
           begin {light frame}
+
             if ((planetary=false) and (full=true))  then
               analyse_image(img,head_2,10 {snr_min},false,hfd_counter,backgr, hfd_median) {find background, number of stars, median HFD}
             else
@@ -1916,11 +1901,7 @@ begin
             ListView1.Items.BeginUpdate;
             try
               begin
-//                maxbackgr:=max(maxbackgr,backgr);
-//                minbackgr:=min(minbackgr,backgr);
-
                 ListView1.Items.item[c].subitems.Strings[L_object]:=object_name; {object name, without spaces}
-
 
                 ListView1.Items.item[c].subitems.Strings[L_filter]:=head_2.filter_name; {filter name, without spaces}
                 if head_2.naxis3=3 then ListView1.Items.item[c].subitems.Strings[L_filter]:='colour'; {give RGB lights filter name colour}
@@ -1957,7 +1938,13 @@ begin
                 ListView1.Items.item[c].subitems.Strings[L_width]:=inttostr(head_2.width); {width}
                 ListView1.Items.item[c].subitems.Strings[L_height]:=inttostr(head_2.height);{height}
 
-                if ((head_2.naxis3=1) and (Xbinning=1) and (bayerpat<>'')) then rawstr:=' raw' else rawstr:='';
+                if (((head_2.naxis3=1) and (Xbinning=1) and (bayerpat<>'')) or (stackmenu1.make_osc_color1.checked)) then //process as OSC images
+                  process_as_osc:=true
+                else
+                  process_as_osc:=false;//disable demosaicing
+
+                if ((head_2.naxis3=1) and (Xbinning=1) and (bayerpat<>'')) then  rawstr:=' raw' else rawstr:='';
+
                 ListView1.Items.item[c].subitems.Strings[L_type]:=copy(imagetype,1,5)+inttostr(nrbits)+rawstr;{type}
 
                 {$ifdef darwin} {MacOS, fix missing icons by coloured unicode. Place in column "type" to avoid problems with textual filter selection}
@@ -2985,11 +2972,6 @@ begin
 
       if load_image(false,false {plot}) then {load}
       begin
-//        if uppercase(ExtractFileExt(filename_old))='.XISF' then
-//                           filename2:=changefileExt(filename_old,'.tiff');
-
-//        if filename_old<>filename2 then tl.items[index].caption:=filename2; {converted cr2 or other format when loaded. Update list with correct filename}
-
         while length(keyw)<8 do keyw:=keyw+' ';{increase length to 8}
         keyw:=copy(keyw,1,8);{decrease if longer then 8}
 
@@ -3100,13 +3082,24 @@ begin
 end;
 
 
+procedure set_icon_stackbutton(col: boolean);//update glyph stack button to colour or gray
+var
+  bmp : tbitmap;
+begin
+  bmp := TBitmap.Create;
+  if col then stackmenu1.ImageList2.GetBitmap(12, bmp){colour stack} else stackmenu1.ImageList2.GetBitmap(6, bmp);{gray stack}
+  stackmenu1.stack_button1.glyph.assign(bmp);
+  freeandnil(bmp);
+end;
+
+
 procedure Tstackmenu1.FormShow(Sender: TObject);
 begin
   edit_background1.Text:='';
-  stackmenu1.stack_method1Change(nil);{update dark pixel filter}
+  stackmenu1.stack_method1Change(nil);{update several things including raw_box1.enabled:=((mosa=false) and filter_groupbox1.enabled}
+  set_icon_stackbutton(classify_filter1.checked);//update glyph stack button
 
   stackmenu1.width_UpDown1.position:=round(head.width*strtofloat2(stackmenu1.resize_factor1.caption));
-  stackmenu1.make_osc_color1Change(nil);{update glyph stack button}
 
   stackmenu1.listview1.columns.Items[l_centaz+1].caption:=centaz_key;   {lv.items[l_sqm].caption:=sqm_key; doesn't work}
   stackmenu1.listview1.columns.Items[l_sqm+1].caption:=sqm_key;   {lv.items[l_sqm].caption:=sqm_key; doesn't work}
@@ -7273,11 +7266,7 @@ end;
 
 procedure Tstackmenu1.classify_filter1Click(Sender: TObject);
 begin
-  if ((classify_filter1.checked) and (make_osc_color1.checked)) then
-  begin
-    memo2_message('■■■■■■■■■■■■■ Due to check-mark "Classify by filter", un-checked "Convert OSC images to colour" ! ■■■■■■■■■■■■■');
-    make_osc_color1.checked:=false;
-  end;
+  stackmenu1.stack_method1Change(nil);{update several things including raw_box1.enabled:=((mosa=false) and filter_groupbox1.enabled}
 end;
 
 
@@ -7303,6 +7292,8 @@ procedure Tstackmenu1.help_osc_menu1Click(Sender: TObject);
 begin
    openurl('http://www.hnsky.org/astap.htm#osc_menu');
 end;
+
+
 procedure Tstackmenu1.help_uncheck_outliers1Click(Sender: TObject);
 begin
     openurl('http://www.hnsky.org/astap.htm#uncheck_outliers');
@@ -7359,14 +7350,6 @@ begin
   Clipboard.AsText:=info;
 end;
 
-procedure Tstackmenu1.make_osc_color1Click(Sender: TObject);
-begin
-  if ((make_osc_color1.checked) and (classify_filter1.checked)) then
-  begin
-    memo2_message('■■■■■■■■■■■■■ Due to check-mark "Convert OSC images to colour", un-checked "Classify by filter" ! ■■■■■■■■■■■■■');
-    classify_filter1.checked:=false;
-  end;
-end;
 
 procedure Tstackmenu1.selectall1Click(Sender: TObject);
 begin
@@ -7594,10 +7577,12 @@ begin
   report_delta;{update delta position of target}
 end;
 
+
 procedure Tstackmenu1.calibrate_prior_solving1Change(Sender: TObject);
 begin
   if calibrate_prior_solving1.checked then check_pattern_filter1.checked:=false;
 end;
+
 
 
 procedure Tstackmenu1.FormDestroy(Sender: TObject);
@@ -7615,6 +7600,8 @@ procedure Tstackmenu1.help_mount_tab1Click(Sender: TObject);
 begin
    openurl('http://www.hnsky.org/astap.htm#mount_tab');
 end;
+
+
 
 procedure Tstackmenu1.listview1ItemChecked(Sender: TObject; Item: TListItem);
 begin
@@ -7685,6 +7672,11 @@ begin
     inc(index); {go to next file}
   end;
   if someresult=false then memo2_message('Select first one star in the first image for alignment. Then select all images for automatic selection the same star.');
+end;
+
+procedure Tstackmenu1.make_osc_color1Click(Sender: TObject);
+begin
+  stackmenu1.stack_method1Change(nil);{update several things including raw_box1.enabled:=((mosa=false) and filter_groupbox1.enabled}
 end;
 
 procedure Tstackmenu1.monitoring_stop1Click(Sender: TObject);
@@ -8358,27 +8350,6 @@ begin
 end;
 
 
-procedure Tstackmenu1.make_osc_color1Change(Sender: TObject);
-var
-  bmp : tbitmap;
-  osc_color : boolean;
-begin
-  {enabe/disable related menu options}
-  osc_color:=make_osc_color1.checked;
-  osc_auto_level1.enabled:=osc_color;
-  bayer_pattern1.enabled:=osc_color;
-  test_pattern1.enabled:=osc_color;
-  demosaic_method1.enabled:=osc_color;
-  osc_colour_smooth1.enabled:=((osc_color) and (osc_auto_level1.checked));
-  apply_normalise_filter1.enabled:=osc_color;
-  osc_smart_colour_sd1.enabled:=osc_color;
-  osc_smart_smooth_width1.enabled:=osc_color;
-
-  bmp := TBitmap.Create;
-  if make_osc_color1.checked then ImageList2.GetBitmap(12, bmp){colour stack} else ImageList2.GetBitmap(6, bmp);{gray stack}
-  stackmenu1.stack_button1.glyph.assign(bmp);
-  freeandnil(bmp);
-end;
 
 
 procedure Tstackmenu1.copy_to_images1Click(Sender: TObject);
@@ -8545,7 +8516,7 @@ begin
 
       if head_2.flat_count=0 then head_2.flat_count:=1; {not required for astap master}
 
-      if  ((stackmenu1.make_osc_color1.checked) and (stackmenu1.apply_normalise_filter1.checked)) then
+      if  ((process_as_osc) and (stackmenu1.apply_normalise_filter1.checked)) then
       begin
         memo2_message('Applying normalise filter on master (OSC) flat.');
         check_pattern_filter(img_flat);
@@ -8966,8 +8937,8 @@ begin
          end;
       flat_norm_value:=round(flat_norm_value/100);{scale factor to apply flat. The norm value will result in a factor one for the center.}
 
-      if stackmenu1.make_osc_color1.checked then {give only warning when converting to colour. Not when calibrating for green channel and used for photometry}
-      if max(max(flat11,flat12),max(flat21,flat22))/min(min(flat11,flat12),min(flat21,flat22))>2.0 then memo2_message('█ █ █ █ █ █ Warning flat pixels differ too much. Use white light for OSC flats or consider using option "Normalise OSC flat" █ █ █ █ █ █ ');
+      if process_as_osc then {give only warning when converting to colour. Not when calibrating for green channel and used for photometry}
+        if max(max(flat11,flat12),max(flat21,flat22))/min(min(flat11,flat12),min(flat21,flat22))>2.0 then memo2_message('█ █ █ █ █ █ Warning flat pixels differ too much. Use white light for OSC flats or consider using option "Normalise OSC flat" █ █ █ █ █ █ ');
 
       for fitsY:=1 to head.height do  {apply the flat}
         for fitsX:=1 to head.width do
@@ -9034,7 +9005,7 @@ begin
 
         if esc_pressed then exit;
 
-        if make_osc_color1.checked then {do demosaic bayer}
+        if process_as_osc then {do demosaic bayer}
             demosaic_bayer(img_loaded); {convert OSC image to colour}
          {head.naxis3 is now 3}
 
@@ -9184,7 +9155,7 @@ procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
    Save_Cursor:TCursor;
    i,c,over_size,over_sizeL,nrfiles, image_counter,object_counter, first_file, total_counter,counter_colours  : integer;
-   filter_name1, filter_name2,defilter, filename3, extra1,extra2,object_to_process,stack_info,thefilters      : string;
+   filter_name1, filter_name2,defilter, filename3, extra1,extra2,object_to_process,stack_info,thefilters,mess : string;
    lrgb,solution,monofile,ignore,cal_and_align, mosaic_mode,sigma_mode,calibration_mode,skip_combine,success  : boolean;
    startTick      : qword;{for timing/speed purposes}
    min_background,max_background,backgr   : double;
@@ -9193,11 +9164,6 @@ begin
   save_settings2;{too many lost selected files, so first save settings}
   esc_pressed:=false;
 
-  if make_osc_color1.checked then
-              memo2_message('OSC, demosaic method '+demosaic_method1.text)
-              else
-              if classify_filter1.checked then memo2_message('LRGB colour stack (classify by light filter checked)')
-              else memo2_message('Grayscale stack (classify by light filter unchecked)');
   memo2_message('Stack method '+stack_method1.text);
   memo2_message('Oversize '+oversize1.text+ ' pixels');
   mosaic_mode:=pos('stich',stackmenu1.stack_method1.text)>0;
@@ -9218,11 +9184,33 @@ begin
 
   calibration_mode:=pos('Calibration only',stackmenu1.stack_method1.text)>0;
 
+
   if ListView1.items.count<>0 then
   begin
     memo2_message('Analysing images.');
     analyse_tab_lights(calibration_mode=false); {analyse any image not done yet. For calibration mode skip hfd and background measurements}
     if esc_pressed then exit;
+
+    if process_as_osc then
+    begin
+      if stackmenu1.make_osc_color1.checked then
+        memo2_message('Colour stack. Forced processing as OSC images. Demosaic method '+demosaic_method1.text)
+      else
+      memo2_message('Colour stack. OSC images detected. Demosaic method '+demosaic_method1.text);
+
+      if classify_filter1.checked then
+      begin
+        memo2_message('■■■■■■■■■■■■■ OSC images. Will uncheck "Classify by filter" ! ■■■■■■■■■■■■■');
+        classify_filter1.checked:=false;
+      end;
+    end
+    else
+    if classify_filter1.checked then memo2_message('LRGB colour stack (classify by light filter checked)')
+    else memo2_message('Grayscale stack (classify by light filter unchecked)');
+
+    set_icon_stackbutton(process_as_osc or classify_filter1.checked);//update glyph stack button to colour or gray
+
+
     memo2_message('Stacking ('+stack_method1.text+'), HOLD ESC key to abort.');
   end
   else
@@ -9613,7 +9601,8 @@ begin
             if sigma_mode then stack_sigmaclip(over_size,{var}files_to_process, counterL) {sigma clip combining}
             else
             if mosaic_mode then stack_mosaic(over_size,{var}files_to_process,abs(max_background-min_background),counterL) {mosaic combining}
-                                                                  else stack_average(over_size,{var}files_to_process,counterL);{average}
+                                                                  else
+                                                                  stack_average(over_size,{var}files_to_process,counterL);{average}
             over_sizeL:=0; {do oversize only once. Not again in 'L' mode !!}
             if esc_pressed then  begin progress_indicator(-2,'ESC'); restore_img; Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
 
@@ -9706,10 +9695,9 @@ begin
         if length(extra2)>=2 then {at least two colors required}
         begin
           files_to_process_LRGB[0]:=files_to_process_LRGB[5];{use luminance as reference for alignment}  {contains, REFERENCE, R,G,B,RGB,L}
-          if files_to_process_LRGB[0].name='' then  files_to_process_LRGB[0]:=files_to_process_LRGB[1]; {use red channel as reference is no luminance is available}
-          if files_to_process_LRGB[0].name='' then  files_to_process_LRGB[0]:=files_to_process_LRGB[2]; {use green channel as reference is no luminance is available}
-
-
+          if files_to_process_LRGB[0].name='' then  files_to_process_LRGB[0]:=files_to_process_LRGB[1]; {use red channel as reference if no luminance is available}
+          if files_to_process_LRGB[0].name='' then  files_to_process_LRGB[0]:=files_to_process_LRGB[2]; {use green channel as reference if no luminance is available}
+          counterL:=0;//reset counter for case no Luminance files are available, so RGB stacking.
           stack_LRGB(over_sizeL {zero if already stacked from several files},files_to_process_LRGB, counter_colours); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,RGB,L]}
           if esc_pressed then  begin progress_indicator(-2,'ESC'); restore_img;Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
         end
@@ -9765,7 +9753,7 @@ begin
         end
         else
         begin
-          if stackmenu1.make_osc_color1.checked then
+          if process_as_osc then
           begin
             if  stackmenu1.osc_auto_level1.checked then
             begin
@@ -9834,7 +9822,7 @@ begin
 
         if head.naxis3>1 then
         begin
-          if make_osc_color1.checked then
+          if process_as_osc then
           begin
             remove_key('BAYERPAT',false{all});{remove key word in header}
             remove_key('XBAYROFF',false{all});{remove key word in header}
@@ -9885,7 +9873,7 @@ begin
           head.exposure:=exposureL*counterL;{for annotation asteroid}
           update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(head.exposure)); {could be used for midpoint. Download time are not included, so it is not perfect}
 
-          if counterL>0 then
+          if counterL>0 then  //counter number of luminance used in LRGB stacking
           begin
             add_integer('LUM_EXP =',' / Luminance exposure time.                       ' ,exposureL);
             add_integer('LUM_CNT =',' / Luminance images combined.                     ' ,counterL);
@@ -9946,7 +9934,6 @@ begin
           for i:=0 to 4 do if length(filters_used[i])>0 then thefilters:=thefilters+' '+filters_used[i];
           thefilters:=trim(thefilters);
 
-  //        thefilters:=filters_used[0]+' '+filters_used[1]+' '+filters_used[2]+' '+filters_used[3]; {for filename info}
           stack_info:=' '+inttostr(head.flatdark_count)+'x'+'FD  '+
                           inttostr(head.flat_count)+'x'+'F  '+
                           inttostr(head.dark_count)+'x'+'D  '+
@@ -10030,6 +10017,7 @@ procedure Tstackmenu1.stack_method1Change(Sender: TObject);
 var
    method : integer;
    sigm, mosa,cal_and_align,cal_only : boolean;
+   mode : string;
 begin
   method:=stack_method1.ItemIndex;
   sigm:=(method in [1,6]);{sigma clip}
@@ -10037,9 +10025,18 @@ begin
   cal_and_align:=(method=3);{}
   cal_only:=(method=4);{}
 
+  //Average
+  //Sigma clip average
+  //Image stiching mode
+  //Calibration and alignment only
+  //Calibration only
+  //Average, skip LRGB  combine
+  //Sigma clip, skip LRGB combine
+
   mosaic_box1.enabled:=mosa;
-  raw_box1.enabled:=(mosa=false);
-  filter_groupbox1.enabled:=(mosa=false);
+  raw_box1.enabled:=((mosa=false) and (classify_filter1.checked=false));;
+  filter_groupbox1.enabled:=((mosa=false) and (classify_filter1.checked));
+
   sd_factor1.enabled:=sigm;
 
   if ((use_astrometry_internal1.checked=false) and (mosa)) then
@@ -10052,12 +10049,15 @@ begin
   classify_object1.enabled:=(mosa=false); {in mosaic mode ignore object name}
   oversize1.enabled:=(mosa=false); {in mosaic mode ignore this oversize setting}
 
-  classify_filter1.enabled:=((cal_and_align=false) and (cal_only=false));
-  classify_object1.enabled:=(cal_only=false);
+  classify_filter1.enabled:=((cal_and_align=false) and (cal_only=false) and (mosa=false));
+  classify_object1.enabled:=((cal_only=false) and (mosa=false));
 
-  stack_button1.caption:='STACK  ('+stack_method1.text+')';
+  if classify_filter1.checked then mode:='LRGB ' else mode:='';
+  stack_button1.caption:='STACK '+mode+'('+stack_method1.text+')';
 
-  if ((method>=5) and (classify_filter1.Checked=false)) then  memo2_message('█ █ █ █ █ █ Warning, classify on Light Filter is not check marked !!! █ █ █ █ █ █ ')
+  if ((method>=5 {Skip average or sigma clip LRGB combine}) and (classify_filter1.Checked=false)) then  memo2_message('█ █ █ █ █ █ Warning, classify on Light Filter is not check marked !!! █ █ █ █ █ █ ');
+
+  set_icon_stackbutton((classify_filter1.checked) or (make_osc_color1.checked));//update glyph stack button to colour or gray
 end;
 
 

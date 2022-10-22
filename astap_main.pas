@@ -58,7 +58,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.10.19a';
+  astap_version='2022.10.22';
 
 type
   { Tmainwindow }
@@ -6603,7 +6603,7 @@ begin
   demosaic_bayer(img);
   memo2_message('De-mosaic bayer pattern used '+bayer_pattern[bayerpattern_final]);
 
-  if ({(stackmenu1.make_osc_color1.checked) and} (stackmenu1.osc_auto_level1.checked)) then
+  if stackmenu1.osc_auto_level1.checked then
   begin
     memo2_message('Adjusting colour levels as set in tab "stack method"');
     stackmenu1.auto_background_level1Click(nil);

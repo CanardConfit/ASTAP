@@ -1,7 +1,7 @@
 object stackmenu1: Tstackmenu1
-  Left = 52
+  Left = 139
   Height = 712
-  Top = 182
+  Top = 186
   Width = 1877
   HorzScrollBar.Page = 1701
   VertScrollBar.Page = 558
@@ -1242,7 +1242,7 @@ object stackmenu1: Tstackmenu1
         Height = 19
         Hint = 'Add time to stack file name. This allow comparison of different settings.'
         Top = 8
-        Width = 163
+        Width = 165
         Caption = 'Add time to stack file name'
         TabOrder = 1
       end
@@ -1405,12 +1405,17 @@ object stackmenu1: Tstackmenu1
       object filter_groupbox1: TGroupBox
         Left = 528
         Height = 304
+        Hint = 'Settings for LRGB stacking, LRGB  stacking is activated if "Classify by light filter" is check marked.'
         Top = 112
         Width = 297
-        Caption = 'R+G+B+L stacking, link filters to RGB colours'
+        Caption = 'LRGB stacking'
         ClientHeight = 284
         ClientWidth = 293
+        Color = clForm
+        ParentColor = False
         ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 3
         object red_filter1: TEdit
           Left = 0
@@ -1735,7 +1740,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Auto adjust the colour levels after stacking.'
           Top = 144
-          Width = 76
+          Width = 78
           Caption = 'Auto levels'
           Checked = True
           Color = clDefault
@@ -1750,11 +1755,10 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Apply colour smooth after stacking.'
           Top = 200
-          Width = 98
+          Width = 100
           Caption = 'Colour smooth'
           Checked = True
           Color = clDefault
-          OnChange = make_osc_color1Change
           ParentColor = False
           ParentFont = False
           State = cbChecked
@@ -1807,7 +1811,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Preserve red nebula around bright stars. The red nebula will come closer to the star.'
           Top = 231
-          Width = 115
+          Width = 117
           Caption = 'preserve_R_nebula'
           Checked = True
           State = cbChecked
@@ -1818,7 +1822,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Balances RGB to remove green and purple.'
           Top = 172
-          Width = 144
+          Width = 146
           Caption = 'Remove green && purple'
           Checked = True
           Color = clDefault
@@ -1830,23 +1834,11 @@ object stackmenu1: Tstackmenu1
       end
       object Label18: TLabel
         Left = 864
-        Height = 48
-        Top = 200
+        Height = 104
+        Top = 240
         Width = 568
         AutoSize = False
-        Caption = '- With Classify by "image filter", colour images are automatically included and can be combined with H-alpha as luminance.'
-        Color = clBtnFace
-        ParentColor = False
-        ParentFont = False
-        Transparent = False
-        WordWrap = True
-      end
-      object Label39: TLabel
-        Left = 864
-        Height = 15
-        Top = 256
-        Width = 252
-        Caption = '- For different image sizes use astrometric align.'
+        Caption = '- LRGB stacking is activated by check-mark Classify by "Light filter". Else it will stack in grayscale or colour depending on BAYERPAT in header.'#13#10#13#10'- If a luminance filter is found, the RGB colour will be used to colour the luminance signal. If one of the colour values of the matrix, R_our, G_out, B_out is zero, enter a bias value to compensate e.g. 200.'#13#10#13#10'- For different image sizes use astrometric align.'
         Color = clBtnFace
         ParentColor = False
         ParentFont = False
@@ -1900,7 +1892,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'This is for setting the background level of each tile equal based on the histogram. Use this option only if most of the image doesn''t contain nebula.'
           Top = 40
-          Width = 128
+          Width = 130
           Caption = 'Equalise background'
           Checked = True
           ParentFont = False
@@ -1917,11 +1909,11 @@ object stackmenu1: Tstackmenu1
           ParentFont = False
         end
         object mosaic_crop2: TEdit
-          Left = 200
+          Left = 192
           Height = 23
           Hint = 'Use to remove poor areas near borders'
           Top = 64
-          Width = 40
+          Width = 48
           ParentFont = False
           TabOrder = 3
           Text = '0'
@@ -1943,44 +1935,33 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'The overlapping areas  are combined except for stars. This could result in better or worse result. If your image shows distortion uncheck this option.'
           Top = 104
-          Width = 190
+          Width = 192
           Caption = 'Merge overlapping backgrounds'
           ParentFont = False
           TabOrder = 5
         end
       end
-      object Label60: TLabel
-        Left = 864
-        Height = 91
-        Top = 288
-        Width = 568
-        AutoSize = False
-        Caption = '- If a luminance filter is found, the RGB colour will be used to colour the luminance signal. If one of the colour values of the matrix, R_our, G_out, B_out is zero, enter a bias value to compensate e.g. 200.'
-        Color = clBtnFace
-        ParentColor = False
-        ParentFont = False
-        Transparent = False
-        WordWrap = True
-      end
       object raw_box1: TGroupBox
         Left = 24
         Height = 304
-        Hint = 'Use RAW files for best performance. Use viewer menu TOOLS, conversion DSLR images for import.'
+        Hint = 'Settings for OSC images.. If disabled uncheck "Classify by light filter".'
         Top = 112
         Width = 464
         Caption = 'RAW one shot colour images'
         ClientHeight = 284
         ClientWidth = 460
         ParentFont = False
+        ParentShowHint = False
+        ShowHint = True
         TabOrder = 5
         object make_osc_color1: TCheckBox
           Left = 0
           Height = 19
+          Hint = 'Force converting OSC images to colour.  This setting is only required if BAYERPAT keyword is missing in the header.'
           Top = 18
-          Width = 178
-          Caption = 'Convert OSC images to colour'
+          Width = 196
+          Caption = 'Force processing as OSC images. '
           Color = clDefault
-          OnChange = make_osc_color1Change
           OnClick = make_osc_color1Click
           ParentColor = False
           ParentFont = False
@@ -2125,13 +2106,10 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Auto adjust the colour levels after stacking.'
           Top = 44
-          Width = 76
+          Width = 78
           Caption = 'Auto levels'
           Checked = True
           Color = clDefault
-          Enabled = False
-          OnChange = make_osc_color1Change
-          OnClick = make_osc_color1Click
           ParentColor = False
           ParentFont = False
           State = cbChecked
@@ -2177,13 +2155,10 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Apply colour smooth after stacking.'
           Top = 100
-          Width = 98
+          Width = 100
           Caption = 'Colour smooth'
           Checked = True
           Color = clDefault
-          Enabled = False
-          OnChange = make_osc_color1Change
-          OnClick = make_osc_color1Click
           ParentColor = False
           ParentFont = False
           State = cbChecked
@@ -2195,7 +2170,6 @@ object stackmenu1: Tstackmenu1
           Hint = 'Standard deviation to detect objects to be colour blurred. Default 3'
           Top = 100
           Width = 60
-          Enabled = False
           ItemHeight = 15
           ItemIndex = 2
           Items.Strings = (
@@ -2216,7 +2190,6 @@ object stackmenu1: Tstackmenu1
           Hint = 'Colour smoothing range in pixels. This will keep luminance but smooth the colours. Default is 10'
           Top = 100
           Width = 60
-          Enabled = False
           ItemHeight = 15
           ItemIndex = 2
           Items.Strings = (
@@ -2236,7 +2209,7 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Preserve red nebula around bright stars'
           Top = 100
-          Width = 115
+          Width = 117
           Caption = 'preserve_R_nebula'
           Checked = True
           State = cbChecked
@@ -2247,10 +2220,9 @@ object stackmenu1: Tstackmenu1
           Height = 19
           Hint = 'Colour shift by not using a white light source for the flat frames is compensated. The flat shall be raw image.'
           Top = 72
-          Width = 118
+          Width = 120
           Caption = 'Normalise OSC flat'
           Color = clDefault
-          Enabled = False
           ParentColor = False
           ParentFont = False
           TabOrder = 11

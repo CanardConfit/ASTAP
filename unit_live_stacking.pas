@@ -173,7 +173,7 @@ begin
 
     mainwindow.memo1.visible:=false;{Hide header}
 
-    colour_correction:=((stackmenu1.make_osc_color1.checked) and (stackmenu1.osc_auto_level1.checked));
+    colour_correction:=((process_as_osc) and (stackmenu1.osc_auto_level1.checked));
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
     if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
@@ -229,6 +229,14 @@ begin
           begin
             if init=false then
             begin
+              if (((head.naxis3=1) and (Xbinning=1) and (bayerpat<>'')) or (stackmenu1.make_osc_color1.checked)) then//process as OSC images
+              begin
+                process_as_osc:=true;
+                memo2_message('Will demosaic OSC images to colour');
+              end
+              else
+                process_as_osc:=false;//disable demosaicing
+
               memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
               if ((bayerpat='') and (make_osc_color1.checked)) then
                 if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
@@ -251,7 +259,7 @@ begin
             else {init is true, second or third image ....}
             if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
 
-            if make_osc_color1.checked then  demosaic_bayer(img_loaded); {convert OSC image to colour}
+            if process_as_osc then  demosaic_bayer(img_loaded); {convert OSC image to colour}
 
             if init=false then {first image}
             begin

@@ -630,7 +630,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if make_osc_color1.checked then {do demosaic bayer}
+          if process_as_osc then {do demosaic bayer}
           begin
             if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
             else
@@ -1133,7 +1133,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then exit;
 
-        if make_osc_color1.checked then {do demosaic bayer}
+        if process_as_osc then {do demosaic bayer}
         begin
           if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
           else
@@ -1323,7 +1323,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if make_osc_color1.checked then {do demosaic bayer}
+          if process_as_osc then {do demosaic bayer}
           begin
             if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
             else
@@ -1424,7 +1424,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if make_osc_color1.checked then {do demosaic bayer}
+          if process_as_osc then {do demosaic bayer}
           begin
             if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
             else
@@ -1616,7 +1616,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then exit;
 
-        if make_osc_color1.checked then {do demosaic bayer}
+        if process_as_osc then {do demosaic bayer}
         begin
           if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
           else
