@@ -51,14 +51,15 @@ uses
   fpreadPNG,fpreadBMP,fpreadJPEG,
   fpwriteTIFF,fpwritePNG,fpwriteBMP,fpwriteJPEG, fptiffcmn,  {images}
   GraphType, {fastbitmap}
-  LCLVersion, SysUtils, Graphics, Forms, strutils, math,
+  LCLVersion, InterfaceBase, LCLPlatformDef,
+  SysUtils, Graphics, Forms, strutils, math,
   clipbrd, {for copy to clipboard}
   Buttons, PopupNotifier, simpleipc,
   CustApp, Types, fileutil,
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.10.22';
+  astap_version='2022.10.31';
 
 type
   { Tmainwindow }
@@ -3292,7 +3293,7 @@ begin
 
  {$IFDEF fpc}
  {$MACRO ON} {required for FPC_fullversion info}
-  about_message5:='Build using Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version;
+  about_message5:='Build using Free Pascal compiler '+inttoStr(FPC_version)+'.'+inttoStr(FPC_RELEASE)+'.'+inttoStr(FPC_patch)+', Lazarus IDE '+lcl_version+', LCL widgetset '+ LCLPlatformDisplayNames[WidgetSet.LCLPlatform]+', Application path '+application_path;
  {$ELSE} {delphi}
   about_message5:='';
  {$ENDIF}
