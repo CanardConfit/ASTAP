@@ -59,7 +59,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.10.31';
+  astap_version='2022.11.06';
 
 type
   { Tmainwindow }
@@ -110,6 +110,8 @@ type
     grid1: TMenuItem;
     freetext1: TMenuItem;
     MenuItem21: TMenuItem;
+    display_adu1: TMenuItem;
+    MenuItem36: TMenuItem;
     move_images1: TMenuItem;
     SelectDirectoryDialog1: TSelectDirectoryDialog;
     simbad_annotation_star1: TMenuItem;
@@ -388,6 +390,7 @@ type
     procedure MenuItem22Click(Sender: TObject);
     procedure electron_to_adu_factors1Click(Sender: TObject);
     procedure halo_removal1Click(Sender: TObject);
+    procedure display_adu1Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
     procedure set_modified_date1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
@@ -907,6 +910,7 @@ var {################# initialised variables #########################}
   mouse_fitsy : double=0;
   coord_frame : integer=0; {J2000=0 or galactic=1}
   hfd_arcseconds: boolean=false; {HFD in arc seconds or pixels}
+  display_adu: boolean=false; {display adu measured}
 
   {$IFDEF Darwin}
   font_name: string= 'Courier';
@@ -1112,7 +1116,6 @@ begin
     TheFile:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
   except
      beep;
-     mainwindow.statusbar1.panels[7].text:='Error accessing file!';
      mainwindow.error_label1.caption:=('Error accessing file!');
      mainwindow.error_label1.visible:=true;
      exit;
@@ -1159,7 +1162,6 @@ begin
         begin
           close_fits_file;
           beep;
-          mainwindow.statusbar1.panels[7].text:=('Error loading FITS file!! Keyword SIMPLE not found.');
           mainwindow.error_label1.caption:=('Error loading FITS file!! Keyword SIMPLE not found.');
           mainwindow.error_label1.visible:=true;
           exit;
@@ -1185,7 +1187,6 @@ begin
       except;
         close_fits_file;
         beep;
-        mainwindow.statusbar1.panels[7].text:='Read exception error!!';
         mainwindow.error_label1.caption:='Read exception error!!';
         mainwindow.error_label1.visible:=true;
         exit;
@@ -2320,7 +2321,6 @@ begin
     TheFile:=tfilestream.Create( filen, fmOpenRead or fmShareDenyWrite);
   except
      beep;
-     mainwindow.statusbar1.panels[7].text:=('Error, accessing the file!');
      mainwindow.error_label1.caption:=('Error, accessing the file!');
      mainwindow.error_label1.visible:=true;
      exit;
@@ -2343,7 +2343,6 @@ begin
     begin
       close_fits_file;
       beep;
-      mainwindow.statusbar1.panels[7].text:=('Error loading PGM/PPM/PFM file!! Keyword P5, P6, PF, Pf not found.');
       mainwindow.error_label1.caption:=('Error loading PGM/PPM/PFM file!! Keyword P5, P6, PF. Pf not found.');
       mainwindow.error_label1.visible:=true;
       exit;
@@ -2427,7 +2426,6 @@ begin
     if ((err<>0) or (err2<>0) or (err3<>0)) then
     begin
       beep;
-      mainwindow.statusbar1.panels[7].text:=('Incompatible PPM/PGM/PFM file !!');
       mainwindow.error_label1.caption:=('Incompatible PPM/PGM/PFM file !!');
       mainwindow.error_label1.visible:=true;
       close_fits_file;
@@ -2614,7 +2612,6 @@ begin
     Image.LoadFromFile(filen, Reader);
   except
      beep;
-     mainwindow.statusbar1.panels[7].text:=('Error, accessing the file!');
      mainwindow.error_label1.caption:=('Error, accessing the file!');
      mainwindow.error_label1.visible:=true;
      exit;
@@ -3244,6 +3241,7 @@ begin
 
     mainwindow.Memo1.Text:=img_backup[index_backup].header;{restore fits header}
     filename2:=img_backup[index_backup].filen;{backup filename}
+    mainwindow.caption:=filename2; //show old filename is case image was binned
 
     stackmenu1.test_pattern1.Enabled:=head.naxis3=1;{allow debayer if mono again}
     img_loaded:=img_backup[index_backup].img; {In dynamic arrays, the assignment statement duplicates only the reference to the array, while SetLength does the job of physically copying/duplicating it, leaving two separate, independent dynamic arrays.}
@@ -8882,7 +8880,7 @@ procedure Tmainwindow.bin_2x2menu1Click(Sender: TObject);
 var
   Save_Cursor:TCursor;
 begin
-  if head.naxis<>0 then
+ if head.naxis<>0 then
   begin
     Save_Cursor := Screen.Cursor;
     Screen.Cursor := crHourglass;    { Show hourglass cursor }
@@ -8900,6 +8898,7 @@ begin
     end;
 
     plot_fits(mainwindow.image1,true,true);{plot real}
+    mainwindow.caption:=Filename2;
     Screen.Cursor:=Save_Cursor;
   end;
 end;
@@ -13934,6 +13933,7 @@ begin
      else
        mainwindow.statusbar1.panels[1].text:=floattostrF(object_xc+1,ffFixed,7,2)+',  '+floattostrF(object_yc+1,ffFixed,7,2);{object position in FITS X,Y}
      mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', SNR='+snr_str+mag_str{+' '+floattostr4(flux)};
+     if display_adu then mainwindow.statusbar1.panels[7].text:='ADU='+floattostrF(flux,ffFixed,0,0);
    end
    else
    begin
@@ -14763,6 +14763,11 @@ begin
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
+procedure Tmainwindow.display_adu1Click(Sender: TObject);
+begin
+  display_adu:=display_adu1.checked;
+end;
+
 
 procedure Tmainwindow.move_images1Click(Sender: TObject);
 var
@@ -14871,10 +14876,7 @@ begin
           date_to_jd(head_2.date_obs,head_2.exposure);{convert date-obs to jd_start, jd_mid}
           if jd_start>2400000 then {valid JD}
           begin
-            {$ifdef mswindows}
-            {$else} {unix}
-            jd_start:=jd_start-(GetLocalTimeOffset/(24*60));//correct for timezone
-            {$endif}
+            jd_start:=jd_start-(GetLocalTimeOffset/(24*60))+head_2.exposure/(24*3600);//correct for timezone and exposure time
             if FileSetDate(filename2,DateTimeToFileDate(jd_start-2415018.5))<0 then  { filedatatodatetime counts from 30 dec 1899.}
               err:=true;
           end

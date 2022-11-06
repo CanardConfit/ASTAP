@@ -19,4 +19,19 @@ How to compile ASTAP:
   Mac:  
      lazbuild -B astap_mac.lpi
 
+-----------------------------------------------------------------------------------------------------------------------------------
+Notes:
+
+Linux QT5 widget:
+
+Using your distros repository -
+
+    Fedora, Mageia - sudo dnf install qt5pas<enter>
+    Ubuntu, Debian - sudo apt install libqt5pas1 <enter>
+
+    lazbuild -B astap_linux_qt5.lpi
+
+See:
+  https://wiki.lazarus.freepascal.org/Qt5_Interface
+
 

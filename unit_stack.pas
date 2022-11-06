@@ -46,6 +46,7 @@ type
     browse_live_stacking1: TBitBtn;
     Button1: TButton;
     calculated_sensor_size1: TLabel;
+    donutstars1: TCheckBox;
     check_pattern_filter1: TCheckBox;
     auto_select1: TMenuItem;
     target_altitude1: TLabel;
@@ -4658,7 +4659,7 @@ end;
 procedure Tstackmenu1.create_test_image_stars1Click(Sender: TObject);
 var
    i,j,m,n, stepsize,stepsize2, starcounter,subsampling  : integer;
-   sigma,hole_radius,donut_radius,hfd_diameter,shiftX,shiftY,flux,flux_star,diam    : double;
+   sigma,hole_radius,donut_radius,hfd_diameter,shiftX,shiftY,flux,flux_star,diam,intensity    : double;
    gradient,diagn_star           : boolean;
 begin
 
@@ -4670,8 +4671,8 @@ begin
   nrbits:=16;
   extend_type:=0; {no extensions in the file, 1 is ascii_table, 2 bintable}
 
-  head.height:=1800;
-  head.width:=1800*3 div 2;{aspect ratio 3:2}
+  head.height:=1800;//1800;
+  head.width:=head.height*3 div 2;{aspect ratio 3:2}
 
   Randomize; {initialise}
 
@@ -4738,12 +4739,16 @@ begin
         flux_star:=0;
         diagn_star:=false;
         inc(starcounter);
-        if sigma*2.5<=5 then {gaussian stars}
+        intensity:=(65000/power(starcounter*2700*1800/(head.height*head.width),0.85));{Intensity}
+
+//        if sigma*2.5<=5 then {gaussian stars}
+        if donutstars1.Checked=false then {gaussian stars}
         begin
           stepsize2:=stepsize*subsampling;
           for m:=-stepsize2 to stepsize2 do for n:=-stepsize2 to stepsize2 do
           begin
-            flux:=(65000/power(starcounter,0.85)){Intensity}*(1/sqr(subsampling)* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))));
+        //    flux:=(65000/power(starcounter,0.85)){Intensity}*(1/sqr(subsampling)* exp(-0.5/sqr(sigma)*(sqr(m/subsampling)+sqr(n/subsampling))));
+            flux:=Intensity*(1/sqr(subsampling*sigma){keep flux independent of HFD and subsmapling} * exp(-0.5*(sqr(m/subsampling)+sqr(n/subsampling))/sqr(sigma)) );
             flux_star:=flux_star+flux;
             img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]:= img_loaded[0,j+round(shiftX+n/subsampling),i+round(shiftY+m/subsampling)]+flux ; {gaussian shaped stars}
             if frac(starcounter/20)=0 then
@@ -6027,8 +6032,6 @@ var
 begin
   jd_start:=0;
   val(copy(date_time,18,7),ss,error2); if error2<>0 then exit; {read also milliseconds}
-//  val(copy(date_time,18,2),ss,error2); if error2<>0 then exit; {read also milliseconds}
-
 
   val(copy(date_time,15,2),min,error2);if error2<>0 then exit;
   val(copy(date_time,12,2),hh,error2);if error2<>0 then exit;

@@ -171,8 +171,14 @@ begin
     message1:=trim(copy(aline,b,c-b)); {remove spaces and crlf}
     val(message1,attachment,error2);{get data block}
   end;
-  if ((a=0) or (error2<>0)) then begin close_fits_file; mainwindow.error_label1.caption:='Error'; mainwindow.error_label1.visible:=true;
-     mainwindow.statusbar1.panels[7].text:='Can not read this format, no attachment'; head.naxis:=0; exit; end;
+  if ((a=0) or (error2<>0)) then
+  begin
+    close_fits_file;
+    mainwindow.error_label1.caption:='Error!. Can not read this format, no attachment';
+    mainwindow.error_label1.visible:=true;
+    head.naxis:=0;
+    exit;
+  end;
 
   a:=posex('sampleFormat=',aline,start_image);
   if a>0 then
@@ -188,8 +194,15 @@ begin
     if message1='UInt32' then nrbits:=32 else
     error2:=1;
   end;
-  if ((a=0) or (error2<>0)) then begin close_fits_file;mainwindow.error_label1.enabled:=true;
-     mainwindow.statusbar1.panels[7].text:=('Can not read this format.'); mainwindow.Memo1.visible:=true;  head.naxis:=0; exit; end;
+  if ((a=0) or (error2<>0)) then
+  begin
+    close_fits_file;
+    mainwindow.error_label1.caption:='Can not read this format.';
+    mainwindow.error_label1.enabled:=true;
+    mainwindow.Memo1.visible:=true;
+    head.naxis:=0;
+    exit;
+  end;
 
   if nrbits=8 then  begin head.datamin_org:=0;head.datamax_org:=255; {8 bits files} end
     else {16, -32 files} begin head.datamin_org:=0;head.datamax_org:=$FFFF;end;{not always specified. For example in skyview. So refresh here for case brightness is adjusted}
@@ -366,7 +379,7 @@ begin
   if head.width>i then
   begin
     sysutils.beep;
-     mainwindow.statusbar1.panels[7].text:='Too wide XISF file !!!!!';
+    mainwindow.error_label1.caption:='Too wide XISF file !!!!!';
     mainwindow.error_label1.visible:=true;
     close_fits_file;
     head.naxis:=0;{failure}

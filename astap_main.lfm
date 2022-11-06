@@ -714,13 +714,13 @@ object mainwindow: Tmainwindow
         Width = 200
       end    
       item
-        Width = 280
+        Width = 320
       end    
       item
-        Width = 220
+        Width = 270
       end    
       item
-        Width = 170
+        Width = 130
       end    
       item
         Width = 170
@@ -1354,14 +1354,14 @@ object mainwindow: Tmainwindow
           Caption = 'Bin 2x2'
           Enabled = False
           Hint = 'Bin the image 2x2'
-          ShortCut = 16434
+          ShortCut = 16497
           OnClick = bin_2x2menu1Click
         end
         object bin_3x3menu1: TMenuItem
           Caption = 'Bin 3x3'
           Enabled = False
           Hint = 'Bin the image 3x3'
-          ShortCut = 16435
+          ShortCut = 16498
           OnClick = bin_2x2menu1Click
         end
         object MenuItem30: TMenuItem
@@ -3547,6 +3547,15 @@ object mainwindow: Tmainwindow
       OnClick = hfd_arcseconds1Click
     end
     object MenuItem35: TMenuItem
+      Caption = '-'
+    end
+    object display_adu1: TMenuItem
+      AutoCheck = True
+      Caption = 'Display star ADU'
+      Hint = 'Display the ADU (analog to digital units) of a star'
+      OnClick = display_adu1Click
+    end
+    object MenuItem36: TMenuItem
       Caption = '-'
     end
     object noise_in_electron1: TMenuItem
