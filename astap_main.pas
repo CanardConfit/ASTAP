@@ -59,7 +59,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.11.06';
+  astap_version='2022.11.06a';
 
 type
   { Tmainwindow }
@@ -114,6 +114,7 @@ type
     MenuItem36: TMenuItem;
     move_images1: TMenuItem;
     SelectDirectoryDialog1: TSelectDirectoryDialog;
+    Separator1: TMenuItem;
     simbad_annotation_star1: TMenuItem;
     simbad_annotation_deepsky1: TMenuItem;
     online_query1: TMenuItem;
@@ -713,7 +714,7 @@ var {################# initialised variables #########################}
   annotation_diameter : integer=20;
   pedestal            : integer=0;
   electron_to_adu     : string='16';
-  image_store_path    : string='';
+//  image_store_path    : string='';
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
@@ -7397,7 +7398,7 @@ begin
 
 
       if paramcount=0 then filename2:=Sett.ReadString('main','last_file','');{if used as viewer don't override paramstr1}
-      image_store_path:=Sett.ReadString('main','image_store_path','');
+//      image_store_path:=Sett.ReadString('main','image_store_path','');
 
       export_index:=Sett.ReadInteger('main','export_index',3);{tiff stretched}
 
@@ -7753,7 +7754,7 @@ begin
 
 
       sett.writestring('main','last_file',filename2);
-      sett.writestring('main','image_store_path',image_store_path);
+//      sett.writestring('main','image_store_path',image_store_path);
       sett.writeInteger('main','export_index',export_index);
 
 
@@ -14784,7 +14785,7 @@ begin
   if OpenDialog1.Execute then
   begin
     SelectDirectoryDialog1.Title := 'Select destination root directory. Files will be placed in new directory .\name, date';
-    SelectDirectoryDialog1.InitialDir:=image_store_path;
+    SelectDirectoryDialog1.InitialDir:=opendialog1.initialdir;//image_store_path;
     esc_pressed:=false;
     err:=false;
     if SelectDirectoryDialog1.Execute then
@@ -14795,7 +14796,7 @@ begin
       with OpenDialog1.Files do
       for I := 0 to Count - 1 do
       begin
-        progress_indicator(100*i/(count),' Solving');{show progress}
+        progress_indicator(100*i/(count),' Moving');{show progress}
         Application.ProcessMessages;
         if esc_pressed then begin err:=true; break; end;
         filename2:=Strings[I];
@@ -14808,7 +14809,7 @@ begin
           begin
             jd_start:=jd_start-(GetLocalTimeOffset/(24*60));//convert to local time.
             jd_start:=jd_start-0.5; //move 12 hour earlier to get date beginning night
-            thepath:=object_name+', '+copy(JDtoDate(jd_start),1,10);
+            thepath:=RemoveSpecialChars(object_name)+', '+copy(JDtoDate(jd_start),1,10);// the path without special characters
 
             {$ifdef mswindows}
             thepath:=SelectDirectoryDialog1.filename+'\'+thepath;

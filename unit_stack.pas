@@ -861,7 +861,6 @@ var
   exposureR, exposureG,exposureB,exposureRGB,exposureL            : integer;
   sum_exp,sum_temp,photometry_stdev                               : double;
   referenceX,referenceY    : double;{reference position used stacking}
-//  ref_X, ref_Y             : double;{reference position from FITS header, used for manual stacking of colour lights, second stage}
   jd_mid                   : double;{julian day of mid head.exposure}
   jd_sum                   : double;{sum of julian days}
   jd_stop                  : double;{end observation in julian days}
@@ -930,6 +929,7 @@ procedure listviews_begin_update; {speed up making stackmenu visible having a ma
 procedure listviews_end_update;{speed up making stackmenu visible having a many items}
 procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse list of FITS files}
 function julian_calc(yyyy,mm:integer;dd,hours,minutes,seconds:double):double; {##### calculate julian day, revised 2017}
+function RemoveSpecialChars(const STR : string) : string; {remove ['.','\','/','*','"',':','|','<','>']}
 
 
 const
@@ -940,7 +940,7 @@ const
   L_hfd=4;
   L_quality=5;
   L_background=6;
-  L_starlevel=7;
+  L_nrstars=7;
   L_sharpness=8;
   L_exposure=9;
   L_temperature=10;
@@ -1373,7 +1373,7 @@ begin
           inc(c); {go to next file}
         until c>counts;
         quality_sd:=sqrt(quality_sd/nr_good_images);
-        memo2_message('Analysing group '+key+ ' for outliers.'+#9+#9+' Average image quality (nr stars/hfd)='+floattostrF(quality_mean,ffFixed,0,0)+ ', σ='+floattostrF(quality_sd,ffFixed,0,1));
+        memo2_message('Analysing group '+key+ ' for outliers.'+#9+#9+' Average image quality (nrstars/sqr(hfd))='+floattostrF(quality_mean,ffFixed,0,0)+ ', σ='+floattostrF(quality_sd,ffFixed,0,1));
 
         {remove outliers}
         sd:=stackmenu1.sd_factor_list1.Text;
@@ -1766,7 +1766,7 @@ end;
 
 procedure analyse_tab_lights(full : boolean);
 var
-  c,hfd_counter  ,i,counts                              : integer;
+  c,star_counter  ,i,counts                             : integer;
   backgr, hfd_median,alt,az                             : double;
   Save_Cursor                                           : TCursor;
   red,green,blue,planetary                                  : boolean;
@@ -1895,9 +1895,9 @@ begin
           begin {light frame}
 
             if ((planetary=false) and (full=true))  then
-              analyse_image(img,head_2,10 {snr_min},false,hfd_counter,backgr, hfd_median) {find background, number of stars, median HFD}
+              analyse_image(img,head_2,10 {snr_min},false,star_counter,backgr, hfd_median) {find background, number of stars, median HFD}
             else
-              begin hfd_counter:=0; backgr:=0;star_level:=0; backgr:=0; hfd_median:=-1; end;
+              begin star_counter:=0; backgr:=0;star_level:=0; backgr:=0; hfd_median:=-1; end;
 
             ListView1.Items.BeginUpdate;
             try
@@ -1922,12 +1922,12 @@ begin
                 ListView1.Items.item[c].subitems.Strings[L_bin]:=floattostrf(Xbinning,ffgeneral,0,0)+' x '+floattostrf(Ybinning,ffgeneral,0,0); {Binning CCD}
 
                 ListView1.Items.item[c].subitems.Strings[L_hfd]:=floattostrF(hfd_median,ffFixed,0,1);
-                ListView1.Items.item[c].subitems.Strings[L_quality]:=inttostr5(round(hfd_counter/hfd_median)); {quality number of stars divided by hfd}
+                ListView1.Items.item[c].subitems.Strings[L_quality]:=inttostr5(round(star_counter/sqr(hfd_median))); {quality number of stars divided by hfd}
 
                 if hfd_median>=99 then ListView1.Items.item[c].checked:=false {no stars, can't process this image}
                 else
                 begin {image can be futher analysed}
-                  ListView1.Items.item[c].subitems.Strings[L_starlevel]:=inttostr5(round(star_level));
+                  ListView1.Items.item[c].subitems.Strings[L_nrstars]:=inttostr5(round(star_counter {star_level}));//nr of stars
                   ListView1.Items.item[c].subitems.Strings[L_background]:=inttostr5(round(backgr));
                   ListView1.Items.item[c].subitems.Strings[L_sharpness]:=floattostrF(image_sharpness(img),ffFixed,0,3); {sharpness test}
                 end;
@@ -9063,14 +9063,14 @@ begin
       stackmenu1.ListView1.Items.item[i].SubitemImages[L_quality]:=-1;{remove any older icon_king}
 
       width1:=strtoint(stackmenu1.ListView1.Items.item[i].subitems.Strings[L_width]);
-      if first=-1 then begin first:=i; largest_width:=width1  end;
+      if first=-1 then begin first:=i; largest_width:=width1;  end;
 
       quality_str:=stackmenu1.ListView1.Items.item[i].subitems.Strings[L_quality];{number of stars detected}
       {$ifdef darwin} {MacOS}
       quality_str:=add_unicode('',quality_str);//remove all crowns and thumbs
       {$endif}
 
-      if length(quality_str)>1 then quality:=strtoint(quality_str) else quality:=0;{quality equals nr stars /hfd}
+      if length(quality_str)>1 then quality:=strtoint(quality_str) else quality:=0;{quality equals nr stars /sqr(hfd)}
 
       if width1>largest_width then {larger image found, give this one preference}
       begin
@@ -9111,7 +9111,7 @@ end;
 
 
 
-function RemoveSpecialChars(const STR : string) : string;
+function RemoveSpecialChars(const STR : string) : string; {remove ['.','\','/','*','"',':','|','<','>']}
 var {################# initialised variables #########################}
   InvalidChars : set of char = ['.','\','/','*','"',':','|','<','>'];
 var
