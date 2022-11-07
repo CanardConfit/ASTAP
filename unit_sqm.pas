@@ -85,7 +85,7 @@ var
 begin
   form_exist:=form_sqm1<>nil;   {see form_sqm1.FormClose action to make this working reliable}
 
-  bayer:=((bayerpat<>'') and (Xbinning=1));
+  bayer:=((bayerpat<>'') and (head.Xbinning=1));
 
   if form_exist then
   begin

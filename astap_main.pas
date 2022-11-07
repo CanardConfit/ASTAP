@@ -59,7 +59,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.11.06a';
+  astap_version='2022.11.07';
 
 type
   { Tmainwindow }
@@ -548,12 +548,15 @@ type
     exposure      : double;
     datamin_org   : double;
     datamax_org   : double;{for update histogram}
+    xbinning      : double;//binning for noise calculations
+    ybinning      : double;//binning for noise calculations
+    xpixsz        : double;//Pixel Width in microns (after binning)
+    ypixsz        : double;//Pixel height in microns (after binning)
     set_temperature : integer;
     dark_count      : integer;
     light_count     : integer;
     flat_count      : integer;
     flatdark_count  : integer;
-
     egain      : string; {gain in e-/adu}
      gain      : string; {gain in 0.1dB or else}
     date_obs   : string;
@@ -566,10 +569,6 @@ type
      head_val: Theader;{most important header values}
      header  : string; {full header text}
      filen   : string; {filename}
-     xbinning: double; {for binning routine. If twice binned or SQM routine}
-     ybinning: double;
-     XPIXSZ  : double;
-     YPIXSZ  : double;
      img     : image_array;
    end;
 
@@ -610,7 +609,7 @@ var
   filename2: string;
   nrbits,size_backup,index_backup    : integer;{number of backup images for ctrl-z, numbered 0,1,2,3}
   ra_mount,dec_mount,{telescope ra,dec}
-  Xbinning,Ybinning,equinox, bandpass,
+  equinox, bandpass,
   ra_radians,dec_radians, pixel_size     : double;
 
 var
@@ -647,8 +646,6 @@ var {################# initialised variables #########################}
   PatternToFind : string=''; {for fits header memo1 popup menu }
   hist_range  {range histogram 255 or 65535 or streched} : integer=255;
   image_move_to_center : boolean=false;
-  xpixsz: double=0;//Pixel Width in microns (after binning)
-  ypixsz: double=0;//Pixel height in microns (after binning)
   focallen: double=0;
   lat_default: string='';
   long_default: string='';
@@ -713,7 +710,7 @@ var {################# initialised variables #########################}
   annotation_color: tcolor=clyellow;
   annotation_diameter : integer=20;
   pedestal            : integer=0;
-  electron_to_adu     : string='16';
+  electron_to_adu     : integer=16;
 //  image_store_path    : string='';
 
 
@@ -721,7 +718,7 @@ procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
 function load_fits(filen:string;light {load as light or dark/flat},load_data,update_memo: boolean;get_ext: integer;out head: Theader; out img_loaded2: image_array): boolean;{load fits file}
 procedure plot_fits(img: timage;center_image,show_header:boolean);
 procedure use_histogram(img: image_array; update_hist: boolean);{get histogram}
-procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
+procedure HFD(img: image_array;x1,y1,rs {boxsize}: integer;aperture_small, adu_e {unbinned}:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);{calculate star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
 procedure backup_img;
 procedure restore_img;
 function load_image(re_center, plot:boolean) : boolean; {load fits or PNG, BMP, TIF}
@@ -946,8 +943,8 @@ begin
     dec_mount:=999;
     head.cdelt1:=0;
     head.cdelt2:=0;
-    xpixsz:=0;
-    ypixsz:=0;
+    head.xpixsz:=0;
+    head.ypixsz:=0;
     focallen:=0;
     subsamp:=1;{just for the case it is not available}
     head.cd1_1:=0;{just for the case it is not available}
@@ -973,8 +970,8 @@ begin
     a_order:=0; {SIP_polynomial, use for check if there is data}
     ap_order:=0; {SIP_polynomial, use for check if there is data}
 
-    xbinning:=1;{normal}
-    ybinning:=1;
+    head.xbinning:=1;{normal}
+    head.ybinning:=1;
 
     date_avg:='';ut:=''; pltlabel:=''; plateid:=''; telescop:=''; instrum:='';  origin:=''; object_name:='';{clear}
     sitelat:=''; sitelong:='';siteelev:='';
@@ -1292,9 +1289,9 @@ begin
         end; {F}
 
         if ((header[i]='X') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-                 xbinning:=validate_double;{binning}
+                 head.xbinning:=validate_double;{binning}
         if ((header[i]='Y') and (header[i+1]='B')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]='N') and (header[i+5]='I')) then
-                 ybinning:=validate_double;{binning}
+                 head.ybinning:=validate_double;{binning}
 
         if ((header[i]='G') and (header[i+1]='A')  and (header[i+2]='I') and (header[i+3]='N') and (header[i+4]=' ')) then
              head.gain:=trim(get_as_string); {head.gain CCD}
@@ -1370,9 +1367,9 @@ begin
           end;
 
           if ((header[i]='X') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {Xpixsz}
-                 xpixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
+                 head.xpixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
           if ((header[i]='Y') and (header[i+1]='P')  and (header[i+2]='I') and (header[i+3]='X') and (header[i+4]='S') and (header[i+5]='Z')) then {Ypixsz}
-                 ypixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
+                 head.ypixsz:=validate_double;{Pixel Width in microns (after binning), maxim DL keyword}
 
           if ((header[i]='R') and (header[i+1]='A')  and (header[i+2]=' ')) then  {ra}
           begin
@@ -1750,8 +1747,8 @@ begin
 
     if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
     begin
-     if ((focallen<>0) and (xpixsz<>0)) then
-        head.cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
+     if ((focallen<>0) and (head.xpixsz<>0)) then
+        head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
     end;
 
     if head.crota2>999 then head.crota2:=0;{not defined, set at 0}
@@ -2186,12 +2183,12 @@ begin
     if key='OBJECT  =' then object_name:=read_string else
 
     if ((key='EXPOSURE=') or ( key='EXPTIME =')) then head.exposure:=read_float else
-    if (key='XBINNING=') then xbinning:=read_integer else
-    if (key='YBINNING=') then ybinning:=read_integer else
+    if (key='XBINNING=') then head.xbinning:=read_integer else
+    if (key='YBINNING=') then head.ybinning:=read_integer else
 
     if (key='FOCALLEN=') then focallen:=read_float else
-    if (key='XPIXSZ  =') then xpixsz:=read_float else  {pixelscale in microns}
-    if (key='YPIXSZ  =') then ypixsz:=read_float else
+    if (key='XPIXSZ  =') then head.xpixsz:=read_float else  {pixelscale in microns}
+    if (key='YPIXSZ  =') then head.ypixsz:=read_float else
     if (key='CDELT1  =') then head.cdelt1:=read_float else   {deg/pixel}
     if (key='CDELT2  =') then head.cdelt2:=read_float else   {deg/pixel}
     if (key='EQUINOX =') then equinox:=read_float else
@@ -2280,8 +2277,8 @@ begin
 
   if ((head.cd1_1=0) and (head.cdelt2=0)) then  {no scale, try to fix it}
   begin
-   if ((focallen<>0) and (xpixsz<>0)) then
-      head.cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
+   if ((focallen<>0) and (head.xpixsz<>0)) then
+      head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word. xpixsz is including binning}
   end;
 
   if head.crota2>999 then head.crota2:=0;{not defined, set at 0}
@@ -3199,11 +3196,6 @@ begin
 
     img_backup[index_backup].head_val:=head;
 
-    img_backup[index_backup].xbinning:=xbinning;
-    img_backup[index_backup].ybinning:=ybinning;
-    img_backup[index_backup].XPIXSZ:=XPIXSZ;
-    img_backup[index_backup].YPIXSZ:=YPIXSZ;
-
     img_backup[index_backup].header:=mainwindow.Memo1.Text;{backup fits header}
     img_backup[index_backup].filen:=filename2;{backup filename}
 
@@ -3234,11 +3226,6 @@ begin
     head:=img_backup[index_backup].head_val;{restore main header values}
 
     resized:=((head.width<>old_width2) or ( head.height<>old_height2));
-
-    xbinning:=img_backup[index_backup].xbinning;
-    ybinning:=img_backup[index_backup].ybinning;
-    XPIXSZ:=img_backup[index_backup].XPIXSZ;
-    YPIXSZ:=img_backup[index_backup].YPIXSZ;
 
     mainwindow.Memo1.Text:=img_backup[index_backup].header;{restore fits header}
     filename2:=img_backup[index_backup].filen;{backup filename}
@@ -3477,18 +3464,18 @@ begin
     update_float  ('CD2_1   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_1);
     update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
   end;
-  XBINNING:=XBINNING*binfactor;
-  YBINNING:=YBINNING*binfactor;
-  update_integer('XBINNING=',' / Binning factor in width                         ' ,round(XBINNING));
-  update_integer('YBINNING=',' / Binning factor in height                        ' ,round(yBINNING));
-  if XPIXSZ<>0 then
+  head.XBINNING:=head.XBINNING*binfactor;
+  head.YBINNING:=head.YBINNING*binfactor;
+  update_integer('XBINNING=',' / Binning factor in width                         ' ,round(head.XBINNING));
+  update_integer('YBINNING=',' / Binning factor in height                        ' ,round(head.yBINNING));
+  if head.XPIXSZ<>0 then
   begin
-    XPIXSZ:=XPIXSZ*binfactor;
-    YPIXSZ:=YPIXSZ*binfactor;
-    update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,XPIXSZ);
-    update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,YPIXSZ);
-    update_float('PIXSIZE1=',' / Pixel width in microns (after binning)          ' ,XPIXSZ);
-    update_float('PIXSIZE2=',' / Pixel height in microns (after binning)         ' ,YPIXSZ);
+    head.XPIXSZ:=head.XPIXSZ*binfactor;
+    head.YPIXSZ:=head.YPIXSZ*binfactor;
+    update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,head.XPIXSZ);
+    update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,head.YPIXSZ);
+    update_float('PIXSIZE1=',' / Pixel width in microns (after binning)          ' ,head.XPIXSZ);
+    update_float('PIXSIZE2=',' / Pixel height in microns (after binning)         ' ,head.YPIXSZ);
   end;
   fact:=inttostr(binfactor);
   fact:=fact+'x'+fact;
@@ -4839,7 +4826,7 @@ begin
   end;
 
   info_message:=info_message+#10+#10+'Bit depth data: '+inttostr(round(ln(range/minstep)/ln(2)));{bit range, calculate 2log}
-  if Xbinning<>1 then  info_message:=info_message+#10+'Binning: '+ floattostrf(Xbinning,ffgeneral,0,0)+'x'+floattostrf(Ybinning,ffgeneral,0,0);
+  if head.Xbinning<>1 then  info_message:=info_message+#10+'Binning: '+ floattostrf(head.Xbinning,ffgeneral,0,0)+'x'+floattostrf(head.Ybinning,ffgeneral,0,0);
   info_message:=info_message+#10+'Rectangle: '+inttostr(startX+1)+', '+inttostr(startY+1)+',    '+inttostr(stopX+1)+', '+inttostr(stopY+1);
   info_message:=info_message+#10+'Filename: '+extractfilename(filename2);
 
@@ -4966,8 +4953,8 @@ begin
   stackmenu1.test_pattern1.Enabled:=head.naxis3=1;{mono}
 
   stackmenu1.focallength1.Text:=floattostrf(focallen,ffgeneral, 4, 4);
-  stackmenu1.pixelsize1.text:=floattostrf(xpixsz{*XBINNING},ffgeneral, 4, 4);
-  stackmenu1.calculator_binning1.caption:=inttostr(head.width)+' x '+inttostr(head.height)+' pixels, binned '+floattostrf(Xbinning,ffgeneral,0,0)+'x'+floattostrf(Ybinning,ffgeneral,0,0);
+  stackmenu1.pixelsize1.text:=floattostrf(head.xpixsz{*XBINNING},ffgeneral, 4, 4);
+  stackmenu1.calculator_binning1.caption:=inttostr(head.width)+' x '+inttostr(head.height)+' pixels, binned '+floattostrf(head.Xbinning,ffgeneral,0,0)+'x'+floattostrf(head.Ybinning,ffgeneral,0,0);
   stackmenu1.focallength1Exit(nil); {update calculator}
 end;
 
@@ -5207,20 +5194,20 @@ begin
       update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
     end;
 
-    XBINNING:=XBINNING/ratio;
-    YBINNING:=YBINNING/ratio;
-    update_float  ('XBINNING=',' / Binning factor in width                         ' ,XBINNING);
-    update_float  ('YBINNING=',' / Binning factor in height                        ' ,YBINNING);
+    head.XBINNING:=head.XBINNING/ratio;
+    head.YBINNING:=head.YBINNING/ratio;
+    update_float  ('XBINNING=',' / Binning factor in width                         ' ,head.XBINNING);
+    update_float  ('YBINNING=',' / Binning factor in height                        ' ,head.YBINNING);
 
 
-    if XPIXSZ<>0 then
+    if head.XPIXSZ<>0 then
     begin
-      XPIXSZ:=XPIXSZ/ratio;
-      YPIXSZ:=YPIXSZ/ratio;
-      update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,XPIXSZ);{note: comment will be never used since it is an existing keyword}
-      update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,YPIXSZ);
-      update_float('PIXSIZE1=',' / Pixel width in microns (after binning)          ' ,XPIXSZ);
-      update_float('PIXSIZE2=',' / Pixel height in microns (after binning)         ' ,YPIXSZ);
+      head.XPIXSZ:=head.XPIXSZ/ratio;
+      head.YPIXSZ:=head.YPIXSZ/ratio;
+      update_float('XPIXSZ  =',' / Pixel width in microns (after binning)          ' ,head.XPIXSZ);{note: comment will be never used since it is an existing keyword}
+      update_float('YPIXSZ  =',' / Pixel height in microns (after binning)         ' ,head.YPIXSZ);
+      update_float('PIXSIZE1=',' / Pixel width in microns (after binning)          ' ,head.XPIXSZ);
+      update_float('PIXSIZE2=',' / Pixel height in microns (after binning)         ' ,head.YPIXSZ);
 
     end;
 
@@ -7375,7 +7362,7 @@ begin
       freetext:=Sett.ReadString('main','f_text','');
 
       noise_in_electron1.checked:=Sett.ReadBool('main','noise_e',false);{status bar menu}
-      electron_to_adu:=Sett.ReadString('main','e_to_adu','16');
+      electron_to_adu:=Sett.ReadInteger('main','e_to_adu',16);
 
 
       add_marker_position1.checked:=Sett.ReadBool('main','add_marker',false);{popup marker selected?}
@@ -7734,8 +7721,9 @@ begin
       sett.writeBool('main','pos_date',positionanddate1.checked);
       sett.writeBool('main','freetxt',freetext1.checked);
       sett.writestring('main','f_text',freetext);
+
       sett.writeBool('main','noise_e',noise_in_electron1.checked);
-      sett.writestring('main','e_to_adu',electron_to_adu);
+      sett.writeinteger('main','e_to_adu',electron_to_adu);
 
       sett.writeBool('main','add_marker',add_marker_position1.checked);
 
@@ -7771,7 +7759,6 @@ begin
       sett.writeBool('ast','add_date',add_date);{asteroids}
       sett.writeString('ast','p1',encrypt(lat_default));{default latitude}
       sett.writeString('ast','p2',encrypt(long_default));{default longitude}
-
 
       sett.writeInteger('ast','annotation_color',annotation_color);
       sett.writeInteger('ast','annotation_diameter',annotation_diameter);
@@ -9596,7 +9583,7 @@ begin
 
     backup_img;
 
-    HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+    HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
     if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
     begin
@@ -9613,7 +9600,7 @@ begin
     end;
     show_marker_shape(mainwindow.shape_marker1,shapetype,20,20,10{minimum}, shape_marker1_fitsX,shape_marker1_fitsY);
 
-    HFD(img_loaded,stopX,stopY,14{annulus radius},99 {flux aperture restriction}, hfd2,star_fwhm2,snr2,flux2,xc2,yc2);{star HFD and FWHM}
+    HFD(img_loaded,stopX,stopY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd2,star_fwhm2,snr2,flux2,xc2,yc2);{star HFD and FWHM}
     if ((hfd2<15) and (hfd2>=0.8) {two pixels minimum} and (snr2>10) and (flux2>1){rare but happens}) then {star detected in img_loaded}
     begin
       shapetype:=1;{circle}
@@ -9969,7 +9956,7 @@ begin
     begin
       if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- cblack> detection_level)) then {new star}
       begin
-        HFD(img_loaded,fitsX,fitsY,annulus_rad {typical 14, annulus radius},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        HFD(img_loaded,fitsX,fitsY,annulus_rad {typical 14, annulus radius},flux_aperture,0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=hfd_min) {two pixels minimum} and (snr>10) and (flux>1){rare but happens}) then {star detected in img_loaded}
         begin
           {for testing}
@@ -10098,7 +10085,7 @@ const
       if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img_loaded[0,fitsX,fitsY]- {cblack}backgr>5*noise_level[0] {star_level} ){star}) then {new star}
       begin
 
-        HFD(img_loaded,fitsX,fitsY,round(1.5* hfd_median){annulus radius},3.0*hfd_median {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        HFD(img_loaded,fitsX,fitsY,round(1.5* hfd_median){annulus radius},3.0*hfd_median {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
 
         //memo2_message(floattostr(xc)+',  ' +floattostr(yc));
 
@@ -10616,19 +10603,19 @@ begin
         update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
       end;
 
-      XBINNING:=XBINNING/ratio;
-      YBINNING:=YBINNING/ratio;
-      update_float  ('XBINNING=',' / Binning factor in width                         ' ,XBINNING);
-      update_float  ('YBINNING=',' / Binning factor in height                        ' ,YBINNING);
+      head.XBINNING:=head.XBINNING/ratio;
+      head.YBINNING:=head.YBINNING/ratio;
+      update_float  ('XBINNING=',' / Binning factor in width                         ' ,head.XBINNING);
+      update_float  ('YBINNING=',' / Binning factor in height                        ' ,head.YBINNING);
 
-      if XPIXSZ<>0 then
+      if head.XPIXSZ<>0 then
       begin
-        XPIXSZ:=XPIXSZ/ratio;
-        YPIXSZ:=YPIXSZ/ratio;
-        update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ' ,XPIXSZ);
-        update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ' ,YPIXSZ);
-        update_float('PIXSIZE1=',' / Pixel width in microns (after stretching)       ' ,XPIXSZ);
-        update_float('PIXSIZE2=',' / Pixel height in microns (after stretching)      ' ,YPIXSZ);
+        head.XPIXSZ:=head.XPIXSZ/ratio;
+        head.YPIXSZ:=head.YPIXSZ/ratio;
+        update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ' ,head.XPIXSZ);
+        update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ' ,head.YPIXSZ);
+        update_float('PIXSIZE1=',' / Pixel width in microns (after stretching)       ' ,head.XPIXSZ);
+        update_float('PIXSIZE2=',' / Pixel height in microns (after stretching)      ' ,head.YPIXSZ);
       end;
 
       add_text   ('HISTORY   ','Image stretched with factor '+ floattostr6(ratio));
@@ -11545,6 +11532,7 @@ begin
    TheFile4:=tfilestream.Create(filen, fmcreate );
 
    update_integer('NAXIS   =',' / Minimal header                                 ' ,0);{2 for mono, 3 for colour}
+   try
   {write memo1 header to file}
    for i:=0 to 79 do empthy_line[i]:=#32;{space}
    i:=0;
@@ -11561,11 +11549,12 @@ begin
       inc(i);
    until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
 
+
+   finally
+     TheFile4.free;
+   end;
   except
-    TheFile4.free;
-    exit;
   end;
-  TheFile4.free;
 end;
 
 //procedure write_astronomy_axy(stars: star_list;snr_list        : array of double );
@@ -13223,7 +13212,7 @@ begin
     yc:=startY;
   end
   else {star alignment}
-  HFD(img,startX,startY,14{annulus radius},99 {flux aperture restriction},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
+  HFD(img,startX,startY,14{annulus radius},99 {flux aperture restriction},0 {adu_e},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
 
 
   if hfd2<90 then {detected something}
@@ -13268,7 +13257,7 @@ begin
   if stackmenu1.pagecontrol1.tabindex=8 {photometry} then
   begin
     {star alignment}
-    HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
+    HFD(img_loaded,startX,startY,14{annulus radius},99 {flux aperture restriction},0 {adu_e},hfd2,fwhm_star2,snr,flux,xc,yc); {auto center using HFD function}
     if hfd2<90 then {detected something}
     begin
       if snr>5 then shapetype:=1 {circle} else shapetype:=0;{square}
@@ -13350,13 +13339,13 @@ end;
 {calculates star HFD and FWHM, SNR, xc and yc are center of gravity, rs is the boxsize, aperture for the flux measurment. All x,y coordinates in array[0..] positions}
 {aperture_small is used for photometry of stars. Set at 99 for normal full flux mode}
 {Procedure uses two global accessible variables:  r_aperture and sd_bg }
-procedure HFD(img: image_array;x1,y1,rs {annulus diameter}: integer;aperture_small:double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);
+procedure HFD(img: image_array;x1,y1,rs {annulus diameter}: integer;aperture_small, adu_e {unbinned} :double; out hfd1,star_fwhm,snr{peak/sigma noise}, flux,xc,yc:double);
 const
   max_ri=74; //(50*sqrt(2)+1 assuming rs<=50. Should be larger or equal then sqrt(sqr(rs+rs)+sqr(rs+rs))+1+2;
 
 var
   width5,height5,i,j,r1_square,r2_square,r2, distance,distance_top_value,illuminated_pixels,signal_counter,counter,annulus_width :integer;
-  SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r, val,pixel_counter,valmax,mad_bg    : double;
+  SumVal,Sumval_small, SumValX,SumValY,SumValR, Xg,Yg, r, val,pixel_counter,valmax,mad_bg, flux_e, sd_bg_e,radius    : double;
   HistStart,boxed : boolean;
   distance_histogram : array [0..max_ri] of integer;
   background : array [0..1000] of double; {size =3*(2*PI()*(50+3)) assuming rs<=50}
@@ -13525,30 +13514,45 @@ begin
 
   star_fwhm:=2*sqrt(pixel_counter/pi);{calculate from surface (by counting pixels above half max) the diameter equals FWHM }
 
+  //noise calculation
   if r_aperture<aperture_small then {normal mode}
   begin
-     snr:=flux/sqrt(flux +sqr(r_aperture)*pi*sqr(sd_bg));
-     {For both bright stars (shot-noise limited) or skybackground limited situations
-       snr := signal/noise
-       snr := star_signal/sqrt(total_signal)
-       snr := star_signal/sqrt(star_signal + sky_signal)
-       equals
-       snr:=flux/sqrt(flux + r*r*pi* sd^2).
-
-       r is the diameter used for star flux measurement. Flux is the total star flux detected above 3* sd.
-
-       Assuming unity head.gain ADU/e-=1
-       See https://en.wikipedia.org/wiki/Signal-to-noise_ratio_(imaging)
-       https://www1.phys.vt.edu/~jhs/phys3154/snr20040108.pdf
-       http://spiff.rit.edu/classes/phys373/lectures/signal/signal_illus.html}
-
-  //   memo2_message(#9+'######'+#9+inttostr(round(flux))+#9+ floattostr6(r_aperture)+#9+floattostr6(sd)+#9+floattostr6(snr)+#9+floattostr6(sqr(r_aperture)*pi*sqr(sd)));
+    radius:=r_aperture;
   end
   else
   begin {photometry mode. Measure only brightest part of the stars}
     flux:=max(sumval_small,0.00001);{prevent dividing by zero or negative values}
-    snr:=flux/sqrt(flux +sqr(aperture_small)*pi*sqr(sd_bg)); {For both bright stars (shot-noise limited) or skybackground limited situations  snr:=signal/sqrt(signal + r*r*pi* SKYsignal) equals snr:=flux/sqrt(flux + r*r*pi* sd^2). }
+    radius:=aperture_small; // use smaller aperture
   end;
+
+  if adu_e=0 then
+  begin {no adu to e correction}
+    flux_e:=flux;
+    sd_bg_e:=sd_bg;
+  end
+  else
+  begin //adu to e- correction
+    flux_e:=flux*adu_e*sqr(head.xbinning);// if an image is binned the adu's are averaged. So bin2x2 result in four times less adu.
+    sd_bg_e:=sd_bg*adu_e*head.xbinning;//noise is sqrt of signal. So electron noise reduces linear with binning value
+  end;
+
+  snr:=flux_e /sqrt(flux_e +sqr(radius)*pi*sqr(sd_bg_e));
+  {For both bright stars (shot-noise limited) or skybackground limited situations
+    snr := signal/noise
+    snr := star_signal/sqrt(total_signal)
+    snr := star_signal/sqrt(star_signal + sky_signal)
+    equals
+    snr:=flux/sqrt(flux + r*r*pi* sd^2).
+
+    r is the diameter used for star flux measurement. Flux is the total star flux detected above 3* sd.
+
+    Assuming unity head.gain ADU/e-=1
+    See https://en.wikipedia.org/wiki/Signal-to-noise_ratio_(imaging)
+    https://www1.phys.vt.edu/~jhs/phys3154/snr20040108.pdf
+    http://spiff.rit.edu/classes/phys373/lectures/signal/signal_illus.html}
+
+//   memo2_message(#9+'######'+#9+inttostr(round(flux))+#9+ floattostr6(r_aperture)+#9+floattostr6(sd)+#9+floattostr6(snr)+#9+floattostr6(sqr(r_aperture)*pi*sqr(sd)));
+
 
   {==========Notes on HFD calculation method=================
     Documented this HFD definition also in https://en.wikipedia.org/wiki/Half_flux_diameter
@@ -13727,19 +13731,17 @@ begin
     egain:=strtofloat2(head.egain);
     if egain<>0 then
     begin
-      e_to_adu:=strtofloat2(electron_to_adu);
-      if e_to_adu<>0 then
-        result:=floattostrF(egain*adu_s*xbinning/e_to_adu,ffFixed,0,1)+' e-';{result in electrons}
+      if electron_to_adu<>0 then
+        result:=floattostrF(egain*adu_s*head.xbinning/electron_to_adu,ffFixed,0,1)+' e-';{noise result in electrons}
     end;
   end;
 end;
 
 
-procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X,
-  Y: Integer);
-
+procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
-  hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance,sd,dummy,conv_factor : double;
+  hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance,sd,dummy,conv_factor,
+  adu_e, egain,e_to_adu                                                        : double;
   s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str                  : string;
   width5,height5,x_sized,y_sized,factor,flipH,flipV,iterations                 : integer;
   color1:tcolor;
@@ -13908,8 +13910,19 @@ begin
    sensor_coordinates_to_celestial(mouse_fitsx,mouse_fitsy,raM,decM);
    mainwindow.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
 
+  adu_e:=0;// zero is no correction
+  if mainwindow.noise_in_electron1.checked then
+  begin
+    egain:=strtofloat2(head.egain);
+    if egain<>0 then
+    begin
+      if electron_to_adu<>0 then
+        adu_e:=egain/electron_to_adu;{ADU to electrons, factor for unbinned images. For ASI1600 unbinned 1/16 because 0..4095 values result in 0..65535 output}
+    end;
+  end;
+
    hfd2:=999;
-   HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),annulus_radius {annulus radius},flux_aperture,hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
+   HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),annulus_radius {annulus radius},flux_aperture,adu_e {adu_e unbinned},hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
    //mainwindow.caption:=floattostr(mouse_fitsX)+',   '+floattostr(mouse_fitsy)+',         '+floattostr(object_xc)+',   '+floattostr(object_yc);
    if ((hfd2<99) and (hfd2>0)) then
    begin
@@ -13919,6 +13932,8 @@ begin
      if ((hfd_arcseconds) and (head.cd1_1<>0)) then begin hfd_str:=hfd_str+'"';fwhm_str:=fwhm_str+'"';end;
 
      str(snr:0:0,snr_str);
+     if adu_e=0 then snr_str:='SNR='+snr_str // noise based on ADU's
+                else snr_str:='SNR_e='+snr_str;// noise based on electrons
 
      if flux_magn_offset<>0 then {offset calculated in star annotation call}
      begin
@@ -13933,7 +13948,7 @@ begin
        mainwindow.statusbar1.panels[1].text:=prepare_ra8(object_raM,': ')+'   '+prepare_dec2(object_decM,'° '){object position in RA,DEC}
      else
        mainwindow.statusbar1.panels[1].text:=floattostrF(object_xc+1,ffFixed,7,2)+',  '+floattostrF(object_yc+1,ffFixed,7,2);{object position in FITS X,Y}
-     mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', SNR='+snr_str+mag_str{+' '+floattostr4(flux)};
+     mainwindow.statusbar1.panels[2].text:='HFD='+hfd_str+', FWHM='+FWHM_str+', '+snr_str+mag_str{+' '+floattostr4(flux)};
      if display_adu then mainwindow.statusbar1.panels[7].text:='ADU='+floattostrF(flux,ffFixed,0,0);
    end
    else
@@ -14671,7 +14686,7 @@ begin
   'At unity gain this factor shall be 1'+#10
   ,head.egain);
   if head.egain='' then exit;
-  electron_to_adu:=InputBox('Additional conversion factor for an unbinned sensor',
+  electron_to_adu:=round(strtofloat(InputBox('Additional conversion factor for an unbinned sensor',
   'For a 12 bit sensor with an output range [0..65535] enter 16'+#10+
   'For a 12 bit sensor with an output range [0. . 4096] enter 1'+#10+
   'For a 14 bit sensor with an output range [0..65535] enter 4'+#10+
@@ -14679,7 +14694,7 @@ begin
   'For a 16 bit sensor with an output range [0..65535] enter 1'+#10+
   #10+
   'The bit depth of the sensor can be measured from a light using popup menu "Show statistics"'+#10
-  ,electron_to_adu);
+  ,inttostr(electron_to_adu))));
 end;
 
 procedure Tmainwindow.halo_removal1Click(Sender: TObject);
@@ -15097,281 +15112,284 @@ begin
   Screen.Cursor:= crHourGlass;
 
   try
-   TheFile4:=tfilestream.Create(filen2, fmcreate );
-  except
-   TheFile4.free;
-   exit;
-  end;
+    TheFile4:=tfilestream.Create(filen2, fmcreate );
+    try
+      progressC:=0;
+
+     {update FITs header}
+      if type1<>24 then {standard FITS}
+      begin
+        update_integer('BITPIX  =',' / Bits per entry                                 ' ,type1); {16 or -32}
+        update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number of dimensions, 2 for mono, 3 for colour}
+        update_integer('NAXIS1  =',' / length of x axis                               ' ,width5);
+        update_integer('NAXIS2  =',' / length of y axis                               ' ,height5);
+        if colours5<>1 then {color image}
+          update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,colours5)
+          else
+          remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
+
+        if type1=16 then bzero2:=32768 else bzero2:=0;
+
+        update_integer('BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,bzero2);
+        update_integer('BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
+        if type1<>8 then
+        begin
+          update_integer('DATAMIN =',' / Minimum data value                             ' ,round(head.datamin_org));
+          update_integer('DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
+          update_integer('CBLACK  =',' / Black point used for displaying image.         ' ,round(cblack) ); {2019-4-9}
+          update_integer('CWHITE  =',' / White point used for displaying the image.     ' ,round(cwhite) );
+        end
+        else
+        begin {in most case reducing from 16 or flat to 8 bit}
+          update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
+          update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
+        end;
+      end {update existing header}
+      else
+      begin {special 8 bit with three colors combined in 24 bit}
+        {update FITs header}
+        update_integer('BITPIX  =',' / Bits per entry                                 ' ,8);
+        update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number dimensions, 2 for mono, 3 for color}
+        update_integer('NAXIS1  =',' / length of x axis                               ' ,3);
+        update_integer('NAXIS2  =',' / length of y axis                               ' ,width5);
+        update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,height5);
+        update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
+        update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
+        update_integer('BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,0);
+        update_integer('BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
+        {update existing header}
+      end;
+
+    //  update_text ('CALSTAT =',#39+head.calstat+#39); {calibration status}
+
+      {write memo1 header to file}
+      for i:=0 to 79 do empthy_line[i]:=#32;{space}
+      i:=0;
+      repeat
+         if i<mainwindow.memo1.lines.count then
+         begin
+           line0:=mainwindow.memo1.lines[i];{line0 is an ansistring. According the standard the FITS header should only contain ASCII charactors between decimal 32 and 126.}
+           while length(line0)<80 do line0:=line0+' ';{extend to length 80 if required}
+           strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
+           thefile4.writebuffer(aline,80);{write updated header from memo1}
+         end
+         else
+         thefile4.writebuffer(empthy_line,80);{write empthy line}
+         inc(i);
+      until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
+
+      if type1=8 then
+      begin
+        minimum:=min(0,mainwindow.minimum1.position); {stretch later if required}
+        maximum:=max(255,mainwindow.maximum1.position);
+        for k:=0 to colours5-1 do {do all colors}
+        for i:=0 to height5-1 do
+        begin
+          inc(progressC);
+          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
+          {$IFDEF fpc}
+          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
+          {$else} {delphi}
+          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
+          {$endif}
+
+          for j:=0 to width5-1 do
+          begin
+            dd:=img[k,j,i];{save all colors}
+            dum:=round((dd-minimum)*255/(maximum-minimum));{scale to 0..255}
+            if dum<0 then dum:=0;
+            if dum>255 then dum:=255;
+            fitsbuffer[j]:=dum;
+          end;
+          thefile4.writebuffer(fitsbuffer,width5); {write as bytes}
+        end;
+      end
+      else
+      if type1=24 then
+      begin
+        minimum:=min(0,mainwindow.minimum1.position); {stretch later if required}
+        maximum:=max(255,mainwindow.maximum1.position);
+
+        for i:=0 to height5-1 do
+        begin
+          inc(progressC);
+          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
+          {$IFDEF fpc}
+          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
+          {$else} {delphi}
+          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
+          {$endif}
+
+          for j:=0 to width5-1 do
+          begin
+            for k:=0 to 2 do {do all colors}
+            begin
+              dd:=img[k,j,i];{save all colors}
+              dum:=round((dd-minimum)*255/(maximum-minimum));{scale to 0..255}
+              if dum<0 then dum:=0;
+              if dum>255 then dum:=255;
+              rgb[k]:=dum;
+            end;
+            fitsbufferRGB[j]:=rgb;
+          end;
+          thefile4.writebuffer(fitsbufferRGB,width5+width5+width5); {write as bytes}
+        end;
+      end
+      else
+
+      if type1=16 then
+      begin
+        for k:=0 to colours5-1 do {do all colors}
+        for i:=0 to height5-1 do
+        begin
+
+          inc(progressC);
+          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
+          {$IFDEF fpc}
+          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
+          {$else} {delphi}
+          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
+          {$endif}
+
+          for j:=0 to width5-1 do
+          begin
+            dum:=max(0,min(65535,round(img[k,j,i]))) - bzero2;{limit data between 0 and 65535 and shift it to -32768.. 32767}
+            { value  - bzero              result  shortint    word
+             ($0000  - $8000) and $FFFF = $8000 (-32768       32768 )  note  $0000 - $8000 ==>  $FFFF8000. Highest bits are skipped
+             ($0001  - $8000) and $FFFF = $8001 (-32767       32769 )  note  $0001 - $8000 ==>  $FFFF8001. Highest bits are skipped
+             ($2000  - $8000) and $FFFF = $A000 (-24576       40960 )
+             ($7FFF  - $8000) and $FFFF = $FFFF (    -1       65535 )
+             ($8000  - $8000) and $FFFF = $0000 (     0           0 )
+             ($8001  - $8000) and $FFFF = $0001 (     1           1 )
+             ($A000  - $8000) and $FFFF = $2000 (  8192        8192 )  note $A000 - $8000 equals  $2000.
+             ($FFFE  - $8000) and $FFFF = $7FFE (+32766       32766 )
+             ($FFFF  - $8000) and $FFFF = $7FFF (+32767       32767 )
+            }
+            fitsbuffer2[j]:=swap(word(dum));{in FITS file hi en low bytes are swapped}
+          end;
+          thefile4.writebuffer(fitsbuffer2,width5+width5); {write as bytes}
+        end;
+      end
+      else
+      if type1=-32 then
+      begin
+        for k:=0 to colours5-1 do {do all colors}
+        for i:=0 to height5-1 do
+        begin
+          inc(progressC);
+          progress_value:=round(progressC*100/(colours5*height5));{progress in %}
+          {$IFDEF fpc}
+          if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase in steps of 5%}
+          {$else} {delphi}
+          if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
+          {$endif}
+          for j:=0 to width5-1 do
+          begin
+           // img[0,j,i]:=341.7177734375;  {equals non intel 3772492355}
+         //  if img[k,j,i]>4100 then img[k,j,i]:=4100;
+
+            fitsbuffer4[j]:=INT_IEEE4_reverse(img[k,j,i]);{in FITS file hi en low bytes are swapped}
+          end;
+          thefile4.writebuffer(fitsbuffer4,width5*4); {write as bytes}
+        end;
+      end;
+      remain:=round(2880*(1-frac(thefile4.position/2880)));{follow standard and only write in a multi of 2880 bytes}
+      if ((remain<>0) and (remain<>2880)) then
+      begin
+        FillChar(fitsbuffer, remain, 0);
+        thefile4.writebuffer(fitsbuffer,remain);{write some bytes}
+      end;
+
+    //  if extend_type>=3 then {write bintable extension}
+    //  begin
+    //    rows:=number_of_fields(#9,mainwindow.memo3.lines[3]); {first lines could be blank or incomplete}
+    //    tal:=mainwindow.memo3.lines[0];
+    //    i:=0;
+    //    strplcopy(aline,'XTENSION= '+#39+'BINTABLE'+#39+' / FITS Binary Table Extension                              ',80);{copy 80 and not more or less in position aline[80] should be #0 from string}
+    //    thefile4.writebuffer(aline,80); inc(i);
+    //    strplcopy(aline,  'BITPIX  =                    8 / 8-bits character format                                  ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+    //    strplcopy(aline,  'NAXIS   =                    2 / Tables are 2-D char. array                               ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+    //    str(rows*4:13,tal); {write only 4 byte floats}
+    //    strplcopy(        aline,'NAXIS1  =        '+tal+' / Bytes in row                                             ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+
+    //    str(mainwindow.memo3.lines.count-1-1 :13,tal);
+    //    strplcopy(aline,      'NAXIS2  =        '+tal  +' /                                                          ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+
+    //    strplcopy(  aline,'PCOUNT  =                    0 / Parameter count always 0                                 ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+
+    //    strplcopy(aline,  'GCOUNT  =                    1 / Group count always 1                                     ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+
+    //    str(rows  :3,tal);
+    //    strplcopy(aline,'TFIELDS =                  '+tal+            ' / No. of col in table                                      ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+
+    //    for k:=1 to rows do
+    //    begin
+    //      str(k:0,tal); tal:=copy(tal+'  ',1,3);
+    //      strplcopy(aline,'TFORM'+tal+'= '+#39+'E       '+#39+'           / Format of field                                          ',80);
+    //      thefile4.writebuffer(aline,80);inc(i);
+
+    //      lab:=retrieve_memo3_string(k-1,0,'col'+inttostr(k)); {retrieve type from memo3}
+    //      strplcopy(aline,'TTYPE'+tal+'= '+#39+lab+#39+' / Field label                                                                                                        ',80);
+    //      thefile4.writebuffer(aline,80);inc(i);
+
+    //      lab:=retrieve_memo3_string(k-1,1,'unit'+inttostr(k)); {retrieve unit from memo3}
+    //      strplcopy(aline,'TUNIT'+tal+'= '+#39+lab+#39+' / Physical unit of field                                                                                             ',80);
+    //      thefile4.writebuffer(aline,80);inc(i);
+    //    end;
+
+    //    strplcopy(  aline,'ORIGIN  = '    +#39+'ASTAP   '+#39+'           / Written by ASTAP                                         ',80);
+    //    thefile4.writebuffer(aline,80);inc(i);
+    //    strpcopy(aline,'END                                                                             ');
+    //    thefile4.writebuffer(aline,80);inc(i);
+
+    //    while  frac(i*80/2880)>0 do
+    //    begin
+    //      thefile4.writebuffer(empthy_line,80);{write empthy line}
+    //      inc(i);
+    //    end;
+
+    //    {write datablock}
+    //    i:=0;
+    //    for r:=2 to mainwindow.memo3.lines.count-1 do {rows}
+    //    begin
+    //       for j:=0 to rows-1 do {columns}
+    //      begin
+    //         tal:=retrieve_memo3_string(j {x},r {y},'0'); {retrieve string value from memo3 at position k,m}
+    //         fitsbuffer4[j]:=INT_IEEE4_reverse(strtofloat2(tal));{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
+    //       end;
+    //       thefile4.writebuffer(fitsbuffer[0],rows*4);{write one row}
+    //       i:=i+rows*4; {byte counter}
+    //    end;
+
+    //    j:=80-round(80*frac(i/80));{remainder in bytes till written muliple of 80 char}
+    //    thefile4.writebuffer(empthy_line,j);{write till multiply of 80}
+    //    i:=(i + j*80) div 80 ;{how many 80 bytes record left till multiple of 2880}
+
+    //    while  frac(i*80/2880)>0 do {write till 2880 block is written}
+    //    begin
+    //      thefile4.writebuffer(empthy_line,80);{write empthy line}
+    //      inc(i);
+    //    end;
+    //  end;
+
+
+    finally
+      TheFile4.free;
+    end;
 
   unsaved_import:=false;{file is available for astrometry.net}
-
-  progressC:=0;
-
- {update FITs header}
-  if type1<>24 then {standard FITS}
-  begin
-    update_integer('BITPIX  =',' / Bits per entry                                 ' ,type1); {16 or -32}
-    update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number of dimensions, 2 for mono, 3 for colour}
-    update_integer('NAXIS1  =',' / length of x axis                               ' ,width5);
-    update_integer('NAXIS2  =',' / length of y axis                               ' ,height5);
-    if colours5<>1 then {color image}
-      update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,colours5)
-      else
-      remove_key('NAXIS3  ',false{all});{remove key word in header. Some program don't like naxis3=1}
-
-    if type1=16 then bzero2:=32768 else bzero2:=0;
-
-    update_integer('BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,bzero2);
-    update_integer('BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
-    if type1<>8 then
-    begin
-      update_integer('DATAMIN =',' / Minimum data value                             ' ,round(head.datamin_org));
-      update_integer('DATAMAX =',' / Maximum data value                             ' ,round(head.datamax_org));
-      update_integer('CBLACK  =',' / Black point used for displaying image.         ' ,round(cblack) ); {2019-4-9}
-      update_integer('CWHITE  =',' / White point used for displaying the image.     ' ,round(cwhite) );
-    end
-    else
-    begin {in most case reducing from 16 or flat to 8 bit}
-      update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-      update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
-    end;
-  end {update existing header}
-  else
-  begin {special 8 bit with three colors combined in 24 bit}
-    {update FITs header}
-    update_integer('BITPIX  =',' / Bits per entry                                 ' ,8);
-    update_integer('NAXIS   =',' / Number of dimensions                           ' ,dimensions);{number dimensions, 2 for mono, 3 for color}
-    update_integer('NAXIS1  =',' / length of x axis                               ' ,3);
-    update_integer('NAXIS2  =',' / length of y axis                               ' ,width5);
-    update_integer('NAXIS3  =',' / length of z axis (mostly colors)               ' ,height5);
-    update_integer('DATAMIN =',' / Minimum data value                             ' ,0);
-    update_integer('DATAMAX =',' / Maximum data value                             ' ,255);
-    update_integer('BZERO   =',' / physical_value = BZERO + BSCALE * array_value  ' ,0);
-    update_integer('BSCALE  =',' / physical_value = BZERO + BSCALE * array_value  ' ,1);{data is scaled to physical value in the load_fits routine}
-    {update existing header}
+  result:=true;
+  except
+    memo2_message('█ █ █ █ █ █ Write error!!  █ █ █ █ █ █');
   end;
-
-//  update_text ('CALSTAT =',#39+head.calstat+#39); {calibration status}
-
-  {write memo1 header to file}
-  for i:=0 to 79 do empthy_line[i]:=#32;{space}
-  i:=0;
-  repeat
-     if i<mainwindow.memo1.lines.count then
-     begin
-       line0:=mainwindow.memo1.lines[i];{line0 is an ansistring. According the standard the FITS header should only contain ASCII charactors between decimal 32 and 126.}
-       while length(line0)<80 do line0:=line0+' ';{extend to length 80 if required}
-       strpcopy(aline,(copy(line0,1,80)));{copy 80 and not more}
-       thefile4.writebuffer(aline,80);{write updated header from memo1}
-     end
-     else
-     thefile4.writebuffer(empthy_line,80);{write empthy line}
-     inc(i);
-  until ((i>=mainwindow.memo1.lines.count) and (frac(i*80/2880)=0)); {write multiply records 36x80 or 2880 bytes}
-
-  if type1=8 then
-  begin
-    minimum:=min(0,mainwindow.minimum1.position); {stretch later if required}
-    maximum:=max(255,mainwindow.maximum1.position);
-    for k:=0 to colours5-1 do {do all colors}
-    for i:=0 to height5-1 do
-    begin
-      inc(progressC);
-      progress_value:=round(progressC*100/(colours5*height5));{progress in %}
-      {$IFDEF fpc}
-      if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
-      {$else} {delphi}
-      if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
-      {$endif}
-
-      for j:=0 to width5-1 do
-      begin
-        dd:=img[k,j,i];{save all colors}
-        dum:=round((dd-minimum)*255/(maximum-minimum));{scale to 0..255}
-        if dum<0 then dum:=0;
-        if dum>255 then dum:=255;
-        fitsbuffer[j]:=dum;
-      end;
-      thefile4.writebuffer(fitsbuffer,width5); {write as bytes}
-    end;
-  end
-  else
-  if type1=24 then
-  begin
-    minimum:=min(0,mainwindow.minimum1.position); {stretch later if required}
-    maximum:=max(255,mainwindow.maximum1.position);
-
-    for i:=0 to height5-1 do
-    begin
-      inc(progressC);
-      progress_value:=round(progressC*100/(colours5*height5));{progress in %}
-      {$IFDEF fpc}
-      if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
-      {$else} {delphi}
-      if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
-      {$endif}
-
-      for j:=0 to width5-1 do
-      begin
-        for k:=0 to 2 do {do all colors}
-        begin
-          dd:=img[k,j,i];{save all colors}
-          dum:=round((dd-minimum)*255/(maximum-minimum));{scale to 0..255}
-          if dum<0 then dum:=0;
-          if dum>255 then dum:=255;
-          rgb[k]:=dum;
-        end;
-        fitsbufferRGB[j]:=rgb;
-      end;
-      thefile4.writebuffer(fitsbufferRGB,width5+width5+width5); {write as bytes}
-    end;
-  end
-  else
-
-  if type1=16 then
-  begin
-    for k:=0 to colours5-1 do {do all colors}
-    for i:=0 to height5-1 do
-    begin
-
-      inc(progressC);
-      progress_value:=round(progressC*100/(colours5*height5));{progress in %}
-      {$IFDEF fpc}
-      if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase insteps of 5%}
-      {$else} {delphi}
-      if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
-      {$endif}
-
-      for j:=0 to width5-1 do
-      begin
-        dum:=max(0,min(65535,round(img[k,j,i]))) - bzero2;{limit data between 0 and 65535 and shift it to -32768.. 32767}
-        { value  - bzero              result  shortint    word
-         ($0000  - $8000) and $FFFF = $8000 (-32768       32768 )  note  $0000 - $8000 ==>  $FFFF8000. Highest bits are skipped
-         ($0001  - $8000) and $FFFF = $8001 (-32767       32769 )  note  $0001 - $8000 ==>  $FFFF8001. Highest bits are skipped
-         ($2000  - $8000) and $FFFF = $A000 (-24576       40960 )
-         ($7FFF  - $8000) and $FFFF = $FFFF (    -1       65535 )
-         ($8000  - $8000) and $FFFF = $0000 (     0           0 )
-         ($8001  - $8000) and $FFFF = $0001 (     1           1 )
-         ($A000  - $8000) and $FFFF = $2000 (  8192        8192 )  note $A000 - $8000 equals  $2000.
-         ($FFFE  - $8000) and $FFFF = $7FFE (+32766       32766 )
-         ($FFFF  - $8000) and $FFFF = $7FFF (+32767       32767 )
-        }
-        fitsbuffer2[j]:=swap(word(dum));{in FITS file hi en low bytes are swapped}
-      end;
-      thefile4.writebuffer(fitsbuffer2,width5+width5); {write as bytes}
-    end;
-  end
-  else
-  if type1=-32 then
-  begin
-    for k:=0 to colours5-1 do {do all colors}
-    for i:=0 to height5-1 do
-    begin
-      inc(progressC);
-      progress_value:=round(progressC*100/(colours5*height5));{progress in %}
-      {$IFDEF fpc}
-      if frac(progress_value/5)=0 then progress_indicator(progress_value,'');{report increase in steps of 5%}
-      {$else} {delphi}
-      if frac(progress_value/5)=0 mainwindow.taskbar1.progressvalue:=progress_value;
-      {$endif}
-      for j:=0 to width5-1 do
-      begin
-       // img[0,j,i]:=341.7177734375;  {equals non intel 3772492355}
-     //  if img[k,j,i]>4100 then img[k,j,i]:=4100;
-
-        fitsbuffer4[j]:=INT_IEEE4_reverse(img[k,j,i]);{in FITS file hi en low bytes are swapped}
-      end;
-      thefile4.writebuffer(fitsbuffer4,width5*4); {write as bytes}
-    end;
-  end;
-  remain:=round(2880*(1-frac(thefile4.position/2880)));{follow standard and only write in a multi of 2880 bytes}
-  if ((remain<>0) and (remain<>2880)) then
-  begin
-    FillChar(fitsbuffer, remain, 0);
-    thefile4.writebuffer(fitsbuffer,remain);{write some bytes}
-  end;
-
-//  if extend_type>=3 then {write bintable extension}
-//  begin
-//    rows:=number_of_fields(#9,mainwindow.memo3.lines[3]); {first lines could be blank or incomplete}
-//    tal:=mainwindow.memo3.lines[0];
-//    i:=0;
-//    strplcopy(aline,'XTENSION= '+#39+'BINTABLE'+#39+' / FITS Binary Table Extension                              ',80);{copy 80 and not more or less in position aline[80] should be #0 from string}
-//    thefile4.writebuffer(aline,80); inc(i);
-//    strplcopy(aline,  'BITPIX  =                    8 / 8-bits character format                                  ',80);
-//    thefile4.writebuffer(aline,80);inc(i);
-//    strplcopy(aline,  'NAXIS   =                    2 / Tables are 2-D char. array                               ',80);
-//    thefile4.writebuffer(aline,80);inc(i);
-//    str(rows*4:13,tal); {write only 4 byte floats}
-//    strplcopy(        aline,'NAXIS1  =        '+tal+' / Bytes in row                                             ',80);
-//    thefile4.writebuffer(aline,80);inc(i);
-
-//    str(mainwindow.memo3.lines.count-1-1 :13,tal);
-//    strplcopy(aline,      'NAXIS2  =        '+tal  +' /                                                          ',80);
-//    thefile4.writebuffer(aline,80);inc(i);
-
-//    strplcopy(  aline,'PCOUNT  =                    0 / Parameter count always 0                                 ',80);
-//    thefile4.writebuffer(aline,80);inc(i);
-
-//    strplcopy(aline,  'GCOUNT  =                    1 / Group count always 1                                     ',80);
-//    thefile4.writebuffer(aline,80);inc(i);
-
-//    str(rows  :3,tal);
-//    strplcopy(aline,'TFIELDS =                  '+tal+            ' / No. of col in table                                      ',80);
-//    thefile4.writebuffer(aline,80);inc(i);
-
-//    for k:=1 to rows do
-//    begin
-//      str(k:0,tal); tal:=copy(tal+'  ',1,3);
-//      strplcopy(aline,'TFORM'+tal+'= '+#39+'E       '+#39+'           / Format of field                                          ',80);
-//      thefile4.writebuffer(aline,80);inc(i);
-
-//      lab:=retrieve_memo3_string(k-1,0,'col'+inttostr(k)); {retrieve type from memo3}
-//      strplcopy(aline,'TTYPE'+tal+'= '+#39+lab+#39+' / Field label                                                                                                        ',80);
-//      thefile4.writebuffer(aline,80);inc(i);
-
-//      lab:=retrieve_memo3_string(k-1,1,'unit'+inttostr(k)); {retrieve unit from memo3}
-//      strplcopy(aline,'TUNIT'+tal+'= '+#39+lab+#39+' / Physical unit of field                                                                                             ',80);
-//      thefile4.writebuffer(aline,80);inc(i);
-//    end;
-
-//    strplcopy(  aline,'ORIGIN  = '    +#39+'ASTAP   '+#39+'           / Written by ASTAP                                         ',80);
-//    thefile4.writebuffer(aline,80);inc(i);
-//    strpcopy(aline,'END                                                                             ');
-//    thefile4.writebuffer(aline,80);inc(i);
-
-//    while  frac(i*80/2880)>0 do
-//    begin
-//      thefile4.writebuffer(empthy_line,80);{write empthy line}
-//      inc(i);
-//    end;
-
-//    {write datablock}
-//    i:=0;
-//    for r:=2 to mainwindow.memo3.lines.count-1 do {rows}
-//    begin
-//       for j:=0 to rows-1 do {columns}
-//      begin
-//         tal:=retrieve_memo3_string(j {x},r {y},'0'); {retrieve string value from memo3 at position k,m}
-//         fitsbuffer4[j]:=INT_IEEE4_reverse(strtofloat2(tal));{adapt intel floating point to non-intel floating. Add 1 to get FITS coordinates}
-//       end;
-//       thefile4.writebuffer(fitsbuffer[0],rows*4);{write one row}
-//       i:=i+rows*4; {byte counter}
-//    end;
-
-//    j:=80-round(80*frac(i/80));{remainder in bytes till written muliple of 80 char}
-//    thefile4.writebuffer(empthy_line,j);{write till multiply of 80}
-//    i:=(i + j*80) div 80 ;{how many 80 bytes record left till multiple of 2880}
-
-//    while  frac(i*80/2880)>0 do {write till 2880 block is written}
-//    begin
-//      thefile4.writebuffer(empthy_line,80);{write empthy line}
-//      inc(i);
-//    end;
-//  end;
-
-  TheFile4.free;
-
+  Screen.Cursor:= OldCursor;
   mainwindow.image1.stretch:=true;
   Screen.Cursor:= OldCursor;
   {$IFDEF fpc}
@@ -15379,9 +15397,7 @@ begin
   {$else} {delphi}
   mainwindow.taskbar1.progressstate:=TTaskBarProgressState.None;
   {$endif}
-  result:=true;
 end;
-
 
 function TextfileSize(const name: string): LongInt;
 var

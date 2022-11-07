@@ -1472,7 +1472,7 @@ begin
         begin
           if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img[0,fitsX,fitsY]-backgr>detection_level)) then {new star. For analyse used sigma is 5, so not too low.}
           begin
-            HFD(img,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            HFD(img,fitsX,fitsY,14{annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
             if ((hfd1<=30) and (snr>snr_min) and (hfd1>hfd_min) {two pixels minimum} ) then
             begin
               hfd_list[star_counter]:=hfd1;{store}
@@ -1585,7 +1585,7 @@ begin
         begin
           if (( img_sa[0,fitsX,fitsY]<=0){area not occupied by a star} and (img[0,fitsX,fitsY]-backgr>detection_level){star}) then {new star. For analyse used sigma is 5, so not too low.}
           begin
-            HFD(img,fitsX,fitsY,25 {LARGE annulus radius},99 {flux aperture restriction}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            HFD(img,fitsX,fitsY,25 {LARGE annulus radius},99 {flux aperture restriction},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
             if ((hfd1<=35) and (snr>30) and (hfd1>0.8) {two pixels minimum} ) then
             begin
               {store values}
@@ -1919,7 +1919,7 @@ begin
                 if head_2.filter_name<>'' then ListView1.Items.item[c].SubitemImages[L_filter]:=7 {question mark} else
                      ListView1.Items.item[c].SubitemImages[L_filter]:=-1;{blank}
 
-                ListView1.Items.item[c].subitems.Strings[L_bin]:=floattostrf(Xbinning,ffgeneral,0,0)+' x '+floattostrf(Ybinning,ffgeneral,0,0); {Binning CCD}
+                ListView1.Items.item[c].subitems.Strings[L_bin]:=floattostrf(head_2.Xbinning,ffgeneral,0,0)+' x '+floattostrf(head_2.Ybinning,ffgeneral,0,0); {Binning CCD}
 
                 ListView1.Items.item[c].subitems.Strings[L_hfd]:=floattostrF(hfd_median,ffFixed,0,1);
                 ListView1.Items.item[c].subitems.Strings[L_quality]:=inttostr5(round(star_counter/sqr(hfd_median))); {quality number of stars divided by hfd}
@@ -1939,12 +1939,12 @@ begin
                 ListView1.Items.item[c].subitems.Strings[L_width]:=inttostr(head_2.width); {width}
                 ListView1.Items.item[c].subitems.Strings[L_height]:=inttostr(head_2.height);{height}
 
-                if (((head_2.naxis3=1) and (Xbinning=1) and (bayerpat<>'')) or (stackmenu1.make_osc_color1.checked)) then //process as OSC images
+                if (((head_2.naxis3=1) and (head_2.Xbinning=1) and (bayerpat<>'')) or (stackmenu1.make_osc_color1.checked)) then //process as OSC images
                   process_as_osc:=true
                 else
                   process_as_osc:=false;//disable demosaicing
 
-                if ((head_2.naxis3=1) and (Xbinning=1) and (bayerpat<>'')) then  rawstr:=' raw' else rawstr:='';
+                if ((head_2.naxis3=1) and (head_2.Xbinning=1) and (bayerpat<>'')) then  rawstr:=' raw' else rawstr:='';
 
                 ListView1.Items.item[c].subitems.Strings[L_type]:=copy(imagetype,1,5)+inttostr(nrbits)+rawstr;{type}
 
@@ -3377,7 +3377,7 @@ begin
               else lv.Items.item[c].subitems.Strings[D_exposure]:=floattostrf(head_2.exposure,ffgeneral, 6, 6);
 
             lv.Items.item[c].subitems.Strings[D_temperature]:=inttostr(head_2.set_temperature);
-            lv.Items.item[c].subitems.Strings[D_binning]:=floattostrf(Xbinning,ffgeneral,0,0)+' x '+floattostrf(Ybinning,ffgeneral,0,0); {Binning CCD}
+            lv.Items.item[c].subitems.Strings[D_binning]:=floattostrf(head_2.Xbinning,ffgeneral,0,0)+' x '+floattostrf(head_2.Ybinning,ffgeneral,0,0); {Binning CCD}
             lv.Items.item[c].subitems.Strings[D_width]:=inttostr(head_2.width); {image width}
             lv.Items.item[c].subitems.Strings[D_height]:=inttostr(head_2.height);{image height}
             lv.Items.item[c].subitems.Strings[D_type]:=imagetype;{image type}
@@ -4117,19 +4117,19 @@ begin
     update_float  ('CD2_2   =',' / CD matrix to convert (x,y) to (Ra, Dec)        ' ,head.cd2_2);
   end;
 
-  XBINNING:=XBINNING/ratio;
-  YBINNING:=YBINNING/ratio;
-  update_float  ('XBINNING=',' / Binning factor in width                         ' ,XBINNING);
-  update_float  ('YBINNING=',' / Binning factor in height                        ' ,YBINNING);
+  head.XBINNING:=head.XBINNING/ratio;
+  head.YBINNING:=head.YBINNING/ratio;
+  update_float  ('XBINNING=',' / Binning factor in width                         ' ,head.XBINNING);
+  update_float  ('YBINNING=',' / Binning factor in height                        ' ,head.YBINNING);
 
-  if XPIXSZ<>0 then
+  if head.XPIXSZ<>0 then
   begin
-    XPIXSZ:=XPIXSZ/ratio;
-    YPIXSZ:=YPIXSZ/ratio;
-    update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ' ,XPIXSZ);
-    update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ' ,YPIXSZ);
-    update_float('PIXSIZE1=',' / Pixel width in microns (after stretching)       ' ,XPIXSZ);
-    update_float('PIXSIZE2=',' / Pixel height in microns (after stretching)      ' ,YPIXSZ);
+    head.XPIXSZ:=head.XPIXSZ/ratio;
+    head.YPIXSZ:=head.YPIXSZ/ratio;
+    update_float('XPIXSZ  =',' / Pixel width in microns (after stretching)       ' ,head.XPIXSZ);
+    update_float('YPIXSZ  =',' / Pixel height in microns (after stretching)      ' ,head.YPIXSZ);
+    update_float('PIXSIZE1=',' / Pixel width in microns (after stretching)       ' ,head.XPIXSZ);
+    update_float('PIXSIZE2=',' / Pixel height in microns (after stretching)      ' ,head.YPIXSZ);
   end;
   add_text   ('HISTORY   ','Image resized with factor '+ floattostr6(ratio));
 end;
@@ -5105,35 +5105,35 @@ begin
      focallen:=strtofloat2(stackmenu1.focallength1.text);{manual entered focal length, update focallen}
 
  if sender=pixelsize1 then {manual entered}
-      xpixsz:=strtofloat2(stackmenu1.pixelsize1.text);{manual entered micrometer, update xpixsz}
+      head.xpixsz:=strtofloat2(stackmenu1.pixelsize1.text);{manual entered micrometer, update xpixsz}
 
   if ((head.cd1_1<>0) and (head.cdelt2<>0)) then {solved image}
   begin
     calc_scale:=3600*abs(head.cdelt2);
     if sender=focallength1 then {calculate pixelsize from head.cdelt2 and manual entered focallen}
     begin
-      xpixsz:=calc_scale*focallen/((180*3600/1000)/pi);
-      stackmenu1.pixelsize1.text:=floattostrf(xpixsz,ffgeneral, 4, 4);
+      head.xpixsz:=calc_scale*focallen/((180*3600/1000)/pi);
+      stackmenu1.pixelsize1.text:=floattostrf(head.xpixsz,ffgeneral, 4, 4);
     end
     else
     begin  {calculate focal length from head.cdelt2 and pixelsize1}
-      focallen:=(xpixsz/calc_scale)*(180*3600/1000)/pi; {arcsec per pixel}
+      focallen:=(head.xpixsz/calc_scale)*(180*3600/1000)/pi; {arcsec per pixel}
       stackmenu1.focallength1.text:=floattostrf(focallen,ffgeneral, 4, 4);
     end;
   end
   else
   begin {not a solved image}
-    if focallen<>0 then calc_scale:=(xpixsz/focallen)*(180*3600/1000)/pi {arcsec per pixel}
+    if focallen<>0 then calc_scale:=(head.xpixsz/focallen)*(180*3600/1000)/pi {arcsec per pixel}
                    else calc_scale:=0;
   end;
 
   if calc_scale<> 0 then calculated_scale1.caption:=floattostrf(calc_scale, ffgeneral, 3, 3)+' "/pixel'
                     else calculated_scale1.caption:='- - -';
 
-  if xpixsz<>0 then calculated_sensor_size1.caption:=floattostrf(head.width*xpixsz*1E-3, fffixed, 3, 1)+' x'+floattostrf(head.height*xpixsz*1E-3, fffixed, 3, 1)+' mm' else calculated_sensor_size1.caption:='- - -';
+  if head.xpixsz<>0 then calculated_sensor_size1.caption:=floattostrf(head.width*head.xpixsz*1E-3, fffixed, 3, 1)+' x'+floattostrf(head.height*head.xpixsz*1E-3, fffixed, 3, 1)+' mm' else calculated_sensor_size1.caption:='- - -';
 
-  if ((xpixsz<>0) and (focallen<>0)) then
-    scale_calc1.Caption:=floattostrf((head.width*xpixsz/focallen)*(180/1000)/pi,ffgeneral, 3, 3)+'° x '+floattostrf((head.height*xpixsz/focallen)*(180/1000)/pi, ffgeneral, 3, 3)+'°'
+  if ((head.xpixsz<>0) and (focallen<>0)) then
+    scale_calc1.Caption:=floattostrf((head.width*head.xpixsz/focallen)*(180/1000)/pi,ffgeneral, 3, 3)+'° x '+floattostrf((head.height*head.xpixsz/focallen)*(180/1000)/pi, ffgeneral, 3, 3)+'°'
   else
     scale_calc1.Caption:='- - -';
 end;
@@ -6403,7 +6403,7 @@ var
   //var
     //starX,starY :double;
   begin
-    HFD(img_loaded,round(deX-1),round(deY-1),annulus_radius {14, annulus radius},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+    HFD(img_loaded,round(deX-1),round(deY-1),annulus_radius {14, annulus radius},flux_aperture,0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
     if ((hfd1<50) and (hfd1>0) and (snr>6)) then {star detected in img_loaded}
     begin
       if head.calstat='' then saturation_level:=64000 else saturation_level:=60000; {could be dark subtracted changing the saturation level}
@@ -9951,7 +9951,7 @@ begin
 
         if head.cd1_1<>0 then memo2_message('Astrometric solution reference file preserved for stack.');
         memo2_message('█ █ █  Saving result '+inttostr(image_counter)+' as '+filename2);
-        save_fits(img_loaded,filename2,-32, true);
+        if save_fits(img_loaded,filename2,-32, true)=false then exit;
 
 
         if head.naxis3>1 then report_results(object_to_process,stack_info,object_counter,3 {color icon}) {report result in tab results}

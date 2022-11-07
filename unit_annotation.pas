@@ -1847,7 +1847,7 @@ var
 
         if flux_calibration then
         begin
-          HFD(img_loaded,round(x),round(y), annulus_radius{14,annulus radius},flux_aperture, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+          HFD(img_loaded,round(x),round(y), annulus_radius{14,annulus radius},flux_aperture,0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
           if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum}) then
           if snr>30 then {star detected in img_loaded. 30 is found emperical}
           begin
@@ -2209,7 +2209,7 @@ var
         if flip_horizontal then x2:=(head.width-1)-x else x2:=x;
         if flip_vertical   then y2:=y            else y2:=(head.height-1)-y;
 
-        HFD(img_loaded,round(x),round(y), 14 {annulus_radius},99 {flux_aperture}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+        HFD(img_loaded,round(x),round(y), 14 {annulus_radius},99 {flux_aperture},0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
         if ((hfd1<15) and (hfd1>=0.8) {two pixels minimum} and (snr>10)) then {star detected in img_loaded}
         begin
           if plot then {show distortion}

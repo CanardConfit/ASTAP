@@ -263,11 +263,11 @@ begin
   extract_double_keyword('AOCAMBT',focus_temp);
 
 
-  extract_double_keyword('XPIXSZ',xpixsz);
+  extract_double_keyword('XPIXSZ',head.xpixsz);
 
   if head.cd1_1=0  then {try to retrieve pixel scale head.cdelt2. Else will be calculated in new_to_old_WCS procedure from the CD matrix}
   begin
-    if ((focallen<>0) and (xpixsz<>0)) then head.cdelt2:=180/(pi*1000)*xpixsz/focallen; {use maxim DL key word}
+    if ((focallen<>0) and (head.xpixsz<>0)) then head.cdelt2:=180/(pi*1000)*head.xpixsz/focallen; {use maxim DL key word}
 
     if head.cdelt2=0 then begin extract_double_keyword('SCALE',head.cdelt2); head.cdelt2:=head.cdelt2/3600 {scale is in arcsec/pixel }  end;{use sgp file keyword}
 

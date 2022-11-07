@@ -994,8 +994,8 @@ begin
 
     if ( (fov_org>1.05*(hd.height*hd.cdelt2) ) or (fov_org<0.95*(hd.height*hd.cdelt2)) ) then    //in astap hd.cdelt2 is always positive. No need for absolute function
     begin
-      if xpixsz<>0 then suggest_str:='Warning inexact scale! Set FOV='+floattostrF(hd.height*hd.cdelt2,ffFixed,0,2)+'d or scale='+floattostrF(hd.cdelt2*3600,ffFixed,0,1)+'"/pix or FL='+inttostr(round((180/(pi*1000)*xpixsz/hd.cdelt2)) )+'mm '
-                   else suggest_str:='Warning inexact scale! Set FOV='+floattostrF(hd.height*hd.cdelt2,ffFixed,0,2)+'d or scale='+floattostrF(hd.cdelt2*3600,ffFixed,0,1)+'"/pix ';
+      if hd.xpixsz<>0 then suggest_str:='Warning inexact scale! Set FOV='+floattostrF(hd.height*hd.cdelt2,ffFixed,0,2)+'d or scale='+floattostrF(hd.cdelt2*3600,ffFixed,0,1)+'"/pix or FL='+inttostr(round((180/(pi*1000)*hd.xpixsz/hd.cdelt2)) )+'mm '
+                      else suggest_str:='Warning inexact scale! Set FOV='+floattostrF(hd.height*hd.cdelt2,ffFixed,0,2)+'d or scale='+floattostrF(hd.cdelt2*3600,ffFixed,0,1)+'"/pix ';
       memo2_message(suggest_str);
       warning_str:=suggest_str+warning_str;
     end;

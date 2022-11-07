@@ -1805,9 +1805,13 @@ begin
          { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
         if nrbits=16 then
-          save_fits(img_loaded,filename2,16,true)
+        begin
+          if save_fits(img_loaded,filename2,16,true)=false then exit;//exit if save error
+        end
         else
-          save_fits(img_loaded,filename2,-32,true);
+        begin
+          if save_fits(img_loaded,filename2,-32,true)=false then exit;//exit if save error
+        end;
          memo2_message('New aligned image created: '+filename2);
         report_results('?',inttostr(round(head.exposure)),0,999 {color icon});{report result in tab result using modified filename2}
         progress_indicator(10+round(90*(counter)/length(files_to_process){(ListView1.items.count)}),'Cal');{show progress}

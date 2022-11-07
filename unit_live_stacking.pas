@@ -229,7 +229,7 @@ begin
           begin
             if init=false then
             begin
-              if (((head.naxis3=1) and (Xbinning=1) and (bayerpat<>'')) or (stackmenu1.make_osc_color1.checked)) then//process as OSC images
+              if (((head.naxis3=1) and (head.Xbinning=1) and (bayerpat<>'')) or (stackmenu1.make_osc_color1.checked)) then//process as OSC images
               begin
                 process_as_osc:=true;
                 memo2_message('Will demosaic OSC images to colour');
