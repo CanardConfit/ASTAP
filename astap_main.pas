@@ -59,7 +59,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.11.07';
+  astap_version='2022.11.08a';
 
 type
   { Tmainwindow }
@@ -711,7 +711,7 @@ var {################# initialised variables #########################}
   annotation_diameter : integer=20;
   pedestal            : integer=0;
   electron_to_adu     : integer=16;
-//  image_store_path    : string='';
+  default_egain       : double=1;
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
@@ -818,12 +818,12 @@ procedure Wait(wt:single=500);  {smart sleep}
 procedure update_header_for_colour; {update naxis and naxis3 keywords}
 procedure flip(x1,y1 : integer; out x2,y2 :integer);{array to screen or screen to array coordinates}
 function decode_string(data0: string; out ra4,dec4 : double):boolean;{convert a string to position}
-function noise_to_electrons(adu_s : double): string; {noise from adu_s to electrons per pixel}
 function save_tiff16(img: image_array; filen2:string;flip_H,flip_V:boolean): boolean;{save to 16 bit TIFF file }
 function save_tiff16_secure(img : image_array;filen2:string) : boolean;{guarantee no file is lost}
 function find_reference_star(img : image_array) : boolean;{for manual alignment}
 function aavso_update_required : boolean; //update of downloaded database required?
-
+function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
+function noise_to_electrons(adu_e, binning, sd : double): string;//reports noise in ADU's (adu_e=0) or electrons
 
 const   bufwide=1024*120;{buffer size in bytes}
 
@@ -4719,7 +4719,7 @@ procedure Tmainwindow.show_statistics1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,counter,col,size,counter_median,required_size,iterations,i : integer;
    value,stepsize,median_position, most_common,mc_1,mc_2,mc_3,mc_4,
-   sd,mean,median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range,total_flux  : double;
+   sd,mean,median,minimum, maximum,max_counter,saturated,mad,minstep,delta,range,total_flux,adu_e : double;
    Save_Cursor              : TCursor;
    info_message             : string;
    median_array             : array of double;
@@ -4742,6 +4742,8 @@ begin
   {reset variables}
   info_message:='';
 
+  adu_e:=retrieve_ADU_to_e_unbinned(head.egain);//Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
+
   {limit points to take median from at median_max_size}
   size:=(stopY-1-startY) * (stopX-1-startX);{number of pixels within the rectangle}
   stepsize:=median_max_size/size;
@@ -4751,7 +4753,6 @@ begin
 
   minstep:=99999;
   {measure the median of the suroundings}
-
   for col:=0 to head.naxis3-1 do  {do all colours}
   begin
     local_sd(startX+1 ,startY+1, stopX-1,stopY-1{within rectangle},col,img_loaded, {var} sd,mean,iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
@@ -4807,8 +4808,8 @@ begin
     info_message:=info_message+  'x̄ :    '+floattostrf(mean,ffgeneral, 5, 5)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+             {mean}
                                  'x̃  :   '+floattostrf(median,ffgeneral, 5, 5)+#10+ {median}
                                  'Mo :  '+floattostrf(most_common,ffgeneral, 5, 5)+#10+
-                                 'σ :   '+noise_to_electrons(sd)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+               {standard deviation}
-                                 'σ_2:   '+noise_to_electrons(get_negative_noise_level(img_loaded,col,startx,stopX,starty,stopY,most_common))+#10+
+                                 'σ :   '+noise_to_electrons(adu_e,head.xbinning,sd)+'   (sigma-clip iterations='+inttostr(iterations)+')'+#10+               {standard deviation}
+                                 'σ_2:   '+noise_to_electrons(adu_e,head.xbinning,get_negative_noise_level(img_loaded,col,startx,stopX,starty,stopY,most_common))+#10+
                                  'mad:   '+floattostrf(mad,ffgeneral, 4, 4)+#10+
                                  'm :   '+floattostrf(minimum,ffgeneral, 5, 5)+#10+
                                  'M :   '+floattostrf(maximum,ffgeneral, 5, 5)+ '  ('+inttostr(round(max_counter))+' x)'+#10+
@@ -7363,6 +7364,7 @@ begin
 
       noise_in_electron1.checked:=Sett.ReadBool('main','noise_e',false);{status bar menu}
       electron_to_adu:=Sett.ReadInteger('main','e_to_adu',16);
+      default_egain:=Sett.ReadFloat('main','d_egain',1);
 
 
       add_marker_position1.checked:=Sett.ReadBool('main','add_marker',false);{popup marker selected?}
@@ -7724,6 +7726,7 @@ begin
 
       sett.writeBool('main','noise_e',noise_in_electron1.checked);
       sett.writeinteger('main','e_to_adu',electron_to_adu);
+      sett.writefloat('main','d_egain',default_egain);
 
       sett.writeBool('main','add_marker',add_marker_position1.checked);
 
@@ -13720,23 +13723,29 @@ begin
 end;
 
 
-function noise_to_electrons(adu_s : double): string; {noise from adu_s to electrons per pixel}
+function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
 var
-  egain,e_to_adu: double;
+  egain: double;
 
 begin
-  result:=floattostrF(adu_s,ffgeneral, 4, 4); {result in adu}
-  if mainwindow.noise_in_electron1.checked then
+  if ((electron_to_adu<>0) and (mainwindow.noise_in_electron1.checked)) then
   begin
-    egain:=strtofloat2(head.egain);
-    if egain<>0 then
-    begin
-      if electron_to_adu<>0 then
-        result:=floattostrF(egain*adu_s*head.xbinning/electron_to_adu,ffFixed,0,1)+' e-';{noise result in electrons}
-    end;
-  end;
+    egain:=strtofloat1(head_egain);//point seperator
+    if egain=0 then egain:=default_egain;
+    result:=egain/electron_to_adu;{ADU to electrons, factor for unbinned images. For ASI1600 unbinned 1/16 because 0..4095 values result in 0..65535 output}
+  end
+  else
+  result:=0;// zero is calculate snr using ADU's
 end;
 
+function noise_to_electrons(adu_e, binning, sd : double): string;
+begin
+  if adu_e<>0 then
+    result:=floattostrF(sd*adu_e*binning,FFgeneral,3,3)+' e-' // in electrons
+  else
+    result:=floattostrF(sd,FFgeneral,3,3);//in adu's
+
+end;
 
 procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
@@ -13910,16 +13919,7 @@ begin
    sensor_coordinates_to_celestial(mouse_fitsx,mouse_fitsy,raM,decM);
    mainwindow.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
 
-  adu_e:=0;// zero is no correction
-  if mainwindow.noise_in_electron1.checked then
-  begin
-    egain:=strtofloat2(head.egain);
-    if egain<>0 then
-    begin
-      if electron_to_adu<>0 then
-        adu_e:=egain/electron_to_adu;{ADU to electrons, factor for unbinned images. For ASI1600 unbinned 1/16 because 0..4095 values result in 0..65535 output}
-    end;
-  end;
+   adu_e:=retrieve_ADU_to_e_unbinned(head.egain);//Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
 
    hfd2:=999;
    HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),annulus_radius {annulus radius},flux_aperture,adu_e {adu_e unbinned},hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
@@ -13960,7 +13960,7 @@ begin
 
      local_sd(round(mouse_fitsX-1)-10,round(mouse_fitsY-1)-10, round(mouse_fitsX-1)+10,round(mouse_fitsY-1)+10{regio of interest},0 {col},img_loaded, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
 
-     mainwindow.statusbar1.panels[2].text:='σ = '+ noise_to_electrons(sd);
+     mainwindow.statusbar1.panels[2].text:='σ = '+noise_to_electrons(adu_e, head.Xbinning, sd); //reports noise in ADU's (adu_e=0) or electrons
    end;
 end;
 
@@ -14686,6 +14686,7 @@ begin
   'At unity gain this factor shall be 1'+#10
   ,head.egain);
   if head.egain='' then exit;
+  default_egain:=strtofloat1(head.egain);//for next file load. Decimal seperator from header
   electron_to_adu:=round(strtofloat(InputBox('Additional conversion factor for an unbinned sensor',
   'For a 12 bit sensor with an output range [0..65535] enter 16'+#10+
   'For a 12 bit sensor with an output range [0. . 4096] enter 1'+#10+

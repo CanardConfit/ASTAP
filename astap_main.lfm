@@ -2212,8 +2212,8 @@ object mainwindow: Tmainwindow
     end
     object noise_in_electron1: TMenuItem
       AutoCheck = True
-      Caption = 'Noise in e-'
-      Hint = 'Noise in electrons uneffected by binning. For raw OSC images apply first binning 2x2.'
+      Caption = 'Noise and SNR based on e-'
+      Hint = 'Noise and SNR values are calculated from electrons not from ADU''s. Noise in electrons uneffected by binning. For raw OSC images apply first binning 2x2.'
     end
     object electron_to_adu_factors1: TMenuItem
       Caption = 'Set ADU=>e- factors'

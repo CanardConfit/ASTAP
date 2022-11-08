@@ -3288,7 +3288,7 @@ end;
 procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse list of FITS files}
 var
   c,counts,i,iterations, hfd_counter                          : integer;
-  backgr, hfd_median, hjd,sd, dummy,alt,az,ra_jnow,dec_jnow,ra_mount_jnow, dec_mount_jnow,ram,decm,rax,decx  : double;
+  backgr, hfd_median, hjd,sd, dummy,alt,az,ra_jnow,dec_jnow,ra_mount_jnow, dec_mount_jnow,ram,decm,rax,decx,adu_e  : double;
   filename1                        : string;
   Save_Cursor                      : TCursor;
   loaded, red,green,blue               : boolean;
@@ -3399,7 +3399,10 @@ begin
 
                 lv.Items.item[c].subitems.Strings[D_background]:=inttostr5(round(backgr));
                 if ((lv.name=stackmenu1.listview2.name) or (lv.name=stackmenu1.listview3.name) or (lv.name=stackmenu1.listview4.name)) then
-                       lv.Items.item[c].subitems.Strings[D_sigma]:=noise_to_electrons(sd); {noise level either in ADU or e-}
+                begin //noise
+                  adu_e:=retrieve_ADU_to_e_unbinned(head_2.egain); //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
+                  lv.Items.item[c].subitems.Strings[D_sigma]:=noise_to_electrons(adu_e, head_2.Xbinning, sd);//reports noise in ADU's (adu_e=0) or electrons
+                end;
               end;
             end;
 
@@ -6687,19 +6690,6 @@ begin
 
           init:=true;
         end;
-
-//        if first_image=c then
-//        begin
-//          head_ref:=head;{backup solution for deepsky annotation}
-
-  //        sensor_coordinates_to_celestial(shape_fitsX2,shape_fitsY2,{var}   rax2,decx2 {position});
-    //      name_check_iau:=prepare_IAU_designation(rax2,decx2);
-
-      //    sensor_coordinates_to_celestial(shape_fitsX,shape_fitsY,rax1,decx1 {fitsX, Y to ra,dec});
-//          sensor_coordinates_to_celestial(shape_fitsX3,shape_fitsY3,rax3,decx3 {fitsX, Y to ra,dec});
-//        end;
-
-
 
         mainwindow.image1.Canvas.Pen.Mode := pmMerge;
         mainwindow.image1.Canvas.Pen.width :=1;{thickness lines}
