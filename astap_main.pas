@@ -59,7 +59,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.11.08a';
+  astap_version='2022.11.09';
 
 type
   { Tmainwindow }
@@ -710,8 +710,8 @@ var {################# initialised variables #########################}
   annotation_color: tcolor=clyellow;
   annotation_diameter : integer=20;
   pedestal            : integer=0;
-  electron_to_adu     : integer=16;
-  default_egain       : double=1;
+  egain_extra_factor  : integer=16;
+  egain_default       : double=1;
 
 
 procedure ang_sep(ra1,dec1,ra2,dec2 : double;out sep: double);
@@ -4742,7 +4742,7 @@ begin
   {reset variables}
   info_message:='';
 
-  adu_e:=retrieve_ADU_to_e_unbinned(head.egain);//Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
+  adu_e:=retrieve_ADU_to_e_unbinned(head.egain);//Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
 
   {limit points to take median from at median_max_size}
   size:=(stopY-1-startY) * (stopX-1-startX);{number of pixels within the rectangle}
@@ -7363,8 +7363,8 @@ begin
       freetext:=Sett.ReadString('main','f_text','');
 
       noise_in_electron1.checked:=Sett.ReadBool('main','noise_e',false);{status bar menu}
-      electron_to_adu:=Sett.ReadInteger('main','e_to_adu',16);
-      default_egain:=Sett.ReadFloat('main','d_egain',1);
+      egain_default:=Sett.ReadFloat('main','egain_d',1);
+      egain_extra_factor:=Sett.ReadInteger('main','egain_ext',16);
 
 
       add_marker_position1.checked:=Sett.ReadBool('main','add_marker',false);{popup marker selected?}
@@ -7725,8 +7725,8 @@ begin
       sett.writestring('main','f_text',freetext);
 
       sett.writeBool('main','noise_e',noise_in_electron1.checked);
-      sett.writeinteger('main','e_to_adu',electron_to_adu);
-      sett.writefloat('main','d_egain',default_egain);
+      sett.writefloat('main','egain_d',egain_default);
+      sett.writeinteger('main','egain_ext',egain_extra_factor);
 
       sett.writeBool('main','add_marker',add_marker_position1.checked);
 
@@ -13723,16 +13723,16 @@ begin
 end;
 
 
-function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
+function retrieve_ADU_to_e_unbinned(head_egain :string): double; //Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
 var
   egain: double;
 
 begin
-  if ((electron_to_adu<>0) and (mainwindow.noise_in_electron1.checked)) then
+  if ((egain_extra_factor<>0) and (mainwindow.noise_in_electron1.checked)) then
   begin
     egain:=strtofloat1(head_egain);//point seperator
-    if egain=0 then egain:=default_egain;
-    result:=egain/electron_to_adu;{ADU to electrons, factor for unbinned images. For ASI1600 unbinned 1/16 because 0..4095 values result in 0..65535 output}
+    if egain=0 then egain:=egain_default;
+    result:=egain/egain_extra_factor;{ADU to electrons, factor for unbinned images. For ASI1600 unbinned 1/16 because 0..4095 values result in 0..65535 output}
   end
   else
   result:=0;// zero is calculate snr using ADU's
@@ -13919,7 +13919,7 @@ begin
    sensor_coordinates_to_celestial(mouse_fitsx,mouse_fitsy,raM,decM);
    mainwindow.statusbar1.panels[0].text:=position_to_string('   ',raM,decM);
 
-   adu_e:=retrieve_ADU_to_e_unbinned(head.egain);//Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
+   adu_e:=retrieve_ADU_to_e_unbinned(head.egain);//Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
 
    hfd2:=999;
    HFD(img_loaded,round(mouse_fitsX-1),round(mouse_fitsY-1),annulus_radius {annulus radius},flux_aperture,adu_e {adu_e unbinned},hfd2,fwhm_star2,snr,flux,object_xc,object_yc);{input coordinates in array[0..] output coordinates in array [0..]}
@@ -14682,12 +14682,13 @@ end;
 
 procedure Tmainwindow.electron_to_adu_factors1Click(Sender: TObject);
 begin
+  if head.egain='' then head.egain:=floattostrF(egain_default,FFgeneral,3,3);
   head.egain:=InputBox('factor e-/ADU, unbinned?',
   'At unity gain this factor shall be 1'+#10
   ,head.egain);
-  if head.egain='' then exit;
-  default_egain:=strtofloat1(head.egain);//for next file load. Decimal seperator from header
-  electron_to_adu:=round(strtofloat(InputBox('Additional conversion factor for an unbinned sensor',
+  egain_default:=strtofloat2(head.egain);//for next file load. Works with either dot (from header) or komma as decimal separator
+
+  egain_extra_factor:=round(strtofloat(InputBox('Additional conversion factor for an unbinned sensor',
   'For a 12 bit sensor with an output range [0..65535] enter 16'+#10+
   'For a 12 bit sensor with an output range [0. . 4096] enter 1'+#10+
   'For a 14 bit sensor with an output range [0..65535] enter 4'+#10+
@@ -14695,7 +14696,7 @@ begin
   'For a 16 bit sensor with an output range [0..65535] enter 1'+#10+
   #10+
   'The bit depth of the sensor can be measured from a light using popup menu "Show statistics"'+#10
-  ,inttostr(electron_to_adu))));
+  ,inttostr(egain_extra_factor))));
 end;
 
 procedure Tmainwindow.halo_removal1Click(Sender: TObject);

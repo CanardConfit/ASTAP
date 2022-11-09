@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1877
-    ActivePage = tab_stackmethod1
+    ActivePage = lights
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 5
+    TabIndex = 0
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove
@@ -1408,7 +1408,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Settings for LRGB stacking, LRGB  stacking is activated if "Classify by light filter" is check marked.'
         Top = 112
         Width = 297
-        Caption = 'LRGB stacking          (☑ Light filter)'
+        Caption = 'LRGB stacking'
         ClientHeight = 284
         ClientWidth = 293
         Color = clForm
@@ -1948,7 +1948,7 @@ object stackmenu1: Tstackmenu1
         Hint = 'Settings for OSC images.. If disabled uncheck "Classify by light filter".'
         Top = 112
         Width = 464
-        Caption = 'RAW one shot colour images           (☐ Light filter)'
+        Caption = 'RAW one shot colour images'
         ClientHeight = 284
         ClientWidth = 460
         ParentFont = False

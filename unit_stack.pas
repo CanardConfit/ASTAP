@@ -6392,8 +6392,8 @@ end;
 procedure Tstackmenu1.photometry_button1Click(Sender: TObject);
 var
   Save_Cursor          : TCursor;
-  magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,backgr,hfd_med,apert,annul,
-  rax1,decx1,rax2,decx2,rax3,decx3,xn,yn                                                        : double;
+  magn,hfd1,star_fwhm,snr,flux,xc,yc,madVar,madCheck,madThree,medianVar,medianCheck,medianThree,
+  backgr,hfd_med,apert,annul, rax1,decx1,rax2,decx2,rax3,decx3,xn,yn,adu_e                      : double;
   saturation_level                                                                              : single;
   c,i,x_new,y_new,fitsX,fitsY,col,{first_image,}size,starX,starY,stepnr,countVar, countCheck,countThree : integer;
   flipvertical,fliphorizontal,init,refresh_solutions,analysedP,store_annotated, warned,success  : boolean;
@@ -6402,81 +6402,81 @@ var
   outliers : array of array of double;
   astr,memo2_text,filename1  : string;
 
-  function measure_star(deX,deY :double): string;{measure position and flux}
-  //var
-    //starX,starY :double;
-  begin
-    HFD(img_loaded,round(deX-1),round(deY-1),annulus_radius {14, annulus radius},flux_aperture,0 {adu_e}, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
-    if ((hfd1<50) and (hfd1>0) and (snr>6)) then {star detected in img_loaded}
-    begin
-      if head.calstat='' then saturation_level:=64000 else saturation_level:=60000; {could be dark subtracted changing the saturation level}
-      if ((img_loaded[0,round(xc),round(yc)]<saturation_level) and
-          (img_loaded[0,round(xc-1),round(yc)]<saturation_level) and
-          (img_loaded[0,round(xc+1),round(yc)]<saturation_level) and
-          (img_loaded[0,round(xc),round(yc-1)]<saturation_level) and
-          (img_loaded[0,round(xc),round(yc+1)]<saturation_level) and
+          function measure_star(deX,deY : double): string;{measure position and flux}
+          //var
+            //starX,starY :double;
+          begin
+            HFD(img_loaded,round(deX-1),round(deY-1),annulus_radius {14, annulus radius},flux_aperture,adu_e, hfd1,star_fwhm,snr,flux,xc,yc);{star HFD and FWHM}
+            if ((hfd1<50) and (hfd1>0) and (snr>6)) then {star detected in img_loaded}
+            begin
+              if head.calstat='' then saturation_level:=64000 else saturation_level:=60000; {could be dark subtracted changing the saturation level}
+              if ((img_loaded[0,round(xc),round(yc)]<saturation_level) and
+                  (img_loaded[0,round(xc-1),round(yc)]<saturation_level) and
+                  (img_loaded[0,round(xc+1),round(yc)]<saturation_level) and
+                  (img_loaded[0,round(xc),round(yc-1)]<saturation_level) and
+                  (img_loaded[0,round(xc),round(yc+1)]<saturation_level) and
 
-          (img_loaded[0,round(xc-1),round(yc-1)]<saturation_level) and
-          (img_loaded[0,round(xc-1),round(yc+1)]<saturation_level) and
-          (img_loaded[0,round(xc+1),round(yc-1)]<saturation_level) and
-          (img_loaded[0,round(xc+1),round(yc+1)]<saturation_level)  ) then {not saturated star}
-      begin
-        magn:=starlistpack[c].flux_magn_offset - ln(flux)*2.511886432/ln(10);
-        result:=floattostrf(magn, ffFixed, 5,3); {write measured magnitude to list}
-//        mainwindow.image1.Canvas.textout(round(dex)+40,round(dey)+20,'hhhhhhhhhhhhhhh'+floattostrf(magn, ffgeneral, 3,3) );
-//        mainwindow.image1.Canvas.textout(round(dex)+20,round(dey)+20,'decX,Y '+floattostrf(deX, ffgeneral, 3,3)+','+floattostrf(deY, ffgeneral, 3,3)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 3,3)+','+floattostrf(yc, ffgeneral, 3,3));
-//        memo2_message(filename2+'decX,Y '+floattostrf(deX, ffgeneral, 4,4)+', '+floattostrf(deY, ffgeneral, 4,4)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 4,4)+', '+floattostrf(yc, ffgeneral, 4,4)+'    '+result+  '  deltas:'  + floattostrf(deX-xc, ffgeneral, 4,4)+',' + floattostrf(deY-yc, ffgeneral, 4,4)+'offset '+floattostrf(starlistpack[c].flux_magn_offset, ffgeneral, 6,6)+'fluxlog '+floattostrf(ln(flux)*2.511886432/ln(10), ffgeneral, 6,6) );
+                  (img_loaded[0,round(xc-1),round(yc-1)]<saturation_level) and
+                  (img_loaded[0,round(xc-1),round(yc+1)]<saturation_level) and
+                  (img_loaded[0,round(xc+1),round(yc-1)]<saturation_level) and
+                  (img_loaded[0,round(xc+1),round(yc+1)]<saturation_level)  ) then {not saturated star}
+              begin
+                magn:=starlistpack[c].flux_magn_offset - ln(flux)*2.511886432/ln(10);
+                result:=floattostrf(magn, ffFixed, 5,3); {write measured magnitude to list}
+        //        mainwindow.image1.Canvas.textout(round(dex)+40,round(dey)+20,'hhhhhhhhhhhhhhh'+floattostrf(magn, ffgeneral, 3,3) );
+        //        mainwindow.image1.Canvas.textout(round(dex)+20,round(dey)+20,'decX,Y '+floattostrf(deX, ffgeneral, 3,3)+','+floattostrf(deY, ffgeneral, 3,3)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 3,3)+','+floattostrf(yc, ffgeneral, 3,3));
+        //        memo2_message(filename2+'decX,Y '+floattostrf(deX, ffgeneral, 4,4)+', '+floattostrf(deY, ffgeneral, 4,4)+'  Xc,Yc '+floattostrf(xc, ffgeneral, 4,4)+', '+floattostrf(yc, ffgeneral, 4,4)+'    '+result+  '  deltas:'  + floattostrf(deX-xc, ffgeneral, 4,4)+',' + floattostrf(deY-yc, ffgeneral, 4,4)+'offset '+floattostrf(starlistpack[c].flux_magn_offset, ffgeneral, 6,6)+'fluxlog '+floattostrf(ln(flux)*2.511886432/ln(10), ffgeneral, 6,6) );
 
-//        if Flipvertical=false then  starY:=(head.height-yc) else starY:=(yc);
-//        if Fliphorizontal     then starX:=(head.width-xc)  else starX:=(xc);
-//        if flux_aperture<99 {<>max setting}then
-//        begin
-//          mainwindow.image1.Canvas.Pen.style:=psSolid;
-//          mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-//        end;
-//        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius),round(starY-annulus_radius),round(starX+annulus_radius),round(starY+annulus_radius));{three pixels, 1,2,3}
-//        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-4),round(starY-annulus_radius-4),round(starX+annulus_radius+4),round(starY+annulus_radius+4));
-      end
-      else result:='Saturated';
-     end
-    else
-    result:='?';
-  end;
+        //        if Flipvertical=false then  starY:=(head.height-yc) else starY:=(yc);
+        //        if Fliphorizontal     then starX:=(head.width-xc)  else starX:=(xc);
+        //        if flux_aperture<99 {<>max setting}then
+        //        begin
+        //          mainwindow.image1.Canvas.Pen.style:=psSolid;
+        //          mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+        //        end;
+        //        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius),round(starY-annulus_radius),round(starX+annulus_radius),round(starY+annulus_radius));{three pixels, 1,2,3}
+        //        mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-4),round(starY-annulus_radius-4),round(starX+annulus_radius+4),round(starY+annulus_radius+4));
+              end
+              else result:='Saturated';
+             end
+            else
+            result:='?';
+          end;
 
-  procedure plot_annulus(x,y: integer); {plot the aperture and annulus}
-  begin
-    if Flipvertical=false then  starY:=(head.height-y) else starY:=(y);
-    if Fliphorizontal     then starX:=(head.width-x)  else starX:=(x);
-    if flux_aperture<99 {<>max setting}then
-        mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
-    mainwindow.image1.canvas.ellipse(round(starX-annulus_radius),round(starY-annulus_radius),round(starX+annulus_radius),round(starY+annulus_radius));{three pixels, 1,2,3}
-    mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-4),round(starY-annulus_radius-4),round(starX+annulus_radius+4),round(starY+annulus_radius+4));
-  end;
+          procedure plot_annulus(x,y: integer); {plot the aperture and annulus}
+          begin
+            if Flipvertical=false then  starY:=(head.height-y) else starY:=(y);
+            if Fliphorizontal     then starX:=(head.width-x)  else starX:=(x);
+            if flux_aperture<99 {<>max setting}then
+                mainwindow.image1.canvas.ellipse(round(starX-flux_aperture-1),round(starY-flux_aperture-1),round(starX+flux_aperture+1),round(starY+flux_aperture+1));{circle, the y+1,x+1 are essential to center the circle(ellipse) at the middle of a pixel. Otherwise center is 0.5,0.5 pixel wrong in x, y}
+            mainwindow.image1.canvas.ellipse(round(starX-annulus_radius),round(starY-annulus_radius),round(starX+annulus_radius),round(starY+annulus_radius));{three pixels, 1,2,3}
+            mainwindow.image1.canvas.ellipse(round(starX-annulus_radius-4),round(starY-annulus_radius-4),round(starX+annulus_radius+4),round(starY+annulus_radius+4));
+          end;
 
-  procedure plot_outliers;{plot up to 4 yellow circles around the outliers}
-  var k: integer;
-  begin
-    mainwindow.image1.Canvas.Pen.Color := clyellow;
-    for k:=0 to length(outliers[0])-1 do
-    begin
-      if flipvertical=false then  starY:=round(head.height-(outliers[1,k])) else starY:=round(outliers[1,k]);
-      if Fliphorizontal     then starX:=round(head.width-outliers[0,k])  else starX:=round(outliers[0,k]);
-      mainwindow.image1.Canvas.ellipse(starX-20,starY-20, starX+20, starY+20);{indicate outlier rectangle}
-      mainwindow.image1.Canvas.textout(starX+20,starY+20,'σ '+floattostrf(outliers[2,i], ffgeneral, 3,0));{add hfd as text}
-    end;
-  end;
+          procedure plot_outliers;{plot up to 4 yellow circles around the outliers}
+          var k: integer;
+          begin
+            mainwindow.image1.Canvas.Pen.Color := clyellow;
+            for k:=0 to length(outliers[0])-1 do
+            begin
+              if flipvertical=false then  starY:=round(head.height-(outliers[1,k])) else starY:=round(outliers[1,k]);
+              if Fliphorizontal     then starX:=round(head.width-outliers[0,k])  else starX:=round(outliers[0,k]);
+              mainwindow.image1.Canvas.ellipse(starX-20,starY-20, starX+20, starY+20);{indicate outlier rectangle}
+              mainwindow.image1.Canvas.textout(starX+20,starY+20,'σ '+floattostrf(outliers[2,k], ffgeneral, 3,0));{add hfd as text}
+            end;
+          end;
 
 
-  procedure nil_all;
-  begin
-    //img_temp:=nil;{free memory}
-    starlistx:=nil;{free memory}
-    starlistpack:=nil; {release memory}
-    outliers:=nil;
-    starCheck:=nil;
-    starThree:=nil;
-    Screen.Cursor :=Save_Cursor;{back to normal }
-  end;
+          procedure nil_all;
+          begin
+            //img_temp:=nil;{free memory}
+            starlistx:=nil;{free memory}
+            starlistpack:=nil; {release memory}
+            outliers:=nil;
+            starCheck:=nil;
+            starThree:=nil;
+            Screen.Cursor :=Save_Cursor;{back to normal }
+          end;
 
 begin
   if listview7.items.count<=0 then exit; {no files}
@@ -6486,6 +6486,7 @@ begin
 
   if ((pos('V',star_database1.text)=0) and (pos('v',star_database1.text)=0)) then
   memo2_message(star_database1.text +' used  █ █ █ █ █ █ Warning, select a V database for accurate Johnson-V magnitudes !!! See tab alignment. █ █ █ █ █ █ ');
+
 
   {check is analyse is done}
   analysedP:=true;
@@ -6590,7 +6591,6 @@ begin
     begin
       if ((esc_pressed=false) and (listview7.Items.item[c].checked) )  then
       begin
-//        if first_image=-1 then first_image:=c;
         listview7.Selected :=nil; {remove any selection}
         listview7.ItemIndex := c;{mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
         listview7.Items[c].MakeVisible(False);{scroll to selected item}
@@ -6673,7 +6673,7 @@ begin
 
         setlength(img_temp,head.naxis3,head.width,head.height);{new size}
 
-        {standard alligned blink}
+        {standard aligned blink}
         if init=false then {init}
         begin
           initialise_var1;{set variables correct for astrometric solution calculation. Use first file as reference and header "head"}
@@ -6701,14 +6701,15 @@ begin
         mainwindow.image1.Canvas.font.size:=10; //round(max(10,8*head.height/image1.height));{adapt font to image dimensions}
 
         {measure the three stars selected by the mouse in the ORIGINAL IMAGE}
-         listview7.Items.item[c].subitems.Strings[P_magn1]:=''; {MAGN, always blank}
+        listview7.Items.item[c].subitems.Strings[P_magn1]:=''; {MAGN, always blank}
         listview7.Items.item[c].subitems.Strings[P_magn2]:=''; {MAGN, always blank}
         listview7.Items.item[c].subitems.Strings[P_magn3]:=''; {MAGN, always blank}
 
         if starlistpack[c].flux_magn_offset<>0 then {valid flux calibration}
-        begin
+        begin // do var star
           if mainwindow.shape_alignment_marker1.visible then
           begin
+            adu_e:=retrieve_ADU_to_e_unbinned(head.egain);//Used for SNR calculation in procedure HFD. Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
             mainwindow.image1.Canvas.Pen.Color := clRed;
             celestial_to_pixel(rax1,decx1, xn,yn); {ra,dec to fitsX,fitsY}
             astr:=measure_star(xn,yn); {var star}
@@ -6722,7 +6723,7 @@ begin
           end;
 
           if mainwindow.shape_alignment_marker2.visible then
-          begin
+          begin //do check star
             mainwindow.image1.Canvas.Pen.Color := clGreen;
 
             celestial_to_pixel(rax2,decx2, xn,yn); {ra,dec to fitsX,fitsY}
@@ -6733,10 +6734,10 @@ begin
               starCheck[countCheck]:=strtofloat2(astr);
               inc(countCheck);
             end;
-
           end;
+
           if mainwindow.shape_alignment_marker3.visible then
-          begin
+          begin //do star 3
             mainwindow.image1.Canvas.Pen.Color := clAqua; {star 3}
 
             celestial_to_pixel(rax3,decx3, xn,yn); {ra,dec to fitsX,fitsY}
@@ -6847,8 +6848,12 @@ begin
     end;
     if ((stepnr=1) and (countvar>4)) then {do it once after one cycle finished}
     begin
+      if mainwindow.noise_in_electron1.checked then //report SNR info based on the last checked file.
+        memo2_message('SNR reporting based on EGAIN= '+ head.egain+'. Additional factor for unbinned images '+ inttostr(egain_extra_factor))
+      else
+        memo2_message('SNR reporting based on ADUs. Can be changed to electrons and factors can be set using the popup menu of the viewer statusbar');
+
       find_star_outliers(strtofloat2(mark_outliers_upto1.text), outliers);
-      //fits_file:=true;{Previous instruction will set fits:=false while it only loads header. Set back to true to allow to set the three measure markers. The displayed image array and header will be compatible}
       if outliers<>nil then plot_outliers;
     end;
 
@@ -10027,8 +10032,23 @@ begin
   //Sigma clip, skip LRGB combine
 
   mosaic_box1.enabled:=mosa;
-  raw_box1.enabled:=((mosa=false) and (classify_filter1.checked=false));;
+  raw_box1.enabled:=((mosa=false) and (classify_filter1.checked=false));
+  if mosa then  raw_box1.caption:='RAW one shot colour images   (Disabled by stack method)'
+  else
+  if classify_filter1.checked then raw_box1.caption:='RAW one shot colour images   (Disabled by ☑ Light filter)'
+  else
+  raw_box1.caption:='RAW one shot colour images';
+
+
+
   filter_groupbox1.enabled:=((mosa=false) and (classify_filter1.checked));
+  if mosa then filter_groupbox1.caption:='LRGB stacking   (Disabled by stack method)'
+  else
+  if classify_filter1.checked=false then filter_groupbox1.caption:='LRGB stacking   (Disabled by ☐ Light filter)'
+  else
+  filter_groupbox1.caption:='LRGB stacking';
+
+
 
   sd_factor1.enabled:=sigm;
 
