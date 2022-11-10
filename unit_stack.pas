@@ -9850,7 +9850,7 @@ begin
 
           head.exposure:=sum_exp;{for annotation asteroid}
           update_integer('EXPTIME =',' / Total luminance exposure time in seconds.      ' ,round(head.exposure));
-          update_integer('SET-TEMP=',' / Set temperature used for luminance.            ' ,temperatureL);
+          update_integer('SET-TEMP=',' / Average set temperature used for luminance.    ' ,temperatureL);
           add_integer('LUM_EXP =',' / Average luminance exposure time.               ' ,exposureL);
           add_integer('LUM_CNT =',' / Luminance images combined.                     ' ,counterL);
           add_integer('LUM_DARK=',' / Darks used for luminance.                      ' ,head.dark_count);
@@ -9878,7 +9878,7 @@ begin
             add_integer('LUM_DARK=',' / Darks used for luminance.                      ' ,counterLdark);
             add_integer('LUM_FLAT=',' / Flats used for luminance.                      ' ,counterLflat);
             add_integer('LUM_BIAS=',' / Flat-darks used for luminance.                 ' ,counterLbias);
-            add_integer('LUM_TEMP=',' / Set temperature used for luminance.            ' ,temperatureL);
+            add_integer('LUM_TEMP=',' / Average set temperature used for luminance.    ' ,temperatureL);
           end;
           if counterR>0 then
           begin
