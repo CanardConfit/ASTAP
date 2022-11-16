@@ -142,6 +142,9 @@ var
  Fliph, Flipv,restore_req  : boolean;
  img_bk,img_sa                         : image_array;
 
+ style: TTextStyle;
+
+
 begin
   if head.naxis=0 then exit; {file loaded?}
   Save_Cursor := Screen.Cursor;
@@ -563,6 +566,9 @@ begin
       text_height:=mainwindow.image1.Canvas.textheight('T');{the correct text height, also for 4k with "make everything bigger"}
 
       left_margin:=min(head.width div 20,round(fontsize*2));{twice font size but not more then 5% of width. Required for small images}
+
+      image1.Canvas.Brush.Style:=bssolid; //Bsclear;
+      image1.Canvas.Brush.Color:=clBlack;
       image1.Canvas.textout(left_margin,head.height-text_height,mess2);{median HFD and tilt indication}
 
       memo2_message(mess2);{for stacking live}

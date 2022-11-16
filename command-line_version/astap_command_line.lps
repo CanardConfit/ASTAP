@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <PathDelim Value="\"/>
+    <Version Value="12"/>
+    <BuildModes Active="Default"/>
+    <Units Count="11">
+      <Unit0>
+        <Filename Value="astap_command_line.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <CursorPos X="10" Y="58"/>
+        <UsageCount Value="193"/>
+        <Loaded Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="1242"/>
+        <CursorPos X="43" Y="1260"/>
+        <UsageCount Value="193"/>
+        <Loaded Value="True"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="unit_command_line_general.pas"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="1"/>
+        <CursorPos X="35" Y="18"/>
+        <UsageCount Value="193"/>
+        <Loaded Value="True"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="..\astap_main.pas"/>
+        <ComponentName Value="mainwindow"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="5604"/>
+        <CursorPos Y="5606"/>
+        <UsageCount Value="12"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="..\unit_stack.pas"/>
+        <ComponentName Value="stackmenu1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1169"/>
+        <CursorPos X="13" Y="1184"/>
+        <UsageCount Value="8"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="..\unit_astrometric_solving.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="526"/>
+        <CursorPos X="3" Y="526"/>
+        <UsageCount Value="5"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="..\unit_star_align.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="663"/>
+        <CursorPos X="10" Y="667"/>
+        <UsageCount Value="7"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="unit_star_database.pas"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos Y="44"/>
+        <UsageCount Value="6"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="C:\Users\h\AppData\Local\Temp\Rar$DI02.518\unit_command_line_general.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="446"/>
+        <CursorPos Y="467"/>
+        <UsageCount Value="2"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="unit_command_line_star_database.pas"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="2715"/>
+        <CursorPos X="30" Y="2733"/>
+        <UsageCount Value="88"/>
+        <Loaded Value="True"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="unit_command_line_stars_wide_field.pas"/>
+        <EditorIndex Value="3"/>
+        <CursorPos Y="21"/>
+        <UsageCount Value="22"/>
+        <Loaded Value="True"/>
+      </Unit10>
+    </Units>
+    <JumpHistory Count="30" HistoryIndex="29">
+      <Position1>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="168" TopLine="156"/>
+      </Position1>
+      <Position2>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="169" TopLine="156"/>
+      </Position2>
+      <Position3>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="170" TopLine="156"/>
+      </Position3>
+      <Position4>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="171" TopLine="156"/>
+      </Position4>
+      <Position5>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="173" TopLine="156"/>
+      </Position5>
+      <Position6>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="176" TopLine="156"/>
+      </Position6>
+      <Position7>
+        <Filename Value="astap_command_line.lpr"/>
+        <Caret Line="184" TopLine="156"/>
+      </Position7>
+      <Position8>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="18" Column="35"/>
+      </Position8>
+      <Position9>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="611" Column="137" TopLine="575"/>
+      </Position9>
+      <Position10>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="771" Column="28" TopLine="755"/>
+      </Position10>
+      <Position11>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="760" Column="19" TopLine="755"/>
+      </Position11>
+      <Position12>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="944" Column="30" TopLine="909"/>
+      </Position12>
+      <Position13>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="949" Column="31" TopLine="914"/>
+      </Position13>
+      <Position14>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="772" Column="28" TopLine="757"/>
+      </Position14>
+      <Position15>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="738" Column="3" TopLine="731"/>
+      </Position15>
+      <Position16>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="512" Column="71" TopLine="495"/>
+      </Position16>
+      <Position17>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1556" Column="70" TopLine="1539"/>
+      </Position17>
+      <Position18>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="512" Column="70" TopLine="495"/>
+      </Position18>
+      <Position19>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="788" Column="41" TopLine="760"/>
+      </Position19>
+      <Position20>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1556" Column="27" TopLine="1528"/>
+      </Position20>
+      <Position21>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="512" Column="27" TopLine="495"/>
+      </Position21>
+      <Position22>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="809" Column="69" TopLine="781"/>
+      </Position22>
+      <Position23>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="18" Column="26"/>
+      </Position23>
+      <Position24>
+        <Filename Value="unit_command_line_solving.pas"/>
+        <Caret Line="1260" Column="43" TopLine="1242"/>
+      </Position24>
+      <Position25>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="18" Column="26"/>
+      </Position25>
+      <Position26>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="149" Column="17" TopLine="120"/>
+      </Position26>
+      <Position27>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="347" TopLine="345"/>
+      </Position27>
+      <Position28>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="1478" Column="89" TopLine="1433"/>
+      </Position28>
+      <Position29>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="29" Column="72"/>
+      </Position29>
+      <Position30>
+        <Filename Value="unit_command_line_general.pas"/>
+        <Caret Line="149" Column="17" TopLine="120"/>
+      </Position30>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes Count="1" ActiveMode="default">
+        <Mode0 Name="default">
+          <local>
+            <CommandLineParams Value="-f  c:\astap.fpc\test_files\command_line_test\m13.fit  -r 180 -d c:\astap.fpc -spd 80"/>
+          </local>
+        </Mode0>
+      </Modes>
+    </RunParams>
+  </ProjectSession>
+</CONFIG>

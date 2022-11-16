@@ -2786,11 +2786,11 @@ begin
 
   if fov>20 then
   begin
-    if fileexists( database_path+'w08_0101.001') then begin name_database:='w08';database_type:=001; end
+    if fileexists( database_path+'w08_0101.001') then begin name_database:='w08';database_type:=001; exit; end
     else
     memo2_message('Could not find w08 star database. Will try with an other database.');
-  end
-  else
+  end;
+
   if ((fov>10) and (fileexists( database_path+'v17_0101.290'))) then begin name_database:='v17'; database_type:=290; end //preference for V17 for large FOV
   else
   if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18'; end
@@ -2952,7 +2952,7 @@ begin
               else
               begin {normal record without magnitude}
                 ra2:= ra_raw*(pi*2  /((256*256*256)-1));
-                dec2:=((dec9_storage shl 16)+(dec8 shl 8)+dec7)*(pi*0.5/((128*256*256)-1));// dec2:=(dec7+(dec8 shl 8)+(dec9 shl 16))*(pi*0.5/((128*256*256)-1)); {FPC compiler makes mistake, but dec7 behind}
+                dec2:=((dec9_storage shl 16)+(dec8 shl 8)+dec7)*(pi*0.5/((128*256*256)-1));// dec2:=(dec7+(dec8 shl 8)+(dec9 shl 16))*(pi*0.5/((128*256*256)-1)); {FPC compiler makes mistake, put dec7 behind}
                 Bp_Rp:=b_r;{gaia (Bp-Rp)*10}    {color information}
               end;
             end;

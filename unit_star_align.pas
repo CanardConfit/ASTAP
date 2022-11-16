@@ -553,12 +553,11 @@ end;
 
 procedure find_quads_xy(starlist :star_list; out starlistquads :star_list);  {FOR DISPLAY ONLY, build quads using closest stars, revised 2020-9-28}
 var
-   i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrquads,buffersize               : integer;
+   i,j,k,nrstars_min_one,j_used1,j_used2,j_used3,nrquads                          : integer;
    distance,distance1,distance2,distance3{,dummy },x1,x2,x3,x4,xt,y1,y2,y3,y4,yt  : double;
    identical_quad : boolean;
 begin
   nrstars_min_one:=Length(starlist[0])-1;
-  buffersize:=nrstars_min_one;{number of quads will be lower}
 
   if nrstars_min_one<3 then
   begin {not enough stars for quads}
@@ -567,7 +566,7 @@ begin
   end;
 
   nrquads:=0;
-  SetLength(starlistquads,10,buffersize);{set array length to buffer size}
+  SetLength(starlistquads,10,nrstars_min_one);{number of quads will be lower}
 
   j_used1:=0;{give it a default value}
   j_used2:=0;

@@ -59,7 +59,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.11.10';
+  astap_version='2022.11.16';
 
 type
   { Tmainwindow }
@@ -11723,31 +11723,36 @@ begin
       if hasOption('h','help') then
       begin
         application.messagebox( pchar(
-        'Command-line usage:'+#10+
+        'Solver command-line usage:'+#10+
         '-f  filename'+#10+
         '-r  radius_area_to_search[degrees]'+#10+      {changed}
-        '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto}'+#10+
         '-fov height_field[degrees]'+#10+
         '-ra  center_right ascension[hours]'+#10+
         '-spd center_south_pole_distance[degrees]'+#10+
         '-s  max_number_of_stars {typical 500, 0 is auto}'+#10+
         '-t  tolerance'+#10+
         '-m  minimum_star_size["]'+#10+
+        '-z  downsample_factor[0,1,2,3,4] {Downsample prior to solving. 0 is auto}'+#10+
+        #10+
         '-check apply[y/n] {Apply check pattern filter prior to solving. Use for raw OSC images only when binning is 1x1}' +#10+
-        '-speed mode[auto/slow] {Slow is forcing reading a larger area from the star database (more overlap) to improve detection}'+#10+
-        '-o  file {Name the output files with this base path & file name}'+#10+
         '-d  path {specify a path to the star database}'+#10+
-        '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
-        '-analyse2 snr_min {both analyse and solve}'+#10+
-        '-extract snr_min {As -analyse but additionally write a .csv file with the detected stars info}'+#10+
+        '-o  file {Name the output files with this base path & file name}'+#10+
+        '-speed mode[auto/slow] {Slow is forcing reading a larger area from the star database (more overlap) to improve detection}'+#10+
         '-sqm pedestal  {add measured sqm value to the solution}'+#10+
-        '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3}'+#10+
+        '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
+        #10+
         '-annotate  {Produce deepsky annotated jpg file}' +#10+
         '-debug  {Show GUI and stop prior to solving}' +#10+
         '-log   {Write the solver log to file}'+#10+
         '-tofits  binning[1,2,3,4]  {Make new fits file from PNG/JPG file input}'+#10+
         '-update  {update the FITS/TIFF header with the found solution.  Jpeg, png will be written as fits}' +#10+
-        '-wcs  {Write a .wcs file  in similar format as Astrometry.net. Else text style.}' +#10+
+        #10+
+        'Analyser and stacker usage:' +#10+
+        '-analyse snr_min {Analyse only and report median HFD and number of stars used}'+#10+
+        '-analyse2 snr_min {both analyse and solve}'+#10+
+        '-extract snr_min {As -analyse but additionally write a .csv file with the detected stars info}'+#10+
+        '-focus1 file1.fit -focus2 file2.fit ....  {Find best focus using files and hyperbola curve fitting. Errorlevel is focuspos*1E4 + rem.error*1E3}'+#10+
+        '-stack  path {startup with live stack tab and path selected}'+#10+
         #10+
         'Preference will be given to the command line values.' +#10+
         'Solver result will be written to filename.ini and filename.wcs.'+#10+
@@ -11881,13 +11886,6 @@ begin
 
           if ((file_loaded) and (solve_image(img_loaded,head,true {get hist}) )) then {find plate solution, filename2 extension will change to .fit}
           begin
-//            {$ifdef CPUARM}
-//            {set tray icon visible gives a fatal error in old compiler for armhf}
-//            {$else}
-//            trayicon1.visible:=true;{show progress in hint of trayicon}
-//            trayicon1.show;{show progress in hint of trayicon}
-//            {$endif}
-
             if hasoption('sqm') then {sky quality}
             begin
               pedestal:=round(strtofloat2(GetOptionValue('sqm')));
@@ -11996,6 +11994,14 @@ begin
 
     {filename as parameter 1}
     Mainwindow.stretch1Change(nil);{create gamma curve}
+
+    if application.hasoption('stack') then //for Ekos
+    begin
+      stackmenu1.live_stacking_path1.caption:=application.GetOptionValue('stack');{live stacking path}
+      stackmenu1.pagecontrol1.tabindex:=11; {live stack}
+      mainwindow.Stackimages1Click(nil);// make stack menu visible
+    end
+    else
     load_image(true,true {plot});{show image of parameter1}
   end {paramcount>0}
   else
@@ -13750,7 +13756,7 @@ end;
 procedure Tmainwindow.Image1MouseMove(Sender: TObject; Shift: TShiftState; X, Y: Integer);
 var
   hfd2,fwhm_star2,snr,flux,xf,yf, raM,decM,pixel_distance,sd,dummy,conv_factor,
-  adu_e, egain,e_to_adu                                                        : double;
+  adu_e                                                                        : double;
   s1,s2, hfd_str, fwhm_str,snr_str,mag_str,dist_str,angle_str                  : string;
   width5,height5,x_sized,y_sized,factor,flipH,flipV,iterations                 : integer;
   color1:tcolor;

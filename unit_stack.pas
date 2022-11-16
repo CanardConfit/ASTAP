@@ -931,7 +931,6 @@ procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse
 function julian_calc(yyyy,mm:integer;dd,hours,minutes,seconds:double):double; {##### calculate julian day, revised 2017}
 function RemoveSpecialChars(const STR : string) : string; {remove ['.','\','/','*','"',':','|','<','>']}
 
-
 const
   L_object=0; {lights, position in listview1}
   L_filter=1;
@@ -5384,6 +5383,7 @@ begin
    {$endif}
 end;
 
+
 procedure Tstackmenu1.live_stacking1Click(Sender: TObject);
 begin
   save_settings2;{too many lost selected files . so first save settings}
@@ -5396,7 +5396,6 @@ begin
   else
      pause_pressed:=false;
 end;
-
 
 
 {$ifdef mswindows}

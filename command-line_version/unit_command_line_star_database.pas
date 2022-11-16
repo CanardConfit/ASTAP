@@ -2760,11 +2760,11 @@ begin
 
   if fov>20 then
   begin
-    if fileexists( database_path+'w08_0101.001') then begin name_database:='w08';database_type:=001; end
+    if fileexists( database_path+'w08_0101.001') then begin name_database:='w08';database_type:=001; exit; end
     else
     memo2_message('Could not find w08 star database. Will try with an other database.');
-  end
-  else
+  end;
+
   if fileexists( database_path+'h18_0101.1476') then begin name_database:='h18'; end
   else
   if fileexists( database_path+'g18_0101.290') then begin name_database:='g18'; database_type:=290; end
