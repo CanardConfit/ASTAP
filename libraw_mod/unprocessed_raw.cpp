@@ -50,6 +50,7 @@ void write_fits(char fits_header[],unsigned width, unsigned height, unsigned lef
                 const char *fname);
 void write_tiff(int width, int height, unsigned short *bitmap,
                 const char *basename);
+void JDtoDate(double jd,  int *year, int *month, int *day, int *hours, int *minutes, double *seconds); //converts a Julian day to a calendar Date and Time according Meeus. C routine written by Han Kleijn
 
 int main(int ac, char *av[])
 {
@@ -60,12 +61,14 @@ int main(int ac, char *av[])
   char str[180];
   char fits_header[2880];
   double temperature;
+  int year,month,day,hh,mm;//for JDtoDate
+  double julianday,ss;            //for JDtoDate
 
   LibRaw RawProcessor;
   if (ac < 2)
   {
   usage:
-    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2022-04-01\n"
+    printf("unprocessed_raw - LibRaw %s %d cameras supported. With FITS file support mod 2022-11-21\n"
            "Usage: %s [-q] [-A] [-g] [-s N] raw-files....\n"
            "\t-q - be quiet\n"
            "\t-s N - select Nth image in file (default=0)\n"
@@ -248,11 +251,16 @@ int main(int ac, char *av[])
       sprintf(str,"NAXIS2  = %20d / Length of y axis                                                     ", (long int)height2);
       str[80]='\0'; strcat(fits_header,str);//line 5. Length of each keyword record should be exactly 80
 
-      sprintf(str,"EXPTIME = %20G / Exposure time in seconds                                             ",(double)P2.shutter);
+      sprintf(str,"EXPTIME = %20G   / Exposure time in seconds                                             ",(double)P2.shutter);
       str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
 
-      sprintf(str,"JD      = %20.5f / Date image was taken in Julian days                                ",2440587.5+ (double)P2.timestamp/(24*60*60));//{convert to Julian Day by adding factor. Unix time is seconds since 1.1.1970}
-      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80
+      julianday= 2440587.5+ (double)P2.timestamp/(24.0*60.0*60.0);//Julian Day of begin exposure. Convert Unix (time is seconds since 1.1.1970) to Julian Day by adding a factor}
+      sprintf(str,"JD      = %20.8f / [Julian Day] The start time of the exposure                           ",julianday);
+      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80           x
+
+      JDtoDate(julianday, &year, &month, &day,&hh,&mm,&ss);// convert to date
+      sprintf(str,"DATE-OBS= '%4.4i-%2.2i-%2.2iT%2.2i:%2.2i:%06.3f' / [UTC] The start time of the exposure                                 ", year, month, day,hh,mm,ss);
+      str[80]='\0'; strcat(fits_header,str);// Length of each keyword record should be exactly 80                                          x
 
       if (P3.SensorTemperature>-999) {temperature=P3.SensorTemperature;}
       else
@@ -525,6 +533,49 @@ void write_tiff(int width, int height, unsigned short *bitmap, const char *fn)
   fwrite(&th, sizeof th, 1, ofp);
   fwrite(bitmap, 2, width * height, ofp);
   fclose(ofp);
+}
+
+
+void JDtoDate(double jd,  int *year, int *month, int *day, int *hours, int *minutes, double *seconds) //converts a Julian day to a calendar Date and Time according Meeus
+  {
+  int alpha, AA, BB, CC, DD, EE, ZZ;
+  double FF,dayFloat,dayFrac;
+
+  jd += 0.5;
+  ZZ = (int)jd; // truncate
+  FF = jd - ZZ;  // fractional part
+  if(ZZ < 2299160.5)  //Julian calendar?
+     AA = ZZ;
+  else{  //Gregorian calendar
+    alpha = (int)((ZZ - 1867216.25) / 36524.25);
+    AA = ZZ + 1 + alpha - (int)(alpha / 4.0);
+    }
+  BB = AA + 1524;
+  CC = (int)((BB - 122.1) /365.25);
+  DD = (int)(365.25 * CC);
+  EE = (int)((BB - DD) /30.6001);
+  dayFloat = BB - DD - (int)(30.6001 * EE) + FF;//days including hours, minutes and seconds
+  *day= (int)dayFloat;// same as trunc()
+
+  if( EE < 14)
+     *month = EE - 1;
+  else
+    *month = EE - 13;
+  if(*month > 2)
+    *year = CC - 4716;
+  else
+    *year = CC - 4715;
+
+  // calculate hours, minutes and seconds from day fraction    
+  dayFrac=dayFloat - *day;//calculate day fraction
+  *hours=(int)(dayFrac*24);
+  *minutes=(int)((dayFrac-(float)*hours/24.0)*(24*60));//not round otherwise 23:60
+  *seconds=(dayFrac-(float)*hours/24.0-(float)*minutes/(24.0*60.0))*(24*3600);
+
+    
+  // 2459902.12214120
+  // 2022-11-18 14:55:53
+  //      18T14:55:52.999690175053
 }
 
 

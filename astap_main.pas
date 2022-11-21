@@ -59,7 +59,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.11.16';
+  astap_version='2022.11.21';
 
 type
   { Tmainwindow }
@@ -1306,7 +1306,7 @@ begin
         if ((header[i]='T') and (header[i+1]='I')  and (header[i+2]='M') and (header[i+3]='E') and (header[i+4]='-') and (header[i+5]='O') and (header[i+6]='B')) then
                 if head.date_obs='' then head.date_obs:=get_string;
 
-        if ((header[i]='J') and (header[i+1]='D')  and (header[i+2]=' ') and (header[i+3]=' ') and (header[i+4]=' ')) then
+        if ((header[i]='J') and (header[i+1]='D')  and (header[i+2]=' ') and (header[i+3]=' ') and (header[i+4]=' ')) then //julian day
         if head.date_obs='' then {DATE-OBS overrules any JD value}
         begin
           jd2:=validate_double;
