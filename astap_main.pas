@@ -59,7 +59,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.11.21';
+  astap_version='2022.11.25';
 
 type
   { Tmainwindow }
@@ -10245,7 +10245,6 @@ begin
   Save_Cursor := Screen.Cursor;
   Screen.Cursor := crHourglass;    { Show hourglass cursor }
 
-  memo2_message('This will take some time');
   mainwindow.calibrate_photometry1Click(nil);{measure hfd and calibrate for point or extended sources depending on the setting}
 
   if flux_magn_offset=0 then
@@ -10259,7 +10258,7 @@ begin
   Fliphorizontal:=mainwindow.Flip_horizontal1.Checked;
 
   image1.Canvas.Pen.Mode := pmMerge;
-  image1.Canvas.Pen.width :=1; // round(1+head.height/image1.height);{thickness lines}
+  image1.Canvas.Pen.width :=1;
   image1.Canvas.Pen.color :=clred;
   image1.Canvas.brush.Style:=bsClear;
   image1.Canvas.font.color:=clyellow;

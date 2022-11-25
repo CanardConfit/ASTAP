@@ -3,7 +3,7 @@ object stackmenu1: Tstackmenu1
   Height = 712
   Top = 186
   Width = 1877
-  HorzScrollBar.Page = 1701
+  HorzScrollBar.Page = 1856
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
@@ -6148,6 +6148,7 @@ object stackmenu1: Tstackmenu1
         object edit_background1: TEdit
           Left = 109
           Height = 23
+          Hint = 'Background value'
           Top = 180
           Width = 57
           OnClick = edit_background1Click
@@ -6189,6 +6190,7 @@ object stackmenu1: Tstackmenu1
         object auto_background1: TCheckBox
           Left = 192
           Height = 19
+          Hint = 'Use an automatically measured background value.'
           Top = 180
           Width = 46
           Caption = 'Auto'
@@ -6680,8 +6682,8 @@ object stackmenu1: Tstackmenu1
         object add_substract1: TComboBox
           Left = 87
           Height = 23
-          Hint = 'Add or subtract files. The apply flat routine can work with mono or colour flat files. '
-          Top = 27
+          Hint = 'Add or subtract files.'
+          Top = 32
           Width = 197
           ItemHeight = 15
           Items.Strings = (
@@ -6699,9 +6701,10 @@ object stackmenu1: Tstackmenu1
         end
         object image_to_add1: TLabel
           Left = 8
-          Height = 15
+          Height = 30
           Top = 2
-          Width = 15
+          Width = 416
+          AutoSize = False
           Caption = '---'
           ParentColor = False
           WordWrap = True
@@ -6710,7 +6713,7 @@ object stackmenu1: Tstackmenu1
           Left = 293
           Height = 30
           Hint = 'Apply above actions. Hit CTRL-Z to undo.'
-          Top = 27
+          Top = 32
           Width = 80
           Caption = 'Apply'
           OnClick = apply_file1Click
@@ -6721,7 +6724,7 @@ object stackmenu1: Tstackmenu1
           Left = 383
           Height = 30
           Hint = 'Undo last action'
-          Top = 27
+          Top = 32
           Width = 30
           Glyph.Data = {
             36040000424D3604000000000000360000002800000010000000100000000100
@@ -6767,7 +6770,7 @@ object stackmenu1: Tstackmenu1
           Left = 32
           Height = 26
           Hint = 'Browse and select image to add/subtract or use a flat.'
-          Top = 27
+          Top = 32
           Width = 46
           AutoSize = True
           Images = ImageList2

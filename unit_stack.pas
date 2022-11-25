@@ -3051,8 +3051,7 @@ procedure Tstackmenu1.file_to_add1Click(Sender: TObject);
 begin
   OpenDialog1.Title:= 'Select image';
   OpenDialog1.Options:= [ofFileMustExist,ofHideReadOnly];
-  opendialog1.Filter:= '8, 16 and -32 bit FITS files (*.fit*)|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS';
-//  fits_file:=true;
+  opendialog1.Filter:= 'FITS or TIFF files|*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.tif;*.tiff;*.TIF';
   if opendialog1.execute then
   begin
      image_to_add1.caption:=OpenDialog1.Files[0];
