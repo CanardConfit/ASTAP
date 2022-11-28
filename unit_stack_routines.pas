@@ -220,7 +220,7 @@ begin
         if c=5 then {all colour files added, correct for the number of pixel values added at one pixel. This can also happen if one colour has an angle and two pixel fit in one!!}
         begin {fix RGB stack}
           memo2_message('Applying black spot filter on interim RGB image.');
-          black_spot_filter(img_average);
+      //    black_spot_filter(500 {add bias}, img_average); //Balc sport filter and add bias. Note for 99,99% zero means black spot but it could also be coincidence
         end;{c=5, all colour files added}
 
         if length(files_to_process[c].name)>0 then
@@ -326,9 +326,9 @@ begin
               for fitsY:=0 to height_max-1 do
                 for fitsX:=0 to width_max-1 do
                 begin
-                  img_average[0,fitsX,fitsY]:=500; {clear img_average. Set default at 500}
-                  img_average[1,fitsX,fitsY]:=500; {clear img_average}
-                  img_average[2,fitsX,fitsY]:=500; {clear img_average}
+                  img_average[0,fitsX,fitsY]:=0; {clear img_average}
+                  img_average[1,fitsX,fitsY]:=0; {clear img_average}
+                  img_average[2,fitsX,fitsY]:=0; {clear img_average}
                 end;
             end;{init, c=0}
 
@@ -387,8 +387,13 @@ begin
               begin
                 calc_newx_newy(vector_based,fitsX,fitsY);{apply correction}
                 x_new:=round(x_new_float+oversize);y_new:=round(y_new_float+oversizeV);
+
                 if ((x_new>=0) and (x_new<=width_max-1) and (y_new>=0) and (y_new<=height_max-1)) then
                 begin
+
+                  if ((x_new=2597-1) and (y_new=1673-1)) then
+                  beep;
+
                   if c=1 {red} then
                   begin
                     value:=img_loaded[0,fitsX-1,fitsY-1];
@@ -448,12 +453,10 @@ begin
                   end;
                   if c=5 {Luminance} then
                   begin
-                    {rgb is already blurred}
                     {r:=l*(0.33+r)/(r+g+b)}
                     colr:=img_average[0,x_new,y_new] - 475 + red_add; {lowest_most_common is around 450 to 500}
                     colg:=img_average[1,x_new,y_new] - 475 + green_add;
                     colb:=img_average[2,x_new,y_new] - 475 + blue_add;
-
 
                     rgbsum:=colr+colg+colb;
                     if rgbsum<0.1 then begin rgbsum:=0.1; red_f:=rgbsum/3; green_f:=red_f; blue_f:=red_f;end

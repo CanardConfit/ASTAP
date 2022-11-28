@@ -59,7 +59,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.11.25';
+  astap_version='2022.11.28';
 
 type
   { Tmainwindow }

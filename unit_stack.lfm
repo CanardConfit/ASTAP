@@ -1,6 +1,6 @@
 object stackmenu1: Tstackmenu1
   Left = 34
-  Height = 712
+  Height = 813
   Top = 186
   Width = 1877
   HorzScrollBar.Page = 1856
@@ -8,7 +8,7 @@ object stackmenu1: Tstackmenu1
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
-  ClientHeight = 712
+  ClientHeight = 813
   ClientWidth = 1877
   Color = clForm
   Icon.Data = {
@@ -53,7 +53,7 @@ object stackmenu1: Tstackmenu1
   LCLVersion = '2.2.4.0'
   object Memo2: TMemo
     Left = 0
-    Height = 152
+    Height = 253
     Top = 560
     Width = 1877
     Align = alBottom
@@ -227,7 +227,7 @@ object stackmenu1: Tstackmenu1
     Hint = 'Stack menu'
     Top = 0
     Width = 1877
-    ActivePage = lights
+    ActivePage = alignment1
     Align = alClient
     Constraints.MaxHeight = 498
     Images = ImageList2
@@ -235,7 +235,7 @@ object stackmenu1: Tstackmenu1
     ParentFont = False
     ParentShowHint = False
     ShowHint = True
-    TabIndex = 0
+    TabIndex = 6
     TabOrder = 4
     OnChange = pagecontrol1Change
     OnMouseMove = pagecontrol1MouseMove

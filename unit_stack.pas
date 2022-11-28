@@ -907,7 +907,7 @@ procedure memo2_message(s: string);{message to memo2}
 procedure update_stackmenu;{update stackmenu1 menus}
 procedure box_blur(colors,range: integer;var img: image_array);{combine values of pixels, ignore zeros}
 procedure check_pattern_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
-procedure black_spot_filter(var img: image_array);{remove black spots with value zero}
+procedure black_spot_filter(extra_bias: double; var img: image_array);{remove black spots with value zero} {execution time about 0.4 sec}
 
 function create_internal_solution(img :image_array;hd: theader) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
 procedure apply_dark_and_flat(var img : image_array) ; inline; {apply dark and flat if required, renew if different head.exposure or ccd temp}
@@ -3847,7 +3847,7 @@ begin
 end;
 
 
-procedure black_spot_filter(var img: image_array);{remove black spots with value zero} {execution time about 0.4 sec}
+procedure black_spot_filter(extra_bias: double; var img: image_array);{remove black spots with value zero} {execution time about 0.4 sec}
 var fitsX,fitsY,k,x1,y1,col,w,h,i,j,counter,range,left,right,bottom,top : integer;
    img_temp2 : image_array;
    value, value2 : single;
@@ -3857,41 +3857,43 @@ begin
   h:=length(img[0,0]);{height}
   w:=length(img[0]);{width}
 
-  {find the black borders.}
-  left:=-1;
-  repeat
-    inc(left);
-    black:=( (img[0,left, h div 2]=0) or ((col>=1) and (img[1,left, h div 2]=0)) or  ((col>=2) and (img[2,left, h div 2]=0)))
-  until ((black=false) or (left>=w-1));
-
-  right:=w;
-  repeat
-    dec(right);
-    black:=( (img[0,right, h div 2]=0) or ((col>=1) and (img[1,right, h div 2]=0)) or  ((col>=2) and (img[2,right, h div 2]=0)))
-  until ((black=false) or (right<=0));
-
-  bottom:=-1;
-  repeat
-    inc(bottom);
-    black:=( (img[0,w div 2, bottom]=0) or ((col>=1) and (img[1,w div 2,bottom]=0)) or  ((col>=2) and (img[2,w div 2,bottom]=0)))
-  until ((black=false) or (bottom>=h-1));
-
-  top:=h;
-  repeat
-    dec(top);
-    black:=( (img[0,w div 2,top]=0) or ((col>=1) and (img[1,w div 2,top]=0)) or  ((col>=2) and (img[2,w div 2,top]=0)))
-  until ((black=false) or (top<=0));
-
-
   range:=1;
   setlength(img_temp2,col,w,h);{set length of image array}
+
   for k:=0 to col-1 do
   begin
+    {find the black borders for each colour}
+    left:=-1;
+    repeat
+      inc(left);
+      black:=img[k,left, h div 2]=0;
+    until ((black=false) or (left>=w-1));
+
+    right:=w;
+    repeat
+      dec(right);
+      black:=img[k,right, h div 2]=0;
+    until ((black=false) or (right<=0));
+
+    bottom:=-1;
+    repeat
+      inc(bottom);
+      black:=img[k,w div 2, bottom]=0;
+    until ((black=false) or (bottom>=h-1));
+
+    top:=h;
+    repeat
+      dec(top);
+      black:=img[k,w div 2,top]=0;
+    until ((black=false) or (top<=0));
+
+
+
     for fitsY:=0 to h-1 do
       for fitsX:=0 to w-1 do
       begin
         value:=img[k,fitsX, fitsY];
-        if value<=0 then {black spot or or -99999 saturation marker}
+        if value=0 then {black spot or saturation marker}
         if ((fitsX>=left) and (fitsX<=right) and (fitsY>=bottom) and (fitsY<=top)) then {not the incomplete borders}
         begin
           range:=1;
@@ -3907,7 +3909,11 @@ begin
                 if ((x1>=left) and (x1<=right) and (Y1>=bottom) and (y1<=top)) then {not the incomplete borders}
                 begin
                   value2:=img[k,x1,  y1];
-                  if value2>0 then begin value:=value+value2; inc(counter);end;{ignore zeros or -99999 saturation markers}
+                  if value2<>0 then {ignore zeros due to black spot or saturation}
+                  begin
+                    value:=value+value2;
+                    inc(counter);
+                  end;
                 end;
               end;
             end;
@@ -3917,7 +3923,7 @@ begin
             inc(range);
           until ((counter<>0) or (range>=100));{try till 100 pixels away}
         end;
-        img_temp2[k,fitsX,fitsY]:=value;
+        img_temp2[k,fitsX,fitsY]:=value+extra_bias;
       end;
   end;{k}
 
@@ -5914,7 +5920,7 @@ begin
 
       {fix black holes}
       img_loaded:=img_temp;
-      black_spot_filter(img_loaded);
+      black_spot_filter(0 {extra_bias}, img_loaded);
 
       if pos('_aligned.fit',filename2)=0 then filename2:=ChangeFileExt(Filename2,'_aligned.fit');{rename only once}
 
