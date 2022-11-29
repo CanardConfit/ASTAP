@@ -59,7 +59,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.11.28';
+  astap_version='2022.11.29';
 
 type
   { Tmainwindow }
@@ -11370,6 +11370,7 @@ begin
     writeln(f,'PLTSOLVD=F');
   end;
   writeln(f,'CMDLINE='+cmdline);{write the original commmand line}
+  writeln(f,'DIMENSIONS='+inttostr(head.width)+' x '+inttostr(head.height));//write image dimensions
 
   Case errorlevel of
              2: writeln(f,'ERROR=Not enough stars.');

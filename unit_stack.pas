@@ -49,6 +49,9 @@ type
     donutstars1: TCheckBox;
     check_pattern_filter1: TCheckBox;
     auto_select1: TMenuItem;
+    photom_calibrate1: TMenuItem;
+    photom_green1: TMenuItem;
+    Separator1: TMenuItem;
     target_altitude1: TLabel;
     target_azimuth1: TLabel;
     direction_arrow1: TImage;
@@ -681,6 +684,8 @@ type
     procedure pagecontrol1Change(Sender: TObject);
     procedure pagecontrol1MouseMove(Sender: TObject; Shift: TShiftState; X,
       Y: Integer);
+    procedure photom_calibrate1Click(Sender: TObject);
+    procedure photom_green1Click(Sender: TObject);
     procedure PopupMenu1Popup(Sender: TObject);
     procedure press_esc_to_abort1Click(Sender: TObject);
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -907,10 +912,10 @@ procedure memo2_message(s: string);{message to memo2}
 procedure update_stackmenu;{update stackmenu1 menus}
 procedure box_blur(colors,range: integer;var img: image_array);{combine values of pixels, ignore zeros}
 procedure check_pattern_filter(var img: image_array); {normalize bayer pattern. Colour shifts due to not using a white light source for the flat frames are avoided.}
-procedure black_spot_filter(extra_bias: double; var img: image_array);{remove black spots with value zero} {execution time about 0.4 sec}
+procedure black_spot_filter(var img: image_array);{remove black spots with value zero} {execution time about 0.4 sec}
 
 function create_internal_solution(img :image_array;hd: theader) : boolean; {plate solving, image should be already loaded create internal solution using the internal solver}
-procedure apply_dark_and_flat(var img : image_array) ; inline; {apply dark and flat if required, renew if different head.exposure or ccd temp}
+function apply_dark_and_flat(var img : image_array): boolean ; inline; {apply dark and flat if required, renew if different head.exposure or ccd temp}
 
 procedure smart_colour_smooth( var img: image_array; wide, sd:double; preserve_r_nebula,measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 procedure green_purple_filter( var img: image_array);{Balances RGB to remove green and purple. For e.g. Hubble palette}
@@ -3371,8 +3376,10 @@ begin
       begin {success loading header only}
         try
           begin
-            if head_2.exposure>=10 then lv.Items.item[c].subitems.Strings[D_exposure]:=inttostr(round(head_2.exposure))
-              else lv.Items.item[c].subitems.Strings[D_exposure]:=floattostrf(head_2.exposure,ffgeneral, 6, 6);
+            if head_2.exposure>=10 then
+              lv.Items.item[c].subitems.Strings[D_exposure]:=inttostr(round(head_2.exposure))
+            else
+              lv.Items.item[c].subitems.Strings[D_exposure]:=floattostrf(head_2.exposure,ffgeneral, 6, 6);
 
             lv.Items.item[c].subitems.Strings[D_temperature]:=inttostr(head_2.set_temperature);
             lv.Items.item[c].subitems.Strings[D_binning]:=floattostrf(head_2.Xbinning,ffgeneral,0,0)+' x '+floattostrf(head_2.Ybinning,ffgeneral,0,0); {Binning CCD}
@@ -3847,7 +3854,86 @@ begin
 end;
 
 
-procedure black_spot_filter(extra_bias: double; var img: image_array);{remove black spots with value zero} {execution time about 0.4 sec}
+procedure black_spot_filterold(var img: image_array);{remove black spots with value zero} {execution time about 0.4 sec}
+var fitsX,fitsY,k,x1,y1,col,w,h,i,j,counter,range,left,right,bottom,top : integer;
+   img_temp2 : image_array;
+   value, value2 : single;
+   black : boolean;
+begin
+  col:=length(img);{the real number of colours}
+  h:=length(img[0,0]);{height}
+  w:=length(img[0]);{width}
+
+  {find the black borders.}
+  left:=-1;
+  repeat
+    inc(left);
+    black:=( (img[0,left, h div 2]=0) or ((col>=1) and (img[1,left, h div 2]=0)) or  ((col>=2) and (img[2,left, h div 2]=0)))
+  until ((black=false) or (left>=w-1));
+
+  right:=w;
+  repeat
+    dec(right);
+    black:=( (img[0,right, h div 2]=0) or ((col>=1) and (img[1,right, h div 2]=0)) or  ((col>=2) and (img[2,right, h div 2]=0)))
+  until ((black=false) or (right<=0));
+
+  bottom:=-1;
+  repeat
+    inc(bottom);
+    black:=( (img[0,w div 2, bottom]=0) or ((col>=1) and (img[1,w div 2,bottom]=0)) or  ((col>=2) and (img[2,w div 2,bottom]=0)))
+  until ((black=false) or (bottom>=h-1));
+
+  top:=h;
+  repeat
+    dec(top);
+    black:=( (img[0,w div 2,top]=0) or ((col>=1) and (img[1,w div 2,top]=0)) or  ((col>=2) and (img[2,w div 2,top]=0)))
+  until ((black=false) or (top<=0));
+
+
+  range:=1;
+  setlength(img_temp2,col,w,h);{set length of image array}
+  for k:=0 to col-1 do
+  begin
+    for fitsY:=0 to h-1 do
+      for fitsX:=0 to w-1 do
+      begin
+        value:=img[k,fitsX, fitsY];
+        if value<=0 then {black spot or or -99999 saturation marker}
+        if ((fitsX>=left) and (fitsX<=right) and (fitsY>=bottom) and (fitsY<=top)) then {not the incomplete borders}
+        begin
+          range:=1;
+          repeat
+            counter:=0;
+            for i:=-range to range do
+            for j:=-range to range do
+            begin
+              if ((abs(i)=range) or (abs(j)=range)) then {square search range}
+              begin
+                x1:=fitsX+i;
+                y1:=fitsY+j;
+                if ((x1>=left) and (x1<=right) and (Y1>=bottom) and (y1<=top)) then {not the incomplete borders}
+                begin
+                  value2:=img[k,x1,  y1];
+                  if value2>0 then begin value:=value+value2; inc(counter);end;{ignore zeros or -99999 saturation markers}
+                end;
+              end;
+            end;
+            if counter<>0 then
+                        value:=value/counter
+            else
+            inc(range);
+          until ((counter<>0) or (range>=100));{try till 100 pixels away}
+        end;
+        img_temp2[k,fitsX,fitsY]:=value;
+      end;
+  end;{k}
+
+  img:=img_temp2;{move pointer array}
+  img_temp2:=nil;
+end;
+
+
+procedure black_spot_filter(var img: image_array);{remove black spots with value zero} {execution time about 0.4 sec}
 var fitsX,fitsY,k,x1,y1,col,w,h,i,j,counter,range,left,right,bottom,top : integer;
    img_temp2 : image_array;
    value, value2 : single;
@@ -3923,7 +4009,7 @@ begin
             inc(range);
           until ((counter<>0) or (range>=100));{try till 100 pixels away}
         end;
-        img_temp2[k,fitsX,fitsY]:=value+extra_bias;
+        img_temp2[k,fitsX,fitsY]:=value;
       end;
   end;{k}
 
@@ -4948,7 +5034,7 @@ procedure Tstackmenu1.extract_green1Click(Sender: TObject);
 var
   c           : integer;
   Save_Cursor : TCursor;
-  fn,col        : string;
+  fn,col,ff       : string;
 begin
   case  QuestionDlg (pchar('Raw colour separation'),pchar('This will extract the green, blue or red pixels from the (calibrated) raw files and write to result to new files. Select colour:'),mtCustom
                                                           ,[20,'Red pixels', 21, 'Green pixels', 'IsDefault', 22, 'Blue pixels', 23, 'Cancel'],'') of
@@ -4967,17 +5053,17 @@ begin
     for c:=0 to listview7.items.count-1 do
      if  listview7.Items.item[c].checked then
      begin
-       if fits_tiff_file_name(filename2)=false then
+       ff:=ListView7.items[c].caption;
+       if fits_tiff_file_name(ff)=false then
        begin
          memo2_message('█ █ █ █ █ █ Can'+#39+'t extract. First analyse file list !! █ █ █ █ █ █');
          beep;
          exit;
        end;
-       fn:=extract_raw_colour_to_file(ListView7.items[c].caption,col{'TG' or 'TB'},1,1); {extract green red or blue channel}
+       fn:=extract_raw_colour_to_file(ff,col{'TG' or 'TB'},1,1); {extract green red or blue channel}
        if fn<>'' then
        begin
            ListView7.items[c].caption:=fn;
-           listview7.Items.item[c].subitems.Strings[B_exposure]:='';{clear head.exposure, indicate a new analyse is required}
        end;
 
        {scroll}
@@ -4989,7 +5075,7 @@ begin
        if esc_pressed then begin Screen.Cursor:=Save_Cursor; exit; end;
      end;
   end;
-  analyse_listview(listview7,true {light},false {full fits},false{refresh}); {refresh list}
+  analyse_listview(listview7,true {light},false {full fits},true{refresh}); {refresh list}
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 
 end;
@@ -5570,6 +5656,100 @@ begin
   FLastHintTabIndex := TabIndex;
 end;
 
+procedure Tstackmenu1.photom_calibrate1Click(Sender: TObject);
+var
+  index,counter,oldindex,position,i: integer;
+  ListItem: TListItem;
+
+begin
+  position:=-1;
+  index:=0;
+  listview1.Items.beginUpdate;
+  listview1.clear;
+  counter:=listview7.Items.Count;
+  while index<counter do
+  begin
+    if  listview7.Items[index].Selected then
+    begin
+      if position<0 then position:=index;
+      listview_add(listview1,listview7.items[index].caption,true,L_nr);
+    end;
+    inc(index); {go to next file}
+  end;
+
+  listview1.Items.endUpdate;
+
+  oldindex:=stack_method1.itemindex;
+  stack_method1.itemindex:=5; //calibration only, no de-mosaic
+  stack_button1Click(sender);
+
+  // move calibrated files back
+  listview_removeselect(listview7);
+  listview7.Items.BeginUpdate;
+  index:=listview1.Items.Count-1;
+  while index>=0 do
+  begin
+    with listview7 do
+     begin
+       ListItem := Items.insert(position);
+       ListItem.Caption:= ChangeFileExt(listview1.items[index].caption,'_cal.fit');
+       ListItem.checked:=true;
+       for i:=1 to P_nr do
+           ListItem.SubItems.Add(''); // add the other columns
+       dec(index); {go to next file}
+     end;
+  end;
+  listview7.Items.EndUpdate;
+
+  stack_method1.itemindex:=oldindex;//return old setting
+  save_settings2;
+
+  analyse_listview(listview7,true {light},false {full fits},true{refresh}); {refresh list}
+end;
+
+procedure Tstackmenu1.photom_green1Click(Sender: TObject);
+var
+  c           : integer;
+  Save_Cursor : TCursor;
+  fn,col,ff   : string;
+begin
+  Save_Cursor := Screen.Cursor;
+  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  esc_pressed:=false;
+
+  if listview7.items.count>0 then
+  begin
+    for c:=0 to listview7.items.count-1 do
+     if  listview7.Items[c].Selected then
+     begin
+       ff:=ListView7.items[c].caption;
+       if fits_tiff_file_name(ff)=false then
+       begin
+         memo2_message('█ █ █ █ █ █ Can'+#39+'t extract. First analyse file list !! █ █ █ █ █ █');
+         beep;
+         exit;
+       end;
+       fn:=extract_raw_colour_to_file(ff,'TG',1,1); {extract green red or blue channel}
+
+       if fn<>'' then
+       begin
+           ListView7.items[c].caption:=fn;
+//           listview7.Items.item[c].subitems.Strings[P_exposure]:='';{clear head.exposure, indicate a new analyse is required}
+       end;
+
+       {scroll}
+//       listview7.Selected :=nil; {remove any selection}
+       listview7.ItemIndex := c;{mark where we are. Important set in object inspector    Listview1.HideSelection := false; Listview1.Rowselect := true}
+       listview7.Items[c].MakeVisible(False);{scroll to selected item}
+
+       application.processmessages;
+       if esc_pressed then begin Screen.Cursor:=Save_Cursor; exit; end;
+     end;
+  end;
+  analyse_listview(listview7,true {light},false {full fits},true{refresh}); {refresh list}
+  Screen.Cursor := Save_Cursor;  { Always restore to normal }
+
+end;
 
 procedure Tstackmenu1.PopupMenu1Popup(Sender: TObject);
 begin
@@ -5920,7 +6100,7 @@ begin
 
       {fix black holes}
       img_loaded:=img_temp;
-      black_spot_filter(0 {extra_bias}, img_loaded);
+      black_spot_filter(img_loaded);
 
       if pos('_aligned.fit',filename2)=0 then filename2:=ChangeFileExt(Filename2,'_aligned.fit');{rename only once}
 
@@ -7681,6 +7861,7 @@ begin
   stackmenu1.stack_method1Change(nil);{update several things including raw_box1.enabled:=((mosa=false) and filter_groupbox1.enabled}
 end;
 
+
 procedure Tstackmenu1.monitoring_stop1Click(Sender: TObject);
 begin
   esc_pressed:=true;
@@ -8865,12 +9046,13 @@ begin
 end;
 
 
-procedure apply_dark_and_flat(var img : image_array) ; inline; {apply dark and flat if required, renew if different head.exposure or ccd temp}
+function apply_dark_and_flat(var img : image_array): boolean ; inline; {apply dark and flat if required, renew if different head.exposure or ccd temp}
 var
   fitsX,fitsY,k    : integer;
   value,flat_factor,dark_norm_value,flat11,flat12,flat21,flat22 : double;
 
 begin
+  result:=false;
   date_to_jd(head.date_obs,head.exposure {light}); {convert date-obs to global variables jd_start, jd_mid. Use this to find the dark with the best match for the light}
 
   if pos('D',head.calstat)<>0 then {is the light already calibrated}
@@ -8905,6 +9087,7 @@ begin
       head.calstat:='D'; {dark applied, store in header of reference file}
       head.dark_count:=head_2.dark_count;
       head.datamax_org:=head.datamax_org-dark_norm_value;{adapt light datamax_org}
+      result:=true;
     end;
   end;{apply dark}
 
@@ -8959,7 +9142,7 @@ begin
       head.calstat:=head.calstat+'F'+head_2.calstat{B from flat};{mark that flat and bias have been applied. Store in the header of the reference file}
       head.flat_count:=head_2.flat_count;
       head.flatdark_count:=head_2.flatdark_count;
-
+      result:=true;
     end;{flat correction}
   end;{do flat & flat dark}
 end;
@@ -8992,46 +9175,55 @@ begin
         Application.ProcessMessages;
         if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo, required for updates},0,head,img_loaded)=false)) then begin memo2_message('Error');{can't load} Screen.Cursor := Save_Cursor; exit;end;
 
-        apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
+        if apply_dark_and_flat(img_loaded) {apply dark, flat if required, renew if different head.exposure or ccd temp} then
+        begin //success added dark or flat
 
-        memo2_message('Calibrating file: '+inttostr(c+1)+'-'+inttostr( ListView1.items.count-1)+' "'+filename2+'"  to average. Using '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
-        Application.ProcessMessages;
+          memo2_message('Calibrating file: '+inttostr(c+1)+'-'+inttostr( ListView1.items.count-1)+' "'+filename2+'"  to average. Using '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
+          Application.ProcessMessages;
 
-        for Y:=0 to head.height-1 do
-         for X:=0 to head.width-1 do
-           for col:=0 to head.naxis3-1 do
-           begin
-             img_loaded[col,X,Y]:= img_loaded[col,X,Y]+500; {add pedestal}
-           end;
-
-
-        if esc_pressed then exit;
-
-        if process_as_osc then {do demosaic bayer}
-            demosaic_bayer(img_loaded); {convert OSC image to colour}
-         {head.naxis3 is now 3}
-
-        update_text   ('COMMENT 1','  Calibrated by ASTAP. www.hnsky.org');
-        update_text   ('CALSTAT =',#39+head.calstat+#39); {calibration status}
-        add_integer('DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
-        add_integer('FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
-        add_integer('BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
-         { ASTAP keyword standard:}
-         { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
-         { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
+          for Y:=0 to head.height-1 do
+           for X:=0 to head.width-1 do
+             for col:=0 to head.naxis3-1 do
+             begin
+               img_loaded[col,X,Y]:= img_loaded[col,X,Y]+500; {add pedestal}
+             end;
 
 
-        filename2:=StringReplace(ChangeFileExt(filename2,'.fit'),'.fit','_cal.fit',[]);{give new file name }
-        memo2_message('█ █ █  Saving calibrated file as '+filename2);
-        save_fits(img_loaded,filename2,-32, true);
+          if esc_pressed then exit;
 
-        object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a object name}
-        stack_info:=' '+inttostr(head.flatdark_count)+'x'+'FD  '+
-                        inttostr(head.flat_count)+'x'+'F  '+
-                        inttostr(head.dark_count)+'x'+'D  '+
-                        '1x'+head.filter_name;
+          if process_as_osc then {do demosaic bayer}
+              demosaic_bayer(img_loaded); {convert OSC image to colour}
+           {head.naxis3 is now 3}
 
-        report_results(object_to_process,stack_info,0,-1{no icon});{report result in tab results}
+          update_text   ('COMMENT 1','  Calibrated by ASTAP. www.hnsky.org');
+          update_text   ('CALSTAT =',#39+head.calstat+#39); {calibration status}
+          add_integer('DARK_CNT=',' / Darks used for luminance.               ' ,head.dark_count);{for interim lum,red,blue...files. Compatible with master darks}
+          add_integer('FLAT_CNT=',' / Flats used for luminance.               ' ,head.flat_count);{for interim lum,red,blue...files. Compatible with master flats}
+          add_integer('BIAS_CNT=',' / Flat-darks used for luminance.          ' ,head.flatdark_count);{for interim lum,red,blue...files. Compatible with master flats}
+           { ASTAP keyword standard:}
+           { interim files can contain keywords: head.exposure, FILTER, LIGHT_CNT,DARK_CNT,FLAT_CNT, BIAS_CNT, SET_TEMP.  These values are written and read. Removed from final stacked file.}
+           { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
+
+
+          filename2:=StringReplace(ChangeFileExt(filename2,'.fit'),'.fit','_cal.fit',[]);{give new file name }
+          memo2_message('█ █ █  Saving calibrated file as '+filename2);
+          save_fits(img_loaded,filename2,-32, true);
+
+          object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a object name}
+          stack_info:=' '+inttostr(head.flatdark_count)+'x'+'FD  '+
+                          inttostr(head.flat_count)+'x'+'F  '+
+                          inttostr(head.dark_count)+'x'+'D  '+
+                          '1x'+head.filter_name;
+
+          report_results(object_to_process,stack_info,0,-1{no icon});{report result in tab results}
+
+        end //calibration
+        else //no change
+        begin
+          Application.ProcessMessages;
+          memo2_message(filename2 + ' No dark of flat found or is already calibrated!!!!');
+          if esc_pressed then exit;
+        end;
       finally
       end;
     end;
@@ -9158,7 +9350,7 @@ var
    Save_Cursor:TCursor;
    i,c,over_size,over_sizeL,nrfiles, image_counter,object_counter, first_file, total_counter,counter_colours  : integer;
    filter_name1, filter_name2,defilter, filename3, extra1,extra2,object_to_process,stack_info,thefilters,mess : string;
-   lrgb,solution,monofile,ignore,cal_and_align, mosaic_mode,sigma_mode,calibration_mode,skip_combine,success  : boolean;
+   lrgb,solution,monofile,ignore,cal_and_align, mosaic_mode,sigma_mode,calibration_mode,calibration_mode2,skip_combine,success  : boolean;
    startTick      : qword;{for timing/speed purposes}
    min_background,max_background,backgr   : double;
    filters_used : array [0..4] of string;
@@ -9184,7 +9376,8 @@ begin
 
   if img_loaded<>nil then begin img_backup:=nil;{clear to save memory} backup_img;    end; ;{backup image array and header for case esc pressed.}
 
-  calibration_mode:=pos('Calibration only',stackmenu1.stack_method1.text)>0;
+  calibration_mode:=pos('Calibration only',stackmenu1.stack_method1.text)>0;//"Calibration only"
+  calibration_mode2:=pos('de-mosaic',stackmenu1.stack_method1.text)>0;//"Calibration only. No de-mosaic"
 
 
   if ListView1.items.count<>0 then
@@ -9192,6 +9385,8 @@ begin
     memo2_message('Analysing images.');
     analyse_tab_lights(calibration_mode=false); {analyse any image not done yet. For calibration mode skip hfd and background measurements}
     if esc_pressed then exit;
+
+    if calibration_mode2 then process_as_osc:=false;
 
     if process_as_osc then
     begin
@@ -9242,11 +9437,12 @@ begin
   min_background:=65535;
   max_background:=0;
 
-  if calibration_mode then {calibrate lights only}
+  if ((calibration_mode) or (calibration_mode2)) then {calibrate lights only}
   begin
-     calibration_only;
-     Memo2_message('Ready. Resulting files are available in tab Results and can be copied to the Blink, Photometry or Lights tab.');
-     exit;
+    calibration_only;
+    if process_as_osc then Memo2_message('OSC images are converted to colour.');
+    Memo2_message('Ready. Resulting files are available in tab Results and can be copied to the Blink, Photometry  or Lights tab.');
+    exit;
   end;
 
   Save_Cursor := Screen.Cursor;
@@ -9462,7 +9658,7 @@ begin
     for i:=0 to 4 do filters_used[i]:='';
     inc(object_counter);
 
-    lrgb:=((classify_filter1.checked) and (cal_and_align=false));{ignore lrgb for calibration and alignmentis true}
+    lrgb:=((classify_filter1.checked) and (cal_and_align=false));{ignore lrgb for calibration and alignment is true}
     over_size:=round(strtofloat2(stackmenu1.oversize1.Text));{accept also commas but round later}
     if lrgb=false then
     begin
@@ -9666,6 +9862,11 @@ begin
             stack_info:='Interim result '+head.filter_name+' x '+inttostr(counterL);
             report_results(object_to_process,stack_info,object_counter,i {color icon});{report result in tab result using modified filename2}
             filename2:=filename3;{restore last filename}
+
+
+
+            extra1:=extra1+head.filter_name;
+
           end{nrfiles>1}
           else
           begin
@@ -9688,7 +9889,7 @@ begin
                    else begin extra2:=extra2+'L'; end;
           end;{case}
 
-          extra1:=extra1+head.filter_name;
+       //   extra1:=extra1+head.filter_name;
         end;
       end;{for loop for 4 RGBL}
 
@@ -9766,7 +9967,7 @@ begin
               use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
               if stackmenu1.osc_colour_smooth1.checked then
               begin
-                memo2_message('Applying colour-smoothing filter image as set in tab "stack method". Factors are set in tab pixel math 1');
+                memo2_message('Applying colour-smoothing filter image as set in tab "stack method".');
                 smart_colour_smooth(img_loaded,strtofloat2(osc_smart_smooth_width1.text),strtofloat2(osc_smart_colour_sd1.text),osc_preserve_r_nebula1.checked,false {get  hist});{histogram doesn't needs an update}
               end
             end
@@ -10022,10 +10223,10 @@ var
    mode : string;
 begin
   method:=stack_method1.ItemIndex;
-  sigm:=(method in [1,6]);{sigma clip}
+  sigm:=(method in [1,7]);{sigma clip}
   mosa:=(method=2);{mosaic}
   cal_and_align:=(method=3);{}
-  cal_only:=(method=4);{}
+  cal_only:=(method in [4,5]);{}
 
   //Average
   //Sigma clip average
@@ -10072,7 +10273,7 @@ begin
   if classify_filter1.checked then mode:='LRGB ' else mode:='';
   stack_button1.caption:='STACK '+mode+'('+stack_method1.text+')';
 
-  if ((method>=5 {Skip average or sigma clip LRGB combine}) and (classify_filter1.Checked=false)) then  memo2_message('█ █ █ █ █ █ Warning, classify on Light Filter is not check marked !!! █ █ █ █ █ █ ');
+  if ((method>=6 {Skip average or sigma clip LRGB combine}) and (classify_filter1.Checked=false)) then  memo2_message('█ █ █ █ █ █ Warning, classify on Light Filter is not check marked !!! █ █ █ █ █ █ ');
 
   set_icon_stackbutton((classify_filter1.checked) or (make_osc_color1.checked));//update glyph stack button to colour or gray
 end;
