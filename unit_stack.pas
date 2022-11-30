@@ -37,6 +37,7 @@ type
     add_noise1: TButton;
     add_substract1: TComboBox;
     add_time1: TCheckBox;
+    save_settings_image_path1: TCheckBox;
     annotate_mode1: TComboBox;
     apply_normalise_filter1: TCheckBox;
     browse1: TBitBtn;
@@ -49,6 +50,7 @@ type
     donutstars1: TCheckBox;
     check_pattern_filter1: TCheckBox;
     auto_select1: TMenuItem;
+    photom_stack1: TMenuItem;
     photom_calibrate1: TMenuItem;
     photom_green1: TMenuItem;
     Separator1: TMenuItem;
@@ -686,6 +688,7 @@ type
       Y: Integer);
     procedure photom_calibrate1Click(Sender: TObject);
     procedure photom_green1Click(Sender: TObject);
+    procedure photom_stack1Click(Sender: TObject);
     procedure PopupMenu1Popup(Sender: TObject);
     procedure press_esc_to_abort1Click(Sender: TObject);
     procedure rainbow_Panel1MouseDown(Sender: TObject; Button: TMouseButton;
@@ -5639,6 +5642,7 @@ begin
   mainwindow.labelVar1.visible:=(theindex=8);
   mainwindow.labelCheck1.visible:=(theindex=8);
   mainwindow.labelThree1.visible:=(theindex=8);
+  stack_button1.enabled:=((theindex<=6) or (theindex>=13));
 end;
 
 
@@ -5660,18 +5664,19 @@ procedure Tstackmenu1.photom_calibrate1Click(Sender: TObject);
 var
   index,counter,oldindex,position,i: integer;
   ListItem: TListItem;
-
 begin
   position:=-1;
   index:=0;
   listview1.Items.beginUpdate;
-  listview1.clear;
+  listview1.clear;//lights
+  listview5.clear;//results
+
   counter:=listview7.Items.Count;
   while index<counter do
   begin
     if  listview7.Items[index].Selected then
     begin
-      if position<0 then position:=index;
+      if position<0 then position:=index;//store first position
       listview_add(listview1,listview7.items[index].caption,true,L_nr);
     end;
     inc(index); {go to next file}
@@ -5683,7 +5688,7 @@ begin
   stack_method1.itemindex:=5; //calibration only, no de-mosaic
   stack_button1Click(sender);
 
-  // move calibrated files back
+  // move calibrated files back form results as *_cal.fits
   listview_removeselect(listview7);
   listview7.Items.BeginUpdate;
   index:=listview1.Items.Count-1;
@@ -5692,7 +5697,7 @@ begin
     with listview7 do
      begin
        ListItem := Items.insert(position);
-       ListItem.Caption:= ChangeFileExt(listview1.items[index].caption,'_cal.fit');
+       ListItem.Caption:= listview5.items[index].caption;//copy from tab results
        ListItem.checked:=true;
        for i:=1 to P_nr do
            ListItem.SubItems.Add(''); // add the other columns
@@ -5700,6 +5705,8 @@ begin
      end;
   end;
   listview7.Items.EndUpdate;
+
+  listview1.clear;
 
   stack_method1.itemindex:=oldindex;//return old setting
   save_settings2;
@@ -5725,7 +5732,7 @@ begin
        ff:=ListView7.items[c].caption;
        if fits_tiff_file_name(ff)=false then
        begin
-         memo2_message('█ █ █ █ █ █ Can'+#39+'t extract. First analyse file list !! █ █ █ █ █ █');
+         memo2_message('█ █ █ █ █ █ Can'+#39+'t extract. First analyse file list to convert to FITS !! █ █ █ █ █ █');
          beep;
          exit;
        end;
@@ -5734,7 +5741,6 @@ begin
        if fn<>'' then
        begin
            ListView7.items[c].caption:=fn;
-//           listview7.Items.item[c].subitems.Strings[P_exposure]:='';{clear head.exposure, indicate a new analyse is required}
        end;
 
        {scroll}
@@ -5749,6 +5755,68 @@ begin
   analyse_listview(listview7,true {light},false {full fits},true{refresh}); {refresh list}
   Screen.Cursor := Save_Cursor;  { Always restore to normal }
 
+end;
+
+procedure Tstackmenu1.photom_stack1Click(Sender: TObject);
+var
+  index,counter,oldindex,position,i: integer;
+  ListItem: TListItem;
+  oldmakeosc : boolean;
+begin
+
+  position:=-1;
+  index:=0;
+  listview1.Items.beginUpdate;
+  listview1.clear;
+  counter:=listview7.Items.Count;
+  while index<counter do
+  begin
+    if  listview7.Items[index].Selected then
+    begin
+      if position<0 then position:=index;//store first position
+      listview_add(listview1,listview7.items[index].caption,true,L_nr);// add to tab light
+    end;
+    inc(index); {go to next file}
+  end;
+  listview1.Items.endUpdate;
+
+  make_osc_color1.checked:=false;// prevent forced de-mosaic
+
+  analyse_tab_lights(false {full});
+  if process_as_osc then
+  begin
+    memo2_message('█ █ █ █ █ █ Abort !! For photometry you can not stack OSC images. First extract the green channel. █ █ █ █ █ █');
+    beep;
+    exit
+  end;
+
+  oldindex:=stack_method1.itemindex;
+  stack_method1.itemindex:=0; //average
+  oldmakeosc:=make_osc_color1.checked;// store setting
+
+  stack_button1Click(sender);// stack the files in tab lights
+
+  // move calibrated files back
+  listview_removeselect(listview7);
+  listview7.Items.BeginUpdate;
+  with listview7 do
+  begin
+    ListItem := Items.insert(position);
+    ListItem.Caption:=filename2; // contains the stack file name
+    ListItem.checked:=true;
+    for i:=1 to P_nr do
+        ListItem.SubItems.Add(''); // add the other columns
+    dec(index); {go to next file}
+  end;
+  listview7.Items.EndUpdate;
+
+  listview1.clear;
+
+  stack_method1.itemindex:=oldindex;//return old setting
+  make_osc_color1.checked:=oldmakeosc;//return old setting
+  save_settings2;
+
+  analyse_listview(listview7,true {light},false {full fits},true{refresh}); {refresh list}
 end;
 
 procedure Tstackmenu1.PopupMenu1Popup(Sender: TObject);
@@ -6199,7 +6267,6 @@ begin
          + DD
          + B
          + 1720994.5;
-
 end;
 
 
@@ -9314,7 +9381,7 @@ begin
 end;
 
 
-function propose_file_name(mosaic_mode: boolean;object_to_process,filters_used:string) : string; {propose a file name}
+function propose_file_name(mosaic_mode,add_time: boolean;object_to_process,filters_used:string) : string; {propose a file name}
 var
   hh,mm,ss,ms : word;
 begin
@@ -9335,7 +9402,7 @@ begin
   instrum:=trim(instrum);
   if instrum<>'' then result:=result+', '+instrum;
   result:=RemoveSpecialChars(result);{slash could be in date but also telescope name like eqmod HEQ5/6}
-  if stackmenu1.add_time1.checked then
+  if add_time then
   begin
     decodetime(time,hh,mm,ss,ms);
     result:=result+'_'+leadingzero(hh)+leadingzero(mm)+leadingzero(ss);
@@ -10011,6 +10078,8 @@ begin
             update_float('JD-AVG  =',' / Julian Day of the observation mid-point.       ', jd_sum/counterL);{give midpoint of exposures}
             date_avg:=JdToDate(jd_sum/counterL); {update date_avg for asteroid annotation}
             update_text ('DATE-AVG=',#39+date_avg+#39);{give midpoint of exposures}
+            head.date_obs:=JdToDate((jd_sum/counterL) - head.exposure/(2*24*60*60)); {estimate for date obs for stack. Accuracy could vary due to lost time between exposures};
+            update_text ('DATE-OBS=',#39+head.date_obs+#39+'/ Calculated for stack JD_AVG - EXPTIME/(2*86400)');
             //add_text   ('COMMENT ',' UT midpoint in decimal notation: '+ UTdecimal(date_avg));
           end;
         end
@@ -10147,11 +10216,13 @@ begin
                           inttostr(counterL)+'x'+inttostr(exposureL)+'L  ('+thefilters+')'; {head.exposure}
         end;
 
-        filename2:=extractfilepath(filename2)+propose_file_name(mosaic_mode,object_to_process,thefilters);{give it a nice file name}
+        filename2:=extractfilepath(filename2)+propose_file_name(mosaic_mode, stackmenu1.add_time1.checked {tab results} or (sender=photom_stack1),object_to_process,thefilters);{give it a nice file name}
 
         if head.cd1_1<>0 then memo2_message('Astrometric solution reference file preserved for stack.');
         memo2_message('█ █ █  Saving result '+inttostr(image_counter)+' as '+filename2);
+
         if save_fits(img_loaded,filename2,-32, true)=false then exit;
+        if save_settings_image_path1.checked then save_settings(changefileext(filename2,'.cfg'));
 
 
         if head.naxis3>1 then report_results(object_to_process,stack_info,object_counter,3 {color icon}) {report result in tab results}
@@ -10233,6 +10304,7 @@ begin
   //Image stiching mode
   //Calibration and alignment only
   //Calibration only
+  //Calibration only. No de-mosaic
   //Average, skip LRGB  combine
   //Sigma clip, skip LRGB combine
 

@@ -59,7 +59,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.11.29';
+  astap_version='2022.11.30';
 
 type
   { Tmainwindow }
@@ -745,6 +745,7 @@ function floattostr4(x:double):string;
 procedure update_menu(fits :boolean);{update menu if fits file is available in array or working from image1 canvas}
 procedure get_hist(colour:integer;img :image_array);{get histogram of img_loaded}
 procedure save_settings2;
+procedure save_settings(lpath:string); //save settings at any path
 procedure progress_indicator(i:double; info:string);{0 to 100% indication of progress}
 {$ifdef mswindows}
 procedure ExecuteAndWait(const aCommando: string; show_console:boolean);
@@ -7474,7 +7475,8 @@ begin
       stackmenu1.classify_flat_date1.checked:= Sett.ReadBool('stack','classify_flat_date',false);
       stackmenu1.classify_flat_exposure1.checked:= Sett.ReadBool('stack','classify_flat_exposure',false);
 
-      stackmenu1.add_time1.checked:= Sett.ReadBool('stack','add_time',false); {add time to resulting stack file name}
+      stackmenu1.add_time1.checked:= Sett.ReadBool('stack','add_time',false); {add a copy of the settings at image path}
+      stackmenu1.save_settings_image_path1.checked:= Sett.ReadBool('stack','copy_sett',false); {add time to resulting stack file name}
 
       stackmenu1.uncheck_outliers1.checked:= Sett.ReadBool('stack','uncheck_outliers',false);
 
@@ -7677,7 +7679,7 @@ begin
 end;
 
 
-procedure save_settings(lpath:string);
+procedure save_settings(lpath:string); //save settings at any path
 var
     Sett : TmemIniFile;
     c    : integer;
@@ -7834,6 +7836,7 @@ begin
       sett.writeBool('stack','classify_flat_exposure',stackmenu1.classify_flat_exposure1.Checked);
 
       sett.writeBool('stack','add_time',stackmenu1.add_time1.Checked);
+      sett.writeBool('stack','copy_sett',stackmenu1.save_settings_image_path1.Checked);
 
       sett.writeBool('stack','uncheck_outliers',stackmenu1.uncheck_outliers1.Checked);
 
