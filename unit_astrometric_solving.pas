@@ -527,7 +527,7 @@ const
 
 begin
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   result:=false;
   esc_pressed:=false;
   warning_str:='';{for header}
@@ -856,7 +856,7 @@ begin
                 begin
                   stackmenu1.Memo2.enablealign;{allow paint messages from other controls to update tmemo. Mod 2021-06-26}
                   stackmenu1.Memo2.Lines.EndUpdate;
-                  Screen.Cursor :=Save_Cursor;    { back to normal }
+                  Screen.Cursor:=crDefault;    { back to normal }
                   exit;
                 end;
               end;{within search circle. Otherwise the search is within a kind of square}
@@ -1021,7 +1021,7 @@ begin
     update_longstr('WARNING =',warning_str);{update or insert long str including single quotes}
   end;
 
-  Screen.Cursor :=Save_Cursor;    { back to normal }
+  Screen.Cursor:=crDefault;    { back to normal }
 end;
 
 

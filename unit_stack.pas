@@ -878,7 +878,7 @@ var
   hue1,hue2: single;{for colour disk}
   asteroidlist : array of array of array of double;
   solve_show_log  : boolean;
-  process_as_osc  : boolean;// process as OSC image
+  process_as_osc  : integer;//1=auto 2=forced process as OSC image
 
 
 var  {################# initialised variables #########################}
@@ -1774,7 +1774,7 @@ end;
 procedure analyse_tab_lights(full : boolean);
 var
   c,star_counter  ,i,counts                             : integer;
-  backgr, hfd_median,alt,az                             : double;
+  backgr, hfd_median,alt,az,sharpness                   : double;
   Save_Cursor                                           : TCursor;
   red,green,blue,planetary                                  : boolean;
   key,filename1,rawstr                                  : string;
@@ -1790,7 +1790,7 @@ begin
     end;
 
     Save_Cursor:=Screen.Cursor;
-    Screen.Cursor:=crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     esc_pressed:=false;
 
@@ -1814,7 +1814,7 @@ begin
         begin
           memo2_message('Converting '+filename1+' to FITS file format');
           Application.ProcessMessages;
-          if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+          if esc_pressed then  begin  Screen.Cursor:=crDefault;    { back to normal }  exit;  end;
           if convert_to_fits(filename1) {convert to fits} then
             ListView1.items[c].caption:=filename1 {change listview name to FITS.}
           else
@@ -1856,7 +1856,7 @@ begin
 
         filename2:=ListView1.items[c].caption;
         Application.ProcessMessages;
-        if esc_pressed then begin Screen.Cursor :=Save_Cursor;  { back to normal }  exit;  end;
+        if esc_pressed then begin Screen.Cursor:=crDefault;  { back to normal }  exit;  end;
 
 
         if load_fits(filename2,true { update head_2.ra0..},true,false {update memo},0,head_2,img)=false then  {load in memory. Use head_2 to protect head against overwriting head}
@@ -1936,7 +1936,8 @@ begin
                 begin {image can be futher analysed}
                   ListView1.Items.item[c].subitems.Strings[L_nrstars]:=inttostr5(round(star_counter {star_level}));//nr of stars
                   ListView1.Items.item[c].subitems.Strings[L_background]:=inttostr5(round(backgr));
-                  ListView1.Items.item[c].subitems.Strings[L_sharpness]:=floattostrF(image_sharpness(img),ffFixed,0,3); {sharpness test}
+                  if full then sharpness:=image_sharpness(img) else sharpness:=0;
+                  ListView1.Items.item[c].subitems.Strings[L_sharpness]:=floattostrF(sharpness,ffFixed,0,3); {sharpness test}
                 end;
 
                 if head_2.exposure>=10 then  ListView1.Items.item[c].subitems.Strings[L_exposure]:=inttostr(round(head_2.exposure)) {round values above 10 seconds}
@@ -1946,10 +1947,13 @@ begin
                 ListView1.Items.item[c].subitems.Strings[L_width]:=inttostr(head_2.width); {width}
                 ListView1.Items.item[c].subitems.Strings[L_height]:=inttostr(head_2.height);{height}
 
-                if (((head_2.naxis3=1) and (head_2.Xbinning=1) and (bayerpat<>'')) or (stackmenu1.make_osc_color1.checked)) then //process as OSC images
-                  process_as_osc:=true
+                if stackmenu1.make_osc_color1.checked then
+                  process_as_osc:=2//forced process as OSC images
                 else
-                  process_as_osc:=false;//disable demosaicing
+                if ((head_2.naxis3=1) and (head_2.Xbinning=1) and (bayerpat<>'')) then //auto process as OSC images
+                  process_as_osc:=1
+                else
+                  process_as_osc:=0;//disable demosaicing
 
                 if ((head_2.naxis3=1) and (head_2.Xbinning=1) and (bayerpat<>'')) then  rawstr:=' raw' else rawstr:='';
 
@@ -2039,7 +2043,7 @@ begin
             if key<>'' then
                list_remove_outliers(key);
           end;
-          if esc_pressed then begin Screen.Cursor :=Save_Cursor;  { back to normal }  exit; end;
+          if esc_pressed then begin Screen.Cursor:=crDefault;  { back to normal }  exit; end;
           inc(c)
         until c>counts;
       until key='';{until all keys are used}
@@ -2053,7 +2057,7 @@ begin
 //     if maxbackgr/(minbackgr)>1.3 then memo2_message('█ █ █ █ █ █ Warning, some images have a significant higher background value. Method sigma clip average will not be effective in removing satellite tracks. Suggest to unselect/remove images with a high background value!! █ █ █ █ █ █ ');
 
 
-    Screen.Cursor :=Save_Cursor;    { back to normal }
+    Screen.Cursor:=crDefault;    { back to normal }
     progress_indicator(-100,'');{progresss done}
   end;
 end;
@@ -2169,12 +2173,9 @@ end;
 
 procedure Tstackmenu1.subtract_background1Click(Sender: TObject);
 var fitsX, fitsY,col,col2,nrcolours :integer;
-   Save_Cursor:TCursor;
 begin
   if head.naxis=0 then exit;
-
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   backup_img;
 
 
@@ -2195,23 +2196,21 @@ begin
     plot_fits(mainwindow.image1,false,true);{plot real}
   end;
   update_equalise_background_step(5 {force 5 since equalise background is set to 1 by loading fits file} );{update menu}
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
 procedure Tstackmenu1.show_quads1Click(Sender: TObject);
 var
-   Save_Cursor:TCursor;
-   hfd_min   : double;
-   max_stars,binning : integer;
-   starlistquads : star_list;
-   warning_downsample: string;
+  hfd_min   : double;
+  max_stars,binning : integer;
+  starlistquads : star_list;
+  warning_downsample: string;
 begin
   if head.naxis=0 then application.messagebox( pchar('First load an image in the viewer!'), pchar('No action'),MB_OK)
   else
   begin
-    Save_Cursor := Screen.Cursor;
-    screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
     max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
     if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
 
@@ -2233,7 +2232,7 @@ begin
     quads_displayed:=true;
     starlistquads:=nil;{release memory}
 
-    Screen.Cursor:=Save_Cursor;
+    Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -2296,6 +2295,28 @@ begin
 end;
 
 
+procedure update_stackmenu;//Update menu shortcuts for Mac
+begin
+  with stackmenu1 do
+  begin
+    with selectall1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with list_to_clipboard1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with selectall2 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with selectall3 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with selectall4 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with selectall5 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with selectall6 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with list_to_clipboard6 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with selectall7 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with list_to_clipboard7 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with selectall8 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with list_to_clipboard8 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with selectall9 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with list_to_clipboard9 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+  end;
+end;
+
+
 procedure Tstackmenu1.FormCreate(Sender: TObject);
 var
   RealFontSize : integer;
@@ -2303,11 +2324,16 @@ begin
   RealFontSize := abs(Round((GetFontData(stackmenu1.Font.Handle).Height * 72 / stackmenu1.Font.PixelsPerInch)));
   if realfontsize>11 then stackmenu1.font.size:=11;{limit fontsize}
 
-{$ifdef mswindows}
-{$else} {unix}
-  copy_files_to_clipboard1.visible:=false;  {works only in Windows}
-  copy_files_to_clipboard1.enabled:=false;
-{$endif}
+  {$ifdef mswindows}
+  {$else} {unix}
+    copy_files_to_clipboard1.visible:=false;  {works only in Windows}
+    copy_files_to_clipboard1.enabled:=false;
+  {$endif}
+
+  {$IfDef Darwin}// for MacOS
+  if commandline_execution=false then update_stackmenu;
+  {$endif}
+
 end;
 
 procedure Tstackmenu1.FormKeyPress(Sender: TObject; var Key: char);
@@ -2326,11 +2352,11 @@ var
 begin
    if head.naxis=0 then exit;
    Save_Cursor := Screen.Cursor;
-   Screen.Cursor := crHourglass;    { Show hourglass cursor }
+   Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
    backup_img;
    gaussian_blur2(img_loaded,4*strtofloat2(most_common_filter_radius1.text));
    plot_fits(mainwindow.image1,false,true);{plot}
-   Screen.Cursor:=Save_Cursor;
+   Screen.Cursor:=crDefault;
    update_equalise_background_step(equalise_background_step+1);{update menu}
 end;
 
@@ -2625,7 +2651,7 @@ begin
   if head.naxis<>0 then
   begin
      Save_Cursor := Screen.Cursor;
-     Screen.Cursor := crHourglass;    { Show hourglass cursor }
+     Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
      backup_img;  {store array in img_backup}
 
@@ -2640,7 +2666,7 @@ begin
       artificial_flatV2(img_loaded, strtoint(StringReplace(ring_equalise_factor1.text,'%','',[])));
 
      plot_fits(mainwindow.image1,false,true);{plot real}
-     Screen.Cursor:=Save_Cursor;
+     Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -2707,20 +2733,16 @@ end;
 
 
 procedure Tstackmenu1.apply_factor1Click(Sender: TObject);
-var
-    Save_Cursor:TCursor;
 begin
  if head.naxis<>0 then
  begin
    backup_img; {move viewer data to img_backup}
-
-   Save_Cursor := Screen.Cursor;
-   Screen.Cursor := crHourglass;    { Show hourglass cursor }
+   Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
    apply_factors;
    use_histogram(img_loaded,true);
    plot_fits(mainwindow.image1,false,true);{plot real}
-   Screen.Cursor:=Save_Cursor;
+   Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -2729,12 +2751,10 @@ procedure Tstackmenu1.apply_file1Click(Sender: TObject);
 var fitsX, fitsY, col               : integer;
    flat_norm_value,flat_factor      : single;
    idx,old_naxis3 : integer;
-   Save_Cursor:TCursor;
 begin
   if head.naxis<>0 then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
     backup_img; {move viewer data to img_backup}
     old_naxis3:=head.naxis3;
 
@@ -2798,7 +2818,7 @@ begin
     img_temp:=nil;
     use_histogram(img_loaded,true);
     plot_fits(mainwindow.image1,false,true);{plot real}
-    Screen.Cursor:=Save_Cursor;
+    Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -2825,7 +2845,7 @@ begin
   if head.naxis<>0 then
   begin
      Save_Cursor := Screen.Cursor;
-     Screen.Cursor := crHourglass;    { Show hourglass cursor }
+     Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
      mainwindow.stretch1.Text:='off';{switch off gamma}
 
      a_factor:=strtofloat2(edit_a1.Text);
@@ -2865,7 +2885,7 @@ begin
      use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
      plot_fits(mainwindow.image1,true,true);{plot real}
 
-     Screen.Cursor:=Save_Cursor;
+     Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -2914,7 +2934,7 @@ begin
   end;
 
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   backup_img; {move copy to backup_img}
 
   try radius:=strtoint(stackmenu1.most_common_filter_radius1.text);except end;
@@ -2922,7 +2942,7 @@ begin
   apply_most_common(img_backup[index_backup].img,img_loaded,radius); {apply most common filter on first array and place result in second array}
 
   plot_fits(mainwindow.image1,false,true);{plot real}
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
   update_equalise_background_step(equalise_background_step+1);{update menu}
 end;
 
@@ -2963,11 +2983,8 @@ var index,counter,error2: integer;
     waarde              : double;
     filename_old        : string;
     success             : boolean;
-    Save_Cursor:TCursor;
-
 begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   index:=0;
   esc_pressed:=false;
   counter:=tl.Items.Count;
@@ -3031,7 +3048,7 @@ begin
     end;
     inc(index); {go to next file}
   end;
-  Screen.Cursor := Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -3123,6 +3140,7 @@ begin
   stackmenu1.monitor_longitude1.Text:=long_default;
 
   update_stackmenu;
+  stackmenu1.pagecontrol1Change(Sender);//update stackbutton1.enabled
 end;
 
 
@@ -3180,17 +3198,14 @@ end;
 
 
 procedure Tstackmenu1.apply_gaussian_blur_button1Click(Sender: TObject);
-var
-   Save_Cursor:TCursor;
 begin
    if head.naxis=0 then exit;
-   Save_Cursor := Screen.Cursor;
-   Screen.Cursor := crHourglass;    { Show hourglass cursor }
+   Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
    backup_img;
    gaussian_blur2(img_loaded,strtofloat2(blur_factor1.text));
    use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
    plot_fits(mainwindow.image1,false,true);{plot}
-   Screen.cursor:=Save_Cursor;
+   Screen.cursor:=crDefault;
 end;
 
 
@@ -3303,7 +3318,7 @@ var
   median_11,median_21,median_31,   median_12,median_22,median_32,   median_13,median_23,median_33 : double;
 begin
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   esc_pressed:=false;
 
@@ -3328,7 +3343,7 @@ begin
       begin
         memo2_message('Converting '+filename1+' to FITS file format');
         Application.ProcessMessages;
-        if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+        if esc_pressed then  begin  Screen.Cursor:=crDefault;    { back to normal }  exit;  end;
         if convert_to_fits(filename1) {convert to fits} then
           lv.items[c].caption:=filename1 {change listview name to FITS.}
         else
@@ -3661,18 +3676,16 @@ begin
   progress_indicator(-100,'');{progresss done}
   img:= nil;
 
-  Screen.Cursor :=Save_Cursor;{back to normal }
+  Screen.Cursor:=crDefault;{back to normal }
 end;
 
 
 procedure average(mess:string; file_list : array of string; file_count:integer; var img2: image_array);{combine to average or mean, make also mono from three colors if color}
 var                                                   {this routine works with mono files but makes coloured files mono, so less suitable for commercial cameras producing coloured raw lights}
-   Save_Cursor:TCursor;
    c,fitsX, fitsY : integer;
    img_tmp1 :image_array;
 begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   {average}
   for c:=0 to file_count-1 do
@@ -3681,7 +3694,7 @@ begin
 
     {load image}
     Application.ProcessMessages;
-    if ((esc_pressed) or (load_fits(file_list[c],false {light},true,true {update memo},0,head,img_tmp1)=false))then  begin Screen.Cursor := Save_Cursor;  exit;end;
+    if ((esc_pressed) or (load_fits(file_list[c],false {light},true,true {update memo},0,head,img_tmp1)=false))then  begin Screen.Cursor:=crDefault; exit;end;
 
     if c=0 then {init}
     begin
@@ -3712,7 +3725,7 @@ begin
        img2[0,fitsX,fitsY]:=img2[0,fitsX,fitsY]/file_count;{scale to one image}
 
   img_tmp1:=nil;{free mem}
-  Screen.Cursor := Save_Cursor;  { Always restore to normal }
+  Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
 
 
@@ -4038,9 +4051,9 @@ var
    keyw,value :string;
    lv: tlistview;
 begin
-  if sender=changekeyword1 then lv:=listview1;{from popup menu}
+  if sender=changekeyword1 then begin lv:=listview1;{from popup menu} new_analyse_required:=true;end;
   if sender=changekeyword2 then lv:=listview2;{from popup menu}
-  if sender=changekeyword3 then lv:=listview3;{from popup menu}
+  if sender=changekeyword3 then begin lv:=listview3;{from popup menu} new_analyse_required3:=true;{tab 3 flats}end;
   if sender=changekeyword4 then lv:=listview4;{from popup menu}
   if sender=changekeyword6 then lv:=listview6;{from popup menu}
   if sender=changekeyword7 then lv:=listview7;{from popup menu}
@@ -4065,7 +4078,7 @@ begin
   if head.naxis<>0 then
   begin
      Save_Cursor := Screen.Cursor;
-     Screen.Cursor := crHourglass;    { Show hourglass cursor }
+     Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
      get_background(0,img_loaded,true,false{do not calculate noise_level}, {var} bg,star_level); {should be about 500 for mosaic since that is the target value}
 
@@ -4081,7 +4094,7 @@ begin
          if frac(fitsY/100)=0 then
          begin
            Application.ProcessMessages;
-           if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+           if esc_pressed then  begin  Screen.Cursor:=crDefault;    { back to normal }  exit;  end;
            progress_value:=round(100*(fitsY)/(((k+1)/head.naxis3)*(head.height)));
            progress_indicator(progress_value,'');{report progress}
          end;
@@ -4107,7 +4120,7 @@ begin
      end;{k color}
      plot_fits(mainwindow.image1,false,true);{plot real}
      progress_indicator(-100,'');{back to normal}
-     Screen.Cursor:=Save_Cursor;
+     Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -4232,17 +4245,15 @@ end;
 
 
 procedure Tstackmenu1.free_resize_fits1Click(Sender: TObject);{free resize FITS image}
-var
-  Save_Cursor:TCursor;
 begin
   if head.naxis=0 then exit;
-  Save_Cursor := Screen.Cursor;
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   backup_img;
   resize_img_loaded(width_UpDown1.position/head.width {ratio});
 
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,true,true);{plot}
-  Screen.cursor:=Save_Cursor;
+  Screen.cursor:=crDefault;
 end;
 
 
@@ -4515,7 +4526,7 @@ var
 begin
   if listview6.items.count<=1 then exit; {no files}
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   save_settings2;{too many lost selected files . so first save settings}
 
   if listview6.Items.item[listview6.items.count-1].subitems.Strings[B_width]='' {width} then
@@ -4606,7 +4617,7 @@ begin
                 success:=savefits_update_header(filename2)
               else
                 success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
-              if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
+              if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
             end;
           end;
         end;{astrometric solve and annotate}
@@ -4748,7 +4759,7 @@ begin
   until ((esc_pressed) or (sender=blink_button1 {single run}) or (sender=write_video1) or (sender=nil){export aligned});
 
   img_temp:=nil;{free memory}
-  Screen.Cursor :=Save_Cursor;{back to normal }
+  Screen.Cursor:=crDefault;{back to normal }
 end;
 
 
@@ -4962,7 +4973,7 @@ begin
   if ListView1.items.count=0 then begin memo2_message('Abort, No files in tab IMAGES.' ); exit;end;{no files in list, exit}
 
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   if listview1.selected=nil then
                  ListView1.ItemIndex := 0;{show wich file is processed}
@@ -4971,7 +4982,7 @@ begin
   if load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded)=false then
   begin
     memo2_message('Abort, can'+#39+'t load '+ filename2);
-    Screen.Cursor :=Save_Cursor;    { back to normal }
+    Screen.Cursor:=crDefault;    { back to normal }
     exit;
   end;
   if ((head.cd1_1=0) or (stackmenu1.ignore_header_solution1.checked)) then {no solution or ignore solution}
@@ -4980,7 +4991,7 @@ begin
     if create_internal_solution(img_loaded,head)= false then
     begin
       memo2_message('Abort, can'+#39+'t solve '+ filename2);
-      Screen.Cursor :=Save_Cursor;    { back to normal }
+      Screen.Cursor:=crDefault;    { back to normal }
       exit;
     end;
   end;
@@ -4996,7 +5007,7 @@ begin
   else
   memo2_message('No object locations found in image. Modify limiting count and limiting magnitude in Asteroid & Comet annotation menu, CTRL+R');
   memo2_message('Ready. Select the object to align on.');
-  Screen.Cursor :=Save_Cursor;    { back to normal }
+  Screen.Cursor:=crDefault;    { back to normal }
 end;
 
 
@@ -5048,7 +5059,7 @@ begin
   end;{case}
 
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   esc_pressed:=false;
 
   if listview7.items.count>0 then
@@ -5075,11 +5086,11 @@ begin
        listview7.Items[c].MakeVisible(False);{scroll to selected item}
 
        application.processmessages;
-       if esc_pressed then begin Screen.Cursor:=Save_Cursor; exit; end;
+       if esc_pressed then begin Screen.Cursor:=crDefault; exit; end;
      end;
   end;
   analyse_listview(listview7,true {light},false {full fits},true{refresh}); {refresh list}
-  Screen.Cursor := Save_Cursor;  { Always restore to normal }
+  Screen.Cursor:=crDefault;  { Always restore to normal }
 
 end;
 
@@ -5555,7 +5566,7 @@ var
    thefile,filename1            : string;
 begin
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   esc_pressed:=false;
   refresh_solutions:=mount_ignore_solutions1.checked; {refresh astrometric solutions}
@@ -5574,7 +5585,7 @@ begin
       {load image}
       if ((esc_pressed) or (load_fits(filename1,true {light},true,true {update memo},0,head_2,img_temp)=false)) then
       begin
-        Screen.Cursor :=Save_Cursor;{back to normal }
+        Screen.Cursor:=crDefault;{back to normal }
         exit;
       end;
       if ((head.cd1_1=0) or (refresh_solutions)) then
@@ -5599,7 +5610,7 @@ begin
               success:=savefits_update_header(filename1)
             else
               success:=save_tiff16_secure(img_temp,filename1);{guarantee no file is lost}
-            if success=false then begin ShowMessage('Write error !!' + filename1);Screen.Cursor := Save_Cursor; exit;end;
+            if success=false then begin ShowMessage('Write error !!' + filename1);Screen.Cursor:=crDefault; exit;end;
           end
         end
         else
@@ -5613,7 +5624,7 @@ begin
     end;
   end;
 
-  Screen.Cursor :=Save_Cursor;{back to normal }
+  Screen.Cursor:=crDefault;{back to normal }
 
   update_menu(false);//do not allow to save fits. img_load is still valid but memo1 is cleared. Could be recovered but is not done
   stackmenu1.mount_analyse1Click(nil);{update. Since it are WCS files with naxis,2 then image1 will be cleared in load_fits}
@@ -5669,7 +5680,6 @@ begin
   index:=0;
   listview1.Items.beginUpdate;
   listview1.clear;//lights
-  listview5.clear;//results
 
   counter:=listview7.Items.Count;
   while index<counter do
@@ -5697,10 +5707,12 @@ begin
     with listview7 do
      begin
        ListItem := Items.insert(position);
-       ListItem.Caption:= listview5.items[index].caption;//copy from tab results
+       //             ListView1.Items.item[c].subitems.Strings[L_calibration]
+       ListItem.Caption:=listview1.items[index].caption;
        ListItem.checked:=true;
        for i:=1 to P_nr do
            ListItem.SubItems.Add(''); // add the other columns
+       ListItem.subitems.Strings[P_calibration]:=ListView1.Items.item[index].subitems.Strings[L_calibration];//copy calibration status
        dec(index); {go to next file}
      end;
   end;
@@ -5721,7 +5733,7 @@ var
   fn,col,ff   : string;
 begin
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   esc_pressed:=false;
 
   if listview7.items.count>0 then
@@ -5749,11 +5761,11 @@ begin
        listview7.Items[c].MakeVisible(False);{scroll to selected item}
 
        application.processmessages;
-       if esc_pressed then begin Screen.Cursor:=Save_Cursor; exit; end;
+       if esc_pressed then begin Screen.Cursor:=crDefault; exit; end;
      end;
   end;
   analyse_listview(listview7,true {light},false {full fits},true{refresh}); {refresh list}
-  Screen.Cursor := Save_Cursor;  { Always restore to normal }
+  Screen.Cursor:=crDefault;  { Always restore to normal }
 
 end;
 
@@ -5761,7 +5773,7 @@ procedure Tstackmenu1.photom_stack1Click(Sender: TObject);
 var
   index,counter,oldindex,position,i: integer;
   ListItem: TListItem;
-  oldmakeosc : boolean;
+  oldmakeosc,oldclassify_filter,oldclassify_object : boolean;
 begin
 
   position:=-1;
@@ -5780,10 +5792,8 @@ begin
   end;
   listview1.Items.endUpdate;
 
-  make_osc_color1.checked:=false;// prevent forced de-mosaic
-
-  analyse_tab_lights(false {full});
-  if process_as_osc then
+  analyse_tab_lights(false {full});//update also process_as_osc
+  if process_as_osc>0 then
   begin
     memo2_message('█ █ █ █ █ █ Abort !! For photometry you can not stack OSC images. First extract the green channel. █ █ █ █ █ █');
     beep;
@@ -5792,7 +5802,6 @@ begin
 
   oldindex:=stack_method1.itemindex;
   stack_method1.itemindex:=0; //average
-  oldmakeosc:=make_osc_color1.checked;// store setting
 
   stack_button1Click(sender);// stack the files in tab lights
 
@@ -5813,7 +5822,6 @@ begin
   listview1.clear;
 
   stack_method1.itemindex:=oldindex;//return old setting
-  make_osc_color1.checked:=oldmakeosc;//return old setting
   save_settings2;
 
   analyse_listview(listview7,true {light},false {full fits},true{refresh}); {refresh list}
@@ -5929,11 +5937,9 @@ end;
 procedure Tstackmenu1.result_compress1Click(Sender: TObject);
 var index,counter: integer;
     filen  : string;
-  Save_Cursor:TCursor;
 begin
   index:=0;
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   counter:=listview5.Items.Count;
   esc_pressed:=false;
@@ -5943,12 +5949,12 @@ begin
     begin
       filen:=listview5.items[index].caption;
       Application.ProcessMessages;
-      if ((esc_pressed) or (pack_cfitsio(filen)=false)) then begin beep; mainwindow.caption:='Exit with error!!'; Screen.Cursor := Save_Cursor;  exit;end;
+      if ((esc_pressed) or (pack_cfitsio(filen)=false)) then begin beep; mainwindow.caption:='Exit with error!!'; Screen.Cursor:=crDefault; exit;end;
     end;
     inc(index); {go to next file}
   end;
   stackmenu1.caption:='Finished, all files compressed with extension .fz.';
-  Screen.Cursor := Save_Cursor;  { Always restore to normal }
+  Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
 
 
@@ -6025,7 +6031,7 @@ begin
   end;
 
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   backup_img; {move copy to img_backup}
 
   get_background(0,img_loaded,false {do not calculate hist},false {do not calculate noise_level}, {var} cblack,star_level);
@@ -6074,7 +6080,7 @@ begin
 
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);{plot real}
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 procedure Tstackmenu1.refresh_astrometric_solutions1click(Sender: TObject);
@@ -6106,7 +6112,7 @@ var
   st                   : string;
 begin
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   esc_pressed:=false;
 
@@ -6195,7 +6201,7 @@ begin
 
   if head.naxis<>0 then
     plot_fits(mainwindow.image1,false {re_center},true);{the last displayed image doesn't match with header. Just plot last image to fix}
-  Screen.Cursor :=Save_Cursor;{back to normal }
+  Screen.Cursor:=crDefault;{back to normal }
 end;
 
 
@@ -6726,13 +6732,13 @@ var
             outliers:=nil;
             starCheck:=nil;
             starThree:=nil;
-            Screen.Cursor :=Save_Cursor;{back to normal }
+            Screen.Cursor:=crDefault;{back to normal }
           end;
 
 begin
   if listview7.items.count<=0 then exit; {no files}
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   save_settings2;{too many lost selected files . so first save settings}
 
   if ((pos('V',star_database1.text)=0) and (pos('v',star_database1.text)=0)) then
@@ -6794,7 +6800,7 @@ begin
             success:=savefits_update_header(filename1)
           else
             success:=save_tiff16_secure(img_temp,filename1);{guarantee no file is lost}
-          if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
+          if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
           listview7.Items.item[c].subitems.Strings[P_astrometric]:='✓';
         end
         else
@@ -6816,7 +6822,7 @@ begin
   begin
     mainwindow.Memo1.Text:= memo2_text;{restore fits header}
     mainwindow.memo1.visible:=true;{Show old header again}
-    Screen.Cursor :=Save_Cursor;{back to normal }
+    Screen.Cursor:=crDefault;{back to normal }
     if refresh_solutions then memo2_message('Ready') else
       memo2_message('Stopped, ESC pressed.');
     exit;
@@ -7493,23 +7499,20 @@ end;
 
 
 procedure Tstackmenu1.smart_colour_smooth_button1Click(Sender: TObject);
-var
-  Save_Cursor:TCursor;
 begin
   if Length(img_loaded)<3 then
   begin
     memo2_message('Error, no three colour image loaded!');
     exit;
   end;
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   backup_img;
 
   smart_colour_smooth(img_loaded, strtofloat2(smart_smooth_width1.text),strtofloat2(smart_colour_sd1.text),preserve_red_nebula1.checked,false);
 
   plot_fits(mainwindow.image1,false,true);{plot real}
 
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -7527,12 +7530,12 @@ begin
   if head.naxis<>0 then
   begin
      Save_Cursor := Screen.Cursor;
-     Screen.Cursor := crHourglass;    { Show hourglass cursor }
+     Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
      backup_img; {move copy to img_backup}
      try radius:=strtoint(extract_background_box_size1.text);except end;
      apply_most_common(img_backup[index_backup].img,img_loaded,radius); {apply most common filter on first array and place result in second array}
      plot_fits(mainwindow.image1,true,true);{plot real}
-     Screen.Cursor:=Save_Cursor;
+     Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -7640,17 +7643,14 @@ end;
 
 procedure Tstackmenu1.apply_remove_background_colour1Click(Sender: TObject);
 var
-   Save_Cursor:TCursor;
-   fitsX,fitsY: integer;
-   background_r,background_g,background_b, red,green,blue,signal_R,signal_G,signal_B,sigma,lumn : double;
+  fitsX,fitsY: integer;
+  background_r,background_g,background_b, red,green,blue,signal_R,signal_G,signal_B,sigma,lumn : double;
 begin
   if head.naxis3<3 then exit;{prevent run time error mono lights}
 //  if head.naxis=0 then exit;
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor:= crHourGlass;
+  Screen.Cursor:=crHourglass; application.processmessages;
 
   backup_img;
-
   sigma:=strtofloat2(sigma_decolour1.text);{standard deviation factor used}
 
   get_background(1,img_loaded,true {hist},true {noise level},{var}background_G, star_level);{calculate background and noise_level}
@@ -7682,7 +7682,7 @@ begin
         img_loaded[2,fitsX  ,  fitsY  ]:=blue;
      end;
    plot_fits(mainwindow.image1,false,true);{plot}
-   Screen.cursor:=Save_Cursor;
+   Screen.cursor:=crDefault;
 end;
 
 procedure Tstackmenu1.reset_factors1Click(Sender: TObject);
@@ -7743,15 +7743,13 @@ end;
 
 
 procedure Tstackmenu1.apply_box_filter2Click(Sender: TObject);
-var    Save_Cursor:TCursor;
 begin
   if Length(img_loaded)=0 then
   begin
     memo2_message('Error, no image in viewer loaded!');
     exit;
   end;
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   backup_img;
 
   box_blur(1 {nr of colors},2,img_loaded);
@@ -7759,7 +7757,7 @@ begin
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);{plot real}
 
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 procedure Tstackmenu1.tab_monitoring1Show(Sender: TObject);
@@ -7769,15 +7767,13 @@ end;
 
 
 procedure Tstackmenu1.test_osc_normalise_filter1Click(Sender: TObject);
-var    Save_Cursor:TCursor;
 begin
   if Length(img_loaded)=0 then
   begin
     memo2_message('Error, no image in viewer loaded!');
     exit;
   end;
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   backup_img;
 
   check_pattern_filter(img_loaded);
@@ -7785,7 +7781,7 @@ begin
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);{plot real}
 
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -8096,7 +8092,7 @@ begin
   memo2_message('   2: Slew the mount to a second point in the sky and take a second image without synchronising the mount.');
   memo2_message('Conditions: The image header should contain the correct time, observer location and mount position. Images should be solvable.');
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   esc_pressed:=false;
 
@@ -8116,7 +8112,7 @@ begin
       {load image}
       if esc_pressed then
       begin
-        Screen.Cursor :=Save_Cursor;{back to normal }
+        Screen.Cursor:=crDefault;{back to normal }
         exit;
       end;
 
@@ -8171,7 +8167,7 @@ begin
       end;
     end;
   end;
-  Screen.Cursor :=Save_Cursor;{back to normal }
+  Screen.Cursor:=crDefault;{back to normal }
 
   stackmenu1.mount_analyse1Click(nil);{update}
 end;
@@ -8245,14 +8241,11 @@ end;
 procedure Tstackmenu1.apply_hue1Click(Sender: TObject);
 var fitsX, fitsY,fuzziness :integer;
     r,g,b,h,s,s_new,v,oldhue,newhue,dhue,saturation_factor,v_old1,v_old2,v_old3,s_old,saturation_tol : single;
-    Save_Cursor:TCursor;
     colour: tcolor;
     remove_lum : boolean;
 begin
   if ((head.naxis=0) or (head.naxis3<>3)) then exit;
-
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   backup_img;
 
   fuzziness:=hue_fuzziness1.position;
@@ -8264,7 +8257,6 @@ begin
   RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),oldhue,s_old,v);
   colour:=colourShape3.brush.color;
   RGB2HSV(getRvalue(colour),getGvalue(colour),getBvalue(colour),newhue,s_new,v);
-
 
   if stackmenu1.area_set1.caption<>'✓'  then {no area selected}
   begin
@@ -8307,7 +8299,7 @@ begin
 
   HueRadioButton1.checked:=false;
   HueRadioButton2.checked:=false;
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -8441,22 +8433,20 @@ begin
 end;
 
 procedure Tstackmenu1.apply_background_noise_filter1Click(Sender: TObject);
-var    Save_Cursor:TCursor;
 begin
   if Length(img_loaded)=0 then
   begin
     memo2_message('Error, no image in viewer loaded!');
     exit;
   end;
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   backup_img;
   background_noise_filter(img_loaded,strtofloat2(stackmenu1.noisefilter_sd1.text),strtofloat2(stackmenu1.noisefilter_blur1.text));
 
 //  use_histogram(true);{get histogram}
   plot_fits(mainwindow.image1,false,true);{plot real}
 
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -8467,20 +8457,17 @@ end;
 
 
 procedure Tstackmenu1.bin_image1Click(Sender: TObject);
-var
-  Save_Cursor:TCursor;
 begin
   if head.naxis<>0 then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     backup_img; {move viewer data to img_backup}
     if bin_factor1.itemindex=0 then bin_X2X3X4(2)
                                else bin_X2X3X4(3);
 
     plot_fits(mainwindow.image1,true,true);{plot real}
-    Screen.Cursor:=Save_Cursor;
+    Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -8495,14 +8482,11 @@ procedure Tstackmenu1.add_noise1Click(Sender: TObject);
 var
   fitsX,fitsY,col: integer;
   noise,mean     : double;
-  Save_Cursor:TCursor;
 begin
   if head.naxis<>0 then
   begin
     backup_img; {move viewer data to img_backup}
-
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     noise:=strtofloat2(stackmenu1.edit_noise1.Text);
     if add_bias1.checked then mean:=3*noise else mean:=0;
@@ -8513,7 +8497,7 @@ begin
     img_loaded[col,fitsX,fitsY]:=max(0,img_loaded[col,fitsX,fitsY]+randg(mean,noise){gaussian noise});
 
     plot_fits(mainwindow.image1,false,true);{plot real}
-    Screen.Cursor:=Save_Cursor;
+    Screen.Cursor:=crDefault;
    end;
    use_histogram(img_loaded,true {update}); {update for the noise, plot histogram, set sliders}
 end;
@@ -8532,7 +8516,7 @@ var
 begin
   if listview1.items.count<=1 then exit; {no files}
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   save_settings2;{too many lost selected files . so first save settings}
   esc_pressed:=false;
   init:=false;
@@ -8577,7 +8561,7 @@ begin
       inc(c,step);
     until ((c>=listview1.items.count) or (c<0));
   until esc_pressed ;
-  Screen.Cursor :=Save_Cursor;{back to normal }
+  Screen.Cursor:=crDefault;{back to normal }
 end;
 
 procedure Tstackmenu1.browse_mount1Click(Sender: TObject);
@@ -8664,9 +8648,6 @@ begin
 
   while c<stackmenu1.listview2.items.count do
   begin
- //   if stackmenu1.listview2.items[c].checked=true then
-  //     test:=head.set_temperature - strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]);
-
     if stackmenu1.listview2.items[c].checked=true then
       if ( (stackmenu1.classify_dark_exposure1.checked=false) or (dark_exposure=round(strtofloat2(stackmenu1.listview2.Items.item[c].subitems.Strings[D_exposure])))) then {head_2.exposure correct}
         if ( (stackmenu1.classify_dark_temperature1.checked=false) or (abs(dark_temperature - strtoint(stackmenu1.listview2.Items.item[c].subitems.Strings[D_temperature]))<=1 )) then {temperature correct within one degree}
@@ -8678,7 +8659,6 @@ begin
               begin
                 filen:=stackmenu1.ListView2.items[c].caption;
                 day_offset:=abs(d-jd_int);
-              //  roundexposure:=round(head.exposure);
               end;
             end;
     inc(c);
@@ -8703,7 +8683,6 @@ begin
       if ((head_2.gain<>'' {gain in header}) and (head.gain{request}<>head_2.gain)) then
          memo2_message('█ █ █ █ █ █ Warning above dark gain ('+head_2.gain+') is different then the light gain ('+head.gain+')! █ █ █ █ █ █ ');
 
-
       last_dark_loaded:=filen; {required for for change in light_jd}
       if head_2.dark_count=0 then head_2.dark_count:=1; {store in head of reference file}
     end;
@@ -8722,7 +8701,6 @@ var
   d,day_offset   : double;
   filen          : string;
 begin
-//  analyse_listview(stackmenu1.listview3,false {light},false {full fits},false{refresh});{find dimensions, head_2.exposure and temperature}
   c:=0;
   day_offset:=99999999;
   filen:='';
@@ -8754,7 +8732,6 @@ begin
       {load master in memory img_flat}
       last_flat_loaded:=filen; {required for for change in light_jd}
       flat_filter:=head.filter_name; {mark as loaded}
-     // head_ref.calstat:=head_2.calstat; {store flat numbers in head_ref.calstat of reference image}
 
       if pos('B',head_2.calstat)=0 then
       begin
@@ -8766,7 +8743,7 @@ begin
 
       if head_2.flat_count=0 then head_2.flat_count:=1; {not required for astap master}
 
-      if  ((process_as_osc) and (stackmenu1.apply_normalise_filter1.checked)) then
+      if  ((process_as_osc>0) and (stackmenu1.apply_normalise_filter1.checked)) then
       begin
         memo2_message('Applying normalise filter on master (OSC) flat.');
         check_pattern_filter(img_flat);
@@ -9189,7 +9166,7 @@ begin
          end;
       flat_norm_value:=round(flat_norm_value/100);{scale factor to apply flat. The norm value will result in a factor one for the center.}
 
-      if process_as_osc then {give only warning when converting to colour. Not when calibrating for green channel and used for photometry}
+      if process_as_osc>0 then {give only warning when converting to colour. Not when calibrating for green channel and used for photometry}
         if max(max(flat11,flat12),max(flat21,flat22))/min(min(flat11,flat12),min(flat21,flat22))>2.0 then memo2_message('█ █ █ █ █ █ Warning flat pixels differ too much. Use white light for OSC flats or consider using option "Normalise OSC flat" █ █ █ █ █ █ ');
 
       for fitsY:=1 to head.height do  {apply the flat}
@@ -9217,12 +9194,10 @@ end;
 
 procedure calibration_only; {calibrate lights only}
 var
-  Save_Cursor:TCursor;
    c,x,y,col  : integer;
    object_to_process, stack_info : string;
 begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   with stackmenu1 do
   begin
     memo2_message('Calibrating individual files only.');
@@ -9240,7 +9215,7 @@ begin
 
         {load image}
         Application.ProcessMessages;
-        if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo, required for updates},0,head,img_loaded)=false)) then begin memo2_message('Error');{can't load} Screen.Cursor := Save_Cursor; exit;end;
+        if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo, required for updates},0,head,img_loaded)=false)) then begin memo2_message('Error loading file '+filename2); Screen.Cursor:=crDefault;exit;end;
 
         if apply_dark_and_flat(img_loaded) {apply dark, flat if required, renew if different head.exposure or ccd temp} then
         begin //success added dark or flat
@@ -9258,7 +9233,7 @@ begin
 
           if esc_pressed then exit;
 
-          if process_as_osc then {do demosaic bayer}
+          if process_as_osc>0 then {do demosaic bayer}
               demosaic_bayer(img_loaded); {convert OSC image to colour}
            {head.naxis3 is now 3}
 
@@ -9272,9 +9247,13 @@ begin
            { final files contains, LUM_EXP,LUM_CNT,LUM_DARK, LUM_FLAT, LUM_BIAS, RED_EXP,RED_CNT,RED_DARK, RED_FLAT, RED_BIAS.......These values are not read}
 
 
+          ListView1.Items.item[c].subitems.Strings[L_calibration]:=head.calstat;
+          ListView1.Items.item[c].subitems.Strings[L_result]:=head.calstat;
+
           filename2:=StringReplace(ChangeFileExt(filename2,'.fit'),'.fit','_cal.fit',[]);{give new file name }
           memo2_message('█ █ █  Saving calibrated file as '+filename2);
           save_fits(img_loaded,filename2,-32, true);
+          ListView1.items[c].caption:=filename2;//update list. Also used for photometry
 
           object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a object name}
           stack_info:=' '+inttostr(head.flatdark_count)+'x'+'FD  '+
@@ -9298,7 +9277,7 @@ begin
 
   plot_fits(mainwindow.image1,true,true);{update to last image, activate memo1}
 
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
   memo2_message('Calibration of the individual files is complete. New files are posted in the results tab');
 end;
 
@@ -9414,10 +9393,10 @@ end;
 
 procedure Tstackmenu1.stack_button1Click(Sender: TObject);
 var
-   Save_Cursor:TCursor;
+
    i,c,over_size,over_sizeL,nrfiles, image_counter,object_counter, first_file, total_counter,counter_colours  : integer;
    filter_name1, filter_name2,defilter, filename3, extra1,extra2,object_to_process,stack_info,thefilters,mess : string;
-   lrgb,solution,monofile,ignore,cal_and_align, mosaic_mode,sigma_mode,calibration_mode,calibration_mode2,skip_combine,success  : boolean;
+   lrgb,solution,monofile,ignore,cal_and_align, mosaic_mode,sigma_mode,calibration_mode,calibration_mode2,skip_combine,success,classify_filter, classify_object,sender_photometry : boolean;
    startTick      : qword;{for timing/speed purposes}
    min_background,max_background,backgr   : double;
    filters_used : array [0..4] of string;
@@ -9431,6 +9410,9 @@ begin
   sigma_mode:=pos('Sigma',stackmenu1.stack_method1.text)>0;
   skip_combine:=pos('skip',stackmenu1.stack_method1.text)>0;
   cal_and_align:=pos('alignment',stackmenu1.stack_method1.text)>0; {calibration and alignment only}
+  sender_photometry:=(sender=photom_stack1);//stack instruction from photometry tab?
+  classify_filter:=((classify_filter1.checked) and (sender_photometry=false));//disable classify filter if sender is photom_stack1
+  classify_object:=((classify_object1.checked) and (sender_photometry=false));//disable classify object if sender is photom_stack1
 
   if  ((stackmenu1.use_manual_alignment1.checked) and (sigma_mode) and (pos('Comet',stackmenu1.manual_centering1.text)<>0)) then memo2_message('█ █ █ █ █ █ Warning, use for comet stacking the stack method "Average"!. █ █ █ █ █ █ ');
 
@@ -9453,33 +9435,33 @@ begin
     analyse_tab_lights(calibration_mode=false); {analyse any image not done yet. For calibration mode skip hfd and background measurements}
     if esc_pressed then exit;
 
-    if calibration_mode2 then process_as_osc:=false;
+    if ((calibration_mode2) or (sender_photometry)) then process_as_osc:=0;// do not process as OSC
 
-    if process_as_osc then
+    if process_as_osc>0 then
     begin
-      if stackmenu1.make_osc_color1.checked then
+      if process_as_osc=2 then
         memo2_message('Colour stack. Forced processing as OSC images. Demosaic method '+demosaic_method1.text)
       else
       memo2_message('Colour stack. OSC images detected. Demosaic method '+demosaic_method1.text);
 
-      if classify_filter1.checked then
+      if classify_filter{1.checked} then
       begin
-        memo2_message('■■■■■■■■■■■■■ OSC images. Will uncheck "Classify by filter" ! ■■■■■■■■■■■■■');
-        classify_filter1.checked:=false;
+   //     memo2_message('■■■■■■■■■■■■■ OSC images. Will uncheck "Classify by filter" ! ■■■■■■■■■■■■■');
+        classify_filter{1.checked}:=false;
       end;
     end
     else
-    if classify_filter1.checked then memo2_message('LRGB colour stack (classify by light filter checked)')
+    if classify_filter{1.checked} then memo2_message('LRGB colour stack (classify by light filter checked)')
     else memo2_message('Grayscale stack (classify by light filter unchecked)');
 
-    set_icon_stackbutton(process_as_osc or classify_filter1.checked);//update glyph stack button to colour or gray
+    set_icon_stackbutton((process_as_osc>0) or (classify_filter{1.checked}));//update glyph stack button to colour or gray
 
 
     memo2_message('Stacking ('+stack_method1.text+'), HOLD ESC key to abort.');
   end
   else
   begin
-    memo2_message('Abort, no images to stack! Browse for images, darks and flats. They will be sorted automatically.');
+    memo2_message('Abort, no images to stack! Browse for images, darks and flats.');
     exit;
   end;
 
@@ -9507,13 +9489,12 @@ begin
   if ((calibration_mode) or (calibration_mode2)) then {calibrate lights only}
   begin
     calibration_only;
-    if process_as_osc then Memo2_message('OSC images are converted to colour.');
+    if process_as_osc>0 then Memo2_message('OSC images are converted to colour.');
     Memo2_message('Ready. Resulting files are available in tab Results and can be copied to the Blink, Photometry  or Lights tab.');
     exit;
   end;
 
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   progress_indicator(0,'');
 
   if use_manual_alignment1.checked then {check is reference objects are marked}
@@ -9528,7 +9509,7 @@ begin
         if length(ListView1.Items.item[c].subitems.Strings[L_X])<=1 then {no manual position added}
         begin
           memo2_message('█ █ █  Abort! █ █ █  Reference object missing for one or more files. Double click on all file names and mark with the mouse the reference object. The file name will then turn green.');
-          Screen.Cursor := Save_Cursor;
+          Screen.Cursor:=crDefault;
           exit;
         end;
         Application.ProcessMessages;
@@ -9559,10 +9540,10 @@ begin
 
         filename2:=ListView1.items[c].caption;
         Application.ProcessMessages;
-        if esc_pressed then begin restore_img; Screen.Cursor := Save_Cursor; exit;end;
+        if esc_pressed then begin restore_img; Screen.Cursor:=crDefault; exit;end;
 
         {load file}
-        if load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded){important required to check head.cd1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
+        if load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded){important required to check head.cd1_1}=false then begin  memo2_message('Error loading file '+filename2);{failed to load} Screen.Cursor:=crDefault; exit;end;
         if ((head.cd1_1=0) or (ignore)) then
                                   solution:= create_internal_solution(img_loaded,head) else solution:=true;
 
@@ -9608,10 +9589,10 @@ begin
         filename2:=ListView1.items[c].caption;
 
         Application.ProcessMessages;
-        if esc_pressed then begin restore_img; Screen.Cursor := Save_Cursor; exit;end;
+        if esc_pressed then begin restore_img; Screen.Cursor:=crDefault; exit;end;
 
         {load file}
-        if load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded){important required to check head.cd1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
+        if load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded){important required to check head.cd1_1}=false then begin memo2_message('Error loading file '+filename2);{failed to load} Screen.Cursor:=crDefault; exit;end;
 
         head.crota2:=fnmodulo(head.crota2,360);
         if ((head.crota2>=90) and (head.crota2<270)) then
@@ -9649,17 +9630,17 @@ begin
         memo2_message('Adding annotations to FITS header and X,Y positions of selected object to list for '+filename2);
 
         Application.ProcessMessages;
-        if esc_pressed then begin restore_img; Screen.Cursor := Save_Cursor; exit;end;
+        if esc_pressed then begin restore_img; Screen.Cursor:=crDefault; exit;end;
 
         {load file}
-        if load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded){important required to check head.cd1_1}=false then begin memo2_message('Error');{failed to load} Screen.Cursor := Save_Cursor; exit;end;
+        if load_fits(filename2,true {light},true,true {update memo},0,head,img_loaded){important required to check head.cd1_1}=false then begin memo2_message('Error loading file '+filename2);{failed to load} Screen.Cursor:=crDefault; exit;end;
         plot_mpcorb(strtoint(maxcount_asteroid),strtofloat2(maxmag_asteroid),true {add_annotations});
 
         if fits_file_name(filename2) then
           success:=savefits_update_header(filename2)
         else
           success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
-        if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
+        if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
 
         get_annotation_position;{fill the x,y with annotation position}
       finally
@@ -9670,7 +9651,7 @@ begin
 
   progress_indicator(10,'');
   Application.ProcessMessages;
-  if esc_pressed then begin restore_img;Screen.Cursor := Save_Cursor;  exit;end;
+  if esc_pressed then begin restore_img;Screen.Cursor:=crDefault; exit;end;
 
   object_counter:=0;
   total_counter:=0;
@@ -9725,7 +9706,7 @@ begin
     for i:=0 to 4 do filters_used[i]:='';
     inc(object_counter);
 
-    lrgb:=((classify_filter1.checked) and (cal_and_align=false));{ignore lrgb for calibration and alignment is true}
+    lrgb:=((classify_filter{1.checked}) and (cal_and_align=false));{ignore lrgb for calibration and alignment is true}
     over_size:=round(strtofloat2(stackmenu1.oversize1.Text));{accept also commas but round later}
     if lrgb=false then
     begin
@@ -9739,7 +9720,7 @@ begin
         if ((ListView1.items[c].Checked=true) and (ListView1.Items.item[c].SubitemImages[L_result]<0)) then {not done yet}
         begin
           if object_to_process='' then object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a object name to stack}
-          if ( (classify_object1.checked=false) or  (mosaic_mode){ignore object name in mosaic} or
+          if ( (classify_object{1.checked}=false) or  (mosaic_mode){ignore object name in mosaic} or
                ((object_to_process<>'') and (object_to_process=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]))) ) then {correct object?}
           begin {correct object}
             files_to_process[c].name:=ListView1.items[c].caption;
@@ -9773,7 +9754,7 @@ begin
         if sigma_mode then
         begin
           if length(files_to_process)<=5 then memo2_message('█ █ █ █ █ █ Method "Sigma Clip average" does not work well for a few images. Try method "Average". █ █ █ █ █ █ ');
-          stack_sigmaclip(over_size,{var}files_to_process,counterL) {sigma clip combining}
+          stack_sigmaclip(over_size,process_as_osc,{var}files_to_process,counterL) {sigma clip combining}
         end
         else
 
@@ -9782,10 +9763,10 @@ begin
         if cal_and_align then {calibration & alignment only}
         begin
           memo2_message('---------- Calibration & alignment for object: '+object_to_process+' -----------');
-          calibration_and_alignment(over_size,{var}files_to_process,counterL){saturation clip average}
+          calibration_and_alignment(over_size,process_as_osc,{var}files_to_process,counterL){saturation clip average}
         end
         else
-          stack_average(over_size,{var}files_to_process,counterL);{average}
+          stack_average(over_size,process_as_osc,{var}files_to_process,counterL);{average}
 
         if counterL>0 then
         begin
@@ -9794,7 +9775,7 @@ begin
           monofile:=true;{success}
         end;
 
-        if esc_pressed then  begin progress_indicator(-2,'ESC'); restore_img;Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+        if esc_pressed then  begin progress_indicator(-2,'ESC'); restore_img;Screen.Cursor:=crDefault;    { back to normal }  exit;  end;
 
       end
       else
@@ -9831,7 +9812,7 @@ begin
           begin  {not done yet}
             if object_to_process='' then object_to_process:=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]); {get a next object name to stack}
 
-            if ((classify_object1.checked=false) or  (mosaic_mode) {ignore object name in mosaic} or
+            if ((classify_object{1.checked}=false) or  (mosaic_mode) {ignore object name in mosaic} or
                 ((object_to_process<>'') and (object_to_process=uppercase(ListView1.Items.item[c].subitems.Strings[L_object]))) ) {correct object?}
             then
             begin {correct object}
@@ -9863,13 +9844,13 @@ begin
             if mosaic_mode=false then put_best_quality_on_top(files_to_process);
             {else already sorted on position to be able to test overlapping of background difference in unit_stack_routines. The tiles have to be plotted such that they overlap for measurement difference}
 
-            if sigma_mode then stack_sigmaclip(over_size,{var}files_to_process, counterL) {sigma clip combining}
+            if sigma_mode then stack_sigmaclip(over_size,process_as_osc,{var}files_to_process, counterL) {sigma clip combining}
             else
             if mosaic_mode then stack_mosaic(over_size,{var}files_to_process,abs(max_background-min_background),counterL) {mosaic combining}
                                                                   else
-                                                                  stack_average(over_size,{var}files_to_process,counterL);{average}
+                                                                  stack_average(over_size,process_as_osc,{var}files_to_process,counterL);{average}
             over_sizeL:=0; {do oversize only once. Not again in 'L' mode !!}
-            if esc_pressed then  begin progress_indicator(-2,'ESC'); restore_img; Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+            if esc_pressed then  begin progress_indicator(-2,'ESC'); restore_img; Screen.Cursor:=crDefault;    { back to normal }  exit;  end;
 
             if ((over_size<>0) and ( head.cd1_1<>0){solution}) then {adapt astrometric solution for intermediate file}
             begin {adapt reference pixels of plate solution due to oversize}
@@ -9969,7 +9950,7 @@ begin
           if files_to_process_LRGB[0].name='' then  files_to_process_LRGB[0]:=files_to_process_LRGB[2]; {use green channel as reference if no luminance is available}
           counterL:=0;//reset counter for case no Luminance files are available, so RGB stacking.
           stack_LRGB(over_sizeL {zero if already stacked from several files},files_to_process_LRGB, counter_colours); {LRGB method, files_to_process_LRGB should contain [REFERENCE, R,G,B,RGB,L]}
-          if esc_pressed then  begin progress_indicator(-2,'ESC'); restore_img;Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+          if esc_pressed then  begin progress_indicator(-2,'ESC'); restore_img;Screen.Cursor:=crDefault;    { back to normal }  exit;  end;
         end
         else
         if length(extra2)=1 then
@@ -9981,7 +9962,7 @@ begin
       end;
     end;
 
-    Screen.Cursor := Save_Cursor;  { Always restore to normal }
+    Screen.Cursor:=crDefault;  { Always restore to normal }
     if esc_pressed then begin progress_indicator(-2,'ESC'); restore_img;exit;end;
 
 
@@ -10023,7 +10004,7 @@ begin
         end
         else
         begin
-          if process_as_osc then
+          if process_as_osc>0 then
           begin
             if  stackmenu1.osc_auto_level1.checked then
             begin
@@ -10094,7 +10075,7 @@ begin
 
         if head.naxis3>1 then
         begin
-          if process_as_osc then
+          if process_as_osc>0 then
           begin
             remove_key('BAYERPAT',false{all});{remove key word in header}
             remove_key('XBAYROFF',false{all});{remove key word in header}
@@ -10216,7 +10197,7 @@ begin
                           inttostr(counterL)+'x'+inttostr(exposureL)+'L  ('+thefilters+')'; {head.exposure}
         end;
 
-        filename2:=extractfilepath(filename2)+propose_file_name(mosaic_mode, stackmenu1.add_time1.checked {tab results} or (sender=photom_stack1),object_to_process,thefilters);{give it a nice file name}
+        filename2:=extractfilepath(filename2)+propose_file_name(mosaic_mode, stackmenu1.add_time1.checked {tab results} or sender_photometry,object_to_process,thefilters);{give it a nice file name}
 
         if head.cd1_1<>0 then memo2_message('Astrometric solution reference file preserved for stack.');
         memo2_message('█ █ █  Saving result '+inttostr(image_counter)+' as '+filename2);
@@ -10239,9 +10220,9 @@ begin
 
   if ((total_counter=0) and (image_counter=0)) then {somehow nothing was stacked}
   begin
-    memo2.lines.add('No images to stack.');
-    if classify_filter1.checked then memo2.lines.add('Hint: remove check mark from classify by "light filter" if required.');
-    if classify_object1.checked then memo2.lines.add('Hint: remove check mark from classify by "light object" if required.');
+    memo2.lines.add('No images in tab lights to stack.');
+    if classify_filter{1.checked} then memo2.lines.add('Hint: remove check mark from classify by "light filter" if required.');
+    if classify_object{1.checked} then memo2.lines.add('Hint: remove check mark from classify by "light object" if required.');
     if use_astrometry_internal1.checked then memo2.lines.add('Hint: check field of view camera in tab alignment.');
   end
   else
@@ -10378,14 +10359,12 @@ end;
 procedure Tstackmenu1.apply_vertical_gradient1Click(Sender: TObject);
 var
    fitsX,fitsY,i,k,most_common,y1,y2,x1,x2,counter,step : integer;
-   Save_Cursor:TCursor;
    mean  : double;
 begin
   if head.naxis=0 then exit;
 
   memo2_message('Remove gradient started.');
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   backup_img;
 
@@ -10451,7 +10430,7 @@ begin
 
   memo2_message('Remove gradient done.');
 
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 

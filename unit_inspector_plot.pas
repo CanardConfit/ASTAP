@@ -138,17 +138,13 @@ var
 
  starlistXY    :array of array of integer;
  mess1,mess2,hfd_value,hfd_arcsec      : string;
- Save_Cursor:TCursor;
+
  Fliph, Flipv,restore_req  : boolean;
  img_bk,img_sa                         : image_array;
-
  style: TTextStyle;
-
-
 begin
   if head.naxis=0 then exit; {file loaded?}
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   restore_req:=false;
   if head.naxis3>1 then {colour image}
@@ -593,8 +589,7 @@ begin
   starlistXY:=nil;
 
   img_sa:=nil;{free mem}
-
-  Screen.Cursor:= Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -1069,12 +1064,10 @@ end;
 procedure Tform_inspection1.roundness1Click(Sender: TObject);
 var
   j: integer;
-  Save_Cursor:TCursor;
   demode : char;
   aspect : boolean;
 begin
-  Save_Cursor := Screen.Cursor;
-  screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   form_inspection1.undo_button1Click(nil);{undo if required}
   backup_img;
@@ -1132,8 +1125,7 @@ begin
   update_text   ('COMMENT 1','  Written by ASTAP, Astrometric STAcking Program. www.hnsky.org');
   if demode='V'  then update_text   ('COMMENT G','  Grey values indicate measured values * 100');
 
-
-  Screen.Cursor := Save_Cursor;  { Always restore to normal }
+  Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
 
 procedure Tform_inspection1.measuring_angle1Change(Sender: TObject);
@@ -1241,20 +1233,17 @@ end;
 
 procedure Tform_inspection1.background_values1Click(Sender: TObject);
 var
- tx,ty,fontsize,halfstepX,halfstepY,stepX,stepY: integer;
- X,Y,stepsizeX,stepsizeY,median,median_center,factor          : double;
- Save_Cursor:TCursor;
- img_bk                                    : image_array;
- Flipvertical, Fliphorizontal, restore_req  : boolean;
- detext  : string;
+  tx,ty,fontsize,halfstepX,halfstepY,stepX,stepY: integer;
+  X,Y,stepsizeX,stepsizeY,median,median_center,factor          : double;
+  img_bk                                    : image_array;
+  Flipvertical, Fliphorizontal, restore_req  : boolean;
+  detext  : string;
 begin
   if head.naxis=0 then exit; {file loaded?}
 
   form_inspection1.undo_button1Click(nil);{undo if required}
   executed:=1;{only refresh required to undo}
-
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   restore_req:=false;
   if head.naxis3>1 then {colour image}
@@ -1337,13 +1326,12 @@ begin
       get_hist(0,img_loaded);{get histogram of img_loaded and his_total}
     end;
   end;
-  Screen.Cursor:= Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
 procedure Tform_inspection1.aberration_inspector1Click(Sender: TObject);
 var fitsX,fitsY,col, widthN,heightN                : integer;
-    Save_Cursor:TCursor;
 var  {################# initialised variables #########################}
    side :integer=250;
 const
@@ -1351,8 +1339,7 @@ const
 begin
   if head.naxis<>0 then
   begin
-   Save_Cursor := Screen.Cursor;
-   Screen.Cursor := crHourglass;    { Show hourglass cursor }
+   Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
    form_inspection1.undo_button1Click(nil);{undo if required}
    backup_img;
@@ -1457,7 +1444,7 @@ begin
    plot_fits(mainwindow.image1,true,true);
    image_move_to_center:=true;
 
-   Screen.Cursor:=Save_Cursor;
+   Screen.Cursor:=crDefault;
   end;
 end;
 

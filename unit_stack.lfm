@@ -1,15 +1,15 @@
 object stackmenu1: Tstackmenu1
-  Left = 34
+  Left = 91
   Height = 813
-  Top = 195
-  Width = 1877
-  HorzScrollBar.Page = 1856
+  Top = 177
+  Width = 1857
+  HorzScrollBar.Page = 1701
   VertScrollBar.Page = 558
   AllowDropFiles = True
   AutoScroll = True
   Caption = 'stack menu'
   ClientHeight = 813
-  ClientWidth = 1877
+  ClientWidth = 1857
   Color = clForm
   Icon.Data = {
     7E03000000000100010010100000010018006803000016000000280000001000
@@ -55,7 +55,7 @@ object stackmenu1: Tstackmenu1
     Left = 0
     Height = 253
     Top = 560
-    Width = 1877
+    Width = 1857
     Align = alBottom
     Anchors = [akTop, akLeft, akRight, akBottom]
     DoubleBuffered = True
@@ -208,7 +208,7 @@ object stackmenu1: Tstackmenu1
     TabOrder = 0
   end
   object more_indication1: TLabel
-    Left = 16716
+    Left = 16696
     Height = 15
     Hint = 'Click to widen.'
     Top = 446
@@ -226,7 +226,7 @@ object stackmenu1: Tstackmenu1
     Height = 498
     Hint = 'Stack menu'
     Top = 0
-    Width = 1877
+    Width = 1857
     ActivePage = lights
     Align = alClient
     Constraints.MaxHeight = 498
@@ -243,7 +243,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the raw light frames'
       Caption = 'Lights'
       ClientHeight = 470
-      ClientWidth = 1869
+      ClientWidth = 1849
       ImageIndex = 22
       ParentFont = False
       object nr_selected1: TLabel
@@ -307,7 +307,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1869
+        Width = 1849
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -604,7 +604,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the dark frames.'
       Caption = 'Darks'
       ClientHeight = 470
-      ClientWidth = 1869
+      ClientWidth = 1849
       ImageIndex = 1
       ParentFont = False
       object replace_by_master_dark1: TButton
@@ -638,7 +638,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1869
+        Width = 1849
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -784,7 +784,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat frames'
       Caption = 'Flats'
       ClientHeight = 470
-      ClientWidth = 1869
+      ClientWidth = 1849
       ImageIndex = 2
       ParentFont = False
       object replace_by_master_flat1: TButton
@@ -830,7 +830,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1869
+        Width = 1849
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -988,7 +988,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Select here the flat-dark/bias frames.'
       Caption = 'Flat darks'
       ClientHeight = 470
-      ClientWidth = 1869
+      ClientWidth = 1849
       ImageIndex = 3
       ParentFont = False
       object clear_selection3: TButton
@@ -1020,7 +1020,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1869
+        Width = 1849
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -1138,7 +1138,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'This page contains the result of stacking. See pop-up menu for more options.'
       Caption = 'Results'
       ClientHeight = 470
-      ClientWidth = 1869
+      ClientWidth = 1849
       ImageIndex = 6
       ParentFont = False
       object listview5: TListView
@@ -1146,7 +1146,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1869
+        Width = 1849
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -1262,7 +1262,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the stack method'
       Caption = 'Stack method'
       ClientHeight = 470
-      ClientWidth = 1869
+      ClientWidth = 1849
       ImageIndex = 5
       ParentFont = False
       object stack_method1: TComboBox
@@ -2258,7 +2258,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Set here the frame alignment and solver options.'
       Caption = 'Alignment'
       ClientHeight = 470
-      ClientWidth = 1869
+      ClientWidth = 1849
       ImageIndex = 7
       ParentFont = False
       object use_star_alignment1: TRadioButton
@@ -2940,7 +2940,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Blinking tool for astronomical images.'
       Caption = 'Blink'
       ClientHeight = 470
-      ClientWidth = 1869
+      ClientWidth = 1849
       ImageIndex = 11
       ParentFont = False
       object listview6: TListView
@@ -2948,7 +2948,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1869
+        Width = 1849
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3250,7 +3250,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Photometry of variable stars.'
       Caption = 'Photometry'
       ClientHeight = 470
-      ClientWidth = 1869
+      ClientWidth = 1849
       ImageIndex = 19
       ParentFont = False
       object analysephotometry1: TButton
@@ -3325,7 +3325,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1869
+        Width = 1849
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3701,7 +3701,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Measure the best focus position for several areas of the image.'
       Caption = 'Inspector'
       ClientHeight = 470
-      ClientWidth = 1869
+      ClientWidth = 1849
       ImageIndex = 17
       object analyse_inspector1: TButton
         Left = 136
@@ -3719,7 +3719,7 @@ object stackmenu1: Tstackmenu1
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1869
+        Width = 1849
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -3960,14 +3960,14 @@ object stackmenu1: Tstackmenu1
       Hint = 'Measure the mount celestial position offsets.'
       Caption = 'Mount analyse'
       ClientHeight = 470
-      ClientWidth = 1869
+      ClientWidth = 1849
       ImageIndex = 21
       object listview9: TListView
         Left = 0
         Height = 434
         Hint = 'Double click to view image'
         Top = 36
-        Width = 1869
+        Width = 1849
         Align = alClient
         AutoSortIndicator = True
         BorderSpacing.Top = 36
@@ -4233,7 +4233,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Stack live images'
       Caption = 'Live stacking'
       ClientHeight = 470
-      ClientWidth = 1869
+      ClientWidth = 1849
       ParentFont = False
       object live_stacking1: TButton
         Left = 16
@@ -4402,7 +4402,7 @@ object stackmenu1: Tstackmenu1
     object tab_monitoring1: TTabSheet
       Caption = 'Monitoring'
       ClientHeight = 470
-      ClientWidth = 1869
+      ClientWidth = 1849
       OnShow = tab_monitoring1Show
       object Label3: TLabel
         Left = 128
@@ -4696,7 +4696,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 1'
       Caption = 'Pixel math 1'
       ClientHeight = 470
-      ClientWidth = 1869
+      ClientWidth = 1849
       Enabled = False
       ImageIndex = 4
       ParentFont = False
@@ -6052,7 +6052,7 @@ object stackmenu1: Tstackmenu1
       Hint = 'Pixel math tools 2'
       Caption = 'Pixel math 2'
       ClientHeight = 470
-      ClientWidth = 1869
+      ClientWidth = 1849
       Enabled = False
       ImageIndex = 4
       object groupBox_dvp1: TGroupBox

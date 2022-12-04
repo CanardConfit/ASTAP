@@ -1327,14 +1327,10 @@ var
   text_dimensions  : array of textarea;
   i,text_counter,th,tw,x1,y1,x2,y2,hf,x,y : integer;
   overlap,sip  :boolean;
-  Save_Cursor:TCursor;
-
 begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
-     Save_Cursor := Screen.Cursor;
-     Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
 
@@ -1511,7 +1507,7 @@ begin
 
     memo2_message('Added '+inttostr(text_counter)+ ' annotations.');
 
-    Screen.Cursor:=Save_Cursor;
+    Screen.Cursor:=crDefault;
   end;
 
 end;{plot deep_sky}
@@ -1889,7 +1885,7 @@ begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
     Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
@@ -2072,7 +2068,7 @@ begin
       hfd_x_sd:=nil;
     end;
 
-    Screen.Cursor:= Save_Cursor;
+    Screen.Cursor:=crDefault;
   end;{fits file}
 end;{plot stars}
 
@@ -2242,7 +2238,7 @@ begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
     Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     flip_vertical:=mainwindow.flip_vertical1.Checked;
     flip_horizontal:=mainwindow.flip_horizontal1.Checked;
@@ -2409,7 +2405,7 @@ begin
     end;
 
 
-    Screen.Cursor:= Save_Cursor;
+    Screen.Cursor:=crDefault;
   end;{fits file}
 end;{measure distortion}
 
@@ -2448,7 +2444,7 @@ begin
   if ((head.naxis<>0) and (head.cd1_1<>0)) then
   begin
     Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     counter_flux_measured:=0;
 
@@ -2531,7 +2527,7 @@ begin
       end;
     end;
 
-    Screen.Cursor:= Save_Cursor;
+    Screen.Cursor:=crDefault;
 
   end;{fits file}
 end;{plot stars}

@@ -238,7 +238,6 @@ end;
 procedure Tform_astrometry_net1.Button1Click(Sender: TObject);
 var
   I: integer;
-  Save_Cursor:TCursor;
   failed, solved :integer;
 begin
   show_console:=show_console1.checked;
@@ -258,8 +257,7 @@ begin
 
   if mainwindow.OpenDialog1.Execute then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     try { Do some lengthy operation }
         with mainwindow.OpenDialog1.Files do
@@ -272,7 +270,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then
           begin
-            Screen.Cursor := Save_Cursor;
+            Screen.Cursor:=crDefault;
             exit;
           end;
           if astrometry_net(filename2,true {remove_tmp},show_console,keep_console_open) then
@@ -282,7 +280,7 @@ begin
         end;
       finally
       progress_indicator(-100,'');{progresss done}
-      Screen.Cursor := Save_Cursor;  { Always restore to normal }
+      Screen.Cursor:=crDefault;  { Always restore to normal }
     end;
   end;
 end;

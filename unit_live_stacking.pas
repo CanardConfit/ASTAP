@@ -136,8 +136,8 @@ end;
 
 procedure stack_live(oversize:integer; path :string);{stack live average}
 var
-    fitsX,fitsY,width_max, height_max, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter,max_stars :  integer;
-    distance,hfd_min                                                                                                              : double;
+    fitsX,fitsY,width_max, height_max, old_width, old_height,x_new,y_new,col,binning, counter,total_counter,bad_counter,max_stars,process_as_asc :  integer;
+    distance,hfd_min                                                                                                                             : double;
     init, solution, vector_based,waiting,transition_image,colour_correction :boolean;
     file_ext,filen,filename_org                 :  string;
     multiply_red,multiply_green,multiply_blue,add_valueR,add_valueG,add_valueB,largest,scaleR,scaleG,scaleB,dum :single; {for colour correction}
@@ -173,7 +173,7 @@ begin
 
     mainwindow.memo1.visible:=false;{Hide header}
 
-    colour_correction:=((process_as_osc) and (stackmenu1.osc_auto_level1.checked));
+    colour_correction:=((process_as_osc>0) and (stackmenu1.osc_auto_level1.checked));
     hfd_min:=max(0.8 {two pixels},strtofloat2(stackmenu1.min_star_size_stacking1.caption){hfd});{to ignore hot pixels which are too small}
     max_stars:=strtoint2(stackmenu1.max_stars1.text);{maximum star to process, if so filter out brightest stars later}
     if max_stars=0 then max_stars:=500;{0 is auto for solving. No auto for stacking}
@@ -229,16 +229,18 @@ begin
           begin
             if init=false then
             begin
-              if (((head.naxis3=1) and (head.Xbinning=1) and (bayerpat<>'')) or (stackmenu1.make_osc_color1.checked)) then//process as OSC images
-              begin
-                process_as_osc:=true;
-                memo2_message('Will demosaic OSC images to colour');
-              end
+              if stackmenu1.make_osc_color1.checked then
+                process_as_osc:=2 //forced process as OSC images
               else
-                process_as_osc:=false;//disable demosaicing
+              if ((head_2.naxis3=1) and (head_2.Xbinning=1) and (bayerpat<>'')) then //auto process as OSC images
+                process_as_osc:=1
+              else
+                process_as_osc:=0;//disable demosaicing
+
+              if process_as_asc<>0 then memo2_message('Will demosaic OSC images to colour');
 
               memo1_text:=mainwindow.Memo1.Text;{save fits header first FITS file}
-              if ((bayerpat='') and (make_osc_color1.checked)) then
+              if ((bayerpat='') and (process_as_osc=2 {forced})) then
                 if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
                 else
                 if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, grayscale image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
@@ -259,7 +261,7 @@ begin
             else {init is true, second or third image ....}
             if ((old_width<>head.width) or (old_height<>head.height)) then memo2_message('█ █ █ █ █ █  Warning different size image!');
 
-            if process_as_osc then  demosaic_bayer(img_loaded); {convert OSC image to colour}
+            if process_as_osc>0 then  demosaic_bayer(img_loaded); {convert OSC image to colour}
 
             if init=false then {first image}
             begin

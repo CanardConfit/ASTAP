@@ -769,9 +769,9 @@ begin
   cometels_path:=form_asteroids1.mpcorb_path2.caption;
 
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux } 
   plot_mpcorb(maxcount,maxmag,add_annotations);
-  Screen.Cursor:= Save_Cursor;
+  Screen.Cursor:=crDefault;
 
   form_asteroids1.close;   {normal this form is not loaded}
   mainwindow.setfocus;

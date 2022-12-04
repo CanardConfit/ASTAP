@@ -59,7 +59,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.11.30';
+  astap_version='2022.12.04';
 
 type
   { Tmainwindow }
@@ -2736,8 +2736,6 @@ end;
 
 
 procedure Tmainwindow.LoadFITSPNGBMPJPEG1Click(Sender: TObject);
-var
-  Save_Cursor:TCursor;
 begin
   OpenDialog1.Title := 'Open in viewer';
   opendialog1.Filter :=  'All formats |*.fit;*.fits;*.FIT;*.FITS;*.fts;*.FTS;*.png;*.PNG;*.jpg;*.JPG;*.bmp;*.BMP;*.tif;*.tiff;*.TIF;*.new;*.ppm;*.pgm;*.pbm;*.pfm;*.xisf;*.fz;'+
@@ -2751,15 +2749,14 @@ begin
   opendialog1.filterindex:=LoadFITSPNGBMPJPEG1filterindex;
   if opendialog1.execute then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     filename2:=opendialog1.filename;
     if opendialog1.FilterIndex<>4 then {<> preview FITS files, not yet loaded}
     {loadimage}
     load_image(true,true {plot});{load and center}
     LoadFITSPNGBMPJPEG1filterindex:=opendialog1.filterindex;{remember filterindex}
-    Screen.Cursor:=Save_Cursor;
+    Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -3210,7 +3207,6 @@ end;
 
 procedure restore_img;
 var
-   Save_Cursor:TCursor;
    resized :boolean;
    old_width2,old_height2 : integer;
 begin
@@ -3218,8 +3214,7 @@ begin
   begin
     if img_backup=nil then exit;{for some rare cases}
 
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     old_width2:=head.width;
     old_height2:=head.height;
@@ -3254,7 +3249,7 @@ begin
     else
     memo2_message('Restored backup index '+inttostr(index_backup));
 
-    Screen.Cursor:=Save_Cursor;
+    Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -3315,7 +3310,7 @@ begin {set form keypreview:=on}
      begin
         shape_paste1.visible:=false;
         copy_paste:=false;
-        screen.Cursor := crDefault;
+        Screen.Cursor:=crDefault;
      end;
    end;
 end;
@@ -3508,7 +3503,6 @@ end;
 
 procedure Tmainwindow.bin2x2Click(Sender: TObject);
 var
-  Save_Cursor:TCursor;
   I, binfactor   : integer;
   dobackup : boolean;
 begin
@@ -3528,8 +3522,7 @@ begin
 
   if OpenDialog1.Execute then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
     try { Do some lengthy operation }
@@ -3544,7 +3537,7 @@ begin
       end;
       finally
       if dobackup then restore_img;{for the viewer}
-      Screen.Cursor := Save_Cursor;  { Always restore to normal }
+      Screen.Cursor:=crDefault;  { Always restore to normal }
     end;
   end;
 end;
@@ -3584,13 +3577,11 @@ end;
 procedure Tmainwindow.localgaussian1Click(Sender: TObject);
 var
    fitsX,fitsY,dum,k : integer;
-   Save_Cursor:TCursor;
 begin
   if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
     backup_img;
     if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
     if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
@@ -3620,7 +3611,7 @@ begin
 
     img_temp:=nil;{clean memory}
     plot_fits(mainwindow.image1,false,true);
-    Screen.Cursor:=Save_Cursor;
+    Screen.Cursor:=crDefault;
   end{fits file}
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
@@ -3634,7 +3625,6 @@ var
    center_x,center_y,a,b,angle_from_center,mean_value,old_value : double;
    line_bottom, line_top,rgb,luminance : double;
    colour,mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,noise_level,mean_value2,new_noise  : array[0..2] of double;
-   Save_Cursor:TCursor;
 
    function checkY(y: integer): integer;
    begin
@@ -3656,8 +3646,7 @@ begin
   if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     backup_img;
 
@@ -3755,7 +3744,7 @@ begin
       end;
 
     plot_fits(mainwindow.image1,false,true);
-    Screen.Cursor:=Save_Cursor;
+    Screen.Cursor:=crDefault;
   end {fits file}
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
@@ -3782,15 +3771,12 @@ end;
 
 
 procedure Tmainwindow.hyperleda_annotation1Click(Sender: TObject);
-var
-  Save_Cursor:TCursor;
 begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass; { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages; { Show hourglass cursor }
 //  backup_img;
   load_hyperleda;   { Load the database once. If loaded no action}
   plot_deepsky;{plot the deep sky object on the image}
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -3830,13 +3816,11 @@ procedure Tmainwindow.remove_colour1Click(Sender: TObject);{make local area gray
 var
    fitsX,fitsY,dum    : integer;
    val  : single;
-   Save_Cursor:TCursor;
 begin
   if ((head.naxis3<>3) or (head.naxis=0)) then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     backup_img;
     if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
@@ -3851,7 +3835,7 @@ begin
        img_loaded[2,fitsX,fitsY]:=val;
     end;
     plot_fits(mainwindow.image1,false,true);
-    Screen.Cursor:=Save_Cursor;
+    Screen.Cursor:=crDefault;
   end{fits file}
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
@@ -4269,12 +4253,10 @@ var
   fitsX,fitsY,overshoot, ra2,dec2,sep   : double;
   x1,y1,dia                             : integer;
   flip_horizontal, flip_vertical,outside: boolean;
-  Save_Cursor:TCursor;
 begin
   if ((head.naxis=0) or (head.cd1_1=0) or (mainwindow.constellations1.checked=false)) then exit;
 
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   {$ifdef mswindows}
    mainwindow.image1.Canvas.Font.Name :='default';
@@ -4342,7 +4324,7 @@ begin
     end;
   end;
 
-  Screen.Cursor := Save_cursor;    { Restore cursor}
+  Screen.Cursor:=crDefault;    { Restore cursor}
 end;
 
 
@@ -4351,7 +4333,6 @@ var
   fitsX,fitsY,step,step2,stepRA,i,j,centra,centdec,range : double;
   x1,y1,x2,y2,k                                          : integer;
   flip_horizontal, flip_vertical: boolean;
-  Save_Cursor:TCursor;
   ra_text:             string;
 var ra_values  : array[0..20] of double =  {nice rounded RA steps in 24 hr system}
    ((45),{step RA 03:00}
@@ -4379,8 +4360,7 @@ var ra_values  : array[0..20] of double =  {nice rounded RA steps in 24 hr syste
 begin
   if ((head.naxis=0) or (head.cd1_1=0) or (mainwindow.grid1.checked=false)) then exit;
 
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   {$ifdef mswindows}
    mainwindow.image1.Canvas.Font.Name :='default';
@@ -4511,7 +4491,7 @@ begin
     until ((i>=centRa+stepRA*6) or (i>=(centRA-6*stepRA)+360));
     j:=j+step;
   until j>=min(centDEC+step*6,90);
-  Screen.Cursor := Save_cursor;    { Restore cursor}
+  Screen.Cursor:=crDefault;    { Restore cursor}
 end;
 
 
@@ -4729,7 +4709,7 @@ const
 
 begin
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   if ((abs(stopX-startX)>2)and (abs(stopY-starty)>2))=false then {do statistics on whole image}
   begin
@@ -4852,7 +4832,7 @@ begin
 
   median_array:=nil;{free mem}
 
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -4962,8 +4942,6 @@ end;
 
 
 procedure Tmainwindow.astrometric_solve_image1Click(Sender: TObject);
-var
-   OldCursor : TCursor;
 begin
   if head.naxis=0 then exit;
 
@@ -4974,8 +4952,7 @@ begin
   end;
   save_settings2;
 
-  OldCursor := Screen.Cursor;
-  Screen.Cursor:= crHourGlass;
+  Screen.Cursor:=crHourglass; application.processmessages;
 
   {solve internal}
   mainwindow.caption:='Solving.......';
@@ -5003,7 +4980,7 @@ begin
   {else do nothing, keep old solution visible if available}
 
   memo1.Visible:=true; {could be disabled by loading dark/flits due to calibrate prior to solving}
-  Screen.Cursor:= OldCursor;
+  Screen.Cursor:=crDefault;
 end;
 
 procedure Tmainwindow.min2EditingDone(Sender: TObject);
@@ -5249,7 +5226,7 @@ begin
     if OpenDialog1.Execute then
     begin
       Save_Cursor := Screen.Cursor;
-      Screen.Cursor := crHourglass;    { Show hourglass cursor }
+      Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
       dobackup:=img_loaded<>nil;
       if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
@@ -5264,7 +5241,7 @@ begin
         end;
       finally
         if dobackup then restore_img;{for the viewer}
-        Screen.Cursor := Save_Cursor;  { Always restore to normal }
+        Screen.Cursor:=crDefault;  { Always restore to normal }
       end;
     end;
     head.naxis:=0;{not the food fits loaded}
@@ -5319,14 +5296,11 @@ var
    noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,
    center_x,center_y,a,b,angle_from_center,new_value,new_value_noise      : double;
    line_bottom, line_top,line_bottom_noise, line_top_noise : double;
-
-   Save_Cursor:TCursor;
 begin
   if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     backup_img;
 
@@ -5378,7 +5352,7 @@ begin
       end;
     end;{k color}
     plot_fits(mainwindow.image1,false,true);
-    Screen.Cursor:=Save_Cursor;
+    Screen.Cursor:=crDefault;
   end {fits file}
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
@@ -6686,12 +6660,9 @@ var
    i,j,col,col_r,col_g,col_b :integer;
    colrr,colgg,colbb,luminance, luminance_stretched,factor, largest, sat_factor,h,s,v: single;
    Bitmap  : TBitmap;{for fast pixel routine}
-   Save_Cursor:TCursor;
    xLine :  PByteArray;{for fast pixel routine}
 begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   img.visible:=true;
   mainwindow.memo1.visible:=show_header;{start updating memo1}
 
@@ -6846,7 +6817,7 @@ begin
 
   quads_displayed:=false; {displaying quads doesn't require a screen refresh}
 
-  Screen.cursor:= Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -6900,13 +6871,11 @@ procedure use_histogram(img: image_array; update_hist: boolean);{calculate histo
 var
   i, minm,maxm,max_range, countR,countG,countB,stopXpos,Xpos,max_color,histo_peakR,number_colors, histo_peak_position,h,w,col : integer;
   above, above_R          : double;
-  Save_Cursor:TCursor;
   histogram2 : array of array of integer;
   histo_peak : array[0..2] of integer;
 
 begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   number_colors:=length(img);
 
@@ -7034,7 +7003,7 @@ begin
   end;
 
   histogram2:=nil;
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -8557,7 +8526,6 @@ end;
 procedure Tmainwindow.convert_to_fits1click(Sender: TObject);
 var
   I: integer;
-  Save_Cursor:TCursor;
   err, dobackup : boolean;
 begin
   OpenDialog1.Title := 'Select multiple  files to convert to FITS.';
@@ -8573,8 +8541,7 @@ begin
   err:=false;
   if OpenDialog1.Execute then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
@@ -8602,7 +8569,7 @@ begin
 
       finally
       if dobackup then restore_img;{for the viewer}
-      Screen.Cursor := Save_Cursor;  { Always restore to normal }
+      Screen.Cursor:=crDefault;  { Always restore to normal }
       progress_indicator(-100,'');{progresss done}
     end;
   end;
@@ -8744,13 +8711,9 @@ end;
 
 
 procedure Tmainwindow.convertmono1Click(Sender: TObject);
-var
-   Save_Cursor:TCursor;
 begin
   if head.naxis3<3 then exit;{prevent run time error mono images}
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor:= crHourGlass;
-
+  Screen.Cursor:=crHourglass; application.processmessages;
   backup_img;
 
   convert_mono(img_loaded,head);
@@ -8761,13 +8724,12 @@ begin
   {colours are now mixed, redraw histogram}
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);{plot}
-  Screen.cursor:=Save_Cursor;
+  Screen.cursor:=crDefault;
 end;
 
 
 procedure Tmainwindow.compress_fpack1Click(Sender: TObject);
 var
-  Save_Cursor:TCursor;
   i: integer;
   filename1: string;
 begin
@@ -8779,8 +8741,7 @@ begin
 
   if OpenDialog1.Execute then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
     try { Do some lengthy operation }
        with OpenDialog1.Files do
        for I := 0 to Count - 1 do
@@ -8789,11 +8750,11 @@ begin
          filename1:=Strings[I];
          memo2_message(filename2+' file nr. '+inttostr(i+1)+'-'+inttostr(Count));
          Application.ProcessMessages;
-         if ((esc_pressed) or (pack_cfitsio(filename1)=false)) then begin beep; mainwindow.caption:='Exit with error!!'; Screen.Cursor := Save_Cursor;  exit;end;
+         if ((esc_pressed) or (pack_cfitsio(filename1)=false)) then begin beep; mainwindow.caption:='Exit with error!!'; Screen.Cursor:=crDefault; exit;end;
       end;
       finally
       mainwindow.caption:='Finished, all files compressed with extension .fz.';
-      Screen.Cursor := Save_Cursor;  { Always restore to normal }
+      Screen.Cursor:=crDefault;  { Always restore to normal }
       progress_indicator(-100,'');{progresss done}
     end;
   end;
@@ -8871,13 +8832,10 @@ end;
 
 
 procedure Tmainwindow.bin_2x2menu1Click(Sender: TObject);
-var
-  Save_Cursor:TCursor;
 begin
  if head.naxis<>0 then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     backup_img; {move viewer data to img_backup}
     if sender=bin_2x2menu1 then
@@ -8893,7 +8851,7 @@ begin
 
     plot_fits(mainwindow.image1,true,true);{plot real}
     mainwindow.caption:=Filename2;
-    Screen.Cursor:=Save_Cursor;
+    Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -9067,7 +9025,7 @@ var
   lim_magn            : double;
 begin
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   case stackmenu1.annotate_mode1.itemindex of
        0,1: lim_magn:=-99;//use local database
@@ -9095,7 +9053,7 @@ begin
     plot_deepsky; {Plot the deep sky object on the image}
   end;
 
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -9137,12 +9095,10 @@ procedure Tmainwindow.sip1Click(Sender: TObject); {simple SIP coefficients calcu
 var
   stars_measured,i,countX,countY  : integer;
   xc,yc,x,y,factorX,factorY       : double;
-  Save_Cursor:TCursor;
   factorsX,factorsY  : array of double;
   valid              : boolean;
 begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   if calculate_undisturbed_image_scale then {calculate and correct the image scale as if the optical system is undisturbed. The distance between the stars in the center are measured and compared between detection and database. It is assumed that the center of the image is undisturbed optically }
   begin
@@ -9327,7 +9283,7 @@ begin
       memo2_message('Abort, not enough stars detected!');
     end;
   end;{succesfull measure scale}
-  Screen.Cursor := Save_cursor;    { Show hourglass cursor }
+  Screen.Cursor:=crDefault;   { Show hourglass cursor, processmessages is for Linux }
 end;
 
 procedure Tmainwindow.split_osc1Click(Sender: TObject);
@@ -9424,7 +9380,7 @@ begin
     if flux_magn_offset=0 then begin beep; exit;end;
 
     Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     backup_img;
 
@@ -9490,7 +9446,7 @@ begin
 
     bg_array:=nil;{free mem}
 
-    Screen.Cursor:=Save_Cursor;
+    Screen.Cursor:=crDefault;
   end{fits file}
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
@@ -9554,7 +9510,7 @@ begin
   if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>1)and (abs(stopY-starty)>1)) then
   begin
-    Screen.Cursor := crDrag;
+    Screen.Cursor:=crDrag;
     backup_img;{required in case later ctrl-z is used}
 
     if startX>stopX then begin dum:=stopX; stopX2:=startX; startX2:=dum; end else  begin stopX2:=stopX; startX2:=startX; end; {swap if required}
@@ -9585,7 +9541,7 @@ begin
   if  ((abs(stopX-startX)>2) or (abs(stopY-starty)>2)) then
   begin
     Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     backup_img;
 
@@ -9634,7 +9590,7 @@ begin
              mrYes: Clipboard.AsText:=info_message2;
     end;
 
-    Screen.Cursor:=Save_Cursor;
+    Screen.Cursor:=crDefault;
   end {fits file}
   else
   application.messagebox(pchar('No distance selected! Hold the right mouse button down while moving from first to second star.'),'',MB_OK);
@@ -9735,16 +9691,12 @@ procedure Tmainwindow.gradient_removal1Click(Sender: TObject);
 var
    colrr1,colgg1,colbb1,colrr2,colgg2,colbb2                      : single;
    a,b,c,p : double;
-
    fitsX,fitsY,bsize  : integer;
-
-   Save_Cursor:TCursor;
 begin
   if head.naxis=0 then exit;
   if  ((abs(stopX-startX)>100) OR (abs(stopY-starty)>100)) then {or function since it could be parallel to x or y axis}
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     backup_img;
 
@@ -9774,7 +9726,7 @@ begin
     use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
     plot_fits(mainwindow.image1,false {re_center},true);
 
-    Screen.Cursor:=Save_Cursor;
+    Screen.Cursor:=crDefault;
   end {fits file}
   else
   application.messagebox(pchar('Place the mouse pointer at a dark area. Hold the right mouse button down and move the mouse pointer to a bright area.'+#10+#10+
@@ -9786,7 +9738,6 @@ end;
 procedure Tmainwindow.remove_longitude_latitude1Click(Sender: TObject);
 var
   I: integer;
-  Save_Cursor:TCursor;
   err,success   : boolean;
   dobackup : boolean;
 begin
@@ -9800,8 +9751,7 @@ begin
   err:=false;
   if OpenDialog1.Execute then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
@@ -9821,7 +9771,7 @@ begin
             success:=savefits_update_header(filename2)
           else
             success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
-          if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
+          if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
         end
         else err:=true;
       end;
@@ -9833,7 +9783,7 @@ begin
       end;
       finally
       if dobackup then restore_img;{for the viewer}
-      Screen.Cursor := Save_Cursor;  { Always restore to normal }
+      Screen.Cursor:=crDefault;  { Always restore to normal }
     end;
   end;
 end;
@@ -10024,21 +9974,17 @@ end;
 procedure Tmainwindow.annotate_unknown_stars1Click(Sender: TObject);
 var
   size,radius, i,j, starX, starY,fitsX,fitsY,n,m,xci,yci,hfd_counter      : integer;
-  Save_Cursor:TCursor;
   Fliphorizontal, Flipvertical,saturated : boolean;
   hfd1,star_fwhm,snr,flux,xc,yc,measured_magn,magnd,magn_database, delta_magn,magn_limit,
   sqr_radius, hfd_median,backgr : double;
   messg : string;
   img_temp3,img_sa :image_array;
-
 const
    default=1000;
 
  begin
   if head.naxis=0 then exit; {file loaded?}
-
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   mainwindow.calibrate_photometry1Click(nil);{measure hfd and calibrate for point or extended sources depending on the setting}
 
@@ -10048,7 +9994,7 @@ const
     beep;
     img_sa:=nil;
     img_temp3:=nil;
-    Screen.Cursor:= Save_Cursor;
+    Screen.Cursor:=crDefault;
     exit;
   end;
 
@@ -10168,7 +10114,7 @@ const
   img_temp3:=nil;{free mem}
   img_sa:=nil;{free mem}
 
-  Screen.Cursor:= Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 procedure Tmainwindow.import_auid1Click(Sender: TObject);
@@ -10237,23 +10183,19 @@ end;
 
 procedure Tmainwindow.annotate_with_measured_magnitudes1Click(Sender: TObject);
 var
- size, i, starX, starY,lim_magn,fontsize,text_height,text_width     : integer;
- Save_Cursor:TCursor;
- Fliphorizontal, Flipvertical  : boolean;
- stars  : star_list;
+  size, i, starX, starY,lim_magn,fontsize,text_height,text_width     : integer;
+  Fliphorizontal, Flipvertical  : boolean;
+  stars  : star_list;
 begin
   if head.naxis=0 then exit; {file loaded?}
-
-
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   mainwindow.calibrate_photometry1Click(nil);{measure hfd and calibrate for point or extended sources depending on the setting}
 
   if flux_magn_offset=0 then
   begin
     beep;
-    Screen.Cursor:= Save_Cursor;
+    Screen.Cursor:=crDefault;
     exit;
   end;
 
@@ -10305,7 +10247,7 @@ begin
   image1.Canvas.textout(round(fontsize*2),head.height-text_height,'Limiting magnitude is '+ floattostrF(magn_limit,ffgeneral,3,1)+'   (7σ, aperture ⌀'+stackmenu1.flux_aperture1.text+')');{magn_limit global variable calculate in plot_and_measure_stars}
 
 
-  Screen.Cursor:= Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -10330,7 +10272,6 @@ end;
 procedure Tmainwindow.batch_annotate1Click(Sender: TObject);
 var
   I: integer;
-  Save_Cursor:TCursor;
   skipped, nrannotated :integer;
   dobackup,success : boolean;
 begin
@@ -10341,8 +10282,7 @@ begin
 
   if OpenDialog1.Execute then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     nrannotated:=0;
     skipped:=0;
@@ -10373,14 +10313,14 @@ begin
                 success:=savefits_update_header(filename2)
               else
                 success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
-              if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
+              if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
               nrannotated :=nrannotated +1;
             end;
           end;
         end;
       finally
       if dobackup then restore_img;{for the viewer}
-      Screen.Cursor := Save_Cursor;  { Always restore to normal }
+      Screen.Cursor:=crDefault;  { Always restore to normal }
     end;
     memo2_message(inttostr(nrannotated)+' images annotated, '+inttostr(skipped)+' images did not have an astrometric solution in the header.');
   end;
@@ -10441,7 +10381,7 @@ begin
   if ((head.naxis=0) or (head.cd1_1=0)) then exit;
 
   Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   apert:=strtofloat2(stackmenu1.flux_aperture1.text); {text "max" will generate a zero}
   if ((flux_magn_offset=0) or (aperture_ratio<>apert){new calibration required})  then
@@ -10467,7 +10407,7 @@ begin
     plot_and_measure_stars(true {calibration},false {plot stars},true{report lim magnitude});
   end;
 
-  Screen.Cursor:= Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 procedure Tmainwindow.Constellations1Click(Sender: TObject);
@@ -10545,14 +10485,12 @@ procedure Tmainwindow.stretch_draw_fits1Click(Sender: TObject);
 var
   tmpbmp: TBitmap;
   ARect: TRect;
-  oldcursor: tcursor;
   x, y,x2,y2 : Integer;
   xLine: PByteArray;
   ratio    : double;
   flipH,flipV : boolean;
 begin
-  OldCursor := Screen.Cursor;
-  Screen.Cursor:= crHourGlass;
+  Screen.Cursor:=crHourglass; application.processmessages;
 
   backup_img;
   try
@@ -10634,7 +10572,7 @@ begin
     end;
     except
   end;
-  Screen.Cursor:=OldCursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -10708,6 +10646,40 @@ begin
   end;
 end;
 
+procedure update_mainmenu;// for Mac
+begin
+  with mainwindow do
+  begin
+    with LoadFITSPNGBMPJPEG1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with select_directory_thumb1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with Saveasfits1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with Export_image1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with SaveasJPGPNGBMP1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with Stackimages1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with astrometric_solve_image1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with clean_up1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with calibrate_photometry1  do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with sqm1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with annotate_with_measured_magnitudes1 {ctrl+alt+m} do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with star_annotation1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with annotate_unknown_stars1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with variable_star_annotation1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with annotate_minor_planets1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with hyperleda_annotation1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with deepsky_annotation1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    //tools
+    with image_cleanup1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with center_lost_windows do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with flip_horizontal1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with flip_vertical1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with grid1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+
+    //headermemo
+    with Menufind2 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with select_all2 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+  end;
+end;
+
 
 procedure Tmainwindow.FormCreate(Sender: TObject);
 var
@@ -10756,20 +10728,20 @@ begin
 
   head.naxis:=0; {not fits files available}
 
+  {$IfDef Darwin}// for MacOS
+  if commandline_execution=false then update_mainmenu;
+  {$endif}
 end;
 
 
 
 procedure Tmainwindow.deepsky_annotation1Click(Sender: TObject);
-var
-  Save_Cursor:TCursor;
 begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
   backup_img;
   load_deep;{load the deepsky database once. If loaded no action}
   plot_deepsky;{plot the deep sky object on the image}
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -12025,10 +11997,8 @@ begin
 end;
 
 
-procedure Tmainwindow.batch_add_solution1Click(
-  Sender: TObject);
+procedure Tmainwindow.batch_add_solution1Click(Sender: TObject);
 var
-  Save_Cursor:TCursor;
   i,nrskipped, nrsolved,nrfailed,file_age,pedestal2                             : integer;
   dobackup,add_sip,add_lim_magn,solution_overwrite,solved,maintain_date,success : boolean;
   failed,skipped,mess                           : string;
@@ -12045,9 +12015,7 @@ begin
 
   if OpenDialog1.Execute then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
     nrsolved:=0;
     nrskipped:=0;
     nrfailed:=0;
@@ -12124,7 +12092,7 @@ begin
               success:=savefits_update_header(filename2)
             else
               success:=save_tiff16_secure(img_loaded,filename2);{guarantee no file is lost}
-            if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor := Save_Cursor; exit;end;
+            if success=false then begin ShowMessage('Write error !!' + filename2);Screen.Cursor:=crDefault; exit;end;
 
             if ((maintain_date) and (file_age>-1)) then FileSetDate(filename2,file_age);
           end;
@@ -12140,7 +12108,7 @@ begin
       memo2_message('Processed in '+ floattostr(round((GetTickCount64 - startTick)/100)/10)+' sec.');
 
       if dobackup then restore_img;{for the viewer}
-      Screen.Cursor := Save_Cursor;  { Always restore to normal }
+      Screen.Cursor:=crDefault;  { Always restore to normal }
     end;
     progress_indicator(-100,'');{progresss done}
     nrfailed:=OpenDialog1.Files.count-nrsolved-nrskipped;
@@ -12184,8 +12152,6 @@ begin
 end;
 
 procedure Tmainwindow.demosaic_bayermatrix1Click(Sender: TObject);
-var
-    oldcursor: tcursor;
 begin
   if head.naxis3>1 then {colour}
   begin
@@ -12198,8 +12164,7 @@ begin
   mainwindow.taskbar1.progressstate:=TTaskBarProgressState.Normal;
   mainwindow.taskbar1.progressvalue:=0; {show progress}
   {$endif}
-  OldCursor := Screen.Cursor;
-  Screen.Cursor:= crHourGlass;
+  Screen.Cursor:=crHourglass; application.processmessages;
   backup_img;
 
   demosaic_advanced(img_loaded);
@@ -12213,7 +12178,7 @@ begin
 
   update_header_for_colour; {update naxis and naxis3 keywords}
 
-  Screen.Cursor:=OldCursor;
+  Screen.Cursor:=crDefault;
  {$IFDEF fpc}
   progress_indicator(-100,'');{back to normal}
  {$else} {delphi}
@@ -12315,12 +12280,10 @@ end;
 procedure Tmainwindow.CropFITSimage1Click(Sender: TObject);
 var fitsX,fitsY,col,dum       : integer;
     ra_c,dec_c, ra_n,dec_n,ra_m, dec_m, delta_ra   : double;
-    Save_Cursor:TCursor;
 begin
   if ((head.naxis<>0) and (abs(stopX-startX)>10)and (abs(stopY-starty)>10)) then
   begin
-   Save_Cursor := Screen.Cursor;
-   Screen.Cursor := crHourglass;    { Show hourglass cursor }
+   Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
    backup_img;
 
@@ -12398,8 +12361,7 @@ begin
    plot_fits(mainwindow.image1,true,true);
    image_move_to_center:=true;
 
-
-   Screen.Cursor:=Save_Cursor;
+   Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -12629,10 +12591,8 @@ end;
 procedure Tmainwindow.inversimage1Click(Sender: TObject);
 var
   max_range, col,fitsX,fitsY : integer;
-  Save_Cursor:TCursor;
 begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   backup_img;
 
@@ -12651,7 +12611,7 @@ begin
   use_histogram(img_loaded,true {update}); {plot histogram, set sliders}
   plot_fits(mainwindow.image1,false,true);
 
-  Screen.Cursor := Save_Cursor;  { Always restore to normal }
+  Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
 
 
@@ -12725,7 +12685,7 @@ procedure Tmainwindow.rotate_arbitrary1Click(Sender: TObject);
 var
   angle,flipped  : double;
   valueI : string;
-  Save_Cursor:TCursor;
+
 begin
   flipped:=+1;//not flipped
   valueI:=InputBox('Arbitrary rotation','Enter angle CCW in degrees:              (If solved, enter N for north up)','' );
@@ -12751,8 +12711,7 @@ begin
     if mainwindow.flip_vertical1.checked then   flipped:=-flipped;{change rotation if flipped}
   end;
 
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   memo2_message('Start rotation. This takes some time due to subsampling 10x10.');
   backup_img;
@@ -12762,7 +12721,7 @@ begin
   plot_fits(mainwindow.image1,false,true);
 
   progress_indicator(-100,'');{back to normal}
-  Screen.Cursor := Save_Cursor;  { Always restore to normal }
+  Screen.Cursor:=crDefault;  { Always restore to normal }
 
   memo2_message('Rotation done.');
 end;
@@ -12784,7 +12743,7 @@ begin
   if OpenDialog1.Execute then
   begin
     Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
@@ -12811,7 +12770,7 @@ begin
       if success=false then begin ShowMessage('Write error !!' + filename2);break; end;
     end;
     if dobackup then restore_img;{for the viewer}
-    Screen.Cursor := Save_Cursor; exit;
+    Screen.Cursor:=crDefault; exit;
   end;
 end;
 
@@ -13055,8 +13014,7 @@ var
    url,ra8,dec8,sgn,window_size,magn,dec_degrees  : string;
    ang_h,ang_w,ra1,ra2,dec1,dec2 : double;
    radius,x1,y1                  : integer;
-   oldcursor: tcursor;
- begin
+begin
   if ((abs(stopX-startX)<2) and (abs(stopY-startY)<2))then
   begin
     if object_xc>0 then {object sync}
@@ -13086,8 +13044,7 @@ var
     object_decM:=(dec1+dec2)/2;
   end;
 
-  OldCursor := Screen.Cursor;
-  Screen.Cursor:= crHourGlass;
+  Screen.Cursor:=crHourglass; application.processmessages;
 
   image1.Canvas.Pen.Mode := pmMerge;
   image1.Canvas.Pen.width :=1;
@@ -13107,7 +13064,7 @@ var
     url:='http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(maintype!=*)'+'%26+region(box,'+ra8+sgn+dec8+',+'+floattostr4(ang_w)+'s+'+floattostr4(ang_h)+'s)&OutputMode=LIST&output.format=ASCII';
 //    http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(Vmag<15+|+Bmag<15+)%26+region(box,60.2175d%2B25.5763d,+32.3592m+38.5229m)&OutputMode=LIST&output.format=ASCII'
     plot_simbad(get_http(url));
-    Screen.Cursor:=OldCursor;
+    Screen.Cursor:=crDefault;
     exit;
   end
   else
@@ -13119,7 +13076,7 @@ var
     url:='http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(maintype=*)'+'%26+region(box,'+ra8+sgn+dec8+',+'+floattostr4(ang_w)+'s+'+floattostr4(ang_h)+'s)&OutputMode=LIST&output.format=ASCII';
 //    http://simbad.u-strasbg.fr/simbad/sim-sam?submit=submit+query&maxObject=1000&Criteria=(Vmag<15+|+Bmag<15+)%26+region(box,60.2175d%2B25.5763d,+32.3592m+38.5229m)&OutputMode=LIST&output.format=ASCII'
     plot_simbad(get_http(url));
-    Screen.Cursor:=OldCursor;
+    Screen.Cursor:=crDefault;
     exit;
   end
   else
@@ -13180,7 +13137,7 @@ var
     //  https://app.aavso.org/vsp/chart/?ra=08%3A40%3A29.63&dec=40%3A07%3A24.4&scale=C&orientation=visual&type=chart&fov=120.0&maglimit=12.0&resolution=150&north=up&east=left
   end;
   openurl(url);
-  Screen.Cursor:=OldCursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -13319,7 +13276,7 @@ begin
 
   if ssleft in shift then
   begin
-    screen.Cursor := crhandpoint;
+    Screen.Cursor:=crhandpoint;
 
     if ((head.naxis3=3) and (stackmenu1.pagecontrol1.tabindex=13) {pixelmath 1}) then {for colour replace function}
     begin
@@ -13988,7 +13945,7 @@ begin
    end;
 
   down_xy_valid := False;
-  screen.Cursor := crDefault;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -13996,10 +13953,8 @@ procedure Tmainwindow.stretch_draw1Click(Sender: TObject); {stretch draw}
 var
   tmpbmp: TBitmap;
   ARect: TRect;
-  oldcursor: tcursor;
 begin
-  OldCursor := Screen.Cursor;
-  Screen.Cursor:= crHourGlass;
+  Screen.Cursor:=crHourglass; application.processmessages;
 
   backup_img;
   try
@@ -14015,7 +13970,7 @@ begin
     end;
     except
   end;
-  Screen.Cursor:=OldCursor;
+  Screen.Cursor:=crDefault;
 end;
 
 
@@ -14469,7 +14424,6 @@ procedure Tmainwindow.save_to_tiff1Click(Sender: TObject);
 var
   I: integer;
   fileDate    : Integer;
-  Save_Cursor:TCursor;
   err,written   : boolean;
   dobackup : boolean;
 begin
@@ -14486,8 +14440,7 @@ begin
   err:=false;
   if OpenDialog1.Execute then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
@@ -14533,7 +14486,7 @@ begin
 
       finally
       if dobackup then restore_img;{for the viewer}
-      Screen.Cursor := Save_Cursor;  { Always restore to normal }
+      Screen.Cursor:=crDefault;  { Always restore to normal }
       progress_indicator(-100,'');{progresss done}
     end;
   end;
@@ -14543,7 +14496,6 @@ end;
 procedure Tmainwindow.convert_to_ppm1Click(Sender: TObject);
 var
   I: integer;
-  Save_Cursor:TCursor;
   err   : boolean;
   dobackup : boolean;
 begin
@@ -14562,8 +14514,7 @@ begin
   err:=false;
   if OpenDialog1.Execute then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
     dobackup:=img_loaded<>nil;
     if dobackup then backup_img;{preserve img array and fits header of the viewer}
 
@@ -14614,7 +14565,7 @@ begin
 
       finally
       if dobackup then restore_img;{for the viewer}
-      Screen.Cursor := Save_Cursor;  { Always restore to normal }
+      Screen.Cursor:=crDefault;  { Always restore to normal }
       progress_indicator(-100,'');{progresss done}
 
     end;
@@ -14625,10 +14576,8 @@ procedure Tmainwindow.flip_H1Click(Sender: TObject);
 var
   col,fitsX,fitsY : integer;
   vertical             :boolean;
-  Save_Cursor:TCursor;
 begin
-  Save_Cursor := Screen.Cursor;
-  Screen.Cursor := crHourglass;    { Show hourglass cursor }
+  Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
   backup_img;
 
@@ -14680,7 +14629,7 @@ begin
   end;
   plot_fits(mainwindow.image1,false,true);
 
-  Screen.Cursor := Save_Cursor;  { Always restore to normal }
+  Screen.Cursor:=crDefault;  { Always restore to normal }
 end;
 
 
@@ -14716,16 +14665,12 @@ var
   mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,mode_halo,noise_level,
   noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,required_bg     : array[0..2] of double;
   red_halo,green_halo,blue_halo : boolean;
-
-  Save_Cursor:TCursor;
 begin
   if head.naxis=0 then exit;
 
   if  ((abs(stopX-startX)>10)and (abs(stopY-starty)>10)) then
   begin
-    Save_Cursor := Screen.Cursor;
-
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
     Randomize; {initialise}
 
     startX2:=startX;{save for Application.ProcessMessages;this could change startX, startY}
@@ -14764,7 +14709,7 @@ begin
     if frac(fitsY/50)=0 then
     begin
       Application.ProcessMessages;{this could change startX, startY}
-      if esc_pressed then  begin  Screen.Cursor :=Save_Cursor;    { back to normal }  exit;  end;
+      if esc_pressed then  begin  Screen.Cursor:=crDefault;    { back to normal }  exit;  end;
     end;
 
     for fitsX:=startX2 to stopX2-1 do
@@ -14784,7 +14729,7 @@ begin
     end;
   end;{fits loop}
   plot_fits(mainwindow.image1,false,true);
-  Screen.Cursor:=Save_Cursor;
+  Screen.Cursor:=crDefault;
   end {fits file}
   else
   application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
@@ -14799,7 +14744,6 @@ end;
 procedure Tmainwindow.move_images1Click(Sender: TObject);
 var
   I    : integer;
-  Save_Cursor:TCursor;
   succ,err : boolean;
   thepath:string;
 begin
@@ -14816,8 +14760,7 @@ begin
     err:=false;
     if SelectDirectoryDialog1.Execute then
     begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
     try { Do some lengthy operation }
       with OpenDialog1.Files do
       for I := 0 to Count - 1 do
@@ -14864,7 +14807,7 @@ begin
     end;
 
     end;
-    Screen.Cursor := Save_Cursor;  { Always restore to normal }
+    Screen.Cursor:=crDefault;  { Always restore to normal }
     progress_indicator(-100,'');{progresss done}
   end;
   img_temp:=nil;
@@ -14874,7 +14817,6 @@ end;
 procedure Tmainwindow.set_modified_date1Click(Sender: TObject);
 var
   I    : integer;
-  Save_Cursor:TCursor;
   err : boolean;
 begin
   OpenDialog1.Title := 'Select multiple FITS files to set "modified date" to DATE-OBS';
@@ -14886,9 +14828,7 @@ begin
   err:=false;
   if OpenDialog1.Execute then
   begin
-    Save_Cursor := Screen.Cursor;
-    Screen.Cursor := crHourglass;    { Show hourglass cursor }
-
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
     try { Do some lengthy operation }
       with OpenDialog1.Files do
       for I := 0 to Count - 1 do
@@ -14920,7 +14860,7 @@ begin
       mainwindow.caption:='Finished, files date set but with errors or stopped!';
     except
     end;
-    Screen.Cursor := Save_Cursor;  { Always restore to normal }
+    Screen.Cursor:=crDefault;  { Always restore to normal }
     progress_indicator(-100,'');{progresss done}
   end;
   img_temp:=nil;
@@ -14937,7 +14877,6 @@ end;
 procedure Tmainwindow.Export_image1Click(Sender: TObject);
 var
   filename3:ansistring;
-  OldCursor : TCursor;
 begin
   filename3:=ChangeFileExt(FileName2,'');
   savedialog1.filename:=filename3;
@@ -14948,8 +14887,7 @@ begin
   savedialog1.filterindex:=export_index; {default 3 tiff stretched}
   if savedialog1.execute then
   begin
-    OldCursor := Screen.Cursor;
-    Screen.Cursor:= crHourGlass;
+    Screen.Cursor:=crHourglass; application.processmessages;
 
     if head.naxis3>1 then {color}
     begin
@@ -15024,7 +14962,7 @@ begin
     end;
 
     export_index:=savedialog1.filterindex;{remember}
-    Screen.Cursor:= OldCursor;
+    Screen.Cursor:=crDefault;
   end;
 end;
 
@@ -15080,9 +15018,6 @@ var
   dd : single;
   line0                : ansistring;
   aline,empthy_line    : array[0..80] of ansichar;{79 required but a little more to have always room}
-  OldCursor : TCursor;
-  //wo: word;
-  //int_16             : smallint absolute wo;{for 16 signed integer}
   rgb  : byteX3;{array [0..2] containing r,g,b colours}
 begin
   result:=false;
@@ -15119,8 +15054,7 @@ begin
   mainwindow.taskbar1.progressvalue:=0; {show progress}
 
   {$endif}
-  OldCursor := Screen.Cursor;
-  Screen.Cursor:= crHourGlass;
+  Screen.Cursor:=crHourglass; application.processmessages;
 
   try
     TheFile4:=tfilestream.Create(filen2, fmcreate );
@@ -15253,7 +15187,6 @@ begin
         for k:=0 to colours5-1 do {do all colors}
         for i:=0 to height5-1 do
         begin
-
           inc(progressC);
           progress_value:=round(progressC*100/(colours5*height5));{progress in %}
           {$IFDEF fpc}
@@ -15400,9 +15333,8 @@ begin
   except
     memo2_message('█ █ █ █ █ █ Write error!!  █ █ █ █ █ █');
   end;
-  Screen.Cursor:= OldCursor;
   mainwindow.image1.stretch:=true;
-  Screen.Cursor:= OldCursor;
+  Screen.Cursor:=crDefault;
   {$IFDEF fpc}
   progress_indicator(-100,'');{back to normal}
   {$else} {delphi}

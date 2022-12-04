@@ -12,10 +12,10 @@ uses
   Classes, SysUtils,forms, math, unit_stack, astap_main, unit_star_align;
 
 procedure stack_LRGB(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer );{stack LRGB mode}
-procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
+procedure stack_average(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 procedure stack_mosaic(oversize:integer; var files_to_process : array of TfileToDo;max_dev_backgr: double; out counter : integer);{stack mosaic/tile mode}
-procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
-procedure calibration_and_alignment(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
+procedure stack_sigmaclip(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
+procedure calibration_and_alignment(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 
 {$inline off}  {!!! Set this off for debugging}
 procedure calc_newx_newy(vector_based : boolean; fitsXfloat,fitsYfloat: double); inline; {apply either vector or astrometric correction}
@@ -247,7 +247,8 @@ begin
 
             {load image}
             Application.ProcessMessages;
-            if ((esc_pressed) or (load_fits(filename2,true {light}, true,init=false{update memo1} ,0,head,img_loaded)=false)) then begin memo2_message('Error');exit;end;{update memo for case esc is pressed}
+            if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
+            if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
             if init=false then
             begin
@@ -563,12 +564,12 @@ begin
 end;
 
 
-procedure stack_average(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
+procedure stack_average(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer);{stack average}
 var
   fitsX,fitsY,c,width_max, height_max,old_width, old_height,x_new,y_new,col,binning,oversizeV,max_stars    : integer;
   background_correction, weightF,hfd_min                                                                   : double;
   init, solution,use_star_alignment,use_manual_align,use_ephemeris_alignment, use_astrometry_internal,vector_based : boolean;
-  tempval   : single;
+  tempval  : single;
   warning  : string;
 
 begin
@@ -606,7 +607,8 @@ begin
 
           Application.ProcessMessages;
           {load image}
-          if ((esc_pressed) or (load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
+          if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
+          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
           if init=false then
           begin {init is false, first image}
@@ -616,7 +618,7 @@ begin
             head_ref:=head;{backup solution}
             initialise_var1;{set variables correct. Do this before apply dark}
             initialise_var2;{set variables correct}
-            if ((bayerpat='') and (make_osc_color1.checked)) then
+            if ((bayerpat='') and (process_as_osc=2 {forced})) then
                if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
                else
                if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, grayscale image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
@@ -628,13 +630,12 @@ begin
           end;
 
           apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
-          {these global variables are passed-on in procedure to protect against overwriting}
 
           memo2_message('Adding file: '+inttostr(c+1)+'-'+nr_selected1.caption+' "'+filename2+'"  to average. Using '+inttostr(head.dark_count)+' darks, '+inttostr(head.flat_count)+' flats, '+inttostr(head.flatdark_count)+' flat-darks') ;
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if process_as_osc then {do demosaic bayer}
+          if process_as_osc>0 then {do demosaic bayer}
           begin
             if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
             else
@@ -852,7 +853,8 @@ begin
           Application.ProcessMessages;
 
           {load image}
-          if ((esc_pressed) or  (load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false)) then  begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
+          if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
+          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
           if init=true then
           begin
@@ -1055,7 +1057,7 @@ begin
 end;
 
 
-procedure stack_sigmaclip(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
+procedure stack_sigmaclip(oversize,process_as_osc:integer; var files_to_process : array of TfileToDo; out counter : integer); {stack using sigma clip average}
 type
    tsolution  = record
      solution_vectorX : solution_vector {array[0..2] of double};
@@ -1109,7 +1111,8 @@ begin
 
         {load image}
         Application.ProcessMessages;
-        if ((esc_pressed) or (load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
+        if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
+        if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
         if init=false then {first image}
         begin
@@ -1119,7 +1122,7 @@ begin
           head_ref:=head;{backup solution}
           initialise_var1;{set variables correct}
           initialise_var2;{set variables correct}
-          if ((bayerpat='') and (make_osc_color1.checked)) then
+          if ((bayerpat='') and (process_as_osc=2 {forced})) then
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
              else
              if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, grayscale image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
@@ -1137,7 +1140,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then exit;
 
-        if process_as_osc then {do demosaic bayer}
+        if process_as_osc>0 then {do demosaic bayer}
         begin
           if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
           else
@@ -1313,7 +1316,8 @@ begin
 
           {load image}
           Application.ProcessMessages;
-          if ((esc_pressed) or (load_fits(filename2,true {light},true,false{update_memo},0,head,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
+          if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
+          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
           if init=false then
           begin
@@ -1327,7 +1331,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if process_as_osc then {do demosaic bayer}
+          if process_as_osc>0 then {do demosaic bayer}
           begin
             if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
             else
@@ -1420,7 +1424,8 @@ begin
 
           {load file}
           Application.ProcessMessages;
-          if ((esc_pressed) or (load_fits(filename2,true {light},true,false{update_memo},0,head,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
+          if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
+          if load_fits(filename2,true {light},true,init=false {update memo only for first ref img},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
           apply_dark_and_flat(img_loaded);{apply dark, flat if required, renew if different head.exposure or ccd temp}
 
@@ -1428,7 +1433,7 @@ begin
           Application.ProcessMessages;
           if esc_pressed then exit;
 
-          if process_as_osc then {do demosaic bayer}
+          if process_as_osc>0 then {do demosaic bayer}
           begin
             if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
             else
@@ -1553,7 +1558,7 @@ begin
   solutions:=nil;
 end;   {stack using sigma clip average}
 
-procedure calibration_and_alignment(oversize:integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
+procedure calibration_and_alignment(oversize,process_as_osc :integer; var files_to_process : array of TfileToDo; out counter : integer); {calibration_and_alignment only}
 var
     fitsX,fitsY,c,width_max, height_max, old_width, old_height,x_new,y_new,col, binning, oversizeV,max_stars   : integer;
     background_correction, hfd_min      : double;
@@ -1592,7 +1597,8 @@ begin
 
         {load image}
         Application.ProcessMessages;
-        if ((esc_pressed) or (load_fits(filename2,true {light},true,true {update memo for saving},0,head,img_loaded)=false)) then begin memo2_message('Error');{can't load} exit;end;{update memo for case esc is pressed}
+        if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
+        if load_fits(filename2,true {light},true,init=false {update memo for saving},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
         if init=false then {first image}
         begin
@@ -1602,7 +1608,7 @@ begin
           head_ref:=head;{backup solution}
           initialise_var1;{set variables correct}
           initialise_var2;{set variables correct}
-          if ((bayerpat='') and (make_osc_color1.checked)) then
+          if ((bayerpat='') and (process_as_osc=2 {forced})) then
              if stackmenu1.bayer_pattern1.Text='auto' then memo2_message('█ █ █ █ █ █ Warning, Bayer colour pattern not in the header! Check colours and if wrong set Bayer pattern manually in tab "stack alignment". █ █ █ █ █ █')
              else
              if test_bayer_matrix(img_loaded)=false then  memo2_message('█ █ █ █ █ █ Warning, grayscale image converted to colour! Un-check option "convert OSC to colour". █ █ █ █ █ █');
@@ -1620,7 +1626,7 @@ begin
         Application.ProcessMessages;
         if esc_pressed then exit;
 
-        if process_as_osc then {do demosaic bayer}
+        if process_as_osc>0 then {do demosaic bayer}
         begin
           if head.naxis3>1 then memo2_message('█ █ █ █ █ █ Warning, light is already in colour ! Will skip demosaic. █ █ █ █ █ █')
           else
