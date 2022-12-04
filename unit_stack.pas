@@ -2295,7 +2295,7 @@ begin
 end;
 
 
-procedure update_stackmenu;//Update menu shortcuts for Mac
+procedure update_stackmenu_mac;//Update menu shortcuts for Mac
 begin
   with stackmenu1 do
   begin
@@ -2331,7 +2331,7 @@ begin
   {$endif}
 
   {$IfDef Darwin}// for MacOS
-  if commandline_execution=false then update_stackmenu;
+  if commandline_execution=false then update_stackmenu_mac;
   {$endif}
 
 end;
