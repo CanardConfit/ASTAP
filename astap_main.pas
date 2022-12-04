@@ -82,7 +82,6 @@ type
     bin2x2: TMenuItem;
     image_cleanup1: TMenuItem;
     localgaussian1: TMenuItem;
-    localcoloursmooth1: TMenuItem;
     autocorrectcolours1: TMenuItem;
     center_lost_windows: TMenuItem;
     deepsky_annotation1: TMenuItem;
@@ -111,6 +110,7 @@ type
     freetext1: TMenuItem;
     MenuItem21: TMenuItem;
     display_adu1: TMenuItem;
+    localcoloursmooth2: TMenuItem;
     MenuItem36: TMenuItem;
     move_images1: TMenuItem;
     SelectDirectoryDialog1: TSelectDirectoryDialog;
@@ -392,6 +392,7 @@ type
     procedure electron_to_adu_factors1Click(Sender: TObject);
     procedure halo_removal1Click(Sender: TObject);
     procedure display_adu1Click(Sender: TObject);
+    procedure localcoloursmooth2Click(Sender: TObject);
     procedure move_images1Click(Sender: TObject);
     procedure set_modified_date1Click(Sender: TObject);
     procedure positionanddate1Click(Sender: TObject);
@@ -440,7 +441,6 @@ type
     procedure max2EditingDone(Sender: TObject);
     procedure Memo1KeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure localgaussian1Click(Sender: TObject);
-    procedure localcoloursmooth1Click(Sender: TObject);
     procedure hyperleda_annotation1Click(Sender: TObject);
     procedure clean_up1Click(Sender: TObject);
     procedure remove_colour1Click(Sender: TObject);
@@ -3618,140 +3618,6 @@ begin
 end;
 
 
-procedure Tmainwindow.localcoloursmooth1Click(Sender: TObject);
-var
-   fitsX,fitsY,dum,k,bsize,x2,y2        : integer;
-   noise_left_bottom,noise_left_top, noise_right_top, noise_right_bottom,
-   center_x,center_y,a,b,angle_from_center,mean_value,old_value : double;
-   line_bottom, line_top,rgb,luminance : double;
-   colour,mode_left_bottom,mode_left_top, mode_right_top, mode_right_bottom,noise_level,mean_value2,new_noise  : array[0..2] of double;
-
-   function checkY(y: integer): integer;
-   begin
-     if y<0 then checkY:=0
-     else
-     if y>head.height-1 then checkY:=head.height-1
-     else
-     checkY:=y;
-   end;
-   function checkx(X: integer): integer;
-   begin
-     if x<0 then checkX:=0
-     else
-     if x>head.width-1 then checkX:=head.width-1
-     else
-     checkX:=x;
-   end;
-begin
-  if head.naxis=0 then exit;
-  if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
-  begin
-    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
-
-    backup_img;
-
-    bsize:=10;  // min(10,abs(stopX-startX));{5 or smaller}
-
-    if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
-    if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
-
-    {ellipse parameters}
-    center_x:=(startx+stopX-1)/2;
-    center_y:=(startY+stopY-1)/2;
-    a:=(stopX-1-startx)/2;
-    b:=(stopY-1-startY)/2;
-
-    for k:=0 to head.naxis3-1 do {do all colors}
-    begin
-
-      mode_left_bottom[k]:=mode(img_loaded,k,startx-bsize,startx,starty-bsize,starty,32000);{for this area get most common value equals peak in histogram}
-      mode_left_top[k]:=   mode(img_loaded,k,startx-bsize,startx,stopY,stopY+bsize,32000);{for this area get most common value equals peak in histogram}
-
-      mode_right_bottom[k]:=mode(img_loaded,k,stopX,stopX+bsize,starty-bsize,starty,32000);{for this area get most common value equals peak in histogram}
-      mode_right_top[k]:=   mode(img_loaded,k,stopX,stopX+bsize,stopY,stopY+bsize,32000);{for this area get most common value equals peak in histogram}
-
-      noise_left_bottom:=  get_negative_noise_level(img_loaded,k,startx-bsize,startx,starty-bsize,starty, mode_left_bottom[k]);{find the negative noise level below most_common_level of a local area}
-      noise_left_top:=     get_negative_noise_level(img_loaded,k,startx-bsize,startx,stopY,stopY+bsize, mode_left_top[k]);{find the negative noise level below most_common_level of a local area}
-      noise_right_bottom:= get_negative_noise_level(img_loaded,k,stopX,stopX+bsize,starty-bsize,starty, mode_right_bottom[k]);{find the negative noise level below most_common_level of a local area}
-      noise_right_top:=    get_negative_noise_level(img_loaded,k,stopX,stopX+bsize,stopY,stopY+bsize, mode_right_top[k]);{find the negative noise level below most_common_level of a local area}
-      noise_level[k]:=(noise_left_bottom + noise_left_top + noise_right_top + noise_right_bottom)/4;
-    end;{k color}
-
-
-    colour[0]:=0;
-    colour[1]:=0;
-    colour[2]:=0;
-
-    for fitsY:=startY to stopY-1 do
-      for fitsX:=startX to stopX-1 do
-      begin
-        angle_from_center:=arctan(abs(fitsy-center_Y)/max(1,abs(fitsX-center_X)));
-        if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
-        for k:=0 to head.naxis3-1 do {do all colors}
-        begin
-          begin
-            line_bottom:=mode_left_bottom[k]*(stopX-fitsx)/(stopX-startx)+ mode_right_bottom[k] *(fitsx-startX)/(stopX-startx);{median value at bottom line}
-            line_top:=  mode_left_top[k] *   (stopX-fitsx)/(stopX-startx)+ mode_right_top[k]*(fitsx-startX)/(stopX-startx);{median value at top line}
-            mean_value:=line_bottom*(stopY-fitsY)/(stopY-startY)+line_top*(fitsY-startY)/(stopY-startY);{median value at position FitsX, fitsY}
-            old_value:=img_loaded[k,fitsX,fitsY];
-            if old_value-3*noise_level[k]>mean_value  then
-              colour[k]:=colour[k]+old_value-mean_value;{adapt only if pixel value is 3*noise level different}
-          end;
-        end;{k color}
-      end;
-    rgb:=colour[0]+colour[1]+colour[2]+0.00001; {0.00001, prevent dividing by zero}
-
-    {smooth all pixel to same colour}
-    x2:=0;
-    y2:=0;
-    for fitsY:=startY to stopY-1 do
-      for fitsX:=startX to stopX-1 do
-      begin
-        angle_from_center:=arctan(abs(fitsy-center_Y)/max(1,abs(fitsX-center_X)));
-        if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
-        begin
-          for k:=0 to head.naxis3-1 do {do all colors}
-          begin
-            line_bottom:=mode_left_bottom[k]*(stopX-fitsx)/(stopX-startx)+ mode_right_bottom[k] *(fitsx-startX)/(stopX-startx);{median value at bottom line}
-            line_top:=  mode_left_top[k] *   (stopX-fitsx)/(stopX-startx)+ mode_right_top[k]*(fitsx-startX)/(stopX-startx);{median value at top line}
-            mean_value2[k]:=line_bottom*(stopY-fitsY)/(stopY-startY)+line_top*(fitsY-startY)/(stopY-startY);{median value at position FitsX, fitsY}
-          end;
-
-          luminance:=( img_loaded[0,fitsX,fitsY]-mean_value2[0]
-                        +img_loaded[1,fitsX,fitsY]-mean_value2[1]
-                        +img_loaded[2,fitsX,fitsY]-mean_value2[2])/3;
-
-          {walk the top and bottom boundary for noise}
-          inc(x2); if x2>=stopX-startX then begin x2:=0;inc(y2);end;
-          if y2>15 then y2:=0;
-
-          for k:=0 to 2 do
-          begin
-            new_noise[k]:=img_loaded[k,checkX(startX+x2),checkY(startY-y2)]-mean_value2[k]; {background noise from bottom boundary}
-            if new_noise[k]>3*noise_level[k] then {star in field}
-            new_noise[k]:=img_loaded[k,checkX(startX+x2),checkY(stopY+y2)]-mean_value2[k]; {background noise from top boundary}
-            if new_noise[k]>3*noise_level[k] then {star in field}
-            new_noise[k]:=img_loaded[k,checkX(startX+x2),checkY(startY-y2-10)]-mean_value2[k]; {background noise from bottom boundary-10}
-            if new_noise[k]>3*noise_level[k] then {star in field}
-            new_noise[k]:=img_loaded[k,checkX(startX+x2),checkY(stopY+y2+10)]-mean_value2[k]; {background noise from top boundary+10}
-          end;
-
-          {apply average colour to pixel}
-          img_loaded[0,fitsX,fitsY]:=new_noise[0]{background noise}+ mean_value2[0]+luminance*colour[0]/rgb;
-          img_loaded[1,fitsX,fitsY]:=new_noise[1]{background noise}+ mean_value2[1]+luminance*colour[1]/rgb;
-          img_loaded[2,fitsX,fitsY]:=new_noise[2]{background noise}+ mean_value2[2]+luminance*colour[2]/rgb;
-        end;
-      end;
-
-    plot_fits(mainwindow.image1,false,true);
-    Screen.Cursor:=crDefault;
-  end {fits file}
-  else
-  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
-
-end;
-
-
 function test_star_spectrum(r,g,b: single) : single;{test star spectrum. Result of zero is perfect star spectrum}
 var RdivG :single;                                  {excel polynom fit based on data from http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html}
 begin                                               {range 2000 till 20000k}
@@ -3816,6 +3682,8 @@ procedure Tmainwindow.remove_colour1Click(Sender: TObject);{make local area gray
 var
    fitsX,fitsY,dum    : integer;
    val  : single;
+   center_x,center_y,a,b,angle_from_center,mean_value,old_value : double;
+
 begin
   if ((head.naxis3<>3) or (head.naxis=0)) then exit;
   if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
@@ -3823,16 +3691,26 @@ begin
     Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
 
     backup_img;
+
+    center_x:=(startx+stopX-1)/2;
+    center_y:=(startY+stopY-1)/2;
+    a:=(stopX-1-startx)/2;
+    b:=(stopY-1-startY)/2;
+
     if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
     if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
 
     for fitsY:=startY to stopY-1 do
     for fitsX:=startX to stopX-1 do
     begin
-       val:=(img_loaded[0,fitsX,fitsY]+img_loaded[1,fitsX,fitsY]+img_loaded[2,fitsX,fitsY])/3;
-       img_loaded[0,fitsX,fitsY]:=val;
-       img_loaded[1,fitsX,fitsY]:=val;
-       img_loaded[2,fitsX,fitsY]:=val;
+      angle_from_center:=arctan(abs(fitsy-center_Y)/max(1,abs(fitsX-center_X)));
+      if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
+      begin
+        val:=(img_loaded[0,fitsX,fitsY]+img_loaded[1,fitsX,fitsY]+img_loaded[2,fitsX,fitsY])/3;
+        img_loaded[0,fitsX,fitsY]:=val;
+        img_loaded[1,fitsX,fitsY]:=val;
+        img_loaded[2,fitsX,fitsY]:=val;
+      end;
     end;
     plot_fits(mainwindow.image1,false,true);
     Screen.Cursor:=crDefault;
@@ -10652,10 +10530,19 @@ begin
   begin
     with LoadFITSPNGBMPJPEG1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
     with select_directory_thumb1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with recent1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with recent2 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with recent3 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with recent4 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with recent5 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with recent6 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with recent7 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with recent8 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+
     with Saveasfits1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
     with Export_image1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
     with SaveasJPGPNGBMP1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
-    with Exit1 do shortcut:=ShortCut(VK_Q, [ssMeta]);      // Meta-Q
+    with Exit1 do shortcut:=menus.ShortCut(VK_Q, [ssMeta]);      // Meta-Q
 
     with Stackimages1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
     //tools
@@ -10740,9 +10627,9 @@ begin
 
   head.naxis:=0; {not fits files available}
 
-  {$IfDef Darwin}// for MacOS
+  //{$IfDef Darwin}// for MacOS
   if commandline_execution=false then update_mainmenu;
-  {$endif}
+//  {$endif}
 end;
 
 
@@ -14750,6 +14637,100 @@ end;
 procedure Tmainwindow.display_adu1Click(Sender: TObject);
 begin
   display_adu:=display_adu1.checked;
+end;
+
+procedure Tmainwindow.localcoloursmooth2Click(Sender: TObject);
+var
+   fitsX,fitsY,dum,k,counter    : integer;
+   flux,center_x,center_y,a,b,angle_from_center,mean_value,old_value,rgb,distance,val1,val2,lumr,strongest_colour_local : single;
+   colour,mean : array[0..2] of single;
+begin
+  if ((head.naxis3<>3) or (head.naxis=0)) then exit;
+  if  ((abs(stopX-startX)>2)and (abs(stopY-starty)>2)) then
+  begin
+    Screen.Cursor:=crHourglass; application.processmessages;   { Show hourglass cursor, processmessages is for Linux }
+
+    backup_img;
+
+    center_x:=(startx+stopX-1)/2;
+    center_y:=(startY+stopY-1)/2;
+    a:=(stopX-1-startx)/2;
+    b:=(stopY-1-startY)/2;
+
+    if startX>stopX then begin dum:=stopX; stopX:=startX; startX:=dum; end;{swap}
+    if startY>stopY then begin dum:=stopY; stopY:=startY; startY:=dum; end;
+
+    colour[0]:=0;
+    colour[1]:=0;
+    colour[2]:=0;
+    mean[0]:=0;
+    mean[1]:=0;
+    mean[2]:=0;
+
+    counter:=0;
+
+    //mean background
+    for fitsY:=startY to stopY-1 do
+    for fitsX:=startX to stopX-1 do
+    begin
+      angle_from_center:=arctan(abs(fitsy-center_Y)/max(1,abs(fitsX-center_X)));
+      distance:=-sqr(fitsX-center_X)+sqr(fitsY-center_Y) + sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)); //distance outside ellipse
+
+      if ((distance>=0) and (distance<=2)) then
+      begin
+        for k:=0 to head.naxis3-1 do {do all colors}
+         mean[k]:=mean[k]+img_loaded[k,fitsX,fitsY];
+         counter:=counter+1;
+      end;
+    end;
+    if counter=0 then exit;
+    for k:=0 to head.naxis3-1 do mean[k]:=mean[k]/counter;
+
+    //mean colour
+    for fitsY:=startY to stopY-1 do
+    for fitsX:=startX to stopX-1 do
+    begin
+      angle_from_center:=arctan(abs(fitsy-center_Y)/max(1,abs(fitsX-center_X)));
+      if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
+      begin
+        for k:=0 to head.naxis3-1 do {do all colors}
+        begin
+          colour[k]:=colour[k]+img_loaded[K,fitsX,fitsY]-mean[k];
+        end;
+      end;
+    end;
+
+    rgb:=colour[0]+colour[1]+colour[2]+0.00001; {mean pixel flux. Factor 0.00001, prevent dividing by zero}
+
+    for fitsY:=startY to stopY-1 do
+    for fitsX:=startX to stopX-1 do
+    begin
+      angle_from_center:=arctan(abs(fitsy-center_Y)/max(1,abs(fitsX-center_X)));
+      if sqr(fitsX-center_X)+sqr(fitsY-center_Y)  <= sqr(a*cos(angle_from_center))+ sqr(b*sin(angle_from_center)) then     {within the ellipse}
+      begin
+        flux:=(img_loaded[0,fitsX,fitsY]-mean[0]
+              +img_loaded[1,fitsX,fitsY]-mean[1]
+              +img_loaded[2,fitsX,fitsY]-mean[2]);//flux of one pixel
+
+
+//        strongest_colour_local:=max(red,max(green,blue));
+//        top:=bg + strongest_colour_local*(flux/rgb);{calculate the highest colour value}
+//        if top>=65534.99 then flux:=flux-(top-65534.99)*rgb/strongest_colour_local;{prevent values above 65535}
+
+        {apply average colour to pixel}
+        lumr:=flux/rgb;
+        img_loaded[0,fitsX,fitsY]:={new_noise[k]}+ mean[0]+colour[0]*lumr;
+        img_loaded[1,fitsX,fitsY]:={new_noise[k]}+ mean[1]+colour[1]*lumr;
+        img_loaded[2,fitsX,fitsY]:={new_noise[k]}+ mean[2]+colour[2]*lumr;
+
+      end;
+    end;
+
+    plot_fits(mainwindow.image1,false,true);
+    Screen.Cursor:=crDefault;
+  end{fits file}
+  else
+  application.messagebox(pchar('No area selected! Hold the right mouse button down while selecting an area.'),'',MB_OK);
 end;
 
 

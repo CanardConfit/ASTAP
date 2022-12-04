@@ -1807,10 +1807,9 @@ object mainwindow: Tmainwindow
       Caption = 'Local adjustments'
       Hint = 'Local adjustments'
       ImageIndex = 42
-      object localcoloursmooth1: TMenuItem
-        Caption = 'Local colour smooth'
-        Hint = 'Smooth the colour of the selected rectangle. Luminance is not changed.'
-        OnClick = localcoloursmooth1Click
+      object localcoloursmooth2: TMenuItem
+        Caption = 'Local colour smooth stars'
+        OnClick = localcoloursmooth2Click
       end
       object remove_colour1: TMenuItem
         Caption = 'Local remove colour'

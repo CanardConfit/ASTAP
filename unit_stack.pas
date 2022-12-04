@@ -7309,7 +7309,7 @@ end;
 procedure smart_colour_smooth( var img: image_array; wide, sd:double; preserve_r_nebula,measurehist:boolean);{Bright star colour smooth. Combine color values of wide x wide pixels, keep luminance intact}
 var fitsX,fitsY,x,y,step,x2,y2,count,width5,height5  : integer;
     img_temp2            : image_array;
-    luminance,red,green,blue,rgb,r,g,b,sqr_dist,strongest_colour_local,top,bg,r2,g2,b2,noise_level1, peak,bgR2,bgB2,bgG2,highest_colour  : single;
+    flux,red,green,blue,rgb,r,g,b,sqr_dist,strongest_colour_local,top,bg,r2,g2,b2,noise_level1, peak,bgR2,bgB2,bgG2,highest_colour,lumr  : single;
     bgR,bgB,bgG         : double;
     copydata,red_nebula : boolean;
 begin
@@ -7367,7 +7367,7 @@ begin
                if r>peak then peak:=r;
                if g>peak then peak:=g;
                if b>peak then peak:=b;
-               {find lowest values. In some case background nebula}
+               {find lowest values. In some cases the background nebula}
                if r<bgR2 then bgR2:=r;
                if g<bgG2 then bgG2:=g;
                if b<bgB2 then bgB2:=b;
@@ -7409,15 +7409,18 @@ begin
             if red<blue*1.06 then{>6000k}
               green:=max(green,0.6604*red+0.3215*blue); {prevent purple stars, purple stars are physical not possible. Emperical formula calculated from colour table http://www.vendian.org/mncharity/dir3/blackbody/UnstableURLs/bbr_color.html}
 
-            luminance:=(r2+g2+b2)/3;
-            rgb:=(red+green+blue+0.00001)/3; {0.00001, prevent dividing by zero}
-            strongest_colour_local:=max(red,max(green,blue));
-            top:=bg+luminance*strongest_colour_local/rgb;{calculate the highest colour value}
-            if top>=65534.99 then luminance:=luminance-(top-65534.99)*rgb/strongest_colour_local;{prevent values above 65535}
+            flux:=r2+g2+b2;//pixel flux
+            rgb:=red+green+blue+0.00001; {average pixel flux, 0.00001, prevent dividing by zero}
 
-            img_temp2[0,fitsX  ,  fitsY  ]:=bg+ luminance*red/rgb;
-            img_temp2[1,fitsX  ,  fitsY  ]:=bg+ luminance*green/rgb;
-            img_temp2[2,fitsX  ,  fitsY  ]:=bg+ luminance*blue/rgb;
+            strongest_colour_local:=max(red,max(green,blue));
+            top:=bg + strongest_colour_local*(flux/rgb);{calculate the highest colour value}
+            if top>=65534.99 then flux:=flux-(top-65534.99)*rgb/strongest_colour_local;{prevent values above 65535}
+
+            lumr:=flux/rgb;
+            img_temp2[0,fitsX,fitsY]:=bg+ red*lumr; //usg average bg and not bgR. See "if copydata" below.
+            img_temp2[1,fitsX,fitsY]:=bg+ green*lumr;
+            img_temp2[2,fitsX,fitsY]:=bg+ blue*lumr;
+
             copydata:=false;{data is already copied}
 
           end;
@@ -7425,9 +7428,9 @@ begin
      end;
      if copydata then {keep original data but adjust zero level}
      begin
-       img_temp2[0,fitsX  ,  fitsY  ]:=max(0,bg+r2);{copy data, but equalise background levels}
-       img_temp2[1,fitsX  ,  fitsY  ]:=max(0,bg+g2);
-       img_temp2[2,fitsX  ,  fitsY  ]:=max(0,bg+b2);
+       img_temp2[0,fitsX,fitsY]:=max(0,bg+r2);{copy data, but equalise background levels by using the same background value}
+       img_temp2[1,fitsX,fitsY]:=max(0,bg+g2);
+       img_temp2[2,fitsX,fitsY]:=max(0,bg+b2);
      end;
 
   end;
