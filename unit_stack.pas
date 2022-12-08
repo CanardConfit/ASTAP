@@ -1029,6 +1029,11 @@ const
   P_limmagn=22;
   P_nr=23;{number of fields}
 
+  I_date=6;//inspector tab
+  I_nr_stars=7;
+  I_focus_pos=8;
+
+
   M_exposure=0;  {mount analyse}
   M_temperature=1;
   M_binning=2;
@@ -1064,8 +1069,6 @@ const
   icon_thumb_down=8; {image index for outlier}
   icon_king=9 {16};{image index for best image}
 
-  insp_focus_pos=8;
-  insp_nr_stars=7;
 
   video_index     : integer=1;
   frame_rate      : string ='1';
@@ -3308,11 +3311,11 @@ end;
 
 procedure analyse_listview(lv :tlistview; light,full, refresh: boolean);{analyse list of FITS files}
 var
-  c,counts,i,iterations, hfd_counter                          : integer;
+  c,counts,i,iterations, hfd_counter,tabnr                        : integer;
   backgr, hfd_median, hjd,sd, dummy,alt,az,ra_jnow,dec_jnow,ra_mount_jnow, dec_mount_jnow,ram,decm,rax,decx,adu_e  : double;
   filename1                        : string;
   Save_Cursor                      : TCursor;
-  loaded, red,green,blue               : boolean;
+  loaded, red,green,blue           : boolean;
   img                              : image_array;
   nr_stars, hfd_outer_ring,
   median_11,median_21,median_31,   median_12,median_22,median_32,   median_13,median_23,median_33 : double;
@@ -3331,7 +3334,6 @@ begin
 
   loaded:=false;
   c:=0;
-
 
   {convert any non FITS file}
   while c<=counts {check all} do
@@ -3357,6 +3359,23 @@ begin
     inc(c);
   end;
 
+  if lv.name=stackmenu1.listview2.name then tabnr:=2 {dark tab}
+  else
+  if lv.name=stackmenu1.listview3.name then tabnr:=3 {flat tab}
+  else
+  if lv.name=stackmenu1.listview4.name then tabnr:=4 {dark-flat tab}
+  else
+  if lv.name=stackmenu1.listview6.name then tabnr:=6 {blink tab}
+  else
+  if lv.name=stackmenu1.listview7.name then tabnr:=7 {photometry tab}
+  else
+  if lv.name=stackmenu1.listview8.name then tabnr:=8 {inspector tab}
+  else
+  if lv.name=stackmenu1.listview9.name then tabnr:=9 {mount analyse tab}
+  else
+  tabnr:=0;
+
+
   c:=0;
   repeat {check for double entries}
       i:=c+1;
@@ -3378,7 +3397,8 @@ begin
 
   for c:=0 to lv.items.count-1 do
   begin
-    if ((lv.Items.item[c].checked) and ((refresh) or (length(lv.Items.item[c].subitems.Strings[4])<=1){height}) ) then {column empthy, only update blank rows}
+    if ((lv.Items.item[c].checked) and
+           ((refresh) or (length(lv.Items.item[c].subitems.Strings[4])<=1){height}) or ((full) and (tabnr<=4 {darks, flat,flat-darks}) and (length(lv.Items.item[c].subitems.Strings[D_background])<=1)) ) then {column empthy, only update blank rows}
     begin
       progress_indicator(100*c/lv.items.count-1,' Analysing');
       lv.Selected :=nil; {remove any selection}
@@ -3412,31 +3432,31 @@ begin
               else
               if head_2.gain<>'' then lv.Items.item[c].subitems.Strings[D_gain]:=head_2.gain;
 
-              if full=true then {dark/flats}
+              if ((full=true) and (tabnr in [2,3,4,7])) then {get background for dark, flats, flat-darks, photometry}
               begin {analyse background and noise}
 
                 get_background(0,img,true {update_hist},false {calculate noise level}, {var} backgr,star_level);
 
-                {analyse centre only. Suitable for flats and dark with amp glow}
-                local_sd((head_2.width div 2)-50,(head_2.height div 2)-50, (head_2.width div 2)+50,(head_2.height div 2)+50{regio of interest},0,img, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
-
                 lv.Items.item[c].subitems.Strings[D_background]:=inttostr5(round(backgr));
-                if ((lv.name=stackmenu1.listview2.name) or (lv.name=stackmenu1.listview3.name) or (lv.name=stackmenu1.listview4.name)) then
+                if tabnr<=4 then
                 begin //noise
+                  {analyse centre only. Suitable for flats and dark with amp glow}
+                  local_sd((head_2.width div 2)-50,(head_2.height div 2)-50, (head_2.width div 2)+50,(head_2.height div 2)+50{regio of interest},0,img, sd,dummy {mean},iterations);{calculate mean and standard deviation in a rectangle between point x1,y1, x2,y2}
+
                   adu_e:=retrieve_ADU_to_e_unbinned(head_2.egain); //Factor for unbinned files. Result is zero when calculating in e- is not activated in the statusbar popup menu. Then in procedure HFD the SNR is calculated using ADU's only.
                   lv.Items.item[c].subitems.Strings[D_sigma]:=noise_to_electrons(adu_e, head_2.Xbinning, sd);//reports noise in ADU's (adu_e=0) or electrons
                 end;
               end;
             end;
 
-            if lv.name=stackmenu1.listview2.name then {dark tab}
+            if tabnr=2 then {dark tab}
             begin
               lv.Items.item[c].subitems.Strings[D_date]:=copy(head_2.date_obs,1,10);
               date_to_jd(head_2.date_obs,head_2.exposure);{convert head_2.date_obs string and head_2.exposure time to global variables jd_start (julian day start head_2.exposure) and jd_mid (julian day middle of the head_2.exposure)}
               lv.Items.item[c].subitems.Strings[D_jd]:=floattostrF(jd_start,ffFixed,0,1); {julian day, 1/10 day accuracy}
             end
             else
-            if lv.name=stackmenu1.listview3.name then {flat tab}
+            if tabnr=3 then {flat tab}
             begin
               lv.Items.item[c].subitems.Strings[F_filter]:=head_2.filter_name; {filter name, without spaces}
               if AnsiCompareText(stackmenu1.red_filter1.text,head_2.filter_name)=0 then begin Lv.Items.item[c].SubitemImages[F_filter]:=0;red:=true; end else
@@ -3465,12 +3485,12 @@ begin
               lv.Items.item[c].subitems.Strings[F_calibration]:=head_2.calstat;
             end
             else
-            if lv.name=stackmenu1.listview4.name then {flat darks tab}
+            if tabnr=4 then {flat darks tab}
             begin
               lv.Items.item[c].subitems.Strings[D_date]:=copy(head_2.date_obs,1,10);
             end
             else
-            if lv.name=stackmenu1.listview6.name then {blink tab}
+            if tabnr=6 then {blink tab}
             begin
               lv.Items.item[c].subitems.Strings[B_date]:=StringReplace(copy(head_2.date_obs,1,19),'T',' ',[]);{date/time for blink. Remove fractions of seconds}
               lv.Items.item[c].subitems.Strings[B_calibration]:=head_2.calstat; {calibration head_2.calstat info DFB}
@@ -3478,7 +3498,7 @@ begin
             end
             else
 
-            if lv.name=stackmenu1.listview7.name then {photometry tab}
+            if tabnr=7 then {photometry tab}
             begin
               lv.Items.item[c].subitems.Strings[P_date]:=StringReplace(copy(head_2.date_obs,1,19),'T',' ',[]);{date/time for blink. Remove fractions of seconds}
               lv.Items.item[c].subitems.Strings[P_filter]:=head_2.filter_name;
@@ -3515,38 +3535,40 @@ begin
             end
             else
 
-            if lv.name=stackmenu1.listview8.name  then {listview8 inspector tab}
+            if tabnr=8  then {listview8 inspector tab}
             begin
-              lv.Items.item[c].subitems.Strings[insp_focus_pos]:=inttostr(focus_pos);
+              lv.Items.item[c].subitems.Strings[I_date]:=StringReplace(copy(head_2.date_obs,1,19),'T',' ',[]);{date/time for blink. Remove fractions of seconds}
+
+              lv.Items.item[c].subitems.Strings[I_focus_pos]:=inttostr(focus_pos);
 
               analyse_image_extended(img,head_2, nr_stars, hfd_median, hfd_outer_ring,  median_11,median_21,median_31,   median_12,median_22,median_32,   median_13,median_23,median_33); {analyse several areas}
 
               if ((hfd_median>25) or (median_22>25) or (hfd_outer_ring>25) or (median_11>25) or (median_31>25) or (median_13>25) or (median_33>25)) then
               begin
                 lv.Items.item[c].checked:=false; {uncheck}
-                lv.Items.item[c].subitems.Strings[insp_nr_stars]:='❌'    ;
+                lv.Items.item[c].subitems.Strings[I_nr_stars]:='❌'    ;
               end
               else
-              lv.Items.item[c].subitems.Strings[insp_nr_stars]:=floattostrF(nr_stars,ffFixed,0,0);
+              lv.Items.item[c].subitems.Strings[I_nr_stars]:=floattostrF(nr_stars,ffFixed,0,0);
 
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+2]:=floattostrF(hfd_median,ffFixed,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+3]:=floattostrF(median_22,ffFixed,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+4]:=floattostrF(hfd_outer_ring,ffFixed,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+5]:=floattostrF(median_11,ffFixed,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+6]:=floattostrF(median_21,ffFixed,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+7]:=floattostrF(median_31,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars+2]:=floattostrF(hfd_median,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars+3]:=floattostrF(median_22,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars+4]:=floattostrF(hfd_outer_ring,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars+5]:=floattostrF(median_11,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars+6]:=floattostrF(median_21,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars+7]:=floattostrF(median_31,ffFixed,0,3);
 
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+8]:=floattostrF(median_12,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars+8]:=floattostrF(median_12,ffFixed,0,3);
 
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+9]:=floattostrF(median_32,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars+9]:=floattostrF(median_32,ffFixed,0,3);
 
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+10]:=floattostrF(median_13,ffFixed,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+11]:=floattostrF(median_23,ffFixed,0,3);
-              lv.Items.item[c].subitems.Strings[insp_nr_stars+12]:=floattostrF(median_33,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars+10]:=floattostrF(median_13,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars+11]:=floattostrF(median_23,ffFixed,0,3);
+              lv.Items.item[c].subitems.Strings[I_nr_stars+12]:=floattostrF(median_33,ffFixed,0,3);
             end
             else
 
-            if lv.name=stackmenu1.listview9.name then {mount analyse tab}
+            if tabnr=9 then {mount analyse tab}
             begin
 
               lv.Items.item[c].subitems.Strings[M_date]:=date_obs_regional(head_2.date_obs);
@@ -4360,7 +4382,7 @@ end;
 
 procedure Tstackmenu1.analysedarksButton2Click(Sender: TObject);
 begin
-  analyse_listview(listview2,false {light},true {full fits},false{refresh}); {img_loaded array and memo1 will not be modified}
+  analyse_listview(listview2,false {light},true {full fits, include background and SD},false{refresh}); {img_loaded array and memo1 will not be modified}
 end;
 
 
@@ -5163,10 +5185,10 @@ begin
       if Items.item[c].checked then
       begin
 
-        posit:=strtofloat2(Items.item[c].subitems.Strings[insp_focus_pos]);{inefficient but simple code to convert string back to float}
+        posit:=strtofloat2(Items.item[c].subitems.Strings[I_focus_pos]);{inefficient but simple code to convert string back to float}
         if posit>0 then
         begin
-          hfd:=strtofloat(Items.item[c].subitems.Strings[insp_focus_pos+i]);
+          hfd:=strtofloat(Items.item[c].subitems.Strings[I_focus_pos+i]);
           if hfd<15 then {valid data}
           begin
             array_hfd[img_counter,1]:=posit;
@@ -5476,7 +5498,7 @@ end;
 
 procedure Tstackmenu1.listview8CustomDrawSubItem(Sender: TCustomListView; Item: TListItem; SubItem: Integer; State: TCustomDrawState; var DefaultDraw: Boolean);
 begin
-  if sender.Items.item[Item.Index].subitems.Strings[insp_nr_stars]='❌'  then
+  if sender.Items.item[Item.Index].subitems.Strings[I_nr_stars]='❌'  then
     Sender.Canvas.Font.Color := clred
   else
     Sender.Canvas.Font.Color := clmenutext;{required for high contrast settings. Otherwise it is always black}
@@ -7862,6 +7884,7 @@ begin
   end;
 end;
 
+
 procedure Tstackmenu1.live_monitoring1Click(Sender: TObject);
 begin
   save_settings2;{too many lost selected files . so first save settings}
@@ -8762,7 +8785,7 @@ begin
 end;
 
 
-procedure replace_by_master_dark;
+procedure replace_by_master_dark(full_analyse : boolean);
 var
    path1,filen,gain :string;
    c,counter,i,file_count : integer;
@@ -8857,7 +8880,7 @@ begin
         listview_add(listview2,path1,true,D_nr);{add master}
         listview2.Items.EndUpdate;
 
-        analyse_listview(listview2,false {light},true {full fits},false{refresh});{update the tab information}
+        analyse_listview(listview2,false {light},full_analyse {full fits},false{refresh});{update the tab information}
       end;
       img_dark:=nil;
     end;
@@ -8894,12 +8917,12 @@ end;
 procedure Tstackmenu1.replace_by_master_dark1Click(Sender: TObject); {this routine works with mono files but makes coloured files mono, so less suitable for commercial cameras producing coloured raw lights}
 begin
   if img_loaded<>nil then {button was used, backup img array and header and restore later}  begin  img_backup:=nil;{clear to save memory}  backup_img;  end;{backup fits for later}
-  replace_by_master_dark;
+  replace_by_master_dark(true {include background and SD});
   if img_loaded<>nil then restore_img; {button was used, restore original image array and header}
 end;
 
 
-procedure replace_by_master_flat;
+procedure replace_by_master_flat(full_analyse : boolean);
 var
    fitsX,fitsY,flat_count                        : integer;
    path1,filen,flat_filter,expos                 : string;
@@ -9048,7 +9071,7 @@ begin
             end;
             listview_add(listview3,path1,true,F_nr);{add master}
             listview3.Items.EndUpdate;
-            analyse_listview(listview3,false {light},true {full fits (for standard deviation)},false{refresh});{update the tab information}
+            analyse_listview(listview3,false {light},full_analyse {full fits (for standard deviation)},false{refresh});{update the tab information}
           end;
           img_flat:=nil;
         end;
@@ -9071,7 +9094,7 @@ end;
 procedure Tstackmenu1.replace_by_master_flat1Click(Sender: TObject);
 begin
   if img_loaded<>nil then {button was used, backup img array and header and restore later}  begin img_backup:=nil;{clear to save memory} backup_img; end;{backup fits for later}
-  replace_by_master_flat;
+  replace_by_master_flat(true {include background and SD});
   if img_loaded<>nil then restore_img; {button was used, restore original image array and header}
 end;
 
@@ -9471,13 +9494,13 @@ begin
   if ListView2.items.count<>0 then
   begin
     memo2_message('Analysing darks.');
-    replace_by_master_dark;
+    replace_by_master_dark(false {include background and SD});
     if esc_pressed then begin restore_img;exit;end;
   end;
   if ListView3.items.count<>0 then
   begin
     memo2_message('Analysing flats.');
-    replace_by_master_flat;
+    replace_by_master_flat(false {include background and SD});
     if esc_pressed then begin restore_img;exit;end;
   end;
 
