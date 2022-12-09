@@ -59,7 +59,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.12.04';
+  astap_version='2022.12.08';
 
 type
   { Tmainwindow }
@@ -10627,9 +10627,9 @@ begin
 
   head.naxis:=0; {not fits files available}
 
-  //{$IfDef Darwin}// for MacOS
+ {$IfDef Darwin}// for MacOS
   if commandline_execution=false then update_mainmenu;
-//  {$endif}
+ {$endif}
 end;
 
 

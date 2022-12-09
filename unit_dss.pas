@@ -1,8 +1,23 @@
 unit unit_dss;
 {calculates to RA/DEC from a DSS image pixel position}
 
-{By han_kleijn@hnsky.org. (c) 2001, 2002, 2003, for non-commercial use only }
-{For updates have a look to www.hnsky.org}
+{By han_kleijn@hnsky.org. (c) 2001, 2002, 2003
+
+*    This program is free software; you can redistribute it and/or modify
+*    it under the terms of the GNU General Lesser Public License as published by
+*    the Free Software Foundation; either version 2 of the License, or
+*    (at your option) any later version.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU Lesser General Public License for more details.
+*
+*    You should have received a copy of the GNU Lesser General Public License
+*    along with this program (see SLA_CONDITIONS); if not, write to the
+*    Free Software Foundation, Inc., 59 Temple Place, Suite 330,
+*    Boston, MA  02111-1307  USA   }
+
 
 interface
 
@@ -25,11 +40,15 @@ Procedure DSSPOS (xpix ,ypix : double; var xpos, ypos : double);
 implementation
 
 
-Procedure DSSPOS (xpix ,ypix : double; var xpos, ypos: double);
-{  Mathematical solution based of DSSPOS.C of WCStools
-   Documentation, to some extent, is online at
-   http://tdc-www.harvard.edu/software/wcstools/libwcs.wcs.html
-   For non-commercial purposes only.
+Procedure DSSPOS (xpix ,ypix : double; var xpos, ypos: double);//decode full astrometrical solution Digital Sky Survey image
+{  Use the Digital Sky Survey polynomial solution as documented in the
+
+   README.TXT of the Digital Sky Survey by the Space Telescope Science Institute
+   and
+   DSSPOS.C of WCStools, http://tdc-www.harvard.edu/software/wcstools/   released with a GNU LESSER GENERAL PUBLIC LICENSE Version 2.1, February 1999
+
+   DSSPOS.C is based on the astrmcal.c portion of GETIMAGE by J. Doggett and the documentation (README.TXT) distributed with the  Digital Sky Survey by the Space Telescope Science Institute.
+
 
    Routine to determine accurate position for pixel coordinates
    returns 0 if successful otherwise 1 = angle too large for projection }
