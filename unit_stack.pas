@@ -3756,7 +3756,7 @@ var
   c,file_count : integer;
   file_list    : array of string;
 begin
-  analyse_listview(stackmenu1.listview4,false {light},false {full fits},false{refesh});{update the tab information, convert to FITS if required}
+  analyse_listview(stackmenu1.listview4,false {light},false {full fits},false{refesh});{update the flat-dark tab information. Convert to FITS if required}
   setlength(file_list,stackmenu1.listview4.items.count);
   file_count:=0;
   result:=0;{just in case no flat-dark are found}
@@ -4058,13 +4058,13 @@ end;
 
 procedure Tstackmenu1.analyseflatsButton3Click(Sender: TObject);
 begin
-  analyse_listview(listview3,false {light},true {full fits},new_analyse_required3{refresh});
+  analyse_listview(listview3,false {light},true {full fits, include background and noise},new_analyse_required3{refresh});
   new_analyse_required3:=false;{analyse done}
 end;
 
 procedure Tstackmenu1.analyseflatdarksButton1Click(Sender: TObject);
 begin
-  analyse_listview(listview4,false {light},sender<>nil {true=full fits},false{refresh});
+  analyse_listview(listview4,false {light},true {full fits, include background and noise},false{refresh});
 end;
 
 
@@ -9094,7 +9094,7 @@ end;
 procedure Tstackmenu1.replace_by_master_flat1Click(Sender: TObject);
 begin
   if img_loaded<>nil then {button was used, backup img array and header and restore later}  begin img_backup:=nil;{clear to save memory} backup_img; end;{backup fits for later}
-  replace_by_master_flat(true {include background and SD});
+  replace_by_master_flat(true {include measuring background and SD});
   if img_loaded<>nil then restore_img; {button was used, restore original image array and header}
 end;
 

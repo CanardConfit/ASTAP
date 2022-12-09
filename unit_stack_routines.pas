@@ -1291,13 +1291,7 @@ begin
             for col:=0 to head.naxis3-1 do
             if img_temp[col,fitsX,fitsY]<>0 then
                img_average[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]/img_temp[col,fitsX,fitsY];{scale to one image by diving by the number of pixels added}
-//      img_loaded[col,fitsX,fitsY]:=img_average[col,fitsX,fitsY]
-
     end;  {light average}
-
-//    plot_fits(mainwindow.image1,true,true);{plot real}
-//    exit;
-
 
     {standard deviation of light images}  {stack using sigma clip average}
     begin {standard deviation}

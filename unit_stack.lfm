@@ -1,5 +1,5 @@
 object stackmenu1: Tstackmenu1
-  Left = 54
+  Left = 226
   Height = 813
   Top = 177
   Width = 1857
