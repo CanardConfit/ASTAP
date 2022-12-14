@@ -1,7 +1,8 @@
 unit unit_ephemerides;
 
 {*
-*  These PASCAL routines where created by Han Kleijn. www.hnsky.org for the ASTAP program and are based on Fortran code from https://github.com/scottransom/pyslalib
+*  These PASCAL routines where created by Han Kleijn. www.hnsky.org for the ASTAP program and are based on Fortran code from https://github.com/scottransom/pyslalib.
+*  Release date Pascal version 2021-09-03
 *
 *  Copyright (C) See each routine
 *
@@ -22,8 +23,6 @@ unit unit_ephemerides;
 *    Boston, MA  02111-1307  USA
 *
 *-}
-
-
 
 
 interface
@@ -751,14 +750,6 @@ begin
 end;
 
 //-----------------------------------------------------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
 
 {
 *     - - - - - - -;
@@ -4871,9 +4862,6 @@ begin
       //     Heliocentric Earth position and velocity component.
       HP[K] := XYZ;
       HV[K] := XYZD / DJY;
-
-
-
     //*     ------------------------------------------------;
     //*     Obtain component of SSB to Earth ecliptic vector;
     //*     ------------------------------------------------;
@@ -4923,9 +4911,7 @@ begin
     end;{Barycentric}
   end; {loop for X, Y,Z}
 
-
   //  Rotate from ecliptic to ICRS coordinates and  the results.
-
   if bary=false then {mod for Pascal. Calculate heliocentric or bary centric if requested, not both}
   begin {heliocentric}
     X := HP[1];

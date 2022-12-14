@@ -59,7 +59,7 @@ uses
   IniFiles;{for saving and loading settings}
 
 const
-  astap_version='2022.12.09';
+  astap_version='2022.12.14';
 
 type
   { Tmainwindow }
@@ -10545,10 +10545,13 @@ begin
     with Exit1 do shortcut:=menus.ShortCut(VK_Q, [ssMeta]);      // Meta-Q
 
     with Stackimages1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+
     //tools
     with astrometric_solve_image1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
     with inversimage1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
     with convertmono1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+    with undo1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
+
     with bin_2x2menu1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
     with bin_3x3menu1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
     with rotate1 do shortcut:=(shortcut and $BFFF) or $1000;//replace Ctrl equals $4000 by Meta equals $1000
@@ -15456,8 +15459,6 @@ begin
 
   head.height:=100;
   head.width:=100;
-//  head.naxis:=2; {numer of dimensions}
-//  head.naxis3:=3;{number of colors}
   head.crpix1:=0;{reference pixel}
   head.crpix2:=0;
   head.cdelt1:=0;{deg/pixel for x}
