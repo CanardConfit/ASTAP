@@ -7433,15 +7433,21 @@ begin
 
       stackmenu1.mount_write_wcs1.Checked:=Sett.ReadBool('stack','wcs',true);{use wcs files for mount}
 
-      obscode:=Sett.ReadString('stack','obscode',''); {photometry}
-      c:=Sett.ReadInteger('stack','delim_pos',987654321);if c<>987654321 then delim_pos:=c;
-      baa_style:=Sett.ReadBool('stack','baa_style',false);{aavso report}
-
 
       c:=Sett.ReadInteger('stack','video_index',987654321);if c<>987654321 then video_index:=c;{blink menu, video}
       dum:=Sett.ReadString('stack','frame_rate',''); if dum<>'' then frame_rate:=dum;
 
+      {remove after 2024-1-1}obscode:=Sett.ReadString('stack','obscode',''); {photometry}
+      {remove after 2024-1-1}c:=Sett.ReadInteger('stack','delim_pos',987654321);if c<>987654321 then delim_pos:=c;
+      {remove after 2024-1-1}baa_style:=Sett.ReadBool('stack','baa_style',false);{aavso report}
 
+      {remove this line after 2024-1-1}if obscode='' then
+      begin
+        obscode:=Sett.ReadString('aavso','obscode',''); {photometry}
+        delim_pos:=Sett.ReadInteger('aavso','delim_pos',0);
+        baa_style:=Sett.ReadBool('aavso','baa_style',false);{aavso report}
+        aavso_filter_index:=Sett.ReadInteger('aavso','pfilter',0);
+      end;
 
       stackmenu1.live_stacking_path1.caption:=Sett.ReadString('live','live_stack_dir','');
       stackmenu1.monitoring_path1.caption:=Sett.ReadString('live','monitor_dir','');
@@ -7775,6 +7781,7 @@ begin
       sett.writestring('stack','annulus_radius',stackmenu1.annulus_radius1.text);
       sett.writeInteger('stack','annotate_m',stackmenu1.annotate_mode1.itemindex);
 
+
       sett.writestring('stack','sigma_decolour',stackmenu1.sigma_decolour1.text);
 
       sett.writestring('stack','sd_factor_list',stackmenu1.sd_factor_list1.text);
@@ -7787,15 +7794,17 @@ begin
 
       sett.writeInteger('stack','sample_size',stackmenu1.sample_size1.itemindex);
 
-      sett.writestring('stack','obscode',obscode);
-      sett.writeInteger('stack','delim_pos',delim_pos);
-      sett.writeBool('stack','baa_style',baa_style);{AAVSO report}
-
 
       sett.writeBool('stack','wcs',stackmenu1.mount_write_wcs1.Checked);{uses wcs file for menu mount}
 
       sett.writeInteger('stack','video_index',video_index);
       sett.writestring('stack','frame_rate',frame_rate);
+
+      sett.writestring('aavso','obscode',obscode);
+      sett.writeInteger('aavso','delim_pos',delim_pos);
+      sett.writeBool('aavso','baa_style',baa_style);{AAVSO report}
+      sett.writeInteger('aavso','pfilter',aavso_filter_index);
+
 
 
       sett.writestring('live','live_stack_dir',stackmenu1.live_stacking_path1.caption);{live stacking}

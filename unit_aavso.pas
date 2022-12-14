@@ -66,6 +66,7 @@ const
   delim_pos  : integer=0;
   to_clipboard  : boolean=true;
   baa_style  : boolean=true;
+  aavso_filter_index: integer=0;
 
 var
   aavso_report : string;
@@ -99,6 +100,7 @@ begin
     abbreviation_check:=name_check1.text;
     delim_pos:=delimiter1.itemindex;
     baa_style:=baa_style1.checked;
+    aavso_filter_index:=filter1.itemindex;
   end;
 end;
 
@@ -106,11 +108,10 @@ end;
 procedure Tform_aavso1.report_to_clipboard1Click(Sender: TObject);
 var
     c  : integer;
-    err,err_message,snr_str,airmass_str, delim,fn,fnG,detype,baa_extra,magn_type: string;
+    err,err_message,snr_str,airmass_str, delim,fn,fnG,detype,baa_extra,magn_type,filter_used: string;
     stdev_valid : boolean;
     snr_value,err_by_snr   : double;
     PNG: TPortableNetworkGraphic;{FPC}
-
 begin
   get_info;
 
@@ -173,21 +174,28 @@ begin
        if pos('v',name_database)>0 then magn_type:=', photometry transformed to Johnson-V. ' else magn_type:=' using BM magnitude. ';
 
        if snr_str<>'' then
-       aavso_report:= aavso_report+ name_var+delim+
-                      StringReplace(listview7.Items.item[c].subitems.Strings[P_jd_mid],',','.',[])+delim+
-                      StringReplace(listview7.Items.item[c].subitems.Strings[P_magn1],',','.',[])+delim+
-                      err+
-                      delim+copy(filter1.text,1,2)+delim+
-                     'NO'+delim+
-                     'STD'+delim+
-                     'ENSEMBLE'+delim+
-                     'na'+delim+
-                     abbreviation_check+delim+
-                     stringreplace(listview7.Items.item[c].subitems.Strings[P_magn2],',','.',[])+delim+
-                     airmass_str+delim+
-                     'na'+delim+ {group}
-                     abbreviation_var_IAU+delim+
-                     'Ensemble of Gaia eDR3 stars'+magn_type+err_message+#13+#10;
+       begin
+         if filter1.itemindex=0 then
+           filter_used:=listview7.Items.item[c].subitems.Strings[P_filter] //take from header
+         else
+           filter_used:=copy(filter1.text,1,2);//manual input
+         aavso_report:= aavso_report+ name_var+delim+
+                        StringReplace(listview7.Items.item[c].subitems.Strings[P_jd_mid],',','.',[])+delim+
+                        StringReplace(listview7.Items.item[c].subitems.Strings[P_magn1],',','.',[])+delim+
+                        err+
+                        delim+filter_used+delim+
+                       'NO'+delim+
+                       'STD'+delim+
+                       'ENSEMBLE'+delim+
+                       'na'+delim+
+                       abbreviation_check+delim+
+                       stringreplace(listview7.Items.item[c].subitems.Strings[P_magn2],',','.',[])+delim+
+                       airmass_str+delim+
+                       'na'+delim+ {group}
+                       abbreviation_var_IAU+delim+
+                       'Ensemble of Gaia eDR3 stars'+magn_type+err_message+#13+#10;
+
+       end;
      end;
    end;
 
@@ -492,11 +500,10 @@ begin
   if length(mainwindow.Shape_alignment_marker2.HINT)>2 then abbreviation_check:=mainwindow.Shape_alignment_marker2.HINT;
   name_check1.text:=abbreviation_check;
 
-  if head.filter_name<>'' then filter1.text:=head.filter_name else  filter1.itemindex:=0 {TC};
-
   delimiter1.itemindex:=delim_pos;
   baa_style1.checked:=baa_style;
   Comparison1.Text:=name_database;
+  filter1.itemindex:=aavso_filter_index;
 
   aavso_report:='';
 

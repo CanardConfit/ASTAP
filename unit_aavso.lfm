@@ -9,7 +9,7 @@ object form_aavso1: Tform_aavso1
   OnClose = FormClose
   OnResize = FormResize
   OnShow = FormShow
-  LCLVersion = '2.0.12.0'
+  LCLVersion = '2.2.4.0'
   object obscode1: TEdit
     Left = 16
     Height = 23
@@ -55,6 +55,7 @@ object form_aavso1: Tform_aavso1
     ItemHeight = 15
     ItemIndex = 0
     Items.Strings = (
+      'Take from file header'
       'CV  (unfiltered)'
       'TG  (green filter or green of OSC)'
       'V    (Johnson-V)'
@@ -63,7 +64,7 @@ object form_aavso1: Tform_aavso1
     ParentShowHint = False
     ShowHint = True
     TabOrder = 2
-    Text = 'CV  (unfiltered)'
+    Text = 'Take from file header'
   end
   object Label6: TLabel
     Left = 242
@@ -203,7 +204,7 @@ object form_aavso1: Tform_aavso1
     Top = 168
     Width = 700
     AutoSize = False
-    Caption = 'Invalid report! View the first image in the list and click on the variable and check star to mark them for measurement. Then press the ▶| button to measure the stars.'
+    Caption = 'Invalid report! View the first image in the list and click both on the variable & check star to mark them for measurement. Then press the ▶| button to measure the stars.'
     Font.Color = clRed
     Font.Height = -24
     ParentColor = False
