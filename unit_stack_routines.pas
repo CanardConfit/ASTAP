@@ -1817,7 +1817,7 @@ begin
           if save_fits(img_loaded,filename2,-32,true)=false then exit;//exit if save error
         end;
          memo2_message('New aligned image created: '+filename2);
-        report_results('?',inttostr(round(head.exposure)),0,999 {color icon});{report result in tab result using modified filename2}
+        report_results(object_name,inttostr(round(head.exposure)),0,999 {color icon});{report result in tab result using modified filename2}
         progress_indicator(10+round(90*(counter)/length(files_to_process){(ListView1.items.count)}),'Cal');{show progress}
         finally
         end;

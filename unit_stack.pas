@@ -443,7 +443,7 @@ type
     auto_rotate1: TCheckBox;
     use_ephemeris_alignment1: TRadioButton;
     write_jpeg1: TCheckBox;
-    xxxxxxx: TComboBox;
+//  xxxxxxx: TComboBox;
     rainbow_Panel1: TPanel;
     rb1: TEdit;
     red_filter1: TEdit;
