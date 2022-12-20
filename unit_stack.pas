@@ -159,8 +159,8 @@ type
     undo_button6: TBitBtn;
     unselect9: TMenuItem;
     Viewimage9: TMenuItem;
-    yyyyyy: TMenuItem;
-    xxxxxx: TMenuItem;
+//    yyyyyy: TMenuItem;
+//    xxxxxx: TMenuItem;
     merge_overlap1: TCheckBox;
     timestamp1: TCheckBox;
     Analyse1: TButton;

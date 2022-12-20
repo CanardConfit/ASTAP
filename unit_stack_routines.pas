@@ -1592,7 +1592,7 @@ begin
         {load image}
         Application.ProcessMessages;
         if esc_pressed then begin memo2_message('ESC pressed.');exit;end;
-        if load_fits(filename2,true {light},true,init=false {update memo for saving},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
+        if load_fits(filename2,true {light},true,true {init=false} {update memo for saving},0,head,img_loaded)=false then begin memo2_message('Error loading '+filename2);exit;end;
 
         if init=false then {first image}
         begin
